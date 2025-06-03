@@ -32,6 +32,7 @@
 #define BAREOS_INCLUDE_BACONFIG_H_
 
 #include "lib/message.h"
+#include "include/compiler_macro.h"
 
 /* Bareos common configuration defines */
 
@@ -282,7 +283,7 @@ inline bool IsSlotNumberValid(slot_number_t slot)
 
 /**
  * As of C++11 varargs macros are part of the standard.
- * We keep the kludgy versions for backwards compatability for now
+ * We keep the kludgy versions for backwards compatibility for now
  * but they're going to go away soon.
  */
 /** Debug Messages that are printed */
@@ -410,36 +411,38 @@ inline bool IsSlotNumberValid(slot_number_t slot)
 class PoolMem;
 
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
-int Mmsg(POOLMEM*& msgbuf, const char* fmt, ...);
-int Mmsg(PoolMem& msgbuf, const char* fmt, ...);
-int Mmsg(PoolMem*& msgbuf, const char* fmt, ...);
-int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...);
+int Mmsg(POOLMEM*& msgbuf, const char* fmt, ...) PRINTF_LIKE(2, 3);
+int Mmsg(PoolMem& msgbuf, const char* fmt, ...) PRINTF_LIKE(2, 3);
 
 class JobControlRecord;
-void d_msg(const char* file, int line, int level, const char* fmt, ...);
-void p_msg(const char* file, int line, int level, const char* fmt, ...);
-void p_msg_fb(const char* file, int line, int level, const char* fmt, ...);
+void d_msg(const char* file, int line, int level, const char* fmt, ...)
+    PRINTF_LIKE(4, 5);
+void p_msg(const char* file, int line, int level, const char* fmt, ...)
+    PRINTF_LIKE(4, 5);
+void p_msg_fb(const char* file, int line, int level, const char* fmt, ...)
+    PRINTF_LIKE(4, 5);
 void e_msg(const char* file,
            int line,
            int type,
            int level,
            const char* fmt,
-           ...);
+           ...) PRINTF_LIKE(5, 6);
 void j_msg(const char* file,
            int line,
            JobControlRecord* jcr,
            int type,
            utime_t mtime,
            const char* fmt,
-           ...);
+           ...) PRINTF_LIKE(6, 7);
 void q_msg(const char* file,
            int line,
            JobControlRecord* jcr,
            int type,
            utime_t mtime,
            const char* fmt,
-           ...);
-int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...);
+           ...) PRINTF_LIKE(6, 7);
+int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...)
+    PRINTF_LIKE(4, 5);
 
 #include "lib/bsys.h"
 #include "lib/scan.h"
@@ -552,6 +555,17 @@ inline const char* first_path_separator(const char* path)
 #else
 #  define Enter(lvl)
 #  define Leave(lvl)
+#endif
+
+#if defined(HAVE_WIN32)
+// mingw/windows does not understand "%zu/%zi" by default
+#  define PRIuz PRIu64
+#  define PRIiz PRIi64
+#  define PRItime "lld"
+#else
+#  define PRIuz "zu"
+#  define PRIiz "zi"
+#  define PRItime "ld"
 #endif
 
 #endif  // BAREOS_INCLUDE_BACONFIG_H_

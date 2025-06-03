@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -122,25 +122,17 @@ static bool GetStorageDevice(char* device, char* storage)
 }
 
 // Print a BootStrapRecord entry into a memory buffer.
+PRINTF_LIKE(2, 3)
 static void PrintBsrItem(std::string& buffer, const char* fmt, ...)
 {
   va_list arg_ptr;
-  int len, maxlen;
   PoolMem item(PM_MESSAGE);
 
-  while (1) {
-    maxlen = item.MaxSize() - 1;
-    va_start(arg_ptr, fmt);
-    len = Bvsnprintf(item.c_str(), maxlen, fmt, arg_ptr);
-    va_end(arg_ptr);
-    if (len < 0 || len >= (maxlen - 5)) {
-      item.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-    break;
-  }
+  va_start(arg_ptr, fmt);
+  auto res = item.Bvsprintf(fmt, arg_ptr);
+  va_end(arg_ptr);
 
-  buffer += item.c_str();
+  if (res >= 0) buffer += item.c_str();
 }
 
 /**
@@ -713,7 +705,7 @@ bool SendBootstrapFile(JobControlRecord* jcr,
   Dmsg1(400, "SendBootstrapFile: %s\n", jcr->RestoreBootstrap);
   if (!jcr->RestoreBootstrap) { return false; }
 
-  sock->fsend(bootstrap);
+  sock->fsend("%s", bootstrap);
   pos = ftello(bs);
 
   while (fgets(ua->cmd, UA_CMD_SIZE, bs)) {

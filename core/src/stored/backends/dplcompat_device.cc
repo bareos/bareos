@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -147,7 +147,7 @@ bool DropletCompatibleDevice::setup()
     return m_setup_succeeded = true;
   } else {
     PmStrcpy(errmsg, result.error().c_str());
-    Emsg0(M_FATAL, 0, errmsg);
+    Emsg0(M_FATAL, 0, "%s", errmsg);
     return false;
   }
 }
@@ -255,14 +255,14 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
 
   if (obj_stat && obj_stat->size > request->wbuflen) {
     Dmsg1(debug_info,
-          "Not uploading chunk %s with size %d, as chunk with size %d is "
+          "Not uploading chunk %s with size %zu, as chunk with size %d is "
           "already present\n",
           obj_name.data(), obj_stat->size, request->wbuflen);
     return true;
   }
 
   auto obj_data = gsl::span{request->buffer, request->wbuflen};
-  Dmsg1(debug_info, "Uploading %zu bytes of data\n", request->wbuflen);
+  Dmsg1(debug_info, "Uploading %" PRIu32 " bytes of data\n", request->wbuflen);
   if (auto result = m_storage.upload(obj_name, obj_chunk, obj_data)) {
     return true;
   } else {
@@ -288,8 +288,8 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
     return false;
   } else if (obj_stat->size > request->wbuflen) {
     Mmsg3(errmsg,
-          T_("Failed to read %s (%ld) to big to fit in chunksize of %ld "
-             "bytes\n"),
+          T_("Failed to read %s (%ld) to big to fit in chunksize of %" PRIu32
+             " bytes\n"),
           obj_name.data(), obj_stat->size, request->wbuflen);
     Dmsg1(debug_info, "%s", errmsg);
     dev_errno = EINVAL;
@@ -392,7 +392,7 @@ boffset_t DropletCompatibleDevice::d_lseek(DeviceControlRecord*,
 
       volumesize = ChunkedVolumeSize();
 
-      Dmsg1(debug_info, "Current volumesize: %lld\n", volumesize);
+      Dmsg1(debug_info, "Current volumesize: %zi\n", volumesize);
 
       if (volumesize >= 0) {
         offset_ = volumesize + offset;

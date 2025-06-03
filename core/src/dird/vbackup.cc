@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -241,7 +241,7 @@ bool DoNativeVbackup(JobControlRecord* jcr)
         ((StorageResource*)jcr->dir_impl->res.write_storage_list->first())
             ->resource_name_);
 
-  Jmsg(jcr, M_INFO, 0, T_("Start Virtual Backup JobId %lu, Job=%s\n"),
+  Jmsg(jcr, M_INFO, 0, T_("Start Virtual Backup JobId %" PRIu32 ", Job=%s\n"),
        jcr->JobId, jcr->Job);
 
   if (!jcr->accurate) {
@@ -394,9 +394,10 @@ bool DoNativeVbackup(JobControlRecord* jcr)
     UaContext* ua;
     ua = new_ua_context(jcr);
     PurgeJobsFromCatalog(ua, jobids.c_str());
-    Jmsg(jcr, M_INFO, 0,
-         T_("purged JobIds %s as they were consolidated into Job %lu\n"),
-         jobids.c_str(), jcr->JobId);
+    Jmsg(
+        jcr, M_INFO, 0,
+        T_("purged JobIds %s as they were consolidated into Job %" PRIu32 "\n"),
+        jobids.c_str(), jcr->JobId);
     FreeUaContext(ua);
   }
   return true;

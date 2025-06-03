@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -279,8 +279,8 @@ static std::pair<std::uint64_t, const char*> parse_number_with_mod(
         }
       }
       if (!found) {
-        Dmsg1(900, "Unknown modifier: \"%.*s\"\n", modifier.size(),
-              modifier.data());
+        Dmsg1(900, "Unknown modifier: \"%.*s\"\n",
+              static_cast<int>(modifier.size()), modifier.data());
         return {total, str};
       }
     }
@@ -644,7 +644,7 @@ char* add_commas(char* val, char* buf)
  * check if acl entry is valid
  * valid acl entries contain only A-Z 0-9 and !*.:_-'/
  */
-bool IsAclEntryValid(const char* acl, std::vector<char>& msg)
+bool IsAclEntryValid(const char* acl, PoolMem& msg)
 {
   int len;
   const char* p;
@@ -680,6 +680,6 @@ bool IsAclEntryValid(const char* acl, std::vector<char>& msg)
 
 bool IsAclEntryValid(const char* acl)
 {
-  std::vector<char> msg;
+  PoolMem msg;
   return IsAclEntryValid(acl, msg);
 }

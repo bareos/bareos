@@ -55,8 +55,8 @@ void CheckpointHandler::UpdateJobmediaRecord(JobControlRecord* jcr)
 
 void CheckpointHandler::UpdateJobrecord(JobControlRecord* jcr)
 {
-  Dmsg2(100, T_("... update job record: %llu bytes %lu files\n"), jcr->JobBytes,
-        jcr->JobFiles);
+  Dmsg2(100, T_("... update job record: %" PRIu64 " bytes %" PRIu32 " files\n"),
+        jcr->JobBytes, jcr->JobFiles);
   jcr->sd_impl->dcr->DirAskToUpdateJobRecord();
 }
 
@@ -87,8 +87,8 @@ void CheckpointHandler::DoTimedCheckpoint(JobControlRecord* jcr)
       next_checkpoint_time_ += checkpoint_interval_;
     }
     Jmsg(jcr, M_INFO, 0,
-         T_("Doing timed backup checkpoint. Next checkpoint in %d seconds\n"),
-         checkpoint_interval_);
+         T_("Doing timed backup checkpoint. Next checkpoint in %lld seconds\n"),
+         static_cast<long long>(checkpoint_interval_));
     DoBackupCheckpoint(jcr);
   }
 }

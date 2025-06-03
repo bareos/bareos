@@ -69,7 +69,7 @@ void DoVerify(JobControlRecord* jcr)
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
   if ((jcr->fd_impl->big_buf = (char*)malloc(jcr->buf_size)) == NULL) {
-    Jmsg1(jcr, M_ABORT, 0, T_("Cannot malloc %d network read buffer\n"),
+    Jmsg1(jcr, M_ABORT, 0, T_("Cannot malloc %" PRIuz " network read buffer\n"),
           DEFAULT_NETWORK_BUFFER_SIZE);
   }
   SetFindOptions((FindFilesPacket*)jcr->fd_impl->ff, jcr->fd_impl->incremental,

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -94,31 +94,6 @@ TEST(bsnprintf, char)
   // literal %
   EXPECT_EQ(Bsnprintf(dest, 100, "%%"), 1);
   EXPECT_STREQ(dest, "%");
-
-  // unsupported w
-  EXPECT_EQ(Bsnprintf(dest, 100, "%w%xyz"), 3);
-  EXPECT_STREQ(dest, "xyz");
-
-  // invalid ! (ignored)
-  EXPECT_EQ(Bsnprintf(dest, 100, "%!xyz"), 3);
-  EXPECT_STREQ(dest, "xyz");
-}
-
-TEST(bsnprintf, pointer)
-{
-  char dest[100];
-  void* null = nullptr;
-  void* ones = reinterpret_cast<void*>(UINTPTR_MAX);
-
-  EXPECT_EQ(Bsnprintf(dest, 100, "%p", null), 1);
-  EXPECT_STREQ(dest, "0");
-  if constexpr (sizeof(void*) == 4) {
-    EXPECT_EQ(Bsnprintf(dest, 100, "%p", ones), 8);
-    EXPECT_STREQ(dest, "ffffffff");
-  } else {
-    EXPECT_EQ(Bsnprintf(dest, 100, "%p", ones), 16);
-    EXPECT_STREQ(dest, "ffffffffffffffff");
-  }
 }
 
 TEST(bsnprintf, integers)
@@ -163,11 +138,8 @@ TEST(bsnprintf, integers)
   EXPECT_EQ(Bsnprintf(dest, 100, "%lli", llint), 4);
   EXPECT_STREQ(dest, "-123");
 
-  EXPECT_EQ(Bsnprintf(dest, 100, "%qi", llint), 4);
-  EXPECT_STREQ(dest, "-123");
-
   ssize_t ss_int = -123;
-  EXPECT_EQ(Bsnprintf(dest, 100, "%zi", ss_int), 4);
+  EXPECT_EQ(Bsnprintf(dest, 100, "%" PRIiz, ss_int), 4);
   EXPECT_STREQ(dest, "-123");
 
   unsigned int uns_int = 123;
@@ -186,11 +158,8 @@ TEST(bsnprintf, integers)
   EXPECT_EQ(Bsnprintf(dest, 100, "%llu", ullint), 3);
   EXPECT_STREQ(dest, "123");
 
-  EXPECT_EQ(Bsnprintf(dest, 100, "%qu", ullint), 3);
-  EXPECT_STREQ(dest, "123");
-
   size_t s_int = 123;
-  EXPECT_EQ(Bsnprintf(dest, 100, "%zu", s_int), 3);
+  EXPECT_EQ(Bsnprintf(dest, 100, "%" PRIuz, s_int), 3);
   EXPECT_STREQ(dest, "123");
 
   EXPECT_EQ(Bsnprintf(dest, 100, "%o", 8), 2);
@@ -201,4 +170,126 @@ TEST(bsnprintf, integers)
 
   EXPECT_EQ(Bsnprintf(dest, 100, "%X", 255), 2);
   EXPECT_STREQ(dest, "FF");
+}
+
+template <typename T> struct specifier;
+
+template <typename T> constexpr auto specifier_v = specifier<T>::value;
+
+template <> struct specifier<std::uint64_t> {
+  static constexpr const char* value = "%" PRIu64;
+};
+template <> struct specifier<std::int64_t> {
+  static constexpr const char* value = "%" PRIi64;
+};
+template <> struct specifier<std::uint32_t> {
+  static constexpr const char* value = "%" PRIu32;
+};
+template <> struct specifier<std::int32_t> {
+  static constexpr const char* value = "%" PRIi32;
+};
+template <> struct specifier<std::uint16_t> {
+  static constexpr const char* value = "%" PRIu16;
+};
+template <> struct specifier<std::int16_t> {
+  static constexpr const char* value = "%" PRIi16;
+};
+template <> struct specifier<std::uint8_t> {
+  static constexpr const char* value = "%" PRIu8;
+};
+template <> struct specifier<std::int8_t> {
+  static constexpr const char* value = "%" PRIi8;
+};
+
+#include <charconv>
+
+template <typename T> void test_format(T value)
+{
+  char buffer[100];
+
+  auto res = std::to_chars(std::begin(buffer), std::end(buffer), value);
+
+  ASSERT_EQ(res.ec, std::errc());
+  ASSERT_NE(res.ptr, std::end(buffer));
+  *res.ptr = '\0';
+
+  PoolMem formatted;
+  auto size = formatted.bsprintf(specifier_v<T>, value);
+  ASSERT_GE(size, 0);
+  ASSERT_LT(size, sizeof(buffer));
+
+  EXPECT_STREQ(buffer, formatted.c_str());
+}
+
+template <typename T> void test_limits()
+{
+  test_format(std::numeric_limits<T>::min());
+  test_format(std::numeric_limits<T>::max());
+}
+
+TEST(bsnprintf, integer_limits)
+{
+  test_limits<std::uint64_t>();
+  test_limits<std::int64_t>();
+  test_limits<std::uint32_t>();
+  test_limits<std::int32_t>();
+  test_limits<std::uint16_t>();
+  test_limits<std::int16_t>();
+  test_limits<std::uint8_t>();
+  test_limits<std::int8_t>();
+}
+
+static std::string repeat(char c, std::size_t count)
+{
+  std::string s;
+
+  s.resize(count);
+  for (char& current : s) { current = c; }
+
+  return s;
+}
+
+
+static void test_buffer(char* buffer, size_t size, const std::string& s)
+{
+  size_t expected_result = std::min(size, s.size());
+
+  EXPECT_EQ(Bsnprintf(buffer, size, "%s", s.c_str()), expected_result);
+
+  size_t expected_size = std::min(size - 1, s.size());
+
+  EXPECT_EQ(std::string_view(buffer, expected_size),
+            std::string_view(s.c_str(), expected_size));
+
+  EXPECT_EQ(buffer[expected_size], '\0');
+}
+
+TEST(bsnprintf, memory_limits)
+{
+  EXPECT_EQ(Bsnprintf(nullptr, -1, "%s", "Hello, World!"), -1);
+  EXPECT_EQ(Bsnprintf(nullptr, 0, "%s", "Hello, World!"), 0);
+
+
+  char buffer[100];
+
+  {
+    memset(buffer, 'a', sizeof(buffer));
+    test_buffer(buffer, 1, repeat('b', 9).c_str());
+  }
+  {
+    memset(buffer, 'a', sizeof(buffer));
+    test_buffer(buffer, 10, repeat('b', 9).c_str());
+  }
+  {
+    memset(buffer, 'a', sizeof(buffer));
+    test_buffer(buffer, 10, repeat('b', 10).c_str());
+  }
+  {
+    memset(buffer, 'a', sizeof(buffer));
+    test_buffer(buffer, 100, repeat('b', 10).c_str());
+  }
+  {
+    memset(buffer, 'a', sizeof(buffer));
+    test_buffer(buffer, 100, repeat('b', 100).c_str());
+  }
 }

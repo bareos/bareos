@@ -56,7 +56,7 @@ static void FreeResource(BareosResource* sres, int type);
 static bool SaveResource(int type, const ResourceItem* items, int pass);
 static void DumpResource(int type,
                          BareosResource* reshdr,
-                         bool sendit(void* sock, const char* fmt, ...),
+                         ConfigurationParser::sender* sendit,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose);
@@ -257,7 +257,7 @@ static s_kw compression_algorithms[]
        {"lzfast", COMPRESS_FZFZ}, {"lz4", COMPRESS_FZ4L},
        {"lz4hc", COMPRESS_FZ4H},  {NULL, 0}};
 
-static void StoreAuthenticationType(LEX* lc,
+static void StoreAuthenticationType(lexer* lc,
                                     const ResourceItem* item,
                                     int index,
                                     int)
@@ -283,7 +283,7 @@ static void StoreAuthenticationType(LEX* lc,
 }
 
 // Store password either clear if for NDMP or MD5 hashed for native.
-static void StoreAutopassword(LEX* lc,
+static void StoreAutopassword(lexer* lc,
                               const ResourceItem* item,
                               int index,
                               int pass)
@@ -313,7 +313,7 @@ static void StoreAutopassword(LEX* lc,
 }
 
 // Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
-static void StoreMaxblocksize(LEX* lc,
+static void StoreMaxblocksize(lexer* lc,
                               const ResourceItem* item,
                               int index,
                               int pass)
@@ -328,7 +328,10 @@ static void StoreMaxblocksize(LEX* lc,
 }
 
 // Store the IO direction on a certain device.
-static void StoreIoDirection(LEX* lc, const ResourceItem* item, int index, int)
+static void StoreIoDirection(lexer* lc,
+                             const ResourceItem* item,
+                             int index,
+                             int)
 {
   int i;
 
@@ -349,7 +352,7 @@ static void StoreIoDirection(LEX* lc, const ResourceItem* item, int index, int)
 }
 
 // Store the compression algorithm to use on a certain device.
-static void StoreCompressionalgorithm(LEX* lc,
+static void StoreCompressionalgorithm(lexer* lc,
                                       const ResourceItem* item,
                                       int index,
                                       int)
@@ -400,7 +403,7 @@ static void InitResourceCb(const ResourceItem* item, int pass)
   }
 }
 
-static void ParseConfigCb(LEX* lc,
+static void ParseConfigCb(lexer* lc,
                           const ResourceItem* item,
                           int index,
                           int pass,
@@ -662,7 +665,7 @@ bool PrintConfigSchemaJson(PoolMem& buffer)
 
 static bool DumpResource_(int type,
                           BareosResource* res,
-                          bool sendit(void* sock, const char* fmt, ...),
+                          ConfigurationParser::sender* sendit,
                           void* sock,
                           bool hide_sensitive_data,
                           bool verbose)
@@ -721,7 +724,7 @@ static bool DumpResource_(int type,
 
 static void DumpResource(int type,
                          BareosResource* res,
-                         bool sendit(void* sock, const char* fmt, ...),
+                         ConfigurationParser::sender* sendit,
                          void* sock,
                          bool hide_sensitive_data,
                          bool verbose)

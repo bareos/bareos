@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,22 +57,25 @@
 #include "lib/version.h"
 #include "lib/bpipe.h"
 
-namespace directordaemon {
-
+namespace {
 /* Commands sent to File daemon */
-static char backupcmd[] = "backup FileIndex=%ld\n";
-static char storaddrcmd[] = "storage address=%s port=%d ssl=%d\n";
-static char passiveclientcmd[] = "passive client address=%s port=%d ssl=%d\n";
+inline constexpr const char backupcmd[] = "backup FileIndex=%" PRIu32 "\n";
+inline constexpr const char storaddrcmd[]
+    = "storage address=%s port=%d ssl=%d\n";
+inline constexpr const char passiveclientcmd[]
+    = "passive client address=%s port=%d ssl=%d\n";
 
 /* Responses received from File daemon */
-static char OKbackup[] = "2000 OK backup\n";
-static char OKstore[] = "2000 OK storage\n";
-static char OKpassiveclient[] = "2000 OK passive client\n";
-static char EndJob[]
+inline constexpr const char OKbackup[] = "2000 OK backup\n";
+inline constexpr const char OKstore[] = "2000 OK storage\n";
+inline constexpr const char OKpassiveclient[] = "2000 OK passive client\n";
+inline constexpr const char EndJob[]
     = "2800 End Job TermCode=%d JobFiles=%u "
       "ReadBytes=%llu JobBytes=%llu Errors=%u "
       "VSS=%d Encrypt=%d\n";
+}  // namespace
 
+namespace directordaemon {
 static inline bool ValidateClient(JobControlRecord* jcr)
 {
   switch (jcr->dir_impl->res.client->Protocol) {
@@ -385,7 +388,8 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
 
   if (jcr->JobId) { /* display the message only for real jobs */
     Jmsg(jcr, M_INFO, 0,
-         "Sent Accurate information for %llu files (skipping %llu deleted "
+         "Sent Accurate information for %" PRIuz " files (skipping %" PRIuz
+         " deleted "
          "files) in %s.\n",
          args.sent, args.discarded, accurate_timer.format_human_readable());
   }
@@ -1089,7 +1093,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
          if (jcr->HasBase) {
             Mmsg(client_options, T_(
                  "  Software Compression:   %s%s\n"
-                 "  Base files/Used files:  %lld/%lld (%.2f%%)\n"
+                 "  Base files/Used files:  %" PRIu64 "/%" PRIu64 "(%.2f%%)\n"
                  "  VSS:                    %s\n"
                  "  Encryption:             %s\n"
                  "  Accurate:               %s\n"),

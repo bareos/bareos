@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -188,7 +188,8 @@ int Bmicrosleep(int32_t sec, int32_t usec)
     timeout.tv_sec++;
   }
 
-  Dmsg2(200, "pthread_cond_timedwait sec=%lld usec=%d\n", sec, usec);
+  Dmsg2(200, "pthread_cond_timedwait sec=%" PRId32 " usec=%" PRId32 "\n", sec,
+        usec);
 
   // Note, this unlocks mutex during the sleep
   lock_mutex(timer_mutex);
@@ -606,9 +607,7 @@ void ReadStateFile(const char* dir, const char* progname, int port)
                 "StateFileHeader must be trivially copyable");
 #endif
 
-  struct StateFileHeader hdr {
-    {0}, 0, 0, 0, { 0 }
-  };
+  struct StateFileHeader hdr{{0}, 0, 0, 0, {0}};
 
   std::ifstream file;
   file.exceptions(file.exceptions() | std::ios::failbit | std::ios::badbit);
@@ -623,7 +622,8 @@ void ReadStateFile(const char* dir, const char* progname, int port)
     }
   } catch (const std::system_error& e) {
     BErrNo be;
-    Dmsg3(100, "Could not open and read state file. size=%d: ERR=%s - %s\n",
+    Dmsg3(100,
+          "Could not open and read state file. size=%" PRIuz ": ERR=%s - %s\n",
           sizeof(StateFileHeader), be.bstrerror(), e.code().message().c_str());
     return;
   } catch (const std::exception& e) {

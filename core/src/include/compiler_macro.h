@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -100,6 +100,14 @@
 #else
 #  define IGNORE_INT_PTR_CAST_ON
 #  define IGNORE_INT_PTR_CAST_OFF
+#endif
+
+
+#if defined(HAVE_MSVC)
+#  define PRINTF_LIKE(fmt_pos, arg_pos)
+#else
+#  define PRINTF_LIKE(fmt_pos, arg_pos) \
+    __attribute__((format(printf, fmt_pos, arg_pos)))
 #endif
 
 #endif  // BAREOS_INCLUDE_COMPILER_MACRO_H_

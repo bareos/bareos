@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -785,7 +785,8 @@ POOLMEM* edit_job_codes(JobControlRecord* jcr,
           }
           break;
         case 'P': /* Process Id */
-          Bsnprintf(add, sizeof(add), "%lu", (uint32_t)getpid());
+          Bsnprintf(add, sizeof(add), "%llu",
+                    static_cast<long long unsigned>(getpid()));
           str = add;
           break;
         case 'b': /* Job Bytes */

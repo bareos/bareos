@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,9 +54,9 @@ namespace directordaemon {
 /* Forward referenced functions */
 static char* find_msg_start(char* msg);
 
-static char Job_status[] = "Status Job=%127s JobStatus=%d\n";
+inline constexpr const char Job_status[] = "Status Job=%127s JobStatus=%d\n";
 
-static char OK_msg[] = "1000 OK\n";
+inline constexpr const char OK_msg[] = "1000 OK\n";
 
 static void SetJcrSdJobStatus(JobControlRecord* jcr, int SDJobStatus)
 {
@@ -223,17 +223,17 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
     /* Here we expact a CatReq message
      *   CatReq Job=nn Catalog-Request-Message */
     if (bs->msg[0] == 'C') { /* Catalog request */
-      Dmsg2(900, "Catalog req jcr 0x%x: %s", jcr, bs->msg);
+      Dmsg2(900, "Catalog req jcr %p: %s", jcr, bs->msg);
       CatalogRequest(jcr, bs);
       continue;
     }
     if (bs->msg[0] == 'U') { /* SD sending attributes */
-      Dmsg2(900, "Catalog upd jcr 0x%x: %s", jcr, bs->msg);
+      Dmsg2(900, "Catalog upd jcr %p: %s", jcr, bs->msg);
       CatalogUpdate(jcr, bs);
       continue;
     }
     if (bs->msg[0] == 'B') { /* SD sending file spool attributes */
-      Dmsg2(100, "Blast attributes jcr 0x%x: %s", jcr, bs->msg);
+      Dmsg2(100, "Blast attributes jcr %p: %s", jcr, bs->msg);
       char filename[256];
       if (sscanf(bs->msg, "BlastAttr Job=%127s File=%255s", Job, filename)
           != 2) {
@@ -283,7 +283,7 @@ static char* find_msg_start(char* msg)
  */
 bool response(JobControlRecord* jcr,
               BareosSocket* bs,
-              char* resp,
+              const char* resp,
               const char* cmd,
               e_prtmsg PrintMessage)
 {

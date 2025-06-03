@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,36 +58,42 @@
 
 #include <algorithm>
 
+namespace {
+
+/* Commands sent to File daemon */
+inline constexpr const char filesetcmd[] = "fileset%s\n"; /* set full fileset */
+inline constexpr const char jobcmd[]
+    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
+inline constexpr const char jobcmdssl[]
+    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%d\n";
+/* Note, mtime_only is not used here -- implemented as file option */
+inline constexpr const char levelcmd[] = "level = %s%s%s mtime_only=%d %s%s\n";
+inline constexpr const char runscriptcmd[]
+    = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
+inline constexpr const char runbeforenowcmd[] = "RunBeforeNow\n";
+inline constexpr const char restoreobjectendcmd[] = "restoreobject end\n";
+inline constexpr const char bandwidthcmd[]
+    = "setbandwidth=%" PRId64 " Job=%s\n";
+inline constexpr const char pluginoptionscmd[] = "pluginoptions %s\n";
+inline constexpr const char getSecureEraseCmd[] = "getSecureEraseCmd\n";
+
+/* Responses received from File daemon */
+inline constexpr const char OKinc[] = "2000 OK include\n";
+inline constexpr const char OKjob[] = "2000 OK Job";
+inline constexpr const char OKlevel[] = "2000 OK level\n";
+inline constexpr const char OKRunScript[] = "2000 OK RunScript\n";
+inline constexpr const char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
+inline constexpr const char OKRestoreObject[] = "2000 OK ObjectRestored\n";
+inline constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
+inline constexpr const char OKPluginOptions[] = "2000 OK PluginOptions\n";
+inline constexpr const char OKgetSecureEraseCmd[]
+    = "2000 OK FDSecureEraseCmd %s\n";
+}  // namespace
 
 namespace directordaemon {
 
 const int debuglevel = 400;
 
-/* Commands sent to File daemon */
-static char filesetcmd[] = "fileset%s\n"; /* set full fileset */
-static char jobcmd[] = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s\n";
-static char jobcmdssl[]
-    = "JobId=%s Job=%s SDid=%u SDtime=%u Authorization=%s ssl=%d\n";
-/* Note, mtime_only is not used here -- implemented as file option */
-static char levelcmd[] = "level = %s%s%s mtime_only=%d %s%s\n";
-static char runscriptcmd[]
-    = "Run OnSuccess=%u OnFailure=%u AbortOnError=%u When=%u Command=%s\n";
-static char runbeforenowcmd[] = "RunBeforeNow\n";
-static char restoreobjectendcmd[] = "restoreobject end\n";
-static char bandwidthcmd[] = "setbandwidth=%lld Job=%s\n";
-static char pluginoptionscmd[] = "pluginoptions %s\n";
-static char getSecureEraseCmd[] = "getSecureEraseCmd\n";
-
-/* Responses received from File daemon */
-static char OKinc[] = "2000 OK include\n";
-static char OKjob[] = "2000 OK Job";
-static char OKlevel[] = "2000 OK level\n";
-static char OKRunScript[] = "2000 OK RunScript\n";
-static char OKRunBeforeNow[] = "2000 OK RunBeforeNow\n";
-static char OKRestoreObject[] = "2000 OK ObjectRestored\n";
-static char OKBandwidth[] = "2000 OK Bandwidth\n";
-static char OKPluginOptions[] = "2000 OK PluginOptions\n";
-static char OKgetSecureEraseCmd[] = "2000 OK FDSecureEraseCmd %s\n";
 
 /* External functions */
 extern DirectorResource* director;
@@ -165,16 +171,16 @@ static void OutputMessageForConnectionTry(JobControlRecord* jcr, UaContext* ua)
 
   if (jcr && jcr->JobId != 0) {
     std::string m1 = m + "\n";
-    Jmsg(jcr, M_INFO, 0, m1.c_str());
+    Jmsg(jcr, M_INFO, 0, "%s", m1.c_str());
   }
-  if (ua) { ua->SendMsg(m.c_str()); }
+  if (ua) { ua->SendMsg("%s", m.c_str()); }
 }
 
 static void SendInfoChosenCipher(JobControlRecord* jcr, UaContext* ua)
 {
   std::string str = jcr->file_bsock->GetCipherMessageString();
   str += '\n';
-  if (jcr->JobId != 0) { Jmsg(jcr, M_INFO, 0, str.c_str()); }
+  if (jcr->JobId != 0) { Jmsg(jcr, M_INFO, 0, "%s", str.c_str()); }
   if (ua) { /* only whith console connection */
     ua->SendRawMsg(str.c_str());
   }
@@ -205,7 +211,7 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
     std::replace(m1.begin(), m1.end(), '\v', ' ');
     std::replace(m1.begin(), m1.end(), ',', ' ');
     m1 += std::string("\n");
-    Jmsg(jcr, M_INFO, 0, m1.c_str());
+    Jmsg(jcr, M_INFO, 0, "%s", m1.c_str());
   }
   if (ua) { /* only whith console connection */
     ua->SendRawMsg(m.c_str());
@@ -886,7 +892,7 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
         || stream == STREAM_UNIX_ATTRIBUTES_EX) {
       if (jcr->cached_attribute) {
         Dmsg3(debuglevel, "Cached attr. Stream=%d fname=%s\n", ar->Stream,
-              ar->fname, ar->attr);
+              ar->fname);
         if (DbLocker _{jcr->db};
             !jcr->db->CreateFileAttributesRecord(jcr, ar)) {
           Jmsg1(jcr, M_FATAL, 0, T_("Attribute create error. %s"),
@@ -937,8 +943,8 @@ int GetAttributesAndPutInCatalog(JobControlRecord* jcr)
       length = strlen(Digest.c_str());
       digest.check_size(length * 2 + 1);
       jcr->db->EscapeString(jcr, digest.c_str(), Digest.c_str(), length);
-      Dmsg4(debuglevel, "stream=%d DigestLen=%d Digest=%s type=%d\n", stream,
-            strlen(digest.c_str()), digest.c_str(), ar->DigestType);
+      Dmsg4(debuglevel, "stream=%d DigestLen=%" PRIuz " Digest=%s type=%d\n",
+            stream, strlen(digest.c_str()), digest.c_str(), ar->DigestType);
     }
     jcr->dir_impl->jr.JobFiles = jcr->JobFiles = file_index;
     jcr->dir_impl->jr.LastIndex = file_index;

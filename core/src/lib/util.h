@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,11 +21,14 @@
 #ifndef BAREOS_LIB_UTIL_H_
 #define BAREOS_LIB_UTIL_H_
 
+#include "include/compiler_macro.h"
+
 #include <sys/stat.h>
 #include <chrono>
 #include <variant>
 #include <chrono>
 #include <optional>
+#include <type_traits>
 
 #if defined(HAVE_WIN32)
 #  include "bregex.h"
@@ -81,7 +84,7 @@ void SortCaseInsensitive(std::vector<std::string>& v);
 std::string getenv_std_string(std::string env_var);
 void StringToLowerCase(std::string& s);
 void StringToLowerCase(std::string& out, const std::string& in);
-bool pm_append(void* pm_string, const char* fmt, ...);
+bool pm_append(void* pm_string, const char* fmt, ...) PRINTF_LIKE(2, 3);
 std::vector<std::string> split_string(const std::string& str, char delim);
 
 std::string CreateDelimitedStringForSqlQueries(
@@ -214,5 +217,10 @@ template <typename CharT> struct path_components {
  private:
   view_type path;
 };
+
+template <class Enum> inline constexpr auto to_underlying(Enum e)
+{
+  return static_cast<std::underlying_type_t<Enum>>(e);
+}
 
 #endif  // BAREOS_LIB_UTIL_H_

@@ -36,7 +36,7 @@
 
 namespace directordaemon {
 
-static void ConfigureLexErrorHandler(const char*, int, LEX* lc, PoolMem& msg)
+static void ConfigureLexErrorHandler(const char*, int, lexer* lc, PoolMem& msg)
 {
   UaContext* ua;
 
@@ -49,7 +49,7 @@ static void ConfigureLexErrorHandler(const char*, int, LEX* lc, PoolMem& msg)
 
 static void ConfigureLexErrorHandler(const char* file,
                                      int line,
-                                     LEX* lc,
+                                     lexer* lc,
                                      const char* msg,
                                      ...)
 {

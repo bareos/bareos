@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,8 +51,12 @@
 #include "lib/message_queue_item.h"
 #include "lib/thread_specific_data.h"
 #include "lib/bpipe.h"
+#include "include/compiler_macro.h"
 
 // globals
+inline constexpr const char* JobMessage
+    = "Jmsg Job=%s type=%" PRId32 " level=%" PRId64 " %s";
+
 const char* working_directory = NULL; /* working directory path stored here */
 int g_verbose = 0;                    /* increase User messages */
 int debug_level = 0;                  /* debug level */
@@ -103,33 +107,27 @@ static const char* bstrrpath(const char* start, const char* end)
   return end;
 }
 
-static void DeliveryError(const char* fmt, ...)
+PRINTF_LIKE(1, 2) static void DeliveryError(const char* fmt, ...)
 {
-  va_list ap;
-  int i, len, maxlen;
-  POOLMEM* pool_buf;
+  POOLMEM* pool_buf = GetPoolMemory(PM_EMSG);
   char dt[MAX_TIME_LENGTH];
-
-  pool_buf = GetPoolMemory(PM_EMSG);
-
   bstrftime(dt, sizeof(dt), time(NULL), log_timestamp_format);
   bstrncat(dt, " ", sizeof(dt));
+  Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
 
-  i = Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
+  POOLMEM* formated = GetPoolMemory(PM_EMSG);
 
-  while (1) {
-    maxlen = SizeofPoolMemory(pool_buf) - i - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(pool_buf + i, maxlen, fmt, ap);
-    va_end(ap);
+  va_list ap;
+  va_start(ap, fmt);
+  int len = PmVFormat(formated, fmt, ap);
+  va_end(ap);
 
-    if (len < 0 || len >= (maxlen - 5)) {
-      pool_buf = ReallocPoolMemory(pool_buf, maxlen + i + maxlen / 2);
-      continue;
-    }
-
-    break;
+  if (len >= 0) {
+    PmStrcat(pool_buf, formated);
+  } else {
+    PmStrcat(pool_buf, "<formatting error>");
   }
+  FreeMemory(formated);
 
   fputs(pool_buf, stdout); /* print this here to INSURE that it is printed */
   fflush(stdout);
@@ -826,8 +824,7 @@ void DispatchMessage(JobControlRecord* jcr,
         case MessageDestinationCode::kDirector:
           Dmsg1(850, "DIRECTOR for following msg: %s", msg);
           if (jcr && jcr->dir_bsock && !jcr->dir_bsock->errors) {
-            jcr->dir_bsock->fsend("Jmsg Job=%s type=%d level=%lld %s", jcr->Job,
-                                  type, mtime, msg);
+            jcr->dir_bsock->fsend(JobMessage, jcr->Job, type, mtime, msg);
           } else {
             Dmsg1(800, "no jcr for following msg: %s", msg);
           }
@@ -913,7 +910,6 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
 {
   va_list ap;
   char ed1[50];
-  int len, maxlen;
   btime_t mtime;
   uint32_t usecs;
   bool details = true;
@@ -938,19 +934,9 @@ void d_msg(const char* file, int line, int level, const char* fmt, ...)
            GetJobIdFromThreadSpecificData());
     }
 
-    while (1) {
-      maxlen = more.MaxSize() - 1;
-      va_start(ap, fmt);
-      len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
-      va_end(ap);
-
-      if (len < 0 || len >= (maxlen - 5)) {
-        more.ReallocPm(maxlen + maxlen / 2);
-        continue;
-      }
-
-      break;
-    }
+    va_start(ap, fmt);
+    more.Bvsprintf(fmt, ap);
+    va_end(ap);
 
     if (details) { pt_out(buf.c_str()); }
 
@@ -1012,7 +998,6 @@ bool GetTimestamp(void) { return dbg_timestamp; }
 void p_msg(const char* file, int line, int level, const char* fmt, ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
   if (level >= 0) {
@@ -1020,19 +1005,9 @@ void p_msg(const char* file, int line, int level, const char* fmt, ...)
          GetJobIdFromThreadSpecificData());
   }
 
-  while (1) {
-    maxlen = more.MaxSize() - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      more.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, fmt);
+  more.Bvsprintf(fmt, ap);
+  va_end(ap);
 
   if (level >= 0) { pt_out(buf.c_str()); }
 
@@ -1074,7 +1049,6 @@ void p_msg_fb(const char* file, int line, int level, const char* fmt, ...)
 void t_msg(const char* file, int line, int level, const char* fmt, ...)
 {
   va_list ap;
-  int len, maxlen;
   bool details = true;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
@@ -1096,19 +1070,9 @@ void t_msg(const char* file, int line, int level, const char* fmt, ...)
            GetJobIdFromThreadSpecificData());
     }
 
-    while (1) {
-      maxlen = more.MaxSize() - 1;
-      va_start(ap, fmt);
-      len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
-      va_end(ap);
-
-      if (len < 0 || len >= (maxlen - 5)) {
-        more.ReallocPm(maxlen + maxlen / 2);
-        continue;
-      }
-
-      break;
-    }
+    va_start(ap, fmt);
+    more.Bvsprintf(fmt, ap);
+    va_end(ap);
 
     if (trace_fd != NULL) {
       if (details) { fputs(buf.c_str(), trace_fd); }
@@ -1127,7 +1091,6 @@ void e_msg(const char* file,
            ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_EMSG), more(PM_EMSG), typestr(PM_EMSG);
 
   switch (type) {
@@ -1174,19 +1137,9 @@ void e_msg(const char* file,
       break;
   }
 
-  while (1) {
-    maxlen = more.MaxSize() - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      more.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, fmt);
+  more.Bvsprintf(fmt, ap);
+  va_end(ap);
 
   // show error message also as debug message (level 10)
   d_msg(file, line, 10, "%s: %s", typestr.c_str(), more.c_str());
@@ -1216,7 +1169,6 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 {
   va_list ap;
   MessagesResource* msgs;
-  int len, maxlen;
   uint32_t JobId = 0;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
@@ -1239,19 +1191,9 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
 
   // The watchdog thread can't use Jmsg directly, we always queued it
   if (IsWatchdog()) {
-    while (1) {
-      maxlen = buf.MaxSize() - 1;
-      va_start(ap, fmt);
-      len = Bvsnprintf(buf.c_str(), maxlen, fmt, ap);
-      va_end(ap);
-
-      if (len < 0 || len >= (maxlen - 5)) {
-        buf.ReallocPm(maxlen + maxlen / 2);
-        continue;
-      }
-
-      break;
-    }
+    va_start(ap, fmt);
+    buf.Bvsprintf(fmt, ap);
+    va_end(ap);
     Qmsg(jcr, type, mtime, "%s", buf.c_str());
 
     return;
@@ -1310,19 +1252,9 @@ void Jmsg(JobControlRecord* jcr, int type, utime_t mtime, const char* fmt, ...)
       break;
   }
 
-  while (1) {
-    maxlen = more.MaxSize() - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      more.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, fmt);
+  more.Bvsprintf(fmt, ap);
+  va_end(ap);
 
   PmStrcat(buf, more.c_str());
   DispatchMessage(jcr, type, mtime, buf.c_str());
@@ -1351,23 +1283,13 @@ void j_msg(const char* file,
            ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
   Mmsg(buf, "%s:%d ", get_basename(file), line);
-  while (1) {
-    maxlen = more.MaxSize() - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
-    va_end(ap);
 
-    if (len < 0 || len >= (maxlen - 5)) {
-      more.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, fmt);
+  more.Bvsprintf(fmt, ap);
+  va_end(ap);
 
   PmStrcat(buf, more.c_str());
 
@@ -1378,23 +1300,13 @@ void j_msg(const char* file,
 int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...)
 {
   va_list ap;
-  int len, maxlen;
+  int len;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
   Mmsg(buf, "%s:%d ", get_basename(file), line);
-  while (1) {
-    maxlen = more.MaxSize() - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      more.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, fmt);
+  more.Bvsprintf(fmt, ap);
+  va_end(ap);
 
   PmStrcpy(pool_buf, buf.c_str());
   len = PmStrcat(pool_buf, more.c_str());
@@ -1410,97 +1322,24 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...)
  */
 int Mmsg(POOLMEM*& pool_buf, const char* fmt, ...)
 {
-  int len, maxlen;
   va_list ap;
 
-  while (1) {
-    maxlen = SizeofPoolMemory(pool_buf) - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(pool_buf, maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      pool_buf = ReallocPoolMemory(pool_buf, maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, fmt);
+  int len = PmVFormat(pool_buf, fmt, ap);
+  va_end(ap);
 
   return len;
 }
 
 int Mmsg(PoolMem& pool_buf, const char* fmt, ...)
 {
-  int len, maxlen;
   va_list ap;
 
-  while (1) {
-    maxlen = pool_buf.MaxSize() - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(pool_buf.c_str(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      pool_buf.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, fmt);
+  int len = pool_buf.Bvsprintf(fmt, ap);
+  va_end(ap);
 
   return len;
-}
-
-int Mmsg(PoolMem*& pool_buf, const char* fmt, ...)
-{
-  int len, maxlen;
-  va_list ap;
-
-  while (1) {
-    maxlen = pool_buf->MaxSize() - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(pool_buf->c_str(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      pool_buf->ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
-
-  return len;
-}
-
-int Mmsg(std::vector<char>& msgbuf, const char* fmt, ...)
-{
-  va_list ap;
-
-  size_t maxlen = msgbuf.size();
-  size_t len = strlen(fmt);
-
-  /* resize msgbuf so at least fmt fits in there.
-   * this makes sure the rest of the code works with a zero-sized vector
-   */
-  if (maxlen < len) {
-    msgbuf.resize(len);
-    maxlen = len;
-  }
-
-  while (1) {
-    va_start(ap, fmt);
-    len = Bvsnprintf(msgbuf.data(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len >= (maxlen - 5)) {
-      maxlen += maxlen / 2;
-      msgbuf.resize(maxlen);
-      continue;
-    }
-    return len;
-  }
 }
 
 // convert bareos message type to syslog log priority
@@ -1552,23 +1391,12 @@ static int MessageTypeToLogPriority(int message_type)
 void Qmsg(JobControlRecord* jcr, int type, utime_t, const char* fmt, ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_EMSG);
   MessageQueueItem* item;
 
-  while (1) {
-    maxlen = buf.MaxSize() - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(buf.c_str(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      buf.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, fmt);
+  buf.Bvsprintf(fmt, ap);
+  va_end(ap);
 
   item = (MessageQueueItem*)malloc(sizeof(MessageQueueItem));
   new (item) MessageQueueItem();
@@ -1626,23 +1454,12 @@ void q_msg(const char* file,
            ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_EMSG), more(PM_EMSG);
 
   Mmsg(buf, "%s:%d ", get_basename(file), line);
-  while (1) {
-    maxlen = more.MaxSize() - 1;
-    va_start(ap, fmt);
-    len = Bvsnprintf(more.c_str(), maxlen, fmt, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      more.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, fmt);
+  more.Bvsprintf(fmt, ap);
+  va_end(ap);
 
   PmStrcat(buf, more.c_str());
 

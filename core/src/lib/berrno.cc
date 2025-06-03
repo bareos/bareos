@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,7 +43,7 @@ const char* BErrNo::bstrerror()
 {
   *buf_ = 0;
 #ifdef HAVE_WIN32
-  if (berrno_ & b_errno_win32 || berrno_ == 0) {
+  if ((berrno_ & b_errno_win32) || berrno_ == 0) {
     FormatWin32Message();
     return (const char*)buf_;
   }
@@ -52,7 +52,7 @@ const char* BErrNo::bstrerror()
 
   char* msg = strerror(berrno_);
   Mmsg(buf_, "%s (errno=%d | win_error=0x%08X)", msg, berrno_,
-       windows_error_code, berrno_ & b_errno_win32);
+       windows_error_code);
 #else
   int status = 0;
 

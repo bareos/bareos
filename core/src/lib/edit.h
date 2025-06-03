@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,6 +24,7 @@
 #include <vector>
 #include <string>
 #include "include/bc_types.h"
+#include "lib/mem_pool.h"
 
 namespace edit {
 /* The biggest 64 bit number -- 2^64-1 -- has 20 digits.
@@ -60,7 +61,7 @@ bool Is_a_number_list(const char* n);
 bool IsAnInteger(const char* n);
 bool IsNameValid(const char* name, std::string& msg);
 bool IsNameValid(const char* name);
-bool IsAclEntryValid(const char* acl, std::vector<char>& msg);
+bool IsAclEntryValid(const char* acl, PoolMem& msg);
 bool IsAclEntryValid(const char* acl);
 std::string SizeAsSiPrefixFormat(uint64_t value_in);
 

@@ -236,7 +236,8 @@ bool BareosSocket::despool(void UpdateAttrSpoolSize(ssize_t size),
       nbytes = read(spool_fd_, msg, message_length);
       if (nbytes != (size_t)message_length) {
         BErrNo be;
-        Dmsg2(400, "nbytes=%d message_length=%d\n", nbytes, message_length);
+        Dmsg2(400, "nbytes=%" PRIuz " message_length=%d\n", nbytes,
+              message_length);
         Qmsg1(get_jcr(), M_FATAL, 0, T_("read attr spool error. ERR=%s\n"),
               be.bstrerror());
         UpdateAttrSpoolSize(tsize - last);
@@ -289,23 +290,17 @@ bool BareosSocket::fsend(const char* fmt, ...)
 
 bool BareosSocket::vfsend(const char* fmt, va_list ap)
 {
-  va_list arg_ptr;
-  int maxlen;
-
   if (errors || IsTerminated()) { return false; }
   /* This probably won't work, but we vsnprintf, then if we
    * get a negative length or a length greater than our buffer
    * (depending on which library is used), the printf was truncated, so
    * get a bigger buffer and try again.
    */
-  for (;;) {
-    maxlen = SizeofPoolMemory(msg) - 1;
-    va_copy(arg_ptr, ap);
-    message_length = Bvsnprintf(msg, maxlen, fmt, arg_ptr);
-    va_end(arg_ptr);
-    if (message_length >= 0 && message_length < (maxlen - 5)) { break; }
-    msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);
-  }
+
+  message_length = PmVFormat(msg, fmt, ap);
+
+  if (message_length < 0) { return false; }
+
   return send();
 }
 
@@ -390,17 +385,17 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
   bool auth_success = false;
 
   if (jcr && jcr->IsJobCanceled()) {
-    const char* fmt
-        = T_("TwoWayAuthenticate failed, because job was canceled.\n");
-    Jmsg(jcr, M_FATAL, 0, fmt);
-    Dmsg0(debuglevel, fmt);
+    const char* err_msg
+        = T_("TwoWayAuthenticate failed, because job was canceled.");
+    Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
+    Dmsg0(debuglevel, "%s\n", err_msg);
   } else if (password.encoding != p_encoding_md5) {
-    const char* fmt = T_(
+    const char* err_msg = T_(
         "Password encoding is not MD5. You are probably restoring a NDMP "
         "Backup "
-        "with a restore job not configured for NDMP protocol.\n");
-    Jmsg(jcr, M_FATAL, 0, fmt);
-    Dmsg0(debuglevel, fmt);
+        "with a restore job not configured for NDMP protocol.");
+    Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
+    Dmsg0(debuglevel, "%s\n", err_msg);
   } else {
     TlsPolicy local_tls_policy = tls_resource->GetPolicy();
     CramMd5Handshake cram_md5_handshake(this, password.value, local_tls_policy,
@@ -410,11 +405,11 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
 
     if (ConnectionReceivedTerminateSignal()) {
       if (tid) { StopBsockTimer(tid); }
-      const char* fmt = T_(
+      const char* err_msg = T_(
           "TwoWayAuthenticate failed, because connection was reset by "
-          "destination peer.\n");
-      Jmsg(jcr, M_FATAL, 0, fmt);
-      Dmsg0(debuglevel, fmt);
+          "destination peer.");
+      Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
+      Dmsg0(debuglevel, "%s\n", err_msg);
       return false;
     }
 
@@ -451,17 +446,17 @@ bool BareosSocket::TwoWayAuthenticate(JobControlRecord* jcr,
       fsend(T_("1999 Authorization failed.\n"));
       Bmicrosleep(sleep_time_after_authentication_error, 0);
     } else if (jcr && jcr->IsJobCanceled()) {
-      const char* fmt
-          = T_("TwoWayAuthenticate failed, because job was canceled.\n");
-      Jmsg(jcr, M_FATAL, 0, fmt);
-      Dmsg0(debuglevel, fmt);
+      const char* err_msg
+          = T_("TwoWayAuthenticate failed, because job was canceled.");
+      Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
+      Dmsg0(debuglevel, "%s\n", err_msg);
       auth_success = false;
     } else if (!DoTlsHandshake(cram_md5_handshake.RemoteTlsPolicy(),
                                tls_resource, initiated_by_remote, identity,
                                password.value, jcr)) {
-      const char* fmt = T_("Tls handshake failed.\n");
-      Jmsg(jcr, M_FATAL, 0, fmt);
-      Dmsg0(debuglevel, fmt);
+      const char* err_msg = T_("Tls handshake failed.");
+      Jmsg(jcr, M_FATAL, 0, "%s\n", err_msg);
+      Dmsg0(debuglevel, "%s\n", err_msg);
       auth_success = false;
     }
     if (tid) { StopBsockTimer(tid); }
@@ -664,14 +659,16 @@ bool BareosSocket::DoTlsHandshakeWithServer(TlsConfigCert* local_tls_cert,
   if (jcr && jcr->is_passive_client_connection_probing) {
     /* connection try */
     message_type = M_INFO;
-    message = T_("TLS negotiation failed (while probing client protocol)\n");
+    message = T_("TLS negotiation failed (while probing client protocol)");
   } else {
     message_type = M_FATAL;
-    message = T_("TLS negotiation failed\n");
+    message = T_("TLS negotiation failed");
   }
 
-  if (jcr && jcr->JobId != 0) { Jmsg(jcr, message_type, 0, message.c_str()); }
-  Dmsg0(debuglevel, message.c_str());
+  if (jcr && jcr->JobId != 0) {
+    Jmsg(jcr, message_type, 0, "%s\n", message.c_str());
+  }
+  Dmsg0(debuglevel, "%s\n", message.c_str());
 
   return false;
 }
@@ -802,8 +799,10 @@ void BareosSocket::ControlBwlimit(int bytes)
   nb_bytes_ += bytes;
   last_tick_ = now;
   if (debug_level >= 400) {
-    Dmsg3(400, "ControlBwlimit: now = %lld, since = %lld, nb_bytes = %d\n", now,
-          temp, nb_bytes_);
+    Dmsg3(400,
+          "ControlBwlimit: now = %" PRId64 ", since = %" PRId64
+          ", nb_bytes = %" PRId64 "\n",
+          now, temp, nb_bytes_);
   }
 
   // Take care of clock problems (>10s)
@@ -823,7 +822,8 @@ void BareosSocket::ControlBwlimit(int bytes)
   usec_sleep = (int64_t)(nb_bytes_ / ((double)bwlimit_ / 1000000.0));
   if (usec_sleep > 100) {
     if (debug_level >= 400) {
-      Dmsg1(400, "ControlBwlimit: sleeping for %lld usecs\n", usec_sleep);
+      Dmsg1(400, "ControlBwlimit: sleeping for %" PRId64 " usecs\n",
+            usec_sleep);
     }
 
     // Sleep the right number of usecs.

@@ -50,30 +50,35 @@
 namespace directordaemon {
 
 /* Commands sent to Storage daemon */
-static char readlabelcmd[] = "readlabel %s Slot=%hd drive=%hd\n";
-static char changerlistallcmd[] = "autochanger listall %s \n";
-static char changerlistcmd[] = "autochanger list %s \n";
-static char changerslotscmd[] = "autochanger slots %s\n";
-static char changerdrivescmd[] = "autochanger drives %s\n";
-static char changertransfercmd[] = "autochanger transfer %s %hd %hd \n";
-static char changervolopslotcmd[] = "%s %s drive=%hd slot=%hd\n";
-static char changervolopcmd[] = "%s %s drive=%hd\n";
-static char canceljobcmd[] = "cancel Job=%s\n";
-static char dotstatuscmd[] = ".status %s\n";
-static char statuscmd[] = "status %s\n";
-static char bandwidthcmd[] = "setbandwidth=%lld Job=%s\n";
-static char pluginoptionscmd[] = "pluginoptions %s\n";
-static char getSecureEraseCmd[] = "getSecureEraseCmd\n";
+inline constexpr const char readlabelcmd[]
+    = "readlabel %s Slot=%hd drive=%hd\n";
+inline constexpr const char changerlistallcmd[] = "autochanger listall %s \n";
+inline constexpr const char changerlistcmd[] = "autochanger list %s \n";
+inline constexpr const char changerslotscmd[] = "autochanger slots %s\n";
+inline constexpr const char changerdrivescmd[] = "autochanger drives %s\n";
+inline constexpr const char changertransfercmd[]
+    = "autochanger transfer %s %hd %hd \n";
+inline constexpr const char changervolopslotcmd[]
+    = "%s %s drive=%hd slot=%hd\n";
+inline constexpr const char changervolopcmd[] = "%s %s drive=%hd\n";
+inline constexpr const char canceljobcmd[] = "cancel Job=%s\n";
+inline constexpr const char dotstatuscmd[] = ".status %s\n";
+inline constexpr const char statuscmd[] = "status %s\n";
+inline constexpr const char bandwidthcmd[]
+    = "setbandwidth=%" PRId64 " Job=%s\n";
+inline constexpr const char pluginoptionscmd[] = "pluginoptions %s\n";
+inline constexpr const char getSecureEraseCmd[] = "getSecureEraseCmd\n";
 
 /* Responses received from Storage daemon */
-static char OKBandwidth[] = "2000 OK Bandwidth\n";
-static char OKpluginoptions[] = "2000 OK plugin options\n";
-static char OKSecureEraseCmd[] = "2000 OK SDSecureEraseCmd %s\n";
+inline constexpr const char OKBandwidth[] = "2000 OK Bandwidth\n";
+inline constexpr const char OKpluginoptions[] = "2000 OK plugin options\n";
+inline constexpr const char OKSecureEraseCmd[]
+    = "2000 OK SDSecureEraseCmd %s\n";
 
 /* Commands received from storage daemon that need scanning */
-static char readlabelresponse[] = "3001 Volume=%s Slot=%hd";
-static char changerslotsresponse[] = "slots=%hd\n";
-static char changerdrivesresponse[] = "drives=%hd\n";
+inline constexpr const char readlabelresponse[] = "3001 Volume=%s Slot=%hd";
+inline constexpr const char changerslotsresponse[] = "slots=%hd\n";
+inline constexpr const char changerdrivesresponse[] = "drives=%hd\n";
 
 static void TerminateAndCloseJcrStoreSocket(JobControlRecord* jcr)
 {
@@ -431,9 +436,10 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
           }
           vl->element_address = INDEX_DRIVE_OFFSET + vl->bareos_slot_number;
           if (vl->element_address >= INDEX_MAX_DRIVES) {
-            ua->ErrorMsg(T_("Drive number %hd greater then "
-                            "INDEX_MAX_DRIVES(%hd) please increase define\n"),
-                         vl->bareos_slot_number, INDEX_MAX_DRIVES);
+            ua->ErrorMsg(
+                T_("Drive number %" PRIu16 " greater then "
+                   "INDEX_MAX_DRIVES(%" PRIu16 ") please increase define\n"),
+                vl->bareos_slot_number, INDEX_MAX_DRIVES);
             free(vl);
             continue;
           }
@@ -482,14 +488,15 @@ dlist<vol_list_t>* native_get_vol_list(UaContext* ua,
             "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=%s "
             "to SD list.\n",
             vl->element_address, vl->bareos_slot_number,
-            vl->currently_loaded_slot_number, vl->slot_type, vl->slot_type,
-            NPRT(vl->VolName));
+            vl->currently_loaded_slot_number, to_underlying(vl->slot_type),
+            to_underlying(vl->slot_status), NPRT(vl->VolName));
     } else {
       Dmsg5(100,
             "Add index = %hd slot=%hd loaded=%hd type=%hd content=%hd Vol=NULL "
             "to SD list.\n",
             vl->element_address, vl->bareos_slot_number,
-            vl->currently_loaded_slot_number, vl->slot_type, vl->slot_type);
+            vl->currently_loaded_slot_number, to_underlying(vl->slot_type),
+            to_underlying(vl->slot_status));
     }
 
     vol_list->binary_insert(vl, StorageCompareVolListEntry);
@@ -705,7 +712,7 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
   if (ua->jcr->store_bsock) {
     std::string cipher_string = ua->jcr->store_bsock->GetCipherMessageString();
     cipher_string += '\n';
-    ua->SendMsg(cipher_string.c_str());
+    ua->SendMsg("%s", cipher_string.c_str());
   }
 
   Dmsg0(20, T_("Connected to storage daemon\n"));

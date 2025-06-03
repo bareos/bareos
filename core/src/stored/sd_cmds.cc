@@ -2,7 +2,7 @@
    BAREOS - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -49,7 +49,7 @@ namespace storagedaemon {
 /* Imported variables */
 
 /* Static variables */
-static char serrmsg[] = "3900 Invalid command\n";
+inline constexpr const char serrmsg[] = "3900 Invalid command\n";
 
 /* Imported functions */
 
@@ -71,17 +71,22 @@ static struct s_sd_cmds sd_cmds[] = {
     {NULL, NULL} /* list terminator */
 };
 
+namespace {
 // Responses sent to the Remote Storage daemon
-static char NO_open[] = "3901 Error replicate session already open\n";
-static char NOT_opened[] = "3902 Error replicate session not opened\n";
-static char ERROR_replicate[] = "3903 Error replicate data\n";
-static char OK_end_replicate[] = "3000 OK end replicate\n";
-static char OK_start_replicate[] = "3000 OK start replicate ticket = %d\n";
+inline constexpr const char NO_open[]
+    = "3901 Error replicate session already open\n";
+inline constexpr const char NOT_opened[]
+    = "3902 Error replicate session not opened\n";
+inline constexpr const char ERROR_replicate[] = "3903 Error replicate data\n";
+inline constexpr const char OK_end_replicate[] = "3000 OK end replicate\n";
+inline constexpr const char OK_start_replicate[]
+    = "3000 OK start replicate ticket = %d\n";
 
 // Responses sent to the Director
-static char Job_start[] = "3010 Job %s start\n";
-static char Job_end[]
+inline constexpr const char Job_start[] = "3010 Job %s start\n";
+inline constexpr const char Job_end[]
     = "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
+}  // namespace
 
 /**
  * After receiving a connection (in socket_server.c) if it is

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,7 @@ static const int debuglevel = 5000;
  *   or semicolon, but stop on BCT_EOB (same as end of
  *   line except it is not eaten).
  */
-void ScanToEol(LEX* lc)
+void ScanToEol(lexer* lc)
 {
   int token;
 
@@ -58,7 +58,7 @@ void ScanToEol(LEX* lc)
 }
 
 // Get next token, but skip EOL
-int ScanToNextNotEol(LEX* lc)
+int ScanToNextNotEol(lexer* lc)
 {
   int token;
 
@@ -70,25 +70,15 @@ int ScanToNextNotEol(LEX* lc)
 }
 
 // Format a scanner error message
-static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
+PRINTF_LIKE(4, 5)
+static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_NAME), more(PM_NAME);
 
-  while (1) {
-    maxlen = buf.size() - 1;
-    va_start(ap, msg);
-    len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      buf.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, msg);
+  buf.Bvsprintf(msg, ap);
+  va_end(ap);
 
   if (lc->err_type == 0) { /* M_ERROR_TERM by default */
     lc->err_type = M_ERROR_TERM;
@@ -114,25 +104,15 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 }
 
 // Format a scanner warning message
-static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
+PRINTF_LIKE(4, 5)
+static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_NAME), more(PM_NAME);
 
-  while (1) {
-    maxlen = buf.size() - 1;
-    va_start(ap, msg);
-    len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      buf.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, msg);
+  buf.Bvsprintf(msg, ap);
+  va_end(ap);
 
   if (lc->line_no > lc->begin_line_no) {
     Mmsg(more, T_("Problem probably begins at line %d.\n"), lc->begin_line_no);
@@ -151,14 +131,14 @@ static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
   }
 }
 
-void LexSetDefaultErrorHandler(LEX* lf) { lf->ScanError = s_err; }
+void LexSetDefaultErrorHandler(lexer* lf) { lf->scan_error = s_err; }
 
-void LexSetDefaultWarningHandler(LEX* lf) { lf->scan_warning = s_warn; }
+void LexSetDefaultWarningHandler(lexer* lf) { lf->scan_warning = s_warn; }
 
 // Set err_type used in error_handler
-void LexSetErrorHandlerErrorType(LEX* lf, int err_type)
+void LexSetErrorHandlerErrorType(lexer* lf, int err_type)
 {
-  LEX* lex = lf;
+  lexer* lex = lf;
   while (lex) {
     lex->err_type = err_type;
     lex = lex->next;
@@ -169,9 +149,9 @@ void LexSetErrorHandlerErrorType(LEX* lf, int err_type)
  * Free the current file, and retrieve the contents of the previous packet if
  * any.
  */
-LEX* LexCloseFile(LEX* lf)
+lexer* LexCloseFile(lexer* lf)
 {
-  LEX* of;
+  lexer* of;
 
   if (lf == NULL) { Emsg0(M_ABORT, 0, T_("Close of NULL file\n")); }
   Dmsg1(debuglevel, "Close lex file: %s\n", lf->fname);
@@ -191,7 +171,7 @@ LEX* LexCloseFile(LEX* lf)
   if (of) {
     of->options = lf->options;              /* preserve options */
     of->error_counter += lf->error_counter; /* summarize the errors */
-    memcpy(lf, of, sizeof(LEX));
+    memcpy(lf, of, sizeof(lexer));
     Dmsg1(debuglevel, "Restart scan of cfg file %s\n", of->fname);
   } else {
     of = lf;
@@ -202,20 +182,20 @@ LEX* LexCloseFile(LEX* lf)
 }
 
 // Add lex structure for an included config file.
-static inline LEX* lex_add(LEX* lf,
-                           const char* filename,
-                           FILE* fd,
-                           Bpipe* bpipe,
-                           LEX_ERROR_HANDLER* ScanError,
-                           LEX_WARNING_HANDLER* scan_warning)
+static inline lexer* lex_add(lexer* lf,
+                             const char* filename,
+                             FILE* fd,
+                             Bpipe* bpipe,
+                             lexer::error_handler* scan_error,
+                             lexer::warning_handler* scan_warning)
 {
-  LEX* nf;
+  lexer* nf;
 
   Dmsg1(100, "open config file: %s\n", filename);
-  nf = (LEX*)malloc(sizeof(LEX));
+  nf = (lexer*)malloc(sizeof(lexer));
   if (lf) {
-    memcpy(nf, lf, sizeof(LEX));
-    memset(lf, 0, sizeof(LEX));
+    memcpy(nf, lf, sizeof(lexer));
+    *lf = {};
     lf->next = nf;             /* if have lf, push it behind new one */
     lf->options = nf->options; /* preserve user options */
     /* preserve err_type to prevent bareos exiting on 'reload'
@@ -223,12 +203,12 @@ static inline LEX* lex_add(LEX* lf,
     lf->err_type = nf->err_type;
   } else {
     lf = nf; /* start new packet */
-    memset(lf, 0, sizeof(LEX));
+    *lf = {};
     LexSetErrorHandlerErrorType(lf, M_ERROR_TERM);
   }
 
-  if (ScanError) {
-    lf->ScanError = ScanError;
+  if (scan_error) {
+    lf->scan_error = scan_error;
   } else {
     LexSetDefaultErrorHandler(lf);
   }
@@ -268,10 +248,10 @@ static inline bool IsWildcardString(const char* string)
  * and link the contents of the old packet into
  * the next field.
  */
-LEX* lex_open_file(LEX* lf,
-                   const char* filename,
-                   LEX_ERROR_HANDLER* ScanError,
-                   LEX_WARNING_HANDLER* scan_warning)
+lexer* lex_open_file(lexer* lf,
+                     const char* filename,
+                     lexer::error_handler* ScanError,
+                     lexer::warning_handler* scan_warning)
 {
   FILE* fd;
   Bpipe* bpipe = NULL;
@@ -312,7 +292,7 @@ LEX* lex_open_file(LEX* lf,
       return NULL;
     }
 
-    Dmsg2(100, "glob %s: %i files\n", filename, fileglob.gl_pathc);
+    Dmsg2(100, "glob %s: %" PRIuz " files\n", filename, fileglob.gl_pathc);
     for (size_t i = 0; i < fileglob.gl_pathc; i++) {
       filename_expanded = fileglob.gl_pathv[i];
       if ((fd = fopen(filename_expanded, "rb")) == NULL) {
@@ -337,7 +317,7 @@ LEX* lex_open_file(LEX* lf,
  *    L_EOF if end of file
  *    L_EOL if end of line
  */
-int LexGetChar(LEX* lf)
+int LexGetChar(lexer* lf)
 {
   if (lf->ch == L_EOF) {
     Emsg0(M_CONFIG_ERROR, 0,
@@ -374,7 +354,7 @@ int LexGetChar(LEX* lf)
   return lf->ch;
 }
 
-void LexUngetChar(LEX* lf)
+void LexUngetChar(lexer* lf)
 {
   if (lf->ch == L_EOL) {
     lf->ch = 0; /* End of line, force read of next one */
@@ -384,7 +364,7 @@ void LexUngetChar(LEX* lf)
 }
 
 // Add a character to the current string
-static void add_str(LEX* lf, int ch)
+static void add_str(lexer* lf, int ch)
 {
   /* The default config string is sized to 256 bytes.
    * If we need longer config strings its increased with 256 bytes each time. */
@@ -398,7 +378,7 @@ static void add_str(LEX* lf, int ch)
 }
 
 // Begin the string
-static void BeginStr(LEX* lf, int ch)
+static void BeginStr(lexer* lf, int ch)
 {
   lf->str_len = 0;
   lf->str[0] = 0;
@@ -482,7 +462,7 @@ const char* lex_tok_to_str(int token)
   }
 }
 
-static uint32_t scan_pint(LEX* lf, char* str)
+static uint32_t scan_pint(lexer* lf, char* str)
 {
   int64_t val = 0;
 
@@ -499,7 +479,7 @@ static uint32_t scan_pint(LEX* lf, char* str)
   return (uint32_t)(val & 0xffffffff);
 }
 
-static uint64_t scan_pint64(LEX* lf, char* str)
+static uint64_t scan_pint64(lexer* lf, char* str)
 {
   uint64_t val = 0;
 
@@ -534,7 +514,7 @@ class TemporaryBuffer {
   long pos_;
 };
 
-static bool NextLineContinuesWithQuotes(LEX* lf)
+static bool NextLineContinuesWithQuotes(lexer* lf)
 {
   TemporaryBuffer t(lf->fd);
 
@@ -549,7 +529,7 @@ static bool NextLineContinuesWithQuotes(LEX* lf)
   return false;
 }
 
-static bool CurrentLineContinuesWithQuotes(LEX* lf)
+static bool CurrentLineContinuesWithQuotes(lexer* lf)
 {
   int i = lf->col_no;
   while (lf->line[i] != '\0') {
@@ -565,7 +545,7 @@ static bool CurrentLineContinuesWithQuotes(LEX* lf)
  * Get the next token from the input
  *
  */
-int LexGetToken(LEX* lf, int expect)
+int LexGetToken(lexer* lf, int expect)
 {
   int ch;
   int token = BCT_NONE;
@@ -587,7 +567,8 @@ int LexGetToken(LEX* lf, int expect)
         Dmsg2(debuglevel, "Lex state lex_none ch=%d,%x\n", ch, ch);
         if (B_ISSPACE(ch)) break;
         if (B_ISALPHA(ch)) {
-          if (lf->options & LOPT_NO_IDENT || lf->options & LOPT_STRING) {
+          if (lf->options[lexer::options::NoIdent]
+              || lf->options[lexer::options::ForceString]) {
             lf->state = lex_string;
           } else {
             lf->state = lex_identifier;
@@ -596,7 +577,7 @@ int LexGetToken(LEX* lf, int expect)
           break;
         }
         if (B_ISDIGIT(ch)) {
-          if (lf->options & LOPT_STRING) {
+          if (lf->options[lexer::options::ForceString]) {
             lf->state = lex_string;
           } else {
             lf->state = lex_number;
@@ -651,7 +632,7 @@ int LexGetToken(LEX* lf, int expect)
             break;
           case '@':
             /* In NO_EXTERN mode, @ is part of a string */
-            if (lf->options & LOPT_NO_EXTERN) {
+            if (lf->options[lexer::options::NoExtern]) {
               lf->state = lex_string;
               BeginStr(lf, ch);
             } else {
@@ -820,12 +801,12 @@ int LexGetToken(LEX* lf, int expect)
         if (ch == '"') {
           /* Keep the original LEX so we can print an error if the included file
            * can't be opened. */
-          LEX* lfori = lf;
+          lexer* lfori = lf;
           /* Skip the double quote when restarting parsing */
           LexGetChar(lf);
 
           lf->state = lex_none;
-          lf = lex_open_file(lf, lf->str, lf->ScanError, lf->scan_warning);
+          lf = lex_open_file(lf, lf->str, lf->scan_error, lf->scan_warning);
           if (lf == NULL) {
             BErrNo be;
             scan_err2(lfori, T_("Cannot open included config file %s: %s\n"),
@@ -851,10 +832,10 @@ int LexGetToken(LEX* lf, int expect)
             || ch == ';' || ch == ',' || ch == '"' || ch == '#') {
           /* Keep the original LEX so we can print an error if the included file
            * can't be opened. */
-          LEX* lfori = lf;
+          lexer* lfori = lf;
 
           lf->state = lex_none;
-          lf = lex_open_file(lf, lf->str, lf->ScanError, lf->scan_warning);
+          lf = lex_open_file(lf, lf->str, lf->scan_error, lf->scan_warning);
           if (lf == NULL) {
             BErrNo be;
             scan_err2(lfori, T_("Cannot open included config file %s: %s\n"),

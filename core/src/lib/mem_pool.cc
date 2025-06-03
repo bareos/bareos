@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,10 +66,10 @@ constexpr int32_t HEAD_SIZE{BALIGN(sizeof(struct abufhead))};
  * the normal error reporting which uses dynamic memory e.g. recursivly calls
  * these routines again leading to deadlocks.
  */
-[[noreturn]] static void MemPoolErrorMessage(const char* file,
-                                             int line,
-                                             const char* fmt,
-                                             ...)
+[[noreturn]] PRINTF_LIKE(3, 4) static void MemPoolErrorMessage(const char* file,
+                                                               int line,
+                                                               const char* fmt,
+                                                               ...)
 {
   char buf[256];
   va_list arg_ptr;
@@ -125,6 +125,8 @@ int32_t SizeofPoolMemory(POOLMEM* obuf) noexcept
 
 POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size) noexcept
 {
+  if (size < 0) { return obuf; }
+
   struct abufhead* old_abuf_ptr = GetPmHeader(obuf);
   char* buf = static_cast<char*>(realloc(old_abuf_ptr, size + HEAD_SIZE));
   if (buf == NULL) {
@@ -279,17 +281,38 @@ int PoolMem::bsprintf(const char* fmt, ...)
 
 int PoolMem::Bvsprintf(const char* fmt, va_list arg_ptr)
 {
-  int maxlen, len;
+  return PmVFormat(mem, fmt, arg_ptr);
+}
+
+int PmFormat(POOLMEM*& dest_pm, const char* fmt, ...)
+{
+  va_list arg_ptr;
+  va_start(arg_ptr, fmt);
+  int len = PmVFormat(dest_pm, fmt, arg_ptr);
+  va_end(arg_ptr);
+  return len;
+}
+
+int PmVFormat(POOLMEM*& dest_pm, const char* fmt, va_list arg_ptr)
+{
   va_list ap;
 
-again:
-  maxlen = MaxSize() - 1;
-  va_copy(ap, arg_ptr);
-  len = ::Bvsnprintf(mem, maxlen, fmt, ap);
-  va_end(ap);
-  if (len >= maxlen) {
-    ReallocPm(maxlen + maxlen / 2);
-    goto again;
+  ASSERT(SizeofPoolMemory(dest_pm) >= 0);
+
+  for (;;) {
+    int maxlen = SizeofPoolMemory(dest_pm);
+
+    va_copy(ap, arg_ptr);
+    int len = Bvsnprintf(dest_pm, maxlen, fmt, ap);
+    va_end(ap);
+
+    // if len == maxlen, then we might have been truncated, so we need to
+    // try again
+    if (len < maxlen) { return len; }
+
+    // add 1 to make sure we always grow (think of maxlen = 0, 1)
+    auto* mem = ReallocPoolMemory(dest_pm, maxlen + 1 + maxlen / 2);
+    if (!mem) { return -1; }
+    dest_pm = mem;
   }
-  return len;
 }

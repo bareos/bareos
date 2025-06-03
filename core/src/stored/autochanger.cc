@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -136,8 +136,8 @@ int AutoloadDevice(DeviceControlRecord* dcr, int writing, BareosSocket* dir)
 
   drive = dcr->dev->drive_index;
   wanted_slot = dcr->VolCatInfo.InChanger ? dcr->VolCatInfo.Slot : 0;
-  Dmsg3(100, "autoload: slot=%hd InChgr=%d Vol=%s\n", dcr->VolCatInfo.Slot,
-        dcr->VolCatInfo.InChanger, dcr->getVolCatName());
+  Dmsg3(100, "autoload: slot=%" PRId32 " InChgr=%d Vol=%s\n",
+        dcr->VolCatInfo.Slot, dcr->VolCatInfo.InChanger, dcr->getVolCatName());
 
   /* Handle autoloaders here.  If we cannot autoload it, we will return 0 so
    * that the sysop will be asked to load it. */
@@ -684,8 +684,8 @@ bool AutochangerCmd(DeviceControlRecord* dcr,
     AutochangerResource* changer_res = dcr->device_resource->changer_res;
     int drives = 1;
     if (changer_res) { drives = changer_res->device_resources->size(); }
-    dir->fsend("drives=%hd\n", drives);
-    Dmsg1(100, "drives=%hd\n", drives);
+    dir->fsend("drives=%d\n", drives);
+    Dmsg1(100, "drives=%d\n", drives);
     return true;
   }
 

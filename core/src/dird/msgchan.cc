@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -48,33 +48,38 @@
 #include "lib/thread_specific_data.h"
 #include "lib/watchdog.h"
 
-namespace directordaemon {
+namespace {
 
 /* Commands sent to Storage daemon */
-static char jobcmd[]
+inline constexpr const char jobcmd[]
     = "JobId=%s job=%s job_name=%s client_name=%s "
       "type=%d level=%d FileSet=%s NoAttr=%d SpoolAttr=%d FileSetMD5=%s "
       "SpoolData=%d PreferMountedVols=%d SpoolSize=%s "
-      "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%llu "
+      "rerunning=%d VolSessionId=%d VolSessionTime=%d Quota=%" PRIu64
+      " "
       "Protocol=%d BackupFormat=%s\n";
-static char use_storage[]
+inline constexpr const char use_storage[]
     = "use storage=%s media_type=%s pool_name=%s "
       "pool_type=%s append=%d copy=%d stripe=%d\n";
-static char use_device[] = "use device=%s\n";
+inline constexpr const char use_device[] = "use device=%s\n";
 // static char query_device[] =
 //   "query device=%s";
 
 /* Response from Storage daemon */
-static char OKbootstrap[] = "3000 OK bootstrap\n";
-static char OK_job[] = "3000 OK Job SDid=%d SDtime=%d Authorization=%100s\n";
-static char OK_nextrun[] = "3000 OK Job Authorization=%100s\n";
-static char OK_device[] = "3000 OK use device device=%s\n";
+inline constexpr const char OKbootstrap[] = "3000 OK bootstrap\n";
+inline constexpr const char OK_job[]
+    = "3000 OK Job SDid=%d SDtime=%d Authorization=%100s\n";
+inline constexpr const char OK_nextrun[] = "3000 OK Job Authorization=%100s\n";
+inline constexpr const char OK_device[] = "3000 OK use device device=%s\n";
 
 /* Storage Daemon requests */
-static char Job_start[] = "3010 Job %127s start\n";
-static char Job_end[]
+inline constexpr const char Job_start[] = "3010 Job %127s start\n";
+inline constexpr const char Job_end[]
     = "3099 Job %127s end JobStatus=%d JobFiles=%d JobBytes=%lld "
       "JobErrors=%u\n";
+}  // namespace
+
+namespace directordaemon {
 
 /* Forward referenced functions */
 extern "C" void* msg_thread(void* arg);
@@ -104,7 +109,7 @@ static inline bool SendBootstrapFileToSd(JobControlRecord* jcr,
     jcr->setJobStatusWithPriorityCheck(JS_ErrorTerminated);
     return false;
   }
-  sd->fsend(bootstrap);
+  sd->fsend("%s", bootstrap);
   while (fgets(buf, sizeof(buf), bs)) { sd->fsend("%s", buf); }
   sd->signal(BNET_EOD);
   fclose(bs);
@@ -348,7 +353,7 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
   // Retrieve available quota 0 bytes means dont perform the check
 
   uint64_t remainingquota = FetchRemainingQuotas(jcr);
-  Dmsg1(50, "Remainingquota: %llu\n", remainingquota);
+  Dmsg1(50, "Remainingquota: %" PRIu64 "\n", remainingquota);
 
   char ed1[30];
   char ed2[30];

@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,70 +36,70 @@
 namespace libbareos {
 
 typedef storagedaemon::BootStrapRecord*(
-    ITEM_HANDLER)(LEX* lc, storagedaemon::BootStrapRecord* bsr);
+    ITEM_HANDLER)(lexer* lc, storagedaemon::BootStrapRecord* bsr);
 
 static storagedaemon::BootStrapRecord* store_vol(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_mediatype(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* StoreDevice(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_client(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_job(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_jobid(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_count(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* StoreJobtype(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_joblevel(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_findex(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_sessid(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_volfile(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_volblock(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_voladdr(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_sesstime(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_include(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_exclude(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_stream(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_slot(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_fileregex(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 static storagedaemon::BootStrapRecord* store_nothing(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr);
 
 struct kw_items {
@@ -141,26 +141,16 @@ static storagedaemon::BootStrapRecord* new_bsr()
 }
 
 // Format a scanner error message
-static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
+PRINTF_LIKE(4, 5)
+static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_NAME);
   JobControlRecord* jcr = (JobControlRecord*)(lc->caller_ctx);
 
-  while (1) {
-    maxlen = buf.size() - 1;
-    va_start(ap, msg);
-    len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      buf.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, msg);
+  buf.Bvsprintf(msg, ap);
+  va_end(ap);
 
   if (jcr) {
     Jmsg(jcr, M_FATAL, 0,
@@ -176,26 +166,16 @@ static void s_err(const char* file, int line, LEX* lc, const char* msg, ...)
 }
 
 // Format a scanner warning message
-static void s_warn(const char* file, int line, LEX* lc, const char* msg, ...)
+PRINTF_LIKE(4, 5)
+static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
 {
   va_list ap;
-  int len, maxlen;
   PoolMem buf(PM_NAME);
   JobControlRecord* jcr = (JobControlRecord*)(lc->caller_ctx);
 
-  while (1) {
-    maxlen = buf.size() - 1;
-    va_start(ap, msg);
-    len = Bvsnprintf(buf.c_str(), maxlen, msg, ap);
-    va_end(ap);
-
-    if (len < 0 || len >= (maxlen - 5)) {
-      buf.ReallocPm(maxlen + maxlen / 2);
-      continue;
-    }
-
-    break;
-  }
+  va_start(ap, msg);
+  buf.Bvsprintf(msg, ap);
+  va_end(ap);
 
   if (jcr) {
     Jmsg(jcr, M_WARNING, 0,
@@ -235,7 +215,7 @@ static inline bool IsPositioningOk(storagedaemon::BootStrapRecord* bsr)
 // Parse Bootstrap file
 storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
 {
-  LEX* lc = NULL;
+  lexer* lc = NULL;
   int token, i;
   storagedaemon::BootStrapRecord* root_bsr = new_bsr();
   storagedaemon::BootStrapRecord* bsr = root_bsr;
@@ -289,7 +269,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
 }
 
 static storagedaemon::BootStrapRecord* store_vol(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -329,7 +309,7 @@ static storagedaemon::BootStrapRecord* store_vol(
 
 // Shove the MediaType in each Volume in the current bsr
 static storagedaemon::BootStrapRecord* store_mediatype(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -349,7 +329,7 @@ static storagedaemon::BootStrapRecord* store_mediatype(
 }
 
 static storagedaemon::BootStrapRecord* store_nothing(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -361,7 +341,7 @@ static storagedaemon::BootStrapRecord* store_nothing(
 
 // Shove the Device name in each Volume in the current bsr
 static storagedaemon::BootStrapRecord* StoreDevice(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -381,7 +361,7 @@ static storagedaemon::BootStrapRecord* StoreDevice(
 }
 
 static storagedaemon::BootStrapRecord* store_client(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -410,7 +390,7 @@ static storagedaemon::BootStrapRecord* store_client(
 }
 
 static storagedaemon::BootStrapRecord* store_job(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -439,7 +419,7 @@ static storagedaemon::BootStrapRecord* store_job(
 }
 
 static storagedaemon::BootStrapRecord* store_findex(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -470,7 +450,7 @@ static storagedaemon::BootStrapRecord* store_findex(
 }
 
 static storagedaemon::BootStrapRecord* store_jobid(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -500,7 +480,7 @@ static storagedaemon::BootStrapRecord* store_jobid(
 }
 
 static storagedaemon::BootStrapRecord* store_count(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -513,7 +493,7 @@ static storagedaemon::BootStrapRecord* store_count(
 }
 
 static storagedaemon::BootStrapRecord* store_fileregex(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -541,7 +521,7 @@ static storagedaemon::BootStrapRecord* store_fileregex(
 }
 
 static storagedaemon::BootStrapRecord* StoreJobtype(
-    LEX*,
+    lexer*,
     storagedaemon::BootStrapRecord* bsr)
 {
   /* *****FIXME****** */
@@ -550,7 +530,7 @@ static storagedaemon::BootStrapRecord* StoreJobtype(
 }
 
 static storagedaemon::BootStrapRecord* store_joblevel(
-    LEX*,
+    lexer*,
     storagedaemon::BootStrapRecord* bsr)
 {
   /* *****FIXME****** */
@@ -560,7 +540,7 @@ static storagedaemon::BootStrapRecord* store_joblevel(
 
 // Routine to handle Volume start/end file
 static storagedaemon::BootStrapRecord* store_volfile(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -592,7 +572,7 @@ static storagedaemon::BootStrapRecord* store_volfile(
 
 // Routine to handle Volume start/end Block
 static storagedaemon::BootStrapRecord* store_volblock(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -624,7 +604,7 @@ static storagedaemon::BootStrapRecord* store_volblock(
 
 // Routine to handle Volume start/end address
 static storagedaemon::BootStrapRecord* store_voladdr(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -655,7 +635,7 @@ static storagedaemon::BootStrapRecord* store_voladdr(
 }
 
 static storagedaemon::BootStrapRecord* store_sessid(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -686,7 +666,7 @@ static storagedaemon::BootStrapRecord* store_sessid(
 }
 
 static storagedaemon::BootStrapRecord* store_sesstime(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -716,7 +696,7 @@ static storagedaemon::BootStrapRecord* store_sesstime(
 }
 
 static storagedaemon::BootStrapRecord* store_stream(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -746,7 +726,7 @@ static storagedaemon::BootStrapRecord* store_stream(
 }
 
 static storagedaemon::BootStrapRecord* store_slot(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   int token;
@@ -764,7 +744,7 @@ static storagedaemon::BootStrapRecord* store_slot(
 }
 
 static storagedaemon::BootStrapRecord* store_include(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   ScanToEol(lc);
@@ -772,7 +752,7 @@ static storagedaemon::BootStrapRecord* store_include(
 }
 
 static storagedaemon::BootStrapRecord* store_exclude(
-    LEX* lc,
+    lexer* lc,
     storagedaemon::BootStrapRecord* bsr)
 {
   ScanToEol(lc);
@@ -798,7 +778,8 @@ static inline void DumpVolblock(storagedaemon::BsrVolumeBlock* volblock)
 static inline void DumpVoladdr(storagedaemon::BsrVolumeAddress* voladdr)
 {
   if (voladdr) {
-    Pmsg2(-1, T_("VolAddr    : %llu-%llu\n"), voladdr->saddr, voladdr->eaddr);
+    Pmsg2(-1, T_("VolAddr    : %" PRIu64 "-%" PRIu64 "\n"), voladdr->saddr,
+          voladdr->eaddr);
     DumpVoladdr(voladdr->next);
   }
 }
@@ -884,8 +865,8 @@ void DumpBsr(storagedaemon::BootStrapRecord* bsr, bool recurse)
     debug_level = save_debug;
     return;
   }
-  Pmsg1(-1, T_("Next        : 0x%x\n"), bsr->next);
-  Pmsg1(-1, T_("Root bsr    : 0x%x\n"), bsr->root);
+  Pmsg1(-1, T_("Next        : %p\n"), bsr->next);
+  Pmsg1(-1, T_("Root bsr    : %p\n"), bsr->root);
   DumpVolume(bsr->volume);
   DumpSessid(bsr->sessid);
   DumpSesstime(bsr->sesstime);

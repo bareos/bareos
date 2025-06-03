@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -172,14 +172,14 @@ extern "C" void* sched_wait(void* arg)
   // Wait until scheduled time arrives
   if (wtime > 0) {
     Jmsg(jcr, M_INFO, 0,
-         T_("Job %s waiting %d seconds for scheduled start time.\n"), jcr->Job,
-         wtime);
+         T_("Job %s waiting %lld seconds for scheduled start time.\n"),
+         jcr->Job, static_cast<long long>(wtime));
   }
 
   // Check every 30 seconds if canceled
   while (wtime > 0) {
-    Dmsg3(2300, "Waiting on sched time, jobid=%d secs=%d use=%d\n", jcr->JobId,
-          wtime, jcr->UseCount());
+    Dmsg3(2300, "Waiting on sched time, jobid=%d secs=%lld use=%d\n",
+          jcr->JobId, static_cast<long long>(wtime), jcr->UseCount());
     if (wtime > 30) { wtime = 30; }
     Bmicrosleep(wtime, 0);
     if (jcr->IsJobCanceled()) { break; }
@@ -206,7 +206,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   pthread_t id;
   wait_pkt* sched_pkt;
 
-  Dmsg3(2300, "JobqAdd jobid=%d jcr=0x%x UseCount=%d\n", jcr->JobId, jcr,
+  Dmsg3(2300, "JobqAdd jobid=%d jcr=%p UseCount=%d\n", jcr->JobId, jcr,
         jcr->UseCount());
   if (jq->valid != JOBQ_VALID) {
     Jmsg0(jcr, M_ERROR, 0, "Jobq_add queue not initialized.\n");
@@ -214,7 +214,7 @@ int JobqAdd(jobq_t* jq, JobControlRecord* jcr)
   }
 
   jcr->IncUseCount(); /* mark jcr in use by us */
-  Dmsg3(2300, "JobqAdd jobid=%d jcr=0x%x UseCount=%d\n", jcr->JobId, jcr,
+  Dmsg3(2300, "JobqAdd jobid=%d jcr=%p UseCount=%d\n", jcr->JobId, jcr,
         jcr->UseCount());
   if (!jcr->IsJobCanceled() && wtime > 0) {
     sched_pkt = (wait_pkt*)malloc(sizeof(wait_pkt));
@@ -285,7 +285,7 @@ int JobqRemove(jobq_t* jq, JobControlRecord* jcr)
   bool found = false;
   jobq_item_t* item;
 
-  Dmsg2(2300, "JobqRemove jobid=%d jcr=0x%x\n", jcr->JobId, jcr);
+  Dmsg2(2300, "JobqRemove jobid=%d jcr=%p\n", jcr->JobId, jcr);
   if (jq->valid != JOBQ_VALID) { return EINVAL; }
 
   lock_mutex(jq->mutex);
@@ -297,7 +297,7 @@ int JobqRemove(jobq_t* jq, JobControlRecord* jcr)
   }
   if (!found) {
     unlock_mutex(jq->mutex);
-    Dmsg2(2300, "JobqRemove jobid=%d jcr=0x%x not in wait queue\n", jcr->JobId,
+    Dmsg2(2300, "JobqRemove jobid=%d jcr=%p not in wait queue\n", jcr->JobId,
           jcr);
     return EINVAL;
   }
@@ -305,7 +305,7 @@ int JobqRemove(jobq_t* jq, JobControlRecord* jcr)
   // Move item to be the first on the list
   jq->waiting_jobs->remove(item);
   jq->ready_jobs->prepend(item);
-  Dmsg2(2300, "JobqRemove jobid=%d jcr=0x%x moved to ready queue\n", jcr->JobId,
+  Dmsg2(2300, "JobqRemove jobid=%d jcr=%p moved to ready queue\n", jcr->JobId,
         jcr);
 
   status = StartServer(jq);
@@ -511,8 +511,8 @@ extern "C" void* jobq_server(void* arg)
         Dmsg1(2300, "moved JobId=%d from wait to ready queue\n",
               je->jcr->JobId);
         je = jn; /* Point to next waiting job */
-      }          /* end for loop */
-    }            /* end if */
+      } /* end for loop */
+    } /* end if */
 
     Dmsg0(2300, "Done checking wait queue.\n");
 
@@ -595,9 +595,11 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
     jcr->sched_time = now + jcr->dir_impl->res.job->RescheduleInterval;
     bstrftime(dt, sizeof(dt), now);
     bstrftime(dt2, sizeof(dt2), jcr->sched_time);
-    Dmsg4(2300, "Rescheduled Job %s to re-run in %d seconds.(now=%u,then=%u)\n",
-          jcr->Job, (int)jcr->dir_impl->res.job->RescheduleInterval, now,
-          jcr->sched_time);
+    Dmsg4(2300,
+          "Rescheduled Job %s to re-run in %d seconds.(now=%lld,then=%lld)\n",
+          jcr->Job,
+          static_cast<int>(jcr->dir_impl->res.job->RescheduleInterval),
+          static_cast<long long>(now), static_cast<long long>(jcr->sched_time));
     Jmsg(jcr, M_INFO, 0,
          T_("Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"),
          jcr->Job, dt, (int)jcr->dir_impl->res.job->RescheduleInterval, dt2);

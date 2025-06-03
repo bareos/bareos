@@ -1536,22 +1536,12 @@ bool sprintit(void* ctx, const char* fmt, ...)
 void bmsg(UaContext* ua, const char* fmt, va_list arg_ptr)
 {
   BareosSocket* bs = ua->UA_sock;
-  int maxlen, len;
   POOLMEM* msg = NULL;
-  va_list ap;
 
   if (bs) { msg = bs->msg; }
   if (!msg) { msg = GetPoolMemory(PM_EMSG); }
 
-again:
-  maxlen = SizeofPoolMemory(msg) - 1;
-  va_copy(ap, arg_ptr);
-  len = Bvsnprintf(msg, maxlen, fmt, ap);
-  va_end(ap);
-  if (len < 0 || len >= maxlen) {
-    msg = ReallocPoolMemory(msg, maxlen + maxlen / 2);
-    goto again;
-  }
+  int len = PmVFormat(msg, fmt, arg_ptr);
 
   if (bs) {
     bs->msg = msg;
@@ -1605,7 +1595,7 @@ void UaContext::SendMsg(const char* fmt, ...)
   va_end(arg_ptr);
 }
 
-void UaContext::SendRawMsg(const char* msg) { SendMsg(msg); }
+void UaContext::SendRawMsg(const char* msg) { SendMsg("%s", msg); }
 
 
 /* This is an error condition with a command. The gui should put
@@ -1640,26 +1630,19 @@ void UaContext::InfoMsg(const char* fmt, ...)
 }
 
 
-void UaContext::SendCmdUsage(const char* fmt, ...)
+void UaContext::SendCmdUsage(const char* message)
 {
-  va_list arg_ptr;
-  PoolMem message;
   PoolMem usage;
 
   /* send current buffer */
   send->SendBuffer();
 
-  va_start(arg_ptr, fmt);
-  message.Bvsprintf(fmt, arg_ptr);
-  va_end(arg_ptr);
-
-  if (cmddef) {
-    if (cmddef->key && cmddef->usage) {
-      usage.bsprintf("\nUSAGE: %s %s\n", cmddef->key, cmddef->usage);
-      message.strcat(usage);
-    }
+  if (cmddef && cmddef->key && cmddef->usage) {
+    usage.bsprintf("%s\nUSAGE: %s %s\n", message, cmddef->key, cmddef->usage);
+  } else {
+    usage.strcpy(message);
   }
 
-  send->message(NULL, message);
+  send->message(NULL, usage);
 }
 } /* namespace directordaemon */

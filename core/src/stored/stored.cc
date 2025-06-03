@@ -67,9 +67,6 @@ extern bool ParseSdConfig(const char* configfile, int exit_code);
 
 using namespace storagedaemon;
 
-/* Imported functions */
-extern bool PrintMessage(void* sock, const char* fmt, ...);
-
 /* Forward referenced functions */
 namespace storagedaemon {
 #if !defined(HAVE_WIN32)

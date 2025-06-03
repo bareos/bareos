@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -251,7 +251,7 @@ ssize_t dedup_device::d_write(int dird, const void* data, size_t size)
           auto rsize = std::min(record.size(), records.leftover());
           if (rsize != record.size()) {
             Dmsg2(500,
-                  "Found split record. Record size = %llu, but only %llu bytes "
+                  "Found split record. Record size = %zu, but only %zu bytes "
                   "available.\n",
                   record.size(), rsize);
           }

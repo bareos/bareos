@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1371,7 +1371,8 @@ bool BareosDb::AccurateGetJobids(JobControlRecord* jcr,
 
   // Build a jobid list ie: 1,2,3,4
   if (jr->limit) {
-    Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate ASC LIMIT %d",
+    Mmsg(query,
+         "SELECT JobId FROM btemp3%s ORDER by JobTDate ASC LIMIT %" PRIu64,
          jobid, jr->limit);
   } else {
     Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate ASC", jobid);
@@ -1396,8 +1397,8 @@ bool BareosDb::GetBaseFileList(JobControlRecord* jcr,
   Mmsg(query,
        "SELECT Path, Name, FileIndex, JobId, LStat, 0 As DeltaSeq, MD5, "
        "Fhinfo, Fhnode "
-       "FROM new_basefile%lld ORDER BY JobId, FileIndex ASC",
-       (uint64_t)jcr->JobId);
+       "FROM new_basefile%" PRIu32 " ORDER BY JobId, FileIndex ASC",
+       jcr->JobId);
 
   if (!use_md5) { strip_md5(query.c_str()); }
   return BigSqlQuery(query.c_str(), ResultHandler, ctx);
@@ -1446,7 +1447,7 @@ bool BareosDb::GetBaseJobid(JobControlRecord* jcr,
   }
   *jobid = (JobId_t)lctx.value;
 
-  Dmsg1(10, "GetBaseJobid=%lld\n", *jobid);
+  Dmsg1(10, "GetBaseJobid=%" PRIu32 "\n", *jobid);
   retval = true;
 
 bail_out:
@@ -1456,7 +1457,7 @@ bail_out:
 bool BareosDb::GetVolumeJobids(MediaDbRecord* mr, db_list_ctx* lst)
 {
   DbLocker _{this};
-  Mmsg(cmd, "SELECT DISTINCT JobId FROM JobMedia WHERE MediaId=%lu",
+  Mmsg(cmd, "SELECT DISTINCT JobId FROM JobMedia WHERE MediaId=%" PRIdbid,
        mr->MediaId);
 
   return SqlQueryWithHandler(cmd, DbListHandler, lst);
@@ -1466,7 +1467,7 @@ bool BareosDb::GetMediaIdsInPool(PoolDbRecord* pool_record,
                                  std::vector<DBId_t>* lst)
 {
   DbLocker _{this};
-  Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE PoolId=%lu",
+  Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE PoolId=%" PRIdbid,
        pool_record->PoolId);
 
   return SqlQueryWithHandler(cmd, DbIdListHandler, lst);
@@ -1763,10 +1764,10 @@ bool BareosDb::GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
                                       ctx);
     }
   }
-  Dmsg3(
-      100,
-      "Got %d JobIds for VolSessionTime=%lld VolSessionId=%lld instead of 1\n",
-      lctx.count, vsi.time, vsi.id);
+  Dmsg3(100,
+        "Got %d JobIds for VolSessionTime=%" PRIu32 " VolSessionId=%" PRIu32
+        " instead of 1\n",
+        lctx.count, vsi.time, vsi.id);
   return false;
 }
 
@@ -1779,7 +1780,7 @@ bool BareosDb::GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
  */
 bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
                                     MediaDbRecord* mr,
-                                    PoolMem* querystring,
+                                    PoolMem& querystring,
                                     PoolMem& volumes)
 {
   bool ok = true;
@@ -1854,7 +1855,7 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
     PmStrcat(querystring, buf.c_str());
   }
 
-  Dmsg1(100, "query=%s\n", querystring);
+  Dmsg1(100, "query=%s\n", querystring.c_str());
 
   return ok;
 }
@@ -1870,7 +1871,7 @@ bool BareosDb::VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
     mr.MediaId = mediaIds.get(i);
     if (!GetMediaRecord(jcr, &mr)) {
       DbLocker _{this};
-      Mmsg1(errmsg, T_("Failed to find MediaId=%lld\n"), (uint64_t)mr.MediaId);
+      Mmsg1(errmsg, T_("Failed to find MediaId=%" PRIdbid "\n"), mr.MediaId);
       Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
       return false;
     } else if (i == 0) {

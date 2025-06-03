@@ -866,8 +866,8 @@ static inline bool SetbwlimitFiled(UaContext* ua,
   if (!SendBwlimitToFd(ua->jcr, Job)) {
     ua->ErrorMsg(T_("Failed to set bandwidth limit on Client.\n"));
   } else {
-    ua->InfoMsg(T_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024,
-                Job);
+    ua->InfoMsg(T_("OK Limiting bandwidth to %" PRId64 "kb/s %s\n"),
+                limit / 1024, Job);
   }
 
   ua->jcr->file_bsock->signal(BNET_TERMINATE);
@@ -915,8 +915,8 @@ static inline bool setbwlimit_stored(UaContext* ua,
   if (!SendBwlimitToFd(ua->jcr, Job)) {
     ua->ErrorMsg(T_("Failed to set bandwidth limit on Storage daemon.\n"));
   } else {
-    ua->InfoMsg(T_("OK Limiting bandwidth to %lldkb/s %s\n"), limit / 1024,
-                Job);
+    ua->InfoMsg(T_("OK Limiting bandwidth to %" PRId64 "kb/s %s\n"),
+                limit / 1024, Job);
   }
 
   ua->jcr->store_bsock->signal(BNET_TERMINATE);
@@ -1599,7 +1599,7 @@ bool SetDeviceCommand::Cmd(UaContext* ua, const char*)
     if (!ua->AclAccessOk(Storage_ACL, arguments["storage"].c_str())) {
       std::string err{"Access to storage "};
       err += "\"" + arguments["storage"] + "\" forbidden\n";
-      ua->ErrorMsg(err.c_str());
+      ua->ErrorMsg("%s", err.c_str());
       return false;
     }
   }
@@ -2051,8 +2051,10 @@ static bool TruncateCmd(UaContext* ua, const char*)
 
   if (int i = FindArgWithValue(ua, "drive"); i >= 0) {
     if (!IsAnInteger(ua->argv[i])) {
-      ua->SendCmdUsage(T_("Drive number must be integer but was : %s\n"),
-                       ua->argv[i]);
+      PoolMem msg;
+      msg.bsprintf(T_("Drive number must be integer but was : %s\n"),
+                   ua->argv[i]);
+      ua->SendCmdUsage(msg.c_str());
     } else {
       drive_number = atoi(ua->argv[i]);
       parsed_args++;
@@ -2070,7 +2072,7 @@ static bool TruncateCmd(UaContext* ua, const char*)
   }
 
   /* create sql query string (in ua->db->cmd) */
-  if (!ua->db->PrepareMediaSqlQuery(ua->jcr, &mr, &tmp, volumes)) {
+  if (!ua->db->PrepareMediaSqlQuery(ua->jcr, &mr, tmp, volumes)) {
     ua->ErrorMsg(T_("Invalid parameter (failed to create sql query).\n"));
     goto bail_out;
   }
@@ -2119,7 +2121,7 @@ static bool TruncateCmd(UaContext* ua, const char*)
   for (int i = 0; i < mediaIds.size(); i++) {
     mr.MediaId = mediaIds.get(i);
     if (!ua->db->GetMediaRecord(ua->jcr, &mr)) {
-      Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t)mr.MediaId);
+      Dmsg1(0, "Can't find MediaId=%" PRIdbid "\n", mr.MediaId);
     } else {
       DoTruncate(ua, mr, drive_number);
     }
@@ -2146,13 +2148,14 @@ static bool DoTruncate(UaContext* ua,
 
   storage_dbr.StorageId = mr.StorageId;
   if (!ua->db->GetStorageRecord(ua->jcr, &storage_dbr)) {
-    ua->ErrorMsg("failed to determine storage for id %lld\n", mr.StorageId);
+    ua->ErrorMsg("failed to determine storage for id %" PRIdbid "\n",
+                 mr.StorageId);
     goto bail_out;
   }
 
   pool_dbr.PoolId = mr.PoolId;
   if (!ua->db->GetPoolRecord(ua->jcr, &pool_dbr)) {
-    ua->ErrorMsg("failed to determine pool for id %lld\n", mr.PoolId);
+    ua->ErrorMsg("failed to determine pool for id %" PRIdbid "\n", mr.PoolId);
     goto bail_out;
   }
 
@@ -2262,7 +2265,7 @@ static void DeleteStorage(UaContext* ua)
   std::vector<std::string> orphaned_storages
       = get_orphaned_storages_names(ua->db);
 
-  ua->SendMsg(T_("Found %zu orphaned Storage records.\n"),
+  ua->SendMsg(T_("Found %" PRIuz " orphaned Storage records.\n"),
               orphaned_storages.size());
 
   if (std::find(orphaned_storages.begin(), orphaned_storages.end(),
@@ -2288,7 +2291,7 @@ static void DeleteStorage(UaContext* ua)
   }
 
   if (storages_to_be_deleted.size() > 0) {
-    ua->SendMsg(T_("Deleting %zu orphaned storage record(s).\n"),
+    ua->SendMsg(T_("Deleting %" PRIuz " orphaned storage record(s).\n"),
                 storages_to_be_deleted.size());
     delete_storages(ua->db, storages_to_be_deleted);
   }
@@ -2445,10 +2448,10 @@ static bool DeleteVolume(UaContext* ua)
       ua->send->ArrayStart("jobids");
       for (const std::string& item : lst) { ua->send->ArrayItem(item.c_str()); }
       ua->send->ArrayEnd("jobids");
-      ua->InfoMsg(
-          T_("Deleted %d jobs and associated records deleted from the catalog "
-             "(jobids: %s).\n"),
-          lst.size(), lst.GetAsString().c_str());
+      ua->InfoMsg(T_("Deleted %" PRIuz
+                     " jobs and associated records deleted from the catalog "
+                     "(jobids: %s).\n"),
+                  lst.size(), lst.GetAsString().c_str());
     }
   }
 

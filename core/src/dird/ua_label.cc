@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -293,7 +293,7 @@ static inline bool IsCleaningTape(UaContext* ua,
       = bstrncmp(mr->VolumeName, ua->jcr->dir_impl->res.pool->cleaning_prefix,
                  strlen(ua->jcr->dir_impl->res.pool->cleaning_prefix));
 
-  Dmsg4(100, "CLNprefix=%s: Vol=%s: len=%d bstrncmp=%s\n",
+  Dmsg4(100, "CLNprefix=%s: Vol=%s: len=%" PRIuz " bstrncmp=%s\n",
         ua->jcr->dir_impl->res.pool->cleaning_prefix, mr->VolumeName,
         strlen(ua->jcr->dir_impl->res.pool->cleaning_prefix),
         retval ? "true" : "false");

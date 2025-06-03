@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,10 +43,10 @@
 
 namespace directordaemon {
 
-static char hello_client_with_version[]
+inline constexpr const char hello_client_with_version[]
     = "Hello Client %127s FdProtocolVersion=%d calling";
 
-static char hello_client[] = "Hello Client %127s calling";
+inline constexpr const char hello_client[] = "Hello Client %127s calling";
 
 /* Global variables */
 static ThreadList thread_list;

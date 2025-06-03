@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -65,17 +65,17 @@ static bool FindSuitableDeviceForJob(JobControlRecord* jcr,
                                      ReserveContext& rctx);
 
 /* Requests from the Director daemon */
-static char use_storage[]
+inline constexpr const char use_storage[]
     = "use storage=%127s media_type=%127s "
       "pool_name=%127s pool_type=%127s append=%d copy=%d stripe=%d\n";
-static char use_device[] = "use device=%127s\n";
+inline constexpr const char use_device[] = "use device=%127s\n";
 
 /* Responses sent to Director daemon */
-static char OK_device[] = "3000 OK use device device=%s\n";
-static char NO_device[]
+inline constexpr const char OK_device[] = "3000 OK use device device=%s\n";
+inline constexpr const char NO_device[]
     = "3924 Device \"%s\" not in SD Device"
       " resources or no matching Media Type.\n";
-static char BAD_use[] = "3913 Bad use command: %s\n";
+inline constexpr const char BAD_use[] = "3913 Bad use command: %s\n";
 
 bool use_cmd(JobControlRecord* jcr)
 {
@@ -643,7 +643,7 @@ static int ReserveDevice(JobControlRecord* jcr, ReserveContext& rctx)
 
   // Make sure device access mode matches
   Dmsg3(debuglevel, "chk AccessMode append=%d access_mode=%d\n", rctx.append,
-        rctx.device_resource->access_mode);
+        to_underlying(rctx.device_resource->access_mode));
   if (rctx.append && rctx.device_resource->access_mode == IODirection::READ) {
     // Trying to write but access mode is readonly
     return -1;

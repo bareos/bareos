@@ -22,14 +22,17 @@
 #ifndef BAREOS_LIB_PARSE_CONF_CALLBACKS_H_
 #define BAREOS_LIB_PARSE_CONF_CALLBACKS_H_
 
+#include "include/compiler_macro.h"
+
 struct ResourceItem;
 class BareosResource;
 class ConfigurationParser;
 
+using sender = PRINTF_LIKE(2, 3) bool(void* user, const char* fmt, ...);
 typedef bool (*SaveResourceCb_t)(int type, const ResourceItem* item, int pass);
 typedef void (*DumpResourceCb_t)(int type,
                                  BareosResource* res,
-                                 bool sendmsg(void* sock, const char* fmt, ...),
+                                 sender* sendmsg,
                                  void* sock,
                                  bool hide_sensitive_data,
                                  bool verbose);

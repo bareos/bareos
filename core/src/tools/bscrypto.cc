@@ -3,7 +3,7 @@
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,7 +68,7 @@ static void ReadKeyBits(const std::string& keyfile,
       TerminateBscrypto(1);
     }
   }
-  Dmsg1(5, "data size = %d\n", sizeof_data);
+  Dmsg1(5, "data size = %zu\n", sizeof_data);
   if (read(kfd, data, sizeof_data) == 0) {
     fprintf(stderr, T_("Cannot read from keyfile %s\n"), keyfile.c_str());
     TerminateBscrypto(1);

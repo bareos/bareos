@@ -64,9 +64,15 @@
 #include "include/jcr.h"
 #include "lib/serial.h"
 
-static std::string error_message_disabling_xattributes{
-    T_("Disabling restore of XATTRs on this filesystem, "
-       "not supported. Current file: \"%s\"\n")};
+[[maybe_unused]] static void warn_if_disabling_xattrs(JobControlRecord* jcr,
+                                                      const char* file)
+{
+  constexpr const char* err_msg
+      = "Disabling restore of XATTRs on this filesystem, not supported. "
+        "Current file: \"%s\"\n";
+  Mmsg(jcr->errmsg, err_msg, file);
+  Dmsg1(100, err_msg, file);
+}
 
 #if !defined(HAVE_XATTR)
 /**
@@ -109,7 +115,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
   if (xattr_data->content_length <= 0) { return BxattrExitCode::kSuccess; }
 
   // Send header
-  if (!sd->fsend("%ld %d 0", jcr->JobFiles, stream)) {
+  if (!sd->fsend("%" PRIu32 " %" PRId32 " 0", jcr->JobFiles, stream)) {
     Jmsg1(jcr, M_FATAL, 0, T_("Network send error to SD. ERR=%s\n"),
           sd->bstrerror());
     return BxattrExitCode::kErrorFatal;
@@ -300,12 +306,12 @@ BxattrExitCode SerializeAndSendXattrStream(JobControlRecord* jcr,
                             xattr_value_list)) {
     Mmsg1(jcr->errmsg,
           T_("Failed to Serialize extended attributes on file \"%s\" (expected "
-             "len %lu != actual len %lu)\n"),
+             "len %" PRIu32 " != actual len %" PRIu32 ")\n"),
           xattr_data->last_fname, expected_serialize_len,
           xattr_data->content_length);
     Dmsg1(100,
           T_("Failed to Serialize extended attributes on file \"%s\" (expected "
-             "len %lu != actual len %lu)\n"),
+             "len %" PRIu32 " != actual len %" PRIu32 ")\n"),
           xattr_data->last_fname, expected_serialize_len,
           xattr_data->content_length);
     return BxattrExitCode::kError;
@@ -374,10 +380,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
            * gets sets again when we change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
           retval = BxattrExitCode::kWarning;
-          Mmsg(jcr->errmsg, error_message_disabling_xattributes.c_str(),
-               xattr_data->last_fname);
-          Dmsg1(100, error_message_disabling_xattributes.c_str(),
-                xattr_data->last_fname);
+          warn_if_disabling_xattr(jcr, xattr_data->last_fname);
           goto bail_out;
         default:
           Mmsg2(jcr->errmsg, T_("llistea error on file \"%s\": ERR=%s\n"),
@@ -591,10 +594,7 @@ static BxattrExitCode aix_parse_xattr_streams(JobControlRecord* jcr,
            * change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_RESTORE_NATIVE;
           retval = BxattrExitCode::kWarning;
-          Mmsg(jcr->errmsg, error_message_disabling_xattributes.c_str(),
-               xattr_data->last_fname);
-          Dmsg1(100, error_message_disabling_xattributes.c_str(),
-                xattr_data->last_fname);
+          warn_if_disabling_xattrs(jcr, xattr_data->last_fname);
           goto bail_out;
         default:
           Mmsg2(jcr->errmsg, T_("lsetea error on file \"%s\": ERR=%s\n"),
@@ -715,10 +715,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
            * change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_SAVE_NATIVE;
           retval = BxattrExitCode::kWarning;
-          Mmsg(jcr->errmsg, error_message_disabling_xattributes.c_str(),
-               xattr_data->last_fname);
-          Dmsg1(100, error_message_disabling_xattributes.c_str(),
-                xattr_data->last_fname);
+          warn_if_disabling_xattrs(jcr, xattr_data->last_fname);
           goto bail_out;
         default:
           Mmsg2(jcr->errmsg, T_("llistxattr error on file \"%s\": ERR=%s\n"),
@@ -948,10 +945,7 @@ static BxattrExitCode generic_parse_xattr_streams(JobControlRecord* jcr,
            * change from one filesystem to another. */
           xattr_data->flags &= ~BXATTR_FLAG_RESTORE_NATIVE;
           retval = BxattrExitCode::kWarning;
-          Mmsg(jcr->errmsg, error_message_disabling_xattributes.c_str(),
-               xattr_data->last_fname);
-          Dmsg1(100, error_message_disabling_xattributes.c_str(),
-                xattr_data->last_fname);
+          warn_if_disabling_xattrs(jcr, xattr_data->last_fname);
           goto bail_out;
         default:
           Mmsg2(jcr->errmsg, T_("lsetxattr error on file \"%s\": ERR=%s\n"),
