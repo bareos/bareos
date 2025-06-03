@@ -1105,7 +1105,7 @@ void dump_data(std::ostream& stream)
   std::size_t buffer_size = 64 * 1024;
   auto buffer = std::make_unique<char[]>(buffer_size);
 
-  disk_map disks;
+  disk_map candidate_disks;
   for (auto& [path, copy] : paths) {
     std::wstring cpath = path;
     if (cpath.back() == L'\\') { cpath.pop_back(); }
@@ -1154,21 +1154,23 @@ void dump_data(std::ostream& stream)
     fprintf(stderr, "shadow %ls -> %p\n", copy.c_str(), shadow);
 
     // the operating system will clean up shadow on exit (yes, we leak it)
-    GetVolumeExtents(disks, volume, shadow);
+    GetVolumeExtents(candidate_disks, volume, shadow);
 
     CloseHandle(volume);
   }
 
-  WriteHeader(stream, disks);
+  // todo: what happens to volumes that are split between fixed disks/non fixed
+  // disks ?
+  disk_map disks;
 
-  for (auto& [id, disk] : disks) {
-    fprintf(stderr, "disk %zu extents\n", id);
-    for (auto& extent : disk.extents) {
-      fprintf(stderr, "  %zu -> %zu\n", extent.partition_offset,
-              extent.partition_offset + extent.length);
-    }
+  struct open_disk {
+    HANDLE hndl;
+    DISK_GEOMETRY_EX geo;
+  };
 
+  std::unordered_map<std::size_t, open_disk> disk_info;
 
+  for (auto& [id, disk] : candidate_disks) {
     std::wstring disk_path
         = std::wstring(L"\\\\.\\PhysicalDrive") + std::to_wstring(id);
 
@@ -1183,6 +1185,33 @@ void dump_data(std::ostream& stream)
       continue;
     }
 
+    auto geo = GetDiskGeometry(hndl);
+    if (!geo) {
+      CloseHandle(hndl);
+      continue;
+    }
+
+    if (geo->Geometry.MediaType != FixedMedia) {
+      fprintf(stderr, "disk %zu has bad media type (%d); skipping...\n", id,
+              geo->Geometry.MediaType);
+      continue;
+    }
+
+    disks[id] = std::move(disk);
+    disk_info[id] = open_disk{hndl, geo.value()};
+  }
+
+  WriteHeader(stream, disks);
+
+  for (auto& [id, disk] : disks) {
+    fprintf(stderr, "disk %zu extents\n", id);
+    for (auto& extent : disk.extents) {
+      fprintf(stderr, "  %zu -> %zu\n", extent.partition_offset,
+              extent.partition_offset + extent.length);
+    }
+
+    auto [hndl, geo] = disk_info[id];
+
     auto layout = GetPartitionLayout(hndl);
     if (!layout) { continue; }
 
@@ -1192,9 +1221,6 @@ void dump_data(std::ostream& stream)
       // continue;
     }
 
-    auto geo = GetDiskGeometry(hndl);
-    if (!geo) { continue; }
-
     fprintf(stderr,
             "disk geometry:\n"
             " - Size: %llu\n"
@@ -1202,11 +1228,11 @@ void dump_data(std::ostream& stream)
             " - Tracks/C: %lu\n"
             " - Sectors/T: %lu\n"
             " - Bytes/S: %lu\n",
-            geo->DiskSize.QuadPart, geo->Geometry.Cylinders.QuadPart,
-            geo->Geometry.TracksPerCylinder, geo->Geometry.SectorsPerTrack,
-            geo->Geometry.BytesPerSector);
+            geo.DiskSize.QuadPart, geo.Geometry.Cylinders.QuadPart,
+            geo.Geometry.TracksPerCylinder, geo.Geometry.SectorsPerTrack,
+            geo.Geometry.BytesPerSector);
 
-    WriteDiskHeader(stream, disk, geo.value());
+    WriteDiskHeader(stream, disk, geo);
     WriteDiskPartTable(stream, layout.value());
     WriteDiskData(stream, disk);
   }
