@@ -54,38 +54,25 @@ if grep -q "*** Restore Error ***" "$restore_file"; then
   return 2
 fi
 
-# validate environment variables in readprogram
-expected_readprogram_output=(
-  "BareosClientName" "bpipe-fd-fd"
-  "BareosJobId" "1"
-  "BareosJobLevel" "F"
-  "BareosSinceTime" "0"
-  "BareosJobType" "B"
+# validate environment variables in readprogram / writeprogram
+expected_output=(
+  "BareosClientName" "bpipe-fd-fd" "bpipe-fd-fd"
+  "BareosJobId" "1" "2"
+  "BareosJobLevel" "F" " "
+  "BareosSinceTime" "0" "0"
+  "BareosJobType" "B" "R"
 )
 
-for ((i = 0; i < ${#expected_readprogram_output[@]}; i += 2)); do
-  key="${expected_readprogram_output[i]}"
-  value="${expected_readprogram_output[i + 1]}"
-  expect_grep "${key}='${value}'" \
+for ((i = 0; i < ${#expected_output[@]}; i += 3)); do
+  key="${expected_output[i + 0]}"
+  readprogram_value="${expected_output[i + 1]}"
+  writeprogram_value="${expected_output[i + 2]}"
+  expect_grep "${key}='${readprogram_value}'" \
     "$tmp/readprogram.out" \
-    "Environment variable '$key' is wrong in readprogram, expected '${value}'."
-done
-
-# validate environment variables in writeprogram
-expected_writeprogram_output=(
-  "BareosClientName" "bpipe-fd-fd"
-  "BareosJobId" "2"
-  "BareosJobLevel" " "
-  "BareosSinceTime" "0"
-  "BareosJobType" "R"
-)
-
-for ((i = 0; i < ${#expected_writeprogram_output[@]}; i += 2)); do
-  key="${expected_writeprogram_output[i]}"
-  value="${expected_writeprogram_output[i + 1]}"
-  expect_grep "${key}='${value}'" \
+    "Environment variable '$key' is wrong in readprogram, expected '${readprogram_value}'."
+  expect_grep "${key}='${writeprogram_value}'" \
     "$tmp/writeprogram.out" \
-    "Environment variable '$key' is wrong in writeprogram, expected '${value}'."
+    "Environment variable '$key' is wrong in writeprogram, expected '${writeprogram_value}'."
 done
 
 end_test
