@@ -60,13 +60,21 @@ static const utl::options option_defaults{
                                                        // crud_storage
 };
 
+void throw_if_junk(const std::string& str, size_t pos = 0)
+{
+  if (auto iter = std::find_if_not(str.begin() + pos, str.end(), b_isjunkchar);
+      iter != str.end()) {
+    throw std::invalid_argument{fmt::format(
+        FMT_STRING("unparseable character '{0}' (0x{0:x}) at pos {1}"), *iter,
+        iter - str.begin())};
+  }
+}
+
 unsigned long long stoull_notrailing(const std::string& str)
 {
   size_t pos;
   unsigned long long val = std::stoull(str, &pos);
-  if (!std::all_of(str.begin() + pos, str.end(), b_isjunkchar)) {
-    throw std::invalid_argument{"unparseable trailing characters"};
-  }
+  throw_if_junk(str, pos);
   return val;
 }
 
@@ -74,9 +82,7 @@ unsigned long stoul_notrailing(const std::string& str)
 {
   size_t pos;
   unsigned long val = std::stoul(str, &pos);
-  if (!std::all_of(str.begin() + pos, str.end(), b_isjunkchar)) {
-    throw std::invalid_argument{"unparseable trailing characters"};
-  }
+  throw_if_junk(str, pos);
   return val;
 }
 
@@ -116,7 +122,8 @@ template <> void convert_value<>(std::string& to, const std::string& from)
 void convert_size(uint64_t& to, const std::string& from)
 {
   if (!size_to_uint64(from.c_str(), &to)) {
-    throw std::invalid_argument("Hello, World!");
+    throw std::invalid_argument(fmt::format(
+        FMT_STRING("value '{}' is not a valid size specification"), from));
   }
 }
 
