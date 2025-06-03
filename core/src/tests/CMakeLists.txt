@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-# if we built the object files as fat lto objects, we add -fno-lto to the 
+# if we built the object files as fat lto objects, we add -fno-lto to the
 # linker-flags of our unit-tests, so we don't spend time optimizing binaries
 # that will only run a few times during testing
 if(CMAKE_CXX_FLAGS MATCHES -ffat-lto-objects)
