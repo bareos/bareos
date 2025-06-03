@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - ndmp: remove ndmp backup level limit [PR #2247]
+- VMware Plugin: Fix for virtual USB devices [PR #2291]
 
 ### Fixed
 - fix problems with msvc 19.44 [PR #2288]
@@ -466,4 +467,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2277]: https://github.com/bareos/bareos/pull/2277
 [PR #2280]: https://github.com/bareos/bareos/pull/2280
 [PR #2288]: https://github.com/bareos/bareos/pull/2288
+[PR #2291]: https://github.com/bareos/bareos/pull/2291
 [unreleased]: https://github.com/bareos/bareos/tree/master
