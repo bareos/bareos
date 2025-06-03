@@ -301,6 +301,9 @@ TEST_F(SchedulerTest, parse_schedule_correctly)
           {"1st saturday at 20:00", "first Sat at 20:00"},
           {"on 1st saturday at 20:00", "first Sat at 20:00"},
           {"Mon, Tue, Wed-Fri, Sat", "Mon, Tue, Wed-Fri, Sat at 00:00"},
+          {"Fri-Mon", "Fri-Mon at 00:00"},
+          {"on 27 at 21:45", "27 at 21:45"},
+          {"20-10 at 21:45", "20-10 at 21:45"},
       };
   for (auto [schedule, expected_generated] : kSchedules) {
     auto [result, warnings] = Parser<Schedule>::Parse(schedule);
@@ -343,7 +346,12 @@ template <class T> class ValueValidator : public DateTimeValidator {
     std::string result;
     result += "ValueValidator{";
     for (size_t i = 0; i < valid_values_.size(); ++i) {
-      result += valid_values_.at(i).name;
+      // date / time specifications are either convertible to int or have a name
+      if constexpr (std::is_convertible_v<T, int>) {
+        result += int(valid_values_.at(i));
+      } else {
+        result += valid_values_.at(i).name;
+      }
       if (i + 1 < valid_values_.size()) { result += ", "; }
     }
     result += "}";
@@ -356,11 +364,11 @@ template <class T> class ValueValidator : public DateTimeValidator {
     if constexpr (std::is_same_v<U, MonthOfYear>) {
       return MonthOfYear::FromIndex(date_time.month);
     } else if constexpr (std::is_same_v<U, WeekOfYear>) {
-      return date_time.week_of_year;
+      return WeekOfYear{date_time.week_of_year};
     } else if constexpr (std::is_same_v<U, WeekOfMonth>) {
-      return date_time.week_of_month;
+      return WeekOfMonth::FromIndex(date_time.week_of_month);
     } else if constexpr (std::is_same_v<U, DayOfMonth>) {
-      return date_time.day_of_month;
+      return DayOfMonth{date_time.day_of_month};
     } else if constexpr (std::is_same_v<U, DayOfWeek>) {
       return DayOfWeek::FromIndex(date_time.day_of_week);
     } else if constexpr (std::is_same_v<U, TimeOfDay>) {
@@ -489,6 +497,12 @@ TEST_F(SchedulerTest, trigger_correctly)
            {
                MakeValidator(std::vector{*DayOfWeek::FromName("Thursday")}),
                MakeValidator(std::vector{*MonthOfYear::FromName("January")}),
+           }},
+          {"30-1 at 20:00",
+           30,
+           {
+               MakeValidator(
+                   std::vector{DayOfMonth{29}, DayOfMonth{30}, DayOfMonth{0}}),
            }},
       };
   for (auto [schedule, expected_count, validators] : kSchedules) {

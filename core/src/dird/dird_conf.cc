@@ -1376,7 +1376,10 @@ std::string ToString(WeekOfMonth week_of_month)
   return std::string(week_of_month.name);
 }
 // :: DayOfMonth
-std::string ToString(DayOfMonth value) { return std::to_string(int(value)); }
+std::string ToString(DayOfMonth value)
+{
+  return std::to_string(int(value) + 1);
+}
 // :: DayOfWeek
 std::string ToString(DayOfWeek day_of_week)
 {
