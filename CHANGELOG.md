@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - setgid on configdirs [PR #2270]
 - Replace Bsnprintf() implementation and add format attributes [PR #1697]
 - cmake: disable lto when linking gtests [PR #2286]
+- VMware Plugin: Fix for virtual USB devices [PR #2213]
 
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
@@ -133,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2201]: https://github.com/bareos/bareos/pull/2201
 [PR #2202]: https://github.com/bareos/bareos/pull/2202
 [PR #2211]: https://github.com/bareos/bareos/pull/2211
+[PR #2213]: https://github.com/bareos/bareos/pull/2213
 [PR #2215]: https://github.com/bareos/bareos/pull/2215
 [PR #2217]: https://github.com/bareos/bareos/pull/2217
 [PR #2220]: https://github.com/bareos/bareos/pull/2220
