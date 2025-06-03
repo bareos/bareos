@@ -27,6 +27,7 @@
 #include <map>
 #include <variant>
 #include <fmt/format.h>
+#include <lib/message.h>
 #include <lib/source_location.h>
 
 namespace backends::util {
@@ -63,10 +64,12 @@ struct LevelAndLocation {
 template <typename Fmt, typename... Args>
 void Dfmt(LevelAndLocation lal, Fmt fmt, Args&&... args)
 {
-  const auto formatted
-      = fmt::format(std::forward<Fmt>(fmt), std::forward<Args>(args)...);
-  d_msg(lal.loc.file_name(), lal.loc.line(), lal.level, "%s\n",
-        formatted.c_str());
+  if (debug_level >= lal.level) {
+    const auto formatted
+        = fmt::format(std::forward<Fmt>(fmt), std::forward<Args>(args)...);
+    d_msg(lal.loc.file_name(), lal.loc.line(), lal.level, "%s\n",
+          formatted.c_str());
+  }
 }
 
 };  // namespace backends::util
