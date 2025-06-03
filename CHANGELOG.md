@@ -81,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - packaging: use GCC 14 for RHEL 8/9 [PR #2275]
 - setgid on configdirs [PR #2270]
 - Replace Bsnprintf() implementation and add format attributes [PR #1697]
+- cmake: disable lto when linking gtests [PR #2286]
 
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
@@ -149,5 +150,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2272]: https://github.com/bareos/bareos/pull/2272
 [PR #2275]: https://github.com/bareos/bareos/pull/2275
 [PR #2278]: https://github.com/bareos/bareos/pull/2278
+[PR #2286]: https://github.com/bareos/bareos/pull/2286
 [PR #2287]: https://github.com/bareos/bareos/pull/2287
 [unreleased]: https://github.com/bareos/bareos/tree/master
