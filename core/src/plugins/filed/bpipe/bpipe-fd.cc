@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -296,35 +296,59 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
   switch (io->func) {
     case IO_OPEN:
       Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN\n");
-      if (io->flags & (O_CREAT | O_WRONLY)) {
-        char* writer_codes = apply_rp_codes(ctx);
+      {
+        int env_job_id;
+        bareos_core_functions->getBareosValue(ctx, bVarJobId, &env_job_id);
+        char* env_client_name;
+        bareos_core_functions->getBareosValue(ctx, bVarFDName,
+                                              &env_client_name);
+        char env_backup_level;
+        bareos_core_functions->getBareosValue(ctx, bVarLevel,
+                                              &env_backup_level);
+        char env_job_type;
+        bareos_core_functions->getBareosValue(ctx, bVarType, &env_job_type);
+        int env_since_time;
+        bareos_core_functions->getBareosValue(ctx, bVarSinceTime,
+                                              &env_since_time);
 
-        p_ctx->pfd = OpenBpipe(writer_codes, 0, "w");
-        Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p writer=%s\n", p_ctx->pfd,
-             writer_codes);
-        if (!p_ctx->pfd) {
-          io->io_errno = errno;
-          Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n",
-               writer_codes, strerror(io->io_errno));
-          Dmsg(ctx, debuglevel,
-               "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes,
-               strerror(io->io_errno));
+        std::unordered_map<std::string, std::string> env{
+            {"BareosClientName", std::string{env_client_name}},
+            {"BareosJobId", std::to_string(env_job_id)},
+            {"BareosJobLevel", std::string{env_backup_level}},
+            {"BareosSinceTime", std::to_string(env_since_time)},
+            {"BareosJobType", std::string{env_job_type}},
+        };
+
+        if (io->flags & (O_CREAT | O_WRONLY)) {
+          char* writer_codes = apply_rp_codes(ctx);
+
+          p_ctx->pfd = OpenBpipe(writer_codes, 0, "w", true, env);
+          Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p writer=%s\n",
+               p_ctx->pfd, writer_codes);
+          if (!p_ctx->pfd) {
+            io->io_errno = errno;
+            Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n",
+                 writer_codes, strerror(io->io_errno));
+            Dmsg(ctx, debuglevel,
+                 "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes,
+                 strerror(io->io_errno));
+            if (writer_codes) { free(writer_codes); }
+            return bRC_Error;
+          }
           if (writer_codes) { free(writer_codes); }
-          return bRC_Error;
-        }
-        if (writer_codes) { free(writer_codes); }
-      } else {
-        p_ctx->pfd = OpenBpipe(p_ctx->reader, 0, "r", false);
-        Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p reader=%s\n", p_ctx->pfd,
-             p_ctx->reader);
-        if (!p_ctx->pfd) {
-          io->io_errno = errno;
-          Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe reader=%s failed: ERR=%s\n",
-               p_ctx->reader, strerror(io->io_errno));
-          Dmsg(ctx, debuglevel,
-               "bpipe-fd: Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader,
-               strerror(io->io_errno));
-          return bRC_Error;
+        } else {
+          p_ctx->pfd = OpenBpipe(p_ctx->reader, 0, "r", false, env);
+          Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p reader=%s\n",
+               p_ctx->pfd, p_ctx->reader);
+          if (!p_ctx->pfd) {
+            io->io_errno = errno;
+            Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe reader=%s failed: ERR=%s\n",
+                 p_ctx->reader, strerror(io->io_errno));
+            Dmsg(ctx, debuglevel,
+                 "bpipe-fd: Open pipe reader=%s failed: ERR=%s\n",
+                 p_ctx->reader, strerror(io->io_errno));
+            return bRC_Error;
+          }
         }
       }
       sleep(1); /* let pipe connect */
