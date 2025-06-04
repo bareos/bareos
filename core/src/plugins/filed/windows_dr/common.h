@@ -35,6 +35,4 @@ struct partition_layout {
 GUID from_disk_format(const guid& id);
 guid to_disk_format(const GUID& id);
 
-// #define DO_DRY 1
-
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_COMMON_H_
