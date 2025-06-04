@@ -26,7 +26,7 @@
 #include "CLI/Formatter.hpp"
 
 #include <stdexcept>
-#include <format>
+#include <fmt/format.h>
 #include <variant>
 #include <optional>
 #include <limits>
@@ -782,7 +782,7 @@ class Parser {
 };  // namespace disk
 
 
-class RestoreToStdout : public RestoreStrategy {
+class RestoreToStdout : public GenericHandler {
  public:
   RestoreToStdout(std::ostream& stream) : output{stream} {}
 
@@ -863,7 +863,7 @@ class RestoreToStdout : public RestoreStrategy {
   std::optional<disk::Parser> disk_;
 };
 
-class RestoreToFiles : public RestoreStrategy {
+class RestoreToFiles : public GenericHandler {
  public:
   RestoreToFiles(std::filesystem::path directory)
   {
@@ -1023,11 +1023,11 @@ void restore_data(std::istream& input, bool use_stdout)
 {
   if (use_stdout) {
     RestoreToStdout strategy{std::cout};
-    generic_restore(input, &strategy);
+    parse_file_format(input, &strategy);
     std::cout.flush();
   } else {
     RestoreToFiles strategy{""};
-    generic_restore(input, &strategy);
+    parse_file_format(input, &strategy);
   }
 }
 
@@ -1065,7 +1065,7 @@ int main(int argc, char* argv[])
   CLI11_PARSE(app, argc, argv);
   try {
     if (*restore) {
-      std::unique_ptr<RestoreStrategy> strategy;
+      std::unique_ptr<GenericHandler> strategy;
 
       if (*stdout) {
         strategy = std::make_unique<RestoreToStdout>(std::cout);
@@ -1079,9 +1079,9 @@ int main(int argc, char* argv[])
         fprintf(stderr, "using %s as input\n", filename.c_str());
         std::ifstream infile{filename,
                              std::ios_base::in | std::ios_base::binary};
-        generic_restore(infile, strategy.get());
+        parse_file_format(infile, strategy.get());
       } else {
-        generic_restore(std::cin, strategy.get());
+        parse_file_format(std::cin, strategy.get());
       }
     } else {
       throw std::logic_error("i dont know what to do");
