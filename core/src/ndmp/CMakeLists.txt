@@ -196,7 +196,6 @@ bareos_disable_warnings(
   -Wdeprecated-non-prototype
   -Wcast-function-type
   -Wincompatible-pointer-types
-  -Wold-style-definition
   C_ONLY
 )
 
