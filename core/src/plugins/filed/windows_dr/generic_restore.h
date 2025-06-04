@@ -30,7 +30,8 @@ struct disk_info {
   std::uint32_t extent_count;
 };
 
-struct RestoreStrategy {
+class GenericHandler {
+ public:
   virtual void BeginRestore(std::size_t num_disks) = 0;
   virtual void EndRestore() = 0;
   virtual void BeginDisk(disk_info info) = 0;
@@ -51,9 +52,11 @@ struct RestoreStrategy {
   virtual void ExtentData(std::span<const char> data) = 0;
   virtual void EndExtent() = 0;
 
-  virtual ~RestoreStrategy() {}
+  virtual ~GenericHandler() {}
 };
 
-void generic_restore(std::istream& stream, RestoreStrategy* strategy);
+
+// this function is basically a simple sax-like parser for the dump format
+void parse_file_format(std::istream& stream, GenericHandler* strategy);
 
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_GENERIC_RESTORE_H_

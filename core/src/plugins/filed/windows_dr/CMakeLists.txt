@@ -32,6 +32,13 @@ else()
   add_executable(dr-dumper restore_linux.cc generic_restore.cc)
   target_link_libraries(
     dr-dumper CLI11::CLI11 Microsoft.GSL::GSL ${ZLIB_LIBRARIES}
+    fmt::fmt-header-only
+  )
+
+  install(
+    TARGETS dr-dumper
+    DESTINATION ${plugindir}
+    COMPONENT filedaemon
   )
 endif()
 
