@@ -514,7 +514,7 @@ mark_as_advanced(ENABLE_NLS)
 
 if(HAVE_WIN32)
   if(NOT DEFINED WINDOWS_VERSION)
-    set(WINDOWS_VERSION 0x600)
+    set(WINDOWS_VERSION 0xA00)
   endif()
 endif() # HAVE_WIN32
 

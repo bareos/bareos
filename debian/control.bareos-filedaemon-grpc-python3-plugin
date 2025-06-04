@@ -2,7 +2,7 @@ Package:        bareos-filedaemon-grpc-python3-plugin
 Architecture:   any
 Section:        python
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-filedaemon (= ${binary:Version}), bareos-filedaemon-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Depends:        bareos-filedaemon (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Recommends:     python3-dateutil
 Description: Backup Archiving Recovery Open Sourced - file daemon gRPC Python plugin
  Bareos is a set of programs to manage backup, recovery and verification of
