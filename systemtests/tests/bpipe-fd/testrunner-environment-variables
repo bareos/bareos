@@ -46,12 +46,12 @@ run_bconsole
 # validate that backup and restore job were successfull
 if grep -q "*** Backup Error ***" "$backup_file"; then
   cat "$backup_file"
-  return 2
+  exit 2
 fi
 
 if grep -q "*** Restore Error ***" "$restore_file"; then
   cat "$restore_file"
-  return 2
+  exit 2
 fi
 
 # validate environment variables in readprogram / writeprogram
@@ -67,12 +67,16 @@ for ((i = 0; i < ${#expected_output[@]}; i += 3)); do
   key="${expected_output[i + 0]}"
   readprogram_value="${expected_output[i + 1]}"
   writeprogram_value="${expected_output[i + 2]}"
-  expect_grep "${key}='${readprogram_value}'" \
-    "$tmp/readprogram.out" \
-    "Environment variable '$key' is wrong in readprogram, expected '${readprogram_value}'."
-  expect_grep "${key}='${writeprogram_value}'" \
-    "$tmp/writeprogram.out" \
-    "Environment variable '$key' is wrong in writeprogram, expected '${writeprogram_value}'."
+  if ! grep -q "${key}='${readprogram_value}'" "$tmp/readprogram.out"; then
+    echo "Environment variable '$key' is wrong in readprogram, expected '${readprogram_value}'."
+    cat "$tmp/readprogram.out"
+    exit 2
+  fi
+  if ! grep -q "${key}='${writeprogram_value}'" "$tmp/writeprogram.out"; then
+    echo "Environment variable '$key' is wrong in writeprogram, expected '${writeprogram_value}'."
+    cat "$tmp/writeprogram.out"
+    exit 2
+  fi
 done
 
 end_test
