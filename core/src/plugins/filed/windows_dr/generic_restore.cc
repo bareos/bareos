@@ -38,7 +38,7 @@ enum
   PARTITION_STYLE_RAW = 2,
 };
 
-void ParseDiskPartTable(std::istream& stream, RestoreStrategy* strategy)
+void ParseDiskPartTable(std::istream& stream, GenericHandler* strategy)
 {
   part_table_header header;
   header.read(stream);
@@ -98,7 +98,7 @@ std::uint32_t ReadHeader(std::istream& stream)
   return header.disk_count;
 }
 
-void ParseExtent(std::istream& stream, RestoreStrategy* strategy)
+void ParseExtent(std::istream& stream, GenericHandler* strategy)
 {
   extent_header header;
   header.read(stream);
@@ -128,7 +128,7 @@ void ParseExtent(std::istream& stream, RestoreStrategy* strategy)
   strategy->EndExtent();
 }
 
-void generic_restore(std::istream& stream, RestoreStrategy* strategy)
+void parse_file_format(std::istream& stream, GenericHandler* strategy)
 {
   auto disk_count = ReadHeader(stream);
 
