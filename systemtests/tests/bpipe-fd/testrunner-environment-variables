@@ -26,7 +26,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 
 @$out $backup_file
-run job=backup-bareos-fd yes
+run job=backup-bareos-fd level=Full yes
 wait
 messages
 
