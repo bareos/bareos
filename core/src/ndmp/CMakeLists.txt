@@ -196,7 +196,6 @@ bareos_disable_warnings(
   -Wcast-function-type
   -Wincompatible-pointer-types
   -Wenum-compare
-  -Wold-style-definition
   C_ONLY
 )
 
