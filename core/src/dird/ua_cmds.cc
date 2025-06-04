@@ -2126,6 +2126,7 @@ static bool TruncateCmd(UaContext* ua, const char*)
       DoTruncate(ua, mr, drive_number);
     }
   }
+  result = true;
 
 bail_out:
   CloseDb(ua);
