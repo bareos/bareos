@@ -110,7 +110,7 @@ part_table_entry_mbr_data from_win32(const PARTITION_INFORMATION_MBR& mbr)
   return Result;
 }
 
-void dump_data(std::ostream&);
+void dump_data(std::ostream&, bool dry);
 void restore_data(std::istream&, bool raw_file);
 
 int main(int argc, char* argv[])
@@ -118,6 +118,8 @@ int main(int argc, char* argv[])
   CLI::App app;
 
   auto* save = app.add_subcommand("save");
+  bool dry = false;
+  save->add_flag("--dry", dry, "do not read/write actual disk data");
   auto* restore = app.add_subcommand("restore");
   std::string filename;
   restore->add_option("--from", filename,
@@ -132,7 +134,7 @@ int main(int argc, char* argv[])
   try {
     if (*save) {
       _setmode(_fileno(stdout), _O_BINARY);
-      dump_data(std::cout);
+      dump_data(std::cout, dry);
     } else if (*restore) {
       if (filename.empty()) {
         _setmode(_fileno(stdin), _O_BINARY);
@@ -776,7 +778,6 @@ void copy_stream(HANDLE hndl,
                  std::size_t length,
                  std::ostream& stream)
 {
-#if !defined(DO_DRY)
   DWORD off_low = offset & 0xFFFFFFFF;
   LONG off_high = (offset >> 32) & 0xFFFFFFFF;
   SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
@@ -816,7 +817,6 @@ void copy_stream(HANDLE hndl,
 
     bytes_to_read -= bytes_read;
   }
-#endif
 }
 
 void WriteDiskData(std::ostream& stream, const disk& disk_extents)
@@ -908,7 +908,7 @@ std::optional<DISK_GEOMETRY_EX> GetDiskGeometry(HANDLE disk)
   return geo;
 }
 
-void dump_data(std::ostream& stream)
+void dump_data(std::ostream& stream, bool dry)
 {
   COM_CALL(CoInitializeEx(NULL, COINIT_MULTITHREADED));
 
@@ -1231,6 +1231,8 @@ void dump_data(std::ostream& stream)
             geo.DiskSize.QuadPart, geo.Geometry.Cylinders.QuadPart,
             geo.Geometry.TracksPerCylinder, geo.Geometry.SectorsPerTrack,
             geo.Geometry.BytesPerSector);
+
+    if (dry) { disk.extents.clear(); }
 
     WriteDiskHeader(stream, disk, geo);
     WriteDiskPartTable(stream, layout.value());
