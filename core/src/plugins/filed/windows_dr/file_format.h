@@ -28,9 +28,10 @@
 #include <vector>
 #include <variant>
 #include <cassert>
-#include <format>
 #include <cstring>
 #include <span>
+#include <cstdint>
+#include <cinttypes>
 
 static_assert(sizeof(char16_t) == 2);
 
@@ -92,7 +93,7 @@ template <typename T> static void read_stream(std::istream& stream, T& t)
 
 
   if constexpr (std::is_same_v<std::uint32_t, T>) {
-    fprintf(stderr, "read %s\n", std::format("{}", t).c_str());
+    fprintf(stderr, "read %" PRIu32 "\n", t);
   }
 }
 
