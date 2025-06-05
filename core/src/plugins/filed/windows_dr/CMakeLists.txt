@@ -29,7 +29,7 @@ if(HAVE_WIN32)
 
   add_executable(copy copy.cc)
 else()
-  add_executable(dr-dumper restore_linux.cc generic_restore.cc)
+  add_executable(dr-dumper restore_linux.cc parser.cc)
   target_link_libraries(
     dr-dumper CLI11::CLI11 Microsoft.GSL::GSL ${ZLIB_LIBRARIES}
     fmt::fmt-header-only
