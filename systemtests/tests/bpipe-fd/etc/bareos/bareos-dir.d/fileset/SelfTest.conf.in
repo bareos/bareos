@@ -8,7 +8,7 @@ FileSet {
     }
     Plugin = "bpipe"
              ":file=/bpipe"
-             ":reader=./readprogram"
-             ":writer=./writeprogram"
+             ":reader=bash ./readprogram"
+             ":writer=bash ./writeprogram"
   }
 }
