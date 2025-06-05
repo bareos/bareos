@@ -88,11 +88,17 @@ int FindNextVolumeForAppend(JobControlRecord* jcr,
   // Find the Next Volume for Append
   DbLocker _{jcr->db};
   while (1) {
-    //  1. Look for volume with "Append" status.
+    //  1. Look for volume with "Append" or "Unlabeled" status.
     SetStorageidInMr(store, mr);
 
     bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
     ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
+    if (!ok) {
+      bstrncpy(mr->VolStatus, "Unlabeled", sizeof(mr->VolStatus));
+      ok = jcr->db->FindNextVolume(jcr, index, InChanger, mr, unwanted_volumes);
+    }
+    if (!ok) { bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus)); }
+
     if (!ok) {
       // No volume found, apply algorithm
       Dmsg4(debuglevel,
@@ -294,7 +300,8 @@ void CheckIfVolumeValidOrRecyclable(JobControlRecord* jcr,
   }
 
   // Now see if we can use the volume as is
-  if (bstrcmp(mr->VolStatus, "Append") || bstrcmp(mr->VolStatus, "Recycle")) {
+  if (bstrcmp(mr->VolStatus, "Unlabeled") || bstrcmp(mr->VolStatus, "Append")
+      || bstrcmp(mr->VolStatus, "Recycle")) {
     *reason = NULL;
     return;
   }
