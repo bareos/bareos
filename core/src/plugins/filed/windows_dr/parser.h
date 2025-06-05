@@ -19,9 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_PLUGINS_FILED_WINDOWS_DR_GENERIC_RESTORE_H_
-#define BAREOS_PLUGINS_FILED_WINDOWS_DR_GENERIC_RESTORE_H_
-
+#ifndef BAREOS_PLUGINS_FILED_WINDOWS_DR_PARSER_H_
+#define BAREOS_PLUGINS_FILED_WINDOWS_DR_PARSER_H_
 
 #include "file_format.h"
 
@@ -59,4 +58,4 @@ class GenericHandler {
 // this function is basically a simple sax-like parser for the dump format
 void parse_file_format(std::istream& stream, GenericHandler* strategy);
 
-#endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_GENERIC_RESTORE_H_
+#endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_PARSER_H_

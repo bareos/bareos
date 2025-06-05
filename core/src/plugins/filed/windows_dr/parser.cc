@@ -19,7 +19,7 @@
    02110-1301, USA.
 */
 
-#include "generic_restore.h"
+#include "parser.h"
 #include <bit>
 
 disk_info ReadDiskHeader(std::istream& stream)
