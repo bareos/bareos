@@ -1070,7 +1070,7 @@ int main(int argc, char* argv[])
 
       if (*stdout) {
         strategy = std::make_unique<RestoreToStdout>(std::cout);
-      } else if (*from) {
+      } else if (*files) {
         strategy = std::make_unique<RestoreToFiles>(directory);
       } else {
         throw std::logic_error("i dont know where to restore too!");
