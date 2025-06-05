@@ -10,6 +10,7 @@ black = "*"
 check-sources = {editable = true, path = "."}
 clang-format = "*"
 cmake-format = "*"
+shfmt-py = "*"
 enlighten = "*"
 gitpython = "*"
 importlib-resources = "*"

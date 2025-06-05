@@ -20,21 +20,32 @@
 from shutil import which
 import logging
 import subprocess
+import pathlib
+import re
 from ..registry import register_modifier
 
-clang_format_exe = which("clang-format")
-if clang_format_exe:
-    logging.getLogger(__name__).info("using executable %s", clang_format_exe)
+shfmt_exe = which("shfmt")
+if shfmt_exe:
+    logging.getLogger(__name__).debug("using executable %s", shfmt_exe)
 else:
-    logging.getLogger(__name__).error("cannot find a clang-format executable")
+    logging.getLogger(__name__).error("cannot find a shfmt executable")
+
+shebang_pattern = re.compile(r"^#!\s*/(?:\S*/)*(env\s+)?(?:bash|sh)\b")
 
 
-def invoke_clang_format(source_text, *argv):
-    invocation = [clang_format_exe] + list(argv)
+def is_shell_content(file_content: str):
+    return re.match(shebang_pattern, file_content) is not None
+
+
+def invoke_shell_format(file_path: pathlib.Path, file_content: str, *argv):
+    if not str(file_path).endswith(".sh") or str(file_path).endswith(".sh.in"):
+        if not is_shell_content(file_content):
+            return file_content
+
+    invocation = [shfmt_exe] + list(argv) + [file_path]
     try:
         proc = subprocess.run(
             invocation,
-            input=source_text,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding="utf-8",
@@ -45,19 +56,17 @@ def invoke_clang_format(source_text, *argv):
         raise OSError(
             f"Command '{subprocess.list2cmdline(invocation)}' failed to start: {exc} from exc"
         ) from exc
-
-    if proc.returncode:
-        cmd = subprocess.list2cmdline(invocation)
-        raise OSError(
-            f"Command '{cmd}' returned non-zero exit status {proc.returncode}",
-            proc.stderr,
-        )
     return proc.stdout
 
 
-@register_modifier("*.c", "*.cc", "*.h", name="clang-format check")
-def check_clang_format(file_path, file_content, **kwargs):
+@register_modifier("*", name="shell-format check")
+def check_shell_format(file_path: pathlib.Path, file_content: str, **kwargs):
     _ = kwargs
-    return invoke_clang_format(
-        file_content, "-style=file", f"-assume-filename={file_path}"
+    return invoke_shell_format(
+        file_path,
+        file_content,
+        "--indent=2",
+        "--binary-next-line",
+        "--case-indent",
+        "--func-next-line",
     )
