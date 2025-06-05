@@ -20,6 +20,7 @@
 */
 
 #include "generic_restore.h"
+#include <bit>
 
 disk_info ReadDiskHeader(std::istream& stream)
 {
