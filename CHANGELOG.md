@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - disable bareosfd-python3-module-test on FreeBSD [PR #2278]
 - postgresql: require non-ssl connection [PR #2272]
 - fix problems with msvc 19.44 [PR #2287]
+- plugins: fix error_string construction [PR #2273]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -150,6 +151,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2268]: https://github.com/bareos/bareos/pull/2268
 [PR #2270]: https://github.com/bareos/bareos/pull/2270
 [PR #2272]: https://github.com/bareos/bareos/pull/2272
+[PR #2273]: https://github.com/bareos/bareos/pull/2273
 [PR #2275]: https://github.com/bareos/bareos/pull/2275
 [PR #2278]: https://github.com/bareos/bareos/pull/2278
 [PR #2286]: https://github.com/bareos/bareos/pull/2286
