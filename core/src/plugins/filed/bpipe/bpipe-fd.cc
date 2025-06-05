@@ -302,10 +302,10 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         char* env_client_name;
         bareos_core_functions->getBareosValue(ctx, bVarFDName,
                                               &env_client_name);
-        char env_backup_level;
+        int env_backup_level;
         bareos_core_functions->getBareosValue(ctx, bVarLevel,
                                               &env_backup_level);
-        char env_job_type;
+        int env_job_type;
         bareos_core_functions->getBareosValue(ctx, bVarType, &env_job_type);
         int env_since_time;
         bareos_core_functions->getBareosValue(ctx, bVarSinceTime,
@@ -314,9 +314,9 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         std::unordered_map<std::string, std::string> env{
             {"BareosClientName", std::string{env_client_name}},
             {"BareosJobId", std::to_string(env_job_id)},
-            {"BareosJobLevel", std::string{env_backup_level}},
+            {"BareosJobLevel", std::string{static_cast<char>(env_backup_level)}},
             {"BareosSinceTime", std::to_string(env_since_time)},
-            {"BareosJobType", std::string{env_job_type}},
+            {"BareosJobType", std::string{static_cast<char>(env_job_type)}},
         };
 
         if (io->flags & (O_CREAT | O_WRONLY)) {
