@@ -557,7 +557,7 @@ class StreamOutput : public Output {
   {
     if (offset < current_offset_) {
       throw std::logic_error{
-          std::format("Trying to skip to offset {}, when already at offset {}",
+          fmt::format("Trying to skip to offset {}, when already at offset {}",
                       offset, current_offset_)};
     }
 
@@ -626,7 +626,7 @@ struct FileOutput : public Output {
   {
     if (offset < current_offset_) {
       throw std::logic_error{
-          std::format("Trying to skip to offset {}, when already at offset {}",
+          fmt::format("Trying to skip to offset {}, when already at offset {}",
                       offset, current_offset_)};
     }
 
@@ -644,7 +644,7 @@ struct FileOutput : public Output {
   {
     off_t res = lseek(fd_, 0, SEEK_CUR);
     if (res < 0) {
-      throw std::runtime_error{std::format(
+      throw std::runtime_error{fmt::format(
           "could not determine file position: {}", strerror(errno))};
     }
 
@@ -658,7 +658,7 @@ struct FileOutput : public Output {
     off_t res = lseek(fd_, s_offset, SEEK_SET);
     if (res < 0) {
       throw std::runtime_error{
-          std::format("could not seek to {}: {}", offset, strerror(errno))};
+          fmt::format("could not seek to {}: {}", offset, strerror(errno))};
     }
   }
 
@@ -672,12 +672,12 @@ struct FileOutput : public Output {
       auto res = ::write(fd_, towrite.data(), towrite.size());
       if (res < 0) {
         throw std::runtime_error(
-            std::format("write() failed: {}", strerror(errno)));
+            fmt::format("write() failed: {}", strerror(errno)));
       }
       if (res == 0) {
         bad_count += 1;
         if (bad_count > 20) {
-          throw std::runtime_error(std::format(
+          throw std::runtime_error(fmt::format(
               "write() failed to write data too often: {}", strerror(errno)));
         }
       }
@@ -869,7 +869,7 @@ class RestoreToFiles : public GenericHandler {
   {
     directory_fd = auto_fd{open(directory.c_str(), O_DIRECTORY | O_RDONLY)};
     if (!directory_fd) {
-      throw std::runtime_error(std::format("cannot open '{}': {}",
+      throw std::runtime_error(fmt::format("cannot open '{}': {}",
                                            directory.c_str(), strerror(errno)));
     }
   }
@@ -878,14 +878,14 @@ class RestoreToFiles : public GenericHandler {
   {
     disk_files.reserve(num_disks);
     for (std::size_t idx = 0; idx < num_disks; ++idx) {
-      auto disk_name = std::format("disk-{}.raw", idx);
+      auto disk_name = fmt::format("disk-{}.raw", idx);
 
       auto_fd fd{openat(directory_fd.get(), disk_name.c_str(),
                         O_CREAT | O_WRONLY | O_EXCL, 0664)};
 
       if (!fd) {
         throw std::runtime_error{
-            std::format("could not open '{}': {}", disk_name, strerror(errno))};
+            fmt::format("could not open '{}': {}", disk_name, strerror(errno))};
       }
 
       disk_files.emplace_back(std::move(fd));
