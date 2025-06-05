@@ -19,7 +19,7 @@
    02110-1301, USA.
 */
 
-#include "generic_restore.h"
+#include "parser.h"
 
 #include "CLI/App.hpp"
 #include "CLI/Config.hpp"
@@ -30,6 +30,7 @@
 #include <variant>
 #include <optional>
 #include <limits>
+#include <cstdint>
 
 #include <gsl/narrow>
 
