@@ -528,6 +528,53 @@ bail_out:
   return retval;
 }
 
+std::unique_ptr<PGresult, PGresultDeleter> BareosDbPostgresql::TryQuery(const char* query) {
+  AssertOwnership();
+  Dmsg1(500, "TryQuery starts with '%s'\n", query);
+
+  auto do_query = [&]() {
+    std::unique_ptr<PGresult, PGresultDeleter> result = nullptr;
+    for (int i = 0; i < 10; i++) {
+      result.reset(PQexec(db_handle_, query));
+      if (result) {
+        auto status = PQresultStatus(result.get());
+        if (status == PGRES_TUPLES_OK || status == PGRES_COMMAND_OK) {
+          return result;
+        }
+        else {
+          return std::unique_ptr<PGresult, PGresultDeleter>{nullptr};
+        }
+      }
+      Bmicrosleep(5, 0);
+    }
+    return std::unique_ptr<PGresult, PGresultDeleter>{nullptr};
+  };
+  
+  auto result = do_query();
+  if (!result && try_reconnect_ && !transaction_) {
+    PQreset(db_handle_);
+    if (PQstatus(db_handle_) == CONNECTION_OK) {
+      std::unique_ptr<PGresult, PGresultDeleter> reset_result{PQexec(db_handle_,
+        "SET datestyle TO 'ISO, YMD';"
+        "SET cursor_tuple_fraction=1;"
+        "SET standard_conforming_strings=on;"
+        "SET client_min_messages TO WARNING;")};
+      if (PQresultStatus(reset_result.get()) == PGRES_COMMAND_OK) {
+        result = do_query();      
+      }
+    }
+  } 
+  if (result) {
+    Dmsg1(500, "TryQuery suceeded with query %s", query);
+    Dmsg0(500, "We have a result\n");
+  }
+  else {
+    Dmsg1(500, "TryQuery failed with query %s", query);
+    Dmsg1(50, "Result status fatal: %s, %s\n", query, sql_strerror());
+  }
+  return result;
+}
+
 /**
  * Submit a general SQL command (cmd), and for each row returned,
  * the ResultHandler is called with the ctx.
