@@ -58,6 +58,10 @@ static dlist<BareosDbPostgresql>* db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+void PGresultDeleter::operator()(PGresult* result) const {
+  PQclear(result);
+}
+
 BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
                                        const char*,
                                        const char* db_name,
