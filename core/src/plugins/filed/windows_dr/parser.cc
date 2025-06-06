@@ -21,6 +21,7 @@
 
 #include "parser.h"
 #include <bit>
+#include <fmt/format.h>
 
 disk_info ReadDiskHeader(std::istream& stream)
 {
@@ -31,13 +32,6 @@ disk_info ReadDiskHeader(std::istream& stream)
 
   return {disk_size, header.extent_count};
 }
-
-enum
-{
-  PARTITION_STYLE_MBR = 0,
-  PARTITION_STYLE_GPT = 1,
-  PARTITION_STYLE_RAW = 2,
-};
 
 void ParseDiskPartTable(std::istream& stream, GenericHandler* strategy)
 {
@@ -71,18 +65,23 @@ void ParseDiskPartTable(std::istream& stream, GenericHandler* strategy)
     entry.read(stream);
 
     switch (entry.partition_style) {
-      case PARTITION_STYLE_MBR: {
+      case Mbr: {
         part_table_entry_mbr_data data;
         data.read(stream);
 
         strategy->MbrEntry(entry, data);
       } break;
-      case PARTITION_STYLE_GPT: {
+      case Gpt: {
         part_table_entry_gpt_data data;
         data.read(stream);
 
         strategy->GptEntry(entry, data);
       } break;
+      default: {
+        throw std::logic_error{
+            fmt::format("unknown partition type ({}) encountered",
+                        static_cast<std::uint8_t>(entry.partition_style))};
+      }
     }
   }
 

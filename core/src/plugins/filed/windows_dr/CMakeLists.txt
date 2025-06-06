@@ -20,11 +20,16 @@
 include(BareosDisableWarnings)
 include(BareosConfigureFile)
 
+add_library(parser OBJECT)
+target_sources(parser PRIVATE parser.cc)
+target_link_libraries(parser PUBLIC fmt::fmt-header-only)
+
 if(HAVE_WIN32)
   add_executable(dr-dumper data_dumper.cc restore.cc common.cc)
 
   target_link_libraries(
-    dr-dumper VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES}
+    dr-dumper VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES} parser
+    Microsoft.GSL::GSL
   )
 
   add_executable(copy copy.cc)
