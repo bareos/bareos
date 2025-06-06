@@ -247,7 +247,7 @@ struct part_table_entry {
   uint64_t partition_offset;
   uint64_t partition_length;
   uint32_t partition_number;
-  uint8_t partition_style;
+  part_type partition_style;
   bool rewrite_partition;     // (useless ?)
   bool is_service_partition;  // (useless ?)
 

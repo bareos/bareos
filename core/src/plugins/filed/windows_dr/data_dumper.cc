@@ -72,13 +72,31 @@ extent_header header_of(const partition_extent& ext)
   return header;
 }
 
+part_type from_win32(PARTITION_STYLE style)
+{
+  switch (style) {
+    case PARTITION_STYLE_MBR: {
+      return part_type::Mbr;
+    }
+    case PARTITION_STYLE_GPT: {
+      return part_type::Gpt;
+    }
+    case PARTITION_STYLE_RAW: {
+      return part_type::Raw;
+    }
+  }
+
+  // TODO: we should report an error here and exit
+  return part_type::Raw;
+}
+
 part_table_entry from_win32(const PARTITION_INFORMATION_EX& info)
 {
   part_table_entry Result = {};
   Result.partition_offset = (uint64_t)info.StartingOffset.QuadPart;
   Result.partition_length = (uint64_t)info.PartitionLength.QuadPart;
   Result.partition_number = info.PartitionNumber;
-  Result.partition_style = (uint8_t)info.PartitionStyle;
+  Result.partition_style = from_win32(info.PartitionStyle);
   Result.rewrite_partition = info.RewritePartition != 0;
   Result.is_service_partition = info.IsServicePartition != 0;
   return Result;
