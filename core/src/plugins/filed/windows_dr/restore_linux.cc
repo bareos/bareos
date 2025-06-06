@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#include "fmt/base.h"
 #include "parser.h"
 #include "partitioning.h"
 
@@ -28,15 +29,14 @@
 
 #include <stdexcept>
 #include <fmt/format.h>
-#include <variant>
 #include <optional>
-#include <limits>
-#include <cstdint>
 
 #include <gsl/narrow>
 
 #include <fcntl.h>
 #include <unistd.h>
+
+#include <cuchar>
 
 class StreamOutput : public Output {
  public:
@@ -418,6 +418,127 @@ void restore_data(std::istream& input, bool use_stdout)
 }
 
 
+std::string guid_to_string(guid id)
+{
+  std::uint64_t First = {};
+  std::uint32_t Second = {};
+  std::uint32_t Third = {};
+  std::uint64_t Fourth = {};
+  std::uint32_t Fifth = {};
+
+  std::size_t offset = 0;
+  std::memcpy(&First, id.Data, sizeof(First));
+  offset += sizeof(First);
+  std::memcpy(&Second, id.Data, sizeof(Second));
+  offset += sizeof(Second);
+  std::memcpy(&Third, id.Data, sizeof(Third));
+  offset += sizeof(Third);
+  std::memcpy(&Fourth, id.Data, sizeof(Fourth));
+  offset += sizeof(Fourth);
+  std::memcpy(&Fifth, id.Data, sizeof(Fifth));
+  offset += sizeof(Fifth);
+
+  return fmt::format("{:08X}-{:04X}-{:04X}-{:08X}{:04X}", First, Second, Third,
+                     Fourth, Fifth);
+}
+
+std::string utf16_to_utf8(std::span<const char16_t> str)
+{
+  std::string result;
+  result.resize((str.size() + 1) * MB_LEN_MAX);
+
+  std::mbstate_t state{};
+
+  char* out = result.data();
+  for (auto c : str) {
+    std::size_t count = std::c16rtomb(out, c, &state);
+    out += count;
+  }
+  std::size_t count = std::c16rtomb(out, L'\0', &state);
+  out += count;
+
+  std::size_t total_size = out - result.data();
+  assert(total_size <= result.size());
+  result.resize(total_size);
+  return result;
+}
+
+class ListContents : public GenericHandler {
+ public:
+  void BeginRestore(std::size_t num_disks) override
+  {
+    fmt::println(stderr, "Contains {} Disks", num_disks);
+  }
+  void EndRestore() override {}
+  void BeginDisk(disk_info info) override
+  {
+    fmt::println(stderr, "Disk {}:", disk_idx_);
+    fmt::println(stderr, " - Size = {}", info.disk_size);
+    fmt::println(stderr, " - Extent Count = {}", info.extent_count);
+  }
+  void EndDisk() override { disk_idx_ += 1; }
+
+  void BeginMbrTable(const partition_info_mbr&) override
+  {
+    fmt::println(stderr, " Mbr Table:");
+  }
+  void BeginGptTable(const partition_info_gpt& gpt) override
+  {
+    fmt::println(stderr, " Gpt Table:");
+    fmt::println(stderr, "  - Max Partition Count = {}", gpt.MaxPartitionCount);
+  }
+  void BeginRawTable(const partition_info_raw&) override
+  {
+    fmt::println(stderr, " Raw Table:");
+  }
+  void MbrEntry(const part_table_entry& entry,
+                const part_table_entry_mbr_data& data) override
+  {
+    fmt::println(stderr, "  Entry:");
+    fmt::println(stderr, "   - Offset = {}", entry.partition_offset);
+    fmt::println(stderr, "   - Length = {}", entry.partition_length);
+    fmt::println(stderr, "   - Number = {}", entry.partition_number);
+    fmt::println(stderr, "   - Style = {}",
+                 static_cast<uint8_t>(entry.partition_style));
+
+    fmt::println(stderr, "   MBR:");
+    fmt::println(stderr, "    - Id = {}", guid_to_string(data.partition_id));
+    fmt::println(stderr, "    - Type = {}", data.partition_type);
+    fmt::println(stderr, "    - Bootable = {}", data.bootable ? "yes" : "no");
+  }
+  void GptEntry(const part_table_entry& entry,
+                const part_table_entry_gpt_data& data) override
+  {
+    fmt::println(stderr, "  Entry:");
+    fmt::println(stderr, "   - Offset = {}", entry.partition_offset);
+    fmt::println(stderr, "   - Length = {}", entry.partition_length);
+    fmt::println(stderr, "   - Number = {}", entry.partition_number);
+    fmt::println(stderr, "   - Style = {}",
+                 static_cast<uint8_t>(entry.partition_style));
+
+    fmt::println(stderr, "   GPT:");
+    fmt::println(stderr, "    - Id = {}", guid_to_string(data.partition_id));
+    fmt::println(stderr, "    - Type = {}",
+                 guid_to_string(data.partition_type));
+    fmt::println(stderr, "    - Attributes = {:08X}", data.attributes);
+
+    fmt::println(stderr, "    - Name = {}", utf16_to_utf8(data.name));
+  }
+  void EndPartTable() override {}
+
+  void BeginExtent(extent_header header) override
+  {
+    fmt::println(stderr, "  Extent:");
+    fmt::println(stderr, "   - Length = {}", header.length);
+    fmt::println(stderr, "   - Offset = {}", header.offset);
+  }
+  void ExtentData(std::span<const char>) override {}
+  void EndExtent() override {}
+
+ private:
+  std::size_t disk_idx_ = 0;
+};
+
 int main(int argc, char* argv[])
 {
   CLI::App app;
@@ -446,6 +567,12 @@ int main(int argc, char* argv[])
 
   location->require_option();
 
+
+  auto* list = app.add_subcommand("list");
+  auto* list_from = list->add_option("--from", filename,
+                                     "read from this file instead of stdin")
+                        ->check(CLI::ExistingFile);
+
   app.require_subcommand(1, 1);
 
   CLI11_PARSE(app, argc, argv);
@@ -468,6 +595,16 @@ int main(int argc, char* argv[])
         parse_file_format(infile, strategy.get());
       } else {
         parse_file_format(std::cin, strategy.get());
+      }
+    } else if (*list) {
+      ListContents strategy;
+      if (*list_from) {
+        fprintf(stderr, "using %s as input\n", filename.c_str());
+        std::ifstream infile{filename,
+                             std::ios_base::in | std::ios_base::binary};
+        parse_file_format(infile, &strategy);
+      } else {
+        parse_file_format(std::cin, &strategy);
       }
     } else {
       throw std::logic_error("i dont know what to do");
