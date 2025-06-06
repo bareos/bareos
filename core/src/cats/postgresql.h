@@ -81,6 +81,9 @@ class BareosDbPostgresql : public BareosDb {
   bool BigSqlQuery(const char* query,
                    DB_RESULT_HANDLER* ResultHandler,
                    void* ctx) override;
+
+  std::unique_ptr<PGresult, PGresultDeleter> TryQuery(const char* query);
+
   bool SqlQueryWithHandler(const char* query,
                            DB_RESULT_HANDLER* ResultHandler,
                            void* ctx) override;
