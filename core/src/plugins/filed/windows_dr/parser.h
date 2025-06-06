@@ -38,7 +38,7 @@ class GenericHandler {
 
   virtual void BeginMbrTable(const partition_info_mbr& mbr) = 0;
   virtual void BeginGptTable(const partition_info_gpt& gpt) = 0;
-  virtual void BeginRawTable(const partition_info_raw& gpt) = 0;
+  virtual void BeginRawTable(const partition_info_raw& raw) = 0;
   virtual void MbrEntry(const part_table_entry& entry,
                         const part_table_entry_mbr_data& data)
       = 0;
