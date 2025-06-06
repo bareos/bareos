@@ -209,7 +209,7 @@ auto ChunkedDevice::getInflightLease(chunk_io_request* request)
 {
   try {
     return InflightLease(this, request);
-  } catch (InflightChunkException&) {
+  } catch (const InflightChunkException&) {
     return std::nullopt;
   }
 }
