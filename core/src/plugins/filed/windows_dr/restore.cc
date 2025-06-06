@@ -112,6 +112,8 @@ class HandleOutput : public Output {
     }
 
     write_buffer(hndl_, current_offset_, bytes);
+
+    current_offset_ += bytes.size();
   }
   void skip_forwards(std::size_t offset) override
   {
