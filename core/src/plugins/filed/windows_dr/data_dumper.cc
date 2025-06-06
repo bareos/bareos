@@ -227,7 +227,7 @@ const char* hresult_as_str(HRESULT hr)
 
 void throw_on_error(HRESULT hr, const char* callsite)
 {
-  if (hr == S_OK) { return; }
+  if (!FAILED(hr)) { return; }
 
   throw std::runtime_error(
       std::format("{}: {} ({:X})", callsite, hresult_as_str(hr), hr));
@@ -856,11 +856,9 @@ void WriteDiskData(std::ostream& stream, const disk& disk_extents)
 // covered by an extent of a volume, then that part of the partition
 // cannot be read!
 
-
 struct partition_cover {
   std::vector<partition_extent> extents;
 };
-
 
 std::optional<std::vector<partition_cover>> CrossCheckPartitionsAndExtents(
     const partition_layout& layout,
@@ -874,13 +872,13 @@ std::optional<std::vector<partition_cover>> CrossCheckPartitionsAndExtents(
     auto offset = info.StartingOffset.QuadPart;
     auto length = info.PartitionLength.QuadPart;
 
-    auto& cover = covers.emplace_back();
-
     if (info.PartitionStyle == PARTITION_STYLE_MBR
         && info.Mbr.PartitionType == PARTITION_ENTRY_UNUSED) {
       continue;
     }
     if (length == 0) { continue; }
+
+    auto& cover = covers.emplace_back();
 
     bool found = false;
     for (auto extent : extents) {
@@ -903,6 +901,16 @@ std::optional<std::vector<partition_cover>> CrossCheckPartitionsAndExtents(
       return std::nullopt;
     }
   }
+
+  std::sort(std::begin(covers), std::end(covers), [](auto& l, auto& r) {
+    // empty collections are always the smallest, so an empty r
+    // can never be smaller than l
+    if (r.extents.size() == 0) { return false; }
+    // if r is not empty, then an empty l is always smaller
+    if (l.extents.size() == 0) { return true; }
+
+    return l.extents[0].partition_offset < r.extents[0].partition_offset;
+  });
 
   return covers;
 }
@@ -1223,6 +1231,12 @@ void dump_data(std::ostream& stream, bool dry)
 
   for (auto& [id, disk] : disks) {
     fprintf(stderr, "disk %zu extents\n", id);
+
+    std::sort(std::begin(disk.extents), std::end(disk.extents),
+              [](auto& l, auto& r) {
+                return l.partition_offset < r.partition_offset;
+              });
+
     for (auto& extent : disk.extents) {
       fprintf(stderr, "  %zu -> %zu\n", extent.partition_offset,
               extent.partition_offset + extent.length);
@@ -1238,6 +1252,16 @@ void dump_data(std::ostream& stream, bool dry)
     if (!disk_extents) {
       // continue;
     }
+
+    // for (auto& cover : disk_extents.value()) {
+    //   fprintf(stderr, " --- START ---\n");
+    //   for (auto& extent : cover) {
+    //     fprintf(stderr, "p.offset = %zu, h.offset = %zu, length = %zu\n"
+    //             extent.partition_offset, extent.handle_offset, extent.length
+    //            );
+    //   }
+    //   fprintf(stderr, " --- END ---\n");
+    // }
 
     fprintf(stderr,
             "disk geometry:\n"
