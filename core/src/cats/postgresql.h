@@ -38,6 +38,10 @@
 struct AttributesDbRecord;
 class JobControlRecord;
 
+struct PGresultDeleter {
+  void operator()(PGresult* result) const; 
+};
+
 class BareosDbPostgresql : public BareosDb {
  public:
   BareosDbPostgresql(JobControlRecord* jcr,
