@@ -39,6 +39,12 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
 
+option(coverage "Enable test coverage analysis" OFF)
+if(coverage)
+  set(CMAKE_BUILD_TYPE Debug)
+  include(BareosTestCoverage)
+endif()
+
 option(ENABLE_SYSTEMTESTS "Enable the systemtest suite" ON)
 option(CPM_ONLY "Add CPM packages and exit" OFF)
 if(CPM_ONLY)
