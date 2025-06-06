@@ -58,6 +58,10 @@ static dlist<BareosDbPostgresql>* db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+void PGresultDeleter::operator()(PGresult* result) const {
+  PQclear(result);
+}
+
 BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
                                        const char*,
                                        const char* db_name,
@@ -133,8 +137,7 @@ bool BareosDbPostgresql::CheckDatabaseEncoding(JobControlRecord* jcr)
   SQL_ROW row;
   bool retval = false;
 
-  if (!SqlQueryWithoutHandler("SELECT getdatabaseencoding()",
-                              QF_STORE_RESULT)) {
+  if (!SqlQueryWithoutHandler("SELECT getdatabaseencoding()")) {
     Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
     return false;
   }
@@ -525,6 +528,53 @@ bail_out:
   return retval;
 }
 
+std::unique_ptr<PGresult, PGresultDeleter> BareosDbPostgresql::TryQuery(const char* query) {
+  AssertOwnership();
+  Dmsg1(500, "TryQuery starts with '%s'\n", query);
+
+  auto do_query = [&]() {
+    std::unique_ptr<PGresult, PGresultDeleter> result = nullptr;
+    for (int i = 0; i < 10; i++) {
+      result.reset(PQexec(db_handle_, query));
+      if (result) {
+        auto status = PQresultStatus(result.get());
+        if (status == PGRES_TUPLES_OK || status == PGRES_COMMAND_OK) {
+          return result;
+        }
+        else {
+          return std::unique_ptr<PGresult, PGresultDeleter>{nullptr};
+        }
+      }
+      Bmicrosleep(5, 0);
+    }
+    return std::unique_ptr<PGresult, PGresultDeleter>{nullptr};
+  };
+  
+  auto result = do_query();
+  if (!result && try_reconnect_ && !transaction_) {
+    PQreset(db_handle_);
+    if (PQstatus(db_handle_) == CONNECTION_OK) {
+      std::unique_ptr<PGresult, PGresultDeleter> reset_result{PQexec(db_handle_,
+        "SET datestyle TO 'ISO, YMD';"
+        "SET cursor_tuple_fraction=1;"
+        "SET standard_conforming_strings=on;"
+        "SET client_min_messages TO WARNING;")};
+      if (PQresultStatus(reset_result.get()) == PGRES_COMMAND_OK) {
+        result = do_query();      
+      }
+    }
+  } 
+  if (result) {
+    Dmsg1(500, "TryQuery suceeded with query %s", query);
+    Dmsg0(500, "We have a result\n");
+  }
+  else {
+    Dmsg1(500, "TryQuery failed with query %s", query);
+    Dmsg1(50, "Result status fatal: %s, %s\n", query, sql_strerror());
+  }
+  return result;
+}
+
 /**
  * Submit a general SQL command (cmd), and for each row returned,
  * the ResultHandler is called with the ctx.
@@ -538,7 +588,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
   Dmsg1(500, "SqlQueryWithHandler starts with '%s'\n", query);
 
   DbLocker _{this};
-  if (!SqlQueryWithoutHandler(query, QF_STORE_RESULT)) {
+  if (!SqlQueryWithoutHandler(query)) {
     Mmsg(errmsg, T_("Query failed: %s: ERR=%s\n"), query, sql_strerror());
     Dmsg0(500, "SqlQueryWithHandler failed\n");
     return false;
@@ -568,99 +618,35 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
  * Returns:  true  on success
  *           false on failure
  */
-bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query, int)
+bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query)
 {
-  int i;
-  bool retry = true;
-  bool retval = false;
-
-  AssertOwnership();
-  Dmsg1(500, "SqlQueryWithoutHandler starts with '%s'\n", query);
-
-  // We are starting a new query. reset everything.
-retry_query:
-  num_rows_ = -1;
-  row_number_ = -1;
-  field_number_ = -1;
-  fields_fetched_ = false;
-
-  if (result_) {
-    PQclear(result_); /* hmm, someone forgot to free?? */
-    result_ = NULL;
+  if (auto result = TryQuery(query)) {
+    PQclear(result_);
+    result_ = result.release();
+    field_number_ = -1;
+    fields_fetched_ = false;
+    num_fields_ = (int)PQnfields(result_);
+    Dmsg1(500, "We have %d fields\n", num_fields_);
+    num_rows_ = PQntuples(result_);
+    Dmsg1(500, "We have %d rows\n", num_rows_);
+    row_number_ = 0; /* we can start to fetch something */
+    status_ = 0;     /* succeed */
+    return true;
   }
-
-  for (i = 0; i < 10; i++) {
-    result_ = PQexec(db_handle_, query);
-    if (result_) { break; }
-    Bmicrosleep(5, 0);
+  status_ = 1; /* failure */
+  return false;
+}
+bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query,
+                                                SqlDiscardResult)
+{
+  if (bool(TryQuery(query))) {
+    status_ = 0; /* succeed */
+    return true;
   }
-
-  status_ = PQresultStatus(result_);
-  switch (status_) {
-    case PGRES_TUPLES_OK:
-    case PGRES_COMMAND_OK:
-      Dmsg0(500, "we have a result\n");
-
-      num_fields_ = (int)PQnfields(result_);
-      Dmsg1(500, "we have %d fields\n", num_fields_);
-
-      num_rows_ = PQntuples(result_);
-      Dmsg1(500, "we have %d rows\n", num_rows_);
-
-      row_number_ = 0; /* we can start to fetch something */
-      status_ = 0;     /* succeed */
-      retval = true;
-      break;
-    case PGRES_FATAL_ERROR:
-      Dmsg1(50, "Result status fatal: %s, %s\n", query, sql_strerror());
-      if (exit_on_fatal_) {
-        Emsg1(M_ERROR_TERM, 0, "Fatal database error: %s\n", sql_strerror());
-      }
-
-      if (try_reconnect_ && !transaction_) {
-        /* Only try reconnecting when no transaction is pending.
-         * Reconnecting within a transaction will lead to an aborted
-         * transaction anyway so we better follow our old error path. */
-        if (retry) {
-          PQreset(db_handle_);
-
-          if (PQstatus(db_handle_) == CONNECTION_OK) {
-            // Reset the connection settings.
-            // prevent leak
-            if (result_) { PQclear(result_); }
-            result_ = PQexec(db_handle_,
-                             "SET datestyle TO 'ISO, YMD';"
-                             "SET cursor_tuple_fraction=1;"
-                             "SET standard_conforming_strings=on;"
-                             "SET client_min_messages TO WARNING;");
-
-            switch (PQresultStatus(result_)) {
-              case PGRES_COMMAND_OK:
-                retry = false;
-                goto retry_query;
-              default:
-                break;
-            }
-          }
-        }
-      }
-      goto bail_out;
-    default:
-      Dmsg1(50, "Result status failed: %s\n", query);
-      goto bail_out;
+  else {
+    status_ = 1; /* failure */
+    return false;
   }
-
-  Dmsg0(500, "SqlQueryWithoutHandler finishing\n");
-  goto ok_out;
-
-bail_out:
-  Dmsg0(500, "we failed\n");
-  PQclear(result_);
-  result_ = NULL;
-  status_ = 1; /* failed */
-
-ok_out:
-  return retval;
 }
 
 void BareosDbPostgresql::SqlFreeResult(void)
