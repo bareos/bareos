@@ -31,118 +31,14 @@
 #include <initguid.h>  // ask virtdisk.h to include guid definitions
 #include <virtdisk.h>
 #include <zlib.h>
+#include <optional>
 
-DISK_GEOMETRY hardcoded_geo = {.Cylinders = {},
-                               .MediaType = {},
-                               .TracksPerCylinder = 255,
-                               .SectorsPerTrack = 63,
-                               .BytesPerSector = 512};
+#include "parser.h"
+#include "partitioning.h"
 
-std::uint32_t ReadHeader(std::istream& stream)
-{
-  file_header header;
-  header.read(stream);
+#include <fmt/format.h>
+#include <fmt/xchar.h>
 
-  assert(header.version == file_header::current_version);
-
-  return header.disk_count;
-}
-
-struct disk_info {
-  std::uint64_t disk_size;
-  std::uint32_t extent_count;
-};
-
-disk_info ReadDiskHeader(std::istream& stream)
-{
-  disk_header header;
-  header.read(stream);
-
-  std::uint64_t disk_size = header.disk_size;
-
-  return {disk_size, header.extent_count};
-}
-
-partition_layout ReadDiskPartTable(std::istream& stream)
-{
-  partition_layout layout;
-
-  fprintf(stderr, "read part header ... \n");
-  part_table_header header;
-  header.read(stream);
-  fprintf(stderr, "read part header ... done\n");
-
-  switch (header.part_table_type) {
-    case part_type::Raw: {
-      layout.info = partition_info_raw{};
-    } break;
-    case part_type::Mbr: {
-      partition_info_mbr mbr{.CheckSum = header.Datum0,
-                             .Signature = (uint32_t)header.Datum1};
-      memcpy(mbr.bootstrap, header.Data2, sizeof(header.Data2));
-      layout.info = mbr;
-    } break;
-    case part_type::Gpt: {
-      partition_info_gpt gpt{
-          .DiskId = std::bit_cast<guid>(header.Data),
-          .StartingUsableOffset = header.Datum1,
-          .UsableLength = header.Datum2,
-          .MaxPartitionCount = header.Datum0,
-      };
-
-      memcpy(gpt.bootstrap, header.Data2, sizeof(header.Data2));
-      layout.info = gpt;
-
-    } break;
-  }
-
-  fprintf(stderr, "found %u partitions\n", header.partition_count);
-
-  layout.partition_infos.resize(header.partition_count);
-
-  for (auto& info : layout.partition_infos) {
-    fprintf(stderr, "read entry ...\n");
-    part_table_entry entry;
-    entry.read(stream);
-    fprintf(stderr, "read entry ... done\n");
-
-    info.PartitionStyle = (PARTITION_STYLE)entry.partition_style;
-    info.StartingOffset.QuadPart = entry.partition_offset;
-    info.PartitionLength.QuadPart = entry.partition_length;
-    info.PartitionNumber = entry.partition_number;
-
-    switch (entry.partition_style) {
-      case PARTITION_STYLE_MBR: {
-        fprintf(stderr, "read mbr ...\n");
-        part_table_entry_mbr_data data;
-        data.read(stream);
-        fprintf(stderr, "read mbr ... done\n");
-
-        info.Mbr.PartitionType = data.partition_type;
-        info.Mbr.BootIndicator = data.bootable ? TRUE : FALSE;
-        info.Mbr.RecognizedPartition = data.recognized ? TRUE : FALSE;
-        info.Mbr.HiddenSectors = data.num_hidden_sectors;
-        info.Mbr.PartitionId = from_disk_format(data.partition_id);
-      } break;
-      case PARTITION_STYLE_GPT: {
-        fprintf(stderr, "read gpt ...\n");
-        part_table_entry_gpt_data data;
-        data.read(stream);
-        fprintf(stderr, "read gpt ... done\n");
-
-        fprintf(stderr, "gpt name = '%.36ls'\n", data.name);
-
-        info.Gpt.PartitionType = from_disk_format(data.partition_type);
-        info.Gpt.PartitionId = from_disk_format(data.partition_id);
-        info.Gpt.Attributes = data.attributes;
-        static_assert(sizeof(data.name) == sizeof(info.Gpt.Name));
-        memcpy(info.Gpt.Name, data.name, sizeof(data.name));
-      } break;
-    }
-  }
-
-  return layout;
-}
 
 void WriteOverlapped(HANDLE hndl,
                      std::size_t offset,
@@ -205,570 +101,238 @@ void write_buffer(HANDLE output,
   }
 }
 
-#pragma pack(push, 1)
-struct gpt_header {
-  char signature[8] = {'E', 'F', 'I', ' ', 'P', 'A', 'R', 'T'};
-  uint32_t revision = 1 << 16;
-  uint32_t header_size = sizeof(gpt_header);
-  uint32_t crc32_sum = 0;
-  uint32_t reserved_0 = 0;
+class HandleOutput : public Output {
+ public:
+  HandleOutput(HANDLE hndl, std::size_t size) : hndl_{hndl}, size_{size} {}
 
-  uint64_t lba_location;
-  uint64_t backup_lba_location;
-  uint64_t first_usable_lba;
-  uint64_t last_usable_lba;
-
-  GUID disk_guid;
-
-  uint64_t table_lba_location;
-
-  uint32_t partition_count;
-  uint32_t entry_size;
-  uint32_t table_crc32_sum;
-};
-#pragma pack(pop)
-
-static_assert(sizeof(gpt_header) == 92);
-
-struct gpt_entry {
-  GUID partition_type;
-  GUID id;
-  uint64_t start_lba;
-  uint64_t end_lba;  // inclusive!
-  uint64_t attributes;
-  wchar_t name[36];
-};
-
-static_assert(sizeof(gpt_entry) == 128);
-
-struct ccitt_crc {
-  ccitt_crc& update(std::span<const char> data)
+  void append(std::span<const char> bytes) override
   {
-    crc = crc32_z(crc, reinterpret_cast<const unsigned char*>(data.data()),
-                  data.size());
-    return *this;
+    if (current_offset_ + bytes.size() > size_) {
+      throw std::logic_error{"can not write past the end of the file"};
+    }
+
+    write_buffer(hndl_, current_offset_, bytes);
+  }
+  void skip_forwards(std::size_t offset) override
+  {
+    if (offset < current_offset_) {
+      throw std::logic_error{
+          fmt::format("Trying to skip to offset {}, when already at offset {}",
+                      offset, current_offset_)};
+    }
+
+    if (offset > size_) {
+      throw std::logic_error{"can not seek past the end of the file"};
+    }
+
+    current_offset_ = offset;
   }
 
-  std::uint32_t get() const { return crc; }
+  std::size_t current_offset() override { return current_offset_; }
 
  private:
-  std::uint32_t crc = 0;
+  HANDLE hndl_;
+  std::size_t current_offset_ = 0;
+  std::size_t size_ = 0;
 };
 
+class OutputHandleGenerator {
+ public:
+  virtual HANDLE Create(disk_info info, disk_geometry geo) = 0;
+  virtual void Close(HANDLE hndl) = 0;
 
-template <typename T> std::span<const char> as_span(const T& val)
-{
-  return {reinterpret_cast<const char*>(&val), sizeof(T)};
-}
+  virtual ~OutputHandleGenerator() {}
+};
 
-template <typename T> std::span<const char> byte_span(const std::vector<T>& val)
-{
-  std::span<const char> result{reinterpret_cast<const char*>(val.data()),
-                               sizeof(T) * val.size()};
-
-  fprintf(stderr, "first bytes: %02X %02X %02X %02X %02X %02X\n",
-          (unsigned char)result[0], (unsigned char)result[1],
-          (unsigned char)result[2], (unsigned char)result[3],
-          (unsigned char)result[4], (unsigned char)result[5]);
-  return result;
-}
-
-gpt_header MakeGptHeader(const partition_info_gpt& info,
-                         ccitt_crc table_crc,
-                         uint64_t disk_size)
-{
-  gpt_header header;
-
-  header.lba_location = 1;
-  std::uint64_t lba_count = disk_size / 512;
-  header.backup_lba_location = lba_count - 1;
-
-  GUID DiskId = from_disk_format(info.DiskId);
+class RawFileGenerator : public OutputHandleGenerator {
+ public:
+  HANDLE Create(disk_info info, disk_geometry) override
   {
-    wchar_t guid_storage[64] = {};
+    auto disk_path = std::format(L"disk-{}.raw", ++disk_idx_);
 
-    StringFromGUID2(DiskId, guid_storage, sizeof(guid_storage));
-    fprintf(stderr, "disk id: %ls\n", guid_storage);
+    HANDLE output
+        = CreateFileW(disk_path.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
+                      CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (output == INVALID_HANDLE_VALUE) {
+      throw std::runtime_error{fmt::format(
+          "could not open disk-{}.raw: Err={}\n", disk_idx_, GetLastError())};
+    }
+
+    // TODO: set file size
+    (void)info;
+
+    return output;
   }
+  void Close(HANDLE hndl) override { CloseHandle(hndl); }
 
-  fprintf(stderr, "disk size = %llu, lbas = %llu, loc = %llx\n", disk_size,
-          lba_count, header.backup_lba_location);
+ private:
+  std::size_t disk_idx_ = 0;
+};
 
-  fprintf(stderr, "usable start = %llu, usable length = %llu\n",
-          info.StartingUsableOffset, info.UsableLength);
-  header.first_usable_lba = info.StartingUsableOffset / 512;
-  header.last_usable_lba
-      = header.first_usable_lba + info.UsableLength / 512 - 1;
-
-  header.disk_guid = DiskId;
-  header.table_lba_location = 2;
-
-  header.partition_count = info.MaxPartitionCount;
-  header.entry_size = sizeof(gpt_entry);
-  header.table_crc32_sum = table_crc.get();
-
-  header.crc32_sum = ccitt_crc{}.update(as_span(header)).get();
-
-  return header;
-}
-
-gpt_header MakeBackupGptHeader(const partition_info_gpt& info,
-                               ccitt_crc table_crc,
-                               uint64_t this_lba,
-                               uint64_t other_lba,
-                               uint64_t table_lba)
-{
-  gpt_header header;
-
-  header.lba_location = this_lba;
-  header.backup_lba_location = other_lba;
-
-  fprintf(stderr, "usable start = %llu, usable length = %llu\n",
-          info.StartingUsableOffset, info.UsableLength);
-  header.first_usable_lba = info.StartingUsableOffset / 512;
-  header.last_usable_lba
-      = header.first_usable_lba + info.UsableLength / 512 - 1;
-
-  header.disk_guid = from_disk_format(info.DiskId);
-  header.table_lba_location = table_lba;
-
-  header.partition_count = info.MaxPartitionCount;
-  header.entry_size = sizeof(gpt_entry);
-  header.table_crc32_sum = table_crc.get();
-
-  header.crc32_sum = ccitt_crc{}.update(as_span(header)).get();
-
-  return header;
-}
-
-#pragma pack(push, 1)
-struct chs {
-  // chs = cylinder, head, sector
-  uint8_t data[3]{};
-
-
-  struct for_mbr {};
-  struct for_gpt {};
-
-  chs() = default;
-
-  chs(std::uint16_t cylinder,  // 10 bits
-      std::uint8_t head,       // 8 bits
-      std::uint8_t sector      // 6 bits
-  )
+class VhdxGenerator : public OutputHandleGenerator {
+ public:
+  HANDLE Create(disk_info info, disk_geometry geo) override
   {
-    data[0] = head;
-    data[1] = sector;
-    data[1] |= ((cylinder >> 8) & 0b11) << 6;
-    data[2] = (cylinder & 0b11111111);
-  }
-  chs(for_mbr,
-      std::uint64_t cylinder,  // 10 bits
-      std::uint8_t head,       // 8 bits
-      std::uint8_t sector      // 6 bits
-      )
-      : chs(cylinder >= (1 << 10) ? (1 << 10) - 1 : cylinder, head, sector)
-  {
-  }
-  chs(for_gpt,
-      std::uint64_t cylinder,  // 10 bits
-      std::uint8_t head,       // 8 bits
-      std::uint8_t sector      // 6 bits
-      )
-      : chs(cylinder >= (1 << 10) ? (cylinder & ((1 << 10) - 1)) : cylinder,
-            head,
-            sector)
-  {
-  }
+    auto disk_path = std::format(L"disk-{}.vhdx", ++disk_idx_);
 
-  static chs from_lba(std::uint64_t lba, bool mbr, DISK_GEOMETRY geo)
-  {
-    auto make = [mbr](auto c, auto h, auto s) {
-      if (mbr) {
-        return chs(for_mbr{}, c, h, s);
-      } else {
-        return chs(for_gpt{}, c, h, s);
-      }
+    VIRTUAL_STORAGE_TYPE vst
+        = {.DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
+           .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT};
+
+    CREATE_VIRTUAL_DISK_PARAMETERS params = {
+      .Version = CREATE_VIRTUAL_DISK_VERSION_2,
+      .Version2 = {
+        .UniqueId = {},
+        .MaximumSize = info.disk_size,
+        .BlockSizeInBytes = {},
+        .SectorSizeInBytes = gsl::narrow<ULONG>(geo.bytes_per_sector),
+        .PhysicalSectorSizeInBytes = {},
+        .ParentPath = nullptr,
+        .SourcePath = nullptr,
+      },
     };
 
-    // lba = ((cylinder * geo.TracksPerCylinder) + head) * geo.SectorsPerTrack
-    //             + (sector - 1)
+    fprintf(stderr, "creating disk\n");
+    HANDLE output = INVALID_HANDLE_VALUE;
 
-    std::uint64_t sector = lba % geo.SectorsPerTrack + 1;
-    auto rest = lba / geo.SectorsPerTrack;
+    DWORD hres = CreateVirtualDisk(
+        &vst, disk_path.c_str(), VIRTUAL_DISK_ACCESS_NONE, NULL,
+        CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &output);
 
-    std::uint64_t head = rest % geo.TracksPerCylinder;
-    std::uint64_t cylinder = rest / geo.TracksPerCylinder;
-
-    // valid chs is:
-    // 0 <= cylinders <  Cylinders
-    // 0 <=   head    <  TracksPerCylinder (255)
-    // 0 <   sector   <= SectorsPerTrack (63)
-
-    if (sector > geo.SectorsPerTrack || head >= geo.TracksPerCylinder
-        || cylinder >= (std::uint64_t)geo.Cylinders.QuadPart) {
-      // offset is too large, so just return the largest one
-
-      fprintf(stderr, "lba %llu => (%llu, %llu, %llu)\n", lba,
-              (long long unsigned)(geo.Cylinders.QuadPart - 1),
-              (long long unsigned)(geo.TracksPerCylinder - 1),
-              (long long unsigned)(geo.SectorsPerTrack));
-
-      return make(geo.Cylinders.QuadPart - 1,
-                  (std::uint8_t)(geo.TracksPerCylinder - 1),
-                  (std::uint8_t)(geo.SectorsPerTrack));
+    if (hres != ERROR_SUCCESS) {
+      throw std::runtime_error{fmt::format(
+          "CreateVirtualDisk(disk-{}.vhdx) returned {}", disk_idx_, hres)};
     }
 
-    fprintf(stderr, "lba %llu => (%llu, %llu, %llu)\n", lba,
-            (long long unsigned)(cylinder), (long long unsigned)(head),
-            (long long unsigned)(sector));
-    return make(cylinder, (std::uint8_t)head, (std::uint8_t)sector);
-  }
-};
+    ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+        = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+    auto attach_res = AttachVirtualDisk(output, NULL,
+                                        ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST,
+                                        0, &attach_params, 0);
 
-static_assert(sizeof(chs) == 3);
-
-struct mbr_entry {
-  enum attrs : std::uint8_t
-  {
-    None = 0,
-    Bootable = (1 << 7),
-  };
-
-  attrs attributes;
-  chs start_chs;
-  uint8_t os_type;
-  chs end_chs;
-  uint32_t start_lba;
-  uint32_t lba_count;
-};
-
-static_assert(sizeof(mbr_entry) == 16);
-
-struct mbr_table {
-  char bootstrap[446];
-  mbr_entry entries[4];
-  uint8_t check[2] = {0x55, 0xAA};
-};
-
-static_assert(sizeof(mbr_table) == 512);
-
-#pragma pack(pop)
-
-mbr_entry MakeMbrEntry(const PARTITION_INFORMATION_EX& info)
-{
-  if (info.PartitionStyle != PARTITION_STYLE_MBR) {
-    throw std::invalid_argument{
-        "cannot create mbr partition from non mbr partition"};
-  }
-
-  mbr_entry entry = {};
-
-  if (info.Mbr.PartitionType == PARTITION_ENTRY_UNUSED) { return entry; }
-
-  if (info.Mbr.BootIndicator) { entry.attributes = mbr_entry::attrs::Bootable; }
-
-  wchar_t guid_storage[64] = {};
-  StringFromGUID2(info.Mbr.PartitionId, guid_storage, sizeof(guid_storage));
-  fprintf(stderr, "mbr partition guid: %ls\n", guid_storage);
-
-  fprintf(stderr, "mbr partition (%llu, %llu)\n", info.StartingOffset.QuadPart,
-          info.PartitionLength.QuadPart);
-
-  entry.os_type = info.Mbr.PartitionType;
-  entry.start_lba = info.StartingOffset.QuadPart / 512;
-  entry.lba_count = info.PartitionLength.QuadPart / 512;
-  fprintf(stderr, "mbr lba (%llu, %llu)\n",
-          static_cast<long long unsigned>(entry.start_lba),
-          static_cast<long long unsigned>(entry.lba_count));
-  entry.start_chs = chs::from_lba(entry.start_lba, true, hardcoded_geo);
-  entry.end_chs = chs::from_lba(entry.start_lba + entry.lba_count - 1, true,
-                                hardcoded_geo);
-
-  return entry;
-}
-
-gpt_entry MakeGptEntry(const PARTITION_INFORMATION_EX& info)
-{
-  if (info.PartitionStyle != PARTITION_STYLE_GPT) {
-    throw std::invalid_argument{
-        "cannot create gpt partition from non gpt partition"};
-  }
-
-  gpt_entry entry;
-  entry.partition_type = info.Gpt.PartitionType;
-
-  wchar_t guid_storage[64] = {};
-
-  StringFromGUID2(info.Gpt.PartitionType, guid_storage, sizeof(guid_storage));
-  fprintf(stderr, "Partition-Type: %ls\n", guid_storage);
-  StringFromGUID2(entry.partition_type, guid_storage, sizeof(guid_storage));
-  fprintf(stderr, "Partition-Type: %ls\n", guid_storage);
-
-  entry.id = info.Gpt.PartitionId;
-  entry.start_lba = info.StartingOffset.QuadPart / 512;
-  entry.end_lba = entry.start_lba + info.PartitionLength.QuadPart / 512 - 1;
-  entry.attributes = info.Gpt.Attributes;
-  std::memcpy(entry.name, info.Gpt.Name, sizeof(entry.name));
-  return entry;
-}
-
-void WriteProtectionMBR(HANDLE output,
-                        std::uint64_t end_lba,
-                        std::span<const char> bootstrap)
-{
-  static constexpr uint8_t gpt_type = 0xEE;
-
-  mbr_entry gpt_entry = {
-      .attributes
-      = mbr_entry::attrs::None,  // if you dont understand gpt, dont boot this
-      .start_chs = chs::from_lba(1, false, hardcoded_geo),
-      .os_type = gpt_type,
-      .end_chs = chs::from_lba(end_lba, false, hardcoded_geo),
-      .start_lba = 1,
-
-
-  // windows does not comply with the spec here, so we do it the windows
-  // way by default
-#if COMPLY_WITH_SPEC
-      .lba_count = (std::uint32_t)std::min(
-          end_lba, (std::uint64_t)std::numeric_limits<std::uint32_t>::max()),
-#else
-      .lba_count = std::numeric_limits<std::uint32_t>::max(),
-#endif
-  };
-
-  mbr_table protective_mbr = {};
-  protective_mbr.entries[0] = gpt_entry;
-
-  assert(bootstrap.size() <= std::size(protective_mbr.bootstrap));
-  memcpy(protective_mbr.bootstrap, bootstrap.data(), bootstrap.size());
-
-  static_assert(sizeof(mbr_table) == 512);
-
-  write_buffer(output, 0, as_span(protective_mbr));
-}
-
-void WritePartitionTable(HANDLE output,
-                         const partition_layout& table,
-                         std::size_t disk_size)
-{
-  if (auto* Gpt = std::get_if<partition_info_gpt>(&table.info)) {
-    // we still have to add support for shared gpt/mbr partitions
-    std::size_t last_lba = disk_size / 512 - 1;
-    WriteProtectionMBR(output, last_lba, Gpt->bootstrap);
-
-    std::size_t table_offset = 1024;
-
-    ccitt_crc table_crc;
-
-    std::size_t partition_count = table.partition_infos.size();
-    std::size_t rounded_size = (partition_count + 3) / 4 * 4;
-    // we can only write in 512byte bursts, so make sure
-    // that we always write in multiple of 4 entries at once
-    std::vector<gpt_entry> entries;
-    entries.reserve(rounded_size);
-    for (auto& part : table.partition_infos) {
-      auto& entry = entries.emplace_back(MakeGptEntry(part));
-      table_crc.update(as_span(entry));
-    }
-
-    entries.resize(rounded_size);
-
-    auto table_size = sizeof(gpt_entry) * Gpt->MaxPartitionCount;
-    auto backup_table_offset = last_lba * 512 - table_size;
-
-    fprintf(stderr,
-            "last lba = %llu, backup gpt start = %llu, table size = %llu, "
-            "backup table offset = %llu\n",
-            last_lba, last_lba * 512, table_size, backup_table_offset);
-    write_buffer(output, table_offset, byte_span(entries));
-    write_buffer(output, backup_table_offset, byte_span(entries));
-    table_offset += sizeof(gpt_entry) * partition_count;
-
-    for (size_t i = 0;
-         i < Gpt->MaxPartitionCount - table.partition_infos.size(); ++i) {
-      gpt_entry entry;
-      memset(&entry, 0, sizeof(entry));
-      table_crc.update(as_span(entry));
-      // write_buffer(output, table_offset, as_span(entry));
-      table_offset += sizeof(entry);
-    }
-
-    auto header = MakeBackupGptHeader(*Gpt, table_crc, 1, last_lba, 2);
-
-    char sector[512] = {};
-
-    std::memcpy(sector, &header, sizeof(header));
-
-    write_buffer(output, 512, as_span(sector));
-
-    auto backup_header = MakeBackupGptHeader(*Gpt, table_crc, last_lba, 1,
-                                             backup_table_offset / 512);
-    std::memcpy(sector, &backup_header, sizeof(backup_header));
-
-    write_buffer(output, last_lba * 512, as_span(sector));
-  } else if (auto* Mbr = std::get_if<partition_info_mbr>(&table.info)) {
-    mbr_table GeneratedMbr = {};
-
-    static_assert(sizeof(GeneratedMbr.bootstrap) == sizeof(Mbr->bootstrap));
-    memcpy(GeneratedMbr.bootstrap, Mbr->bootstrap, sizeof(Mbr->bootstrap));
-
-    if (table.partition_infos.size() > 4) {
+    if (attach_res != ERROR_SUCCESS) {
+      CloseHandle(output);
       throw std::runtime_error(
-          "cannot restore mbr with more than 4 partitions");
+          fmt::format("AttachVirtualDisk(disk-{}.vhdx) returned {}\n",
+                      disk_idx_, attach_res));
     }
 
-    for (std::size_t i = 0; i < table.partition_infos.size(); ++i) {
-      GeneratedMbr.entries[i] = MakeMbrEntry(table.partition_infos[i]);
-    }
-
-    write_buffer(output, 0, as_span(GeneratedMbr));
-  } else {
-    // todo
-    fprintf(stderr, "cant restore raw yet\n");
+    return output;
   }
-}
+  void Close(HANDLE hndl) override
+  {
+    DetachVirtualDisk(hndl, DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
+    CloseHandle(hndl);
+  }
 
-void copy_output(std::istream& stream,
-                 std::size_t offset,
-                 std::size_t length,
-                 HANDLE output)
-{
-#if !defined(DO_DRY)
-  std::vector<char> buffer;
-  buffer.resize(4 * 1024 * 1024);
+ private:
+  std::size_t disk_idx_ = 0;
+};
 
-  std::size_t bytes_to_read = length;
+class RestoreToHandles : public GenericHandler {
+ public:
+  RestoreToHandles(OutputHandleGenerator* Generator) : Generator_{Generator} {}
 
-  while (bytes_to_read > 0) {
-    auto bytes_this_call = std::min(bytes_to_read, buffer.size());
-
-    stream.read(buffer.data(), bytes_this_call);
-
-    auto read_this_call = stream.gcount();
-
-    if (read_this_call != (std::streamsize)bytes_this_call) {
-      fprintf(stderr, "read %llu/%llu, got %llu\n", bytes_this_call,
-              bytes_to_read, read_this_call);
-
-      assert(read_this_call == (std::streamsize)bytes_this_call);
+  void BeginRestore(std::size_t num_disks [[maybe_unused]]) override {}
+  void EndRestore() override {}
+  void BeginDisk(disk_info info) override
+  {
+    if (disk_) {
+      throw std::logic_error{"cannot begin disk after one was created"};
     }
 
-    write_buffer(output, offset + (length - bytes_to_read),
-                 {std::begin(buffer), bytes_this_call});
-
-    bytes_to_read -= bytes_this_call;
+    auto geo = geometry_for_size(info.disk_size);
+    HANDLE hndl = Generator_->Create(info, geo);
+    disk_.emplace(hndl, geo, info.disk_size);
   }
-#endif
-}
+  void EndDisk() override
+  {
+    HANDLE hndl = disk_->hndl;
+    disk_.reset();
+    Generator_->Close(hndl);
+  }
 
-void ReadExtent(std::istream& stream, HANDLE output)
-{
-  extent_header header;
-  header.read(stream);
+  void BeginMbrTable(const partition_info_mbr& mbr) override
+  {
+    disk().BeginMbrTable(mbr);
+  }
 
-  fprintf(stderr, "Extent: Offset=%llu Length=%llu\n", header.offset,
-          header.length);
+  void BeginGptTable(const partition_info_gpt& gpt) override
+  {
+    disk().BeginGptTable(gpt);
+  }
 
-  copy_output(stream, header.offset, header.length, output);
-}
+  void BeginRawTable(const partition_info_raw& raw) override
+  {
+    disk().BeginRawTable(raw);
+  }
+
+  void MbrEntry(const part_table_entry& entry,
+                const part_table_entry_mbr_data& data) override
+  {
+    disk().MbrEntry(entry, data);
+  }
+
+  void GptEntry(const part_table_entry& entry,
+                const part_table_entry_gpt_data& data) override
+  {
+    disk().GptEntry(entry, data);
+  }
+
+  void EndPartTable() override { disk().EndPartTable(); }
+
+  void BeginExtent(extent_header header) override
+  {
+    disk().BeginExtent(header);
+  }
+  void ExtentData(std::span<const char> data) override
+  {
+    disk().ExtentData(data);
+  }
+  void EndExtent() override { disk().EndExtent(); }
+
+  ~RestoreToHandles()
+  {
+    if (disk_) {
+      HANDLE hndl = disk_->hndl;
+      disk_.reset();
+      Generator_->Close(hndl);
+    }
+  }
+
+ private:
+  disk::Parser& disk()
+  {
+    if (!disk_) {
+      throw std::logic_error{"cannot access disk if no disk is started"};
+    }
+    return disk_->parser;
+  }
+
+  OutputHandleGenerator* Generator_ = nullptr;
+  struct open_disk {
+    HANDLE hndl;
+    HandleOutput output;
+    disk::Parser parser;
+
+    open_disk(HANDLE hndl_, disk_geometry geo, std::size_t disk_size)
+        : hndl{hndl_}, output{hndl_, disk_size}, parser{geo, disk_size, &output}
+    {
+    }
+  };
+  std::optional<open_disk> disk_;
+};
 
 void restore_data(std::istream& stream, bool raw_file)
 {
-  fprintf(stderr, "reading header\n");
-  auto disk_count = ReadHeader(stream);
-
-  fprintf(stderr, "disk count = %lu\n", disk_count);
-  for (std::size_t i = 0; i < disk_count; ++i) {
-    fprintf(stderr, "reading disk header\n");
-    auto disk_header = ReadDiskHeader(stream);
-    fprintf(stderr, "reading disk header ... done\n");
-
-
-    std::size_t bytes_per_cylinder
-        = 1 * std::size_t{hardcoded_geo.BytesPerSector}
-          * std::size_t{hardcoded_geo.SectorsPerTrack}
-          * std::size_t{hardcoded_geo.TracksPerCylinder};
-
-    hardcoded_geo.Cylinders.QuadPart
-        = disk_header.disk_size / bytes_per_cylinder;
-
-    fprintf(stderr, "%llu / %llu = %llu cylinders\n",
-            static_cast<long long unsigned>(disk_header.disk_size),
-            static_cast<long long unsigned>(bytes_per_cylinder),
-            static_cast<long long unsigned>(hardcoded_geo.Cylinders.QuadPart));
-
-    HANDLE output = INVALID_HANDLE_VALUE;
-
+  auto output_generator = [&]() -> std::unique_ptr<OutputHandleGenerator> {
     if (raw_file) {
-      auto disk_path = std::format(L"disk-{}.raw", i);
-
-      output = CreateFileW(disk_path.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE,
-                           NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-
-      if (output == INVALID_HANDLE_VALUE) {
-        fprintf(stderr, "could not open %ls: Err=%d\n", disk_path.c_str(),
-                GetLastError());
-
-        return;
-      }
+      return std::make_unique<RawFileGenerator>();
     } else {
-      auto disk_path = std::format(L"disk-{}.vhdx", i);
-
-      VIRTUAL_STORAGE_TYPE vst
-          = {.DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
-             .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT};
-
-      CREATE_VIRTUAL_DISK_PARAMETERS params = {
-        .Version = CREATE_VIRTUAL_DISK_VERSION_2,
-        .Version2 = {
-          .UniqueId = {},
-          .MaximumSize = disk_header.disk_size,
-          .BlockSizeInBytes = {},
-          .SectorSizeInBytes = {},
-          .PhysicalSectorSizeInBytes = {},
-          .ParentPath = nullptr,
-          .SourcePath = nullptr,
-        },
-      };
-
-      fprintf(stderr, "creating disk\n");
-      DWORD hres = CreateVirtualDisk(
-          &vst, disk_path.c_str(), VIRTUAL_DISK_ACCESS_NONE, NULL,
-          CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &output);
-
-      if (hres != ERROR_SUCCESS) {
-        fprintf(stderr, "CreateVirtualDisk(%ls) returned %d\n",
-                disk_path.c_str(), hres);
-        return;
-      }
-
-      ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
-          = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
-      auto attach_res = AttachVirtualDisk(
-          output, NULL, ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST, 0,
-          &attach_params, 0);
-
-      if (attach_res != ERROR_SUCCESS) {
-        fprintf(stderr, "AttachVirtualDisk(%ls) returned %d\n",
-                disk_path.c_str(), attach_res);
-        return;
-      }
+      return std::make_unique<VhdxGenerator>();
     }
-
-
-    fprintf(stderr, "reading part table ...\n");
-    auto part_table = ReadDiskPartTable(stream);
-    fprintf(stderr, "reading part table ... done\n");
-    for (size_t extent = 0; extent < disk_header.extent_count; ++extent) {
-      fprintf(stderr, "reading extent ...\n");
-      ReadExtent(stream, output);
-      fprintf(stderr, "reading extent ... done\n");
-    }
-
-    WritePartitionTable(output, part_table, disk_header.disk_size);
-
-    CloseHandle(output);
-  }
+  }();
+  RestoreToHandles alg{output_generator.get()};
+  parse_file_format(stream, &alg);
 }
