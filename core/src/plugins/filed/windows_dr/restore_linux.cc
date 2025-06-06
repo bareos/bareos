@@ -962,7 +962,11 @@ class RestoreToFiles : public GenericHandler {
 
     auto& fd = disk_files[current_idx];
 
-    ftruncate(fd.get(), disk_size);
+    if (ftruncate(fd.get(), disk_size) < 0) {
+      throw std::runtime_error{
+          fmt::format("could not expand disk: Err={}", strerror(errno))
+              };
+    }
 
     auto& res = current_disk.emplace(fd.get(), geometry, disk_size);
     return res.disk;
@@ -993,32 +997,6 @@ class RestoreToFiles : public GenericHandler {
   std::vector<auto_fd> disk_files;
   std::optional<writing_disk> current_disk;
 };
-
-#if 0
-struct RestoreToFiles : RestoreStrategy {
-  void BeginRestore(std::size_t num_disks) override { (void) num_disks; }
-  void EndRestore() override {}
-  void BeginDisk(disk_info info) override { (void) info; }
-  void EndDisk() override {}
-
-  void BeginMbrTable(const partition_info_mbr& mbr) override { }
-  void BeginGptTable(const partition_info_gpt& gpt) override {}
-  void BeginRawTable(const partition_info_raw& gpt) override {}
-  void MbrEntry(const part_table_entry& entry,
-                const part_table_entry_mbr_data& data) override
-  {
-  }
-  void GptEntry(const part_table_entry& entry,
-                const part_table_entry_gpt_data& data) override
-  {
-  }
-  void EndPartTable() override {}
-
-  void BeginExtent(extent_header header) override {}
-  void ExtentData(std::span<const char> data) override {}
-  void EndExtent() override {}
-};
-#endif
 
 void restore_data(std::istream& input, bool use_stdout)
 {
