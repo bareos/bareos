@@ -608,16 +608,16 @@ class Parser {
   }
 
  private:
-  disk_geometry geometry;
-  std::size_t disk_size;
-  Output* output;
+  disk_geometry geometry = {};
+  std::size_t disk_size = 0;
+  Output* output = nullptr;
 
   partition_table::Parser part_table;
 
-  std::size_t current_extent_end;
+  std::size_t current_extent_end = 0;
 
-  std::size_t footer_offset;
-  std::vector<char> footer;
+  std::size_t footer_offset = 0;
+  std::vector<char> footer = {};
 };
 };  // namespace disk
 
