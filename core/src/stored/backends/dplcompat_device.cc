@@ -143,15 +143,15 @@ tl::expected<utl::options*, std::string> convert(
 
   try {
     converter(target, value);
-  } catch (std::invalid_argument& e) {
+  } catch (const std::invalid_argument& e) {
     return tl::unexpected(
         fmt::format(FMT_STRING("invalid argument '{}' for option '{}': {}\n"),
                     value, key, e.what()));
-  } catch (std::out_of_range& e) {
+  } catch (const std::out_of_range& e) {
     return tl::unexpected(fmt::format(
         FMT_STRING("value '{}' for option '{}' is out of range: {}\n"), value,
         key, e.what()));
-  } catch (gsl::narrowing_error& e) {
+  } catch (const gsl::narrowing_error& e) {
     return tl::unexpected(fmt::format(
         FMT_STRING("value '{}' for option '{}' would be truncated: {}\n"),
         value, key, e.what()));
