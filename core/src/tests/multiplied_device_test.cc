@@ -53,7 +53,7 @@ static DeviceResource* GetDeviceResourceByName(ConfigurationParser& config,
 
 static DeviceResource* GetMultipliedDeviceResource(ConfigurationParser& config)
 {
-  const char* name = "MultipliedDeviceResource";
+  const char* name = "$MultipliedDeviceResource";
 
   BareosResource* p = config.GetResWithName(R_DEVICE, name, false);
   DeviceResource* d = dynamic_cast<DeviceResource*>(p);
@@ -98,11 +98,11 @@ TEST(sd, MultipliedDeviceTest_ImplicitAutochangerCreation)
   ASSERT_TRUE(test_config->ParseConfig());
 
   DeviceResource* explicit_device
-      = GetDeviceResourceByName(*test_config, "DeviceWithExplicitAutochanger");
+      = GetDeviceResourceByName(*test_config, "$DeviceWithExplicitAutochanger");
   ASSERT_TRUE(explicit_device);
   ASSERT_TRUE(explicit_device->changer_res);
   DeviceResource* implicit_device
-      = GetDeviceResourceByName(*test_config, "DeviceWithImplicitAutochanger");
+      = GetDeviceResourceByName(*test_config, "$DeviceWithImplicitAutochanger");
   ASSERT_TRUE(implicit_device);
   ASSERT_TRUE(implicit_device->changer_res);
 
@@ -135,7 +135,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_1(
   uint32_t count_devices = 0;
 
   DeviceResource* source_device_resource
-      = GetDeviceResourceByName(config, "MultipliedDeviceResource");
+      = GetDeviceResourceByName(config, "$MultipliedDeviceResource");
   if (!source_device_resource) { return 0; }
 
   /* find all matching multiplied-devices, this includes the source device */
@@ -190,7 +190,7 @@ static uint32_t CheckNamesOfConfiguredDeviceResources_2(
   uint32_t count_devices = 0;
 
   DeviceResource* source_device_resource
-      = GetDeviceResourceByName(config, "AnotherMultipliedDeviceResource");
+      = GetDeviceResourceByName(config, "$AnotherMultipliedDeviceResource");
   if (!source_device_resource) { return 0; }
 
   BareosResource* p = nullptr;
@@ -347,7 +347,7 @@ TEST(sd, MultipliedDeviceTest_CheckPointerReferenceOfCopiedDevice)
   ASSERT_TRUE(test_config->ParseConfig());
 
   BareosResource* p;
-  p = test_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource");
+  p = test_config->GetResWithName(R_DEVICE, "$MultipliedDeviceResource");
   ASSERT_TRUE(p);
   DeviceResource* original_device_resource = dynamic_cast<DeviceResource*>(p);
   p = test_config->GetResWithName(R_DEVICE, "MultipliedDeviceResource0001");
