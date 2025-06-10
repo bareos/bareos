@@ -75,7 +75,7 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
     if (DeviceResource* original_copy_device = device_resource->multiplied_device_resource) {
       if (original_copy_devices.find(original_copy_device) == original_copy_devices.end()) {
         DeviceResource* d = new DeviceResource(*original_copy_device);
-        temp_alist->append(d);    
+        temp_alist->append(d);
         original_copy_devices.insert(original_copy_device);
       }
     }

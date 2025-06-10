@@ -25,7 +25,12 @@
 
 const char* GetResourceName(const void* resource)
 {
-  return static_cast<const BareosResource*>(resource)->resource_name_;
+  const char* resource_name = static_cast<const BareosResource*>(resource)->resource_name_;
+  // This should only be the case for devices that where multiplied, i.e. count > 1 to avoid naming collision with its implicit autochanger.
+  if (resource_name[0] == '$') {
+    return resource_name + 1;
+  }
+  return resource_name;
 }
 
 BareosResource::BareosResource(const BareosResource& other)
