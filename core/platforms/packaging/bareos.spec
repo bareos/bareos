@@ -119,7 +119,7 @@ BuildRequires: gcc-toolset-14-gcc-c++
 %if 0%{?suse_version}
 BuildRequires: gcc13
 BuildRequires: gcc13-c++
-%define enable_grpc 0
+%define enable_grpc 1
 %endif
 
 %if 0%{?systemd_support}
