@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix problems with msvc 19.44 [PR #2287]
 - plugins: fix error_string construction [PR #2273]
 - dplcompat: fix unsupported size-suffixes on chunksize [PR #2240]
+- gRPC: add fixes to enable building on SUSE [PR #2250]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -145,6 +146,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2232]: https://github.com/bareos/bareos/pull/2232
 [PR #2240]: https://github.com/bareos/bareos/pull/2240
 [PR #2241]: https://github.com/bareos/bareos/pull/2241
+[PR #2250]: https://github.com/bareos/bareos/pull/2250
 [PR #2252]: https://github.com/bareos/bareos/pull/2252
 [PR #2256]: https://github.com/bareos/bareos/pull/2256
 [PR #2259]: https://github.com/bareos/bareos/pull/2259
