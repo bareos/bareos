@@ -673,9 +673,9 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
 }
 
 // Label a Volume
-static bool LabelCmd(JobControlRecord* jcr) { return DoLabel(jcr, false); }
+static bool LabelCmd(JobControlRecord* jcr) { DoLabel(jcr, false); return true; }
 
-static bool RelabelCmd(JobControlRecord* jcr) { return DoLabel(jcr, true); }
+static bool RelabelCmd(JobControlRecord* jcr) { DoLabel(jcr, true); return true; }
 
 /**
  * Read the tape label and determine if we can safely
