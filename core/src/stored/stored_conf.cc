@@ -486,6 +486,15 @@ static void MultiplyDevice(DeviceResource& original,
     auto it = std::find(devices.begin(), devices.end(), device);
     if (it == devices.end()) { devices.append(device); }
   }
+  // The original device name is prefixed with "$" in order to prevent a naming
+  // collision with the implicitly created autochanger. If both the original
+  // device and the implicit autochanger have the same name, both will be used
+  // if specified in a Director -> Storage resource. However, we only want the
+  // implicit autochanger to be used so we give the device a different name.
+  char* prefixed_resource_name
+      = strdup(("$" + std::string{original.resource_name_}).c_str());
+  free(original.resource_name_);
+  original.resource_name_ = prefixed_resource_name;
 }
 
 static void MultiplyConfiguredDevices(ConfigurationParser& config)
