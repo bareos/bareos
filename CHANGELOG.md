@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - postgresql: require non-ssl connection [PR #2272]
 - fix problems with msvc 19.44 [PR #2287]
 - plugins: fix error_string construction [PR #2273]
+- dplcompat: fix unsupported size-suffixes on chunksize [PR #2240]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -142,6 +143,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2222]: https://github.com/bareos/bareos/pull/2222
 [PR #2225]: https://github.com/bareos/bareos/pull/2225
 [PR #2232]: https://github.com/bareos/bareos/pull/2232
+[PR #2240]: https://github.com/bareos/bareos/pull/2240
 [PR #2241]: https://github.com/bareos/bareos/pull/2241
 [PR #2252]: https://github.com/bareos/bareos/pull/2252
 [PR #2256]: https://github.com/bareos/bareos/pull/2256
