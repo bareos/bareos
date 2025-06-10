@@ -693,10 +693,10 @@ SectionIn 1 2 3
   # do not package python3-fd for now
   # File "python3-fd.dll"
 
-  # Write dr-dumper to normal install dir for now
+  # Write barri to normal install dir for now
   SetOutPath "$INSTDIR"
   !cd "${CMAKE_BINARY_DIR}\bin"
-  File "dr-dumper.exe"
+  File "barri.exe"
 
 SectionEnd
 
@@ -2100,7 +2100,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bextract.exe"
   Delete "$INSTDIR\bscan.exe"
   Delete "$INSTDIR\bconsole.exe"
-  Delete "$INSTDIR\dr-dumper.exe"
+  Delete "$INSTDIR\barri.exe"
   Delete "$INSTDIR\bareos-config-deploy.bat"
 
   Delete "$INSTDIR\*bareos.dll"
