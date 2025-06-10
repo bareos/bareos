@@ -107,6 +107,7 @@ bareos_disable_warnings(
   -Wsign-compare
   -Wunused-parameter
   -Wdeprecated-non-prototype
+  -Wold-style-definition
   C_ONLY
   ADD_FOR_LTO
 )
