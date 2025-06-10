@@ -41,7 +41,7 @@ OS:
       IMAGE: "ubuntu22.04"
       BUILD_SCRIPT: CD/deb/build-ulc.sh
       FINISH_SCRIPT: CD/deb/finish-ulc.sh
-      CUSTOM_TEST_IMAGES: [ "Ubuntu-24.04", "Debian-12" ]
+      CUSTOM_TEST_IMAGES: [ "Ubuntu-24.04", "Debian-13" ]
       ARCH:
         - x86_64
         - aarch64
@@ -75,6 +75,11 @@ OS:
       ARCH:
       - x86_64
   Debian:
+    "13":
+      TYPE: deb
+      IMAGE: "debian13"
+      ARCH:
+        - x86_64
     "12":
       TYPE: deb
       IMAGE: "debian12"
