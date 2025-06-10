@@ -407,7 +407,7 @@ created for each of the NumVols specified in the Pool resource record.
 +------------------+-----------+-----------------------------------------+
 | VolStatus        | text      | | Status of media:                      |
 |                  |           | | Unlabeled, Full, Archive, Append,     |
-|                  |           |   Recycle, Read-Only, Disabled, Error,  |
+|                  |           | | Recycle, Read-Only, Disabled, Error,  |
 |                  |           |   Busy                                  |
 +------------------+-----------+-----------------------------------------+
 | Enabled          | smallint  | Whether or not Volume can be written    |
@@ -659,9 +659,10 @@ The **LocationLog** table contains a log of all Job output.
 +--------------+-----------+-----------------------------------------------+
 | LocationId   | integer   | Points to Location record                     |
 +--------------+-----------+-----------------------------------------------+
-| NewVolStatus | integer   | enum: Unlabeled, Full, Archive, Append,       |
-|              |           | Recycle, Purged, Read-only, Disabled, Error,  |
-|              |           | Busy, Used, Cleaning                          |
+| NewVolStatus | integer   | | enum:                                       |
+|              |           | | Unlabeled, Full, Archive, Append, Recycle   |
+|              |           | | Purged, Read-only, Disabled, Error, Busy,   |
+|              |           |   Used, Cleaning                              |
 +--------------+-----------+-----------------------------------------------+
 | Enabled      | tinyint   | Whether or not Volume is enabled              |
 +--------------+-----------+-----------------------------------------------+
