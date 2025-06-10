@@ -86,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace Bsnprintf() implementation and add format attributes [PR #1697]
 - cmake: disable lto when linking gtests [PR #2286]
 - VMware Plugin: Fix for virtual USB devices [PR #2213]
+- build: add Fedora 42 [PR #2263]
 
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
@@ -151,6 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2256]: https://github.com/bareos/bareos/pull/2256
 [PR #2259]: https://github.com/bareos/bareos/pull/2259
 [PR #2260]: https://github.com/bareos/bareos/pull/2260
+[PR #2263]: https://github.com/bareos/bareos/pull/2263
 [PR #2264]: https://github.com/bareos/bareos/pull/2264
 [PR #2268]: https://github.com/bareos/bareos/pull/2268
 [PR #2270]: https://github.com/bareos/bareos/pull/2270
