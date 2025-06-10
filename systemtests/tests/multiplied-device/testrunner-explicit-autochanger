@@ -23,11 +23,6 @@ JobName=backup-to-pool1
 JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
-"${BAREOS_SCRIPTS_DIR}"/cleanup
-"${BAREOS_SCRIPTS_DIR}"/setup
-
-# Fill ${BackupDirectory} with data.
-setup_data
 
 start_test
 
@@ -36,9 +31,15 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $tmp/log1.out
 setdebug level=100 storage=File
+
 setdevice storage=File device=MultiFileStorage0001 autoselect=yes
 setdevice storage=File device=MultiFileStorage0002 autoselect=yes
 setdevice storage=File device=MultiFileStorage0003 autoselect=yes
+
+label volume=Pool1-Vol pool=Pool1 storage=File device=MultiFileStorage0001
+label volume=Pool2-Vol pool=Pool2 storage=File device=MultiFileStorage0002
+label volume=Pool3-Vol pool=Pool3 storage=File device=MultiFileStorage0003
+
 run job=backup-to-pool1 level=Full yes
 run job=backup-to-pool2 level=Full yes
 run job=backup-to-pool3 level=Full yes
@@ -49,6 +50,11 @@ run job=backup-to-pool3 level=Full yes
 status storage=File
 wait
 messages
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# now do a restore
 @#
@@ -57,21 +63,27 @@ restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all 
 yes
 wait
 messages
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# now purge and truncate
 @#
 @$out $tmp/log3.out
-purge volume=Full-0001 yes
+purge volume=Pool1-Vol yes
 truncate volstatus=Purged drive=0 yes
-purge volume=Full-0002 yes
+purge volume=Pool2-Vol yes
 truncate volstatus=Purged drive=1 yes
-purge volume=Full-0003 yes
+purge volume=Pool3-Vol yes
 truncate volstatus=Purged drive=2 yes
 messages
 quit
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole "$tmp/bconcmds"
+
 check_for_zombie_jobs storage=File
 
 # rename the storages instead of deleting them
@@ -122,41 +134,41 @@ expect_grep "Using Device \"MultiFileStorage0003\"" \
   "\"MultiFileStorage0003\" not in use."
 
 #make sure all volumes are purged
-expect_grep "There are no more Jobs associated with Volume \"Full-0001\". Marking it purged." \
+expect_grep "There are no more Jobs associated with Volume \"Pool1-Vol\". Marking it purged." \
   "${tmp}"/log3.out \
-  "The Purge command failed for Volume \"Full-0001\"."
-expect_grep "There are no more Jobs associated with Volume \"Full-0002\". Marking it purged." \
+  "The Purge command failed for Volume \"Pool1-Vol\"."
+expect_grep "There are no more Jobs associated with Volume \"Pool2-Vol\". Marking it purged." \
   "${tmp}"/log3.out \
-  "The Purge command failed for Volume \"Full-0002\"."
-expect_grep "There are no more Jobs associated with Volume \"Full-0003\". Marking it purged." \
+  "The Purge command failed for Volume \"Pool2-Vol\"."
+expect_grep "There are no more Jobs associated with Volume \"Pool3-Vol\". Marking it purged." \
   "${tmp}"/log3.out \
-  "The Purge command failed for Volume \"Full-0003\"."
+  "The Purge command failed for Volume \"Pool3-Vol\"."
 
 #make sure all volumes are correctly truncated with the correct drive
-expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0001\" Device=\"MultiFileStorage0000\" (storage)" \
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Pool1-Vol\" Device=\"MultiFileStorage0000\" (storage)" \
   "${tmp}"/log3.out \
-  "The Truncate command failed for Volume \"Full-0001\"."
-expect_grep "The volume 'Full-0001' has been truncated." \
+  "The Truncate command failed for Volume \"Pool1-Vol\"."
+expect_grep "The volume 'Pool1-Vol' has been truncated." \
   "${tmp}"/log3.out \
-  "The Truncate command failed for Volume \"Full-0001\"."
-expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0002\" Device=\"MultiFileStorage0001\" (storage)" \
+  "The Truncate command failed for Volume \"Pool1-Vol\"."
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Pool2-Vol\" Device=\"MultiFileStorage0001\" (storage)" \
   "${tmp}"/log3.out \
-  "The Truncate command failed for Volume \"Full-0002\"."
-expect_grep "The volume 'Full-0002' has been truncated." \
+  "The Truncate command failed for Volume \"Pool2-Vol\"."
+expect_grep "The volume 'Pool2-Vol' has been truncated." \
   "${tmp}"/log3.out \
-  "The Truncate command failed for Volume \"Full-0002\"."
-expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Full-0003\" Device=\"MultiFileStorage0002\" (storage)" \
+  "The Truncate command failed for Volume \"Pool2-Vol\"."
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Pool3-Vol\" Device=\"MultiFileStorage0002\" (storage)" \
   "${tmp}"/log3.out \
-  "The Truncate command failed for Volume \"Full-0003\"."
-expect_grep "The volume 'Full-0003' has been truncated." \
+  "The Truncate command failed for Volume \"Pool3-Vol\"."
+expect_grep "The volume 'Pool3-Vol' has been truncated." \
   "${tmp}"/log3.out \
-  "The Truncate command failed for Volume \"Full-0003\"."
+  "The Truncate command failed for Volume \"Pool3-Vol\"."
 
 # make sure the devices really have been truncated
 for i in 1 2 3; do
-  size=$(wc -c <"storage/Full-000${i}")
+  size=$(wc -c <"storage/Pool${i}-Vol")
   if [ "$size" -ge 300 ]; then
-    echo "file storage/Full-000$i" was not truncated
+    echo "file storage/Pool$i-Vol" was not truncated
     estat=3
   fi
 done

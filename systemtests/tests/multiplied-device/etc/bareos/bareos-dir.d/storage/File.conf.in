@@ -3,7 +3,16 @@ Storage {
   Address = @hostname@
   Password = "@sd_password@"
   Device = virtual-autochanger
-  Autochanger = yes
+  Media Type = File
+  Port = @sd_port@
+  MaximumConcurrentJobs = 20
+}
+
+Storage {
+  Name = ImplicitAutochangerFile
+  Address = @hostname@
+  Password = "@sd_password@"
+  Device = ImplicitAutochangerDevice
   Media Type = File
   Port = @sd_port@
   MaximumConcurrentJobs = 20
