@@ -25,23 +25,23 @@ target_sources(parser PRIVATE parser.cc)
 target_link_libraries(parser PUBLIC fmt::fmt-header-only)
 
 if(HAVE_WIN32)
-  add_executable(dr-dumper data_dumper.cc restore.cc common.cc)
+  add_executable(barri data_dumper.cc restore.cc common.cc)
 
   target_link_libraries(
-    dr-dumper VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES} parser
+    barri VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES} parser
     Microsoft.GSL::GSL
   )
 
   add_executable(copy copy.cc)
 else()
-  add_executable(dr-dumper restore_linux.cc parser.cc)
+  add_executable(barri restore_linux.cc parser.cc)
   target_link_libraries(
-    dr-dumper CLI11::CLI11 Microsoft.GSL::GSL ${ZLIB_LIBRARIES}
+    barri CLI11::CLI11 Microsoft.GSL::GSL ${ZLIB_LIBRARIES}
     fmt::fmt-header-only
   )
 
   install(
-    TARGETS dr-dumper
+    TARGETS barri
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
