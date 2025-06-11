@@ -61,13 +61,6 @@ if(NOT MSVC)
     )
   endif()
 
-  # FreeBSD, but apparently not found during configure
-  check_function_exists(add_proplist_entry HAVE_ADD_PROPLIST_ENTRY)
-  check_function_exists(get_proplist_entry HAVE_GET_PROPLIST_ENTRY)
-  check_function_exists(getproplist HAVE_GETPROPLIST)
-  check_function_exists(setproplist HAVE_SETPROPLIST)
-  check_function_exists(sizeof_proplist_entry HAVE_SIZEOF_PROPLIST_ENTRY)
-
   # FreeBSD extended attributes
   check_function_exists(extattr_get_file HAVE_EXTATTR_GET_FILE)
   check_function_exists(extattr_get_link HAVE_EXTATTR_GET_LINK)

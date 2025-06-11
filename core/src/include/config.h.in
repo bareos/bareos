@@ -71,9 +71,6 @@
 // Defines if your system have the ACL_TYPE_NFS4 acl type
 #cmakedefine HAVE_ACL_TYPE_NFS4 @HAVE_ACL_TYPE_NFS4@
 
-// Define to 1 if you have the `add_proplist_entry' function
-#cmakedefine HAVE_ADD_PROPLIST_ENTRY @HAVE_ADD_PROPLIST_ENTRY@
-
 // Define to 1 if your system has AFS support
 #cmakedefine HAVE_AFS @HAVE_AFS@
 
@@ -213,14 +210,8 @@
 // Define to 1 if you have the `getpagesize' function
 #cmakedefine HAVE_GETPAGESIZE @HAVE_GETPAGESIZE@
 
-// Define to 1 if you have the `getproplist' function
-#cmakedefine HAVE_GETPROPLIST @HAVE_GETPROPLIST@
-
 // Define to 1 if you have the `getxattr' function
 #cmakedefine HAVE_GETXATTR @HAVE_GETXATTR@
-
-// Define to 1 if you have the `get_proplist_entry' function
-#cmakedefine HAVE_GET_PROPLIST_ENTRY @HAVE_GET_PROPLIST_ENTRY@
 
 // Define to 1 if you have gfapi lib
 #cmakedefine HAVE_GFAPI @HAVE_GFAPI@
@@ -357,9 +348,6 @@
 // Define to 1 if you have the `setea' function
 #cmakedefine HAVE_SETEA @HAVE_SETEA@
 
-// Define to 1 if you have the `setproplist' function
-#cmakedefine HAVE_SETPROPLIST @HAVE_SETPROPLIST@
-
 // Define to 1 if you have the `setreuid' function
 #cmakedefine HAVE_SETREUID @HAVE_SETREUID@
 
@@ -368,9 +356,6 @@
 
 // Define to 1 if the SHA-2 family of digest algorithms is available
 #cmakedefine HAVE_SHA2 @HAVE_SHA2@
-
-// Define to 1 if you have the `sizeof_proplist_entry' function
-#cmakedefine HAVE_SIZEOF_PROPLIST_ENTRY @HAVE_SIZEOF_PROPLIST_ENTRY@
 
 // Define to 1 if you are running Solaris
 #cmakedefine HAVE_SUN_OS @HAVE_SUN_OS@
@@ -410,9 +395,6 @@
 
 // Define to 1 if you have the <sys/prctl.h> header file
 #cmakedefine HAVE_SYS_PRCTL_H @HAVE_SYS_PRCTL_H@
-
-// Define to 1 if you have the <sys/proplist.h> header file
-#cmakedefine HAVE_SYS_PROPLIST_H @HAVE_SYS_PROPLIST_H@
 
 // Define to 1 if you have the <sys/statvfs.h> header file
 #cmakedefine HAVE_SYS_STATVFS_H @HAVE_SYS_STATVFS_H@
