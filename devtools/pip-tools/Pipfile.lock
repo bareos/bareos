@@ -252,6 +252,14 @@
             "markers": "python_version >= '3.8'",
             "version": "==6.0.2"
         },
+        "shfmt-py": {
+            "hashes": [
+                "sha256:ab84e5e3f5fedfdf93b758ba573342cdd3af1c99ebae81a1012e3b8dfb9622d3"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.9'",
+            "version": "==3.11.0.2"
+        },
         "six": {
             "hashes": [
                 "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926",

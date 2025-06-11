@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -43,6 +43,7 @@ COPYRIGHT_FORMAT = "Copyright (C) {}-{} Bareos GmbH & Co. KG"
     name="check copyright notice exists",
 )
 def check_copyright_notice(file_path, file_content, **kwargs):
+    _ = kwargs
     # do check .inc (c/c++), but skip ReST includes
     if file_path.match("*.rst.inc"):
         return True
@@ -57,6 +58,8 @@ def check_copyright_notice(file_path, file_content, **kwargs):
 def set_copyright_year(
     file_path, file_content, git_repo, file_history, blame_ignore_revs, **kwargs
 ):
+    _ = git_repo
+    _ = kwargs
     m = COPYRIGHT_REGEX.search(file_content)
     if m is None:
         return file_content
@@ -67,18 +70,17 @@ def set_copyright_year(
     if file_history.is_changed(file_path):
         change_year = datetime.now().year
         logger.debug(
-            "Uncommitted changes in {}, setting year to {}".format(
-                file_path, change_year
-            )
+            "Uncommitted changes in %s, setting year to %i", file_path, change_year
         )
     else:
         commit = file_history.get_latest_commit(file_path, ignore=blame_ignore_revs)
         if commit:
             change_year = datetime.utcfromtimestamp(commit.committed_date).year
             logger.debug(
-                "Latest commit for {} is {} from {}".format(
-                    file_path, commit.hexsha, change_year
-                )
+                "Latest commit for %s is %s from %i",
+                file_path,
+                commit.hexsha,
+                change_year,
             )
         else:
             # skip files without commit info
