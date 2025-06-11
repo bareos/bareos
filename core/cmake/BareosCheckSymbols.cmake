@@ -32,5 +32,3 @@ if(CHFLAGS_IS_A_STUB)
   message(STATUS "lchflags is a stub, setting HAVE_CHFLAGS to 0")
   set(HAVE_CHFLAGS 0)
 endif()
-
-check_symbol_exists(poll poll.h HAVE_POLL)

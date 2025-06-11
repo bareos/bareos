@@ -43,11 +43,8 @@ if(NOT MSVC)
 
   check_include_files("sys/types.h;sys/tape.h" HAVE_SYS_TAPE_H)
 
-  check_include_files(sys/time.h HAVE_SYS_TIME_H)
-
   check_include_file_cxx(cxxabi.h HAVE_CXXABI_H)
   check_include_files(curses.h HAVE_CURSES_H)
-  check_include_files(poll.h HAVE_POLL_H)
   check_include_files(sys/poll.h HAVE_SYS_POLL_H)
   check_include_files(sys/statvfs.h HAVE_SYS_STATVFS_H)
   check_include_files(umem.h HAVE_UMEM_H)
@@ -79,6 +76,5 @@ if(NOT MSVC)
 else()
   # we provide tho following headers
   set(HAVE_SYS_MTIO_H 1)
-  set(HAVE_SYS_TIME_H 1)
   set(HAVE_PCRE2_POSIX_H 1)
 endif()
