@@ -922,7 +922,7 @@
           "code": 0,
           "default_value": "1",
           "equals": true,
-          "description": "If Count is set to (1 < Count < 10000), this resource will be multiplied Count times. The names of multiplied resources will have a serial number (0001, 0002, ...) attached. If set to 1 only this single resource will be used and its name will not be altered."
+          "description": "If Count is set to (1 < Count < 10000), duplicated devices will be created post-fixed with serial numbers 0000 up to Count. The 0000 device is automatically assigned 'Autoselect=No'. Additionally, an autochanger resource is created with the name of the device the Count directive is specified for. The duplicated devices will be assigned to this autochanger unless they are used in another autochanger already."
         }
       },
       "Messages": {
