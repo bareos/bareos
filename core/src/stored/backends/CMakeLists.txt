@@ -38,7 +38,7 @@ target_sources(chunked-device PRIVATE ordered_cbuf.cc chunked_device.cc)
 
 add_library(backend-utils STATIC)
 target_sources(backend-utils PRIVATE util.cc)
-target_link_libraries(backend-utils PUBLIC bareos fmt::fmt)
+target_link_libraries(backend-utils PUBLIC bareos fmt::fmt-header-only)
 
 if(${HAVE_GLUSTERFS})
   add_sd_backend(bareossd-gfapi)

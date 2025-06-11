@@ -19,7 +19,6 @@
    02110-1301, USA.
 */
 
-#define FMT_ENFORCE_COMPILE_STRING
 #include "include/bareos.h"
 
 #include "stored/stored.h"
