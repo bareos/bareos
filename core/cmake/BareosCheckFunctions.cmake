@@ -88,12 +88,19 @@ if(NOT MSVC)
   check_function_exists(setea HAVE_SETEA)
 
   # Linux extended attributes
-  check_function_exists(getxattr HAVE_GETXATTR)
-  check_function_exists(lgetxattr HAVE_LGETXATTR)
-  check_function_exists(listxattr HAVE_LISTXATTR)
-  check_function_exists(llistxattr HAVE_LLISTXATTR)
-  check_function_exists(lsetxattr HAVE_LSETXATTR)
-  check_function_exists(setxattr HAVE_SETXATTR)
+  try_compile(
+    HAVE_LINUX_XATTR ${CMAKE_BINARY_DIR}/compile_tests
+    ${PROJECT_SOURCE_DIR}/src/compile_tests/linux_xattr.c
+  )
+  if(HAVE_LINUX_XATTR)
+    set(HAVE_GETXATTR 1)
+    set(HAVE_LGETXATTR 1)
+    set(HAVE_LISTXATTR 1)
+    set(HAVE_LLISTXATTR 1)
+    set(HAVE_LSETXATTR 1)
+    set(HAVE_SETXATTR 1)
+    set(HAVE_SYS_XATTR_H 1)
+  endif()
 
   # Linux
   check_function_exists(getmntent HAVE_GETMNTENT)
