@@ -54,7 +54,6 @@ if(NOT MSVC)
   check_include_files(sys/extattr.h HAVE_SYS_EXTATTR_H)
   check_include_files(libutil.h HAVE_LIBUTIL_H)
   check_include_files(sys/ea.h HAVE_SYS_EA_H)
-  check_include_files(sys/xattr.h HAVE_SYS_XATTR_H)
 
   include(CheckSymbolExists)
 
