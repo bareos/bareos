@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -42,10 +42,11 @@ def invoke_shell_format(file_path: pathlib.Path, file_content: str, *argv):
         if not is_shell_content(file_content):
             return file_content
 
-    invocation = [shfmt_exe] + list(argv) + [file_path]
+    invocation = [shfmt_exe] + list(argv)
     try:
         proc = subprocess.run(
             invocation,
+            input=file_content,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             encoding="utf-8",
@@ -69,4 +70,5 @@ def check_shell_format(file_path: pathlib.Path, file_content: str, **kwargs):
         "--binary-next-line",
         "--case-indent",
         "--func-next-line",
+        f"--filename=\"{file_path}\""
     )
