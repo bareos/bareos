@@ -38,10 +38,8 @@ if(NOT MSVC)
   check_include_files("sys/types.h;sys/acl.h" HAVE_SYS_ACL_H)
   check_include_files(sys/attr.h HAVE_SYS_ATTR_H)
   check_include_files(sys/capability.h HAVE_SYS_CAPABILITY_H)
-  check_include_files(sys/ea.h HAVE_SYS_EA_H)
   check_include_files(sys/mtio.h HAVE_SYS_MTIO_H)
   check_include_files(sys/nvpair.h HAVE_SYS_NVPAIR_H)
-  check_include_files("sys/types.h;sys/extattr.h" HAVE_SYS_EXTATTR_H)
 
   check_include_files("sys/types.h;sys/tape.h" HAVE_SYS_TAPE_H)
 

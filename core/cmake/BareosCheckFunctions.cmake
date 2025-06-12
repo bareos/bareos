@@ -18,8 +18,6 @@
 #   02110-1301, USA.
 
 if(NOT MSVC)
-  include(CheckFunctionExists)
-
   try_compile(
     HAVE_SYSTEM_INTERFACES ${CMAKE_BINARY_DIR}/compile_tests
     ${PROJECT_SOURCE_DIR}/src/compile_tests/core_system_interfaces.c
@@ -62,30 +60,36 @@ if(NOT MSVC)
   endif()
 
   # FreeBSD extended attributes
-  check_function_exists(extattr_get_file HAVE_EXTATTR_GET_FILE)
-  check_function_exists(extattr_get_link HAVE_EXTATTR_GET_LINK)
-  check_function_exists(extattr_list_file HAVE_EXTATTR_LIST_FILE)
-  check_function_exists(extattr_list_link HAVE_EXTATTR_LIST_LINK)
-  check_function_exists(
-    extattr_namespace_to_string HAVE_EXTATTR_NAMESPACE_TO_STRING
+  try_compile(
+    HAVE_FREEBSD_EXTATTR ${CMAKE_BINARY_DIR}/compile_tests
+    ${PROJECT_SOURCE_DIR}/src/compile_tests/freebsd_extattr.c
   )
-  check_function_exists(extattr_set_file HAVE_EXTATTR_SET_FILE)
-  check_function_exists(extattr_set_link HAVE_EXTATTR_SET_LINK)
-  check_function_exists(
-    extattr_string_to_namespace HAVE_EXTATTR_STRING_TO_NAMESPACE
-  )
-
-  # FreeBSD & MacOS
-  check_function_exists(chflags HAVE_CHFLAGS)
-  check_function_exists(getmntinfo HAVE_GETMNTINFO)
+  if(HAVE_FREEBSD_EXTATTR)
+    set(HAVE_EXTATTR_GET_FILE 1)
+    set(HAVE_EXTATTR_GET_LINK 1)
+    set(HAVE_EXTATTR_LIST_FILE 1)
+    set(HAVE_EXTATTR_LIST_LINK 1)
+    set(HAVE_EXTATTR_NAMESPACE_TO_STRING 1)
+    set(HAVE_EXTATTR_SET_FILE 1)
+    set(HAVE_EXTATTR_SET_LINK 1)
+    set(HAVE_EXTATTR_STRING_TO_NAMESPACE 1)
+    set(HAVE_SYS_EXTATTR_H 1)
+  endif()
 
   # AIX extended attributes
-  check_function_exists(getea HAVE_GETEA)
-  check_function_exists(lgetea HAVE_LGETEA)
-  check_function_exists(listea HAVE_LISTEA)
-  check_function_exists(llistea HAVE_LLISTEA)
-  check_function_exists(lsetea HAVE_LSETEA)
-  check_function_exists(setea HAVE_SETEA)
+  try_compile(
+    HAVE_AIX_EA ${CMAKE_BINARY_DIR}/compile_tests
+    ${PROJECT_SOURCE_DIR}/src/compile_tests/aix_ea.c
+  )
+  if(HAVE_AIX_EA)
+    set(HAVE_GETEA 1)
+    set(HAVE_LGETEA 1)
+    set(HAVE_LISTEA 1)
+    set(HAVE_LLISTEA 1)
+    set(HAVE_LSETEA 1)
+    set(HAVE_SETEA 1)
+    set(HAVE_SYS_EA 1)
+  endif()
 
   # Linux extended attributes
   try_compile(
@@ -101,6 +105,12 @@ if(NOT MSVC)
     set(HAVE_SETXATTR 1)
     set(HAVE_SYS_XATTR_H 1)
   endif()
+
+  include(CheckFunctionExists)
+
+  # FreeBSD & MacOS
+  check_function_exists(chflags HAVE_CHFLAGS)
+  check_function_exists(getmntinfo HAVE_GETMNTINFO)
 
   # Linux
   check_function_exists(getmntent HAVE_GETMNTENT)
