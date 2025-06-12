@@ -29,8 +29,6 @@ if(NOT MSVC)
   set(HAVE_SYS_STATVFS_H 1)
 
   check_include_files(alloca.h HAVE_ALLOCA_H)
-  check_include_files(afs/afsint.h HAVE_AFS_AFSINT_H)
-  check_include_files(afs/venus.h HAVE_AFS_VENUS_H)
   check_include_files(arpa/nameser.h HAVE_ARPA_NAMESER_H)
   check_include_files(attr.h HAVE_ATTR_H)
   check_include_files(demangle.h HAVE_DEMANGLE_H)
