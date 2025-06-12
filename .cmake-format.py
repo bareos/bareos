@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -85,6 +85,10 @@ additional_commands = {
         "pargs": 0,
         "flags": ["", ""],
         "kwargs": {"BAREOS_DB_NAME": "*", "DEBIAN_DB_NAME": "*"},
+    },
+    "bareos_known_compiler_flags": {
+        "flags": ["UNSUPPORTED", "C_ONLY", "CXX_ONLY"],
+        "kwargs": {"ID": "1", "SINCE": "1", "FLAGS": "*"},
     },
     "CPMAddPackage": {
         "pargs": 0,
