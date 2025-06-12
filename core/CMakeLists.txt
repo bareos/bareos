@@ -142,42 +142,27 @@ endif()
 
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-Wsuggest-override compiler_will_suggest_override)
-
-if(${compiler_will_suggest_override})
+check_cxx_compiler_flag(-Wsuggest-override CXX_SUPPORTS_Wsuggest_override)
+if(CXX_SUPPORTS_Wsuggest_override)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
 endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   # make format-security issues a compiler-error
-  check_cxx_compiler_flag(-Wformat compiler_format_security)
-  if(${compiler_format_security})
+  check_cxx_compiler_flag(-Wformat CXX_SUPPORTS_Wformat)
+  if(CXX_SUPPORTS_Wformat)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat")
   endif()
-  check_cxx_compiler_flag(
-    -Werror=format-security compiler_error_format_security
-  )
-  if(${compiler_error_format_security})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=format-security")
+  check_cxx_compiler_flag(-Wformat-security CXX_SUPPORTS_Wformat_security)
+  if(CXX_SUPPORTS_Wformat_security)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat-security")
   endif()
 endif()
 
-check_cxx_compiler_flag(-Winvalid-offsetof compiler_has_invalid_offsetof)
-if(compiler_has_invalid_offsetof)
+check_cxx_compiler_flag(-Winvalid-offsetof CXX_SUPPORTS_Winvalid_offsetof)
+if(CXX_SUPPORTS_Winvalid_offsetof)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")
 endif()
-
-# warn on sign-conversion include(CheckCCompilerFlag)
-# CHECK_C_COMPILER_FLAG(-Wsign-conversion c_compiler_will_warn_sign_conversion)
-#
-# if (${c_compiler_will_warn_sign_conversion}) set (CMAKE_C_FLAGS
-# "${CMAKE_C_FLAGS} -Wsign-conversion") endif()
-#
-# CHECK_CXX_COMPILER_FLAG(-Wsign-conversion
-# cxx_compiler_will_warn_sign_conversion)
-#
-# if (${cxx_compiler_will_warn_sign_conversion}) set (CMAKE_CXX_FLAGS
-# "${CMAKE_CXX_FLAGS} -Wsign-conversion") endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   include_directories(/usr/include)
@@ -256,9 +241,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   include_directories(SYSTEM /usr/local/include)
   link_directories(/usr/local/lib)
   link_libraries(intl)
-  check_cxx_compiler_flag(
-    -Wunused-but-set-variable compiler_will_warn_of_unused_but_set_variable
-  )
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
