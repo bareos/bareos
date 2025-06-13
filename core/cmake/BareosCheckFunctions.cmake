@@ -130,10 +130,6 @@ if(NOT MSVC)
   # Other
   check_function_exists(closefrom HAVE_CLOSEFROM)
 
-  check_function_exists(
-    glfs_readdirplus HAVE_GLFS_READDIRPLUS
-  ) # in gfapi since 3.5, no check needed anymore
-
 else()
   # windows provides these functions
   set(HAVE_GETADDRINFO 1)
