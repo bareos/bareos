@@ -1,7 +1,7 @@
 #!/bin/bash
 
-read_program_file="$tmp/readprogram.out"
-write_program_file="$tmp/writeprogram.out"
+read_program_file="tmp/readprogram.out"
+write_program_file="tmp/writeprogram.out"
 
 # write restored data from readprogram to file
 touch "$read_program_file" || {
