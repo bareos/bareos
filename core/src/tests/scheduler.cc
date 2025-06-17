@@ -287,7 +287,7 @@ enum
 
 TEST_F(SchedulerTest, parse_schedule_correctly)
 {
-  static std::vector<std::pair<std::string_view, std::string_view>> kSchedules
+  static std::vector<std::pair<std::string_view, std::string_view>> kValidSchedules
       = {
           {"", "at 00:00"},
           {"hourly", "hourly at 00:00"},
@@ -298,15 +298,18 @@ TEST_F(SchedulerTest, parse_schedule_correctly)
           {"daily at 20:00", "at 20:00"},
           {"w00/w02 Fri at 23:10", "w00/w02 Fri at 23:10"},
           {"Mon-Fri", "Mon-Fri at 00:00"},
+          {"Mon-Fri at 20:00", "Mon-Fri at 20:00"},
           {"1st saturday at 20:00", "first Sat at 20:00"},
           {"on 1st saturday at 20:00", "first Sat at 20:00"},
           {"Mon, Tue, Wed-Fri, Sat", "Mon, Tue, Wed-Fri, Sat at 00:00"},
           {"Fri-Mon", "Fri-Mon at 00:00"},
           {"on 27 at 21:45", "27 at 21:45"},
           {"20-10 at 21:45", "20-10 at 21:45"},
+          {"1/2 at 23:10", "1/2 at 23:10"},
+          {"5/5 at 23:10", "0/5 at 23:10"},
       };
-  for (auto [schedule, expected_generated] : kSchedules) {
-    auto [result, warnings] = Parser<Schedule>::Parse(schedule);
+  for (auto [schedule, expected_generated] : kValidSchedules) {
+    auto [result, _] = Parser<Schedule>::Parse(schedule);
     EXPECT_TRUE(std::holds_alternative<Schedule>(result))
         << "Could not parse '" << schedule << "'" << std::endl
         << std::get<Parser<Schedule>::Error>(result).message;
@@ -317,6 +320,15 @@ TEST_F(SchedulerTest, parse_schedule_correctly)
           << "\" does not match the expected string \"" << expected_generated
           << "\"";
     }
+  }
+
+  static std::vector<std::string_view> kInvalidSchedules
+  = {
+      "w20/w05",
+  };
+  for (std::string_view schedule : kInvalidSchedules) {
+    auto [result, _] = Parser<Schedule>::Parse(schedule);
+    EXPECT_TRUE(std::holds_alternative<Parser<Schedule>::Error>(result));
   }
 }
 
@@ -362,15 +374,15 @@ template <class T> class ValueValidator : public DateTimeValidator {
   template <class U> static auto Get(const DateTime& date_time)
   {
     if constexpr (std::is_same_v<U, MonthOfYear>) {
-      return MonthOfYear::FromIndex(date_time.month);
+      return MonthOfYear{date_time.month};
     } else if constexpr (std::is_same_v<U, WeekOfYear>) {
       return WeekOfYear{date_time.week_of_year};
     } else if constexpr (std::is_same_v<U, WeekOfMonth>) {
-      return WeekOfMonth::FromIndex(date_time.week_of_month);
+      return WeekOfMonth{date_time.week_of_month};
     } else if constexpr (std::is_same_v<U, DayOfMonth>) {
       return DayOfMonth{date_time.day_of_month};
     } else if constexpr (std::is_same_v<U, DayOfWeek>) {
-      return DayOfWeek::FromIndex(date_time.day_of_week);
+      return DayOfWeek{date_time.day_of_week};
     } else if constexpr (std::is_same_v<U, TimeOfDay>) {
       return TimeOfDay{date_time.hour, date_time.minute};
     } else {
@@ -503,6 +515,11 @@ TEST_F(SchedulerTest, trigger_correctly)
            {
                MakeValidator(
                    std::vector{DayOfMonth{29}, DayOfMonth{30}, DayOfMonth{0}}),
+           }},
+           {"0/2 at 23:10", 186, {}},
+           {"1/2 at 23:10", 179, {}},
+           {"0/7 at 23:10", 59, {
+            MakeValidator(std::vector{DayOfMonth{0}, DayOfMonth{7}, DayOfMonth{14}, DayOfMonth{21}, DayOfMonth{28}})
            }},
       };
   for (auto [schedule, expected_count, validators] : kSchedules) {
