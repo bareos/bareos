@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -91,7 +91,7 @@ void EncodeStat(char* buf,
   p += ToBase64((int64_t)LinkFI, p);
   *p++ = ' ';
 
-#ifdef HAVE_CHFLAGS
+#if defined(HAVE_CHFLAGS) && !defined(__stub_chflags)
   /* FreeBSD function */
   p += ToBase64((int64_t)statp->st_flags, p); /* output st_flags */
 #else
@@ -183,7 +183,7 @@ int DecodeStat(char* buf, struct stat* statp, int stat_size, int32_t* LinkFI)
   if (*p == ' ' || (*p != 0 && *(p + 1) == ' ')) {
     p++;
     p += FromBase64(&val, p);
-#ifdef HAVE_CHFLAGS
+#if defined(HAVE_CHFLAGS) && !defined(__stub_chflags)
     plug(statp->st_flags, val);
   } else {
     statp->st_flags = 0;
