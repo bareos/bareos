@@ -193,11 +193,18 @@ Some examples for Schedule resources
       Run = mon-fri at 20:00 # run from monday to friday at 20:00 
    }
 
+   # The modulo scheduler makes it easy to specify schedules like odd or even days/weeks, or more generally every n days or weeks.
+   # It is called modulo scheduler because it uses the modulo to determine if the schedule must be run or not.
+   # The second variable behind the slash lets you determine in which cycle of days/weeks a job should be run.
+   # The first part determines on which day/week the job should be run first.
+   # E.g. if you want to run a backup in a 5-week-cycle, starting on week 4, you set it up as w03/w05.
+   # Note that if you want to run your backup always at the beginning of the cycle, you need to set the first value to 0, e.g. w00/w05.
+   # Modulos where the first value is not bigger than the second value are invalid, so w10/w05 is invalid.
    Schedule {
       Name = "Modulo"
       Run = w05/w07 at 20:00 # run every 7th week of the year all 7 days at 20:00 starting from week 5 (i.e. w05, w12, w19, w26, w33, w40, w47)
-      Run = 0/2 at 20:00 # run every even day at 20:0
-      Run = 1/2 at 20:00 # run every odd day at 20:00
+      Run = 0/2 at 20:00 # run every even day of the month at 20:0
+      Run = 1/2 at 20:00 # run every odd day of the month at 20:00
    }
 
    Schedule {
