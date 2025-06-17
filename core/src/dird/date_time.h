@@ -24,23 +24,32 @@
 #ifndef BAREOS_DIRD_DATE_TIME_H_
 #define BAREOS_DIRD_DATE_TIME_H_
 
+#include <string_view>
+#include <ctime>
+
 namespace directordaemon {
 
 struct DateTime {
   DateTime(time_t time);
 
-  int WeekOfMonth() const;
   bool OnLast7DaysOfMonth() const;
   void PrintDebugMessage(int debug_level) const;
+  time_t GetTime() const;
 
   int year{0};
   int month{0};
   int week_of_year{0};
+  int week_of_month{0};
   int day_of_year{0};
   int day_of_month{0};
   int day_of_week{0};
   int hour{0};
-  time_t time;
+  int minute{0};
+  int second{0};
+private:
+  int dst_ = 0; // daylight saving time
+  int gmt_offset_ = 0; // seconds east of UTC
+  std::string_view time_zone_; // abbreviated
 };
 
 }  // namespace directordaemon

@@ -53,7 +53,25 @@ static int LastDayOfMonth(int year, int month)
   }
 }
 
-int DateTime::WeekOfMonth() const { return day_of_month / 7; }
+DateTime::DateTime(time_t time)
+{
+  struct tm tm = {};
+  Blocaltime(&time, &tm);
+  year = 1900 + tm.tm_year;
+  month = tm.tm_mon;
+  week_of_year = TmWoy(time);
+  week_of_month = (tm.tm_mday - 1) / 7;
+  day_of_year = tm.tm_yday;
+  day_of_month = tm.tm_mday - 1;
+  day_of_week = tm.tm_wday;
+  hour = tm.tm_hour;
+  minute = tm.tm_min;
+  second = tm.tm_sec;
+  dst_ = tm.tm_isdst;
+  gmt_offset_ = tm.tm_gmtoff;
+  time_zone_ = tm.tm_zone;  
+}
+
 bool DateTime::OnLast7DaysOfMonth() const
 {
   auto last_day = LastDayOfMonth(year, month);
@@ -61,22 +79,25 @@ bool DateTime::OnLast7DaysOfMonth() const
   return last_day - kDaysPerWeek < day_of_year;
 }
 
-DateTime::DateTime(time_t time_) : time(time_)
-{
+time_t DateTime::GetTime() const {
   struct tm tm = {};
-  Blocaltime(&time, &tm);
-  day_of_month = tm.tm_mday - 1;
-  day_of_week = tm.tm_wday;
-  week_of_year = TmWoy(time);
-  month = tm.tm_mon;
-  day_of_year = tm.tm_yday;
-  hour = tm.tm_hour;
-  year = tm.tm_year;
+  tm.tm_year = year - 1900;
+  tm.tm_mon = month;
+  tm.tm_yday = day_of_year;
+  tm.tm_mday = day_of_month + 1;
+  tm.tm_wday = day_of_week;
+  tm.tm_hour = hour;
+  tm.tm_min = minute;
+  tm.tm_sec = second;
+  tm.tm_isdst = dst_;
+  tm.tm_gmtoff = gmt_offset_;
+  tm.tm_zone = time_zone_.data();
+  return mktime(&tm);
 }
 
 void DateTime::PrintDebugMessage(int debug_level) const
 {
-  Dmsg8(debug_level, "now = %lx: h=%d m=%d md=%d wd=%d woy=%d yday=%d\n ", time,
+  Dmsg8(debug_level, "now = %x: h=%d m=%d md=%d wd=%d woy=%d yday=%d\n ", GetTime(),
         hour, month, day_of_month, day_of_week, week_of_year, day_of_year);
 }
 
