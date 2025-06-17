@@ -202,7 +202,7 @@ static bool VolumeHasAttrlist(const char*) { return false; }
 #endif
 
 // check for BSD nodump flag
-#if defined(HAVE_CHFLAGS) && defined(UF_NODUMP)
+#if defined(HAVE_CHFLAGS) && !defined(__stub_chflags) && defined(UF_NODUMP)
 static inline bool no_dump(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 {
   if (BitIsSet(FO_HONOR_NODUMP, ff_pkt->flags)
