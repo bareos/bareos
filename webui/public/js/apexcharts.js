@@ -9698,7 +9698,7 @@
         var w = this.w;
         var cnf = w.config;
         var gl = w.globals;
-        this.excludeCollapsedSeriesInYAxis(); // If we detected string in X prop of series, we fallback to category x-axis
+        this.excludeCollapsedSeriesInYAxis(); // If we detected string in X prop of series, we fall back to category x-axis
 
         this.fallbackToCategory = false;
         this.ctx.core.resetGlobals();

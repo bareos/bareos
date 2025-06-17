@@ -1397,7 +1397,7 @@ static int GetWindowsFileInfo(const char* filename,
       if (p_FindFirstFileW) { /* use unicode */
         pftLastAccessTime = &info_w.ftLastAccessTime;
         pftLastWriteTime = &info_w.ftLastWriteTime;
-        // if change time is not available we fallback to
+        // if change time is not available we fall back to
         // using lastwritetime instead
         if (CompareFileTime(&info_w.ftLastWriteTime, &info_w.ftCreationTime)
             < 0) {
@@ -1636,7 +1636,7 @@ int fstat(intptr_t fd, struct stat* sb)
   if (use_fallback_data) {
     sb->st_atime = CvtFtimeToUtime(info.ftLastAccessTime);
     sb->st_mtime = CvtFtimeToUtime(info.ftLastWriteTime);
-    // if changetime is not available we fallback to LastWriteTime
+    // if changetime is not available we fall back to LastWriteTime
     if (CompareFileTime(&info.ftLastWriteTime, &info.ftCreationTime) < 0) {
       sb->st_ctime = CvtFtimeToUtime(info.ftCreationTime);
     } else {
