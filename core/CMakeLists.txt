@@ -345,8 +345,6 @@ include(BareosCheckIncludes)
 
 include(BareosCheckFunctions)
 
-include(BareosCheckSymbols)
-
 include(BareosDetermineHaveLowLevelScsiInterface)
 
 include(acltypes)
