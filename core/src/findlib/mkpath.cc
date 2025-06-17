@@ -49,8 +49,8 @@
 #  define lchown chown
 #endif
 
-// For old systems that don't have lchmod() use chmod()
-#ifndef HAVE_LCHMOD
+// For old systems that don't have lchmod() or where it is a stub use chmod()
+#if !defined(HAVE_LCHMOD) || defined(__stub_lchmod) || defined(__stub___lchmod)
 #  define lchmod chmod
 #endif
 
