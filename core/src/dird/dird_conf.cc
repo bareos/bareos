@@ -1407,7 +1407,12 @@ std::string ToString(const Hourly& hourly)
 // :: Modulo
 template <class T> std::string ToString(const Modulo<T>& modulo)
 {
-  return ToString(modulo.remainder) + "/" + ToString(modulo.divisor);
+  if constexpr (std::is_same_v<DayOfMonth, T>) {
+    return ToString(modulo.remainder) + "/" + ToString(modulo.divisor);
+  }
+  else {
+    return ToString(T{modulo.remainder}) + "/" + ToString(T{modulo.divisor});
+  }
 }
 // :: std::variant
 template <class... Args>

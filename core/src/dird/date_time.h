@@ -44,10 +44,10 @@ struct MonthOfYear {
       "Juli",    "August",   "September", "October", "November", "December",
   };
 
-  static MonthOfYear FromIndex(size_t index)
+  MonthOfYear(int index)
   {
-    ASSERT(index < kNames.size());
-    return MonthOfYear{kNames.at(index)};
+    ASSERT(0 <= index && static_cast<size_t>(index) < kNames.size());
+    name = kNames.at(index);
   }
   static std::optional<MonthOfYear> FromName(std::string_view name)
   {
@@ -94,10 +94,10 @@ struct WeekOfMonth {
   };
   static_assert(kNames.size() == kAlternativeNames.size());
 
-  static WeekOfMonth FromIndex(size_t index)
+  WeekOfMonth(int index)
   {
-    ASSERT(index < kNames.size());
-    return WeekOfMonth{kNames.at(index)};
+    ASSERT(0 <= index && static_cast<size_t>(index) < kNames.size());
+    name = kNames.at(index);
   }
   static std::optional<WeekOfMonth> FromName(std::string_view name)
   {
@@ -148,10 +148,10 @@ struct DayOfWeek {
       "Thursday", "Friday", "Saturday",
   };
 
-  static DayOfWeek FromIndex(size_t index)
+  DayOfWeek(int index)
   {
-    ASSERT(index < kNames.size());
-    return DayOfWeek{kNames.at(index)};
+    ASSERT(0 <= index && static_cast<size_t>(index) < kNames.size());
+    name = kNames.at(index);
   }
   static std::optional<DayOfWeek> FromName(std::string_view name)
   {

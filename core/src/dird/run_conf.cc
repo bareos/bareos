@@ -156,9 +156,30 @@ template <class T> struct Parser<Modulo<T>> {
   {
     size_t index = str.find('/');
     if (index == std::string::npos) { return std::nullopt; }
-    auto remainder = Parser<T>::Parse(str.substr(0, index));
-    auto divisor = Parser<T>::Parse(str.substr(index + 1));
-    if (remainder && divisor) { return Modulo<T>{*remainder, *divisor}; }
+    if constexpr (std::is_same_v<DayOfMonth, T>) {
+      auto remainder = Parser<int>::Parse(str.substr(0, index));
+      auto divisor = Parser<int>::Parse(str.substr(index + 1));
+      if (remainder && divisor) {
+        if (static_cast<int>(*remainder) < static_cast<int>(*divisor)) {
+          return Modulo<T>{static_cast<int>(*remainder), static_cast<int>(*divisor)};
+        }
+        else if (static_cast<int>(*remainder) == static_cast<int>(*divisor)) {
+          return Modulo<T>{0, static_cast<int>(*divisor)};
+        }
+      }
+    }
+    else {
+      auto remainder = Parser<T>::Parse(str.substr(0, index));
+      auto divisor = Parser<T>::Parse(str.substr(index + 1));
+      if (remainder && divisor) {
+        if (static_cast<int>(*remainder) < static_cast<int>(*divisor)) {
+          return Modulo<T>{static_cast<int>(*remainder), static_cast<int>(*divisor)};
+        }
+        else if (static_cast<int>(*remainder) == static_cast<int>(*divisor)) {
+          return Modulo<T>{0, static_cast<int>(*divisor)};
+        }
+      }
+    }
     return std::nullopt;
   }
 };

@@ -41,7 +41,7 @@ template <class T> struct Interval {
   T first, last;
 };
 template <class T> struct Modulo {
-  T remainder, divisor;
+  int remainder, divisor;
 };
 template <class T> using Mask = std::variant<Interval<T>, Modulo<T>, T>;
 
