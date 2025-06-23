@@ -314,7 +314,8 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         std::unordered_map<std::string, std::string> env{
             {"BareosClientName", std::string{env_client_name}},
             {"BareosJobId", std::to_string(env_job_id)},
-            {"BareosJobLevel", std::string{static_cast<char>(env_backup_level)}},
+            {"BareosJobLevel",
+             std::string{static_cast<char>(env_backup_level)}},
             {"BareosSinceTime", std::to_string(env_since_time)},
             {"BareosJobType", std::string{static_cast<char>(env_job_type)}},
         };
@@ -330,8 +331,8 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
             Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n",
                  writer_codes.c_str(), strerror(io->io_errno));
             Dmsg(ctx, debuglevel,
-                 "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes.c_str(),
-                 strerror(io->io_errno));
+                 "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n",
+                 writer_codes.c_str(), strerror(io->io_errno));
             return bRC_Error;
           }
         } else {
@@ -516,28 +517,28 @@ static std::string apply_rp_codes(PluginContext* ctx)
    * - number of "replace" codes */
 
   std::string output;
-  output.reserve(strlen(imsg) + (w_count * (strlen(p_ctx->where) - 2))
-                 - r_count + 1);
+  output.reserve(strlen(imsg) + (w_count * (strlen(p_ctx->where) - 2)) - r_count
+                 + 1);
 
   for (p = imsg; *p; p++) {
     if (*p == '%') {
       switch (*++p) {
-      case '%': {
+        case '%': {
           output += "%";
-      } break;
-      case 'w': {
+        } break;
+        case 'w': {
           output += p_ctx->where;
-      } break;
-      case 'r': {
-          output += (char) p_ctx->replace;
-      } break;
-      default: {
+        } break;
+        case 'r': {
+          output += (char)p_ctx->replace;
+        } break;
+        default: {
           output += '%';
-          output += (char) *p;
-      } break;
+          output += (char)*p;
+        } break;
       }
     } else {
-      output += (char) *p;
+      output += (char)*p;
     }
   }
   return output;
