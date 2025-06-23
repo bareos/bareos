@@ -70,7 +70,7 @@ static bRC setAcl(PluginContext* ctx, acl_pkt* ap);
 static bRC getXattr(PluginContext* ctx, xattr_pkt* xp);
 static bRC setXattr(PluginContext* ctx, xattr_pkt* xp);
 
-static std::string apply_rp_codes(PluginContext* ctx);
+static std::string apply_rp_codes(PluginContext* ctx, const char* fmt);
 static bRC parse_plugin_definition(PluginContext* ctx, void* value);
 static bRC plugin_has_all_arguments(PluginContext* ctx);
 
@@ -321,7 +321,13 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         };
 
         if (io->flags & (O_CREAT | O_WRONLY)) {
-          std::string writer_codes = apply_rp_codes(ctx);
+          if (!p_ctx->writer) {
+            // this shouldnt happen as we check for this on plugin creation!
+            Jmsg(ctx, M_FATAL, "bpipe-fd: writer command is not set\n");
+            return bRC_Error;
+          }
+
+          std::string writer_codes = apply_rp_codes(ctx, p_ctx->writer);
 
           p_ctx->pfd = OpenBpipe(writer_codes.c_str(), 0, "w", true, env);
           Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p writer=%s\n",
@@ -481,65 +487,47 @@ static bRC setXattr(PluginContext*, xattr_pkt*) { return bRC_OK; }
  * 'ifolder' => 'o', chr(111)
  * 'never' => 'n', chr(110)
  *
- * This function will allocate the required amount of memory with malloc.
- * Need to be free()d manually.
- *
  * Inspired by edit_job_codes in lib/util.c
  */
-static std::string apply_rp_codes(PluginContext* ctx)
+static std::string apply_rp_codes(PluginContext* ctx, const char* fmt)
 {
-  char add[10];
-  char *p, *q, *imsg;
-  int w_count = 0, r_count = 0;
+  ASSERT(ctx);
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
+  ASSERT(p_ctx);
 
-  if (!p_ctx) { return NULL; }
-
-  imsg = p_ctx->writer;
-  if (!imsg) { return NULL; }
-
-  if ((p = imsg)) {
-    while ((q = strstr(p, "%w"))) {
-      w_count++;
-      p = q + 1;
-    }
-
-    p = imsg;
-    while ((q = strstr(p, "%r"))) {
-      r_count++;
-      p = q + 1;
-    }
-  }
-
-  /* Required mem:
-   * len(imsg)
-   * + number of "where" codes * (len(where)-2)
-   * - number of "replace" codes */
+  ASSERT(fmt);
 
   std::string output;
-  output.reserve(strlen(imsg) + (w_count * (strlen(p_ctx->where) - 2)) - r_count
-                 + 1);
 
-  for (p = imsg; *p; p++) {
-    if (*p == '%') {
-      switch (*++p) {
+  for (char const* p = fmt; *p; ++p) {
+    if (p[0] == '%') {
+      bool valid_specifier = false;
+
+      switch (p[1]) {
         case '%': {
           output += "%";
+          valid_specifier = true;
         } break;
         case 'w': {
           output += p_ctx->where;
+          valid_specifier = true;
         } break;
         case 'r': {
           output += (char)p_ctx->replace;
-        } break;
-        default: {
-          output += '%';
-          output += (char)*p;
+          valid_specifier = true;
         } break;
       }
-    } else {
-      output += (char)*p;
+
+      if (valid_specifier) {
+        p += 1;  // skip both characters
+        continue;
+      }
+
+      // if % is not followed by a valid specifier, we simply treat it as a
+      // normal char and "fallthrough"
     }
+
+    output += (char)p[0];
   }
   return output;
 }
