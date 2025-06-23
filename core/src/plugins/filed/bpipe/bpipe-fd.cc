@@ -70,7 +70,7 @@ static bRC setAcl(PluginContext* ctx, acl_pkt* ap);
 static bRC getXattr(PluginContext* ctx, xattr_pkt* xp);
 static bRC setXattr(PluginContext* ctx, xattr_pkt* xp);
 
-static char* apply_rp_codes(PluginContext* ctx);
+static std::string apply_rp_codes(PluginContext* ctx);
 static bRC parse_plugin_definition(PluginContext* ctx, void* value);
 static bRC plugin_has_all_arguments(PluginContext* ctx);
 
@@ -320,22 +320,20 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         };
 
         if (io->flags & (O_CREAT | O_WRONLY)) {
-          char* writer_codes = apply_rp_codes(ctx);
+          std::string writer_codes = apply_rp_codes(ctx);
 
-          p_ctx->pfd = OpenBpipe(writer_codes, 0, "w", true, env);
+          p_ctx->pfd = OpenBpipe(writer_codes.c_str(), 0, "w", true, env);
           Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p writer=%s\n",
-               p_ctx->pfd, writer_codes);
+               p_ctx->pfd, writer_codes.c_str());
           if (!p_ctx->pfd) {
             io->io_errno = errno;
             Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n",
-                 writer_codes, strerror(io->io_errno));
+                 writer_codes.c_str(), strerror(io->io_errno));
             Dmsg(ctx, debuglevel,
-                 "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes,
+                 "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes.c_str(),
                  strerror(io->io_errno));
-            if (writer_codes) { free(writer_codes); }
             return bRC_Error;
           }
-          if (writer_codes) { free(writer_codes); }
         } else {
           p_ctx->pfd = OpenBpipe(p_ctx->reader, 0, "r", false, env);
           Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p reader=%s\n",
@@ -487,11 +485,10 @@ static bRC setXattr(PluginContext*, xattr_pkt*) { return bRC_OK; }
  *
  * Inspired by edit_job_codes in lib/util.c
  */
-static char* apply_rp_codes(PluginContext* ctx)
+static std::string apply_rp_codes(PluginContext* ctx)
 {
   char add[10];
-  const char* str;
-  char *p, *q, *omsg, *imsg;
+  char *p, *q, *imsg;
   int w_count = 0, r_count = 0;
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
 
@@ -517,42 +514,33 @@ static char* apply_rp_codes(PluginContext* ctx)
    * len(imsg)
    * + number of "where" codes * (len(where)-2)
    * - number of "replace" codes */
-  omsg = (char*)malloc(strlen(imsg) + (w_count * (strlen(p_ctx->where) - 2))
-                       - r_count + 1);
-  if (!omsg) {
-    Jmsg(ctx, M_FATAL, "bpipe-fd: Out of memory.");
-    return NULL;
-  }
 
-  *omsg = 0;
+  std::string output;
+  output.reserve(strlen(imsg) + (w_count * (strlen(p_ctx->where) - 2))
+                 - r_count + 1);
+
   for (p = imsg; *p; p++) {
     if (*p == '%') {
       switch (*++p) {
-        case '%':
-          str = "%";
-          break;
-        case 'w':
-          str = p_ctx->where;
-          break;
-        case 'r':
-          snprintf(add, 2, "%c", p_ctx->replace);
-          str = add;
-          break;
-        default:
-          add[0] = '%';
-          add[1] = *p;
-          add[2] = 0;
-          str = add;
-          break;
+      case '%': {
+          output += "%";
+      } break;
+      case 'w': {
+          output += p_ctx->where;
+      } break;
+      case 'r': {
+          output += (char) p_ctx->replace;
+      } break;
+      default: {
+          output += '%';
+          output += (char) *p;
+      } break;
       }
     } else {
-      add[0] = *p;
-      add[1] = 0;
-      str = add;
+      output += (char) *p;
     }
-    strcat(omsg, str);
   }
-  return omsg;
+  return output;
 }
 
 // Strip any backslashes in the string.
