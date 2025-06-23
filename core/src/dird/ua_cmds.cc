@@ -2117,6 +2117,8 @@ static bool TruncateCmd(UaContext* ua, const char*)
 
   if (!mediaIds.size()) {
     Dmsg0(100, "Results are empty\n");
+    // no results should not count as an error
+    result = true;
     goto bail_out;
   }
 
