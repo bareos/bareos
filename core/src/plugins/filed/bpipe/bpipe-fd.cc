@@ -70,7 +70,7 @@ static bRC setAcl(PluginContext* ctx, acl_pkt* ap);
 static bRC getXattr(PluginContext* ctx, xattr_pkt* xp);
 static bRC setXattr(PluginContext* ctx, xattr_pkt* xp);
 
-static char* apply_rp_codes(PluginContext* ctx);
+static std::string apply_rp_codes(PluginContext* ctx, const char* fmt);
 static bRC parse_plugin_definition(PluginContext* ctx, void* value);
 static bRC plugin_has_all_arguments(PluginContext* ctx);
 
@@ -314,28 +314,33 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
         std::unordered_map<std::string, std::string> env{
             {"BareosClientName", std::string{env_client_name}},
             {"BareosJobId", std::to_string(env_job_id)},
-            {"BareosJobLevel", std::string{static_cast<char>(env_backup_level)}},
+            {"BareosJobLevel",
+             std::string{static_cast<char>(env_backup_level)}},
             {"BareosSinceTime", std::to_string(env_since_time)},
             {"BareosJobType", std::string{static_cast<char>(env_job_type)}},
         };
 
         if (io->flags & (O_CREAT | O_WRONLY)) {
-          char* writer_codes = apply_rp_codes(ctx);
+          if (!p_ctx->writer) {
+            // this shouldn't happen as we check for this on plugin creation!
+            Jmsg(ctx, M_FATAL, "bpipe-fd: writer command is not set\n");
+            return bRC_Error;
+          }
 
-          p_ctx->pfd = OpenBpipe(writer_codes, 0, "w", true, env);
+          std::string writer_codes = apply_rp_codes(ctx, p_ctx->writer);
+
+          p_ctx->pfd = OpenBpipe(writer_codes.c_str(), 0, "w", true, env);
           Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p writer=%s\n",
-               p_ctx->pfd, writer_codes);
+               p_ctx->pfd, writer_codes.c_str());
           if (!p_ctx->pfd) {
             io->io_errno = errno;
             Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n",
-                 writer_codes, strerror(io->io_errno));
+                 writer_codes.c_str(), strerror(io->io_errno));
             Dmsg(ctx, debuglevel,
-                 "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes,
-                 strerror(io->io_errno));
-            if (writer_codes) { free(writer_codes); }
+                 "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n",
+                 writer_codes.c_str(), strerror(io->io_errno));
             return bRC_Error;
           }
-          if (writer_codes) { free(writer_codes); }
         } else {
           p_ctx->pfd = OpenBpipe(p_ctx->reader, 0, "r", false, env);
           Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p reader=%s\n",
@@ -482,77 +487,47 @@ static bRC setXattr(PluginContext*, xattr_pkt*) { return bRC_OK; }
  * 'ifolder' => 'o', chr(111)
  * 'never' => 'n', chr(110)
  *
- * This function will allocate the required amount of memory with malloc.
- * Need to be free()d manually.
- *
  * Inspired by edit_job_codes in lib/util.c
  */
-static char* apply_rp_codes(PluginContext* ctx)
+static std::string apply_rp_codes(PluginContext* ctx, const char* fmt)
 {
-  char add[10];
-  const char* str;
-  char *p, *q, *omsg, *imsg;
-  int w_count = 0, r_count = 0;
+  ASSERT(ctx);
   struct plugin_ctx* p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
+  ASSERT(p_ctx);
 
-  if (!p_ctx) { return NULL; }
+  ASSERT(fmt);
 
-  imsg = p_ctx->writer;
-  if (!imsg) { return NULL; }
+  std::string output;
 
-  if ((p = imsg)) {
-    while ((q = strstr(p, "%w"))) {
-      w_count++;
-      p = q + 1;
-    }
-
-    p = imsg;
-    while ((q = strstr(p, "%r"))) {
-      r_count++;
-      p = q + 1;
-    }
-  }
-
-  /* Required mem:
-   * len(imsg)
-   * + number of "where" codes * (len(where)-2)
-   * - number of "replace" codes */
-  omsg = (char*)malloc(strlen(imsg) + (w_count * (strlen(p_ctx->where) - 2))
-                       - r_count + 1);
-  if (!omsg) {
-    Jmsg(ctx, M_FATAL, "bpipe-fd: Out of memory.");
-    return NULL;
-  }
-
-  *omsg = 0;
-  for (p = imsg; *p; p++) {
-    if (*p == '%') {
-      switch (*++p) {
-        case '%':
-          str = "%";
-          break;
-        case 'w':
-          str = p_ctx->where;
-          break;
-        case 'r':
-          snprintf(add, 2, "%c", p_ctx->replace);
-          str = add;
-          break;
-        default:
-          add[0] = '%';
-          add[1] = *p;
-          add[2] = 0;
-          str = add;
-          break;
+  for (char const* p = fmt; *p; ++p) {
+    bool parsed_specifier = false;
+    if (p[0] == '%') {
+      switch (p[1]) {
+        case '%': {
+          output += "%";
+          parsed_specifier = true;
+        } break;
+        case 'w': {
+          output += (char const*)p_ctx->where;
+          parsed_specifier = true;
+        } break;
+        case 'r': {
+          output += (char)p_ctx->replace;
+          parsed_specifier = true;
+        } break;
       }
-    } else {
-      add[0] = *p;
-      add[1] = 0;
-      str = add;
+
+      // if % is not followed by a valid specifier, we simply treat it as a
+      // normal character
     }
-    strcat(omsg, str);
+
+    if (parsed_specifier) {
+      p += 1;  // skip both characters
+    } else {
+      output += p[0];
+    }
   }
-  return omsg;
+  return output;
 }
 
 // Strip any backslashes in the string.
