@@ -43,6 +43,7 @@
 #include "lib/base64.h"
 #include "lib/source_location.h"
 
+#include <bitset>
 #include <string>
 #include <stdexcept>
 #include <system_error>
@@ -486,9 +487,6 @@ class BareosSqlError : public std::runtime_error {
   BareosSqlError(const char* what) : std::runtime_error(what) {}
 };
 
-// used in SqlQuery method
-struct SqlDiscardResult {};
-
 class BareosDb : public BareosDbQueryEnum {
  protected:
   brwlock_t lock_; /**< Transaction lock */
@@ -530,7 +528,6 @@ class BareosDb : public BareosDbQueryEnum {
   const char** queries = nullptr;   /**< table of query texts */
   static const char* query_names[]; /**< table of query names */
   int num_rows_ = 0; /**< Number of rows returned by last query */
-
  private:
   int GetFilenameRecord(JobControlRecord* jcr);
   bool CreateBatchFileAttributesRecord(JobControlRecord* jcr,
@@ -566,6 +563,7 @@ class BareosDb : public BareosDbQueryEnum {
  public:
   BareosDb() {}
   virtual ~BareosDb() {}
+
   const char* get_db_name(void) { return db_name_; }
   const char* get_db_user(void) { return db_user_; }
   bool IsConnected(void) { return connected_; }
@@ -905,7 +903,7 @@ class BareosDb : public BareosDbQueryEnum {
 
   bool SqlQuery(SQL_QUERY query, ...);
   bool SqlQuery(const char* query);
-  bool SqlQuery(const char* query, SqlDiscardResult);
+  bool SqlExec(const char* query);  // like SqlQuery, but does not store result
   bool SqlQuery(const char* query, DB_RESULT_HANDLER* ResultHandler, void* ctx);
 
   /* sql_update.cc */
@@ -982,8 +980,43 @@ class BareosDb : public BareosDbQueryEnum {
   virtual int SqlNumFields(void) = 0;
   virtual void SqlFreeResult(void) = 0;
   virtual SQL_ROW SqlFetchRow(void) = 0;
-  virtual bool SqlQueryWithoutHandler(const char* query) = 0;
-  virtual bool SqlQueryWithoutHandler(const char* query, SqlDiscardResult) = 0;
+
+ protected:
+  enum class query_flag : size_t
+  {
+    DiscardResult,
+    Count,
+  };
+
+  struct query_flags {
+    std::bitset<static_cast<size_t>(query_flag::Count)> set_flags;
+
+    query_flags() = default;
+    constexpr query_flags(std::initializer_list<query_flag> initial_flags)
+    {
+      for (auto flag : initial_flags) {
+        auto pos = static_cast<size_t>(flag);
+        set_flags.set(pos);
+      }
+    }
+
+    template <query_flag Flag> void set()
+    {
+      constexpr auto pos = static_cast<size_t>(Flag);
+      static_assert(pos < static_cast<size_t>(query_flag::Count));
+      set_flags.set(pos);
+    }
+
+    bool test(query_flag Flag)
+    {
+      return set_flags.test(static_cast<size_t>(Flag));
+    }
+  };
+
+
+ private:
+  virtual bool SqlQueryWithoutHandler(const char* query, query_flags flags = {})
+      = 0;
   virtual bool SqlQueryWithHandler(const char* query,
                                    DB_RESULT_HANDLER* ResultHandler,
                                    void* ctx)

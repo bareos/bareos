@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -129,7 +129,7 @@ TEST_F(CatalogTest, database)
       "  '19.2.4~pre1035.d5f227724 (22Nov19) "
       "Linux-5.3.11-200.fc30.x86_64,redhat,Fedora release 30 (Thirty)')"};
 
-  ASSERT_TRUE(db->SqlQuery(client_query.c_str(), SqlDiscardResult{}));
+  ASSERT_TRUE(db->SqlExec(client_query.c_str()));
 
   std::string job_query{
       "INSERT INTO Job "
@@ -144,7 +144,7 @@ TEST_F(CatalogTest, database)
       "  '2019-11-27 15:04:49', "
       "  '2019-11-27 15:04:48') "};
 
-  ASSERT_TRUE(db->SqlQuery(job_query.c_str(), SqlDiscardResult{}));
+  ASSERT_TRUE(db->SqlExec(job_query.c_str()));
 
   result = db->FindLastJobStartTimeForJobAndClient(jcr, "backup-bareos-fd",
                                                    "bareos-fd", stime);

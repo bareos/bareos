@@ -38,10 +38,6 @@
 struct AttributesDbRecord;
 class JobControlRecord;
 
-struct PGresultDeleter {
-  void operator()(PGresult* result) const; 
-};
-
 class BareosDbPostgresql : public BareosDb {
  public:
   BareosDbPostgresql(JobControlRecord* jcr,
@@ -82,13 +78,11 @@ class BareosDbPostgresql : public BareosDb {
                    DB_RESULT_HANDLER* ResultHandler,
                    void* ctx) override;
 
-  std::unique_ptr<PGresult, PGresultDeleter> TryQuery(const char* query);
-
   bool SqlQueryWithHandler(const char* query,
                            DB_RESULT_HANDLER* ResultHandler,
                            void* ctx) override;
-  bool SqlQueryWithoutHandler(const char* query) override;
-  bool SqlQueryWithoutHandler(const char* query, SqlDiscardResult) override;
+  bool SqlQueryWithoutHandler(const char* query,
+                              query_flags flags = {}) override;
   void SqlFreeResult(void) override;
   SQL_ROW SqlFetchRow(void) override;
   const char* sql_strerror(void) override;
