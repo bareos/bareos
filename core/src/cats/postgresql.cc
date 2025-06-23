@@ -642,10 +642,8 @@ bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query,
       Dmsg1(500, "We have %d rows\n", num_rows_);
       row_number_ = 0; /* we can start to fetch something */
     }
-    status_ = 0; /* succeed */
     return true;
   } else {
-    status_ = 1; /* failure */
     return false;
   }
 }
@@ -947,6 +945,211 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 bail_out:
   unlock_mutex(mutex);
   return mdb;
+}
+
+bool BareosDbPostgresql::SqlBatchStartFileTable(JobControlRecord*)
+{
+  AssertOwnership();
+  const char* query = "COPY batch FROM STDIN";
+
+  Dmsg0(500, "SqlBatchStartFileTable started\n");
+
+  if (!SqlQueryWithoutHandler("CREATE TEMPORARY TABLE batch ("
+                              "FileIndex int,"
+                              "JobId int,"
+                              "Path varchar,"
+                              "Name varchar,"
+                              "LStat varchar,"
+                              "Md5 varchar,"
+                              "DeltaSeq smallint,"
+                              "Fhinfo NUMERIC(20),"
+                              "Fhnode NUMERIC(20))")) {
+    Dmsg0(500, "SqlBatchStartFileTable failed\n");
+    return false;
+  }
+
+  // We are starting a new query.  reset everything.
+  num_rows_ = -1;
+  row_number_ = -1;
+  field_number_ = -1;
+
+  SqlFreeResult();
+
+  postgres::result res;
+  for (int i = 0; i < 10; i++) {
+    res.reset(PQexec(db_handle_, query));
+    if (res) { break; }
+    Bmicrosleep(5, 0);
+  }
+  if (!res) {
+    Dmsg1(50, "Query failed: %s\n", query);
+    goto bail_out;
+  }
+
+  {
+    auto status = PQresultStatus(res.get());
+    if (status == PGRES_COPY_IN) {
+      num_fields_ = (int)PQnfields(res.get());
+      num_rows_ = 0;
+    } else {
+      Dmsg1(50, "Result status failed: %s\n", query);
+      goto bail_out;
+    }
+  }
+
+  Dmsg0(500, "SqlBatchStartFileTable finishing\n");
+
+  result_ = res.release();
+
+  return true;
+
+bail_out:
+  Mmsg1(errmsg, T_("error starting batch mode: %s"),
+        PQerrorMessage(db_handle_));
+  return false;
+}
+
+// Set error to something to abort operation
+bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord*,
+                                              const char* error)
+{
+  int res;
+  int count = 30;
+  PGresult* pg_result;
+
+  Dmsg0(500, "SqlBatchEndFileTable started\n");
+
+  do {
+    res = PQputCopyEnd(db_handle_, error);
+  } while (res == 0 && --count > 0);
+
+  if (res == 1) { Dmsg0(500, "ok\n"); }
+
+  if (res <= 0) {
+    Dmsg0(500, "we failed\n");
+    Mmsg1(errmsg, T_("error ending batch mode: %s"),
+          PQerrorMessage(db_handle_));
+    Dmsg1(500, "failure %s\n", errmsg);
+  }
+
+  pg_result = PQgetResult(db_handle_);
+  if (PQresultStatus(pg_result) != PGRES_COMMAND_OK) {
+    Mmsg1(errmsg, T_("error ending batch mode: %s"),
+          PQerrorMessage(db_handle_));
+  }
+
+  PQclear(pg_result);
+
+  Dmsg0(500, "SqlBatchEndFileTable finishing\n");
+
+  return true;
+}
+
+/**
+ * Escape strings so that PostgreSQL is happy on COPY
+ *
+ *   NOTE! len is the length of the old string. Your new
+ *         string must be long enough (max 2*old+1) to hold
+ *         the escaped output.
+ */
+static char* pgsql_copy_escape(char* dest, const char* src, size_t len)
+{
+  char c = '\0';
+
+  while (len > 0 && *src) {
+    switch (*src) {
+      case '\b':
+        c = 'b';
+        break;
+      case '\f':
+        c = 'f';
+        break;
+      case '\n':
+        c = 'n';
+        break;
+      case '\\':
+        c = '\\';
+        break;
+      case '\t':
+        c = 't';
+        break;
+      case '\r':
+        c = 'r';
+        break;
+      case '\v':
+        c = 'v';
+        break;
+      case '\'':
+        c = '\'';
+        break;
+      default:
+        c = '\0';
+        break;
+    }
+
+    if (c) {
+      *dest = '\\';
+      dest++;
+      *dest = c;
+    } else {
+      *dest = *src;
+    }
+
+    len--;
+    src++;
+    dest++;
+  }
+
+  *dest = '\0';
+  return dest;
+}
+
+bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
+                                                 AttributesDbRecord* ar)
+{
+  int res;
+  int count = 30;
+  size_t len;
+  const char* digest;
+  char ed1[50], ed2[50], ed3[50];
+
+  AssertOwnership();
+  esc_name = CheckPoolMemorySize(esc_name, fnl * 2 + 1);
+  pgsql_copy_escape(esc_name, fname, fnl);
+
+  esc_path = CheckPoolMemorySize(esc_path, pnl * 2 + 1);
+  pgsql_copy_escape(esc_path, path, pnl);
+
+  if (ar->Digest == NULL || ar->Digest[0] == 0) {
+    digest = "0";
+  } else {
+    digest = ar->Digest;
+  }
+
+  len = Mmsg(cmd, "%u\t%s\t%s\t%s\t%s\t%s\t%u\t%s\t%s\n", ar->FileIndex,
+             edit_int64(ar->JobId, ed1), esc_path, esc_name, ar->attr, digest,
+             ar->DeltaSeq, edit_uint64(ar->Fhinfo, ed2),
+             edit_uint64(ar->Fhnode, ed3));
+
+  do {
+    res = PQputCopyData(db_handle_, cmd, len);
+  } while (res == 0 && --count > 0);
+
+  if (res == 1) {
+    Dmsg0(500, "ok\n");
+    changes++;
+  }
+
+  if (res <= 0) {
+    Dmsg0(500, "we failed\n");
+    Mmsg1(errmsg, T_("error copying in batch mode: %s"),
+          PQerrorMessage(db_handle_));
+    Dmsg1(500, "failure %s\n", errmsg);
+  }
+
+  Dmsg0(500, "SqlBatchInsertFileTable finishing\n");
+
+  return true;
 }
 
 #endif /* HAVE_POSTGRESQL */
