@@ -500,34 +500,32 @@ static std::string apply_rp_codes(PluginContext* ctx, const char* fmt)
   std::string output;
 
   for (char const* p = fmt; *p; ++p) {
+    bool parsed_specifier = false;
     if (p[0] == '%') {
-      bool valid_specifier = false;
-
       switch (p[1]) {
         case '%': {
           output += "%";
-          valid_specifier = true;
+          parsed_specifier = true;
         } break;
         case 'w': {
-          output += p_ctx->where;
-          valid_specifier = true;
+          output += (char const*)p_ctx->where;
+          parsed_specifier = true;
         } break;
         case 'r': {
           output += (char)p_ctx->replace;
-          valid_specifier = true;
+          parsed_specifier = true;
         } break;
       }
 
-      if (valid_specifier) {
-        p += 1;  // skip both characters
-        continue;
-      }
-
       // if % is not followed by a valid specifier, we simply treat it as a
-      // normal char and "fallthrough"
+      // normal character
     }
 
-    output += (char)p[0];
+    if (parsed_specifier) {
+      p += 1;  // skip both characters
+    } else {
+      output += p[0];
+    }
   }
   return output;
 }
