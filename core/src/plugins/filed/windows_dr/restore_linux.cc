@@ -272,9 +272,9 @@ class RestoreToStdout : public GenericHandler {
   std::optional<disk::Parser> disk_;
 };
 
-class RestoreToFiles : public GenericHandler {
+class RestoreToGeneratedFiles : public GenericHandler {
  public:
-  RestoreToFiles(std::filesystem::path directory)
+  RestoreToGeneratedFiles(std::filesystem::path directory)
   {
     directory_fd = auto_fd{open(directory.c_str(), O_DIRECTORY | O_RDONLY)};
     if (!directory_fd) {
@@ -405,6 +405,125 @@ class RestoreToFiles : public GenericHandler {
   std::optional<writing_disk> current_disk;
 };
 
+class RestoreToSpecifiedFiles : public GenericHandler {
+ public:
+  RestoreToSpecifiedFiles(std::vector<auto_fd> files)
+      : disk_files{std::move(files)}
+  {
+  }
+
+  void BeginRestore(std::size_t num_disks) override
+  {
+    if (disk_files.size() != num_disks)
+      throw std::runtime_error{fmt::format(
+          "image contains {} disks, but only {} were specified on the "
+          "command line",
+          num_disks, disk_files.size())};
+  }
+
+  void EndRestore() override {}
+  void BeginDisk(disk_info info) override
+  {
+    begin_disk(geometry_for_size(info.disk_size), info.disk_size);
+  }
+  void EndDisk() override
+  {
+    disk().Finish();
+    end_disk();
+  }
+
+  void BeginMbrTable(const partition_info_mbr& mbr) override
+  {
+    disk().BeginMbrTable(mbr);
+  }
+
+  void BeginGptTable(const partition_info_gpt& gpt) override
+  {
+    disk().BeginGptTable(gpt);
+  }
+
+  void BeginRawTable(const partition_info_raw& raw) override
+  {
+    disk().BeginRawTable(raw);
+  }
+
+  void MbrEntry(const part_table_entry& entry,
+                const part_table_entry_mbr_data& data) override
+  {
+    disk().MbrEntry(entry, data);
+  }
+
+  void GptEntry(const part_table_entry& entry,
+                const part_table_entry_gpt_data& data) override
+  {
+    disk().GptEntry(entry, data);
+  }
+
+  void EndPartTable() override { disk().EndPartTable(); }
+
+  void BeginExtent(extent_header header) override
+  {
+    disk().BeginExtent(header);
+  }
+  void ExtentData(std::span<const char> data) override
+  {
+    disk().ExtentData(data);
+  }
+  void EndExtent() override { disk().EndExtent(); }
+
+ private:
+  disk::Parser& disk()
+  {
+    if (!current_disk) {
+      throw std::logic_error{"cannot access disk before it is created"};
+    }
+
+    return current_disk->disk;
+  }
+
+  template <typename... Args>
+  disk::Parser& begin_disk(disk_geometry geometry, std::size_t disk_size)
+  {
+    if (current_disk) {
+      throw std::logic_error{"cannot begin disk after one was created"};
+    }
+
+    auto& fd = disk_files[current_idx];
+
+    if (ftruncate(fd.get(), disk_size) < 0) {
+      throw std::runtime_error{
+          fmt::format("could not expand disk: Err={}", strerror(errno))};
+    }
+
+    auto& res = current_disk.emplace(fd.get(), geometry, disk_size);
+    return res.disk;
+  }
+
+  void end_disk()
+  {
+    if (!current_disk) {
+      throw std::logic_error{"cannot access disk before it is created"};
+    }
+
+    current_disk.reset();
+    current_idx += 1;
+  }
+
+  struct writing_disk {
+    FileOutput output;
+    disk::Parser disk;
+
+    writing_disk(int fd, disk_geometry geometry, std::size_t disk_size)
+        : output{fd, disk_size}, disk{geometry, disk_size, &output}
+    {
+    }
+  };
+
+  std::size_t current_idx = 0;
+  std::vector<auto_fd> disk_files;
+  std::optional<writing_disk> current_disk;
+};
+
 void restore_data(std::istream& input, bool use_stdout)
 {
   if (use_stdout) {
@@ -412,7 +531,7 @@ void restore_data(std::istream& input, bool use_stdout)
     parse_file_format(input, &strategy);
     std::cout.flush();
   } else {
-    RestoreToFiles strategy{""};
+    RestoreToGeneratedFiles strategy{""};
     parse_file_format(input, &strategy);
   }
 }
@@ -539,6 +658,25 @@ class ListContents : public GenericHandler {
   std::size_t disk_idx_ = 0;
 };
 
+std::vector<auto_fd> open_files(std::span<std::string> filenames)
+{
+  std::vector<auto_fd> files;
+  files.reserve(filenames.size());
+
+  for (auto& filename : filenames) {
+    auto_fd fd{open(filename.c_str(), O_WRONLY, 0664)};
+
+    if (!fd) {
+      throw std::runtime_error{
+          fmt::format("could not open '{}': {}", filename, strerror(errno))};
+    }
+
+    files.emplace_back(std::move(fd));
+  }
+
+  return files;
+}
+
 int main(int argc, char* argv[])
 {
   CLI::App app;
@@ -557,13 +695,20 @@ int main(int argc, char* argv[])
       "--stdout", "restore the single disk to stdout (for piping purposes)");
 
   std::string directory;
-  auto* files = location
-                    ->add_option(
-                        "--into", directory,
-                        "restore the disks to raw files in the given directory")
-                    ->check(CLI::ExistingDirectory);
+  auto* gendir
+      = location
+            ->add_option(
+                "--into", directory,
+                "restore the disks to raw files in the given directory")
+            ->check(CLI::ExistingDirectory);
 
-  files->excludes(stdout);
+  gendir->excludes(stdout);
+  std::vector<std::string> filenames;
+  auto* disks = location
+                    ->add_option("--onto", filenames,
+                                 "write the restored disks into the given "
+                                 "files; in the given order")
+                    ->check(CLI::ExistingFile);
 
   location->require_option();
 
@@ -582,8 +727,12 @@ int main(int argc, char* argv[])
 
       if (*stdout) {
         strategy = std::make_unique<RestoreToStdout>(std::cout);
-      } else if (*files) {
-        strategy = std::make_unique<RestoreToFiles>(directory);
+      } else if (*gendir) {
+        strategy = std::make_unique<RestoreToGeneratedFiles>(directory);
+      } else if (*disks) {
+        auto files = open_files(filenames);
+
+        strategy = std::make_unique<RestoreToSpecifiedFiles>(std::move(files));
       } else {
         throw std::logic_error("i dont know where to restore too!");
       }
