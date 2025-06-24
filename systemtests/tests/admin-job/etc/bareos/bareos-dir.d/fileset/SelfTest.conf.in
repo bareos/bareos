@@ -5,8 +5,8 @@ FileSet {
   Include {
     Options {
       Signature = XXH128
+      XAttr Support = No
     }
-   #File = "@sbindir@"
     File=<@tmpdir@/file-list
   }
 }
