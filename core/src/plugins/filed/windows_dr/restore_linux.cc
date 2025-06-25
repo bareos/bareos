@@ -56,13 +56,6 @@ template <typename... T> void err_msg(fmt::format_string<T...> fmt, T&&... args)
   fmt::println(stderr, fmt, std::forward<T>(args)...);
 }
 
-template <typename... T>
-void info_msg(fmt::format_string<T...> fmt, T&&... args)
-{
-  fmt::println(stderr, fmt, std::forward<T>(args)...);
-}
-
-
 class StreamOutput : public Output {
  public:
   // the stream is assumed to be unseekable!
@@ -689,121 +682,6 @@ std::vector<auto_fd> open_files(std::span<std::string> filenames)
   return files;
 }
 
-template <typename BaseHandler> struct WithInfo : GenericHandler {
-  using Clock = typename std::chrono::steady_clock;
-
-
-  template <typename... Args>
-  WithInfo(Clock::duration info_frequency_, Args&&... args)
-      : handler{std::forward<Args>(args)...}, info_frequency{info_frequency_}
-  {
-  }
-
-  void BeginRestore(std::size_t num_disks) override
-  {
-    info_msg("restoring {} disks", num_disks);
-    handler.BeginRestore(num_disks);
-  }
-  void EndRestore() override { handler.EndRestore(); }
-  void BeginDisk(disk_info info) override
-  {
-    current_disk += 1;
-    current_disk_size = info.disk_size;
-    current_disk_offset = 0;
-    last_info_at = Clock::now();
-    info_msg("restoring disk {} of size {}", current_disk, current_disk_size);
-    handler.BeginDisk(info);
-  }
-  void EndDisk() override
-  {
-    AdvanceTo(current_disk_size);
-    handler.EndDisk();
-    info_msg("finished restoring disk {}", current_disk);
-  }
-
-  void BeginMbrTable(const partition_info_mbr& mbr) override
-  {
-    info_msg("start restoring mbr table");
-    handler.BeginMbrTable(mbr);
-  }
-  void BeginGptTable(const partition_info_gpt& gpt) override
-  {
-    info_msg("start restoring gpt table");
-    handler.BeginGptTable(gpt);
-  }
-  void BeginRawTable(const partition_info_raw& raw) override
-  {
-    handler.BeginRawTable(raw);
-  }
-  void MbrEntry(const part_table_entry& entry,
-                const part_table_entry_mbr_data& data) override
-  {
-    handler.MbrEntry(entry, data);
-  }
-  void GptEntry(const part_table_entry& entry,
-                const part_table_entry_gpt_data& data) override
-  {
-    handler.GptEntry(entry, data);
-  }
-  void EndPartTable() override
-  {
-    info_msg("start restoring disk data");
-    handler.EndPartTable();
-  }
-
-  void BeginExtent(extent_header header) override
-  {
-    AdvanceTo(header.offset);
-    handler.BeginExtent(header);
-  }
-
-  void ExtentData(std::span<const char> data) override
-  {
-    static constexpr std::size_t block_size = std::size_t{4} << 20;
-
-    while (data.size() > block_size) {
-      auto block = data.subspan(0, block_size);
-      Write(block);
-      data = data.subspan(block.size());
-    }
-    Write(data);
-  }
-
-  void EndExtent() override { handler.EndExtent(); }
-
-  void AdvanceTo(std::size_t next_disk_offset)
-  {
-    if (next_disk_offset == current_disk_size) {
-      info_msg(". 100% ({0}/{0})", current_disk_size);
-      current_disk_offset = next_disk_offset;
-      return;
-    }
-
-    Clock::time_point now = Clock::now();
-    if (now - last_info_at >= info_frequency) {
-      info_msg(". {:3}% ({}/{})", (100 * next_disk_offset) / current_disk_size,
-               next_disk_offset, current_disk_size);
-
-      last_info_at = now;
-    }
-    current_disk_offset = next_disk_offset;
-  }
-  void Write(std::span<char const> data)
-  {
-    handler.ExtentData(data);
-    AdvanceTo(current_disk_offset + data.size());
-  }
-
-  virtual ~WithInfo() = default;
-
-  BaseHandler handler;
-  std::size_t current_disk{};
-  std::size_t current_disk_size{};
-  std::size_t current_disk_offset{};
-  Clock::time_point last_info_at;
-  Clock::duration info_frequency;
-};
-
 int main(int argc, char* argv[])
 {
   CLI::App app;
@@ -869,21 +747,21 @@ int main(int argc, char* argv[])
   app.require_subcommand(1, 1);
 
   CLI11_PARSE(app, argc, argv);
+
+  auto* logger = progressbar::get();
+
   try {
     if (*restore) {
       std::unique_ptr<GenericHandler> strategy;
 
       if (*stdout) {
-        strategy = std::make_unique<WithInfo<RestoreToStdout>>(info_frequency,
-                                                               std::cout);
+        strategy = std::make_unique<RestoreToStdout>(std::cout);
       } else if (*gendir) {
-        strategy = std::make_unique<WithInfo<RestoreToGeneratedFiles>>(
-            info_frequency, directory);
+        strategy = std::make_unique<RestoreToGeneratedFiles>(directory);
       } else if (*disks) {
         auto files = open_files(filenames);
 
-        strategy = std::make_unique<WithInfo<RestoreToSpecifiedFiles>>(
-            info_frequency, std::move(files));
+        strategy = std::make_unique<RestoreToSpecifiedFiles>(std::move(files));
       } else {
         throw std::logic_error("i dont know where to restore too!");
       }
@@ -891,22 +769,22 @@ int main(int argc, char* argv[])
       std::ifstream opened_file;
       std::istream* input = std::addressof(std::cin);
       if (*from) {
-        trace_msg("using {} as input", filename);
+        logger->Info(fmt::format("using {} as input", filename));
         opened_file.open(filename, std::ios_base::in | std::ios_base::binary);
         input = std::addressof(opened_file);
       }
-      parse_file_format(progressbar::get(), *input, strategy.get());
+      parse_file_format(logger, *input, strategy.get());
     } else if (*list) {
       ListContents strategy;
 
       std::ifstream opened_file;
       std::istream* input = std::addressof(std::cin);
       if (*list_from) {
-        trace_msg("using {} as input", filename);
+        logger->Info(fmt::format("using {} as input", filename));
         opened_file.open(filename, std::ios_base::in | std::ios_base::binary);
         input = std::addressof(opened_file);
       }
-      parse_file_format(progressbar::get(), *input, &strategy);
+      parse_file_format(logger, *input, &strategy);
     } else {
       throw std::logic_error("i dont know what to do");
     }
