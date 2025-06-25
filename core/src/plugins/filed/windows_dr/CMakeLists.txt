@@ -41,6 +41,10 @@ else()
     progress-bar-logger PRIVATE indicators::indicators fmt::fmt-header-only
   )
 
+  add_executable(test-progress progress.cc)
+  target_link_libraries(test-progress PUBLIC indicators::indicators)
+  target_compile_options(test-progress PRIVATE "-Wno-shadow")
+
   target_link_libraries(
     barri CLI11::CLI11 Microsoft.GSL::GSL ${ZLIB_LIBRARIES}
     fmt::fmt-header-only progress-bar-logger
