@@ -54,6 +54,52 @@
 #include "CLI/Config.hpp"
 #include "CLI/Formatter.hpp"
 
+template <class... Ts> struct overloads : Ts... {
+  using Ts::operator()...;
+};
+
+using insert_bytes = std::vector<char>;
+struct insert_from {
+  HANDLE hndl;
+  std::size_t offset;
+  std::size_t length;
+};
+
+using insert_step = std::variant<insert_bytes, insert_from>;
+
+using insert_plan = std::vector<insert_step>;
+
+
+std::size_t compute_plan_size(const insert_plan& plan)
+{
+  std::size_t computed_size = 0;
+  for (auto& step : plan) {
+    computed_size += std::visit(
+        overloads{
+            [](const insert_bytes& bytes) { return bytes.size(); },
+            [](const insert_from& from) { return from.length; },
+        },
+        step);
+  }
+  return computed_size;
+}
+
+
+struct vec_writer : public writer {
+  vec_writer() {}
+
+  void write(const char* input, std::size_t size) override
+  {
+    buf.insert(std::end(buf), input, input + size);
+  }
+  virtual ~vec_writer() {}
+
+  std::vector<char> get() { return std::move(buf); }
+
+ private:
+  std::vector<char> buf;
+};
+
 struct partition_extent {
   std::size_t partition_offset;
   std::size_t handle_offset;
@@ -127,6 +173,69 @@ part_table_entry_mbr_data from_win32(const PARTITION_INFORMATION_MBR& mbr)
 
   return Result;
 }
+
+void copy_stream(HANDLE hndl,
+                 std::size_t offset,
+                 std::size_t length,
+                 std::ostream& stream)
+{
+  DWORD off_low = offset & 0xFFFFFFFF;
+  LONG off_high = (offset >> 32) & 0xFFFFFFFF;
+  SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
+
+  std::vector<char> buffer(1024 * 1024);
+
+  std::size_t bytes_to_read = length;
+  while (bytes_to_read > 0) {
+    DWORD bytes_read = 0;
+
+    DWORD buffer_size = std::min(buffer.size(), bytes_to_read);
+
+    if (!ReadFile(hndl, buffer.data(), buffer_size, &bytes_read, NULL)) {
+      throw win_error("ReadFile", GetLastError());
+    }
+
+    if (bytes_read == 0) {
+      {
+        LARGE_INTEGER dist = {};
+        dist.QuadPart = 0;
+        LARGE_INTEGER new_pos = {};
+        if (!SetFilePointerEx(hndl, dist, &new_pos, FILE_CURRENT)) {
+          fprintf(stderr, "coud not determine size: Err=%d\n", GetLastError());
+        } else {
+          fprintf(stderr, "Reading (%llu, %llu) of %p.  Current = %llu\n",
+                  offset, length, hndl, new_pos.QuadPart);
+        }
+      }
+
+      fprintf(stderr,
+              "premature reading end (read 0).  Still %llu bytes to go...\n",
+              bytes_to_read);
+      return;
+    }
+
+    stream.write(buffer.data(), bytes_read);
+
+    bytes_to_read -= bytes_read;
+  }
+}
+
+
+void execute_plan(std::ostream& stream, const insert_plan& plan)
+{
+  for (auto& step : plan) {
+    std::visit(overloads{
+                   [&stream](const insert_bytes& bytes) {
+                     stream.write(bytes.data(), bytes.size());
+                   },
+                   [&stream](const insert_from& from) {
+                     copy_stream(from.hndl, from.offset, from.length, stream);
+                   },
+               },
+               step);
+  }
+}
+
 
 void dump_data(std::ostream&, bool dry);
 void restore_data(std::istream&, bool raw_file);
@@ -717,34 +826,37 @@ std::optional<partition_layout> GetPartitionLayout(HANDLE device)
   return result;
 }
 
-void WriteHeader(std::ostream& stream, const disk_map& map)
+void WriteHeader(std::ostream& stream,
+                 const disk_map& map,
+                 std::size_t total_size)
 {
-  file_header header(map.size());
+  file_header header(map.size(), total_size);
 
-  header.write(stream);
+  vec_writer writer;
+  header.write(writer);
+  auto data = writer.get();
+  stream.write(data.data(), data.size());
 }
 
-void WriteDiskHeader(std::ostream& stream,
+void WriteDiskHeader(insert_plan& plan,
                      const disk& Disk,
                      const DISK_GEOMETRY_EX& geo)
 {
   std::size_t total_extent_size = 0;
-  for (auto& extent : Disk.extents) {
-    total_extent_size += disk_extents.length;
-  }
+  for (auto& extent : Disk.extents) { total_extent_size += extent.length; }
   disk_header header(geo.DiskSize.QuadPart, geo.Geometry.MediaType,
                      geo.Geometry.BytesPerSector, Disk.extents.size(),
                      total_extent_size);
 
-  header.write(stream);
+  vec_writer writer;
+  header.write(writer);
+  plan.emplace_back(writer.get());
 }
 
-template <class... Ts> struct overloads : Ts... {
-  using Ts::operator()...;
-};
-
-void WriteDiskPartTable(std::ostream& stream, const partition_layout& layout)
+void WriteDiskPartTable(insert_plan& plan, const partition_layout& layout)
 {
+  vec_writer writer;
+
   {
     auto header = std::visit(
         overloads{
@@ -771,87 +883,49 @@ void WriteDiskPartTable(std::ostream& stream, const partition_layout& layout)
         },
         layout.info);
     header.partition_count = layout.partition_infos.size();
-    header.write(stream);
+
+    header.write(writer);
   }
 
 
   for (auto& info : layout.partition_infos) {
     part_table_entry ent = from_win32(info);
 
-    ent.write(stream);
+    ent.write(writer);
     switch (info.PartitionStyle) {
       case PARTITION_STYLE_MBR: {
         part_table_entry_mbr_data data = from_win32(info.Mbr);
 
-        data.write(stream);
+        data.write(writer);
       } break;
       case PARTITION_STYLE_GPT: {
         part_table_entry_gpt_data data = from_win32(info.Gpt);
 
-        data.write(stream);
+        data.write(writer);
       } break;
       default: { /* intentionally left blank */
       } break;
     }
   }
+
+  plan.emplace_back(writer.get());
 }
 
-void copy_stream(HANDLE hndl,
-                 std::size_t offset,
-                 std::size_t length,
-                 std::ostream& stream)
-{
-  DWORD off_low = offset & 0xFFFFFFFF;
-  LONG off_high = (offset >> 32) & 0xFFFFFFFF;
-  SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
-
-  std::vector<char> buffer(1024 * 1024);
-
-  std::size_t bytes_to_read = length;
-  while (bytes_to_read > 0) {
-    DWORD bytes_read = 0;
-
-    DWORD buffer_size = std::min(buffer.size(), bytes_to_read);
-
-    if (!ReadFile(hndl, buffer.data(), buffer_size, &bytes_read, NULL)) {
-      throw win_error("ReadFile", GetLastError());
-    }
-
-    if (bytes_read == 0) {
-      {
-        LARGE_INTEGER dist = {};
-        dist.QuadPart = 0;
-        LARGE_INTEGER new_pos = {};
-        if (!SetFilePointerEx(hndl, dist, &new_pos, FILE_CURRENT)) {
-          fprintf(stderr, "coud not determine size: Err=%d\n", GetLastError());
-        } else {
-          fprintf(stderr, "Reading (%llu, %llu) of %p.  Current = %llu\n",
-                  offset, length, hndl, new_pos.QuadPart);
-        }
-      }
-
-      fprintf(stderr,
-              "premature reading end (read 0).  Still %llu bytes to go...\n",
-              bytes_to_read);
-      return;
-    }
-
-    stream.write(buffer.data(), bytes_read);
-
-    bytes_to_read -= bytes_read;
-  }
-}
-
-void WriteDiskData(std::ostream& stream, const disk& disk_extents)
+void WriteDiskData(insert_plan& plan, const disk& disk_extents)
 {
   for (auto& extent : disk_extents.extents) {
+    vec_writer writer;
     extent_header header = header_of(extent);
 
-    header.write(stream);
+    header.write(writer);
+
+    plan.emplace_back(writer.get());
 
     fprintf(stderr, "copying extent (%llu, %llu)\n", extent.handle_offset,
             extent.length);
-    copy_stream(extent.hndl, extent.handle_offset, extent.length, stream);
+
+    plan.emplace_back(
+        insert_from{extent.hndl, extent.handle_offset, extent.length});
   }
 }
 
@@ -938,7 +1012,6 @@ std::optional<DISK_GEOMETRY_EX> GetDiskGeometry(HANDLE disk)
 
   return geo;
 }
-
 void dump_data(std::ostream& stream, bool dry)
 {
   COM_CALL(CoInitializeEx(NULL, COINIT_MULTITHREADED));
@@ -1232,7 +1305,7 @@ void dump_data(std::ostream& stream, bool dry)
     disk_info[id] = open_disk{hndl, geo.value()};
   }
 
-  WriteHeader(stream, disks);
+  insert_plan plan;
 
   for (auto& [id, disk] : disks) {
     fprintf(stderr, "disk %zu extents\n", id);
@@ -1281,10 +1354,14 @@ void dump_data(std::ostream& stream, bool dry)
 
     if (dry) { disk.extents.clear(); }
 
-    WriteDiskHeader(stream, disk, geo);
-    WriteDiskPartTable(stream, layout.value());
-    WriteDiskData(stream, disk);
+    WriteDiskHeader(plan, disk, geo);
+    WriteDiskPartTable(plan, layout.value());
+    WriteDiskData(plan, disk);
   }
+
+  std::size_t payload_size = compute_plan_size(plan);
+  WriteHeader(stream, disks, payload_size);
+  execute_plan(stream, plan);
 
   snapshot.delete_snapshot(backup_components);
 

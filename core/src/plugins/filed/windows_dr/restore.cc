@@ -336,6 +336,14 @@ class RestoreToHandles : public GenericHandler {
   std::optional<open_disk> disk_;
 };
 
+struct NoLogger : public GenericLogger {
+  void Begin(std::size_t) override {}
+  void Progressed(std::size_t) {}
+  void End() {}
+
+  virtual ~NoLogger() {}
+};
+
 void restore_data(std::istream& stream, bool raw_file)
 {
   auto output_generator = [&]() -> std::unique_ptr<OutputHandleGenerator> {
@@ -346,5 +354,9 @@ void restore_data(std::istream& stream, bool raw_file)
     }
   }();
   RestoreToHandles alg{output_generator.get()};
-  parse_file_format(stream, &alg);
+
+
+  NoLogger log;
+
+  parse_file_format(&log, stream, &alg);
 }
