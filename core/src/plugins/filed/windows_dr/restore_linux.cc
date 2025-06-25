@@ -589,78 +589,82 @@ std::string utf16_to_utf8(std::span<const char16_t> str)
 
 class ListContents : public GenericHandler {
  public:
+  ListContents(GenericLogger* logger) : log{logger} {}
+
   void BeginRestore(std::size_t num_disks) override
   {
-    fmt::println(stderr, "Contains {} Disks", num_disks);
+    log->Info(fmt::format("Contains {} Disks", num_disks));
   }
   void EndRestore() override {}
   void BeginDisk(disk_info info) override
   {
-    fmt::println(stderr, "Disk {}:", disk_idx_);
-    fmt::println(stderr, " - Size = {}", info.disk_size);
-    fmt::println(stderr, " - Extent Count = {}", info.extent_count);
+    log->Info(fmt::format("Disk {}:", disk_idx_));
+    log->Info(fmt::format(" - Size = {}", info.disk_size));
+    log->Info(fmt::format(" - Extent Count = {}", info.extent_count));
   }
   void EndDisk() override { disk_idx_ += 1; }
 
   void BeginMbrTable(const partition_info_mbr&) override
   {
-    fmt::println(stderr, " Mbr Table:");
+    log->Info(fmt::format(" Mbr Table:"));
   }
   void BeginGptTable(const partition_info_gpt& gpt) override
   {
-    fmt::println(stderr, " Gpt Table:");
-    fmt::println(stderr, "  - Max Partition Count = {}", gpt.MaxPartitionCount);
+    log->Info(fmt::format(" Gpt Table:"));
+    log->Info(
+        fmt::format("  - Max Partition Count = {}", gpt.MaxPartitionCount));
   }
   void BeginRawTable(const partition_info_raw&) override
   {
-    fmt::println(stderr, " Raw Table:");
+    log->Info(fmt::format(" Raw Table:"));
   }
   void MbrEntry(const part_table_entry& entry,
                 const part_table_entry_mbr_data& data) override
   {
-    fmt::println(stderr, "  Entry:");
-    fmt::println(stderr, "   - Offset = {}", entry.partition_offset);
-    fmt::println(stderr, "   - Length = {}", entry.partition_length);
-    fmt::println(stderr, "   - Number = {}", entry.partition_number);
-    fmt::println(stderr, "   - Style = {}",
-                 static_cast<uint8_t>(entry.partition_style));
+    log->Info(fmt::format("  Entry:"));
+    log->Info(fmt::format("   - Offset = {}", entry.partition_offset));
+    log->Info(fmt::format("   - Length = {}", entry.partition_length));
+    log->Info(fmt::format("   - Number = {}", entry.partition_number));
+    log->Info(fmt::format("   - Style = {}",
+                          static_cast<uint8_t>(entry.partition_style)));
 
-    fmt::println(stderr, "   MBR:");
-    fmt::println(stderr, "    - Id = {}", guid_to_string(data.partition_id));
-    fmt::println(stderr, "    - Type = {}", data.partition_type);
-    fmt::println(stderr, "    - Bootable = {}", data.bootable ? "yes" : "no");
+    log->Info(fmt::format("   MBR:"));
+    log->Info(fmt::format("    - Id = {}", guid_to_string(data.partition_id)));
+    log->Info(fmt::format("    - Type = {}", data.partition_type));
+    log->Info(fmt::format("    - Bootable = {}", data.bootable ? "yes" : "no"));
   }
   void GptEntry(const part_table_entry& entry,
                 const part_table_entry_gpt_data& data) override
   {
-    fmt::println(stderr, "  Entry:");
-    fmt::println(stderr, "   - Offset = {}", entry.partition_offset);
-    fmt::println(stderr, "   - Length = {}", entry.partition_length);
-    fmt::println(stderr, "   - Number = {}", entry.partition_number);
-    fmt::println(stderr, "   - Style = {}",
-                 static_cast<uint8_t>(entry.partition_style));
+    log->Info(fmt::format("  Entry:"));
+    log->Info(fmt::format("   - Offset = {}", entry.partition_offset));
+    log->Info(fmt::format("   - Length = {}", entry.partition_length));
+    log->Info(fmt::format("   - Number = {}", entry.partition_number));
+    log->Info(fmt::format("   - Style = {}",
+                          static_cast<uint8_t>(entry.partition_style)));
 
-    fmt::println(stderr, "   GPT:");
-    fmt::println(stderr, "    - Id = {}", guid_to_string(data.partition_id));
-    fmt::println(stderr, "    - Type = {}",
-                 guid_to_string(data.partition_type));
-    fmt::println(stderr, "    - Attributes = {:08X}", data.attributes);
+    log->Info(fmt::format("   GPT:"));
+    log->Info(fmt::format("    - Id = {}", guid_to_string(data.partition_id)));
+    log->Info(
+        fmt::format("    - Type = {}", guid_to_string(data.partition_type)));
+    log->Info(fmt::format("    - Attributes = {:08X}", data.attributes));
 
-    fmt::println(stderr, "    - Name = {}", utf16_to_utf8(data.name));
+    log->Info(fmt::format("    - Name = {}", utf16_to_utf8(data.name)));
   }
   void EndPartTable() override {}
 
   void BeginExtent(extent_header header) override
   {
-    fmt::println(stderr, "  Extent:");
-    fmt::println(stderr, "   - Length = {}", header.length);
-    fmt::println(stderr, "   - Offset = {}", header.offset);
+    log->Info(fmt::format("  Extent:"));
+    log->Info(fmt::format("   - Length = {}", header.length));
+    log->Info(fmt::format("   - Offset = {}", header.offset));
   }
   void ExtentData(std::span<const char>) override {}
   void EndExtent() override {}
 
  private:
   std::size_t disk_idx_ = 0;
+  GenericLogger* log{};
 };
 
 std::vector<auto_fd> open_files(std::span<std::string> filenames)
@@ -775,7 +779,7 @@ int main(int argc, char* argv[])
       }
       parse_file_format(logger, *input, strategy.get());
     } else if (*list) {
-      ListContents strategy;
+      ListContents strategy{logger};
 
       std::ifstream opened_file;
       std::istream* input = std::addressof(std::cin);
