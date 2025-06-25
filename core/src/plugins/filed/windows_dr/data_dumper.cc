@@ -728,8 +728,13 @@ void WriteDiskHeader(std::ostream& stream,
                      const disk& Disk,
                      const DISK_GEOMETRY_EX& geo)
 {
+  std::size_t total_extent_size = 0;
+  for (auto& extent : Disk.extents) {
+    total_extent_size += disk_extents.length;
+  }
   disk_header header(geo.DiskSize.QuadPart, geo.Geometry.MediaType,
-                     geo.Geometry.BytesPerSector, Disk.extents.size());
+                     geo.Geometry.BytesPerSector, Disk.extents.size(),
+                     total_extent_size);
 
   header.write(stream);
 }
