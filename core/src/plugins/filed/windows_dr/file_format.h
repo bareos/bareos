@@ -141,16 +141,19 @@ struct disk_header {
   static constexpr std::uint64_t magic_value = build_magic("badrdisk");
 
   uint64_t disk_size;
+  uint64_t total_extent_size;
   uint32_t media_type;
   uint32_t bytes_per_sector;
   uint32_t extent_count;
 
   disk_header() = default;
   disk_header(uint64_t disk_size_,
+              uint64_t total_extent_size_,
               uint32_t media_type_,
               uint32_t bytes_per_sector_,
               uint32_t extent_count_)
       : disk_size{disk_size_}
+      , total_extent_size{total_extent_size_}
       , media_type{media_type_}
       , bytes_per_sector{bytes_per_sector_}
       , extent_count{extent_count_}
@@ -161,6 +164,7 @@ struct disk_header {
   {
     write_stream(stream, magic_value);
     write_stream(stream, disk_size);
+    write_stream(stream, total_extent_size);
     write_stream(stream, media_type);
     write_stream(stream, bytes_per_sector);
     write_stream(stream, extent_count);
@@ -170,6 +174,7 @@ struct disk_header {
   {
     expect_stream(stream, magic_value);
     read_stream(stream, disk_size);
+    read_stream(stream, total_extent_size);
     read_stream(stream, media_type);
     read_stream(stream, bytes_per_sector);
     read_stream(stream, extent_count);
