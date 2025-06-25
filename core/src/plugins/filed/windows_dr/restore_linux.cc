@@ -38,6 +38,27 @@
 
 #include <cuchar>
 
+bool trace = false;
+
+
+template <typename... T>
+void trace_msg(fmt::format_string<T...> fmt, T&&... args)
+{
+  if (trace) { fmt::println(stderr, fmt, std::forward<T>(args)...); }
+}
+
+template <typename... T> void err_msg(fmt::format_string<T...> fmt, T&&... args)
+{
+  fmt::println(stderr, fmt, std::forward<T>(args)...);
+}
+
+template <typename... T>
+void info_msg(fmt::format_string<T...> fmt, T&&... args)
+{
+  fmt::println(stderr, fmt, std::forward<T>(args)...);
+}
+
+
 class StreamOutput : public Output {
  public:
   // the stream is assumed to be unseekable!
@@ -677,9 +698,125 @@ std::vector<auto_fd> open_files(std::span<std::string> filenames)
   return files;
 }
 
+template <typename BaseHandler> struct WithInfo : GenericHandler {
+  template <typename... Args>
+  WithInfo(Args&&... args) : handler{std::forward<Args>(args)...}
+  {
+  }
+
+  void BeginRestore(std::size_t num_disks) override
+  {
+    info_msg("restoring {} disks", num_disks);
+    handler.BeginRestore(num_disks);
+  }
+  void EndRestore() override { handler.EndRestore(); }
+  void BeginDisk(disk_info info) override
+  {
+    current_disk += 1;
+    current_disk_size = info.disk_size;
+    current_disk_offset = 0;
+    info_msg("restoring disk {} of size {}", current_disk, current_disk_size);
+    handler.BeginDisk(info);
+  }
+  void EndDisk() override
+  {
+    AdvanceTo(current_disk_size);
+    handler.EndDisk();
+    info_msg("finished restoring disk {}", current_disk);
+  }
+
+  void BeginMbrTable(const partition_info_mbr& mbr) override
+  {
+    info_msg("start restoring mbr table");
+    handler.BeginMbrTable(mbr);
+  }
+  void BeginGptTable(const partition_info_gpt& gpt) override
+  {
+    info_msg("start restoring gpt table");
+    handler.BeginGptTable(gpt);
+  }
+  void BeginRawTable(const partition_info_raw& raw) override
+  {
+    handler.BeginRawTable(raw);
+  }
+  void MbrEntry(const part_table_entry& entry,
+                const part_table_entry_mbr_data& data) override
+  {
+    handler.MbrEntry(entry, data);
+  }
+  void GptEntry(const part_table_entry& entry,
+                const part_table_entry_gpt_data& data) override
+  {
+    handler.GptEntry(entry, data);
+  }
+  void EndPartTable() override
+  {
+    info_msg("start restoring disk data");
+    handler.EndPartTable();
+  }
+
+  void BeginExtent(extent_header header) override
+  {
+    AdvanceTo(header.offset);
+    handler.BeginExtent(header);
+  }
+
+  void ExtentData(std::span<const char> data) override
+  {
+    static constexpr std::size_t block_size = std::size_t{4} << 20;
+
+    while (data.size() > block_size) {
+      auto block = data.subspan(0, block_size);
+      Write(block);
+      data = data.subspan(block.size());
+    }
+    Write(data);
+  }
+
+  void EndExtent() override { handler.EndExtent(); }
+
+  void AdvanceTo(std::size_t next_disk_offset)
+  {
+    if (next_disk_offset == current_disk_size) {
+      info_msg(". 100% ({0}/{0})", current_disk_size);
+      current_disk_offset = next_disk_offset;
+      return;
+    }
+
+    static constexpr std::size_t step_count = 20;
+    static_assert(100 % step_count == 0);
+
+    auto bytes_per_step = current_disk_size / step_count;
+
+    auto current_step = current_disk_offset / bytes_per_step;
+    auto next_step = next_disk_offset / bytes_per_step;
+
+    if (current_step != next_step) {
+      info_msg(". {:3}% ({}/{})",
+               (100 * current_disk_offset) / current_disk_size,
+               next_disk_offset, current_disk_size);
+    }
+    current_disk_offset = next_disk_offset;
+  }
+  void Write(std::span<char const> data)
+  {
+    handler.ExtentData(data);
+    AdvanceTo(current_disk_offset + data.size());
+  }
+
+  virtual ~WithInfo() = default;
+
+  BaseHandler handler;
+  std::size_t current_disk{};
+  std::size_t current_disk_size{};
+  std::size_t current_disk_offset{};
+};
+
 int main(int argc, char* argv[])
 {
   CLI::App app;
+
+  app.add_flag("--trace", trace, "print additional status information");
 
   auto* restore = app.add_subcommand("restore");
   std::string filename;
@@ -702,7 +839,6 @@ int main(int argc, char* argv[])
                 "restore the disks to raw files in the given directory")
             ->check(CLI::ExistingDirectory);
 
-  gendir->excludes(stdout);
   std::vector<std::string> filenames;
   auto* disks = location
                     ->add_option("--onto", filenames,
@@ -710,7 +846,7 @@ int main(int argc, char* argv[])
                                  "files; in the given order")
                     ->check(CLI::ExistingFile);
 
-  location->require_option();
+  location->require_option(1);
 
 
   auto* list = app.add_subcommand("list");
@@ -726,19 +862,21 @@ int main(int argc, char* argv[])
       std::unique_ptr<GenericHandler> strategy;
 
       if (*stdout) {
-        strategy = std::make_unique<RestoreToStdout>(std::cout);
+        strategy = std::make_unique<WithInfo<RestoreToStdout>>(std::cout);
       } else if (*gendir) {
-        strategy = std::make_unique<RestoreToGeneratedFiles>(directory);
+        strategy
+            = std::make_unique<WithInfo<RestoreToGeneratedFiles>>(directory);
       } else if (*disks) {
         auto files = open_files(filenames);
 
-        strategy = std::make_unique<RestoreToSpecifiedFiles>(std::move(files));
+        strategy = std::make_unique<WithInfo<RestoreToSpecifiedFiles>>(
+            std::move(files));
       } else {
         throw std::logic_error("i dont know where to restore too!");
       }
 
       if (*from) {
-        fprintf(stderr, "using %s as input\n", filename.c_str());
+        trace_msg("using {} as input", filename);
         std::ifstream infile{filename,
                              std::ios_base::in | std::ios_base::binary};
         parse_file_format(infile, strategy.get());
@@ -748,7 +886,7 @@ int main(int argc, char* argv[])
     } else if (*list) {
       ListContents strategy;
       if (*list_from) {
-        fprintf(stderr, "using %s as input\n", filename.c_str());
+        trace_msg("using {} as input", filename);
         std::ifstream infile{filename,
                              std::ios_base::in | std::ios_base::binary};
         parse_file_format(infile, &strategy);
@@ -761,8 +899,7 @@ int main(int argc, char* argv[])
 
     return 0;
   } catch (const std::exception& ex) {
-    std::cerr << ex.what() << std::endl;
-
+    err_msg("{}", ex.what());
     return 1;
   }
 }
