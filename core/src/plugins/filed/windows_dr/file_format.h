@@ -23,6 +23,7 @@
 #define BAREOS_PLUGINS_FILED_WINDOWS_DR_FILE_FORMAT_H_
 
 #include <cstdint>
+#include <format>
 #include <istream>
 #include <ostream>
 #include <vector>
@@ -32,6 +33,8 @@
 #include <span>
 #include <cstdint>
 #include <cinttypes>
+
+#include <lib/source_location.h>
 
 struct reader {
   // reads exactly size bytes into buffer
@@ -98,12 +101,19 @@ template <typename T> static void read_stream(reader& stream, T& t)
 }
 
 template <typename T>
-static void expect_stream(reader& stream, const T& expected)
+static void expect_stream(reader& stream,
+                          const T& expected,
+                          libbareos::source_location expected_at
+                          = libbareos::source_location::current())
 {
   T value;
   read_stream(stream, value);
 
-  assert(value == expected);
+  if (value != expected) {
+    throw std::runtime_error{std::format(
+        "{}:{} dump format error: expected constant {:0x}, got {:0x}",
+        expected_at.file_name(), expected_at.line(), expected, value)};
+  }
 }
 
 // badr <~> BAreos Disaster Recovery
