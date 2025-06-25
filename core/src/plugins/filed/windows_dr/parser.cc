@@ -128,8 +128,11 @@ void ParseExtent(std::istream& stream, GenericHandler* strategy)
   strategy->EndExtent();
 }
 
-void parse_file_format(std::istream& stream, GenericHandler* strategy)
+void parse_file_format(GenericLogger* logger,
+                       std::istream& stream,
+                       GenericHandler* strategy)
 {
+  (void)logger;
   auto disk_count = ReadHeader(stream);
 
   strategy->BeginRestore(disk_count);
