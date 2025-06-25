@@ -27,6 +27,7 @@
 struct disk_info {
   std::uint64_t disk_size;
   std::uint32_t extent_count;
+  std::uint64_t total_extent_size;
 };
 
 class GenericHandler {
@@ -56,8 +57,10 @@ class GenericHandler {
 
 struct GenericLogger {
   virtual void Begin(std::size_t FileSize) = 0;
-  virtual void ProgressedTo(std::size_t Offset) = 0;
+  virtual void Progressed(std::size_t Amount) = 0;
   virtual void End() = 0;
+
+  virtual void Info(std::string_view Message) { (void)Message; }
 
   virtual ~GenericLogger() {}
 };

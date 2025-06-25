@@ -37,7 +37,9 @@ else()
   add_executable(barri restore_linux.cc parser.cc)
   add_library(progress-bar-logger OBJECT logger.cc)
   target_compile_options(progress-bar-logger PRIVATE "-Wno-shadow")
-  target_link_libraries(progress-bar-logger PRIVATE indicators::indicators)
+  target_link_libraries(
+    progress-bar-logger PRIVATE indicators::indicators fmt::fmt-header-only
+  )
 
   target_link_libraries(
     barri CLI11::CLI11 Microsoft.GSL::GSL ${ZLIB_LIBRARIES}
