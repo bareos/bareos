@@ -115,14 +115,19 @@ struct parser {
     strategy->EndPartTable();
   }
 
-  std::uint32_t ReadHeader(reader& stream)
+  file_header ReadHeader(reader& stream)
   {
     file_header header;
     header.read(stream);
 
-    assert(header.version == file_header::current_version);
+    if (header.version != file_header::current_version) {
+      throw std::runtime_error{
+          fmt::format("expected dump version {}, got version {}",
+                      file_header::current_version, header.version),
+      };
+    }
 
-    return header.disk_count;
+    return header;
   }
 
   void ParseExtent(reader& stream, GenericHandler* strategy)
@@ -153,7 +158,10 @@ struct parser {
   {
     logging_reader stream{logger, &input_stream};
 
-    auto disk_count = ReadHeader(stream);
+    auto fheader = ReadHeader(stream);
+    auto disk_count = fheader.disk_count;
+    auto dump_size = fheader.file_size;
+    logger->Begin(dump_size);
 
     Info("Restoring {} disks", disk_count);
     strategy->BeginRestore(disk_count);
@@ -161,7 +169,6 @@ struct parser {
       auto disk_header = ReadDiskHeader(stream);
       Info("Restoring disk {} of size {}", disk, disk_header.disk_size);
       strategy->BeginDisk(disk_header);
-      logger->Begin(disk_header.disk_size);
 
       Info("Restoring partition table");
       ParseDiskPartTable(stream, strategy);
@@ -171,12 +178,12 @@ struct parser {
       }
 
       strategy->EndDisk();
-      logger->End();
       Info("disk {} finished", disk);
     }
 
     strategy->EndRestore();
     Info("restore completed");
+    logger->End();
   }
 
   template <typename... Args>
