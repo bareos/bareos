@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#include "CLI/CLI.hpp"
 #include "fmt/base.h"
 #include "parser.h"
 #include "partitioning.h"
@@ -27,6 +28,7 @@
 #include "CLI/Config.hpp"
 #include "CLI/Formatter.hpp"
 
+#include <chrono>
 #include <stdexcept>
 #include <fmt/format.h>
 #include <optional>
@@ -699,8 +701,12 @@ std::vector<auto_fd> open_files(std::span<std::string> filenames)
 }
 
 template <typename BaseHandler> struct WithInfo : GenericHandler {
+  using Clock = typename std::chrono::steady_clock;
+
+
   template <typename... Args>
-  WithInfo(Args&&... args) : handler{std::forward<Args>(args)...}
+  WithInfo(Clock::duration info_frequency_, Args&&... args)
+      : handler{std::forward<Args>(args)...}, info_frequency{info_frequency_}
   {
   }
 
@@ -715,6 +721,7 @@ template <typename BaseHandler> struct WithInfo : GenericHandler {
     current_disk += 1;
     current_disk_size = info.disk_size;
     current_disk_offset = 0;
+    last_info_at = Clock::now();
     info_msg("restoring disk {} of size {}", current_disk, current_disk_size);
     handler.BeginDisk(info);
   }
@@ -783,18 +790,12 @@ template <typename BaseHandler> struct WithInfo : GenericHandler {
       return;
     }
 
-    static constexpr std::size_t step_count = 20;
-    static_assert(100 % step_count == 0);
-
-    auto bytes_per_step = current_disk_size / step_count;
-
-    auto current_step = current_disk_offset / bytes_per_step;
-    auto next_step = next_disk_offset / bytes_per_step;
-
-    if (current_step != next_step) {
-      info_msg(". {:3}% ({}/{})",
-               (100 * current_disk_offset) / current_disk_size,
+    Clock::time_point now = Clock::now();
+    if (now - last_info_at >= info_frequency) {
+      info_msg(". {:3}% ({}/{})", (100 * next_disk_offset) / current_disk_size,
                next_disk_offset, current_disk_size);
+
+      last_info_at = now;
     }
     current_disk_offset = next_disk_offset;
   }
@@ -810,6 +811,8 @@ template <typename BaseHandler> struct WithInfo : GenericHandler {
   std::size_t current_disk{};
   std::size_t current_disk_size{};
   std::size_t current_disk_offset{};
+  Clock::time_point last_info_at;
+  Clock::duration info_frequency;
 };
 
 int main(int argc, char* argv[])
@@ -824,6 +827,26 @@ int main(int argc, char* argv[])
                    ->add_option("--from", filename,
                                 "read from this file instead of stdin")
                    ->check(CLI::ExistingFile);
+
+  std::chrono::steady_clock::duration info_frequency = std::chrono::minutes(1);
+
+  auto as_multiplier = [](auto dur) {
+    return std::chrono::duration_cast<std::chrono::steady_clock::duration>(dur)
+        .count();
+  };
+
+  restore
+      ->add_option("--freq", info_frequency,
+                   "how often should status update occur")
+      ->transform(CLI::AsNumberWithUnit(
+          std::map<std::string, std::size_t>{
+              {"s", as_multiplier(std::chrono::seconds(1))},
+              {"m", as_multiplier(std::chrono::minutes(1))},
+              {"h", as_multiplier(std::chrono::hours(1))},
+          },
+          CLI::AsNumberWithUnit::UNIT_REQUIRED
+              | CLI::AsNumberWithUnit::CASE_INSENSITIVE,
+          "TIME"));
 
   auto* location = restore->add_option_group(
       "output", "select where the data will be restored");
@@ -862,15 +885,16 @@ int main(int argc, char* argv[])
       std::unique_ptr<GenericHandler> strategy;
 
       if (*stdout) {
-        strategy = std::make_unique<WithInfo<RestoreToStdout>>(std::cout);
+        strategy = std::make_unique<WithInfo<RestoreToStdout>>(info_frequency,
+                                                               std::cout);
       } else if (*gendir) {
-        strategy
-            = std::make_unique<WithInfo<RestoreToGeneratedFiles>>(directory);
+        strategy = std::make_unique<WithInfo<RestoreToGeneratedFiles>>(
+            info_frequency, directory);
       } else if (*disks) {
         auto files = open_files(filenames);
 
         strategy = std::make_unique<WithInfo<RestoreToSpecifiedFiles>>(
-            std::move(files));
+            info_frequency, std::move(files));
       } else {
         throw std::logic_error("i dont know where to restore too!");
       }
