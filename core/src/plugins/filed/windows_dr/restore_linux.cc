@@ -40,6 +40,8 @@
 
 #include <cuchar>
 
+#include "logger.h"
+
 bool trace = false;
 
 
@@ -547,19 +549,6 @@ class RestoreToSpecifiedFiles : public GenericHandler {
   std::optional<writing_disk> current_disk;
 };
 
-void restore_data(std::istream& input, bool use_stdout)
-{
-  if (use_stdout) {
-    RestoreToStdout strategy{std::cout};
-    parse_file_format(input, &strategy);
-    std::cout.flush();
-  } else {
-    RestoreToGeneratedFiles strategy{""};
-    parse_file_format(input, &strategy);
-  }
-}
-
-
 std::string guid_to_string(guid id)
 {
   std::uint64_t First = {};
@@ -906,7 +895,7 @@ int main(int argc, char* argv[])
         opened_file.open(filename, std::ios_base::in | std::ios_base::binary);
         input = std::addressof(opened_file);
       }
-      parse_file_format(*input, strategy.get());
+      parse_file_format(progressbar::get(), *input, strategy.get());
     } else if (*list) {
       ListContents strategy;
 
@@ -917,7 +906,7 @@ int main(int argc, char* argv[])
         opened_file.open(filename, std::ios_base::in | std::ios_base::binary);
         input = std::addressof(opened_file);
       }
-      parse_file_format(*input, &strategy);
+      parse_file_format(progressbar::get(), *input, &strategy);
     } else {
       throw std::logic_error("i dont know what to do");
     }
