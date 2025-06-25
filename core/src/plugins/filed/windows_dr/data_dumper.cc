@@ -226,9 +226,11 @@ void execute_plan(std::ostream& stream, const insert_plan& plan)
   for (auto& step : plan) {
     std::visit(overloads{
                    [&stream](const insert_bytes& bytes) {
+                     fprintf(stderr, "writing %zu bytes\n", bytes.size());
                      stream.write(bytes.data(), bytes.size());
                    },
                    [&stream](const insert_from& from) {
+                     fprintf(stderr, "copying %zu bytes\n", from.length);
                      copy_stream(from.hndl, from.offset, from.length, stream);
                    },
                },
@@ -844,9 +846,9 @@ void WriteDiskHeader(insert_plan& plan,
 {
   std::size_t total_extent_size = 0;
   for (auto& extent : Disk.extents) { total_extent_size += extent.length; }
-  disk_header header(geo.DiskSize.QuadPart, geo.Geometry.MediaType,
-                     geo.Geometry.BytesPerSector, Disk.extents.size(),
-                     total_extent_size);
+  disk_header header(geo.DiskSize.QuadPart, total_extent_size,
+                     geo.Geometry.MediaType, geo.Geometry.BytesPerSector,
+                     Disk.extents.size());
 
   vec_writer writer;
   header.write(writer);
