@@ -33,7 +33,19 @@
 #include <cstdint>
 #include <cinttypes>
 
+struct reader {
+  // reads exactly size bytes into buffer
+  virtual void read(char* buffer, std::size_t size) = 0;
+  virtual ~reader() {};
+};
+
 static_assert(sizeof(char16_t) == 2);
+
+// TODO: we want to change the format slightly:
+//   instead of storing the data depth first, we want to store it breadth first
+//   i.e. first should come _all_ meta data, and only then there should be
+//   actual data.
+//   this makes it easier for tools to understand what they are supposed to do!
 
 struct guid {
   char Data[16];
@@ -75,30 +87,13 @@ template <typename T> static void write_stream(std::ostream& stream, const T& t)
   stream.write(reinterpret_cast<const char*>(&t), sizeof(t));
 }
 
-template <typename T> static void read_stream(std::istream& stream, T& t)
+template <typename T> static void read_stream(reader& stream, T& t)
 {
-#if 0
-  auto read_bytes = stream.sgetn(reinterpret_cast<char*>(&t), sizeof(t));
-#else
   stream.read(reinterpret_cast<char*>(&t), sizeof(t));
-  auto read_bytes = stream.gcount();
-#endif
-  fprintf(stderr, "read %zi/%zu bytes\n", read_bytes, sizeof(t));
-
-  if (read_bytes != (std::streamsize)sizeof(t)) {
-    fprintf(stderr, "fail: %s | good: %s | eof: %s | bad: %s\n",
-            stream.fail() ? "yes" : "no", stream.good() ? "yes" : "no",
-            stream.eof() ? "yes" : "no", stream.bad() ? "yes" : "no");
-  }
-
-
-  if constexpr (std::is_same_v<std::uint32_t, T>) {
-    fprintf(stderr, "read %" PRIu32 "\n", t);
-  }
 }
 
 template <typename T>
-static void expect_stream(std::istream& stream, const T& expected)
+static void expect_stream(reader& stream, const T& expected)
 {
   T value;
   read_stream(stream, value);
@@ -129,7 +124,7 @@ struct file_header {
     write_stream(stream, version);
   }
 
-  void read(std::istream& stream)
+  void read(reader& stream)
   {
     expect_stream(stream, magic_value);
     read_stream(stream, disk_count);
@@ -170,7 +165,7 @@ struct disk_header {
     write_stream(stream, extent_count);
   }
 
-  void read(std::istream& stream)
+  void read(reader& stream)
   {
     expect_stream(stream, magic_value);
     read_stream(stream, disk_size);
@@ -233,7 +228,7 @@ struct part_table_header {
     write_stream(stream, Data2);
   }
 
-  void read(std::istream& stream)
+  void read(reader& stream)
   {
     expect_stream(stream, magic_value);
     read_stream(stream, partition_count);
@@ -269,7 +264,7 @@ struct part_table_entry {
     write_stream(stream, is_service_partition);
   }
 
-  void read(std::istream& stream)
+  void read(reader& stream)
   {
     expect_stream(stream, magic_value);
     read_stream(stream, partition_offset);
@@ -286,7 +281,7 @@ static inline void write_guid(std::ostream& stream, const guid& id)
   write_stream(stream, id.Data);
 }
 
-static inline void read_guid(std::istream& stream, guid& id)
+static inline void read_guid(reader& stream, guid& id)
 {
   read_stream(stream, id.Data);
 }
@@ -307,7 +302,7 @@ struct part_table_entry_gpt_data {
     write_stream(stream, name);
   }
 
-  void read(std::istream& stream)
+  void read(reader& stream)
   {
     read_guid(stream, partition_type);
     read_guid(stream, partition_id);
@@ -335,7 +330,7 @@ struct part_table_entry_mbr_data {
     write_stream(stream, recognized);
   }
 
-  void read(std::istream& stream)
+  void read(reader& stream)
   {
     read_guid(stream, partition_id);
     read_stream(stream, num_hidden_sectors);
@@ -360,7 +355,7 @@ struct extent_header {
     write_stream(stream, length);
   }
 
-  void read(std::istream& stream)
+  void read(reader& stream)
   {
     expect_stream(stream, magic_value);
     read_stream(stream, offset);
