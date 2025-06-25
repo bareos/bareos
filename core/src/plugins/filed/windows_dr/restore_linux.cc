@@ -899,24 +899,25 @@ int main(int argc, char* argv[])
         throw std::logic_error("i dont know where to restore too!");
       }
 
+      std::ifstream opened_file;
+      std::istream* input = std::addressof(std::cin);
       if (*from) {
         trace_msg("using {} as input", filename);
-        std::ifstream infile{filename,
-                             std::ios_base::in | std::ios_base::binary};
-        parse_file_format(infile, strategy.get());
-      } else {
-        parse_file_format(std::cin, strategy.get());
+        opened_file.open(filename, std::ios_base::in | std::ios_base::binary);
+        input = std::addressof(opened_file);
       }
+      parse_file_format(*input, strategy.get());
     } else if (*list) {
       ListContents strategy;
+
+      std::ifstream opened_file;
+      std::istream* input = std::addressof(std::cin);
       if (*list_from) {
         trace_msg("using {} as input", filename);
-        std::ifstream infile{filename,
-                             std::ios_base::in | std::ios_base::binary};
-        parse_file_format(infile, &strategy);
-      } else {
-        parse_file_format(std::cin, &strategy);
+        opened_file.open(filename, std::ios_base::in | std::ios_base::binary);
+        input = std::addressof(opened_file);
       }
+      parse_file_format(*input, &strategy);
     } else {
       throw std::logic_error("i dont know what to do");
     }
