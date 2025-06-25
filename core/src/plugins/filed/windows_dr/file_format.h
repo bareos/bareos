@@ -39,6 +39,11 @@ struct reader {
   virtual ~reader() {};
 };
 
+struct writer {
+  virtual void write(const char* buffer, std::size_t size) = 0;
+  virtual ~writer() {};
+};
+
 static_assert(sizeof(char16_t) == 2);
 
 // TODO: we want to change the format slightly:
@@ -82,7 +87,7 @@ static constexpr uint64_t build_magic(const char (&str)[N])
   return value;
 }
 
-template <typename T> static void write_stream(std::ostream& stream, const T& t)
+template <typename T> static void write_stream(writer& stream, const T& t)
 {
   stream.write(reinterpret_cast<const char*>(&t), sizeof(t));
 }
@@ -105,30 +110,36 @@ static void expect_stream(reader& stream, const T& expected)
 
 struct file_header {
   static constexpr std::uint64_t magic_value = build_magic("badrfile");
-  static constexpr std::uint32_t current_version = 0;
+  static constexpr std::uint32_t current_version = 100'000'000;
 
   uint32_t disk_count;
   uint32_t version = current_version;
+  uint64_t file_size = 0;
   // todo: we should add _all_ disk sizes here
   // this makes it easier for the restore code to decide to which disk
   // it should restore to!
 
 
   file_header() = default;
-  file_header(uint32_t disk_count_) : disk_count{disk_count_} {}
+  file_header(uint32_t disk_count_, uint64_t file_size_)
+      : disk_count{disk_count_}, file_size{file_size_}
+  {
+  }
 
-  void write(std::ostream& stream) const
+  void write(writer& stream) const
   {
     write_stream(stream, magic_value);
-    write_stream(stream, disk_count);
     write_stream(stream, version);
+    write_stream(stream, disk_count);
+    write_stream(stream, file_size);
   }
 
   void read(reader& stream)
   {
     expect_stream(stream, magic_value);
-    read_stream(stream, disk_count);
     read_stream(stream, version);
+    read_stream(stream, disk_count);
+    read_stream(stream, file_size);
   }
 };
 
@@ -155,7 +166,7 @@ struct disk_header {
   {
   }
 
-  void write(std::ostream& stream) const
+  void write(writer& stream) const
   {
     write_stream(stream, magic_value);
     write_stream(stream, disk_size);
@@ -216,7 +227,7 @@ struct part_table_header {
     memcpy(Data2, Data2_.data(), Data2_.size());
   }
 
-  void write(std::ostream& stream) const
+  void write(writer& stream) const
   {
     write_stream(stream, magic_value);
     write_stream(stream, partition_count);
@@ -253,7 +264,7 @@ struct part_table_entry {
 
   part_table_entry() = default;
 
-  void write(std::ostream& stream) const
+  void write(writer& stream) const
   {
     write_stream(stream, magic_value);
     write_stream(stream, partition_offset);
@@ -276,7 +287,7 @@ struct part_table_entry {
   }
 };
 
-static inline void write_guid(std::ostream& stream, const guid& id)
+static inline void write_guid(writer& stream, const guid& id)
 {
   write_stream(stream, id.Data);
 }
@@ -294,7 +305,7 @@ struct part_table_entry_gpt_data {
 
   part_table_entry_gpt_data() = default;
 
-  void write(std::ostream& stream) const
+  void write(writer& stream) const
   {
     write_guid(stream, partition_type);
     write_guid(stream, partition_id);
@@ -321,7 +332,7 @@ struct part_table_entry_mbr_data {
 
   part_table_entry_mbr_data() = default;
 
-  void write(std::ostream& stream) const
+  void write(writer& stream) const
   {
     write_guid(stream, partition_id);
     write_stream(stream, num_hidden_sectors);
@@ -348,7 +359,7 @@ struct extent_header {
 
   extent_header() = default;
 
-  void write(std::ostream& stream) const
+  void write(writer& stream) const
   {
     write_stream(stream, magic_value);
     write_stream(stream, offset);
