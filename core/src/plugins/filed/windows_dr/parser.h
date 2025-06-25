@@ -54,8 +54,18 @@ class GenericHandler {
   virtual ~GenericHandler() {}
 };
 
+struct GenericLogger {
+  virtual void Begin(std::size_t FileSize) = 0;
+  virtual void ProgressedTo(std::size_t Offset) = 0;
+  virtual void End() = 0;
+
+  virtual ~GenericLogger() {}
+};
+
 
 // this function is basically a simple sax-like parser for the dump format
-void parse_file_format(std::istream& stream, GenericHandler* strategy);
+void parse_file_format(GenericLogger* logger,
+                       std::istream& stream,
+                       GenericHandler* strategy);
 
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_PARSER_H_
