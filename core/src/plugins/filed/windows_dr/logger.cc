@@ -40,14 +40,16 @@ namespace progressbar {
 using namespace indicators;
 
 struct logger : public GenericLogger {
-  enum class Output {
+  enum class Output
+  {
     StdOut,
     StdErr,
   };
 
   static constexpr Output Current = Output::StdErr;
 
-  static constexpr std::ostream& stream() {
+  static constexpr std::ostream& stream()
+  {
     if constexpr (Current == Output::StdOut) {
       return std::cout;
     } else if constexpr (Current == Output::StdErr) {
@@ -55,7 +57,8 @@ struct logger : public GenericLogger {
     }
   }
 
-  static FILE* handle() {
+  static FILE* handle()
+  {
     if constexpr (Current == Output::StdOut) {
       return stdout;
     } else if constexpr (Current == Output::StdErr) {
@@ -63,20 +66,14 @@ struct logger : public GenericLogger {
     }
   }
 
-  static void erase_line()
-  {
-    std::fputs("\r\033[K", handle());
-  }
+  static void erase_line() { std::fputs("\r\033[K", handle()); }
 
   static void show_cursor(bool show)
   {
     std::fputs(show ? "\033[?25h" : "\033[?25l", handle());
   }
 
-  void Begin(std::size_t FileSize) override
-  {
-    progress_bar.emplace(FileSize);
-  }
+  void Begin(std::size_t FileSize) override { progress_bar.emplace(FileSize); }
   void Progressed(std::size_t Amount) override
   {
     if (progress_bar) { progress_bar->progress(Amount); }
@@ -102,9 +99,7 @@ struct logger : public GenericLogger {
       stream().flush();
     }
     fmt::println(stderr, "{}", Message);
-    if (progress_bar) {
-      progress_bar->print();
-    }
+    if (progress_bar) { progress_bar->print(); }
   }
 
   struct progress_bar {
@@ -117,27 +112,32 @@ struct logger : public GenericLogger {
     progress_bar(std::size_t goal_)
         : goal{goal_}
         , bar{
-      option::BarWidth{50}, option::Start{"["}, option::Fill{"="},
-          option::Lead{">"}, option::Remainder{" "}, option::End{"]"},
-          option::ForegroundColor{Color::green}, option::ShowPercentage{true},
-          option::FontStyles{std::vector<FontStyle>{FontStyle::bold}},
-          option::MaxProgress(goal_),
-          option::ShowPercentage(true),
+              option::BarWidth{50},
+              option::Start{"["},
+              option::Fill{"="},
+              option::Lead{">"},
+              option::Remainder{" "},
+              option::End{"]"},
+              option::ForegroundColor{Color::green},
+              option::ShowPercentage{true},
+              option::FontStyles{std::vector<FontStyle>{FontStyle::bold}},
+              option::MaxProgress(goal_),
+              option::ShowPercentage(true),
 
-          // using anything but cout is not really supported ...
-          option::Stream(stream()),
+              // using anything but cout is not really supported ...
+              option::Stream(stream()),
 
-          option::ShowElapsedTime(true),
-          option::ShowRemainingTime(true),
+              option::ShowElapsedTime(true),
+              option::ShowRemainingTime(true),
           }
     {
       show_cursor(false);
       cursor_hidden = true;
     }
     progress_bar(progress_bar const&) = delete;
-    progress_bar(progress_bar &&) = delete;
+    progress_bar(progress_bar&&) = delete;
     progress_bar& operator=(progress_bar const&) = delete;
-    progress_bar& operator=(progress_bar &&) = delete;
+    progress_bar& operator=(progress_bar&&) = delete;
 
     void progress(std::size_t amount)
     {
@@ -149,18 +149,13 @@ struct logger : public GenericLogger {
 
     void print()
     {
-      if (!bar.is_completed()) {
-        bar.print_progress();
-      }
+      if (!bar.is_completed()) { bar.print_progress(); }
     }
 
-    ~progress_bar() {
-      if (!bar.is_completed()) {
-        bar.mark_as_completed();
-      }
-      if (cursor_hidden) {
-        show_cursor(true);
-      }
+    ~progress_bar()
+    {
+      if (!bar.is_completed()) { bar.mark_as_completed(); }
+      if (cursor_hidden) { show_cursor(true); }
     }
 
     bool cursor_hidden{};
