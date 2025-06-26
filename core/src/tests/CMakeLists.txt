@@ -537,9 +537,9 @@ if(NOT HAVE_WIN32)
 endif()
 
 if(NOT client-only)
-bareos_add_test(
-  backend_parse LINK_LIBRARIES bareos GTest::gtest_main backend-utils
-)
+  bareos_add_test(
+    backend_parse LINK_LIBRARIES bareos GTest::gtest_main backend-utils
+  )
 endif()
 
 add_executable(env_tester env_tester.cc)
