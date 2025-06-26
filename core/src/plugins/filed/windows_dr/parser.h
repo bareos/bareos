@@ -60,6 +60,7 @@ struct GenericLogger {
   virtual void Progressed(std::size_t Amount) = 0;
   virtual void End() = 0;
 
+  virtual void SetStatus(std::string_view Status) { (void)Status; }
   virtual void Info(std::string_view Message) { (void)Message; }
 
   virtual ~GenericLogger() {}
