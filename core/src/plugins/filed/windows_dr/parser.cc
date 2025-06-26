@@ -166,19 +166,21 @@ struct parser {
     Info("Restoring {} disks", disk_count);
     strategy->BeginRestore(disk_count);
     for (std::size_t disk = 0; disk < disk_count; ++disk) {
+      logger->SetStatus(
+          std::format("restoring disk {}/{}", disk + 1, disk_count));
       auto disk_header = ReadDiskHeader(stream);
-      Info("Restoring disk {} of size {}", disk, disk_header.disk_size);
+      Info("Restoring disk {} of size {}", disk + 1, disk_header.disk_size);
       strategy->BeginDisk(disk_header);
 
       Info("Restoring partition table");
       ParseDiskPartTable(stream, strategy);
       for (size_t extent = 0; extent < disk_header.extent_count; ++extent) {
-        Info("Restoring extent {}/{}", extent, disk_header.extent_count);
+        Info("Restoring extent {}/{}", extent + 1, disk_header.extent_count);
         ParseExtent(stream, strategy);
       }
 
       strategy->EndDisk();
-      Info("disk {} finished", disk);
+      Info("disk {} finished", disk + 1);
     }
 
     strategy->EndRestore();
