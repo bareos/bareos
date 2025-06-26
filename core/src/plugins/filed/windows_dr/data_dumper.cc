@@ -49,6 +49,7 @@
 #include "file_format.h"
 #include "error.h"
 #include "common.h"
+#include "logger.h"
 
 #include "CLI/App.hpp"
 #include "CLI/Config.hpp"
@@ -221,20 +222,28 @@ void copy_stream(HANDLE hndl,
 }
 
 
-void execute_plan(std::ostream& stream, const insert_plan& plan)
+void execute_plan(GenericLogger* logger,
+                  std::ostream& stream,
+                  const insert_plan& plan)
 {
   for (auto& step : plan) {
-    std::visit(overloads{
-                   [&stream](const insert_bytes& bytes) {
-                     fprintf(stderr, "writing %zu bytes\n", bytes.size());
-                     stream.write(bytes.data(), bytes.size());
-                   },
-                   [&stream](const insert_from& from) {
-                     fprintf(stderr, "copying %zu bytes\n", from.length);
-                     copy_stream(from.hndl, from.offset, from.length, stream);
-                   },
-               },
-               step);
+    std::visit(
+        overloads{
+            [logger, &stream](const insert_bytes& bytes) {
+              logger->SetStatus("inserting meta data");
+              logger->Info(std::format("writing {} bytes\n", bytes.size()));
+              stream.write(bytes.data(), bytes.size());
+              logger->Progressed(bytes.size());
+            },
+            [logger, &stream](const insert_from& from) {
+              logger->SetStatus("reading a file");
+
+              logger->Info(std::format("writing {} bytes\n", from.length));
+              copy_stream(from.hndl, from.offset, from.length, stream);
+              logger->Progressed(from.length);
+            },
+        },
+        step);
   }
 }
 
@@ -1363,8 +1372,14 @@ void dump_data(std::ostream& stream, bool dry)
 
   std::size_t payload_size = compute_plan_size(plan);
   WriteHeader(stream, disks, payload_size);
-  execute_plan(stream, plan);
+  auto logger = progressbar::get();
+  logger->Begin(payload_size);
+  execute_plan(logger, stream, plan);
+  logger->End();
 
+  // we need to away to always delete these shadow copies
+  // currently you can remove orphaned shadow copies via
+  // diskshadow > delete shadows all
   snapshot.delete_snapshot(backup_components);
 
   backup_components.Release();
