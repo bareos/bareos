@@ -25,11 +25,16 @@ target_sources(parser PRIVATE parser.cc)
 target_link_libraries(parser PUBLIC fmt::fmt-header-only)
 
 if(HAVE_WIN32)
+  add_library(progress-bar-logger OBJECT logger.cc)
+  target_link_libraries(
+    progress-bar-logger PRIVATE indicators::indicators fmt::fmt-header-only
+  )
+
   add_executable(barri data_dumper.cc restore.cc common.cc)
 
   target_link_libraries(
     barri VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES} parser
-    Microsoft.GSL::GSL
+    Microsoft.GSL::GSL progress-bar-logger
   )
 
   add_executable(copy copy.cc)
