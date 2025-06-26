@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Breaking changes
+- Bareos 25 disables SSL on the PostgreSQL connection, as we have observed strange issues with SSL enabled.[Issue #1965]
+
 ### Removed
 - config: deprecate file daemon as alias for client in FD config [PR #2187]
 
@@ -87,7 +91,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: disable lto when linking gtests [PR #2286]
 - VMware Plugin: Fix for virtual USB devices [PR #2213]
 - build: add Fedora 42 [PR #2263]
+- python: fix traceback generation [PR #2303]
 
+[Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
 [PR #1893]: https://github.com/bareos/bareos/pull/1893
 [PR #2018]: https://github.com/bareos/bareos/pull/2018
@@ -162,4 +168,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2278]: https://github.com/bareos/bareos/pull/2278
 [PR #2286]: https://github.com/bareos/bareos/pull/2286
 [PR #2287]: https://github.com/bareos/bareos/pull/2287
+[PR #2303]: https://github.com/bareos/bareos/pull/2303
 [unreleased]: https://github.com/bareos/bareos/tree/master
