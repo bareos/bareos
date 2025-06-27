@@ -40,12 +40,7 @@ namespace progressbar {
 using namespace indicators;
 
 struct logger : public GenericLogger {
-  enum class Output
-  {
-    StdOut,
-    StdErr,
-  };
-
+  using Output = typename indicators::TerminalHandle;
   static constexpr Output Current = Output::StdErr;
 
   static constexpr std::ostream& stream()
@@ -66,11 +61,11 @@ struct logger : public GenericLogger {
     }
   }
 
-  static void erase_line() { std::fputs("\r\033[K", handle()); }
+  static void erase_line() { indicators::erase_line(Current); }
 
   static void show_cursor(bool show)
   {
-    std::fputs(show ? "\033[?25h" : "\033[?25l", handle());
+    indicators::show_console_cursor(show, Current);
   }
 
   void Begin(std::size_t FileSize) override { progress_bar.emplace(FileSize); }
@@ -125,7 +120,7 @@ struct logger : public GenericLogger {
               option::ShowPercentage(true),
 
               // using anything but cout is not really supported ...
-              option::Stream(stream()),
+              option::Stream(Current),
 
               option::ShowElapsedTime(true),
               option::ShowRemainingTime(true),
