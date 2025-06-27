@@ -23,7 +23,9 @@
 #define BAREOS_PLUGINS_FILED_WINDOWS_DR_FILE_FORMAT_H_
 
 #include <cstdint>
-#include <format>
+
+#include <fmt/format.h>
+
 #include <istream>
 #include <ostream>
 #include <vector>
@@ -110,7 +112,7 @@ static void expect_stream(reader& stream,
   read_stream(stream, value);
 
   if (value != expected) {
-    throw std::runtime_error{std::format(
+    throw std::runtime_error{fmt::format(
         "{}:{} dump format error: expected constant {:0x}, got {:0x}",
         expected_at.file_name(), expected_at.line(), expected, value)};
   }
