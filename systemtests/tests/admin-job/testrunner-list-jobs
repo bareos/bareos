@@ -1,0 +1,55 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=./environment
+. ./environment
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+# remove jobs from previous runs
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/log-purge.out
+purge jobs yes
+2
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+# run two jobs
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/log-backup.out
+run job=backup-bareos-fd yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+# list jobs
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/log-list.out
+run job=admin-list-jobs yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "| admin-list-job.*| R" \
+            "${log_home}/log-list.out" \
+            "admin job not found in listing"
+
+expect_grep "| backup-bareos-fd.*| T" \
+            "${log_home}/log-list.out" \
+            "backup job not found in listing"
+
+end_test

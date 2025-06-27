@@ -34,7 +34,6 @@ target_sources(
           sql_query.cc
           sql_update.cc
           postgresql.cc
-          postgresql_batch.cc
 )
 target_link_libraries(bareossql PUBLIC Bareos::Lib PostgreSQL::PostgreSQL)
 

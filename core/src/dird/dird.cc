@@ -124,7 +124,7 @@ static bool DirDbLogInsert(JobControlRecord* jcr,
   Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
        edit_int64(jcr->JobId, ed1), dt, esc_msg.c_str());
 
-  return jcr->db->SqlQuery(query.c_str());
+  return jcr->db->SqlExec(query.c_str());
 }
 
 /*********************************************************************

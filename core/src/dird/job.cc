@@ -1844,12 +1844,17 @@ bail_out:
   return files;
 }
 
-/* TODO: redirect command ouput to job log */
-bool RunConsoleCommand(JobControlRecord*, const char* cmd)
+bool RunConsoleCommand(JobControlRecord* jcr, const char* cmd)
 {
   UaContext* ua;
   bool ok;
   JobControlRecord* ljcr = new_control_jcr("-RunScript-", JT_CONSOLE);
+
+  if (jcr) {
+    /* redirect command ouput to job log */
+    ljcr->JobId = jcr->JobId;
+  }
+
   ua = new_ua_context(ljcr);
   /* run from runscript and check if commands are authorized */
   ua->runscript = true;
