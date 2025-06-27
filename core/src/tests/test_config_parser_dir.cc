@@ -92,15 +92,11 @@ TEST_F(ConfigParser_Dir, ParseSchedulerOddEvenDaysCorrectly)
   std::string expected_output{
       "Schedule {\n"
       "  Name = \"Even Weeks\"\n "
-      " Run = Fri "
-      "w00,w02,w04,w06,w08,w10,w12,w14,w16,w18,w20,w22,w24,w26,w28,w30,w32,w34,"
-      "w36,w38,w40,w42,w44,w46,w48,w50,w52 at 23:10\n"
+      " Run = w00/w02 Fri at 23:10\n"
       "}\n\n"
       "Schedule {\n"
       "  Name = \"Odd Weeks\"\n"
-      "  Run = Sun "
-      "w01,w03,w05,w07,w09,w11,w13,w15,w17,w19,w21,w23,w25,w27,w29,w31,w33,w35,"
-      "w37,w39,w41,w43,w45,w47,w49,w51,w53 at 23:10\n"
+      "  Run = w01/w02 Sun at 23:10\n"
       "}\n\n"};
 
 
