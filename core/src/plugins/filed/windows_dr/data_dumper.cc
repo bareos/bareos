@@ -175,7 +175,8 @@ part_table_entry_mbr_data from_win32(const PARTITION_INFORMATION_MBR& mbr)
   return Result;
 }
 
-void copy_stream(HANDLE hndl,
+void copy_stream(GenericLogger* Logger,
+                 HANDLE hndl,
                  std::size_t offset,
                  std::size_t length,
                  std::ostream& stream)
@@ -184,7 +185,7 @@ void copy_stream(HANDLE hndl,
   LONG off_high = (offset >> 32) & 0xFFFFFFFF;
   SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
 
-  std::vector<char> buffer(1024 * 1024);
+  std::vector<char> buffer(4 * 1024 * 1024);
 
   std::size_t bytes_to_read = length;
   while (bytes_to_read > 0) {
@@ -216,6 +217,7 @@ void copy_stream(HANDLE hndl,
     }
 
     stream.write(buffer.data(), bytes_read);
+    Logger->Progressed(bytes_read);
 
     bytes_to_read -= bytes_read;
   }
@@ -239,7 +241,7 @@ void execute_plan(GenericLogger* logger,
               logger->SetStatus("reading a file");
 
               logger->Info(std::format("writing {} bytes\n", from.length));
-              copy_stream(from.hndl, from.offset, from.length, stream);
+              copy_stream(logger, from.hndl, from.offset, from.length, stream);
               logger->Progressed(from.length);
             },
         },

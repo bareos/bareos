@@ -108,7 +108,8 @@ endif()
 CPMAddPackage(
   NAME indicators
   VERSION "2.3"
-  GITHUB_REPOSITORY "p-ranav/indicators"
+  GITHUB_REPOSITORY "sebsura/indicators"
+  GIT_TAG "dev/ssura/master/fix-stderr-output"
 )
 
 # Dump package information from CPM into a YAML file
