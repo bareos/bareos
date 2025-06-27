@@ -167,7 +167,7 @@ struct parser {
     strategy->BeginRestore(disk_count);
     for (std::size_t disk = 0; disk < disk_count; ++disk) {
       logger->SetStatus(
-          std::format("restoring disk {}/{}", disk + 1, disk_count));
+          fmt::format("restoring disk {}/{}", disk + 1, disk_count));
       auto disk_header = ReadDiskHeader(stream);
       Info("Restoring disk {} of size {}", disk + 1, disk_header.disk_size);
       strategy->BeginDisk(disk_header);
