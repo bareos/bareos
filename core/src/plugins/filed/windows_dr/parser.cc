@@ -1,0 +1,204 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+
+#include "parser.h"
+#include <bit>
+#include <fmt/format.h>
+
+struct parser {
+  GenericLogger* logger;
+  parser(GenericLogger* logger_) : logger{logger_} {}
+
+  struct logging_reader : public reader {
+    logging_reader(GenericLogger* logger_, std::istream* stream_)
+        : logger{logger_}, stream{stream_}
+    {
+    }
+
+    void read(char* buffer, std::size_t size) override
+    {
+      stream->read(buffer, size);
+      auto read_bytes = stream->gcount();
+      if (read_bytes != (std::streamsize)size) {
+        throw std::runtime_error{fmt::format(
+            "wanted to read {} bytes from input stream but only {} were read",
+            size, read_bytes)};
+      }
+      logger->Progressed(size);
+    }
+
+    GenericLogger* logger;
+    std::istream* stream;
+  };
+
+
+  disk_info ReadDiskHeader(reader& stream)
+  {
+    disk_header header;
+    header.read(stream);
+
+    std::uint64_t disk_size = header.disk_size;
+
+    return {disk_size, header.extent_count, header.total_extent_size};
+  }
+
+  void ParseDiskPartTable(reader& stream, GenericHandler* strategy)
+  {
+    part_table_header header;
+    header.read(stream);
+
+    switch (header.part_table_type) {
+      case part_type::Raw: {
+        strategy->BeginRawTable(partition_info_raw{});
+      } break;
+      case part_type::Mbr: {
+        partition_info_mbr mbr{.CheckSum = header.Datum0,
+                               .Signature = (uint32_t)header.Datum1,
+                               .bootstrap = {}};
+        memcpy(mbr.bootstrap, header.Data2, sizeof(header.Data2));
+        strategy->BeginMbrTable(mbr);
+      } break;
+      case part_type::Gpt: {
+        partition_info_gpt gpt{.DiskId = std::bit_cast<guid>(header.Data),
+                               .StartingUsableOffset = header.Datum1,
+                               .UsableLength = header.Datum2,
+                               .MaxPartitionCount = header.Datum0,
+                               .bootstrap = {}};
+        memcpy(gpt.bootstrap, header.Data2, sizeof(header.Data2));
+        strategy->BeginGptTable(gpt);
+      } break;
+    }
+
+    for (size_t i = 0; i < header.partition_count; ++i) {
+      part_table_entry entry;
+      entry.read(stream);
+
+      switch (entry.partition_style) {
+        case Mbr: {
+          part_table_entry_mbr_data data;
+          data.read(stream);
+
+          strategy->MbrEntry(entry, data);
+        } break;
+        case Gpt: {
+          part_table_entry_gpt_data data;
+          data.read(stream);
+
+          strategy->GptEntry(entry, data);
+        } break;
+        default: {
+          throw std::logic_error{
+              fmt::format("unknown partition type ({}) encountered",
+                          static_cast<std::uint8_t>(entry.partition_style))};
+        }
+      }
+    }
+
+    strategy->EndPartTable();
+  }
+
+  file_header ReadHeader(reader& stream)
+  {
+    file_header header;
+    header.read(stream);
+
+    if (header.version != file_header::current_version) {
+      throw std::runtime_error{
+          fmt::format("expected dump version {}, got version {}",
+                      file_header::current_version, header.version),
+      };
+    }
+
+    return header;
+  }
+
+  void ParseExtent(reader& stream, GenericHandler* strategy)
+  {
+    extent_header header;
+    header.read(stream);
+
+    strategy->BeginExtent(header);
+
+    std::vector<char> buffer;
+    buffer.resize(4 * 1024 * 1024);
+
+    std::size_t bytes_to_read = header.length;
+
+    while (bytes_to_read > 0) {
+      auto bytes_this_call = std::min(bytes_to_read, buffer.size());
+
+      stream.read(buffer.data(), bytes_this_call);
+
+      strategy->ExtentData({std::begin(buffer), bytes_this_call});
+
+      bytes_to_read -= bytes_this_call;
+    }
+    strategy->EndExtent();
+  }
+
+  void parse(std::istream& input_stream, GenericHandler* strategy)
+  {
+    logging_reader stream{logger, &input_stream};
+
+    auto fheader = ReadHeader(stream);
+    auto disk_count = fheader.disk_count;
+    auto dump_size = fheader.file_size;
+    logger->Begin(dump_size);
+
+    Info("Restoring {} disks", disk_count);
+    strategy->BeginRestore(disk_count);
+    for (std::size_t disk = 0; disk < disk_count; ++disk) {
+      logger->SetStatus(
+          fmt::format("restoring disk {}/{}", disk + 1, disk_count));
+      auto disk_header = ReadDiskHeader(stream);
+      Info("Restoring disk {} of size {}", disk + 1, disk_header.disk_size);
+      strategy->BeginDisk(disk_header);
+
+      Info("Restoring partition table");
+      ParseDiskPartTable(stream, strategy);
+      for (size_t extent = 0; extent < disk_header.extent_count; ++extent) {
+        Info("Restoring extent {}/{}", extent + 1, disk_header.extent_count);
+        ParseExtent(stream, strategy);
+      }
+
+      strategy->EndDisk();
+      Info("disk {} finished", disk + 1);
+    }
+
+    strategy->EndRestore();
+    Info("restore completed");
+    logger->End();
+  }
+
+  template <typename... Args>
+  void Info(fmt::format_string<Args...> fmt, Args&&... args)
+  {
+    logger->Info(fmt::format(fmt, std::forward<Args>(args)...));
+  }
+};
+
+void parse_file_format(GenericLogger* logger,
+                       std::istream& stream,
+                       GenericHandler* strategy)
+{
+  parser FileParser{logger};
+  FileParser.parse(stream, strategy);
+}
