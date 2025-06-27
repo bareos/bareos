@@ -30,8 +30,6 @@ Here are a few important considerations concerning disaster recovery that you sh
 Steps to Take Before Disaster Strikes
 -------------------------------------
 
--  Create a rescue or CDROM for your systems. Generally, they are offered by each distribution, and there are many good rescue disks on the Web
-
 -  Ensure that you always have a valid bootstrap file for your backup and that it is saved to an alternate machine. This will permit you to easily do a full restore of your system.
 
 -  If possible copy your catalog nightly to an alternate machine. If you have a valid bootstrap file, this is not necessary, but can be very useful if you do not want to reload everything.
@@ -473,38 +471,183 @@ and add the Run Script definition to the job intended to backup the data for a R
 
 .. _section-RestoreServer:
 
-Restoring a Bareos Server
--------------------------
+Disaster Restoring a Bareos Server
+----------------------------------
 
 .. index::
    single: Restore; Bareos Server
 
-Above, we considered how to recover a client machine where a valid Bareos server was running on another machine. However, what happens if your server goes down and you no longer have a running Director, Catalog, or Storage daemon? There are several solutions:
+If correctly configured, Bareos protects you from data loss caused by
+data deletion or a complete system breakdown. At most, you could lose
+the data generated since the last backup.
 
-#. Move your server to another machine.
+As long as you still have the data carriers containing your backups, you will
+be able to restore your data. Bareos uses the same data format for all data
+carriers, so the tools will be able to access the data, whether they are stored
+on hard drives or tapes.
 
-#. Use a Hot Spare Server on another Machine.
+Precautionary measures that protect the Bareos system
+'''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-Consider the following steps:
+The first measure you should take in any Bareos installation to prevent
+loss of data is to back up the database (the ``Job`` named
+``BackupCatalog``). This backup 'must' be configured in every Bareos
+installation, and it always runs as the last job of the day so it
+includes all jobs of the day.
+This job also saves the configuration files of the bareos system.
+In the default setup, this job also sends the bootstrap file via email.
+Additionally, it is also a good idea to have the current configuration files
+also available on a second system.
 
--  Install the same database server as on the original system.
+This bootstrap file allows a very quick recovery of the catalog backup in an
+emergency, so you should make sure that the job emails from the catalog backup
+are sent to an external server.
 
--  Install Bareos and initialize the Bareos database.
+The job reports on backups that are sent out via email also contain
+important information you may need in an emergency:
 
--  Ideally, you will have a copy of all the Bareos conf files that were being used on your server. If not, you will at a minimum need create a bareos-dir.conf that has the same Client resource that was used to backup your system.
+-  What is the most recent backup of the ``BackupCatalog`` job?
 
--  If you have a valid saved Bootstrap file as created for your damaged machine with WriteBootstrap, use it to restore the files to the damaged machine, where you have loaded a static Bareos File daemon using the Rescue disk). This is done by using the restore command and at the yes/mod/no prompt, selecting mod then specifying the path to the bootstrap file.
+-  What medium was this backup written to?
 
--  After the Catalog is restored, it should be located in (:file:`./var/lib/bareos/bareos.sql`) relative to the restore location. After stopping the bareos-dir service, this file then needs to be loaded into the PostgreSQL database. (For example by running ``sudo -u bareos psql bareos bareos -f ./var/lib/bareos/bareos.sql`` or ```su postgres -c "psql bareos -f ./var/lib/bareos/bareos.sql``)
+Ways to approach a restore
+''''''''''''''''''''''''''
 
--  If you have successfully used a Bootstrap file, you should now be back up and running, if you do not have a Bootstrap file, continue with the suggestions below.
+The restore procedure depends on the following factors:
 
--  Using bscan scan the last set of backup tapes into your catalog database.
+-  How badly damaged is the Bareos system?
 
--  Start Bareos, and using the Console restore command, restore the last valid copy of the Bareos database and the Bareos configuration files.
+-  What data are available on the restore?
 
--  Move the database to the correct location.
+In an emergency restore, the first objective is to restore the catalog
+database. As soon as the catalog database is restored, all other data
+and their storage locations are also available.
 
--  Start the database, and restart Bareos. Then use the Console restore command, restore all the files on the damaged machine, where you have loaded a Bareos File daemon using the Rescue disk.
+Of course an emergency restore of the Bareos system is only possible if
+you have storage media containing the necessary data. The degree of
+destruction and available restore data determine the restore method. The
+aim is always to get the backup system working again in as efficient a
+way as possible. Less damage and more available restore data make this
+stage quicker to achieve.
+
+Tools
+'''''
+
+Next to programs for regular operation (director, file daemon, storage daemon,
+Bareos console) a Bareos installation contains additional service programs.
+Programs that work with media require a valid storage daemon configuration
+because they use the same routines to access storage media as the storage
+daemon does in normal operation. Other programs require the configuration file
+of the director, as they assess the configuration settings stored there.
+
+It is therefore a great advantage if the configuration files of your
+installation are available in an emergency. Otherwise, an emergency
+restore must be preceded by the restoring of the configuration. In most
+cases you will lack the time to do this properly.
+
+
+``bextract`` allows you to extract data directly from Bareos media. It
+does not need a functioning storage daemon configuration file and is
+therefore suitable as a basic tool when all other restoring methods
+fail.
+
+``bls`` displays the content of Bareos media. It can access both tapes
+and files in the file system.
+
+
+Performing an emergency restore
+'''''''''''''''''''''''''''''''
+
+In the following section we will assume that our backup system itself
+has failed. We need the following to restore it:
+
+Bootstrap
+
+-  The media containing the backup. If the backup itself has been
+   destroyed, it is of course no longer possible to restore it. You
+   should therefore always swap out backups in some form or at least
+   separate them from the actual backup system.
+
+-  The configuration of the storage daemon. If the properties of the
+   replacement system have changed (paths or SCSI devices, for example),
+   you have to adjust the storage daemon configuration to suit the new
+   environment.
+
+-  The ``Bootstrap`` file of the most recent backup of the database,
+   i.e. of the ``BackupCatalog`` job.
+
+In our example, bootstrap file :file:`BackupCatalog.bsr` looks like
+this:
+
+::
+
+   # 15-Mar-2025 11:02:42 - BackupCatalog.2025-03-15_11.02.39_10 - Full
+   Volume="E01001L4"
+   MediaType="LTO-4"
+   Slot=1
+   VolSessionId=2
+   VolSessionTime=1331805611
+   VolAddr=4294967296-4294967297
+   FileIndex=1-1
+
+We use ``bextract`` to extract the most recent database backup from the
+Bareos media. The call-up syntax is:
+
+::
+
+   bextract -c <SD configuration directory>  <drive name in sd.conf> <output directory>  -b <bootstrap file>
+
+``bextract`` now extracts the data specified in the ``<Bootstrap file>``
+to the ``<output file>`` using drive ``<drive name>``. ``bextract``
+consults the storage daemon configuration file to determine how to
+address the drive.
+
+For our example, that means the following call:
+
+::
+
+   root@bareos:~ #  bextract -c /etc/bareos -V E01001L4  Drive-1 /tmp  -b BackupCatalog.bsr
+   bextract: butil.c:287 Using device: "Drive-1" for reading.
+   15-Mär 12:07 bextract JobId 0: 3301 Issuing autochanger "loaded? drive 0" command.
+   15-Mär 12:07 bextract JobId 0: 3302 Autochanger "loaded? drive 0", result is Slot 1.
+   15-Mär 12:07 bextract JobId 0: Ready to read from volume "E01001L4" on device "Drive-1" (/dev/nst0).
+   15-Mär 12:07 bextract JobId 0: Forward spacing Volume "E01001L4" to file:block 1:0.
+   bextract JobId 0: -rw-------   1 bareos   bareos         87862 2025-03-15 11:02:42  /tmp/var/lib/bareos/bareos.sql
+   15-Mär 12:07 bextract JobId 0: End of Volume at file 2 on device "Drive-1" (/dev/nst0), Volume "E01001L4"
+   15-Mär 12:07 bextract JobId 0: End of all volumes.
+   1 files restored.
+
+
+We have successfully extracted the database dump to file
+:file:`/tmp/var/lib/bareos/bareos.sql`. We now want to import it to
+the Bareos database, so we use Bareos scripts to create the database,
+tables and access permissions:
+
+::
+
+   root@bareos:/usr/lib/bareos/scripts # ./create_bareos_database
+   Creating postgresql database
+   CREATE DATABASE
+   ALTER DATABASE
+   Creation of bareos database succeeded.
+   Database encoding OK
+
+   root@bareos:/usr/lib/bareos/scripts # make_bareos_tables
+   Making postgresql tables
+   [...]
+   INSERT 0 1
+   Creation of Bareos PostgreSQL tables succeeded.
+
+   root@bareos:/usr/lib/bareos/scripts # grant_bareos_privileges
+
+We now import the database dump to the database:
+
+::
+
+   root@bareos:~ #  psql bareos < /tmp/var/lib/bareos/bareos.sql
+
+Finally you start the director. The system is now restored with all
+information on all backups and is available for restores.
+
 
 For additional details of restoring your database, please see the :ref:`section-RestoreCatalog` chapter.
