@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -209,7 +209,7 @@ auto ChunkedDevice::getInflightLease(chunk_io_request* request)
 {
   try {
     return InflightLease(this, request);
-  } catch (InflightChunkException&) {
+  } catch (const InflightChunkException&) {
     return std::nullopt;
   }
 }
