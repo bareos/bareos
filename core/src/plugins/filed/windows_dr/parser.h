@@ -72,4 +72,11 @@ void parse_file_format(GenericLogger* logger,
                        std::istream& stream,
                        GenericHandler* strategy);
 
+
+struct restartable_parser;
+
+restartable_parser* parse_begin(GenericHandler* strategy);
+void parse_data(restartable_parser*, std::span<const char> data);
+void parse_end(restartable_parser*);
+
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_PARSER_H_
