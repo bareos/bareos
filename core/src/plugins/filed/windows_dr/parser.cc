@@ -202,3 +202,42 @@ void parse_file_format(GenericLogger* logger,
   parser FileParser{logger};
   FileParser.parse(stream, strategy);
 }
+
+struct restartable_parser {
+  restartable_parser(GenericHandler* handler) : _handler{handler} {}
+
+  struct data_to_read {};
+  bool step(data_to_read&) { return false; }
+
+  void ingest_with_leftover(r) {}
+  void ingest(std::span<const char> data)
+  {
+    data_to_read d{leftover, data};
+    while (d.size() > 0) {
+      if (!step(d)) { break; }
+    }
+
+    if (d.size() > 0) { save_rest(d); }
+  }
+
+  ~restartable_parser() { _handler->EndRestore(); }
+
+  GenericHandler* _handler{nullptr};
+  std::vector<char> left_over;
+};
+
+restartable_parser* parse_begin(GenericHandler* handler)
+{
+  return new restartable_parser{handler};
+}
+
+void parse_data(restartable_parser* parser, std::span<const char> data)
+{
+  parser->ingest(data);
+}
+
+void parse_end(restartable_parser* parser)
+{
+  parse_data(parser, {});
+  delete parser;
+}
