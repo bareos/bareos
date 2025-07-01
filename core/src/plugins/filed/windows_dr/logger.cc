@@ -68,7 +68,36 @@ struct logger : public GenericLogger {
     indicators::show_console_cursor(show, Current);
   }
 
-  void Begin(std::size_t FileSize) override { progress_bar.emplace(FileSize); }
+  static bool is_a_tty()
+  {
+#if defined(HAVE_WIN32)
+    HANDLE hndl = NULL;
+    switch (Current) {
+        // GetStdHandle return NULL if no such handle exists
+      case TerminalHandle::StdOut: {
+        hndl = GetStdHandle(STD_OUTPUT_HANDLE);
+      }
+      case TerminalHandle::StdErr: {
+        hndl = GetStdHandle(STD_ERROR_HANDLE);
+      }
+    }
+    return hndl != INVALID_HANDLE_VALUE && hndl != NULL
+           && GetFileTYPE(hndl) == FILE_TYPE_CHAR;
+#else
+    switch (Current) {
+      case TerminalHandle::StdOut:
+        return isatty(STDOUT_FILENO);
+      case TerminalHandle::StdErr:
+        return isatty(STDERR_FILENO);
+    }
+    return false;
+#endif
+  }
+
+  void Begin(std::size_t FileSize) override
+  {
+    if (is_a_tty()) { progress_bar.emplace(FileSize); }
+  }
   void Progressed(std::size_t Amount) override
   {
     if (progress_bar) { progress_bar->progress(Amount); }
