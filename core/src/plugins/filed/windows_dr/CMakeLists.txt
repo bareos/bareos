@@ -59,4 +59,16 @@ else()
   )
 endif()
 
+add_library(bareos-core-api bareos_api.cc)
+target_link_libraries(bareos-core-api PUBLIC fmt::fmt-header-only Bareos::Lib)
+
+bareos_add_plugin(wdr-fd)
+target_sources(wdr-fd PRIVATE plugin.cc)
+target_link_libraries(wdr-fd PUBLIC Bareos::Lib bareos-core-api parser)
+install(
+  TARGETS wdr-fd
+  DESTINATION ${plugindir}
+  COMPONENT filedaemon
+)
+
 include(DebugEdit)
