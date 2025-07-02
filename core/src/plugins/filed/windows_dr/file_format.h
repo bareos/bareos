@@ -41,7 +41,7 @@
 struct reader {
   // reads exactly size bytes into buffer
   virtual void read(char* buffer, std::size_t size) = 0;
-  virtual ~reader() {};
+  virtual ~reader() {}
 };
 
 struct writer {
