@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,10 +54,36 @@ bool is_chunk_name(const std::string& name)
 }
 
 static const utl::options option_defaults{
-    {"chunksize", "10485760"},  // 10 MB
-    {"iothreads", "0"},        {"ioslots", "10"}, {"retries", "0"},
-    {"program_timeout", "0"},  // use default in crud_storage
+    {"chunksize", "10 MB"}, {"iothreads", "0"},       {"ioslots", "10"},
+    {"retries", "0"},       {"program_timeout", "0"},  // default in
+                                                       // crud_storage
 };
+
+void throw_if_junk(const std::string& str, size_t pos = 0)
+{
+  if (auto iter = std::find_if_not(str.begin() + pos, str.end(), b_isjunkchar);
+      iter != str.end()) {
+    throw std::invalid_argument{fmt::format(
+        FMT_STRING("unparseable character '{0}' (0x{0:x}) at pos {1}"), *iter,
+        iter - str.begin())};
+  }
+}
+
+unsigned long long stoull_notrailing(const std::string& str)
+{
+  size_t pos;
+  unsigned long long val = std::stoull(str, &pos);
+  throw_if_junk(str, pos);
+  return val;
+}
+
+unsigned long stoul_notrailing(const std::string& str)
+{
+  size_t pos;
+  unsigned long val = std::stoul(str, &pos);
+  throw_if_junk(str, pos);
+  return val;
+}
 
 // delete this, so only specializations will be considered
 template <typename T> void convert_value(T&, const std::string&) = delete;
@@ -66,24 +92,24 @@ template <>
 [[maybe_unused]] void convert_value<>(unsigned long long& to,
                                       const std::string& from)
 {
-  to = std::stoull(from);
+  to = stoull_notrailing(from);
 }
 
 template <>
 [[maybe_unused]] void convert_value<>(unsigned long& to,
                                       const std::string& from)
 {
-  to = std::stoul(from);
+  to = stoul_notrailing(from);
 }
 
 template <> void convert_value<>(uint8_t& to, const std::string& from)
 {
-  to = gsl::narrow<uint8_t>(std::stoul(from));
+  to = gsl::narrow<uint8_t>(stoul_notrailing(from));
 }
 
 template <> void convert_value<>(uint32_t& to, const std::string& from)
 {
-  to = gsl::narrow<uint32_t>(std::stoul(from));
+  to = gsl::narrow<uint32_t>(stoul_notrailing(from));
 }
 
 
@@ -92,31 +118,42 @@ template <> void convert_value<>(std::string& to, const std::string& from)
   to = from;
 }
 
+void convert_size(uint64_t& to, const std::string& from)
+{
+  if (!size_to_uint64(from.c_str(), &to)) {
+    throw std::invalid_argument(fmt::format(
+        FMT_STRING("value '{}' is not a valid size specification"), from));
+  }
+}
+
 template <typename T>
-tl::expected<utl::options*, std::string> convert(utl::options* options,
-                                                 const std::string& key,
-                                                 T& target)
+tl::expected<utl::options*, std::string> convert(
+    utl::options* options,
+    const std::string& key,
+    T& target,
+    std::function<void(T&, const std::string&)> converter = convert_value<T>)
 {
   auto node_handle = options->extract(key);
   if (node_handle.empty()) {
     return tl::unexpected(
-        fmt::format("no value provided for option '{}'\n", key));
+        fmt::format(FMT_STRING("no value provided for option '{}'\n"), key));
   }
   auto value = node_handle.mapped();
 
   try {
-    convert_value(target, value);
-  } catch (std::invalid_argument& e) {
-    return tl::unexpected(fmt::format(
-        "invalid argument '{}' for option '{}': {}\n", value, key, e.what()));
-  } catch (std::out_of_range& e) {
+    converter(target, value);
+  } catch (const std::invalid_argument& e) {
     return tl::unexpected(
-        fmt::format("value '{}' for option '{}' is out of range: {}\n", value,
-                    key, e.what()));
-  } catch (gsl::narrowing_error& e) {
-    return tl::unexpected(
-        fmt::format("value '{}' for option '{}' would be truncated: {}\n",
+        fmt::format(FMT_STRING("invalid argument '{}' for option '{}': {}\n"),
                     value, key, e.what()));
+  } catch (const std::out_of_range& e) {
+    return tl::unexpected(fmt::format(
+        FMT_STRING("value '{}' for option '{}' is out of range: {}\n"), value,
+        key, e.what()));
+  } catch (const gsl::narrowing_error& e) {
+    return tl::unexpected(fmt::format(
+        FMT_STRING("value '{}' for option '{}' would be truncated: {}\n"),
+        value, key, e.what()));
   }
   return options;
 }
@@ -129,12 +166,21 @@ std::optional<std::string> fetch_value(utl::options& options,
   return node_handle.mapped();
 }
 
-template <typename T> auto get_converter(const std::string& key, T& target)
+template <typename T>
+auto get_value_converter(const std::string& key, T& target)
 {
   return [&key, &target](utl::options* options) {
     return convert(options, key, target);
   };
 }
+
+template <typename T> auto get_size_converter(const std::string& key, T& target)
+{
+  return [&key, &target](utl::options* options) {
+    return convert(options, key, target, std::function{convert_size});
+  };
+}
+
 
 }  // namespace
 
@@ -156,30 +202,28 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
 {
   auto res = utl::parse_options(dev_options);
   if (std::holds_alternative<utl::error>(res)) {
-    return tl::unexpected(
-        fmt::format("device option error: {}\n", std::get<utl::error>(res)));
+    return tl::unexpected(fmt::format(FMT_STRING("device option error: {}\n"),
+                                      std::get<utl::error>(res)));
   }
   auto options = std::get<utl::options>(res);
 
   // apply default values
   options.merge(utl::options(option_defaults));
-
-  Dmsg0(debug_info, "dev_options: %s\n", dev_options);
+  utl::Dfmt(debug_info, FMT_STRING("dev_options: {}"), dev_options);
   for (const auto& [key, value] : options) {
-    Dmsg0(debug_trace, "'%s' = '%s'\n", key.c_str(), value.c_str());
+    utl::Dfmt(debug_trace, FMT_STRING("'{}' = '{}'"), key, value);
   }
-
   std::string program;
   uint32_t program_timeout{0};
 
   if (auto conversion_result
       = tl::expected<utl::options*, std::string>{&options}
-            .and_then(get_converter("iothreads", io_threads_))
-            .and_then(get_converter("ioslots", io_slots_))
-            .and_then(get_converter("retries", retries_))
-            .and_then(get_converter("chunksize", chunk_size_))
-            .and_then(get_converter("program", program))
-            .and_then(get_converter("program_timeout", program_timeout));
+            .and_then(get_value_converter("iothreads", io_threads_))
+            .and_then(get_value_converter("ioslots", io_slots_))
+            .and_then(get_value_converter("retries", retries_))
+            .and_then(get_size_converter("chunksize", chunk_size_))
+            .and_then(get_value_converter("program", program))
+            .and_then(get_value_converter("program_timeout", program_timeout));
       !conversion_result) {
     return tl::unexpected(conversion_result.error());
   }
@@ -187,6 +231,9 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   if (program.empty()) {
     return tl::unexpected("Option 'program' is required\n"s);
   }
+
+  utl::Dfmt(debug_trace, FMT_STRING("configured chunksize in bytes: {}"),
+            chunk_size_);
 
   if (auto result = m_storage.set_program(program); !result) { return result; }
 
@@ -198,13 +245,14 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
     for (const auto& option_name : *supported_options) {
       if (auto value = fetch_value(options, option_name);
           value && !m_storage.set_option(option_name, *value)) {
-        return tl::unexpected(fmt::format("Error setting option '{}' to '{}'\n",
-                                          option_name, *value));
+        return tl::unexpected(
+            fmt::format(FMT_STRING("Error setting option '{}' to '{}'\n"),
+                        option_name, *value));
       }
     }
   } else {
     return tl::unexpected(
-        fmt::format("Cannot get supported options.\nCause: {}\n",
+        fmt::format(FMT_STRING("Cannot get supported options.\nCause: {}\n"),
                     supported_options.error()));
   }
 
@@ -212,8 +260,9 @@ tl::expected<void, std::string> DropletCompatibleDevice::setup_impl()
   if (!options.empty()) {
     BStringList option_names;
     for (const auto& [name, value] : options) { option_names.push_back(name); }
-    return tl::unexpected(fmt::format("Unknown options encountered: {}\n",
-                                      option_names.Join(", ")));
+    return tl::unexpected(
+        fmt::format(FMT_STRING("Unknown options encountered: {}\n"),
+                    option_names.Join(", ")));
   }
   return {};
 }
@@ -229,17 +278,18 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
   const std::string_view obj_name{request->volname};
   const std::string obj_chunk = get_chunk_name(request);
   if (request->wbuflen == 0) {
-    Dmsg1(debug_info, "Not flushing empty chunk %s/%s\n", obj_name.data(),
-          obj_chunk.c_str());
+    utl::Dfmt(debug_info, FMT_STRING("Not flushing empty chunk {}/{})"),
+              obj_name, obj_chunk);
     return true;
   }
-  Dmsg1(debug_trace, "Flushing chunk %s/%s\n", obj_name.data(),
-        obj_chunk.c_str());
+  utl::Dfmt(debug_trace, FMT_STRING("Flushing chunk {}/{}"), obj_name,
+            obj_chunk);
 
   auto inflight_lease = getInflightLease(request);
   if (!inflight_lease) {
-    Dmsg0(debug_info, "Could not acquire inflight lease for %s %s\n",
-          obj_name.data(), obj_chunk.c_str());
+    utl::Dfmt(debug_info,
+              FMT_STRING("Could not acquire inflight lease for {}/{}"),
+              obj_name, obj_chunk);
     return false;
   }
 
@@ -254,15 +304,17 @@ bool DropletCompatibleDevice::FlushRemoteChunk(chunk_io_request* request)
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
 
   if (obj_stat && obj_stat->size > request->wbuflen) {
-    Dmsg1(debug_info,
-          "Not uploading chunk %s with size %d, as chunk with size %d is "
-          "already present\n",
-          obj_name.data(), obj_stat->size, request->wbuflen);
+    utl::Dfmt(
+        debug_info,
+        FMT_STRING("Not uploading chunk {} with size {}, as chunk with size "
+                   "{} is already present"),
+        obj_name, request->wbuflen, obj_stat->size);
     return true;
   }
 
   auto obj_data = gsl::span{request->buffer, request->wbuflen};
-  Dmsg1(debug_info, "Uploading %zu bytes of data\n", request->wbuflen);
+  utl::Dfmt(debug_info, FMT_STRING("Uploading {} bytes of data"),
+            request->wbuflen);
   if (auto result = m_storage.upload(obj_name, obj_chunk, obj_data)) {
     return true;
   } else {
@@ -277,7 +329,8 @@ bool DropletCompatibleDevice::ReadRemoteChunk(chunk_io_request* request)
 {
   const std::string_view obj_name{request->volname};
   const std::string obj_chunk = get_chunk_name(request);
-  Dmsg1(debug_trace, "Reading chunk %s\n", obj_name.data());
+  utl::Dfmt(debug_trace, FMT_STRING("Reading chunk {}/{}"), obj_name.data(),
+            obj_chunk.data());
 
   // check object metadata
   auto obj_stat = m_storage.stat(obj_name, obj_chunk);
@@ -392,7 +445,7 @@ boffset_t DropletCompatibleDevice::d_lseek(DeviceControlRecord*,
 
       volumesize = ChunkedVolumeSize();
 
-      Dmsg1(debug_info, "Current volumesize: %lld\n", volumesize);
+      utl::Dfmt(debug_info, FMT_STRING("Current volumesize: {}"), volumesize);
 
       if (volumesize >= 0) {
         offset_ = volumesize + offset;

@@ -62,6 +62,8 @@ if(ENABLE_SANITIZERS)
     set(CMAKE_C_FLAGS
         "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
     )
+
+    add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS
         "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
@@ -69,9 +71,11 @@ if(ENABLE_SANITIZERS)
     set(CMAKE_C_FLAGS
         "${CMAKE_C_FLAGS} -fsanitize=undefined -fsanitize=address -fno-sanitize-recover"
     )
+    add_compile_definitions(BAREOS_UB_SANITIZER=1 BAREOS_ADDRESS_SANITIZER=1)
   elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
+    add_compile_definitions(BAREOS_ADDRESS_SANITIZER=1)
   else()
     message(
       FATAL_ERROR
@@ -233,58 +237,6 @@ include(BareosFindPrograms)
 
 if(NOT ${OPENSSL_FOUND})
   message(FATAL_ERROR "FATAL ERROR: OpenSSL is required but was not found.")
-endif()
-
-if(coverage)
-  set(COVERAGE_COMPILER_FLAGS
-      "-g -O0 --coverage -fprofile-arcs -ftest-coverage"
-      CACHE INTERNAL ""
-  )
-  message(
-    STATUS
-      "coverage requested, adding COVERAGE_COMPILER_FLAGS : ${COVERAGE_COMPILER_FLAGS}"
-  )
-  set(CMAKE_BUILD_TYPE Debug)
-  if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    link_libraries(gcov)
-  else()
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
-  endif()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_COMPILER_FLAGS}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}")
-
-  add_custom_target(
-    cov-clean
-    COMMENT "Cleaning gcda files from ${CMAKE_BINARY_DIR} and report."
-    COMMAND find "${CMAKE_BINARY_DIR}" -name '*.gcda' -delete
-    COMMAND "${CMAKE_COMMAND}" -E rm -rf "${CMAKE_BINARY_DIR}/coverage"
-  )
-
-  find_program(PROGRAM_GCOVR gcovr)
-  if(PROGRAM_GCOVR)
-    add_custom_target(
-      cov-report
-      COMMENT "Creating HTML coverage report in ${CMAKE_BINARY_DIR}/coverage"
-      # avoid irritating gcov error by removing a broken gcno file
-      COMMAND
-        "${CMAKE_COMMAND}" -E rm -f
-        "${CMAKE_BINARY_DIR}/core/src/droplet/libdroplet/CMakeFiles/droplet.dir/src/getdate.c.gcno"
-      COMMAND "${CMAKE_COMMAND}" -E make_directory
-              "${CMAKE_BINARY_DIR}/coverage"
-      COMMAND
-        "${PROGRAM_GCOVR}" --html-details
-        "${CMAKE_BINARY_DIR}/coverage/index.html" --root "${CMAKE_SOURCE_DIR}"
-        --filter "${CMAKE_SOURCE_DIR}" --filter "${CMAKE_BINARY_DIR}"
-        "${CMAKE_BINARY_DIR}"
-    )
-  else()
-    add_custom_target(
-      cov-report
-      COMMAND
-        "${CMAKE_COMMAND}" -E echo
-        "WARNING: gcovr binary not found, cannot create HTML coverage report"
-    )
-  endif()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

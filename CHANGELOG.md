@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix problems with msvc 19.44 [PR #2288]
 - plugins: fix error_string construction [PR #2292]
 - gRPC: add fixes to enable building on SUSE [PR #2282]
+- dplcompat: fix unsupported size-suffixes on chunksize [PR #2298]
 
 ## [24.0.3] - 2025-05-19
 
@@ -473,5 +474,6 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2288]: https://github.com/bareos/bareos/pull/2288
 [PR #2291]: https://github.com/bareos/bareos/pull/2291
 [PR #2292]: https://github.com/bareos/bareos/pull/2292
+[PR #2298]: https://github.com/bareos/bareos/pull/2298
 [PR #2304]: https://github.com/bareos/bareos/pull/2304
 [unreleased]: https://github.com/bareos/bareos/tree/master
