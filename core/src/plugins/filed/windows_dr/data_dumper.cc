@@ -1024,6 +1024,378 @@ std::optional<DISK_GEOMETRY_EX> GetDiskGeometry(HANDLE disk)
 
   return geo;
 }
+
+struct data_dumper {
+  data_dumper() {}
+
+  void GatherData(bool dry)
+  {
+    COM_CALL(CreateVssBackupComponents(&backup_components));
+    COM_CALL(backup_components->InitializeForBackup());
+
+    bool select_components = true;
+    bool backup_bootable_system_state = false;
+    VSS_BACKUP_TYPE backup_type = VSS_BT_COPY;
+    bool partial_file_support = false;
+
+    COM_CALL(backup_components->SetBackupState(
+        select_components, backup_bootable_system_state, backup_type,
+        partial_file_support));
+
+    if (!GatherWriterMetaData(backup_components)) {
+      throw std::runtime_error("Could not gather writer meta data");
+    }
+
+    auto writers = get_writers(backup_components);
+
+    for (auto& writer : writers) {
+      auto& metadata = writer.metadata;
+
+      struct {
+        VSS_ID instance_id;
+        VSS_ID writer_id;
+        CComBSTR name;
+        VSS_USAGE_TYPE usage_type;
+        VSS_SOURCE_TYPE source_type;
+      } identity{};
+      struct {
+        UINT include, exclude, component;
+      } counts{};
+
+      COM_CALL(metadata->GetIdentity(&identity.instance_id, &identity.writer_id,
+                                     &identity.name, &identity.usage_type,
+                                     &identity.source_type));
+
+      // these two writers should be skipped
+      if (identity.writer_id == SYSTEM_WRITER_ID) {
+        fprintf(stderr, "=== SYSTEM WRITER DETECTED ===\n");
+      }
+      if (identity.writer_id == ASR_WRITER_ID) {
+        fprintf(stderr, "=== ASR WRITER DETECTED ===\n");
+      }
+
+      fprintf(stderr, "%ls\n", (BSTR)identity.name);
+      {
+        wchar_t guid_storage[64] = {};
+
+        StringFromGUID2(identity.instance_id, guid_storage,
+                        sizeof(guid_storage));
+        fprintf(stderr, "  Instance Id: %ls\n", guid_storage);
+        StringFromGUID2(identity.writer_id, guid_storage, sizeof(guid_storage));
+        fprintf(stderr, "  Writer Id: %ls\n", guid_storage);
+        fprintf(stderr, "  Usage Type: %s (%u)\n",
+                vss_usage_as_str(identity.usage_type), identity.usage_type);
+        fprintf(stderr, "  Source Type: %s (%u)\n",
+                vss_source_as_str(identity.source_type), identity.source_type);
+      }
+
+      COM_CALL(metadata->GetFileCounts(&counts.include, &counts.exclude,
+                                       &counts.component));
+
+      fprintf(stderr, "  %u Includes:\n", counts.include);
+      for (UINT i = 0; i < counts.include; ++i) {
+        CComPtr<IVssWMFiledesc> file;
+        COM_CALL(metadata->GetIncludeFile(i, &file));
+
+        CComBSTR path;
+        COM_CALL(file->GetPath(&path));
+
+        fprintf(stderr, "    %ls\n", (BSTR)path);
+      }
+
+      fprintf(stderr, "  %u Excludes:\n", counts.exclude);
+      for (UINT i = 0; i < counts.exclude; ++i) {
+        CComPtr<IVssWMFiledesc> file;
+        COM_CALL(metadata->GetExcludeFile(i, &file));
+        CComBSTR path;
+        COM_CALL(file->GetPath(&path));
+
+        fprintf(stderr, "    %ls\n", (BSTR)path);
+      }
+
+      fprintf(stderr, "  %u Components:\n", counts.component);
+      for (UINT i = 0; i < counts.component; ++i) {
+        CComPtr<IVssWMComponent> component;
+        COM_CALL(metadata->GetComponent(i, &component));
+
+        PVSSCOMPONENTINFO info{nullptr};
+        COM_CALL(component->GetComponentInfo(&info));
+        fprintf(stderr, "    %u:\n", i);
+        fprintf(stderr, "      path: %ls\n", info->bstrLogicalPath);
+        fprintf(stderr, "      name: %ls\n", info->bstrComponentName);
+        fprintf(stderr, "      caption: %ls\n", info->bstrCaption);
+
+        fprintf(stderr, "      files: %u\n", info->cFileCount);
+        for (UINT fileidx = 0; fileidx < info->cFileCount; ++fileidx) {
+          fprintf(stderr, "        %u:\n", fileidx);
+          CComPtr<IVssWMFiledesc> file;
+          COM_CALL(component->GetFile(fileidx, &file));
+
+          CComBSTR path;
+          COM_CALL(file->GetPath(&path));
+          CComBSTR spec;
+          COM_CALL(file->GetFilespec(&spec));
+          bool recursive;
+          COM_CALL(file->GetRecursive(&recursive));
+
+          fprintf(stderr, "          path: %ls\n", (BSTR)path);
+          fprintf(stderr, "          spec: %ls\n", (BSTR)spec);
+          fprintf(stderr, "          recursive: %s\n",
+                  recursive ? "true" : "false");
+        }
+
+        fprintf(stderr, "      databases: %u\n", info->cDatabases);
+        for (UINT dbidx = 0; dbidx < info->cDatabases; ++dbidx) {
+          fprintf(stderr, "        %u:\n", dbidx);
+          CComPtr<IVssWMFiledesc> file;
+          COM_CALL(component->GetDatabaseFile(dbidx, &file));
+
+          CComBSTR path;
+          COM_CALL(file->GetPath(&path));
+          CComBSTR spec;
+          COM_CALL(file->GetFilespec(&spec));
+          bool recursive;
+          COM_CALL(file->GetRecursive(&recursive));
+
+          fprintf(stderr, "          path: %ls\n", (BSTR)path);
+          fprintf(stderr, "          spec: %ls\n", (BSTR)spec);
+          fprintf(stderr, "          recursive: %s\n",
+                  recursive ? "true" : "false");
+        }
+
+        fprintf(stderr, "      logs: %u\n", info->cLogFiles);
+        for (UINT logidx = 0; logidx < info->cLogFiles; ++logidx) {
+          fprintf(stderr, "        %u:\n", logidx);
+          CComPtr<IVssWMFiledesc> file;
+          COM_CALL(component->GetDatabaseLogFile(logidx, &file));
+
+          CComBSTR path;
+          COM_CALL(file->GetPath(&path));
+          CComBSTR spec;
+          COM_CALL(file->GetFilespec(&spec));
+          bool recursive;
+          COM_CALL(file->GetRecursive(&recursive));
+
+          fprintf(stderr, "          path: %ls\n", (BSTR)path);
+          fprintf(stderr, "          spec: %ls\n", (BSTR)spec);
+          fprintf(stderr, "          recursive: %s\n",
+                  recursive ? "true" : "false");
+        }
+
+        fprintf(stderr, "      dependencies: %u\n", info->cDependencies);
+        for (UINT depidx = 0; depidx < info->cDependencies; ++depidx) {
+          fprintf(stderr, "        %u:\n", depidx);
+          CComPtr<IVssWMDependency> dep;
+          COM_CALL(component->GetDependency(depidx, &dep));
+
+          CComBSTR name;
+          COM_CALL(dep->GetComponentName(&name));
+          CComBSTR path;
+          COM_CALL(dep->GetLogicalPath(&path));
+          VSS_ID writer_id;
+          COM_CALL(dep->GetWriterId(&writer_id));
+
+          fprintf(stderr, "          name: %ls\n", (BSTR)name);
+          fprintf(stderr, "          path: %ls\n", (BSTR)path);
+
+          wchar_t guid_storage[64] = {};
+          StringFromGUID2(writer_id, guid_storage, sizeof(guid_storage));
+          fprintf(stderr, "          writer: %ls\n", guid_storage);
+        }
+
+        COM_CALL(component->FreeComponentInfo(info));
+      }
+    }
+
+    auto volumes = list_volumes();
+
+    snapshot.emplace(VssSnapshot::create(backup_components, volumes));
+
+    auto paths = snapshot->snapshotted_paths(backup_components);
+
+    std::size_t buffer_size = 64 * 1024;
+    auto buffer = std::make_unique<char[]>(buffer_size);
+
+    disk_map candidate_disks;
+    for (auto& [path, copy] : paths) {
+      std::wstring cpath = path;
+      if (cpath.back() == L'\\') { cpath.pop_back(); }
+
+      HANDLE volume
+          = CreateFileW(cpath.c_str(), 0,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                        NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+
+      if (volume == INVALID_HANDLE_VALUE) {
+        fprintf(stderr, "volume %ls (%ls) -> could not volume\n", path.c_str(),
+                copy.c_str());
+        throw win_error("CreateFileW", GetLastError());
+      }
+
+      fprintf(stderr, "volume %ls -> %p\n", cpath.c_str(), volume);
+
+      HANDLE shadow = CreateFileW(
+          copy.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS,
+          FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS
+              | FILE_FLAG_SEQUENTIAL_SCAN,
+          NULL);
+
+      if (shadow == INVALID_HANDLE_VALUE) {
+        fprintf(stderr, "volume %ls (%ls) -> could not shadow copy\n",
+                path.c_str(), copy.c_str());
+        CloseHandle(volume);
+        throw win_error("CreateFileW", GetLastError());
+      }
+      {
+        DWORD bytes_returned;
+        if (!DeviceIoControl(shadow,                        // handle to file
+                             FSCTL_ALLOW_EXTENDED_DASD_IO,  // dwIoControlCode
+                             NULL,                          // lpInBuffer
+                             0,                             // nInBufferSize
+                             NULL,                          // lpOutBuffer
+                             0,                             // nOutBufferSize
+                             &bytes_returned, NULL)) {
+          fprintf(stderr,
+                  "---- could not enable extended access (Err=%d) ----\n",
+                  GetLastError());
+        } else {
+          fprintf(stderr, "---- extended access enabled ----\n");
+        }
+      }
+
+      fprintf(stderr, "shadow %ls -> %p\n", copy.c_str(), shadow);
+
+      // the operating system will clean up shadow on exit (yes, we leak it)
+      GetVolumeExtents(candidate_disks, volume, shadow);
+
+      CloseHandle(volume);
+    }
+
+    // todo: what happens to volumes that are split between fixed disks/non
+    // fixed disks ?
+    disk_map disks;
+
+    struct open_disk {
+      HANDLE hndl;
+      DISK_GEOMETRY_EX geo;
+    };
+
+    std::unordered_map<std::size_t, open_disk> disk_info;
+
+    for (auto& [id, disk] : candidate_disks) {
+      std::wstring disk_path
+          = std::wstring(L"\\\\.\\PhysicalDrive") + std::to_wstring(id);
+
+      HANDLE hndl = CreateFileW(
+          disk_path.c_str(), GENERIC_READ,
+          FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+          OPEN_EXISTING, FILE_ATTRIBUTE_READONLY | FILE_FLAG_BACKUP_SEMANTICS,
+          NULL);
+
+      if (hndl == INVALID_HANDLE_VALUE) {
+        fprintf(stderr, "could not open %ls\n", disk_path.c_str());
+        continue;
+      }
+
+      auto geo = GetDiskGeometry(hndl);
+      if (!geo) {
+        CloseHandle(hndl);
+        continue;
+      }
+
+      if (geo->Geometry.MediaType != FixedMedia) {
+        fprintf(stderr, "disk %zu has bad media type (%d); skipping...\n", id,
+                geo->Geometry.MediaType);
+        continue;
+      }
+
+      disks[id] = std::move(disk);
+      disk_info[id] = open_disk{hndl, geo.value()};
+    }
+
+    for (auto& [id, disk] : disks) {
+      fprintf(stderr, "disk %zu extents\n", id);
+
+      std::sort(std::begin(disk.extents), std::end(disk.extents),
+                [](auto& l, auto& r) {
+                  return l.partition_offset < r.partition_offset;
+                });
+
+      for (auto& extent : disk.extents) {
+        fprintf(stderr, "  %zu -> %zu\n", extent.partition_offset,
+                extent.partition_offset + extent.length);
+      }
+
+      auto [hndl, geo] = disk_info[id];
+
+      auto layout = GetPartitionLayout(hndl);
+      if (!layout) { continue; }
+
+      auto disk_extents
+          = CrossCheckPartitionsAndExtents(layout.value(), disk.extents);
+      if (!disk_extents) {
+        // continue;
+      }
+
+      // for (auto& cover : disk_extents.value()) {
+      //   fprintf(stderr, " --- START ---\n");
+      //   for (auto& extent : cover) {
+      //     fprintf(stderr, "p.offset = %zu, h.offset = %zu, length = %zu\n"
+      //             extent.partition_offset, extent.handle_offset,
+      //             extent.length
+      //            );
+      //   }
+      //   fprintf(stderr, " --- END ---\n");
+      // }
+
+      fprintf(stderr,
+              "disk geometry:\n"
+              " - Size: %llu\n"
+              " - Cylinders: %llu\n"
+              " - Tracks/C: %lu\n"
+              " - Sectors/T: %lu\n"
+              " - Bytes/S: %lu\n",
+              geo.DiskSize.QuadPart, geo.Geometry.Cylinders.QuadPart,
+              geo.Geometry.TracksPerCylinder, geo.Geometry.SectorsPerTrack,
+              geo.Geometry.BytesPerSector);
+
+      if (dry) { disk.extents.clear(); }
+
+      WriteDiskHeader(plan, disk, geo);
+      WriteDiskPartTable(plan, layout.value());
+      WriteDiskData(plan, disk);
+    }
+  }
+
+  bool Done() const { return finished; }
+
+  std::size_t Write(std::span<char> buffer)
+  {
+    // std::size_t payload_size = compute_plan_size(plan);
+    // WriteHeader(stream, disks, payload_size);
+    // auto logger = progressbar::get();
+    // logger->Begin(payload_size);
+    // execute_plan(logger, stream, plan);
+    // logger->End();
+    return 0;
+  }
+
+  ~data_dumper()
+  {
+    // we need to away to always delete these shadow copies
+    // currently you can remove orphaned shadow copies via
+    // diskshadow > delete shadows all
+    if (snapshot) { snapshot->delete_snapshot(backup_components); }
+  }
+
+  bool finished{false};
+
+  CComPtr<IVssBackupComponents> backup_components{};
+  std::optional<VssSnapshot> snapshot;
+  std::vector<HANDLE> open_handles;
+  insert_plan plan;
+};
+
 void dump_data(std::ostream& stream, bool dry)
 {
   COM_CALL(CoInitializeEx(NULL, COINIT_MULTITHREADED));
@@ -1034,354 +1406,14 @@ void dump_data(std::ostream& stream, bool dry)
 
   CoUninitializer _{};
 
-  CComPtr<IVssBackupComponents> backup_components{};
-  COM_CALL(CreateVssBackupComponents(&backup_components));
+  std::vector<char> buffer;
+  buffer.resize(4 << 20);
 
-  COM_CALL(backup_components->InitializeForBackup());
+  data_dumper dumper;
+  dumper.GatherData(dry);
 
-  bool select_components = true;
-  bool backup_bootable_system_state = false;
-  VSS_BACKUP_TYPE backup_type = VSS_BT_COPY;
-  bool partial_file_support = false;
-
-  COM_CALL(backup_components->SetBackupState(
-      select_components, backup_bootable_system_state, backup_type,
-      partial_file_support));
-
-  if (!GatherWriterMetaData(backup_components)) {
-    throw std::runtime_error("Could not gather writer meta data");
+  while (!dumper.Done()) {
+    auto count = dumper.Write(buffer);
+    stream.write(buffer.data(), count);
   }
-
-  auto writers = get_writers(backup_components);
-
-  for (auto& writer : writers) {
-    auto& metadata = writer.metadata;
-
-    struct {
-      VSS_ID instance_id;
-      VSS_ID writer_id;
-      CComBSTR name;
-      VSS_USAGE_TYPE usage_type;
-      VSS_SOURCE_TYPE source_type;
-    } identity{};
-    struct {
-      UINT include, exclude, component;
-    } counts{};
-
-    COM_CALL(metadata->GetIdentity(&identity.instance_id, &identity.writer_id,
-                                   &identity.name, &identity.usage_type,
-                                   &identity.source_type));
-
-    // these two writers should be skipped
-    if (identity.writer_id == SYSTEM_WRITER_ID) {
-      fprintf(stderr, "=== SYSTEM WRITER DETECTED ===\n");
-    }
-    if (identity.writer_id == ASR_WRITER_ID) {
-      fprintf(stderr, "=== ASR WRITER DETECTED ===\n");
-    }
-
-    fprintf(stderr, "%ls\n", (BSTR)identity.name);
-    {
-      wchar_t guid_storage[64] = {};
-
-      StringFromGUID2(identity.instance_id, guid_storage, sizeof(guid_storage));
-      fprintf(stderr, "  Instance Id: %ls\n", guid_storage);
-      StringFromGUID2(identity.writer_id, guid_storage, sizeof(guid_storage));
-      fprintf(stderr, "  Writer Id: %ls\n", guid_storage);
-      fprintf(stderr, "  Usage Type: %s (%u)\n",
-              vss_usage_as_str(identity.usage_type), identity.usage_type);
-      fprintf(stderr, "  Source Type: %s (%u)\n",
-              vss_source_as_str(identity.source_type), identity.source_type);
-    }
-
-    COM_CALL(metadata->GetFileCounts(&counts.include, &counts.exclude,
-                                     &counts.component));
-
-    fprintf(stderr, "  %u Includes:\n", counts.include);
-    for (UINT i = 0; i < counts.include; ++i) {
-      CComPtr<IVssWMFiledesc> file;
-      COM_CALL(metadata->GetIncludeFile(i, &file));
-
-      CComBSTR path;
-      COM_CALL(file->GetPath(&path));
-
-      fprintf(stderr, "    %ls\n", (BSTR)path);
-    }
-
-    fprintf(stderr, "  %u Excludes:\n", counts.exclude);
-    for (UINT i = 0; i < counts.exclude; ++i) {
-      CComPtr<IVssWMFiledesc> file;
-      COM_CALL(metadata->GetExcludeFile(i, &file));
-      CComBSTR path;
-      COM_CALL(file->GetPath(&path));
-
-      fprintf(stderr, "    %ls\n", (BSTR)path);
-    }
-
-    fprintf(stderr, "  %u Components:\n", counts.component);
-    for (UINT i = 0; i < counts.component; ++i) {
-      CComPtr<IVssWMComponent> component;
-      COM_CALL(metadata->GetComponent(i, &component));
-
-      PVSSCOMPONENTINFO info{nullptr};
-      COM_CALL(component->GetComponentInfo(&info));
-      fprintf(stderr, "    %u:\n", i);
-      fprintf(stderr, "      path: %ls\n", info->bstrLogicalPath);
-      fprintf(stderr, "      name: %ls\n", info->bstrComponentName);
-      fprintf(stderr, "      caption: %ls\n", info->bstrCaption);
-
-      fprintf(stderr, "      files: %u\n", info->cFileCount);
-      for (UINT fileidx = 0; fileidx < info->cFileCount; ++fileidx) {
-        fprintf(stderr, "        %u:\n", fileidx);
-        CComPtr<IVssWMFiledesc> file;
-        COM_CALL(component->GetFile(fileidx, &file));
-
-        CComBSTR path;
-        COM_CALL(file->GetPath(&path));
-        CComBSTR spec;
-        COM_CALL(file->GetFilespec(&spec));
-        bool recursive;
-        COM_CALL(file->GetRecursive(&recursive));
-
-        fprintf(stderr, "          path: %ls\n", (BSTR)path);
-        fprintf(stderr, "          spec: %ls\n", (BSTR)spec);
-        fprintf(stderr, "          recursive: %s\n",
-                recursive ? "true" : "false");
-      }
-
-      fprintf(stderr, "      databases: %u\n", info->cDatabases);
-      for (UINT dbidx = 0; dbidx < info->cDatabases; ++dbidx) {
-        fprintf(stderr, "        %u:\n", dbidx);
-        CComPtr<IVssWMFiledesc> file;
-        COM_CALL(component->GetDatabaseFile(dbidx, &file));
-
-        CComBSTR path;
-        COM_CALL(file->GetPath(&path));
-        CComBSTR spec;
-        COM_CALL(file->GetFilespec(&spec));
-        bool recursive;
-        COM_CALL(file->GetRecursive(&recursive));
-
-        fprintf(stderr, "          path: %ls\n", (BSTR)path);
-        fprintf(stderr, "          spec: %ls\n", (BSTR)spec);
-        fprintf(stderr, "          recursive: %s\n",
-                recursive ? "true" : "false");
-      }
-
-      fprintf(stderr, "      logs: %u\n", info->cLogFiles);
-      for (UINT logidx = 0; logidx < info->cLogFiles; ++logidx) {
-        fprintf(stderr, "        %u:\n", logidx);
-        CComPtr<IVssWMFiledesc> file;
-        COM_CALL(component->GetDatabaseLogFile(logidx, &file));
-
-        CComBSTR path;
-        COM_CALL(file->GetPath(&path));
-        CComBSTR spec;
-        COM_CALL(file->GetFilespec(&spec));
-        bool recursive;
-        COM_CALL(file->GetRecursive(&recursive));
-
-        fprintf(stderr, "          path: %ls\n", (BSTR)path);
-        fprintf(stderr, "          spec: %ls\n", (BSTR)spec);
-        fprintf(stderr, "          recursive: %s\n",
-                recursive ? "true" : "false");
-      }
-
-      fprintf(stderr, "      dependencies: %u\n", info->cDependencies);
-      for (UINT depidx = 0; depidx < info->cDependencies; ++depidx) {
-        fprintf(stderr, "        %u:\n", depidx);
-        CComPtr<IVssWMDependency> dep;
-        COM_CALL(component->GetDependency(depidx, &dep));
-
-        CComBSTR name;
-        COM_CALL(dep->GetComponentName(&name));
-        CComBSTR path;
-        COM_CALL(dep->GetLogicalPath(&path));
-        VSS_ID writer_id;
-        COM_CALL(dep->GetWriterId(&writer_id));
-
-        fprintf(stderr, "          name: %ls\n", (BSTR)name);
-        fprintf(stderr, "          path: %ls\n", (BSTR)path);
-
-        wchar_t guid_storage[64] = {};
-        StringFromGUID2(writer_id, guid_storage, sizeof(guid_storage));
-        fprintf(stderr, "          writer: %ls\n", guid_storage);
-      }
-
-      COM_CALL(component->FreeComponentInfo(info));
-    }
-  }
-
-  auto volumes = list_volumes();
-
-  auto snapshot = VssSnapshot::create(backup_components, volumes);
-
-  auto paths = snapshot.snapshotted_paths(backup_components);
-
-  std::size_t buffer_size = 64 * 1024;
-  auto buffer = std::make_unique<char[]>(buffer_size);
-
-  disk_map candidate_disks;
-  for (auto& [path, copy] : paths) {
-    std::wstring cpath = path;
-    if (cpath.back() == L'\\') { cpath.pop_back(); }
-
-    HANDLE volume
-        = CreateFileW(cpath.c_str(), 0,
-                      FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                      NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-
-    if (volume == INVALID_HANDLE_VALUE) {
-      fprintf(stderr, "volume %ls (%ls) -> could not volume\n", path.c_str(),
-              copy.c_str());
-      throw win_error("CreateFileW", GetLastError());
-    }
-
-    fprintf(stderr, "volume %ls -> %p\n", cpath.c_str(), volume);
-
-    HANDLE shadow = CreateFileW(
-        copy.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS
-            | FILE_FLAG_SEQUENTIAL_SCAN,
-        NULL);
-
-    if (shadow == INVALID_HANDLE_VALUE) {
-      fprintf(stderr, "volume %ls (%ls) -> could not shadow copy\n",
-              path.c_str(), copy.c_str());
-      CloseHandle(volume);
-      throw win_error("CreateFileW", GetLastError());
-    }
-    {
-      DWORD bytes_returned;
-      if (!DeviceIoControl(shadow,                        // handle to file
-                           FSCTL_ALLOW_EXTENDED_DASD_IO,  // dwIoControlCode
-                           NULL,                          // lpInBuffer
-                           0,                             // nInBufferSize
-                           NULL,                          // lpOutBuffer
-                           0,                             // nOutBufferSize
-                           &bytes_returned, NULL)) {
-        fprintf(stderr, "---- could not enable extended access (Err=%d) ----\n",
-                GetLastError());
-      } else {
-        fprintf(stderr, "---- extended access enabled ----\n");
-      }
-    }
-
-    fprintf(stderr, "shadow %ls -> %p\n", copy.c_str(), shadow);
-
-    // the operating system will clean up shadow on exit (yes, we leak it)
-    GetVolumeExtents(candidate_disks, volume, shadow);
-
-    CloseHandle(volume);
-  }
-
-  // todo: what happens to volumes that are split between fixed disks/non fixed
-  // disks ?
-  disk_map disks;
-
-  struct open_disk {
-    HANDLE hndl;
-    DISK_GEOMETRY_EX geo;
-  };
-
-  std::unordered_map<std::size_t, open_disk> disk_info;
-
-  for (auto& [id, disk] : candidate_disks) {
-    std::wstring disk_path
-        = std::wstring(L"\\\\.\\PhysicalDrive") + std::to_wstring(id);
-
-    HANDLE hndl = CreateFileW(
-        disk_path.c_str(), GENERIC_READ,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
-        OPEN_EXISTING, FILE_ATTRIBUTE_READONLY | FILE_FLAG_BACKUP_SEMANTICS,
-        NULL);
-
-    if (hndl == INVALID_HANDLE_VALUE) {
-      fprintf(stderr, "could not open %ls\n", disk_path.c_str());
-      continue;
-    }
-
-    auto geo = GetDiskGeometry(hndl);
-    if (!geo) {
-      CloseHandle(hndl);
-      continue;
-    }
-
-    if (geo->Geometry.MediaType != FixedMedia) {
-      fprintf(stderr, "disk %zu has bad media type (%d); skipping...\n", id,
-              geo->Geometry.MediaType);
-      continue;
-    }
-
-    disks[id] = std::move(disk);
-    disk_info[id] = open_disk{hndl, geo.value()};
-  }
-
-  insert_plan plan;
-
-  for (auto& [id, disk] : disks) {
-    fprintf(stderr, "disk %zu extents\n", id);
-
-    std::sort(std::begin(disk.extents), std::end(disk.extents),
-              [](auto& l, auto& r) {
-                return l.partition_offset < r.partition_offset;
-              });
-
-    for (auto& extent : disk.extents) {
-      fprintf(stderr, "  %zu -> %zu\n", extent.partition_offset,
-              extent.partition_offset + extent.length);
-    }
-
-    auto [hndl, geo] = disk_info[id];
-
-    auto layout = GetPartitionLayout(hndl);
-    if (!layout) { continue; }
-
-    auto disk_extents
-        = CrossCheckPartitionsAndExtents(layout.value(), disk.extents);
-    if (!disk_extents) {
-      // continue;
-    }
-
-    // for (auto& cover : disk_extents.value()) {
-    //   fprintf(stderr, " --- START ---\n");
-    //   for (auto& extent : cover) {
-    //     fprintf(stderr, "p.offset = %zu, h.offset = %zu, length = %zu\n"
-    //             extent.partition_offset, extent.handle_offset, extent.length
-    //            );
-    //   }
-    //   fprintf(stderr, " --- END ---\n");
-    // }
-
-    fprintf(stderr,
-            "disk geometry:\n"
-            " - Size: %llu\n"
-            " - Cylinders: %llu\n"
-            " - Tracks/C: %lu\n"
-            " - Sectors/T: %lu\n"
-            " - Bytes/S: %lu\n",
-            geo.DiskSize.QuadPart, geo.Geometry.Cylinders.QuadPart,
-            geo.Geometry.TracksPerCylinder, geo.Geometry.SectorsPerTrack,
-            geo.Geometry.BytesPerSector);
-
-    if (dry) { disk.extents.clear(); }
-
-    WriteDiskHeader(plan, disk, geo);
-    WriteDiskPartTable(plan, layout.value());
-    WriteDiskData(plan, disk);
-  }
-
-  std::size_t payload_size = compute_plan_size(plan);
-  WriteHeader(stream, disks, payload_size);
-  auto logger = progressbar::get();
-  logger->Begin(payload_size);
-  execute_plan(logger, stream, plan);
-  logger->End();
-
-  // we need to away to always delete these shadow copies
-  // currently you can remove orphaned shadow copies via
-  // diskshadow > delete shadows all
-  snapshot.delete_snapshot(backup_components);
-
-  backup_components.Release();
 }
