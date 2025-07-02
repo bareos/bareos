@@ -370,7 +370,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
   }
   {
     DbLocker _{ua->db};
-    ua->db->SqlQuery(query.c_str());
+    ua->db->SqlExec(query.c_str());
   }
 
   /* If we removed the entries from the file table without limiting it to a
@@ -396,7 +396,7 @@ static bool PruneDirectory(UaContext* ua, ClientResource* client)
     }
     {
       DbLocker _{ua->db};
-      ua->db->SqlQuery(query.c_str());
+      ua->db->SqlExec(query.c_str());
     }
   }
 
@@ -416,7 +416,7 @@ static bool PruneStats(UaContext* ua, utime_t retention)
     DbLocker _{ua->db};
     Mmsg(query, "DELETE FROM JobHisto WHERE JobTDate < %s",
          edit_int64(now - retention, ed1));
-    ua->db->SqlQuery(query.c_str());
+    ua->db->SqlExec(query.c_str());
   }
 
   ua->InfoMsg(T_("Pruned Jobs from JobHisto in catalog.\n"));
@@ -425,14 +425,14 @@ static bool PruneStats(UaContext* ua, utime_t retention)
   {
     DbLocker _{ua->db};
     Mmsg(query, "DELETE FROM DeviceStats WHERE SampleTime < '%s'", dt);
-    ua->db->SqlQuery(query.c_str());
+    ua->db->SqlExec(query.c_str());
   }
 
   ua->InfoMsg(T_("Pruned Statistics from DeviceStats in catalog.\n"));
   {
     DbLocker _{ua->db};
     Mmsg(query, "DELETE FROM JobStats WHERE SampleTime < '%s'", dt);
-    ua->db->SqlQuery(query.c_str());
+    ua->db->SqlExec(query.c_str());
   }
 
   ua->InfoMsg(T_("Pruned Statistics from JobStats in catalog.\n"));
@@ -669,7 +669,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
        sql_from.c_str(), sql_where.c_str());
 
   Dmsg1(050, "select sql=%s\n", query.c_str());
-  if (!ua->db->SqlQuery(query.c_str())) {
+  if (!ua->db->SqlExec(query.c_str())) {
     if (ua->verbose) { ua->ErrorMsg("%s", ua->db->strerror()); }
     DropTempTables(ua);
     return true;
@@ -745,7 +745,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
          "AND JobFiles!=0",      // Discard when JobFiles=0
          jobids.GetAsString().c_str());
 
-    if (!ua->db->SqlQuery(query.c_str())) {
+    if (!ua->db->SqlExec(query.c_str())) {
       ua->ErrorMsg("%s", ua->db->strerror());
       // Don't continue if the list isn't clean
       DropTempTables(ua);
