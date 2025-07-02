@@ -74,7 +74,7 @@ struct logger : public GenericLogger {
       }
     }
     return hndl != INVALID_HANDLE_VALUE && hndl != NULL
-           && GetFileTYPE(hndl) == FILE_TYPE_CHAR;
+           && GetFileType(hndl) == FILE_TYPE_CHAR;
 #else
     switch (Current) {
       case TerminalHandle::StdOut:
