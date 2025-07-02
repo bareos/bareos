@@ -100,7 +100,71 @@ struct restartable_parser {
     to_parse.push(init{});
   }
 
-  disk_info ReadDiskHeader(reader& stream)
+  template <typename Parsable> struct generic_context {
+    void BeginRestore(std::size_t num_disks)
+    {
+      _handler->BeginRestore(num_disks);
+    }
+    void EndRestore() { _handler->EndRestore(); }
+    void BeginDisk(disk_info info) { _handler->BeginDisk(info); }
+    void EndDisk() { _handler->EndDisk(); }
+
+    void BeginMbrTable(const partition_info_mbr& mbr)
+    {
+      _handler->BeginMbrTable(mbr);
+    }
+    void BeginGptTable(const partition_info_gpt& gpt)
+    {
+      _handler->BeginGptTable(gpt);
+    }
+    void BeginRawTable(const partition_info_raw& raw)
+    {
+      _handler->BeginRawTable(raw);
+    }
+    void MbrEntry(const part_table_entry& entry,
+                  const part_table_entry_mbr_data& data)
+    {
+      _handler->MbrEntry(entry, data);
+    }
+    void GptEntry(const part_table_entry& entry,
+                  const part_table_entry_gpt_data& data)
+    {
+      _handler->GptEntry(entry, data);
+    }
+    void EndPartTable() { _handler->EndPartTable(); }
+
+    void BeginExtent(extent_header header) { _handler->BeginExtent(header); }
+    void ExtentData(std::span<const char> data) { _handler->ExtentData(data); }
+    void EndExtent() { _handler->EndExtent(); }
+
+    void Begin(std::size_t FileSize) { _logger->Begin(FileSize); }
+    void Progressed(std::size_t Amount) { _logger->Progressed(Amount); }
+    void End() { _logger->End(); }
+
+    void SetStatus(std::string_view Status) { _logger->SetStatus(Status); }
+
+    void Info(std::string_view Message) { _logger->Info(Message); }
+
+    template <typename... Args>
+    void Info(fmt::format_string<Args...> fmt, Args&&... args)
+    {
+      _logger->Info(fmt::format(fmt, std::forward<Args>(args)...));
+    }
+
+    data_to_read& stream() { return *_data; }
+
+    template <typename T, typename... Args> void enqueue(Args&&... args)
+    {
+      next->push_back(T{std::forward<Args>(args)...});
+    }
+
+    GenericLogger* _logger;
+    GenericHandler* _handler;
+    data_to_read* _data;
+    std::vector<Parsable>* next;
+  };
+
+  static disk_info ReadDiskHeader(reader& stream)
   {
     disk_header header;
     header.read(stream);
@@ -110,7 +174,7 @@ struct restartable_parser {
     return {disk_size, header.extent_count, header.total_extent_size};
   }
 
-  file_header ReadFileHeader(reader& stream)
+  static file_header ReadFileHeader(reader& stream)
   {
     file_header header;
     header.read(stream);
@@ -124,6 +188,7 @@ struct restartable_parser {
 
     return header;
   }
+
 
   // void ingest_with_leftover(r) {}
   void ingest(std::span<const char> data)
@@ -139,27 +204,32 @@ struct restartable_parser {
       auto& current = to_parse.top();
       auto snapshot = d;
 
+      context ctx{_logger, _handler, &d, &next_storage};
+
       try {
         std::visit(
-            [this, &d](auto&& x) {
+            [this, &d, &ctx](auto&& x) {
               next_storage.clear();
-              parse_element(x, d, next_storage);
-              to_parse.pop();
-              for (size_t i = 0; i < next_storage.size(); ++i) {
-                to_parse.emplace(
-                    std::move(next_storage[next_storage.size() - 1 - i]));
-              }
+              x.parse(ctx);
             },
             current);
       } catch (const need_data&) {
         d = snapshot;
         break;
       }
+
+      to_parse.pop();
+      for (size_t i = 0; i < next_storage.size(); ++i) {
+        to_parse.emplace(std::move(next_storage[next_storage.size() - 1 - i]));
+      }
     }
 
     if (to_parse.empty() && d.size() > 0) {
       throw std::runtime_error{"parsing done, but still data left"};
     }
+
+    // we need to save the left over data, so that the next time we are called
+    // we can continue where we left off
     save_rest(d);
   }
 
@@ -195,30 +265,17 @@ struct restartable_parser {
   GenericHandler* _handler{nullptr};
   std::vector<char> left_over;
 
-  struct init {};
-  struct end {};
-  struct file {};
-  struct disk {
-    std::size_t index;
-    std::size_t count;
-  };
-  struct disk_end {
-    std::size_t index;
-  };
-  struct partition_table {};
-  struct partition_table_entry {};
-  struct partition_table_end {};
-  struct extent {
-    std::size_t index;
-    std::size_t count;
-  };
-  struct extent_data {
-    std::size_t togo;
-  };
-  struct extent_end {
-    std::size_t index;
-    std::size_t count;
-  };
+  struct end;
+  struct file;
+  struct init;
+  struct disk;
+  struct disk_end;
+  struct partition_table;
+  struct partition_table_entry;
+  struct partition_table_end;
+  struct extent;
+  struct extent_data;
+  struct extent_end;
 
   using parsable = std::variant<init,
                                 end,
@@ -232,150 +289,192 @@ struct restartable_parser {
                                 extent_data,
                                 extent_end>;
 
+  using context = generic_context<parsable>;
 
-  void parse_element(init, reader&, std::vector<parsable>& next)
-  {
-    next.emplace_back(file{});
-    next.emplace_back(end{});
-  }
-  void parse_element(end, reader&, std::vector<parsable>&)
-  {
-    _handler->EndRestore();
-    Info("restore completed");
-    _logger->End();
-  }
-  void parse_element(file, reader& r, std::vector<parsable>& next)
-  {
-    file_header header = ReadFileHeader(r);
-    _logger->Begin(header.file_size);
-    Info("Restoring {} disks", header.disk_count);
-    _handler->BeginRestore(header.disk_count);
-    for (std::size_t i = 0; i < header.disk_count; ++i) {
-      next.push_back(disk{i, header.disk_count});
+  struct end {
+    end() = default;
+    void parse(context& ctx)
+    {
+      ctx.EndRestore();
+      ctx.Info("restore completed");
+      ctx.End();
     }
-  }
-  void parse_element(disk d, reader& r, std::vector<parsable>& next)
-  {
-    disk_info header = ReadDiskHeader(r);
-
-    _logger->SetStatus(
-        fmt::format("restoring disk {}/{}", d.index + 1, d.count));
-
-    Info("Restoring disk {} of size {}", d.index + 1, header.disk_size);
-    next.push_back(partition_table{});
-    for (std::size_t i = 0; i < header.extent_count; ++i) {
-      next.push_back(extent{i, header.extent_count});
-    }
-    next.push_back(disk_end{d.index});
-  }
-  void parse_element(disk_end e, reader&, std::vector<parsable>&)
-  {
-    _handler->EndDisk();
-    Info("disk {} finished", e.index + 1);
-  }
-  void parse_element(partition_table, reader& r, std::vector<parsable>& next)
-  {
-    part_table_header header;
-    header.read(r);
-
-    switch (header.part_table_type) {
-      case part_type::Raw: {
-        _handler->BeginRawTable(partition_info_raw{});
-      } break;
-      case part_type::Mbr: {
-        partition_info_mbr mbr{.CheckSum = header.Datum0,
-                               .Signature = (uint32_t)header.Datum1,
-                               .bootstrap = {}};
-        memcpy(mbr.bootstrap, header.Data2, sizeof(header.Data2));
-        _handler->BeginMbrTable(mbr);
-      } break;
-      case part_type::Gpt: {
-        partition_info_gpt gpt{.DiskId = std::bit_cast<guid>(header.Data),
-                               .StartingUsableOffset = header.Datum1,
-                               .UsableLength = header.Datum2,
-                               .MaxPartitionCount = header.Datum0,
-                               .bootstrap = {}};
-        memcpy(gpt.bootstrap, header.Data2, sizeof(header.Data2));
-        _handler->BeginGptTable(gpt);
-      } break;
-    }
-
-    for (std::size_t i = 0; i < header.partition_count; ++i) {
-      next.push_back(partition_table_entry{});
-    }
-    next.push_back(partition_table_end{});
-  }
-  void parse_element(partition_table_entry, reader& r, std::vector<parsable>&)
-  {
-    part_table_entry entry;
-    entry.read(r);
-
-    switch (entry.partition_style) {
-      case Mbr: {
-        part_table_entry_mbr_data data;
-        data.read(r);
-
-        _handler->MbrEntry(entry, data);
-      } break;
-      case Gpt: {
-        part_table_entry_gpt_data data;
-        data.read(r);
-
-        _handler->GptEntry(entry, data);
-      } break;
-      default: {
-        throw std::logic_error{
-            fmt::format("unknown partition type ({}) encountered",
-                        static_cast<std::uint8_t>(entry.partition_style))};
+  };
+  struct file {
+    file() = default;
+    void parse(context& ctx)
+    {
+      file_header header = ReadFileHeader(ctx.stream());
+      ctx.Begin(header.file_size);
+      ctx.Info("Restoring {} disks", header.disk_count);
+      ctx.BeginRestore(header.disk_count);
+      for (std::size_t i = 0; i < header.disk_count; ++i) {
+        ctx.enqueue<disk>(i, header.disk_count);
       }
     }
-  }
-  void parse_element(partition_table_end, reader&, std::vector<parsable>&)
-  {
-    _handler->EndPartTable();
-  }
-  void parse_element(extent e, reader& r, std::vector<parsable>& next)
-  {
-    Info("Restoring extent {}/{}", e.index + 1, e.count);
-    extent_header header;
-    header.read(r);
-
-    _handler->BeginExtent(header);
-
-    next.push_back(extent_data{header.length});
-    next.push_back(extent_end{e.index, e.count});
-  }
-  void parse_element(extent_data d,
-                     data_to_read& r,
-                     std::vector<parsable>& next)
-  {
-    std::size_t bytes_read = 0;
-    while (bytes_read < d.togo) {
-      auto span = r.take_contiguous(d.togo - bytes_read);
-      if (span.size() == 0) { break; }
-
-      _handler->ExtentData(span);
-      bytes_read += span.size();
+  };
+  struct init {
+    init() = default;
+    void parse(context& ctx)
+    {
+      ctx.enqueue<file>();
+      ctx.enqueue<end>();
     }
-    if (bytes_read == 0) { throw need_data{d.togo, 0}; }
+  };
+  struct disk {
+    disk(std::size_t index, std::size_t count) : _count{count}, _index{index} {}
 
-    if (bytes_read < d.togo) {
-      next.push_back(extent_data{d.togo - bytes_read});
+    void parse(context& ctx)
+    {
+      disk_info header = ReadDiskHeader(ctx.stream());
+
+      ctx.SetStatus(fmt::format("restoring disk {}/{}", _index + 1, _count));
+
+      ctx.Info("Restoring disk {} of size {}", _index + 1, header.disk_size);
+      ctx.enqueue<partition_table>();
+      for (std::size_t i = 0; i < header.extent_count; ++i) {
+        ctx.enqueue<extent>(i, header.extent_count);
+      }
+      ctx.enqueue<disk_end>(_index);
     }
-  }
-  void parse_element(extent_end, reader&, std::vector<parsable>&)
-  {
-    _handler->EndExtent();
-  }
+
+    std::size_t _count;
+    std::size_t _index;
+  };
+  struct disk_end {
+    disk_end(std::size_t index) : _index{index} {}
+
+    void parse(context& ctx)
+    {
+      ctx.EndDisk();
+      ctx.Info("disk {} finished", _index + 1);
+    }
+
+    std::size_t _index;
+  };
+  struct partition_table {
+    partition_table() = default;
+    void parse(context& ctx)
+    {
+      part_table_header header;
+      header.read(ctx.stream());
+
+      switch (header.part_table_type) {
+        case part_type::Raw: {
+          ctx.BeginRawTable(partition_info_raw{});
+        } break;
+        case part_type::Mbr: {
+          partition_info_mbr mbr{.CheckSum = header.Datum0,
+                                 .Signature = (uint32_t)header.Datum1,
+                                 .bootstrap = {}};
+          memcpy(mbr.bootstrap, header.Data2, sizeof(header.Data2));
+          ctx.BeginMbrTable(mbr);
+        } break;
+        case part_type::Gpt: {
+          partition_info_gpt gpt{.DiskId = std::bit_cast<guid>(header.Data),
+                                 .StartingUsableOffset = header.Datum1,
+                                 .UsableLength = header.Datum2,
+                                 .MaxPartitionCount = header.Datum0,
+                                 .bootstrap = {}};
+          memcpy(gpt.bootstrap, header.Data2, sizeof(header.Data2));
+          ctx.BeginGptTable(gpt);
+        } break;
+      }
+
+      for (std::size_t i = 0; i < header.partition_count; ++i) {
+        ctx.enqueue<partition_table_entry>();
+      }
+      ctx.enqueue<partition_table_end>();
+    }
+  };
+  struct partition_table_entry {
+    partition_table_entry() = default;
+
+    void parse(context& ctx)
+    {
+      part_table_entry entry;
+      entry.read(ctx.stream());
+
+      switch (entry.partition_style) {
+        case Mbr: {
+          part_table_entry_mbr_data data;
+          data.read(ctx.stream());
+
+          ctx.MbrEntry(entry, data);
+        } break;
+        case Gpt: {
+          part_table_entry_gpt_data data;
+          data.read(ctx.stream());
+
+          ctx.GptEntry(entry, data);
+        } break;
+        default: {
+          throw std::logic_error{
+              fmt::format("unknown partition type ({}) encountered",
+                          static_cast<std::uint8_t>(entry.partition_style))};
+        }
+      }
+    }
+  };
+  struct partition_table_end {
+    partition_table_end() = default;
+
+    void parse(context& ctx) { ctx.EndPartTable(); }
+  };
+  struct extent {
+    extent(std::size_t index, std::size_t count) : _index{index}, _count{count}
+    {
+    }
+
+    void parse(context& ctx)
+    {
+      ctx.Info("Restoring extent {}/{}", _index + 1, _count);
+      extent_header header;
+      header.read(ctx.stream());
+
+      ctx.BeginExtent(header);
+
+      ctx.enqueue<extent_data>(header.length);
+      ctx.enqueue<extent_end>(_index, _count);
+    }
+
+    std::size_t _index;
+    std::size_t _count;
+  };
+  struct extent_data {
+    extent_data(std::size_t togo) : _togo{togo} {}
+
+    void parse(context& ctx)
+    {
+      std::size_t bytes_read = 0;
+      while (bytes_read < _togo) {
+        auto span = ctx.stream().take_contiguous(_togo - bytes_read);
+        if (span.size() == 0) { break; }
+
+        ctx.ExtentData(span);
+        bytes_read += span.size();
+      }
+      if (bytes_read == 0) { throw need_data{_togo, 0}; }
+
+      if (bytes_read < _togo) { ctx.enqueue<extent_data>(_togo - bytes_read); }
+    }
+
+    std::size_t _togo;
+  };
+  struct extent_end {
+    extent_end(std::size_t index, std::size_t count)
+        : _index{index}, _count{count}
+    {
+    }
+
+    void parse(context& ctx) { ctx.EndExtent(); }
+
+    std::size_t _index;
+    std::size_t _count;
+  };
 
   std::stack<parsable, std::vector<parsable>> to_parse{};
   std::vector<parsable> next_storage;
-
-  template <typename... Args>
-  void Info(fmt::format_string<Args...> fmt, Args&&... args)
-  {
-    _logger->Info(fmt::format(fmt, std::forward<Args>(args)...));
-  }
 };
 
 restartable_parser* parse_begin(GenericHandler* handler)
