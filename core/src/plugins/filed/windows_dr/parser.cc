@@ -331,6 +331,7 @@ struct restartable_parser {
       ctx.SetStatus(fmt::format("restoring disk {}/{}", _index + 1, _count));
 
       ctx.Info("Restoring disk {} of size {}", _index + 1, header.disk_size);
+      ctx.BeginDisk(header);
       ctx.enqueue<partition_table>();
       for (std::size_t i = 0; i < header.extent_count; ++i) {
         ctx.enqueue<extent>(i, header.extent_count);
