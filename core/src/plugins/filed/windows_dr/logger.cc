@@ -25,16 +25,8 @@
 #include "indicators/setting.hpp"
 
 #include <indicators/progress_bar.hpp>
-// #include <indicators/dynamic_progress.hpp>
 #include <indicators/cursor_control.hpp>
 #include <optional>
-
-
-// idea:
-// [ ... ] disk x/y
-// [ ... <=> ... ] making part table
-// [====> ...] extracting disk data
-
 
 namespace progressbar {
 using namespace indicators;
