@@ -29,7 +29,6 @@
 #include <unordered_map>
 #include <variant>
 #include <bit>
-#include <cassert>
 #include <algorithm>
 #include <fstream>
 #include <limits>
