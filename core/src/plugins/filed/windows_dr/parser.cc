@@ -24,6 +24,15 @@
 #include <stack>
 #include <fmt/format.h>
 
+struct need_data : std::exception {
+  std::size_t _available;
+  std::size_t _needed;
+  need_data(std::size_t needed, std::size_t available)
+      : _available{available}, _needed{needed}
+  {
+  }
+};
+
 struct data_to_read : public reader {
   data_to_read(std::span<const char> data1_, std::span<const char> data2_)
       : data1{data1_}, data2{data2_}
@@ -37,9 +46,7 @@ struct data_to_read : public reader {
   void read(char* buffer, std::size_t size) override
   {
     if (data1.size() + data2.size() < size) {
-      throw std::runtime_error{
-          fmt::format("expected {} bytes, but only {} available", size,
-                      data1.size() + data2.size())};
+      throw need_data{size, data1.size() + data2.size()};
     }
 
     std::size_t from_first = std::min(data1.size(), size);
@@ -144,7 +151,7 @@ struct restartable_parser {
               }
             },
             current);
-      } catch (...) {
+      } catch (const need_data&) {
         d = snapshot;
         break;
       }
@@ -350,7 +357,7 @@ struct restartable_parser {
       _handler->ExtentData(span);
       bytes_read += span.size();
     }
-    if (bytes_read == 0) { throw std::runtime_error{"no data"}; }
+    if (bytes_read == 0) { throw need_data{d.togo, 0}; }
 
     if (bytes_read < d.togo) {
       next.push_back(extent_data{d.togo - bytes_read});
