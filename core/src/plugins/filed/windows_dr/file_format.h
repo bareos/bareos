@@ -126,6 +126,7 @@ struct file_header {
 
   uint32_t disk_count;
   uint32_t version = current_version;
+  // NOTE: this is the size of everything _but_ this header!
   uint64_t file_size = 0;
   // todo: we should add _all_ disk sizes here
   // this makes it easier for the restore code to decide to which disk
