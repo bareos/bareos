@@ -120,6 +120,7 @@ struct logger : public GenericLogger {
 
   struct progress_bar {
     std::size_t goal{0};
+    std::size_t pct{0};
     std::size_t current{0};
 
     ProgressBar bar;
@@ -127,6 +128,7 @@ struct logger : public GenericLogger {
     progress_bar() = default;
     progress_bar(std::size_t goal_)
         : goal{goal_}
+        , pct{goal_ / 100}
         , bar{
               option::BarWidth{50},
               option::Start{"["},
@@ -158,8 +160,11 @@ struct logger : public GenericLogger {
     void progress(std::size_t amount)
     {
       if (!bar.is_completed()) {
-        current += amount;
-        bar.set_progress(current);
+        auto next = current + amount;
+
+        if (pct && next / pct > current / pct) { bar.set_progress(next); }
+
+        current = next;
       }
     }
 
