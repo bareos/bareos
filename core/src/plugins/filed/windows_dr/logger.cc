@@ -169,6 +169,8 @@ struct logger : public GenericLogger {
       auto this_update = std::chrono::steady_clock::now();
       if (this_update - last_update < std::chrono::seconds(1)) { return; }
 
+      last_update = this_update;
+
       bar.set_progress(current);
     }
 
