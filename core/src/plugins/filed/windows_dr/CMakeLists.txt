@@ -30,18 +30,6 @@ endif()
 add_library(progress-bar-logger OBJECT logger.cc)
 target_link_libraries(progress-bar-logger PRIVATE indicators::indicators format)
 
-bareos_add_plugin(wdr-fd)
-target_link_libraries(
-  wdr-fd
-  PUBLIC Bareos::Lib
-  PRIVATE format
-)
-install(
-  TARGETS wdr-fd
-  DESTINATION ${plugindir}
-  COMPONENT filedaemon
-)
-
 if(HAVE_WIN32)
   add_library(dump OBJECT)
   target_sources(dump PRIVATE dump.cc common.cc com.cc restore.cc parser.cc)
@@ -50,6 +38,17 @@ if(HAVE_WIN32)
                  ${ZLIB_LIBRARIES}
   )
 
+  bareos_add_plugin(wdr-fd)
+  target_link_libraries(
+    wdr-fd
+    PUBLIC Bareos::Lib
+    PRIVATE format
+  )
+  install(
+    TARGETS wdr-fd
+    DESTINATION ${plugindir}
+    COMPONENT filedaemon
+  )
   target_sources(wdr-fd PRIVATE plugin.cc bareos_api.cc)
   target_link_libraries(wdr-fd PRIVATE dump)
 
