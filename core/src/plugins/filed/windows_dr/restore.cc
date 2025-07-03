@@ -25,7 +25,6 @@
 
 #include <iostream>
 #include <string>
-#include <format>
 #include <stdexcept>
 #include <span>
 #include <initguid.h>  // ask virtdisk.h to include guid definitions
@@ -35,10 +34,7 @@
 
 #include "parser.h"
 #include "partitioning.h"
-
-#include <fmt/format.h>
-#include <fmt/xchar.h>
-
+#include "format.h"
 
 void WriteOverlapped(HANDLE hndl,
                      std::size_t offset,
@@ -118,9 +114,9 @@ class HandleOutput : public Output {
   void skip_forwards(std::size_t offset) override
   {
     if (offset < current_offset_) {
-      throw std::logic_error{
-          fmt::format("Trying to skip to offset {}, when already at offset {}",
-                      offset, current_offset_)};
+      throw std::logic_error{libbareos::format(
+          "Trying to skip to offset {}, when already at offset {}", offset,
+          current_offset_)};
     }
 
     if (offset > size_) {
@@ -150,14 +146,14 @@ class RawFileGenerator : public OutputHandleGenerator {
  public:
   HANDLE Create(disk_info info, disk_geometry) override
   {
-    auto disk_path = std::format(L"disk-{}.raw", ++disk_idx_);
+    auto disk_path = libbareos::format(L"disk-{}.raw", ++disk_idx_);
 
     HANDLE output
         = CreateFileW(disk_path.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
                       CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (output == INVALID_HANDLE_VALUE) {
-      throw std::runtime_error{fmt::format(
+      throw std::runtime_error{libbareos::format(
           "could not open disk-{}.raw: Err={}\n", disk_idx_, GetLastError())};
     }
 
@@ -176,7 +172,7 @@ class VhdxGenerator : public OutputHandleGenerator {
  public:
   HANDLE Create(disk_info info, disk_geometry geo) override
   {
-    auto disk_path = std::format(L"disk-{}.vhdx", ++disk_idx_);
+    auto disk_path = libbareos::format(L"disk-{}.vhdx", ++disk_idx_);
 
     VIRTUAL_STORAGE_TYPE vst
         = {.DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
@@ -203,7 +199,7 @@ class VhdxGenerator : public OutputHandleGenerator {
         CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &output);
 
     if (hres != ERROR_SUCCESS) {
-      throw std::runtime_error{fmt::format(
+      throw std::runtime_error{libbareos::format(
           "CreateVirtualDisk(disk-{}.vhdx) returned {}", disk_idx_, hres)};
     }
 
@@ -216,8 +212,8 @@ class VhdxGenerator : public OutputHandleGenerator {
     if (attach_res != ERROR_SUCCESS) {
       CloseHandle(output);
       throw std::runtime_error(
-          fmt::format("AttachVirtualDisk(disk-{}.vhdx) returned {}\n",
-                      disk_idx_, attach_res));
+          libbareos::format("AttachVirtualDisk(disk-{}.vhdx) returned {}\n",
+                            disk_idx_, attach_res));
     }
 
     return output;
@@ -244,15 +240,15 @@ class RestoreToHandles : public GenericHandler {
       throw std::logic_error{"cannot begin disk after one was created"};
     }
 
-    fmt::println(stderr, "begin disk {{ size {}, count {} }}", info.disk_size,
-                 info.extent_count);
+    libbareos::println(stderr, "begin disk {{ size {}, count {} }}",
+                       info.disk_size, info.extent_count);
     auto geo = geometry_for_size(info.disk_size);
     HANDLE hndl = Generator_->Create(info, geo);
     disk_.emplace(hndl, geo, info.disk_size);
   }
   void EndDisk() override
   {
-    fmt::println(stderr, "disk done");
+    libbareos::println(stderr, "disk done");
     HANDLE hndl = disk_->hndl;
     disk_.reset();
     Generator_->Close(hndl);
@@ -289,18 +285,18 @@ class RestoreToHandles : public GenericHandler {
 
   void BeginExtent(extent_header header) override
   {
-    fmt::println(stderr, "begin extent {{ size: {}, offset: {} }}",
-                 header.length, header.offset);
+    libbareos::println(stderr, "begin extent {{ size: {}, offset: {} }}",
+                       header.length, header.offset);
     disk().BeginExtent(header);
   }
   void ExtentData(std::span<const char> data) override
   {
-    fmt::println(stderr, "extent data {{ size: {} }}", data.size());
+    libbareos::println(stderr, "extent data {{ size: {} }}", data.size());
     disk().ExtentData(data);
   }
   void EndExtent() override
   {
-    fmt::println(stderr, "extent end");
+    libbareos::println(stderr, "extent end");
     disk().EndExtent();
   }
 
@@ -336,15 +332,7 @@ class RestoreToHandles : public GenericHandler {
   std::optional<open_disk> disk_;
 };
 
-struct NoLogger : public GenericLogger {
-  void Begin(std::size_t) override {}
-  void Progressed(std::size_t) {}
-  void End() {}
-
-  virtual ~NoLogger() {}
-};
-
-void restore_data(std::istream& stream, bool raw_file)
+void do_restore(std::istream& stream, GenericLogger* logger, bool raw_file)
 {
   auto output_generator = [&]() -> std::unique_ptr<OutputHandleGenerator> {
     if (raw_file) {
@@ -355,8 +343,5 @@ void restore_data(std::istream& stream, bool raw_file)
   }();
   RestoreToHandles alg{output_generator.get()};
 
-
-  NoLogger log;
-
-  parse_file_format(&log, stream, &alg);
+  parse_file_format(logger, stream, &alg);
 }

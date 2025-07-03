@@ -24,8 +24,6 @@
 
 #include <cstdint>
 
-#include <fmt/format.h>
-
 #include <istream>
 #include <ostream>
 #include <vector>
@@ -37,6 +35,8 @@
 #include <cinttypes>
 
 #include <lib/source_location.h>
+
+#include "format.h"
 
 struct reader {
   // reads exactly size bytes into buffer
@@ -112,7 +112,7 @@ static void expect_stream(reader& stream,
   read_stream(stream, value);
 
   if (value != expected) {
-    throw std::runtime_error{fmt::format(
+    throw std::runtime_error{libbareos::format(
         "{}:{} dump format error: expected constant {:0x}, got {:0x}",
         expected_at.file_name(), expected_at.line(), expected, value)};
   }
