@@ -29,7 +29,6 @@
 #include <span>
 #include <limits>
 #include <gsl/narrow>
-#include <fmt/format.h>
 
 struct zlib_crc {
   template <typename T> zlib_crc& update(std::span<const T> data)

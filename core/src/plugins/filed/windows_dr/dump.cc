@@ -21,7 +21,6 @@
 
 #include <stdexcept>
 #include <iostream>
-#include <format>
 #include <vector>
 #include <chrono>
 #include <cstdio>
@@ -42,17 +41,13 @@
 #include <atlbase.h>
 #include <atlcomcli.h>
 
-#include <fcntl.h>
-#include <io.h>
-
+#include "format.h"
 #include "file_format.h"
 #include "error.h"
 #include "common.h"
-#include "logger.h"
+#include "dump.h"
+#include "com.h"
 
-#include "CLI/App.hpp"
-#include "CLI/Config.hpp"
-#include "CLI/Formatter.hpp"
 
 template <class... Ts> struct overloads : Ts... {
   using Ts::operator()...;
@@ -227,6 +222,7 @@ void copy_stream(GenericLogger* Logger,
                  std::size_t length,
                  char* result_buffer)
 {
+  (void)Logger;
   // TODO: make this dynamic (?)
   constexpr std::size_t sector_size = 512;  // volume sector size
   constexpr std::size_t page_size = 4096;
@@ -272,6 +268,7 @@ void copy_stream(GenericLogger* Logger,
 
     DWORD diff = rounded_buffer_size - buffer_size;
     // fprintf(stderr, "size: %d => diff: %d\n", buffer_size, diff);
+    (void)diff;
 
     buffer_size = rounded_buffer_size;
 
@@ -324,141 +321,6 @@ void copy_stream(GenericLogger* Logger,
     }
   }
 }
-
-void execute_plan(GenericLogger* logger,
-                  std::ostream& stream,
-                  const insert_plan& plan)
-{
-  for (auto& step : plan) {
-    std::visit(
-        overloads{
-            [logger, &stream](const insert_bytes& bytes) {
-              logger->SetStatus("inserting meta data");
-              logger->Info(std::format("writing {} bytes\n", bytes.size()));
-              stream.write(bytes.data(), bytes.size());
-              logger->Progressed(bytes.size());
-            },
-            [logger, &stream](const insert_from& from) {
-              logger->SetStatus("reading a file");
-              logger->Info(std::format("writing {} bytes\n", from.length));
-              copy_stream(logger, from.hndl, from.offset, from.length, stream);
-              logger->Progressed(from.length);
-            },
-        },
-        step);
-  }
-}
-
-
-void dump_data(std::ostream&, bool dry);
-void restore_data(std::istream&, bool raw_file);
-
-int main(int argc, char* argv[])
-{
-  CLI::App app;
-
-  auto* save = app.add_subcommand("save");
-  bool dry = false;
-  save->add_flag("--dry", dry, "do not read/write actual disk data");
-  auto* restore = app.add_subcommand("restore");
-  std::string filename;
-  restore->add_option("--from", filename,
-                      "read from this file instead of stdin");
-  bool raw_file;
-  restore->add_flag("--raw", raw_file);
-
-
-  app.require_subcommand(1, 1);
-
-  CLI11_PARSE(app, argc, argv);
-  try {
-    if (*save) {
-      _setmode(_fileno(stdout), _O_BINARY);
-      dump_data(std::cout, dry);
-    } else if (*restore) {
-      if (filename.empty()) {
-        _setmode(_fileno(stdin), _O_BINARY);
-        restore_data(std::cin, raw_file);
-      } else {
-        fprintf(stderr, "using %s as input\n", filename.c_str());
-        std::ifstream infile{filename,
-                             std::ios_base::in | std::ios_base::binary};
-        restore_data(infile, raw_file);
-      }
-    }
-
-    return 0;
-  } catch (const std::exception& ex) {
-    std::cerr << ex.what() << std::endl;
-
-    return 1;
-  }
-}
-
-const char* hresult_as_str(HRESULT hr)
-{
-  switch (hr) {
-    case E_INVALIDARG:
-      return "One of the parameter values is not valid";
-      break;
-    case E_OUTOFMEMORY:
-      return "The caller is out of memory or other system resources";
-      break;
-    case E_ACCESSDENIED:
-      return "The caller does not have sufficient backup privileges or is not "
-             "an administrator";
-      break;
-    case VSS_E_INVALID_XML_DOCUMENT:
-      return "The XML document is not valid";
-      break;
-    case VSS_E_OBJECT_NOT_FOUND:
-      return "The specified file does not exist";
-      break;
-    case VSS_E_BAD_STATE:
-      return "Object is not initialized; called during restore or not called "
-             "in "
-             "correct sequence";
-      break;
-    case VSS_E_WRITER_INFRASTRUCTURE:
-      return "The writer infrastructure is not operating properly. Check that "
-             "the "
-             "Event Service and VSS have been started, and check for errors "
-             "associated with those services in the error log";
-      break;
-    case VSS_S_ASYNC_CANCELLED:
-      return "The asynchronous operation was canceled by a previous call to "
-             "IVssAsync::Cancel";
-      break;
-    case VSS_S_ASYNC_PENDING:
-      return "The asynchronous operation is still running";
-      break;
-    case RPC_E_CHANGED_MODE:
-      return "Previous call to CoInitializeEx specified the multithread "
-             "apartment "
-             "(MTA). This call indicates single-threaded apartment has "
-             "occurred";
-      break;
-    case S_FALSE:
-      return "No writer found for the current component";
-      break;
-    default:
-      return "Unknown error";
-      break;
-  }
-}
-
-void throw_on_error(HRESULT hr, const char* callsite)
-{
-  if (!FAILED(hr)) { return; }
-
-  throw std::runtime_error(
-      std::format("{}: {} ({:X})", callsite, hresult_as_str(hr), hr));
-}
-
-#define COM_CALL(...)                            \
-  do {                                           \
-    throw_on_error((__VA_ARGS__), #__VA_ARGS__); \
-  } while (0)
 
 bool WaitOnJob(IVssAsync* job)
 {
@@ -719,8 +581,8 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
       auto err = GetLastError();
 
       if (err != ERROR_MORE_DATA) {
-        std::cerr << std::format("DISK_EXTENTS returned {} for volume {}", err,
-                                 volume)
+        std::cerr << libbareos::format("DISK_EXTENTS returned {} for volume {}",
+                                       err, volume)
                   << std::endl;
         return;
       }
@@ -733,7 +595,7 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
 
   if (bytes_written == 0) {
     // no extents
-    std::cerr << std::format("volume {} has no extents ...", volume)
+    std::cerr << libbareos::format("volume {} has no extents ...", volume)
               << std::endl;
     return;
   }
@@ -744,9 +606,9 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
   for (size_t i = 0; i < extents->NumberOfDiskExtents; ++i) {
     auto& extent = extents->Extents[i];
 
-    std::cerr << std::format("volume {} extent {} @ {} -> {}", volume,
-                             extent.DiskNumber, extent.StartingOffset.QuadPart,
-                             extent.ExtentLength.QuadPart)
+    std::cerr << libbareos::format(
+        "volume {} extent {} @ {} -> {}", volume, extent.DiskNumber,
+        extent.StartingOffset.QuadPart, extent.ExtentLength.QuadPart)
               << std::endl;
 
     auto& disk = disks[extent.DiskNumber];
@@ -877,7 +739,7 @@ std::optional<partition_layout> GetPartitionLayout(HANDLE device)
         continue;
       }
 
-      std::cerr << std::format("io control error = {}", err) << std::endl;
+      std::cerr << libbareos::format("io control error = {}", err) << std::endl;
       return std::nullopt;
     }
 
@@ -1490,7 +1352,8 @@ struct data_dumper {
               [this, buffer = to_write](const insert_bytes& bytes) {
                 if (current_offset == 0) {
                   logger->SetStatus("inserting meta data");
-                  logger->Info(std::format("writing {} bytes\n", bytes.size()));
+                  logger->Info(
+                      libbareos::format("writing {} bytes\n", bytes.size()));
                 }
 
                 auto bytes_left = bytes.size() - current_offset;
@@ -1511,7 +1374,8 @@ struct data_dumper {
               [this, buffer = to_write](const insert_from& from) {
                 if (current_offset == 0) {
                   logger->SetStatus("reading a file");
-                  logger->Info(std::format("writing {} bytes\n", from.length));
+                  logger->Info(
+                      libbareos::format("writing {} bytes\n", from.length));
                 }
 
                 auto bytes_left = from.length - current_offset;
@@ -1562,24 +1426,17 @@ struct data_dumper {
   insert_plan plan;
 };
 
-void dump_data(std::ostream& stream, bool dry)
+data_dumper* dumper_setup(GenericLogger* logger)
 {
-  COM_CALL(CoInitializeEx(NULL, COINIT_MULTITHREADED));
-
-  struct CoUninitializer {
-    ~CoUninitializer() { CoUninitialize(); }
-  };
-
-  CoUninitializer _{};
-
-  std::vector<char> buffer;
-  buffer.resize(4 << 20);
-
-  data_dumper dumper{progressbar::get()};
-  dumper.GatherData(dry);
-
-  while (!dumper.Done()) {
-    auto count = dumper.Write(buffer);
-    stream.write(buffer.data(), count);
-  }
+  auto* dumper = new data_dumper{logger};
+  dumper->GatherData(false);
+  return dumper;
 }
+
+std::size_t dumper_write(data_dumper* dumper, std::span<char> data)
+{
+  if (dumper->Done()) { return 0; }
+  return dumper->Write(data);
+}
+
+void dumper_stop(data_dumper* dumper) { delete dumper; }
