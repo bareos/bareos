@@ -216,111 +216,122 @@ void copy_stream(GenericLogger* Logger,
   }
 }
 
-void copy_stream(GenericLogger* Logger,
-                 HANDLE hndl,
-                 std::size_t offset,
-                 std::size_t length,
-                 char* result_buffer)
-{
-  (void)Logger;
+struct disk_reader {
   // TODO: make this dynamic (?)
-  constexpr std::size_t sector_size = 512;  // volume sector size
-  constexpr std::size_t page_size = 4096;
+  static constexpr std::size_t sector_size = 512;  // volume sector size
+  static constexpr std::size_t page_size = 4096;
+
+  disk_reader(std::size_t max_block_size)
+      : capacity{(max_block_size / page_size) * page_size}
+      , buffer{(char*)_aligned_malloc(capacity, page_size)}
+  {
+  }
+
+  void read(HANDLE hndl,
+            std::size_t offset,
+            std::size_t length,
+            char* result_buffer)
+  {
+    DWORD ignore_offset = 0;
+    {
+      // the offset needs to be sector aligned.  We need to round _down_ here
+      // to make sure that we read everything
+
+      std::size_t rounded_offset = (offset / sector_size) * sector_size;
+
+      ignore_offset = offset - rounded_offset;
+      // fprintf(stderr, "offset: %zu => ignore = %d\n", offset, ignore_offset);
+
+      DWORD off_low = rounded_offset & 0xFFFFFFFF;
+      LONG off_high = (rounded_offset >> 32) & 0xFFFFFFFF;
+      SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
+    }
+
+    if (ignore_offset) {
+      fprintf(stderr, "%zu/%zu => %d\n", offset, sector_size, ignore_offset);
+    }
+
+    std::size_t bytes_to_read = length + ignore_offset;
+    while (bytes_to_read > 0) {
+      // fprintf(stderr, "%s\n", fmt::format("to read: {} (offset: {})",
+      // bytes_to_read, offset).c_str());
+      DWORD bytes_read = 0;
+
+      DWORD buffer_size = std::min(capacity, bytes_to_read);
+      // buffer_size, as computed, may not be divisible by the sector size
+      // since we are working with disk handles, we can only read in pages.
+      // as such we need to "round up" this value, and overread a bit.
+      // we then just simply only copy part of the buffer into the
+      // result_buffer.
+
+      DWORD rounded_buffer_size
+          = (buffer_size + sector_size - 1) / sector_size * sector_size;
+
+      DWORD diff = rounded_buffer_size - buffer_size;
+      if (diff) {
+        fprintf(stderr, "%zu/%zu => %d\n", bytes_to_read, sector_size, diff);
+      }
+
+      buffer_size = rounded_buffer_size;
+
+      // as the buffer is always sector sized, this should always hold true
+      assert(buffer_size <= capacity);
+
+      // fprintf(stderr, "%s\n", fmt::format("buffer size: {}",
+      // buffer_size).c_str());
+
+      if (!ReadFile(hndl, buffer.get(), buffer_size, &bytes_read, NULL)) {
+        fprintf(stderr, "oh oh error: %d\n", GetLastError());
+        throw win_error("ReadFile", GetLastError());
+      }
+
+      if (bytes_read == 0) {
+        {
+          LARGE_INTEGER dist = {};
+          dist.QuadPart = 0;
+          LARGE_INTEGER new_pos = {};
+          if (!SetFilePointerEx(hndl, dist, &new_pos, FILE_CURRENT)) {
+            fprintf(stderr, "coud not determine size: Err=%d\n",
+                    GetLastError());
+          } else {
+            fprintf(stderr, "Reading (%llu, %llu) of %p.  Current = %llu\n",
+                    offset, length, hndl, new_pos.QuadPart);
+          }
+        }
+
+        fprintf(stderr,
+                "premature reading end (read 0).  Still %llu bytes to go...\n",
+                bytes_to_read);
+        return;
+      }
+      // fprintf(stderr, "%s\n", fmt::format("read: {}", bytes_read).c_str());
+
+      // make sure to ignore the first ignore_offset bytes
+      if (ignore_offset > 0) {
+        auto bytes_ignored = std::min(bytes_read, ignore_offset);
+        bytes_read -= bytes_ignored;
+        ignore_offset -= bytes_ignored;
+        bytes_to_read -= bytes_ignored;
+      }
+
+
+      if (bytes_read != 0) {
+        if (bytes_read > bytes_to_read) { bytes_read = bytes_to_read; }
+        // bytes_read = std::min(bytes_read, bytes_to_read);
+        std::memcpy(result_buffer, buffer.get(), bytes_read);
+        result_buffer += bytes_read;
+        bytes_to_read -= bytes_read;
+      }
+    }
+  }
 
   struct aligned_deleter {
     void operator()(char* ptr) { _aligned_free(ptr); }
   };
 
-  std::size_t buffer_cap = 8 * 1024 * sector_size;
-  std::unique_ptr<char[], aligned_deleter> buffer{
-      (char*)_aligned_malloc(buffer_cap, page_size)};
-
-  DWORD ignore_offset = 0;
-  {
-    // the offset needs to be sector aligned.  We need to round _down_ here
-    // to make sure that we read everything
-
-    std::size_t rounded_offset = (offset / sector_size) * sector_size;
-
-    ignore_offset = offset - rounded_offset;
-    // fprintf(stderr, "offset: %zu => ignore = %d\n", offset, ignore_offset);
-
-    DWORD off_low = rounded_offset & 0xFFFFFFFF;
-    LONG off_high = (rounded_offset >> 32) & 0xFFFFFFFF;
-    SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
-  }
-
-
-  std::size_t bytes_to_read = length + ignore_offset;
-  while (bytes_to_read > 0) {
-    // fprintf(stderr, "%s\n", fmt::format("to read: {} (offset: {})",
-    // bytes_to_read, offset).c_str());
-    DWORD bytes_read = 0;
-
-    DWORD buffer_size = std::min(buffer_cap, bytes_to_read);
-    // buffer_size, as computed, may not be divisible by the sector size
-    // since we are working with disk handles, we can only read in pages.
-    // as such we need to "round up" this value, and overread a bit.
-    // we then just simply only copy part of the buffer into the result_buffer.
-
-    DWORD rounded_buffer_size
-        = (buffer_size + sector_size - 1) / sector_size * sector_size;
-
-    DWORD diff = rounded_buffer_size - buffer_size;
-    // fprintf(stderr, "size: %d => diff: %d\n", buffer_size, diff);
-    (void)diff;
-
-    buffer_size = rounded_buffer_size;
-
-    // as the buffer is always sector sized, this should always hold true
-    assert(buffer_size <= buffer_cap);
-
-    // fprintf(stderr, "%s\n", fmt::format("buffer size: {}",
-    // buffer_size).c_str());
-
-    if (!ReadFile(hndl, buffer.get(), buffer_size, &bytes_read, NULL)) {
-      fprintf(stderr, "oh oh error: %d\n", GetLastError());
-      throw win_error("ReadFile", GetLastError());
-    }
-
-    if (bytes_read == 0) {
-      {
-        LARGE_INTEGER dist = {};
-        dist.QuadPart = 0;
-        LARGE_INTEGER new_pos = {};
-        if (!SetFilePointerEx(hndl, dist, &new_pos, FILE_CURRENT)) {
-          fprintf(stderr, "coud not determine size: Err=%d\n", GetLastError());
-        } else {
-          fprintf(stderr, "Reading (%llu, %llu) of %p.  Current = %llu\n",
-                  offset, length, hndl, new_pos.QuadPart);
-        }
-      }
-
-      fprintf(stderr,
-              "premature reading end (read 0).  Still %llu bytes to go...\n",
-              bytes_to_read);
-      return;
-    }
-    // fprintf(stderr, "%s\n", fmt::format("read: {}", bytes_read).c_str());
-
-    // make sure to ignore the first ignore_offset bytes
-    if (ignore_offset > 0) {
-      auto bytes_ignored = std::min(bytes_read, ignore_offset);
-      bytes_read -= bytes_ignored;
-      ignore_offset -= bytes_ignored;
-      bytes_to_read -= bytes_ignored;
-    }
-
-
-    if (bytes_read != 0) {
-      if (bytes_read > bytes_to_read) { bytes_read = bytes_to_read; }
-      // bytes_read = std::min(bytes_read, bytes_to_read);
-      std::memcpy(result_buffer, buffer.get(), bytes_read);
-      result_buffer += bytes_read;
-      bytes_to_read -= bytes_read;
-    }
-  }
-}
+  std::size_t capacity;
+  std::unique_ptr<char[], aligned_deleter> buffer;
+};
 
 bool WaitOnJob(IVssAsync* job)
 {
@@ -1333,6 +1344,8 @@ struct data_dumper {
 
   bool Done() const { return current_index >= plan.size(); }
 
+  disk_reader reader{4 << 20};
+
   std::size_t Write(std::span<char> buffer)
   {
     // auto logger = progressbar::get();
@@ -1343,13 +1356,16 @@ struct data_dumper {
       logger->Begin(compute_plan_size(plan));
     }
 
+    bool wrote_bytes = false;
+
     auto bytes_written = 0;
     while (bytes_written < buffer.size() && current_index < plan.size()) {
       auto& current_step = plan[current_index];
       auto to_write = buffer.subspan(bytes_written);
-      bytes_written += std::visit(
+      auto write_result = std::visit(
           overloads{
-              [this, buffer = to_write](const insert_bytes& bytes) {
+              [this, buffer = to_write,
+               &wrote_bytes](const insert_bytes& bytes) {
                 if (current_offset == 0) {
                   logger->SetStatus("inserting meta data");
                   logger->Info(
@@ -1368,10 +1384,12 @@ struct data_dumper {
                 } else {
                   current_offset += bytes_to_write;
                 }
+                wrote_bytes = true;
 
                 return bytes_to_write;
               },
-              [this, buffer = to_write](const insert_from& from) {
+              [this, buffer = to_write, &wrote_bytes](const insert_from& from) {
+                if (wrote_bytes) { return std::size_t{0}; }
                 if (current_offset == 0) {
                   logger->SetStatus("reading a file");
                   logger->Info(
@@ -1381,7 +1399,7 @@ struct data_dumper {
                 auto bytes_left = from.length - current_offset;
                 auto bytes_to_write = std::min(bytes_left, buffer.size());
 
-                copy_stream(logger, from.hndl, from.offset + current_offset,
+                reader.read(from.hndl, from.offset + current_offset,
                             bytes_to_write, buffer.data());
 
                 logger->Progressed(bytes_to_write);
@@ -1397,6 +1415,9 @@ struct data_dumper {
               },
           },
           current_step);
+
+      if (write_result == 0) { break; }
+      bytes_written += write_result;
     }
 
     if (current_index == plan.size()) {
@@ -1437,6 +1458,8 @@ std::size_t dumper_write(data_dumper* dumper, std::span<char> data)
 {
   if (dumper->Done()) { return 0; }
   return dumper->Write(data);
+
+  return 0;
 }
 
 void dumper_stop(data_dumper* dumper) { delete dumper; }
