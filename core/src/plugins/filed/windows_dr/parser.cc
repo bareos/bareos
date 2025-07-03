@@ -22,7 +22,8 @@
 #include "parser.h"
 #include <bit>
 #include <stack>
-#include <fmt/format.h>
+
+#include "format.h"
 
 struct need_data : std::exception {
   std::size_t _available;
@@ -146,9 +147,9 @@ struct restartable_parser {
     void Info(std::string_view Message) { _logger->Info(Message); }
 
     template <typename... Args>
-    void Info(fmt::format_string<Args...> fmt, Args&&... args)
+    void Info(libbareos::format_string<Args...> fmt, Args&&... args)
     {
-      _logger->Info(fmt::format(fmt, std::forward<Args>(args)...));
+      _logger->Info(libbareos::format(fmt, std::forward<Args>(args)...));
     }
 
     data_to_read& stream() { return *_data; }
@@ -181,8 +182,8 @@ struct restartable_parser {
 
     if (header.version != file_header::current_version) {
       throw std::runtime_error{
-          fmt::format("expected dump version {}, got version {}",
-                      file_header::current_version, header.version),
+          libbareos::format("expected dump version {}, got version {}",
+                            file_header::current_version, header.version),
       };
     }
 
@@ -328,7 +329,8 @@ struct restartable_parser {
     {
       disk_info header = ReadDiskHeader(ctx.stream());
 
-      ctx.SetStatus(fmt::format("restoring disk {}/{}", _index + 1, _count));
+      ctx.SetStatus(
+          libbareos::format("restoring disk {}/{}", _index + 1, _count));
 
       ctx.Info("Restoring disk {} of size {}", _index + 1, header.disk_size);
       ctx.BeginDisk(header);
@@ -410,9 +412,9 @@ struct restartable_parser {
           ctx.GptEntry(entry, data);
         } break;
         default: {
-          throw std::logic_error{
-              fmt::format("unknown partition type ({}) encountered",
-                          static_cast<std::uint8_t>(entry.partition_style))};
+          throw std::logic_error{libbareos::format(
+              "unknown partition type ({}) encountered",
+              static_cast<std::uint8_t>(entry.partition_style))};
         }
       }
     }

@@ -21,12 +21,13 @@
 
 #include "logger.h"
 #include <cstdint>
-#include "fmt/base.h"
 #include "indicators/setting.hpp"
 
 #include <indicators/progress_bar.hpp>
 #include <indicators/cursor_control.hpp>
 #include <optional>
+
+#include "format.h"
 
 namespace progressbar {
 using namespace indicators;
@@ -114,7 +115,7 @@ struct logger : public GenericLogger {
       erase_line();
       stream().flush();
     }
-    fmt::println(stderr, "{}", Message);
+    libbareos::println(stderr, "{}", Message);
     if (progress_bar) { progress_bar->print(); }
   }
 

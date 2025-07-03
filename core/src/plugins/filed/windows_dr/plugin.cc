@@ -23,6 +23,9 @@
 #include "filed/fd_plugins.h"
 #include "bareos_api.h"
 #include "parser.h"
+#include "dump.h"
+
+void err_msg(PluginContext*, ...) {}
 
 filedaemon::CoreFunctions bareos_core;
 
@@ -54,10 +57,39 @@ struct plugin_arguments {
   static plugin_arguments parse(std::string_view) { return {}; }
 };
 
-struct session_ctx {};
+struct plugin_logger : public GenericLogger {
+  void Begin(std::size_t FileSize) override { (void)FileSize; }
+  void Progressed(std::size_t Amount) override { (void)Amount; }
+  void End() override {}
+
+  void SetStatus(std::string_view Status) override { (void)Status; }
+  void Info(std::string_view Message) override { (void)Message; }
+};
+
+struct session_ctx {
+  plugin_logger logger;
+  data_dumper* dumper{nullptr};
+
+  session_ctx() : dumper{dumper_setup(&logger)} {}
+
+  ~session_ctx()
+  {
+    if (dumper) { dumper_stop(dumper); }
+  }
+};
 
 struct plugin_ctx {
-  void begin_session(plugin_arguments) {}
+  void set_plugin_args(plugin_arguments) {}
+
+  void begin_session() { current_session.emplace(); }
+
+  std::size_t session_read(std::span<char> data)
+  {
+    if (!current_session) { return 0; }
+    return dumper_write(current_session->dumper, data);
+  }
+
+  bool has_session() const { return current_session.has_value(); }
 
   std::optional<session_ctx> current_session;
 };
@@ -111,9 +143,7 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
   switch (event->eventType) {
     case filedaemon::bEventPluginCommand: {
       auto arguments = plugin_arguments::parse(static_cast<const char*>(data));
-
-      pctx->begin_session(std::move(arguments));
-
+      pctx->set_plugin_args(std::move(arguments));
     } break;
 
     case filedaemon::bEventNewPluginOptions:
@@ -123,23 +153,25 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
     case filedaemon::bEventEstimateCommand:
       [[fallthrough]];
     case filedaemon::bEventRestoreCommand: {
+      auto arguments = plugin_arguments::parse(static_cast<const char*>(data));
+      pctx->set_plugin_args(std::move(arguments));
     }
   }
-  (void)ctx;
-  (void)data;
   return bRC_Error;
 }
 
 bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* pkt)
 {
-  (void)ctx;
+  auto* pctx = get_private_context(ctx);
+  (void)pctx;
   (void)pkt;
-  return bRC_Error;
+  return bRC_OK;
 }
 bRC endBackupFile(PluginContext* ctx)
 {
-  (void)ctx;
-  return bRC_Error;
+  auto* pctx = get_private_context(ctx);
+  (void)pctx;
+  return bRC_OK;
 }
 bRC startRestoreFile(PluginContext* ctx, const char* file_name)
 {
@@ -154,8 +186,53 @@ bRC endRestoreFile(PluginContext* ctx)
 }
 bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 {
-  (void)ctx;
-  (void)pkt;
+  auto* pctx = get_private_context(ctx);
+  switch (pkt->func) {
+    case filedaemon::IO_OPEN: {
+      if (pctx->has_session()) {
+        err_msg(ctx, "context can only be created once");
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      try {
+        pctx->begin_session();
+        pkt->status = 0;
+        return bRC_OK;
+      } catch (const std::exception& ex) {
+        err_msg(ctx, "could not start: {}", ex.what());
+        pkt->status = -1;
+        return bRC_Error;
+      } catch (...) {
+        err_msg(ctx, "could not start: unknown error occured");
+        pkt->status = -1;
+        return bRC_Error;
+      }
+    } break;
+    case filedaemon::IO_READ: {
+      if (pkt->count < 0) {
+        err_msg(ctx, "its impossible to read {} bytes...", pkt->count);
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      pkt->status = pctx->session_read(
+          std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
+      return bRC_OK;
+    } break;
+    case filedaemon::IO_WRITE: {
+      err_msg(ctx, "restores are not supported on windows");
+      pkt->status = -1;
+      return bRC_Error;
+    } break;
+    case filedaemon::IO_CLOSE: {
+      if (!pctx->has_session()) {
+        err_msg(ctx, "context can only be closed, if its open");
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      pkt->status = 0;
+      return bRC_OK;
+    } break;
+  }
   return bRC_Error;
 }
 bRC createFile(PluginContext* ctx, filedaemon::restore_pkt* pkt)

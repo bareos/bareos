@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,7 @@
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 
-#include <fmt/format.h>
+#include "format.h"
 
 namespace internal {
 void DebugMessage(/* optional */ PluginContext* ctx,
@@ -96,10 +96,11 @@ void setup_globals(const filedaemon::CoreFunctions* core);
 
 template <typename... Args>
 void DebugLog(Severity severity,
-              fmt::format_string<Args...> fmt,
+              libbareos::format_string<Args...> fmt,
               Args&&... args)
 {
-  auto formatted = fmt::vformat(fmt, fmt::make_format_args(args...));
+  auto formatted
+      = libbareos::vformat(fmt, libbareos::make_format_args(args...));
 
   internal::DebugMessage(nullptr, severity.file, severity.line,
                          severity.severity, formatted.c_str());
@@ -108,10 +109,11 @@ void DebugLog(Severity severity,
 template <typename... Args>
 void DebugLog(PluginContext* ctx,
               Severity severity,
-              fmt::format_string<Args...> fmt,
+              libbareos::format_string<Args...> fmt,
               Args&&... args)
 {
-  auto formatted = fmt::vformat(fmt, fmt::make_format_args(args...));
+  auto formatted
+      = libbareos::vformat(fmt, libbareos::make_format_args(args...));
 
   internal::DebugMessage(ctx, severity.file, severity.line, severity.severity,
                          formatted.c_str());
@@ -120,10 +122,10 @@ void DebugLog(PluginContext* ctx,
 template <typename... Args>
 void JobLog(PluginContext* ctx,
             Type type,
-            fmt::format_string<Args...> fmt,
+            libbareos::format_string<Args...> fmt,
             Args&&... args)
 {
-  auto formatted = fmt::format(fmt, args...);
+  auto formatted = libbareos::format(fmt, args...);
 
   internal::JobMessage(ctx, type.file, type.line, type.type, formatted.c_str());
 }
