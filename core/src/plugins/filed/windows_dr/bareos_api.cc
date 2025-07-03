@@ -27,7 +27,7 @@ struct globals {
 
 static globals fd{};
 
-bool SetupBareosApi(filedaemon::CoreFunctions* core_funcs)
+bool SetupBareosApi(const filedaemon::CoreFunctions* core_funcs)
 {
   if (core_funcs->size != sizeof(*fd.core)) { return false; }
   if (core_funcs->version != FD_PLUGIN_INTERFACE_VERSION) { return false; }

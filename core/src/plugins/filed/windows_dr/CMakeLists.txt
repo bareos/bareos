@@ -20,26 +20,46 @@
 include(BareosDisableWarnings)
 include(BareosConfigureFile)
 
-add_library(parser OBJECT)
-target_sources(parser PRIVATE parser.cc)
-target_link_libraries(parser PUBLIC fmt::fmt-header-only)
+add_library(format INTERFACE)
+if(0)
+  target_compile_options(format INTERFACE USE_STD_FMT)
+else()
+  target_link_libraries(format INTERFACE fmt::fmt-header-only)
+endif()
 
 add_library(progress-bar-logger OBJECT logger.cc)
+target_link_libraries(progress-bar-logger PRIVATE indicators::indicators format)
+
+bareos_add_plugin(wdr-fd)
 target_link_libraries(
-  progress-bar-logger PRIVATE indicators::indicators fmt::fmt-header-only
+  wdr-fd
+  PUBLIC Bareos::Lib
+  PRIVATE format
+)
+install(
+  TARGETS wdr-fd
+  DESTINATION ${plugindir}
+  COMPONENT filedaemon
 )
 
 if(HAVE_WIN32)
-
-  add_executable(barri data_dumper.cc restore.cc common.cc)
-
+  add_library(dump OBJECT)
+  target_sources(dump PRIVATE dump.cc common.cc com.cc restore.cc parser.cc)
   target_link_libraries(
-    barri VssApi.lib virtdisk.lib CLI11::CLI11 ${ZLIB_LIBRARIES} parser
-    Microsoft.GSL::GSL progress-bar-logger
+    dump PRIVATE VssApi.lib virtdisk.lib format Microsoft.GSL::GSL
+                 ${ZLIB_LIBRARIES}
   )
+
+  target_sources(wdr-fd PRIVATE plugin.cc bareos_api.cc)
+  target_link_libraries(wdr-fd PRIVATE dump)
+
+  add_executable(barri barri.cc)
+
+  target_link_libraries(barri CLI11::CLI11 progress-bar-logger dump format)
 
   add_executable(copy copy.cc)
 else()
+
   add_executable(barri restore_linux.cc parser.cc)
   target_compile_options(progress-bar-logger PRIVATE "-Wno-shadow")
 
@@ -58,17 +78,5 @@ else()
     COMPONENT filedaemon
   )
 endif()
-
-add_library(bareos-core-api bareos_api.cc)
-target_link_libraries(bareos-core-api PUBLIC fmt::fmt-header-only Bareos::Lib)
-
-bareos_add_plugin(wdr-fd)
-target_sources(wdr-fd PRIVATE plugin.cc)
-target_link_libraries(wdr-fd PUBLIC Bareos::Lib bareos-core-api parser)
-install(
-  TARGETS wdr-fd
-  DESTINATION ${plugindir}
-  COMPONENT filedaemon
-)
 
 include(DebugEdit)
