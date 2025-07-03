@@ -21,6 +21,7 @@
 
 #include "logger.h"
 #include <cstdint>
+#include <chrono>
 #include "indicators/setting.hpp"
 
 #include <indicators/progress_bar.hpp>
@@ -150,6 +151,7 @@ struct logger : public GenericLogger {
               option::ShowRemainingTime(true),
           }
     {
+      last_update = std::chrono::steady_clock::now();
       show_cursor(false);
       cursor_hidden = true;
     }
@@ -160,13 +162,14 @@ struct logger : public GenericLogger {
 
     void progress(std::size_t amount)
     {
-      if (!bar.is_completed()) {
-        auto next = current + amount;
+      current += amount;
 
-        if (pct && next / pct > current / pct) { bar.set_progress(next); }
+      if (bar.is_completed()) { return; }
 
-        current = next;
-      }
+      auto this_update = std::chrono::steady_clock::now();
+      if (this_update - last_update < std::chrono::seconds(1)) { return; }
+
+      bar.set_progress(current);
     }
 
     void print()
@@ -181,6 +184,7 @@ struct logger : public GenericLogger {
     }
 
     bool cursor_hidden{};
+    std::chrono::steady_clock::time_point last_update;
   };
 
 
