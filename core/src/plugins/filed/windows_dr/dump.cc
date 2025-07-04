@@ -168,54 +168,6 @@ part_table_entry_mbr_data from_win32(const PARTITION_INFORMATION_MBR& mbr)
   return Result;
 }
 
-void copy_stream(GenericLogger* Logger,
-                 HANDLE hndl,
-                 std::size_t offset,
-                 std::size_t length,
-                 std::ostream& stream)
-{
-  DWORD off_low = offset & 0xFFFFFFFF;
-  LONG off_high = (offset >> 32) & 0xFFFFFFFF;
-  SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
-
-  std::vector<char> buffer(4 * 1024 * 1024);
-
-  std::size_t bytes_to_read = length;
-  while (bytes_to_read > 0) {
-    DWORD bytes_read = 0;
-
-    DWORD buffer_size = std::min(buffer.size(), bytes_to_read);
-
-    if (!ReadFile(hndl, buffer.data(), buffer_size, &bytes_read, NULL)) {
-      throw win_error("ReadFile", GetLastError());
-    }
-
-    if (bytes_read == 0) {
-      {
-        LARGE_INTEGER dist = {};
-        dist.QuadPart = 0;
-        LARGE_INTEGER new_pos = {};
-        if (!SetFilePointerEx(hndl, dist, &new_pos, FILE_CURRENT)) {
-          fprintf(stderr, "coud not determine size: Err=%d\n", GetLastError());
-        } else {
-          fprintf(stderr, "Reading (%llu, %llu) of %p.  Current = %llu\n",
-                  offset, length, hndl, new_pos.QuadPart);
-        }
-      }
-
-      fprintf(stderr,
-              "premature reading end (read 0).  Still %llu bytes to go...\n",
-              bytes_to_read);
-      return;
-    }
-
-    stream.write(buffer.data(), bytes_read);
-    Logger->Progressed(bytes_read);
-
-    bytes_to_read -= bytes_read;
-  }
-}
-
 struct disk_reader {
   // TODO: make this dynamic (?)
   static constexpr std::size_t sector_size = 512;  // volume sector size
