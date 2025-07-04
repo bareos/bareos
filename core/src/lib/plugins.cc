@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -347,6 +347,9 @@ int ListPlugins(alist<Plugin*>* plugin_list, PoolMem& msg)
   int i{};
   int len{};
   Plugin* plugin{};
+
+  Dmsg0(300, "plugin_list=%p size=%d", plugin_list,
+        plugin_list ? 0 : plugin_list->size());
 
   if (plugin_list && plugin_list->size() > 0) {
     PmStrcpy(msg, "Plugin Info:\n");
