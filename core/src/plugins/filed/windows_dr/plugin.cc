@@ -300,10 +300,11 @@ const filedaemon::PluginFunctions my_functions = {
     .setXattr = &setXattr,
 };
 
-extern "C" int loadPlugin(filedaemon::PluginApiDefinition* core_info,
-                          filedaemon::CoreFunctions* core_funcs,
-                          PluginInformation** plugin_info,
-                          filedaemon::PluginFunctions** plugin_funcs)
+extern "C" __declspec(dllexport) int loadPlugin(
+    filedaemon::PluginApiDefinition* core_info,
+    filedaemon::CoreFunctions* core_funcs,
+    PluginInformation** plugin_info,
+    filedaemon::PluginFunctions** plugin_funcs)
 {
   if (!SetupBareosApi(core_funcs)) { return -1; }
 
@@ -315,4 +316,4 @@ extern "C" int loadPlugin(filedaemon::PluginApiDefinition* core_info,
   return 0;
 }
 
-extern "C" int unloadPlugin() { return 0; }
+extern "C" __declspec(dllexport) int unloadPlugin() { return 0; }
