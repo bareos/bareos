@@ -22,9 +22,21 @@
 #ifndef BAREOS_PLUGINS_FILED_WINDOWS_DR_RESTORE_H_
 #define BAREOS_PLUGINS_FILED_WINDOWS_DR_RESTORE_H_
 
-#include <istream>
-#include "plugins/filed/windows_dr/parser.h"
+#if !defined(NEW_RESTORE)
+#  include <istream>
+#  include "plugins/filed/windows_dr/parser.h"
+
 
 void do_restore(std::istream& stream, GenericLogger* logger, bool raw_file);
+#else
+#  include "restore_options.h"
+#  include <span>
+
+struct data_writer;
+
+data_writer* writer_begin(restore_options options);
+std::size_t writer_write(data_writer* writer, std::span<char> data);
+void writer_end(data_writer* writer);
+#endif
 
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_RESTORE_H_
