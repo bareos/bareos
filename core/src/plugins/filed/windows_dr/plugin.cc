@@ -22,12 +22,12 @@
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 #include "bareos_api.h"
+#include "include/filetypes.h"
 #include "parser.h"
 #include "dump.h"
+#include <comdef.h>
 
-void err_msg(PluginContext*, ...) {}
-
-filedaemon::CoreFunctions bareos_core;
+#define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
 
 bool AmICompatibleWith(filedaemon::PluginApiDefinition* core_info)
 {
@@ -63,14 +63,24 @@ struct plugin_logger : public GenericLogger {
   void End() override {}
 
   void SetStatus(std::string_view Status) override { (void)Status; }
-  void Info(std::string_view Message) override { (void)Message; }
+  void Info(std::string_view Message) override
+  {
+    JobLog(ctx, M_INFO, "{}", Message);
+  }
+
+  plugin_logger(PluginContext* ctx_) : ctx{ctx_} {}
+
+ private:
+  PluginContext* ctx;
 };
 
 struct session_ctx {
   plugin_logger logger;
   data_dumper* dumper{nullptr};
 
-  session_ctx() : dumper{dumper_setup(&logger)} {}
+  session_ctx(PluginContext* ctx) : logger{ctx}, dumper{dumper_setup(&logger)}
+  {
+  }
 
   ~session_ctx()
   {
@@ -81,7 +91,7 @@ struct session_ctx {
 struct plugin_ctx {
   void set_plugin_args(plugin_arguments) {}
 
-  void begin_session() { current_session.emplace(); }
+  void begin_session(PluginContext* ctx) { current_session.emplace(ctx); }
 
   std::size_t session_read(std::span<char> data)
   {
@@ -92,6 +102,12 @@ struct plugin_ctx {
   bool has_session() const { return current_session.has_value(); }
 
   std::optional<session_ctx> current_session;
+
+  struct CoUninitializer {
+    ~CoUninitializer() { CoUninitialize(); }
+  };
+
+  CoUninitializer unititializer{};
 };
 
 plugin_ctx* get_private_context(PluginContext* ctx)
@@ -106,11 +122,19 @@ void set_private_context(PluginContext* ctx, plugin_ctx* priv_ctx)
 
 bRC newPlugin(PluginContext* ctx)
 {
+  auto hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+
+  if (FAILED(hr)) {
+    _com_error err(hr);
+    err_msg(ctx, "could not initialize com: {}", err.ErrorMessage());
+  }
+
   set_private_context(ctx, new plugin_ctx);
   RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventNewPluginOptions);
   RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventJobStart);
+  // RegisterBareosEvent(ctx, filedaemon::bEventStartBackupJob);
   RegisterBareosEvent(ctx, filedaemon::bEventRestoreCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventEstimateCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventBackupCommand);
@@ -144,6 +168,7 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
     case filedaemon::bEventPluginCommand: {
       auto arguments = plugin_arguments::parse(static_cast<const char*>(data));
       pctx->set_plugin_args(std::move(arguments));
+      return bRC_OK;
     } break;
 
     case filedaemon::bEventNewPluginOptions:
@@ -155,16 +180,28 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
     case filedaemon::bEventRestoreCommand: {
       auto arguments = plugin_arguments::parse(static_cast<const char*>(data));
       pctx->set_plugin_args(std::move(arguments));
+      return bRC_OK;
     }
   }
   return bRC_Error;
 }
 
-bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* pkt)
+bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
 {
   auto* pctx = get_private_context(ctx);
   (void)pctx;
-  (void)pkt;
+
+  auto now = time(NULL);
+  sp->fname = const_cast<char*>("disaster.img");
+  sp->type = FT_REG;
+  sp->statp.st_mode = 0700 | S_IFREG;
+  sp->statp.st_ctime = now;
+  sp->statp.st_mtime = now;
+  sp->statp.st_atime = now;
+  sp->statp.st_size = -1;
+  sp->statp.st_blksize = 4096;
+  sp->statp.st_blocks = 1;
+
   return bRC_OK;
 }
 bRC endBackupFile(PluginContext* ctx)
@@ -195,7 +232,7 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
         return bRC_Error;
       }
       try {
-        pctx->begin_session();
+        pctx->begin_session(ctx);
         pkt->status = 0;
         return bRC_OK;
       } catch (const std::exception& ex) {
