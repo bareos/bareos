@@ -799,3 +799,59 @@ int main(int argc, char* argv[])
     return 1;
   }
 }
+
+#define NEW_RESTORE
+#include "restore.h"
+
+using handler_ptr = std::unique_ptr<GenericHandler>;
+
+struct data_writer {
+  data_writer(GenericLogger* logger_, handler_ptr handler_)
+      : logger{logger_}
+      , handler{std::move(handler_)}
+      , parser{parse_begin(handler.get())}
+  {
+  }
+
+  std::size_t write(std::span<char> data)
+  {
+    parse_data(parser, data);
+    return data.size();
+  }
+
+  ~data_writer() { parse_end(parser); }
+
+  GenericLogger* logger;
+  handler_ptr handler;
+  restartable_parser* parser;
+};
+
+GenericLogger* GetLogger(restore_options options) { return options.logger; }
+std::unique_ptr<GenericHandler> GetHandler(restore_options options)
+{
+  return std::visit(
+      [](auto& val) -> std::unique_ptr<GenericHandler> {
+        using T = std::remove_reference_t<decltype(val)>;
+        if constexpr (std::is_same_v<T, restore_directory>) {
+          return std::make_unique<RestoreToGeneratedFiles>(val.path);
+        } else if constexpr (std::is_same_v<T, restore_files>) {
+          auto files = open_files(val);
+          return std::make_unique<RestoreToSpecifiedFiles>(std::move(files));
+        } else {
+          static_assert(!std::is_same_v<T, T>, "case not handled");
+        }
+      },
+      options.location);
+}
+
+data_writer* writer_begin(restore_options options)
+{
+  GenericLogger* logger = GetLogger(options);
+  handler_ptr handler = GetHandler(options);
+  return new data_writer(logger, std::move(handler));
+}
+std::size_t writer_write(data_writer* writer, std::span<char> data)
+{
+  return writer->write(data);
+}
+void writer_end(data_writer* writer) { delete writer; }
