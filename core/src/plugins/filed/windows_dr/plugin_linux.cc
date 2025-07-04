@@ -19,13 +19,17 @@
    02110-1301, USA.
 */
 
+#define NEW_RESTORE
+
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 #include "bareos_api.h"
 #include "include/filetypes.h"
 #include "parser.h"
+#include "restore.h"
 
 #define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
+#define info_msg(ctx, ...) JobLog((ctx), M_INFO, __VA_ARGS__)
 
 bool AmICompatibleWith(filedaemon::PluginApiDefinition* core_info)
 {
@@ -73,22 +77,33 @@ struct plugin_logger : public GenericLogger {
 };
 
 struct session_ctx {
-  plugin_logger logger;
+  data_writer* writer{};
 
-  session_ctx(PluginContext* ctx) : logger{ctx} {}
+  session_ctx(restore_options options) : writer{writer_begin(options)} {}
 
-  ~session_ctx() {}
+  ~session_ctx()
+  {
+    if (writer) { writer_end(writer); }
+  }
 };
 
 struct plugin_ctx {
+  plugin_logger logger;
+
+  plugin_ctx(PluginContext* ctx) : logger{ctx} {}
+
   void set_plugin_args(plugin_arguments) {}
 
-  void begin_session(PluginContext* ctx) { current_session.emplace(ctx); }
+  void begin_session(restore_options options)
+  {
+    current_session.emplace(options);
+  }
 
   std::size_t session_write(std::span<char> data)
   {
-    (void)data;
-    return 0;
+    if (!current_session) { return 0; }
+
+    return writer_write(current_session->writer, data);
   }
 
   bool has_session() const { return current_session.has_value(); }
@@ -108,15 +123,13 @@ void set_private_context(PluginContext* ctx, plugin_ctx* priv_ctx)
 
 bRC newPlugin(PluginContext* ctx)
 {
-  set_private_context(ctx, new plugin_ctx);
+  set_private_context(ctx, new plugin_ctx{ctx});
   RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventNewPluginOptions);
   RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventJobStart);
   // RegisterBareosEvent(ctx, filedaemon::bEventStartBackupJob);
   RegisterBareosEvent(ctx, filedaemon::bEventRestoreCommand);
-  RegisterBareosEvent(ctx, filedaemon::bEventEstimateCommand);
-  RegisterBareosEvent(ctx, filedaemon::bEventBackupCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventRestoreObject);
   return bRC_OK;
 }
@@ -152,10 +165,6 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
 
     case filedaemon::bEventNewPluginOptions:
       [[fallthrough]];
-    case filedaemon::bEventBackupCommand:
-      [[fallthrough]];
-    case filedaemon::bEventEstimateCommand:
-      [[fallthrough]];
     case filedaemon::bEventRestoreCommand: {
       auto arguments = plugin_arguments::parse(static_cast<const char*>(data));
       pctx->set_plugin_args(std::move(arguments));
@@ -178,14 +187,18 @@ bRC endBackupFile(PluginContext* ctx)
 }
 bRC startRestoreFile(PluginContext* ctx, const char* file_name)
 {
-  (void)ctx;
-  (void)file_name;
-  return bRC_Error;
+  auto* pctx = get_private_context(ctx);
+  if (pctx->has_session()) {
+    err_msg(ctx, "this plugin cannot restore more than one 'file' at once");
+    return bRC_Error;
+  }
+  info_msg(ctx, "restore started (file = {})", file_name);
+  return bRC_OK;
 }
 bRC endRestoreFile(PluginContext* ctx)
 {
-  (void)ctx;
-  return bRC_Error;
+  info_msg(ctx, "restore finished");
+  return bRC_OK;
 }
 bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 {
@@ -193,12 +206,51 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
   (void)pctx;
   switch (pkt->func) {
     case filedaemon::IO_OPEN: {
+      if (pctx->has_session()) {
+        err_msg(ctx, "context can only be created once");
+        pkt->status = -1;
+        return bRC_Error;
+      }
+
+      restore_options options
+          = restore_options::into_directory(&pctx->logger, "/tmp/restore");
+      try {
+        pctx->begin_session(options);
+        pkt->status = 0;
+        return bRC_OK;
+      } catch (const std::exception& ex) {
+        err_msg(ctx, "could not start: {}", ex.what());
+        pkt->status = -1;
+        return bRC_Error;
+      } catch (...) {
+        err_msg(ctx, "could not start: unknown error occured");
+        pkt->status = -1;
+        return bRC_Error;
+      }
     } break;
     case filedaemon::IO_READ: {
+      err_msg(ctx, "backups are not supported on windows");
+      pkt->status = -1;
+      return bRC_Error;
     } break;
     case filedaemon::IO_WRITE: {
+      if (pkt->count < 0) {
+        err_msg(ctx, "its impossible to read {} bytes...", pkt->count);
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      pkt->status = pctx->session_write(
+          std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
+      return bRC_OK;
     } break;
     case filedaemon::IO_CLOSE: {
+      if (!pctx->has_session()) {
+        err_msg(ctx, "context can only be closed, if its open");
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      pkt->status = 0;
+      return bRC_OK;
     } break;
   }
   return bRC_Error;
