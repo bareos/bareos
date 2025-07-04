@@ -349,7 +349,7 @@ int ListPlugins(alist<Plugin*>* plugin_list, PoolMem& msg)
   Plugin* plugin{};
 
   Dmsg0(300, "plugin_list=%p size=%d", plugin_list,
-        plugin_list ? 0 : plugin_list->size());
+        plugin_list ? plugin_list->size() : 0);
 
   if (plugin_list && plugin_list->size() > 0) {
     PmStrcpy(msg, "Plugin Info:\n");
