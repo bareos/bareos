@@ -28,7 +28,7 @@
 #include <VsWriter.h>
 #include <VsBackup.h>
 
-const char* hresult_as_str(HRESULT hr)
+__declspec(dllexport) const char* hresult_as_str(HRESULT hr)
 {
   switch (hr) {
     case E_INVALIDARG:
