@@ -1321,7 +1321,7 @@ struct data_dumper {
                 if (current_offset == 0) {
                   logger->SetStatus("inserting meta data");
                   logger->Info(
-                      libbareos::format("writing {} bytes\n", bytes.size()));
+                      libbareos::format("writing {} bytes", bytes.size()));
                 }
 
                 auto bytes_left = bytes.size() - current_offset;
@@ -1345,7 +1345,7 @@ struct data_dumper {
                 if (current_offset == 0) {
                   logger->SetStatus("reading a file");
                   logger->Info(
-                      libbareos::format("writing {} bytes\n", from.length));
+                      libbareos::format("writing {} bytes", from.length));
                 }
 
                 auto bytes_left = from.length - current_offset;
