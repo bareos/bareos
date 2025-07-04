@@ -125,7 +125,7 @@ void JobLog(PluginContext* ctx,
             libbareos::format_string<Args...> fmt,
             Args&&... args)
 {
-  auto formatted = libbareos::format(fmt, args...);
+  auto formatted = libbareos::format(fmt, std::forward<Args>(args)...);
 
   internal::JobMessage(ctx, type.file, type.line, type.type, formatted.c_str());
 }
