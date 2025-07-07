@@ -77,10 +77,12 @@ class BareosDbPostgresql : public BareosDb {
   bool BigSqlQuery(const char* query,
                    DB_RESULT_HANDLER* ResultHandler,
                    void* ctx) override;
+
   bool SqlQueryWithHandler(const char* query,
                            DB_RESULT_HANDLER* ResultHandler,
                            void* ctx) override;
-  bool SqlQueryWithoutHandler(const char* query, int flags = 0) override;
+  bool SqlQueryWithoutHandler(const char* query,
+                              query_flags flags = {}) override;
   void SqlFreeResult(void) override;
   SQL_ROW SqlFetchRow(void) override;
   const char* sql_strerror(void) override;
@@ -98,7 +100,6 @@ class BareosDbPostgresql : public BareosDb {
 
   bool CheckDatabaseEncoding(JobControlRecord* jcr);
 
-  int status_ = 0; /**< Status */
   bool fields_fetched_
       = false;         /**< Marker, if field descriptions are already fetched */
   int num_fields_ = 0; /**< Number of fields returned by last query */
