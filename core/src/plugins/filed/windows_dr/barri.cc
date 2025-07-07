@@ -82,6 +82,7 @@ int main(int argc, char* argv[])
   bool raw_file;
   restore->add_flag("--raw", raw_file);
 
+  auto* version = app.add_subcommand("version");
 
   app.require_subcommand(1, 1);
 
@@ -100,6 +101,16 @@ int main(int argc, char* argv[])
                              std::ios_base::in | std::ios_base::binary};
         restore_data(infile, raw_file);
       }
+    } else if (*version) {
+#if !defined(BARRI_VERSION)
+#  warning "no barri version defined"
+#  define BARRI_VERSION "unknown"
+#endif
+#if !defined(BARRI_DATE)
+#  warning "no barri date defined"
+#  define BARRI_DATE "unknown"
+#endif
+      std::cout << BARRI_VERSION " (" BARRI_DATE ")" << std::endl;
     }
 
     return 0;
