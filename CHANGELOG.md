@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - plugins: fix error_string construction [PR #2294]
 
+### Changed
+- python: fix traceback generation [PR #2306]
+
 ## [22.1.7] - 2025-04-14
 
 ### Fixed
@@ -736,4 +739,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2190]: https://github.com/bareos/bareos/pull/2190
 [PR #2197]: https://github.com/bareos/bareos/pull/2197
 [PR #2294]: https://github.com/bareos/bareos/pull/2294
+[PR #2306]: https://github.com/bareos/bareos/pull/2306
 [unreleased]: https://github.com/bareos/bareos/tree/master
