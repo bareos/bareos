@@ -38,9 +38,12 @@ def is_shell_content(file_content: str):
 
 
 def invoke_shell_format(file_path: pathlib.Path, file_content: str, *argv):
-    if not str(file_path).endswith(".sh") or str(file_path).endswith(".sh.in"):
-        if not is_shell_content(file_content):
-            return file_content
+    if (
+        not str(file_path).endswith(".sh")
+        and not str(file_path).endswith(".sh.in")
+        and not is_shell_content(file_content)
+    ):
+        return file_content
 
     invocation = [shfmt_exe] + list(argv)
     try:
@@ -70,5 +73,5 @@ def check_shell_format(file_path: pathlib.Path, file_content: str, **kwargs):
         "--binary-next-line",
         "--case-indent",
         "--func-next-line",
-        f"--filename=\"{file_path}\""
+        f'--filename="{file_path}"',
     )
