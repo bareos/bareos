@@ -50,7 +50,7 @@ void dump_data(std::ostream& stream, bool dry)
   std::vector<char> buffer;
   buffer.resize(4 << 20);
 
-  auto dumper = dumper_setup(progressbar::get());
+  auto dumper = dumper_setup(progressbar::get(), dry);
   // data_dumper dumper{progressbar::get()};
   // dumper.GatherData(dry);
 
