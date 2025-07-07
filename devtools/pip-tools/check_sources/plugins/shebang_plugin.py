@@ -17,27 +17,27 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""ensure executable scripts have a proper shebang"""
+
 import os
 from ..registry import register_checker
 
 
 @register_checker("*", name="shebang in executables")
 def check_shebang(file_path, file_content, **kwargs):
-    _ = kwargs
+    del kwargs
     if os.access(file_path, os.X_OK):
         return file_content[0:2] == "#!"
-    else:
-        return True
+    return True
 
 
 @register_checker("*.py", name="python shebang")
 def check_python_shebang(file_path, file_content, **kwargs):
-    _ = kwargs
+    del kwargs
     if os.access(file_path, os.X_OK):
         return (
             file_content.startswith("#!/usr/bin/env python\n")
             or file_content.startswith("#!/usr/bin/env python2\n")
             or file_content.startswith("#!/usr/bin/env python3\n")
         )
-    else:
-        return True
+    return True

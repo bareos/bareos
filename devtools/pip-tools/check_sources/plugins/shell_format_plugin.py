@@ -17,6 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""reformat shell scripts using shfmt"""
+
 from shutil import which
 import logging
 import subprocess
@@ -65,7 +67,7 @@ def invoke_shell_format(file_path: pathlib.Path, file_content: str, *argv):
 
 @register_modifier("*", name="shell-format check")
 def check_shell_format(file_path: pathlib.Path, file_content: str, **kwargs):
-    _ = kwargs
+    del kwargs
     return invoke_shell_format(
         file_path,
         file_content,

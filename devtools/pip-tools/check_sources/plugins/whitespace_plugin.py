@@ -17,13 +17,15 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""remove unneccessary whitespace from files and fix dos line-endings"""
+
 from ..registry import register_modifier
 
 
 @register_modifier("*", name="trailing spaces")
 def strip_tailing_whitespace(file_path, file_content, **kwargs):
-    _ = file_path
-    _ = kwargs
+    del file_path
+    del kwargs
     lines = []
     for line in file_content.split("\n"):
         # rst file use ".. " as comment marker.
@@ -35,14 +37,14 @@ def strip_tailing_whitespace(file_path, file_content, **kwargs):
 
 @register_modifier("*", name="trailing newlines")
 def strip_tailing_newlines(file_path, file_content, **kwargs):
-    _ = file_path
-    _ = kwargs
+    del file_path
+    del kwargs
     return file_content.rstrip("\n") + "\n"
 
 
 @register_modifier("*", name="dos line-endings")
 def fix_dos_lineendings(file_path, file_content, **kwargs):
-    _ = kwargs
+    del kwargs
     if (
         file_path.match("*.bat")
         or file_path.match("*.cmd")
@@ -51,5 +53,4 @@ def fix_dos_lineendings(file_path, file_content, **kwargs):
         return file_content
     if file_content.find("\r\n") > -1:
         return file_content.replace("\r\n", "\n")
-    else:
-        return file_content
+    return file_content

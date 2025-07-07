@@ -17,6 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""reformat python code using black"""
+
 import logging
 from black import format_file_contents, Mode, NothingChanged, InvalidInput
 from ..registry import register_modifier
@@ -26,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @register_modifier("*.py", name="python black")
 def format_python_black(file_path, file_content, **kwargs):
-    _ = kwargs
+    del kwargs
     try:
         return format_file_contents(file_content, fast=False, mode=Mode())
     except NothingChanged:

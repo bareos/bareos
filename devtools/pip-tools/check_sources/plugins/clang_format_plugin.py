@@ -17,6 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""reformat c/c++ code with clang-format"""
+
 from shutil import which
 import logging
 import subprocess
@@ -57,7 +59,7 @@ def invoke_clang_format(source_text, *argv):
 
 @register_modifier("*.c", "*.cc", "*.h", name="clang-format check")
 def check_clang_format(file_path, file_content, **kwargs):
-    _ = kwargs
+    del kwargs
     return invoke_clang_format(
         file_content, "-style=file", f"-assume-filename={file_path}"
     )

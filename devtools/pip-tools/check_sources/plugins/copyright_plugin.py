@@ -17,6 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""update copyright file headers based on git history data"""
+
 import re
 import logging
 from datetime import datetime
@@ -43,7 +45,7 @@ COPYRIGHT_FORMAT = "Copyright (C) {}-{} Bareos GmbH & Co. KG"
     name="check copyright notice exists",
 )
 def check_copyright_notice(file_path, file_content, **kwargs):
-    _ = kwargs
+    del kwargs
     # do check .inc (c/c++), but skip ReST includes
     if file_path.match("*.rst.inc"):
         return True
@@ -58,8 +60,8 @@ def check_copyright_notice(file_path, file_content, **kwargs):
 def set_copyright_year(
     file_path, file_content, git_repo, file_history, blame_ignore_revs, **kwargs
 ):
-    _ = git_repo
-    _ = kwargs
+    del git_repo
+    del kwargs
     m = COPYRIGHT_REGEX.search(file_content)
     if m is None:
         return file_content
@@ -90,5 +92,4 @@ def set_copyright_year(
         return COPYRIGHT_REGEX.sub(
             COPYRIGHT_FORMAT.format(start_year, change_year), file_content
         )
-    else:
-        return file_content
+    return file_content

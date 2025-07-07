@@ -17,6 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""enforces existance of header-guards using bareos-style"""
+
 import logging
 import re
 from ..registry import register_checker
@@ -35,7 +37,7 @@ def check_line(actual: str, expected: str):
 
 @register_checker("*.h", name="missing/wrong include guard")
 def check_include_guard(file_path, file_content, **kwargs):
-    _ = kwargs
+    del kwargs
     # strip .in suffix if present
     file_path = get_stemmed_file_path(file_path)
     dir_parts = file_path.parent.parts

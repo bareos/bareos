@@ -17,11 +17,13 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""detect unsolved merge conflicts in source files"""
+
 from ..registry import register_checker
 
 
 @register_checker("*", name="unresolved merge conflict")
 def detect_merge_conflict(file_path, file_content, **kwargs):
-    _ = file_path
-    _ = kwargs
+    del file_path
+    del kwargs
     return file_content.find("\n<<<<<<<") == -1 and file_content.find("\n>>>>>>>") == -1

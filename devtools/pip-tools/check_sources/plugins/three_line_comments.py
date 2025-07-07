@@ -37,6 +37,6 @@ replace_regexp = re.compile(r"\/\*\*?\n.*\*(.*)\n.*\*/", flags=re.MULTILINE)
 
 @register_modifier("*.cc", "*.c", "*.h", name="compact three-line comments")
 def shrink_three_line_comments(file_path, file_content, **kwargs):
-    _ = file_path
-    _ = kwargs
+    del file_path
+    del kwargs
     return replace_regexp.sub("//\\1", file_content)

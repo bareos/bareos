@@ -17,6 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""module containing plugins and loader code"""
+
 import pkgutil
 from importlib import import_module
 import logging

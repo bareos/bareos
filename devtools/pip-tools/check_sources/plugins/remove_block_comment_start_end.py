@@ -49,6 +49,6 @@ replace_regexp = re.compile(
 
 @register_modifier("*.cc", "*.c", "*.h", name="compress c block comments")
 def shrink_block_comment_start_end(file_path, file_content, **kwargs):
-    _ = file_path
-    _ = kwargs
+    del file_path
+    del kwargs
     return replace_regexp.sub("/*\\1 */", file_content)

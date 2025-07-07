@@ -17,6 +17,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""reformat CMake code using cmake-format"""
+
 import logging
 from cmakelang.format.__main__ import get_config, process_file
 from cmakelang.configuration import Configuration
@@ -40,5 +42,5 @@ def format_cmake_file(file_path, file_content):
 
 @register_modifier("CMakeLists.txt", "*.cmake", name="cmake format")
 def modify_cmake_format(file_path, file_content, **kwargs):
-    _ = kwargs
+    del kwargs
     return format_cmake_file(file_path, file_content)
