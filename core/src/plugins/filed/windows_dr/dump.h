@@ -27,7 +27,7 @@
 
 struct data_dumper;
 
-data_dumper* dumper_setup(GenericLogger* logger);
+data_dumper* dumper_setup(GenericLogger* logger, bool dry);
 
 std::size_t dumper_write(data_dumper* dumper, std::span<char> data);
 
