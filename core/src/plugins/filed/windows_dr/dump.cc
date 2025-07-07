@@ -1399,10 +1399,10 @@ struct data_dumper {
   insert_plan plan;
 };
 
-data_dumper* dumper_setup(GenericLogger* logger)
+data_dumper* dumper_setup(GenericLogger* logger, bool dry)
 {
   auto* dumper = new data_dumper{logger};
-  dumper->GatherData(false);
+  dumper->GatherData(dry);
   return dumper;
 }
 
@@ -1410,8 +1410,6 @@ std::size_t dumper_write(data_dumper* dumper, std::span<char> data)
 {
   if (dumper->Done()) { return 0; }
   return dumper->Write(data);
-
-  return 0;
 }
 
 void dumper_stop(data_dumper* dumper) { delete dumper; }
