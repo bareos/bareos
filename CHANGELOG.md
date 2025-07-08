@@ -95,6 +95,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - python: fix traceback generation [PR #2303]
 - build: add Debian 13 [PR #2290]
 - bareos-check-sources: add shell_format plugin [PR #2267]
+- Build FreeBSD for major versions 14 / 13 (instead of minor releases) [PR #2117]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -122,6 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2109]: https://github.com/bareos/bareos/pull/2109
 [PR #2111]: https://github.com/bareos/bareos/pull/2111
 [PR #2116]: https://github.com/bareos/bareos/pull/2116
+[PR #2117]: https://github.com/bareos/bareos/pull/2117
 [PR #2120]: https://github.com/bareos/bareos/pull/2120
 [PR #2121]: https://github.com/bareos/bareos/pull/2121
 [PR #2122]: https://github.com/bareos/bareos/pull/2122
