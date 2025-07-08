@@ -50,14 +50,10 @@ void dump_data(std::ostream& stream, bool dry)
   std::vector<char> buffer;
   buffer.resize(64 << 10);
 
-  auto dumper = dumper_setup(progressbar::get(), dry);
-  // data_dumper dumper{progressbar::get()};
-  // dumper.GatherData(dry);
+  dump_context* ctx = make_context();
+  insert_plan plan = create_insert_plan(ctx, dry);
 
-  // while (!dumper.Done()) {
-  //   auto count = dumper.Write(buffer);
-  //   stream.write(buffer.data(), count);
-  // }
+  auto dumper = dumper_setup(progressbar::get(), std::move(plan));
 
   for (;;) {
     auto count = dumper_write(dumper, buffer);
@@ -66,6 +62,7 @@ void dump_data(std::ostream& stream, bool dry)
   }
 
   dumper_stop(dumper);
+  destroy_context(ctx);
 }
 
 int main(int argc, char* argv[])
