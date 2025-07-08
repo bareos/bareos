@@ -499,4 +499,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2319]: https://github.com/bareos/bareos/pull/2319
 [PR #2320]: https://github.com/bareos/bareos/pull/2320
 [PR #2322]: https://github.com/bareos/bareos/pull/2322
+[PR #2311]: https://github.com/bareos/bareos/pull/2311
 [unreleased]: https://github.com/bareos/bareos/tree/master
