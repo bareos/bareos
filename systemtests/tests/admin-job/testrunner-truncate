@@ -23,6 +23,14 @@ set -e
 set -o pipefail
 set -u
 
+file_size() {
+  if [ "$(uname)" = FreeBSD ]; then
+    stat -f %z "$@"
+  else
+    stat -c %s "$@"
+  fi
+}
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -44,7 +52,7 @@ END_OF_DATA
 
 run_bconsole
 
-SIZE_TO_BEAT=$(stat -c%s storage/ToBePurged)
+SIZE_TO_BEAT=$(file_size storage/ToBePurged)
 
 # truncate volume
 cat <<END_OF_DATA >"$tmp/bconcmds"
@@ -66,7 +74,7 @@ END_OF_DATA
 
 run_bconsole
 
-TRUNCATED_SIZE=$(stat -c%s storage/ToBePurged)
+TRUNCATED_SIZE=$(file_size storage/ToBePurged)
 
 echo "$SIZE_TO_BEAT < $TRUNCATED_SIZE"
 
