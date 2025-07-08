@@ -1192,6 +1192,7 @@ struct data_dumper {
 
       // the operating system will clean up shadow on exit (yes, we leak it)
       GetVolumeExtents(candidate_disks, volume, shadow);
+      open_handles.push_back(shadow);
 
       CloseHandle(volume);
     }
@@ -1236,6 +1237,7 @@ struct data_dumper {
 
       disks[id] = std::move(disk);
       disk_info[id] = open_disk{hndl, geo.value()};
+      open_handles.push_back(hndl);
     }
 
     for (auto& [id, disk] : disks) {
@@ -1384,6 +1386,7 @@ struct data_dumper {
     // we need to away to always delete these shadow copies
     // currently you can remove orphaned shadow copies via
     // diskshadow > delete shadows all
+    for (auto hndl : open_handles) { CloseHandle(hndl); }
     if (snapshot) { snapshot->delete_snapshot(backup_components); }
   }
 
