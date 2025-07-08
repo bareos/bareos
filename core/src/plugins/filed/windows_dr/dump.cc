@@ -1325,10 +1325,6 @@ struct data_dumper {
 
   std::size_t Write(std::span<char> buffer)
   {
-    // auto logger = progressbar::get();
-    // execute_plan(logger, stream, plan);
-    // logger->End();
-
     if (current_index == 0 && current_offset == 0) {
       logger->Begin(compute_plan_size(plan));
     }
