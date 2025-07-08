@@ -1,0 +1,94 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+file_size() {
+  if [ "$(uname)" = FreeBSD ]; then
+    stat -f %z "$@"
+  else
+    stat -c %s "$@"
+  fi
+}
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=./environment
+. ./environment
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+# prepare purged volume with data
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/log-purge.out
+label volume=ToBePurged storage=File pool=PurgePool
+run job=backup-bareos-fd pool=PurgePool yes
+update volstatus=Used volume=ToBePurged
+purge volume=ToBePurged pool=PurgePool yes
+END_OF_DATA
+
+run_bconsole
+
+SIZE_TO_BEAT=$(file_size storage/ToBePurged)
+
+# truncate volume
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/log-truncate.out
+run job=admin-truncate yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+# truncate nothing (as volume is too small)
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/log-truncate-nothing.out
+run job=admin-truncate yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+TRUNCATED_SIZE=$(file_size storage/ToBePurged)
+
+echo "$SIZE_TO_BEAT < $TRUNCATED_SIZE"
+
+expect_grep "Termination:[[:space:]]*Admin OK" \
+            "${log_home}/log-truncate.out" \
+            "Actual Truncate admin job did not end successfully"
+
+expect_grep "Termination:[[:space:]]*Admin OK" \
+            "${log_home}/log-truncate-nothing.out" \
+            "Empty Truncate admin job did not end successfully"
+
+if ! [ "$SIZE_TO_BEAT" -le "$TRUNCATED_SIZE" ]; then
+  echo -e "\n*** Fail: Volume was not truncated: old size = ${SIZE_TO_BEAT}, new size = ${TRUNCATED_SIZE}." >&2
+  estat=1
+fi
+
+end_test
