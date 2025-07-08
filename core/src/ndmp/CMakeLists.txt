@@ -187,13 +187,15 @@ bareos_disable_warnings(
   TARGET
   bareosndmp
   WARNINGS
-  bareosndmp
   -Wenum-conversion
   -Wunused-parameter
   -Wsign-compare
   -Wmissing-field-initializers
   -Wunused-but-set-variable
   -Wdeprecated-non-prototype
+  -Wcast-function-type
+  -Wincompatible-pointer-types
+  -Wenum-compare
   C_ONLY
 )
 
