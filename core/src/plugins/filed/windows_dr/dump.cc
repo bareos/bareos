@@ -179,13 +179,16 @@ struct disk_reader {
   {
   }
 
+  HANDLE current_handle = INVALID_HANDLE_VALUE;
+  std::size_t current_offset = std::numeric_limits<std::size_t>::max();
+
   void read(HANDLE hndl,
             std::size_t offset,
             std::size_t length,
             char* result_buffer)
   {
     DWORD ignore_offset = 0;
-    {
+    if (hndl != current_handle || offset != current_offset) {
       // the offset needs to be sector aligned.  We need to round _down_ here
       // to make sure that we read everything
 
@@ -197,6 +200,8 @@ struct disk_reader {
       DWORD off_low = rounded_offset & 0xFFFFFFFF;
       LONG off_high = (rounded_offset >> 32) & 0xFFFFFFFF;
       SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
+      current_offset = offset;
+      current_handle = hndl;
     }
 
     if (ignore_offset) {
@@ -256,6 +261,9 @@ struct disk_reader {
                 bytes_to_read);
         return;
       }
+
+      current_offset += bytes_read;
+
       // fprintf(stderr, "%s\n", fmt::format("read: {}", bytes_read).c_str());
 
       // make sure to ignore the first ignore_offset bytes
