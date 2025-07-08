@@ -24,13 +24,32 @@
 
 #include "plugins/filed/windows_dr/parser.h"
 #include <span>
+#include <optional>
+#include <vector>
+#include <Windows.h>
 
 struct data_dumper;
 
-data_dumper* dumper_setup(GenericLogger* logger, bool dry);
+using insert_bytes = std::vector<char>;
+struct insert_from {
+  HANDLE hndl;
+  std::size_t offset;
+  std::size_t length;
+};
 
+using insert_step = std::variant<insert_bytes, insert_from>;
+
+using insert_plan = std::vector<insert_step>;
+
+struct dump_context;
+
+dump_context* make_context();
+void destroy_context(dump_context* ctx);
+
+insert_plan create_insert_plan(dump_context* ctx, bool dry);
+
+data_dumper* dumper_setup(GenericLogger* logger, insert_plan&& plan);
 std::size_t dumper_write(data_dumper* dumper, std::span<char> data);
-
 void dumper_stop(data_dumper* dumper);
 
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_DUMP_H_
