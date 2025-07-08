@@ -48,7 +48,7 @@ void dump_data(std::ostream& stream, bool dry)
   CoUninitializer _{};
 
   std::vector<char> buffer;
-  buffer.resize(4 << 20);
+  buffer.resize(64 << 10);
 
   auto dumper = dumper_setup(progressbar::get(), dry);
   // data_dumper dumper{progressbar::get()};
