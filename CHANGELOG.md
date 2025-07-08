@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - dplcompat: fix unsupported size-suffixes on chunksize [PR #2240]
 - gRPC: add fixes to enable building on SUSE [PR #2250]
 - fix admin job issues [PR #2283]
+- truncate: fix return status bug [PR #2300]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -174,5 +175,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2286]: https://github.com/bareos/bareos/pull/2286
 [PR #2287]: https://github.com/bareos/bareos/pull/2287
 [PR #2290]: https://github.com/bareos/bareos/pull/2290
+[PR #2300]: https://github.com/bareos/bareos/pull/2300
 [PR #2303]: https://github.com/bareos/bareos/pull/2303
 [unreleased]: https://github.com/bareos/bareos/tree/master
