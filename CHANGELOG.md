@@ -93,6 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMware Plugin: Fix for virtual USB devices [PR #2213]
 - build: add Fedora 42 [PR #2263]
 - python: fix traceback generation [PR #2303]
+- build: add Debian 13 [PR #2290]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -170,5 +171,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2283]: https://github.com/bareos/bareos/pull/2283
 [PR #2286]: https://github.com/bareos/bareos/pull/2286
 [PR #2287]: https://github.com/bareos/bareos/pull/2287
+[PR #2290]: https://github.com/bareos/bareos/pull/2290
 [PR #2303]: https://github.com/bareos/bareos/pull/2303
 [unreleased]: https://github.com/bareos/bareos/tree/master
