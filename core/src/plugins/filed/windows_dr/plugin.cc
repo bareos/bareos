@@ -76,15 +76,20 @@ struct plugin_logger : public GenericLogger {
 
 struct session_ctx {
   plugin_logger logger;
+  dump_context* dctx{nullptr};
   data_dumper* dumper{nullptr};
 
-  session_ctx(PluginContext* ctx) : logger{ctx}, dumper{dumper_setup(&logger)}
+  session_ctx(PluginContext* ctx)
+      : logger{ctx}
+      , dctx{make_context()}
+      , dumper{dumper_setup(&logger, create_insert_plan(dctx, false))}
   {
   }
 
   ~session_ctx()
   {
     if (dumper) { dumper_stop(dumper); }
+    if (dctx) { destroy_context(dctx); }
   }
 };
 
