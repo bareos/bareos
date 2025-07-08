@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,6 +16,8 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+
+"""update copyright file headers based on git history data"""
 
 import re
 import logging
@@ -43,6 +45,7 @@ COPYRIGHT_FORMAT = "Copyright (C) {}-{} Bareos GmbH & Co. KG"
     name="check copyright notice exists",
 )
 def check_copyright_notice(file_path, file_content, **kwargs):
+    del kwargs
     # do check .inc (c/c++), but skip ReST includes
     if file_path.match("*.rst.inc"):
         return True
@@ -57,6 +60,8 @@ def check_copyright_notice(file_path, file_content, **kwargs):
 def set_copyright_year(
     file_path, file_content, git_repo, file_history, blame_ignore_revs, **kwargs
 ):
+    del git_repo
+    del kwargs
     m = COPYRIGHT_REGEX.search(file_content)
     if m is None:
         return file_content
@@ -67,18 +72,17 @@ def set_copyright_year(
     if file_history.is_changed(file_path):
         change_year = datetime.now().year
         logger.debug(
-            "Uncommitted changes in {}, setting year to {}".format(
-                file_path, change_year
-            )
+            "Uncommitted changes in %s, setting year to %i", file_path, change_year
         )
     else:
         commit = file_history.get_latest_commit(file_path, ignore=blame_ignore_revs)
         if commit:
             change_year = datetime.utcfromtimestamp(commit.committed_date).year
             logger.debug(
-                "Latest commit for {} is {} from {}".format(
-                    file_path, commit.hexsha, change_year
-                )
+                "Latest commit for %s is %s from %i",
+                file_path,
+                commit.hexsha,
+                change_year,
             )
         else:
             # skip files without commit info
@@ -88,5 +92,4 @@ def set_copyright_year(
         return COPYRIGHT_REGEX.sub(
             COPYRIGHT_FORMAT.format(start_year, change_year), file_content
         )
-    else:
-        return file_content
+    return file_content

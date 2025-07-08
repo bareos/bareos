@@ -94,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - build: add Fedora 42 [PR #2263]
 - python: fix traceback generation [PR #2303]
 - build: add Debian 13 [PR #2290]
+- bareos-check-sources: add shell_format plugin [PR #2267]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -162,6 +163,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2260]: https://github.com/bareos/bareos/pull/2260
 [PR #2263]: https://github.com/bareos/bareos/pull/2263
 [PR #2264]: https://github.com/bareos/bareos/pull/2264
+[PR #2267]: https://github.com/bareos/bareos/pull/2267
 [PR #2268]: https://github.com/bareos/bareos/pull/2268
 [PR #2270]: https://github.com/bareos/bareos/pull/2270
 [PR #2272]: https://github.com/bareos/bareos/pull/2272

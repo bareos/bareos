@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,9 +17,13 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+"""detect unsolved merge conflicts in source files"""
+
 from ..registry import register_checker
 
 
 @register_checker("*", name="unresolved merge conflict")
 def detect_merge_conflict(file_path, file_content, **kwargs):
+    del file_path
+    del kwargs
     return file_content.find("\n<<<<<<<") == -1 and file_content.find("\n>>>>>>>") == -1
