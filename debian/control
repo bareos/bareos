@@ -475,7 +475,7 @@ Package: bareos-webui
 Architecture: all
 Depends: apache2 | httpd,
    php-fpm (>= 7.0),
-   php-date,
+   php-date <bookworm> <bullseye> <noble> <jammy>,
    php-intl,
    php-json,
    php-curl,
