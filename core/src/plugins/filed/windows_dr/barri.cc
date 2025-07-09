@@ -48,17 +48,23 @@ void dump_data(std::ostream& stream, bool dry)
   CoUninitializer _{};
 
   std::vector<char> buffer;
-  buffer.resize(1 << 20);
+  buffer.resize(4 << 20);
 
   dump_context* ctx = make_context();
   insert_plan plan = create_insert_plan(ctx, dry);
 
   auto dumper = dumper_setup(progressbar::get(), std::move(plan));
 
-  for (;;) {
-    auto count = dumper_write(dumper, buffer);
-    if (!count) { break; }
-    stream.write(buffer.data(), count);
+  try {
+    for (;;) {
+      auto count = dumper_write(dumper, buffer);
+      if (!count) { break; }
+      stream.write(buffer.data(), count);
+    }
+  } catch (const std::exception& ex) {
+    fprintf(stderr, "[EXCEPTION]: %s\n", ex.what());
+  } catch (...) {
+    fprintf(stderr, "[EXCEPTION]: %s\n", "unknown");
   }
 
   dumper_stop(dumper);
