@@ -167,15 +167,17 @@ struct disk_reader {
   static constexpr std::size_t sector_size = 512;  // volume sector size
   static constexpr std::size_t page_size = 4096;
 
-  disk_reader(std::size_t max_block_size)
+  GenericLogger* logger;
+
+
+  disk_reader(std::size_t max_block_size, GenericLogger* logger_)
       : capacity{(max_block_size / page_size) * page_size}
       , buffer{(char*)_aligned_malloc(capacity, page_size)}
+      , logger{logger_}
   {
   }
 
-  HANDLE current_handle = INVALID_HANDLE_VALUE;
-  std::size_t current_offset = std::numeric_limits<std::size_t>::max();
-
+#if 0
   void read(HANDLE hndl,
             std::size_t offset,
             std::size_t length,
@@ -281,37 +283,197 @@ struct disk_reader {
       std::memset(buffer.get(), 0, actual_bytes_read);
     }
   }
+#endif
 
   struct aligned_deleter {
     void operator()(char* ptr) { _aligned_free(ptr); }
   };
 
+  HANDLE current_handle = INVALID_HANDLE_VALUE;
+  std::size_t disk_size = 0;
+  std::size_t current_offset = std::numeric_limits<std::size_t>::max();
+  std::size_t capacity = 0;
+  std::size_t size = 0;
 
-  // void idea()
-  // {
-  //   std::size_t bytes_written = 0;
-  //   while (bytes_written < size) {
-  //     auto left = size - bytes_written;
-  //     auto buffer = next_chunk();
-
-  //     if (buffer.size() == 0) { break; }
-
-  //     if (buffer.size() > left) {
-  //       std::memcpy(result_buffer + bytes_written, buffer.data(), left);
-  //       advance_read_buffer(left);
-  //       bytes_written += left;
-  //       break;
-  //     } else {
-  //       std::memcpy(result_buffer + bytes_written, buffer.data(),
-  //                   buffer.size());
-  //       bytes_written += buffer.size();
-  //       discard_read_buffer();
-  //     }
-  //   }
-  // }
-
-  std::size_t capacity;
+  // this buffer is always filled by size bytes
+  // starting at current_offset
   std::unique_ptr<char[], aligned_deleter> buffer;
+
+  std::span<char> get_cached(HANDLE hndl, std::size_t offset)
+  {
+    if (hndl != current_handle) {
+      // cached data is from different handle
+      return {};
+    }
+
+    if (current_offset > offset || current_offset + size < offset) {
+      // no valid data available
+      return {};
+    }
+
+    auto diff = offset - current_offset;
+
+    return std::span{buffer.get() + diff, size - diff};
+  }
+
+  void switch_volume(HANDLE hndl)
+  {
+    current_handle = hndl;
+    // invalidate our cache
+    current_offset = std::numeric_limits<std::size_t>::max();
+    size = 0;
+
+    //
+
+    STORAGE_PROPERTY_QUERY query = {
+        .PropertyId = StorageAccessAlignmentProperty,
+        .QueryType = PropertyStandardQuery,
+    };
+
+#if 0
+    // TODO: this should be done per disk, so that we can use the optimal
+    // disk access in here
+    std::vector<char> desc_buf;
+    desc_buf.resize( sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR) );
+
+    std::size_t new_align = 4096;
+    for (;;) {
+      DWORD bytes_returned;
+      auto success = DeviceIoControl(
+                                     hndl,
+                                     IOCTL_STORAGE_QUERY_PROPERTY,
+                                     &query,
+                                     sizeof(query),
+                                     desc_buf.data(),
+                                     desc_buf.size(),
+                                     &bytes_returned,
+                                     NULL
+                                    );
+
+      if (success) {
+        if (bytes_returned >= sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR)) {
+          STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR desc;
+          std::memcpy(&desc, desc_buf.data(), sizeof(desc));
+
+          new_align = desc.BytesPerPhysicalSector;
+          fprintf(stderr, "phys sector size: %zu\n", new_align);
+        } else {
+          fprintf(stderr, "bad size for query storage alignment\n");
+        }
+      } else {
+        auto err = GetLastError();
+
+        if (err == ERROR_MORE_DATA) {
+          desc_buf.resize(desc_buf.size() * 2);
+          continue;
+        } else {
+          fprintf(stderr, "could not query storage alignment\n");
+        }
+      }
+      break;
+    }
+#endif
+
+    {
+      GET_LENGTH_INFORMATION length_info = {0};
+      DWORD bytes_returned = 0;
+
+      if (DeviceIoControl(hndl, IOCTL_DISK_GET_LENGTH_INFO, NULL, 0,
+                          &length_info, sizeof(length_info), &bytes_returned,
+                          NULL)) {
+        disk_size = length_info.Length.QuadPart;
+        logger->Info(libbareos::format("disk size = {}", disk_size));
+      } else {
+        disk_size = 0;
+        logger->Info(libbareos::format("could not determine disk size"));
+      }
+    }
+  }
+
+  void refresh_cache(HANDLE hndl, std::size_t offset)
+  {
+    if (current_handle != hndl) { switch_volume(hndl); }
+    if (offset != current_offset + size) {
+      // the offset needs to be sector aligned.  We need to round _down_ here
+      // to make sure that we read everything
+
+      current_offset = (offset / sector_size) * sector_size;
+
+      logger->Info(libbareos::format("current offset = {} (wanted: {})\n",
+                                     current_offset, offset));
+
+      DWORD off_low = current_offset & 0xFFFFFFFF;
+      LONG off_high = (current_offset >> 32) & 0xFFFFFFFF;
+      SetFilePointer(current_handle, off_low, &off_high, FILE_BEGIN);
+    } else {
+      current_offset += size;
+    }
+
+    std::size_t bytes_to_read = std::min(capacity, disk_size - current_offset);
+
+    if (current_offset == 0) {
+      logger->Info(libbareos::format("bytes_to_read = {}, buffer.get() = {}",
+                                     bytes_to_read, (void*)buffer.get()));
+    }
+    size = 0;
+    while (size < bytes_to_read) {
+      DWORD bytes_read = 0;
+      if (!ReadFile(current_handle, buffer.get() + size, bytes_to_read - size,
+                    &bytes_read, NULL)) {
+        logger->Info(libbareos::format(
+            "oh oh error: {} ({}: {}, {} | {}, {})", GetLastError(),
+            current_handle, buffer.get() + size, bytes_to_read - size,
+            current_offset, size));
+        // throw win_error("ReadFile", GetLastError());
+        break;
+      }
+
+      if (bytes_read == 0) { break; }
+
+      size += bytes_read;
+    }
+
+    // fprintf(stderr, "wanted: %p, %zu, cached: %p, %zu-%zu (%zu)\n",
+    //         hndl, offset, current_handle, current_offset, current_offset +
+    //         size, size);
+  }
+
+  std::size_t do_fill(HANDLE hndl, std::size_t offset, std::span<char> output)
+  {
+    // fprintf(stderr, "fill %p %zu\n", hndl, offset);
+    std::size_t bytes_written = 0;
+    bool refreshed = false;
+    for (;;) {
+      auto to_write = output.subspan(bytes_written);
+      auto cached = get_cached(hndl, offset + bytes_written);
+      if (cached.size() < to_write.size()) {
+        if (cached.size() > 0) {
+          std::memcpy(to_write.data(), cached.data(), cached.size());
+
+          bytes_written += cached.size();
+        } else if (refreshed) {
+          // there is still no data even after a refresh.
+          // something went wrong, so we just return
+
+          logger->Info(
+              libbareos::format("no data after refresh offset={} ({} + {}))!!!",
+                                offset + bytes_written, offset, bytes_written));
+          break;
+        }
+        refresh_cache(hndl, offset + bytes_written);
+        refreshed = true;
+      } else {
+        std::memcpy(to_write.data(), cached.data(), to_write.size());
+
+        bytes_written += to_write.size();
+
+        // we are done!
+        break;
+      }
+    }
+
+    return bytes_written;
+  }
 };
 
 bool WaitOnJob(IVssAsync* job)
@@ -570,6 +732,9 @@ size_t GetClusterSize(HANDLE volume)
     return 0;
   }
 
+  fprintf(stderr, "\n%p => sectors: %zu, clusters: %zu\n\n", volume,
+          (size_t)buffer.NumberSectors.QuadPart,
+          (size_t)buffer.TotalClusters.QuadPart);
   return buffer.BytesPerCluster;
 }
 
@@ -587,7 +752,8 @@ VOLUME_BITMAP_BUFFER* GetBitmap(HANDLE disk,
   buffer.resize(bitmap_bytes ? bitmap_bytes : 1);
 
   DWORD bytes_written = 0;
-  LARGE_INTEGER Start = {.QuadPart = static_cast<LONGLONG>(starting_lcn)};
+  STARTING_LCN_INPUT_BUFFER Start
+      = {.StartingLcn = {.QuadPart = static_cast<LONGLONG>(starting_lcn)}};
 
   for (;;) {
     if (!DeviceIoControl(disk, FSCTL_GET_VOLUME_BITMAP, &Start, sizeof(Start),
@@ -729,7 +895,6 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
 
       // we need at least min_hole_clusters in a row until we start emiting
       // "holes"
-
 
       std::optional<std::size_t> start;
       std::optional<std::size_t> end;
@@ -1515,13 +1680,51 @@ insert_plan create_insert_plan(dump_context* ctx, bool dry)
 
 struct data_dumper {
   data_dumper(GenericLogger* logger_, insert_plan&& plan_)
-      : logger{logger_}, plan{std::move(plan_)}
+      : logger{logger_}, plan{std::move(plan_)}, reader{4 << 20, logger_}
   {
   }
 
   bool Done() const { return current_index >= plan.size(); }
 
-  disk_reader reader{4 << 20};
+  std::size_t fill_bytes(const insert_bytes& bytes,
+                         std::size_t offset,
+                         std::span<char> buffer)
+  {
+    if (offset == 0) {
+      logger->SetStatus("inserting meta data");
+      logger->Info(libbareos::format("writing {} bytes", bytes.size()));
+    }
+
+    auto bytes_left = bytes.size() - offset;
+    auto bytes_to_write = std::min(bytes_left, buffer.size());
+    std::memcpy(buffer.data(), bytes.data(), bytes_to_write);
+
+    logger->Progressed(bytes_to_write);
+
+    return bytes_to_write;
+  }
+
+  std::size_t fill_bytes(const insert_from& from,
+                         std::size_t offset,
+                         std::span<char> buffer)
+  {
+    if (offset == 0) {
+      logger->SetStatus("inserting from file");
+      logger->Info(libbareos::format("writing {} bytes", from.length));
+    }
+
+    auto bytes_left = from.length - offset;
+    auto bytes_to_write = std::min(bytes_left, buffer.size());
+
+    if (bytes_to_write == 0) {
+      logger->Info(libbareos::format("bytes_to_write = 0!!! {} {} {} {}",
+                                     bytes_left, buffer.size(), offset,
+                                     current_offset));
+    }
+
+    return reader.do_fill(from.hndl, from.offset + offset,
+                          buffer.subspan(0, bytes_to_write));
+  }
 
   std::size_t Write(std::span<char> buffer)
   {
@@ -1536,61 +1739,21 @@ struct data_dumper {
       auto& current_step = plan[current_index];
       auto to_write = buffer.subspan(bytes_written);
       auto write_result = std::visit(
-          overloads{
-              [this, buffer = to_write,
-               &wrote_bytes](const insert_bytes& bytes) {
-                if (current_offset == 0) {
-                  logger->SetStatus("inserting meta data");
-                  logger->Info(
-                      libbareos::format("writing {} bytes", bytes.size()));
-                }
-
-                auto bytes_left = bytes.size() - current_offset;
-                auto bytes_to_write = std::min(bytes_left, buffer.size());
-                std::memcpy(buffer.data(), bytes.data(), bytes_to_write);
-
-                logger->Progressed(bytes_to_write);
-
-                if (bytes_to_write == bytes_left) {
-                  current_offset = 0;
-                  current_index += 1;
-                } else {
-                  current_offset += bytes_to_write;
-                }
-                wrote_bytes = true;
-
-                return bytes_to_write;
-              },
-              [this, buffer = to_write, &wrote_bytes](const insert_from& from) {
-                if (wrote_bytes) { return std::size_t{0}; }
-                if (current_offset == 0) {
-                  logger->SetStatus("reading a file");
-                  logger->Info(
-                      libbareos::format("writing {} bytes", from.length));
-                }
-
-                auto bytes_left = from.length - current_offset;
-                auto bytes_to_write = std::min(bytes_left, buffer.size());
-
-                reader.read(from.hndl, from.offset + current_offset,
-                            bytes_to_write, buffer.data());
-
-                logger->Progressed(bytes_to_write);
-
-                if (bytes_to_write == bytes_left) {
-                  current_offset = 0;
-                  current_index += 1;
-                } else {
-                  current_offset += bytes_to_write;
-                }
-
-                return bytes_to_write;
-              },
+          [this, to_write](auto& elem) {
+            return fill_bytes(elem, current_offset, to_write);
           },
           current_step);
 
-      if (write_result == 0) { break; }
+      logger->Progressed(write_result);
+
       bytes_written += write_result;
+      if (write_result == 0) {
+        logger->Info("write done");
+        current_index += 1;
+        current_offset = 0;
+      } else {
+        current_offset += write_result;
+      }
     }
 
     if (current_index == plan.size()) {
@@ -1605,6 +1768,7 @@ struct data_dumper {
   std::size_t current_offset{};
   std::size_t current_index{};
   insert_plan plan;
+  disk_reader reader;
 };
 
 data_dumper* dumper_setup(GenericLogger* logger, insert_plan&& plan)
