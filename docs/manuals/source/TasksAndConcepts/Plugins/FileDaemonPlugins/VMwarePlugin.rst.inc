@@ -108,8 +108,19 @@ command:
    BPP=$(python3 -c'import sys; print(f"/usr/{sys.platlibdir}/bareos/plugins")')
    pip install -t $BPP --upgrade pyvmomi
 
-Note that it is currently not possible to use Python virtual environments for
-Bareos Python plugins.
+The following warning message is not relevant when using the above command,
+because it installs modules in a path which is not used by system packages:
+
+.. code-block:: shell-session
+   :caption: Warning message when using pip install -t as root
+
+   WARNING: Running pip as the 'root' user can result in broken permissions and conflicting
+   behaviour with the system package manager. It is recommended to use a virtual environment
+
+.. note::
+
+   It is currently not possible to use Python virtual environments for
+   Bareos Python plugins.
 
 The versions of Python modules which have been installed with the above command
 can be checked as follows:
@@ -120,7 +131,7 @@ can be checked as follows:
    BPP=$(python3 -c'import sys; print(f"/usr/{sys.platlibdir}/bareos/plugins")')
    pip list --path $BPP
 
-System wide installed Pyhton modules, both packaged and installed using **pip**,
+System wide installed Python modules, both packaged and installed using **pip**,
 can be listed using the following command:
 
 .. code-block:: shell-session
