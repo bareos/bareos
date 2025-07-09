@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMware Plugin: Fix for virtual USB devices [PR #2291]
 - python: fix traceback generation [PR #2304]
 - build: add Debian 13 [PR #2311]
+- Build FreeBSD for major versions 14 / 13 (instead of minor releases) [PR #2316]
 
 ### Fixed
 - fix problems with msvc 19.44 [PR #2288]
@@ -478,4 +479,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2298]: https://github.com/bareos/bareos/pull/2298
 [PR #2304]: https://github.com/bareos/bareos/pull/2304
 [PR #2311]: https://github.com/bareos/bareos/pull/2311
+[PR #2316]: https://github.com/bareos/bareos/pull/2316
 [unreleased]: https://github.com/bareos/bareos/tree/master
