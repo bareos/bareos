@@ -48,7 +48,7 @@ void dump_data(std::ostream& stream, bool dry)
   CoUninitializer _{};
 
   std::vector<char> buffer;
-  buffer.resize(64 << 10);
+  buffer.resize(1 << 20);
 
   dump_context* ctx = make_context();
   insert_plan plan = create_insert_plan(ctx, dry);
