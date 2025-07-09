@@ -166,10 +166,11 @@ struct logger : public GenericLogger {
 
       if (bar.is_completed()) { return; }
 
-      auto this_update = std::chrono::steady_clock::now();
-      if (this_update - last_update < std::chrono::seconds(1)) { return; }
-
-      last_update = this_update;
+      if (current != goal) {
+        auto this_update = std::chrono::steady_clock::now();
+        if (this_update - last_update < std::chrono::seconds(1)) { return; }
+        last_update = this_update;
+      }
 
       bar.set_progress(current);
     }
@@ -181,6 +182,9 @@ struct logger : public GenericLogger {
 
     ~progress_bar()
     {
+      bar.set_option(option::PostfixText("Done"));
+      progress(goal - current);
+
       if (!bar.is_completed()) { bar.mark_as_completed(); }
       if (cursor_hidden) { show_cursor(true); }
     }
