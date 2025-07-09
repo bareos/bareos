@@ -74,6 +74,7 @@ void write_buffer(HANDLE output,
 {
   std::size_t offset = 0;
 
+#if 0
   fprintf(
       stderr,
       "%llu: %02X %02X %02X %02X %02X %02X ... %02X %02X %02X %02X %02X %02X\n",
@@ -86,6 +87,7 @@ void write_buffer(HANDLE output,
       (unsigned char)buffer[buffer.size() - 3],
       (unsigned char)buffer[buffer.size() - 2],
       (unsigned char)buffer[buffer.size() - 1]);
+#endif
 
   while (offset != buffer.size()) {
     DWORD bytes_written = 0;
@@ -98,8 +100,20 @@ void write_buffer(HANDLE output,
 }
 
 class HandleOutput : public Output {
+  static constexpr std::size_t buffer_cap = 4 << 20;
+
  public:
-  HandleOutput(HANDLE hndl, std::size_t size) : hndl_{hndl}, size_{size} {}
+  HandleOutput(HANDLE hndl, std::size_t size) : hndl_{hndl}, size_{size}
+  {
+    buffer.reserve(buffer_cap);
+  }
+
+  void flush_buffer()
+  {
+    write_buffer(hndl_, current_offset_, buffer);
+    current_offset_ += buffer.size();
+    buffer.clear();
+  }
 
   void append(std::span<const char> bytes) override
   {
@@ -107,23 +121,44 @@ class HandleOutput : public Output {
       throw std::logic_error{"can not write past the end of the file"};
     }
 
-    write_buffer(hndl_, current_offset_, bytes);
+    while (!bytes.empty()) {
+      std::size_t buffer_free = buffer_cap - buffer.size();
 
-    current_offset_ += bytes.size();
+      if (bytes.size() < buffer_free) {
+        buffer.insert(buffer.end(), bytes.begin(), bytes.end());
+        break;
+      } else {
+        buffer.insert(buffer.end(), bytes.data(), bytes.data() + buffer_free);
+        flush_buffer();
+        bytes = bytes.subspan(buffer_free);
+      }
+    }
   }
+
   void skip_forwards(std::size_t offset) override
   {
-    if (offset < current_offset_) {
+    auto actual_offset = current_offset_ + buffer.size();
+
+    if (offset < actual_offset) {
       throw std::logic_error{libbareos::format(
-          "Trying to skip to offset {}, when already at offset {}", offset,
-          current_offset_)};
+          "Trying to skip to offset {}, when already at offset {} ({} + {})",
+          offset, actual_offset, current_offset_, buffer.size())};
     }
 
     if (offset > size_) {
       throw std::logic_error{"can not seek past the end of the file"};
     }
 
-    current_offset_ = offset;
+    if (offset < current_offset_ + buffer_cap) {
+      auto diff = offset - actual_offset;
+      buffer.insert(buffer.end(), diff, 0);
+    } else if (!buffer.empty()) {
+      // zero out the rest of the buffer
+      buffer.insert(buffer.end(), buffer_cap - buffer.size(), 0);
+      flush_buffer();
+
+      current_offset_ = offset;
+    }
   }
 
   std::size_t current_offset() override { return current_offset_; }
@@ -132,6 +167,9 @@ class HandleOutput : public Output {
   HANDLE hndl_;
   std::size_t current_offset_ = 0;
   std::size_t size_ = 0;
+
+
+  std::vector<char> buffer{};
 };
 
 class OutputHandleGenerator {
@@ -230,7 +268,10 @@ class VhdxGenerator : public OutputHandleGenerator {
 
 class RestoreToHandles : public GenericHandler {
  public:
-  RestoreToHandles(OutputHandleGenerator* Generator) : Generator_{Generator} {}
+  RestoreToHandles(OutputHandleGenerator* Generator, GenericLogger* logger)
+      : Generator_{Generator}, logger_{logger}
+  {
+  }
 
   void BeginRestore(std::size_t num_disks [[maybe_unused]]) override {}
   void EndRestore() override {}
@@ -240,15 +281,15 @@ class RestoreToHandles : public GenericHandler {
       throw std::logic_error{"cannot begin disk after one was created"};
     }
 
-    libbareos::println(stderr, "begin disk {{ size {}, count {} }}",
-                       info.disk_size, info.extent_count);
+    logger_->Info(libbareos::format("begin disk {{ size {}, count {} }}",
+                                    info.disk_size, info.extent_count));
     auto geo = geometry_for_size(info.disk_size);
     HANDLE hndl = Generator_->Create(info, geo);
     disk_.emplace(hndl, geo, info.disk_size);
   }
   void EndDisk() override
   {
-    libbareos::println(stderr, "disk done");
+    logger_->Info("disk done");
     HANDLE hndl = disk_->hndl;
     disk_.reset();
     Generator_->Close(hndl);
@@ -285,18 +326,18 @@ class RestoreToHandles : public GenericHandler {
 
   void BeginExtent(extent_header header) override
   {
-    libbareos::println(stderr, "begin extent {{ size: {}, offset: {} }}",
-                       header.length, header.offset);
+    logger_->Info(libbareos::format("begin extent {{ size: {}, offset: {} }}",
+                                    header.length, header.offset));
     disk().BeginExtent(header);
   }
   void ExtentData(std::span<const char> data) override
   {
-    libbareos::println(stderr, "extent data {{ size: {} }}", data.size());
+    // libbareos::println(stderr, "extent data {{ size: {} }}", data.size());
     disk().ExtentData(data);
   }
   void EndExtent() override
   {
-    libbareos::println(stderr, "extent end");
+    logger_->Info("extent end");
     disk().EndExtent();
   }
 
@@ -319,6 +360,7 @@ class RestoreToHandles : public GenericHandler {
   }
 
   OutputHandleGenerator* Generator_ = nullptr;
+  GenericLogger* logger_ = nullptr;
   struct open_disk {
     HANDLE hndl;
     HandleOutput output;
@@ -341,7 +383,7 @@ void do_restore(std::istream& stream, GenericLogger* logger, bool raw_file)
       return std::make_unique<VhdxGenerator>();
     }
   }();
-  RestoreToHandles alg{output_generator.get()};
+  RestoreToHandles alg{output_generator.get(), logger};
 
   parse_file_format(logger, stream, &alg);
 }
