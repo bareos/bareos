@@ -1680,7 +1680,7 @@ insert_plan create_insert_plan(dump_context* ctx, bool dry)
 
 struct data_dumper {
   data_dumper(GenericLogger* logger_, insert_plan&& plan_)
-      : logger{logger_}, plan{std::move(plan_)}, reader{4 << 20, logger_}
+      : logger{logger_}, plan{std::move(plan_)}, reader{1 << 20, logger_}
   {
   }
 
