@@ -256,6 +256,7 @@ struct disk_reader {
         return;
       }
 
+      std::size_t actual_bytes_read = bytes_read;
       current_offset += bytes_read;
 
       // fprintf(stderr, "%s\n", fmt::format("read: {}", bytes_read).c_str());
@@ -276,6 +277,8 @@ struct disk_reader {
         result_buffer += bytes_read;
         bytes_to_read -= bytes_read;
       }
+
+      std::memset(buffer.get(), 0, actual_bytes_read);
     }
   }
 
@@ -575,6 +578,8 @@ VOLUME_BITMAP_BUFFER* GetBitmap(HANDLE disk,
                                 std::size_t starting_lcn,
                                 std::size_t lcn_count)
 {
+  return nullptr;
+
   // this is the minimum.  Its possible that we actually need to provide
   // more buffer to the ioctl call, as it might not respect the starting lcn
   // (it is allowed to choose an earlier lcn instead!)
@@ -1348,9 +1353,6 @@ insert_plan create_insert_plan(dump_context* ctx, bool dry)
   auto& open_handles = ctx->open_handles;
 
   auto paths = snapshot->snapshotted_paths(backup_components);
-
-  std::size_t buffer_size = 64 * 1024;
-  auto buffer = std::make_unique<char[]>(buffer_size);
 
   disk_map candidate_disks;
   for (auto& [path, copy] : paths) {
