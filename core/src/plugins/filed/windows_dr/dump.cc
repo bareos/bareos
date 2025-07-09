@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#include <climits>
 #include <stdexcept>
 #include <iostream>
 #include <vector>
@@ -48,6 +49,10 @@
 #include "dump.h"
 #include "com.h"
 
+bool GetBit(unsigned char* data, std::size_t index)
+{
+  return (data[index / CHAR_BIT] >> (index & CHAR_BIT)) & 0x1;
+}
 
 template <class... Ts> struct overloads : Ts... {
   using Ts::operator()...;
@@ -277,6 +282,30 @@ struct disk_reader {
   struct aligned_deleter {
     void operator()(char* ptr) { _aligned_free(ptr); }
   };
+
+
+  // void idea()
+  // {
+  //   std::size_t bytes_written = 0;
+  //   while (bytes_written < size) {
+  //     auto left = size - bytes_written;
+  //     auto buffer = next_chunk();
+
+  //     if (buffer.size() == 0) { break; }
+
+  //     if (buffer.size() > left) {
+  //       std::memcpy(result_buffer + bytes_written, buffer.data(), left);
+  //       advance_read_buffer(left);
+  //       bytes_written += left;
+  //       break;
+  //     } else {
+  //       std::memcpy(result_buffer + bytes_written, buffer.data(),
+  //                   buffer.size());
+  //       bytes_written += buffer.size();
+  //       discard_read_buffer();
+  //     }
+  //   }
+  // }
 
   std::size_t capacity;
   std::unique_ptr<char[], aligned_deleter> buffer;
@@ -528,10 +557,106 @@ struct disk {
 
 using disk_map = std::unordered_map<std::size_t, disk>;
 
+size_t GetClusterSize(HANDLE volume)
+{
+  DWORD bytes_written;
+  NTFS_VOLUME_DATA_BUFFER buffer;
+
+  if (!DeviceIoControl(volume, FSCTL_GET_NTFS_VOLUME_DATA, NULL, 0, &buffer,
+                       sizeof(buffer), &bytes_written, nullptr)) {
+    return 0;
+  }
+
+  return buffer.BytesPerCluster;
+}
+
+VOLUME_BITMAP_BUFFER* GetBitmap(HANDLE disk,
+                                std::vector<char>& buffer,
+                                std::size_t starting_lcn,
+                                std::size_t lcn_count)
+{
+  // this is the minimum.  Its possible that we actually need to provide
+  // more buffer to the ioctl call, as it might not respect the starting lcn
+  // (it is allowed to choose an earlier lcn instead!)
+  auto bitmap_bytes = (lcn_count + CHAR_BIT - 1) / CHAR_BIT;
+  buffer.resize(bitmap_bytes ? bitmap_bytes : 1);
+
+  DWORD bytes_written = 0;
+  LARGE_INTEGER Start = {.QuadPart = static_cast<LONGLONG>(starting_lcn)};
+
+  for (;;) {
+    if (!DeviceIoControl(disk, FSCTL_GET_VOLUME_BITMAP, &Start, sizeof(Start),
+                         buffer.data(), buffer.size(), &bytes_written,
+                         nullptr)) {
+      auto error = GetLastError();
+
+      if (error == ERROR_MORE_DATA) {
+        std::cerr << libbareos::format("VOLUME_BITMAP returned {} (size = {})",
+                                       bytes_written, buffer.size())
+                  << std::endl;
+
+        buffer.resize(buffer.size() * 2);
+
+        continue;
+      }
+
+      return nullptr;
+    }
+
+    VOLUME_BITMAP_BUFFER* buf
+        = reinterpret_cast<VOLUME_BITMAP_BUFFER*>(buffer.data());
+
+    std::size_t count = buf->BitmapSize.QuadPart + 1;
+    std::size_t start = buf->StartingLcn.QuadPart;
+    assert(start <= starting_lcn);
+
+    if (start + count < starting_lcn + lcn_count) {
+      std::cerr << libbareos::format("wanted {}-{}, got {}-{}", starting_lcn,
+                                     starting_lcn + lcn_count, start,
+                                     start + count)
+                << std::endl;
+      buffer.resize(buffer.size() * 2);
+
+      continue;
+    }
+
+
+    std::cerr << libbareos::format("done: wanted {}-{}, got {}-{}",
+                                   starting_lcn, starting_lcn + lcn_count,
+                                   start, start + count)
+              << std::endl;
+
+    return buf;
+  }
+}
+
 void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
 {
   std::vector<char> buffer;
   buffer.resize(1024 * 1024);
+
+  size_t cluster_size = GetClusterSize(data_volume);
+
+  std::cerr << libbareos::format(":::::: cluster size {}", cluster_size)
+            << std::endl;
+
+  LARGE_INTEGER StartingLCN = {};
+
+  std::vector<char> bitmap;
+  bitmap.resize(64 << 20);
+  DWORD bitmap_bytes;
+  if (!DeviceIoControl(data_volume, FSCTL_GET_VOLUME_BITMAP, &StartingLCN,
+                       sizeof(StartingLCN), bitmap.data(), bitmap.size(),
+                       &bitmap_bytes, nullptr)) {
+    std::cerr << libbareos::format("bad bitmap {}", bitmap_bytes) << std::endl;
+  } else {
+    VOLUME_BITMAP_BUFFER* buf
+        = reinterpret_cast<VOLUME_BITMAP_BUFFER*>(bitmap.data());
+    std::cerr << libbareos::format("good bitmap {} (LCN = {}, SIZE = {})",
+                                   bitmap_bytes, buf->StartingLcn.QuadPart,
+                                   buf->BitmapSize.QuadPart)
+              << std::endl;
+  }
 
   DWORD bytes_written = 0;
   for (;;) {
@@ -565,6 +690,7 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
   std::size_t volume_offset = 0;
   for (size_t i = 0; i < extents->NumberOfDiskExtents; ++i) {
     auto& extent = extents->Extents[i];
+    std::size_t lcn_count = 0;
 
     std::cerr << libbareos::format(
         "volume {} extent {} @ {} -> {}", volume, extent.DiskNumber,
@@ -572,9 +698,78 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
               << std::endl;
 
     auto& disk = disks[extent.DiskNumber];
-    disk.extents.push_back({(size_t)extent.StartingOffset.QuadPart,
-                            volume_offset, (size_t)extent.ExtentLength.QuadPart,
-                            data_volume});
+
+    auto* bits = [&]() -> VOLUME_BITMAP_BUFFER* {
+      if (cluster_size == 0) { return nullptr; }
+
+      assert(volume_offset % cluster_size == 0);
+      assert(extent.ExtentLength.QuadPart % cluster_size == 0);
+
+      auto starting_lcn = volume_offset / cluster_size;
+
+      lcn_count = extent.ExtentLength.QuadPart / cluster_size;
+      if (lcn_count * cluster_size != extent.ExtentLength.QuadPart) {
+        throw std::logic_error{"extent length not divisible by cluster size"};
+      }
+
+      return GetBitmap(data_volume, bitmap, starting_lcn, lcn_count);
+    }();
+
+    if (bits) {
+      std::size_t min_hole_bytes = 1 << 20;  // 1 mb
+      std::size_t min_hole_clusters = min_hole_bytes / cluster_size;
+      auto starting_lcn = volume_offset / cluster_size;
+      std::size_t starting_bit_offset
+          = starting_lcn - bits->StartingLcn.QuadPart;
+
+      // we need at least min_hole_clusters in a row until we start emiting
+      // "holes"
+
+
+      std::optional<std::size_t> start;
+      std::optional<std::size_t> end;
+
+      std::size_t zero_count = 0;
+      auto end_lcn = starting_bit_offset + lcn_count - 1;
+
+      auto push = [&](std::size_t start, std::size_t end) {
+        auto offset = start * cluster_size;
+        auto length = (end - start) * cluster_size;
+        disk.extents.push_back({extent.StartingOffset.QuadPart + offset,
+                                volume_offset + offset, length, data_volume});
+      };
+
+      for (std::size_t bit_offset = starting_bit_offset; bit_offset < end_lcn;
+           ++bit_offset) {
+        if (GetBit(bits->Buffer, bit_offset)) {
+          zero_count = 0;
+          if (!start) { start = bit_offset; }
+          end = bit_offset + 1;
+        } else {
+          zero_count += 1;
+
+          if (zero_count == min_hole_clusters) {
+            // ok we found a hole.  commit the last found stuff
+
+            if (start) {
+              push(*start - starting_bit_offset, *end - starting_bit_offset);
+              start.reset();
+              end.reset();
+            }
+          }
+        }
+      }
+
+      if (start) {
+        push(*start - starting_bit_offset, *end - starting_bit_offset);
+        start.reset();
+        end.reset();
+      }
+    } else {
+      disk.extents.push_back(
+          {(size_t)extent.StartingOffset.QuadPart, volume_offset,
+           (size_t)extent.ExtentLength.QuadPart, data_volume});
+    }
 
     volume_offset += (size_t)extent.ExtentLength.QuadPart;
   }
@@ -1264,10 +1459,13 @@ insert_plan create_insert_plan(dump_context* ctx, bool dry)
                 return l.partition_offset < r.partition_offset;
               });
 
+    std::size_t total = 0;
     for (auto& extent : disk.extents) {
+      total += extent.length;
       fprintf(stderr, "  %zu -> %zu\n", extent.partition_offset,
               extent.partition_offset + extent.length);
     }
+    fprintf(stderr, " => total = %zu\n", total);
 
     auto [hndl, geo] = disk_info[id];
 
