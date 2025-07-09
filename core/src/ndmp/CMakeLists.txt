@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -187,13 +187,15 @@ bareos_disable_warnings(
   TARGET
   bareosndmp
   WARNINGS
-  bareosndmp
   -Wenum-conversion
   -Wunused-parameter
   -Wsign-compare
   -Wmissing-field-initializers
   -Wunused-but-set-variable
   -Wdeprecated-non-prototype
+  -Wcast-function-type
+  -Wincompatible-pointer-types
+  -Wenum-compare
   C_ONLY
 )
 
