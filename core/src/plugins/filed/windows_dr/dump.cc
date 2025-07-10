@@ -340,16 +340,14 @@ struct disk_reader {
     std::size_t new_align = 4096;
     for (;;) {
       DWORD bytes_returned;
-      auto success = DeviceIoControl(
-                                     hndl,
+      auto success = DeviceIoControl(hndl,
                                      IOCTL_STORAGE_QUERY_PROPERTY,
                                      &query,
                                      sizeof(query),
                                      desc_buf.data(),
                                      desc_buf.size(),
                                      &bytes_returned,
-                                     NULL
-                                    );
+                                     NULL);
 
       if (success) {
         if (bytes_returned >= sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR)) {
@@ -881,7 +879,7 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
     }();
 
     if (bits) {
-      static constexpr std::size_t min_hole_size = 1 << 20;  // 1 mb
+      static constexpr std::size_t min_hole_size = 128 << 10;  // 1 mb
 
       used.clear();
       find_used_data(used, bits.value(), volume_offset,
@@ -1640,7 +1638,7 @@ insert_plan create_insert_plan(dump_context* ctx, bool dry)
 
 struct data_dumper {
   data_dumper(GenericLogger* logger_, insert_plan&& plan_)
-      : logger{logger_}, plan{std::move(plan_)}, reader{4 << 20, logger_}
+      : logger{logger_}, plan{std::move(plan_)}, reader{1 << 20, logger_}
   {
   }
 
