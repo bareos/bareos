@@ -292,12 +292,12 @@ Do's
 - follow the `C++ Core Guidelines`_
 - get in touch with us, preferably as `GitHub discussion`_
 
-.. _RAII:                      https://en.cppreference.com/w/cpp/language/raii
-.. _Rule of three:             https://en.cppreference.com/w/cpp/language/rule_of_three
-.. _fixed width integer types: https://en.cppreference.com/w/cpp/types/integer
+.. _RAII:                      https://en.cppreference.com/w/cpp/language/raii.html
+.. _Rule of three:             https://en.cppreference.com/w/cpp/language/rule_of_three.html
+.. _fixed width integer types: https://en.cppreference.com/w/cpp/types/integer.html
 .. _Google C++ Style Guide:    https://google.github.io/styleguide/cppguide.html
-.. _C++ Core Guidelines:       http://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines
-.. _GitHub discussion:              https://github.com/bareos/bareos/discussions
+.. _C++ Core Guidelines:       https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines
+.. _GitHub discussion:         https://github.com/bareos/bareos/discussions
 
 Don'ts
 ------
