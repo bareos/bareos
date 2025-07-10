@@ -48,6 +48,7 @@
 #include "common.h"
 #include "dump.h"
 #include "com.h"
+#include "remove_holes.h"
 
 bool GetBit(unsigned char* data, std::size_t index)
 {
@@ -738,10 +739,11 @@ size_t GetClusterSize(HANDLE volume)
   return buffer.BytesPerCluster;
 }
 
-VOLUME_BITMAP_BUFFER* GetBitmap(HANDLE disk,
-                                std::vector<char>& buffer,
-                                std::size_t starting_lcn,
-                                std::size_t lcn_count)
+std::optional<used_bitmap> GetBitmap(std::vector<char>& buffer,
+                                     HANDLE disk,
+                                     std::size_t start,
+                                     std::size_t length,
+                                     std::size_t cluster_size)
 {
   // this is the minimum.  Its possible that we actually need to provide
   // more buffer to the ioctl call, as it might not respect the starting lcn
@@ -751,12 +753,19 @@ VOLUME_BITMAP_BUFFER* GetBitmap(HANDLE disk,
   // cluster size, the max amount of clusters in a volume will be
   // ceil( size / cluster_size ) - 1.  We have to be careful about this!
 
-  auto bitmap_bytes = (lcn_count + CHAR_BIT - 1) / CHAR_BIT;
-  buffer.resize(bitmap_bytes ? bitmap_bytes : 1);
+  assert(cluster_size > 0);
+  auto start_cluster = start / cluster_size;
+  auto end_cluster = (start + length + cluster_size - 1) / cluster_size;
+  auto length_cluster = end_cluster - start_cluster;
+
+  auto bitmap_bytes = (length_cluster + CHAR_BIT - 1) / CHAR_BIT;
+  auto struct_size = offsetof(VOLUME_BITMAP_BUFFER, Buffer[bitmap_bytes]);
+
+  buffer.resize(struct_size);
 
   DWORD bytes_written = 0;
   STARTING_LCN_INPUT_BUFFER Start
-      = {.StartingLcn = {.QuadPart = static_cast<LONGLONG>(starting_lcn)}};
+      = {.StartingLcn = {.QuadPart = static_cast<LONGLONG>(start_cluster)}};
 
   for (;;) {
     if (!DeviceIoControl(disk, FSCTL_GET_VOLUME_BITMAP, &Start, sizeof(Start),
@@ -765,78 +774,69 @@ VOLUME_BITMAP_BUFFER* GetBitmap(HANDLE disk,
       auto error = GetLastError();
 
       if (error == ERROR_MORE_DATA) {
-        std::cerr << libbareos::format("VOLUME_BITMAP returned {} (size = {})",
-                                       bytes_written, buffer.size())
-                  << std::endl;
+        bool enough_data = false;
+        if (bytes_written > sizeof(VOLUME_BITMAP_BUFFER)) {
+          VOLUME_BITMAP_BUFFER* buf
+              = reinterpret_cast<VOLUME_BITMAP_BUFFER*>(buffer.data());
 
-        buffer.resize(buffer.size() * 2);
+          std::size_t bitmap_count = buf->BitmapSize.QuadPart;
+          std::size_t bitmap_start = buf->StartingLcn.QuadPart;
 
-        continue;
+          if (bitmap_start + bitmap_count >= end_cluster) {
+            enough_data = true;
+          }
+        }
+
+        if (!enough_data) {
+          std::cerr << libbareos::format(
+              "VOLUME_BITMAP returned {} (size = {}, needed = {})",
+              bytes_written, buffer.size(), struct_size)
+                    << std::endl;
+
+          buffer.resize(buffer.size() * 2);
+
+          continue;
+        }
       }
 
-      return nullptr;
+      return std::nullopt;
     }
 
     VOLUME_BITMAP_BUFFER* buf
         = reinterpret_cast<VOLUME_BITMAP_BUFFER*>(buffer.data());
 
-    std::size_t count = buf->BitmapSize.QuadPart + 1;
-    std::size_t start = buf->StartingLcn.QuadPart;
-    assert(start <= starting_lcn);
+    used_bitmap map;
 
-    if (start + count < starting_lcn + lcn_count) {
-      std::cerr << libbareos::format("wanted {}-{}, got {}-{}", starting_lcn,
-                                     starting_lcn + lcn_count, start,
-                                     start + count)
-                << std::endl;
-      buffer.resize(buffer.size() * 2);
+    std::size_t bitmap_count = buf->BitmapSize.QuadPart;
+    std::size_t bitmap_start = buf->StartingLcn.QuadPart;
 
-      continue;
+    map.start = bitmap_start * cluster_size;
+    map.unit_size = cluster_size;
+    map.bits.resize(bitmap_count);
+    for (std::size_t bit = 0; bit < bitmap_count; ++bit) {
+      map.bits[bit] = GetBit(buf->Buffer, bit);
     }
 
-
-    std::cerr << libbareos::format("done: wanted {}-{}, got {}-{}",
-                                   starting_lcn, starting_lcn + lcn_count,
-                                   start, start + count)
-              << std::endl;
-
-    return buf;
+    return map;
   }
 }
 
 void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
 {
-  std::vector<char> buffer;
-  buffer.resize(1024 * 1024);
-
   size_t cluster_size = GetClusterSize(data_volume);
 
   std::cerr << libbareos::format(":::::: cluster size {}", cluster_size)
             << std::endl;
 
-  LARGE_INTEGER StartingLCN = {};
 
-  std::vector<char> bitmap;
-  bitmap.resize(64 << 20);
-  DWORD bitmap_bytes;
-  if (!DeviceIoControl(data_volume, FSCTL_GET_VOLUME_BITMAP, &StartingLCN,
-                       sizeof(StartingLCN), bitmap.data(), bitmap.size(),
-                       &bitmap_bytes, nullptr)) {
-    std::cerr << libbareos::format("bad bitmap {}", bitmap_bytes) << std::endl;
-  } else {
-    VOLUME_BITMAP_BUFFER* buf
-        = reinterpret_cast<VOLUME_BITMAP_BUFFER*>(bitmap.data());
-    std::cerr << libbareos::format("good bitmap {} (LCN = {}, SIZE = {})",
-                                   bitmap_bytes, buf->StartingLcn.QuadPart,
-                                   buf->BitmapSize.QuadPart)
-              << std::endl;
-  }
+  std::vector<char> extent_buffer;
+  extent_buffer.resize(1024 * 1024);
 
   DWORD bytes_written = 0;
   for (;;) {
     if (!DeviceIoControl(volume, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, nullptr,
-                         0, buffer.data(), buffer.size(), &bytes_written,
-                         nullptr)) {
+                         0, extent_buffer.data(), extent_buffer.size(),
+                         &bytes_written, nullptr)) {
       auto err = GetLastError();
 
       if (err != ERROR_MORE_DATA) {
@@ -846,7 +846,7 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
         return;
       }
 
-      buffer.resize(buffer.size() * 2);
+      extent_buffer.resize(extent_buffer.size() * 2);
     }
 
     break;
@@ -858,14 +858,14 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
               << std::endl;
     return;
   }
+  auto extents = reinterpret_cast<VOLUME_DISK_EXTENTS*>(extent_buffer.data());
 
-  auto extents = reinterpret_cast<VOLUME_DISK_EXTENTS*>(buffer.data());
+  std::vector<char> bitmap_buffer;
 
   std::size_t volume_offset = 0;
+  std::vector<used_interval> used;
   for (size_t i = 0; i < extents->NumberOfDiskExtents; ++i) {
     auto& extent = extents->Extents[i];
-    std::size_t lcn_count = 0;
-
     std::cerr << libbareos::format(
         "volume {} extent {} @ {} -> {}", volume, extent.DiskNumber,
         extent.StartingOffset.QuadPart, extent.ExtentLength.QuadPart)
@@ -873,71 +873,27 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
 
     auto& disk = disks[extent.DiskNumber];
 
-    auto* bits = [&]() -> VOLUME_BITMAP_BUFFER* {
-      return nullptr;
-      if (cluster_size == 0) { return nullptr; }
+    auto bits = [&]() -> std::optional<used_bitmap> {
+      if (cluster_size == 0) { return std::nullopt; }
 
-      assert(volume_offset % cluster_size == 0);
-      assert(extent.ExtentLength.QuadPart % cluster_size == 0);
-
-      auto starting_lcn = volume_offset / cluster_size;
-
-      lcn_count = extent.ExtentLength.QuadPart / cluster_size;
-      if (lcn_count * cluster_size != extent.ExtentLength.QuadPart) {
-        throw std::logic_error{"extent length not divisible by cluster size"};
-      }
-
-      return GetBitmap(data_volume, bitmap, starting_lcn, lcn_count);
+      return GetBitmap(bitmap_buffer, data_volume, volume_offset,
+                       extent.ExtentLength.QuadPart, cluster_size);
     }();
 
     if (bits) {
-      std::size_t min_hole_bytes = 1 << 20;  // 1 mb
-      std::size_t min_hole_clusters = min_hole_bytes / cluster_size;
-      auto starting_lcn = volume_offset / cluster_size;
-      std::size_t starting_bit_offset
-          = starting_lcn - bits->StartingLcn.QuadPart;
+      static constexpr std::size_t min_hole_size = 1 << 20;  // 1 mb
 
-      // we need at least min_hole_clusters in a row until we start emiting
-      // "holes"
+      used.clear();
+      find_used_data(used, bits.value(), volume_offset,
+                     volume_offset + extent.ExtentLength.QuadPart,
+                     min_hole_size);
 
-      std::optional<std::size_t> start;
-      std::optional<std::size_t> end;
+      for (auto [start, length] : used) {
+        assert(start >= volume_offset);
+        auto disk_offset
+            = extent.StartingOffset.QuadPart + (start - volume_offset);
 
-      std::size_t zero_count = 0;
-      auto end_lcn = starting_bit_offset + lcn_count - 1;
-
-      auto push = [&](std::size_t start, std::size_t end) {
-        auto offset = start * cluster_size;
-        auto length = (end - start) * cluster_size;
-        disk.extents.push_back({extent.StartingOffset.QuadPart + offset,
-                                volume_offset + offset, length, data_volume});
-      };
-
-      for (std::size_t bit_offset = starting_bit_offset; bit_offset < end_lcn;
-           ++bit_offset) {
-        if (GetBit(bits->Buffer, bit_offset)) {
-          zero_count = 0;
-          if (!start) { start = bit_offset; }
-          end = bit_offset + 1;
-        } else {
-          zero_count += 1;
-
-          if (zero_count == min_hole_clusters) {
-            // ok we found a hole.  commit the last found stuff
-
-            if (start) {
-              push(*start - starting_bit_offset, *end - starting_bit_offset);
-              start.reset();
-              end.reset();
-            }
-          }
-        }
-      }
-
-      if (start) {
-        push(*start - starting_bit_offset, *end - starting_bit_offset);
-        start.reset();
-        end.reset();
+        disk.extents.push_back({disk_offset, start, length, data_volume});
       }
     } else {
       disk.extents.push_back(
@@ -1684,7 +1640,7 @@ insert_plan create_insert_plan(dump_context* ctx, bool dry)
 
 struct data_dumper {
   data_dumper(GenericLogger* logger_, insert_plan&& plan_)
-      : logger{logger_}, plan{std::move(plan_)}, reader{1 << 20, logger_}
+      : logger{logger_}, plan{std::move(plan_)}, reader{4 << 20, logger_}
   {
   }
 
