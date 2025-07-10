@@ -83,6 +83,7 @@ if(ENABLE_GRPC)
     grpc-proto "proto/plugin.proto" "proto/events.proto" "proto/bareos.proto"
     "proto/common.proto"
   )
+  target_compile_options(grpc-proto PUBLIC -Wno-suggest-override)
   target_link_libraries(
     grpc-proto PUBLIC gRPC::grpc++_reflection gRPC::grpc++
                       protobuf::libprotobuf
@@ -100,7 +101,7 @@ if(ENABLE_GRPC)
   add_executable(
     grpc-test-module test_module/test_module.cc test_module/plugin_service.cc
   )
-  target_link_libraries(grpc-test-module fmt::fmt grpc-proto)
+  target_link_libraries(grpc-test-module fmt::fmt grpc-proto stdc++fs)
   install(
     TARGETS grpc-test-module
     DESTINATION ${plugindir}/grpc
