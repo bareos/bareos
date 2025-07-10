@@ -63,3 +63,16 @@ Please note that the two items above describing the "reader" and "writer", these
 automatically create the path to the file. Either the path must exist, or you must explicitly do so with your command or in a shell script.
 
 See the examples about :ref:`backup-postgresql` and :ref:`backup-mysql`.
+
+Environment variables
+^^^^^^^^^^^^^^^^^^^^^
+
+For both the readprogram and the writeprogram, the following environment variables are being set:
+
+================ =================================================
+BareosClientName Client name of the current job
+BareosJobId      Job id of the current job
+BareosJobLevel   Job level of the current job
+BareosSinceTime  Since time of the differential/incremental backup
+BareosJobType    Job type of the current job
+================ =================================================
