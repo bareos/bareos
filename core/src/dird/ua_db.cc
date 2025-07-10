@@ -217,7 +217,7 @@ int CreatePool(JobControlRecord* jcr,
 void SetPoolDbrDefaultsInMediaDbr(MediaDbRecord* mr, PoolDbRecord* pr)
 {
   mr->PoolId = pr->PoolId;
-  bstrncpy(mr->VolStatus, NT_("Append"), sizeof(mr->VolStatus));
+  bstrncpy(mr->VolStatus, NT_("Unlabeled"), sizeof(mr->VolStatus));
   mr->Recycle = pr->Recycle;
   mr->VolRetention = pr->VolRetention;
   mr->VolUseDuration = pr->VolUseDuration;
