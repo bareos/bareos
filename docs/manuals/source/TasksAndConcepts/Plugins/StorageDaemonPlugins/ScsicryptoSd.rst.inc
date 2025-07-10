@@ -285,7 +285,7 @@ Restart the Storage Daemon and the Director. After this you can label new volume
 Disaster Recovery
 ^^^^^^^^^^^^^^^^^
 
-For Disaster Recovery (DR) you need the following information:
+For Disaster Recovery (DR) see :ref:`Restore Bareos Server <section-RestoreServer>`, you need the following information:
 
 -  Actual bareos-sd configuration files with config options enabled as described above, including, among others, a definition of a director with the Key Encryption Key used for creating the encryption keys of the volumes.
 
