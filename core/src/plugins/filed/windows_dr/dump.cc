@@ -743,11 +743,14 @@ VOLUME_BITMAP_BUFFER* GetBitmap(HANDLE disk,
                                 std::size_t starting_lcn,
                                 std::size_t lcn_count)
 {
-  return nullptr;
-
   // this is the minimum.  Its possible that we actually need to provide
   // more buffer to the ioctl call, as it might not respect the starting lcn
   // (it is allowed to choose an earlier lcn instead!)
+
+  // for some reason, even if the volume size is divisible by the
+  // cluster size, the max amount of clusters in a volume will be
+  // ceil( size / cluster_size ) - 1.  We have to be careful about this!
+
   auto bitmap_bytes = (lcn_count + CHAR_BIT - 1) / CHAR_BIT;
   buffer.resize(bitmap_bytes ? bitmap_bytes : 1);
 
@@ -871,6 +874,7 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
     auto& disk = disks[extent.DiskNumber];
 
     auto* bits = [&]() -> VOLUME_BITMAP_BUFFER* {
+      return nullptr;
       if (cluster_size == 0) { return nullptr; }
 
       assert(volume_offset % cluster_size == 0);
