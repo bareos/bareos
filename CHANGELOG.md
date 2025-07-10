@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [24.0.4] - 2025-07-10
 
 ### Changed
 - ndmp: remove ndmp backup level limit [PR #2247]
@@ -268,6 +268,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [24.0.1]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.1
 [24.0.2]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.2
 [24.0.3]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.3
+[24.0.4]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.4
 [PR #1538]: https://github.com/bareos/bareos/pull/1538
 [PR #1581]: https://github.com/bareos/bareos/pull/1581
 [PR #1587]: https://github.com/bareos/bareos/pull/1587
@@ -480,4 +481,3 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2304]: https://github.com/bareos/bareos/pull/2304
 [PR #2311]: https://github.com/bareos/bareos/pull/2311
 [PR #2316]: https://github.com/bareos/bareos/pull/2316
-[unreleased]: https://github.com/bareos/bareos/tree/master
