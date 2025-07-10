@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: fix grpc-fd plugin call [PR #2068]
 - docs: add devtools documentation [PR #2149]
 - docs rear: update to rear >= 2.8 [PR #2220]
+- docs: Python plugin dependencies installation [PR #2315]
 
 ### Added
 - added build-dep to libutfcpp-dev in debian-like environments [PR #2056]
@@ -169,4 +170,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2286]: https://github.com/bareos/bareos/pull/2286
 [PR #2287]: https://github.com/bareos/bareos/pull/2287
 [PR #2303]: https://github.com/bareos/bareos/pull/2303
+[PR #2315]: https://github.com/bareos/bareos/pull/2315
 [unreleased]: https://github.com/bareos/bareos/tree/master
