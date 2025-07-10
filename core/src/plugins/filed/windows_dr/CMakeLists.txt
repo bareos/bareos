@@ -44,7 +44,9 @@ install(
 
 if(HAVE_WIN32)
   add_library(dump OBJECT)
-  target_sources(dump PRIVATE dump.cc common.cc com.cc restore.cc parser.cc)
+  target_sources(
+    dump PRIVATE dump.cc common.cc com.cc restore.cc parser.cc remove_holes.cc
+  )
   target_link_libraries(
     dump PRIVATE VssApi.lib virtdisk.lib format Microsoft.GSL::GSL
                  ${ZLIB_LIBRARIES}
@@ -84,5 +86,11 @@ else()
     COMPONENT filedaemon
   )
 endif()
+
+bareos_add_test(
+  find_holes
+  LINK_LIBRARIES GTest::gtest_main
+  ADDITIONAL_SOURCES remove_holes.cc
+)
 
 include(DebugEdit)
