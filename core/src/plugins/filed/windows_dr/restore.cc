@@ -192,7 +192,7 @@ class RawFileGenerator : public OutputHandleGenerator {
 
     if (output == INVALID_HANDLE_VALUE) {
       throw std::runtime_error{libbareos::format(
-          "could not open disk-{}.raw: Err={}\n", disk_idx_, GetLastError())};
+          "could not open disk-{}.raw: Err={}", disk_idx_, GetLastError())};
     }
 
     // TODO: set file size
