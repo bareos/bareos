@@ -33,6 +33,180 @@
 namespace progressbar {
 using namespace indicators;
 
+
+struct counter {
+  using Clock = std::chrono::steady_clock;
+  using Duration = Clock::duration;
+  using Timepoint = Clock::time_point;
+  using Value = std::size_t;
+  static constexpr std::size_t BlockCount = 128;
+
+
+  struct timed {
+    Timepoint t;
+    Value v;
+  };
+
+  struct block {
+    block* Prev{nullptr};
+
+    std::size_t Count{0};
+    timed Values[BlockCount];
+  };
+
+  counter(Duration lookback_) : lookback{lookback_} {}
+
+  block* NextBlock()
+  {
+    auto* Next = FreeList;
+    if (!Next) {
+      Next = new block;
+    } else {
+      FreeList = Next->Prev;
+      Next->Count = 0;
+    }
+    assert(Next->Count == 0);
+
+    return Next;
+  }
+
+  void add_data_point(Timepoint point, Value value)
+  {
+    cached.reset();
+
+    if (!Last) {
+      First = Last = NextBlock();
+
+      Last->Values[Last->Count++] = {point, value};
+      return;
+    }
+
+    assert(Last->Count > 0);
+
+    auto& LastValue = Last->Values[Last->Count - 1];
+
+    if (point - LastValue.t < std::chrono::milliseconds(30)) {
+      // just treat them as the same event
+      LastValue.v += value;
+      return;
+    }
+
+    if (Last->Count == std::size(Last->Values)) {
+      auto* Next = NextBlock();
+      Next->Prev = Last;
+      Last = Next;
+    }
+
+    Last->Values[Last->Count++] = {point, value};
+  }
+
+  double compute_average_per_sec()
+  {
+    if (!cached) {
+      auto* Current = Last;
+
+      assert(Current->Count > 0);
+
+      auto Start = Current->Values[Current->Count - 1].t;
+      auto LastPossible = Start - lookback;
+      auto End = Start;
+
+
+      std::size_t TotalValue = Current->Values[Current->Count - 1].v;
+
+      for (size_t i = 1; i <= Current->Count - 1; ++i) {
+        auto& Timed = Current->Values[Current->Count - 1 - i];
+        if (Timed.t >= LastPossible) {
+          TotalValue += Timed.v;
+          assert(End >= Timed.t);
+          End = Timed.t;
+        }
+      }
+
+      auto* Next = Current;
+      for (auto* Block = Current->Prev; Block;
+           Next = Block, Block = Next->Prev) {
+        assert(Block->Count == std::size(Block->Values));
+
+        auto& LastEvent = Block->Values[std::size(Block->Values) - 1];
+
+        if (LastEvent.t < LastPossible) {
+          Next->Prev = nullptr;
+          AddToFreeList(Block);
+          First = Next;
+          break;
+        }
+
+        for (size_t i = 1; i <= std::size(Block->Values); ++i) {
+          auto& Timed = Block->Values[std::size(Block->Values) - i];
+          if (Timed.t >= LastPossible) {
+            TotalValue += Timed.v;
+            assert(End >= Timed.t);
+            End = Timed.t;
+          }
+        }
+      }
+
+      auto Diff = duration_cast<std::chrono::seconds>(Start - End);
+      auto SecondCount = Diff.count();
+      if (SecondCount == 0) { SecondCount = 1; }
+
+      cached = static_cast<double>(TotalValue) / SecondCount;
+    }
+
+    return cached.value();
+  }
+
+  std::pair<std::size_t, std::size_t> block_count() const
+  {
+    std::size_t UsedCount{0}, FreeCount{0};
+    for (auto* Current = Last; Current; Current = Current->Prev) {
+      UsedCount += 1;
+    }
+    for (auto* Current = FreeList; Current; Current = Current->Prev) {
+      FreeCount += 1;
+    }
+
+    return {UsedCount, FreeCount};
+  }
+
+  ~counter()
+  {
+    auto* Current = Last;
+    while (Current) {
+      auto* Prev = Current->Prev;
+      delete Current;
+      Current = Prev;
+
+      if (!Current) {
+        Current = FreeList;
+        FreeList = nullptr;
+      }
+    }
+  }
+
+  counter(counter&&) = delete;
+  counter(const counter&) = delete;
+  counter& operator=(counter&&) = delete;
+  counter& operator=(const counter&) = delete;
+
+ private:
+  void AddToFreeList(block* Block)
+  {
+    assert(Block);
+    First->Prev = FreeList;
+    FreeList = Block;
+  }
+
+  // how long should we store data
+  Duration lookback;
+
+  std::optional<double> cached{0.0};
+  block *First{nullptr}, *Last{nullptr};
+  block* FreeList{nullptr};
+};
+
+
 struct logger : public GenericLogger {
   using Output = typename indicators::TerminalHandle;
   static constexpr Output Current = Output::StdErr;
@@ -105,8 +279,9 @@ struct logger : public GenericLogger {
 
   void SetStatus(std::string_view status) override
   {
-    if (!progress_bar) { return; }
-    progress_bar->bar.set_option(option::PostfixText(status));
+    (void)status;
+    // if (!progress_bar) { return; }
+    // progress_bar->bar.set_option(option::PostfixText(status));
   }
 
   void Info(std::string_view Message) override
@@ -160,16 +335,42 @@ struct logger : public GenericLogger {
     progress_bar& operator=(progress_bar const&) = delete;
     progress_bar& operator=(progress_bar&&) = delete;
 
+    std::string speed_to_text(double bytes_per_sec)
+    {
+      static constexpr std::pair<double, std::string_view> breakpoints[] = {
+          {1 << 30, "GiB"},
+          {1 << 20, "MiB"},
+          {1 << 10, "KiB"},
+      };
+
+      std::string_view unit = "B";
+      double speed = bytes_per_sec;
+
+      for (auto& b : breakpoints) {
+        if (bytes_per_sec > b.first) {
+          speed = bytes_per_sec / b.first;
+          unit = b.second;
+          break;
+        }
+      }
+
+      return libbareos::format("{:.2f} {}/s", speed, unit);
+    }
+
     void progress(std::size_t amount)
     {
+      auto this_update = std::chrono::steady_clock::now();
       current += amount;
+
+      throughput.add_data_point(this_update, amount);
 
       if (bar.is_completed()) { return; }
 
       if (current != goal) {
-        auto this_update = std::chrono::steady_clock::now();
         if (this_update - last_update < std::chrono::seconds(1)) { return; }
         last_update = this_update;
+        bar.set_option(option::PostfixText(
+            speed_to_text(throughput.compute_average_per_sec())));
       }
 
       bar.set_progress(current);
@@ -191,6 +392,7 @@ struct logger : public GenericLogger {
 
     bool cursor_hidden{};
     std::chrono::steady_clock::time_point last_update;
+    counter throughput{std::chrono::minutes(1)};
   };
 
 
