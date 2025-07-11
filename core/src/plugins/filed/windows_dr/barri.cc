@@ -53,13 +53,20 @@ void dump_data(std::ostream& stream, bool dry)
   dump_context* ctx = make_context();
   insert_plan plan = create_insert_plan(ctx, dry);
 
-  auto dumper = dumper_setup(progressbar::get(), std::move(plan));
+  auto* logger = progressbar::get();
+  auto dumper = dumper_setup(logger, std::move(plan));
 
   try {
     for (;;) {
       auto count = dumper_write(dumper, buffer);
       if (!count) { break; }
       stream.write(buffer.data(), count);
+
+      if (stream.eof() || stream.fail() || stream.bad()) {
+        logger->Info(libbareos::format(
+            "stream did accept all data (eof = {} | fail = {} | bad = {})",
+            stream.eof(), stream.fail(), stream.bad()));
+      }
     }
   } catch (const std::exception& ex) {
     fprintf(stderr, "[EXCEPTION]: %s\n", ex.what());
