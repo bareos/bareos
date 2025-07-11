@@ -50,10 +50,10 @@ void dump_data(std::ostream& stream, bool dry)
   std::vector<char> buffer;
   buffer.resize(4 << 20);
 
-  dump_context* ctx = make_context();
+  auto* logger = progressbar::get();
+  dump_context* ctx = make_context(logger);
   insert_plan plan = create_insert_plan(ctx, dry);
 
-  auto* logger = progressbar::get();
   auto dumper = dumper_setup(logger, std::move(plan));
 
   try {
