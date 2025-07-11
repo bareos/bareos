@@ -10,7 +10,7 @@ MariaDB mariabackup Plugin
 
 This plugin uses the tool :command:`mariabackup` to make full and incremental backups of |mariadb| databases. :command:`mariabackup` is part of the standard mariadb installation.
 
-Documentation of mariabackup is available online: https://mariadb.com/kb/en/mariabackup/.
+Documentation of mariadb-backup is available online: https://mariadb.com/docs/server/server-usage/backup-and-restore/mariadb-backup\ .
 
 It is stable since MariaDB 10.1.48
 
@@ -99,7 +99,7 @@ This example shows the restore tree for restore job with ID 656. First sub-direc
 
 Next line is the first incremental job with ID 635, starting at LSN 10129154 until 10142295. The third line is the 2nd incremental job with ID 708.
 
-To further prepare the restored files, use the :command:`mariabackup --prepare` command. Read https://mariadb.com/kb/en/incremental-backup-and-restore-with-mariabackup/ for more information.
+To further prepare the restored files, use the :command:`mariabackup --prepare` command. Read https://mariadb.com/docs/server/server-usage/backup-and-restore/mariadb-backup/incremental-backup-and-restore-with-mariadb-backup for more information.
 
 Also our systemtest can serve as example see `systemtests/tests/py2plug-fd-mariabackup/testrunner`
 
