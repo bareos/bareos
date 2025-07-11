@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - gRPC: add fixes to enable building on SUSE [PR #2282]
 - dplcompat: fix unsupported size-suffixes on chunksize [PR #2298]
 
+### Documentation
+- docs: Python plugin dependencies installation [PR #2319]
+
 ## [24.0.3] - 2025-05-19
 
 ### Fixed
@@ -483,4 +486,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2304]: https://github.com/bareos/bareos/pull/2304
 [PR #2311]: https://github.com/bareos/bareos/pull/2311
 [PR #2316]: https://github.com/bareos/bareos/pull/2316
+[PR #2319]: https://github.com/bareos/bareos/pull/2319
 [unreleased]: https://github.com/bareos/bareos/tree/master

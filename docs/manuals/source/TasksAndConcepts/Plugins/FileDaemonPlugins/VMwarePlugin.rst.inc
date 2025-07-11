@@ -97,6 +97,47 @@ There is no dependency in the package. In most Linux distributions,
 the packages providing these modules can be used. The minimum version of
 **requests** must be 2.20.0 and **urllib3** must be at least 1.24.1.
 
+If :command:`pip install ...` returns the message
+**error: externally-managed-environment**, it is possible to install the
+required dependencies only for Bareos Python plugins using the following
+command:
+
+.. code-block:: shell-session
+   :caption: Example Installing Python Modules only for Bareos Plugins
+
+   BPP=$(python3 -c'import sys; print(f"/usr/{sys.platlibdir}/bareos/plugins")')
+   pip install -t $BPP --upgrade pyvmomi
+
+The following warning message is not relevant when using the above command,
+because it installs modules in a path which is not used by system packages:
+
+.. code-block:: shell-session
+   :caption: Warning message when using pip install -t as root
+
+   WARNING: Running pip as the 'root' user can result in broken permissions and conflicting
+   behaviour with the system package manager. It is recommended to use a virtual environment
+
+.. note::
+
+   It is currently not possible to use Python virtual environments for
+   Bareos Python plugins.
+
+The versions of Python modules which have been installed with the above command
+can be checked as follows:
+
+.. code-block:: shell-session
+   :caption: Listing installed Python Modules only for Bareos Plugins
+
+   BPP=$(python3 -c'import sys; print(f"/usr/{sys.platlibdir}/bareos/plugins")')
+   pip list --path $BPP
+
+System wide installed Python modules, both packaged and installed using **pip**,
+can be listed using the following command:
+
+.. code-block:: shell-session
+   :caption: Listing all installed Python Modules
+
+   pip list -v
 
 Installation
 ^^^^^^^^^^^^
@@ -334,6 +375,11 @@ this to the VMware Tools config:
    vss.disableAppQuiescing = true
 
 For details see https://knowledge.broadcom.com/external/article?legacyId=2146204
+
+It is also possible to disable specific VSS writers with VMware Tools.
+The article https://knowledge.broadcom.com/external/article?legacyId=1031200
+describes how to check VSS writer errors and how to disable specific VSS
+writers in the VMware Tools configuration.
 
 For consistent backups of MS SQL server, please use the Bareos **MSSQL Plugin**.
 
