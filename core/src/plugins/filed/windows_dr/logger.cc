@@ -194,7 +194,7 @@ struct logger : public GenericLogger {
   };
 
 
-  logger()
+  logger(bool trace) : GenericLogger{trace}
   {
     // indicators::show_console_cursor(false);
   }
@@ -205,9 +205,9 @@ struct logger : public GenericLogger {
   std::optional<progress_bar> progress_bar;
 };
 
-GenericLogger* get()
+GenericLogger* get(bool trace)
 {
-  static logger Instance;
+  static logger Instance{trace};
   return std::addressof(Instance);
 }
 };  // namespace progressbar
