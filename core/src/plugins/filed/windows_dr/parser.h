@@ -60,10 +60,20 @@ struct GenericLogger {
   virtual void Progressed(std::size_t Amount) = 0;
   virtual void End() = 0;
 
-  virtual void SetStatus(std::string_view Status) { (void)Status; }
-  virtual void Info(std::string_view Message) { (void)Message; }
+  virtual void SetStatus(std::string_view Status) = 0;
+  virtual void Info(std::string_view Message) = 0;
 
+  template <typename F /* : () -> std::is_convertible_v<std::string_view> */>
+  inline void Trace(const F& f)
+  {
+    if (trace) { Info(f()); }
+  }
+
+  GenericLogger(bool do_trace) : trace{do_trace} {}
   virtual ~GenericLogger() {}
+
+
+  bool trace{false};
 };
 
 
