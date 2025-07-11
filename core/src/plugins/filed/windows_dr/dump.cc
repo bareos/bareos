@@ -381,7 +381,8 @@ struct disk_reader {
                           &length_info, sizeof(length_info), &bytes_returned,
                           NULL)) {
         disk_size = length_info.Length.QuadPart;
-        logger->Info(libbareos::format("disk size = {}", disk_size));
+        logger->Trace(
+            [&] { return libbareos::format("disk size = {}", disk_size); });
       } else {
         disk_size = 0;
         logger->Info(libbareos::format("could not determine disk size"));
@@ -398,8 +399,10 @@ struct disk_reader {
 
       current_offset = (offset / sector_size) * sector_size;
 
-      logger->Info(libbareos::format("current offset = {} (wanted: {})\n",
-                                     current_offset, offset));
+      logger->Trace([&] {
+        return libbareos::format("current offset = {} (wanted: {})\n",
+                                 current_offset, offset);
+      });
 
       DWORD off_low = current_offset & 0xFFFFFFFF;
       LONG off_high = (current_offset >> 32) & 0xFFFFFFFF;
@@ -411,18 +414,22 @@ struct disk_reader {
     std::size_t bytes_to_read = std::min(capacity, disk_size - current_offset);
 
     if (current_offset == 0) {
-      logger->Info(libbareos::format("bytes_to_read = {}, buffer.get() = {}",
-                                     bytes_to_read, (void*)buffer.get()));
+      logger->Trace([&] {
+        return libbareos::format("bytes_to_read = {}, buffer.get() = {}",
+                                 bytes_to_read, (void*)buffer.get());
+      });
     }
     size = 0;
     while (size < bytes_to_read) {
       DWORD bytes_read = 0;
       if (!ReadFile(current_handle, buffer.get() + size, bytes_to_read - size,
                     &bytes_read, NULL)) {
-        logger->Info(libbareos::format(
-            "oh oh error: {} ({}: {}, {} | {}, {})", GetLastError(),
-            current_handle, buffer.get() + size, bytes_to_read - size,
-            current_offset, size));
+        logger->Trace([&] {
+          return libbareos::format("oh oh error: {} ({}: {}, {} | {}, {})",
+                                   GetLastError(), current_handle,
+                                   buffer.get() + size, bytes_to_read - size,
+                                   current_offset, size);
+        });
         // throw win_error("ReadFile", GetLastError());
         break;
       }
@@ -1650,7 +1657,8 @@ struct data_dumper {
   {
     if (offset == 0) {
       logger->SetStatus("inserting meta data");
-      logger->Info(libbareos::format("writing {} bytes", bytes.size()));
+      logger->Trace(
+          [&] { return libbareos::format("writing {} bytes", bytes.size()); });
     }
 
     auto bytes_left = bytes.size() - offset;
@@ -1668,16 +1676,19 @@ struct data_dumper {
   {
     if (offset == 0) {
       logger->SetStatus("inserting from file");
-      logger->Info(libbareos::format("writing {} bytes", from.length));
+      logger->Trace(
+          [&] { return libbareos::format("inserting {} bytes", from.length); });
     }
 
     auto bytes_left = from.length - offset;
     auto bytes_to_write = std::min(bytes_left, buffer.size());
 
     if (bytes_to_write == 0) {
-      logger->Info(libbareos::format("bytes_to_write = 0!!! {} {} {} {}",
-                                     bytes_left, buffer.size(), offset,
-                                     current_offset));
+      logger->Trace([&] {
+        return libbareos::format("bytes_to_write = 0!!! {} {} {} {}",
+                                 bytes_left, buffer.size(), offset,
+                                 current_offset);
+      });
     }
 
     return reader.do_fill(from.hndl, from.offset + offset,
@@ -1706,7 +1717,7 @@ struct data_dumper {
 
       bytes_written += write_result;
       if (write_result == 0) {
-        logger->Info("write done");
+        logger->Trace([&] { return "write done"; });
         current_index += 1;
         current_offset = 0;
       } else {

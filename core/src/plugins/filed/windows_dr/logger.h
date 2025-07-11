@@ -25,7 +25,7 @@
 #include "parser.h"
 
 namespace progressbar {
-GenericLogger* get();
+GenericLogger* get(bool trace = false);
 };
 
 

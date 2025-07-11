@@ -70,7 +70,7 @@ struct plugin_logger : public GenericLogger {
     JobLog(ctx, M_INFO, "{}", Message);
   }
 
-  plugin_logger(PluginContext* ctx_) : ctx{ctx_} {}
+  plugin_logger(PluginContext* ctx_) : GenericLogger{false}, ctx{ctx_} {}
 
  private:
   PluginContext* ctx;
