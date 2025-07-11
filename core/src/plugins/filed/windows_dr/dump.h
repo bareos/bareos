@@ -43,7 +43,7 @@ using insert_plan = std::vector<insert_step>;
 
 struct dump_context;
 
-dump_context* make_context();
+dump_context* make_context(GenericLogger* logger);
 void destroy_context(dump_context* ctx);
 
 insert_plan create_insert_plan(dump_context* ctx, bool dry);
