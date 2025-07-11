@@ -36,6 +36,7 @@
 #include <gsl/narrow>
 
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <cuchar>
@@ -388,9 +389,18 @@ class RestoreToGeneratedFiles : public GenericHandler {
 
     auto& fd = disk_files[current_idx];
 
-    if (ftruncate(fd.get(), disk_size) < 0) {
+    struct stat s;
+    if (fstat(fd, &s) < 0) {
       throw std::runtime_error{
-          fmt::format("could not expand disk: Err={}", strerror(errno))};
+          fmt::format("could not stat disk: Err={}", strerror(errno))};
+    }
+
+    if (s.st_size >= 0 && static_cast<std::size_t>(s.st_size) < disk_size) {
+      // file is too small; lets try to enlarge it
+      if (ftruncate(fd.get(), disk_size) < 0) {
+        throw std::runtime_error{
+            fmt::format("could not expand disk: Err={}", strerror(errno))};
+      }
     }
 
     auto& res = current_disk.emplace(fd.get(), geometry, disk_size);
