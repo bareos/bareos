@@ -45,6 +45,30 @@
 
 bool trace = false;
 
+std::size_t io_block_size(int fd)
+{
+  static constexpr std::size_t default_blocksize = 256 << 10;
+
+  struct stat st;
+  if (fstat(fd, &st) < 0) { return default_blocksize; }
+
+  auto recommended = st.st_blksize;
+
+  // ignore nonsense
+  if (recommended <= 0) { recommended = default_blocksize; }
+
+  auto blocksize = static_cast<std::size_t>(recommended);
+
+  // we never want to use less than `default_blocksize` bytes, so
+  // if recommended is smaller, we take the next multiple thats bigger than it.
+  if (blocksize < default_blocksize) {
+    auto factor = (default_blocksize + blocksize - 1) % blocksize;
+    blocksize = factor * blocksize;
+  }
+
+  return blocksize;
+}
+
 
 template <typename... T>
 void trace_msg(fmt::format_string<T...> fmt, T&&... args)
@@ -210,9 +234,105 @@ struct FileOutput : public Output {
   std::size_t internal_offset_ = 0;
 };
 
+template <typename WrappedOutput> struct BufferedOutput : Output {
+  template <typename... WrappedArgs>
+  BufferedOutput(std::size_t buffer_size, WrappedArgs&&... args)
+      : wrapped{std::forward<WrappedArgs>(args)...}
+  {
+    buffer.reserve(buffer_size);
+  }
+
+ public:
+  void append(std::span<const char> bytes) override
+  {
+    while (!bytes.empty()) {
+      std::size_t buffer_free = buffer.capacity() - buffer.size();
+
+      if (bytes.size() < buffer_free) {
+        // we are done
+        buffer.insert(buffer.end(), bytes.begin(), bytes.end());
+        break;
+      } else {
+        // if our buffer is empty, then we "emulate" buffered writes
+        // instead of wasting cycles writing stuff into the buffer, just
+        // to flush the buffer instead
+
+        if (buffer.size() == 0) {
+          while (bytes.size() > buffer.capacity()) {
+            auto to_insert = bytes.subspan(0, buffer.capacity());
+
+            wrapped.append(to_insert);
+
+            bytes = bytes.subspan(buffer.capacity());
+          }
+        } else {
+          // our buffer is already used, so we cannot just skip that data
+          // since we only want to do "buffered" writes to wrapped*, i.e.
+          // writes of a full buffer, we have no choice but to first
+          // buffer the data and then flush the buffer
+          // [*]: apart from the last one!
+
+          auto to_insert = bytes.subspan(0, buffer_free);
+          buffer.insert(buffer.end(), to_insert.begin(), to_insert.end());
+          flush_buffer();
+          bytes = bytes.subspan(buffer_free);
+        }
+      }
+    }
+  }
+  void skip_forwards(std::size_t offset) override
+  {
+    auto wrapped_offset = wrapped.current_offset();
+    auto current = wrapped_offset + buffer.size();
+    if (current > offset) {
+      throw std::logic_error{libbareos::format(
+          "Trying to skip to offset {}, when already at offset {} ({} + {})",
+          offset, current, wrapped_offset, buffer.size())};
+    }
+
+    if (offset < wrapped_offset + buffer.capacity()) {
+      // we skip into a different point in our buffer
+
+      // ASSERT: this holds because of the check above !(current > offset)
+      assert(offset >= current);
+      auto diff = offset - current;
+      buffer.insert(buffer.end(), diff, 0);
+    } else {
+      // we skip outside our buffer, we need to flush the buffer and
+      // skip in the wrapped output
+
+      buffer.insert(buffer.end(), buffer.capacity() - buffer.size(), 0);
+
+      flush_buffer();
+      wrapped.skip_forwards(offset);
+    }
+  }
+  std::size_t current_offset() const override
+  {
+    return wrapped.current_offset() + buffer.size();
+  }
+
+  const WrappedOutput& internal() const { return wrapped; }
+
+  ~BufferedOutput()
+  {
+    if (!buffer.empty()) { wrapped.append(buffer); }
+  }
+
+ private:
+  void flush_buffer()
+  {
+    wrapped.append(buffer);
+    buffer.clear();
+  }
+
+  WrappedOutput wrapped;
+  std::vector<char> buffer;
+};
+
 class RestoreToStdout : public GenericHandler {
  public:
-  RestoreToStdout(std::ostream& stream) : output{stream} {}
+  RestoreToStdout() : output{io_block_size(fileno(stdout)), std::cout} {}
 
   void BeginRestore(std::size_t num_disks) override
   {
@@ -287,8 +407,19 @@ class RestoreToStdout : public GenericHandler {
     return disk_.emplace(std::forward<Args>(args)...);
   }
 
-  StreamOutput output;
+  BufferedOutput<StreamOutput> output;
   std::optional<disk::Parser> disk_;
+};
+
+struct writing_disk {
+  BufferedOutput<FileOutput> output;
+  disk::Parser disk;
+
+  writing_disk(int fd, disk_geometry geometry, std::size_t disk_size)
+      : output{io_block_size(fd), fd, disk_size}
+      , disk{geometry, disk_size, &output}
+  {
+  }
 };
 
 class RestoreToGeneratedFiles : public GenericHandler {
@@ -395,9 +526,11 @@ class RestoreToGeneratedFiles : public GenericHandler {
           fmt::format("could not stat disk: Err={}", strerror(errno))};
     }
 
-    if (s.st_size >= 0 && static_cast<std::size_t>(s.st_size) < disk_size) {
+    if (S_ISREG(s.st_mode) && s.st_size >= 0
+        && static_cast<std::size_t>(s.st_size) < disk_size) {
       // file is too small; lets try to enlarge it
       if (ftruncate(fd.get(), disk_size) < 0) {
+        // TODO: this should be warning instead!
         throw std::runtime_error{
             fmt::format("could not expand disk: Err={}", strerror(errno))};
       }
@@ -416,16 +549,6 @@ class RestoreToGeneratedFiles : public GenericHandler {
     current_disk.reset();
     current_idx += 1;
   }
-
-  struct writing_disk {
-    FileOutput output;
-    disk::Parser disk;
-
-    writing_disk(int fd, disk_geometry geometry, std::size_t disk_size)
-        : output{fd, disk_size}, disk{geometry, disk_size, &output}
-    {
-    }
-  };
 
   auto_fd directory_fd;
   std::size_t current_idx = 0;
@@ -536,16 +659,6 @@ class RestoreToSpecifiedFiles : public GenericHandler {
     current_disk.reset();
     current_idx += 1;
   }
-
-  struct writing_disk {
-    FileOutput output;
-    disk::Parser disk;
-
-    writing_disk(int fd, disk_geometry geometry, std::size_t disk_size)
-        : output{fd, disk_size}, disk{geometry, disk_size, &output}
-    {
-    }
-  };
 
   std::size_t current_idx = 0;
   std::vector<auto_fd> disk_files;
@@ -771,7 +884,7 @@ int main(int argc, char* argv[])
       std::unique_ptr<GenericHandler> strategy;
 
       if (*stdout) {
-        strategy = std::make_unique<RestoreToStdout>(std::cout);
+        strategy = std::make_unique<RestoreToStdout>();
       } else if (*gendir) {
         strategy = std::make_unique<RestoreToGeneratedFiles>(directory);
       } else if (*disks) {
