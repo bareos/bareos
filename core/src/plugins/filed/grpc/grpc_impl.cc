@@ -1758,11 +1758,10 @@ struct grpc_connection_members {
   std::shared_ptr<grpc::Channel> channel;
   std::unique_ptr<grpc::Server> server;
 
-  grpc_connection_members(
-      PluginClient&& client_,
-      std::vector<std::unique_ptr<grpc::Service>>&& services_,
-      std::shared_ptr<grpc::Channel>&& channel_,
-      std::unique_ptr<grpc::Server>&& server_)
+  grpc_connection_members(PluginClient client_,
+                          std::vector<std::unique_ptr<grpc::Service>> services_,
+                          std::shared_ptr<grpc::Channel> channel_,
+                          std::unique_ptr<grpc::Server> server_)
       : client{std::move(client_)}
       , services{std::move(services_)}
       , channel{std::move(channel_)}
