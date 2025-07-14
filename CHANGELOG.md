@@ -11,6 +11,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - python: fix traceback generation [PR #2305]
+- matrix: test the Debian ULC packages for OpenSSL 1.1 on Debian 11 instead of Debian 10 [PR #2323]
 
 ## [23.1.3] - 2025-03-27
 
@@ -653,4 +654,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2227]: https://github.com/bareos/bareos/pull/2227
 [PR #2293]: https://github.com/bareos/bareos/pull/2293
 [PR #2305]: https://github.com/bareos/bareos/pull/2305
+[PR #2323]: https://github.com/bareos/bareos/pull/2323
 [unreleased]: https://github.com/bareos/bareos/tree/master
