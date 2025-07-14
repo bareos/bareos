@@ -740,9 +740,16 @@ size_t GetClusterSize(HANDLE volume)
     return 0;
   }
 
-  fprintf(stderr, "\n%p => sectors: %zu, clusters: %zu\n\n", volume,
-          (size_t)buffer.NumberSectors.QuadPart,
-          (size_t)buffer.TotalClusters.QuadPart);
+  fprintf(
+      stderr,
+      "\n%p => sectors: %zu, clusters: %zu(%zu,%zu)\nmft: %zu mft-mirror: %zu "
+      "mft-zone: %zu-%zu\n\n",
+      volume, (size_t)buffer.NumberSectors.QuadPart,
+      (size_t)buffer.TotalClusters.QuadPart,
+      (size_t)buffer.FreeClusters.QuadPart,
+      (size_t)buffer.TotalReserved.QuadPart,
+      (size_t)buffer.MftStartLcn.QuadPart, (size_t)buffer.Mft2StartLcn.QuadPart,
+      (size_t)buffer.MftZoneStart.QuadPart, (size_t)buffer.MftZoneEnd.QuadPart);
   return buffer.BytesPerCluster;
 }
 
@@ -817,6 +824,11 @@ std::optional<used_bitmap> GetBitmap(std::vector<char>& buffer,
     std::size_t bitmap_count = buf->BitmapSize.QuadPart;
     std::size_t bitmap_start = buf->StartingLcn.QuadPart;
 
+    libbareos::println(
+        stderr, "bitmap:: start: {}, count: {} (bytes: {}, guessed: {})",
+        bitmap_start, bitmap_count, bytes_written,
+        offsetof(VOLUME_BITMAP_BUFFER, Buffer[(bitmap_count + 7) / 8]));
+
     map.start = bitmap_start * cluster_size;
     map.unit_size = cluster_size;
     map.bits.resize(bitmap_count);
@@ -871,6 +883,10 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
 
   std::size_t volume_offset = 0;
   std::vector<used_interval> used;
+
+  std::size_t used_clusters = 0;
+  std::size_t free_clusters = 0;
+
   for (size_t i = 0; i < extents->NumberOfDiskExtents; ++i) {
     auto& extent = extents->Extents[i];
     std::cerr << libbareos::format(
@@ -888,20 +904,44 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
     }();
 
     if (bits) {
-      static constexpr std::size_t min_hole_size = 128 << 10;  // 1 mb
+      static constexpr std::size_t min_hole_size = 1;  // 1 mb
+
+      for (auto bit : bits->bits) {
+        if (bit) {
+          used_clusters += 1;
+        } else {
+          free_clusters += 1;
+        }
+      }
 
       used.clear();
       find_used_data(used, bits.value(), volume_offset,
                      volume_offset + extent.ExtentLength.QuadPart,
                      min_hole_size);
 
+      libbareos::println(stderr, "{}({}):{} -> ",
+                         extent.StartingOffset.QuadPart, volume_offset,
+                         extent.ExtentLength.QuadPart);
+
+      std::size_t ext_size
+          = static_cast<std::size_t>(extent.ExtentLength.QuadPart);
+
+      std::size_t total_size = 0;
       for (auto [start, length] : used) {
         assert(start >= volume_offset);
+        assert(start - volume_offset + length <= ext_size);
+
         auto disk_offset
             = extent.StartingOffset.QuadPart + (start - volume_offset);
 
+        libbareos::println(stderr, " - {}({}):{}", disk_offset, start, length);
+
+        total_size += length;
+
         disk.extents.push_back({disk_offset, start, length, data_volume});
       }
+
+      assert(total_size <= ext_size);
     } else {
       disk.extents.push_back(
           {(size_t)extent.StartingOffset.QuadPart, volume_offset,
@@ -910,6 +950,10 @@ void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
 
     volume_offset += (size_t)extent.ExtentLength.QuadPart;
   }
+
+  libbareos::println(stderr, "volume used: {} free: {} total: {}",
+                     used_clusters, free_clusters,
+                     used_clusters + free_clusters);
 }
 
 std::optional<partition_layout> partitioning(DRIVE_LAYOUT_INFORMATION_EX* info)
