@@ -758,6 +758,8 @@ int main(int argc, char* argv[])
                                      "read from this file instead of stdin")
                         ->check(CLI::ExistingFile);
 
+  auto* version = app.add_subcommand("version");
+
   app.require_subcommand(1, 1);
 
   CLI11_PARSE(app, argc, argv);
@@ -799,6 +801,17 @@ int main(int argc, char* argv[])
         input = std::addressof(opened_file);
       }
       parse_file_format(logger, *input, &strategy);
+    } else if (*version) {
+#if !defined(BARRI_VERSION)
+#  warning "no barri version defined"
+#  define BARRI_VERSION "unknown"
+#endif
+#if !defined(BARRI_DATE)
+#  warning "no barri date defined"
+#  define BARRI_DATE "unknown"
+#endif
+      std::cout << "barri " << BARRI_VERSION " (" BARRI_DATE ")" << std::endl;
+      std::cout << "Copyright (C) 2025-2025 Bareos GmbH & Co. KG" << std::endl;
     } else {
       throw std::logic_error("i dont know what to do");
     }
