@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
   std::string filename;
   restore->add_option("--from", filename,
                       "read from this file instead of stdin");
-  bool raw_file;
+  bool raw_file{false};
   restore->add_flag("--raw", raw_file);
 
   auto* version = app.add_subcommand("version");
