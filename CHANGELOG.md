@@ -99,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - build: add Debian 13 [PR #2290]
 - bareos-check-sources: add shell_format plugin [PR #2267]
 - Build FreeBSD for major versions 14 / 13 (instead of minor releases) [PR #2117]
+- matrix: test the Debian ULC packages for OpenSSL 1.1 on Debian 11 instead of Debian 10 [PR #2321]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -183,4 +184,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2303]: https://github.com/bareos/bareos/pull/2303
 [PR #2310]: https://github.com/bareos/bareos/pull/2310
 [PR #2315]: https://github.com/bareos/bareos/pull/2315
+[PR #2321]: https://github.com/bareos/bareos/pull/2321
 [unreleased]: https://github.com/bareos/bareos/tree/master
