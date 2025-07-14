@@ -528,7 +528,7 @@ class Output {
  public:
   virtual void append(std::span<const char> bytes) = 0;
   virtual void skip_forwards(std::size_t offset) = 0;
-  virtual std::size_t current_offset() = 0;
+  virtual std::size_t current_offset() const = 0;
 };
 
 namespace disk {
