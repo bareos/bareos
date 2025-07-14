@@ -23,7 +23,8 @@ set -e
 set -o pipefail
 set -u
 
-file_size() {
+file_size()
+{
   if [ "$(uname)" = FreeBSD ]; then
     stat -f %z "$@"
   else
@@ -46,6 +47,7 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${log_home}/log-purge.out
 label volume=ToBePurged storage=File pool=PurgePool
 run job=backup-bareos-fd pool=PurgePool yes
+wait
 update volstatus=Used volume=ToBePurged
 purge volume=ToBePurged pool=PurgePool yes
 END_OF_DATA
@@ -79,14 +81,14 @@ TRUNCATED_SIZE=$(file_size storage/ToBePurged)
 echo "$SIZE_TO_BEAT < $TRUNCATED_SIZE"
 
 expect_grep "Termination:[[:space:]]*Admin OK" \
-            "${log_home}/log-truncate.out" \
-            "Actual Truncate admin job did not end successfully"
+  "${log_home}/log-truncate.out" \
+  "Actual Truncate admin job did not end successfully"
 
 expect_grep "Termination:[[:space:]]*Admin OK" \
-            "${log_home}/log-truncate-nothing.out" \
-            "Empty Truncate admin job did not end successfully"
+  "${log_home}/log-truncate-nothing.out" \
+  "Empty Truncate admin job did not end successfully"
 
-if ! [ "$SIZE_TO_BEAT" -le "$TRUNCATED_SIZE" ]; then
+if [ "$SIZE_TO_BEAT" -le "$TRUNCATED_SIZE" ]; then
   echo -e "\n*** Fail: Volume was not truncated: old size = ${SIZE_TO_BEAT}, new size = ${TRUNCATED_SIZE}." >&2
   estat=1
 fi
