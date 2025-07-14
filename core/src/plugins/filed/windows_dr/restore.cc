@@ -163,6 +163,8 @@ class HandleOutput : public Output {
 
   std::size_t current_offset() const override { return current_offset_; }
 
+  ~HandleOutput() { flush_buffer(); }
+
  private:
   HANDLE hndl_;
   std::size_t current_offset_ = 0;
