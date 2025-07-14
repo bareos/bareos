@@ -96,15 +96,11 @@ OS:
       ARCH:
         - x86_64
   FreeBSD:
-    "14.0":
+    "14":
       TYPE: freebsd
       ARCH:
         - amd64
-    "13.3":
-      TYPE: freebsd
-      ARCH:
-        - amd64
-    "13.2":
+    "13":
       TYPE: freebsd
       ARCH:
         - amd64
