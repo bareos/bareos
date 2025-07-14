@@ -86,7 +86,7 @@ class StreamOutput : public Output {
     }
   }
 
-  std::size_t current_offset() override { return current_offset_; }
+  std::size_t current_offset() const override { return current_offset_; }
 
  private:
   std::size_t current_offset_ = 0;
@@ -155,7 +155,7 @@ struct FileOutput : public Output {
     seek(internal_offset_ + offset);
   }
 
-  std::size_t current_offset() override { return current_offset_; }
+  std::size_t current_offset() const override { return current_offset_; }
 
  private:
   std::size_t tell()
