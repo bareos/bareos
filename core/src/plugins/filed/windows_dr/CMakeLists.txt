@@ -70,6 +70,9 @@ else()
 
   add_executable(barri restore_linux.cc parser.cc)
   target_compile_options(progress-bar-logger PRIVATE "-Wno-shadow")
+  target_compile_definitions(
+    barri PRIVATE BARRI_VERSION="${BAREOS_FULL_VERSION}" BARRI_DATE="${DATE}"
+  )
 
   add_executable(test-progress progress.cc)
   target_link_libraries(test-progress PUBLIC indicators::indicators)
