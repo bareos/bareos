@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+- docs: update disaster recovery chapter [PR #2320]
+
 ## [24.0.4] - 2025-07-10
 
 ### Changed
@@ -487,4 +490,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2311]: https://github.com/bareos/bareos/pull/2311
 [PR #2316]: https://github.com/bareos/bareos/pull/2316
 [PR #2319]: https://github.com/bareos/bareos/pull/2319
+[PR #2320]: https://github.com/bareos/bareos/pull/2320
 [unreleased]: https://github.com/bareos/bareos/tree/master
