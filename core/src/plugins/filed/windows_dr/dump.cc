@@ -53,7 +53,7 @@
 namespace {
 bool GetBit(unsigned char* data, std::size_t index)
 {
-  return (data[index / CHAR_BIT] >> (index & CHAR_BIT)) & 0x1;
+  return (data[index / CHAR_BIT] >> (index % CHAR_BIT)) & 0x1;
 }
 
 template <class... Ts> struct overloads : Ts... {
