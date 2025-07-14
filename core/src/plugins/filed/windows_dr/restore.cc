@@ -161,7 +161,7 @@ class HandleOutput : public Output {
     }
   }
 
-  std::size_t current_offset() override { return current_offset_; }
+  std::size_t current_offset() const override { return current_offset_; }
 
  private:
   HANDLE hndl_;
