@@ -121,6 +121,7 @@ int main(int argc, char* argv[])
 #  define BARRI_DATE "unknown"
 #endif
       std::cout << BARRI_VERSION " (" BARRI_DATE ")" << std::endl;
+      std::cout << "Copyright (C) 2025-2025 Bareos GmbH & Co. KG" << std::endl;
     }
 
     return 0;
