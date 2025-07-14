@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - matrix: test the Debian ULC packages for OpenSSL 1.1 on Debian 11 instead of Debian 10 [PR #2322]
 
+### Fixed
+- truncate: fix return status bug [PR #2308]
+
 ## [24.0.4] - 2025-07-10
 
 ### Changed
@@ -490,6 +493,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2292]: https://github.com/bareos/bareos/pull/2292
 [PR #2298]: https://github.com/bareos/bareos/pull/2298
 [PR #2304]: https://github.com/bareos/bareos/pull/2304
+[PR #2308]: https://github.com/bareos/bareos/pull/2308
 [PR #2311]: https://github.com/bareos/bareos/pull/2311
 [PR #2316]: https://github.com/bareos/bareos/pull/2316
 [PR #2319]: https://github.com/bareos/bareos/pull/2319
