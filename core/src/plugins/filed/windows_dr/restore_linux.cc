@@ -520,7 +520,7 @@ class RestoreToGeneratedFiles : public GenericHandler {
 
     auto& fd = disk_files[current_idx];
 
-    struct stat s;
+    struct stat s = {};
     if (fstat(fd, &s) < 0) {
       throw std::runtime_error{
           fmt::format("could not stat disk: Err={}", strerror(errno))};
