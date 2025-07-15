@@ -8,6 +8,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Fixed
 - Fix btape fill-test problem [PR #2171]
 - plugins: fix error_string construction [PR #2293]
+- truncate: fix return status bug [PR #2309]
 
 ### Changed
 - python: fix traceback generation [PR #2305]
@@ -655,6 +656,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2227]: https://github.com/bareos/bareos/pull/2227
 [PR #2293]: https://github.com/bareos/bareos/pull/2293
 [PR #2305]: https://github.com/bareos/bareos/pull/2305
+[PR #2309]: https://github.com/bareos/bareos/pull/2309
 [PR #2317]: https://github.com/bareos/bareos/pull/2317
 [PR #2323]: https://github.com/bareos/bareos/pull/2323
 [unreleased]: https://github.com/bareos/bareos/tree/master

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@ message("Adding systemtests from ${CMAKE_CURRENT_SOURCE_DIR}")
 add_subdirectory(accurate-lmdb-stresstest)
 add_subdirectory(accurate-stresstest)
 add_subdirectory(acl)
+add_subdirectory(admin-job)
 add_subdirectory(always-incremental-consolidate)
 add_subdirectory(autochanger)
 add_subdirectory(autoxflate)
