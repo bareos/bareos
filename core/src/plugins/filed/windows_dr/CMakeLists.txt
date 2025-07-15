@@ -66,6 +66,8 @@ if(HAVE_WIN32)
 else()
 
   target_sources(wdr-fd PRIVATE plugin_linux.cc)
+  target_compile_definitions(wdr-fd PRIVATE PLUGIN_NAME="wdr")
+  target_link_libraries(wdr-fd PRIVATE tl::expected)
   # target_link_libraries(wdr-fd PRIVATE dump)
 
   add_executable(barri restore_linux.cc parser.cc)
