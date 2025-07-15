@@ -51,6 +51,12 @@ struct restore_options {
     return restore_options{logger, restore_directory{dir}};
   }
 
+  static restore_options into_files(GenericLogger* logger,
+                                    std::span<std::string> files)
+  {
+    return restore_options{logger, restore_files{files}};
+  }
+
  private:
   restore_options(GenericLogger* logger_,
                   std::variant<restore_directory, restore_files> location_)
