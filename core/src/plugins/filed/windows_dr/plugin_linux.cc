@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#include <type_traits>
 #define NEW_RESTORE
 #if !defined(PLUGIN_NAME)
 #  error PLUGIN_NAME not set
@@ -61,9 +62,10 @@ const PluginInformation my_info = {
 };
 
 struct plugin_arguments {
-  bool restore_into_dir{true};
-  std::vector<std::string> files{};
-  std::string directory{"/tmp"};
+  using directory = std::string;
+  using files = std::vector<std::string>;
+
+  std::variant<std::monostate, directory, files> target;
 
   using Error = tl::unexpected<std::string>;
 
@@ -84,7 +86,45 @@ struct plugin_arguments {
                                        std::string_view key,
                                        std::string_view value)
   {
-    (void)parsed;
+    static constexpr auto success = std::nullopt;
+
+    if (key == "files") {
+      if (parsed.target.index() != 0) {
+        return err("cannot have more than one directory/files value total");
+      }
+
+      auto& vec = parsed.target.emplace<files>();
+
+      while (!value.empty()) {
+        auto comma_pos = value.find_first_of(",");
+        if (comma_pos == 0) {
+          return err("files[{}] cannot be set to an empty string", vec.size());
+        } else if (comma_pos == value.npos) {
+          vec.emplace_back(value);
+          value = {};
+        } else {
+          auto file = value.substr(0, comma_pos);
+          vec.emplace_back(file);
+          value.remove_prefix(comma_pos + 1);
+        }
+      }
+
+      return success;
+    } else if (key == "directory") {
+      if (parsed.target.index() != 0) {
+        return err("cannot have more than one directory/files value total");
+      }
+
+      if (value.empty()) {
+        return err("directory cannot be set to an empty string");
+      }
+
+      auto& dir = parsed.target.emplace<directory>();
+
+      dir.assign(value);
+
+      return success;
+    }
     return err("unknown key {} (= {})", key, value);
   }
 
@@ -178,9 +218,31 @@ struct plugin_ctx {
 
   void set_plugin_args(plugin_arguments) {}
 
-  void begin_session(restore_options options)
+  bool begin_session()
   {
+    // no arguments set
+    if (!args) { return false; }
+    // no target specified
+
+    restore_options options = std::visit(
+        [&](auto& tgt) -> restore_options {
+          using T = std::remove_reference_t<decltype(tgt)>;
+
+          if constexpr (std::is_same_v<T, plugin_arguments::directory>) {
+            return restore_options::into_directory(&logger, tgt);
+          } else if constexpr (std::is_same_v<T, plugin_arguments::files>) {
+            return restore_options::into_files(&logger, tgt);
+          } else if constexpr (std::is_same_v<T, std::monostate>) {
+            // nothing was chosen, so just use a sensible default
+            return restore_options::into_directory(&logger, "/tmp");
+          }
+        },
+        args->target);
+    if (args->target.index() == 0) { return false; }
+
     current_session.emplace(options);
+
+    return true;
   }
 
   std::size_t session_write(std::span<char> data)
@@ -193,6 +255,8 @@ struct plugin_ctx {
   bool has_session() const { return current_session.has_value(); }
 
   std::optional<session_ctx> current_session;
+
+  std::optional<plugin_arguments> args;
 };
 
 plugin_ctx* get_private_context(PluginContext* ctx)
@@ -304,10 +368,11 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
         return bRC_Error;
       }
 
-      restore_options options
-          = restore_options::into_directory(&pctx->logger, "/tmp/restore");
       try {
-        pctx->begin_session(options);
+        if (!pctx->begin_session()) {
+          err_msg(ctx, "could not begin session");
+          return bRC_Error;
+        }
         pkt->status = 0;
         return bRC_OK;
       } catch (const std::exception& ex) {
