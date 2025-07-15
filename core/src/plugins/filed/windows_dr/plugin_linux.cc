@@ -20,6 +20,9 @@
 */
 
 #define NEW_RESTORE
+#if !defined(PLUGIN_NAME)
+#  error PLUGIN_NAME not set
+#endif
 
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
@@ -27,6 +30,8 @@
 #include "include/filetypes.h"
 #include "parser.h"
 #include "restore.h"
+
+#include <tl/expected.hpp>
 
 #define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
 #define info_msg(ctx, ...) JobLog((ctx), M_INFO, __VA_ARGS__)
@@ -56,7 +61,86 @@ const PluginInformation my_info = {
 };
 
 struct plugin_arguments {
-  static plugin_arguments parse(std::string_view) { return {}; }
+  bool restore_into_dir{true};
+  std::vector<std::string> files{};
+  std::string directory{"/tmp"};
+
+  using Error = tl::unexpected<std::string>;
+
+  template <typename... Args>
+  static Error err(fmt::format_string<Args...> fmt, Args&&... args)
+  {
+    return Error{fmt::format(fmt, std::forward<Args>(args)...)};
+  }
+
+  static std::optional<Error> parse_flag(plugin_arguments& parsed,
+                                         std::string_view flag)
+  {
+    (void)parsed;
+    return err("unknown flag {}", flag);
+  }
+
+  static std::optional<Error> parse_kv(plugin_arguments& parsed,
+                                       std::string_view key,
+                                       std::string_view value)
+  {
+    (void)parsed;
+    return err("unknown key {} (= {})", key, value);
+  }
+
+  static tl::expected<plugin_arguments, std::string> parse(
+      std::string_view cmdline)
+  {
+    if (!cmdline.starts_with(PLUGIN_NAME)) {
+      return err("received plugin options for wrong plugin: {}", cmdline);
+    }
+
+    auto args = cmdline.substr(strlen(PLUGIN_NAME));
+
+    plugin_arguments parsed = {};
+
+    while (!args.empty()) {
+      if (args[0] != ':') {
+        return err("expected ':' at index {}", args.data() - cmdline.data());
+      }
+
+      auto next_arg_start = args.find_first_of(":", 1);
+      std::string_view current_arg = [&] {
+        if (next_arg_start == args.npos) {
+          // we have reached the last argument
+
+          auto res = args;
+          args = {};
+          return res;
+        } else {
+          auto res = args.substr(0, next_arg_start);
+          args.remove_prefix(next_arg_start + 1);
+          return res;
+        }
+      }();
+
+      if (current_arg.size() == 0) {
+        // ignore this for now, maybe this should be an error
+        continue;
+      }
+
+      auto eq_pos = current_arg.find_first_of("=");
+
+      if (eq_pos == current_arg.npos) {
+        // we have received a flag
+        if (auto err = parse_flag(parsed, current_arg)) { return err.value(); }
+      } else {
+        // we have received a kv-pair
+
+        std::string_view key = current_arg.substr(0, eq_pos);
+        std::string_view value = current_arg.substr(eq_pos + 1);
+
+        if (auto err = parse_kv(parsed, key, value)) { return err.value(); }
+      }
+    }
+
+    return parsed;
+  }
 };
 
 struct plugin_logger : public GenericLogger {
@@ -159,7 +243,11 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
   switch (event->eventType) {
     case filedaemon::bEventPluginCommand: {
       auto arguments = plugin_arguments::parse(static_cast<const char*>(data));
-      pctx->set_plugin_args(std::move(arguments));
+      if (!arguments) {
+        err_msg(ctx, "could not parse arguments: {}", arguments.error());
+        return bRC_Error;
+      }
+      pctx->set_plugin_args(std::move(arguments.value()));
       return bRC_OK;
     } break;
 
@@ -167,7 +255,11 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
       [[fallthrough]];
     case filedaemon::bEventRestoreCommand: {
       auto arguments = plugin_arguments::parse(static_cast<const char*>(data));
-      pctx->set_plugin_args(std::move(arguments));
+      if (!arguments) {
+        err_msg(ctx, "could not parse arguments: {}", arguments.error());
+        return bRC_Error;
+      }
+      pctx->set_plugin_args(std::move(arguments.value()));
       return bRC_OK;
     }
   }
