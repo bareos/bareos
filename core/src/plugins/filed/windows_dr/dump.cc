@@ -1251,7 +1251,7 @@ struct partition_cover {
 
 std::optional<std::vector<partition_cover>> CrossCheckPartitionsAndExtents(
     const partition_layout& layout,
-    const std::vector<partition_extent> extents)
+    const std::vector<partition_extent>& extents)
 {
   // for now we assume that every partition corresponds exactly to one extent.
 
