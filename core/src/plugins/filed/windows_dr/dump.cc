@@ -105,7 +105,6 @@ std::size_t compute_plan_size(const insert_plan& plan)
   return computed_size;
 }
 
-
 struct vec_writer : public writer {
   vec_writer() {}
 
@@ -210,110 +209,6 @@ struct disk_reader {
   {
   }
 
-#if 0
-  void read(HANDLE hndl,
-            std::size_t offset,
-            std::size_t length,
-            char* result_buffer)
-  {
-    DWORD ignore_offset = 0;
-    if (hndl != current_handle || offset != current_offset) {
-      // the offset needs to be sector aligned.  We need to round _down_ here
-      // to make sure that we read everything
-
-      std::size_t rounded_offset = (offset / sector_size) * sector_size;
-
-      ignore_offset = offset - rounded_offset;
-      // logger->Trace( "offset: {} => ignore = {}", offset, ignore_offset);
-
-      DWORD off_low = rounded_offset & 0xFFFFFFFF;
-      LONG off_high = (rounded_offset >> 32) & 0xFFFFFFFF;
-      SetFilePointer(hndl, off_low, &off_high, FILE_BEGIN);
-      current_offset = offset;
-      current_handle = hndl;
-    }
-
-    if (ignore_offset) {
-      logger->Trace([&] { return libbareos::format("{}/{} => {}", offset, sector_size, ignore_offset); });
-    }
-
-    std::size_t bytes_to_read = length + ignore_offset;
-    while (bytes_to_read > 0) {
-      // logger->Trace( "{}", fmt::format("to read: {} (offset: {})",
-      // bytes_to_read, offset).c_str());
-      DWORD bytes_read = 0;
-
-      DWORD buffer_size = std::min(capacity, bytes_to_read);
-      // buffer_size, as computed, may not be divisible by the sector size
-      // since we are working with disk handles, we can only read in pages.
-      // as such we need to "round up" this value, and overread a bit.
-      // we then just simply only copy part of the buffer into the
-      // result_buffer.
-
-      DWORD rounded_buffer_size
-          = (buffer_size + sector_size - 1) / sector_size * sector_size;
-
-      DWORD diff = rounded_buffer_size - buffer_size;
-      if (diff) {
-        logger->Trace("{}/{} => {}", bytes_to_read, sector_size, diff);
-      }
-
-      buffer_size = rounded_buffer_size;
-
-      // as the buffer is always sector sized, this should always hold true
-      assert(buffer_size <= capacity);
-
-      // logger->Trace( "{}", fmt::format("buffer size: {}",
-      // buffer_size).c_str());
-
-      if (!ReadFile(hndl, buffer.get(), buffer_size, &bytes_read, NULL)) {
-        logger->Info("Read error occured when trying to read handle {}: {}", hndl, GetLastError());
-        throw win_error("ReadFile", GetLastError());
-      }
-
-      if (bytes_read == 0) {
-        {
-          LARGE_INTEGER dist = {};
-          dist.QuadPart = 0;
-          LARGE_INTEGER new_pos = {};
-          if (!SetFilePointerEx(hndl, dist, &new_pos, FILE_CURRENT)) {
-            logger->Trace("could not determine current pos of handle {}: Err={}", hndl, GetLastError());
-          } else {
-            logger->Trace("reading ({}, {}) of {}  Current = {}", offset, length, hndl, new_pos.QuadPart);
-          }
-        }
-
-        logger->Info("encountered premature reading end when trying to read from handle {}.  There were still {} bytes to go", hndl, bytes_to_read);
-        return;
-      }
-
-      std::size_t actual_bytes_read = bytes_read;
-      current_offset += bytes_read;
-
-      // logger->Trace( "{}", fmt::format("read: {}", bytes_read).c_str());
-
-      // make sure to ignore the first ignore_offset bytes
-      if (ignore_offset > 0) {
-        auto bytes_ignored = std::min(bytes_read, ignore_offset);
-        bytes_read -= bytes_ignored;
-        ignore_offset -= bytes_ignored;
-        bytes_to_read -= bytes_ignored;
-      }
-
-
-      if (bytes_read != 0) {
-        if (bytes_read > bytes_to_read) { bytes_read = bytes_to_read; }
-        // bytes_read = std::min(bytes_read, bytes_to_read);
-        std::memcpy(result_buffer, buffer.get(), bytes_read);
-        result_buffer += bytes_read;
-        bytes_to_read -= bytes_read;
-      }
-
-      std::memset(buffer.get(), 0, actual_bytes_read);
-    }
-  }
-#endif
-
   struct aligned_deleter {
     void operator()(char* ptr) { _aligned_free(ptr); }
   };
@@ -358,48 +253,6 @@ struct disk_reader {
         .PropertyId = StorageAccessAlignmentProperty,
         .QueryType = PropertyStandardQuery,
     };
-
-#if 0
-    // TODO: this should be done per disk, so that we can use the optimal
-    // disk access in here
-    std::vector<char> desc_buf;
-    desc_buf.resize( sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR) );
-
-    std::size_t new_align = 4096;
-    for (;;) {
-      DWORD bytes_returned;
-      auto success = DeviceIoControl(hndl,
-                                     IOCTL_STORAGE_QUERY_PROPERTY,
-                                     &query,
-                                     sizeof(query),
-                                     desc_buf.data(),
-                                     desc_buf.size(),
-                                     &bytes_returned,
-                                     NULL);
-
-      if (success) {
-        if (bytes_returned >= sizeof(STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR)) {
-          STORAGE_ACCESS_ALIGNMENT_DESCRIPTOR desc;
-          std::memcpy(&desc, desc_buf.data(), sizeof(desc));
-
-          new_align = desc.BytesPerPhysicalSector;
-          logger->Trace( "phys sector size: {}", new_align);
-        } else {
-          logger->Trace( "bad size for query storage alignment");
-        }
-      } else {
-        auto err = GetLastError();
-
-        if (err == ERROR_MORE_DATA) {
-          desc_buf.resize(desc_buf.size() * 2);
-          continue;
-        } else {
-          logger->Trace( "could not query storage alignment");
-        }
-      }
-      break;
-    }
-#endif
 
     {
       GET_LENGTH_INFORMATION length_info = {0};
