@@ -144,12 +144,12 @@ struct restartable_parser {
 
     void SetStatus(std::string_view Status) { _logger->SetStatus(Status); }
 
-    void Info(std::string_view Message) { _logger->Info(Message); }
+    void Info(std::string_view Message) { _logger->Output(Message); }
 
     template <typename... Args>
     void Info(libbareos::format_string<Args...> fmt, Args&&... args)
     {
-      _logger->Info(libbareos::format(fmt, std::forward<Args>(args)...));
+      _logger->Info(fmt, std::forward<Args>(args)...);
     }
 
     data_to_read& stream() { return *_data; }

@@ -44,9 +44,13 @@ using insert_plan = std::vector<insert_step>;
 struct dump_context;
 
 dump_context* make_context(GenericLogger* logger);
-void destroy_context(dump_context* ctx);
 
-insert_plan create_insert_plan(dump_context* ctx, bool dry);
+void dump_context_save_unknown_disks(dump_context*, bool);
+void dump_context_save_unknown_partitions(dump_context*, bool);
+void dump_context_save_unknown_extents(dump_context*, bool);
+void dump_context_ignore_all_data(dump_context*, bool);
+insert_plan dump_context_create_plan(dump_context* ctx);
+void destroy_context(dump_context* ctx);
 
 data_dumper* dumper_setup(GenericLogger* logger, insert_plan&& plan);
 std::size_t dumper_write(data_dumper* dumper, std::span<char> data);
