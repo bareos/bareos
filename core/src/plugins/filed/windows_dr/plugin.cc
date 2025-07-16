@@ -68,7 +68,7 @@ struct plugin_logger : public GenericLogger {
     JobLog(ctx, M_INFO, "{}", Message);
   }
 
-  plugin_logger(PluginContext* ctx_) : ctx{ctx_} {}
+  plugin_logger(PluginContext* ctx_) : GenericLogger{false}, ctx{ctx_} {}
 
  private:
   PluginContext* ctx;
@@ -81,7 +81,7 @@ struct session_ctx {
 
   session_ctx(PluginContext* ctx)
       : logger{ctx}
-      , dctx{make_context()}
+      , dctx{make_context(&logger)}
       , dumper{dumper_setup(&logger, create_insert_plan(dctx, false))}
   {
   }
