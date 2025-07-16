@@ -279,10 +279,10 @@ struct disk_reader {
 
       current_offset = (offset / sector_size) * sector_size;
 
-      logger->Trace([&] {
-        return libbareos::format("current offset = {} (wanted: {})",
-                                 current_offset, offset);
-      });
+      // logger->Trace([&] {
+      //   return libbareos::format("current offset = {} (wanted: {})",
+      //                            current_offset, offset);
+      // });
 
       DWORD off_low = current_offset & 0xFFFFFFFF;
       LONG off_high = (current_offset >> 32) & 0xFFFFFFFF;
@@ -1621,8 +1621,8 @@ struct data_dumper {
                          std::span<char> buffer)
   {
     if (offset == 0) {
-      logger->SetStatus("inserting meta data");
-      logger->Trace("writing {} bytes", bytes.size());
+      // logger->SetStatus("inserting meta data");
+      // logger->Trace("writing {} bytes", bytes.size());
     }
 
     auto bytes_left = bytes.size() - offset;
@@ -1639,16 +1639,16 @@ struct data_dumper {
                          std::span<char> buffer)
   {
     if (offset == 0) {
-      logger->SetStatus("inserting from file");
-      logger->Trace("inserting {} bytes", from.length);
+      // logger->SetStatus("inserting from file");
+      // logger->Trace("inserting {} bytes", from.length);
     }
 
     auto bytes_left = from.length - offset;
     auto bytes_to_write = std::min(bytes_left, buffer.size());
 
     if (bytes_to_write == 0) {
-      logger->Trace("bytes_to_write = 0!!! {} {} {} {}", bytes_left,
-                    buffer.size(), offset, current_offset);
+      // logger->Trace("bytes_to_write = 0!!! {} {} {} {}", bytes_left,
+      //               buffer.size(), offset, current_offset);
     }
 
     return reader.do_fill(from.hndl, from.offset + offset,
@@ -1677,7 +1677,7 @@ struct data_dumper {
 
       bytes_written += write_result;
       if (write_result == 0) {
-        logger->Trace("write done");
+        // logger->Trace("write done");
         current_index += 1;
         current_offset = 0;
       } else {
