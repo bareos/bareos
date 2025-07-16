@@ -32,12 +32,17 @@
 #include "CLI/Formatter.hpp"
 
 
-void restore_data(std::istream& stream, bool raw_file)
+void restore_data(std::istream& stream, bool raw_file, GenericLogger* logger)
 {
-  do_restore(stream, progressbar::get(), raw_file);
+  do_restore(stream, logger, raw_file);
 }
 
-void dump_data(std::ostream& stream, bool dry)
+bool dry = false;
+bool save_unreferenced_extents{false};
+bool save_unreferenced_partitions{false};
+bool save_unreferenced_disks{false};
+
+void dump_data(std::ostream& stream, GenericLogger* logger)
 {
   COM_CALL(CoInitializeEx(NULL, COINIT_MULTITHREADED));
 
@@ -50,9 +55,12 @@ void dump_data(std::ostream& stream, bool dry)
   std::vector<char> buffer;
   buffer.resize(4 << 20);
 
-  auto* logger = progressbar::get();
   dump_context* ctx = make_context(logger);
-  insert_plan plan = create_insert_plan(ctx, dry);
+  dump_context_ignore_all_data(ctx, dry);
+  dump_context_save_unknown_disks(ctx, save_unreferenced_disks);
+  dump_context_save_unknown_partitions(ctx, save_unreferenced_partitions);
+  dump_context_save_unknown_extents(ctx, save_unreferenced_extents);
+  insert_plan plan = dump_context_create_plan(ctx);
 
   auto dumper = dumper_setup(logger, std::move(plan));
 
@@ -63,9 +71,9 @@ void dump_data(std::ostream& stream, bool dry)
       stream.write(buffer.data(), count);
 
       if (stream.eof() || stream.fail() || stream.bad()) {
-        logger->Info(libbareos::format(
+        logger->Info(
             "stream did accept all data (eof = {} | fail = {} | bad = {})",
-            stream.eof(), stream.fail(), stream.bad()));
+            stream.eof(), stream.fail(), stream.bad());
       }
     }
   } catch (const std::exception& ex) {
@@ -81,10 +89,22 @@ void dump_data(std::ostream& stream, bool dry)
 int main(int argc, char* argv[])
 {
   CLI::App app;
+  bool trace = false;
+  app.add_flag("--trace", trace, "enable debug tracing");
 
   auto* save = app.add_subcommand("save");
-  bool dry = false;
   save->add_flag("--dry", dry, "do not read/write actual disk data");
+
+  save->add_flag("--unreferenced-extents", save_unreferenced_extents,
+                 "save even unsnapshotted data from partitions that contain "
+                 "snapshotted data");
+  save->add_flag("--unreferenced-partitions", save_unreferenced_partitions,
+                 "save even unsnapshotted partitions from disks that contain "
+                 "snapshotted partitions");
+  // save->add_flag("--unreferenced-disks", save_unreferenced_disks,
+  //                "save completey unsnapshotted disks");
+
+
   auto* restore = app.add_subcommand("restore");
   std::string filename;
   restore->add_option("--from", filename,
@@ -97,19 +117,21 @@ int main(int argc, char* argv[])
   app.require_subcommand(1, 1);
 
   CLI11_PARSE(app, argc, argv);
+
+  auto logger = progressbar::get(trace);
   try {
     if (*save) {
       _setmode(_fileno(stdout), _O_BINARY);
-      dump_data(std::cout, dry);
+      dump_data(std::cout, logger);
     } else if (*restore) {
       if (filename.empty()) {
         _setmode(_fileno(stdin), _O_BINARY);
-        restore_data(std::cin, raw_file);
+        restore_data(std::cin, raw_file, logger);
       } else {
         fprintf(stderr, "using %s as input\n", filename.c_str());
         std::ifstream infile{filename,
                              std::ios_base::in | std::ios_base::binary};
-        restore_data(infile, raw_file);
+        restore_data(infile, raw_file, logger);
       }
     } else if (*version) {
 #if !defined(BARRI_VERSION)

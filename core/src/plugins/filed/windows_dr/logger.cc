@@ -208,23 +208,23 @@ struct counter {
 
 
 struct logger : public GenericLogger {
-  using Output = typename indicators::TerminalHandle;
-  static constexpr Output Current = Output::StdErr;
+  using Destination = typename indicators::TerminalHandle;
+  static constexpr Destination Current = Destination::StdErr;
 
   static constexpr std::ostream& stream()
   {
-    if constexpr (Current == Output::StdOut) {
+    if constexpr (Current == Destination::StdOut) {
       return std::cout;
-    } else if constexpr (Current == Output::StdErr) {
+    } else if constexpr (Current == Destination::StdErr) {
       return std::cerr;
     }
   }
 
   static FILE* handle()
   {
-    if constexpr (Current == Output::StdOut) {
+    if constexpr (Current == Destination::StdOut) {
       return stdout;
-    } else if constexpr (Current == Output::StdErr) {
+    } else if constexpr (Current == Destination::StdErr) {
       return stderr;
     }
   }
@@ -284,7 +284,7 @@ struct logger : public GenericLogger {
     // progress_bar->bar.set_option(option::PostfixText(status));
   }
 
-  void Info(std::string_view Message) override
+  void Output(std::string_view Message) override
   {
     if (progress_bar) {
       stream() << termcolor::reset;
