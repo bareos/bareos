@@ -467,685 +467,15 @@ static constexpr VSS_ID ASR_WRITER_ID
        0x4426,
        {0x9C, 0x58, 0x53, 0x1A, 0xA6, 0x35, 0x5F, 0xC4}};
 
-std::vector<std::wstring> list_volumes()
-{
-  std::vector<std::wstring> volumes;
-  wchar_t VolumeGUID[MAX_PATH];
-  HANDLE iter = FindFirstVolumeW(VolumeGUID, sizeof(VolumeGUID));
-
-  if (iter == INVALID_HANDLE_VALUE) {
-    throw win_error("FindFirstVolumeW", GetLastError());
-  }
-
-  for (;;) {
-    volumes.emplace_back(VolumeGUID);
-    fprintf(stderr, "Volume '%ls'\n", volumes.back().c_str());
-
-    if (!FindNextVolumeW(iter, VolumeGUID, sizeof(VolumeGUID))) {
-      auto err = GetLastError();
-      if (err == ERROR_NO_MORE_FILES) { break; }
-      throw win_error("FindNextVolumeW", err);
-    }
-  }
-
-  FindVolumeClose(iter);
-
-  return volumes;
-}
-
-struct VssSnapshot {
-  static VssSnapshot create(IVssBackupComponents* vss,
-                            std::span<const std::wstring> volumes)
-  {
-    wchar_t guid_storage[64] = {};
-    GUID snapshot_guid = GUID_NULL;
-
-    COM_CALL(vss->StartSnapshotSet(&snapshot_guid));
-
-    StringFromGUID2(snapshot_guid, guid_storage, sizeof(guid_storage));
-    fprintf(stderr, "snapshot set => %ls\n", guid_storage);
-
-    BackupAborter aborter{vss};
-
-    for (auto& vol : volumes) {
-      VSS_ID volume_id = {};
-      vss->AddToSnapshotSet(const_cast<VSS_PWSZ>(vol.c_str()), GUID_NULL,
-                            &volume_id);
-
-      StringFromGUID2(volume_id, guid_storage, sizeof(guid_storage));
-      fprintf(stderr, "%ls => %ls\n", vol.c_str(), guid_storage);
-    }
-
-    CComPtr<IVssAsync> prepare_job;
-    COM_CALL(vss->PrepareForBackup(&prepare_job));
-    WaitOnJob(prepare_job);
-
-    CComPtr<IVssAsync> snapshot_job;
-    COM_CALL(vss->DoSnapshotSet(&snapshot_job));
-    WaitOnJob(snapshot_job);
-
-    aborter.backup_components = nullptr;  // not needed anymore
-
-    return {snapshot_guid};
-  }
-
-  GUID snapshot_guid;
-
-  auto snapshotted_paths(CComPtr<IVssBackupComponents> vss)
-  {
-    std::unordered_map<std::wstring, std::wstring> paths;
-    CComPtr<IVssEnumObject> iter;
-    COM_CALL(
-        vss->Query(GUID_NULL, VSS_OBJECT_NONE, VSS_OBJECT_SNAPSHOT, &iter));
-
-    VSS_OBJECT_PROP prop;
-
-    for (;;) {
-      ULONG fetched_count;
-      auto err = iter->Next(1, &prop, &fetched_count);
-
-      if (fetched_count == 0) { break; }
-
-      throw_on_error(err, "iter->Next(1, &prop, &fetched_count)");
-
-      wchar_t guid_storage[64] = {};
-      StringFromGUID2(prop.Obj.Snap.m_SnapshotSetId, guid_storage,
-                      sizeof(guid_storage));
-      fprintf(stderr, "found guid => %ls\n", guid_storage);
-
-      if (prop.Obj.Snap.m_SnapshotSetId == snapshot_guid) {
-        fprintf(stderr, "%ls => %ls\n", prop.Obj.Snap.m_pwszOriginalVolumeName,
-                prop.Obj.Snap.m_pwszSnapshotDeviceObject);
-
-        paths.emplace(prop.Obj.Snap.m_pwszOriginalVolumeName,
-                      prop.Obj.Snap.m_pwszSnapshotDeviceObject);
-      }
-
-      VssFreeSnapshotProperties(&prop.Obj.Snap);
-    }
-
-    return std::move(paths);
-  }
-
-  void delete_snapshot(CComPtr<IVssBackupComponents> vss)
-  {
-    GUID bad_snapshot;
-    LONG deleted_count;
-
-    COM_CALL(vss->DeleteSnapshots(snapshot_guid, VSS_OBJECT_SNAPSHOT_SET, FALSE,
-                                  &deleted_count, &bad_snapshot));
-  }
-
- private:
-  struct BackupAborter {
-    ~BackupAborter()
-    {
-      if (backup_components) { backup_components->AbortBackup(); }
-    }
-
-    IVssBackupComponents* backup_components;
-  };
-};
-
-struct part_header {
-  uint64_t magic;
-  uint64_t size;
-
-  enum part_type : uint8_t
-  {
-    Mbr = 0,
-    Gpt = 1,
-    Partition = 2,
-  };
-
-  uint8_t type;
-};
-
-struct disk {
-  std::vector<partition_extent> extents;
-};
-
-using disk_map = std::unordered_map<std::size_t, disk>;
-
-size_t GetClusterSize(HANDLE volume)
-{
-  DWORD bytes_written;
-  NTFS_VOLUME_DATA_BUFFER buffer;
-
-  if (!DeviceIoControl(volume, FSCTL_GET_NTFS_VOLUME_DATA, NULL, 0, &buffer,
-                       sizeof(buffer), &bytes_written, nullptr)) {
-    return 0;
-  }
-
-  fprintf(
-      stderr,
-      "\n%p => sectors: %zu, clusters: %zu(%zu,%zu)\nmft: %zu mft-mirror: %zu "
-      "mft-zone: %zu-%zu\n\n",
-      volume, (size_t)buffer.NumberSectors.QuadPart,
-      (size_t)buffer.TotalClusters.QuadPart,
-      (size_t)buffer.FreeClusters.QuadPart,
-      (size_t)buffer.TotalReserved.QuadPart,
-      (size_t)buffer.MftStartLcn.QuadPart, (size_t)buffer.Mft2StartLcn.QuadPart,
-      (size_t)buffer.MftZoneStart.QuadPart, (size_t)buffer.MftZoneEnd.QuadPart);
-  return buffer.BytesPerCluster;
-}
-
-std::optional<used_bitmap> GetBitmap(std::vector<char>& buffer,
-                                     HANDLE disk,
-                                     std::size_t start,
-                                     std::size_t length,
-                                     std::size_t cluster_size)
-{
-  // this is the minimum.  Its possible that we actually need to provide
-  // more buffer to the ioctl call, as it might not respect the starting lcn
-  // (it is allowed to choose an earlier lcn instead!)
-
-  // for some reason, even if the volume size is divisible by the
-  // cluster size, the max amount of clusters in a volume will be
-  // ceil( size / cluster_size ) - 1.  We have to be careful about this!
-
-  assert(cluster_size > 0);
-  auto start_cluster = start / cluster_size;
-  auto end_cluster = (start + length + cluster_size - 1) / cluster_size;
-  auto length_cluster = end_cluster - start_cluster;
-
-  auto bitmap_bytes = (length_cluster + CHAR_BIT - 1) / CHAR_BIT;
-  auto struct_size = offsetof(VOLUME_BITMAP_BUFFER, Buffer[bitmap_bytes]);
-
-  buffer.resize(struct_size);
-
-  DWORD bytes_written = 0;
-  STARTING_LCN_INPUT_BUFFER Start
-      = {.StartingLcn = {.QuadPart = static_cast<LONGLONG>(start_cluster)}};
-
-  for (;;) {
-    if (!DeviceIoControl(disk, FSCTL_GET_VOLUME_BITMAP, &Start, sizeof(Start),
-                         buffer.data(), buffer.size(), &bytes_written,
-                         nullptr)) {
-      auto error = GetLastError();
-
-      if (error == ERROR_MORE_DATA) {
-        bool enough_data = false;
-        if (bytes_written > sizeof(VOLUME_BITMAP_BUFFER)) {
-          VOLUME_BITMAP_BUFFER* buf
-              = reinterpret_cast<VOLUME_BITMAP_BUFFER*>(buffer.data());
-
-          std::size_t bitmap_count = buf->BitmapSize.QuadPart;
-          std::size_t bitmap_start = buf->StartingLcn.QuadPart;
-
-          if (bitmap_start + bitmap_count >= end_cluster) {
-            enough_data = true;
-          }
-        }
-
-        if (!enough_data) {
-          std::cerr << libbareos::format(
-              "VOLUME_BITMAP returned {} (size = {}, needed = {})",
-              bytes_written, buffer.size(), struct_size)
-                    << std::endl;
-
-          buffer.resize(buffer.size() * 2);
-
-          continue;
-        }
-      }
-
-      return std::nullopt;
-    }
-
-    VOLUME_BITMAP_BUFFER* buf
-        = reinterpret_cast<VOLUME_BITMAP_BUFFER*>(buffer.data());
-
-    used_bitmap map;
-
-    std::size_t bitmap_count = buf->BitmapSize.QuadPart;
-    std::size_t bitmap_start = buf->StartingLcn.QuadPart;
-
-    libbareos::println(
-        stderr, "bitmap:: start: {}, count: {} (bytes: {}, guessed: {})",
-        bitmap_start, bitmap_count, bytes_written,
-        offsetof(VOLUME_BITMAP_BUFFER, Buffer[(bitmap_count + 7) / 8]));
-
-    map.start = bitmap_start * cluster_size;
-    map.unit_size = cluster_size;
-    map.bits.resize(bitmap_count);
-    for (std::size_t bit = 0; bit < bitmap_count; ++bit) {
-      map.bits[bit] = GetBit(buf->Buffer, bit);
-    }
-
-    return map;
-  }
-}
-
-void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
-{
-  size_t cluster_size = GetClusterSize(data_volume);
-
-  std::cerr << libbareos::format(":::::: cluster size {}", cluster_size)
-            << std::endl;
-
-
-  std::vector<char> extent_buffer;
-  extent_buffer.resize(1024 * 1024);
-
-  DWORD bytes_written = 0;
-  for (;;) {
-    if (!DeviceIoControl(volume, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, nullptr,
-                         0, extent_buffer.data(), extent_buffer.size(),
-                         &bytes_written, nullptr)) {
-      auto err = GetLastError();
-
-      if (err != ERROR_MORE_DATA) {
-        std::cerr << libbareos::format("DISK_EXTENTS returned {} for volume {}",
-                                       err, volume)
-                  << std::endl;
-        return;
-      }
-
-      extent_buffer.resize(extent_buffer.size() * 2);
-    }
-
-    break;
-  }
-
-  if (bytes_written == 0) {
-    // no extents
-    std::cerr << libbareos::format("volume {} has no extents ...", volume)
-              << std::endl;
-    return;
-  }
-  auto extents = reinterpret_cast<VOLUME_DISK_EXTENTS*>(extent_buffer.data());
-
-  std::vector<char> bitmap_buffer;
-
-  std::size_t volume_offset = 0;
-  std::vector<used_interval> used;
-
-  std::size_t used_clusters = 0;
-  std::size_t free_clusters = 0;
-
-  for (size_t i = 0; i < extents->NumberOfDiskExtents; ++i) {
-    auto& extent = extents->Extents[i];
-    std::cerr << libbareos::format(
-        "volume {} extent {} @ {} -> {}", volume, extent.DiskNumber,
-        extent.StartingOffset.QuadPart, extent.ExtentLength.QuadPart)
-              << std::endl;
-
-    auto& disk = disks[extent.DiskNumber];
-
-    auto bits = [&]() -> std::optional<used_bitmap> {
-      if (cluster_size == 0) { return std::nullopt; }
-
-      return GetBitmap(bitmap_buffer, data_volume, volume_offset,
-                       extent.ExtentLength.QuadPart, cluster_size);
-    }();
-
-    if (bits) {
-      static constexpr std::size_t min_hole_size = 1;  // 1 mb
-
-      for (auto bit : bits->bits) {
-        if (bit) {
-          used_clusters += 1;
-        } else {
-          free_clusters += 1;
-        }
-      }
-
-      used.clear();
-      find_used_data(used, bits.value(), volume_offset,
-                     volume_offset + extent.ExtentLength.QuadPart,
-                     min_hole_size);
-
-      libbareos::println(stderr, "{}({}):{} -> ",
-                         extent.StartingOffset.QuadPart, volume_offset,
-                         extent.ExtentLength.QuadPart);
-
-      std::size_t ext_size
-          = static_cast<std::size_t>(extent.ExtentLength.QuadPart);
-
-      std::size_t total_size = 0;
-      for (auto [start, length] : used) {
-        assert(start >= volume_offset);
-        assert(start - volume_offset + length <= ext_size);
-
-        auto disk_offset
-            = extent.StartingOffset.QuadPart + (start - volume_offset);
-
-        libbareos::println(stderr, " - {}({}):{}", disk_offset, start, length);
-
-        total_size += length;
-
-        disk.extents.push_back({disk_offset, start, length, data_volume});
-      }
-
-      assert(total_size <= ext_size);
-    } else {
-      disk.extents.push_back(
-          {(size_t)extent.StartingOffset.QuadPart, volume_offset,
-           (size_t)extent.ExtentLength.QuadPart, data_volume});
-    }
-
-    volume_offset += (size_t)extent.ExtentLength.QuadPart;
-  }
-
-  libbareos::println(stderr, "volume used: {} free: {} total: {}",
-                     used_clusters, free_clusters,
-                     used_clusters + free_clusters);
-}
-
-std::optional<partition_layout> partitioning(DRIVE_LAYOUT_INFORMATION_EX* info)
-{
-  for (DWORD i = 0; i < info->PartitionCount; ++i) {
-    auto& entry = info->PartitionEntry[i];
-
-    fprintf(stderr, "  partition %d\n", i);
-
-    switch (entry.PartitionStyle) {
-      case PARTITION_STYLE_MBR: {
-        fprintf(stderr, "    style: mbr\n");
-        auto& mbr = entry.Mbr;
-        fprintf(stderr, "      type: %d\n", mbr.PartitionType);
-        fprintf(stderr, "      boot?: %s\n", mbr.BootIndicator ? "yes" : "no");
-        fprintf(stderr, "      recognized?: %s\n",
-                mbr.RecognizedPartition ? "yes" : "no");
-        fprintf(stderr, "      hidden sectors: %d\n", mbr.HiddenSectors);
-
-        wchar_t guid_storage[64] = {};
-
-        StringFromGUID2(mbr.PartitionId, guid_storage, sizeof(guid_storage));
-        fprintf(stderr, "      partition id: %ls\n", guid_storage);
-      } break;
-      case PARTITION_STYLE_RAW: {
-        fprintf(stderr, "    style: raw\n");
-      } break;
-      case PARTITION_STYLE_GPT: {
-        fprintf(stderr, "    style: gpt\n");
-        auto& gpt = entry.Gpt;
-        wchar_t guid_storage[64] = {};
-
-        StringFromGUID2(gpt.PartitionType, guid_storage, sizeof(guid_storage));
-        fprintf(stderr, "      type: %ls\n", guid_storage);
-        StringFromGUID2(gpt.PartitionId, guid_storage, sizeof(guid_storage));
-        fprintf(stderr, "      partition id: %ls\n", guid_storage);
-        fprintf(stderr, "      attributes: %lld\n", gpt.Attributes);
-        fprintf(stderr, "      name: %.*ls\n", (int)sizeof(gpt.Name), gpt.Name);
-      } break;
-      default: {
-        fprintf(stderr, "    style: unknown\n");
-      } break;
-    }
-
-    fprintf(stderr, "    offset: %lld\n", entry.StartingOffset.QuadPart);
-    fprintf(stderr, "    length: %lld\n", entry.PartitionLength.QuadPart);
-    fprintf(stderr, "    number: %d\n", entry.PartitionNumber);
-    fprintf(stderr, "    rewrite?: %s\n",
-            entry.RewritePartition ? "yes" : "no");
-    // fprintf(stderr, "    service?: %s\n",
-    //         entry.IsServicePartition ? "yes" : "no");
-  }
-  return std::nullopt;
-}
-
-void read_volume_file(HANDLE hndl, std::span<char> buffer)
-{
-  fprintf(stderr, "reading bootstrap (size = %llu)\n", buffer.size());
-
-  alignas(4096) char real_buffer[4096];
-
-  std::size_t bytes_to_read = buffer.size();
-  std::size_t total_bytes = 0;
-  while (total_bytes < bytes_to_read) {
-    DWORD bytes_read = 0;
-
-    if (!ReadFile(hndl, real_buffer, (DWORD)std::size(real_buffer), &bytes_read,
-                  NULL)) {
-      auto err = GetLastError();
-      fprintf(stderr, "could not read from %p: Err=%d\n", hndl, err);
-
-      throw win_error("ReadFile", err);
-    }
-
-    if (bytes_read != std::size(real_buffer)) {
-      fprintf(stderr,
-              "premature reading end.  Only read %d bytes, but still %llu "
-              "bytes to go...\n",
-              bytes_read, bytes_to_read);
-      return;
-    }
-
-    DWORD read_size
-        = (DWORD)std::min(std::size(real_buffer), bytes_to_read - total_bytes);
-
-    std::memcpy(buffer.data() + total_bytes, real_buffer, read_size);
-
-    total_bytes += read_size;
-  }
-
-
-  fprintf(stderr,
-          "bootstrap: %02X %02X %02X %02X %02X %02X ... %02X %02X %02X %02X "
-          "%02X %02X\n",
-          (unsigned char)buffer[0], (unsigned char)buffer[1],
-          (unsigned char)buffer[2], (unsigned char)buffer[3],
-          (unsigned char)buffer[4], (unsigned char)buffer[5],
-          (unsigned char)buffer[buffer.size() - 6],
-          (unsigned char)buffer[buffer.size() - 5],
-          (unsigned char)buffer[buffer.size() - 4],
-          (unsigned char)buffer[buffer.size() - 3],
-          (unsigned char)buffer[buffer.size() - 2],
-          (unsigned char)buffer[buffer.size() - 1]);
-}
-
-std::optional<partition_layout> GetPartitionLayout(HANDLE device)
-{
-  std::vector<char> buffer;
-  buffer.resize(1024 * 1024);  // 1MiB should be more than enough
-
-  for (;;) {
-    DWORD bytes_written = 0;
-    if (!DeviceIoControl(device, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, nullptr, 0,
-                         buffer.data(), (DWORD)buffer.size(), &bytes_written,
-                         nullptr)) {
-      auto err = GetLastError();
-      if (err == ERROR_MORE_DATA) {
-        buffer.resize(buffer.size() + (buffer.size() >> 1));
-        continue;
-      }
-
-      std::cerr << libbareos::format("io control error = {}", err) << std::endl;
-      return std::nullopt;
-    }
-
-    break;
-  }
-
-  auto info = reinterpret_cast<DRIVE_LAYOUT_INFORMATION_EX*>(buffer.data());
-  fprintf(stderr, "partition count = %d\n", info->PartitionCount);
-
-  partition_layout result = {};
-
-  switch (info->PartitionStyle) {
-    case PARTITION_STYLE_MBR: {
-      partition_info_mbr mbr{
-          std::bit_cast<std::uint32_t>(info->Mbr.CheckSum),
-          std::bit_cast<std::uint32_t>(info->Mbr.Signature),
-      };
-      DWORD off_low = 0;
-      LONG off_high = 0;
-      SetFilePointer(device, off_low, &off_high, FILE_BEGIN);
-      read_volume_file(device, mbr.bootstrap);
-
-      result.info = mbr;
-
-      fprintf(stderr, "mbr partitioning\n");
-    } break;
-    case PARTITION_STYLE_RAW: {
-      result.info = partition_info_raw{};
-      fprintf(stderr, "raw partitioning style => nothing to do\n");
-    } break;
-    case PARTITION_STYLE_GPT: {
-      partition_info_gpt gpt{
-          to_disk_format(info->Gpt.DiskId),
-          std::bit_cast<std::uint64_t>(info->Gpt.StartingUsableOffset),
-          std::bit_cast<std::uint64_t>(info->Gpt.UsableLength),
-          std::bit_cast<std::uint32_t>(info->Gpt.MaxPartitionCount),
-      };
-
-      DWORD off_low = 0;
-      LONG off_high = 0;
-      SetFilePointer(device, off_low, &off_high, FILE_BEGIN);
-      read_volume_file(device, gpt.bootstrap);
-
-      result.info = gpt;
-      fprintf(stderr, "gpt partitioning\n");
-    } break;
-    default: {
-      fprintf(stderr, "unknown partitioning\n");
-      return std::nullopt;
-    } break;
-  }
-
-  partitioning(info);
-
-  result.partition_infos.resize(info->PartitionCount);
-  std::copy_n(info->PartitionEntry, info->PartitionCount,
-              std::begin(result.partition_infos));
-
-  return result;
-}
-
-void PrependFileHeader(insert_plan& plan,
-                       const disk_map& map,
-                       std::size_t total_size)
-{
-  file_header header(map.size(), total_size);
-
-  vec_writer writer;
-  header.write(writer);
-  plan.insert(plan.begin(), writer.get());
-}
-
-void WriteDiskHeader(insert_plan& plan,
-                     const disk& Disk,
-                     const DISK_GEOMETRY_EX& geo)
-{
-  std::size_t total_extent_size = 0;
-  for (auto& extent : Disk.extents) { total_extent_size += extent.length; }
-  disk_header header(geo.DiskSize.QuadPart, total_extent_size,
-                     geo.Geometry.MediaType, geo.Geometry.BytesPerSector,
-                     Disk.extents.size());
-
-  vec_writer writer;
-  header.write(writer);
-  plan.emplace_back(writer.get());
-}
-
-void WriteDiskPartTable(insert_plan& plan, const partition_layout& layout)
-{
-  vec_writer writer;
-
-  {
-    auto header = std::visit(
-        overloads{
-            [](const partition_info_raw&) {
-              part_table_header header(0, part_type::Raw, 0, 0, 0);
-              return header;
-            },
-            [](const partition_info_mbr& mbr) {
-              part_table_header header(0, part_type::Mbr, mbr.CheckSum,
-                                       mbr.Signature, 0, {}, mbr.bootstrap);
-              return header;
-            },
-            [](const partition_info_gpt& gpt) {
-              static_assert(sizeof(gpt.DiskId) == 16);
-              part_table_header header(
-                  0, part_type::Gpt, gpt.MaxPartitionCount,
-                  gpt.StartingUsableOffset, gpt.UsableLength,
-                  std::span<const char>(
-                      reinterpret_cast<const char*>(&gpt.DiskId),
-                      sizeof(gpt.DiskId)),
-                  gpt.bootstrap);
-              return header;
-            },
-        },
-        layout.info);
-    header.partition_count = layout.partition_infos.size();
-
-    header.write(writer);
-  }
-
-
-  for (auto& info : layout.partition_infos) {
-    part_table_entry ent = from_win32(info);
-
-    ent.write(writer);
-    switch (info.PartitionStyle) {
-      case PARTITION_STYLE_MBR: {
-        part_table_entry_mbr_data data = from_win32(info.Mbr);
-
-        data.write(writer);
-      } break;
-      case PARTITION_STYLE_GPT: {
-        part_table_entry_gpt_data data = from_win32(info.Gpt);
-
-        data.write(writer);
-      } break;
-      default: { /* intentionally left blank */
-      } break;
-    }
-  }
-
-  plan.emplace_back(writer.get());
-}
-
-void WriteDiskData(insert_plan& plan, const disk& disk_extents)
-{
-  for (auto& extent : disk_extents.extents) {
-    vec_writer writer;
-    extent_header header = header_of(extent);
-
-    header.write(writer);
-
-    plan.emplace_back(writer.get());
-
-    fprintf(stderr, "copying extent (%llu, %llu)\n", extent.handle_offset,
-            extent.length);
-
-    plan.emplace_back(
-        insert_from{extent.hndl, extent.handle_offset, extent.length});
-  }
-}
-
-// on linux we can get the disk_geometry with the HDIO_GETGEO ioctl
-std::optional<DISK_GEOMETRY_EX> GetDiskGeometry(HANDLE disk)
-{
-  DISK_GEOMETRY_EX geo;
-  DWORD bytes_written = 0;
-  auto res = DeviceIoControl(disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, NULL, 0,
-                             &geo, sizeof(geo), &bytes_written, NULL);
-
-  if (res != TRUE) { return std::nullopt; }
-
-  // if (sizeof(geo) != bytes_written) {
-  //   fprintf(stderr, "drive geometry: bad read.  got %d bytes\n",
-  //   bytes_written); return std::nullopt;
-  // }
-
-  return geo;
-}
-
 struct dump_context {
-  GenericLogger* logger;
-
+ public:
   bool dry{false};
   bool save_unknown_partitions{false};
   bool save_unknown_disks{false};
   bool save_unknown_extents{false};
 
-  CComPtr<IVssBackupComponents> backup_components{};
-  std::optional<VssSnapshot> snapshot;
-  std::vector<HANDLE> open_handles;
 
+  dump_context(GenericLogger* logger_) : logger{logger_} {}
   ~dump_context()
   {
     // we need to away to always delete these shadow copies
@@ -1155,9 +485,9 @@ struct dump_context {
     if (snapshot) { snapshot->delete_snapshot(backup_components); }
   }
 
- public:
   insert_plan create()
   {
+    logger->Info(" setting up vss");
     COM_CALL(CreateVssBackupComponents(&backup_components));
 
     COM_CALL(backup_components->InitializeForBackup());
@@ -1340,12 +670,16 @@ struct dump_context {
 
     auto volumes = list_volumes();
 
-    snapshot.emplace(VssSnapshot::create(backup_components, volumes));
+
+    logger->Info(" creating a vss snapshot");
+    snapshot.emplace(VssSnapshot::create(logger, backup_components, volumes));
 
     auto paths = snapshot->snapshotted_paths(backup_components);
 
     disk_map candidate_disks;
     for (auto& [path, copy] : paths) {
+      logger->Info(" examining volume {} ({})", FromUtf16(path),
+                   FromUtf16(copy));
       std::wstring cpath = path;
       if (cpath.back() == L'\\') { cpath.pop_back(); }
 
@@ -1399,6 +733,7 @@ struct dump_context {
       open_handles.push_back(shadow);
 
       CloseHandle(volume);
+      logger->Info(" ... done!");
     }
 
     // todo: what happens to volumes that are split between fixed disks/non
@@ -1413,8 +748,9 @@ struct dump_context {
     std::unordered_map<std::size_t, open_disk> disk_info;
 
     for (auto& [id, disk] : candidate_disks) {
-      std::wstring disk_path
-          = std::wstring(L"\\\\.\\PhysicalDrive") + std::to_wstring(id);
+      std::wstring disk_path = libbareos::format(L"\\\\.\\PhysicalDrive{}", id);
+
+      logger->Info(" collecting info from disk \\\\.\\PhysicalDrive{}", id);
 
       HANDLE hndl = CreateFileW(
           disk_path.c_str(), GENERIC_READ,
@@ -1423,7 +759,7 @@ struct dump_context {
           NULL);
 
       if (hndl == INVALID_HANDLE_VALUE) {
-        logger->Info("could not open disk {}; skipping ...",
+        logger->Info("  could not open disk {}; skipping ...",
                      FromUtf16(disk_path));
         continue;
       }
@@ -1435,7 +771,7 @@ struct dump_context {
       }
 
       if (geo->Geometry.MediaType != FixedMedia) {
-        logger->Info("disk {} has bad media type {}; skipping ...", id,
+        logger->Info("  disk {} has bad media type {}; skipping ...", id,
                      (int)geo->Geometry.MediaType);
         continue;
       }
@@ -1443,8 +779,11 @@ struct dump_context {
       disks[id] = std::move(disk);
       disk_info[id] = open_disk{hndl, geo.value()};
       open_handles.push_back(hndl);
+
+      logger->Info(" ... done!");
     }
 
+    logger->Info(" generating backup plan");
     insert_plan plan;
     for (auto& [id, disk] : disks) {
       logger->Trace("disk {} extents:", id);
@@ -1489,6 +828,8 @@ struct dump_context {
     }
     std::size_t payload_size = compute_plan_size(plan);
     PrependFileHeader(plan, disks, payload_size);
+
+    logger->Info(" ... done!");
     return plan;
   }
 
@@ -1565,6 +906,679 @@ struct dump_context {
       }
     }
   }
+
+  std::vector<std::wstring> list_volumes()
+  {
+    std::vector<std::wstring> volumes;
+    wchar_t VolumeGUID[MAX_PATH];
+    HANDLE iter = FindFirstVolumeW(VolumeGUID, sizeof(VolumeGUID));
+
+    if (iter == INVALID_HANDLE_VALUE) {
+      throw win_error("FindFirstVolumeW", GetLastError());
+    }
+
+    for (;;) {
+      volumes.emplace_back(VolumeGUID);
+      logger->Trace("Volume '{}'", FromUtf16(volumes.back()));
+
+      if (!FindNextVolumeW(iter, VolumeGUID, sizeof(VolumeGUID))) {
+        auto err = GetLastError();
+        if (err == ERROR_NO_MORE_FILES) { break; }
+        throw win_error("FindNextVolumeW", err);
+      }
+    }
+
+    FindVolumeClose(iter);
+
+    return volumes;
+  }
+
+  struct VssSnapshot {
+    static VssSnapshot create(GenericLogger* logger,
+                              IVssBackupComponents* vss,
+                              std::span<const std::wstring> volumes)
+    {
+      wchar_t guid_storage[64] = {};
+      GUID snapshot_guid = GUID_NULL;
+
+      COM_CALL(vss->StartSnapshotSet(&snapshot_guid));
+
+      StringFromGUID2(snapshot_guid, guid_storage, sizeof(guid_storage));
+      logger->Trace("snapshot set => {}", FromUtf16(guid_storage));
+
+      BackupAborter aborter{vss};
+
+      for (auto& vol : volumes) {
+        VSS_ID volume_id = {};
+        vss->AddToSnapshotSet(const_cast<VSS_PWSZ>(vol.c_str()), GUID_NULL,
+                              &volume_id);
+
+        StringFromGUID2(volume_id, guid_storage, sizeof(guid_storage));
+        logger->Trace("{} => {}", FromUtf16(vol), FromUtf16(guid_storage));
+      }
+
+      CComPtr<IVssAsync> prepare_job;
+      COM_CALL(vss->PrepareForBackup(&prepare_job));
+      WaitOnJob(prepare_job);
+
+      CComPtr<IVssAsync> snapshot_job;
+      COM_CALL(vss->DoSnapshotSet(&snapshot_job));
+      WaitOnJob(snapshot_job);
+
+      aborter.backup_components = nullptr;  // not needed anymore
+
+      return {snapshot_guid, logger};
+    }
+
+    GUID snapshot_guid;
+    GenericLogger* logger;
+
+    auto snapshotted_paths(CComPtr<IVssBackupComponents> vss)
+    {
+      std::unordered_map<std::wstring, std::wstring> paths;
+      CComPtr<IVssEnumObject> iter;
+      COM_CALL(
+          vss->Query(GUID_NULL, VSS_OBJECT_NONE, VSS_OBJECT_SNAPSHOT, &iter));
+
+      VSS_OBJECT_PROP prop;
+
+      for (;;) {
+        ULONG fetched_count;
+        auto err = iter->Next(1, &prop, &fetched_count);
+
+        if (fetched_count == 0) { break; }
+
+        throw_on_error(err, "iter->Next(1, &prop, &fetched_count)");
+
+        wchar_t guid_storage[64] = {};
+        StringFromGUID2(prop.Obj.Snap.m_SnapshotSetId, guid_storage,
+                        sizeof(guid_storage));
+        logger->Trace("found guid => {}", FromUtf16(guid_storage));
+
+        if (prop.Obj.Snap.m_SnapshotSetId == snapshot_guid) {
+          logger->Trace("{} => {}",
+                        FromUtf16(prop.Obj.Snap.m_pwszOriginalVolumeName),
+                        FromUtf16(prop.Obj.Snap.m_pwszSnapshotDeviceObject));
+
+          paths.emplace(prop.Obj.Snap.m_pwszOriginalVolumeName,
+                        prop.Obj.Snap.m_pwszSnapshotDeviceObject);
+        }
+
+        VssFreeSnapshotProperties(&prop.Obj.Snap);
+      }
+
+      return std::move(paths);
+    }
+
+    void delete_snapshot(CComPtr<IVssBackupComponents> vss)
+    {
+      GUID bad_snapshot;
+      LONG deleted_count;
+
+      COM_CALL(vss->DeleteSnapshots(snapshot_guid, VSS_OBJECT_SNAPSHOT_SET,
+                                    FALSE, &deleted_count, &bad_snapshot));
+    }
+
+   private:
+    struct BackupAborter {
+      ~BackupAborter()
+      {
+        if (backup_components) { backup_components->AbortBackup(); }
+      }
+
+      IVssBackupComponents* backup_components;
+    };
+  };
+
+  struct part_header {
+    uint64_t magic;
+    uint64_t size;
+
+    enum part_type : uint8_t
+    {
+      Mbr = 0,
+      Gpt = 1,
+      Partition = 2,
+    };
+
+    uint8_t type;
+  };
+
+  struct disk {
+    std::vector<partition_extent> extents;
+  };
+
+  using disk_map = std::unordered_map<std::size_t, disk>;
+
+  size_t GetClusterSize(HANDLE volume)
+  {
+    DWORD bytes_written;
+    NTFS_VOLUME_DATA_BUFFER buffer;
+
+    if (!DeviceIoControl(volume, FSCTL_GET_NTFS_VOLUME_DATA, NULL, 0, &buffer,
+                         sizeof(buffer), &bytes_written, nullptr)) {
+      return 0;
+    }
+
+    logger->Trace(
+        "{} => sectors: {}, clusters: {}({},{})\nmft: {} "
+        "mft-mirror: {} "
+        "mft-zone: {}-{}\n",
+        volume, (size_t)buffer.NumberSectors.QuadPart,
+        (size_t)buffer.TotalClusters.QuadPart,
+        (size_t)buffer.FreeClusters.QuadPart,
+        (size_t)buffer.TotalReserved.QuadPart,
+        (size_t)buffer.MftStartLcn.QuadPart,
+        (size_t)buffer.Mft2StartLcn.QuadPart,
+        (size_t)buffer.MftZoneStart.QuadPart,
+        (size_t)buffer.MftZoneEnd.QuadPart);
+    return buffer.BytesPerCluster;
+  }
+
+  std::optional<used_bitmap> GetBitmap(std::vector<char>& buffer,
+                                       HANDLE disk,
+                                       std::size_t start,
+                                       std::size_t length,
+                                       std::size_t cluster_size)
+  {
+    // this is the minimum.  Its possible that we actually need to provide
+    // more buffer to the ioctl call, as it might not respect the starting lcn
+    // (it is allowed to choose an earlier lcn instead!)
+
+    // for some reason, even if the volume size is divisible by the
+    // cluster size, the max amount of clusters in a volume will be
+    // ceil( size / cluster_size ) - 1.  We have to be careful about this!
+
+    assert(cluster_size > 0);
+    auto start_cluster = start / cluster_size;
+    auto end_cluster = (start + length + cluster_size - 1) / cluster_size;
+    auto length_cluster = end_cluster - start_cluster;
+
+    auto bitmap_bytes = (length_cluster + CHAR_BIT - 1) / CHAR_BIT;
+    auto struct_size = offsetof(VOLUME_BITMAP_BUFFER, Buffer[bitmap_bytes]);
+
+    buffer.resize(struct_size);
+
+    DWORD bytes_written = 0;
+    STARTING_LCN_INPUT_BUFFER Start
+        = {.StartingLcn = {.QuadPart = static_cast<LONGLONG>(start_cluster)}};
+
+    for (;;) {
+      if (!DeviceIoControl(disk, FSCTL_GET_VOLUME_BITMAP, &Start, sizeof(Start),
+                           buffer.data(), buffer.size(), &bytes_written,
+                           nullptr)) {
+        auto error = GetLastError();
+
+        if (error == ERROR_MORE_DATA) {
+          bool enough_data = false;
+          if (bytes_written > sizeof(VOLUME_BITMAP_BUFFER)) {
+            VOLUME_BITMAP_BUFFER* buf
+                = reinterpret_cast<VOLUME_BITMAP_BUFFER*>(buffer.data());
+
+            std::size_t bitmap_count = buf->BitmapSize.QuadPart;
+            std::size_t bitmap_start = buf->StartingLcn.QuadPart;
+
+            if (bitmap_start + bitmap_count >= end_cluster) {
+              enough_data = true;
+            }
+          }
+
+          if (!enough_data) {
+            std::cerr << libbareos::format(
+                "VOLUME_BITMAP returned {} (size = {}, needed = {})",
+                bytes_written, buffer.size(), struct_size)
+                      << std::endl;
+
+            buffer.resize(buffer.size() * 2);
+
+            continue;
+          }
+        }
+
+        return std::nullopt;
+      }
+
+      VOLUME_BITMAP_BUFFER* buf
+          = reinterpret_cast<VOLUME_BITMAP_BUFFER*>(buffer.data());
+
+      used_bitmap map;
+
+      std::size_t bitmap_count = buf->BitmapSize.QuadPart;
+      std::size_t bitmap_start = buf->StartingLcn.QuadPart;
+
+      logger->Trace(
+          "bitmap:: start: {}, count: {} (bytes: {}, guessed: {})",
+          bitmap_start, bitmap_count, bytes_written,
+          offsetof(VOLUME_BITMAP_BUFFER, Buffer[(bitmap_count + 7) / 8]));
+
+      map.start = bitmap_start * cluster_size;
+      map.unit_size = cluster_size;
+      map.bits.resize(bitmap_count);
+      for (std::size_t bit = 0; bit < bitmap_count; ++bit) {
+        map.bits[bit] = GetBit(buf->Buffer, bit);
+      }
+
+      return map;
+    }
+  }
+
+  void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
+  {
+    size_t cluster_size = GetClusterSize(data_volume);
+
+    logger->Trace("cluster size = {}", cluster_size);
+
+    std::vector<char> extent_buffer;
+    extent_buffer.resize(1024 * 1024);
+
+    DWORD bytes_written = 0;
+    for (;;) {
+      if (!DeviceIoControl(volume, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,
+                           nullptr, 0, extent_buffer.data(),
+                           extent_buffer.size(), &bytes_written, nullptr)) {
+        auto err = GetLastError();
+
+        if (err != ERROR_MORE_DATA) {
+          logger->Info("DISK_EXTENTS returned {} for volume {}", err, volume);
+          return;
+        }
+
+        extent_buffer.resize(extent_buffer.size() * 2);
+      }
+
+      break;
+    }
+
+    if (bytes_written == 0) {
+      // no extents
+      logger->Info("volume {} has no extents ...", volume);
+      return;
+    }
+    auto extents = reinterpret_cast<VOLUME_DISK_EXTENTS*>(extent_buffer.data());
+
+    std::vector<char> bitmap_buffer;
+
+    std::size_t volume_offset = 0;
+    std::vector<used_interval> used;
+
+    std::size_t used_clusters = 0;
+    std::size_t free_clusters = 0;
+
+    for (size_t i = 0; i < extents->NumberOfDiskExtents; ++i) {
+      auto& extent = extents->Extents[i];
+      logger->Trace("volume {} extent {} @ {} -> {}", volume, extent.DiskNumber,
+                    extent.StartingOffset.QuadPart,
+                    extent.ExtentLength.QuadPart);
+
+      auto& disk = disks[extent.DiskNumber];
+
+      auto bits = [&]() -> std::optional<used_bitmap> {
+        if (cluster_size == 0) { return std::nullopt; }
+
+        return GetBitmap(bitmap_buffer, data_volume, volume_offset,
+                         extent.ExtentLength.QuadPart, cluster_size);
+      }();
+
+      if (bits) {
+        static constexpr std::size_t min_hole_size = 1;  // 1 mb
+
+        for (auto bit : bits->bits) {
+          if (bit) {
+            used_clusters += 1;
+          } else {
+            free_clusters += 1;
+          }
+        }
+
+        used.clear();
+        find_used_data(used, bits.value(), volume_offset,
+                       volume_offset + extent.ExtentLength.QuadPart,
+                       min_hole_size);
+
+        logger->Trace("{}({}):{} -> ", extent.StartingOffset.QuadPart,
+                      volume_offset, extent.ExtentLength.QuadPart);
+
+        std::size_t ext_size
+            = static_cast<std::size_t>(extent.ExtentLength.QuadPart);
+
+        std::size_t total_size = 0;
+        for (auto [start, length] : used) {
+          assert(start >= volume_offset);
+          assert(start - volume_offset + length <= ext_size);
+
+          auto disk_offset
+              = extent.StartingOffset.QuadPart + (start - volume_offset);
+
+          logger->Trace(" - {}({}):{}", disk_offset, start, length);
+
+          total_size += length;
+
+          disk.extents.push_back({disk_offset, start, length, data_volume});
+        }
+
+        assert(total_size <= ext_size);
+      } else {
+        disk.extents.push_back(
+            {(size_t)extent.StartingOffset.QuadPart, volume_offset,
+             (size_t)extent.ExtentLength.QuadPart, data_volume});
+      }
+
+      volume_offset += (size_t)extent.ExtentLength.QuadPart;
+    }
+
+    logger->Trace("volume used: {} free: {} total: {}", used_clusters,
+                  free_clusters, used_clusters + free_clusters);
+  }
+
+  std::optional<partition_layout> partitioning(
+      DRIVE_LAYOUT_INFORMATION_EX* info)
+  {
+    for (DWORD i = 0; i < info->PartitionCount; ++i) {
+      auto& entry = info->PartitionEntry[i];
+
+      logger->Trace("  partition {}", i);
+
+      switch (entry.PartitionStyle) {
+        case PARTITION_STYLE_MBR: {
+          logger->Trace("    style: mbr");
+          auto& mbr = entry.Mbr;
+          logger->Trace("      type: {}", mbr.PartitionType);
+          logger->Trace("      boot?: {}", mbr.BootIndicator ? "yes" : "no");
+          logger->Trace("      recognized?: {}",
+                        mbr.RecognizedPartition ? "yes" : "no");
+          logger->Trace("      hidden sectors: {}", mbr.HiddenSectors);
+
+          wchar_t guid_storage[64] = {};
+
+          StringFromGUID2(mbr.PartitionId, guid_storage, sizeof(guid_storage));
+          logger->Trace("      partition id: {}", FromUtf16(guid_storage));
+        } break;
+        case PARTITION_STYLE_RAW: {
+          logger->Trace("    style: raw");
+        } break;
+        case PARTITION_STYLE_GPT: {
+          logger->Trace("    style: gpt");
+          auto& gpt = entry.Gpt;
+          wchar_t guid_storage[64] = {};
+
+          StringFromGUID2(gpt.PartitionType, guid_storage,
+                          sizeof(guid_storage));
+          logger->Trace("      type: {}", FromUtf16(guid_storage));
+          StringFromGUID2(gpt.PartitionId, guid_storage, sizeof(guid_storage));
+          logger->Trace("      partition id: {}", FromUtf16(guid_storage));
+          logger->Trace("      attributes: {}", gpt.Attributes);
+          logger->Trace("      name: {}", FromUtf16(std::wstring_view{
+                                              gpt.Name, sizeof(gpt.Name)}));
+        } break;
+        default: {
+          logger->Trace("    style: unknown");
+        } break;
+      }
+
+      logger->Trace("    offset: {}", entry.StartingOffset.QuadPart);
+      logger->Trace("    length: {}", entry.PartitionLength.QuadPart);
+      logger->Trace("    number: {}", entry.PartitionNumber);
+      logger->Trace("    rewrite?: {}", entry.RewritePartition ? "yes" : "no");
+      // logger->Trace( "    service?: {}",
+      //         entry.IsServicePartition ? "yes" : "no");
+    }
+    return std::nullopt;
+  }
+
+  void read_volume_file(HANDLE hndl, std::span<char> buffer)
+  {
+    logger->Trace("reading bootstrap (size = {})", buffer.size());
+
+    alignas(4096) char real_buffer[4096];
+
+    std::size_t bytes_to_read = buffer.size();
+    std::size_t total_bytes = 0;
+    while (total_bytes < bytes_to_read) {
+      DWORD bytes_read = 0;
+
+      if (!ReadFile(hndl, real_buffer, (DWORD)std::size(real_buffer),
+                    &bytes_read, NULL)) {
+        auto err = GetLastError();
+        logger->Trace("could not read from {}: Err={}", hndl, err);
+
+        throw win_error("ReadFile", err);
+      }
+
+      if (bytes_read != std::size(real_buffer)) {
+        logger->Trace(
+            "premature reading end.  Only read {} bytes, but still {} "
+            "bytes to go...",
+            bytes_read, bytes_to_read);
+        return;
+      }
+
+      DWORD read_size = (DWORD)std::min(std::size(real_buffer),
+                                        bytes_to_read - total_bytes);
+
+      std::memcpy(buffer.data() + total_bytes, real_buffer, read_size);
+
+      total_bytes += read_size;
+    }
+
+
+    logger->Trace(
+        "bootstrap: {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} ... {:02X} "
+        "{:02X} {:02X} {:02X} "
+        "{:02X} {:02X}",
+        (unsigned char)buffer[0], (unsigned char)buffer[1],
+        (unsigned char)buffer[2], (unsigned char)buffer[3],
+        (unsigned char)buffer[4], (unsigned char)buffer[5],
+        (unsigned char)buffer[buffer.size() - 6],
+        (unsigned char)buffer[buffer.size() - 5],
+        (unsigned char)buffer[buffer.size() - 4],
+        (unsigned char)buffer[buffer.size() - 3],
+        (unsigned char)buffer[buffer.size() - 2],
+        (unsigned char)buffer[buffer.size() - 1]);
+  }
+
+  std::optional<partition_layout> GetPartitionLayout(HANDLE device)
+  {
+    std::vector<char> buffer;
+    buffer.resize(1024 * 1024);  // 1MiB should be more than enough
+
+    for (;;) {
+      DWORD bytes_written = 0;
+      if (!DeviceIoControl(device, IOCTL_DISK_GET_DRIVE_LAYOUT_EX, nullptr, 0,
+                           buffer.data(), (DWORD)buffer.size(), &bytes_written,
+                           nullptr)) {
+        auto err = GetLastError();
+        if (err == ERROR_MORE_DATA) {
+          buffer.resize(buffer.size() + (buffer.size() >> 1));
+          continue;
+        }
+
+        std::cerr << libbareos::format("io control error = {}", err)
+                  << std::endl;
+        return std::nullopt;
+      }
+
+      break;
+    }
+
+    auto info = reinterpret_cast<DRIVE_LAYOUT_INFORMATION_EX*>(buffer.data());
+    logger->Trace("partition count = {}", info->PartitionCount);
+
+    partition_layout result = {};
+
+    switch (info->PartitionStyle) {
+      case PARTITION_STYLE_MBR: {
+        partition_info_mbr mbr{
+            std::bit_cast<std::uint32_t>(info->Mbr.CheckSum),
+            std::bit_cast<std::uint32_t>(info->Mbr.Signature),
+        };
+        DWORD off_low = 0;
+        LONG off_high = 0;
+        SetFilePointer(device, off_low, &off_high, FILE_BEGIN);
+        read_volume_file(device, mbr.bootstrap);
+
+        result.info = mbr;
+
+        logger->Trace("mbr partitioning");
+      } break;
+      case PARTITION_STYLE_RAW: {
+        result.info = partition_info_raw{};
+        logger->Trace("raw partitioning style => nothing to do");
+      } break;
+      case PARTITION_STYLE_GPT: {
+        partition_info_gpt gpt{
+            to_disk_format(info->Gpt.DiskId),
+            std::bit_cast<std::uint64_t>(info->Gpt.StartingUsableOffset),
+            std::bit_cast<std::uint64_t>(info->Gpt.UsableLength),
+            std::bit_cast<std::uint32_t>(info->Gpt.MaxPartitionCount),
+        };
+
+        DWORD off_low = 0;
+        LONG off_high = 0;
+        SetFilePointer(device, off_low, &off_high, FILE_BEGIN);
+        read_volume_file(device, gpt.bootstrap);
+
+        result.info = gpt;
+        logger->Trace("gpt partitioning");
+      } break;
+      default: {
+        logger->Trace("unknown partitioning");
+        return std::nullopt;
+      } break;
+    }
+
+    partitioning(info);
+
+    result.partition_infos.resize(info->PartitionCount);
+    std::copy_n(info->PartitionEntry, info->PartitionCount,
+                std::begin(result.partition_infos));
+
+    return result;
+  }
+
+  void PrependFileHeader(insert_plan& plan,
+                         const disk_map& map,
+                         std::size_t total_size)
+  {
+    file_header header(map.size(), total_size);
+
+    vec_writer writer;
+    header.write(writer);
+    plan.insert(plan.begin(), writer.get());
+  }
+
+  void WriteDiskHeader(insert_plan& plan,
+                       const disk& Disk,
+                       const DISK_GEOMETRY_EX& geo)
+  {
+    std::size_t total_extent_size = 0;
+    for (auto& extent : Disk.extents) { total_extent_size += extent.length; }
+    disk_header header(geo.DiskSize.QuadPart, total_extent_size,
+                       geo.Geometry.MediaType, geo.Geometry.BytesPerSector,
+                       Disk.extents.size());
+
+    vec_writer writer;
+    header.write(writer);
+    plan.emplace_back(writer.get());
+  }
+
+  void WriteDiskPartTable(insert_plan& plan, const partition_layout& layout)
+  {
+    vec_writer writer;
+
+    {
+      auto header = std::visit(
+          overloads{
+              [](const partition_info_raw&) {
+                part_table_header header(0, part_type::Raw, 0, 0, 0);
+                return header;
+              },
+              [](const partition_info_mbr& mbr) {
+                part_table_header header(0, part_type::Mbr, mbr.CheckSum,
+                                         mbr.Signature, 0, {}, mbr.bootstrap);
+                return header;
+              },
+              [](const partition_info_gpt& gpt) {
+                static_assert(sizeof(gpt.DiskId) == 16);
+                part_table_header header(
+                    0, part_type::Gpt, gpt.MaxPartitionCount,
+                    gpt.StartingUsableOffset, gpt.UsableLength,
+                    std::span<const char>(
+                        reinterpret_cast<const char*>(&gpt.DiskId),
+                        sizeof(gpt.DiskId)),
+                    gpt.bootstrap);
+                return header;
+              },
+          },
+          layout.info);
+      header.partition_count = layout.partition_infos.size();
+
+      header.write(writer);
+    }
+
+
+    for (auto& info : layout.partition_infos) {
+      part_table_entry ent = from_win32(info);
+
+      ent.write(writer);
+      switch (info.PartitionStyle) {
+        case PARTITION_STYLE_MBR: {
+          part_table_entry_mbr_data data = from_win32(info.Mbr);
+
+          data.write(writer);
+        } break;
+        case PARTITION_STYLE_GPT: {
+          part_table_entry_gpt_data data = from_win32(info.Gpt);
+
+          data.write(writer);
+        } break;
+        default: { /* intentionally left blank */
+        } break;
+      }
+    }
+
+    plan.emplace_back(writer.get());
+  }
+
+  void WriteDiskData(insert_plan& plan, const disk& disk_extents)
+  {
+    for (auto& extent : disk_extents.extents) {
+      vec_writer writer;
+      extent_header header = header_of(extent);
+
+      header.write(writer);
+
+      plan.emplace_back(writer.get());
+
+      // logger->Trace( "copying extent ({}, {})", extent.handle_offset,
+      //         extent.length);
+
+      plan.emplace_back(
+          insert_from{extent.hndl, extent.handle_offset, extent.length});
+    }
+  }
+
+  // on linux we can get the disk_geometry with the HDIO_GETGEO ioctl
+  std::optional<DISK_GEOMETRY_EX> GetDiskGeometry(HANDLE disk)
+  {
+    DISK_GEOMETRY_EX geo;
+    DWORD bytes_written = 0;
+    auto res = DeviceIoControl(disk, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, NULL, 0,
+                               &geo, sizeof(geo), &bytes_written, NULL);
+
+    if (res != TRUE) { return std::nullopt; }
+
+    // if (sizeof(geo) != bytes_written) {
+    //   logger->Trace( "drive geometry: bad read.  got {} bytes",
+    //   bytes_written); return std::nullopt;
+    // }
+
+    return geo;
+  }
+
+  GenericLogger* logger;
+  CComPtr<IVssBackupComponents> backup_components{};
+  std::optional<VssSnapshot> snapshot;
+  std::vector<HANDLE> open_handles;
 };
 
 dump_context* make_context(GenericLogger* logger)
