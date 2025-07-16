@@ -66,6 +66,7 @@ void dump_data(std::ostream& stream, GenericLogger* logger)
 
   auto dumper = dumper_setup(logger, std::move(plan));
 
+  logger->Info("writing backup");
   try {
     for (;;) {
       auto count = dumper_write(dumper, buffer);
