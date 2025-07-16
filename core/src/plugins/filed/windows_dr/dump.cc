@@ -674,6 +674,13 @@ struct dump_context {
     logger->Info(" creating a vss snapshot");
     snapshot.emplace(VssSnapshot::create(logger, backup_components, volumes));
 
+    {
+      wchar_t guid_storage[64] = {};
+      StringFromGUID2(snapshot->snapshot_guid, guid_storage,
+                      sizeof(guid_storage));
+      logger->Info(" ... done! (=> Id = {})", FromUtf16(guid_storage));
+    }
+
     auto paths = snapshot->snapshotted_paths(backup_components);
 
     disk_map candidate_disks;
