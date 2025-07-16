@@ -61,17 +61,45 @@ struct GenericLogger {
   virtual void End() = 0;
 
   virtual void SetStatus(std::string_view Status) = 0;
-  virtual void Info(std::string_view Message) = 0;
-
-  template <typename F /* : () -> std::is_convertible_v<std::string_view> */>
-  inline void Trace(const F& f)
-  {
-    if (trace) { Info(f()); }
-  }
+  virtual void Output(std::string_view Message) = 0;
 
   GenericLogger(bool do_trace) : trace{do_trace} {}
   virtual ~GenericLogger() {}
 
+  template <typename... Args>
+  inline constexpr void Info(libbareos::format_string<Args...> fmt,
+                             Args&&... args)
+  {
+    if constexpr (sizeof...(Args) == 0) {
+      auto fmt_view = fmt.get();
+      Output(std::string_view{fmt_view.data(), fmt_view.size()});
+    } else {
+      auto formatted = libbareos::format(fmt, std::forward<Args>(args)...);
+      Output(formatted);
+    }
+  }
+
+  template <typename F /* : () -> std::is_convertible_v<std::string_view> */,
+            typename = std::enable_if_t<std::is_invocable_v<F>>>
+  inline constexpr void Trace(const F& f)
+  {
+    if (trace) { Output(f()); }
+  }
+
+  template <typename... Args>
+  inline constexpr void Trace(libbareos::format_string<Args...> fmt,
+                              Args&&... args)
+  {
+    if (trace) {
+      if constexpr (sizeof...(Args) == 0) {
+        auto fmt_view = fmt.get();
+        Output(std::string_view{fmt_view.data(), fmt_view.size()});
+      } else {
+        auto formatted = libbareos::format(fmt, std::forward<Args>(args)...);
+        Output(formatted);
+      }
+    }
+  }
 
   bool trace{false};
 };

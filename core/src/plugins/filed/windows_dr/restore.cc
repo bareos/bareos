@@ -283,8 +283,8 @@ class RestoreToHandles : public GenericHandler {
       throw std::logic_error{"cannot begin disk after one was created"};
     }
 
-    logger_->Info(libbareos::format("begin disk {{ size {}, count {} }}",
-                                    info.disk_size, info.extent_count));
+    logger_->Info("begin disk {{ size {}, count {} }}", info.disk_size,
+                  info.extent_count);
     auto geo = geometry_for_size(info.disk_size);
     HANDLE hndl = Generator_->Create(info, geo);
     disk_.emplace(hndl, geo, info.disk_size);
@@ -328,8 +328,8 @@ class RestoreToHandles : public GenericHandler {
 
   void BeginExtent(extent_header header) override
   {
-    logger_->Info(libbareos::format("begin extent {{ size: {}, offset: {} }}",
-                                    header.length, header.offset));
+    logger_->Info("begin extent {{ size: {}, offset: {} }}", header.length,
+                  header.offset);
     disk().BeginExtent(header);
   }
   void ExtentData(std::span<const char> data) override
