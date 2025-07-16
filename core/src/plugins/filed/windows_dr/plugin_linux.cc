@@ -189,7 +189,7 @@ struct plugin_logger : public GenericLogger {
   void End() override {}
 
   void SetStatus(std::string_view Status) override { (void)Status; }
-  void Info(std::string_view Message) override
+  void Output(std::string_view Message) override
   {
     JobLog(ctx, M_INFO, "{}", Message);
   }

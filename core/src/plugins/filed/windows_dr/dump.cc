@@ -51,6 +51,36 @@
 #include "remove_holes.h"
 
 namespace {
+std::string FromUtf16(std::wstring_view utf16)
+{
+  // WideCharToMultiByte does not handle empty strings
+  if (utf16.size() == 0) { return {}; }
+
+  // if the buffer is to small (or not supplied) the function returns
+  // the number of bytes required
+  DWORD required = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(),
+                                       nullptr, 0, nullptr, nullptr);
+  if (required == 0) { return "<impossible conversion>"; }
+  std::string utf8(required, '\0');
+
+  // if the buffer is big enough the function returns the number of
+  // bytes written
+  DWORD written
+      = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(), utf8.data(),
+                            utf8.size(), nullptr, nullptr);
+
+  if (written != required) { return "<impossible conversion>"; }
+
+  utf8.resize(written);
+  return utf8;
+}
+
+std::string FromUtf16(const wchar_t* utf16p)
+{
+  if (!utf16p) { return {}; }
+  return FromUtf16(std::wstring_view{utf16p});
+}
+
 bool GetBit(unsigned char* data, std::size_t index)
 {
   return (data[index / CHAR_BIT] >> (index % CHAR_BIT)) & 0x1;
@@ -194,7 +224,7 @@ struct disk_reader {
       std::size_t rounded_offset = (offset / sector_size) * sector_size;
 
       ignore_offset = offset - rounded_offset;
-      // fprintf(stderr, "offset: %zu => ignore = %d\n", offset, ignore_offset);
+      // logger->Trace( "offset: {} => ignore = {}", offset, ignore_offset);
 
       DWORD off_low = rounded_offset & 0xFFFFFFFF;
       LONG off_high = (rounded_offset >> 32) & 0xFFFFFFFF;
@@ -204,12 +234,12 @@ struct disk_reader {
     }
 
     if (ignore_offset) {
-      fprintf(stderr, "%zu/%zu => %d\n", offset, sector_size, ignore_offset);
+      logger->Trace([&] { return libbareos::format("{}/{} => {}", offset, sector_size, ignore_offset); });
     }
 
     std::size_t bytes_to_read = length + ignore_offset;
     while (bytes_to_read > 0) {
-      // fprintf(stderr, "%s\n", fmt::format("to read: {} (offset: {})",
+      // logger->Trace( "{}", fmt::format("to read: {} (offset: {})",
       // bytes_to_read, offset).c_str());
       DWORD bytes_read = 0;
 
@@ -225,7 +255,7 @@ struct disk_reader {
 
       DWORD diff = rounded_buffer_size - buffer_size;
       if (diff) {
-        fprintf(stderr, "%zu/%zu => %d\n", bytes_to_read, sector_size, diff);
+        logger->Trace("{}/{} => {}", bytes_to_read, sector_size, diff);
       }
 
       buffer_size = rounded_buffer_size;
@@ -233,11 +263,11 @@ struct disk_reader {
       // as the buffer is always sector sized, this should always hold true
       assert(buffer_size <= capacity);
 
-      // fprintf(stderr, "%s\n", fmt::format("buffer size: {}",
+      // logger->Trace( "{}", fmt::format("buffer size: {}",
       // buffer_size).c_str());
 
       if (!ReadFile(hndl, buffer.get(), buffer_size, &bytes_read, NULL)) {
-        fprintf(stderr, "oh oh error: %d\n", GetLastError());
+        logger->Info("Read error occured when trying to read handle {}: {}", hndl, GetLastError());
         throw win_error("ReadFile", GetLastError());
       }
 
@@ -247,24 +277,20 @@ struct disk_reader {
           dist.QuadPart = 0;
           LARGE_INTEGER new_pos = {};
           if (!SetFilePointerEx(hndl, dist, &new_pos, FILE_CURRENT)) {
-            fprintf(stderr, "coud not determine size: Err=%d\n",
-                    GetLastError());
+            logger->Trace("could not determine current pos of handle {}: Err={}", hndl, GetLastError());
           } else {
-            fprintf(stderr, "Reading (%llu, %llu) of %p.  Current = %llu\n",
-                    offset, length, hndl, new_pos.QuadPart);
+            logger->Trace("reading ({}, {}) of {}  Current = {}", offset, length, hndl, new_pos.QuadPart);
           }
         }
 
-        fprintf(stderr,
-                "premature reading end (read 0).  Still %llu bytes to go...\n",
-                bytes_to_read);
+        logger->Info("encountered premature reading end when trying to read from handle {}.  There were still {} bytes to go", hndl, bytes_to_read);
         return;
       }
 
       std::size_t actual_bytes_read = bytes_read;
       current_offset += bytes_read;
 
-      // fprintf(stderr, "%s\n", fmt::format("read: {}", bytes_read).c_str());
+      // logger->Trace( "{}", fmt::format("read: {}", bytes_read).c_str());
 
       // make sure to ignore the first ignore_offset bytes
       if (ignore_offset > 0) {
@@ -357,9 +383,9 @@ struct disk_reader {
           std::memcpy(&desc, desc_buf.data(), sizeof(desc));
 
           new_align = desc.BytesPerPhysicalSector;
-          fprintf(stderr, "phys sector size: %zu\n", new_align);
+          logger->Trace( "phys sector size: {}", new_align);
         } else {
-          fprintf(stderr, "bad size for query storage alignment\n");
+          logger->Trace( "bad size for query storage alignment");
         }
       } else {
         auto err = GetLastError();
@@ -368,7 +394,7 @@ struct disk_reader {
           desc_buf.resize(desc_buf.size() * 2);
           continue;
         } else {
-          fprintf(stderr, "could not query storage alignment\n");
+          logger->Trace( "could not query storage alignment");
         }
       }
       break;
@@ -383,11 +409,10 @@ struct disk_reader {
                           &length_info, sizeof(length_info), &bytes_returned,
                           NULL)) {
         disk_size = length_info.Length.QuadPart;
-        logger->Trace(
-            [&] { return libbareos::format("disk size = {}", disk_size); });
+        logger->Trace("disk size = {}", disk_size);
       } else {
         disk_size = 0;
-        logger->Info(libbareos::format("could not determine disk size"));
+        logger->Info("could not determine disk size");
       }
     }
   }
@@ -402,7 +427,7 @@ struct disk_reader {
       current_offset = (offset / sector_size) * sector_size;
 
       logger->Trace([&] {
-        return libbareos::format("current offset = {} (wanted: {})\n",
+        return libbareos::format("current offset = {} (wanted: {})",
                                  current_offset, offset);
       });
 
@@ -441,14 +466,14 @@ struct disk_reader {
       size += bytes_read;
     }
 
-    // fprintf(stderr, "wanted: %p, %zu, cached: %p, %zu-%zu (%zu)\n",
+    // logger->Trace( "wanted: {}, {}, cached: {}, {}-{} ({})",
     //         hndl, offset, current_handle, current_offset, current_offset +
     //         size, size);
   }
 
   std::size_t do_fill(HANDLE hndl, std::size_t offset, std::span<char> output)
   {
-    // fprintf(stderr, "fill %p %zu\n", hndl, offset);
+    // logger->Trace( "fill {} {}", hndl, offset);
     std::size_t bytes_written = 0;
     bool refreshed = false;
     for (;;) {
@@ -463,9 +488,8 @@ struct disk_reader {
           // there is still no data even after a refresh.
           // something went wrong, so we just return
 
-          logger->Info(
-              libbareos::format("no data after refresh offset={} ({} + {}))!!!",
-                                offset + bytes_written, offset, bytes_written));
+          logger->Info("no data after refresh offset={} ({} + {}))!!!",
+                       offset + bytes_written, offset, bytes_written);
           break;
         }
         refresh_cache(hndl, offset + bytes_written);
@@ -1239,72 +1263,6 @@ void WriteDiskData(insert_plan& plan, const disk& disk_extents)
   }
 }
 
-// we want to make sure that every partition is covered by some extent
-// of a volume.  Because we can only read from (shadow copies) of volumes,
-// and not from the devices directly.  If some part of a partition is not
-// covered by an extent of a volume, then that part of the partition
-// cannot be read!
-
-struct partition_cover {
-  std::vector<partition_extent> extents;
-};
-
-std::optional<std::vector<partition_cover>> CrossCheckPartitionsAndExtents(
-    const partition_layout& layout,
-    const std::vector<partition_extent>& extents)
-{
-  // for now we assume that every partition corresponds exactly to one extent.
-
-  std::vector<partition_cover> covers;
-
-  for (auto& info : layout.partition_infos) {
-    auto offset = info.StartingOffset.QuadPart;
-    auto length = info.PartitionLength.QuadPart;
-
-    if (info.PartitionStyle == PARTITION_STYLE_MBR
-        && info.Mbr.PartitionType == PARTITION_ENTRY_UNUSED) {
-      continue;
-    }
-    if (length == 0) { continue; }
-
-    auto& cover = covers.emplace_back();
-
-    bool found = false;
-    for (auto extent : extents) {
-      if (extent.partition_offset == offset && extent.length == length) {
-        found = true;
-        cover.extents.push_back(extent);
-        break;
-      }
-    }
-
-    std::sort(std::begin(cover.extents), std::end(cover.extents),
-              [](auto& l, auto& r) {
-                return l.partition_offset < r.partition_offset;
-              });
-
-    if (!found) {
-      fprintf(stderr,
-              "could not find extent covering partition %d, (%llu, %llu)\n",
-              info.PartitionNumber, offset, offset + length);
-      return std::nullopt;
-    }
-  }
-
-  std::sort(std::begin(covers), std::end(covers), [](auto& l, auto& r) {
-    // empty collections are always the smallest, so an empty r
-    // can never be smaller than l
-    if (r.extents.size() == 0) { return false; }
-    // if r is not empty, then an empty l is always smaller
-    if (l.extents.size() == 0) { return true; }
-
-    return l.extents[0].partition_offset < r.extents[0].partition_offset;
-  });
-
-  return covers;
-}
-
-
 // on linux we can get the disk_geometry with the HDIO_GETGEO ioctl
 std::optional<DISK_GEOMETRY_EX> GetDiskGeometry(HANDLE disk)
 {
@@ -1326,6 +1284,11 @@ std::optional<DISK_GEOMETRY_EX> GetDiskGeometry(HANDLE disk)
 struct dump_context {
   GenericLogger* logger;
 
+  bool dry{false};
+  bool save_unknown_partitions{false};
+  bool save_unknown_disks{false};
+  bool save_unknown_extents{false};
+
   CComPtr<IVssBackupComponents> backup_components{};
   std::optional<VssSnapshot> snapshot;
   std::vector<HANDLE> open_handles;
@@ -1340,7 +1303,7 @@ struct dump_context {
   }
 
  public:
-  insert_plan create(bool dry)
+  insert_plan create()
   {
     COM_CALL(CreateVssBackupComponents(&backup_components));
 
@@ -1381,31 +1344,33 @@ struct dump_context {
 
       // these two writers should be skipped
       if (identity.writer_id == SYSTEM_WRITER_ID) {
-        fprintf(stderr, "=== SYSTEM WRITER DETECTED ===\n");
+        logger->Trace("=== SYSTEM WRITER DETECTED ===");
       }
       if (identity.writer_id == ASR_WRITER_ID) {
-        fprintf(stderr, "=== ASR WRITER DETECTED ===\n");
+        logger->Trace("=== ASR WRITER DETECTED ===");
       }
 
-      fprintf(stderr, "%ls\n", (BSTR)identity.name);
+      logger->Trace("{}", FromUtf16((BSTR)identity.name));
       {
         wchar_t guid_storage[64] = {};
 
         StringFromGUID2(identity.instance_id, guid_storage,
                         sizeof(guid_storage));
-        fprintf(stderr, "  Instance Id: %ls\n", guid_storage);
+        logger->Trace("  Instance Id: {}", FromUtf16(guid_storage));
         StringFromGUID2(identity.writer_id, guid_storage, sizeof(guid_storage));
-        fprintf(stderr, "  Writer Id: %ls\n", guid_storage);
-        fprintf(stderr, "  Usage Type: %s (%u)\n",
-                vss_usage_as_str(identity.usage_type), identity.usage_type);
-        fprintf(stderr, "  Source Type: %s (%u)\n",
-                vss_source_as_str(identity.source_type), identity.source_type);
+        logger->Trace("  Writer Id: {}", FromUtf16(guid_storage));
+        logger->Trace("  Usage Type: {} ({})",
+                      vss_usage_as_str(identity.usage_type),
+                      (int)identity.usage_type);
+        logger->Trace("  Source Type: {} ({})",
+                      vss_source_as_str(identity.source_type),
+                      (int)identity.source_type);
       }
 
       COM_CALL(metadata->GetFileCounts(&counts.include, &counts.exclude,
                                        &counts.component));
 
-      fprintf(stderr, "  %u Includes:\n", counts.include);
+      logger->Trace("  {} Includes:", counts.include);
       for (UINT i = 0; i < counts.include; ++i) {
         CComPtr<IVssWMFiledesc> file;
         COM_CALL(metadata->GetIncludeFile(i, &file));
@@ -1413,34 +1378,34 @@ struct dump_context {
         CComBSTR path;
         COM_CALL(file->GetPath(&path));
 
-        fprintf(stderr, "    %ls\n", (BSTR)path);
+        logger->Trace("    {}", FromUtf16((BSTR)path));
       }
 
-      fprintf(stderr, "  %u Excludes:\n", counts.exclude);
+      logger->Trace("  {} Excludes:", counts.exclude);
       for (UINT i = 0; i < counts.exclude; ++i) {
         CComPtr<IVssWMFiledesc> file;
         COM_CALL(metadata->GetExcludeFile(i, &file));
         CComBSTR path;
         COM_CALL(file->GetPath(&path));
 
-        fprintf(stderr, "    %ls\n", (BSTR)path);
+        logger->Trace("    {}", FromUtf16((BSTR)path));
       }
 
-      fprintf(stderr, "  %u Components:\n", counts.component);
+      logger->Trace("  {} Components:", counts.component);
       for (UINT i = 0; i < counts.component; ++i) {
         CComPtr<IVssWMComponent> component;
         COM_CALL(metadata->GetComponent(i, &component));
 
         PVSSCOMPONENTINFO info{nullptr};
         COM_CALL(component->GetComponentInfo(&info));
-        fprintf(stderr, "    %u:\n", i);
-        fprintf(stderr, "      path: %ls\n", info->bstrLogicalPath);
-        fprintf(stderr, "      name: %ls\n", info->bstrComponentName);
-        fprintf(stderr, "      caption: %ls\n", info->bstrCaption);
+        logger->Trace("    {}:", i);
+        logger->Trace("      path: {}", FromUtf16(info->bstrLogicalPath));
+        logger->Trace("      name: {}", FromUtf16(info->bstrComponentName));
+        logger->Trace("      caption: {}", FromUtf16(info->bstrCaption));
 
-        fprintf(stderr, "      files: %u\n", info->cFileCount);
+        logger->Trace("      files: {}", info->cFileCount);
         for (UINT fileidx = 0; fileidx < info->cFileCount; ++fileidx) {
-          fprintf(stderr, "        %u:\n", fileidx);
+          logger->Trace("        {}:", fileidx);
           CComPtr<IVssWMFiledesc> file;
           COM_CALL(component->GetFile(fileidx, &file));
 
@@ -1451,15 +1416,15 @@ struct dump_context {
           bool recursive;
           COM_CALL(file->GetRecursive(&recursive));
 
-          fprintf(stderr, "          path: %ls\n", (BSTR)path);
-          fprintf(stderr, "          spec: %ls\n", (BSTR)spec);
-          fprintf(stderr, "          recursive: %s\n",
-                  recursive ? "true" : "false");
+          logger->Trace("          path: {}", FromUtf16((BSTR)path));
+          logger->Trace("          spec: {}", FromUtf16((BSTR)spec));
+          logger->Trace("          recursive: {}",
+                        recursive ? "true" : "false");
         }
 
-        fprintf(stderr, "      databases: %u\n", info->cDatabases);
+        logger->Trace("      databases: {}", info->cDatabases);
         for (UINT dbidx = 0; dbidx < info->cDatabases; ++dbidx) {
-          fprintf(stderr, "        %u:\n", dbidx);
+          logger->Trace("        {}:", dbidx);
           CComPtr<IVssWMFiledesc> file;
           COM_CALL(component->GetDatabaseFile(dbidx, &file));
 
@@ -1470,15 +1435,15 @@ struct dump_context {
           bool recursive;
           COM_CALL(file->GetRecursive(&recursive));
 
-          fprintf(stderr, "          path: %ls\n", (BSTR)path);
-          fprintf(stderr, "          spec: %ls\n", (BSTR)spec);
-          fprintf(stderr, "          recursive: %s\n",
-                  recursive ? "true" : "false");
+          logger->Trace("          path: {}", FromUtf16((BSTR)path));
+          logger->Trace("          spec: {}", FromUtf16((BSTR)spec));
+          logger->Trace("          recursive: {}",
+                        recursive ? "true" : "false");
         }
 
-        fprintf(stderr, "      logs: %u\n", info->cLogFiles);
+        logger->Trace("      logs: {}", info->cLogFiles);
         for (UINT logidx = 0; logidx < info->cLogFiles; ++logidx) {
-          fprintf(stderr, "        %u:\n", logidx);
+          logger->Trace("        {}:", logidx);
           CComPtr<IVssWMFiledesc> file;
           COM_CALL(component->GetDatabaseLogFile(logidx, &file));
 
@@ -1489,15 +1454,15 @@ struct dump_context {
           bool recursive;
           COM_CALL(file->GetRecursive(&recursive));
 
-          fprintf(stderr, "          path: %ls\n", (BSTR)path);
-          fprintf(stderr, "          spec: %ls\n", (BSTR)spec);
-          fprintf(stderr, "          recursive: %s\n",
-                  recursive ? "true" : "false");
+          logger->Trace("          path: {}", FromUtf16((BSTR)path));
+          logger->Trace("          spec: {}", FromUtf16((BSTR)spec));
+          logger->Trace("          recursive: {}",
+                        recursive ? "true" : "false");
         }
 
-        fprintf(stderr, "      dependencies: %u\n", info->cDependencies);
+        logger->Trace("      dependencies: {}", info->cDependencies);
         for (UINT depidx = 0; depidx < info->cDependencies; ++depidx) {
-          fprintf(stderr, "        %u:\n", depidx);
+          logger->Trace("        {}:", depidx);
           CComPtr<IVssWMDependency> dep;
           COM_CALL(component->GetDependency(depidx, &dep));
 
@@ -1508,12 +1473,12 @@ struct dump_context {
           VSS_ID writer_id;
           COM_CALL(dep->GetWriterId(&writer_id));
 
-          fprintf(stderr, "          name: %ls\n", (BSTR)name);
-          fprintf(stderr, "          path: %ls\n", (BSTR)path);
+          logger->Trace("          name: {}", FromUtf16((BSTR)name));
+          logger->Trace("          path: {}", FromUtf16((BSTR)path));
 
           wchar_t guid_storage[64] = {};
           StringFromGUID2(writer_id, guid_storage, sizeof(guid_storage));
-          fprintf(stderr, "          writer: %ls\n", guid_storage);
+          logger->Trace("          writer: {}", FromUtf16(guid_storage));
         }
 
         COM_CALL(component->FreeComponentInfo(info));
@@ -1537,12 +1502,12 @@ struct dump_context {
                         NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
       if (volume == INVALID_HANDLE_VALUE) {
-        fprintf(stderr, "volume %ls (%ls) -> could not volume\n", path.c_str(),
-                copy.c_str());
+        logger->Trace("volume {} ({}) -> could not open volume",
+                      FromUtf16(path), FromUtf16(copy));
         throw win_error("CreateFileW", GetLastError());
       }
 
-      fprintf(stderr, "volume %ls -> %p\n", cpath.c_str(), volume);
+      logger->Trace("volume {} -> {}", FromUtf16(cpath), volume);
 
       HANDLE shadow = CreateFileW(
           copy.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS,
@@ -1551,8 +1516,8 @@ struct dump_context {
           NULL);
 
       if (shadow == INVALID_HANDLE_VALUE) {
-        fprintf(stderr, "volume %ls (%ls) -> could not shadow copy\n",
-                path.c_str(), copy.c_str());
+        logger->Trace("volume {} ({}) -> could not open shadow copy",
+                      FromUtf16(path), FromUtf16(copy));
         CloseHandle(volume);
         throw win_error("CreateFileW", GetLastError());
       }
@@ -1565,15 +1530,16 @@ struct dump_context {
                              NULL,                          // lpOutBuffer
                              0,                             // nOutBufferSize
                              &bytes_returned, NULL)) {
-          fprintf(stderr,
-                  "---- could not enable extended access (Err=%d) ----\n",
-                  GetLastError());
+          logger->Trace("---- could not enable extended access (Err={}) ----",
+                        GetLastError());
         } else {
-          fprintf(stderr, "---- extended access enabled ----\n");
+          logger->Trace("---- extended access enabled ----");
         }
       }
 
-      fprintf(stderr, "shadow %ls -> %p\n", copy.c_str(), shadow);
+      logger->Trace([&] {
+        return libbareos::format("shadow {} -> {}", FromUtf16(copy), shadow);
+      });
 
       // the operating system will clean up shadow on exit (yes, we leak it)
       GetVolumeExtents(candidate_disks, volume, shadow);
@@ -1604,7 +1570,8 @@ struct dump_context {
           NULL);
 
       if (hndl == INVALID_HANDLE_VALUE) {
-        fprintf(stderr, "could not open %ls\n", disk_path.c_str());
+        logger->Info("could not open disk {}; skipping ...",
+                     FromUtf16(disk_path));
         continue;
       }
 
@@ -1615,8 +1582,8 @@ struct dump_context {
       }
 
       if (geo->Geometry.MediaType != FixedMedia) {
-        fprintf(stderr, "disk %zu has bad media type (%d); skipping...\n", id,
-                geo->Geometry.MediaType);
+        logger->Info("disk {} has bad media type {}; skipping ...", id,
+                     (int)geo->Geometry.MediaType);
         continue;
       }
 
@@ -1627,53 +1594,39 @@ struct dump_context {
 
     insert_plan plan;
     for (auto& [id, disk] : disks) {
-      fprintf(stderr, "disk %zu extents\n", id);
+      logger->Trace("disk {} extents:", id);
 
       std::sort(std::begin(disk.extents), std::end(disk.extents),
                 [](auto& l, auto& r) {
                   return l.partition_offset < r.partition_offset;
                 });
 
-      std::size_t total = 0;
-      for (auto& extent : disk.extents) {
-        total += extent.length;
-        fprintf(stderr, "  %zu -> %zu\n", extent.partition_offset,
-                extent.partition_offset + extent.length);
-      }
-      fprintf(stderr, " => total = %zu\n", total);
-
       auto [hndl, geo] = disk_info[id];
+
+      logger->Trace(
+          "disk geometry:\n"
+          " - Size: {}\n"
+          " - Cylinders: {}\n"
+          " - Tracks/C: {}\n"
+          " - Sectors/T: {}\n"
+          " - Bytes/S: {}",
+          geo.DiskSize.QuadPart, geo.Geometry.Cylinders.QuadPart,
+          geo.Geometry.TracksPerCylinder, geo.Geometry.SectorsPerTrack,
+          geo.Geometry.BytesPerSector);
 
       auto layout = GetPartitionLayout(hndl);
       if (!layout) { continue; }
 
-      auto disk_extents
-          = CrossCheckPartitionsAndExtents(layout.value(), disk.extents);
-      if (!disk_extents) {
-        // continue;
+      InsertMissingExtents(hndl, layout.value(), disk.extents);
+
+      std::size_t total = 0;
+      for (auto& extent : disk.extents) {
+        total += extent.length;
+        logger->Trace("  {} -> {}", extent.partition_offset,
+                      extent.partition_offset + extent.length);
       }
 
-      // for (auto& cover : disk_extents.value()) {
-      //   fprintf(stderr, " --- START ---\n");
-      //   for (auto& extent : cover) {
-      //     fprintf(stderr, "p.offset = %zu, h.offset = %zu, length = %zu\n"
-      //             extent.partition_offset, extent.handle_offset,
-      //             extent.length
-      //            );
-      //   }
-      //   fprintf(stderr, " --- END ---\n");
-      // }
-
-      fprintf(stderr,
-              "disk geometry:\n"
-              " - Size: %llu\n"
-              " - Cylinders: %llu\n"
-              " - Tracks/C: %lu\n"
-              " - Sectors/T: %lu\n"
-              " - Bytes/S: %lu\n",
-              geo.DiskSize.QuadPart, geo.Geometry.Cylinders.QuadPart,
-              geo.Geometry.TracksPerCylinder, geo.Geometry.SectorsPerTrack,
-              geo.Geometry.BytesPerSector);
+      logger->Trace("  => total = {}", total);
 
       if (dry) { disk.extents.clear(); }
 
@@ -1687,6 +1640,78 @@ struct dump_context {
   }
 
  private:
+  void InsertMissingExtents(HANDLE disk_handle,
+                            const partition_layout& layout,
+                            std::vector<partition_extent>& extents)
+  {
+    /* extents currently contains all extents _from the current disk_ that we
+     * wish to save (they are probably all coming from the volumes that we
+     * snapshotted) our task is now to insert relevant extents that were not
+     * part of the snapshot. */
+    // we assume that these extents are sorted
+
+    std::vector<partition_extent> new_extents;
+    for (auto& info : layout.partition_infos) {
+      std::size_t offset = info.StartingOffset.QuadPart;
+      std::size_t length = info.PartitionLength.QuadPart;
+
+      if (info.PartitionStyle == PARTITION_STYLE_MBR
+          && info.Mbr.PartitionType == PARTITION_ENTRY_UNUSED) {
+        continue;
+      }
+      if (length == 0) { continue; }
+
+      // first_extent is the index of the first extent whose end
+      // is larger than the start of the partition (i.e. offset)
+      std::size_t first_extent = extents.size();
+      for (std::size_t i = 0; i < extents.size(); ++i) {
+        if (extents[i].partition_offset + extents[i].length > offset) {
+          first_extent = i;
+          break;
+        }
+      }
+
+      // if the extent we found starts _after_ our partition begins, then
+      // their intersection is empty, and we are in the case where the partition
+      // contains _no_ snapshotted data.
+      // if no first_extent exists, then we are also in this case.
+      if (first_extent == extents.size()
+          || offset + length <= extents[first_extent].partition_offset) {
+        if (save_unknown_partitions) {
+          new_extents.push_back({offset, offset, length, disk_handle});
+          logger->Trace("saving unknown partition {} ({}-{})",
+                        info.PartitionNumber, offset, offset + length);
+        }
+        continue;
+      }
+
+      if (save_unknown_extents) {
+        auto current_extent = first_extent;
+        auto current_offset = offset;
+        // loop invariant:
+        // current_offset < end(extents[current_extent])
+        while (current_offset < offset + length
+               && current_extent < extents.size()) {
+          auto& extent = extents[current_extent];
+          if (current_offset < extent.partition_offset) {
+            std::size_t hole_end
+                = std::min(extent.partition_offset, offset + length);
+
+            std::size_t hole_size = hole_end - current_offset;
+
+            logger->Trace("saving unknown extent {}-{}", current_offset,
+                          hole_end);
+
+            new_extents.push_back(
+                {current_offset, current_offset, hole_size, disk_handle});
+          }
+
+          current_offset = extent.partition_offset + extent.length;
+          current_extent += 1;
+        }
+      }
+    }
+  }
 };
 
 dump_context* make_context(GenericLogger* logger)
@@ -1695,9 +1720,25 @@ dump_context* make_context(GenericLogger* logger)
 }
 void destroy_context(dump_context* ctx) { delete ctx; }
 
-insert_plan create_insert_plan(dump_context* ctx, bool dry)
+void dump_context_save_unknown_disks(dump_context* ctx, bool enable)
 {
-  return ctx->create(dry);
+  ctx->save_unknown_disks = enable;
+}
+void dump_context_save_unknown_partitions(dump_context* ctx, bool enable)
+{
+  ctx->save_unknown_partitions = enable;
+}
+void dump_context_save_unknown_extents(dump_context* ctx, bool enable)
+{
+  ctx->save_unknown_extents = enable;
+}
+void dump_context_ignore_all_data(dump_context* ctx, bool dry)
+{
+  ctx->dry = dry;
+}
+insert_plan dump_context_create_plan(dump_context* ctx)
+{
+  return ctx->create();
 }
 
 struct data_dumper {
@@ -1714,8 +1755,7 @@ struct data_dumper {
   {
     if (offset == 0) {
       logger->SetStatus("inserting meta data");
-      logger->Trace(
-          [&] { return libbareos::format("writing {} bytes", bytes.size()); });
+      logger->Trace("writing {} bytes", bytes.size());
     }
 
     auto bytes_left = bytes.size() - offset;
@@ -1733,19 +1773,15 @@ struct data_dumper {
   {
     if (offset == 0) {
       logger->SetStatus("inserting from file");
-      logger->Trace(
-          [&] { return libbareos::format("inserting {} bytes", from.length); });
+      logger->Trace("inserting {} bytes", from.length);
     }
 
     auto bytes_left = from.length - offset;
     auto bytes_to_write = std::min(bytes_left, buffer.size());
 
     if (bytes_to_write == 0) {
-      logger->Trace([&] {
-        return libbareos::format("bytes_to_write = 0!!! {} {} {} {}",
-                                 bytes_left, buffer.size(), offset,
-                                 current_offset);
-      });
+      logger->Trace("bytes_to_write = 0!!! {} {} {} {}", bytes_left,
+                    buffer.size(), offset, current_offset);
     }
 
     return reader.do_fill(from.hndl, from.offset + offset,
@@ -1774,7 +1810,7 @@ struct data_dumper {
 
       bytes_written += write_result;
       if (write_result == 0) {
-        logger->Trace([&] { return "write done"; });
+        logger->Trace("write done");
         current_index += 1;
         current_offset = 0;
       } else {
