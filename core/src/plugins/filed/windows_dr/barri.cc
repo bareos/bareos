@@ -60,7 +60,9 @@ void dump_data(std::ostream& stream, GenericLogger* logger)
   dump_context_save_unknown_disks(ctx, save_unreferenced_disks);
   dump_context_save_unknown_partitions(ctx, save_unreferenced_partitions);
   dump_context_save_unknown_extents(ctx, save_unreferenced_extents);
+  logger->Info("gathering meta data");
   insert_plan plan = dump_context_create_plan(ctx);
+  logger->Info("... done!");
 
   auto dumper = dumper_setup(logger, std::move(plan));
 
