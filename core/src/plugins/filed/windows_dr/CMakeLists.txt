@@ -63,6 +63,7 @@ if(HAVE_WIN32)
   )
 
   add_executable(copy copy.cc)
+  add_executable(count count.cc)
 else()
 
   target_sources(wdr-fd PRIVATE plugin_linux.cc)
