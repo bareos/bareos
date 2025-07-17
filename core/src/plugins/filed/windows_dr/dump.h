@@ -52,6 +52,8 @@ void dump_context_ignore_all_data(dump_context*, bool);
 insert_plan dump_context_create_plan(dump_context* ctx);
 void destroy_context(dump_context* ctx);
 
+std::size_t compute_plan_size(const insert_plan& plan);
+
 data_dumper* dumper_setup(GenericLogger* logger, insert_plan&& plan);
 std::size_t dumper_write(data_dumper* dumper, std::span<char> data);
 void dumper_stop(data_dumper* dumper);
