@@ -297,7 +297,7 @@ struct restartable_parser {
     void parse(context& ctx)
     {
       ctx.EndRestore();
-      ctx.Info("restore completed");
+      ctx._logger->Trace("restore completed");
       ctx.End();
     }
   };
@@ -307,7 +307,7 @@ struct restartable_parser {
     {
       file_header header = ReadFileHeader(ctx.stream());
       ctx.Begin(header.file_size);
-      ctx.Info("Restoring {} disks", header.disk_count);
+      ctx._logger->Trace("Restoring {} disks", header.disk_count);
       ctx.BeginRestore(header.disk_count);
       for (std::size_t i = 0; i < header.disk_count; ++i) {
         ctx.enqueue<disk>(i, header.disk_count);
@@ -332,7 +332,8 @@ struct restartable_parser {
       ctx.SetStatus(
           libbareos::format("restoring disk {}/{}", _index + 1, _count));
 
-      ctx.Info("Restoring disk {} of size {}", _index + 1, header.disk_size);
+      ctx._logger->Trace("Restoring disk {} of size {}", _index + 1,
+                         header.disk_size);
       ctx.BeginDisk(header);
       ctx.enqueue<partition_table>();
       for (std::size_t i = 0; i < header.extent_count; ++i) {
@@ -350,7 +351,7 @@ struct restartable_parser {
     void parse(context& ctx)
     {
       ctx.EndDisk();
-      ctx.Info("disk {} finished", _index + 1);
+      ctx._logger->Trace("disk {} finished", _index + 1);
     }
 
     std::size_t _index;
@@ -431,7 +432,7 @@ struct restartable_parser {
 
     void parse(context& ctx)
     {
-      ctx.Info("Restoring extent {}/{}", _index + 1, _count);
+      ctx._logger->Trace("Restoring extent {}/{}", _index + 1, _count);
       extent_header header;
       header.read(ctx.stream());
 
