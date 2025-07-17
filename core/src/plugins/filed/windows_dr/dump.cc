@@ -271,6 +271,59 @@ struct disk_reader {
     }
   }
 
+  bool OverlappedRead(HANDLE handle,
+                      std::size_t offset,
+                      std::span<char> output,
+                      std::size_t* bytes_read_res)
+  {
+    *bytes_read_res = 0;
+
+    HANDLE event = CreateEvent(NULL, FALSE, FALSE, NULL);
+    std::size_t total_bytes_read = 0;
+    while (total_bytes_read < output.size()) {
+      auto to_read = output.subspan(total_bytes_read);
+      DWORD bytes_read = 0;
+      DWORD bytes_to_read = static_cast<DWORD>(
+          std::min(static_cast<std::size_t>(std::numeric_limits<DWORD>::max()),
+                   to_read.size()));
+
+      OVERLAPPED overlapped = {};
+      overlapped.hEvent = event;
+      overlapped.Offset = static_cast<uint32_t>(offset + total_bytes_read);
+      overlapped.OffsetHigh
+          = static_cast<uint32_t>((offset + total_bytes_read) >> 32);
+
+
+      if (!ReadFile(handle, to_read.data(), bytes_to_read, &bytes_read,
+                    &overlapped)) {
+        auto err = GetLastError();
+        if (err == ERROR_IO_PENDING) {
+          if (!GetOverlappedResult(handle, &overlapped, &bytes_read, TRUE)) {
+            err = GetLastError();
+          } else {
+            err = ERROR_SUCCESS;
+          }
+        }
+
+        if (err != ERROR_SUCCESS) {
+          SetLastError(err);
+          logger->Trace("could not read from handle {} at {}: Err={}", handle,
+                        offset + total_bytes_read, err);
+          CloseHandle(event);
+          return false;
+        }
+      }
+
+      ResetEvent(event);
+      if (bytes_read == 0) { break; }
+      total_bytes_read += bytes_read;
+    }
+    CloseHandle(event);
+    *bytes_read_res = total_bytes_read;
+    return true;
+  }
+
+
   void refresh_cache(HANDLE hndl, std::size_t offset)
   {
     if (current_handle != hndl) { switch_volume(hndl); }
@@ -302,18 +355,31 @@ struct disk_reader {
     }
     size = 0;
     while (size < bytes_to_read) {
-      DWORD bytes_read = 0;
-      if (!ReadFile(current_handle, buffer.get() + size, bytes_to_read - size,
-                    &bytes_read, NULL)) {
-        logger->Trace([&] {
-          return libbareos::format("oh oh error: {} ({}: {}, {} | {}, {})",
-                                   GetLastError(), current_handle,
-                                   buffer.get() + size, bytes_to_read - size,
-                                   current_offset, size);
-        });
-        // throw win_error("ReadFile", GetLastError());
+      auto to_read_into
+          = std::span<char>(buffer.get() + size, bytes_to_read - size);
+      std::size_t bytes_read = 0;
+      if (!OverlappedRead(current_handle, current_offset, to_read_into,
+                          &bytes_read)) {
+        auto err = GetLastError();
+        logger->Trace("oh oh error: {} ({}: {}, {} | {}, {})", err,
+                      current_handle, buffer.get() + size, bytes_to_read - size,
+                      current_offset, size);
+        // throw win_error("ReadFile", err);
         break;
       }
+      // DWORD bytes_read = 0;
+      // if (!ReadFile(current_handle, buffer.get() + size, bytes_to_read -
+      // size,
+      //               &bytes_read, NULL)) {
+      //   logger->Trace([&] {
+      //     return libbareos::format("oh oh error: {} ({}: {}, {} | {}, {})",
+      //                              GetLastError(), current_handle,
+      //                              buffer.get() + size, bytes_to_read - size,
+      //                              current_offset, size);
+      //   });
+      //   // throw win_error("ReadFile", GetLastError());
+      //   break;
+      // }
 
       if (bytes_read == 0) { break; }
 
@@ -858,7 +924,9 @@ struct dump_context {
                            DWORD out_length,
                            DWORD* bytes_written)
   {
+    HANDLE event = CreateEvent(NULL, FALSE, FALSE, NULL);
     OVERLAPPED overlapped = {};
+    overlapped.hEvent = event;
 
     if (DeviceIoControl(handle, control_code, in_buffer, in_length, out_buffer,
                         out_length, bytes_written, &overlapped)) {
@@ -868,48 +936,14 @@ struct dump_context {
     auto err = GetLastError();
     if (err != ERROR_IO_PENDING) {
       SetLastError(err);
+      CloseHandle(event);
       return false;
     }
 
-    return GetOverlappedResult(handle, &overlapped, bytes_written, TRUE);
+    bool res = GetOverlappedResult(handle, &overlapped, bytes_written, TRUE);
+    CloseHandle(event);
+    return res;
   }
-
-  bool OverlappedRead(HANDLE handle, std::size_t offset, std::span<char> buffer)
-  {
-    OVERLAPPED overlapped = {};
-    overlapped.Offset = static_cast<uint32_t>(offset);
-    overlapped.OffsetHigh = static_cast<uint32_t>(offset >> 32);
-
-    std::size_t total_bytes_read = 0;
-    while (total_bytes_read < buffer.size()) {
-      auto to_read = buffer.subspan(total_bytes_read);
-      DWORD bytes_read = 0;
-      DWORD bytes_to_read = static_cast<DWORD>(
-          std::min(static_cast<std::size_t>(std::numeric_limits<DWORD>::max()),
-                   to_read.size()));
-      if (!ReadFile(handle, to_read.data(), bytes_to_read, &bytes_read,
-                    &overlapped)) {
-        auto err = GetLastError();
-        if (err == ERROR_IO_PENDING) {
-          if (!GetOverlappedResult(handle, &overlapped, bytes_read, TRUE)) {
-            err = GetLastError();
-          } else {
-            err = ERROR_SUCCESS;
-          }
-        }
-
-        if (err != ERROR_SUCCESS) {
-          logger->Trace("could not read from handle {} at {}: Err={}", handle,
-                        offset, err);
-          return false;
-        }
-      }
-
-      total_bytes_read += bytes_read;
-    }
-    return true;
-  }
-
 
   void InsertMissingExtents(HANDLE disk_handle,
                             const partition_layout& layout,
