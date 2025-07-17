@@ -56,7 +56,6 @@ if(HAVE_WIN32)
   target_link_libraries(wdr-fd PRIVATE dump)
 
   add_executable(barri barri.cc)
-
   target_link_libraries(barri CLI11::CLI11 progress-bar-logger dump format)
   target_compile_definitions(
     barri PRIVATE BARRI_VERSION="${BAREOS_FULL_VERSION}" BARRI_DATE="${DATE}"
