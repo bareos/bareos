@@ -56,7 +56,6 @@ void dump_data(std::ostream& stream, GenericLogger* logger)
   buffer.resize(4 << 20);
 
   dump_context* ctx = make_context(logger);
-  dump_context_ignore_all_data(ctx, dry);
   dump_context_save_unknown_disks(ctx, save_unreferenced_disks);
   dump_context_save_unknown_partitions(ctx, save_unreferenced_partitions);
   dump_context_save_unknown_extents(ctx, save_unreferenced_extents);
@@ -64,28 +63,32 @@ void dump_data(std::ostream& stream, GenericLogger* logger)
   insert_plan plan = dump_context_create_plan(ctx);
   logger->Info("... done!");
 
-  auto dumper = dumper_setup(logger, std::move(plan));
+  auto output_size = compute_plan_size(plan);
 
-  logger->Info("writing backup");
-  try {
-    for (;;) {
-      auto count = dumper_write(dumper, buffer);
-      if (!count) { break; }
-      stream.write(buffer.data(), count);
+  logger->Info("writing backup (expecting {} bytes of output)", output_size);
+  if (!dry) {
+    auto dumper = dumper_setup(logger, std::move(plan));
 
-      if (stream.eof() || stream.fail() || stream.bad()) {
-        logger->Info(
-            "stream did accept all data (eof = {} | fail = {} | bad = {})",
-            stream.eof(), stream.fail(), stream.bad());
+    try {
+      for (;;) {
+        auto count = dumper_write(dumper, buffer);
+        if (!count) { break; }
+        stream.write(buffer.data(), count);
+
+        if (stream.eof() || stream.fail() || stream.bad()) {
+          logger->Info(
+              "stream did accept all data (eof = {} | fail = {} | bad = {})",
+              stream.eof(), stream.fail(), stream.bad());
+        }
       }
+    } catch (const std::exception& ex) {
+      fprintf(stderr, "[EXCEPTION]: %s\n", ex.what());
+    } catch (...) {
+      fprintf(stderr, "[EXCEPTION]: %s\n", "unknown");
     }
-  } catch (const std::exception& ex) {
-    fprintf(stderr, "[EXCEPTION]: %s\n", ex.what());
-  } catch (...) {
-    fprintf(stderr, "[EXCEPTION]: %s\n", "unknown");
-  }
 
-  dumper_stop(dumper);
+    dumper_stop(dumper);
+  }
   destroy_context(ctx);
 }
 
@@ -102,8 +105,8 @@ int main(int argc, char* argv[])
   //                "save even unsnapshotted data from partitions that contain "
   //                "snapshotted data");
   // save->add_flag("--unreferenced-partitions", save_unreferenced_partitions,
-  //                "save even unsnapshotted partitions from disks that contain "
-  //                "snapshotted partitions");
+  //                "save even unsnapshotted partitions from disks that contain
+  //                " "snapshotted partitions");
   // save->add_flag("--unreferenced-disks", save_unreferenced_disks,
   //                "save completey unsnapshotted disks");
 
