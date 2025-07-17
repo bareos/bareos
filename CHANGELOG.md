@@ -100,6 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - bareos-check-sources: add shell_format plugin [PR #2267]
 - Build FreeBSD for major versions 14 / 13 (instead of minor releases) [PR #2117]
 - matrix: test the Debian ULC packages for OpenSSL 1.1 on Debian 11 instead of Debian 10 [PR #2321]
+- ndmp-bareos: Introduce incremental loop, restore 2nd file explicitly [PR #2269]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -171,6 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2264]: https://github.com/bareos/bareos/pull/2264
 [PR #2267]: https://github.com/bareos/bareos/pull/2267
 [PR #2268]: https://github.com/bareos/bareos/pull/2268
+[PR #2269]: https://github.com/bareos/bareos/pull/2269
 [PR #2270]: https://github.com/bareos/bareos/pull/2270
 [PR #2272]: https://github.com/bareos/bareos/pull/2272
 [PR #2273]: https://github.com/bareos/bareos/pull/2273
