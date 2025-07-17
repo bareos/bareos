@@ -1,6 +1,5 @@
 Storage {
   Name = bareos-sd
-  Maximum Concurrent Jobs = 20
   NDMP Enable = yes
   NDMP Log Level = 7
   NDMP Snooping = yes
