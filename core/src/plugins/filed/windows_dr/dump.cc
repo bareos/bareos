@@ -469,7 +469,7 @@ static constexpr VSS_ID ASR_WRITER_ID
 
 struct dump_context {
  public:
-  bool dry{false};
+  bool ignore_data{false};
   bool save_unknown_partitions{false};
   bool save_unknown_disks{false};
   bool save_unknown_extents{false};
@@ -827,7 +827,7 @@ struct dump_context {
 
       logger->Trace("  => total = {}", total);
 
-      if (dry) { disk.extents.clear(); }
+      if (ignore_data) { disk.extents.clear(); }
 
       WriteDiskHeader(plan, disk, geo);
       WriteDiskPartTable(plan, layout.value());
@@ -1606,9 +1606,9 @@ void dump_context_save_unknown_extents(dump_context* ctx, bool enable)
 {
   ctx->save_unknown_extents = enable;
 }
-void dump_context_ignore_all_data(dump_context* ctx, bool dry)
+void dump_context_ignore_all_data(dump_context* ctx, bool ignore_data)
 {
-  ctx->dry = dry;
+  ctx->ignore_data = ignore_data;
 }
 insert_plan dump_context_create_plan(dump_context* ctx)
 {
