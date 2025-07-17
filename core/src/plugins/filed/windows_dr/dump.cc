@@ -202,10 +202,10 @@ struct disk_reader {
 
   GenericLogger* logger;
 
-
   disk_reader(std::size_t max_block_size, GenericLogger* logger_)
       : capacity{(max_block_size / page_size) * page_size}
       , buffer{(char*)_aligned_malloc(capacity, page_size)}
+      , cache{std::span{buffer.get(), capacity}}
       , logger{logger_}
   {
   }
@@ -214,41 +214,129 @@ struct disk_reader {
     void operator()(char* ptr) { _aligned_free(ptr); }
   };
 
-  HANDLE current_handle = INVALID_HANDLE_VALUE;
+  struct cached {
+    HANDLE hndl = INVALID_HANDLE_VALUE;
+    std::size_t offset = std::numeric_limits<std::size_t>::max();
+    std::size_t size = 0;
+    std::span<char> buffer{};
+    bool done = true;
+
+    HANDLE event;
+    OVERLAPPED overlapped = {};
+
+    cached(std::span<char> buffer_)
+    {
+      if (buffer_.size() > std::numeric_limits<DWORD>::max()) {
+        buffer_ = buffer_.subspan(0, std::numeric_limits<DWORD>::max());
+      }
+      buffer = buffer_;
+      event = CreateEvent(NULL, FALSE, FALSE, NULL);
+      overlapped.hEvent = event;
+    }
+
+    cached(const cached&) = delete;
+    cached(cached&&) = delete;
+
+    cached& operator=(const cached&) = delete;
+    cached& operator=(cached&&) = delete;
+
+    bool read(HANDLE hndl_, std::size_t offset_)
+    {
+      hndl = hndl_;
+      offset = offset_;
+
+      // cancel the old request
+      cancel();
+
+      size = 0;
+      done = false;
+      ResetEvent(event);
+
+      DWORD bytes_transferred = 0;
+      if (ReadFile(hndl, buffer.data(), buffer.size(), &bytes_transferred,
+                   &overlapped)) {
+        done = true;
+        size = bytes_transferred;
+      } else {
+        auto err = GetLastError();
+        if (err != ERROR_IO_PENDING) {
+          SetLastError(err);
+          done = true;
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    bool ready()
+    {
+      if (!done) { done = HasOverlappedIoCompleted(&overlapped); }
+
+      return done;
+    }
+
+    void wait()
+    {
+      if (done) { return; }
+      DWORD bytes_transferred = 0;
+      if (!GetOverlappedResult(hndl, &overlapped, &bytes_transferred, TRUE)) {
+        assert(0);
+      }
+      done = true;
+      size = bytes_transferred;
+    }
+
+    void cancel()
+    {
+      if (done) { return; }
+      CancelIoEx(hndl, &overlapped);
+      // we need for the cancel to actually happen
+      wait();
+    }
+
+    ~cached()
+    {
+      cancel();
+      CloseHandle(event);
+    }
+  };
+
   std::size_t disk_size = 0;
-  std::size_t current_offset = std::numeric_limits<std::size_t>::max();
   std::size_t capacity = 0;
-  std::size_t size = 0;
 
   // this buffer is always filled by size bytes
   // starting at current_offset
   std::unique_ptr<char[], aligned_deleter> buffer;
+  cached cache;
 
   std::span<char> get_cached(HANDLE hndl, std::size_t offset)
   {
-    if (hndl != current_handle) {
+    if (hndl != cache.hndl) {
       // cached data is from different handle
       return {};
     }
 
-    if (current_offset > offset || current_offset + size < offset) {
+    if (cache.offset > offset || cache.offset + capacity < offset) {
       // no valid data available
       return {};
     }
 
-    auto diff = offset - current_offset;
+    cache.wait();  // make sure data is available
 
-    return std::span{buffer.get() + diff, size - diff};
+    if (cache.offset + cache.size < offset) {
+      // no valid data available
+      return {};
+    }
+
+    auto diff = offset - cache.offset;
+
+    return cache.buffer.subspan(diff);
   }
 
   void switch_volume(HANDLE hndl)
   {
-    current_handle = hndl;
-    // invalidate our cache
-    current_offset = std::numeric_limits<std::size_t>::max();
-    size = 0;
-
-    //
+    cache.cancel();
 
     STORAGE_PROPERTY_QUERY query = {
         .PropertyId = StorageAccessAlignmentProperty,
@@ -326,69 +414,13 @@ struct disk_reader {
 
   void refresh_cache(HANDLE hndl, std::size_t offset)
   {
-    if (current_handle != hndl) { switch_volume(hndl); }
-    if (offset != current_offset + size) {
-      // the offset needs to be sector aligned.  We need to round _down_ here
-      // to make sure that we read everything
+    if (cache.hndl != hndl) { switch_volume(hndl); }
 
-      current_offset = (offset / sector_size) * sector_size;
+    auto aligned_offset = (offset / sector_size) * sector_size;
 
-      // logger->Trace([&] {
-      //   return libbareos::format("current offset = {} (wanted: {})",
-      //                            current_offset, offset);
-      // });
-
-      DWORD off_low = current_offset & 0xFFFFFFFF;
-      LONG off_high = (current_offset >> 32) & 0xFFFFFFFF;
-      SetFilePointer(current_handle, off_low, &off_high, FILE_BEGIN);
-    } else {
-      current_offset += size;
+    if (!cache.read(hndl, aligned_offset)) {
+      logger->Trace("cache couldnt read ... Err={}", GetLastError());
     }
-
-    std::size_t bytes_to_read = std::min(capacity, disk_size - current_offset);
-
-    if (current_offset == 0) {
-      logger->Trace([&] {
-        return libbareos::format("bytes_to_read = {}, buffer.get() = {}",
-                                 bytes_to_read, (void*)buffer.get());
-      });
-    }
-    size = 0;
-    while (size < bytes_to_read) {
-      auto to_read_into
-          = std::span<char>(buffer.get() + size, bytes_to_read - size);
-      std::size_t bytes_read = 0;
-      if (!OverlappedRead(current_handle, current_offset, to_read_into,
-                          &bytes_read)) {
-        auto err = GetLastError();
-        logger->Trace("oh oh error: {} ({}: {}, {} | {}, {})", err,
-                      current_handle, buffer.get() + size, bytes_to_read - size,
-                      current_offset, size);
-        // throw win_error("ReadFile", err);
-        break;
-      }
-      // DWORD bytes_read = 0;
-      // if (!ReadFile(current_handle, buffer.get() + size, bytes_to_read -
-      // size,
-      //               &bytes_read, NULL)) {
-      //   logger->Trace([&] {
-      //     return libbareos::format("oh oh error: {} ({}: {}, {} | {}, {})",
-      //                              GetLastError(), current_handle,
-      //                              buffer.get() + size, bytes_to_read - size,
-      //                              current_offset, size);
-      //   });
-      //   // throw win_error("ReadFile", GetLastError());
-      //   break;
-      // }
-
-      if (bytes_read == 0) { break; }
-
-      size += bytes_read;
-    }
-
-    // logger->Trace( "wanted: {}, {}, cached: {}, {}-{} ({})",
-    //         hndl, offset, current_handle, current_offset, current_offset +
-    //         size, size);
   }
 
   std::size_t do_fill(HANDLE hndl, std::size_t offset, std::span<char> output)
@@ -399,6 +431,7 @@ struct disk_reader {
     for (;;) {
       auto to_write = output.subspan(bytes_written);
       auto cached = get_cached(hndl, offset + bytes_written);
+
       if (cached.size() < to_write.size()) {
         if (cached.size() > 0) {
           std::memcpy(to_write.data(), cached.data(), cached.size());
