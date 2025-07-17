@@ -515,25 +515,15 @@ class RestoreToGeneratedFiles : public GenericHandler {
   disk::Parser& begin_disk(disk_geometry geometry, std::size_t disk_size)
   {
     if (current_disk) {
-      throw std::logic_error{"cannot begin disk after one was created"};
+      throw std::logic_error{
+          "cannot begin new disk as old one is not finished yet"};
     }
 
     auto& fd = disk_files[current_idx];
 
-    struct stat s = {};
-    if (fstat(fd, &s) < 0) {
-      throw std::runtime_error{
-          fmt::format("could not stat disk: Err={}", strerror(errno))};
-    }
-
-    if (S_ISREG(s.st_mode) && s.st_size >= 0
-        && static_cast<std::size_t>(s.st_size) < disk_size) {
-      // file is too small; lets try to enlarge it
-      if (ftruncate(fd.get(), disk_size) < 0) {
-        // TODO: this should be warning instead!
-        throw std::runtime_error{
-            fmt::format("could not expand disk: Err={}", strerror(errno))};
-      }
+    if (ftruncate(fd.get(), disk_size) < 0) {
+      throw std::runtime_error{libbareos::format(
+          "could not expand disk {}: Err={}", current_idx, strerror(errno))};
     }
 
     auto& res = current_disk.emplace(fd.get(), geometry, disk_size);
@@ -558,8 +548,8 @@ class RestoreToGeneratedFiles : public GenericHandler {
 
 class RestoreToSpecifiedFiles : public GenericHandler {
  public:
-  RestoreToSpecifiedFiles(std::vector<auto_fd> files)
-      : disk_files{std::move(files)}
+  RestoreToSpecifiedFiles(std::vector<auto_fd> files, GenericLogger* logger)
+      : disk_files{std::move(files)}, logger_{logger}
   {
   }
 
@@ -570,11 +560,14 @@ class RestoreToSpecifiedFiles : public GenericHandler {
           "image contains {} disks, but only {} were specified on the "
           "command line",
           num_disks, disk_files.size())};
+
+    logger_->Info("Restoring {} Disks", num_disks);
   }
 
   void EndRestore() override {}
   void BeginDisk(disk_info info) override
   {
+    logger_->Info("Restoring disk {}", current_idx);
     begin_disk(geometry_for_size(info.disk_size), info.disk_size);
   }
   void EndDisk() override
@@ -636,14 +629,25 @@ class RestoreToSpecifiedFiles : public GenericHandler {
   disk::Parser& begin_disk(disk_geometry geometry, std::size_t disk_size)
   {
     if (current_disk) {
-      throw std::logic_error{"cannot begin disk after one was created"};
+      throw std::logic_error{
+          "cannot begin new disk as old one is not finished yet"};
     }
 
     auto& fd = disk_files[current_idx];
 
-    if (ftruncate(fd.get(), disk_size) < 0) {
-      throw std::runtime_error{
-          fmt::format("could not expand disk: Err={}", strerror(errno))};
+    struct stat s = {};
+    if (fstat(fd, &s) < 0) {
+      throw std::runtime_error{libbareos::format(
+          "could not stat disk {}: Err={}", current_idx, strerror(errno))};
+    }
+
+    if (S_ISREG(s.st_mode) && s.st_size >= 0
+        && static_cast<std::size_t>(s.st_size) < disk_size) {
+      // file is too small; lets try to enlarge it
+      if (ftruncate(fd.get(), disk_size) < 0) {
+        logger_->Info("could not expand disk {}: Err={}", current_idx,
+                      strerror(errno));
+      }
     }
 
     auto& res = current_disk.emplace(fd.get(), geometry, disk_size);
@@ -663,6 +667,7 @@ class RestoreToSpecifiedFiles : public GenericHandler {
   std::size_t current_idx = 0;
   std::vector<auto_fd> disk_files;
   std::optional<writing_disk> current_disk;
+  GenericLogger* logger_;
 };
 
 std::string guid_to_string(guid id)
@@ -774,9 +779,9 @@ class ListContents : public GenericHandler {
 
   void BeginExtent(extent_header header) override
   {
-    log->Info("  Extent:");
-    log->Info("   - Length = {}", header.length);
-    log->Info("   - Offset = {}", header.offset);
+    log->Trace("  Extent:");
+    log->Trace("   - Length = {}", header.length);
+    log->Trace("   - Offset = {}", header.offset);
   }
   void ExtentData(std::span<const char>) override {}
   void EndExtent() override {}
@@ -886,7 +891,8 @@ int main(int argc, char* argv[])
       } else if (*disks) {
         auto files = open_files(filenames);
 
-        strategy = std::make_unique<RestoreToSpecifiedFiles>(std::move(files));
+        strategy = std::make_unique<RestoreToSpecifiedFiles>(std::move(files),
+                                                             logger);
       } else {
         throw std::logic_error("i dont know where to restore too!");
       }
@@ -962,13 +968,14 @@ GenericLogger* GetLogger(restore_options options) { return options.logger; }
 std::unique_ptr<GenericHandler> GetHandler(restore_options options)
 {
   return std::visit(
-      [](auto& val) -> std::unique_ptr<GenericHandler> {
+      [&](auto& val) -> std::unique_ptr<GenericHandler> {
         using T = std::remove_reference_t<decltype(val)>;
         if constexpr (std::is_same_v<T, restore_directory>) {
           return std::make_unique<RestoreToGeneratedFiles>(val.path);
         } else if constexpr (std::is_same_v<T, restore_files>) {
           auto files = open_files(val);
-          return std::make_unique<RestoreToSpecifiedFiles>(std::move(files));
+          return std::make_unique<RestoreToSpecifiedFiles>(std::move(files),
+                                                           options.logger);
         } else {
           static_assert(!std::is_same_v<T, T>, "case not handled");
         }
