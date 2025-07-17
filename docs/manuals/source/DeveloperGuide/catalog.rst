@@ -706,6 +706,171 @@ index of the file, and is used for optimization of Restore jobs to
 prevent the need to read the FileId record when creating the in
 memory tree. This record is not yet implemented.
 
+Database Views
+---------------
+
+
+backup_unit_overview
+~~~~~~~~~~~~~~~~~~~~
+
+The **backup_unit_overview** view help to summarize the number of unit per category.
+
++--------------+-----------+----------------------+
+| Column Name  | Data Type | Description          |
++==============+===========+======================+
+| client       | text      | File Services Name   |
++--------------+-----------+----------------------+
+| fileset      | text      | FileSet name         |
++--------------+-----------+----------------------+
+| db_units     | bigint    | Database unit        |
++--------------+-----------+----------------------+
+| vm_units     | bigint    | Virtual Machine unit |
++--------------+-----------+----------------------+
+| filer_units  | bigint    | Filer Unit           |
++--------------+-----------+----------------------+
+| normal_units | bigint    | Normal Unit          |
++--------------+-----------+----------------------+
+
+
+latest_full_size_categorized
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The **latest_full_size_categorized** is helping to classify latest full job per client and
+fileset by type and summarize the size in MB.
+
++-------------+-----------+---------------------------------+
+| Column Name | Data Type | Description                     |
++=============+===========+=================================+
+| client      | text      | File Services Name              |
++-------------+-----------+---------------------------------+
+| fileset     | text      | FileSet name                    |
++-------------+-----------+---------------------------------+
+| total_mb    | bigint    | Total in MB                     |
++-------------+-----------+---------------------------------+
+| db_mb       | bigint    | Database unit size in MB        |
++-------------+-----------+---------------------------------+
+| vm_mb       | bigint    | Virtual Machine unit size in MB |
++-------------+-----------+---------------------------------+
+| filer_mb    | bigint    | Filer unit size in MB           |
++-------------+-----------+---------------------------------+
+| normal_mb   | bigint    | Normal backup unit in MB        |
++-------------+-----------+---------------------------------+
+| unknown_mb  | bigint    | Unclassified backup unit        |
++-------------+-----------+---------------------------------+
+| filesettext | text      | Fileset content                 |
++-------------+-----------+---------------------------------+
+
+
+Database Functions
+------------------
+
+bareos_frombase64
+~~~~~~~~~~~~~~~~~
+
+The **bareos_frombase64** function emulate in ``plpgsql`` language the C++ code
+of FromBase64 function in core/src/lib/base64.cc
+
++-------------------+-------------------+---------------------+--------+
+|Name               | Result data type  | Argument data types | Type   |
++===================+===================+=====================+========+
+|bareos_frombase64  | bigint            | field text          | func   |
++-------------------+-------------------+---------------------+--------+
+
+
+decode_lstat
+~~~~~~~~~~~~
+
+The function **decode_lstat** emulate in ``plgsql`` language the C++ code of ``DecodeStat``
+function in core/src/lib/attrib.cc.
+
+``LinkFI`` is decode here as ``bigint`` which differs from the C code.
+By default we return all fields, limit parameter used in ``params`` to obtain the desired values.
+
++-------------------+-------------------+---------------------------------+--------+
+| Name              | Result data type  | Argument data types             | Type   |
++===================+===================+=================================+========+
+|bareos_frombase64  | table             | field text, params text array[] | func   |
++-------------------+-------------------+---------------------------------+--------+
+
+input array ``params```
+
++------------+-----------+
+| Field Name | Data type |
++============+===========+
+| st_dev     | text      |
++------------+-----------+
+| st_ino     | text      |
++------------+-----------+
+| st_mode    | text      |
++------------+-----------+
+| st_nlink   | text      |
++------------+-----------+
+| st_uid     | text      |
++------------+-----------+
+| st_gid     | text      |
++------------+-----------+
+| st_rdev    | text      |
++------------+-----------+
+| st_size    | text      |
++------------+-----------+
+| st_blksize | text      |
++------------+-----------+
+| st_blocks  | text      |
++------------+-----------+
+| st_atime   | text      |
++------------+-----------+
+| st_mtime   | text      |
++------------+-----------+
+| st_ctime   | text      |
++------------+-----------+
+| linkfi     | text      |
++------------+-----------+
+| st_flags   | text      |
++------------+-----------+
+| data       | text      |
++------------+-----------+
+
+
+Returned table
+
++------------+-----------+
+| Field Name | Data type |
++============+===========+
+| st_dev     | bigint    |
++------------+-----------+
+| st_ino     | bigint    |
++------------+-----------+
+| st_mode    | bigint    |
++------------+-----------+
+| st_nlink   | bigint    |
++------------+-----------+
+| st_uid     | bigint    |
++------------+-----------+
+| st_gid     | bigint    |
++------------+-----------+
+| st_rdev    | bigint    |
++------------+-----------+
+| st_size    | bigint    |
++------------+-----------+
+| st_blksize | bigint    |
++------------+-----------+
+| st_blocks  | bigint    |
++------------+-----------+
+| st_atime   | bigint    |
++------------+-----------+
+| st_mtime   | bigint    |
++------------+-----------+
+| st_ctime   | bigint    |
++------------+-----------+
+| linkfi     | bigint    |
++------------+-----------+
+| st_flags   | bigint    |
++------------+-----------+
+| data       | bigint    |
++------------+-----------+
+
+
+
 UML Diagram of Database Schema
 ------------------------------
 
