@@ -230,8 +230,7 @@ struct disk_reader {
         buffer_ = buffer_.subspan(0, std::numeric_limits<DWORD>::max());
       }
       buffer = buffer_;
-      event = CreateEvent(NULL, FALSE, FALSE, NULL);
-      overlapped.hEvent = event;
+      event = CreateEvent(NULL, TRUE, FALSE, NULL);
     }
 
     cached(const cached&) = delete;
@@ -240,19 +239,27 @@ struct disk_reader {
     cached& operator=(const cached&) = delete;
     cached& operator=(cached&&) = delete;
 
+    HANDLE last_read = INVALID_HANDLE_VALUE;
+
     bool read(HANDLE hndl_, std::size_t offset_)
     {
-      hndl = hndl_;
-      offset = offset_;
-
       // cancel the old request
       cancel();
+
+      hndl = hndl_;
+      offset = offset_;
 
       size = 0;
       done = false;
       ResetEvent(event);
 
+      overlapped = {};
+      overlapped.hEvent = event;
+      overlapped.Offset = static_cast<uint32_t>(offset);
+      overlapped.OffsetHigh = static_cast<uint32_t>(offset >> 32);
+
       DWORD bytes_transferred = 0;
+      last_read = hndl;
       if (ReadFile(hndl, buffer.data(), buffer.size(), &bytes_transferred,
                    &overlapped)) {
         done = true;
@@ -269,28 +276,59 @@ struct disk_reader {
       return true;
     }
 
-    bool ready()
-    {
-      if (!done) { done = HasOverlappedIoCompleted(&overlapped); }
+    // bool ready()
+    // {
+    //   if (!done) { done = HasOverlappedIoCompleted(&overlapped); }
 
-      return done;
-    }
+    //   return done;
+    // }
 
-    void wait()
+    bool wait()
     {
-      if (done) { return; }
-      DWORD bytes_transferred = 0;
-      if (!GetOverlappedResult(hndl, &overlapped, &bytes_transferred, TRUE)) {
-        assert(0);
+      if (done) { return true; }
+
+      DWORD wait_res = WaitForSingleObject(event, INFINITE);
+
+      switch (wait_res) {
+        case WAIT_OBJECT_0: {
+          // we were signaled, continue with the function
+        } break;
+        default: {
+          // something went wrong ...
+          fprintf(stderr, "\n Wait messed up ~> %d\n\n", wait_res);
+          return false;
+        } break;
       }
-      done = true;
-      size = bytes_transferred;
+
+
+      DWORD bytes_transferred = 0;
+      if (hndl != last_read) {
+        fprintf(stderr, "bad handle: %p != %p\n\n\n", hndl, last_read);
+      }
+      if (!GetOverlappedResult(hndl, &overlapped, &bytes_transferred, TRUE)) {
+        auto err = GetLastError();
+        if (err == ERROR_OPERATION_ABORTED) {
+          // we got canceled, so this is fine
+          done = true;
+          size = 0;
+        } else {
+          SetLastError(err);
+          fprintf(stderr, "\n\n err = %d\n\n\n", err);
+          return false;
+        }
+      } else {
+        done = true;
+        size = bytes_transferred;
+      }
+
+      return true;
     }
 
     void cancel()
     {
       if (done) { return; }
-      CancelIoEx(hndl, &overlapped);
+      auto res = CancelIoEx(hndl, &overlapped);
+      fprintf(stderr, "\n\n cancel = %d \n\n\n", res);
       // we need for the cancel to actually happen
       wait();
     }
@@ -322,7 +360,10 @@ struct disk_reader {
       return {};
     }
 
-    cache.wait();  // make sure data is available
+    if (!cache.wait())  // make sure data is available
+    {
+      fprintf(stderr, "how did this happen (%d)????\n\n\n\n", GetLastError());
+    }
 
     if (cache.offset + cache.size < offset) {
       // no valid data available
@@ -366,7 +407,7 @@ struct disk_reader {
   {
     *bytes_read_res = 0;
 
-    HANDLE event = CreateEvent(NULL, FALSE, FALSE, NULL);
+    HANDLE event = CreateEvent(NULL, TRUE, FALSE, NULL);
     std::size_t total_bytes_read = 0;
     while (total_bytes_read < output.size()) {
       auto to_read = output.subspan(total_bytes_read);
@@ -582,7 +623,10 @@ struct dump_context {
     // we need to away to always delete these shadow copies
     // currently you can remove orphaned shadow copies via
     // diskshadow > delete shadows all
+
+    logger->Trace("closing all handles");
     for (auto hndl : open_handles) { CloseHandle(hndl); }
+    logger->Trace("deleting snapshot");
     if (snapshot) { snapshot->delete_snapshot(backup_components); }
   }
 
@@ -957,7 +1001,7 @@ struct dump_context {
                            DWORD out_length,
                            DWORD* bytes_written)
   {
-    HANDLE event = CreateEvent(NULL, FALSE, FALSE, NULL);
+    HANDLE event = CreateEvent(NULL, TRUE, FALSE, NULL);
     OVERLAPPED overlapped = {};
     overlapped.hEvent = event;
 
