@@ -708,7 +708,7 @@ struct dump_context {
       HANDLE shadow = CreateFileW(
           copy.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_ALWAYS,
           FILE_ATTRIBUTE_NORMAL | FILE_FLAG_BACKUP_SEMANTICS
-              | FILE_FLAG_SEQUENTIAL_SCAN,
+              | FILE_FLAG_SEQUENTIAL_SCAN | FILE_FLAG_OVERLAPPED,
           NULL);
 
       if (shadow == INVALID_HANDLE_VALUE) {
@@ -719,13 +719,14 @@ struct dump_context {
       }
       {
         DWORD bytes_returned;
-        if (!DeviceIoControl(shadow,                        // handle to file
-                             FSCTL_ALLOW_EXTENDED_DASD_IO,  // dwIoControlCode
-                             NULL,                          // lpInBuffer
-                             0,                             // nInBufferSize
-                             NULL,                          // lpOutBuffer
-                             0,                             // nOutBufferSize
-                             &bytes_returned, NULL)) {
+        if (!OverlappedIoControl(
+                shadow,                        // handle to file
+                FSCTL_ALLOW_EXTENDED_DASD_IO,  // dwIoControlCode
+                NULL,                          // lpInBuffer
+                0,                             // nInBufferSize
+                NULL,                          // lpOutBuffer
+                0,                             // nOutBufferSize
+                &bytes_returned)) {
           logger->Trace("---- could not enable extended access (Err={}) ----",
                         GetLastError());
         } else {
@@ -849,6 +850,67 @@ struct dump_context {
   }
 
  private:
+  bool OverlappedIoControl(HANDLE handle,
+                           DWORD control_code,
+                           void* in_buffer,
+                           DWORD in_length,
+                           void* out_buffer,
+                           DWORD out_length,
+                           DWORD* bytes_written)
+  {
+    OVERLAPPED overlapped = {};
+
+    if (DeviceIoControl(handle, control_code, in_buffer, in_length, out_buffer,
+                        out_length, bytes_written, &overlapped)) {
+      return true;
+    }
+
+    auto err = GetLastError();
+    if (err != ERROR_IO_PENDING) {
+      SetLastError(err);
+      return false;
+    }
+
+    return GetOverlappedResult(handle, &overlapped, bytes_written, TRUE);
+  }
+
+  bool OverlappedRead(HANDLE handle, std::size_t offset, std::span<char> buffer)
+  {
+    OVERLAPPED overlapped = {};
+    overlapped.Offset = static_cast<uint32_t>(offset);
+    overlapped.OffsetHigh = static_cast<uint32_t>(offset >> 32);
+
+    std::size_t total_bytes_read = 0;
+    while (total_bytes_read < buffer.size()) {
+      auto to_read = buffer.subspan(total_bytes_read);
+      DWORD bytes_read = 0;
+      DWORD bytes_to_read = static_cast<DWORD>(
+          std::min(static_cast<std::size_t>(std::numeric_limits<DWORD>::max()),
+                   to_read.size()));
+      if (!ReadFile(handle, to_read.data(), bytes_to_read, &bytes_read,
+                    &overlapped)) {
+        auto err = GetLastError();
+        if (err == ERROR_IO_PENDING) {
+          if (!GetOverlappedResult(handle, &overlapped, bytes_read, TRUE)) {
+            err = GetLastError();
+          } else {
+            err = ERROR_SUCCESS;
+          }
+        }
+
+        if (err != ERROR_SUCCESS) {
+          logger->Trace("could not read from handle {} at {}: Err={}", handle,
+                        offset, err);
+          return false;
+        }
+      }
+
+      total_bytes_read += bytes_read;
+    }
+    return true;
+  }
+
+
   void InsertMissingExtents(HANDLE disk_handle,
                             const partition_layout& layout,
                             std::vector<partition_extent>& extents)
@@ -1119,9 +1181,9 @@ struct dump_context {
         = {.StartingLcn = {.QuadPart = static_cast<LONGLONG>(start_cluster)}};
 
     for (;;) {
-      if (!DeviceIoControl(disk, FSCTL_GET_VOLUME_BITMAP, &Start, sizeof(Start),
-                           buffer.data(), buffer.size(), &bytes_written,
-                           nullptr)) {
+      if (!OverlappedIoControl(disk, FSCTL_GET_VOLUME_BITMAP, &Start,
+                               sizeof(Start), buffer.data(), buffer.size(),
+                               &bytes_written)) {
         auto error = GetLastError();
 
         if (error == ERROR_MORE_DATA) {
