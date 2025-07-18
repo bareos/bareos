@@ -884,7 +884,7 @@ int main(int argc, char* argv[])
 
   CLI11_PARSE(app, argc, argv);
 
-  auto* logger = progressbar::get();
+  auto* logger = progressbar::get(trace);
 
   try {
     if (*restore) {
