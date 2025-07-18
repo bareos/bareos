@@ -153,20 +153,34 @@ struct FileOutput : public Output {
   FileOutput(int fd, std::size_t size) : fd_{fd}, size_{size}
   {
     internal_offset_ = tell();
+    if (internal_offset_ != 0) {
+      throw std::logic_error{libbareos::format(
+          "im not starting at offset 0, but {} instead", internal_offset_)};
+    }
   }
 
   void append(std::span<const char> bytes) override
   {
     if (current_offset_ + bytes.size() > size_) {
-      throw std::logic_error{"can not write past the end of the file"};
+      throw std::logic_error{
+          libbareos::format("can not write past the end of the file; size = "
+                            "{}, offset = {}, to_write = {}",
+                            size_, current_offset_, bytes.size())};
     }
 
     write(bytes);
     current_offset_ += bytes.size();
+    if (auto offset = tell(); current_offset_ != offset) {
+      throw std::logic_error{fmt::format(
+          "Wrote {} bytes to offset {} but now im at offset {} (diff = {})",
+          bytes.size(), current_offset_ - bytes.size(), offset,
+          offset > current_offset_ ? offset - current_offset_
+                                   : current_offset_ - offset)};
+    }
   }
   void skip_forwards(std::size_t offset) override
   {
-    if (offset < current_offset_) {
+    if (internal_offset_ + offset < current_offset_) {
       throw std::logic_error{
           fmt::format("Trying to skip to offset {}, when already at offset {}",
                       offset, current_offset_)};
@@ -177,6 +191,7 @@ struct FileOutput : public Output {
     }
 
     seek(internal_offset_ + offset);
+    current_offset_ = internal_offset_ + offset;
   }
 
   std::size_t current_offset() const override { return current_offset_; }
@@ -202,10 +217,29 @@ struct FileOutput : public Output {
       throw std::runtime_error{
           fmt::format("could not seek to {}: {}", offset, strerror(errno))};
     }
+
+    if (res != s_offset) {
+      throw std::runtime_error(fmt::format(
+          "wanted to seek to {}, but got {} instead", s_offset, res));
+    }
+
+    if (auto pos = tell(); offset != pos) {
+      throw std::runtime_error(
+          fmt::format("seeked to {}, but am at {} instead", offset, pos));
+    }
   }
 
   void write(std::span<const char> bytes)
   {
+    {
+      auto actual_offset = tell();
+      if (actual_offset != current_offset_) {
+        throw std::runtime_error(
+            fmt::format("wanted to write to {}/{}, but got {} instead",
+                        current_offset_, internal_offset_, actual_offset));
+      }
+    }
+
     auto towrite = bytes;
 
     std::size_t bad_count = 0;
@@ -213,8 +247,12 @@ struct FileOutput : public Output {
     while (towrite.size() > 0) {
       auto res = ::write(fd_, towrite.data(), towrite.size());
       if (res < 0) {
+        off_t actual_offset = lseek(fd_, 0, SEEK_CUR);
         throw std::runtime_error(
-            fmt::format("write() failed: {}", strerror(errno)));
+            fmt::format("write() failed: {} (tried writing {} bytes to offset "
+                        "{}/{}, {} still to go, {} bad writes)",
+                        strerror(errno), bytes.size(), current_offset_,
+                        actual_offset, towrite.size(), bad_count));
       }
       if (res == 0) {
         bad_count += 1;
@@ -532,6 +570,7 @@ class RestoreToGeneratedFiles : public GenericHandler {
           "could not expand disk {}: Err={}", current_idx, strerror(errno))};
     }
 
+    // TODO: we should use the disk_size of the _target_ disk
     auto& res = current_disk.emplace(fd.get(), geometry, disk_size);
     return res.disk;
   }
