@@ -22,6 +22,8 @@
 #include <fcntl.h>
 #include <io.h>
 
+#include <vector>
+
 #include "logger.h"
 #include "dump.h"
 #include "com.h"
@@ -41,6 +43,7 @@ bool dry = false;
 bool save_unreferenced_extents{false};
 bool save_unreferenced_partitions{false};
 bool save_unreferenced_disks{false};
+std::vector<std::size_t> ignored_disks;
 
 void dump_data(std::ostream& stream, GenericLogger* logger)
 {
@@ -59,6 +62,7 @@ void dump_data(std::ostream& stream, GenericLogger* logger)
   dump_context_save_unknown_disks(ctx, save_unreferenced_disks);
   dump_context_save_unknown_partitions(ctx, save_unreferenced_partitions);
   dump_context_save_unknown_extents(ctx, save_unreferenced_extents);
+  for (auto disk_id : ignored_disks) { dump_context_ignore_disk(ctx, disk_id); }
   logger->Info("gathering meta data");
   insert_plan plan = dump_context_create_plan(ctx);
   logger->Info("... done!");
@@ -110,6 +114,8 @@ int main(int argc, char* argv[])
   // save->add_flag("--unreferenced-disks", save_unreferenced_disks,
   //                "save completey unsnapshotted disks");
 
+  save->add_option("--ignore-disks", ignored_disks,
+                   "ids of disks to ignore (0, 1, 2, ...)");
 
   auto* restore = app.add_subcommand("restore");
   std::string filename;
