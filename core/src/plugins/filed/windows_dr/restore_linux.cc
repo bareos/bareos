@@ -613,6 +613,7 @@ class RestoreToSpecifiedFiles : public GenericHandler {
 
   void BeginExtent(extent_header header) override
   {
+    logger_->Trace("writing extent ({}, {})", header.offset, header.length);
     disk().BeginExtent(header);
   }
   void ExtentData(std::span<const char> data) override
@@ -666,6 +667,7 @@ class RestoreToSpecifiedFiles : public GenericHandler {
       throw std::logic_error{"cannot access disk before it is created"};
     }
 
+    logger_->Trace("flushing disk");
     current_disk.reset();
     current_idx += 1;
   }
