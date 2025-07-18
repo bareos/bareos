@@ -49,6 +49,7 @@ void dump_context_save_unknown_disks(dump_context*, bool);
 void dump_context_save_unknown_partitions(dump_context*, bool);
 void dump_context_save_unknown_extents(dump_context*, bool);
 void dump_context_ignore_all_data(dump_context*, bool);
+void dump_context_ignore_disk(dump_context*, std::size_t id);
 insert_plan dump_context_create_plan(dump_context* ctx);
 void destroy_context(dump_context* ctx);
 
