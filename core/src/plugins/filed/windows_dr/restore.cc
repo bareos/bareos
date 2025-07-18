@@ -334,7 +334,7 @@ class RestoreToHandles : public GenericHandler {
   }
   void ExtentData(std::span<const char> data) override
   {
-    // libbareos::println(stderr, "extent data {{ size: {} }}", data.size());
+    // logger_->Trace("extent data {{ size: {} }}", data.size());
     disk().ExtentData(data);
   }
   void EndExtent() override
