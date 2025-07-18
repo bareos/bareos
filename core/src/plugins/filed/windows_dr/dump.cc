@@ -31,6 +31,7 @@
 #include <bit>
 #include <algorithm>
 #include <fstream>
+#include <unordered_set>
 #include <limits>
 
 #include <Windows.h>
@@ -473,6 +474,7 @@ struct dump_context {
   bool save_unknown_partitions{false};
   bool save_unknown_disks{false};
   bool save_unknown_extents{false};
+  std::unordered_set<std::size_t> ignored_disk_ids;
 
 
   dump_context(GenericLogger* logger_) : logger{logger_} {}
@@ -755,6 +757,12 @@ struct dump_context {
     std::unordered_map<std::size_t, open_disk> disk_info;
 
     for (auto& [id, disk] : candidate_disks) {
+      if (ignored_disk_ids.find(id) != ignored_disk_ids.end()) {
+        logger->Info(" skipping ignored \\\\.\\PhysicalDrive{}", id);
+        continue;
+      }
+
+
       std::wstring disk_path = libbareos::format(L"\\\\.\\PhysicalDrive{}", id);
 
       logger->Info(" collecting info from disk \\\\.\\PhysicalDrive{}", id);
@@ -1609,6 +1617,10 @@ void dump_context_save_unknown_extents(dump_context* ctx, bool enable)
 void dump_context_ignore_all_data(dump_context* ctx, bool ignore_data)
 {
   ctx->ignore_data = ignore_data;
+}
+void dump_context_ignore_disk(dump_context* ctx, std::size_t id)
+{
+  ctx->ignored_disk_ids.emplace(id);
 }
 insert_plan dump_context_create_plan(dump_context* ctx)
 {
