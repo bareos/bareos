@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,13 +19,13 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_PLUGINS_FILED_GRPC_BAREOS_API_H_
-#define BAREOS_PLUGINS_FILED_GRPC_BAREOS_API_H_
+#ifndef BAREOS_PLUGINS_FILED_WINDOWS_DR_BAREOS_API_H_
+#define BAREOS_PLUGINS_FILED_WINDOWS_DR_BAREOS_API_H_
 
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 
-#include <fmt/format.h>
+#include "format.h"
 
 namespace internal {
 void DebugMessage(/* optional */ PluginContext* ctx,
@@ -40,7 +40,7 @@ void JobMessage(PluginContext* ctx,
                 const char* string);
 };  // namespace internal
 
-void SetupBareosApi(const filedaemon::CoreFunctions* core);
+bool SetupBareosApi(const filedaemon::CoreFunctions* core);
 void RegisterBareosEvent(PluginContext* ctx, filedaemon::bEventType event);
 void UnregisterBareosEvent(PluginContext* ctx, filedaemon::bEventType event);
 bool SetBareosValue(PluginContext* ctx, filedaemon::bVariable var, void* value);
@@ -71,9 +71,9 @@ struct Severity {
   const char* file{};
   int line{};
 
-  constexpr Severity(int severity_,
-                     const char* file_ = __builtin_FILE(),
-                     int line_ = __builtin_LINE())
+  Severity(int severity_,
+           const char* file_ = __builtin_FILE(),
+           int line_ = __builtin_LINE())
       : severity{severity_}, file{file_}, line{line_}
   {
   }
@@ -84,9 +84,9 @@ struct Type {
   const char* file{};
   int line{};
 
-  constexpr Type(int type_,
-                 const char* file_ = __builtin_FILE(),
-                 int line_ = __builtin_LINE())
+  Type(int type_,
+       const char* file_ = __builtin_FILE(),
+       int line_ = __builtin_LINE())
       : type{type_}, file{file_}, line{line_}
   {
   }
@@ -96,10 +96,11 @@ void setup_globals(const filedaemon::CoreFunctions* core);
 
 template <typename... Args>
 void DebugLog(Severity severity,
-              fmt::format_string<Args...> fmt,
+              libbareos::format_string<Args...> fmt,
               Args&&... args)
 {
-  auto formatted = fmt::vformat(fmt, fmt::make_format_args(args...));
+  auto formatted
+      = libbareos::vformat(fmt, libbareos::make_format_args(args...));
 
   internal::DebugMessage(nullptr, severity.file, severity.line,
                          severity.severity, formatted.c_str());
@@ -108,22 +109,23 @@ void DebugLog(Severity severity,
 template <typename... Args>
 void DebugLog(PluginContext* ctx,
               Severity severity,
-              fmt::format_string<Args...> fmt,
+              libbareos::format_string<Args...> fmt,
               Args&&... args)
 {
-  auto formatted = fmt::vformat(fmt, fmt::make_format_args(args...));
+  auto formatted
+      = libbareos::vformat(fmt, libbareos::make_format_args(args...));
 
   internal::DebugMessage(ctx, severity.file, severity.line, severity.severity,
                          formatted.c_str());
 }
 
 template <typename... Args>
-constexpr void JobLog(PluginContext* ctx,
-                      Type type,
-                      fmt::format_string<Args...> fmt,
-                      Args&&... args)
+void JobLog(PluginContext* ctx,
+            Type type,
+            libbareos::format_string<Args...> fmt,
+            Args&&... args)
 {
-  auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
+  auto formatted = libbareos::format(fmt, std::forward<Args>(args)...);
 
   internal::JobMessage(ctx, type.file, type.line, type.type, formatted.c_str());
 }
@@ -231,4 +233,4 @@ template <typename T> bool Set(PluginContext* ctx, typename T::type value)
 };  // namespace bVar
 
 
-#endif  // BAREOS_PLUGINS_FILED_GRPC_BAREOS_API_H_
+#endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_BAREOS_API_H_
