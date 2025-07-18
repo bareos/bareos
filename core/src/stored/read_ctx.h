@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,6 +37,8 @@ struct Read_Context {
   Session_Label sessrec;          /**< Start Of Session record info */
   uint32_t records_processed = 0; /**< Number of records processed from this block */
   int32_t lastFileIndex = 0;      /**< Last File Index processed */
+
+  BootStrapRecord* current = nullptr;
 };
 /* clang-format on */
 
