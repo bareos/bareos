@@ -426,8 +426,8 @@ class Parser {
       append_bytes(footer, as_span(backup));
     }
 
-
-    return {std::move(header), std::move(footer), disk_size - footer.size()};
+    auto footer_offset = disk_size - footer.size();
+    return {std::move(header), std::move(footer), footer_offset};
   }
 
  private:
