@@ -243,6 +243,11 @@ template <typename WrappedOutput> struct BufferedOutput : Output {
   }
 
  public:
+  void flush()
+  {
+    if (!buffer.empty()) { wrapped.append(buffer); }
+  }
+
   void append(std::span<const char> bytes) override
   {
     while (!bytes.empty()) {
@@ -314,10 +319,7 @@ template <typename WrappedOutput> struct BufferedOutput : Output {
 
   const WrappedOutput& internal() const { return wrapped; }
 
-  ~BufferedOutput()
-  {
-    if (!buffer.empty()) { wrapped.append(buffer); }
-  }
+  ~BufferedOutput() { flush(); }
 
  private:
   void flush_buffer()
@@ -347,7 +349,11 @@ class RestoreToStdout : public GenericHandler {
   {
     begin_disk(geometry_for_size(info.disk_size), info.disk_size, &output);
   }
-  void EndDisk() override { disk().Finish(); }
+  void EndDisk() override
+  {
+    disk().Finish();
+    output.flush();
+  }
 
   void BeginMbrTable(const partition_info_mbr& mbr) override
   {
