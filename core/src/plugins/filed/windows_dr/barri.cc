@@ -64,7 +64,9 @@ void dump_data(std::ostream& stream, GenericLogger* logger)
   dump_context_save_unknown_extents(ctx, save_unreferenced_extents);
   for (auto disk_id : ignored_disks) { dump_context_ignore_disk(ctx, disk_id); }
   logger->Info("gathering meta data");
+  logger->PushIndent();
   insert_plan plan = dump_context_create_plan(ctx);
+  logger->PopIndent();
   logger->Info("... done!");
 
   auto output_size = compute_plan_size(plan);

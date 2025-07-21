@@ -291,7 +291,7 @@ struct logger : public GenericLogger {
       erase_line();
       stream().flush();
     }
-    libbareos::println(stderr, "{}", Message);
+    libbareos::println(stderr, "{:{}}{}", "", indent, Message);
     if (progress_bar) { progress_bar->print(); }
   }
 
