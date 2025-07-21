@@ -328,8 +328,8 @@ class RestoreToHandles : public GenericHandler {
 
   void BeginExtent(extent_header header) override
   {
-    logger_->Info("begin extent {{ size: {}, offset: {} }}", header.length,
-                  header.offset);
+    logger_->Trace("begin extent {{ size: {}, offset: {} }}", header.length,
+                   header.offset);
     disk().BeginExtent(header);
   }
   void ExtentData(std::span<const char> data) override
@@ -339,7 +339,7 @@ class RestoreToHandles : public GenericHandler {
   }
   void EndExtent() override
   {
-    logger_->Info("extent end");
+    logger_->Trace("extent end");
     disk().EndExtent();
   }
 
