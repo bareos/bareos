@@ -950,7 +950,13 @@ struct dump_context {
     logger->Info(" generating backup plan");
     insert_plan plan;
     for (auto& [id, disk] : disks) {
-      logger->Trace("disk {} extents:", id);
+      if (disk.extents.empty()) {
+        if (!save_unknown_disks) {
+          // we dont care for this disk
+          logger->Info("skip disk {} (no snapshotted data)", id);
+          continue;
+        }
+      }
 
       std::sort(std::begin(disk.extents), std::end(disk.extents),
                 [](auto& l, auto& r) {
@@ -973,8 +979,9 @@ struct dump_context {
       auto layout = GetPartitionLayout(hndl);
       if (!layout) { continue; }
 
-      InsertMissingExtents(hndl, layout.value(), disk.extents);
+      InsertMissingExtents(hndl, id, layout.value(), disk.extents);
 
+      logger->Trace("disk {} extents:", id);
       std::size_t total = 0;
       for (auto& extent : disk.extents) {
         total += extent.length;
@@ -1028,6 +1035,7 @@ struct dump_context {
   }
 
   void InsertMissingExtents(HANDLE disk_handle,
+                            std::size_t disk_id,
                             const partition_layout& layout,
                             std::vector<partition_extent>& extents)
   {
@@ -1038,7 +1046,9 @@ struct dump_context {
     // we assume that these extents are sorted
 
     std::vector<partition_extent> new_extents;
-    for (auto& info : layout.partition_infos) {
+    for (std::size_t part_idx = 0; part_idx < layout.partition_infos.size();
+         ++part_idx) {
+      auto& info = layout.partition_infos[part_idx];
       std::size_t offset = info.StartingOffset.QuadPart;
       std::size_t length = info.PartitionLength.QuadPart;
 
@@ -1068,6 +1078,9 @@ struct dump_context {
           new_extents.push_back({offset, offset, length, disk_handle});
           logger->Trace("saving unknown partition {} ({}-{})",
                         info.PartitionNumber, offset, offset + length);
+        } else {
+          logger->Info("skipping disk {}/partition {} (no snapshotted data)",
+                       part_idx);
         }
         continue;
       }
