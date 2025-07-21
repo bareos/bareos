@@ -63,7 +63,7 @@ struct plugin_logger : public GenericLogger {
   void End() override {}
 
   void SetStatus(std::string_view Status) override { (void)Status; }
-  void Info(std::string_view Message) override
+  void Output(std::string_view Message) override
   {
     JobLog(ctx, M_INFO, "{}", Message);
   }
@@ -82,7 +82,7 @@ struct session_ctx {
   session_ctx(PluginContext* ctx)
       : logger{ctx}
       , dctx{make_context(&logger)}
-      , dumper{dumper_setup(&logger, create_insert_plan(dctx, false))}
+      , dumper{dumper_setup(&logger, dump_context_create_plan(dctx))}
   {
   }
 
