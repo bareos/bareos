@@ -105,14 +105,14 @@ int main(int argc, char* argv[])
   auto* save = app.add_subcommand("save");
   save->add_flag("--dry", dry, "do not read/write actual disk data");
 
-  // save->add_flag("--unreferenced-extents", save_unreferenced_extents,
-  //                "save even unsnapshotted data from partitions that contain "
-  //                "snapshotted data");
-  // save->add_flag("--unreferenced-partitions", save_unreferenced_partitions,
-  //                "save even unsnapshotted partitions from disks that contain
-  //                " "snapshotted partitions");
-  // save->add_flag("--unreferenced-disks", save_unreferenced_disks,
-  //                "save completey unsnapshotted disks");
+  save->add_flag("--unreferenced-extents", save_unreferenced_extents,
+                 "save even unsnapshotted data from partitions that contain "
+                 "snapshotted data");
+  save->add_flag("--unreferenced-partitions", save_unreferenced_partitions,
+                 "save even unsnapshotted partitions from disks that contain "
+                 "snapshotted partitions");
+  save->add_flag("--unreferenced-disks", save_unreferenced_disks,
+                 "save completey unsnapshotted disks");
 
   save->add_option("--ignore-disks", ignored_disks,
                    "ids of disks to ignore (0, 1, 2, ...)");
