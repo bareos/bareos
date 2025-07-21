@@ -101,7 +101,12 @@ struct GenericLogger {
     }
   }
 
+  void PushIndent() { indent += 1; }
+  void PopIndent() { indent -= 1; }
+
+ protected:
   bool trace{false};
+  std::size_t indent{0};
 };
 
 
