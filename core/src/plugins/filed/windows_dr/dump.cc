@@ -240,9 +240,6 @@ struct disk_reader {
     cached& operator=(const cached&) = delete;
     cached& operator=(cached&&) = delete;
 
-    HANDLE last_read = INVALID_HANDLE_VALUE;
-    std::size_t last_offset = 0;
-
     bool read(HANDLE hndl_, std::size_t offset_, std::size_t end)
     {
       // cancel the old request
@@ -268,8 +265,6 @@ struct disk_reader {
       }
 
       DWORD bytes_transferred = 0;
-      last_read = hndl;
-      last_offset = offset_;
       if (ReadFile(hndl, buffer.data(), read_end - offset, &bytes_transferred,
                    &overlapped)) {
         done = true;
@@ -305,16 +300,16 @@ struct disk_reader {
         } break;
         default: {
           // something went wrong ...
-          fprintf(stderr, "\n Wait messed up ~> %d\n\n", wait_res);
+          auto err = GetLastError();
+          logger->Trace("wait for async operation failed ({}/{})", wait_res,
+                        err);
+          SetLastError(err);
           return false;
         } break;
       }
 
 
       DWORD bytes_transferred = 0;
-      if (hndl != last_read) {
-        fprintf(stderr, "bad handle: %p != %p\n\n\n", hndl, last_read);
-      }
       if (!GetOverlappedResult(hndl, &overlapped, &bytes_transferred, TRUE)) {
         auto err = GetLastError();
         if (err == ERROR_OPERATION_ABORTED) {
@@ -323,8 +318,7 @@ struct disk_reader {
           size = 0;
         } else {
           SetLastError(err);
-          fprintf(stderr, "\n\n hndl = %p, offset = %zu, err = %d\n\n\n", hndl,
-                  last_offset, err);
+          logger->Trace("async read operation failed ({})", err);
           return false;
         }
       } else {
@@ -339,7 +333,7 @@ struct disk_reader {
     {
       if (done) { return; }
       auto res = CancelIoEx(hndl, &overlapped);
-      fprintf(stderr, "\n\n cancel = %d \n\n\n", res);
+      logger->Trace("cancel returned {}", res);
       // we need for the cancel to actually happen
       wait();
     }
@@ -373,7 +367,7 @@ struct disk_reader {
 
     if (!cache.wait())  // make sure data is available
     {
-      fprintf(stderr, "how did this happen (%d)????\n\n\n\n", GetLastError());
+      logger->Info("could not wait for data to be read ({})", GetLastError());
     }
 
     if (cache.offset + cache.size < offset) {
