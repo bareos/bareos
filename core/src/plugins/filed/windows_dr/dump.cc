@@ -205,7 +205,7 @@ struct disk_reader {
   disk_reader(std::size_t max_block_size, GenericLogger* logger_)
       : capacity{(max_block_size / page_size) * page_size}
       , buffer{(char*)_aligned_malloc(capacity, page_size)}
-      , cache{std::span{buffer.get(), capacity}}
+      , cache{logger_, std::span{buffer.get(), capacity}}
       , logger{logger_}
   {
   }
@@ -220,11 +220,12 @@ struct disk_reader {
     std::size_t size = 0;
     std::span<char> buffer{};
     bool done = true;
+    GenericLogger* logger{nullptr};
 
     HANDLE event;
     OVERLAPPED overlapped = {};
 
-    cached(std::span<char> buffer_)
+    cached(GenericLogger* logger_, std::span<char> buffer_) : logger{logger_}
     {
       if (buffer_.size() > std::numeric_limits<DWORD>::max()) {
         buffer_ = buffer_.subspan(0, std::numeric_limits<DWORD>::max());
@@ -240,8 +241,9 @@ struct disk_reader {
     cached& operator=(cached&&) = delete;
 
     HANDLE last_read = INVALID_HANDLE_VALUE;
+    std::size_t last_offset = 0;
 
-    bool read(HANDLE hndl_, std::size_t offset_)
+    bool read(HANDLE hndl_, std::size_t offset_, std::size_t end)
     {
       // cancel the old request
       cancel();
@@ -258,9 +260,17 @@ struct disk_reader {
       overlapped.Offset = static_cast<uint32_t>(offset);
       overlapped.OffsetHigh = static_cast<uint32_t>(offset >> 32);
 
+      std::size_t read_end = offset + buffer.size();
+      if (read_end > end) {
+        logger->Trace("requesting less data buffer end = {}, actual end = {}\n",
+                      read_end, end);
+        read_end = end;
+      }
+
       DWORD bytes_transferred = 0;
       last_read = hndl;
-      if (ReadFile(hndl, buffer.data(), buffer.size(), &bytes_transferred,
+      last_offset = offset_;
+      if (ReadFile(hndl, buffer.data(), read_end - offset, &bytes_transferred,
                    &overlapped)) {
         done = true;
         size = bytes_transferred;
@@ -313,7 +323,8 @@ struct disk_reader {
           size = 0;
         } else {
           SetLastError(err);
-          fprintf(stderr, "\n\n err = %d\n\n\n", err);
+          fprintf(stderr, "\n\n hndl = %p, offset = %zu, err = %d\n\n\n", hndl,
+                  last_offset, err);
           return false;
         }
       } else {
@@ -459,7 +470,7 @@ struct disk_reader {
 
     auto aligned_offset = (offset / sector_size) * sector_size;
 
-    if (!cache.read(hndl, aligned_offset)) {
+    if (!cache.read(hndl, aligned_offset, disk_size)) {
       logger->Trace("cache couldnt read ... Err={}", GetLastError());
     }
   }
