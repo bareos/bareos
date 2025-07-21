@@ -1069,7 +1069,7 @@ struct dump_context {
      * wish to save (they are probably all coming from the volumes that we
      * snapshotted) our task is now to insert relevant extents that were not
      * part of the snapshot. */
-    // we assume that these extents are sorted
+    // we assume that the extents & the layout are sorted
 
     std::vector<partition_extent> new_extents;
     for (std::size_t part_idx = 0; part_idx < layout.partition_infos.size();
@@ -1136,6 +1136,26 @@ struct dump_context {
           current_extent += 1;
         }
       }
+    }
+
+    // merge new_extents and extents
+
+    logger->Trace("adding {} new extents", new_extents.size());
+
+    std::size_t insertion_point = 0;
+    for (auto& new_extent : new_extents) {
+      while (insertion_point < extents.size()) {
+        if (extents[insertion_point].partition_offset
+            > new_extent.partition_offset) {
+          break;
+        }
+
+        insertion_point += 1;
+      }
+
+      // we want to insert _before_ insertion point
+
+      extents.insert(extents.begin() + insertion_point, new_extent);
     }
   }
 
@@ -1683,6 +1703,12 @@ struct dump_context {
     result.partition_infos.resize(info->PartitionCount);
     std::copy_n(info->PartitionEntry, info->PartitionCount,
                 std::begin(result.partition_infos));
+
+    std::sort(std::begin(result.partition_infos),
+              std::end(result.partition_infos),
+              [](const auto& a, const auto& b) {
+                return a.StartingOffset.QuadPart < b.StartingOffset.QuadPart;
+              });
 
     return result;
   }
