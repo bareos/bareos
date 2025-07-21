@@ -231,7 +231,7 @@ class VhdxGenerator : public OutputHandleGenerator {
       },
     };
 
-    fprintf(stderr, "creating disk\n");
+    // logger_->Trace("creating disk");
     HANDLE output = INVALID_HANDLE_VALUE;
 
     DWORD hres = CreateVirtualDisk(
@@ -283,7 +283,7 @@ class RestoreToHandles : public GenericHandler {
       throw std::logic_error{"cannot begin disk after one was created"};
     }
 
-    logger_->Info("begin disk {{ size {}, count {} }}", info.disk_size,
+    logger_->Info("begin disk {{ size: {}, extent count: {} }}", info.disk_size,
                   info.extent_count);
     auto geo = geometry_for_size(info.disk_size);
     HANDLE hndl = Generator_->Create(info, geo);
