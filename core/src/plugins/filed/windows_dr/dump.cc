@@ -637,7 +637,7 @@ struct dump_context {
 
   insert_plan create()
   {
-    logger->Info(" setting up vss");
+    logger->Info("setting up vss");
     COM_CALL(CreateVssBackupComponents(&backup_components));
 
     COM_CALL(backup_components->InitializeForBackup());
@@ -821,21 +821,21 @@ struct dump_context {
     auto volumes = list_volumes();
 
 
-    logger->Info(" creating a vss snapshot");
+    logger->Info("creating a vss snapshot");
     snapshot.emplace(VssSnapshot::create(logger, backup_components, volumes));
 
     {
       wchar_t guid_storage[64] = {};
       StringFromGUID2(snapshot->snapshot_guid, guid_storage,
                       sizeof(guid_storage));
-      logger->Info(" ... done! (=> Id = {})", FromUtf16(guid_storage));
+      logger->Info("... done! (=> Id = {})", FromUtf16(guid_storage));
     }
 
     auto paths = snapshot->snapshotted_paths(backup_components);
 
     disk_map candidate_disks;
     for (auto& [path, copy] : paths) {
-      logger->Info(" examining volume {} ({})", FromUtf16(path),
+      logger->Info("examining volume {} ({})", FromUtf16(path),
                    FromUtf16(copy));
       std::wstring cpath = path;
       if (cpath.back() == L'\\') { cpath.pop_back(); }
@@ -891,7 +891,7 @@ struct dump_context {
       open_handles.push_back(shadow);
 
       CloseHandle(volume);
-      logger->Info(" ... done!");
+      logger->Info("... done!");
     }
 
     // todo: what happens to volumes that are split between fixed disks/non
@@ -906,15 +906,19 @@ struct dump_context {
     std::unordered_map<std::size_t, open_disk> disk_info;
 
     for (auto& [id, disk] : candidate_disks) {
+      logger->Info("collecting info from disk \\\\.\\PhysicalDrive{}", id);
+      logger->PushIndent();
+
       if (ignored_disk_ids.find(id) != ignored_disk_ids.end()) {
-        logger->Info(" skipping ignored \\\\.\\PhysicalDrive{}", id);
+        logger->Info("\\\\.\\PhysicalDrive{} is ignored", id);
+
+        logger->PopIndent();
+        logger->Info("=> skipped");
         continue;
       }
 
 
       std::wstring disk_path = libbareos::format(L"\\\\.\\PhysicalDrive{}", id);
-
-      logger->Info(" collecting info from disk \\\\.\\PhysicalDrive{}", id);
 
       HANDLE hndl = CreateFileW(
           disk_path.c_str(), GENERIC_READ,
@@ -923,41 +927,62 @@ struct dump_context {
           NULL);
 
       if (hndl == INVALID_HANDLE_VALUE) {
-        logger->Info("  could not open disk {}; skipping ...",
-                     FromUtf16(disk_path));
+        logger->Info("could not open disk {}", FromUtf16(disk_path));
+
+        logger->PopIndent();
+        logger->Info("=> skipped");
         continue;
       }
 
       auto geo = GetDiskGeometry(hndl);
       if (!geo) {
+        logger->Info("could not determine disk geometry for disk {}", id);
+
+        logger->PopIndent();
+        logger->Info("=> skipped");
+
         CloseHandle(hndl);
         continue;
       }
 
       if (geo->Geometry.MediaType != FixedMedia) {
-        logger->Info("  disk {} has bad media type {}; skipping ...", id,
+        logger->Info("disk {} has bad media type {}", id,
                      (int)geo->Geometry.MediaType);
+
+        logger->PopIndent();
+        logger->Info("=> skipped");
+        CloseHandle(hndl);
         continue;
+      }
+
+      if (disk.extents.empty()) {
+        if (save_unknown_disks) {
+          disk.extents.push_back(
+              {0, 0, static_cast<std::size_t>(geo->DiskSize.QuadPart), hndl});
+        } else {
+          logger->Info("disk {} has no snapshotted data", id,
+                       (int)geo->Geometry.MediaType);
+
+          logger->PopIndent();
+          logger->Info("=> skipped");
+          CloseHandle(hndl);
+          continue;
+        }
       }
 
       disks[id] = std::move(disk);
       disk_info[id] = open_disk{hndl, geo.value()};
       open_handles.push_back(hndl);
 
-      logger->Info(" ... done!");
+
+      logger->PopIndent();
+      logger->Info("=> recorded!");
     }
 
-    logger->Info(" generating backup plan");
+    logger->Info("generating backup plan");
+    logger->PushIndent();
     insert_plan plan;
     for (auto& [id, disk] : disks) {
-      if (disk.extents.empty()) {
-        if (!save_unknown_disks) {
-          // we dont care for this disk
-          logger->Info("skip disk {} (no snapshotted data)", id);
-          continue;
-        }
-      }
-
       std::sort(std::begin(disk.extents), std::end(disk.extents),
                 [](auto& l, auto& r) {
                   return l.partition_offset < r.partition_offset;
@@ -1000,7 +1025,8 @@ struct dump_context {
     std::size_t payload_size = compute_plan_size(plan);
     PrependFileHeader(plan, disks, payload_size);
 
-    logger->Info(" ... done!");
+    logger->PopIndent();
+    logger->Info("... done!");
     return plan;
   }
 
@@ -1080,7 +1106,7 @@ struct dump_context {
                         info.PartitionNumber, offset, offset + length);
         } else {
           logger->Info("skipping disk {}/partition {} (no snapshotted data)",
-                       part_idx);
+                       disk_id, part_idx);
         }
         continue;
       }
