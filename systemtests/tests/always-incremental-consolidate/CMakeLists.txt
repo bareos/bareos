@@ -50,13 +50,19 @@ if(NOT ISDISABLED)
       "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
   )
   set_tests_properties(
-    system:always-incremental-consolidate:05-priority
+    system:always-incremental-consolidate:05-consolidate-deleted-file
     PROPERTIES
       FIXTURES_REQUIRED
       "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
   )
   set_tests_properties(
-    system:always-incremental-consolidate:06-consolidate-duplicates
+    system:always-incremental-consolidate:06-priority
+    PROPERTIES
+      FIXTURES_REQUIRED
+      "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
+  )
+  set_tests_properties(
+    system:always-incremental-consolidate:07-consolidate-duplicates
     PROPERTIES
       FIXTURES_REQUIRED
       "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
