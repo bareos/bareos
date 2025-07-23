@@ -769,9 +769,9 @@ bareos_frombase64
 The **bareos_frombase64** function is an ``plpgsql`` implementation of the ``FromBase64`` function in core/src/lib/base64.cc.  It essentially recovers the 64bit number from its base64 textual representation.
 
 +-------------------+-------------------+---------------------+--------+
-|Name               | Result data type  | Argument data types | Type   |
+| Name              | Result data type  | Argument data types | Type   |
 +===================+===================+=====================+========+
-|bareos_frombase64  | bigint            | field text          | func   |
+| bareos_frombase64 | bigint            | field text          | func   |
 +-------------------+-------------------+---------------------+--------+
 
 
@@ -784,11 +784,11 @@ function in core/src/lib/attrib.cc.
 ``LinkFI`` is decoded as a ``bigint`` which differs from the C++ code.
 By default we return all fields, but one can limit the parameters returned via the ``params`` array.
 
-+-------------------+-------------------+---------------------------------+--------+
-| Name              | Result data type  | Argument data types             | Type   |
-+===================+===================+=================================+========+
-|bareos_frombase64  | table             | field text, params text array[] | func   |
-+-------------------+-------------------+---------------------------------+--------+
++--------------+-------------------+-------------------------+--------+
+| Name         | Result data type  | Argument data types     | Type   |
++==============+===================+=========================+========+
+| decode_lstat | table             | lst text, params text[] | func   |
++--------------+-------------------+-------------------------+--------+
 
 input array ``params```
 
