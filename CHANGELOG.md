@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [23.1.4] - 2025-07-23
 
 ### Fixed
 - Fix btape fill-test problem [PR #2171]
@@ -398,6 +398,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [23.1.1]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.1
 [23.1.2]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.2
 [23.1.3]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.3
+[23.1.4]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.4
 [PR #935]: https://github.com/bareos/bareos/pull/935
 [PR #1011]: https://github.com/bareos/bareos/pull/1011
 [PR #1130]: https://github.com/bareos/bareos/pull/1130
@@ -659,4 +660,3 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2309]: https://github.com/bareos/bareos/pull/2309
 [PR #2317]: https://github.com/bareos/bareos/pull/2317
 [PR #2323]: https://github.com/bareos/bareos/pull/2323
-[unreleased]: https://github.com/bareos/bareos/tree/master
