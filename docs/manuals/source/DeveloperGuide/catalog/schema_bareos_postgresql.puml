@@ -380,13 +380,12 @@
   interface bareos_frombase64 {
     --
     field : TEXT
-    params : TEXT
   }
 
   interface decode_lstat{
     --
-    field : TEXT
-    params : String []
+    lst : TEXT
+    params : TEXT[]
   }
   }
 
