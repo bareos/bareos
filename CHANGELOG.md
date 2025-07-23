@@ -9,9 +9,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - Fix btape fill-test problem [PR #2171]
 - plugins: fix error_string construction [PR #2293]
 - truncate: fix return status bug [PR #2309]
+- python: fix traceback generation [PR #2305]
 
 ### Changed
-- python: fix traceback generation [PR #2305]
 - matrix: test the Debian ULC packages for OpenSSL 1.1 on Debian 11 instead of Debian 10 [PR #2323]
 - Build FreeBSD for major versions 14 / 13 (instead of minor releases) [PR #2317]
 
