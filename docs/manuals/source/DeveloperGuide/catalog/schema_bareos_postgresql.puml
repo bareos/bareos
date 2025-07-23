@@ -354,6 +354,7 @@
   package views <<Rectangle>> {
   entity latest_full_size_categorized {
     --
+    client      : TEXT
     fileset     : TEXT
     total_mb    : BIGINT
     db_mb       : BIGINT

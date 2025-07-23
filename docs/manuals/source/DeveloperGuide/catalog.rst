@@ -713,7 +713,7 @@ Database Views
 backup_unit_overview
 ~~~~~~~~~~~~~~~~~~~~
 
-The **backup_unit_overview** view help to summarize the number of unit per category.
+The **backup_unit_overview** view summarizes the number of units per category.
 
 +--------------+-----------+----------------------+
 | Column Name  | Data Type | Description          |
@@ -735,8 +735,7 @@ The **backup_unit_overview** view help to summarize the number of unit per categ
 latest_full_size_categorized
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The **latest_full_size_categorized** is helping to classify latest full job per client and
-fileset by type and summarize the size in MB.
+The **latest_full_size_categorized** view categorizes the data that the last full backup of each client/fileset pair contains.
 
 +-------------+-----------+---------------------------------+
 | Column Name | Data Type | Description                     |
@@ -767,8 +766,7 @@ Database Functions
 bareos_frombase64
 ~~~~~~~~~~~~~~~~~
 
-The **bareos_frombase64** function emulate in ``plpgsql`` language the C++ code
-of FromBase64 function in core/src/lib/base64.cc
+The **bareos_frombase64** function is an ``plpgsql`` implementation of the ``FromBase64`` function in core/src/lib/base64.cc.  It essentially recovers the 64bit number from its base64 textual representation.
 
 +-------------------+-------------------+---------------------+--------+
 |Name               | Result data type  | Argument data types | Type   |
@@ -780,11 +778,11 @@ of FromBase64 function in core/src/lib/base64.cc
 decode_lstat
 ~~~~~~~~~~~~
 
-The function **decode_lstat** emulate in ``plgsql`` language the C++ code of ``DecodeStat``
+The function **decode_lstat** is an implementation in ``plpgsql`` of the ``DecodeStat``
 function in core/src/lib/attrib.cc.
 
-``LinkFI`` is decode here as ``bigint`` which differs from the C code.
-By default we return all fields, limit parameter used in ``params`` to obtain the desired values.
+``LinkFI`` is decoded as a ``bigint`` which differs from the C++ code.
+By default we return all fields, but one can limit the parameters returned via the ``params`` array.
 
 +-------------------+-------------------+---------------------------------+--------+
 | Name              | Result data type  | Argument data types             | Type   |
