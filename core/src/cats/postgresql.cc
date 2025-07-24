@@ -559,7 +559,7 @@ bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query, int)
   bool retry = true;
   bool retval = false;
 
-  AssertOwnership();
+  CheckOwnership();
   Dmsg1(500, "SqlQueryWithoutHandler starts with '%s'\n", query);
 
   // We are starting a new query. reset everything.
@@ -715,7 +715,7 @@ SQL_ROW BareosDbPostgresql::SqlFetchRow(void)
 
 const char* BareosDbPostgresql::sql_strerror(void)
 {
-  AssertOwnership();
+  CheckOwnership();
   return PQerrorMessage(db_handle_);
 }
 

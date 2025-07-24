@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -223,7 +223,7 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
 
 int BareosDb::GetPathRecord(JobControlRecord* jcr, const char* new_path)
 {
-  AssertOwnership();
+  CheckOwnership();
   PmStrcpy(path, new_path);
   pnl = strlen(path);
   return GetPathRecord(jcr);
@@ -893,7 +893,7 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
   char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem buf(PM_MESSAGE);
 
-  AssertOwnership();
+  CheckOwnership();
 
   Mmsg(cmd,
        "SELECT DISTINCT MediaId FROM Media WHERE Recycle=%d AND Enabled=%d ",
