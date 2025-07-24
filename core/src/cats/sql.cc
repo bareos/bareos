@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -202,7 +202,7 @@ bool BareosDb::QueryDb(JobControlRecord* jcr,
                        const char* select_cmd,
                        libbareos::source_location loc)
 {
-  AssertOwnership();
+  CheckOwnership();
 
   SqlFreeResult();
   Dmsg1(1000, "query: %s\n", select_cmd);
@@ -228,7 +228,7 @@ int BareosDb::InsertDb(JobControlRecord* jcr,
                        const char* select_cmd,
                        libbareos::source_location loc)
 {
-  AssertOwnership();
+  CheckOwnership();
   int num_rows;
 
   if (!SqlQuery(select_cmd)) {
@@ -264,7 +264,7 @@ int BareosDb::UpdateDb(JobControlRecord* jcr,
                        const char* UpdateCmd,
                        libbareos::source_location loc)
 {
-  AssertOwnership();
+  CheckOwnership();
   if (!SqlQuery(UpdateCmd)) {
     msg_(loc.file_name(), loc.line(), errmsg, T_("update %s failed:\n%s\n"),
          UpdateCmd, sql_strerror());
@@ -289,7 +289,7 @@ int BareosDb::DeleteDb(JobControlRecord* jcr,
                        const char* DeleteCmd,
                        libbareos::source_location loc)
 {
-  AssertOwnership();
+  CheckOwnership();
   if (!SqlQuery(DeleteCmd)) {
     msg_(loc.file_name(), loc.line(), errmsg, T_("delete %s failed:\n%s\n"),
          DeleteCmd, sql_strerror());
@@ -312,7 +312,7 @@ int BareosDb::DeleteDb(JobControlRecord* jcr,
  */
 int BareosDb::GetSqlRecordMax(JobControlRecord* jcr)
 {
-  AssertOwnership();
+  CheckOwnership();
 
   SQL_ROW row;
   int retval = 0;
@@ -336,7 +336,7 @@ char* BareosDb::strerror()
 {
   // it does not make sense to call this function without holding the lock,
   // as it may not be the real error anymore.
-  AssertOwnership();
+  CheckOwnership();
   return errmsg;
 }
 
@@ -347,7 +347,7 @@ char* BareosDb::strerror()
  */
 void BareosDb::SplitPathAndFile(JobControlRecord* jcr, const char* filename)
 {
-  AssertOwnership();
+  CheckOwnership();
   const char *p, *f;
 
   /* Find path without the filename.
@@ -430,7 +430,7 @@ void BareosDb::ListDashes(OutputFormatter* send)
 // List result handler used by queries done with db_big_sql_query()
 int BareosDb::ListResult(void* vctx, int, char** row)
 {
-  AssertOwnership();
+  CheckOwnership();
 
   JobControlRecord* jcr;
   char ewc[30];
@@ -642,7 +642,7 @@ int BareosDb::ListResult(JobControlRecord* jcr,
                          OutputFormatter* send,
                          e_list_type type)
 {
-  AssertOwnership();
+  CheckOwnership();
 
   SQL_ROW row;
   char ewc[30];
@@ -876,7 +876,7 @@ int ListResult(JobControlRecord* jcr,
  */
 bool BareosDb::OpenBatchConnection(JobControlRecord* jcr)
 {
-  AssertOwnership();
+  CheckOwnership();
 
   bool multi_db;
 
