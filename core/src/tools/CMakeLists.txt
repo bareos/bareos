@@ -96,6 +96,9 @@ if(NOT client-only)
   endif()
 endif()
 
+add_executable(random-commands random_commands.cc)
+target_link_libraries(random-commands fmt::fmt CLI11::CLI11)
+
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
 
