@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,8 +60,8 @@ int RwlReadunlock(brwlock_t* rwl);
 int RwlWritelock(brwlock_t* rwl);
 int RwlWritetrylock(brwlock_t* rwl);
 int RwlWriteunlock(brwlock_t* rwl);
-void RwlAssertWriterIsMe(brwlock_t* rwl,
-                         libbareos::source_location loc
-                         = libbareos::source_location::current());
+void RwlCheckWriterIsMe(brwlock_t* rwl,
+                        libbareos::source_location loc
+                        = libbareos::source_location::current());
 
 #endif  // BAREOS_LIB_RWLOCK_H_
