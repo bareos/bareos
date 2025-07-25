@@ -15,13 +15,25 @@ export TestName
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${tmp}/label.out
 label barcodes slots=1 drive=0 pool=Incremental yes
+@$out ${tmp}/release.out
 release alldrives
+@$out ${tmp}/mount.out
 mount drive=1 slot=1
+@$out ${tmp}/job.out
 run job=backup-bareos-fd yes
 wait
+messages
 END_OF_DATA
 
 run_bconsole
+
+expect_grep "Catalog record for Volume.*Slot 1 successfully created." "${tmp}/label.out" "record was not created successfully"
+expect_grep "OK label" "${tmp}/label.out" "Volume was not labeled correctly"
+expect_grep "3001 Mounted Volume: .*" "${tmp}/mount.out" "volume was not mounted"
+expect_grep "Backup OK" "${tmp}/job.out" "Backup was not successful"
 
 end_test
