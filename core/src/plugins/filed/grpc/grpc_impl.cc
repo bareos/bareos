@@ -851,6 +851,156 @@ class BareosCore : public bc::Core::Service {
   PluginContext* core{nullptr};
 };
 
+bool make_event_request(filedaemon::bEventType type,
+                        void* data,
+                        bp::handlePluginEventRequest& req)
+{
+  auto* event = req.mutable_to_handle();
+
+  switch (type) {
+    case filedaemon::bEventJobStart: {
+      auto* inner = event->mutable_job_start();
+      inner->set_data((char*)data);
+    } break;
+    case filedaemon::bEventJobEnd: {
+      auto* inner = event->mutable_job_end();
+      (void)inner;
+    } break;
+    case filedaemon::bEventStartBackupJob: {
+      auto* inner = event->mutable_start_backup_job();
+      (void)inner;
+    } break;
+    case filedaemon::bEventEndBackupJob: {
+      auto* inner = event->mutable_end_backup_job();
+      (void)inner;
+    } break;
+    case filedaemon::bEventStartRestoreJob: {
+      auto* inner = event->mutable_start_restore_job();
+      (void)inner;
+    } break;
+    case filedaemon::bEventEndRestoreJob: {
+      auto* inner = event->mutable_end_restore_job();
+      (void)inner;
+    } break;
+    case filedaemon::bEventStartVerifyJob: {
+      auto* inner = event->mutable_start_verify_job();
+      (void)inner;
+    } break;
+    case filedaemon::bEventEndVerifyJob: {
+      auto* inner = event->mutable_end_verify_job();
+      (void)inner;
+    } break;
+    case filedaemon::bEventBackupCommand: {
+      auto* inner = event->mutable_backup_command();
+      inner->set_data((char*)data);
+    } break;
+    case filedaemon::bEventRestoreCommand: {
+      auto* inner = event->mutable_restore_command();
+      inner->set_data((char*)data);
+    } break;
+    case filedaemon::bEventEstimateCommand: {
+      auto* inner = event->mutable_estimate_command();
+      inner->set_data((char*)data);
+    } break;
+    case filedaemon::bEventLevel: {
+      auto* inner = event->mutable_level();
+      inner->set_level((intptr_t)data);
+    } break;
+    case filedaemon::bEventSince: {
+      auto* inner = event->mutable_since();
+      time_t since_time = (intptr_t)data;
+      inner->mutable_since()->set_seconds(since_time);
+    } break;
+    case filedaemon::bEventCancelCommand: {
+      auto* inner = event->mutable_cancel_command();
+      (void)inner;
+    } break;
+    case filedaemon::bEventRestoreObject: {
+      if (data == nullptr) {
+        auto* inner = event->mutable_end_restore_object();
+        (void)inner;
+      } else {
+        auto* rop = reinterpret_cast<filedaemon::restore_object_pkt*>(data);
+
+        auto* inner = event->mutable_restore_object();
+        auto* grop = inner->mutable_rop();
+        grop->set_jobid(rop->JobId);
+        // TODO: we need to remove grpc: from this!
+        grop->set_used_cmd_string(rop->plugin_name);
+        auto* sent = grop->mutable_sent();
+        sent->set_index(rop->object_index);
+        sent->set_data(rop->object, rop->object_len);
+        sent->set_name(rop->object_name);
+      }
+    } break;
+    case filedaemon::bEventEndFileSet: {
+      auto* inner = event->mutable_end_fileset();
+      (void)inner;
+    } break;
+    case filedaemon::bEventPluginCommand: {
+      auto* inner = event->mutable_plugin_command();
+      inner->set_data((char*)data);
+    } break;
+    case filedaemon::bEventOptionPlugin: {
+      auto* inner = event->mutable_option_plugin();
+      (void)inner;
+    } break;
+    case filedaemon::bEventNewPluginOptions: {
+      auto* inner = event->mutable_new_plugin_options();
+      inner->set_data((char*)data);
+    } break;
+    case filedaemon::bEventVssInitializeForBackup: {
+      auto* inner = event->mutable_vss_init_backup();
+      (void)inner;
+    } break;
+    case filedaemon::bEventVssInitializeForRestore: {
+      auto* inner = event->mutable_vss_init_restore();
+      (void)inner;
+    } break;
+    case filedaemon::bEventVssSetBackupState: {
+      auto* inner = event->mutable_vss_set_backup_state();
+      (void)inner;
+    } break;
+    case filedaemon::bEventVssPrepareForBackup: {
+      auto* inner = event->mutable_vss_prepare_snapshot();
+      (void)inner;
+    } break;
+    case filedaemon::bEventVssBackupAddComponents: {
+      auto* inner = event->mutable_vss_backup_add_components();
+      (void)inner;
+    } break;
+    case filedaemon::bEventVssPrepareSnapshot: {
+      auto* inner = event->mutable_vss_prepare_snapshot();
+      (void)inner;
+    } break;
+    case filedaemon::bEventVssCreateSnapshots: {
+      auto* inner = event->mutable_vss_create_snapshot();
+      (void)inner;
+    } break;
+    case filedaemon::bEventVssRestoreLoadComponentMetadata: {
+      auto* inner = event->mutable_vss_restore_load_companents_metadata();
+      (void)inner;
+    } break;
+    case filedaemon::bEventVssRestoreSetComponentsSelected: {
+      auto* inner = event->mutable_vss_restore_set_components_selected();
+      (void)inner;
+    } break;
+    case filedaemon::bEventVssCloseRestore: {
+      auto* inner = event->mutable_vss_close_restore();
+      (void)inner;
+    } break;
+    case filedaemon::bEventVssBackupComplete: {
+      auto* inner = event->mutable_vss_backup_complete();
+      (void)inner;
+    } break;
+
+    default:
+      return false;
+  }
+  return true;
+}
+
+
 class PluginClient {
  public:
   PluginClient(std::shared_ptr<grpc::ChannelInterface> channel,
@@ -872,160 +1022,12 @@ class PluginClient {
     return bRC_OK;
   }
 
-  bRC handlePluginEvent(filedaemon::bEventType type, void* data)
+  bRC handlePluginEvent(filedaemon::bEventType type,
+                        bp::handlePluginEventRequest* req)
   {
-    bp::handlePluginEventRequest req;
-    auto* event = req.mutable_to_handle();
-
-    switch (type) {
-      case filedaemon::bEventJobStart: {
-        auto* inner = event->mutable_job_start();
-        inner->set_data((char*)data);
-      } break;
-      case filedaemon::bEventJobEnd: {
-        auto* inner = event->mutable_job_end();
-        (void)inner;
-      } break;
-      case filedaemon::bEventStartBackupJob: {
-        auto* inner = event->mutable_start_backup_job();
-        (void)inner;
-      } break;
-      case filedaemon::bEventEndBackupJob: {
-        auto* inner = event->mutable_end_backup_job();
-        (void)inner;
-      } break;
-      case filedaemon::bEventStartRestoreJob: {
-        auto* inner = event->mutable_start_restore_job();
-        (void)inner;
-      } break;
-      case filedaemon::bEventEndRestoreJob: {
-        auto* inner = event->mutable_end_restore_job();
-        (void)inner;
-      } break;
-      case filedaemon::bEventStartVerifyJob: {
-        auto* inner = event->mutable_start_verify_job();
-        (void)inner;
-      } break;
-      case filedaemon::bEventEndVerifyJob: {
-        auto* inner = event->mutable_end_verify_job();
-        (void)inner;
-      } break;
-      case filedaemon::bEventBackupCommand: {
-        auto* inner = event->mutable_backup_command();
-        inner->set_data((char*)data);
-      } break;
-      case filedaemon::bEventRestoreCommand: {
-        auto* inner = event->mutable_restore_command();
-        inner->set_data((char*)data);
-      } break;
-      case filedaemon::bEventEstimateCommand: {
-        auto* inner = event->mutable_estimate_command();
-        inner->set_data((char*)data);
-      } break;
-      case filedaemon::bEventLevel: {
-        auto* inner = event->mutable_level();
-        inner->set_level((intptr_t)data);
-      } break;
-      case filedaemon::bEventSince: {
-        auto* inner = event->mutable_since();
-        time_t since_time = (intptr_t)data;
-        inner->mutable_since()->set_seconds(since_time);
-      } break;
-      case filedaemon::bEventCancelCommand: {
-        auto* inner = event->mutable_cancel_command();
-        (void)inner;
-      } break;
-      case filedaemon::bEventRestoreObject: {
-        if (data == nullptr) {
-          auto* inner = event->mutable_end_restore_object();
-          (void)inner;
-        } else {
-          auto* rop = reinterpret_cast<filedaemon::restore_object_pkt*>(data);
-
-          auto* inner = event->mutable_restore_object();
-          auto* grop = inner->mutable_rop();
-          grop->set_jobid(rop->JobId);
-          // TODO: we need to remove grpc: from this!
-          grop->set_used_cmd_string(rop->plugin_name);
-          auto* sent = grop->mutable_sent();
-          sent->set_index(rop->object_index);
-          sent->set_data(rop->object, rop->object_len);
-          sent->set_name(rop->object_name);
-        }
-      } break;
-      case filedaemon::bEventEndFileSet: {
-        auto* inner = event->mutable_end_fileset();
-        (void)inner;
-      } break;
-      case filedaemon::bEventPluginCommand: {
-        auto* inner = event->mutable_plugin_command();
-        inner->set_data((char*)data);
-      } break;
-      case filedaemon::bEventOptionPlugin: {
-        auto* inner = event->mutable_option_plugin();
-        (void)inner;
-      } break;
-      case filedaemon::bEventHandleBackupFile: {
-        auto* inner = event->mutable_handle_backup_file();
-        // TODO
-        (void)inner;
-        DebugLog(50, "handle backup file not supported yet");
-        return bRC_Error;
-      } break;
-      case filedaemon::bEventNewPluginOptions: {
-        auto* inner = event->mutable_new_plugin_options();
-        inner->set_data((char*)data);
-      } break;
-      case filedaemon::bEventVssInitializeForBackup: {
-        auto* inner = event->mutable_vss_init_backup();
-        (void)inner;
-      } break;
-      case filedaemon::bEventVssInitializeForRestore: {
-        auto* inner = event->mutable_vss_init_restore();
-        (void)inner;
-      } break;
-      case filedaemon::bEventVssSetBackupState: {
-        auto* inner = event->mutable_vss_set_backup_state();
-        (void)inner;
-      } break;
-      case filedaemon::bEventVssPrepareForBackup: {
-        auto* inner = event->mutable_vss_prepare_snapshot();
-        (void)inner;
-      } break;
-      case filedaemon::bEventVssBackupAddComponents: {
-        auto* inner = event->mutable_vss_backup_add_components();
-        (void)inner;
-      } break;
-      case filedaemon::bEventVssPrepareSnapshot: {
-        auto* inner = event->mutable_vss_prepare_snapshot();
-        (void)inner;
-      } break;
-      case filedaemon::bEventVssCreateSnapshots: {
-        auto* inner = event->mutable_vss_create_snapshot();
-        (void)inner;
-      } break;
-      case filedaemon::bEventVssRestoreLoadComponentMetadata: {
-        auto* inner = event->mutable_vss_restore_load_companents_metadata();
-        (void)inner;
-      } break;
-      case filedaemon::bEventVssRestoreSetComponentsSelected: {
-        auto* inner = event->mutable_vss_restore_set_components_selected();
-        (void)inner;
-      } break;
-      case filedaemon::bEventVssCloseRestore: {
-        auto* inner = event->mutable_vss_close_restore();
-        (void)inner;
-      } break;
-      case filedaemon::bEventVssBackupComplete: {
-        auto* inner = event->mutable_vss_backup_complete();
-        (void)inner;
-      } break;
-    }
-
     bp::handlePluginEventResponse resp;
     grpc::ClientContext ctx;
-    grpc::Status status = stub_->handlePluginEvent(&ctx, req, &resp);
-
+    grpc::Status status = stub_->handlePluginEvent(&ctx, *req, &resp);
 
     if (!status.ok()) {
       DebugLog(50, FMT_STRING("rpc did not succeed for event {} ({}): Err={}"),
@@ -1061,6 +1063,24 @@ class PluginClient {
       default:
         return bRC_Error;
     }
+  }
+
+  bRC handlePluginEvent(filedaemon::bEventType type, void* data)
+  {
+    bp::handlePluginEventRequest req;
+
+    switch (type) {
+      case filedaemon::bEventHandleBackupFile: {
+        DebugLog(50, "handle backup file not supported yet");
+        return bRC_Error;
+      } break;
+      default: {
+      } break;
+    }
+
+    make_event_request(type, data, req);
+
+    return handlePluginEvent(type, &req);
   }
 
   bRC startBackupFile(filedaemon::save_pkt* pkt)
@@ -1699,7 +1719,6 @@ class PluginClient {
     ::DebugLog(core, severity, std::move(fmt), std::forward<Args>(args)...);
   }
 };
-
 }  // namespace
 
 struct grpc_connection_members {
@@ -2247,6 +2266,33 @@ process::~process()
 }
 
 grpc_connection::~grpc_connection() { delete members; }
+
+
+bareos::plugin::handlePluginEventRequest* to_grpc(filedaemon::bEventType type,
+                                                  void* data)
+{
+  auto req = new bp::handlePluginEventRequest;
+
+  if (make_event_request(type, data, *req)) {
+    return req;
+  } else {
+    delete req;
+    return nullptr;
+  }
+}
+
+void delete_request(bareos::plugin::handlePluginEventRequest* req)
+{
+  delete req;
+}
+
+bRC grpc_connection::handlePluginEvent(filedaemon::bEventType type,
+                                       bp::handlePluginEventRequest* req)
+{
+  PluginClient* client = &members->client;
+  return client->handlePluginEvent(type, req);
+}
+
 bRC grpc_connection::handlePluginEvent(filedaemon::bEventType type, void* data)
 {
   PluginClient* client = &members->client;
