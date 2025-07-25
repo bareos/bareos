@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -848,6 +848,10 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
     *alistvalue = new alist<const char*>(10, owned_by_alist);
   }
 
+  auto saved = lc->options;
+
+  lc->options |= LOPT_STRING; /* force string */
+
   bool finish = false;
   while (!finish) {
     switch (LexGetToken(lc, BCT_ALL)) {
@@ -875,6 +879,7 @@ void ConfigurationParser::StorePluginNames(LEX* lc,
         break;
     }
   }
+  lc->options = saved;
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
