@@ -1332,12 +1332,13 @@ StorageResource* get_storage_resource(UaContext* ua,
     // Ignore any zapped keyword.
     if (*ua->argk[i] == 0) { continue; }
     if (use_default && !ua->argv[i]) {
-      // Ignore barcode, barcodes, encrypt, scan and slots keywords.
+      // Ignore alldrives, barcode, barcodes, encrypt, scan and slots keywords.
       if (Bstrcasecmp("barcode", ua->argk[i])
           || Bstrcasecmp("barcodes", ua->argk[i])
           || Bstrcasecmp("encrypt", ua->argk[i])
           || Bstrcasecmp("scan", ua->argk[i])
-          || Bstrcasecmp("slots", ua->argk[i])) {
+          || Bstrcasecmp("slots", ua->argk[i])
+          || Bstrcasecmp("alldrives", ua->argk[i])) {
         continue;
       }
       // Default argument is storage
