@@ -378,7 +378,7 @@ class BareosFdPluginVz7CtFs(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             bareosfd.DebugMessage(
                 100,
                 "No files to backup\n")
-            return bareosfd.bRCs['bareosfd.bRC_Skip']
+            return bareosfd.bRCs['bareosfd.bRC_Stop']
         # reading file list from beginning to ensure dirs are created before files
         path_to_backup = self.files.popleft()
         possible_link_to_dir = path_to_backup.rstrip('/')
