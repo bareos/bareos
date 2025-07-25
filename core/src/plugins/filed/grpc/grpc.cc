@@ -357,43 +357,43 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
                                                   (void*)plugin->cmd.c_str());
     } break;
     case bEventRestoreObject: {
-      if (data == nullptr) {
-        return plugin->child->con.handlePluginEvent(
-            bEventType(event->eventType), (void*)nullptr);
+      // the case where data == nullptr, happens if this is the last
+      // restore object for this plugin.   We can treat that specific
+      // event like any other event, as it requeres no special handling
+      // (no re_setup, etc.)
+      if (data != nullptr) {
+        auto* rop = reinterpret_cast<restore_object_pkt*>(data);
+        if (!plugin->re_setup(ctx, rop->plugin_name)) { return bRC_Error; }
+
+        char* old = rop->plugin_name;
+        rop->plugin_name = const_cast<char*>(plugin->cmd.c_str());
+        auto res = plugin->child->con.handlePluginEvent(
+            bEventType(event->eventType), (void*)rop);
+        rop->plugin_name = old;
+        return res;
       }
-
-      auto* rop = reinterpret_cast<restore_object_pkt*>(data);
-      if (!plugin->re_setup(ctx, rop->plugin_name)) { return bRC_Error; }
-
-      char* old = rop->plugin_name;
-      rop->plugin_name = const_cast<char*>(plugin->cmd.c_str());
-      auto res = plugin->child->con.handlePluginEvent(
-          bEventType(event->eventType), (void*)rop);
-      rop->plugin_name = old;
-      return res;
     } break;
+
     default: {
-      if (plugin->needs_setup()) {
-        DebugLog(100,
-                 FMT_STRING("cannot handle event {} as context was not set up "
-                            "yet, caching ..."),
-                 event->eventType);
-        if (!plugin->cache_event(event, data)) {
-          JobLog(ctx, M_FATAL, FMT_STRING("could not cache event {}"),
-                 event->eventType);
-          return bRC_Error;
-        }
-        return bRC_OK;
-      }
+      // intentionally left blank: normal events are handled below
     } break;
   }
 
-  if (!plugin->child) {
-    JobLog(ctx, M_FATAL, FMT_STRING("plugin is not running"));
-    return bRC_Error;
+  if (plugin->needs_setup()) {
+    DebugLog(100,
+             FMT_STRING("cannot handle event {} as context was not set up "
+                        "yet, caching ..."),
+             event->eventType);
+    if (!plugin->cache_event(event, data)) {
+      JobLog(ctx, M_FATAL, FMT_STRING("could not cache event {}"),
+             event->eventType);
+      return bRC_Error;
+    }
+    return bRC_OK;
+  } else {
+    return plugin->child->con.handlePluginEvent(
+        (filedaemon::bEventType)(event->eventType), data);
   }
-  return plugin->child->con.handlePluginEvent(
-      (filedaemon::bEventType)(event->eventType), data);
 }
 
 bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* pkt)
