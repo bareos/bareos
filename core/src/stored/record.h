@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -103,7 +103,9 @@ enum
  *
  * This is the memory structure for the record header.
  */
-struct BootStrapRecord; /* satisfy forward reference */
+namespace bsr {
+struct volume;
+};  // namespace bsr
 struct DeviceRecord {
   dlink<DeviceRecord> link; /**< link for chaining in read_record.c */
   /**<
@@ -120,7 +122,7 @@ struct DeviceRecord {
   uint32_t remainder{0};              /**< Remaining bytes to read/write */
   char state_bits[REC_STATE_BYTES]{}; /**< State bits */
   rec_state state{st_none};           /**< State of WriteRecordToBlock */
-  BootStrapRecord* bsr{nullptr};      /**< Pointer to bsr that matched */
+  bsr::volume* bsr_volume{nullptr};   /**< Pointer to bsr that matched */
   POOLMEM* data{nullptr};  /**< Record data. This MUST be a memory pool item */
   int32_t match_stat{0};   /**< BootStrapRecord match status */
   bool own_mempool{false}; /**< Do we own the POOLMEM pointed to in data ? */

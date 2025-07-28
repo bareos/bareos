@@ -71,10 +71,15 @@ struct bsr_parser {
 
   void push_media_type(std::string_view type)
   {
-    prototype.media_type.assign(type);
+    if (!prototype.media_type) { prototype.media_type.emplace(); }
+    prototype.media_type->assign(type);
   }
 
-  void push_device(std::string_view device) { prototype.device.assign(device); }
+  void push_device(std::string_view device)
+  {
+    if (!prototype.device) { prototype.device.emplace(); }
+    prototype.device->assign(device);
+  }
 
   void push_storage(std::string_view storage)
   {
@@ -697,9 +702,11 @@ void DumpBsr(storagedaemon::BootStrapRecord* bsr)
 
   for (auto& volume : bsr->volumes) {
     Pmsg1(-1, T_("VolumeName  : %s\n"), volume.volume_name.c_str());
-    Pmsg1(-1, T_("  MediaType : %s\n"), volume.media_type.c_str());
-    Pmsg1(-1, T_("  Device    : %s\n"), volume.device.c_str());
-    Pmsg1(-1, T_("  Slot      : %d\n"), volume.slot);
+    Pmsg1(-1, T_("  MediaType : %s\n"),
+          volume.media_type ? volume.media_type->c_str() : "(unset)");
+    Pmsg1(-1, T_("  Device    : %s\n"),
+          volume.device ? volume.device->c_str() : "(unset)");
+    Pmsg1(-1, T_("  Slot      : %d\n"), volume.slot ? volume.slot.value() : -1);
 
     print_intervals("SessId", true, volume.session_ids);
 

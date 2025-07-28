@@ -62,18 +62,24 @@ struct interval {
       : start{start_}, end{end_}
   {
   }
+
+  bool contains(std::uint64_t value) const noexcept
+  {
+    return start <= value && value <= end;
+  }
 };
 
 struct volume {
   BootStrapRecord* root{nullptr};
 
   std::string volume_name{};
-  std::string media_type{};
-  std::string device{};
-  std::int32_t slot{};
-
   std::uint64_t count{}; /* count of files to restore this bsr */
   std::uint64_t found{}; /* count of restored files this bsr */
+  bool done{};           /* set when everything found for this volume */
+
+  std::optional<std::string> media_type{};
+  std::optional<std::string> device{};
+  std::optional<std::int32_t> slot{};
 
   std::vector<interval> files;
   std::vector<interval> blocks;
@@ -89,15 +95,13 @@ struct volume {
   std::vector<std::string> clients;
 
   std::vector<std::string> jobs;
-  std::vector<std::uint32_t> job_type;
-  std::vector<std::uint32_t> job_level;
+  std::vector<std::uint32_t> job_types;
+  std::vector<std::uint32_t> job_levels;
 
   std::vector<std::int32_t> streams;
 
   std::string fileregex{}; /* set if restore is filtered on filename */
   std::unique_ptr<regex_t> fileregex_re{nullptr};
-
-  bool done{}; /* set when everything found for this volume */
 };
 };  // namespace bsr
 
@@ -108,10 +112,18 @@ struct BootStrapRecord {
   bool use_positioning{};    /* set if we can position the archive */
   bool skip_file{};          /* skip all records for current file */
 
-  std::size_t current_volume{};
+  std::size_t current_volume = std::numeric_limits<std::size_t>::max();
   std::vector<bsr::volume> volumes;
 
   Attributes* attr{nullptr}; /* scratch space for unpacking */
+
+  bsr::volume* current()
+  {
+    if (current_volume >= volumes.size()) { return nullptr; }
+    return &volumes[current_volume];
+  }
+
+  void advance() { current_volume += 1; }
 };
 
 

@@ -516,7 +516,7 @@ void DumpRecord(const char* tag, const DeviceRecord* rec)
   }
   Dmsg3(100, "%-14s %u (%s)\n", "state", rec->state,
         record_state_to_ascii(rec->state));
-  Dmsg2(100, "%-14s %p\n", "bsr", rec->bsr);
+  Dmsg2(100, "%-14s %p\n", "bsr", rec->bsr_volume);
   Dmsg2(100, "%-14s %p\n", "data", rec->data);
   Dmsg2(100, "%-14s %d\n", "match_stat", rec->match_stat);
   Dmsg2(100, "%-14s %s\n", "own_mempool", rec->own_mempool ? "true" : "false");

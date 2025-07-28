@@ -39,6 +39,7 @@
 #include "include/bareos.h"
 #include "include/streams.h"
 #include "stored/bsr.h"
+#include <algorithm>
 #include "stored/device_control_record.h"
 #include "stored/stored_jcr_impl.h"
 #include "stored/stored.h"
@@ -49,144 +50,36 @@ namespace storagedaemon {
 const int dbglevel = 500;
 
 /* Forward references */
-static int MatchVolume(BootStrapRecord* bsr,
-                       BsrVolume* volume,
-                       Volume_Label* volrec,
-                       bool done);
-static int MatchSesstime(BootStrapRecord* bsr,
-                         BsrSessionTime* sesstime,
-                         DeviceRecord* rec,
-                         bool done);
-static int MatchSessid(BootStrapRecord* bsr,
-                       BsrSessionId* sessid,
-                       DeviceRecord* rec);
-static int MatchClient(BootStrapRecord* bsr,
-                       BsrClient* client,
-                       Session_Label* sessrec,
-                       bool done);
-static int MatchJob(BootStrapRecord* bsr,
-                    BsrJob* job,
-                    Session_Label* sessrec,
-                    bool done);
-static int MatchJobType(BootStrapRecord* bsr,
-                        BsrJobType* job_type,
-                        Session_Label* sessrec,
-                        bool done);
-static int MatchJobLevel(BootStrapRecord* bsr,
-                         BsrJoblevel* job_level,
-                         Session_Label* sessrec,
-                         bool done);
-static int MatchJobid(BootStrapRecord* bsr,
-                      BsrJobid* jobid,
-                      Session_Label* sessrec,
-                      bool done);
-static int MatchFindex(BootStrapRecord* bsr,
-                       BsrFileIndex* findex,
-                       DeviceRecord* rec,
-                       bool done);
-static int MatchVolfile(BootStrapRecord* bsr,
-                        BsrVolumeFile* volfile,
-                        DeviceRecord* rec,
-                        bool done);
-static int MatchVoladdr(BootStrapRecord* bsr,
-                        BsrVolumeAddress* voladdr,
-                        DeviceRecord* rec,
-                        bool done);
-static int MatchStream(BootStrapRecord* bsr,
-                       BsrStream* stream,
-                       DeviceRecord* rec,
-                       bool done);
-static int MatchAll(BootStrapRecord* bsr,
-                    DeviceRecord* rec,
-                    Volume_Label* volrec,
-                    Session_Label* sessrec,
-                    bool done,
-                    JobControlRecord* jcr);
-static int MatchBlockSesstime(BootStrapRecord* bsr,
-                              BsrSessionTime* sesstime,
-                              DeviceBlock* block);
-static int MatchBlockSessid(BootStrapRecord* bsr,
-                            BsrSessionId* sessid,
-                            DeviceBlock* block);
+namespace bsr {
+static bool match_volume(volume& volume, Volume_Label* label);
+static bool match_sesstime(volume& volume, DeviceRecord* rec);
+static bool match_sessid(volume& volume, DeviceRecord* rec);
+static bool match_client(volume& volume, Session_Label* sessrec);
+static bool match_job(volume& volume, Session_Label* sessrec);
+static bool match_job_type(volume& volume, Session_Label* sessrec);
+static bool match_job_level(volume& volume, Session_Label* sessrec);
+static bool match_job_id(volume& volume, Session_Label* sessrec);
+static bool match_file_index(volume& volume, DeviceRecord* rec);
+static bool match_vol_file(volume& volume, DeviceRecord* rec);
+static bool match_vol_addr(volume& volume, DeviceRecord* rec);
+// static bool match_vol_block(volume& volume, DeviceRecord* rec);
+static bool match_stream(volume& volume, DeviceRecord* rec);
+
+static int match_all(volume& volume,
+                     DeviceRecord* rec,
+                     Volume_Label* volrec,
+                     Session_Label* sessrec,
+                     JobControlRecord* jcr);
+
+static bool match_sesstime(volume& volume, DeviceBlock* block);
+static bool match_sessid(volume& volume, DeviceBlock* block);
+
+};  // namespace bsr
+
+#if 0
+
 static BootStrapRecord* find_smallest_volfile(BootStrapRecord* fbsr,
                                               BootStrapRecord* bsr);
-
-/**
- *
- *  Do fast block rejection based on bootstrap records.
- *    use_fast_rejection will be set if we have VolSessionId and VolSessTime
- *    in each record. When BlockVer is >= 2, we have those in the block header
- *    so can do fast rejection.
- *
- *   returns:  1 if block may contain valid records
- *             0 if block may be skipped (i.e. it contains no records of
- *                  that can match the bsr).
- *
- */
-int MatchBsrBlock(BootStrapRecord* bsr, DeviceBlock* block)
-{
-  if (!bsr || !bsr->use_fast_rejection || (block->BlockVer < 2)) {
-    return 1; /* cannot fast reject */
-  }
-
-  for (; bsr; bsr = bsr->next) {
-    if (!MatchBlockSesstime(bsr, bsr->sesstime, block)) { continue; }
-    if (!MatchBlockSessid(bsr, bsr->sessid, block)) { continue; }
-    return 1;
-  }
-  return 0;
-}
-
-static int MatchBlockSesstime(BootStrapRecord* bsr,
-                              BsrSessionTime* sesstime,
-                              DeviceBlock* block)
-{
-  if (!sesstime) { return 1; /* no specification matches all */ }
-  if (sesstime->sesstime == block->VolSessionTime) { return 1; }
-  if (sesstime->next) { return MatchBlockSesstime(bsr, sesstime->next, block); }
-  return 0;
-}
-
-static int MatchBlockSessid(BootStrapRecord* bsr,
-                            BsrSessionId* sessid,
-                            DeviceBlock* block)
-{
-  if (!sessid) { return 1; /* no specification matches all */ }
-  if (sessid->sessid <= block->VolSessionId
-      && sessid->sessid2 >= block->VolSessionId) {
-    return 1;
-  }
-  if (sessid->next) { return MatchBlockSessid(bsr, sessid->next, block); }
-  return 0;
-}
-
-static int MatchFileregex(BootStrapRecord* bsr,
-                          DeviceRecord* rec,
-                          JobControlRecord* jcr)
-{
-  if (bsr->fileregex_re == NULL) return 1;
-
-  if (bsr->attr == NULL) { bsr->attr = new_attr(jcr); }
-
-  /* The code breaks if the first record associated with a file is
-   * not of this type */
-  if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES
-      || rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX) {
-    bsr->skip_file = false;
-    if (UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len,
-                               bsr->attr)) {
-      if (regexec(bsr->fileregex_re, bsr->attr->fname, 0, NULL, 0) == 0) {
-        Dmsg2(dbglevel, "Matched pattern, fname=%s FI=%d\n", bsr->attr->fname,
-              rec->FileIndex);
-      } else {
-        Dmsg2(dbglevel, "Didn't match, skipping fname=%s FI=%d\n",
-              bsr->attr->fname, rec->FileIndex);
-        bsr->skip_file = true;
-      }
-    }
-  }
-  return 1;
-}
 
 /**
  *
@@ -207,13 +100,27 @@ int MatchBsr(BootStrapRecord* bsr,
   /* The bsr->Reposition flag is set any time a bsr is done.
    *   In this case, we can probably Reposition the
    *   tape to the next available bsr position. */
+
   if (bsr) {
-    bsr->Reposition = false;
-    status = MatchAll(bsr, rec, volrec, sessrec, true, jcr);
-    /* Note, bsr->Reposition is set by MatchAll when
-     *  a bsr is done. We turn it off if a match was
-     *  found or if we cannot use positioning */
-    if (status != 0 || !bsr->use_positioning) { bsr->Reposition = false; }
+    while (bsr->current_volume < bsr->volumes.size()) {
+      auto& current = bsr->volumes[bsr->current_volume];
+
+      if (current.done) {
+        bsr->current_volume += 1;
+        continue;
+      }
+
+      bsr->Reposition = false;
+      /* Note, bsr->Reposition is set by match_all when
+       *  a bsr is done. We turn it off if a match was
+       *  found or if we cannot use positioning */
+      status = match_all(current, rec, volrec, sessrec, jcr);
+      if (status != 0 || !bsr->use_positioning) { bsr->Reposition = false; }
+
+      if (status != -1) { break; }
+
+      bsr->current_volume += 1;
+    }
   } else {
     status = 1; /* no bsr => match all */
   }
@@ -224,8 +131,15 @@ int MatchBsr(BootStrapRecord* bsr,
  * Find the next bsr that applies to the current tape.
  *   It is the one with the smallest VolFile position.
  */
-BootStrapRecord* find_next_bsr(BootStrapRecord* root_bsr, Device* dev)
+BootStrapRecord* find_next_bsr(BootStrapRecord* bsr, Device* dev)
 {
+  if (!bsr) { return nullptr; }
+
+  if (bsr->current_volume >= bsr->volumes.size()) { return nullptr; }
+
+  auto& current = bsr->volumes[bsr->current_volume];
+
+
   BootStrapRecord* bsr;
   BootStrapRecord* found_bsr = NULL;
 
@@ -365,22 +279,115 @@ static BootStrapRecord* find_smallest_volfile(BootStrapRecord* found_bsr,
  */
 bool IsThisBsrDone(BootStrapRecord*, DeviceRecord* rec)
 {
-  BootStrapRecord* rbsr = rec->bsr;
-  Dmsg1(dbglevel, "match_set %d\n", rbsr != NULL);
-  if (!rbsr) { return false; }
-  rec->bsr = NULL;
-  rbsr->found++;
-  if (rbsr->count && rbsr->found >= rbsr->count) {
-    rbsr->done = true;
-    rbsr->root->Reposition = true;
-    Dmsg2(dbglevel, "is_end_this_bsr set Reposition=1 count=%d found=%d\n",
-          rbsr->count, rbsr->found);
+  bsr::volume* rec_volume = rec->bsr_volume;
+  Dmsg1(dbglevel, "match_set %p\n", rec_volume);
+  if (!rec_volume) { return false; }
+  rec->bsr_volume = NULL;
+  rec_volume->found++;
+  if (rec_volume->count && rec_volume->found >= rec_volume->count) {
+    rec_volume->done = true;
+    rec_volume->root->Reposition = true;
+    Dmsg2(dbglevel, "is_end_this_bsr set Reposition=1 count=%zu found=%zu\n",
+          rec_volume->count, rec_volume->found);
     return true;
   }
-  Dmsg2(dbglevel, "is_end_this_bsr not done count=%d found=%d\n", rbsr->count,
-        rbsr->found);
+  Dmsg2(dbglevel, "is_end_this_bsr not done count=%zu found=%zu\n",
+        rec_volume->count, rec_volume->found);
   return false;
 }
+
+#endif
+
+namespace bsr {
+
+struct match_result {
+  bool found;
+  bool too_big;
+};
+
+static match_result match_interval(const std::vector<interval>& intervals,
+                                   std::uint64_t value)
+{
+  if (intervals.empty()) { return {true, false}; }
+
+  bool too_big = true;
+  for (auto& iv : intervals) {
+    if (iv.contains(value)) { return {true, false}; }
+    if (value < iv.end) { too_big = false; }
+  }
+
+  return {false, too_big};
+}
+
+/**
+ *
+ *  Do fast block rejection based on bootstrap records.
+ *    use_fast_rejection will be set if we have VolSessionId and VolSessTime
+ *    in each record. When BlockVer is >= 2, we have those in the block header
+ *    so can do fast rejection.
+ *
+ *   returns:  1 if block may contain valid records
+ *             0 if block may be skipped (i.e. it contains no records of
+ *                  that can match the bsr).
+ *
+ */
+bool match_bsr_block(BootStrapRecord* bsr, volume& volume, DeviceBlock* block)
+{
+  if (!bsr || !bsr->use_fast_rejection || (block->BlockVer < 2)) {
+    return 1; /* cannot fast reject */
+  }
+
+  if (!match_sesstime(volume, block)) { return 0; }
+  if (!match_sesstime(volume, block)) { return 0; }
+  return 1;
+}
+
+static bool match_sesstime(volume& volume, DeviceBlock* block)
+{
+  if (volume.session_times.empty()) { return true; }
+
+  return std::find(std::begin(volume.session_times),
+                   std::end(volume.session_times), block->VolSessionTime)
+         != std::end(volume.session_times);
+}
+
+static bool match_sessid(volume& volume, DeviceBlock* block)
+{
+  return match_interval(volume.session_ids, block->VolSessionId).found;
+}
+
+static bool match_fileregex(BootStrapRecord* bsr,
+                            bsr::volume& volume,
+                            DeviceRecord* rec,
+                            JobControlRecord* jcr)
+{
+  if (!volume.fileregex_re) { return true; }
+
+  if (bsr->attr == NULL) { bsr->attr = new_attr(jcr); }
+
+  /* The code breaks if the first record associated with a file is
+   * not of this type */
+  if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES
+      || rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX) {
+    bsr->skip_file = false;
+    if (UnpackAttributesRecord(jcr, rec->Stream, rec->data, rec->data_len,
+                               bsr->attr)) {
+      if (regexec(volume.fileregex_re.get(), bsr->attr->fname, 0, NULL, 0)
+          == 0) {
+        Dmsg2(dbglevel, "Matched pattern, fname=%s FI=%d\n", bsr->attr->fname,
+              rec->FileIndex);
+      } else {
+        Dmsg2(dbglevel, "Didn't match, skipping fname=%s FI=%d\n",
+              bsr->attr->fname, rec->FileIndex);
+        bsr->skip_file = true;
+        /*** FIXUP: shouldnt there be a false here ? ***/
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 
 /**
  * Match all the components of current record
@@ -388,77 +395,66 @@ bool IsThisBsrDone(BootStrapRecord*, DeviceRecord* rec)
  *   returns  0 no match
  *   returns -1 no additional matches possible
  */
-static int MatchAll(BootStrapRecord* bsr,
-                    DeviceRecord* rec,
-                    Volume_Label* volrec,
-                    Session_Label* sessrec,
-                    bool done,
-                    JobControlRecord* jcr)
+static int match_all(volume& volume,
+                     DeviceRecord* rec,
+                     Volume_Label* volrec,
+                     Session_Label* sessrec,
+                     JobControlRecord* jcr)
 {
   Dmsg0(dbglevel, "Enter MatchAll\n");
-  if (bsr->done) {
+  if (volume.done) {
     //    Dmsg0(dbglevel, "bsr->done set\n");
     goto no_match;
   }
-  if (!MatchVolume(bsr, bsr->volume, volrec, 1)) {
+  if (!match_volume(volume, volrec)) {
     Dmsg2(dbglevel, "bsr fail bsr_vol=%s != rec read_vol=%s\n",
-          bsr->volume->VolumeName, volrec->VolumeName);
+          volume.volume_name.c_str(), volrec->VolumeName);
     goto no_match;
   }
   Dmsg2(dbglevel, "OK bsr match bsr_vol=%s read_vol=%s\n",
-        bsr->volume->VolumeName, volrec->VolumeName);
+        volume.volume_name.c_str(), volrec->VolumeName);
 
-  if (!MatchVolfile(bsr, bsr->volfile, rec, 1)) {
-    if (bsr->volfile) {
-      Dmsg3(dbglevel, "Fail on file=%u. bsr=%u,%u\n", rec->File,
-            bsr->volfile->sfile, bsr->volfile->efile);
-    }
+  if (!match_vol_file(volume, rec)) {
+    Dmsg3(dbglevel, "Fail on file=%u\n", rec->File);
     goto no_match;
   }
 
-  if (!MatchVoladdr(bsr, bsr->voladdr, rec, 1)) {
-    if (bsr->voladdr) {
-      Dmsg3(dbglevel, "Fail on Addr=%" PRIu64 ". bsr=%" PRIu64 ",%" PRIu64 "\n",
-            GetRecordAddress(rec), bsr->voladdr->saddr, bsr->voladdr->eaddr);
-    }
+  if (!match_vol_addr(volume, rec)) {
+    Dmsg3(dbglevel, "Fail on Addr=%" PRIu64 "\n", GetRecordAddress(rec));
     goto no_match;
   }
 
-  if (!MatchSesstime(bsr, bsr->sesstime, rec, 1)) {
-    Dmsg2(dbglevel, "Fail on sesstime. bsr=%u rec=%u\n",
-          bsr->sesstime->sesstime, rec->VolSessionTime);
+  if (!match_sesstime(volume, rec)) {
+    Dmsg2(dbglevel, "Fail on sesstime. rec=%u\n", rec->VolSessionTime);
     goto no_match;
   }
 
   /* NOTE!! This test MUST come after the sesstime test */
-  if (!MatchSessid(bsr, bsr->sessid, rec)) {
-    Dmsg2(dbglevel, "Fail on sessid. bsr=%u rec=%u\n", bsr->sessid->sessid,
-          rec->VolSessionId);
+  if (!match_sessid(volume, rec)) {
+    Dmsg2(dbglevel, "Fail on sessid. rec=%u\n", rec->VolSessionId);
     goto no_match;
   }
 
   /* NOTE!! This test MUST come after sesstime and sessid tests */
-  if (bsr->FileIndex) {
-    if (!MatchFindex(bsr, bsr->FileIndex, rec, 1)) {
-      Dmsg3(dbglevel, "Fail on findex=%d. bsr=%d,%d\n", rec->FileIndex,
-            bsr->FileIndex->findex, bsr->FileIndex->findex2);
+  if (!volume.file_indices.empty()) {
+    if (!match_file_index(volume, rec)) {
+      Dmsg3(dbglevel, "Fail on findex=%d\n", rec->FileIndex);
       goto no_match;
     } else {
-      Dmsg3(dbglevel, "match on findex=%d. bsr=%d,%d\n", rec->FileIndex,
-            bsr->FileIndex->findex, bsr->FileIndex->findex2);
+      Dmsg3(dbglevel, "match on findex=%d\n", rec->FileIndex);
     }
   } else {
     Dmsg0(dbglevel, "No bsr->FileIndex!\n");
   }
 
-  if (!MatchFileregex(bsr, rec, jcr)) {
-    Dmsg1(dbglevel, "Fail on fileregex='%s'\n", bsr->fileregex);
+  if (!match_fileregex(volume.root, volume, rec, jcr)) {
+    Dmsg1(dbglevel, "Fail on fileregex='%s'\n", volume.fileregex.c_str());
     goto no_match;
   }
 
   /* This flag is set by MatchFileregex (and perhaps other tests) */
-  if (bsr->skip_file) {
-    Dmsg1(dbglevel, "Skipping findex=%d\n", rec->FileIndex);
+  if (volume.root->skip_file) {
+    Dmsg1(dbglevel, "Skipping findex=%d (skip file)\n", rec->FileIndex);
     goto no_match;
   }
 
@@ -468,8 +464,8 @@ static int MatchAll(BootStrapRecord* bsr,
    *   after processing the record or records, we can update
    *   the found count. I.e. rec->bsr points to the bsr that
    *   satisfied the match. */
-  if (bsr->count && bsr->FileIndex) {
-    rec->bsr = bsr;
+  if (volume.count && !volume.file_indices.empty()) {
+    rec->bsr_volume = &volume;
     Dmsg0(dbglevel, "Leave MatchAll 1\n");
     return 1; /* this is a complete match */
   }
@@ -477,37 +473,34 @@ static int MatchAll(BootStrapRecord* bsr,
   /* The selections below are not used by Bareos's
    *   restore command, and don't work because of
    *   the rec->bsr = bsr optimization above. */
-  if (!MatchJobid(bsr, bsr->JobId, sessrec, 1)) {
+  if (!match_job_id(volume, sessrec)) {
     Dmsg0(dbglevel, "fail on JobId\n");
     goto no_match;
   }
-  if (!MatchJob(bsr, bsr->job, sessrec, 1)) {
+  if (!match_job(volume, sessrec)) {
     Dmsg0(dbglevel, "fail on Job\n");
     goto no_match;
   }
-  if (!MatchClient(bsr, bsr->client, sessrec, 1)) {
+  if (!match_client(volume, sessrec)) {
     Dmsg0(dbglevel, "fail on Client\n");
     goto no_match;
   }
-  if (!MatchJobType(bsr, bsr->JobType, sessrec, 1)) {
+  if (!match_job_type(volume, sessrec)) {
     Dmsg0(dbglevel, "fail on Job type\n");
     goto no_match;
   }
-  if (!MatchJobLevel(bsr, bsr->JobLevel, sessrec, 1)) {
+  if (!match_job_level(volume, sessrec)) {
     Dmsg0(dbglevel, "fail on Job level\n");
     goto no_match;
   }
-  if (!MatchStream(bsr, bsr->stream, rec, 1)) {
+  if (!match_stream(volume, rec)) {
     Dmsg0(dbglevel, "fail on stream\n");
     goto no_match;
   }
   return 1;
 
 no_match:
-  if (bsr->next) {
-    return MatchAll(bsr->next, rec, volrec, sessrec, bsr->done && done, jcr);
-  }
-  if (bsr->done && done) {
+  if (volume.done) {
     Dmsg0(dbglevel, "Leave match all -1\n");
     return -1;
   }
@@ -515,167 +508,115 @@ no_match:
   return 0;
 }
 
-static int MatchVolume(BootStrapRecord* bsr,
-                       BsrVolume* volume,
-                       Volume_Label* volrec,
-                       bool)
+static bool match_volume(volume& volume, Volume_Label* volrec)
 {
-  if (!volume) { return 0; /* Volume must match */ }
-  if (bstrcmp(volume->VolumeName, volrec->VolumeName)) {
+  if (bstrcmp(volume.volume_name.c_str(), volrec->VolumeName)) {
     Dmsg1(dbglevel, "MatchVolume=%s\n", volrec->VolumeName);
-    return 1;
+    return true;
   }
-  if (volume->next) { return MatchVolume(bsr, volume->next, volrec, 1); }
-  return 0;
+  return false;
 }
 
-static int MatchClient(BootStrapRecord* bsr,
-                       BsrClient* client,
-                       Session_Label* sessrec,
-                       bool)
+static bool match_client(volume& volume, Session_Label* sessrec)
 {
-  if (!client) { return 1; /* no specification matches all */ }
-  if (bstrcmp(client->ClientName, sessrec->ClientName)) { return 1; }
-  if (client->next) { return MatchClient(bsr, client->next, sessrec, 1); }
-  return 0;
-}
+  if (volume.clients.empty()) { return true; }
 
-static int MatchJob(BootStrapRecord* bsr,
-                    BsrJob* job,
-                    Session_Label* sessrec,
-                    bool)
-{
-  if (!job) { return 1; /* no specification matches all */ }
-  if (bstrcmp(job->Job, sessrec->Job)) { return 1; }
-  if (job->next) { return MatchJob(bsr, job->next, sessrec, 1); }
-  return 0;
-}
-
-static int MatchJobType(BootStrapRecord* bsr,
-                        BsrJobType* job_type,
-                        Session_Label* sessrec,
-                        bool)
-{
-  if (!job_type) { return 1; /* no specification matches all */ }
-  if (job_type->JobType == sessrec->JobType) { return 1; }
-  if (job_type->next) { return MatchJobType(bsr, job_type->next, sessrec, 1); }
-  return 0;
-}
-
-static int MatchJobLevel(BootStrapRecord* bsr,
-                         BsrJoblevel* job_level,
-                         Session_Label* sessrec,
-                         bool)
-{
-  if (!job_level) { return 1; /* no specification matches all */ }
-  if (job_level->JobLevel == sessrec->JobLevel) { return 1; }
-  if (job_level->next) {
-    return MatchJobLevel(bsr, job_level->next, sessrec, 1);
-  }
-  return 0;
-}
-
-static int MatchJobid(BootStrapRecord* bsr,
-                      BsrJobid* jobid,
-                      Session_Label* sessrec,
-                      bool)
-{
-  if (!jobid) { return 1; /* no specification matches all */ }
-  if (jobid->JobId <= sessrec->JobId && jobid->JobId2 >= sessrec->JobId) {
-    return 1;
-  }
-  if (jobid->next) { return MatchJobid(bsr, jobid->next, sessrec, 1); }
-  return 0;
-}
-
-static int MatchVolfile(BootStrapRecord* bsr,
-                        BsrVolumeFile* volfile,
-                        DeviceRecord* rec,
-                        bool done)
-{
-  if (!volfile) { return 1; /* no specification matches all */ }
-  /* The following code is turned off because this should now work
-   *   with disk files too, though since a "volfile" is 4GB, it does
-   *   not improve performance much. */
-  if (volfile->sfile <= rec->File && volfile->efile >= rec->File) { return 1; }
-  /* Once we get past last efile, we are done */
-  if (rec->File > volfile->efile) { volfile->done = true; /* set local done */ }
-  if (volfile->next) {
-    return MatchVolfile(bsr, volfile->next, rec, volfile->done && done);
+  for (auto& client : volume.clients) {
+    if (bstrcmp(client.c_str(), sessrec->ClientName)) { return true; }
   }
 
-  /* If we are done and all prior matches are done, this bsr is finished */
-  if (volfile->done && done) {
-    bsr->done = true;
-    bsr->root->Reposition = true;
-    Dmsg2(dbglevel, "bsr done from volfile rec=%u volefile=%u\n", rec->File,
-          volfile->efile);
-  }
-  return 0;
+  return false;
 }
 
-static int MatchVoladdr(BootStrapRecord* bsr,
-                        BsrVolumeAddress* voladdr,
-                        DeviceRecord* rec,
-                        bool done)
+static bool match_job(volume& volume, Session_Label* sessrec)
 {
-  if (!voladdr) { return 1; /* no specification matches all */ }
+  if (volume.jobs.empty()) { return true; }
 
+  for (auto& job : volume.jobs) {
+    if (bstrcmp(job.c_str(), sessrec->Job)) { return true; }
+  }
+
+  return false;
+}
+
+static bool match_job_type(volume& volume, Session_Label* sessrec)
+{
+  if (volume.job_types.empty()) { return true; }
+
+  for (auto& job_type : volume.job_types) {
+    if (job_type == sessrec->JobType) { return true; }
+  }
+
+  return false;
+}
+
+static bool match_job_level(volume& volume, Session_Label* sessrec)
+{
+  if (volume.job_levels.empty()) { return true; }
+
+  for (auto& job_level : volume.job_levels) {
+    if (job_level == sessrec->JobLevel) { return true; }
+  }
+
+  return false;
+}
+
+static bool match_job_id(volume& volume, Session_Label* sessrec)
+{
+  return match_interval(volume.job_ids, sessrec->JobId).found;
+}
+
+static bool match_vol_file(volume& volume, DeviceRecord* rec)
+{
+  auto result = match_interval(volume.files, rec->File);
+  if (result.too_big) {
+    volume.done = true;
+    volume.root->Reposition = true;
+    Dmsg2(dbglevel, "volume done from volfile rec=%u\n", rec->File);
+  }
+  return result.found;
+}
+
+static bool match_vol_addr(volume& volume, DeviceRecord* rec)
+{
   uint64_t addr = GetRecordAddress(rec);
-  Dmsg6(dbglevel,
-        "MatchVoladdr: saddr=%" PRIu64 " eaddr=%" PRIu64 " recaddr=%" PRIu64
-        " "
-        "sfile=%" PRIu64 " efile=%" PRIu64 " recfile=%" PRIu64 "\n",
-        voladdr->saddr, voladdr->eaddr, addr, voladdr->saddr >> 32,
-        voladdr->eaddr >> 32, addr >> 32);
 
-  if (voladdr->saddr <= addr && voladdr->eaddr >= addr) { return 1; }
-  /* Once we get past last eblock, we are done */
-  if (addr > voladdr->eaddr) { voladdr->done = true; /* set local done */ }
-  if (voladdr->next) {
-    return MatchVoladdr(bsr, voladdr->next, rec, voladdr->done && done);
-  }
+  auto result = match_interval(volume.addresses, addr);
 
-  /* If we are done and all prior matches are done, this bsr is finished */
-  if (voladdr->done && done) {
-    bsr->done = true;
-    bsr->root->Reposition = true;
-    Dmsg2(dbglevel,
-          "bsr done from voladdr rec=%" PRIu64 " voleaddr=%" PRIu64 "\n", addr,
-          voladdr->eaddr);
+  if (result.too_big) {
+    volume.done = true;
+    volume.root->Reposition = true;
+    Dmsg2(dbglevel, "bsr done from voladdr rec=%" PRIu64 "\n", addr);
   }
-  return 0;
+  return result.found;
 }
 
 
-static int MatchStream(BootStrapRecord* bsr,
-                       BsrStream* stream,
-                       DeviceRecord* rec,
-                       bool)
+static bool match_stream(volume& volume, DeviceRecord* rec)
 {
-  if (!stream) { return 1; /* no specification matches all */ }
-  if (stream->stream == rec->Stream) { return 1; }
-  if (stream->next) { return MatchStream(bsr, stream->next, rec, 1); }
-  return 0;
+  if (volume.streams.empty()) { return true; }
+
+  return std::find(std::begin(volume.streams), std::end(volume.streams),
+                   rec->Stream)
+         != std::end(volume.streams);
 }
 
-static int MatchSesstime(BootStrapRecord* bsr,
-                         BsrSessionTime* sesstime,
-                         DeviceRecord* rec,
-                         bool done)
+static bool match_sesstime(volume& volume, DeviceRecord* rec)
 {
-  if (!sesstime) { return 1; /* no specification matches all */ }
-  if (sesstime->sesstime == rec->VolSessionTime) { return 1; }
-  if (rec->VolSessionTime > sesstime->sesstime) { sesstime->done = true; }
-  if (sesstime->next) {
-    return MatchSesstime(bsr, sesstime->next, rec, sesstime->done && done);
+  if (volume.session_times.empty()) { return true; }
+
+  bool done = true;
+  for (auto time : volume.session_times) {
+    if (time == rec->VolSessionTime) { return true; }
+    if (time < rec->VolSessionTime) { done = false; }
   }
-  if (sesstime->done && done) {
-    bsr->done = true;
-    bsr->root->Reposition = true;
-    Dmsg0(dbglevel, "bsr done from sesstime\n");
-  }
-  return 0;
+
+  volume.done = done;
+
+  volume.root->Reposition = true;
+  Dmsg0(dbglevel, "volume done from sesstime\n");
+
+  return false;
 }
 
 /**
@@ -683,17 +624,9 @@ static int MatchSesstime(BootStrapRecord* bsr,
  *  have interleaved records, and there may be more of what we want
  *  later.
  */
-static int MatchSessid(BootStrapRecord* bsr,
-                       BsrSessionId* sessid,
-                       DeviceRecord* rec)
+static bool match_sessid(volume& volume, DeviceRecord* rec)
 {
-  if (!sessid) { return 1; /* no specification matches all */ }
-  if (sessid->sessid <= rec->VolSessionId
-      && sessid->sessid2 >= rec->VolSessionId) {
-    return 1;
-  }
-  if (sessid->next) { return MatchSessid(bsr, sessid->next, rec); }
-  return 0;
+  return match_interval(volume.session_ids, rec->VolSessionId).found;
 }
 
 /**
@@ -703,31 +636,19 @@ static int MatchSessid(BootStrapRecord* bsr,
  *  ***FIXME*** optimizations
  * We could optimize by removing the recursion.
  */
-static int MatchFindex(BootStrapRecord* bsr,
-                       BsrFileIndex* findex,
-                       DeviceRecord* rec,
-                       bool done)
+static bool match_file_index(volume& volume, DeviceRecord* rec)
 {
-  if (!findex) { return 1; /* no specification matches all */ }
-  if (!findex->done) {
-    if (findex->findex <= rec->FileIndex && findex->findex2 >= rec->FileIndex) {
-      Dmsg3(dbglevel, "Match on findex=%d. bsrFIs=%d,%d\n", rec->FileIndex,
-            findex->findex, findex->findex2);
-      return 1;
-    }
-    if (rec->FileIndex > findex->findex2) { findex->done = true; }
+  auto result = match_interval(volume.file_indices, rec->FileIndex);
+  if (result.too_big) {
+    volume.done = true;
+    volume.root->Reposition = true;
+    Dmsg1(dbglevel, "volume done from findex %d\n", rec->FileIndex);
   }
-  if (findex->next) {
-    return MatchFindex(bsr, findex->next, rec, findex->done && done);
-  }
-  if (findex->done && done) {
-    bsr->done = true;
-    bsr->root->Reposition = true;
-    Dmsg1(dbglevel, "bsr done from findex %d\n", rec->FileIndex);
-  }
-  return 0;
+  return result.found;
 }
+}  // namespace bsr
 
+#if 0
 uint64_t GetBsrStartAddr(BootStrapRecord* bsr, uint32_t* file, uint32_t* block)
 {
   uint64_t bsr_addr = 0;
@@ -880,5 +801,6 @@ void FreeRestoreVolumeList(JobControlRecord* jcr)
   }
   jcr->sd_impl->VolList = NULL;
 }
+#endif
 
 } /* namespace storagedaemon */

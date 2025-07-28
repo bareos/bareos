@@ -77,7 +77,7 @@ static int const rdebuglevel = 100;
 /* Forward referenced functions */
 static void AttachDcrToDev(DeviceControlRecord* dcr);
 static void DetachDcrFromDev(DeviceControlRecord* dcr);
-static void SetDcrFromVol(DeviceControlRecord* dcr, VolumeList* vol);
+static void SetDcrFromVol(DeviceControlRecord* dcr, bsr::volume* vol);
 
 /**
  * Acquire device for reading.
@@ -94,11 +94,12 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   JobControlRecord* jcr = dcr->jcr;
   bool retval = false;
   bool tape_previously_mounted;
-  VolumeList* vol;
   bool try_autochanger = true;
   int i;
   int vol_label_status;
   int retry = 0;
+  BootStrapRecord* bsr;
+  bsr::volume* volume;
 
   Enter(rdebuglevel);
   dev = dcr->dev;
@@ -116,8 +117,9 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   }
 
   /* Find next Volume, if any */
-  vol = jcr->sd_impl->VolList;
-  if (!vol) {
+  bsr = jcr->sd_impl->read_session.bsr;
+  bsr->advance();
+  if (!bsr) {
     char ed1[50];
     Jmsg(jcr, M_FATAL, 0,
          T_("No volumes specified for reading. Job %s canceled.\n"),
@@ -125,14 +127,14 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     goto get_out;
   }
   jcr->sd_impl->CurReadVolume++;
-  for (i = 1; i < jcr->sd_impl->CurReadVolume; i++) { vol = vol->next; }
-  if (!vol) {
+  volume = bsr->current();
+  if (!volume) {
     Jmsg(jcr, M_FATAL, 0,
          T_("Logic error: no next volume to read. Numvol=%d Curvol=%d\n"),
          jcr->sd_impl->NumReadVolumes, jcr->sd_impl->CurReadVolume);
     goto get_out; /* should not happen */
   }
-  SetDcrFromVol(dcr, vol);
+  SetDcrFromVol(dcr, volume);
 
   Dmsg2(rdebuglevel, "Want Vol=%s Slot=%d\n", vol->VolumeName, vol->Slot);
 
@@ -803,15 +805,15 @@ void FreeDeviceControlRecord(DeviceControlRecord* dcr)
   delete dcr;
 }
 
-static void SetDcrFromVol(DeviceControlRecord* dcr, VolumeList* vol)
+static void SetDcrFromVol(DeviceControlRecord* dcr, bsr::volume* vol)
 {
   /* Note, if we want to be able to work from a .bsr file only
    *  for disaster recovery, we must "simulate" reading the catalog */
-  bstrncpy(dcr->VolumeName, vol->VolumeName, sizeof(dcr->VolumeName));
-  dcr->setVolCatName(vol->VolumeName);
-  bstrncpy(dcr->media_type, vol->MediaType, sizeof(dcr->media_type));
-  dcr->VolCatInfo.Slot = vol->Slot;
-  dcr->VolCatInfo.InChanger = vol->Slot > 0;
+  bstrncpy(dcr->VolumeName, vol->volume_name.c_str(), sizeof(dcr->VolumeName));
+  dcr->setVolCatName(vol->volume_name.c_str());
+  bstrncpy(dcr->media_type, vol->volume_name.c_str(), sizeof(dcr->media_type));
+  dcr->VolCatInfo.Slot = vol->slot.value_or(0);
+  dcr->VolCatInfo.InChanger = vol->slot.has_value();
 }
 
 } /* namespace storagedaemon */

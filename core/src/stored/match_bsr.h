@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,17 +23,17 @@
 
 namespace storagedaemon {
 
-int MatchBsr(BootStrapRecord* bsr,
-             DeviceRecord* rec,
-             Volume_Label* volrec,
-             Session_Label* sesrec,
-             JobControlRecord* jcr);
-int MatchBsrBlock(BootStrapRecord* bsr, DeviceBlock* block);
-BootStrapRecord* find_next_bsr(BootStrapRecord* root_bsr, Device* dev);
-bool IsThisBsrDone(BootStrapRecord* bsr, DeviceRecord* rec);
-uint64_t GetBsrStartAddr(BootStrapRecord* bsr,
-                         uint32_t* file = NULL,
-                         uint32_t* block = NULL);
+// int MatchBsr(BootStrapRecord* bsr,
+//              DeviceRecord* rec,
+//              Volume_Label* volrec,
+//              Session_Label* sesrec,
+//              JobControlRecord* jcr);
+// int MatchBsrBlock(BootStrapRecord* bsr, DeviceBlock* block);
+// BootStrapRecord* find_next_bsr(BootStrapRecord* root_bsr, Device* dev);
+// bool IsThisBsrDone(BootStrapRecord* bsr, DeviceRecord* rec);
+// uint64_t GetBsrStartAddr(BootStrapRecord* bsr,
+//                          uint32_t* file = NULL,
+//                          uint32_t* block = NULL);
 
 } /* namespace storagedaemon */
 
