@@ -64,7 +64,7 @@ static Device* in_dev{};
 static Device* out_dev{};
 static JobControlRecord* in_jcr{};  /* input jcr */
 static JobControlRecord* out_jcr{}; /* output jcr */
-static BootStrapRecord* bsr{};
+static BootStrapRecord* global_bsr{};
 static bool list_records{};
 static uint32_t records{};
 static uint32_t jobs{};
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
       .add_option(
           "-b,--parse-bootstrap",
           [](std::vector<std::string> vals) {
-            bsr = libbareos::parse_bsr(nullptr, vals.front().data());
+            global_bsr = libbareos::parse_bsr(nullptr, vals.front().data());
             return true;
           },
           "Specify a bootstrap file.")
@@ -204,7 +204,7 @@ int main(int argc, char* argv[])
   Dmsg0(100, "About to setup input jcr\n");
 
   DeviceControlRecord* in_dcr = new DeviceControlRecord;
-  in_jcr = SetupJcr("bcopy", input_archive.data(), bsr, director, in_dcr,
+  in_jcr = SetupJcr("bcopy", input_archive.data(), global_bsr, director, in_dcr,
                     inputVolumes, true); /* read device */
   if (!in_jcr) { exit(BEXIT_FAILURE); }
 
@@ -225,8 +225,8 @@ int main(int argc, char* argv[])
   Dmsg0(100, "About to setup output jcr\n");
 
   DeviceControlRecord* out_dcr = new DeviceControlRecord;
-  out_jcr = SetupJcr("bcopy", output_archive.data(), bsr, director, out_dcr,
-                     outputVolumes, false); /* write device */
+  out_jcr = SetupJcr("bcopy", output_archive.data(), global_bsr, director,
+                     out_dcr, outputVolumes, false); /* write device */
   if (!out_jcr) { exit(BEXIT_FAILURE); }
 
   out_dev = out_jcr->sd_impl->dcr->dev;
@@ -304,7 +304,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
         Pmsg0(000, T_("Volume label not copied.\n"));
         return true;
       case SOS_LABEL:
-        if (bsr && rec->match_stat < 1) {
+        if (global_bsr && rec->match_stat < 1) {
           /* Skipping record, because does not match BootStrapRecord filter */
           if (g_verbose) {
             Pmsg0(-1, T_("Copy skipped. Record does not match BootStrapRecord "
@@ -315,7 +315,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
         }
         break;
       case EOS_LABEL:
-        if (bsr && rec->match_stat < 1) {
+        if (global_bsr && rec->match_stat < 1) {
           /* Skipping record, because does not match BootStrapRecord filter */
           return true;
         }
@@ -350,7 +350,7 @@ static bool RecordCb(DeviceControlRecord* in_dcr, DeviceRecord* rec)
   }
 
   /*  Write record */
-  if (bsr && rec->match_stat < 1) {
+  if (global_bsr && rec->match_stat < 1) {
     /* Skipping record, because does not match BootStrapRecord filter */
     return true;
   }

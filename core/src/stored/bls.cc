@@ -81,7 +81,7 @@ static uint32_t num_files = 0;
 static Attributes* attr;
 
 static FindFilesPacket* ff;
-static BootStrapRecord* bsr = nullptr;
+static BootStrapRecord* global_bsr = nullptr;
 
 int main(int argc, char* argv[])
 {
@@ -245,10 +245,10 @@ int main(int argc, char* argv[])
 
   for (std::string device : device_names) {
     if (!bsrName.empty()) {
-      bsr = libbareos::parse_bsr(nullptr, bsrName.data());
+      global_bsr = libbareos::parse_bsr(nullptr, bsrName.data());
     }
     dcr = new DeviceControlRecord;
-    jcr = SetupJcr("bls", device.data(), bsr, director, dcr, VolumeNames,
+    jcr = SetupJcr("bls", device.data(), global_bsr, director, dcr, VolumeNames,
                    true); /* read device */
     if (!jcr) { exit(BEXIT_FAILURE); }
 
@@ -284,7 +284,7 @@ int main(int argc, char* argv[])
     }
     do_close(jcr);
   }
-  if (bsr) { libbareos::FreeBsr(bsr); }
+  if (global_bsr) { libbareos::FreeBsr(global_bsr); }
   TermIncludeExcludeFiles(ff);
   TermFindFiles(ff);
   return BEXIT_SUCCESS;
@@ -346,7 +346,7 @@ static void DoBlocks(char*)
           return;
         }
     }
-    if (!MatchBsrBlock(bsr, block)) {
+    if (!bsr::match_bsr_block(global_bsr, *global_bsr->current(), block)) {
       Dmsg5(100, "reject Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",
             block->BlockNumber, block->block_len, block->BlockVer,
             block->VolSessionId, block->VolSessionTime);

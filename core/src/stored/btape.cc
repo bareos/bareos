@@ -140,7 +140,7 @@ static int argc;
 
 static int quickie_count = 0;
 static uint64_t write_count = 0;
-static BootStrapRecord* bsr = nullptr;
+static BootStrapRecord* global_bsr = nullptr;
 static bool signals = true;
 static bool g_ok;
 static int stop = 0;
@@ -251,7 +251,7 @@ int main(int margc, char* margv[])
       .add_option(
           "-b,--parse-bootstrap",
           [](std::vector<std::string> vals) {
-            bsr = libbareos::parse_bsr(nullptr, vals.front().data());
+            global_bsr = libbareos::parse_bsr(nullptr, vals.front().data());
             return true;
           },
           "Specify a bootstrap file.")
@@ -337,8 +337,8 @@ int main(int margc, char* margv[])
                   GetFirstPortHostOrder(me->SDaddrs));
 
   g_dcr = new BTAPE_DCR;
-  g_jcr = SetupJcr("btape", archive_name.data(), bsr, director, g_dcr, "",
-                   false); /* write device */
+  g_jcr = SetupJcr("btape", archive_name.data(), global_bsr, director, g_dcr,
+                   "", false); /* write device */
   if (!g_jcr) { exit(BEXIT_FAILURE); }
 
   g_dev = g_jcr->sd_impl->dcr->dev;
@@ -379,7 +379,7 @@ static void TerminateBtape(int status)
     cmd = nullptr;
   }
 
-  if (bsr) { libbareos::FreeBsr(bsr); }
+  if (global_bsr) { libbareos::FreeBsr(global_bsr); }
 
   FreeVolumeLists();
 

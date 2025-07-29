@@ -102,7 +102,7 @@ static bool UpdateDigestRecord(BareosDb* db,
 static Device* dev = nullptr;
 static BareosDb* db;
 static JobControlRecord* bjcr; /* jcr for bscan */
-static BootStrapRecord* bsr = nullptr;
+static BootStrapRecord* global_bsr = nullptr;
 static MediaDbRecord mr;
 static PoolDbRecord pr;
 static JobDbRecord jr;
@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
       .add_option(
           "-b,--parse-bootstrap",
           [](std::vector<std::string> vals) {
-            bsr = libbareos::parse_bsr(nullptr, vals.front().data());
+            global_bsr = libbareos::parse_bsr(nullptr, vals.front().data());
             return true;
           },
           "Specify a bootstrap file")
@@ -293,8 +293,8 @@ int main(int argc, char* argv[])
   }
 
   DeviceControlRecord* dcr = new DeviceControlRecord;
-  bjcr = SetupJcr("bscan", device_name.data(), bsr, director, dcr, volumes,
-                  true);
+  bjcr = SetupJcr("bscan", device_name.data(), global_bsr, director, dcr,
+                  volumes, true);
   if (!bjcr) { exit(BEXIT_FAILURE); }
   dev = bjcr->sd_impl->read_dcr->dev;
 
@@ -584,7 +584,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         break;
 
       case SOS_LABEL:
-        if (bsr && rec->match_stat < 1) {
+        if (global_bsr && rec->match_stat < 1) {
           // Skipping record, because does not match BootStrapRecord filter
           Dmsg0(200, T_("SOS_LABEL skipped. Record does not match "
                         "BootStrapRecord filter.\n"));
@@ -674,7 +674,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         break;
 
       case EOS_LABEL:
-        if (bsr && rec->match_stat < 1) {
+        if (global_bsr && rec->match_stat < 1) {
           // Skipping record, because does not match BootStrapRecord filter
           Dmsg0(200, T_("EOS_LABEL skipped. Record does not match "
                         "BootStrapRecord filter.\n"));

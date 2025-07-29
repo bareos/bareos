@@ -30,10 +30,19 @@ namespace storagedaemon {
 //              JobControlRecord* jcr);
 // int MatchBsrBlock(BootStrapRecord* bsr, DeviceBlock* block);
 bool find_next_bsr(BootStrapRecord* bsr, Device* dev);
-// bool IsThisBsrDone(BootStrapRecord* bsr, DeviceRecord* rec);
+namespace bsr {
+bool match_bsr_block(BootStrapRecord* bsr, volume& volume, DeviceBlock* block);
+};
+bool IsThisBsrDone(BootStrapRecord* bsr, DeviceRecord* rec);
 uint64_t GetBsrStartAddr(BootStrapRecord* bsr,
                          uint32_t* file = NULL,
                          uint32_t* block = NULL);
+
+int match_bsr(BootStrapRecord* bsr,
+              DeviceRecord* rec,
+              Volume_Label* volrec,
+              Session_Label* sesrec,
+              JobControlRecord* jcr);
 
 } /* namespace storagedaemon */
 

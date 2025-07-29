@@ -81,6 +81,8 @@ static bool match_sessid(volume& volume, DeviceBlock* block);
 static BootStrapRecord* find_smallest_volfile(BootStrapRecord* fbsr,
                                               BootStrapRecord* bsr);
 
+#endif
+
 /**
  *
  *      Match Bootstrap records
@@ -89,45 +91,16 @@ static BootStrapRecord* find_smallest_volfile(BootStrapRecord* fbsr,
  *                      Reposition the tape
  *       returns -1 no additional matches possible
  */
-int MatchBsr(BootStrapRecord* bsr,
-             DeviceRecord* rec,
-             Volume_Label* volrec,
-             Session_Label* sessrec,
-             JobControlRecord* jcr)
+int match_bsr(BootStrapRecord* bsr,
+              DeviceRecord* rec,
+              Volume_Label* volrec,
+              Session_Label* sessrec,
+              JobControlRecord* jcr)
 {
-  int status;
+  if (!bsr) { return 1; }
 
-  /* The bsr->Reposition flag is set any time a bsr is done.
-   *   In this case, we can probably Reposition the
-   *   tape to the next available bsr position. */
-
-  if (bsr) {
-    while (bsr->current_volume < bsr->volumes.size()) {
-      auto& current = bsr->volumes[bsr->current_volume];
-
-      if (current.done) {
-        bsr->current_volume += 1;
-        continue;
-      }
-
-      bsr->Reposition = false;
-      /* Note, bsr->Reposition is set by match_all when
-       *  a bsr is done. We turn it off if a match was
-       *  found or if we cannot use positioning */
-      status = match_all(current, rec, volrec, sessrec, jcr);
-      if (status != 0 || !bsr->use_positioning) { bsr->Reposition = false; }
-
-      if (status != -1) { break; }
-
-      bsr->current_volume += 1;
-    }
-  } else {
-    status = 1; /* no bsr => match all */
-  }
-  return status;
+  return bsr::match_all(*bsr->current(), rec, volrec, sessrec, jcr);
 }
-
-#endif
 
 /**
  * Check if the current volume is done, and if so, if we can
@@ -264,6 +237,8 @@ static BootStrapRecord* find_smallest_volfile(BootStrapRecord* found_bsr,
   return return_bsr;
 }
 
+#endif
+
 /**
  * Called after the signature record so that
  *   we can see if the current bsr has been
@@ -292,8 +267,6 @@ bool IsThisBsrDone(BootStrapRecord*, DeviceRecord* rec)
         rec_volume->count, rec_volume->found);
   return false;
 }
-
-#endif
 
 namespace bsr {
 
@@ -348,7 +321,7 @@ static bool match_sesstime(volume& volume, DeviceBlock* block)
          != std::end(volume.session_times);
 }
 
-static bool match_sessid(volume& volume, DeviceBlock* block)
+[[maybe_unused]] static bool match_sessid(volume& volume, DeviceBlock* block)
 {
   return match_interval(volume.session_ids, block->VolSessionId).found;
 }

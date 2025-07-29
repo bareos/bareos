@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -156,36 +156,17 @@ class SimpleVolumesBsr {
   SimpleVolumesBsr(const std::vector<std::string>& volumenames)
   {
     using namespace storagedaemon;
+    root = new BootStrapRecord;
     for (auto& name : volumenames) {
-      auto* bsrvolume = (BsrVolume*)calloc(1, sizeof(BsrVolume));
-      bstrncpy(bsrvolume->VolumeName, name.c_str(),
-               sizeof(bsrvolume->VolumeName));
-
-      BootStrapRecord* bsr = (BootStrapRecord*)calloc(1, sizeof(*bsr));
-      bsr->volume = bsrvolume;
-      if (root) {
-        bsr->next = root;
-        root->prev = bsr;
-      }
-      root = bsr;
-    }
-
-    for (auto* current = root; current; current = current->next) {
-      current->root = root;
+      auto& vol = root->volumes.emplace_back();
+      vol.volume_name = name;
+      vol.root = root;
     }
   }
 
   storagedaemon::BootStrapRecord* get() { return root; }
 
-  ~SimpleVolumesBsr()
-  {
-    while (root) {
-      auto* next = root->next;
-      free(root->volume);
-      free(root);
-      root = next;
-    }
-  }
+  ~SimpleVolumesBsr() { delete root; }
 
  private:
   storagedaemon::BootStrapRecord* root{nullptr};

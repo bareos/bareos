@@ -123,7 +123,7 @@ READ_CTX* new_read_context(void)
   READ_CTX* rctx;
 
   rctx = (READ_CTX*)malloc(sizeof(READ_CTX));
-  READ_CTX empty_READ_CTX;
+  READ_CTX empty_READ_CTX{};
   *rctx = empty_READ_CTX;
 
   rctx->recs = new dlist<DeviceRecord>();
@@ -316,8 +316,9 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
       HandleSessionRecord(dcr->dev, rec, &rctx->sessrec);
       if (jcr->sd_impl->read_session.bsr) {
         // We just check block FI and FT not FileIndex
-        rec->match_stat
-            = MatchBsrBlock(jcr->sd_impl->read_session.bsr, dcr->block);
+        rec->match_stat = match_bsr_block(
+            jcr->sd_impl->read_session.bsr,
+            *jcr->sd_impl->read_session.bsr->current(), dcr->block);
       } else {
         rec->match_stat = 0;
       }
@@ -327,8 +328,8 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
 
     // Apply BootStrapRecord filter
     if (jcr->sd_impl->read_session.bsr) {
-      rec->match_stat = MatchBsr(jcr->sd_impl->read_session.bsr, rec,
-                                 &dev->VolHdr, &rctx->sessrec, jcr);
+      rec->match_stat = match_bsr(jcr->sd_impl->read_session.bsr, rec,
+                                  &dev->VolHdr, &rctx->sessrec, jcr);
       if (rec->match_stat == -1) { /* no more possible matches */
         *done = true;              /* all items found, stop */
         Dmsg2(debuglevel, "All done=(file:block) %u:%u\n", dev->file,
@@ -377,29 +378,29 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
   }
 }
 
-static bool ReadRecordsFromBsr(DeviceControlRecord* dcr,
-                               bool RecordCb(DeviceControlRecord* dcr,
-                                             DeviceRecord* rec,
-                                             void* user_data),
-                               bool mount_cb(DeviceControlRecord* dcr),
-                               void* user_data,
-                               BootStrapRecord* bsr)
-{
-  JobControlRecord* jcr = dcr->jcr;
-  READ_CTX* rctx = new_read_context();
+// static bool ReadRecordsFromBsr(DeviceControlRecord* dcr,
+//                                bool RecordCb(DeviceControlRecord* dcr,
+//                                              DeviceRecord* rec,
+//                                              void* user_data),
+//                                bool mount_cb(DeviceControlRecord* dcr),
+//                                void* user_data,
+//                                BootStrapRecord* bsr)
+// {
+//   JobControlRecord* jcr = dcr->jcr;
+//   READ_CTX* rctx = new_read_context();
 
-  for (auto& volume : bsr->volumes) {
-    jcr->sd_impl->CurReadVolume = 0;
+//   for (auto& volume : bsr->volumes) {
+//     jcr->sd_impl->CurReadVolume = 0;
 
-    // mount_cb uses VolList to mount the next one
-    mount_cb(dcr);
+//     // mount_cb uses VolList to mount the next one
+//     mount_cb(dcr);
 
-    // if mount doesnt position us, we need to position now
-    PositionDeviceToFirstFile(jcr, dcr);
+//     // if mount doesnt position us, we need to position now
+//     PositionDeviceToFirstFile(jcr, dcr);
 
-    while (!volume.done) {}
-  }
-}
+//     while (!volume.done) {}
+//   }
+// }
 
 /**
  * This subroutine reads all the records and passes them back to your
