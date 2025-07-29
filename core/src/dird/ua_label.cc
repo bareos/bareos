@@ -83,7 +83,7 @@ static inline bool update_database(UaContext* ua,
     if (mr->VolBytes > 0) {
       bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
     }
-    
+
     if (ua->db->CreateMediaRecord(ua->jcr, mr)) {
       ua->InfoMsg(T_("Catalog record for Volume \"%s\", Slot %hd successfully "
                      "created.\n"),
