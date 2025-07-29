@@ -388,41 +388,8 @@ static bool ReadRecordsFromBsr(DeviceControlRecord* dcr,
   JobControlRecord* jcr = dcr->jcr;
   READ_CTX* rctx = new_read_context();
 
-  auto* outdated = jcr->sd_impl->VolList;
-
-  auto* cheeky_vol_list = new VolumeList;
-  jcr->sd_impl->VolList = cheeky_vol_list;
-
   for (auto& volume : bsr->volumes) {
     jcr->sd_impl->CurReadVolume = 0;
-
-    *cheeky_vol_list = {};
-
-    strncpy(cheeky_vol_list->VolumeName, volume.volume_name.c_str(),
-            sizeof(cheeky_vol_list->VolumeName));
-
-    if (volume.media_type) {
-      strncpy(cheeky_vol_list->MediaType, volume.media_type->c_str(),
-              sizeof(cheeky_vol_list->MediaType));
-    }
-
-    if (volume.device) {
-      strncpy(cheeky_vol_list->device, volume.device->c_str(),
-              sizeof(cheeky_vol_list->device));
-    }
-    if (volume.slot) { cheeky_vol_list->Slot = volume.slot.value(); }
-
-    if (!volume.addresses.empty()) {
-      cheeky_vol_list->start_file = volume.addresses[0].start >> 32;
-    }
-
-    if (!volume.files.empty()) {
-      uint32_t start = std::numeric_limits<std::uint32_t>::max();
-      for (auto& file : volume.files) {
-        if (start > file.start) { start = file.start; }
-      }
-      cheeky_vol_list->start_file = start;
-    }
 
     // mount_cb uses VolList to mount the next one
     mount_cb(dcr);
@@ -432,10 +399,6 @@ static bool ReadRecordsFromBsr(DeviceControlRecord* dcr,
 
     while (!volume.done) {}
   }
-
-  delete cheeky_vol_list;
-  jcr->sd_impl->VolList = outdated;
-  jcr->sd_impl->CurReadVolume = bsr->volumes.size();
 }
 
 /**
@@ -453,10 +416,10 @@ bool ReadRecords(DeviceControlRecord* dcr,
 {
   JobControlRecord* jcr = dcr->jcr;
 
-  if (jcr->sd_impl->read_session.bsr) {
-    return ReadRecordsFromBsr(dcr, RecordCb, mount_cb, user_data,
-                              jcr->sd_impl->read_session.bsr);
-  }
+  // if (jcr->sd_impl->read_session.bsr) {
+  //   return ReadRecordsFromBsr(dcr, RecordCb, mount_cb, user_data,
+  //                             jcr->sd_impl->read_session.bsr);
+  // }
 
   READ_CTX* rctx;
   bool ok = true;

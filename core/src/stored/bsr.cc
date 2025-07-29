@@ -127,53 +127,50 @@ int MatchBsr(BootStrapRecord* bsr,
   return status;
 }
 
-/**
- * Find the next bsr that applies to the current tape.
- *   It is the one with the smallest VolFile position.
- */
-BootStrapRecord* find_next_bsr(BootStrapRecord* bsr, Device* dev)
-{
-  if (!bsr) { return nullptr; }
+#endif
 
-  if (bsr->current_volume >= bsr->volumes.size()) { return nullptr; }
+/**
+ * Check if the current volume is done, and if so, if we can
+ * continue reading from the current tape.
+ */
+bool find_next_bsr(BootStrapRecord* bsr, Device* dev)
+{
+  if (!bsr) {
+    Dmsg0(dbglevel, "NULL root bsr pointer passed to find_next_bsr.\n");
+    return false;
+  }
+
+  if (bsr->current_volume >= bsr->volumes.size() - 1) { return false; }
 
   auto& current = bsr->volumes[bsr->current_volume];
 
-
-  BootStrapRecord* bsr;
-  BootStrapRecord* found_bsr = NULL;
-
-  /* Do tape/disk seeking only if CAP_POSITIONBLOCKS is on */
-  if (!root_bsr) {
-    Dmsg0(dbglevel, "NULL root bsr pointer passed to find_next_bsr.\n");
-    return NULL;
+  if (!current.done) {
+    Dmsg0(dbglevel, "current volume not done yet!\n");
+    return false;
   }
-  if (!root_bsr->use_positioning || !root_bsr->Reposition
+
+  auto& next = bsr->volumes[bsr->current_volume + 1];
+
+  if (!bsr->use_positioning || !bsr->Reposition
       || !dev->HasCap(CAP_POSITIONBLOCKS)) {
-    Dmsg2(dbglevel, "No nxt_bsr use_pos=%d repos=%d\n",
-          root_bsr->use_positioning, root_bsr->Reposition);
-    return NULL;
+    Dmsg2(dbglevel, "No nxt_bsr use_pos=%d repos=%d\n", bsr->use_positioning,
+          bsr->Reposition);
+    return false;
   }
-  Dmsg2(dbglevel, "use_pos=%d repos=%d\n", root_bsr->use_positioning,
-        root_bsr->Reposition);
-  root_bsr->mount_next_volume = false;
-  /* Walk through all bsrs to find the next one to use => smallest file,block */
-  for (bsr = root_bsr; bsr; bsr = bsr->next) {
-    if (bsr->done || !MatchVolume(bsr, bsr->volume, &dev->VolHdr, 1)) {
-      continue;
-    }
-    if (found_bsr == NULL) {
-      found_bsr = bsr;
-    } else {
-      found_bsr = find_smallest_volfile(found_bsr, bsr);
-    }
+  Dmsg2(dbglevel, "use_pos=%d repos=%d\n", bsr->use_positioning,
+        bsr->Reposition);
+
+  if (match_volume(next, &dev->VolHdr)) {
+    bsr->mount_next_volume = false;
+    bsr->current_volume += 1;
+    return true;
+  } else {
+    bsr->mount_next_volume = true;
+    return false;
   }
-  /* If we get to this point and found no bsr, it means
-   *  that any additional bsr's must apply to the next
-   *  tape, so set a flag. */
-  if (found_bsr == NULL) { root_bsr->mount_next_volume = true; }
-  return found_bsr;
 }
+
+#if 0
 
 /**
  * Get the smallest address from this voladdr part
@@ -648,34 +645,33 @@ static bool match_file_index(volume& volume, DeviceRecord* rec)
 }
 }  // namespace bsr
 
-#if 0
 uint64_t GetBsrStartAddr(BootStrapRecord* bsr, uint32_t* file, uint32_t* block)
 {
   uint64_t bsr_addr = 0;
   uint32_t sfile = 0, sblock = 0;
 
   if (bsr) {
-    if (bsr->voladdr) {
-      bsr_addr = bsr->voladdr->saddr;
-      sfile = bsr_addr >> 32;
-      sblock = (uint32_t)bsr_addr;
+    auto* volume = bsr->current();
+    if (!volume->addresses.empty()) {
+      bsr_addr = volume->addresses[0].start;
+      sfile = static_cast<std::uint32_t>(bsr_addr >> 32);
+      sblock = static_cast<std::uint32_t>(bsr_addr);
+    } else {
+      if (!volume->files.empty()) { sfile = volume->files[0].start; }
+      if (!volume->blocks.empty()) { sblock = volume->blocks[0].start; }
 
-    } else if (bsr->volfile && bsr->volblock) {
-      bsr_addr
-          = (((uint64_t)bsr->volfile->sfile) << 32) | bsr->volblock->sblock;
-      sfile = bsr->volfile->sfile;
-      sblock = bsr->volblock->sblock;
+      bsr_addr = static_cast<std::uint64_t>(sfile) << 32
+                 | static_cast<std::uint64_t>(sblock);
     }
   }
 
-  if (file && block) {
-    *file = sfile;
-    *block = sblock;
-  }
+  if (file) *file = sfile;
+  if (block) *block = sblock;
 
   return bsr_addr;
 }
 
+#if 0
 /* ****************************************************************
  * Routines for handling volumes
  */

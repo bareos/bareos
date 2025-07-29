@@ -357,9 +357,8 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
   BareosSocket* sd;
   storagedaemon::BootStrapRecord* bsr;
   NIS* nis = NULL;
-  int32_t current_fi;
+  std::uint64_t current_fi;
   bootstrap_info info;
-  storagedaemon::BsrFileIndex* fileindex;
   struct ndm_session ndmp_sess;
   struct ndm_job_param ndmp_job;
   bool session_initialized = false;
@@ -374,7 +373,7 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
 
   // We first parse the BootStrapRecord ourself so we know what to restore.
   jcr->dir_impl->bsr = libbareos::parse_bsr(jcr, jcr->RestoreBootstrap);
-  if (!jcr->dir_impl->bsr) {
+  if (!jcr->dir_impl->bsr || jcr->dir_impl->bsr->volumes.empty()) {
     Jmsg(jcr, M_FATAL, 0, T_("Error parsing bootstrap file.\n"));
     goto bail_out;
   }
@@ -456,30 +455,35 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
     bool first_run = true;
     bool next_sessid = true;
     bool next_fi = true;
-    int first_fi = jcr->dir_impl->bsr->FileIndex->findex;
-    int last_fi = jcr->dir_impl->bsr->FileIndex->findex2;
-    VolumeSessionInfo current_session{jcr->dir_impl->bsr->sessid->sessid,
-                                      jcr->dir_impl->bsr->sesstime->sesstime};
+
+    auto& start_volume = jcr->dir_impl->bsr->volumes[0];
+    std::uint64_t first_fi = start_volume.file_indices[0].start;
+    std::uint64_t last_fi = start_volume.file_indices[0].end;
+    VolumeSessionInfo current_session{
+        static_cast<std::uint32_t>(start_volume.session_ids[0].start),
+        start_volume.session_times[0]};
     cnt = 0;
 
-    for (bsr = jcr->dir_impl->bsr; bsr; bsr = bsr->next) {
-      if (current_session.id != bsr->sessid->sessid) {
-        current_session = {bsr->sessid->sessid, bsr->sesstime->sesstime};
+    for (auto& volume : jcr->dir_impl->bsr->volumes) {
+      if (current_session.id != volume.session_ids[0].start) {
+        current_session
+            = {static_cast<std::uint32_t>(volume.session_ids[0].start),
+               volume.session_times[0]};
         first_run = true;
         next_sessid = true;
       }
       /* check for the first and last fileindex  we have in the current
        * BootStrapRecord */
-      for (fileindex = bsr->FileIndex; fileindex; fileindex = fileindex->next) {
+      for (auto& findex : volume.file_indices) {
         if (first_run) {
-          first_fi = fileindex->findex;
-          last_fi = fileindex->findex2;
+          first_fi = findex.start;
+          last_fi = findex.end;
           first_run = false;
         } else {
-          first_fi = MIN(first_fi, fileindex->findex);
-          if (last_fi != fileindex->findex2) {
+          first_fi = MIN(first_fi, findex.start);
+          if (last_fi != findex.end) {
             next_fi = true;
-            last_fi = fileindex->findex2;
+            last_fi = findex.end;
           }
         }
         Dmsg4(20, "sessionid:sesstime : first_fi/last_fi : %d:%d %d/%d \n",

@@ -95,7 +95,6 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   bool retval = false;
   bool tape_previously_mounted;
   bool try_autochanger = true;
-  int i;
   int vol_label_status;
   int retry = 0;
   BootStrapRecord* bsr;
@@ -136,7 +135,8 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   }
   SetDcrFromVol(dcr, volume);
 
-  Dmsg2(rdebuglevel, "Want Vol=%s Slot=%d\n", vol->VolumeName, vol->Slot);
+  Dmsg2(rdebuglevel, "Want Vol=%s Slot=%d\n", volume->volume_name.c_str(),
+        volume->slot.value_or(0));
 
   /* If the MediaType requested for this volume is not the
    * same as the current drive, we attempt to find the same
@@ -170,9 +170,10 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     memset(&rctx, 0, sizeof(ReserveContext));
     jcr->sd_impl->read_dcr = dcr;
     rctx.any_drive = true;
-    rctx.device_name = vol->device;
-    director_storage store(false, "", vol->MediaType, dcr->pool_name,
-                           dcr->pool_type);
+    rctx.device_name = volume->device ? volume->device->c_str() : "";
+    director_storage store(
+        false, "", volume->media_type ? volume->media_type->c_str() : "",
+        dcr->pool_name, dcr->pool_type);
     rctx.store = &store;
     CleanDevice(dcr); /* clean up the dcr */
 
@@ -196,20 +197,23 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
       Dmsg1(50, "Media Type change.  New read device %s chosen.\n",
             dev->print_name());
 
-      bstrncpy(dcr->VolumeName, vol->VolumeName, sizeof(dcr->VolumeName));
-      dcr->setVolCatName(vol->VolumeName);
-      bstrncpy(dcr->media_type, vol->MediaType, sizeof(dcr->media_type));
-      dcr->VolCatInfo.Slot = vol->Slot;
-      dcr->VolCatInfo.InChanger = vol->Slot > 0;
+      bstrncpy(dcr->VolumeName, volume->volume_name.c_str(),
+               sizeof(dcr->VolumeName));
+      dcr->setVolCatName(volume->volume_name.c_str());
+      bstrncpy(dcr->media_type,
+               volume->media_type ? volume->media_type->c_str() : "",
+               sizeof(dcr->media_type));
+      dcr->VolCatInfo.Slot = volume->slot.value_or(0);
+      dcr->VolCatInfo.InChanger = volume->slot.has_value();
       bstrncpy(dcr->pool_name, store.pool_name.c_str(), sizeof(dcr->pool_name));
       bstrncpy(dcr->pool_type, store.pool_type.c_str(), sizeof(dcr->pool_type));
     } else {
       /* error */
       Jmsg1(jcr, M_FATAL, 0,
             T_("No suitable device found to read Volume \"%s\"\n"),
-            vol->VolumeName);
+            volume->volume_name.c_str());
       Dmsg1(rdebuglevel, "No suitable device found to read Volume \"%s\"\n",
-            vol->VolumeName);
+            volume->volume_name.c_str());
       goto get_out;
     }
   }
@@ -219,7 +223,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
   dev->ClearUnload();
 
   if (dev->vol && dev->vol->IsSwapping()) {
-    dev->vol->SetSlotNumber(vol->Slot);
+    dev->vol->SetSlotNumber(volume->slot.value_or(0));
     Dmsg3(rdebuglevel, "swapping: slot=%d Vol=%s dev=%s\n", dev->vol->GetSlot(),
           dev->vol->vol_name, dev->print_name());
   }
@@ -261,7 +265,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     dcr->DoUnload();
     dcr->DoSwapping(false /*!IsWriting*/);
     dcr->DoLoad(false /*!IsWriting*/);
-    SetDcrFromVol(dcr, vol); /* refresh dcr with desired volume info */
+    SetDcrFromVol(dcr, volume); /* refresh dcr with desired volume info */
 
     /* This code ensures that the device is ready for reading. If it is a file,
      * it opens it. If it is a tape, it checks the volume name */

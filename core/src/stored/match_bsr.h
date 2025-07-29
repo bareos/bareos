@@ -29,11 +29,11 @@ namespace storagedaemon {
 //              Session_Label* sesrec,
 //              JobControlRecord* jcr);
 // int MatchBsrBlock(BootStrapRecord* bsr, DeviceBlock* block);
-// BootStrapRecord* find_next_bsr(BootStrapRecord* root_bsr, Device* dev);
+bool find_next_bsr(BootStrapRecord* bsr, Device* dev);
 // bool IsThisBsrDone(BootStrapRecord* bsr, DeviceRecord* rec);
-// uint64_t GetBsrStartAddr(BootStrapRecord* bsr,
-//                          uint32_t* file = NULL,
-//                          uint32_t* block = NULL);
+uint64_t GetBsrStartAddr(BootStrapRecord* bsr,
+                         uint32_t* file = NULL,
+                         uint32_t* block = NULL);
 
 } /* namespace storagedaemon */
 
