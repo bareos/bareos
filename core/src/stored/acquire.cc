@@ -117,7 +117,6 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
 
   /* Find next Volume, if any */
   bsr = jcr->sd_impl->read_session.bsr;
-  bsr->advance();
   if (!bsr) {
     char ed1[50];
     Jmsg(jcr, M_FATAL, 0,
@@ -125,6 +124,7 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
          edit_int64(jcr->JobId, ed1));
     goto get_out;
   }
+  bsr->advance();
   jcr->sd_impl->CurReadVolume++;
   volume = bsr->current();
   if (!volume) {
@@ -815,7 +815,8 @@ static void SetDcrFromVol(DeviceControlRecord* dcr, bsr::volume* vol)
    *  for disaster recovery, we must "simulate" reading the catalog */
   bstrncpy(dcr->VolumeName, vol->volume_name.c_str(), sizeof(dcr->VolumeName));
   dcr->setVolCatName(vol->volume_name.c_str());
-  bstrncpy(dcr->media_type, vol->volume_name.c_str(), sizeof(dcr->media_type));
+  bstrncpy(dcr->media_type, vol->media_type ? vol->media_type->c_str() : "",
+           sizeof(dcr->media_type));
   dcr->VolCatInfo.Slot = vol->slot.value_or(0);
   dcr->VolCatInfo.InChanger = vol->slot.has_value();
 }

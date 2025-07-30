@@ -99,7 +99,15 @@ int match_bsr(BootStrapRecord* bsr,
 {
   if (!bsr) { return 1; }
 
-  return bsr::match_all(*bsr->current(), rec, volrec, sessrec, jcr);
+  auto res = bsr::match_all(*bsr->current(), rec, volrec, sessrec, jcr);
+
+  if (res == -1) {
+    if (!bsr->current()->done) { bsr->current()->done = true; }
+
+    if (bsr->current_volume < bsr->volumes.size() - 1) { res = 0; }
+  }
+
+  return res;
 }
 
 /**
