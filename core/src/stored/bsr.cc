@@ -644,7 +644,6 @@ uint64_t GetBsrStartAddr(BootStrapRecord* bsr, uint32_t* file, uint32_t* block)
   return bsr_addr;
 }
 
-#if 0
 /* ****************************************************************
  * Routines for handling volumes
  */
@@ -709,36 +708,38 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
   jcr->sd_impl->CurReadVolume = 0;
   if (jcr->sd_impl->read_session.bsr) {
     BootStrapRecord* bsr = jcr->sd_impl->read_session.bsr;
-    if (!bsr->volume || !bsr->volume->VolumeName[0]) { return; }
-    for (; bsr; bsr = bsr->next) {
-      BsrVolume* bsrvol;
-      BsrVolumeFile* volfile;
+
+    for (auto& volume : bsr->volumes) {
       uint32_t sfile = UINT32_MAX;
 
       /* Find minimum start file so that we can forward space to it */
-      for (volfile = bsr->volfile; volfile; volfile = volfile->next) {
-        if (volfile->sfile < sfile) { sfile = volfile->sfile; }
+      for (auto volfile : volume.files) {
+        if (volfile.start < sfile) { sfile = volfile.start; }
       }
-      /* Now add volumes for this bsr */
-      for (bsrvol = bsr->volume; bsrvol; bsrvol = bsrvol->next) {
-        vol = new_restore_volume();
-        bstrncpy(vol->VolumeName, bsrvol->VolumeName, sizeof(vol->VolumeName));
-        bstrncpy(vol->MediaType, bsrvol->MediaType, sizeof(vol->MediaType));
-        bstrncpy(vol->device, bsrvol->device, sizeof(vol->device));
-        vol->Slot = bsrvol->Slot;
-        vol->start_file = sfile;
-        if (AddRestoreVolume(jcr, vol)) {
-          jcr->sd_impl->NumReadVolumes++;
-          Dmsg2(400, "Added volume=%s mediatype=%s\n", vol->VolumeName,
-                vol->MediaType);
-        } else {
-          Dmsg1(400, "Duplicate volume %s\n", vol->VolumeName);
-          free((char*)vol);
-        }
-        sfile = 0; /* start at beginning of second volume */
+
+      vol = new_restore_volume();
+      bstrncpy(vol->VolumeName, volume.volume_name.c_str(),
+               sizeof(vol->VolumeName));
+      bstrncpy(vol->MediaType,
+               volume.media_type ? volume.media_type->c_str() : "",
+               sizeof(vol->MediaType));
+      bstrncpy(vol->device, volume.device ? volume.device->c_str() : "",
+               sizeof(vol->device));
+      vol->Slot = volume.slot.value_or(0);
+      vol->start_file = sfile;
+
+      jcr->sd_impl->NumReadVolumes++;
+
+      if (AddRestoreVolume(jcr, vol)) {
+        Dmsg2(400, "Added volume=%s mediatype=%s\n", vol->VolumeName,
+              vol->MediaType);
+      } else {
+        Dmsg1(400, "Duplicate volume %s\n", vol->VolumeName);
+        free((char*)vol);
       }
     }
   } else {
+    BootStrapRecord* bsr = new BootStrapRecord;
     /* This is the old way -- deprecated */
     for (p = jcr->sd_impl->dcr->VolumeName; p && *p;) {
       n = strchr(p, '|'); /* volume name separator */
@@ -747,13 +748,23 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
       bstrncpy(vol->VolumeName, p, sizeof(vol->VolumeName));
       bstrncpy(vol->MediaType, jcr->sd_impl->dcr->media_type,
                sizeof(vol->MediaType));
+
+      auto& volume = bsr->volumes.emplace_back();
+
+      volume.volume_name = p;
+      volume.media_type = jcr->sd_impl->dcr->media_type;
+      volume.root = bsr;
+
+      jcr->sd_impl->NumReadVolumes++;
+
       if (AddRestoreVolume(jcr, vol)) {
-        jcr->sd_impl->NumReadVolumes++;
       } else {
         free((char*)vol);
       }
       p = n;
     }
+
+    jcr->sd_impl->read_session.bsr = bsr;
   }
 }
 
@@ -770,6 +781,5 @@ void FreeRestoreVolumeList(JobControlRecord* jcr)
   }
   jcr->sd_impl->VolList = NULL;
 }
-#endif
 
 } /* namespace storagedaemon */
