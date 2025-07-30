@@ -336,7 +336,7 @@ bool TryDeviceRepositioning(JobControlRecord* jcr,
           dev->block_num, file, block);
     dev->Reposition(dcr, file, block);
     rec->Block = 0;
-    return false;
+    return true;
   } else if (bsr->mount_next_volume) {
     Dmsg0(500, "Would mount next volume here\n");
     Dmsg2(500, "Current position (file:block) %u:%u\n", dev->file,
