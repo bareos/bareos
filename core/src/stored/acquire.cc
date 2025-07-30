@@ -125,12 +125,11 @@ bool AcquireDeviceForRead(DeviceControlRecord* dcr)
     goto get_out;
   }
   bsr->advance();
-  jcr->sd_impl->CurReadVolume++;
   volume = bsr->current();
   if (!volume) {
     Jmsg(jcr, M_FATAL, 0,
-         T_("Logic error: no next volume to read. Numvol=%d Curvol=%d\n"),
-         jcr->sd_impl->NumReadVolumes, jcr->sd_impl->CurReadVolume);
+         T_("Logic error: no next volume to read. Numvol=%zu Curvol=%zu\n"),
+         bsr->volumes.size(), bsr->current_volume);
     goto get_out; /* should not happen */
   }
   SetDcrFromVol(dcr, volume);

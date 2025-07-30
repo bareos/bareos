@@ -56,6 +56,7 @@ restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restore select yes
 cd $tmp
 markdir data
 mark data/file-1
+lsmark
 done
 wait
 status director

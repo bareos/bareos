@@ -649,17 +649,19 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
     bool ok = true;
     READ_CTX* rctx;
 
+    auto* bsr = jcr->sd_impl->read_session.bsr;
+
     // Setup internal system for reading data (if not done before).
     if (!jcr->sd_impl->acquired_storage) {
       Dmsg0(20, "Start read data.\n");
 
-      if (jcr->sd_impl->NumReadVolumes == 0) {
+      if (bsr->volumes.empty()) {
         Jmsg(jcr, M_FATAL, 0, T_("No Volume names found for restore.\n"));
         goto bail_out;
       }
 
-      Dmsg2(200, "Found %d volumes names to restore. First=%s\n",
-            jcr->sd_impl->NumReadVolumes, jcr->sd_impl->VolList->VolumeName);
+      Dmsg2(200, "Found %zu volumes names to restore. First=%s\n",
+            bsr->volumes.size(), jcr->sd_impl->VolList->VolumeName);
 
       // Ready device for reading
       if (!AcquireDeviceForRead(dcr)) { goto bail_out; }

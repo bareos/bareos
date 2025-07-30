@@ -107,7 +107,7 @@ int match_bsr(BootStrapRecord* bsr,
     if (!bsr->current()->done) { bsr->current()->done = true; }
 
     if (bsr->current_volume < bsr->volumes.size() - 1) {
-      auto& next = bsr->volumes[bsr->current_volume+1];
+      auto& next = bsr->volumes[bsr->current_volume + 1];
 
       if (bsr::match_all(next, rec, volrec, sessrec, jcr) == 1) {
         // this code should not be here, but it has to because of the
@@ -133,7 +133,6 @@ int match_bsr(BootStrapRecord* bsr,
         // the next bsr entry if that returns a match!
 
         bsr->current_volume += 1;
-        jcr->sd_impl->CurReadVolume += 1;
         res = 1;
       } else {
         res = 0;
@@ -178,7 +177,6 @@ bool find_next_bsr(BootStrapRecord* bsr, Device* dev)
   if (match_volume(next, &dev->VolHdr)) {
     bsr->mount_next_volume = false;
     bsr->current_volume += 1;
-    jcr->sd_impl->CurReadVolume += 1;
     return true;
   } else {
     bsr->mount_next_volume = true;
@@ -747,8 +745,6 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
   VolumeList* vol;
 
   // Build a list of volumes to be processed
-  jcr->sd_impl->NumReadVolumes = 0;
-  jcr->sd_impl->CurReadVolume = 0;
   if (jcr->sd_impl->read_session.bsr) {
     BootStrapRecord* bsr = jcr->sd_impl->read_session.bsr;
 
@@ -770,8 +766,6 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
                sizeof(vol->device));
       vol->Slot = volume.slot.value_or(0);
       vol->start_file = sfile;
-
-      jcr->sd_impl->NumReadVolumes++;
 
       if (AddRestoreVolume(jcr, vol)) {
         Dmsg2(400, "Added volume=%s mediatype=%s\n", vol->VolumeName,
@@ -797,8 +791,6 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
       volume.volume_name = p;
       volume.media_type = jcr->sd_impl->dcr->media_type;
       volume.root = bsr;
-
-      jcr->sd_impl->NumReadVolumes++;
 
       if (AddRestoreVolume(jcr, vol)) {
       } else {

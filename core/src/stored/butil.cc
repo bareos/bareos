@@ -71,7 +71,6 @@ JobControlRecord* SetupDummyJcr(const char* name,
   jcr->sd_impl->director = director;
   jcr->VolSessionId = 1;
   jcr->VolSessionTime = (uint32_t)time(NULL);
-  jcr->sd_impl->NumReadVolumes = 0;
   jcr->sd_impl->NumWriteVolumes = 0;
   jcr->JobId = 0;
   jcr->setJobType(JT_CONSOLE);

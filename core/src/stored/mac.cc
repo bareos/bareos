@@ -470,7 +470,8 @@ bool DoMacRun(JobControlRecord* jcr)
 
   Dmsg0(20, "Start read data.\n");
 
-  if (jcr->sd_impl->NumReadVolumes == 0) {
+  auto* bsr = jcr->sd_impl->read_session.bsr;
+  if (bsr->volumes.empty()) {
     Jmsg(jcr, M_FATAL, 0, T_("No Volume names found for %s.\n"), Type);
     goto bail_out;
   }
@@ -488,9 +489,8 @@ bool DoMacRun(JobControlRecord* jcr)
     }
 
     Dmsg1(100, "read_dcr=%p\n", jcr->sd_impl->read_dcr);
-    Dmsg3(200, "Found %d volumes names for %s. First=%s\n",
-          jcr->sd_impl->NumReadVolumes, Type,
-          jcr->sd_impl->VolList->VolumeName);
+    Dmsg3(200, "Found %zu volumes names for %s. First=%s\n",
+          bsr->volumes.size(), Type, jcr->sd_impl->VolList->VolumeName);
 
     // Ready devices for reading.
     if (!AcquireDeviceForRead(jcr->sd_impl->read_dcr)) {
@@ -597,9 +597,8 @@ bool DoMacRun(JobControlRecord* jcr)
 
     Dmsg2(100, "read_dcr=%p write_dcr=%p\n", jcr->sd_impl->read_dcr,
           jcr->sd_impl->dcr);
-    Dmsg3(200, "Found %d volumes names for %s. First=%s\n",
-          jcr->sd_impl->NumReadVolumes, Type,
-          jcr->sd_impl->VolList->VolumeName);
+    Dmsg3(200, "Found %zu volumes names for %s. First=%s\n",
+          bsr->volumes.size(), Type, jcr->sd_impl->VolList->VolumeName);
 
     // Ready devices for reading and writing.
     if (!AcquireDeviceForAppend(jcr->sd_impl->dcr)

@@ -65,14 +65,16 @@ bool DoReadData(JobControlRecord* jcr)
     return false;
   }
 
-  if (jcr->sd_impl->NumReadVolumes == 0) {
+  auto* bsr = jcr->sd_impl->read_session.bsr;
+
+  if (bsr->volumes.empty()) {
     Jmsg(jcr, M_FATAL, 0, T_("No Volume names found for restore.\n"));
     fd->fsend(FD_error);
     return false;
   }
 
-  Dmsg2(200, "Found %d volumes names to restore. First=%s\n",
-        jcr->sd_impl->NumReadVolumes, jcr->sd_impl->VolList->VolumeName);
+  Dmsg2(200, "Found %zu volumes names to restore. First=%s\n",
+        bsr->volumes.size(), jcr->sd_impl->VolList->VolumeName);
 
   // Ready device for reading
   if (!AcquireDeviceForRead(dcr)) {
