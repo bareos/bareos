@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - gRPC: add fixes to enable building on SUSE [PR #2250]
 - fix admin job issues [PR #2283]
 - truncate: fix return status bug [PR #2300]
+- stored: add new volume status 'Unlabeled' [PR #2207]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -153,6 +154,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2194]: https://github.com/bareos/bareos/pull/2194
 [PR #2201]: https://github.com/bareos/bareos/pull/2201
 [PR #2202]: https://github.com/bareos/bareos/pull/2202
+[PR #2207]: https://github.com/bareos/bareos/pull/2207
 [PR #2211]: https://github.com/bareos/bareos/pull/2211
 [PR #2213]: https://github.com/bareos/bareos/pull/2213
 [PR #2215]: https://github.com/bareos/bareos/pull/2215

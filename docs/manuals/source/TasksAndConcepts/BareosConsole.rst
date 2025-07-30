@@ -1683,20 +1683,20 @@ To see what you have added, enter:
 .. code-block:: bconsole
 
    *<input>list media pool=Default</input>
-   +-------+----------+---------+---------+-------+------------------+
-   | MedId | VolumeNa | MediaTyp| VolStat | Bytes | LastWritten      |
-   +-------+----------+---------+---------+-------+------------------+
-   |    11 | Save0001 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-   |    12 | Save0002 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-   |    13 | Save0003 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-   |    14 | Save0004 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-   |    15 | Save0005 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-   |    16 | Save0006 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-   |    17 | Save0007 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-   |    18 | Save0008 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-   |    19 | Save0009 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-   |    20 | Save0010 | DLT8000 | Append  |     0 | 0000-00-00 00:00 |
-   +-------+----------+---------+---------+-------+------------------+
+   +-------+----------+---------+-----------+-------+------------------+
+   | MedId | VolumeNa | MediaTyp| VolStat   | Bytes | LastWritten      |
+   +-------+----------+---------+-----------+-------+------------------+
+   |    11 | Save0001 | DLT8000 | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    12 | Save0002 | DLT8000 | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    13 | Save0003 | DLT8000 | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    14 | Save0004 | DLT8000 | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    15 | Save0005 | DLT8000 | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    16 | Save0006 | DLT8000 | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    17 | Save0007 | DLT8000 | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    18 | Save0008 | DLT8000 | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    19 | Save0009 | DLT8000 | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    20 | Save0010 | DLT8000 | Unlabeled |     0 | 0000-00-00 00:00 |
+   +-------+----------+---------+-----------+-------+------------------+
    *
 
 Notice that the console program automatically appended a number to the base Volume name that you specify (Save in this case). If you don’t want it to append a number, you can simply answer 0 (zero) to the question "Enter number of Media volumes to create. Max=1000:", and in this case, it will create a single Volume with the exact name you specify.

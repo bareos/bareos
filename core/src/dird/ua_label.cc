@@ -64,6 +64,9 @@ static inline bool update_database(UaContext* ua,
 
   if (media_record_exists) {
     // Update existing media record.
+    if (mr->VolBytes > 0 && bstrcmp(mr->VolStatus, "Unlabeled")) {
+      bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
+    }
     mr->InChanger = mr->Slot > 0; /* If slot give assume in changer */
     SetStorageidInMr(ua->jcr->dir_impl->res.write_storage, mr);
     if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
@@ -76,6 +79,10 @@ static inline bool update_database(UaContext* ua,
     mr->InChanger = mr->Slot > 0; /* If slot give assume in changer */
     mr->Enabled = 1;
     SetStorageidInMr(ua->jcr->dir_impl->res.write_storage, mr);
+
+    if (mr->VolBytes > 0) {
+      bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
+    }
 
     if (ua->db->CreateMediaRecord(ua->jcr, mr)) {
       ua->InfoMsg(T_("Catalog record for Volume \"%s\", Slot %hd successfully "
