@@ -123,7 +123,7 @@ struct BootStrapRecord {
     return &volumes[current_volume];
   }
 
-  void advance() { current_volume += 1; }
+  void advance() { current_volume += 1; mount_next_volume = false; }
 };
 
 

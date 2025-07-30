@@ -101,10 +101,44 @@ int match_bsr(BootStrapRecord* bsr,
 
   auto res = bsr::match_all(*bsr->current(), rec, volrec, sessrec, jcr);
 
+  // the following check only works if sizes are given,
+  // but bareos always does that!
   if (res == -1) {
     if (!bsr->current()->done) { bsr->current()->done = true; }
 
-    if (bsr->current_volume < bsr->volumes.size() - 1) { res = 0; }
+    if (bsr->current_volume < bsr->volumes.size() - 1) {
+      auto& next = bsr->volumes[bsr->current_volume+1];
+
+      if (bsr::match_all(next, rec, volrec, sessrec, jcr) == 1) {
+        // this code should not be here, but it has to because of the
+        // way split records work.
+        // if we have a situation like so:
+
+        // volume entry 1 | volume entry 2
+        //                |
+        //  ... [  b1   ] | [   b2     ] ....
+        //           [   r1    ]
+
+        // with a bsr with two volume entries, one including only b1,
+        //  and another one including only b2,
+        // then the "ReadRecordFromBlock" function will read both
+        // b1 & b2 and then ask the first bsr if r1 matches, but with
+        // the address set to being inside b2.  This will return "no match"
+        // as the address does not match.
+        // In that case bareos will throw away r1, and position to the start
+        // of the second bsr entry, b2.  This will cause us to only read
+        // the second half of r1, which will get thrown away.
+
+        // to prevent this we have to peek ahead here, and continue with
+        // the next bsr entry if that returns a match!
+
+        bsr->current_volume += 1;
+        jcr->sd_impl->CurReadVolume += 1;
+        res = 1;
+      } else {
+        res = 0;
+      }
+    }
   }
 
   return res;
@@ -144,6 +178,7 @@ bool find_next_bsr(BootStrapRecord* bsr, Device* dev)
   if (match_volume(next, &dev->VolHdr)) {
     bsr->mount_next_volume = false;
     bsr->current_volume += 1;
+    jcr->sd_impl->CurReadVolume += 1;
     return true;
   } else {
     bsr->mount_next_volume = true;
@@ -315,7 +350,7 @@ bool match_bsr_block(BootStrapRecord* bsr, volume& volume, DeviceBlock* block)
     return 1; /* cannot fast reject */
   }
 
-  if (!match_sesstime(volume, block)) { return 0; }
+  if (!match_sessid(volume, block)) { return 0; }
   if (!match_sesstime(volume, block)) { return 0; }
   return 1;
 }
