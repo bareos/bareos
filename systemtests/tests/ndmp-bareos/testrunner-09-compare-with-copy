@@ -23,6 +23,10 @@ set -e
 set -o pipefail
 set -u
 
+#
+# make sure we can copy ndmp jobs, and also restore them afterwards
+#
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -32,6 +36,21 @@ export TestName
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
-cleanup_remote
+start_test
 
-"${BAREOS_SCRIPTS_DIR}"/cleanup
+# TODO
+# bscan between source and copy should produce the same result,
+# but it is not always the case.
+# https://github.com/bareos/internal/issues/349
+run_bscan_db --list-records --verbose --volumes ndmp-0001 \
+    --update-volume-info FileStorage
+mv "${tmp}/bscan.out" "${tmp}/bscan_FileStorage.out"
+
+run_bscan_db --list-records --verbose --volumes ndmpcopy-0002 \
+    --update-volume-info CopyStorage
+mv "${tmp}/bscan.out" "${tmp}/bscan_CopyStorage.out"
+
+diff -u  "${tmp}/bscan_FileStorage.out" "${tmp}/bscan_CopyStorage.out" > "${tmp}/diff.out"
+dstat=$?
+
+end_test
