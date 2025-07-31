@@ -33,6 +33,36 @@
 #include "lib/parse_bsr.h"
 #include "lib/lex.h"
 
+namespace storagedaemon::bsr {
+volume::volume(const volume& prototype)
+    : root{prototype.root}
+    , volume_name{prototype.volume_name}
+    , count{prototype.count}
+    , found{prototype.found}
+    , done{prototype.done}
+    , media_type{prototype.media_type}
+    , device{prototype.device}
+    , slot{prototype.slot}
+    , files{prototype.files}
+    , blocks{prototype.blocks}
+    , addresses{prototype.addresses}
+    , file_indices{prototype.file_indices}
+    , session_times{prototype.session_times}
+    , session_ids{prototype.session_ids}
+    , job_ids{prototype.job_ids}
+    , clients{prototype.clients}
+    , jobs{prototype.jobs}
+    , job_types{prototype.job_types}
+    , job_levels{prototype.job_levels}
+    , streams{prototype.streams}
+    , fileregex{prototype.fileregex}
+{
+  fileregex_re = std::make_unique<regex_t>();
+
+  regcomp(fileregex_re.get(), fileregex.c_str(), REG_EXTENDED | REG_NOSUB);
+}
+}  // namespace storagedaemon::bsr
+
 namespace libbareos {
 
 
@@ -45,15 +75,15 @@ struct bsr_parser {
   void end_volume_group()
   {
     for (std::size_t i = 0; i < volume_names.size(); ++i) {
-      auto& vol = bsr->volumes.emplace_back();
-      if (i == volume_names.size() - 1) {
-        // we have no need for the prototype anymore, so just
-        // move it in the last iteration to save a bunch of copies
-        vol = std::move(prototype);
-      } else {
-        // TODO: fix this
-        // vol = prototype;
-      }
+      auto& vol = [&]() -> storagedaemon::bsr::volume& {
+        if (i == volume_names.size() - 1) {
+          // we have no need for the prototype anymore, so just
+          // move it in the last iteration to save a bunch of copies
+          return bsr->volumes.emplace_back(std::move(prototype));
+        } else {
+          return bsr->volumes.emplace_back(prototype);
+        }
+      }();
       vol.volume_name = std::move(volume_names[i]);
     }
 

@@ -102,6 +102,12 @@ struct volume {
 
   std::string fileregex{}; /* set if restore is filtered on filename */
   std::unique_ptr<regex_t> fileregex_re{nullptr};
+
+  volume() = default;
+
+  volume(volume&& other) = default;
+  volume& operator=(volume&& other) = default;
+  volume(const volume& prototype);
 };
 };  // namespace bsr
 
