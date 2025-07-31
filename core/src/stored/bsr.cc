@@ -685,136 +685,41 @@ uint64_t GetBsrStartAddr(BootStrapRecord* bsr, uint32_t* file, uint32_t* block)
   return bsr_addr;
 }
 
-/* ****************************************************************
- * Routines for handling volumes
- */
-static VolumeList* new_restore_volume()
-{
-  VolumeList* vol;
-  vol = (VolumeList*)malloc(sizeof(VolumeList));
-  memset(vol, 0, sizeof(VolumeList));
-  return vol;
-}
-
-/**
- * Add current volume to end of list, only if the Volume
- * is not already in the list.
- *
- *   returns: 1 if volume added
- *            0 if volume already in list
- */
-static bool AddRestoreVolume(JobControlRecord* jcr, VolumeList* vol)
-{
-  VolumeList* next = jcr->sd_impl->VolList;
-
-  /* Add volume to volume manager's read list */
-  AddReadVolume(jcr, vol->VolumeName);
-
-  if (!next) {                   /* list empty ? */
-    jcr->sd_impl->VolList = vol; /* yes, add volume */
-  } else {
-    /* Loop through all but last */
-    for (; next->next; next = next->next) {
-      if (bstrcmp(vol->VolumeName, next->VolumeName)) {
-        /* Save smallest start file */
-        if (vol->start_file < next->start_file) {
-          next->start_file = vol->start_file;
-        }
-        return false; /* already in list */
-      }
-    }
-    /* Check last volume in list */
-    if (bstrcmp(vol->VolumeName, next->VolumeName)) {
-      if (vol->start_file < next->start_file) {
-        next->start_file = vol->start_file;
-      }
-      return false; /* already in list */
-    }
-    next->next = vol; /* add volume */
-  }
-  return true;
-}
-
 /**
  * Create a list of Volumes (and Slots and Start positions) to be
  *  used in the current restore job.
  */
 void CreateRestoreVolumeList(JobControlRecord* jcr)
 {
-  char *p, *n;
-  VolumeList* vol;
-
   // Build a list of volumes to be processed
-  if (jcr->sd_impl->read_session.bsr) {
-    BootStrapRecord* bsr = jcr->sd_impl->read_session.bsr;
-
-    for (auto& volume : bsr->volumes) {
-      uint32_t sfile = UINT32_MAX;
-
-      /* Find minimum start file so that we can forward space to it */
-      for (auto volfile : volume.files) {
-        if (volfile.start < sfile) { sfile = volfile.start; }
-      }
-
-      vol = new_restore_volume();
-      bstrncpy(vol->VolumeName, volume.volume_name.c_str(),
-               sizeof(vol->VolumeName));
-      bstrncpy(vol->MediaType,
-               volume.media_type ? volume.media_type->c_str() : "",
-               sizeof(vol->MediaType));
-      bstrncpy(vol->device, volume.device ? volume.device->c_str() : "",
-               sizeof(vol->device));
-      vol->Slot = volume.slot.value_or(0);
-      vol->start_file = sfile;
-
-      if (AddRestoreVolume(jcr, vol)) {
-        Dmsg2(400, "Added volume=%s mediatype=%s\n", vol->VolumeName,
-              vol->MediaType);
-      } else {
-        Dmsg1(400, "Duplicate volume %s\n", vol->VolumeName);
-        free((char*)vol);
-      }
-    }
-  } else {
+  if (!jcr->sd_impl->read_session.bsr) {
     BootStrapRecord* bsr = new BootStrapRecord;
     /* This is the old way -- deprecated */
-    for (p = jcr->sd_impl->dcr->VolumeName; p && *p;) {
-      n = strchr(p, '|'); /* volume name separator */
+    for (char* p = jcr->sd_impl->dcr->VolumeName; p && *p;) {
+      char* n = strchr(p, '|'); /* volume name separator */
       if (n) { *n++ = 0; /* Terminate name */ }
-      vol = new_restore_volume();
-      bstrncpy(vol->VolumeName, p, sizeof(vol->VolumeName));
-      bstrncpy(vol->MediaType, jcr->sd_impl->dcr->media_type,
-               sizeof(vol->MediaType));
-
       auto& volume = bsr->volumes.emplace_back();
 
       volume.volume_name = p;
       volume.media_type = jcr->sd_impl->dcr->media_type;
       volume.root = bsr;
 
-      if (AddRestoreVolume(jcr, vol)) {
-      } else {
-        free((char*)vol);
-      }
       p = n;
     }
 
     jcr->sd_impl->read_session.bsr = bsr;
   }
+  for (auto& volume : jcr->sd_impl->read_session.bsr->volumes) {
+    AddReadVolume(jcr, volume.volume_name.c_str());
+  }
 }
 
 void FreeRestoreVolumeList(JobControlRecord* jcr)
 {
-  VolumeList* vol = jcr->sd_impl->VolList;
-  VolumeList* tmp;
-
-  for (; vol;) {
-    tmp = vol->next;
-    RemoveReadVolume(jcr, vol->VolumeName);
-    free(vol);
-    vol = tmp;
+  if (!jcr->sd_impl->read_session.bsr) { return; }
+  for (auto& volume : jcr->sd_impl->read_session.bsr->volumes) {
+    RemoveReadVolume(jcr, volume.volume_name.c_str());
   }
-  jcr->sd_impl->VolList = NULL;
 }
 
 } /* namespace storagedaemon */

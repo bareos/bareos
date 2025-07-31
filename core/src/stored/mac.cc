@@ -490,7 +490,7 @@ bool DoMacRun(JobControlRecord* jcr)
 
     Dmsg1(100, "read_dcr=%p\n", jcr->sd_impl->read_dcr);
     Dmsg3(200, "Found %zu volumes names for %s. First=%s\n",
-          bsr->volumes.size(), Type, jcr->sd_impl->VolList->VolumeName);
+          bsr->volumes.size(), Type, bsr->volumes[0].volume_name.c_str());
 
     // Ready devices for reading.
     if (!AcquireDeviceForRead(jcr->sd_impl->read_dcr)) {
@@ -598,7 +598,7 @@ bool DoMacRun(JobControlRecord* jcr)
     Dmsg2(100, "read_dcr=%p write_dcr=%p\n", jcr->sd_impl->read_dcr,
           jcr->sd_impl->dcr);
     Dmsg3(200, "Found %zu volumes names for %s. First=%s\n",
-          bsr->volumes.size(), Type, jcr->sd_impl->VolList->VolumeName);
+          bsr->volumes.size(), Type, bsr->volumes[0].volume_name.c_str());
 
     // Ready devices for reading and writing.
     if (!AcquireDeviceForAppend(jcr->sd_impl->dcr)

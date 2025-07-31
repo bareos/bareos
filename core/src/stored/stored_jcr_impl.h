@@ -76,7 +76,6 @@ struct StoredJcrImpl {
   POOLMEM* fileset_name{};        /**< FileSet */
   POOLMEM* fileset_md5{};         /**< MD5 for FileSet */
   POOLMEM* backup_format{};       /**< Backup format used when doing a NDMP backup */
-  storagedaemon::VolumeList* VolList{}; /**< List to read */
   int32_t NumWriteVolumes{};      /**< Number of volumes written */
   int32_t label_errors{};         /**< Count of label errors */
   bool session_opened{};

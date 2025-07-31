@@ -2449,11 +2449,10 @@ static bool do_unfill()
   bstrncpy(g_dcr->VolumeName, "TestVolume1|TestVolume2",
            sizeof(g_dcr->VolumeName));
   CreateRestoreVolumeList(g_jcr);
-  if (g_jcr->sd_impl->VolList != nullptr) {
-    g_jcr->sd_impl->VolList->Slot = 1;
-    if (g_jcr->sd_impl->VolList->next != nullptr) {
-      g_jcr->sd_impl->VolList->next->Slot = 2;
-    }
+  if (g_jcr->sd_impl->read_session.bsr != nullptr) {
+    auto* bsr = g_jcr->sd_impl->read_session.bsr;
+    if (bsr->volumes.size() >= 1) { bsr->volumes[0].slot = 1; }
+    if (bsr->volumes.size() >= 2) { bsr->volumes[1].slot = 2; }
   }
 
   SetVolumeName("TestVolume1", 1);

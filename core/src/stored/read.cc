@@ -74,7 +74,7 @@ bool DoReadData(JobControlRecord* jcr)
   }
 
   Dmsg2(200, "Found %zu volumes names to restore. First=%s\n",
-        bsr->volumes.size(), jcr->sd_impl->VolList->VolumeName);
+        bsr->volumes.size(), bsr->volumes[0].volume_name.c_str());
 
   // Ready device for reading
   if (!AcquireDeviceForRead(dcr)) {

@@ -259,7 +259,7 @@ static void MyFreeJcr(JobControlRecord* jcr)
     jcr->comment = NULL;
   }
 
-  if (jcr->sd_impl->VolList) { FreeRestoreVolumeList(jcr); }
+  FreeRestoreVolumeList(jcr);
 
   if (jcr->sd_impl->dcr) {
     FreeDeviceControlRecord(jcr->sd_impl->dcr);

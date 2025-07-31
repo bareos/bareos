@@ -396,6 +396,8 @@ void StoredFreeJcr(JobControlRecord* jcr)
 
   if (jcr->sd_impl->backup_format) { FreeMemory(jcr->sd_impl->backup_format); }
 
+  // Free any restore volume list created
+  FreeRestoreVolumeList(jcr);
   if (jcr->sd_impl->read_session.bsr) {
     libbareos::FreeBsr(jcr->sd_impl->read_session.bsr);
     jcr->sd_impl->read_session.bsr = NULL;
@@ -410,8 +412,6 @@ void StoredFreeJcr(JobControlRecord* jcr)
     CleanupCompression(jcr);
   }
 
-  // Free any restore volume list created
-  FreeRestoreVolumeList(jcr);
   if (jcr->RestoreBootstrap) {
     SecureErase(jcr, jcr->RestoreBootstrap);
     FreePoolMemory(jcr->RestoreBootstrap);
