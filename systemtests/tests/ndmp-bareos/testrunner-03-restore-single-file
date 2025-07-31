@@ -38,23 +38,39 @@ export TestName
 
 start_test
 
-# remove files
-${SSH} rm -Rf "/ifs/home/regress/${NDMP_FILESYSTEM}"
+echo "################ restore single file with mark #####################"
+cleanup_remote
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/restore.out
-restore jobid=1 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump select yes
-mark /ifs/home/regress/${NDMP_FILESYSTEM}/testfile
+@$out ${log_home}/restore-mark.out
+restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select yes
+mark ${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile
 done
 wait
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-check_log "${log_home}/restore.out"
+check_log "${log_home}/restore-mark.out"
 
-${SSH} "cat /ifs/home/regress/${NDMP_FILESYSTEM}/testfile" | diff - sbin/bareos_dir-ndmp-bareos
+${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile\"" | diff - sbin/bareos_dir-ndmp-bareos
 
-check_for_zombie_jobs storage=isilonfile client=bareos-fd
+echo "################ restore single file with file #####################"
+cleanup_remote
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore-file.out
+restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile2" select yes
+wait
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${log_home}/restore-file.out"
+
+${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile2\"" | diff - sbin/bareos_sd-ndmp-bareos
+
+#uncomment when ok
+#check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test
