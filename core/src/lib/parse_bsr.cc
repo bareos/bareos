@@ -617,10 +617,10 @@ static bool store_voladdr(lexer* lc, bsr_parser& parser)
   if (!parser.started()) { return false; }
 
   for (;;) {
-    int token = LexGetToken(lc, BCT_PINT32_RANGE);
+    int token = LexGetToken(lc, BCT_PINT64_RANGE);
     if (token == BCT_ERROR) { return false; }
 
-    parser.push_vol_addrs(lc->u.pint32_val, lc->u2.pint32_val);
+    parser.push_vol_addrs(lc->u.pint64_val, lc->u2.pint64_val);
 
     token = LexGetToken(lc, BCT_ALL);
     if (token != BCT_COMMA) { break; }
