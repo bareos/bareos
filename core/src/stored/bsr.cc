@@ -697,6 +697,7 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
       p = n;
     }
 
+    jcr->sd_impl->read_session.bsr_generated = true;
     jcr->sd_impl->read_session.bsr = bsr;
   }
   for (auto& volume : jcr->sd_impl->read_session.bsr->volumes) {

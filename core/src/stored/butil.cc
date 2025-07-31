@@ -260,7 +260,8 @@ static void MyFreeJcr(JobControlRecord* jcr)
   }
 
   FreeRestoreVolumeList(jcr);
-  if (jcr->sd_impl->read_session.bsr) {
+  if (jcr->sd_impl->read_session.bsr
+      && jcr->sd_impl->read_session.bsr_generated) {
     libbareos::FreeBsr(jcr->sd_impl->read_session.bsr);
   }
 

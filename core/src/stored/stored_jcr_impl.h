@@ -41,6 +41,7 @@ struct director_storage;
 
 struct ReadSession {
   READ_CTX* rctx{};
+  bool bsr_generated{false};  // set if the bsr was auto generated
   BootStrapRecord* bsr{};
   bool mount_next_volume{};
   uint32_t read_VolSessionId{};
