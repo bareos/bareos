@@ -48,14 +48,75 @@ set(ndmp_tape_and_robot_agent_changer_device
 )
 set(ndmp_tape_and_robot_agent_tape_device
     ""
-    CACHE STRING "tape device of the ndmp robot agent"
+    CACHE STRING "list of tape device of the ndmp robot agent"
 )
+if(ndmp_data_agent_address)
 
-if(ndmp_tape_and_robot_agent_address)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+  find_program(IP_COMMAND ip)
+  if(IP_COMMAND)
+    execute_process(
+      COMMAND ${IP_COMMAND} route get ${ndmp_data_agent_address}
+      OUTPUT_VARIABLE ROUTE_INFO_TO_ACCESS_NDMP_DATA_AGENT
+    )
+
+    # cmake-format: off
+    #
+    # Example:
+    # 192.168.76.10 via 192.168.77.1 dev eth0 src 192.168.77.101 uid 25031
+    string(
+      REGEX REPLACE ".* src ([^ ]+).*"
+      \\1
+      IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT
+      ${ROUTE_INFO_TO_ACCESS_NDMP_DATA_AGENT}
+    )
+    # cmake-format: on
+
+    message(DEBUG "NDMP ROUTE INFO: ${ROUTE_INFO_TO_ACCESS_NDMP_DATA_AGENT}")
+
+    message(
+      STATUS
+        "IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT (${ndmp_data_agent_address})=${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}"
+    )
+
+    if(IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT)
+      if(NOT ndmp_data_agent_user)
+        set(ndmp_data_agent_user ndmpadmin)
+      endif()
+      if(NOT ndmp_data_agent_password)
+        set(ndmp_data_agent_password test)
+      endif()
+
+      if(ndmp_tape_and_robot_agent_address)
+        set(ndmp_tapes_devices
+            ""
+            CACHE STRING "builded string of Devices for ndmp storage"
+        )
+        foreach(device ${ndmp_tape_and_robot_agent_tape_device})
+          string(APPEND ndmp_tapes_devices "Device = \"${device}\"\n")
+        endforeach(device)
+        create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+        # add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME}) Testing
+        # needs exclusive access to an autochanger from the ndmp host by iscsi
+      else()
+        create_systemtest(
+          ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
+          "ndmp_tape_and_robot_agent_address not given"
+        )
+      endif()
+    else()
+      create_systemtest(
+        ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
+        "failed to get IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT"
+      )
+    endif()
+  else()
+    create_systemtest(
+      ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "ip command not found"
+    )
+  endif()
 else()
   create_systemtest(
     ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
-    "ndmp_tape_and_robot_agent_address not given"
+    "ndmp_data_agent_address not given"
   )
 endif()
