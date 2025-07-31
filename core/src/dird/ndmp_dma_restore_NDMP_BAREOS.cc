@@ -355,7 +355,6 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
 {
   int cnt;
   BareosSocket* sd;
-  storagedaemon::BootStrapRecord* bsr;
   NIS* nis = NULL;
   std::uint64_t current_fi;
   bootstrap_info info;
@@ -395,7 +394,6 @@ static inline bool DoNdmpRestoreBootstrap(JobControlRecord* jcr)
   memset(nis, 0, sizeof(NIS));
 
   // Read the bootstrap file
-  bsr = jcr->dir_impl->bsr;
   while (!feof(info.bs)) {
     if (!SelectNextRstore(jcr, info)) { goto cleanup; }
 
