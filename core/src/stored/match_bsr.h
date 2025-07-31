@@ -22,13 +22,6 @@
 #define BAREOS_STORED_MATCH_BSR_H_
 
 namespace storagedaemon {
-
-// int MatchBsr(BootStrapRecord* bsr,
-//              DeviceRecord* rec,
-//              Volume_Label* volrec,
-//              Session_Label* sesrec,
-//              JobControlRecord* jcr);
-// int MatchBsrBlock(BootStrapRecord* bsr, DeviceBlock* block);
 bool find_next_bsr(BootStrapRecord* bsr, Device* dev);
 namespace bsr {
 bool match_bsr_block(BootStrapRecord* bsr, volume& volume, DeviceBlock* block);
