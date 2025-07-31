@@ -1,5 +1,5 @@
 Fileset {
-  Name = "ndmp-fileset"
+  Name = "omnios-fileset"
   Include {
     Options {
         # meta = "USER=root"
@@ -10,6 +10,6 @@ Fileset {
         meta = "BUTYPE=DUMP"
 
     }
-    File = /export/home
+    File = /export/home/regress/ndmp-bareos/@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
   }
 }
