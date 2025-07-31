@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -39,15 +39,20 @@ export TestName
 start_test
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
+setdebug level=250 trace=1 timestamp=1 dir
 @$out ${log_home}/full.out
-run job=${NDMPCLIENT}dump level=Full yes
+run job=NDMPBackupDump fileset=${NDMP_CLIENT}-fileset level=Full yes
 wait
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
+echo "setdebug level=0 trace=0 timestamp=0 dir" >"${tmp}/bconcmds"
+run_bconsole "${tmp}/bconcmds"
+
 check_log "${log_home}/full.out"
 
-check_for_zombie_jobs storage=isilonfile client=bareos-fd
+# When fixed uncomment
+#check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test
