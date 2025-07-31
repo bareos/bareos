@@ -378,30 +378,6 @@ bool ReadNextRecordFromBlock(DeviceControlRecord* dcr,
   }
 }
 
-// static bool ReadRecordsFromBsr(DeviceControlRecord* dcr,
-//                                bool RecordCb(DeviceControlRecord* dcr,
-//                                              DeviceRecord* rec,
-//                                              void* user_data),
-//                                bool mount_cb(DeviceControlRecord* dcr),
-//                                void* user_data,
-//                                BootStrapRecord* bsr)
-// {
-//   JobControlRecord* jcr = dcr->jcr;
-//   READ_CTX* rctx = new_read_context();
-
-//   for (auto& volume : bsr->volumes) {
-//     jcr->sd_impl->CurReadVolume = 0;
-
-//     // mount_cb uses VolList to mount the next one
-//     mount_cb(dcr);
-
-//     // if mount doesnt position us, we need to position now
-//     PositionDeviceToFirstFile(jcr, dcr);
-
-//     while (!volume.done) {}
-//   }
-// }
-
 /**
  * This subroutine reads all the records and passes them back to your
  * callback routine (also mount routine at EOM).
@@ -416,11 +392,6 @@ bool ReadRecords(DeviceControlRecord* dcr,
                  void* user_data)
 {
   JobControlRecord* jcr = dcr->jcr;
-
-  // if (jcr->sd_impl->read_session.bsr) {
-  //   return ReadRecordsFromBsr(dcr, RecordCb, mount_cb, user_data,
-  //                             jcr->sd_impl->read_session.bsr);
-  // }
 
   READ_CTX* rctx;
   bool ok = true;
