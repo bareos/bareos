@@ -346,7 +346,8 @@ static void DoBlocks(char*)
           return;
         }
     }
-    if (!bsr::match_bsr_block(global_bsr, *global_bsr->current(), block)) {
+    auto* bsr = jcr->sd_impl->read_session.bsr;
+    if (!bsr::match_bsr_block(bsr, *bsr->current(), block)) {
       Dmsg5(100, "reject Blk=%u blen=%u bVer=%d SessId=%u SessTim=%u\n",
             block->BlockNumber, block->block_len, block->BlockVer,
             block->VolSessionId, block->VolSessionTime);
