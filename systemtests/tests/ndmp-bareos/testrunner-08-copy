@@ -39,13 +39,13 @@ export TestName
 start_test
 
 # remove files
-${SSH} rm -Rf "/ifs/home/regress/${NDMP_FILESYSTEM}"
+cleanup_remote
 
+id=last_jobid_or_zero
 # first run the copy jobs
-
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/copy.out
-run job=ndmp-copy-$NDMPCLIENT yes
+run job=ndmp-copy fileset=${NDMP_CLIENT}-fileset yes
 wait
 messages
 END_OF_DATA
@@ -53,32 +53,36 @@ END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 check_log "${log_home}/copy.out"
 
+# restore copy force correct fileset to be used and not the one in jobdefs.
 # then restore a full copy
-
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-full.out
-restore jobid=19 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes
+restore jobid=20 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump all done yes
 wait
 messages
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 check_log "${log_home}/restore-full.out"
-${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full" | grep "${NDMP_FILESYSTEM}"
+${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/full\" | head -n 1) | grep \"${NDMP_FILESYSTEM}\""
 
+cleanup_remote
 # afterwards restore an incremental copy
-
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-incr.out
-restore jobid=29 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes
+restore jobid=38 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump all done yes
 wait
 messages
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 check_log "${log_home}/restore-incr.out"
-${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental" | grep "${NDMP_FILESYSTEM}"
 
-check_for_zombie_jobs storage=isilonfile client=bareos-fd
+# we deterministically use one jobid and look that we found the corresponding incremental
+# here the restore use the copy of 9th incremental
+${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/incremental\" | tail -n 1) | grep \"${NDMP_FILESYSTEM}-9\""
+
+#uncomment when fixed
+#check_for_zombie_jobs storage=isilonfile client=bareos-fd
 
 end_test

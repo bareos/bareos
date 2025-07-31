@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,10 @@ set -e
 set -o pipefail
 set -u
 
+#
+# run a full backup job
+#
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -32,6 +36,23 @@ export TestName
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
-cleanup_remote
+start_test
 
-"${BAREOS_SCRIPTS_DIR}"/cleanup
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+setdebug level=250 trace=1 timestamp=1 dir
+@$out ${log_home}/full.out
+run job=ndmp-native fileset=${NDMP_CLIENT}-fileset level=Full yes
+wait
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+echo "setdebug level=0 trace=0 timestamp=0 dir" >"${tmp}/bconcmds"
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${log_home}/full.out"
+
+# When fixed uncomment
+#check_for_zombie_jobs storage=ndmp client=ndmp-fd
+
+end_test

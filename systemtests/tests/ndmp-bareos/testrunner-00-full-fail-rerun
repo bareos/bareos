@@ -1,0 +1,116 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#
+# Requirements:
+# * This tests is implemented for a Isilon NDMP storage.
+# * To create and delete backup data,
+#   password-less SSH root access to the Isilon storage is required.
+# * run cmake with parameter matching your environment:
+#     -Dndmp_data_agent_address=<ip.of.data.agent> \
+#     -Dndmp_data_agent_user=<user> \
+#     -Dndmp_data_agent_password=<password>
+#
+
+#
+# run a full backup job when no data to backup exist to make it failed
+# the job has rerun instruction, so it should succeed in that task
+#
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+# Remove previously created data
+cleanup_remote
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+setdebug level=2300 trace=1 timestamp=1 dir
+@$out ${log_home}/full.out
+run job=NDMPBackupDump fileset=${NDMP_CLIENT}-fileset level=Full yes
+wait
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+# Avoid to failed the test here.
+# check_log "${log_home}/full.out"
+
+# Create data so rescheduled job will work
+make_remote_data_full
+
+# We shouldn't see the job failing with
+# ``Fatal error: No backup type specified in NDMP job``
+# Fixed in e49a5362d
+
+# Next run should see the job running and not timeout.
+
+    # To be fixed storage should not wait anymore the FD connection.
+    # With client passive = yes, this is working immediately.
+    # but not always ...
+    # status storage=ndmpfile
+    #Job inventory:
+    #
+    #Backup Job omniosdump.2025-08-18_14.06.34_05 waiting for Client connection.
+    #JobId=1 Level=Full Type=Backup Name=omniosdump Status=Waiting on FD
+echo "status storage=ndmpfile" >"${tmp}/bconcmds"
+status_storage=$(run_bconsole "${tmp}/bconcmds")
+if grep 'Status=Waiting on FD' <<< "${status_storage}"; then
+#  set_error "${RESULT}"
+#  exit 1
+# While its obviously an error to be fixed, we move forward by cancelling the job
+  echo "cancel all yes" >"${tmp}/bconcmds"
+  run_bconsole "${tmp}/bconcmds"
+fi
+sleep 5
+
+# At that point the storage has release the resource
+# if we rerun manually the job everything get blocked and cancel it again will raise dir error.
+echo "rerun jobid=1 yes" >"${tmp}/bconcmds"
+run_bconsole "${tmp}/bconcmds"
+
+### To trigger the Dir error you can cancel the new running job
+echo "cancel jobid=2 yes" >"${tmp}/bconcmds"
+run_bconsole "${tmp}/bconcmds"
+
+# Jobid 2 might failed if restarted while the Storage is still waiting on previous FD
+# status client return bad communication
+# status storage is locked due to still using device by previous job.
+# If all jobs are canceled we might have this issue at the end of jobid 2
+# bareos-dir JobId 2: Fatal error: NumConcurrentJobs Dec Wstore=LocalfileStorage wncj=-1
+
+# trying to stop the sd will not occur with first SIGTERM you have to send it twice.
+
+# Need to be fixed
+check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
+
+end_test

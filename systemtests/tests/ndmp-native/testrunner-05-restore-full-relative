@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 #
-# make sure we can restore a full backup
+# make sure we can restore a full backup to some relative location
 #
 
 TestName="$(basename "$(pwd)")"
@@ -41,25 +41,25 @@ start_test
 # remove files
 cleanup_remote
 
-echo "################ restore full #####################"
+restore_path="bareos-restores-${NDMP_FILESYSTEM}"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore.out
-restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump all done yes"
+restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump where=/${restore_path} all done yes
 wait
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
+# Beware of https://github.com/bareos/internal/issues/446
 check_log "${log_home}/restore.out"
 
 # printf is used to suppress error return due to null byte
 # bash: line 1: warning: command substitution: ignored null byte in input
-${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/full\") | grep ${NDMP_FILESYSTEM}"
-${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile\"" | diff - sbin/bareos_dir-ndmp-bareos
-${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile2\"" | diff - sbin/bareos_sd-ndmp-bareos
+${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/${restore_path}/full\") | grep ${NDMP_FILESYSTEM}"
+${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/${restore_path}/testfile\"" | diff - sbin/bareos_dir-ndmp-native
+${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/${restore_path}/testfile2\"" | diff - sbin/bareos_sd-ndmp-native
 
-#uncomment when fixed
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test

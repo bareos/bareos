@@ -30,6 +30,10 @@ cleanup_remote()
 {
   ${SSH} rm -Rf "${NDMP_TEST_PATH}"
   ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/data/${NDMP_TEST_PATH}"
+cleanup_remote()
+{
+  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/home/regress/${TestName}"
+  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/data/${TestName}"
 }
 
 make_remote_data_full()

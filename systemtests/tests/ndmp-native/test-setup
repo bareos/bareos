@@ -34,6 +34,11 @@ export TestName
 # * run cmake with parameter matching your environment:
 #     -Dndmp_config=<path/to/you/ndmp/ctest.conf>
 #     see CTestNDMPConfig.cmake.template in source tree
+
+#
+# This test is missing a tape cleanup which need to be run
+# remotely on the quadstore host if needed.
+# mtx tool for omnios are not easy to find.
 #
 
 #shellcheck source=../../environment.in
@@ -50,8 +55,41 @@ bin/bareos status
 # make sure, daemons are up and running.
 print_debug "$(bin/bconsole <<<"status director")"
 print_debug "$(bin/bconsole <<<"status client=ndmp-fd")"
-print_debug "$(bin/bconsole <<<"status storage=ndmpfile")"
+print_debug "$(bin/bconsole <<<"status storage=ndmp")"
 
 cleanup_remote
 
 make_remote_data_full
+
+echo "################ Prepare NDMP Tapes #####################"
+# we need a similar mechanism that for autochanger to empty and invalidate all tapes
+# see ouput of status slots.
+# We consider here to have at least 2 available tape in slot 0,1
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@out ${tmp}/label-barecode.out
+label barcode storage=ndmp drive=0 slot=1-2 pool=ndmp-tapes yes
+list volumes
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+# see https://github.com/bareos/internal/issues/445
+# Once volumestatus = "unlabeled" is fixed we can move on by automation
+# in the meantime update manually the volumes to Append.
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+.api 2
+@out ${tmp}/volumes.out
+list volumes
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@out ${tmp}/update_volumes.out
+END_OF_DATA
+
+for V in $(awk -F ":" '/volumename/ {gsub("\"","",$2);gsub(",","",$2);gsub(" ","",$2); print $2}' ${tmp}/volumes.out)
+do
+  echo "update volstatus=Append volume=${V}" >> "${tmp}/bconcmds"
+done
+run_bconsole "${tmp}/bconcmds"
