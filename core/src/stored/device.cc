@@ -292,24 +292,24 @@ bail_out:
 }
 
 // Position to the first file on this volume
-BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
-                                           DeviceControlRecord* dcr)
+// returns: true if the device was positioned, false otherwise
+bool PositionDeviceToFirstFile(JobControlRecord* jcr, DeviceControlRecord* dcr)
 {
-  BootStrapRecord* bsr = NULL;
+  BootStrapRecord* bsr = jcr->sd_impl->read_session.bsr;
   Device* dev = dcr->dev;
   uint32_t file, block;
   /* Now find and position to first file and block
    *   on this tape. */
-  if (jcr->sd_impl->read_session.bsr) {
-    jcr->sd_impl->read_session.bsr->Reposition = true;
+  if (bsr) {
+    bsr->Reposition = true;
     if (GetBsrStartAddr(bsr, &file, &block) > 0) {
       Jmsg(jcr, M_INFO, 0,
            T_("Forward spacing Volume \"%s\" to file:block %u:%u.\n"),
            dev->VolHdr.VolumeName, file, block);
-      dev->Reposition(dcr, file, block);
+      return dev->Reposition(dcr, file, block);
     }
   }
-  return bsr;
+  return false;
 }
 
 /**
