@@ -1,0 +1,110 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+# Common functions for NDMP Testing
+
+# Determine the SED to be used
+os_type=$(uname -s)
+if [ "$os_type" = "Darwin" ] || [ "$os_type" = "FreeBSD" ]; then
+  SED="sed -i ''"
+else
+  SED="sed --in-place"
+  if [ "$os_type" = "Windows" ]; then
+    conf=$(cygpath -w "${BAREOS_CONFIG_DIR}")
+    export conf
+  fi
+fi
+export SED
+export os_type
+
+wait_jobid()
+{
+  JOBID=$1
+  TIMEOUT=${2:-10}
+
+  while [ ${TIMEOUT} -gt 0 ] && ${BCONSOLE} <<< "wait jobid=${JOBID}" | grep "JobStatus=Unknown"; do
+    sleep 1
+    TIMEOUT=$((TIMEOUT-1))
+  done
+  ${BCONSOLE} <<< "wait jobid=${JOBID}"
+}
+
+check_jobid()
+{
+  JOBID=$1
+
+  wait_jobid "${JOBID}"
+  RESULT=$(${BCONSOLE} <<< "list joblog jobid=${JOBID}")
+  if grep 'Fatal error:' <<< "${RESULT}"; then
+    set_error "${RESULT}"
+    exit 1
+  fi
+  if ! grep 'Termination:.*OK' <<< "${RESULT}"; then
+    set_error "${RESULT}"
+    exit 1
+  fi
+}
+
+check_jobid_failed()
+{
+  JOBID=$1
+
+  wait_jobid "${JOBID}"
+  RESULT=$(${BCONSOLE} <<< "list joblog jobid=${JOBID}")
+  if grep 'Termination:.*OK' <<< "${RESULT}"; then
+    set_error "${RESULT}"
+    exit 1
+  fi
+  if ! grep 'Fatal error:' <<< "${RESULT}"; then
+    set_error "${RESULT}"
+    exit 1
+  fi
+}
+
+cleanup_remote()
+{
+  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/home/regress/${TestName}"
+  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/data/${TestName}"
+}
+
+make_remote_data_full()
+{
+  ${SSH} mkdir -p "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}"
+  ${SSH} dd if=/dev/zero of="${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/full" bs=1M count=20
+  ${SSH} "echo \"${NDMP_FILESYSTEM}\" >> \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/full\""
+  ${SSH} "cat - > \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile\"" < $(readlink sbin/bareos_dir-*)
+  # we need an additional file, so the restore doesn't pick the last file of the volume and data stream
+  ${SSH} "cat - > \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile2\"" < $(readlink sbin/bareos_sd-*)
+}
+
+make_remote_data_incremental()
+{
+  ${SSH} dd if=/dev/zero of="${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/incremental" bs=1M count=2
+}
+
+make_remote_subdata_incremental()
+{
+  ${SSH} mkdir -p "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/subdir"
+  ${SSH} cp -a "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile" "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/subdir/subtestfile1"
+  ${SSH} cp -a "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile2" "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/subdir/subtestfile2"
+}
+
+SSH="ssh root@${NDMP_DATA_AGENT_ADDRESS} -o StrictHostKeyChecking=no"
+export SSH

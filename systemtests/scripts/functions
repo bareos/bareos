@@ -50,12 +50,9 @@ last_jobid_or_zero()
   # return the last jobid if it exists, or 0, so that
   # result + 1 is the next jobid
   set +o pipefail
-  "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<EOD | tail -n3 | head -n1 | cut -d'|' -f2 | xargs
-sqlquery
-SELECT CASE
-WHEN is_called THEN last_value ELSE 0 END
-FROM job_jobid_seq;
-EOD
+  "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<< ".api 2
+.sql query=\"SELECT CASE WHEN is_called THEN last_value ELSE 0 END FROM job_jobid_seq;\"
+" | awk '/"case":/ {gsub("\"","",$2);print $2}'
   set -o pipefail
 }
 
@@ -1397,6 +1394,12 @@ dir_pid=0
 
 trap "{ estat=999; end_test; }" TERM INT
 
+# load specific ndmp functions if they exists
+if [ -f "${BAREOS_SCRIPTS_DIR}"/functions-ndmp ]; then
+  source "$BAREOS_SCRIPTS_DIR"/functions-ndmp
+fi
+
+# load local functions if they exists
 if [ -f functions.local ]; then
   source functions.local
 fi

@@ -1539,7 +1539,6 @@ void DirdFreeJcrPointers(JobControlRecord* jcr)
 
   BfreeAndNull(jcr->sd_auth_key);
   BfreeAndNull(jcr->where);
-  BfreeAndNull(jcr->dir_impl->backup_format);
   BfreeAndNull(jcr->RestoreBootstrap);
   BfreeAndNull(jcr->ar);
 

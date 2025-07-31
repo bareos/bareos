@@ -59,20 +59,20 @@ check_log "${log_home}/restore-mark.out"
 # here the restore use the first incremental
 ${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/incremental\" | tail -n 1) | grep \"${NDMP_FILESYSTEM}-1\""
 
-
+# beware of https://github.com/bareos/internal/issues/447
 echo "################ restore incremental by file #####################"
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-file.out
-restore jobid=10 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/incremental" yes
+restore jobid=10 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/subdir/subtestfile1" file="${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/subdir/subtestfile2" yes
 wait
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore-file.out"
-${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/incremental\" | tail -n 1) | grep \"${NDMP_FILESYSTEM}-9\""
+${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/subdir/subtestfile1\"" | diff - sbin/bareos_dir-ndmp-native
+${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/subdir/subtestfile2\"" | diff - sbin/bareos_sd-ndmp-native
 
-#uncomment once fixed
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test

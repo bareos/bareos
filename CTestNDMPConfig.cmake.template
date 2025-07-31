@@ -1,0 +1,41 @@
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+# This file can be called by cmake -Dndmp_config=/full/patch/CTestNDMPConfig.cmake
+
+# omnios/isilon
+set(ndmp_test "omnios")
+set(ndmp_data_agent_address "192.168.50.1")
+set(ndmp_data_agent_user "ndmpadmin")
+set(ndmp_data_agent_password "test")
+set(ndmp_data_agent_auth_type "MD5")
+# export for omnios / ifs for isilon
+set(ndmp_data_mountpoint "/export")
+
+# following value are used in ndmp-native test
+set(ndmp_tape_and_robot_agent_address "192.168.50.1")
+set(ndmp_tape_and_robot_agent_user "ndmpadmin")
+set(ndmp_tape_and_robot_agent_password "test")
+set(ndmp_tape_and_robot_agent_auth_type "MD5")
+set(ndmp_tape_and_robot_agent_tape_device "/dev/rmt/10n;/dev/rmt/11n;/dev/rmt12n;/dev/rmt/13n")
+set(ndmp_tape_and_robot_agent_changer_device "/dev/scsi/changer/c3t0d0")
+message(
+      INFO
+      "\n\"ndmp:\" test type set to  \"${ndmp_test}\""
+)
