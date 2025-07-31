@@ -27,15 +27,6 @@
  * Volume Records
  */
 
-/*
- * ***FIXME***
- * Also for efficiency, once a bsr is done, it really should be
- *   delinked from the bsr chain.  This will avoid the above
- *   problem and make traversal of the bsr chain more efficient.
- *
- *   To be done ...
- */
-
 #include "include/bareos.h"
 #include "include/streams.h"
 #include "stored/bsr.h"
@@ -62,7 +53,6 @@ static bool match_job_id(volume& volume, Session_Label* sessrec);
 static bool match_file_index(volume& volume, DeviceRecord* rec);
 static bool match_vol_file(volume& volume, DeviceRecord* rec);
 static bool match_vol_addr(volume& volume, DeviceRecord* rec);
-// static bool match_vol_block(volume& volume, DeviceRecord* rec);
 static bool match_stream(volume& volume, DeviceRecord* rec);
 
 static int match_all(volume& volume,
