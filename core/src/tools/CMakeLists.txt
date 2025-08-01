@@ -96,6 +96,10 @@ if(NOT client-only)
   endif()
 endif()
 
+add_executable(generate-volumes generate_volume.cc ../stored/crc32/crc32.cc)
+target_link_libraries(generate-volumes CLI11::CLI11)
+list(APPEND TOOLS_SBIN generate-volumes)
+
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
 

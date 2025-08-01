@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,6 +22,7 @@
 #ifndef BAREOS_LIB_NETWORK_ORDER_H_
 #define BAREOS_LIB_NETWORK_ORDER_H_
 
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
@@ -100,6 +101,13 @@ struct network {
   }
 
   constexpr operator T() const noexcept { return load(); }
+
+  auto stored_bytes() const
+  {
+    std::array<char, sizeof(T)> bytes;
+    std::memcpy(bytes.data(), &storage, sizeof(storage));
+    return bytes;
+  }
 
  private:
   T storage;
