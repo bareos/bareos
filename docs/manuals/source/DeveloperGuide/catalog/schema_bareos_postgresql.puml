@@ -351,6 +351,45 @@
   }
   }
 
+  package views <<Rectangle>> {
+  entity latest_full_size_categorized {
+    --
+    client      : TEXT
+    fileset     : TEXT
+    total_mb    : BIGINT
+    db_mb       : BIGINT
+    vm_mb       : BIGINT
+    filer_mb    : BIGINT
+    normal_mb   : BIGINT
+    unknown_mb  : BIGINT
+    filesettext : TEXT
+
+  }
+  entity backup_unit_overview {
+    --
+    client       : TEXT
+    fileset      : TEXT
+    db_units     : BIGINT
+    vm_units     : BIGINT
+    filer_units  : BIGINT
+    normal_units : BIGINT
+  }
+  }
+
+  package functions <<Rectangle>> {
+  interface bareos_frombase64 {
+    --
+    field : TEXT
+  }
+
+  interface decode_lstat{
+    --
+    lst : TEXT
+    params : TEXT[]
+  }
+  }
+
+
   Client }o-- Job
   Client }o-- Quota
   Client }o-- NDMPLevelMap
