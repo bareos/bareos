@@ -127,6 +127,114 @@ bool Unregister(std::basic_string_view<bc::EventType> types)
   return true;
 }
 
+struct plugin_thread {
+  plugin_thread() : plugin_thread(channel::CreateBufferedChannel<callback>(10))
+  {
+  }
+
+  using callback = std::packaged_task<bRC(PluginContext*)>;
+
+  template <typename F> bRC submit(F f)
+  {
+    callback task(f);
+
+    auto fut = task.get_future();
+
+    if (!enqueue_task(std::move(task))) { return bRC_Error; }
+
+    return fut.get();
+  }
+
+  void join()
+  {
+    if (t.joinable()) {
+      in.close();
+      t.join();
+    }
+  }
+
+  ~plugin_thread() { join(); }
+
+  PluginContext* ctx() { return &pctx; }
+
+  struct cached_event {
+    filedaemon::bEvent event{};
+    intptr_t ptr_value;
+
+    filedaemon::bEvent* type() { return &event; }
+    void* value() { return reinterpret_cast<void*>(ptr_value); }
+  };
+
+  std::vector<cached_event> cached_events{};
+
+  std::vector<cached_event> clear_cached_events()
+  {
+    std::vector<cached_event> result{};
+    std::swap(result, cached_events);
+    return result;
+  }
+  bool cache_event(filedaemon::bEvent* event, void* value, std::size_t size)
+  {
+    auto& cached = cached_events.emplace_back();
+    cached.event = *event;
+    if (size != 0) {
+      DebugLog(100, FMT_STRING("cannot cache data of size {}"), size);
+      return false;
+    }
+    // size is 0 here, so no actual data was stored, i.e. we only care
+    // about the value of the pointer
+    cached.ptr_value = reinterpret_cast<intptr_t>(value);
+    return true;
+  }
+
+  void allow_events(std::uint64_t mask) { registered_events |= mask; }
+
+  void disallow_events(std::uint64_t mask) { registered_events &= ~mask; }
+
+  bool is_event_allowed(filedaemon::bEvent* type)
+  {
+    return ((1 << type->eventType) & registered_events) != 0;
+  }
+
+  std::uint64_t allowed_events() { return registered_events; }
+
+ private:
+  plugin_thread(channel::channel_pair<callback> p)
+      : in{std::move(p.first)}, out{std::move(p.second)}
+  {
+    pctx.core_private_context = this;
+    // only start the thread once the plugin context is setup
+    t = std::thread{+[](plugin_thread* pt) { pt->run(); }, this};
+  }
+
+  bool enqueue_task(callback&& c) { return in.emplace(std::move(c)); }
+
+  void run()
+  {
+    if (!WaitForReady()) {
+      fprintf(stderr, "WaitForReady failed.\n");
+      return;
+    }
+    DebugLog(100, FMT_STRING("plugin thread starting (ctx={})..."),
+             (void*)&pctx);
+    for (;;) {
+      std::optional cb = out.get();
+      if (!cb) { break; }
+      (*cb)(&pctx);
+    }
+    DebugLog(100, FMT_STRING("plugin thread stopping (ctx={})..."),
+             (void*)&pctx);
+  }
+
+  PluginContext pctx{};
+  channel::input<callback> in;
+  channel::output<callback> out;
+  std::thread t;
+
+  std::uint64_t registered_events = 0;
+};
+
+
 // TODO: implement these
 
 void AddExclude() { return; }
@@ -436,9 +544,11 @@ std::optional<bc::EventType> to_grpc(uint32_t num)
 }
 
 
-bRC Wrapper_registerBareosEvents(PluginContext*, int nr_events, ...)
+bRC Wrapper_registerBareosEvents(PluginContext* ctx, int nr_events, ...)
 {
   std::vector<bc::EventType> events;
+
+  std::uint64_t event_mask = 0;
 
   va_list args;
   va_start(args, nr_events);
@@ -447,6 +557,7 @@ bRC Wrapper_registerBareosEvents(PluginContext*, int nr_events, ...)
     std::optional event = to_grpc(event_num);
     if (event) {
       events.push_back(*event);
+      event_mask |= 1 << event_num;
     } else {
       JobLog(bc::JMSG_ERROR, FMT_STRING("bad event nr {}"), event_num);
       return bRC_Error;
@@ -454,11 +565,15 @@ bRC Wrapper_registerBareosEvents(PluginContext*, int nr_events, ...)
   }
   va_end(args);
   if (!Register({events.data(), events.size()})) { return bRC_Error; }
+
+  auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
+  thrd->allow_events(event_mask);
   return bRC_OK;
 }
-bRC Wrapper_unregisterBareosEvents(PluginContext*, int nr_events, ...)
+bRC Wrapper_unregisterBareosEvents(PluginContext* ctx, int nr_events, ...)
 {
   std::vector<bc::EventType> events;
+  std::uint64_t event_mask = 0;
 
   va_list args;
   va_start(args, nr_events);
@@ -466,6 +581,7 @@ bRC Wrapper_unregisterBareosEvents(PluginContext*, int nr_events, ...)
     auto event_num = va_arg(args, uint32_t);
     std::optional event = to_grpc(event_num);
     if (event) {
+      event_mask |= 1 << event_num;
       events.push_back(*event);
     } else {
       JobLog(bc::JMSG_ERROR, FMT_STRING("bad event nr {}"), event_num);
@@ -474,6 +590,10 @@ bRC Wrapper_unregisterBareosEvents(PluginContext*, int nr_events, ...)
   }
   va_end(args);
   if (!Unregister({events.data(), events.size()})) { return bRC_Error; }
+
+  auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
+  thrd->disallow_events(event_mask);
+
   return bRC_OK;
 }
 bRC Wrapper_getInstanceCount(PluginContext*, int* ret)
@@ -899,100 +1019,6 @@ bool setup()
   return true;
 }
 
-struct plugin_thread {
-  plugin_thread() : plugin_thread(channel::CreateBufferedChannel<callback>(10))
-  {
-  }
-
-  using callback = std::packaged_task<bRC(PluginContext*)>;
-
-  template <typename F> bRC submit(F f)
-  {
-    callback task(f);
-
-    auto fut = task.get_future();
-
-    if (!enqueue_task(std::move(task))) { return bRC_Error; }
-
-    return fut.get();
-  }
-
-  void join()
-  {
-    if (t.joinable()) {
-      in.close();
-      t.join();
-    }
-  }
-
-  ~plugin_thread() { join(); }
-
-  PluginContext* ctx() { return &pctx; }
-
-  struct cached_event {
-    filedaemon::bEvent event{};
-    intptr_t ptr_value;
-
-    filedaemon::bEvent* type() { return &event; }
-    void* value() { return reinterpret_cast<void*>(ptr_value); }
-  };
-
-  std::vector<cached_event> cached_events{};
-
-  std::vector<cached_event> clear_cached_events()
-  {
-    std::vector<cached_event> result{};
-    std::swap(result, cached_events);
-    return result;
-  }
-  bool cache_event(filedaemon::bEvent* event, void* value, std::size_t size)
-  {
-    auto& cached = cached_events.emplace_back();
-    cached.event = *event;
-    if (size != 0) {
-      DebugLog(100, FMT_STRING("cannot cache data of size {}"), size);
-      return false;
-    }
-    // size is 0 here, so no actual data was stored, i.e. we only care
-    // about the value of the pointer
-    cached.ptr_value = reinterpret_cast<intptr_t>(value);
-    return true;
-  }
-
- private:
-  plugin_thread(channel::channel_pair<callback> p)
-      : in{std::move(p.first)}, out{std::move(p.second)}
-  {
-    pctx.core_private_context = this;
-    // only start the thread once the plugin context is setup
-    t = std::thread{+[](plugin_thread* pt) { pt->run(); }, this};
-  }
-
-  bool enqueue_task(callback&& c) { return in.emplace(std::move(c)); }
-
-  void run()
-  {
-    if (!WaitForReady()) {
-      fprintf(stderr, "WaitForReady failed.\n");
-      return;
-    }
-    DebugLog(100, FMT_STRING("plugin thread starting (ctx={})..."),
-             (void*)&pctx);
-    for (;;) {
-      std::optional cb = out.get();
-      if (!cb) { break; }
-      (*cb)(&pctx);
-    }
-    DebugLog(100, FMT_STRING("plugin thread stopping (ctx={})..."),
-             (void*)&pctx);
-  }
-
-  PluginContext pctx{};
-  channel::input<callback> in;
-  channel::output<callback> out;
-  std::thread t;
-};
-
 template <typename F> bRC plugin_run(PluginContext* ctx, F&& f)
 {
   auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
@@ -1163,10 +1189,18 @@ bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx,
             = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
         auto cached = thrd->clear_cached_events();
 
-        DebugLog(100, FMT_STRING("inserting {} cached events"), cached.size());
+        DebugLog(100, FMT_STRING("inserting {} cached events ({:x})"),
+                 cached.size(), thrd->allowed_events());
 
         bool cached_err = false;
         for (auto& cached_event : cached) {
+          if (!thrd->is_event_allowed(cached_event.type())) {
+            DebugLog(100, FMT_STRING("skipping cached {}-event ({})"),
+                     cached_event.type()->eventType, cached_event.value());
+            continue;
+          }
+
+
           DebugLog(100, FMT_STRING("inserting cached {}-event ({})"),
                    cached_event.type()->eventType, cached_event.value());
           if (plugin_funs->handlePluginEvent(ctx, cached_event.type(),
@@ -1186,8 +1220,8 @@ bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx,
       } break;
     }
 
+    auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
     if (!plugin_funs) {
-      auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
       DebugLog(100,
                FMT_STRING("inferior not setup yet, so we cache event {} ({})"),
                event->eventType, (void*)thrd);
@@ -1202,6 +1236,11 @@ bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx,
       return bRC_OK;
     }
 
+    if (!thrd->is_event_allowed(event)) {
+      DebugLog(100, FMT_STRING("skipping cached {}-event ({})"),
+               event->eventType, value);
+      return bRC_OK;
+    }
     return plugin_funs->handlePluginEvent(ctx, event, value);
   });
 }
