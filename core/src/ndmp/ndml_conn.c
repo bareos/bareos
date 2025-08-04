@@ -819,10 +819,10 @@ int ndmconn_readit(void* a_conn, char* buf, int len)
       if (rc <= 0) { return rc; }
       i += rc;
     }
-    conn->frag_resid = conn->frag_hdr_buf[0] << 24;
-    conn->frag_resid |= conn->frag_hdr_buf[1] << 16;
-    conn->frag_resid |= conn->frag_hdr_buf[2] << 8;
-    conn->frag_resid |= conn->frag_hdr_buf[3];
+    conn->frag_resid = (uint32_t)conn->frag_hdr_buf[0] << 24;
+    conn->frag_resid |= (uint32_t)conn->frag_hdr_buf[1] << 16;
+    conn->frag_resid |= (uint32_t)conn->frag_hdr_buf[2] << 8;
+    conn->frag_resid |= (uint32_t)conn->frag_hdr_buf[3];
     conn->frag_resid &= 0xFFFFFF;
     conn->fhb_off = 0;
   }
