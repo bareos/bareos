@@ -20,6 +20,7 @@
 BAREOS_SCRIPTS_DIR="${BAREOS_SCRIPTS_DIR:-@scriptdir@}"
 BAREOS_CONFIG_LIB=${BAREOS_SCRIPTS_DIR}/bareos-config-lib.sh
 BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_CONFIG_TEMPLATE_DIR=${BAREOS_CONFIG_TEMPLATE_DIR:-@configtemplatedir@}
 BAREOS_SBIN_DIR=${BAREOS_SBIN_DIR:-@sbindir@}
 BAREOS_DIRECTOR_BINARY=${BAREOS_DIRECTOR_BINARY:-${BAREOS_SBIN_DIR}/bareos-dir}
 AWK="@AWK@"
@@ -397,6 +398,17 @@ get_config_path2()
     warn "failed to find config for component \"${COMPONENT}\" in directory \"${BASEDIR}\"."
     return 1
   fi
+}
+
+deploy_config_new()
+{
+  COMPONENT=${1:-}
+
+  [ -n "${BAREOS_CONFIG_TEMPLATE_DIR}" ] || return 1
+
+  RC=0
+  deploy_config "${BAREOS_CONFIG_TEMPLATE_DIR}" "${BAREOS_CONFIG_DIR}" "${COMPONENT}" || RC=$?
+  return $RC
 }
 
 deploy_config()

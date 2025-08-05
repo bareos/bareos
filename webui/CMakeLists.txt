@@ -26,6 +26,7 @@ set(CMAKE_MODULE_PATH
     ${PROJECT_SOURCE_DIR}/../SOURCES ${PROJECT_SOURCE_DIR}/cmake
 )
 
+include(BareosSetVariableDefaults)
 include(BareosLocalBuildDefinitions OPTIONAL
         RESULT_VARIABLE BareosLocalBuildDefinitionsFile
 )
@@ -135,16 +136,16 @@ if(NOT client-only)
   )
 
   install(FILES install/bareos/bareos-dir.d/console/admin.conf.example
-          DESTINATION ${confdir}/bareos-dir.d/console/
+          DESTINATION ${configtemplatedir}/bareos-dir.d/console/
   )
   install(FILES install/bareos/bareos-dir.d/profile/webui-admin.conf
-          DESTINATION ${confdir}/bareos-dir.d/profile/
+          DESTINATION ${configtemplatedir}/bareos-dir.d/profile/
   )
   install(FILES install/bareos/bareos-dir.d/profile/webui-limited.conf.example
-          DESTINATION ${confdir}/bareos-dir.d/profile/
+          DESTINATION ${configtemplatedir}/bareos-dir.d/profile/
   )
   install(FILES install/bareos/bareos-dir.d/profile/webui-readonly.conf
-          DESTINATION ${confdir}/bareos-dir.d/profile/
+          DESTINATION ${configtemplatedir}/bareos-dir.d/profile/
   )
   install(FILES install/apache/bareos-webui.conf DESTINATION ${HTTPD_CONF}/)
 
