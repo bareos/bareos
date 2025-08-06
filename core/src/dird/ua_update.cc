@@ -297,7 +297,7 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
     return;
   }
   mr->Slot = atoi(val);
-  if (pr.MaxVols > 0 && mr->Slot > (int)pr.MaxVols) {
+  if ((pr.MaxVols > 0 && mr->Slot > (int)pr.MaxVols) || mr->Slot < 0) {
     ua->ErrorMsg(T_("Invalid slot, it must be between 0 and MaxVols=%d\n"),
                  pr.MaxVols);
     return;
