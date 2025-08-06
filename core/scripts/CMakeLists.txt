@@ -90,13 +90,18 @@ if(TARGET python3-fd)
 endif()
 
 if(NOT client-only)
+  set(SCRIPTS
+    ${CMAKE_CURRENT_BINARY_DIR}/mtx-changer
+    ${CMAKE_CURRENT_BINARY_DIR}/disk-changer
+    ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-dir
+    ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-sd
+    s3cmd-wrapper.sh
+  )
+  if(HAVE_GLUSTERFS)
+    list(APPEND SCRIPTS "${CMAKE_CURRENT_BINARY_DIR}/bareos-glusterfind-wrapper")
+  endif()
   install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/mtx-changer
-          ${CMAKE_CURRENT_BINARY_DIR}/disk-changer
-          ${CMAKE_CURRENT_BINARY_DIR}/bareos-glusterfind-wrapper
-          ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-dir
-          ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-sd
-          s3cmd-wrapper.sh
+    FILES ${SCRIPTS}
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
                 WORLD_READ WORLD_EXECUTE
     DESTINATION "${scriptdir}"
