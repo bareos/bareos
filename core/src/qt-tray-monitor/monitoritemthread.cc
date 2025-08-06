@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -91,7 +91,7 @@ void MonitorItemThread::run()
   TermMsg();  // this cannot be called twice, however
 }
 
-QStringList MonitorItemThread::createRes(const cl_opts& cl)
+QStringList MonitorItemThread::createRes(const cl_opts& cl, bool no_gui)
 {
   QStringList tabRefs;
 
@@ -121,9 +121,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
     item->setType(R_DIRECTOR);
     item->setResource(dird);
     item->setConnectTimeout(monitor->DIRConnectTimeout);
-    if (!cl.do_connection_test_only_) {
-      item->connectToMainWindow(MainWindow::instance());
-    }
+    if (!no_gui) { item->connectToMainWindow(MainWindow::instance()); }
     tabRefs.append(item->get_name());
     items.append(item);
     nitems++;
@@ -135,9 +133,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
     item->setType(R_CLIENT);
     item->setResource(filed);
     item->setConnectTimeout(monitor->FDConnectTimeout);
-    if (!cl.do_connection_test_only_) {
-      item->connectToMainWindow(MainWindow::instance());
-    }
+    if (!no_gui) { item->connectToMainWindow(MainWindow::instance()); }
     tabRefs.append(item->get_name());
     items.append(item);
     nitems++;
@@ -149,9 +145,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
     item->setType(R_STORAGE);
     item->setResource(stored);
     item->setConnectTimeout(monitor->SDConnectTimeout);
-    if (!cl.do_connection_test_only_) {
-      item->connectToMainWindow(MainWindow::instance());
-    }
+    if (!no_gui) { item->connectToMainWindow(MainWindow::instance()); }
     tabRefs.append(item->get_name());
     items.append(item);
     nitems++;

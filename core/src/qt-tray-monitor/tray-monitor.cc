@@ -245,7 +245,9 @@ int main(int argc, char* argv[])
 
   original_handler = qInstallMessageHandler(QtMessageOutputHandler);
 
-  if (cl.do_connection_test_only_) {
+  bool no_gui = cl.do_connection_test_only_ || cl.test_config_only_;
+
+  if (no_gui) {
     /* do not initialize a GUI */
     app = new QCoreApplication(argc, argv);
   } else {
@@ -254,17 +256,17 @@ int main(int argc, char* argv[])
     app = p;
   }
 
-  if (!cl.do_connection_test_only_) { setupQtObjects(); }
+  if (!no_gui) { setupQtObjects(); }
 
-  QStringList tabRefs = MonitorItemThread::instance()->createRes(cl);
+  QStringList tabRefs = MonitorItemThread::instance()->createRes(cl, no_gui);
+
+  if (cl.test_config_only_) { exit(0); }
 
   int ret = 0;
   if (cl.do_connection_test_only_) {
     ret = MonitorItemThread::instance()->doConnectionTest() ? 0 : 1;
   } else {
     MainWindow::instance()->addTabs(tabRefs);
-
-    if (cl.test_config_only_) { exit(0); }
 
     MonitorItemThread::instance()->start();
 
