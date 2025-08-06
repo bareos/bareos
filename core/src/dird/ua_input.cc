@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -184,8 +184,22 @@ int GetEnabled(UaContext* ua, const char* val)
     Enabled = VOL_NOT_ENABLED;
   } else if (Bstrcasecmp(val, "archived")) {
     Enabled = VOL_ARCHIVED;
-  } else {
-    Enabled = atoi(val);
+  } else if (*val != '\0') {
+    char* rest = nullptr;
+    errno = 0;
+    auto parsed = std::strtol(val, &rest, 10);
+    if (rest && *rest != '\0') {
+      // something was not parsed correctly
+      Enabled = -1;
+    } else if ((parsed == LONG_MIN || parsed == LONG_MAX) && errno == ERANGE) {
+      // we got an overflow
+      Enabled = -1;
+    } else if (errno == EINVAL) {
+      // some other issue occured (i.e. base 10 is not supported...)
+      Enabled = -1;
+    } else {
+      Enabled = parsed;
+    }
   }
 
   if (Enabled < 0 || Enabled > 2) {
