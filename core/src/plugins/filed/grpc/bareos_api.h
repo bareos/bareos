@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -99,7 +99,7 @@ void DebugLog(Severity severity,
               fmt::format_string<Args...> fmt,
               Args&&... args)
 {
-  auto formatted = fmt::vformat(fmt, fmt::make_format_args(args...));
+  auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
 
   internal::DebugMessage(nullptr, severity.file, severity.line,
                          severity.severity, formatted.c_str());
@@ -111,7 +111,7 @@ void DebugLog(PluginContext* ctx,
               fmt::format_string<Args...> fmt,
               Args&&... args)
 {
-  auto formatted = fmt::vformat(fmt, fmt::make_format_args(args...));
+  auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
 
   internal::DebugMessage(ctx, severity.file, severity.line, severity.severity,
                          formatted.c_str());
@@ -123,7 +123,7 @@ void JobLog(PluginContext* ctx,
             fmt::format_string<Args...> fmt,
             Args&&... args)
 {
-  auto formatted = fmt::format(fmt, args...);
+  auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
 
   internal::JobMessage(ctx, type.file, type.line, type.type, formatted.c_str());
 }
