@@ -33,6 +33,8 @@
 #include "lib/bnet.h"
 #include "lib/edit.h"
 
+#include <limits>
+
 namespace directordaemon {
 
 /* Imported variables */
@@ -191,7 +193,9 @@ int GetEnabled(UaContext* ua, const char* val)
     if (rest && *rest != '\0') {
       // something was not parsed correctly
       Enabled = -1;
-    } else if ((parsed == LONG_MIN || parsed == LONG_MAX) && errno == ERANGE) {
+    } else if ((parsed == std::numeric_limits<decltype(parsed)>::min()
+                || parsed == std::numeric_limits<decltype(parsed)>::max())
+               && errno == ERANGE) {
       // we got an overflow
       Enabled = -1;
     } else if (errno == EINVAL) {
