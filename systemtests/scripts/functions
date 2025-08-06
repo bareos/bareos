@@ -225,7 +225,9 @@ start_test()
   dstat=0
   # marker for cleanup()
   echo "$STARTDATE" >"${working}/CLEANUPMARKER"
-  bin/bareos status || true
+  if [ -z "${SKIP_BAREOS_STATUS:-}" ]; then
+    bin/bareos status || true
+  fi
 }
 
 require_root()
