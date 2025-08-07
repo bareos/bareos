@@ -37,7 +37,6 @@ endif()
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 
-include(GNUInstallDirs)
 include(BareosHelper)
 
 # switch on CXX 17 Support

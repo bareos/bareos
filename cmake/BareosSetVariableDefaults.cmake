@@ -19,6 +19,8 @@
 
 # check if variables are set via cmdline else set them to default values
 
+include(GNUInstallDirs)
+
 # configure variables
 #
 # strings - directories
