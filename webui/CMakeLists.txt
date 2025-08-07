@@ -138,13 +138,7 @@ if(NOT client-only)
   install(FILES install/bareos/bareos-dir.d/console/admin.conf.example
           DESTINATION ${configtemplatedir}/bareos-dir.d/console/
   )
-  install(FILES install/bareos/bareos-dir.d/profile/webui-admin.conf
-          DESTINATION ${configtemplatedir}/bareos-dir.d/profile/
-  )
   install(FILES install/bareos/bareos-dir.d/profile/webui-limited.conf.example
-          DESTINATION ${configtemplatedir}/bareos-dir.d/profile/
-  )
-  install(FILES install/bareos/bareos-dir.d/profile/webui-readonly.conf
           DESTINATION ${configtemplatedir}/bareos-dir.d/profile/
   )
   install(FILES install/apache/bareos-webui.conf DESTINATION ${HTTPD_CONF}/)
