@@ -1213,7 +1213,7 @@ bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx,
 
         DebugLog(100, FMT_STRING("plugin funs = {}"), (void*)plugin_funs);
         DebugLog(100, FMT_STRING("handle plugin events = {}"),
-                 (void*)plugin_funs->handlePluginEvents);
+                 (void*)plugin_funs->handlePluginEvent);
         auto result = plugin_funs->handlePluginEvent(ctx, event,
                                                      (void*)pstring->data());
         if (cached_err) { return bRC_Error; }
@@ -1302,7 +1302,7 @@ bRC Wrapper_checkFile(PluginContext* outer_ctx, char* fname)
   return plugin_run(outer_ctx, [fname](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     // this isnt really right, but there is no right answer here
-    if (!plugin_funcs->checkFile) { return bRC_Error; }
+    if (!plugin_funs->checkFile) { return bRC_Error; }
     return plugin_funs->checkFile(ctx, fname);
   });
 }
@@ -1311,9 +1311,9 @@ bRC Wrapper_getAcl(PluginContext* outer_ctx, acl_pkt* ap)
   return plugin_run(outer_ctx, [ap](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     // this isnt really right, but there is no right answer here
-    if (!plugin_funcs->getAcl) {
+    if (!plugin_funs->getAcl) {
       ap->content_length = 0;
-      return bRC_Ok;
+      return bRC_OK;
     }
     return plugin_funs->getAcl(ctx, ap);
   });
@@ -1323,7 +1323,7 @@ bRC Wrapper_setAcl(PluginContext* outer_ctx, acl_pkt* ap)
   return plugin_run(outer_ctx, [ap](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     // this isnt really right, but there is no right answer here
-    if (!plugin_funcs->setAcl) { return bRC_Error; }
+    if (!plugin_funs->setAcl) { return bRC_Error; }
     return plugin_funs->setAcl(ctx, ap);
   });
 }
@@ -1332,9 +1332,9 @@ bRC Wrapper_getXattr(PluginContext* outer_ctx, xattr_pkt* xp)
   return plugin_run(outer_ctx, [xp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     // this isnt really right, but there is no right answer here
-    if (!plugin_funcs->getXattr) {
-      xp.name_length = 0;
-      return bRC_Ok;
+    if (!plugin_funs->getXattr) {
+      xp->name_length = 0;
+      return bRC_OK;
     }
     return plugin_funs->getXattr(ctx, xp);
   });
@@ -1344,7 +1344,7 @@ bRC Wrapper_setXattr(PluginContext* outer_ctx, xattr_pkt* xp)
   return plugin_run(outer_ctx, [xp](PluginContext* ctx) {
     if (!plugin_funs) { return bRC_Error; }
     // this isnt really right, but there is no right answer here
-    if (!plugin_funcs->setXattr) { return bRC_Error; }
+    if (!plugin_funs->setXattr) { return bRC_Error; }
     return plugin_funs->setXattr(ctx, xp);
   });
 }
