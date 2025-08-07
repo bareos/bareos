@@ -26,7 +26,6 @@ set(CMAKE_MODULE_PATH
     ${PROJECT_SOURCE_DIR}/../SOURCES ${PROJECT_SOURCE_DIR}/cmake
 )
 
-include(BareosSetVariableDefaults)
 include(BareosLocalBuildDefinitions OPTIONAL
         RESULT_VARIABLE BareosLocalBuildDefinitionsFile
 )

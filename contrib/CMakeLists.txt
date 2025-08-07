@@ -25,7 +25,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 else()
   include(GNUInstallDirs)
 endif()
-include(BareosSetVariableDefaults)
 
 add_subdirectory(fd-plugins)
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
