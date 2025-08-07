@@ -1,0 +1,89 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# run config test (-t) for each daemon with defaultconfig files
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+SKIP_BAREOS_STATUS="ON"
+
+start_test
+
+os_type=$(uname -s)
+if [ "$os_type" = "Darwin" ] || [ "$os_type" = "FreeBSD" ]; then
+  SED="sed -i ''"
+else
+  SED="sed --in-place"
+fi
+
+# bareos-fd
+# fix working non existing default working directory
+${SED} "s,\(Name.*=.*-fd\).*$,\1\n  Working Directory = \"${BAREOS_WORKING_DIR}\"\n,g" "${BAREOS_CONFIG_DIR}/bareos-fd.d/client/myself.conf"
+check_config bareos-fd "${BAREOS_FILEDAEMON_BINARY}" --config "${BAREOS_CONFIG_DIR}" || exit $?
+echo " OK"
+
+# bareos-sd
+# fix working non existing default working directory
+${SED} "s,\(Name.*=.*-sd\).*$,\1\n  Working Directory = \"${BAREOS_WORKING_DIR}\"\n,g" "${BAREOS_CONFIG_DIR}/bareos-sd.d/storage/bareos-sd.conf"
+if [ -z "${WINDIR:-}" ]; then
+  # adjust sd_backenddir, Windows doesn't have dynamic backend
+  ${SED} "s,\(Name.*=.*-sd\).*$,\1\n  Backend Directory = \"${sd_backenddir}\"\n,g" "${BAREOS_CONFIG_DIR}/bareos-sd.d/storage/bareos-sd.conf"
+fi
+# adjust default device storage location
+${SED} "s,\(Archive.*Device.*=\)\(.*\)$,\1 \"storage/\"\n,g" "${BAREOS_CONFIG_DIR}/bareos-sd.d/device/FileStorage.conf"
+check_config bareos-sd "${BAREOS_STORAGEDAEMON_BINARY}" --config "${BAREOS_CONFIG_DIR}" || exit $?
+echo " OK"
+
+#bareos-dir
+# fix working non existing default working dir
+${SED} "s,\(Name.*=.*-dir\).*$,\1\n  Working Directory = \"${BAREOS_WORKING_DIR}\"\n,g" "${BAREOS_CONFIG_DIR}/bareos-dir.d/director/bareos-dir.conf"
+check_config bareos-dir "${BAREOS_DIRECTOR_BINARY}" --config "${BAREOS_CONFIG_DIR}" || exit $?
+echo " OK"
+
+#bconsole
+check_config bconsole "${BAREOS_BCONSOLE_BINARY}" --config "${BAREOS_CONFIG_DIR}" || exit $?
+echo " OK"
+
+# tray-monitor
+if [ -n "${BAREOS_TRAY_MONITOR_BINARY=-}" ] && [ "$BAREOS_TRAY_MONITOR_BINARY" != './/' ]; then
+  check_config bareos-tray-monitor "${BAREOS_TRAY_MONITOR_BINARY}" --config "${BAREOS_CONFIG_DIR}" || exit $?
+  echo " OK"
+else
+  echo "Testing tray-monitor : Skipped"
+fi
+
+end_test

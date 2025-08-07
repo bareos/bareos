@@ -51,9 +51,6 @@ macro(create_systemtests_directory)
   )
   file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/systemtests/tls/minio/)
 
-  configurefilestosystemtest("core/src" "defaultconfigs" "*.conf" @ONLY "")
-  configurefilestosystemtest("core/src" "defaultconfigs" "*.in" @ONLY "")
-
   configurefilestosystemtest("core" "scripts" "*.in" @ONLY "")
   configurefilestosystemtest("core" "scripts" "bareos-ctl-funcs" @ONLY "")
   configurefilestosystemtest("core" "scripts" "btraceback.gdb" @ONLY "")
@@ -61,8 +58,6 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("core/src/cats" "scripts/ddl" "*" @ONLY "ddl")
   configurefilestosystemtest("core/src" "scripts" "*_catalog_*" @ONLY "cats")
   configurefilestosystemtest("core/src" "scripts" "*_bareos_*" @ONLY "cats")
-
-  configurefilestosystemtest("core/src" "console" "*.in" @ONLY "")
 
   # install special windows start scripts
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
