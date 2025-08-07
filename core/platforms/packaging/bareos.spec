@@ -1067,6 +1067,10 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %doc webui/tests/selenium
 %{_datadir}/%{name}-webui/
 %dir /etc/bareos-webui
+%configtemplatedir/bareos-dir.d/console/admin.conf.example
+%configtemplatedir/bareos-dir.d/profile/webui-admin.conf
+%configtemplatedir/bareos-dir.d/profile/webui-limited.conf.example
+%configtemplatedir/bareos-dir.d/profile/webui-readonly.conf
 %config(noreplace) /etc/bareos-webui/directors.ini
 %config(noreplace) /etc/bareos-webui/configuration.ini
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
@@ -1128,11 +1132,38 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sysconfdir}/rc.d/init.d/bareos-dir
 %endif
 %endif
+%{configtemplatedir}/bareos-dir.d/catalog/MyCatalog.conf
+%{configtemplatedir}/bareos-dir.d/client/bareos-fd.conf
+%{configtemplatedir}/bareos-dir.d/console/bareos-mon.conf
+%{configtemplatedir}/bareos-dir.d/director/bareos-dir.conf
+%{configtemplatedir}/bareos-dir.d/fileset/Catalog.conf
+%{configtemplatedir}/bareos-dir.d/fileset/LinuxAll.conf
+%{configtemplatedir}/bareos-dir.d/fileset/SelfTest.conf
+"%{configtemplatedir}/bareos-dir.d/fileset/Windows All Drives.conf"
+%{configtemplatedir}/bareos-dir.d/job/backup-bareos-fd.conf
+%{configtemplatedir}/bareos-dir.d/job/BackupCatalog.conf
+%{configtemplatedir}/bareos-dir.d/jobdefs/DefaultJob.conf
+%{configtemplatedir}/bareos-dir.d/job/RestoreFiles.conf
+%{configtemplatedir}/bareos-dir.d/messages/Daemon.conf
+%{configtemplatedir}/bareos-dir.d/messages/Standard.conf
+%{configtemplatedir}/bareos-dir.d/pool/Differential.conf
+%{configtemplatedir}/bareos-dir.d/pool/Full.conf
+%{configtemplatedir}/bareos-dir.d/pool/Incremental.conf
+%{configtemplatedir}/bareos-dir.d/pool/Scratch.conf
+%{configtemplatedir}/bareos-dir.d/profile/operator.conf
+%{configtemplatedir}/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf
+%{configtemplatedir}/bareos-dir.d/schedule/WeeklyCycle.conf
+%{configtemplatedir}/bareos-dir.d/storage/File.conf
+%{configtemplatedir}/bareos-dir.d/storage/File.conf.example
+%if 0%{?build_qt_monitor}
+# TODO: shouldn't this belong into the tray-monitor package?
+%dir %{configtemplatedir}/tray-monitor.d/director
+%{configtemplatedir}/tray-monitor.d/director/Director-local.conf
+%endif
 %attr(2750, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/%{name}/bareos-dir-export/
 %config(noreplace) %{_sysconfdir}/logrotate.d/%{name}-dir
 # we do not have any dir plugin but the python plugin
 #%%{plugin_dir}/*-dir.so
-%{configtemplatedir}/bareos-dir.d/
 %{script_dir}/delete_catalog_backup
 %{script_dir}/make_catalog_backup
 %{_sbindir}/bareos-dir
@@ -1174,7 +1205,24 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_unitdir}/bareos-sd.service
 %endif
 %attr(0775, %{storage_daemon_user}, %{daemon_group}) %dir /var/lib/%{name}/storage
-%{configtemplatedir}/bareos-sd.d/
+%dir %{configtemplatedir}/bareos-sd.d
+%dir %{configtemplatedir}/bareos-sd.d/autochanger
+%dir %{configtemplatedir}/bareos-sd.d/device
+%dir %{configtemplatedir}/bareos-sd.d/director
+%dir %{configtemplatedir}/bareos-sd.d/ndmp
+%dir %{configtemplatedir}/bareos-sd.d/messages
+%dir %{configtemplatedir}/bareos-sd.d/storage
+%{configtemplatedir}/bareos-sd.d/autochanger/FileStorage.conf.example
+%{configtemplatedir}/bareos-sd.d/device/FileStorage.conf.example
+%{configtemplatedir}/bareos-sd.d/device/FileStorage.conf
+%{configtemplatedir}/bareos-sd.d/director/bareos-dir.conf
+%{configtemplatedir}/bareos-sd.d/director/bareos-mon.conf
+%{configtemplatedir}/bareos-sd.d/messages/Standard.conf
+%{configtemplatedir}/bareos-sd.d/storage/bareos-sd.conf
+%if 0%{?build_qt_monitor}
+%dir %{configtemplatedir}/tray-monitor.d/storage
+%{configtemplatedir}/tray-monitor.d/storage/StorageDaemon-local.conf
+%endif
 
 %files storage-tape
 # tape specific files
@@ -1189,30 +1237,45 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sbindir}/btape
 %{plugin_dir}/scsicrypto-sd.so
 %{plugin_dir}/scsitapealert-sd.so
+%{configtemplatedir}/bareos-dir.d/storage/Tape.conf.example
+%{configtemplatedir}/bareos-sd.d/autochanger/autochanger-0.conf.example
+%{configtemplatedir}/bareos-sd.d/device/tapedrive-0.conf.example
 
 %files storage-fifo
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-fifo*.so
+%{configtemplatedir}/bareos-dir.d/storage/NULL.conf.example
+%{configtemplatedir}/bareos-sd.d/device/NULL.conf.example
 
 %files storage-dedupable
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-dedupable*.so
+%{configtemplatedir}/bareos-dir.d/storage/Dedupable.conf.example
+%{configtemplatedir}/bareos-sd.d/device/Dedupable.conf.example
 
 %if 0%{?droplet}
 %files storage-droplet
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-droplet*.so
+%{configtemplatedir}/bareos-dir.d/storage/S3_Object.conf.example
+%{configtemplatedir}/bareos-sd.d/device/S3_ObjectStorage.conf.example
+%dir %{configtemplatedir}/bareos-sd.d/device/droplet/
+%{configtemplatedir}/bareos-sd.d/device/droplet/*.example
 %endif
 
 %files storage-dplcompat
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-dplcompat*.so
 %{script_dir}/s3cmd-wrapper.sh
+%{configtemplatedir}/bareos-dir.d/storage/dplcompat.conf.example
+%{configtemplatedir}/bareos-sd.d/device/dplcompat.conf.example
 
 %if 0%{?glusterfs}
 %files storage-glusterfs
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-gfapi*.so
+%{configtemplatedir}/bareos-dir.d/storage/Gluster.conf.example
+%{configtemplatedir}/bareos-sd.d/device/GlusterStorage.conf.example
 %endif
 
 # not client_only
@@ -1242,13 +1305,47 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-fd.service
 %endif
-%{configtemplatedir}/bareos-fd.d/
+%dir %{configtemplatedir}/bareos-fd.d/
+%dir %{configtemplatedir}/bareos-fd.d/client
+%dir %{configtemplatedir}/bareos-fd.d/director
+%dir %{configtemplatedir}/bareos-fd.d/messages
+%{configtemplatedir}/bareos-fd.d/client/myself.conf
+%{configtemplatedir}/bareos-fd.d/director/bareos-dir.conf
+%{configtemplatedir}/bareos-fd.d/director/bareos-mon.conf
+%{configtemplatedir}/bareos-fd.d/messages/Standard.conf
+%if 0%{?build_qt_monitor}
+%dir %{configtemplatedir}/tray-monitor.d/client
+%{configtemplatedir}/tray-monitor.d/client/FileDaemon-local.conf
+%endif
 
 
 %files common
 # common shared libraries (without db)
 %defattr(-, root, root)
 %attr(2755, root, %{daemon_group})           %dir %{_sysconfdir}/%{name}
+%if !0%{?client_only}
+# these directories belong to bareos-common,
+# as other packages may contain configurations for the director.
+%dir %{configtemplatedir}/bareos-dir.d
+%dir %{configtemplatedir}/bareos-dir.d/catalog
+%dir %{configtemplatedir}/bareos-dir.d/client
+%dir %{configtemplatedir}/bareos-dir.d/console
+%dir %{configtemplatedir}/bareos-dir.d/counter
+%dir %{configtemplatedir}/bareos-dir.d/director
+%dir %{configtemplatedir}/bareos-dir.d/fileset
+%dir %{configtemplatedir}/bareos-dir.d/job
+%dir %{configtemplatedir}/bareos-dir.d/jobdefs
+%dir %{configtemplatedir}/bareos-dir.d/messages
+%dir %{configtemplatedir}/bareos-dir.d/pool
+%dir %{configtemplatedir}/bareos-dir.d/profile
+%dir %{configtemplatedir}/bareos-dir.d/schedule
+%dir %{configtemplatedir}/bareos-dir.d/storage
+%dir %{configtemplatedir}/bareos-dir.d/user
+# tray monitor configurate is installed by the target daemons
+%if 0%{?build_qt_monitor}
+%dir %{configtemplatedir}/tray-monitor.d
+%endif
+%endif
 %dir %{backend_dir}
 %{library_dir}/libbareosfastlz.so*
 %{library_dir}/libbareos.so*
@@ -1344,7 +1441,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_mandir}/man1/bareos-tray-monitor.1.gz
 /usr/share/applications/bareos-tray-monitor.desktop
 /usr/share/pixmaps/bareos-tray-monitor.png
-%{configtemplatedir}/tray-monitor.d/
+%dir %{configtemplatedir}/tray-monitor.d/monitor
+%{configtemplatedir}/tray-monitor.d/monitor/bareos-mon.conf
 %endif
 
 # client_only
@@ -1374,6 +1472,9 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-ldap-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-ldap.py*
+%{configtemplatedir}/bareos-dir.d/fileset/plugin-ldap.conf.example
+%{configtemplatedir}/bareos-dir.d/job/backup-ldap.conf.example
+%{configtemplatedir}/bareos-dir.d/job/restore-ldap.conf.example
 
 %files filedaemon-libcloud-python-plugin
 %defattr(-, root, root)
@@ -1423,6 +1524,9 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-glusterfs-plugin
 %{script_dir}/bareos-glusterfind-wrapper
 %{plugin_dir}/gfapi-fd.so
+%{configtemplatedir}/bareos-dir.d/fileset/plugin-gfapi.conf.example
+%{configtemplatedir}/bareos-dir.d/job/BackupGFAPI.conf.example
+%{configtemplatedir}/bareos-dir.d/job/RestoreGFAPI.conf.example
 %endif
 
 %if 0%{?contrib}
