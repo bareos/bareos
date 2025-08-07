@@ -4,6 +4,7 @@
 pidofproc()
 {
   pid=""
+  set -x
   # Test syntax.
   if [ $# = 0 ]; then
     echo "Usage: pidofproc {program} {port}"
@@ -37,10 +38,11 @@ pidofproc()
 
   # Finally try to extract it from ps
 
-  printf "%s" "$(ps ax | grep -i bareos)"
+  printf "%s" "$(ps ax | grep -i ${base})"
 
   pid=$(ps x | grep ${base} | awk '{print $1}' | head -n1)
   echo $pid
+  set +x
   return 0
 }
 
