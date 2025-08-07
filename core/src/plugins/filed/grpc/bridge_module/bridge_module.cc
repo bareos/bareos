@@ -1177,7 +1177,7 @@ bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx,
       case bEventRestoreCommand:
         [[fallthrough]];
       case bEventNewPluginOptions: {
-        std::string_view cmd{(char*)value};
+        std::string cmd{(char*)value};
         DebugLog(100, FMT_STRING("got cmd string \"{}\""), cmd);
         std::optional pstring = inferior_setup(ctx, cmd);
         if (!pstring) { return bRC_Error; }
@@ -1211,6 +1211,9 @@ bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx,
           }
         }
 
+        DebugLog(100, FMT_STRING("plugin funs = {}"), (void*)plugin_funs);
+        DebugLog(100, FMT_STRING("handle plugin events = {}"),
+                 (void*)plugin_funs->handlePluginEvent);
         auto result = plugin_funs->handlePluginEvent(ctx, event,
                                                      (void*)pstring->data());
         if (cached_err) { return bRC_Error; }
