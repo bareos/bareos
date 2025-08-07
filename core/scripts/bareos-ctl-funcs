@@ -3,7 +3,6 @@
 # A function to find the pid of a program.
 pidofproc()
 {
-  set -x
   pid=""
   # Test syntax.
   if [ $# = 0 ]; then
@@ -14,9 +13,12 @@ pidofproc()
   # Get base program name
   base=$(basename $1)
 
+  ret=0
+
   # First try "pidof"
   if [ ! -z "${PIDOF}" -a -x "${PIDOF}" ]; then
     pid=$(${PIDOF} $1)
+    ret=$?
     if [ "$pid" != "" ]; then
       echo $pid
       return 0
@@ -26,6 +28,7 @@ pidofproc()
   # Next try "pgrep"
   if [ ! -z "${PGREP}" -a -x "${PGREP}" ]; then
     pid=$(${PGREP} -f $base)
+    ret=$?
     if [ "$pid" != "" ]; then
       echo $pid | cut -d' ' -f 1
       return 0
@@ -38,7 +41,6 @@ pidofproc()
 
   pid=$(ps -A | grep ${base} | awk '{print $1}' | head -n1)
   echo $pid
-  set +x
   return 0
 }
 
