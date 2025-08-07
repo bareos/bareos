@@ -423,13 +423,14 @@ auto PluginService::handlePluginEvent(
     auto& inner = event.level();
     intptr_t level = inner.level();
     filedaemon::bEvent e{filedaemon::bEventLevel};
-    auto res = funcs.handlePluginEvent(ctx, &e, reinterpret_cast<void*>(level));
+    auto res
+        = funcs.handlePluginEvent(ctx, &e, reinterpret_cast<void*>(level), 0);
     response->set_res(to_grpc(res));
   } else if (event.has_since()) {
     auto& inner = event.since();
     time_t t = inner.since().seconds();
     filedaemon::bEvent e{filedaemon::bEventSince};
-    auto res = funcs.handlePluginEvent(ctx, &e, reinterpret_cast<void*>(t));
+    auto res = funcs.handlePluginEvent(ctx, &e, reinterpret_cast<void*>(t), 0);
     response->set_res(to_grpc(res));
   } else if (event.has_job_end()) {
     auto& inner = event.job_end();
@@ -437,7 +438,7 @@ auto PluginService::handlePluginEvent(
              inner.DebugString());
 
     filedaemon::bEvent e{filedaemon::bEventJobEnd};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
 
     funcs.freePlugin(ctx);
@@ -446,45 +447,45 @@ auto PluginService::handlePluginEvent(
     auto& inner = event.job_start();
     DebugLog(100, FMT_STRING("got job start event ({})."), inner.DebugString());
     filedaemon::bEvent e{filedaemon::bEventJobStart};
-    auto res = funcs.handlePluginEvent(ctx, &e,
-                                       const_cast<char*>(inner.data().c_str()));
+    auto res = funcs.handlePluginEvent(
+        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
     response->set_res(to_grpc(res));
   } else if (event.has_end_fileset()) {
     auto& inner = event.end_fileset();
     filedaemon::bEvent e{filedaemon::bEventEndFileSet};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_option_plugin()) {
     auto& inner = event.option_plugin();
     filedaemon::bEvent e{filedaemon::bEventOptionPlugin};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_backup_command()) {
     auto& inner = event.backup_command();
     filedaemon::bEvent e{filedaemon::bEventBackupCommand};
-    auto res = funcs.handlePluginEvent(ctx, &e,
-                                       const_cast<char*>(inner.data().c_str()));
+    auto res = funcs.handlePluginEvent(
+        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
     response->set_res(to_grpc(res));
   } else if (event.has_cancel_command()) {
     auto& inner = event.cancel_command();
     filedaemon::bEvent e{filedaemon::bEventCancelCommand};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_end_backup_job()) {
     auto& inner = event.end_backup_job();
     filedaemon::bEvent e{filedaemon::bEventEndBackupJob};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_end_verify_job()) {
     auto& inner = event.end_verify_job();
     filedaemon::bEvent e{filedaemon::bEventEndVerifyJob};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_plugin_command()) {
     auto& inner = event.plugin_command();
     filedaemon::bEvent e{filedaemon::bEventPluginCommand};
-    auto res = funcs.handlePluginEvent(ctx, &e,
-                                       const_cast<char*>(inner.data().c_str()));
+    auto res = funcs.handlePluginEvent(
+        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
     response->set_res(to_grpc(res));
   } else if (event.has_restore_object()) {
     auto& inner = event.restore_object();
@@ -504,105 +505,105 @@ auto PluginService::handlePluginEvent(
     // rop.object_full_len    =;
     // rop.object_compression =;
 
-    auto res = funcs.handlePluginEvent(ctx, &e, &rop);
+    auto res = funcs.handlePluginEvent(ctx, &e, &rop, sizeof(rop));
     response->set_res(to_grpc(res));
   } else if (event.has_end_restore_job()) {
     auto& inner = event.end_restore_job();
     filedaemon::bEvent e{filedaemon::bEventEndRestoreJob};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_restore_command()) {
     auto& inner = event.restore_command();
     filedaemon::bEvent e{filedaemon::bEventRestoreCommand};
-    auto res = funcs.handlePluginEvent(ctx, &e,
-                                       const_cast<char*>(inner.data().c_str()));
+    auto res = funcs.handlePluginEvent(
+        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
     response->set_res(to_grpc(res));
   } else if (event.has_vss_init_backup()) {
     auto& inner = event.vss_init_backup();
     filedaemon::bEvent e{filedaemon::bEventVssInitializeForBackup};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_estimate_command()) {
     auto& inner = event.estimate_command();
     filedaemon::bEvent e{filedaemon::bEventEstimateCommand};
-    auto res = funcs.handlePluginEvent(ctx, &e,
-                                       const_cast<char*>(inner.data().c_str()));
+    auto res = funcs.handlePluginEvent(
+        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
     response->set_res(to_grpc(res));
   } else if (event.has_start_backup_job()) {
     auto& inner = event.start_backup_job();
     filedaemon::bEvent e{filedaemon::bEventStartBackupJob};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_start_verify_job()) {
     auto& inner = event.start_verify_job();
     filedaemon::bEvent e{filedaemon::bEventStartVerifyJob};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_init_restore()) {
     auto& inner = event.vss_init_restore();
     filedaemon::bEvent e{filedaemon::bEventVssInitializeForRestore};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_start_restore_job()) {
     auto& inner = event.start_restore_job();
     filedaemon::bEvent e{filedaemon::bEventStartRestoreJob};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_close_restore()) {
     auto& inner = event.vss_close_restore();
     filedaemon::bEvent e{filedaemon::bEventVssCloseRestore};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_handle_backup_file()) {
     auto& inner = event.handle_backup_file();
     filedaemon::bEvent e{filedaemon::bEventHandleBackupFile};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_new_plugin_options()) {
     auto& inner = event.new_plugin_options();
     filedaemon::bEvent e{filedaemon::bEventNewPluginOptions};
-    auto res = funcs.handlePluginEvent(ctx, &e,
-                                       const_cast<char*>(inner.data().c_str()));
+    auto res = funcs.handlePluginEvent(
+        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
     response->set_res(to_grpc(res));
   } else if (event.has_vss_backup_complete()) {
     auto& inner = event.vss_backup_complete();
     filedaemon::bEvent e{filedaemon::bEventVssBackupComplete};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_create_snapshot()) {
     auto& inner = event.vss_create_snapshot();
     filedaemon::bEvent e{filedaemon::bEventVssCreateSnapshots};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_prepare_snapshot()) {
     auto& inner = event.vss_prepare_snapshot();
     filedaemon::bEvent e{filedaemon::bEventVssPrepareSnapshot};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_set_backup_state()) {
     auto& inner = event.vss_set_backup_state();
     filedaemon::bEvent e{filedaemon::bEventVssSetBackupState};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_prepare_for_backup()) {
     auto& inner = event.vss_prepare_for_backup();
     filedaemon::bEvent e{filedaemon::bEventVssPrepareForBackup};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_backup_add_components()) {
     auto& inner = event.vss_backup_add_components();
     filedaemon::bEvent e{filedaemon::bEventVssBackupAddComponents};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_restore_set_components_selected()) {
     auto& inner = event.vss_restore_set_components_selected();
     filedaemon::bEvent e{filedaemon::bEventVssRestoreSetComponentsSelected};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_restore_load_companents_metadata()) {
     auto& inner = event.vss_restore_load_companents_metadata();
     filedaemon::bEvent e{filedaemon::bEventVssRestoreLoadComponentMetadata};
-    auto res = funcs.handlePluginEvent(ctx, &e, nullptr);
+    auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else {
     return Status(grpc::StatusCode::INVALID_ARGUMENT, "unknown event type");

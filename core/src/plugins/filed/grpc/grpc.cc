@@ -132,7 +132,6 @@ struct plugin_ctx {
     return true;
   }
 
-
   bool setup(PluginContext* bareos_ctx, const void* data)
   {
     if (!bareos_ctx || !data) { return false; }
@@ -166,7 +165,53 @@ struct plugin_ctx {
   bool needs_setup() { return !child.has_value(); }
 
 
+  struct request_deleter {
+    void operator()(bareos::plugin::handlePluginEventRequest* req) const
+    {
+      delete_request(req);
+    }
+  };
+
+  using req_ptr = std::unique_ptr<bareos::plugin::handlePluginEventRequest,
+                                  request_deleter>;
+
+  static inline req_ptr make_event_request(filedaemon::bEvent* e, void* data)
+  {
+    return req_ptr{
+        to_grpc(static_cast<filedaemon::bEventType>(e->eventType), data)};
+  }
+
+  struct cached_event {
+    filedaemon::bEventType event_type;
+    req_ptr request;
+
+    filedaemon::bEventType type() const { return event_type; }
+    bareos::plugin::handlePluginEventRequest* req() const
+    {
+      return request.get();
+    }
+  };
+
+  bool cache_event(filedaemon::bEvent* e, void* data)
+  {
+    auto req = make_event_request(e, data);
+    if (!req) { return false; }
+    cached_events.emplace_back(cached_event{
+        static_cast<filedaemon::bEventType>(e->eventType), std::move(req)});
+
+    return true;
+  }
+
+  std::vector<cached_event> clear_cached_events()
+  {
+    std::vector<cached_event> events{};
+    std::swap(events, cached_events);
+    return events;
+  }
+
+
  public:
+  std::vector<cached_event> cached_events;
   std::string name;
   std::string cmd;
   std::string plugin_name;
@@ -195,6 +240,38 @@ bRC newPlugin(PluginContext* ctx)
   RegisterBareosEvent(ctx, filedaemon::bEventEstimateCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventBackupCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventRestoreObject);
+
+  RegisterBareosEvent(ctx, filedaemon::bEventJobStart);
+  RegisterBareosEvent(ctx, filedaemon::bEventJobEnd);
+  RegisterBareosEvent(ctx, filedaemon::bEventStartBackupJob);
+  RegisterBareosEvent(ctx, filedaemon::bEventEndBackupJob);
+  RegisterBareosEvent(ctx, filedaemon::bEventStartRestoreJob);
+  RegisterBareosEvent(ctx, filedaemon::bEventEndRestoreJob);
+  RegisterBareosEvent(ctx, filedaemon::bEventStartVerifyJob);
+  RegisterBareosEvent(ctx, filedaemon::bEventEndVerifyJob);
+  RegisterBareosEvent(ctx, filedaemon::bEventBackupCommand);
+  RegisterBareosEvent(ctx, filedaemon::bEventRestoreCommand);
+  RegisterBareosEvent(ctx, filedaemon::bEventEstimateCommand);
+  RegisterBareosEvent(ctx, filedaemon::bEventLevel);
+  RegisterBareosEvent(ctx, filedaemon::bEventSince);
+  RegisterBareosEvent(ctx, filedaemon::bEventCancelCommand);
+  RegisterBareosEvent(ctx, filedaemon::bEventRestoreObject);
+  RegisterBareosEvent(ctx, filedaemon::bEventEndFileSet);
+  RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
+  RegisterBareosEvent(ctx, filedaemon::bEventOptionPlugin);
+  RegisterBareosEvent(ctx, filedaemon::bEventHandleBackupFile);
+  RegisterBareosEvent(ctx, filedaemon::bEventNewPluginOptions);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssInitializeForBackup);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssInitializeForRestore);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssSetBackupState);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssPrepareForBackup);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssBackupAddComponents);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssPrepareSnapshot);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssCreateSnapshots);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssRestoreLoadComponentMetadata);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssRestoreSetComponentsSelected);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssCloseRestore);
+  RegisterBareosEvent(ctx, filedaemon::bEventVssBackupComplete);
 
   return bRC_OK;
 }
@@ -239,9 +316,29 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
 
       DebugLog(ctx, 100, FMT_STRING("using cmd string \"{}\" for the plugin"),
                plugin->cmd);
+
+      auto cached = plugin->clear_cached_events();
+
+      DebugLog(ctx, 100, FMT_STRING("inserting {} cached events"),
+               cached.size());
+
+      bool cached_err = false;
+      for (auto& cached_event : cached) {
+        DebugLog(ctx, 100, FMT_STRING("inserting cached {}-event"),
+                 static_cast<std::size_t>(cached_event.type()));
+        if (plugin->child->con.handlePluginEvent(cached_event.type(),
+                                                 cached_event.req())
+            == bRC_Error) {
+          cached_err = true;
+        }
+      }
+
+
       // we do not want to give "grpc:" to the plugin
-      return plugin->child->con.handlePluginEvent(bEventPluginCommand,
-                                                  (void*)plugin->cmd.c_str());
+      bRC res = plugin->child->con.handlePluginEvent(
+          bEventPluginCommand, (void*)plugin->cmd.c_str());
+      if (cached_err) { return bRC_Error; }
+      return res;
     } break;
     case bEventNewPluginOptions:
       [[fallthrough]];
@@ -260,39 +357,43 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
                                                   (void*)plugin->cmd.c_str());
     } break;
     case bEventRestoreObject: {
-      if (data == nullptr) {
-        return plugin->child->con.handlePluginEvent(
-            bEventType(event->eventType), nullptr);
+      // the case where data == nullptr, happens if this is the last
+      // restore object for this plugin.   We can treat that specific
+      // event like any other event, as it requeres no special handling
+      // (no re_setup, etc.)
+      if (data != nullptr) {
+        auto* rop = reinterpret_cast<restore_object_pkt*>(data);
+        if (!plugin->re_setup(ctx, rop->plugin_name)) { return bRC_Error; }
+
+        char* old = rop->plugin_name;
+        rop->plugin_name = const_cast<char*>(plugin->cmd.c_str());
+        auto res = plugin->child->con.handlePluginEvent(
+            bEventType(event->eventType), (void*)rop);
+        rop->plugin_name = old;
+        return res;
       }
-
-      auto* rop = reinterpret_cast<restore_object_pkt*>(data);
-      if (!plugin->re_setup(ctx, rop->plugin_name)) { return bRC_Error; }
-
-      char* old = rop->plugin_name;
-      rop->plugin_name = const_cast<char*>(plugin->cmd.c_str());
-      auto res = plugin->child->con.handlePluginEvent(
-          bEventType(event->eventType), (void*)rop);
-      rop->plugin_name = old;
-      return res;
     } break;
+
     default: {
-      if (plugin->needs_setup()) {
-        DebugLog(
-            100,
-            FMT_STRING(
-                "cannot handle event {} as context was not set up properly"),
-            event->eventType);
-        return bRC_Error;
-      }
+      // intentionally left blank: normal events are handled below
     } break;
   }
 
-  if (!plugin->child) {
-    JobLog(ctx, M_FATAL, FMT_STRING("plugin is not running"));
-    return bRC_Error;
+  if (plugin->needs_setup()) {
+    DebugLog(100,
+             FMT_STRING("cannot handle event {} as context was not set up "
+                        "yet, caching ..."),
+             event->eventType);
+    if (!plugin->cache_event(event, data)) {
+      JobLog(ctx, M_FATAL, FMT_STRING("could not cache event {}"),
+             event->eventType);
+      return bRC_Error;
+    }
+    return bRC_OK;
+  } else {
+    return plugin->child->con.handlePluginEvent(
+        (filedaemon::bEventType)(event->eventType), data);
   }
-  return plugin->child->con.handlePluginEvent(
-      (filedaemon::bEventType)(event->eventType), data);
 }
 
 bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* pkt)

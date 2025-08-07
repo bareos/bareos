@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -176,7 +176,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         bareosfd.DebugMessage(100, "start_backup_file() called\n")
         if not self.files_to_backup:
             bareosfd.DebugMessage(100, "No files to backup\n")
-            return bRC_Skip
+            return bRC_Stop
 
         file_to_backup = self.files_to_backup.pop()
 

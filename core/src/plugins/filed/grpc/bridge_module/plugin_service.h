@@ -43,7 +43,8 @@ struct PluginFunctions {
                         void* value);
   bRC (*handlePluginEvent)(PluginContext* ctx,
                            filedaemon::bEvent* event,
-                           void* value);
+                           void* value,
+                           std::size_t size);
   bRC (*startBackupFile)(PluginContext* ctx, filedaemon::save_pkt* sp);
   bRC (*endBackupFile)(PluginContext* ctx);
   bRC (*startRestoreFile)(PluginContext* ctx, const char* cmd);
