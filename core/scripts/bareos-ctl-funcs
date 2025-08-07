@@ -37,9 +37,9 @@ pidofproc()
 
   # Finally try to extract it from ps
 
-  printf "%s" "$(ps aux | grep -i bareos)"
+  printf "%s" "$(ps ax | grep -i bareos)"
 
-  pid=$(ps -A | grep ${base} | awk '{print $1}' | head -n1)
+  pid=$(ps x | grep ${base} | awk '{print $1}' | head -n1)
   echo $pid
   return 0
 }
