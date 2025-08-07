@@ -32,7 +32,10 @@ pidofproc()
   fi
 
   # Finally try to extract it from ps
-  pid=$(ps | grep ${base} | awk '{print $1}' | head -n1)
+
+  printf "%s" "$(ps | grep ${base})"
+
+  pid=$(ps -A | grep ${base} | awk '{print $1}' | head -n1)
   echo $pid
   return 0
 }
