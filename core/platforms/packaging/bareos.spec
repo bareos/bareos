@@ -1063,10 +1063,10 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %doc webui/tests/selenium
 %{_datadir}/%{name}-webui/
 %dir /etc/bareos-webui
-%configtemplatedir/bareos-dir.d/console/admin.conf.example
-%configtemplatedir/bareos-dir.d/profile/webui-admin.conf
-%configtemplatedir/bareos-dir.d/profile/webui-limited.conf.example
-%configtemplatedir/bareos-dir.d/profile/webui-readonly.conf
+%{configtemplatedir}/bareos-dir.d/console/admin.conf.example
+# %%{configtemplatedir}/bareos-dir.d/profile/webui-admin.conf
+%{configtemplatedir}/bareos-dir.d/profile/webui-limited.conf.example
+# %%{configtemplatedir}/bareos-dir.d/profile/webui-readonly.conf
 %config(noreplace) /etc/bareos-webui/directors.ini
 %config(noreplace) /etc/bareos-webui/configuration.ini
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
@@ -1147,6 +1147,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{configtemplatedir}/bareos-dir.d/pool/Incremental.conf
 %{configtemplatedir}/bareos-dir.d/pool/Scratch.conf
 %{configtemplatedir}/bareos-dir.d/profile/operator.conf
+%{configtemplatedir}/bareos-dir.d/profile/webui-admin.conf
+%{configtemplatedir}/bareos-dir.d/profile/webui-readonly.conf
 %{configtemplatedir}/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf
 %{configtemplatedir}/bareos-dir.d/schedule/WeeklyCycle.conf
 %{configtemplatedir}/bareos-dir.d/storage/File.conf
