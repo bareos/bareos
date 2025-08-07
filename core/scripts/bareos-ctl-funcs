@@ -5,43 +5,51 @@ pidofproc()
 {
   pid=""
   set -x
-  # Test syntax.
-  if [ $# = 0 ]; then
-    echo "Usage: pidofproc {program} {port}"
-    return 1
-  fi
 
-  # Get base program name
-  base=$(basename $1)
+  for _ in {1..3}; do
+    # Test syntax.
+    if [ $# = 0 ]; then
+      echo "Usage: pidofproc {program} {port}"
+      return 1
+    fi
 
-  ret=0
+    # Get base program name
+    base=$(basename $1)
 
-  # First try "pidof"
-  if [ ! -z "${PIDOF}" -a -x "${PIDOF}" ]; then
-    pid=$(${PIDOF} $1)
-    ret=$?
+    ret=0
+
+    # First try "pidof"
+    if [ ! -z "${PIDOF}" -a -x "${PIDOF}" ]; then
+      pid=$(${PIDOF} $1)
+      ret=$?
+      if [ "$pid" != "" ]; then
+        echo $pid
+        return 0
+      fi
+    fi
+
+    # Next try "pgrep"
+    if [ ! -z "${PGREP}" -a -x "${PGREP}" ]; then
+      pid=$(${PGREP} -f $base)
+      ret=$?
+      if [ "$pid" != "" ]; then
+        echo $pid | cut -d' ' -f 1
+        return 0
+      fi
+    fi
+
+    # Finally try to extract it from ps
+
+    printf "%s" "$(ps ax | grep -i ${base})"
+
+    pid=$(ps x | grep ${base} | awk '{print $1}' | head -n1)
     if [ "$pid" != "" ]; then
       echo $pid
       return 0
     fi
-  fi
 
-  # Next try "pgrep"
-  if [ ! -z "${PGREP}" -a -x "${PGREP}" ]; then
-    pid=$(${PGREP} -f $base)
-    ret=$?
-    if [ "$pid" != "" ]; then
-      echo $pid | cut -d' ' -f 1
-      return 0
-    fi
-  fi
-
-  # Finally try to extract it from ps
-
-  printf "%s" "$(ps ax | grep -i ${base})"
-
-  pid=$(ps x | grep ${base} | awk '{print $1}' | head -n1)
-  echo $pid
+    sleep 0.1 || sleep 1
+  done
   set +x
   return 0
 }
