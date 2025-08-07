@@ -1,0 +1,105 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=ai-backup-bareos-fd
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+start_test
+
+# Delete file during incremental, do a consolidation and check deleted file disappears
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/extra.log
+messages
+.api 2
+@$out $tmp/delete-file_start.out
+@exec "sh -c 'echo \"tobedelete\" > ${tmp}/data/weird-files/tobedeleted'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'rm ${tmp}/data/weird-files/tobedeleted'"
+run job=$JobName level=Incremental yes
+wait
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/another-file'"
+run job=$JobName level=Incremental yes
+wait
+@$out $tmp/delete-file_consolidate.out
+run job=Consolidate yes
+wait
+@$out $tmp/delete-file_messages.out
+.api 1
+status director
+status client
+status storage=File
+messages
+END_OF_DATA
+
+run_bconsole
+
+# get the first to last jobid (taking into account test restarts)
+create_job=$(grep "jobid" "$tmp/delete-file_start.out" | tail -n 4 | head -n 1 | sed 's/["jobid:]//g' | xargs)
+delete_job=$(grep "jobid" "$tmp/delete-file_start.out" | tail -n 3 | head -n 1 | sed 's/["jobid:]//g' | xargs)
+empty_job=$(grep "jobid" "$tmp/delete-file_start.out" | tail -n 2 | head -n 1 | sed 's/["jobid:]//g' | xargs)
+lastinc_job=$(grep "jobid" "$tmp/delete-file_start.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
+cons_job=$(grep "jobid" "$tmp/delete-file_consolidate.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
+
+jobid=$((cons_job + 1))
+
+# Check if deleted file still present
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/delete-file_bvfs.out
+.bvfs_lsdirs jobid=${jobid} path=
+.bvfs_update
+.bvfs_lsdirs jobid=${jobid} path=
+.bvfs_versions jobid=${jobid} path=${tmp}/data/weird-files/ client=bareos-fd fname=tobedeleted
+messages
+END_OF_DATA
+run_bconsole
+
+expect_grep " A A C.*0.*AI-Consolidated-0003.*0" \
+            "$tmp/delete-file_bvfs.out" \
+            ".bvfs_versions did not find a deleted file backup."
+
+expect_grep "purging empty jobids ${empty_job}" \
+            "$tmp/delete-file_messages.out" \
+            "Removal of expected empty jobs was not successful"
+
+expect_grep "purged JobIds .*${delete_job} as they were consolidated into Job ${jobid}" \
+            "$tmp/delete-file_messages.out" \
+            "consolidation of expected jobs did not happen."
+
+expect_not_grep "purged JobIds .*${empty_job}.* as they were consolidated into Job ${jobid}" \
+		"$tmp/delete-file_messages.out" \
+		"consolidation of empty happened."
+
+expect_not_grep "purged JobIds .*${lastinc_job}.* as they were consolidated into Job ${jobid}" \
+		"$tmp/delete-file_messages.out" \
+		"consolidation of last incremental happened."
+
+end_test
