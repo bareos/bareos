@@ -3,6 +3,7 @@
 # A function to find the pid of a program.
 pidofproc()
 {
+  set -x
   pid=""
   # Test syntax.
   if [ $# = 0 ]; then
@@ -37,6 +38,7 @@ pidofproc()
 
   pid=$(ps -A | grep ${base} | awk '{print $1}' | head -n1)
   echo $pid
+  set +x
   return 0
 }
 
