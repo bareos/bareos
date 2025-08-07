@@ -59,7 +59,7 @@ END_OF_DATA
   command_count=$((command_count + 1))
 done | bin/bconsole
 
-if ! bin/bareos status >"${NULL_DEV}"; then
+if ! bin/bareos status 1>&2; then
   # we managed to create a crash, lets try to find out
   # where it went wrong
 
