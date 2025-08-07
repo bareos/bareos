@@ -173,7 +173,7 @@ status()
     return 2
   fi
 
-  echo "$base is stopped"
+  echo "$base ($pid) is stopped"
 
   return 3
 }
