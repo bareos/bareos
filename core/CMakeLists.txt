@@ -37,7 +37,6 @@ endif()
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 
-include(GNUInstallDirs)
 include(BareosHelper)
 
 # switch on CXX 20 Support
@@ -257,8 +256,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(PostgreSQL_INCLUDE_DIR "")
     set(PostgreSQL_TYPE_INCLUDE_DIR "")
   endif()
-  set(dynamic-storage-backends OFF)
-  set(HAVE_DYNAMIC_SD_BACKENDS 0)
+  set(dynamic-storage-backends
+      OFF
+      CACHE BOOL "Enable dynamic storage backends" FORCE
+  )
+  set(HAVE_DYNAMIC_SD_BACKENDS
+      0
+      CACHE INTERNAL "" FORCE
+  )
 
 else()
   add_compile_definitions("_FILE_OFFSET_BITS=64")
@@ -282,7 +287,6 @@ list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 
-include(BareosSetVariableDefaults)
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
