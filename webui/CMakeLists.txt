@@ -19,14 +19,11 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 project(bareos-webui)
 
-include(GNUInstallDirs)
-
 set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../SOURCES
     ${PROJECT_SOURCE_DIR}/../SOURCES ${PROJECT_SOURCE_DIR}/cmake
 )
 
-include(BareosSetVariableDefaults)
 include(BareosLocalBuildDefinitions OPTIONAL
         RESULT_VARIABLE BareosLocalBuildDefinitionsFile
 )
