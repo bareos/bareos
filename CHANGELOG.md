@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - truncate: fix return status bug [PR #2300]
 - stored: add new volume status 'Unlabeled' [PR #2207]
 - doc: add views & functions to developer catalog service chapter [PR #2328]
+- systemtests: add config-default test [PR #2332]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -191,4 +192,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2315]: https://github.com/bareos/bareos/pull/2315
 [PR #2321]: https://github.com/bareos/bareos/pull/2321
 [PR #2328]: https://github.com/bareos/bareos/pull/2328
+[PR #2332]: https://github.com/bareos/bareos/pull/2332
 [unreleased]: https://github.com/bareos/bareos/tree/master
