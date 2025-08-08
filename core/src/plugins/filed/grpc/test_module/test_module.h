@@ -107,7 +107,7 @@ void DebugLog(Severity severity,
               fmt::format_string<Args...> fmt,
               Args&&... args)
 {
-  auto formatted = fmt::vformat(fmt, fmt::make_format_args(args...));
+  auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
 
   DebugMessage(severity.severity, formatted, severity.line, severity.file,
                severity.function);
@@ -116,7 +116,7 @@ void DebugLog(Severity severity,
 template <typename... Args>
 void JobLog(Type type, fmt::format_string<Args...> fmt, Args&&... args)
 {
-  auto formatted = fmt::format(fmt, args...);
+  auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
 
   JobMessage(type.type, type.line, type.file, type.function, formatted);
 }
