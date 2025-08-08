@@ -50,7 +50,7 @@ pidofproc()
       return 0
     fi
 
-    sleep 0.1 || sleep 1
+    sleep 1
   done
   set +x
   return 0
