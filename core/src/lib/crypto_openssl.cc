@@ -1414,20 +1414,6 @@ struct CRYPTO_dynlock_value {
   pthread_mutex_t mutex;
 };
 
-/*
- * ***FIXME*** this is a sort of dummy to avoid having to
- *   change all the existing code to pass either a jcr or
- *   a NULL.  Passing a NULL causes the messages to be
- *   printed by the daemon -- not very good :-(
- */
-void OpensslPostErrors_impl(const char* file,
-                            int line,
-                            int type,
-                            const char* errstring)
-{
-  OpensslPostErrors_impl(file, line, NULL, type, errstring);
-}
-
 // Post all per-thread openssl errors
 void OpensslPostErrors_impl(const char* file,
                             int line,

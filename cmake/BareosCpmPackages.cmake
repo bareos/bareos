@@ -105,6 +105,13 @@ if(xxHash_ADDED)
   endif()
 endif()
 
+CPMAddPackage(
+  NAME indicators
+  VERSION "2.3"
+  GITHUB_REPOSITORY "sebsura/indicators"
+  GIT_TAG "dev/ssura/master/fix-stderr-output"
+)
+
 # Dump package information from CPM into a YAML file
 file(WRITE "${CMAKE_BINARY_DIR}/cpm-packages.yaml"
      "# List of packages provided by CPM\n" "---\n"

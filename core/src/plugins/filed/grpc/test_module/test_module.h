@@ -78,10 +78,10 @@ struct Severity {
   const char* function{};
   int line{};
 
-  Severity(int severity_,
-           const char* file_ = __builtin_FILE(),
-           const char* function_ = __builtin_FUNCTION(),
-           int line_ = __builtin_LINE())
+  constexpr Severity(int severity_,
+                     const char* file_ = __builtin_FILE(),
+                     const char* function_ = __builtin_FUNCTION(),
+                     int line_ = __builtin_LINE())
       : severity{severity_}, file{file_}, function{function_}, line{line_}
   {
   }
@@ -93,10 +93,10 @@ struct Type {
   const char* function{};
   int line{};
 
-  Type(bc::JMsgType type_,
-       const char* file_ = __builtin_FILE(),
-       const char* function_ = __builtin_FUNCTION(),
-       int line_ = __builtin_LINE())
+  constexpr Type(bc::JMsgType type_,
+                 const char* file_ = __builtin_FILE(),
+                 const char* function_ = __builtin_FUNCTION(),
+                 int line_ = __builtin_LINE())
       : type{type_}, file{file_}, function{function_}, line{line_}
   {
   }
@@ -114,9 +114,11 @@ void DebugLog(Severity severity,
 }
 
 template <typename... Args>
-void JobLog(Type type, fmt::format_string<Args...> fmt, Args&&... args)
+constexpr void JobLog(Type type,
+                      fmt::format_string<Args...> fmt,
+                      Args&&... args)
 {
-  auto formatted = fmt::format(fmt, args...);
+  auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
 
   JobMessage(type.type, type.line, type.file, type.function, formatted);
 }
