@@ -97,7 +97,7 @@ if(NOT client-only)
 endif()
 
 add_executable(generate-volumes generate_volume.cc ../stored/crc32/crc32.cc)
-target_link_libraries(generate-volumes CLI11::CLI11)
+target_link_libraries(generate-volumes CLI11::CLI11 Bareos::Lib)
 list(APPEND TOOLS_SBIN generate-volumes)
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")

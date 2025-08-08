@@ -30,7 +30,9 @@
 #include <memory>
 #include <chrono>
 
+#include "CLI/CLI.hpp"
 #include "lib/network_order.h"
+#include "lib/attribs.h"
 #include "stored/crc32/crc32.h"
 
 std::size_t operator""_k(unsigned long long val) { return val * 1024; }
@@ -125,6 +127,8 @@ struct context {
   std::string default_pool_type;
   std::string default_media_type;
 
+  std::string default_job_name;
+  std::string default_client_name;
   std::string default_fileset_name;
   std::string default_fileset_md5;
 
@@ -147,13 +151,13 @@ volume* DeclareVolume(context* ctx, std::string_view name)
 }
 
 struct record_writer {
-  char* begin;
+  char* begin{nullptr};
 
-  std::size_t current_size{0};
+  std::size_t current_record_size{0};
   std::size_t written_bytes{0};
-  std::size_t max_bytes;
+  std::size_t max_bytes{0};
 
-  char* size_ptr;
+  char* size_ptr{nullptr};
 
   record_writer(char* data, std::size_t size) noexcept
       : begin{data}, max_bytes{size}
@@ -161,13 +165,17 @@ struct record_writer {
   }
 
   std::size_t byte_size() const noexcept { return written_bytes; }
-  std::size_t record_size() const noexcept { return current_size; }
+  std::size_t record_size() const noexcept { return current_record_size; }
 
   void set_size_marker()
   {
     // todo: we have to handle the oom condition somehow
     assert(!size_ptr);
     size_ptr = begin + written_bytes;
+
+    // allocate space for size
+    written_bytes += 4;
+    current_record_size += 4;
   }
 };
 
@@ -178,7 +186,7 @@ void WriteBytes(record_writer& writer, std::string_view value)
   auto bytes_free = writer.max_bytes - writer.written_bytes;
 
   writer.written_bytes += bytes_to_write;
-  writer.current_size += bytes_to_write;
+  writer.current_record_size += bytes_to_write;
 
   if (bytes_free < bytes_to_write) { return; }
 
@@ -191,7 +199,7 @@ void WriteBytes(record_writer& writer, const char* data, std::size_t size)
   auto bytes_free = writer.max_bytes - writer.written_bytes;
 
   writer.written_bytes += size;
-  writer.current_size += size;
+  writer.current_record_size += size;
 
   if (bytes_free < size) { return; }
 
@@ -202,12 +210,12 @@ void WriteBytes(record_writer& writer, const char* data, std::size_t size)
 void PlaceholderBytes(record_writer& writer, std::size_t size)
 {
   writer.written_bytes += size;
-  writer.current_size += size;
+  writer.current_record_size += size;
 }
 
 void PhantomBytes(record_writer& writer, std::size_t size)
 {
-  writer.current_size += size;
+  writer.current_record_size += size;
 }
 
 template <typename T> void WriteNetwork(record_writer& writer, T val)
@@ -234,9 +242,9 @@ void BeginRecord(record_writer& writer,
 {
   WriteNetwork(writer, file_idx);
   WriteNetwork(writer, stream);
-
   writer.set_size_marker();
-  PlaceholderBytes(writer, sizeof(std::uint32_t));
+
+  writer.current_record_size = 0;
 }
 
 bool EndRecord(record_writer& writer)
@@ -244,15 +252,13 @@ bool EndRecord(record_writer& writer)
   assert(writer.size_ptr);
 
   network_order::network<std::uint32_t> net{
-      static_cast<std::uint32_t>(writer.current_size)};
+      static_cast<std::uint32_t>(writer.current_record_size)};
 
   auto bytes = net.stored_bytes();
 
   std::memcpy(writer.size_ptr, bytes.data(), bytes.size());
 
   writer.size_ptr = nullptr;
-
-  writer.current_size = 0;
 
   return writer.written_bytes <= writer.max_bytes;
 }
@@ -324,11 +330,10 @@ record_writer BeginBlock(block& b)
 
 bool EndBlock(block& b, job* j, record_writer& writer)
 {
-  if (!WriteBlockHeader(b, j)) { return false; }
-
   b.resize(writer.written_bytes);
   b.shrink_to_fit();
 
+  if (!WriteBlockHeader(b, j)) { return false; }
   return true;
 }
 
@@ -365,24 +370,22 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
       WriteNetwork(writer, BAREOS_TAPE_VERSION);
       WriteNetwork<std::uint32_t>(writer, job->vol_session_id);
 
-      WriteBytes(writer, ctx->default_pool_name);
-      WriteBytes(writer, ctx->default_pool_type);
-
       WriteNetwork<int64_t>(writer, job->vol_session_time);
       WriteNetwork<double>(writer, 0);
 
-      WriteNetwork(writer, job->vol_session_id);
-      WriteNetwork(writer, job->vol_session_time);
+      WriteBytes(writer, ctx->default_pool_name);
+      WriteBytes(writer, ctx->default_pool_type);
+
+      WriteBytes(writer, ctx->default_job_name);
+      WriteBytes(writer, ctx->default_client_name);
 
       WriteBytes(writer, job->name);
       WriteBytes(writer, ctx->default_fileset_name);
-
       WriteNetwork(writer, to_underlying(job->type));
       WriteNetwork(writer, to_underlying(job->level));
 
       WriteBytes(writer, ctx->default_fileset_md5);
 
-      BeginRecord(writer, job->vol_session_id, volume_label::StartOfSession);
       if (!EndRecord(writer)) {
         SetError(ctx, "{} byte block is too small for sos header!", size);
         return {};
@@ -411,10 +414,10 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
           //  attribsEx, 0, ff_pkt->delta_seq, 0);
 
           char encoded[1000];
-          EncodeStats(encoded, &s, sizeof(s), 0,
-                      to_underlying(Stream::FileData));
+          EncodeStat(encoded, &s, sizeof(s), 0,
+                     to_underlying(Stream::FileData));
 
-          WriteBytes(writer, reinterpret_cast<char*>(&s), sizeof(s));
+          WriteBytes(writer, std::string_view{encoded, strlen(encoded)});
 
           if (!EndRecord(writer)) {
             done = true;
@@ -444,9 +447,12 @@ void InsertVolumeLabel(context* ctx, volume* vol, job* j)
 
   BeginRecord(writer, 1, volume_label::Volume);
 
+  using btime_t = int64_t;
+
   WriteBytes(writer, "Bareos 2.0 immortal\n");
   WriteNetwork(writer, BAREOS_TAPE_VERSION);
-  WriteNetwork(writer, /* btime */ 0);
+  WriteNetwork(writer, btime_t{0});
+  WriteNetwork(writer, btime_t{0});
   WriteNetwork<double>(writer, 0.0);
   WriteNetwork<double>(writer, 0.0);
 
@@ -493,9 +499,45 @@ void InsertSmallBlock(context* ctx, volume* vol, job* job, std::size_t size)
 
 void FlushJob(context*, volume*, job*) {}
 
-int main()
+void full_write(int fd, std::size_t count, const char* bytes)
 {
+  std::size_t offset = 0;
+  while (offset < count) {
+    auto bytes_written = write(fd, bytes + offset, count - offset);
+    assert(bytes_written > 0);
+
+    offset += bytes_written;
+  }
+}
+
+int main(int argc, char* argv[])
+{
+  CLI::App app;
+
+  std::string archive_dir;
+  app.add_option("--archive_dir", archive_dir,
+                 "directory where the volumes will get stored")
+      ->required()
+      ->check(CLI::ExistingDirectory);
+
+  CLI11_PARSE(app, argc, argv);
+
   context ctx[1] = {};
+
+  ctx->default_pool_name = "Full";
+  ctx->default_pool_type = "Backup";
+  ctx->default_media_type = "File";
+
+  ctx->default_fileset_name = "MyFileSet";
+  ctx->default_fileset_md5 = "1234";
+
+  ctx->default_client_name = "localuser";
+  ctx->default_job_name = "backuper";
+
+  ctx->host_name = "fake.example.com";
+  ctx->prog_name = "generate-volume";
+  ctx->prog_version = "0.0.1";
+  ctx->prog_date = "1. Jan 1970";
 
   auto* job1 = DeclareJob(ctx, "Full");
   auto* job2 = DeclareJob(ctx, "Incr");
@@ -522,4 +564,15 @@ int main()
   InsertSmallBlock(ctx, vol1, job2, 64_k);
   FlushJob(ctx, vol2, job1);
   FlushJob(ctx, vol2, job2);
+
+  for (auto& volume : ctx->volumes) {
+    std::string path = archive_dir + "/" + volume->name;
+    int fd = open(path.c_str(), O_WRONLY | O_CREAT, 0664);
+
+    assert(fd >= 0);
+
+    for (auto& b : volume->blocks) { full_write(fd, b.size(), b.data()); }
+
+    close(fd);
+  }
 }
