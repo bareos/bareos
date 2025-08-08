@@ -605,14 +605,16 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
             // Job record already exists in DB
             update_db = false; /* don't change db in CreateJobRecord */
             if (g_verbose) {
-              Pmsg1(000, T_("SOS_LABEL: Found Job record for JobId: %d\n"),
-                    jr.JobId);
+              Pmsg1(000,
+                    T_("SOS_LABEL: Found Job record for Job: %s (%d => %d)\n"),
+                    jr.Job, label.JobId, jr.JobId);
             }
           } else {
             // Must create a Job record in DB
             if (!update_db) {
-              Pmsg1(000, T_("SOS_LABEL: Job record not found for JobId: %d\n"),
-                    jr.JobId);
+              Pmsg1(000,
+                    T_("SOS_LABEL: Job record not found for Job: %s (%d)\n"),
+                    jr.Job, label.JobId);
             }
           }
 
