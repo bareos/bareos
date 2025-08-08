@@ -170,11 +170,17 @@ class DirectorController extends AbstractActionController
             );
         }
 
+        $reportDetail = "";
+
+        if ($this->params()->fromQuery('detail') == true) {
+            $reportDetail = "all";
+        }
+
         $result = null;
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 2, "all");
+            $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 2, $reportDetail);
             $this->bsock->disconnect();
         } catch (Exception $e) {
             echo $e->getMessage();
