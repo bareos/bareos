@@ -42,9 +42,9 @@ pidofproc()
 
     # Finally try to extract it from ps
 
-    printf "%s\n" "$(ps ax | grep -i "${base}")" 1>&2
+    printf "%s\n" "$(ps -eax | grep -i "${base}")" 1>&2
 
-    pid=$(ps x | grep "${base}" | grep -v "grep" | awk '{print $1}' | head -n1)
+    pid=$(ps -ex | grep "${base}" | grep -v "grep" | awk '{print $1}' | head -n1)
     if [ "$pid" != "" ]; then
       echo "${pid}"
       return 0
