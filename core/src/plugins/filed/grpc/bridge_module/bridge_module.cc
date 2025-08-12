@@ -470,6 +470,8 @@ std::optional<bco::FileType> to_grpc(int32_t num)
       return bco::FileType::Deleted;
     case FT_JUNCTION:
       return bco::FileType::Junction;
+    case FT_RESTORE_FIRST:
+      return bco::FileType::RestoreObject;
     default:
       return std::nullopt;
   }
