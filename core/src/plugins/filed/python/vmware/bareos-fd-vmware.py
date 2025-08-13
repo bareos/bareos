@@ -52,7 +52,7 @@ from pyVmomi import vim
 from pyVmomi import vmodl
 import pyVim.task
 
-# adapt to change in pyVmomi 9.x
+# Try import pyVmomi 9.x first and fallback to old method
 try:
     from pyVmomi.VmomiJSONEncoder import VmomiJSONEncoder
 except ImportError:
