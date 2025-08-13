@@ -51,7 +51,12 @@ from pyVim.connect import SmartConnect, Disconnect
 from pyVmomi import vim
 from pyVmomi import vmodl
 import pyVim.task
-from pyVmomi.VmomiSupport import VmomiJSONEncoder
+
+# Try import pyVmomi 9.x first and fallback to old method
+try:
+    from pyVmomi.VmomiJSONEncoder import VmomiJSONEncoder
+except ImportError:
+    from pyVmomi.VmomiSupport import VmomiJSONEncoder
 
 # if OrderedDict is not available from collection (eg. SLES11),
 # the additional package python-ordereddict must be used
