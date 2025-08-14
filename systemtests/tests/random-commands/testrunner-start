@@ -1,0 +1,80 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+#shellcheck source=functions
+. functions
+
+start_test
+
+setup_data
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out $log_home/setup.out
+status director
+status client
+status storage=File
+
+
+label volume=Full-0001 pool=Full
+label volume=Full-0002 pool=Full
+label volume=Full-0003 pool=Full
+label volume=Incremental-0001 pool=Incremental
+label volume=Incremental-0002 pool=Incremental
+label volume=Incremental-0003 pool=Incremental
+label volume=Differential-0001 pool=Differential
+label volume=Differential-0002 pool=Differential
+label volume=Differential-0003 pool=Differential
+
+@$out $log_home/full.out
+run job=backup-bareos-fd level=Full yes
+wait
+messages
+@$out $log_home/diff.out
+run job=backup-bareos-fd level=Differential yes
+wait
+messages
+@$out $log_home/incr.out
+run job=backup-bareos-fd level=Incremental yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Backup OK" "$log_home/full.out" "full was not successful"
+expect_grep "Backup OK" "$log_home/diff.out" "diff was not successful"
+expect_grep "Backup OK" "$log_home/incr.out" "incr was not successful"
+
+end_test
