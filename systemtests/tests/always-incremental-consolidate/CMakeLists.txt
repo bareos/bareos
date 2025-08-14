@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,7 @@ if(NOT ISDISABLED)
     system:always-incremental-consolidate:01-full+incr
     PROPERTIES FIXTURES_SETUP
                "system:always-incremental-consolidate:full+incr-fixture"
-               FIXTURES_REQURIED
+               FIXTURES_REQUIRED
                "system:always-incremental-consolidate-fixture"
   )
   set_tests_properties(
@@ -50,13 +50,19 @@ if(NOT ISDISABLED)
       "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
   )
   set_tests_properties(
-    system:always-incremental-consolidate:05-priority
+    system:always-incremental-consolidate:05-consolidate-deleted-file
     PROPERTIES
       FIXTURES_REQUIRED
       "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
   )
   set_tests_properties(
-    system:always-incremental-consolidate:06-consolidate-duplicates
+    system:always-incremental-consolidate:06-priority
+    PROPERTIES
+      FIXTURES_REQUIRED
+      "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
+  )
+  set_tests_properties(
+    system:always-incremental-consolidate:07-consolidate-duplicates
     PROPERTIES
       FIXTURES_REQUIRED
       "system:always-incremental-consolidate:full+incr-fixture;system:always-incremental-consolidate-fixture"
