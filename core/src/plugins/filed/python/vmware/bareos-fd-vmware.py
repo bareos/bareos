@@ -4065,6 +4065,8 @@ class BareosVmConfigInfoToSpec(object):
                 add_device = self._transform_virtual_ensoniq1371(device)
             elif device["_vimtype"] == "vim.vm.device.VirtualUSB":
                 add_device = self._transform_virtual_usb(device)
+            elif device["_vimtype"] == "vim.vm.device.VirtualSerialPort":
+                add_device = self._transform_virtual_serial_port(device)
             else:
                 raise RuntimeError(
                     "Error: Unknown Device Type %s" % (device["_vimtype"])
@@ -4326,6 +4328,55 @@ class BareosVmConfigInfoToSpec(object):
         add_device.product = device["product"]
         add_device.speed = device["speed"]
         add_device.vendor = device["vendor"]
+
+        return add_device
+
+    def _transform_virtual_serial_port(self, device):
+        add_device = vim.vm.device.VirtualSerialPort()
+        add_device.key = device["key"] * -1
+        if (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualSerialPort.DeviceBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualSerialPort.DeviceBackingInfo()
+            add_device.backing.deviceName = device["backing"]["deviceName"]
+            add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
+        elif (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualSerialPort.URIBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualSerialPort.URIBackingInfo()
+            add_device.backing.direction = device["backing"]["direction"]
+            add_device.backing.proxyURI = device["backing"]["proxyURI"]
+            add_device.backing.serviceURI = device["backing"]["serviceURI"]
+        elif (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualSerialPort.PipeBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualSerialPort.PipeBackingInfo()
+            add_device.backing.endpoint = device["backing"]["endpoint"]
+            add_device.backing.noRxLoss = device["backing"]["noRxLoss"]
+            add_device.backing.pipeName = device["backing"]["pipeName"]
+        elif (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualSerialPort.FileBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualSerialPort.FileBackingInfo()
+            add_device.backing.backingObjectId = device["backing"]["backingObjectId"]
+            add_device.backing.datastore = vim.Datastore(device["backing"]["datastore"])
+            add_device.backing.fileName = device["backing"]["fileName"]
+        else:
+            raise RuntimeError(
+                "Unknown Backing for VirtualSerialPort: %s"
+                % (device["backing"]["_vimtype"])
+            )
+
+        if device["connectable"]:
+            add_device.connectable = self._transform_connectable(device)
+
+        self._transform_controllerkey_and_unitnumber(add_device, device)
+
+        add_device.yieldOnPoll = device["yieldOnPoll"]
 
         return add_device
 
