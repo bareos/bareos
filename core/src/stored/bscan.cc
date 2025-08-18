@@ -487,8 +487,7 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
   char digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
 
   if (rec->data_len > 0) {
-    mr.VolBytes
-        += rec->data_len + WRITE_RECHDR_LENGTH; /* Accumulate Volume bytes */
+    mr.VolBytes = dev->file_size;
     if (showProgress && currentVolumeSize > 0) {
       int pct = (mr.VolBytes * 100) / currentVolumeSize;
       if (pct != last_pct) {
@@ -554,7 +553,6 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
           }
           // Clear out some volume statistics that will be updated
           mr.VolJobs = mr.VolFiles = mr.VolBlocks = 0;
-          mr.VolBytes = rec->data_len + 20;
         } else {
           if (!update_db) {
             Pmsg1(000, T_("VOL_LABEL: Media record not found for Volume: %s\n"),
@@ -736,7 +734,10 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         }
         mr.VolFiles = rec->File;
         mr.VolBlocks = rec->Block;
-        mr.VolBytes += mr.VolBlocks * WRITE_BLKHDR_LENGTH; /* approx. */
+        /** TODO: test behaviour with multiple specified volumes ... **/
+        /** TODO: this should probably be done also in the mount function ...
+         * **/
+        mr.VolBytes = dev->file_size;
         mr.VolMounts++;
         UpdateMediaRecord(db, &mr);
         Pmsg3(0,
