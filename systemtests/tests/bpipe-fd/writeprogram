@@ -1,23 +1,25 @@
 #!/bin/bash
 
-read_program_file="tmp/readprogram.out"
-write_program_file="tmp/writeprogram.out"
+read_program_data_file="tmp/readprogram.$BareosJobId.$BareosJobLevel.dat"
+write_program_log="tmp/writeprogram.env"
 
 # write restored data from readprogram to file
-touch "$read_program_file" || {
-  echo "Cannot write to $read_program_file"
+touch "$read_program_data_file" || {
+  echo "Cannot write to $read_program_data_file"
   exit 1
 }
-cat >"$read_program_file"
+cat >"$read_program_data_file"
 
 # write environment variables from writeprogram to file
-touch "$write_program_file" || {
-  echo "Cannot write to $write_program_file"
+touch "$write_program_log" || {
+  echo "Cannot write to $write_program_log"
   exit 1
 }
-echo "Environment variables:" >>"$write_program_file"
-echo "BareosClientName='$BareosClientName'" >>"$write_program_file"
-echo "BareosJobId='$BareosJobId'" >>"$write_program_file"
-echo "BareosJobLevel='$BareosJobLevel'" >>"$write_program_file"
-echo "BareosSinceTime='$BareosSinceTime'" >>"$write_program_file"
-echo "BareosJobType='$BareosJobType'" >>"$write_program_file"
+{
+  echo "# Environment variables:"
+  echo "BareosClientName='$BareosClientName'"
+  echo "BareosJobId='$BareosJobId'"
+  echo "BareosJobLevel='$BareosJobLevel'"
+  echo "BareosSinceTime='$BareosSinceTime'"
+  echo "BareosJobType='$BareosJobType'"
+} >"$write_program_log"
