@@ -43,6 +43,6 @@ END_OF_DATA
 run_bconsole
 check_for_zombie_jobs storage=File
 
-check_two_logs
+check_log "$tmp/log2.out"
 check_restore_diff ${BackupDirectory}
 end_test

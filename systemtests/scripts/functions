@@ -841,33 +841,36 @@ check_two_logs()
   default_restore_log="${tmp}/log2.out"
   restore_log=${2:-${default_restore_log}}
 
-  if grep "^  Termination: *Backup OK" "$backup_log" >/dev/null 2>&1; then
+  if ! grep "^  Termination: *Backup OK$" "$backup_log" >/dev/null 2>&1; then
     bstat=${bstat:-$?}
+    print_debug "Backup not ok!"
   fi
 
   if grep "^  Termination: .*Backup Error" "$backup_log" >/dev/null 2>&1; then
-    echo "Backup error!"
     bstat=2
+    print_debug "Backup error!"
   fi
 
-  if grep "^  Termination: *Restore OK" "$restore_log" >/dev/null 2>&1; then
+  if ! grep "^  Termination: *Restore OK$" "$restore_log" >/dev/null 2>&1; then
     rstat=${rstat:-$?}
+    print_debug "Restore not ok!"
   fi
 
   if grep "^  Termination: .*Restore Error" "$restore_log" >/dev/null 2>&1; then
-    echo "Restore error!"
     rstat=2
+    print_debug "Restore error!"
   fi
   if grep ".* Warning: File count mismatch" "$restore_log" >/dev/null 2>&1; then
-    echo "File count mismatch in restore!"
     rstat=3
+    print_debug "File count mismatch in restore!"
   fi
   if grep "^  Termination: .*Verify Differences" "$restore_log" >/dev/null 2>&1; then
     rstat=4
+    print_debug "found differences during verify"
   fi
   if grep "Encoding error for database" "$backup_log" >/dev/null; then
-    print_debug "Found database encoding error"
     bstat=2
+    print_debug "Found database encoding error"
   fi
 }
 
@@ -885,6 +888,7 @@ check_log()
 
   if grep \
     -e "^  Termination: .*Backup Error" \
+    -e "^  Termination: .*Backup OK -- with warnings" \
     -e "^Can't find " \
     -e "Encoding error for database" \
     -e "^Could not find Client" \
@@ -899,7 +903,7 @@ check_log()
 
   if grep \
     -e "^  Termination: .*Restore Error" \
-    -e "^  Termination: *Restore OK -- warning" \
+    -e "^  Termination: *Restore OK -- with warnings" \
     -e "^  Termination: .*Verify Differences" \
     "$LOG"; then
     rstat=1
