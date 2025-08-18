@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - matrix: test the Debian ULC packages for OpenSSL 1.1 on Debian 11 instead of Debian 10 [PR #2322]
 - ndmp-bareos: Introduce incremental loop, restore one file explicitly [PR #2327]
+- vmware: upgrade vmware vix disklib to version 9.0
 
 ### Fixed
 - truncate: fix return status bug [PR #2308]
