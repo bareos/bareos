@@ -17,13 +17,23 @@ export TestName
 
 start_test
 
+currenttime=$(date +"%H:%M")
+
+echo "Schedule {
+  Name = \"TestCycle\"
+  Run = Level=Full daily at $currenttime
+}" >"$conf"/bareos-dir.d/schedule/TestCycle.conf
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
 messages
-@$out $tmp/log1.out
+@$out $tmp/setup.out
 setdebug level=100 storage=File trace=1
 setdebug level=100 director trace=1
 setdebug level=100 client trace=1
+reload
+@sleep 1
+@$out $tmp/log1.out
 status director
 status client
 status storage=File
@@ -43,6 +53,6 @@ END_OF_DATA
 run_bconsole
 check_for_zombie_jobs storage=File
 
-check_log "$tmp/log2.out"
-check_restore_diff ${BackupDirectory}
+check_two_logs
+check_restore_diff "${BackupDirectory}"
 end_test
