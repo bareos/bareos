@@ -130,6 +130,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "vadp_dumper_query_allocated_blocks_chunk_size",
             "fallback_to_full_cbt",
             "restore_allow_disks_mismatch",
+            "nvram_connect_timeout",
+            "nvram_readwrite_timeout",
         ]
         self.allowed_options = (
             self.mandatory_options_default
@@ -406,6 +408,20 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 100,
                 "Using Option %s=%s\n"
                 % (option, StringCodec.encode(self.options[option])),
+            )
+
+        if not self._check_option_integer_positive("nvram_connect_timeout"):
+            return bareosfd.bRC_Error
+
+        if self.options.get("nvram_connect_timeout"):
+            self.vadp.nvram_connect_timeout = int(self.options["nvram_connect_timeout"])
+
+        if not self._check_option_integer_positive("nvram_readwrite_timeout"):
+            return bareosfd.bRC_Error
+
+        if self.options.get("nvram_readwrite_timeout"):
+            self.vadp.nvram_readwrite_timeout = int(
+                self.options["nvram_readwrite_timeout"]
             )
 
         if not self.options.get("localvmdk") == "yes":
@@ -1262,6 +1278,8 @@ class BareosVADPWrapper(object):
         self.dumper_query_allocated_blocks_chunk_size = 1024
         self.vm_nvram_path = None
         self.vm_nvram_content = None
+        self.nvram_connect_timeout = 30
+        self.nvram_readwrite_timeout = 60
         self.restore_vm_created = False
         self.fallback_to_full_cbt = True
         self.restore_allow_disks_mismatch = False
@@ -2212,7 +2230,7 @@ class BareosVADPWrapper(object):
         vm_virtual_usb_devices = [
             device
             for device in self.vm.config.hardware.device
-            if type(device) == vim.vm.device.VirtualUSB
+            if type(device) is vim.vm.device.VirtualUSB
         ]
         if len(backup_virutal_usb_devices) > 0:
             if len(backup_virutal_usb_devices) != len(vm_virtual_usb_devices):
@@ -2314,7 +2332,7 @@ class BareosVADPWrapper(object):
         """
         self.disk_devices = []
         for hw_device in devicespec:
-            if type(hw_device) == vim.vm.device.VirtualDisk:
+            if type(hw_device) is vim.vm.device.VirtualDisk:
                 if hw_device.backing.diskMode in self.skip_disk_modes:
                     bareosfd.JobMessage(
                         bareosfd.M_INFO,
@@ -3405,7 +3423,7 @@ class BareosVADPWrapper(object):
             created_disk_backing_filename = [
                 device.backing.fileName
                 for device in self.vm.config.hardware.device
-                if type(device) == vim.vm.device.VirtualDisk
+                if type(device) is vim.vm.device.VirtualDisk
             ][disk_index]
 
             if expected_disk_backing_filename != created_disk_backing_filename:
@@ -3577,7 +3595,7 @@ class BareosVADPWrapper(object):
                     headers=request_headers,
                     cookies=cookie,
                     verify=verify_cert,
-                    timeout=5,
+                    timeout=(self.nvram_connect_timeout, self.nvram_readwrite_timeout),
                 )
                 response.raise_for_status()
             except Exception as exc:
@@ -3640,7 +3658,7 @@ class BareosVADPWrapper(object):
                     headers=request_headers,
                     cookies=cookie,
                     verify=verify_cert,
-                    timeout=5,
+                    timeout=(self.nvram_connect_timeout, self.nvram_readwrite_timeout),
                 )
                 response.raise_for_status()
             except Exception as exc:
