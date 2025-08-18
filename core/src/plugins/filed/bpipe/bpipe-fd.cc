@@ -322,7 +322,7 @@ static bRC pluginIO(PluginContext* ctx, io_pkt* io)
 
         if (io->flags & (O_CREAT | O_WRONLY)) {
           if (!p_ctx->writer) {
-            // this shouldnt happen as we check for this on plugin creation!
+            // this shouldn't happen as we check for this on plugin creation!
             Jmsg(ctx, M_FATAL, "bpipe-fd: writer command is not set\n");
             return bRC_Error;
           }
