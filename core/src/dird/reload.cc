@@ -234,6 +234,10 @@ bool DoReloadConfig()
   UnlockJobs();
 
   is_reloading.clear();
+
+
+  Scheduler::GetMainScheduler().WakeUp();
+
   return reloaded;
 }
 
