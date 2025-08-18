@@ -796,5 +796,20 @@ restore_allow_disks_mismatch (optional)
 
    Since :sinceVersion:`23.0.4: VMware Plugin`
 
+nvram_connect_timeout (optional)
+   When backing up or restoring NVRAM, this is done by HTTPS connection to
+   the vCenter server. The connect timeout in seconds can be changed using this
+   parameter, the default is 30s.
+
+   Since :sinceVersion:`25.0.5: VMware Plugin`
+
+nvram_readwrite_timeout (optional)
+   When backing up or restoring NVRAM, this is done by reading or writing it
+   via HTTPS connection to/from the vCenter server. The timeout in seconds 
+   can be changed using this parameter, the default is 60s.
+
+   Since :sinceVersion:`25.0.5: VMware Plugin`
+
+
 uuid (deprecated)
    The uuid option could be used instead of *dc*, *folder* and *vmname* to uniquely address a VM for backup. As the plugin since :sinceVersion:`22.0.0: VMware Plugin` is able recreate VMs in a different datacenter, folder or datastore, this option has become useless. When using uuid, restoring is only possible to the same still existing VM. It is recommended to change the configuration, as the uuid option will be dropped in the next version.
