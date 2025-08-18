@@ -61,6 +61,14 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         super(BareosFdPluginLocalFilesetWithRestoreObjects, self).__init__(
             plugindef, ["filename"]
         )
+
+        self.events = []
+        self.events.append(bareosfd.bEventStartBackupJob)
+        self.events.append(bareosfd.bEventStartRestoreJob)
+        self.events.append(bareosfd.bEventEndRestoreJob)
+        self.events.append(bareosfd.bEventRestoreObject)
+        bareosfd.RegisterEvents(self.events)
+
         self.files_to_backup = []
         self.allow = None
         self.deny = None
@@ -131,36 +139,44 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         if "deny" in self.options:
             self.deny = re.compile(self.options["deny"])
 
-        for listItem in config_file.read().splitlines():
-            if os.path.isfile(listItem) and self.filename_is_allowed(
-                listItem, self.allow, self.deny
-            ):
-                self.files_to_backup.append(listItem)
-            if os.path.isdir(listItem):
-                for topdir, dirNames, fileNames in os.walk(listItem):
-                    for fileName in fileNames:
-                        if self.filename_is_allowed(
-                            os.path.join(topdir, fileName),
-                            self.allow,
-                            self.deny,
-                        ):
-                            self.files_to_backup.append(os.path.join(topdir, fileName))
-                            if os.path.isfile(os.path.join(topdir, fileName)):
+        if chr(self.level) in ["I", "D"]:
+            for longrestoreobject_length in range(970, 998):
+                self.files_to_backup.append(
+                    "%s.longrestoreobject" % longrestoreobject_length
+                )
+        else:
+            for listItem in config_file.read().splitlines():
+                if os.path.isfile(listItem) and self.filename_is_allowed(
+                    listItem, self.allow, self.deny
+                ):
+                    self.files_to_backup.append(listItem)
+                if os.path.isdir(listItem):
+                    for topdir, dirNames, fileNames in os.walk(listItem):
+                        for fileName in fileNames:
+                            if self.filename_is_allowed(
+                                os.path.join(topdir, fileName),
+                                self.allow,
+                                self.deny,
+                            ):
                                 self.files_to_backup.append(
-                                    os.path.join(topdir, fileName) + ".sha256sum"
+                                    os.path.join(topdir, fileName)
                                 )
-                                self.files_to_backup.append(
-                                    os.path.join(topdir, fileName) + ".abspath"
-                                )
-            else:
-                if os.path.isfile(listItem):
-                    self.files_to_backup.append(listItem + ".sha256sum")
-                    self.files_to_backup.append(listItem + ".abspath")
+                                if os.path.isfile(os.path.join(topdir, fileName)):
+                                    self.files_to_backup.append(
+                                        os.path.join(topdir, fileName) + ".sha256sum"
+                                    )
+                                    self.files_to_backup.append(
+                                        os.path.join(topdir, fileName) + ".abspath"
+                                    )
+                else:
+                    if os.path.isfile(listItem):
+                        self.files_to_backup.append(listItem + ".sha256sum")
+                        self.files_to_backup.append(listItem + ".abspath")
 
-        for longrestoreobject_length in range(998, 1004):
-            self.files_to_backup.append(
-                "%s.longrestoreobject" % longrestoreobject_length
-            )
+            for longrestoreobject_length in range(998, 1004):
+                self.files_to_backup.append(
+                    "%s.longrestoreobject" % longrestoreobject_length
+                )
 
         if not self.files_to_backup:
             bareosfd.JobMessage(
@@ -306,6 +322,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         bareosfd.DebugMessage(
             100, "ROP.object(%s): %s\n" % (type(ROP.object), repr(ROP.object))
         )
+        bareosfd.JobMessage(M_INFO, f"received object {ROP.object_name}\n")
         orig_filename = os.path.splitext(ROP.object_name)[0]
         if ROP.object_name.endswith(".sha256sum"):
             self.sha256sums_by_filename[orig_filename] = ROP.object
