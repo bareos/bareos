@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,7 +42,7 @@ class SystemTimeSource : public TimeSource {
     // avoid loop counter wrap due to roundoff
     if (loop_count == 0) { loop_count = 1; }
 
-    while (running_ && loop_count--) {
+    while (!wakeup_requested.exchange(false) && running_ && loop_count--) {
       // cannot use condition variable because notify_one
       // does not securely work in a signal handler
       std::this_thread::sleep_for(wait_increment);
@@ -51,8 +51,11 @@ class SystemTimeSource : public TimeSource {
 
   void Terminate() override { running_ = false; }
 
+  void WakeUp() override { wakeup_requested.exchange(true); }
+
  private:
   std::atomic<bool> running_{true};
+  std::atomic<bool> wakeup_requested{false};
 };
 
 }  // namespace directordaemon

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -67,6 +67,8 @@ class SimulatedTimeSource : public directordaemon::TimeSource {
           + static_cast<time_t>(wait_interval_pseudo_seconds.count());
     while (running_ && clock_value_ < wait_until_) { clock_value_ += 1; }
   }
+
+  void WakeUp() override {}
 
   void Terminate() override { running_ = false; }
   time_t SystemTime() override { return clock_value_; }

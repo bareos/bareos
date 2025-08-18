@@ -129,6 +129,7 @@ class TestTimeSource : public TimeSource {
   {
     ++test_results.scheduler_sleep_count;
   }
+  void WakeUp() override {}
   void Terminate() override {}
 };
 
