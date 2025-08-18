@@ -1,9 +1,13 @@
 #!/bin/bash
 
+read_program_env_file="tmp/readprogram.$BareosJobLevel.env"
+
+{
 # output environment variables from readprogram
-echo "Environment variables from read-program:"
+echo "# Environment variables from read-program:"
 echo "BareosClientName='$BareosClientName'"
 echo "BareosJobId='$BareosJobId'"
 echo "BareosJobLevel='$BareosJobLevel'"
 echo "BareosSinceTime='$BareosSinceTime'"
 echo "BareosJobType='$BareosJobType'"
+} > "$read_program_env_file"

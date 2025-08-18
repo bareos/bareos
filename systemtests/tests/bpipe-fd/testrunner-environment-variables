@@ -18,19 +18,26 @@ export TestName
 
 start_test
 
-backup_file="${tmp}/backup_log.out"
-restore_file="${tmp}/restore_log.out"
+backup_log="${tmp}/log1.out"
+restore_log="${tmp}/log2.out"
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
 messages
 
-@$out $backup_file
+
+@$out $backup_log
 run job=backup-bareos-fd level=Full yes
 wait
 messages
 
-@$out $restore_file
+@$out $backup_log
+wait
+run job=backup-bareos-fd level=Incremental yes
+wait
+messages
+
+@$out $restore_log
 restore jobid=1 client=bareos-fd all done yes
 wait
 messages
@@ -43,40 +50,53 @@ END_OF_DATA
 # Further bconsole commands can be executed by "run_bconsole".
 run_bconsole
 
-# validate that backup and restore job were successfull
-if grep -q "*** Backup Error ***" "$backup_file"; then
-  cat "$backup_file"
-  exit 2
-fi
-
-if grep -q "*** Restore Error ***" "$restore_file"; then
-  cat "$restore_file"
-  exit 2
-fi
+check_two_logs
 
 # validate environment variables in readprogram / writeprogram
 expected_output=(
-  "BareosClientName" "bpipe-fd-fd" "bpipe-fd-fd"
-  "BareosJobId" "1" "2"
-  "BareosJobLevel" "F" " "
-  "BareosSinceTime" "0" "0"
-  "BareosJobType" "B" "R"
+  "BareosClientName" "bpipe-fd-fd" "bpipe-fd-fd" "bpipe-fd-fd"
+  "BareosJobId"      "1" "2" "3"
+  "BareosJobLevel"   "F" "I" " "
+#  "BareosSinceTime"  "0" "$now" "0"
+  "BareosJobType"    "B" "B" "R"
 )
 
-for ((i = 0; i < ${#expected_output[@]}; i += 3)); do
+for ((i = 0; i < ${#expected_output[@]}; i += 4)); do
   key="${expected_output[i + 0]}"
-  readprogram_value="${expected_output[i + 1]}"
-  writeprogram_value="${expected_output[i + 2]}"
-  if ! grep -q "${key}='${readprogram_value}'" "$tmp/readprogram.out"; then
-    echo "Environment variable '$key' is wrong in readprogram, expected '${readprogram_value}'."
-    cat "$tmp/readprogram.out"
+  readprogram_F_value="${expected_output[i + 1]}"
+  readprogram_I_value="${expected_output[i + 2]}"
+  writeprogram_value="${expected_output[i + 3]}"
+  if ! grep -q "${key}='${readprogram_F_value}'" "$tmp/readprogram.F.env"; then
+    echo "Environment variable '$key' is wrong in readprogram, expected '${readprogram_F_value}'."
+    grep "${key}" "$tmp/readprogram.F.env"
+    cat "$tmp/readprogram.F.env"
     exit 2
   fi
-  if ! grep -q "${key}='${writeprogram_value}'" "$tmp/writeprogram.out"; then
+  if ! grep -q "${key}='${readprogram_I_value}'" "$tmp/readprogram.I.env"; then
+    echo "Environment variable '$key' is wrong in readprogram, expected '${readprogram_I_value}'."
+    grep "${key}" "$tmp/readprogram.I.env"
+    cat "$tmp/readprogram.I.env"
+    exit 2
+  fi
+  if ! grep -q "${key}='${writeprogram_value}'" "$tmp/writeprogram.env"; then
     echo "Environment variable '$key' is wrong in writeprogram, expected '${writeprogram_value}'."
-    cat "$tmp/writeprogram.out"
+    grep "${key}" "$tmp/writeprogram.env"
+    cat "$tmp/writeprogram.env"
     exit 2
   fi
 done
+
+
+# check the plausibility of the value of BareosSinceTime
+source "$tmp/readprogram.I.env"
+now=$(date +%s)
+
+timediff=$((now - BareosSinceTime))
+if [ $timediff -gt 60 ] ; then
+    echo "BareosSinceTime is not plausible:"
+    echo "Now: $now BareosSincetime: $BareosSinceTime, diff: $timediff"
+    exit 3
+fi
+
 
 end_test
