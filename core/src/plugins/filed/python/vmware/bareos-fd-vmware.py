@@ -76,7 +76,12 @@ import BareosFdPluginBaseclass
 # #define REPLACE_IFOLDER  'o'
 # In python, we get this in restorepkt.replace as integer.
 # This may be added to bareos_fd_consts in the future:
-bReplace = dict(ALWAYS=ord("a"), IFNEWER=ord("w"), NEVER=ord("n"), IFOLDER=ord("o"))
+bReplace = {
+    "ALWAYS": ord("a"),
+    "IFNEWER": ord("w"),
+    "NEVER": ord("n"),
+    "IFOLDER": ord("o"),
+}
 
 
 @BareosPlugin
@@ -130,6 +135,8 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "vadp_dumper_query_allocated_blocks_chunk_size",
             "fallback_to_full_cbt",
             "restore_allow_disks_mismatch",
+            "nvram_connect_timeout",
+            "nvram_readwrite_timeout",
         ]
         self.allowed_options = (
             self.mandatory_options_default
@@ -406,6 +413,20 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 100,
                 "Using Option %s=%s\n"
                 % (option, StringCodec.encode(self.options[option])),
+            )
+
+        if not self._check_option_integer_positive("nvram_connect_timeout"):
+            return bareosfd.bRC_Error
+
+        if self.options.get("nvram_connect_timeout"):
+            self.vadp.nvram_connect_timeout = int(self.options["nvram_connect_timeout"])
+
+        if not self._check_option_integer_positive("nvram_readwrite_timeout"):
+            return bareosfd.bRC_Error
+
+        if self.options.get("nvram_readwrite_timeout"):
+            self.vadp.nvram_readwrite_timeout = int(
+                self.options["nvram_readwrite_timeout"]
             )
 
         if not self.options.get("localvmdk") == "yes":
@@ -1262,6 +1283,8 @@ class BareosVADPWrapper(object):
         self.dumper_query_allocated_blocks_chunk_size = 1024
         self.vm_nvram_path = None
         self.vm_nvram_content = None
+        self.nvram_connect_timeout = 30
+        self.nvram_readwrite_timeout = 60
         self.restore_vm_created = False
         self.fallback_to_full_cbt = True
         self.restore_allow_disks_mismatch = False
@@ -1672,8 +1695,8 @@ class BareosVADPWrapper(object):
         self.vm = search_index.FindByUuid(None, self.options["uuid"], True, True)
         if self.vm is None:
             return False
-        else:
-            return True
+
+        return True
 
     def _get_dcftree(self, dcf, folder, vm_folder):
         """
@@ -2212,7 +2235,7 @@ class BareosVADPWrapper(object):
         vm_virtual_usb_devices = [
             device
             for device in self.vm.config.hardware.device
-            if type(device) == vim.vm.device.VirtualUSB
+            if isinstance(device, vim.vm.device.VirtualUSB)
         ]
         if len(backup_virutal_usb_devices) > 0:
             if len(backup_virutal_usb_devices) != len(vm_virtual_usb_devices):
@@ -2314,7 +2337,7 @@ class BareosVADPWrapper(object):
         """
         self.disk_devices = []
         for hw_device in devicespec:
-            if type(hw_device) == vim.vm.device.VirtualDisk:
+            if isinstance(hw_device, vim.vm.device.VirtualDisk):
                 if hw_device.backing.diskMode in self.skip_disk_modes:
                     bareosfd.JobMessage(
                         bareosfd.M_INFO,
@@ -3405,7 +3428,7 @@ class BareosVADPWrapper(object):
             created_disk_backing_filename = [
                 device.backing.fileName
                 for device in self.vm.config.hardware.device
-                if type(device) == vim.vm.device.VirtualDisk
+                if isinstance(device, vim.vm.device.VirtualDisk)
             ][disk_index]
 
             if expected_disk_backing_filename != created_disk_backing_filename:
@@ -3577,7 +3600,7 @@ class BareosVADPWrapper(object):
                     headers=request_headers,
                     cookies=cookie,
                     verify=verify_cert,
-                    timeout=5,
+                    timeout=(self.nvram_connect_timeout, self.nvram_readwrite_timeout),
                 )
                 response.raise_for_status()
             except Exception as exc:
@@ -3640,7 +3663,7 @@ class BareosVADPWrapper(object):
                     headers=request_headers,
                     cookies=cookie,
                     verify=verify_cert,
-                    timeout=5,
+                    timeout=(self.nvram_connect_timeout, self.nvram_readwrite_timeout),
                 )
                 response.raise_for_status()
             except Exception as exc:
@@ -3738,8 +3761,8 @@ class StringCodec:
     def encode(var):
         if version_info.major < 3:
             return var.encode("utf-8")
-        else:
-            return var
+
+        return var
 
 
 class BareosVmConfigInfoToSpec(object):
@@ -4065,6 +4088,8 @@ class BareosVmConfigInfoToSpec(object):
                 add_device = self._transform_virtual_ensoniq1371(device)
             elif device["_vimtype"] == "vim.vm.device.VirtualUSB":
                 add_device = self._transform_virtual_usb(device)
+            elif device["_vimtype"] == "vim.vm.device.VirtualSerialPort":
+                add_device = self._transform_virtual_serial_port(device)
             else:
                 raise RuntimeError(
                     "Error: Unknown Device Type %s" % (device["_vimtype"])
@@ -4326,6 +4351,55 @@ class BareosVmConfigInfoToSpec(object):
         add_device.product = device["product"]
         add_device.speed = device["speed"]
         add_device.vendor = device["vendor"]
+
+        return add_device
+
+    def _transform_virtual_serial_port(self, device):
+        add_device = vim.vm.device.VirtualSerialPort()
+        add_device.key = device["key"] * -1
+        if (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualSerialPort.DeviceBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualSerialPort.DeviceBackingInfo()
+            add_device.backing.deviceName = device["backing"]["deviceName"]
+            add_device.backing.useAutoDetect = device["backing"]["useAutoDetect"]
+        elif (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualSerialPort.URIBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualSerialPort.URIBackingInfo()
+            add_device.backing.direction = device["backing"]["direction"]
+            add_device.backing.proxyURI = device["backing"]["proxyURI"]
+            add_device.backing.serviceURI = device["backing"]["serviceURI"]
+        elif (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualSerialPort.PipeBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualSerialPort.PipeBackingInfo()
+            add_device.backing.endpoint = device["backing"]["endpoint"]
+            add_device.backing.noRxLoss = device["backing"]["noRxLoss"]
+            add_device.backing.pipeName = device["backing"]["pipeName"]
+        elif (
+            device["backing"]["_vimtype"]
+            == "vim.vm.device.VirtualSerialPort.FileBackingInfo"
+        ):
+            add_device.backing = vim.vm.device.VirtualSerialPort.FileBackingInfo()
+            add_device.backing.backingObjectId = device["backing"]["backingObjectId"]
+            add_device.backing.datastore = vim.Datastore(device["backing"]["datastore"])
+            add_device.backing.fileName = device["backing"]["fileName"]
+        else:
+            raise RuntimeError(
+                "Unknown Backing for VirtualSerialPort: %s"
+                % (device["backing"]["_vimtype"])
+            )
+
+        if device["connectable"]:
+            add_device.connectable = self._transform_connectable(device)
+
+        self._transform_controllerkey_and_unitnumber(add_device, device)
+
+        add_device.yieldOnPoll = device["yieldOnPoll"]
 
         return add_device
 
