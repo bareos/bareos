@@ -734,10 +734,6 @@ static bool RecordCb(DeviceControlRecord* dcr, DeviceRecord* rec)
         }
         mr.VolFiles = rec->File;
         mr.VolBlocks = rec->Block;
-        /** TODO: test behaviour with multiple specified volumes ... **/
-        /** TODO: this should probably be done also in the mount function ...
-         * **/
-        mr.VolBytes = dev->file_size;
         mr.VolMounts++;
         UpdateMediaRecord(db, &mr);
         Pmsg3(0,
