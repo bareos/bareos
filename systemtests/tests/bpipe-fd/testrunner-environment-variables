@@ -21,6 +21,10 @@ start_test
 backup_log="${tmp}/log1.out"
 restore_log="${tmp}/log2.out"
 
+desired_since_time=$(date "+%F %R:%S")
+#yyyy-mm-dd hh:mm:ss
+desired_timestamp_of_since_time=$(date +%s --date="$desired_since_time")
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
 messages
@@ -33,7 +37,7 @@ messages
 
 @$out $backup_log
 wait
-run job=backup-bareos-fd level=Incremental yes
+run job=backup-bareos-fd level=Incremental since="$desired_since_time" yes
 wait
 messages
 
@@ -57,7 +61,7 @@ expected_output=(
   "BareosClientName" "bpipe-fd-fd" "bpipe-fd-fd" "bpipe-fd-fd"
   "BareosJobId"      "1" "2" "3"
   "BareosJobLevel"   "F" "I" " "
-#  "BareosSinceTime"  "0" "$now" "0"
+  "BareosSinceTime"  "0" "$desired_timestamp_of_since_time" "0"
   "BareosJobType"    "B" "B" "R"
 )
 
@@ -85,18 +89,5 @@ for ((i = 0; i < ${#expected_output[@]}; i += 4)); do
     exit 2
   fi
 done
-
-
-# check the plausibility of the value of BareosSinceTime
-source "$tmp/readprogram.I.env"
-now=$(date +%s)
-
-timediff=$((now - BareosSinceTime))
-if [ $timediff -gt 60 ] ; then
-    echo "BareosSinceTime is not plausible:"
-    echo "Now: $now BareosSincetime: $BareosSinceTime, diff: $timediff"
-    exit 3
-fi
-
 
 end_test
