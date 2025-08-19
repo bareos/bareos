@@ -76,7 +76,12 @@ import BareosFdPluginBaseclass
 # #define REPLACE_IFOLDER  'o'
 # In python, we get this in restorepkt.replace as integer.
 # This may be added to bareos_fd_consts in the future:
-bReplace = dict(ALWAYS=ord("a"), IFNEWER=ord("w"), NEVER=ord("n"), IFOLDER=ord("o"))
+bReplace = {
+    "ALWAYS": ord("a"),
+    "IFNEWER": ord("w"),
+    "NEVER": ord("n"),
+    "IFOLDER": ord("o"),
+}
 
 
 @BareosPlugin
@@ -1690,8 +1695,8 @@ class BareosVADPWrapper(object):
         self.vm = search_index.FindByUuid(None, self.options["uuid"], True, True)
         if self.vm is None:
             return False
-        else:
-            return True
+
+        return True
 
     def _get_dcftree(self, dcf, folder, vm_folder):
         """
@@ -2230,7 +2235,7 @@ class BareosVADPWrapper(object):
         vm_virtual_usb_devices = [
             device
             for device in self.vm.config.hardware.device
-            if type(device) is vim.vm.device.VirtualUSB
+            if isinstance(device, vim.vm.device.VirtualUSB)
         ]
         if len(backup_virutal_usb_devices) > 0:
             if len(backup_virutal_usb_devices) != len(vm_virtual_usb_devices):
@@ -2332,7 +2337,7 @@ class BareosVADPWrapper(object):
         """
         self.disk_devices = []
         for hw_device in devicespec:
-            if type(hw_device) is vim.vm.device.VirtualDisk:
+            if isinstance(hw_device, vim.vm.device.VirtualDisk):
                 if hw_device.backing.diskMode in self.skip_disk_modes:
                     bareosfd.JobMessage(
                         bareosfd.M_INFO,
@@ -3423,7 +3428,7 @@ class BareosVADPWrapper(object):
             created_disk_backing_filename = [
                 device.backing.fileName
                 for device in self.vm.config.hardware.device
-                if type(device) is vim.vm.device.VirtualDisk
+                if isinstance(device, vim.vm.device.VirtualDisk)
             ][disk_index]
 
             if expected_disk_backing_filename != created_disk_backing_filename:
@@ -3756,8 +3761,8 @@ class StringCodec:
     def encode(var):
         if version_info.major < 3:
             return var.encode("utf-8")
-        else:
-            return var
+
+        return var
 
 
 class BareosVmConfigInfoToSpec(object):
