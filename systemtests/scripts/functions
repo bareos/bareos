@@ -1233,8 +1233,8 @@ expect_grep()
     exit 1
   fi
 
-  if [ ! -f ${target_file} ]; then
-    echo "\"${target_file}\" does not exist or is not a file.\n"
+  if [ ! -f "${target_file}" ]; then
+    echo -e "${FUNCNAME[0]}: \"${target_file}\" does not exist or is not a file.\n"
     exit 1
   fi
 
@@ -1242,10 +1242,10 @@ expect_grep()
     echo -e "\n*** Fail: Expected line \"${expected_result}\" was not found in log file \"${target_file}\"." >&2
     estat=1
     if [ "${error_message}" != "" ]; then
-      echo "---Error--->${error_message}\n" >&2
+      echo -e "---Error--->${error_message}\n" >&2
     fi
     if [ "${possible_alternative}" != "" ]; then
-      echo -e "---Found instead--->$(grep "${possible_alternative}" ${target_file})\n" >&2
+      echo -e "---Found instead--->$(grep "${possible_alternative}" "${target_file}")\n" >&2
     fi
   fi
 }
