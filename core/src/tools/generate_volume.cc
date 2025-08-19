@@ -29,11 +29,13 @@
 #include <vector>
 #include <memory>
 #include <chrono>
+#include <fmt/format.h>
 
 #include "CLI/CLI.hpp"
 #include "lib/network_order.h"
 #include "lib/attribs.h"
 #include "stored/crc32/crc32.h"
+#include "include/filetypes.h"
 
 std::size_t operator""_k(unsigned long long val) { return val * 1024; }
 
@@ -110,6 +112,8 @@ struct job {
   file_state current_state;
 
   std::size_t current_record_size{128_k};
+
+  std::vector<char> scratch;
 
   job_level level;
   job_type type;
@@ -337,6 +341,18 @@ bool EndBlock(block& b, job* j, record_writer& writer)
   return true;
 }
 
+void full_write(int fd, const std::vector<char>& vec)
+{
+  std::size_t written = 0;
+  while (written < vec.size()) {
+    auto bytes_written = write(fd, vec.data() + written, vec.size() - written);
+
+    assert(bytes_written > 0);
+
+    written += bytes_written;
+  }
+}
+
 block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 {
   (void)split;
@@ -357,7 +373,9 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
       if (!job->vol_session_id) { job->vol_session_id = ++ctx->next_id; }
       if (!job->vol_session_time) {
         job->vol_session_time
-            = std::chrono::steady_clock::now().time_since_epoch().count();
+            = std::chrono::duration_cast<std::chrono::seconds>(
+                  std::chrono::steady_clock::now().time_since_epoch())
+                  .count();
       }
 
       if (job->type == job_type::Unset) { job->type = job_type::Backup; }
@@ -370,7 +388,8 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
       WriteNetwork(writer, BAREOS_TAPE_VERSION);
       WriteNetwork<std::uint32_t>(writer, job->vol_session_id);
 
-      WriteNetwork<int64_t>(writer, job->vol_session_time);
+      WriteNetwork<int64_t>(
+          writer, std::chrono::steady_clock::now().time_since_epoch().count());
       WriteNetwork<double>(writer, 0);
 
       WriteBytes(writer, ctx->default_pool_name);
@@ -397,7 +416,10 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 
       switch (job->current_state) {
         case job::file_state::ATTRIBUTES: {
-          if (job->fd >= 0) { close(job->fd); }
+          if (job->fd >= 0) {
+            close(job->fd);
+            job->fd = -1;
+          }
 
           job->fd = open("/tmp", O_TMPFILE | O_RDWR, 0664);
 
@@ -417,7 +439,15 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
           EncodeStat(encoded, &s, sizeof(s), 0,
                      to_underlying(Stream::FileData));
 
-          WriteBytes(writer, std::string_view{encoded, strlen(encoded)});
+          std::string_view attributes{encoded, strlen(encoded)};
+
+          using namespace std::literals;
+
+          std::string attribute_content = fmt::format(
+              "{} {} {}\0{}\0\0{}\0{}\0"sv, job->current_file_idx,
+              static_cast<int32_t>(FT_REG), "/file-name", attributes, "", 0);
+
+          WriteBytes(writer, attribute_content);
 
           if (!EndRecord(writer)) {
             done = true;
@@ -427,10 +457,37 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
           job->current_state = job::file_state::DATA;
         } break;
         case job::file_state::DATA: {
+          assert(job->fd >= 0);
+
+          BeginRecord(writer, to_underlying(Stream::FileData),
+                      job->current_file_idx);
+
+          auto& scratch = job->scratch;
+
+          auto record_size = job->current_record_size;
+          auto current_max_record_size = size - writer.byte_size();
+
+          if (record_size > current_max_record_size) {
+            record_size = current_max_record_size;
+          }
+
+          scratch.resize(record_size);
+
+          // fill with random data
+          memset(scratch.data(), 0xde, scratch.size());
+
+          full_write(job->fd, scratch);
+          WriteBytes(writer, scratch.data(), scratch.size());
+
+          scratch.resize(0);
+
+          if (!EndRecord(writer)) {
+            done = true;
+            break;
+          }
+
         } break;
       }
-
-      break;
     }
   }
 
