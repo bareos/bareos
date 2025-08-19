@@ -23,8 +23,12 @@ restore_log="${tmp}/log2.out"
 
 desired_since_time=$(date "+%F %R:%S")
 #yyyy-mm-dd hh:mm:ss
-desired_timestamp_of_since_time=$(date +%s --date="$desired_since_time")
 
+if [ "$(uname -s)" == FreeBSD ]; then
+  desired_timestamp_of_since_time=$(date -j -f "%Y-%m-%d%n %H:%M:%S" "$desired_since_time" "+%s")
+else
+  desired_timestamp_of_since_time=$(date +%s --date="$desired_since_time")
+fi
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
 messages
