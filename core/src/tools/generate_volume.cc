@@ -578,7 +578,15 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 
   bool done = false;
 
-  while (!done && writer.byte_size() < size) {
+  std::size_t goal_size = size;
+  if (split) {
+    // we want to produce a split record at the end,
+    // so we "reserve" (record_size / 3) bytes at the end
+    // where we will put our split record start
+    goal_size -= job->current_record_size / 3;
+  }
+
+  while (!done && writer.byte_size() < goal_size) {
     if (job->current_file_idx == 0) {
       // we need to first generate start of session record
 
@@ -646,14 +654,12 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 
             auto record_data_size = job->current_record_size;
 
-            if (!split) {
-              // if we are not a split record, we cannot try to write more data
-              // than there is space in the block
-              auto current_max_record_data_size = size - writer.byte_size();
+            // if we are not a split record, we cannot try to write more data
+            // than there is space in the block
+            auto current_max_record_data_size = goal_size - writer.byte_size();
 
-              if (record_data_size > current_max_record_data_size) {
-                record_data_size = current_max_record_data_size;
-              }
+            if (record_data_size > current_max_record_data_size) {
+              record_data_size = current_max_record_data_size;
             }
 
             auto& scratch = job->scratch;
@@ -668,19 +674,9 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
             job->leftover_offset = 0;
           }
 
-          auto current_max_record_data_size = size - writer.byte_size();
+          auto current_max_record_data_size = goal_size - writer.byte_size();
 
           if (record_data.size() > current_max_record_data_size) {
-            {
-              // todo: this isnt totally correct, this should only be done
-              // if we just created this record, i.e. we arent in a continuation
-              // record
-
-              PhantomBytes(writer,
-                           record_data.size() - current_max_record_data_size);
-            }
-
-
             record_data = record_data.subspan(0, current_max_record_data_size);
           }
 
@@ -697,6 +693,35 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
           }
         } break;
       }
+    }
+  }
+
+  if (split) {
+    // one record spanning multiple block is not yet supported
+    assert(job->leftovers().empty());
+    // 20 bytes should be the minimum
+    assert(writer.max_bytes > writer.written_bytes + 20);
+
+    BeginRecord(writer, to_underlying(Stream::FileData), job->current_file_idx);
+
+    auto size_delta = writer.max_bytes - writer.written_bytes;
+
+    auto& scratch = job->scratch;
+    scratch.resize(job->current_record_size);
+
+    // fill with random data
+    random_fill(ctx, scratch);
+    full_write(job->f.fd, scratch);
+
+    assert(scratch.size() > size_delta);
+
+    job->leftover_offset = size_delta;
+
+    WriteBytes(writer, scratch.data(), size_delta);
+
+    PhantomBytes(writer, scratch.size() - size_delta);
+    if (!EndRecord(writer)) {
+      SetError(ctx, "could not write split record to end of block");
     }
   }
 
