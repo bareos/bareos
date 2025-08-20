@@ -32,6 +32,7 @@
 #include <fmt/format.h>
 
 #include "CLI/CLI.hpp"
+#include "include/job_status.h"
 #include "lib/network_order.h"
 #include "lib/attribs.h"
 #include "stored/crc32/crc32.h"
@@ -91,6 +92,37 @@ enum class job_level : int32_t
   VirtualFull = 'f'            /**< Virtual full backup */
 };
 
+struct file_descriptor {
+  int fd{-1};
+
+  explicit file_descriptor(int fd_) : fd{fd_} {}
+
+  file_descriptor(const file_descriptor& other) = delete;
+  file_descriptor& operator=(const file_descriptor& other) = delete;
+
+  file_descriptor(file_descriptor&& other) { std::swap(fd, other.fd); }
+
+  file_descriptor& operator=(file_descriptor&& other)
+  {
+    std::swap(fd, other.fd);
+    return *this;
+  }
+
+  operator int() const { return fd; }
+
+  operator bool() const { return fd >= 0; }
+
+  ~file_descriptor()
+  {
+    if (fd >= 0) { close(fd); }
+  }
+};
+
+struct file {
+  std::string name;
+  file_descriptor fd;
+};
+
 struct job {
   std::string name{};
 
@@ -119,6 +151,20 @@ struct job {
   job_type type;
 
   job(std::string_view name_) : name(name_) {}
+
+
+  struct {
+    std::uint32_t errors;
+    std::uint32_t status;
+
+    // std::uint32_t jobfiles;
+    std::uint64_t jobbytes;
+
+    std::uint32_t start_file;
+    std::uint32_t start_block;
+    std::uint32_t end_file;
+    std::uint32_t end_block;
+  } statistics = {};
 };
 
 struct context {
@@ -140,9 +186,15 @@ struct context {
   std::string prog_name;
   std::string prog_version;
   std::string prog_date;
+
+  std::vector<std::string> errors;
 };
 
-void SetError(context*, const char*, ...) {}
+template <typename... Args>
+void SetError(context* ctx, fmt::format_string<Args...> fmt, Args&&... args)
+{
+  ctx->errors.emplace_back(fmt::format(fmt, std::forward<Args>(args)...));
+}
 
 job* DeclareJob(context* ctx, std::string_view name)
 {
@@ -353,6 +405,108 @@ void full_write(int fd, const std::vector<char>& vec)
   }
 }
 
+bool InsertSessionStartLabel(record_writer& writer, context* ctx, job* job)
+{
+  if (!job->vol_session_id) { job->vol_session_id = ++ctx->next_id; }
+  if (!job->vol_session_time) {
+    job->vol_session_time
+        = std::chrono::duration_cast<std::chrono::seconds>(
+              std::chrono::steady_clock::now().time_since_epoch())
+              .count();
+  }
+
+  if (job->type == job_type::Unset) { job->type = job_type::Backup; }
+
+  if (job->level == job_level::Unset) { job->level = job_level::Full; }
+
+  BeginRecord(writer, job->vol_session_id, volume_label::StartOfSession);
+
+  WriteBytes(writer, "Bareos 2.0 immortal\n");
+  WriteNetwork(writer, BAREOS_TAPE_VERSION);
+  WriteNetwork<std::uint32_t>(writer, job->vol_session_id);
+
+  WriteNetwork<int64_t>(
+      writer, std::chrono::steady_clock::now().time_since_epoch().count());
+  WriteNetwork<double>(writer, 0);
+
+  WriteBytes(writer, ctx->default_pool_name);
+  WriteBytes(writer, ctx->default_pool_type);
+
+  WriteBytes(writer, ctx->default_job_name);
+  WriteBytes(writer, ctx->default_client_name);
+
+  WriteBytes(writer, job->name);
+  WriteBytes(writer, ctx->default_fileset_name);
+  WriteNetwork(writer, to_underlying(job->type));
+  WriteNetwork(writer, to_underlying(job->level));
+
+  WriteBytes(writer, ctx->default_fileset_md5);
+
+  if (!EndRecord(writer)) {
+    SetError(ctx, "{} byte block is too small for sos header!",
+             writer.max_bytes);
+    return false;
+  }
+
+  return true;
+}
+
+bool InsertSessionEndLabel(record_writer& writer, context* ctx, job* job)
+{
+  if (!job->vol_session_id) { job->vol_session_id = ++ctx->next_id; }
+  if (!job->vol_session_time) {
+    job->vol_session_time
+        = std::chrono::duration_cast<std::chrono::seconds>(
+              std::chrono::steady_clock::now().time_since_epoch())
+              .count();
+  }
+
+  if (job->type == job_type::Unset) { job->type = job_type::Backup; }
+
+  if (job->level == job_level::Unset) { job->level = job_level::Full; }
+
+  BeginRecord(writer, job->vol_session_id, volume_label::EndOfSession);
+
+  WriteBytes(writer, "Bareos 2.0 immortal\n");
+  WriteNetwork(writer, BAREOS_TAPE_VERSION);
+  WriteNetwork<std::uint32_t>(writer, job->vol_session_id);
+
+  WriteNetwork<int64_t>(
+      writer, std::chrono::steady_clock::now().time_since_epoch().count());
+  WriteNetwork<double>(writer, 0);
+
+  WriteBytes(writer, ctx->default_pool_name);
+  WriteBytes(writer, ctx->default_pool_type);
+
+  WriteBytes(writer, ctx->default_job_name);
+  WriteBytes(writer, ctx->default_client_name);
+
+  WriteBytes(writer, job->name);
+  WriteBytes(writer, ctx->default_fileset_name);
+  WriteNetwork(writer, to_underlying(job->type));
+  WriteNetwork(writer, to_underlying(job->level));
+
+  WriteBytes(writer, ctx->default_fileset_md5);
+
+
+  WriteNetwork(writer, std::uint32_t(job->current_file_idx));
+  WriteNetwork(writer, job->statistics.jobbytes);
+  WriteNetwork(writer, job->statistics.start_block);
+  WriteNetwork(writer, job->statistics.end_block);
+  WriteNetwork(writer, job->statistics.start_file);
+  WriteNetwork(writer, job->statistics.end_file);
+  WriteNetwork(writer, job->statistics.errors);
+  WriteNetwork(writer, job->statistics.status);
+
+  if (!EndRecord(writer)) {
+    SetError(ctx, "{} byte block is too small for sos header!",
+             writer.max_bytes);
+    return false;
+  }
+
+  return true;
+}
+
 block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 {
   (void)split;
@@ -370,45 +524,7 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
     if (job->current_file_idx == 0) {
       // we need to first generate start of session record
 
-      if (!job->vol_session_id) { job->vol_session_id = ++ctx->next_id; }
-      if (!job->vol_session_time) {
-        job->vol_session_time
-            = std::chrono::duration_cast<std::chrono::seconds>(
-                  std::chrono::steady_clock::now().time_since_epoch())
-                  .count();
-      }
-
-      if (job->type == job_type::Unset) { job->type = job_type::Backup; }
-
-      if (job->level == job_level::Unset) { job->level = job_level::Full; }
-
-      BeginRecord(writer, job->vol_session_id, volume_label::StartOfSession);
-
-      WriteBytes(writer, "Bareos 2.0 immortal\n");
-      WriteNetwork(writer, BAREOS_TAPE_VERSION);
-      WriteNetwork<std::uint32_t>(writer, job->vol_session_id);
-
-      WriteNetwork<int64_t>(
-          writer, std::chrono::steady_clock::now().time_since_epoch().count());
-      WriteNetwork<double>(writer, 0);
-
-      WriteBytes(writer, ctx->default_pool_name);
-      WriteBytes(writer, ctx->default_pool_type);
-
-      WriteBytes(writer, ctx->default_job_name);
-      WriteBytes(writer, ctx->default_client_name);
-
-      WriteBytes(writer, job->name);
-      WriteBytes(writer, ctx->default_fileset_name);
-      WriteNetwork(writer, to_underlying(job->type));
-      WriteNetwork(writer, to_underlying(job->level));
-
-      WriteBytes(writer, ctx->default_fileset_md5);
-
-      if (!EndRecord(writer)) {
-        SetError(ctx, "{} byte block is too small for sos header!", size);
-        return {};
-      }
+      if (!InsertSessionStartLabel(writer, ctx, job)) { return {}; }
 
       job->current_file_idx += 1;
     } else {
@@ -464,14 +580,19 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 
           auto& scratch = job->scratch;
 
-          auto record_size = job->current_record_size;
-          auto current_max_record_size = size - writer.byte_size();
+          auto record_data_size = job->current_record_size;
 
-          if (record_size > current_max_record_size) {
-            record_size = current_max_record_size;
+          // if we are not a split record, we cannot try to write more data than
+          // there is space in the block
+          auto current_max_record_data_size = size - writer.byte_size();
+
+          if (record_data_size > current_max_record_data_size) {
+            record_data_size = current_max_record_data_size;
           }
 
-          scratch.resize(record_size);
+          job->statistics.jobbytes += record_data_size;
+
+          scratch.resize(record_data_size);
 
           // fill with random data
           memset(scratch.data(), 0xde, scratch.size());
@@ -534,6 +655,13 @@ void InsertVolumeLabel(context* ctx, volume* vol, job* j)
 void InsertBlock(context* ctx, volume* vol, job* job)
 {
   if (vol->blocks.empty()) { InsertVolumeLabel(ctx, vol, job); }
+  if (job->current_file_idx == 0) {
+    std::uint64_t start_addr = 0;
+    for (auto& b : vol->blocks) { start_addr += b.size(); }
+
+    job->statistics.start_block = static_cast<std::uint32_t>(start_addr);
+    job->statistics.start_file = static_cast<std::uint32_t>(start_addr >> 32);
+  }
   vol->blocks.emplace_back(NextBlock(ctx, job, false, vol->block_size));
 }
 
@@ -554,7 +682,36 @@ void InsertSmallBlock(context* ctx, volume* vol, job* job, std::size_t size)
   }
 }
 
-void FlushJob(context*, volume*, job*) {}
+void FlushJob(context* ctx, volume* vol, job* job)
+{
+  if (vol->blocks.empty()) { InsertVolumeLabel(ctx, vol, job); }
+
+  block data;
+  data.resize(vol->block_size);
+  auto writer = BeginBlock(data);
+
+  /* TODO: flush rest of split block */
+
+  std::uint64_t end_addr = 0;
+  for (auto& b : vol->blocks) { end_addr += b.size(); }
+  job->statistics.end_block = static_cast<std::uint32_t>(end_addr);
+  job->statistics.end_file = static_cast<std::uint32_t>(end_addr >> 32);
+
+  job->statistics.status = JS_Terminated;
+
+  if (!InsertSessionEndLabel(writer, ctx, job)) {
+    SetError(ctx, "could not insert session end label for job {}",
+             job->name.c_str());
+    return;
+  }
+
+  if (!EndBlock(data, job, writer)) {
+    SetError(ctx, "could not flush job {}", job->name.c_str());
+    return;
+  }
+
+  vol->blocks.emplace_back(std::move(data));
+}
 
 void full_write(int fd, std::size_t count, const char* bytes)
 {
@@ -566,6 +723,8 @@ void full_write(int fd, std::size_t count, const char* bytes)
     offset += bytes_written;
   }
 }
+
+void print_error(std::string_view error) { fmt::print("[ERROR] {}\n", error); }
 
 int main(int argc, char* argv[])
 {
@@ -621,6 +780,11 @@ int main(int argc, char* argv[])
   InsertSmallBlock(ctx, vol1, job2, 64_k);
   FlushJob(ctx, vol2, job1);
   FlushJob(ctx, vol2, job2);
+
+  if (!ctx->errors.empty()) {
+    for (auto& error : ctx->errors) { print_error(error); }
+    return 1;
+  }
 
   for (auto& volume : ctx->volumes) {
     std::string path = archive_dir + "/" + volume->name;
