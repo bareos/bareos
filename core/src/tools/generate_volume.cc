@@ -30,6 +30,7 @@
 #include <memory>
 #include <chrono>
 #include <fmt/format.h>
+#include <span>
 
 #include "CLI/CLI.hpp"
 #include "include/job_status.h"
@@ -159,6 +160,18 @@ struct job {
   std::size_t current_record_size{128_k};
 
   std::vector<char> scratch;
+  // there are no leftovers, if leftover_offset >= scratch.size()
+  std::size_t leftover_offset;
+
+  std::span<char> leftovers()
+  {
+    if (leftover_offset >= scratch.size()) {
+      return {};
+    } else {
+      return {scratch.data() + leftover_offset,
+              scratch.size() - leftover_offset};
+    }
+  }
 
   job_level level;
   job_type type;
@@ -324,6 +337,14 @@ void BeginRecord(record_writer& writer,
   writer.current_record_size = 0;
 }
 
+void BeginContinuationRecord(record_writer& writer,
+                             std::int32_t stream,
+                             std::int32_t file_idx)
+{
+  assert(stream >= 0);
+  BeginRecord(writer, -stream, file_idx);
+}
+
 bool EndRecord(record_writer& writer)
 {
   assert(writer.size_ptr);
@@ -414,7 +435,7 @@ bool EndBlock(block& b, job* j, record_writer& writer)
   return true;
 }
 
-void full_write(int fd, const std::vector<char>& vec)
+void full_write(int fd, std::span<char> vec)
 {
   std::size_t written = 0;
   while (written < vec.size()) {
@@ -548,8 +569,6 @@ void random_fill(context* ctx, std::vector<char>& vec)
 
 block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 {
-  (void)split;
-
   block data;
   data.resize(size);
 
@@ -571,6 +590,8 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 
       switch (job->current_state) {
         case job::file_state::ATTRIBUTES: {
+          assert(job->leftovers().empty());
+
           if (job->f.fd) { job->files.emplace_back(std::move(job->f)); }
 
           job->f.name = fmt::format("/file-{}", job->current_file_idx);
@@ -603,6 +624,7 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
           WriteBytes(writer, attribute_content);
 
           if (!EndRecord(writer)) {
+            SetError(ctx, "could not insert file attributes");
             done = true;
             break;
           }
@@ -611,35 +633,65 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
         } break;
         case job::file_state::DATA: {
           assert(job->f.fd);
+          std::span<char> record_data;
 
-          BeginRecord(writer, to_underlying(Stream::FileData),
-                      job->current_file_idx);
+          if (auto leftovers = job->leftovers(); !leftovers.empty()) {
+            BeginContinuationRecord(writer, to_underlying(Stream::FileData),
+                                    job->current_file_idx);
 
-          auto& scratch = job->scratch;
+            record_data = leftovers;
+          } else {
+            BeginRecord(writer, to_underlying(Stream::FileData),
+                        job->current_file_idx);
 
-          auto record_data_size = job->current_record_size;
+            auto record_data_size = job->current_record_size;
 
-          // if we are not a split record, we cannot try to write more data than
-          // there is space in the block
-          auto current_max_record_data_size = size - writer.byte_size();
+            if (!split) {
+              // if we are not a split record, we cannot try to write more data
+              // than there is space in the block
+              auto current_max_record_data_size = size - writer.byte_size();
 
-          if (record_data_size > current_max_record_data_size) {
-            record_data_size = current_max_record_data_size;
+              if (record_data_size > current_max_record_data_size) {
+                record_data_size = current_max_record_data_size;
+              }
+            }
+
+            auto& scratch = job->scratch;
+            scratch.resize(record_data_size);
+
+            // fill with random data
+            random_fill(ctx, scratch);
+            full_write(job->f.fd, scratch);
+
+            record_data = std::span{scratch};
+
+            job->leftover_offset = 0;
           }
 
-          job->statistics.jobbytes += record_data_size;
+          auto current_max_record_data_size = size - writer.byte_size();
 
-          scratch.resize(record_data_size);
+          if (record_data.size() > current_max_record_data_size) {
+            {
+              // todo: this isnt totally correct, this should only be done
+              // if we just created this record, i.e. we arent in a continuation
+              // record
 
-          // fill with random data
-          random_fill(ctx, scratch);
+              PhantomBytes(writer,
+                           record_data.size() - current_max_record_data_size);
+            }
 
-          full_write(job->f.fd, scratch);
-          WriteBytes(writer, scratch.data(), scratch.size());
 
-          scratch.resize(0);
+            record_data = record_data.subspan(0, current_max_record_data_size);
+          }
+
+
+          job->statistics.jobbytes += record_data.size();
+          job->leftover_offset += record_data.size();
+
+          WriteBytes(writer, record_data.data(), record_data.size());
 
           if (!EndRecord(writer)) {
+            SetError(ctx, "could not insert file data");
             done = true;
             break;
           }
@@ -727,29 +779,58 @@ void FlushJob(context* ctx, volume* vol, job* job)
 
   if (job->f.fd) { job->files.emplace_back(std::move(job->f)); }
 
-  auto writer = BeginBlock(data);
+  bool done = false;
 
-  /* TODO: flush rest of split block */
+  while (!done) {
+    auto writer = BeginBlock(data);
 
-  std::uint64_t end_addr = 0;
-  for (auto& b : vol->blocks) { end_addr += b.size(); }
-  job->statistics.end_block = static_cast<std::uint32_t>(end_addr);
-  job->statistics.end_file = static_cast<std::uint32_t>(end_addr >> 32);
+    /* TODO: flush rest of split block */
 
-  job->statistics.status = JS_Terminated;
+    if (auto leftovers = job->leftovers(); !leftovers.empty()) {
+      BeginContinuationRecord(writer, to_underlying(Stream::FileData),
+                              job->current_file_idx);
 
-  if (!InsertSessionEndLabel(writer, ctx, job)) {
-    SetError(ctx, "could not insert session end label for job {}",
-             job->name.c_str());
-    return;
+
+      auto current_max_record_data_size = writer.max_bytes - writer.byte_size();
+
+      if (leftovers.size() >= current_max_record_data_size) {
+        leftovers = leftovers.subspan(0, current_max_record_data_size);
+      }
+
+      job->leftover_offset += leftovers.size();
+
+      WriteBytes(writer, leftovers.data(), leftovers.size());
+
+      if (!EndRecord(writer)) {
+        SetError(ctx, "could not flush rest of split block");
+        return;
+      }
+    }
+
+    std::uint64_t end_addr = 0;
+    for (auto& b : vol->blocks) { end_addr += b.size(); }
+    job->statistics.end_block = static_cast<std::uint32_t>(end_addr);
+    job->statistics.end_file = static_cast<std::uint32_t>(end_addr >> 32);
+
+    job->statistics.status = JS_Terminated;
+
+    // TODO: if this doesnt work because of size constraints, we should
+    // create a new block and try again
+    if (!InsertSessionEndLabel(writer, ctx, job)) {
+      SetError(ctx, "could not insert session end label for job {}",
+               job->name.c_str());
+      return;
+    } else {
+      done = true;
+    }
+
+    if (!EndBlock(data, job, writer)) {
+      SetError(ctx, "could not flush job {}", job->name.c_str());
+      return;
+    }
+
+    vol->blocks.emplace_back(std::move(data));
   }
-
-  if (!EndBlock(data, job, writer)) {
-    SetError(ctx, "could not flush job {}", job->name.c_str());
-    return;
-  }
-
-  vol->blocks.emplace_back(std::move(data));
 }
 
 void full_write(int fd, std::size_t count, const char* bytes)
