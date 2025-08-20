@@ -38,6 +38,19 @@
 #include "stored/crc32/crc32.h"
 #include "include/filetypes.h"
 
+using rand_type = std::uint64_t;
+
+rand_type next_random(rand_type& state)
+{
+  // xorshift 64
+  rand_type val = state;
+  val ^= val << 13;
+  val ^= val >> 7;
+  val ^= val << 17;
+  state = val;
+  return val;
+}
+
 std::size_t operator""_k(unsigned long long val) { return val * 1024; }
 
 std::size_t operator""_m(unsigned long long val) { return val * 1024_k; }
@@ -95,6 +108,7 @@ enum class job_level : int32_t
 struct file_descriptor {
   int fd{-1};
 
+  file_descriptor() = default;
   explicit file_descriptor(int fd_) : fd{fd_} {}
 
   file_descriptor(const file_descriptor& other) = delete;
@@ -109,7 +123,6 @@ struct file_descriptor {
   }
 
   operator int() const { return fd; }
-
   operator bool() const { return fd >= 0; }
 
   ~file_descriptor()
@@ -139,7 +152,7 @@ struct job {
     // DIGEST,
   };
 
-  int fd{-1};
+  file f;
 
   file_state current_state;
 
@@ -165,6 +178,8 @@ struct job {
     std::uint32_t end_file;
     std::uint32_t end_block;
   } statistics = {};
+
+  std::vector<file> files;
 };
 
 struct context {
@@ -188,6 +203,12 @@ struct context {
   std::string prog_date;
 
   std::vector<std::string> errors;
+
+  std::string archive_dir;
+  std::string data_dir;
+
+
+  rand_type rand_state;
 };
 
 template <typename... Args>
@@ -507,6 +528,24 @@ bool InsertSessionEndLabel(record_writer& writer, context* ctx, job* job)
   return true;
 }
 
+void random_fill(context* ctx, std::vector<char>& vec)
+{
+  if constexpr (1) {
+    std::size_t i = 0;
+    for (; i + sizeof(rand_type) < vec.size(); i += sizeof(rand_type)) {
+      rand_type rand_value = next_random(ctx->rand_state);
+      memcpy(&vec[i], &rand_value, sizeof(rand_value));
+    }
+
+    if (i != vec.size()) {
+      rand_type rand_value = next_random(ctx->rand_state);
+      memcpy(&vec[i], &rand_value, vec.size() - i);
+    }
+  } else {
+    memset(vec.data(), 0xde, vec.size());
+  }
+}
+
 block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 {
   (void)split;
@@ -532,24 +571,21 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 
       switch (job->current_state) {
         case job::file_state::ATTRIBUTES: {
-          if (job->fd >= 0) {
-            close(job->fd);
-            job->fd = -1;
-          }
+          if (job->f.fd) { job->files.emplace_back(std::move(job->f)); }
 
-          job->fd = open("/tmp", O_TMPFILE | O_RDWR, 0664);
+          job->f.name = fmt::format("/file-{}", job->current_file_idx);
 
-          assert(job->fd >= 0);
+          auto tmp_dir = ctx->data_dir.empty() ? "/tmp" : ctx->data_dir.c_str();
+
+          job->f.fd = file_descriptor{open(tmp_dir, O_TMPFILE | O_RDWR, 0600)};
+
+          assert(job->f.fd);
 
           struct stat s;
-          assert(fstat(job->fd, &s) >= 0);
+          assert(fstat(job->f.fd, &s) >= 0);
 
           BeginRecord(writer, to_underlying(Stream::UnixAttribs),
                       job->current_file_idx);
-
-          // ("%" PRIu32 " %d %s%c%s%c%c%s%c%d%c", jcr->JobFiles,
-          //  ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0, 0,
-          //  attribsEx, 0, ff_pkt->delta_seq, 0);
 
           char encoded[1000];
           EncodeStat(encoded, &s, sizeof(s), 0,
@@ -559,9 +595,10 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
 
           using namespace std::literals;
 
-          std::string attribute_content = fmt::format(
-              "{} {} {}\0{}\0\0{}\0{}\0"sv, job->current_file_idx,
-              static_cast<int32_t>(FT_REG), "/file-name", attributes, "", 0);
+          std::string attribute_content
+              = fmt::format("{} {} {}\0{}\0\0{}\0{}\0"sv, job->current_file_idx,
+                            static_cast<int32_t>(FT_REG), job->f.name.c_str(),
+                            attributes, "", 0);
 
           WriteBytes(writer, attribute_content);
 
@@ -573,7 +610,7 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
           job->current_state = job::file_state::DATA;
         } break;
         case job::file_state::DATA: {
-          assert(job->fd >= 0);
+          assert(job->f.fd);
 
           BeginRecord(writer, to_underlying(Stream::FileData),
                       job->current_file_idx);
@@ -595,9 +632,9 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
           scratch.resize(record_data_size);
 
           // fill with random data
-          memset(scratch.data(), 0xde, scratch.size());
+          random_fill(ctx, scratch);
 
-          full_write(job->fd, scratch);
+          full_write(job->f.fd, scratch);
           WriteBytes(writer, scratch.data(), scratch.size());
 
           scratch.resize(0);
@@ -606,7 +643,6 @@ block NextBlock(context* ctx, job* job, bool split, std::size_t size)
             done = true;
             break;
           }
-
         } break;
       }
     }
@@ -688,6 +724,9 @@ void FlushJob(context* ctx, volume* vol, job* job)
 
   block data;
   data.resize(vol->block_size);
+
+  if (job->f.fd) { job->files.emplace_back(std::move(job->f)); }
+
   auto writer = BeginBlock(data);
 
   /* TODO: flush rest of split block */
@@ -731,14 +770,27 @@ int main(int argc, char* argv[])
   CLI::App app;
 
   std::string archive_dir;
+  std::string data_dir;
   app.add_option("--archive_dir", archive_dir,
                  "directory where the volumes will get stored")
       ->required()
       ->check(CLI::ExistingDirectory);
 
+  app.add_option("--data_dir", data_dir,
+                 "directory where the job files will get stored")
+      ->check(CLI::ExistingDirectory);
+
   CLI11_PARSE(app, argc, argv);
 
   context ctx[1] = {};
+
+  srand(time(nullptr));
+  ctx->rand_state = rand();
+
+  fmt::print("initial random seed: {}\n", ctx->rand_state);
+
+  ctx->archive_dir = archive_dir;
+  ctx->data_dir = data_dir;
 
   ctx->default_pool_name = "Full";
   ctx->default_pool_type = "Backup";
@@ -795,5 +847,31 @@ int main(int argc, char* argv[])
     for (auto& b : volume->blocks) { full_write(fd, b.size(), b.data()); }
 
     close(fd);
+  }
+
+  if (!data_dir.empty()) {
+    // realise the files so that we can later compare them to the
+    // restore result
+    for (auto& job : ctx->jobs) {
+      // std::string job_path = ctx->job_path(job.get());
+
+      // printf("making %s\n", job_path.c_str());
+
+      // if (mkdir(job_path.c_str(), 0644) < 0) {
+      //   if (errno != EEXIST) {
+      //     perror(fmt::format("could not create dir {}", job_path).c_str());
+      //     continue;
+      //   }
+      // }
+
+      for (auto& file : job->files) {
+        // note: file.name starts with /
+        std::string path
+            = fmt::format("{}{}-{}", ctx->data_dir, file.name, job->name);
+        if (linkat(file.fd, "", AT_FDCWD, path.c_str(), AT_EMPTY_PATH) < 0) {
+          perror(fmt::format("could not realise file {}", path).c_str());
+        }
+      }
+    }
   }
 }
