@@ -341,14 +341,14 @@ char* edit_utime(utime_t val, char* buf, int buf_len)
       = {60 * 60 * 24 * 365, 60 * 60 * 24 * 30, 60 * 60 * 24, 60 * 60, 60};
   static const char* mod[] = {"year", "month", "day", "hour", "min"};
   int i;
-  uint32_t times;
+  std::size_t times;
 
   *buf = 0;
   for (i = 0; i < 5; i++) {
-    times = (uint32_t)(val / mult[i]);
+    times = val / mult[i];
     if (times > 0) {
       val = val - (utime_t)times * mult[i];
-      Bsnprintf(mybuf, sizeof(mybuf), "%d %s%s ", times, mod[i],
+      Bsnprintf(mybuf, sizeof(mybuf), "%zu %s%s ", times, mod[i],
                 times > 1 ? "s" : "");
       bstrncat(buf, mybuf, buf_len);
     }

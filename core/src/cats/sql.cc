@@ -332,11 +332,11 @@ int BareosDb::GetSqlRecordMax(JobControlRecord* jcr)
   return retval;
 }
 
-char* BareosDb::strerror()
+char* BareosDb::strerror(libbareos::source_location loc)
 {
   // it does not make sense to call this function without holding the lock,
   // as it may not be the real error anymore.
-  AssertOwnership();
+  AssertOwnership(loc);
   return errmsg;
 }
 

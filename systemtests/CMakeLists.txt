@@ -170,6 +170,7 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     testfind
     bdedupestimate
     gentestdata
+    random-commands
 )
 
 if(TARGET bareos_vadp_dumper)

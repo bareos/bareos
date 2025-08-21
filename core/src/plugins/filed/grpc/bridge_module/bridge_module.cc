@@ -1336,7 +1336,7 @@ std::optional<std::string_view> inferior_setup(PluginContext* ctx,
 
     if (!load_plugin) {
       JobLog(bc::JMSG_ERROR, FMT_STRING("could not find loadPlugin: Err={}"),
-             strerror(errno));
+             std::string_view{strerror(errno)});
       return std::nullopt;
     }
 
