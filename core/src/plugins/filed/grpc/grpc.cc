@@ -232,6 +232,7 @@ bRC newPlugin(PluginContext* ctx)
   /* the actual setup is done inside of handle plugin event, because
    * at the moment we have no idea which plugin to start! */
 
+  // these are the events that this plugin _needs_ to work
   RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventNewPluginOptions);
   RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
@@ -240,27 +241,19 @@ bRC newPlugin(PluginContext* ctx)
   RegisterBareosEvent(ctx, filedaemon::bEventEstimateCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventBackupCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventRestoreObject);
+  RegisterBareosEvent(ctx, filedaemon::bEventNewPluginOptions);
 
+  // these are the early events that the module _might_ want,
+  // but wouldnt get since its initialised _after_ they are emitted
   RegisterBareosEvent(ctx, filedaemon::bEventJobStart);
-  RegisterBareosEvent(ctx, filedaemon::bEventJobEnd);
   RegisterBareosEvent(ctx, filedaemon::bEventStartBackupJob);
-  RegisterBareosEvent(ctx, filedaemon::bEventEndBackupJob);
   RegisterBareosEvent(ctx, filedaemon::bEventStartRestoreJob);
-  RegisterBareosEvent(ctx, filedaemon::bEventEndRestoreJob);
   RegisterBareosEvent(ctx, filedaemon::bEventStartVerifyJob);
-  RegisterBareosEvent(ctx, filedaemon::bEventEndVerifyJob);
-  RegisterBareosEvent(ctx, filedaemon::bEventBackupCommand);
-  RegisterBareosEvent(ctx, filedaemon::bEventRestoreCommand);
-  RegisterBareosEvent(ctx, filedaemon::bEventEstimateCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventLevel);
   RegisterBareosEvent(ctx, filedaemon::bEventSince);
-  RegisterBareosEvent(ctx, filedaemon::bEventCancelCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventRestoreObject);
-  RegisterBareosEvent(ctx, filedaemon::bEventEndFileSet);
-  RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventOptionPlugin);
-  RegisterBareosEvent(ctx, filedaemon::bEventHandleBackupFile);
-  RegisterBareosEvent(ctx, filedaemon::bEventNewPluginOptions);
+
   RegisterBareosEvent(ctx, filedaemon::bEventVssInitializeForBackup);
   RegisterBareosEvent(ctx, filedaemon::bEventVssInitializeForRestore);
   RegisterBareosEvent(ctx, filedaemon::bEventVssSetBackupState);
@@ -270,8 +263,6 @@ bRC newPlugin(PluginContext* ctx)
   RegisterBareosEvent(ctx, filedaemon::bEventVssCreateSnapshots);
   RegisterBareosEvent(ctx, filedaemon::bEventVssRestoreLoadComponentMetadata);
   RegisterBareosEvent(ctx, filedaemon::bEventVssRestoreSetComponentsSelected);
-  RegisterBareosEvent(ctx, filedaemon::bEventVssCloseRestore);
-  RegisterBareosEvent(ctx, filedaemon::bEventVssBackupComplete);
 
   return bRC_OK;
 }
