@@ -104,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Build FreeBSD for major versions 14 / 13 (instead of minor releases) [PR #2117]
 - matrix: test the Debian ULC packages for OpenSSL 1.1 on Debian 11 instead of Debian 10 [PR #2321]
 - ndmp-bareos: Introduce incremental loop, restore 2nd file explicitly [PR #2269]
+- systemtest: always incremental add one job with one removed file [PR #2329]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -192,5 +193,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2315]: https://github.com/bareos/bareos/pull/2315
 [PR #2321]: https://github.com/bareos/bareos/pull/2321
 [PR #2328]: https://github.com/bareos/bareos/pull/2328
+[PR #2329]: https://github.com/bareos/bareos/pull/2329
 [PR #2332]: https://github.com/bareos/bareos/pull/2332
 [unreleased]: https://github.com/bareos/bareos/tree/master
