@@ -852,6 +852,10 @@ void ConfigurationParser::StorePluginNames(lexer* lc,
     *alistvalue = new alist<const char*>(10, owned_by_alist);
   }
 
+  auto saved = lc->options;
+  lc->options.set(lexer::options::ForceString); /* force string, i.e. convert
+                                                   numbers/identifiers */
+
   bool finish = false;
   while (!finish) {
     switch (LexGetToken(lc, BCT_ALL)) {
@@ -879,6 +883,7 @@ void ConfigurationParser::StorePluginNames(lexer* lc,
         break;
     }
   }
+  lc->options = saved;
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }

@@ -290,7 +290,7 @@ class BareosFdTaskClass(BareosFdPluginBaseclass):
 
         if not len(self.tasks):
             self.job_message(bJobMessageType[b'M_WARNING'], 'no tasks defined')
-            return bRCs[b'bRC_Skip']
+            return bRCs[b'bRC_Stop']
 
         self.task = self.tasks.pop()
         stat_pkt = StatPacket()
