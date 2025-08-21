@@ -23,23 +23,25 @@
 
 #include "crypto.h"
 
-#define VarArgMacroSelect(_1, _2, _3, _4, ...) _4
-#define OpensslPostErrors(...)                        \
-  VarArgMacroSelect(__VA_ARGS__, OpensslPostErrors_2, \
-                    OpensslPostErrors_1)(__VA_ARGS__)
-#define OpensslPostErrors_1(type, errstring) \
-  OpensslPostErrors_impl(__FILE__, __LINE__, (type), (errstring))
-#define OpensslPostErrors_2(jcr, type, errstring) \
-  OpensslPostErrors_impl(__FILE__, __LINE__, (jcr), (type), (errstring))
-void OpensslPostErrors_impl(const char* file,
-                            int line,
-                            int type,
-                            const char* errstring);
 void OpensslPostErrors_impl(const char* file,
                             int line,
                             JobControlRecord* jcr,
                             int type,
                             const char* errstring);
+
+
+static inline void OpensslPostErrors_impl(const char* file,
+                                          int line,
+                                          int type,
+                                          const char* errstring)
+{
+  return OpensslPostErrors_impl(file, line, nullptr, type, errstring);
+}
+
+
+#define OpensslPostErrors(...) \
+  OpensslPostErrors_impl(__FILE__, __LINE__, __VA_ARGS__)
+
 int OpensslInitThreads(void);
 void OpensslCleanupThreads(void);
 DIGEST* OpensslDigestNew(JobControlRecord* jcr, crypto_digest_t type);
