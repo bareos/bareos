@@ -19,6 +19,12 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
+@$out $tmp/copy-summary.out
+run copy
+no
+@$out $tmp/copy-with-next-pool-override-summary.out
+run copy-with-next-pool-override
+no
 @$out $copy_log
 label volume=TestCopyVolume001 storage=File2 pool=FullCopy
 run copy yes
@@ -81,5 +87,15 @@ expect_grep "|.*B.*|" \
             "Copy job was not upgraded to backup after original backup was pruned."
 
 check_for_zombie_jobs storage=File
+
+
+# check whether next-pool directive overrides work (in job resource > in pool resource)
+expect_grep "NextPool:      FullCopy" \
+            "$tmp/copy-summary.out" \
+            "Wrong next pool selected for job 'copy' ."
+
+expect_grep "NextPool:      AnotherFullCopy" \
+            "$tmp/copy-with-next-pool-override-summary.out" \
+            "Wrong next pool selected for job 'copy-with-next-pool-override' ."
 
 end_test
