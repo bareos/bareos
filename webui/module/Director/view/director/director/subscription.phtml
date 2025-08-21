@@ -51,7 +51,7 @@ As well it is a prerequisite to get official
 </p>
 <p>
 The backup unit report below will show estimated number of subscriptions.
-Please request a quote by sending the report via email to <a href="mailto:sales@bareos.com?subject=Request%20for%20Quote">sales@bareos.com</a>.
+Please request a quote by sending the summary report via email to <a href="mailto:sales@bareos.com?subject=Request%20for%20Quote">sales@bareos.com</a>.
 </p>
 
 <div class="panel panel-default">
@@ -99,11 +99,12 @@ Please request a quote by sending the report via email to <a href="mailto:sales@
 </div>
 </div>
 </div>
-
+<div class="row row-no-gutters">
 <?php
     if ($this->directorOutput) {
-        echo '<a class="btn btn-primary" href="' . $this->url('director', array('action' => 'backupunitreport')) . '">' . $this->translate('Download Backup Unit Report (JSON)') . '</a>';
+        echo '<a class="btn btn-primary" href="' . $this->url('director', array('action' => 'backupunitreport')) . '">' . $this->translate('Download Summary Backup Unit Report (JSON)') . '</a> ';
+        echo '<a class="btn btn-default" href="' . $this->url('director', array('action' => 'backupunitreport'), array('query' => ['detail' => true ])) . '">' . $this->translate('Download Detailed Backup Unit Report (JSON)') . '</a> ';
     }
 ?>
-
+</div>
 <?php endif; ?>
