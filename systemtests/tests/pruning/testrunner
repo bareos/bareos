@@ -48,9 +48,9 @@ label volume=TestVolumeIncremental storage=File pool=Incremental
 status director
 status client
 status storage=File
+run job=$regularjob_name Level=Full yes
+run job=$regularjob_name Level=Full yes
 wait
-run job=$regularjob_name Level=Full yes
-run job=$regularjob_name Level=Full yes
 messages
 
 @$out $restore_log
@@ -216,87 +216,86 @@ check_two_logs "$label_backup_log" "$restore_log"
 
 ## Prune volumes
 expect_grep "Purging the following 2 JobIds: 1,2" \
-            "$prune_volume_log" \
-            "Pruned jobs from volume pruning not found" \
-            "Purging the"
+  "$prune_volume_log" \
+  "Pruned jobs from volume pruning not found" \
+  "Purging the"
 
 expect_grep "Volume \"TestVolume001\" contains no jobs after pruning." \
-            "$prune_volume_log" \
-            "Volume still contains jobs, or wrong volume pruned." \
-            "Volume.*contains no jobs after pruning."
+  "$prune_volume_log" \
+  "Volume still contains jobs, or wrong volume pruned." \
+  "Volume.*contains no jobs after pruning."
 
 ## Prune all volumes
 expect_grep "Purging the following 2 JobIds: 4,5" \
-            "$prune_all_log" \
-            "Pruned jobs from volume all pruning not found" \
-            "Purging the"
+  "$prune_all_log" \
+  "Pruned jobs from volume all pruning not found" \
+  "Purging the"
 
 expect_grep "Volume \"TestVolume002\" contains no jobs after pruning." \
-            "$prune_all_log" \
-            "Volume still contains jobs, or wrong volume pruned." \
-            "Volume.*contains no jobs after pruning."
+  "$prune_all_log" \
+  "Volume still contains jobs, or wrong volume pruned." \
+  "Volume.*contains no jobs after pruning."
 
 expect_grep "Purging the following 2 JobIds: 6,7" \
-            "$prune_all_log" \
-            "Pruned jobs from volume all pruning not found" \
-            "Purging the"
+  "$prune_all_log" \
+  "Pruned jobs from volume all pruning not found" \
+  "Purging the"
 
 expect_grep "Volume \"TestVolume003\" contains no jobs after pruning." \
-            "$prune_all_log" \
-            "Volume still contains jobs, or wrong volume pruned." \
-            "Volume.*contains no jobs after pruning."
-
+  "$prune_all_log" \
+  "Volume still contains jobs, or wrong volume pruned." \
+  "Volume.*contains no jobs after pruning."
 
 ## Prune all volumes from specific pool
 
 expect_grep "Purging the following 1 JobIds: 9" \
-            "$prune_all_pool_log" \
-            "Pruned jobs from volume all pool pruning not found" \
-            "Purging the"
+  "$prune_all_pool_log" \
+  "Pruned jobs from volume all pool pruning not found" \
+  "Purging the"
 
 expect_grep "Volume \"TestVolumeIncremental\" contains no jobs after pruning." \
-            "$prune_all_pool_log" \
-            "Volume still contains jobs, or wrong volume pruned." \
-            "Volume.*contains no jobs after pruning."
+  "$prune_all_pool_log" \
+  "Volume still contains jobs, or wrong volume pruned." \
+  "Volume.*contains no jobs after pruning."
 
 ## Pruning jobs
 expect_grep "Purging the following 2 JobIds: 8,10" \
-            "$job_pruning_log" \
-            "Expected pruned jobids not found" \
-            "Purging the"
+  "$job_pruning_log" \
+  "Expected pruned jobids not found" \
+  "Purging the"
 
 expect_grep "Pruned 2 Jobs for client bareos-fd from catalog." \
-            "$job_pruning_log" \
-            "Expected number of jobs pruned not found"
+  "$job_pruning_log" \
+  "Expected number of jobs pruned not found"
 
 ## Pruning files
 expect_grep "Pruned Files from 1 Jobs" \
-            "$file_pruning_log" \
-            "Expected number of files pruned not found"
+  "$file_pruning_log" \
+  "Expected number of files pruned not found"
 
 expect_grep "Most likely your retention policy pruned the files." \
-            "$file_pruning_log" \
-            "Restore command found files, when they should have been pruned"
+  "$file_pruning_log" \
+  "Restore command found files, when they should have been pruned"
 
 ## Purging failed jobs
 expect_grep "Found 3 Jobs for client \"bareos-fd\" in catalog \"MyCatalog\"" \
-            "$purging_failed_jobs" \
-            "Correct number of failed jobs to prune was not found."
+  "$purging_failed_jobs" \
+  "Correct number of failed jobs to prune was not found."
 
 expect_grep "Purging the following 3 JobIds: 12,13,14" \
-            "$purging_failed_jobs" \
-            "Expected pruned failed jobids not found" \
-            "Purging the"
+  "$purging_failed_jobs" \
+  "Expected pruned failed jobids not found" \
+  "Purging the"
 
 ## Purging failed jobs from specific pool
 
 expect_grep "3 Jobs on Pool \"SmallFull\" purged from catalog" \
-            "$purging_pool_failed_jobs" \
-            "Correct number of jobs with warnings to purge on specific pool was not found."
+  "$purging_pool_failed_jobs" \
+  "Correct number of jobs with warnings to purge on specific pool was not found."
 
 expect_grep "Purging the following 3 JobIds: 18,19,20" \
-            "$purging_pool_failed_jobs" \
-            "Expected purged jobids with warnings in specific pool not found" \
-            "Purging the"
+  "$purging_pool_failed_jobs" \
+  "Expected purged jobids with warnings in specific pool not found" \
+  "Purging the"
 
 end_test

@@ -46,6 +46,13 @@ status client
 status storage=File
 wait
 messages
+@$out $tmp/incremental.out
+run job=$JobName level=Incremental yes
+status director
+status client
+status storage=File
+wait
+messages
 @#
 @# now do a restore
 @#
@@ -60,8 +67,33 @@ run_bareos "$@"
 check_for_zombie_jobs storage=File
 
 check_two_logs
-list=( $(find "${BackupDirectory}" -type f) )
+list=($(find "${BackupDirectory}" -type f))
 # Using check_restore_only_files_diff instead of check_restore_diff
 # to don't diff the file attributes, because they are not saved
 check_restore_only_files_diff "${list[@]}"
+
+expect_not_grep "with warnings" \
+  "${tmp}/log1.out" \
+  "Full job contains an error/a warning"
+
+expect_not_grep "with warnings" \
+  "${tmp}/incremental.out" \
+  "Incremental job contains an error/a warning"
+
+expect_not_grep "with warnings" \
+  "${tmp}/log2.out" \
+  "Restore job contains an error/a warning"
+
+expect_grep "received object 999.longrestoreobject" \
+  "${tmp}/incremental.out" \
+  "Incremental job did not receive restore object"
+
+expect_grep "received object 970.longrestoreobject" \
+  "${tmp}/log2.out" \
+  "Restore job did not incremental restore object"
+
+expect_grep "received object 999.longrestoreobject" \
+  "${tmp}/log2.out" \
+  "Restore job did not full restore object"
+
 end_test
