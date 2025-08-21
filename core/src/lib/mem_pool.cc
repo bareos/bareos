@@ -120,12 +120,15 @@ POOLMEM* GetMemory(int32_t size) noexcept
 
 int32_t SizeofPoolMemory(POOLMEM* obuf) noexcept
 {
+  if (!obuf) { return 0; }
   return GetPmHeader(obuf)->ablen;
 }
 
 POOLMEM* ReallocPoolMemory(POOLMEM* obuf, int32_t size) noexcept
 {
   if (size < 0) { return obuf; }
+
+  if (!obuf) { return GetMemory(size); }
 
   struct abufhead* old_abuf_ptr = GetPmHeader(obuf);
   char* buf = static_cast<char*>(realloc(old_abuf_ptr, size + HEAD_SIZE));
@@ -144,7 +147,10 @@ POOLMEM* CheckPoolMemorySize(POOLMEM* obuf, int32_t size) noexcept
   return ReallocPoolMemory(obuf, size);
 }
 
-void FreePoolMemory(POOLMEM* obuf) noexcept { free(GetPmHeader(obuf)); }
+void FreePoolMemory(POOLMEM* obuf) noexcept
+{
+  if (obuf) { free(GetPmHeader(obuf)); }
+}
 
 /*
  * Concatenate a string (str) onto a pool memory buffer pm
