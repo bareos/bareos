@@ -18,4 +18,8 @@
 #   02110-1301, USA.
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
-create_systemtest(${SYSTEMTEST_PREFIX} "${BASENAME}")
+if(TARGET generate-volumes)
+  create_systemtest(${SYSTEMTEST_PREFIX} "${BASENAME}")
+else()
+  create_systemtest(${SYSTEMTEST_PREFIX} "${BASENAME}" DISABLED)
+endif()
