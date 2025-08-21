@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,9 @@
 namespace directordaemon {
 
 JobControlRecord* NewDirectorJcr(JCR_free_HANDLER* DirdFreeJcr);
+JobControlRecord* NewDirectorJcr(
+    JCR_free_HANDLER* DirdFreeJcr,
+    std::shared_ptr<ConfigResourcesContainer> job_resources);
 
 } /* namespace directordaemon */
 #endif  // BAREOS_DIRD_JCR_UTIL_H_
