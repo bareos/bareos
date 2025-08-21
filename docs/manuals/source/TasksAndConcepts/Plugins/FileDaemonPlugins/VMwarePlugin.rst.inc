@@ -23,6 +23,9 @@ Status
 
 The Plugin can do full, differential and incremental backup and restore of VM disks.
 
+Since :sinceVersion:`24.0.5: VMware Plugin` The Plugin can now save and recreate
+VMs with VirtualSerialPort devices.
+
 Since :sinceVersion:`24.0.3: VMware Plugin` The Plugin can now save and recreate
 VMs with VirtualUSB devices. Note that VirtualUSB devices could disappear when
 powering on the VM and the USB device is attached to a different running VM,
@@ -87,9 +90,11 @@ Requirements
 
 As the Plugin is based on the |vsphere| Storage APIs for Data Protection, which requires at least a |vsphere| Essentials License. It is tested against |vsphere| Storage APIs for Data Protection of |vmware| 7.0.1. It does not work with standalone unlicensed |vmware| ESXi\ |trade|.
 
-Since Bareos :sinceVersion:`22.0.0: VMware Plugin: VDDK 8.0.0` the plugin is using the Virtual Disk Development Kit (VDDK) 8.0.0, as of the VDDK 8.0 release notes, it should be compatible with vSphere 8 and the next major release (except new features) and backward compatible with vSphere 6.7 and 7, see VDDK release notes at https://developer.broadcom.com/sdks/vmware-virtual-disk-development-kit-vddk/8.0 for details.
+Since Bareos :sinceVersion:`24.0.5: VMware Plugin: VDDK 9.0` the plugin is using the Virtual Disk Development Kit (VDDK) 9.0, as of the VDDK 9.0 release notes, it should be compatible with vSphere 9 and the next major release (except new features) and backward compatible with vSphere 7.0.x and 8.0.x, see VDDK release notes at https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere-sdks-tools/9-0/release-notes/virtual-disk-development-kit/virtual-disk-development-kit-90-release-notes.html for details.
 
 This plugin requires the pyVmomi module version 7.0.2 or greater. Since Bareos :sinceVersion:`21.0.0: VMware Plugin: pyVmomi` the package **bareos-vmware-plugin** no longer includes a dependency on a pyVmomi package, because some Linux distributions don't provide current versions. Consequently, pyVmomi must be either installed by using :command:`pip install pyvmomi` or by manually installing a distribution provided pyVmomi package.
+Generally, the pyVmomi major version should match the used vSphere major version.
+For available versions see https://pypi.org/project/pyvmomi/
 
 Since :sinceVersion:`23.0.3: VMware Plugin` the plugin requires the modules
 **requests** and **urllib3** for backup and restore of the NVRAM.
@@ -107,6 +112,15 @@ command:
 
    BPP=$(python3 -c'import sys; print(f"/usr/{sys.platlibdir}/bareos/plugins")')
    pip install -t $BPP --upgrade pyvmomi
+   pip install -t $BPP --upgrade requests
+   pip install -t $BPP --upgrade urllib3
+
+.. note::
+
+   Installing the **requests** and **urllib3** modules as described above
+   is only necessary when the required versions are not available packaged
+   for the used operating system. See below how to check the installed
+   versions.
 
 The following warning message is not relevant when using the above command,
 because it installs modules in a path which is not used by system packages:
@@ -781,6 +795,21 @@ restore_allow_disks_mismatch (optional)
    This option will only be used when recreating the VM to be restored.
 
    Since :sinceVersion:`23.0.4: VMware Plugin`
+
+nvram_connect_timeout (optional)
+   When backing up or restoring NVRAM, this is done by HTTPS connection to
+   the vCenter server. The connect timeout in seconds can be changed using this
+   parameter, the default is 30s.
+
+   Since :sinceVersion:`25.0.5: VMware Plugin`
+
+nvram_readwrite_timeout (optional)
+   When backing up or restoring NVRAM, this is done by reading or writing it
+   via HTTPS connection to/from the vCenter server. The timeout in seconds 
+   can be changed using this parameter, the default is 60s.
+
+   Since :sinceVersion:`25.0.5: VMware Plugin`
+
 
 uuid (deprecated)
    The uuid option could be used instead of *dc*, *folder* and *vmname* to uniquely address a VM for backup. As the plugin since :sinceVersion:`22.0.0: VMware Plugin` is able recreate VMs in a different datacenter, folder or datastore, this option has become useless. When using uuid, restoring is only possible to the same still existing VM. It is recommended to change the configuration, as the uuid option will be dropped in the next version.
