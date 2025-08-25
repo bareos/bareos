@@ -373,6 +373,7 @@ Requires(pre): grep
 Requires(pre): openssl
 Requires(pre): sed
 %if 0%{?suse_version}
+Requires(pre): libcap-progs
 Requires(pre): shadow
 %else
 Requires(pre): glibc-common

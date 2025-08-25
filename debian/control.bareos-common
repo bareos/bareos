@@ -1,6 +1,6 @@
 Package:        bareos-common
 Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser, coreutils, findutils, grep, gawk, libc-bin, passwd, openssl, sed
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser, coreutils, findutils, grep, gawk, libc-bin, passwd, openssl, sed, libcap2-bin
 Depends:        ${shlibs:Depends}, ${misc:Depends}
 Conflicts:      bacula-director-common, bacula-common
 Description: Backup Archiving Recovery Open Sourced - common files
