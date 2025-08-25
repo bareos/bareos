@@ -673,6 +673,8 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
       }
       njcr->dir_impl->res.messages = jcr->dir_impl->res.messages;
       njcr->dir_impl->spool_data = jcr->dir_impl->spool_data;
+      njcr->dir_impl->backup_format = jcr->dir_impl->backup_format;
+
       Dmsg0(2300, "Call to run new job\n");
       unlock_mutex(jq->mutex);
       RunJob(njcr);  /* This creates a "new" job */
