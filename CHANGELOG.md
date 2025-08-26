@@ -107,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - matrix: test the Debian ULC packages for OpenSSL 1.1 on Debian 11 instead of Debian 10 [PR #2321]
 - ndmp-bareos: Introduce incremental loop, restore 2nd file explicitly [PR #2269]
 - systemtest: always incremental add one job with one removed file [PR #2329]
+- webui: add summary subscription report [PR #2340]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -197,6 +198,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2328]: https://github.com/bareos/bareos/pull/2328
 [PR #2329]: https://github.com/bareos/bareos/pull/2329
 [PR #2332]: https://github.com/bareos/bareos/pull/2332
+[PR #2340]: https://github.com/bareos/bareos/pull/2340
 [PR #2341]: https://github.com/bareos/bareos/pull/2341
 [PR #2344]: https://github.com/bareos/bareos/pull/2344
 [unreleased]: https://github.com/bareos/bareos/tree/master
