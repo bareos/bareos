@@ -20,12 +20,8 @@ set -e
 daemon_user=bareos
 daemon_group=bareos
 
-#director_daemon_user=$daemon_user
 storage_daemon_user=$daemon_user
-#file_daemon_user=root
 storage_daemon_group=$daemon_group
-
-
 
 permissions()
 {
@@ -35,32 +31,31 @@ permissions()
 
 scsicrypto()
 {
-if [ -f "@confdir@/.enable-cap_sys_rawio" ]; then
-   /usr/lib/bareos/scripts/bareos-config set_scsicrypto_capabilities
-fi
+  if [ -f "@confdir@/.enable-cap_sys_rawio" ]; then
+    /usr/lib/bareos/scripts/bareos-config set_scsicrypto_capabilities
+  fi
 }
 
 case "$1" in
-    configure)
-        /usr/lib/bareos/scripts/bareos-config deploy_config "@configtemplatedir@" "@confdir@" "bareos-sd" || true
-        permissions
-        /usr/lib/bareos/scripts/bareos-config setup_sd_user
-        # on Univention distributions the ucr command allows to open the firewall
-        if [ -x "/etc/init.d/univention-firewall" ] && which ucr >/dev/null 2>&1; then
-            ucr set \
-                security/packetfilter/package/bareos-storage/tcp/@sd_port@/all="ACCEPT" \
-                security/packetfilter/package/bareos-storage/tcp/@sd_port@/all/en="bareos-sd"
-            #invoke-rc.d univention-firewall restart
-        fi
-        scsicrypto
+  configure)
+    /usr/lib/bareos/scripts/bareos-config deploy_config "bareos-sd"
+    permissions
+    /usr/lib/bareos/scripts/bareos-config setup_sd_user
+    # on Univention distributions the ucr command allows to open the firewall
+    if [ -x "/etc/init.d/univention-firewall" ] && which ucr >/dev/null 2>&1; then
+      ucr set \
+        security/packetfilter/package/bareos-storage/tcp/@sd_port@/all="ACCEPT" \
+        security/packetfilter/package/bareos-storage/tcp/@sd_port@/all/en="bareos-sd"
+      #invoke-rc.d univention-firewall restart
+    fi
+    scsicrypto
     ;;
 
-    abort-upgrade|abort-remove|abort-deconfigure)
-    ;;
+  abort-upgrade | abort-remove | abort-deconfigure) ;;
 
-    *)
-        echo "postinst called with unknown argument \`$1'" >&2
-        exit 1
+  *)
+    echo "postinst called with unknown argument \`$1'" >&2
+    exit 1
     ;;
 esac
 
