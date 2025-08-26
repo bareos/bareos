@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - matrix: test the Debian ULC packages for OpenSSL 1.1 on Debian 11 instead of Debian 10 [PR #2322]
 - ndmp-bareos: Introduce incremental loop, restore one file explicitly [PR #2327]
 - vmware: upgrade vmware vix disklib to version 9.0
+- webui: add summary subscription report [PR #2351]
 
 ### Fixed
 - truncate: fix return status bug [PR #2308]
@@ -506,4 +507,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2327]: https://github.com/bareos/bareos/pull/2327
 [PR #2343]: https://github.com/bareos/bareos/pull/2343
 [PR #2345]: https://github.com/bareos/bareos/pull/2345
+[PR #2351]: https://github.com/bareos/bareos/pull/2351
 [unreleased]: https://github.com/bareos/bareos/tree/master
