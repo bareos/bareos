@@ -365,7 +365,7 @@ setup_sd_user()
 get_config_path()
 {
   # configuration component (either file or bareos-dir, ...)
-  COMPONENT="${1}"
+  local COMPONENT="${1}"
 
   if [ -f "${COMPONENT}" ]; then
     printf "%s" "${COMPONENT}"
@@ -382,8 +382,8 @@ get_config_path()
 get_config_path2()
 {
   # configuration component (either file or bareos-dir, ...)
-  BASEDIR="${1}"
-  COMPONENT="${2}"
+  local BASEDIR="${1}"
+  local COMPONENT="${2}"
 
   if ! [ -d "${BASEDIR}" ]; then
     warn "base directory \"${BASEDIR}\" does not exists."
@@ -394,134 +394,254 @@ get_config_path2()
     printf "%s" "${BASEDIR}/${COMPONENT}.conf"
   elif [ -d "${BASEDIR}/${COMPONENT}.d/" ]; then
     printf "%s" "${BASEDIR}/${COMPONENT}.d/"
+  elif [ -d "${BASEDIR}/${COMPONENT}/" ]; then
+    printf "%s" "${BASEDIR}/${COMPONENT}/"
   else
     warn "failed to find config for component \"${COMPONENT}\" in directory \"${BASEDIR}\"."
     return 1
   fi
 }
 
-deploy_config_new()
+deploy_config_usage()
 {
-  COMPONENT=${1:-}
-
-  [ -n "${BAREOS_CONFIG_TEMPLATE_DIR}" ] || return 1
-
-  RC=0
-  deploy_config "${BAREOS_CONFIG_TEMPLATE_DIR}" "${BAREOS_CONFIG_DIR}" "${COMPONENT}" || RC=$?
-  return $RC
+  if [ "$1" ]; then
+    error "$1"
+  fi
+  info "Usage: deploy_config [--init] <COMPONENT>"
 }
 
 deploy_config()
 {
-  ARGS=$#
-  SOURCE=${1:-}
-  DEST=${2:-}
-  COMPONENT=${3:-}
+  # usage:
+  #   deploy_config COMPONENT
+  #   deploy_config --init COMPONENT
+  #       0: config deployed or skipped, because dest already exists.
+  #       >0: error, including, dest already exists.
+  #   deploy_config --exist COMPONENT
+  #     0: dest does not exist, so config would be deployed if called with --init
+  #     >0: dest already exist
+  #
+  #   RC:
+  #    2: wrong parameter, usage error.
 
-  [ -d "${SOURCE}" ] || return 1
-  [ -n "${DEST}" ] || return 1
+  local COMPONENT
+
+  [ -n "${BAREOS_CONFIG_TEMPLATE_DIR}" ] || return 1
+
+  local MODE="init"
+  if echo "$1" | grep -q '^--'; then
+    if [ "$1" = "--init" ]; then
+      # default
+      MODE="init"
+    elif [ "$1" = "--exist" ]; then
+      MODE="exist"
+    else
+      deploy_config_usage "unknown mode parameter ${MODE}"
+      return 2
+    fi
+    shift
+  fi
+
+  COMPONENT="${1:-}"
 
   RC=0
-  if [ $ARGS -eq 2 ]; then
-    deploy_config2 "${SOURCE}" "${DEST}" || RC=$?
-  elif [ $ARGS -eq 3 ]; then
-    deploy_config3 "${SOURCE}" "${DEST}" "${COMPONENT}" || RC=$?
+  if [ "${MODE}" = "init" ]; then
+    deploy_config_init "${COMPONENT}" || RC=$?
+  elif [ "${MODE}" = "exist" ]; then
+    config_exists "${COMPONENT}" || RC=$?
   else
-    RC=1
-  fi
-
-  if [ $RC -eq 0 ]; then
-    initialize_local_hostname
-    initialize_passwords
-    if [ "${DAEMON_USER}" ] && [ "${DAEMON_GROUP}" ]; then
-      chown -R "${DAEMON_USER}":"${DAEMON_GROUP}" "${DEST}"
-    fi
-    # chmod ... X: set x on directories, but not on files.
-    if [ "$os_type" = "Darwin" ]; then
-      # MacOS users from the "admin" group should be able to change the configuration files.
-      chgrp -R admin "${DEST}"
-      chmod -R ug=rwX,o= "${DEST}"
-    else
-      # This also changes permissions of .rndpwd from 0400 to 0640
-      chmod -R u=rwX,g=rX,o= "${DEST}"
-    fi
+    deploy_config_usage "unknown mode ${MODE}"
+    return 2
   fi
 
   return $RC
 }
 
-deploy_config2()
+config_exists()
 {
-  #
-  # Copy configuration from SOURCE to DEST and apply settings.
-  # Only copies new files. It does not overwrite existing files.
-  #
-  # Returns:
-  #   0: if new config files have been copied
-  #   1: otherwise (on error or if no new config files are available)
-  #
+  local COMPONENT=${1:-}
 
-  SOURCE=${1:-}
-  DEST=${2:-}
-
-  RC=1
-
-  [ -d "${SOURCE}" ] || return 1
-  if ! [ -e "${DEST}" ]; then
-    mkdir -p "${DEST}"
-    chmod 2750 "${DEST}"
-  fi
-
-  #
-  # Copy all files, but do not overwrite existing file.
-  # Use verbose to detect, when new files have been copied.
-  # On MacOS, only single letter cp options are available.
-  #
-  #OUT=`cp --verbose --recursive --no-clobber "$SOURCE/." "$DEST/."`
-  OUT="$(cp -v -r -n "${SOURCE}/." "${DEST}/.")"
-  if [ "${OUT}" ]; then
-    RC=0
-  fi
-
-  return $RC
-}
-
-deploy_config3()
-{
-  #
-  # Copy configuration from SOURCE to DEST and apply settings.
-  # Only copies new files. It does not overwrite existing files.
-  #
-  # Returns:
-  #   0: if new config files have been copied
-  #   1: otherwise (on error or if no new config files are available)
-  #
-
-  SOURCE=${1:-}
-  DEST=${2:-}
-  COMPONENT=${3:-}
-
-  [ -d "${SOURCE}" ] || return 1
-  if ! [ -e "${DEST}" ]; then
-    mkdir -p "${DEST}"
-    chmod 2750 "${DEST}"
-  fi
-
-  if ! SOURCE_CONFIG_PATH="$(get_config_path2 "${SOURCE}" "${COMPONENT}")"; then
+  if [ -z "$COMPONENT" ]; then
+    deploy_config_usage "missing component"
     return 1
   fi
 
+  local DEST_CONFIG_PATH
+  DEST_CONFIG_PATH="$(get_config_path2 "${BAREOS_CONFIG_DIR}" "${COMPONENT}")"
+  return $?
+}
+
+deploy_config_init()
+{
+  local COMPONENT=${1:-}
+
+  if [ -z "$COMPONENT" ]; then
+    deploy_config_usage "missing component"
+    return 1
+  fi
+
+  local SOURCE_CONFIG_PATH
+  if ! SOURCE_CONFIG_PATH="$(get_config_path2 "${BAREOS_CONFIG_TEMPLATE_DIR}" "${COMPONENT}")"; then
+    return 1
+  fi
+
+  local DEST_CONFIG_PATH
   RC=0
   if [ -d "${SOURCE_CONFIG_PATH}" ]; then
-    deploy_config2 "${SOURCE_CONFIG_PATH}" "${DEST}/${COMPONENT}.d/" || RC=$?
-  else
-    DEST_CONFIG_PATH="${DEST}/${COMPONENT}.conf"
-    if [ ! -f "${DEST_CONFIG_PATH}" ]; then
-      cp "${SOURCE_CONFIG_PATH}" "${DEST_CONFIG_PATH}" || RC=$?
+    DEST_CONFIG_PATH="${BAREOS_CONFIG_DIR}/${COMPONENT}.d/"
+    if [ -d "${DEST_CONFIG_PATH}" ]; then
+      info "deploy_config_init(): destination path ${DEST_CONFIG_PATH} already exists. Skipped"
+      return 0
     fi
+    mkdir -p "${DEST_CONFIG_PATH}"
+    # On macOS, only single letter cp options are available.
+    # -r: --recursive
+    cp -r "${SOURCE_CONFIG_PATH}/." "${DEST_CONFIG_PATH}/." || RC=$?
+  else
+    DEST_CONFIG_PATH="${BAREOS_CONFIG_DIR}/${COMPONENT}.conf"
+    if [ -f "${DEST_CONFIG_PATH}" ]; then
+      info "deploy_config_init(): destination ${DEST_CONFIG_PATH} already exists. Skipped"
+      return 0
+    fi
+    cp "${SOURCE_CONFIG_PATH}" "${DEST_CONFIG_PATH}" || RC=$?
+  fi
+
+  if [ $RC -eq 0 ]; then
+    config_finalize "${BAREOS_CONFIG_DIR}" "${COMPONENT}" || RC=$?
   fi
 
   return $RC
+}
+
+config_finalize()
+{
+  # usage:
+  #   $1: DEST
+  #   $2: COMPONENT
+
+  local DEST=${1:-}
+  local COMPONENT=${2:-}
+
+  local DEST_CONFIG_PATH
+  if ! DEST_CONFIG_PATH="$(get_config_path2 "${DEST}" "${COMPONENT}")"; then
+    return 1
+  fi
+
+  if [ "${COMPONENT}" = "tray-monitor" ]; then
+    configure_tray_monitor "${DEST}"
+  fi
+
+  initialize_local_hostname
+  initialize_passwords
+  config_set_permissions "${DEST}" "${COMPONENT}"
+}
+
+config_set_permissions()
+{
+  # usage:
+  #   $1: DEST
+  #   $2: COMPONENT
+
+  local DEST=${1:-}
+  local COMPONENT=${2:-}
+
+  local DEST_CONFIG_PATH
+  if ! DEST_CONFIG_PATH="$(get_config_path2 "${DEST}" "${COMPONENT}")"; then
+    return 1
+  fi
+
+  # defaults
+  local COMPONENT_USER="${DAEMON_USER}"
+  local COMPONENT_GROUP="${DAEMON_GROUP}"
+  local FILE_PERMISSION="u=rw,g=r,o="
+  local DIR_PERMISSION="u=rwx,g=rxs,o="
+
+  if [ "$os_type" = "Darwin" ]; then
+    # MacOS users from the "admin" group should be able to change the
+    COMPONENT_USER=""
+    COMPONENT_GROUP="admin"
+    DIR_PERMISSION="ug=rwx,o="
+    FILE_PERMISSION="ug=rw,o="
+  else
+    if [ "${COMPONENT}" = "bareos-fd" ]; then
+      COMPONENT_USER="root"
+    elif [ "${COMPONENT}" = "bconsole" ]; then
+      COMPONENT_USER="root"
+    elif [ "${COMPONENT}" = "tray-monitor" ]; then
+      DIR_PERMISSION="u=rwx,g=rxs,o=rx"
+      FILE_PERMISSION="u=rw,go=r"
+    fi
+  fi
+
+  if [ -f "${DEST_CONFIG_PATH}" ]; then
+    # only one config file
+    if [ "${COMPONENT_USER}" ]; then
+      chown "${COMPONENT_USER}" "${DEST_CONFIG_PATH}"
+    fi
+    if [ "${COMPONENT_GROUP}" ]; then
+      chgrp "${COMPONENT_GROUP}" "${DEST_CONFIG_PATH}"
+    fi
+    chmod "${FILE_PERMISSION}" "${DEST_CONFIG_PATH}"
+  else
+    # config directory
+    if [ "${COMPONENT_USER}" ]; then
+      chown -R "${COMPONENT_USER}" "${DEST_CONFIG_PATH}"
+    fi
+    if [ "${COMPONENT_GROUP}" ]; then
+      chgrp -R "${COMPONENT_GROUP}" "${DEST_CONFIG_PATH}"
+    fi
+    if ls "${DEST_CONFIG_PATH}"/*/*.conf >/dev/null 2>&1; then
+      chmod ${DIR_PERMISSION} "${DEST_CONFIG_PATH}" "${DEST_CONFIG_PATH}"/*/
+      chmod ${FILE_PERMISSION} "${DEST_CONFIG_PATH}"/*/*.conf
+    fi
+  fi
+
+  if [ "${COMPONENT}" = "bareos-dir" ]; then
+    # the bareos-dir uses config directories
+    # bareos.d and bareos-dir-export (for exporting configuration).
+    config_set_permissions "${DEST}" "bareos-dir-export"
+  fi
+}
+
+configure_tray_monitor()
+{
+  local DEST="$1"
+  local COMPONENT="tray-monitor"
+
+  local SOURCE_CONFIG_PATH
+  if ! SOURCE_CONFIG_PATH="$(get_config_path2 "${BAREOS_CONFIG_TEMPLATE_DIR}" "${COMPONENT}")"; then
+    return 1
+  fi
+
+  local DEST_CONFIG_PATH
+  if ! DEST_CONFIG_PATH="$(get_config_path2 "${DEST}" "${COMPONENT}")"; then
+    return 1
+  fi
+
+  if ! [ -d "${SOURCE_CONFIG_PATH}" ] || ! [ -d "${DEST_CONFIG_PATH}" ]; then
+    return 1
+  fi
+
+  if config_exists "bareos-fd"; then
+    if ! [ -e "${DEST_CONFIG_PATH}/client/FileDaemon-local.conf" ]; then
+      cp "${SOURCE_CONFIG_PATH}/client/FileDaemon-local.conf" "${DEST_CONFIG_PATH}/client/FileDaemon-local.conf"
+    fi
+  fi
+
+  if config_exists "bareos-sd"; then
+    if ! [ -e "${DEST_CONFIG_PATH}/storage/StorageDaemon-local.conf" ]; then
+      cp "${SOURCE_CONFIG_PATH}/storage/StorageDaemon-local.conf" "${DEST_CONFIG_PATH}/storage/StorageDaemon-local.conf"
+    fi
+  fi
+
+  if config_exists "bareos-dir"; then
+    if ! [ -e "${DEST_CONFIG_PATH}/director/Director-local.conf" ]; then
+      cp "${SOURCE_CONFIG_PATH}/director/Director-local.conf" "${DEST_CONFIG_PATH}/director/Director-local.conf"
+    fi
+    if ! [ -e "${DEST_CONFIG_PATH}/monitor/bareos-mon.conf" ]; then
+      cp "${SOURCE_CONFIG_PATH}/monitor/bareos-mon.conf" "${DEST_CONFIG_PATH}/monitor/bareos-mon.conf"
+    fi
+  fi
 }
 
 get_config_param()
@@ -531,15 +651,15 @@ get_config_param()
   #
 
   # configuration file
-  CFG_FILE="${1-}"
+  local CFG_FILE="${1-}"
   # section, currently ignored
-  SECTION="${2-}"
+  local SECTION="${2-}"
   # name of the section, currently ignored
-  NAME="${3-}"
+  local NAME="${3-}"
   # parameter to get from config file
-  PARAM="${4-}"
+  local PARAM="${4-}"
   # default value, if parameter is not found
-  DEFAULT="${5-}"
+  local DEFAULT="${5-}"
 
   if [ ! -r "${CFG_FILE}" ]; then
     warn "failed to get parameter ${SECTION} ${NAME} ${PARAM}: can't read ${CFG_FILE}"
@@ -575,16 +695,17 @@ set_config_param()
   #   Possible workaround: get expanded config by "bareos-* --xc"
 
   # configuration component (either file or bareos-dir, ...)
-  COMPONENT="${1}"
+  local COMPONENT="${1}"
   # section / resource type
-  SECTION="${2}"
+  local SECTION="${2}"
   # name of the section, currently ignored
-  NAME="${3}"
+  local NAME="${3}"
   # parameter to set in the config file
-  PARAM="${4}"
+  local PARAM="${4}"
   # value to set
-  VALUE="${5}"
+  local VALUE="${5}"
 
+  local CONFIG_PATH
   if ! CONFIG_PATH=$(get_config_path "${COMPONENT}"); then
     return 1
   fi
@@ -605,15 +726,15 @@ set_config_param_in_directory()
     return 1
   fi
   # configuration file
-  DIRECTORY="${1}"
+  local DIRECTORY="${1}"
   # section / resource type
-  SECTION=$(echo "${2}" | tr '[:upper:]' '[:lower:]')
+  local SECTION=$(echo "${2}" | tr '[:upper:]' '[:lower:]')
   # name of the section, currently ignored
-  NAME="${3}"
+  local NAME="${3}"
   # parameter to set in the config file
-  PARAM="${4}"
+  local PARAM="${4}"
   # value to set
-  VALUE="${5}"
+  local VALUE="${5}"
 
   if ! [ -e "${DIRECTORY}/${SECTION}" ]; then
     warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: directory ${DIRECTORY}/${SECTION} does not exist"
@@ -637,15 +758,15 @@ set_config_param_in_file()
   fi
 
   # configuration file
-  FILE="${1}"
+  local FILE="${1}"
   # section / resource type
-  SECTION="${2}"
+  local SECTION="${2}"
   # name of the section, currently ignored
-  NAME="${3}"
+  local NAME="${3}"
   # parameter to set in the config file
-  PARAM="${4}"
+  local PARAM="${4}"
   # value to set
-  VALUE="${5}"
+  local VALUE="${5}"
 
   if [ ! -w "${FILE}" ]; then
     warn "failed to set parameter ${SECTION} ${NAME} ${PARAM} = ${VALUE}: can't access file '${FILE}'"

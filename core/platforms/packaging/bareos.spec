@@ -21,7 +21,7 @@ Vendor:     The Bareos Team
 %define plugin_dir        %{_libdir}/%{name}/plugins
 %define script_dir        /usr/lib/%{name}/scripts
 %define working_dir       /var/lib/%{name}
-%define bsr_dir           /var/lib/%{name}
+%define bsr_dir           %{_sharedstatedir}/%{name}
 # TODO: use /run ?
 %define _subsysdir        /var/lock
 
@@ -1726,7 +1726,7 @@ a2enmod fcgid &> /dev/null || true
 %post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/storage/File.conf"
 %post_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/director/Director-local.conf"
 
-%{script_dir}/bareos-config deploy_config_new "bareos-dir" || true
+%{script_dir}/bareos-config deploy_config "bareos-dir"
 %if 0%{?suse_version} >= 1210
 %service_add_post bareos-dir.service
 /bin/systemctl enable bareos-dir.service >/dev/null 2>&1 || true
@@ -1776,7 +1776,7 @@ a2enmod fcgid &> /dev/null || true
 %post_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/storage/bareos-sd.conf"
 %post_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/storage/StorageDaemon-local.conf"
 
-%{script_dir}/bareos-config deploy_config_new "bareos-sd" || true
+%{script_dir}/bareos-config deploy_config "bareos-sd" || true
 # pre script has already generated the storage daemon user,
 # but here we add the user to additional groups
 %{script_dir}/bareos-config setup_sd_user
@@ -1823,7 +1823,7 @@ a2enmod fcgid &> /dev/null || true
 %post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
 %post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf"
 %post_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf"
-%{script_dir}/bareos-config deploy_config_new "bareos-fd" || true
+%{script_dir}/bareos-config deploy_config "bareos-fd"
 %if 0%{?suse_version} >= 1210
 %service_add_post bareos-fd.service
 /bin/systemctl enable bareos-fd.service >/dev/null 2>&1 || true
@@ -1856,7 +1856,7 @@ a2enmod fcgid &> /dev/null || true
 # update from bareos < 25
 %post_backup_file "%{_sysconfdir}/%{name}/bconsole.conf"
 
-%{script_dir}/bareos-config deploy_config_new "bconsole" || true
+%{script_dir}/bareos-config deploy_config "bconsole"
 
 
 %posttrans bconsole
@@ -1893,7 +1893,7 @@ a2enmod fcgid &> /dev/null || true
 # update from bareos < 25
 %post_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/monitor/bareos-mon.conf"
 
-%{script_dir}/bareos-config deploy_config_new "tray-monitor" || true
+%{script_dir}/bareos-config deploy_config "tray-monitor"
 
 
 %posttrans traymonitor
