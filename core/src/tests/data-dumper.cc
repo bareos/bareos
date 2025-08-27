@@ -251,3 +251,29 @@ TEST(Test_Dumping, split_from)
 
   CloseHandle(hndl);
 }
+
+TEST(Test_Plan, check_size_computation)
+{
+  std::vector<char> bytes;
+
+
+  insert_plan plan;
+
+  std::size_t target_size = 0;
+  for (size_t i = 0; i < 100; ++i) {
+    bytes.resize(i);
+    plan.push_back(bytes);
+
+    target_size += i;
+
+    EXPECT_EQ(compute_plan_size(plan), target_size);
+  }
+
+  for (size_t i = 0; i < 100; ++i) {
+    plan.push_back(insert_from{INVALID_HANDLE_VALUE, target_size, i});
+
+    target_size += i;
+
+    EXPECT_EQ(compute_plan_size(plan), target_size);
+  }
+}
