@@ -109,7 +109,7 @@ macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
   # executed by systemtests with which they have dependencies.
   set(options SKIP_GTEST DISABLE)
   set(multiValueArgs ADDITIONAL_SOURCES LINK_LIBRARIES COMPILE_DEFINITIONS
-                     COMPILE_OPTIONS
+                     COMPILE_OPTIONS INCLUDE_DIRECTORIES
   )
   cmake_parse_arguments(
     BAREOS_ADD_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN}
@@ -128,6 +128,9 @@ macro(bareos_add_test BAREOS_ADD_TEST_TESTNAME)
   )
   target_compile_options(
     ${BAREOS_ADD_TEST_TESTNAME} PRIVATE ${BAREOS_ADD_TEST_COMPILE_OPTIONS}
+  )
+  target_include_directories(
+    ${BAREOS_ADD_TEST_TESTNAME} PRIVATE ${BAREOS_ADD_TEST_INCLUDE_DIRECTORIES}
   )
   if(BAREOS_ADD_TEST_DISABLE)
     set(disable "DISABLE")
@@ -507,5 +510,11 @@ bareos_add_test(bpipe_env_test LINK_LIBRARIES GTest::gtest_main Bareos::Lib)
 target_compile_definitions(
   bpipe_env_test PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:env_tester>\""
 )
+
+if(HAVE_WIN32)
+  bareos_add_test(
+    data-dumper LINK_LIBRARIES GTest::gtest_main Bareos::BarriDump
+  )
+endif()
 
 include(DebugEdit)
