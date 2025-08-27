@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -36,17 +36,60 @@ start_test
 # we need to sleep before the consolidate because the
 # job retention is 1 second.  Otherwise we might not
 # consider the last job eligable
+
+# first we clear out the old messages
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/extra.out
+messages
+END_OF_DATA
+run_bconsole
+
+# then we create empty incrementals
+empty_ids=()
+
+for job in {0..2}; do
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
+.api 2
+@$out $tmp/consolidate-empty-incrementals_incr.out
+setdebug level=150 client trace=1
+run job=$JobName level=Incremental yes
+wait
+END_OF_DATA
+  run_bconsole
+  empty_ids+=("$(last_jobid_or_zero)")
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
+.api 2
+@$out $tmp/file-${job}.out
+list files jobid=${empty_ids[${job}]}
+END_OF_DATA
+  run_bconsole
+
+  # check that the incremental was actually empty
+
+  expect_grep "\"filenames\": \[\]" \
+    "${tmp}/file-${job}.out" \
+    "job ${empty_ids[${job}]} (#$((job + 1))) is not empty!!!"
+
+  if [ "${estat}" != "0" ]; then
+    files=$(grep "\"filename\":" "${tmp}/file-${job}.out" | sed 's/.*filename": //')
+
+    for file in ${files}; do
+      # dont forget to remove the quotes
+      stat "${file:1:-1}"
+      bin/bconsole <<<".sql query=\"SELECT * FROM file JOIN path USING (pathid) WHERE path||name='${file:1:-1}'\""
+    done
+
+    find "${working}" -type f -name "*.trace" -exec cat {} \;
+  fi
+
+done
+
+####
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/extra.out
 messages
 .api 2
-@$out $tmp/consolidate-empty-incrementals_incr.out
-run job=$JobName level=Incremental yes
-wait
-run job=$JobName level=Incremental yes
-wait
-run job=$JobName level=Incremental yes
-wait
 @sleep 1
 @$out $tmp/consolidate-empty-incrementals_consolidate.out
 run job=Consolidate yes
@@ -59,10 +102,12 @@ run_bconsole
 
 # take the last 3 jobs (needed in case of test restart)
 
-jobids=$(grep "jobid" "$tmp/consolidate-empty-incrementals_incr.out" | tail -n 3 | sed 's/["jobid:]//g' | xargs | tr ' ' ',')
+#jobids=$(grep "jobid" "$tmp/consolidate-empty-incrementals_incr.out" | tail -n 3 | sed 's/["jobid:]//g' | xargs | tr ' ' ',')
+
+jobids=$(join_by , "${empty_ids[@]}")
 
 expect_grep "purging empty jobids ${jobids}" \
-            "$tmp/consolidate-empty-incrementals_messages.out" \
-            "Removal of expected empty jobs was not successful."
+  "$tmp/consolidate-empty-incrementals_messages.out" \
+  "Removal of expected empty jobs was not successful."
 
 end_test
