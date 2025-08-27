@@ -1585,7 +1585,12 @@ struct dump_context {
   {
     logger->Trace("reading bootstrap (size = {})", buffer.size());
 
-    alignas(4096) char real_buffer[4096];
+    static constexpr std::size_t page_size = 4096;
+
+    // volume HANDLES are generally unbuffered, so we need to make sure
+    // we only read from "good" addresses & with "good" lengths.
+    // page_size may not always necessary, but it should always be enough.
+    alignas(page_size) char real_buffer[page_size];
 
     std::size_t bytes_to_read = buffer.size();
     std::size_t total_bytes = 0;
