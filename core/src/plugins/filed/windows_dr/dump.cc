@@ -1923,8 +1923,6 @@ struct data_dumper {
       logger->Begin(compute_plan_size(plan));
     }
 
-    bool wrote_bytes = false;
-
     auto bytes_written = 0;
     while (bytes_written < buffer.size() && current_index < plan.size()) {
       auto& current_step = plan[current_index];
