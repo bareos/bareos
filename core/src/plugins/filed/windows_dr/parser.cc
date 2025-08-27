@@ -55,7 +55,7 @@ struct data_to_read : public reader {
 
     std::size_t from_second = size - from_first;
     if (from_second) {
-      std::memcpy(buffer, data2.data(), from_second);
+      std::memcpy(buffer + from_first, data2.data(), from_second);
 
       // at this point we know that the first buffer is empty, so "swap" them
 
