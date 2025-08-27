@@ -1892,7 +1892,7 @@ struct data_dumper {
 
     auto bytes_left = bytes.size() - offset;
     auto bytes_to_write = std::min(bytes_left, buffer.size());
-    std::memcpy(buffer.data(), bytes.data(), bytes_to_write);
+    std::memcpy(buffer.data(), bytes.data() + offset, bytes_to_write);
 
     logger->Progressed(bytes_to_write);
 
