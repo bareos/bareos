@@ -47,9 +47,12 @@ if(HAVE_WIN32)
   target_sources(
     dump PRIVATE dump.cc common.cc com.cc restore.cc parser.cc remove_holes.cc
   )
+  target_include_directories(dump PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
+  add_library(Bareos::BarriDump ALIAS dump)
   target_link_libraries(
-    dump PRIVATE VssApi.lib virtdisk.lib format Microsoft.GSL::GSL
-                 ${ZLIB_LIBRARIES}
+    dump
+    PRIVATE VssApi.lib virtdisk.lib ${ZLIB_LIBRARIES}
+    PUBLIC format Microsoft.GSL::GSL
   )
 
   target_sources(wdr-fd PRIVATE plugin.cc bareos_api.cc)

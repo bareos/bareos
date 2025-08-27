@@ -22,7 +22,7 @@
 #ifndef BAREOS_PLUGINS_FILED_WINDOWS_DR_DUMP_H_
 #define BAREOS_PLUGINS_FILED_WINDOWS_DR_DUMP_H_
 
-#include "plugins/filed/windows_dr/parser.h"
+#include "parser.h"
 #include <span>
 #include <optional>
 #include <vector>
