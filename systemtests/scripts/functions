@@ -16,6 +16,16 @@ remove_colon_from_windows_path()
   sed 's#/\(.\):#/\1#g' <<<"$1"
 }
 
+join_by()
+{
+  local joined
+  local separator=${1:?}
+  shift
+
+  joined=$(printf "${separator}%s" "$@")
+  echo "${joined:${#separator}}"
+}
+
 generate_test_data()
 {
   subdir=$1
