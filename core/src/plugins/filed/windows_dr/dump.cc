@@ -399,7 +399,10 @@ struct disk_reader {
         disk_size = length_info.Length.QuadPart;
         logger->Trace("disk size = {}", disk_size);
       } else {
-        disk_size = 0;
+        // TODO: we should turn off caching here instead
+        // for now we just try to get as much as possible, and hope
+        // that it works
+        disk_size = std::numeric_limits<std::size_t>::max();
         logger->Info("could not determine disk size");
       }
     }
