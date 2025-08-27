@@ -1562,8 +1562,9 @@ struct dump_context {
           StringFromGUID2(gpt.PartitionId, guid_storage, sizeof(guid_storage));
           logger->Trace("      partition id: {}", FromUtf16(guid_storage));
           logger->Trace("      attributes: {}", gpt.Attributes);
-          logger->Trace("      name: {}", FromUtf16(std::wstring_view{
-                                              gpt.Name, sizeof(gpt.Name)}));
+          logger->Trace("      name: {}",
+                        FromUtf16(std::wstring_view{
+                            gpt.Name, wcsnlen(gpt.Name, sizeof(gpt.Name))}));
         } break;
         default: {
           logger->Trace("    style: unknown");
