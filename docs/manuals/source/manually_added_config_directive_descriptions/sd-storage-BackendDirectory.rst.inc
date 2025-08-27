@@ -1,3 +1,4 @@
-This parameter is only used for daemon created with dynamic backend. 
+This parameter is only available for storage daemons that support dynamic backends.
 
-For static build like bareos-sd under Windows, using this parameter is unsupported and lead to an error if used.
+..note::
+  Setting this parameter in builds that do not support dynamic backends, such as the official windows build, will lead to a configuration error.
