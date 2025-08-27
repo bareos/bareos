@@ -109,7 +109,6 @@ struct GenericLogger {
   std::size_t indent{0};
 };
 
-
 // this function is basically a simple sax-like parser for the dump format
 void parse_file_format(GenericLogger* logger,
                        std::istream& stream,
