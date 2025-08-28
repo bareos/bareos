@@ -27,6 +27,8 @@
 #include "dump.h"
 #include <comdef.h>
 
+#include <memory>
+
 #define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
 
 bool AmICompatibleWith(filedaemon::PluginApiDefinition* core_info)
@@ -93,25 +95,18 @@ struct plugin_logger : public GenericLogger {
 
 struct session_ctx {
   plugin_logger logger;
-  dump_context* dctx{nullptr};
-  data_dumper* dumper{nullptr};
+  std::unique_ptr<dump_context,
+                  decltype([](dump_context* ctx) { destroy_context(ctx); })>
+      dctx{};
+  std::unique_ptr<data_dumper,
+                  decltype([](data_dumper* ptr) { dumper_stop(ptr); })>
+      dumper{};
 
   session_ctx(PluginContext* ctx, const plugin_arguments& args)
       : logger{ctx}, dctx{make_context(&logger)}
   {
-    args.apply_dump_context_settings(dctx);
-    dumper = dumper_setup(&logger, dump_context_create_plan(dctx));
-  }
-
-  session_ctx(const session_ctx&) = delete;
-  session_ctx(session_ctx&&) = delete;
-  session_ctx& operator=(const session_ctx&) = delete;
-  session_ctx& operator=(session_ctx&) = delete;
-
-  ~session_ctx()
-  {
-    if (dumper) { dumper_stop(dumper); }
-    if (dctx) { destroy_context(dctx); }
+    args.apply_dump_context_settings(dctx.get());
+    dumper.reset(dumper_setup(&logger, dump_context_create_plan(dctx.get())));
   }
 };
 
@@ -123,7 +118,7 @@ struct plugin_ctx {
   std::size_t session_read(std::span<char> data)
   {
     if (!current_session) { return 0; }
-    return dumper_write(current_session->dumper, data);
+    return dumper_write(current_session->dumper.get(), data);
   }
 
   bool has_session() const { return current_session.has_value(); }
