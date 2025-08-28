@@ -67,6 +67,7 @@ expected_output=(
   "BareosJobLevel"   "F" "I" " "
   "BareosSinceTime"  "0" "$desired_timestamp_of_since_time" "0"
   "BareosJobType"    "B" "B" "R"
+  "my_env_variable"  "still there" "still there" "still there"
 )
 
 for ((i = 0; i < ${#expected_output[@]}; i += 4)); do

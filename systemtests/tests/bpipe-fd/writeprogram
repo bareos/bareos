@@ -22,4 +22,5 @@ touch "$write_program_log" || {
   echo "BareosJobLevel='$BareosJobLevel'"
   echo "BareosSinceTime='$BareosSinceTime'"
   echo "BareosJobType='$BareosJobType'"
+  echo "my_env_variable='$my_env_variable'"
 } >"$write_program_log"
