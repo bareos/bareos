@@ -55,6 +55,23 @@ const PluginInformation my_info = {
 
 struct plugin_arguments {
   static plugin_arguments parse(std::string_view) { return {}; }
+
+  void apply_dump_context_settings(dump_context* ctx) const
+  {
+    dump_context_save_unknown_disks(ctx, save_unknown_disks);
+    dump_context_save_unknown_partitions(ctx, save_unknown_partitions);
+    dump_context_save_unknown_extents(ctx, save_unknown_extents);
+
+    for (auto disk_id : ignored_disks) {
+      dump_context_ignore_disk(ctx, disk_id);
+    }
+  }
+
+ private:
+  std::vector<size_t> ignored_disks;
+  bool save_unknown_disks{false};
+  bool save_unknown_partitions{false};
+  bool save_unknown_extents{false};
 };
 
 struct plugin_logger : public GenericLogger {
@@ -79,12 +96,17 @@ struct session_ctx {
   dump_context* dctx{nullptr};
   data_dumper* dumper{nullptr};
 
-  session_ctx(PluginContext* ctx)
-      : logger{ctx}
-      , dctx{make_context(&logger)}
-      , dumper{dumper_setup(&logger, dump_context_create_plan(dctx))}
+  session_ctx(PluginContext* ctx, const plugin_arguments& args)
+      : logger{ctx}, dctx{make_context(&logger)}
   {
+    args.apply_dump_context_settings(dctx);
+    dumper = dumper_setup(&logger, dump_context_create_plan(dctx));
   }
+
+  session_ctx(const session_ctx&) = delete;
+  session_ctx(session_ctx&&) = delete;
+  session_ctx& operator=(const session_ctx&) = delete;
+  session_ctx& operator=(session_ctx&) = delete;
 
   ~session_ctx()
   {
@@ -94,9 +116,9 @@ struct session_ctx {
 };
 
 struct plugin_ctx {
-  void set_plugin_args(plugin_arguments) {}
+  void set_plugin_args(plugin_arguments args_) { args = args_; }
 
-  void begin_session(PluginContext* ctx) { current_session.emplace(ctx); }
+  void begin_session(PluginContext* ctx) { current_session.emplace(ctx, args); }
 
   std::size_t session_read(std::span<char> data)
   {
@@ -113,6 +135,7 @@ struct plugin_ctx {
   };
 
   CoUninitializer unititializer{};
+  plugin_arguments args{};
 };
 
 plugin_ctx* get_private_context(PluginContext* ctx)
