@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2024 Bareos GmbH & Co KG
+#               2013-2025 Bareos GmbH & Co KG
 #
 
 Name:       bareos
@@ -284,9 +284,7 @@ Summary:    Bareos client Meta-All-In-One package
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-bconsole = %{version}
 Requires:   %{name}-filedaemon = %{version}
-%if 0%{?suse_version}
 Recommends: %{name}-traymonitor = %{version}
-%endif
 
 %package    director
 Summary:    Bareos Director daemon
@@ -296,12 +294,10 @@ Requires:   %{name}-database-common = %{version}
 Requires:   %{name}-database-tools
 %if 0%{?suse_version}
 Requires(pre): shadow
-# Don't use this option on anything other then SUSE derived distributions
-# as Fedora & others don't know this tag
-Recommends: logrotate
 %else
 Requires(pre): shadow-utils
 %endif
+Recommends: logrotate
 Provides:   %{name}-dir
 
 %package    storage
@@ -311,12 +307,11 @@ Requires:   %{name}-common = %{version}
 Provides:   %{name}-sd
 %if 0%{?suse_version}
 Requires(pre): shadow
-Recommends: bareos-tools
 %else
 Requires(pre): shadow-utils
-# Recommends would be enough, however only supported by Fedora >= 24.
-Requires: bareos-tools
 %endif
+Recommends: bareos-tools
+Recommends: logrotate
 
 %package    storage-dedupable
 Summary:    Dedupable storage format for the Bareos Storage daemon
@@ -728,9 +723,7 @@ This package provides some additional tools, not part of the Bareos project.
 Summary:     Additional File Daemon Python plugins, not part of the Bareos project
 Group:       Productivity/Archiving/Backup
 Requires:    bareos-filedaemon-python-plugin
-%if 0%{?rhel} != 7
-Suggests:   bareos-filedaemon-python3-plugin = %{version}
-%endif
+Suggests:    bareos-filedaemon-python3-plugin = %{version}
 
 %description contrib-filedaemon-python-plugins
 %{dscr}
