@@ -38,10 +38,12 @@ lib/libbareosndmp.so
 lib/libbareossd.so.%%DISTVERSION%%
 lib/libbareossd.so.%%LIBVERSION%%
 lib/libbareossd.so
+lib/libbareossd-file.so
 lib/bareos/scripts/bareos-config
 lib/bareos/scripts/bareos-config-lib.sh
 lib/bareos/scripts/btraceback.gdb
-@dir(bareos,bareos,750) lib/bareos/plugins
+@dir(bareos,bareos,755) lib/bareos/plugins
+lib/bareos/plugins/autoxflate-sd.so
 bin/bsmtp
 sbin/bsmtp
 sbin/btraceback

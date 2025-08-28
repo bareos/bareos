@@ -1238,8 +1238,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %endif
 %{_sbindir}/bareos-sd
 %{script_dir}/disk-changer
-%{plugin_dir}/autoxflate-sd.so
-%{backend_dir}/libbareossd-file*.so
 %{_mandir}/man8/bareos-sd.8.gz
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-sd.service
@@ -1374,6 +1372,9 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %if !0%{?client_only}
 %{library_dir}/libbareosndmp.so*
 %{library_dir}/libbareossd.so*
+%{backend_dir}/libbareossd-file*.so
+%dir %{plugin_dir}
+%{plugin_dir}/autoxflate-sd.so
 %endif
 # generic stuff needed from multiple bareos packages
 %dir /usr/lib/%{name}/
@@ -1384,7 +1385,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %if "%{_libdir}" != "/usr/lib/"
 %dir %{_libdir}/%{name}/
 %endif
-%dir %{plugin_dir}
 %if !0%{?client_only}
 %{_bindir}/bsmtp
 %{_sbindir}/bsmtp
