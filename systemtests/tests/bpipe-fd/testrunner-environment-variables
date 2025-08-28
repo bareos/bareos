@@ -18,6 +18,11 @@ export TestName
 
 start_test
 
+# Windows debug: show environment vars
+if [[ "$(uname -s)" =~ _NT ]]; then
+  nssm get bareos_fd-bpipe-fd AppEnvironmentExtra
+fi
+
 backup_log="${tmp}/log1.out"
 restore_log="${tmp}/log2.out"
 
@@ -63,11 +68,11 @@ check_two_logs
 # validate environment variables in readprogram / writeprogram
 expected_output=(
   "BareosClientName" "bpipe-fd-fd" "bpipe-fd-fd" "bpipe-fd-fd"
-  "BareosJobId"      "1" "2" "3"
-  "BareosJobLevel"   "F" "I" " "
-  "BareosSinceTime"  "0" "$desired_timestamp_of_since_time" "0"
-  "BareosJobType"    "B" "B" "R"
-  "my_env_variable"  "still there" "still there" "still there"
+  "BareosJobId" "1" "2" "3"
+  "BareosJobLevel" "F" "I" " "
+  "BareosSinceTime" "0" "$desired_timestamp_of_since_time" "0"
+  "BareosJobType" "B" "B" "R"
+  "my_env_variable" "still there" "still there" "still there"
 )
 
 for ((i = 0; i < ${#expected_output[@]}; i += 4)); do
