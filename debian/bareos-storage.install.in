@@ -1,5 +1,3 @@
-@plugindir@/autoxflate-sd.so
-@backenddir@/libbareossd-file.so*
 @scriptdir@/disk-changer
 @configtemplatedir@/bareos-sd.d/autochanger/FileStorage.conf.example
 @configtemplatedir@/bareos-sd.d/device/FileStorage.conf.example
