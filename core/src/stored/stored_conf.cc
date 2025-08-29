@@ -82,7 +82,7 @@ static const ResourceItem store_items[] = {
   { "SourceAddress", CFG_TYPE_ADDRESSES_ADDRESS, ITEM(res_store, SDsrc_addr), {config::DefaultValue{"0"}, config::Alias{"SdSourceAddress"}}},
   { "WorkingDirectory", CFG_TYPE_DIR, ITEM(res_store, working_directory), {config::DefaultValue{PATH_BAREOS_WORKINGDIR}, config::PlatformSpecific{}}},
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
-  { "BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), {config::DefaultValue{PATH_BAREOS_BACKENDDIR}, config::PlatformSpecific{}}},
+  { "BackendDirectory", CFG_TYPE_STR_VECTOR_OF_DIRS, ITEM(res_store, backend_directories), {config::DefaultValue{PATH_BAREOS_BACKENDDIR}, config::PlatformSpecific{},config::Description{"This is the directory where the storage daemon will look for dynamic backends (file, tape, etc.) when it needs to load them."}}},
 #endif
   { "JustInTimeReservation", CFG_TYPE_BOOL, ITEM(res_store, just_in_time_reservation), {config::IntroducedIn{23, 1, 0}, config::DefaultValue{"Yes"}, config::Description{"The storage daemon will only reserve devices when it receives data that needs to be written.  This option also means that no session label gets written if the job is empty."}}},
   { "PluginDirectory", CFG_TYPE_DIR, ITEM(res_store, plugin_directory), {}},
