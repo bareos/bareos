@@ -55,8 +55,95 @@ const PluginInformation my_info = {
     .plugin_usage = "...",
 };
 
+std::size_t next_option(std::string_view& to_parse,
+                        std::span<const std::string_view> keywords,
+                        std::string_view* value)
+{
+  to_parse.remove_prefix(to_parse.size());
+  *value = {};
+  return keywords.size();
+}
+
+bool insert_numbers(std::vector<std::size_t>& nums, std::string_view to_parse)
+{
+  return false;
+}
+
+constexpr std::size_t index_of(std::span<const std::string_view> keywords,
+                               std::string_view keyword)
+{
+  for (std::size_t i = 0; i < keywords.size(); ++i) {
+    if (keywords[i] == keyword) { return i; }
+  }
+
+  throw std::logic_error{"no such keyword"};
+}
+
 struct plugin_arguments {
-  static plugin_arguments parse(std::string_view) { return {}; }
+  static plugin_arguments parse(PluginContext* ctx, std::string_view str)
+  {
+    static constexpr std::string_view keywords[] = {
+        "unknown disks",
+        "unknown partitions",
+        "unknown extents",
+        "ignore disk",
+    };
+
+    plugin_arguments args{};
+    while (str.size() > 0) {
+      std::string_view value;
+      switch (next_option(str, keywords, &value)) {
+        case index_of(keywords, "unknown disks"): {
+          if (!value.empty()) {
+            err_msg(ctx, "unexpected value {} for {} flag", value, keywords[0]);
+            return {};
+          }
+          args.save_unknown_disks = true;
+        } break;
+        case index_of(keywords, "unknown partitions"): {
+          if (!value.empty()) {
+            err_msg(ctx, "unexpected value {} for {} flag", value,
+                    "unknown partitions");
+            return {};
+          }
+          args.save_unknown_partitions = true;
+        } break;
+        case index_of(keywords, "unknown extents"): {
+          if (!value.empty()) {
+            err_msg(ctx, "unexpected value {} for {} flag", value,
+                    "unknown extents");
+            return {};
+          }
+          args.save_unknown_extents = true;
+        } break;
+        case index_of(keywords, "ignore disk"): {
+          if (value.empty()) {
+            err_msg(ctx, "unexpected empty value for {} option", "ignore disk");
+            return {};
+          }
+          if (!insert_numbers(args.ignored_disks, value)) {
+            err_msg(ctx, "could not parse {} as a list of ints ({})", value,
+                    "ignore disk");
+            return {};
+          }
+        } break;
+        default: {
+          err_msg(ctx, "could not parse {}", value);
+          return {};
+        } break;
+      }
+    }
+
+    // std::string_view current_option;
+    // while (next_option(str, &current_option)) {
+    //   auto [key, value] = parse_kv(current_option);
+
+    //   if (value) {
+    //     if (key == "")
+    //   } else {
+    //   }
+    // }
+  }
 
   void apply_dump_context_settings(dump_context* ctx) const
   {
@@ -189,7 +276,8 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
   auto* pctx = get_private_context(ctx);
   switch (event->eventType) {
     case filedaemon::bEventPluginCommand: {
-      auto arguments = plugin_arguments::parse(static_cast<const char*>(data));
+      auto arguments
+          = plugin_arguments::parse(ctx, static_cast<const char*>(data));
       pctx->set_plugin_args(std::move(arguments));
       return bRC_OK;
     } break;
@@ -201,7 +289,8 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
     case filedaemon::bEventEstimateCommand:
       [[fallthrough]];
     case filedaemon::bEventRestoreCommand: {
-      auto arguments = plugin_arguments::parse(static_cast<const char*>(data));
+      auto arguments
+          = plugin_arguments::parse(ctx, static_cast<const char*>(data));
       pctx->set_plugin_args(std::move(arguments));
       return bRC_OK;
     }
