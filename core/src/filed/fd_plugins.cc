@@ -642,6 +642,10 @@ static bool GetPluginName(JobControlRecord* jcr, char* cmd, int* ret)
 
 void PluginUpdateFfPkt(FindFilesPacket* ff_pkt, save_pkt* sp)
 {
+  if (sp->portable != BitIsSet(FO_PORTABLE, ff_pkt->flags)) {
+    SetBit(FO_PORTABLE, ff_pkt->flags);
+  }
+
   ff_pkt->no_read = sp->no_read;
   ff_pkt->delta_seq = sp->delta_seq;
 
