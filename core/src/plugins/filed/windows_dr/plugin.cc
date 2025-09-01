@@ -128,7 +128,8 @@ struct plugin_arguments {
           }
         } break;
         default: {
-          err_msg(ctx, "could not parse '{}' (size = {})", str, str.size());
+          err_msg(ctx, "could not parse '{}' (size = {}) ['{}' (size = {})]",
+                  str, str.size(), value, value.size());
 
           str = {};
         } break;
@@ -307,6 +308,7 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
   (void)pctx;
 
   auto now = time(NULL);
+  sp->portable = true;  // we do not create windows backup data streams
   sp->fname = const_cast<char*>("disaster.img");
   sp->type = FT_REG;
   sp->statp.st_mode = 0700 | S_IFREG;

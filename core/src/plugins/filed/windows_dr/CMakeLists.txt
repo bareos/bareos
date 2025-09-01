@@ -67,25 +67,26 @@ if(HAVE_WIN32)
   add_executable(copy copy.cc)
   add_executable(count count.cc)
 else()
+  target_compile_options(progress-bar-logger PRIVATE "-Wno-shadow")
 
-  target_sources(wdr-fd PRIVATE plugin_linux.cc)
+  add_library(windows-dr-restore OBJECT)
+  target_sources(windows-dr-restore PRIVATE restore_linux.cc parser.cc)
+  target_link_libraries(
+    windows-dr-restore PUBLIC Microsoft.GSL::GSL fmt::fmt-header-only
+  )
+
+  target_sources(wdr-fd PRIVATE plugin_linux.cc bareos_api.cc)
   target_compile_definitions(wdr-fd PRIVATE PLUGIN_NAME="wdr")
-  target_link_libraries(wdr-fd PRIVATE tl::expected)
+  target_link_libraries(wdr-fd PRIVATE tl::expected windows-dr-restore)
   # target_link_libraries(wdr-fd PRIVATE dump)
 
-  add_executable(barri restore_linux.cc parser.cc)
-  target_compile_options(progress-bar-logger PRIVATE "-Wno-shadow")
+  add_executable(barri barri_linux.cc)
   target_compile_definitions(
     barri PRIVATE BARRI_VERSION="${BAREOS_FULL_VERSION}" BARRI_DATE="${DATE}"
   )
-
-  add_executable(test-progress progress.cc)
-  target_link_libraries(test-progress PUBLIC indicators::indicators)
-  target_compile_options(test-progress PRIVATE "-Wno-shadow")
-
   target_link_libraries(
-    barri CLI11::CLI11 Microsoft.GSL::GSL ${ZLIB_LIBRARIES}
-    fmt::fmt-header-only progress-bar-logger
+    barri PRIVATE CLI11::CLI11 ${ZLIB_LIBRARIES} progress-bar-logger
+                  windows-dr-restore
   )
 
   install(
