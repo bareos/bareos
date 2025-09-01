@@ -128,7 +128,7 @@ struct plugin_arguments {
           }
         } break;
         default: {
-          err_msg(ctx, "could not parse '{}'", value);
+          err_msg(ctx, "could not parse '{}' (size = {})", str, str.size());
 
           str = {};
         } break;
