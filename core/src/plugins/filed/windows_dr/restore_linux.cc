@@ -20,7 +20,6 @@
 */
 
 #include "CLI/CLI.hpp"
-#include "fmt/base.h"
 #include "parser.h"
 #include "partitioning.h"
 
