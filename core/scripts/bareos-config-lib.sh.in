@@ -852,7 +852,7 @@ get_translated_sql_file()
   db_version=$(get_database_version)
   # Try to find a separator character (for sed) not used in db_password.
   RC=0
-  sep="$(get_unused_separator)" || RC=$?
+  sep=$(get_unused_separator "${db_password}") || RC=$?
   if [ ${RC} -ne 0 ]; then
     error "Not able to find a free separator for sed not used in your password"
     return 3
