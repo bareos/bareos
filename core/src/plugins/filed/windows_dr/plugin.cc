@@ -128,11 +128,14 @@ struct plugin_arguments {
           }
         } break;
         default: {
-          err_msg(ctx, "could not parse {}", value);
-          return {};
+          err_msg(ctx, "could not parse '{}'", value);
+
+          str = {};
         } break;
       }
     }
+
+    return args;
 
     // std::string_view current_option;
     // while (next_option(str, &current_option)) {
