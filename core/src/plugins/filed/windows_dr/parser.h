@@ -117,7 +117,8 @@ void parse_file_format(GenericLogger* logger,
 
 struct restartable_parser;
 
-restartable_parser* parse_begin(GenericHandler* strategy);
+restartable_parser* parse_begin(GenericHandler* strategy,
+                                GenericLogger* logger);
 void parse_data(restartable_parser*, std::span<const char> data);
 void parse_end(restartable_parser*);
 
