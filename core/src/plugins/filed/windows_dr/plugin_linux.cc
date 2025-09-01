@@ -147,14 +147,13 @@ struct plugin_arguments {
       auto next_arg_start = args.find_first_of(":", 1);
       std::string_view current_arg = [&] {
         if (next_arg_start == args.npos) {
-          // we have reached the last argument
-
-          auto res = args;
+          // we have reached the last argument,
+          auto res = args.substr(1);
           args = {};
           return res;
         } else {
-          auto res = args.substr(0, next_arg_start);
-          args.remove_prefix(next_arg_start + 1);
+          auto res = args.substr(1, next_arg_start);
+          args.remove_prefix(next_arg_start);
           return res;
         }
       }();
@@ -216,7 +215,7 @@ struct plugin_ctx {
 
   plugin_ctx(PluginContext* ctx) : logger{ctx} {}
 
-  void set_plugin_args(plugin_arguments) {}
+  void set_plugin_args(plugin_arguments&& new_args) { args.emplace(new_args); }
 
   bool begin_session()
   {
@@ -315,9 +314,7 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
       return bRC_OK;
     } break;
 
-    case filedaemon::bEventNewPluginOptions:
-      [[fallthrough]];
-    case filedaemon::bEventRestoreCommand: {
+    case filedaemon::bEventNewPluginOptions: {
       auto arguments = plugin_arguments::parse(static_cast<const char*>(data));
       if (!arguments) {
         err_msg(ctx, "could not parse arguments: {}", arguments.error());
@@ -325,7 +322,24 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
       }
       pctx->set_plugin_args(std::move(arguments.value()));
       return bRC_OK;
-    }
+    } break;
+
+    case filedaemon::bEventRestoreCommand: {
+      if (!pctx->args) {
+        // not sure what to do here,
+        // these are the _backup_ arguments,
+        // so we should normally just ignore them, as the restore
+        // arguments are completely different
+        auto arguments
+            = plugin_arguments::parse(static_cast<const char*>(data));
+        if (!arguments) {
+          err_msg(ctx, "could not parse arguments: {}", arguments.error());
+          return bRC_Error;
+        }
+        pctx->set_plugin_args(std::move(arguments.value()));
+      }
+      return bRC_OK;
+    } break;
   }
   return bRC_Error;
 }
@@ -415,7 +429,7 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 bRC createFile(PluginContext* ctx, filedaemon::restore_pkt* pkt)
 {
   (void)ctx;
-  (void)pkt;
+  pkt->create_status = CF_EXTRACT;
   return bRC_OK;
 }
 bRC setFileAttributes(PluginContext* ctx, filedaemon::restore_pkt* pkt)
