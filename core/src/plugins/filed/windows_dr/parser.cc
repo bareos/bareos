@@ -481,9 +481,11 @@ struct restartable_parser {
   std::vector<parsable> next_storage;
 };
 
-restartable_parser* parse_begin(GenericHandler* handler)
+restartable_parser* parse_begin(GenericHandler* handler, GenericLogger* logger)
 {
-  return new restartable_parser{handler};
+  auto* parser = new restartable_parser{handler};
+  parser->set_logger(logger);
+  return parser;
 }
 
 void parse_data(restartable_parser* parser, std::span<const char> data)
@@ -512,9 +514,7 @@ void parse_file_format(GenericLogger* logger,
   std::vector<char> buffer;
   buffer.resize(4 << 20);
 
-  auto parser = parse_begin(strategy);
-
-  parser->set_logger(logger);
+  auto parser = parse_begin(strategy, logger);
 
   while (!stream.eof()) {
     stream.read(buffer.data(), buffer.size());
