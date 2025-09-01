@@ -23,8 +23,9 @@ if [[ "$(uname -s)" =~ _NT ]]; then
   nssm get bareos_fd-bpipe-fd AppEnvironmentExtra
 fi
 
-backup_log="${tmp}/log1.out"
-restore_log="${tmp}/log2.out"
+full_log="${tmp}/full.out"
+incr_log="${tmp}/incr.out"
+restore_log="${tmp}/restore.out"
 
 desired_since_time=$(date "+%F %R:%S")
 #yyyy-mm-dd hh:mm:ss
@@ -39,12 +40,12 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 
 
-@$out $backup_log
+@$out $full_log
 run job=backup-bareos-fd level=Full yes
 wait
 messages
 
-@$out $backup_log
+@$out $incr_log
 wait
 run job=backup-bareos-fd level=Incremental since="$desired_since_time" yes
 wait
@@ -58,12 +59,11 @@ messages
 quit
 END_OF_DATA
 
-# Start the bareos daemons
-# and run the bconsole commands from ${tmp}/bconcmds
-# Further bconsole commands can be executed by "run_bconsole".
 run_bconsole
 
-check_two_logs
+check_log "$full_log"
+check_log "$incr_log"
+check_log "$restore_log"
 
 # validate environment variables in readprogram / writeprogram
 expected_output=(
@@ -82,19 +82,16 @@ for ((i = 0; i < ${#expected_output[@]}; i += 4)); do
   writeprogram_value="${expected_output[i + 3]}"
   if ! grep -q "${key}='${readprogram_F_value}'" "$tmp/readprogram.F.env"; then
     echo "Environment variable '$key' is wrong in readprogram, expected '${readprogram_F_value}'."
-    grep "${key}" "$tmp/readprogram.F.env"
     cat "$tmp/readprogram.F.env"
     exit 2
   fi
   if ! grep -q "${key}='${readprogram_I_value}'" "$tmp/readprogram.I.env"; then
     echo "Environment variable '$key' is wrong in readprogram, expected '${readprogram_I_value}'."
-    grep "${key}" "$tmp/readprogram.I.env"
     cat "$tmp/readprogram.I.env"
     exit 2
   fi
   if ! grep -q "${key}='${writeprogram_value}'" "$tmp/writeprogram.env"; then
     echo "Environment variable '$key' is wrong in writeprogram, expected '${writeprogram_value}'."
-    grep "${key}" "$tmp/writeprogram.env"
     cat "$tmp/writeprogram.env"
     exit 2
   fi
