@@ -55,6 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMware Plugin: Adapt to pyVmomi 9 [PR #2341]
 - VMWare Plugin: Fix VirtualSerialPort, NVRAM timeouts configurable [PR #2344]
 - doc: storage backend add note about static build [PR #2350]
+- fix next-pool overrides by job [PR #2279]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -187,6 +188,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2273]: https://github.com/bareos/bareos/pull/2273
 [PR #2275]: https://github.com/bareos/bareos/pull/2275
 [PR #2278]: https://github.com/bareos/bareos/pull/2278
+[PR #2279]: https://github.com/bareos/bareos/pull/2279
 [PR #2283]: https://github.com/bareos/bareos/pull/2283
 [PR #2286]: https://github.com/bareos/bareos/pull/2286
 [PR #2287]: https://github.com/bareos/bareos/pull/2287
