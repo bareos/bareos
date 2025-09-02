@@ -158,25 +158,10 @@ int main(int argc, char* argv[])
                                 "read from this file instead of stdin")
                    ->check(CLI::ExistingFile);
 
-  std::chrono::steady_clock::duration info_frequency = std::chrono::minutes(1);
-
   auto as_multiplier = [](auto dur) {
     return std::chrono::duration_cast<std::chrono::steady_clock::duration>(dur)
         .count();
   };
-
-  restore
-      ->add_option("--freq", info_frequency,
-                   "how often should status update occur")
-      ->transform(CLI::AsNumberWithUnit(
-          std::map<std::string, std::size_t>{
-              {"s", as_multiplier(std::chrono::seconds(1))},
-              {"m", as_multiplier(std::chrono::minutes(1))},
-              {"h", as_multiplier(std::chrono::hours(1))},
-          },
-          CLI::AsNumberWithUnit::UNIT_REQUIRED
-              | CLI::AsNumberWithUnit::CASE_INSENSITIVE,
-          "TIME"));
 
   auto* location = restore->add_option_group(
       "output", "select where the data will be restored");
