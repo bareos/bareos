@@ -686,9 +686,8 @@ class RestoreToSpecifiedFiles : public GenericHandler {
       }
 
       if (blk_size < disk_size) {
-        throw std::runtime_error{
-            libbareos::format("disk {} is too small: {} < {}", current_idx,
-                              blk_size, disk_size, )};
+        throw std::runtime_error{libbareos::format(
+            "disk {} is too small: {} < {}", current_idx, blk_size, disk_size)};
       }
     } else {
       logger_->Info(
