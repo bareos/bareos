@@ -27,7 +27,7 @@ m.lastwritten between '2023-10-30 06:20:02' and '2023-11-19 05:20:02'
 ;
 ```
 
-## Installation
+## Manual Installation
 
 Install the script at where bareos python plugin are located `/usr/lib64/bareos/plugins`
 
@@ -48,13 +48,13 @@ chown root:root /usr/lib/bareos/scripts/media_vault.sh
 ### Virtualenv
 
 Prepare a python 3 venv to work with, and install python\_bareos in.
-It may be a good idea to have this done with bareos user.
+It may be a good idea to have this done as bareos user.
 
 ```bash
 su bareos -l -s /bin/bash
 python3 -m venv ~/.local/share/virtualenvs/bareos_media_vault
 . ~/.local/share/virtualenvs/bareos_media_vault/bin/activate
-python3 -m pip install python_bareos ConfigArgParse sslpsk
+python3 -m pip install python_bareos ConfigArgParse
 ```
 
 .. note:
@@ -78,8 +78,8 @@ dnf install python3-bareos python36-configargparse.noarch
 
 ### bareos dir dedicated console and acl profile
 
-To protect your director, it is recommended to create a restricted console, dedicated
-to the tool, with restricted acls.
+To protect your director, it is recommended to create a restricted console,
+dedicated to the tool, with restricted acls.
 
 #### Example of console
 
@@ -120,9 +120,8 @@ Profile {
    Name = media_vault
    Description = "Profile allowing Bareos autoloader & tape operations."
 
-   Command ACL = !.bvfs_clear_cache, !.bvfs_update
-   Command ACL = !configure, !create, !delete, !purge, !prune, !run, !rerun
-   Command ACL = show, sqlquery, umount, unmount, mount, export, update, .api, .sql
+   Command ACL = show, umount, unmount, mount, export, update, .api, .sql
+   Command ACL = !*all*
 
    Catalog ACL = *all*
    Client ACL = *all*
@@ -158,9 +157,9 @@ Remember to verify that it is readable by running user (bareos)
 #### Installation of a default configuration file
 
 ```bash
-cp media_vault.ini.in media_vault.ini
-chmod 640 media_vault.ini
-chown root:bareos media_vault.ini
+cp media_vault.ini.in /etc/bareos/media_vault.ini
+chmod 640 /etc/bareos/media_vault.ini
+chown root:bareos /etc/bareos/media_vault.ini
 ```
 
 Then edit and adapt parameters to the needs
@@ -238,7 +237,7 @@ A typical admin job will have records in list jobs similar to
 
 The ``backup_type`` is ``D``, it have to be manually purged from the database from time to time.
 
-A job log will have similar output.
+A job log with vault report activated will have similar output.
 
 ```log
 *list joblog jobid=16880
@@ -277,3 +276,4 @@ A job log will have similar output.
   Job triggered by:       User
   Termination:            Admin OK
 ```
+
