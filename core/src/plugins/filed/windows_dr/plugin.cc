@@ -222,6 +222,8 @@ struct plugin_ctx {
 
   CoUninitializer unititializer{};
   plugin_arguments args{};
+
+  std::string dump_file_name;
 };
 
 plugin_ctx* get_private_context(PluginContext* ctx)
@@ -248,6 +250,7 @@ bRC newPlugin(PluginContext* ctx)
   RegisterBareosEvent(ctx, filedaemon::bEventNewPluginOptions);
   RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventJobStart);
+  RegisterBareosEvent(ctx, filedaemon::bEventLevel);
   // RegisterBareosEvent(ctx, filedaemon::bEventStartBackupJob);
   RegisterBareosEvent(ctx, filedaemon::bEventRestoreCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventEstimateCommand);
@@ -297,7 +300,21 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
           = plugin_arguments::parse(ctx, static_cast<const char*>(data));
       pctx->set_plugin_args(std::move(arguments));
       return bRC_OK;
-    }
+    } break;
+    case filedaemon::bEventLevel: {
+      intptr_t level = reinterpret_cast<intptr_t>(data);
+
+      if (level == 'F') {
+        // full backups are a-ok!
+        return bRC_OK;
+      }
+
+      err_msg(ctx,
+              "This plugin can only do full backups; backup level requested = "
+              "{} ({})",
+              (char)level, level);
+      return bRC_Error;
+    } break;
   }
   return bRC_Error;
 }
@@ -305,13 +322,25 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
 bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
 {
   auto* pctx = get_private_context(ctx);
-  (void)pctx;
+
+  const char* Name = nullptr;
+  std::optional client_name = Get<bVar::Client>(ctx);
+  if (!client_name) {
+    err_msg(ctx, "could not retrieve client name from the bareos api!");
+    return bRC_Error;
+  }
+
+  sp->portable = true;  // we do not create windows backup data streams
 
   auto now = time(NULL);
-  sp->portable = true;  // we do not create windows backup data streams
-  sp->fname = const_cast<char*>(
-      "@barri@/disaster.img");  // maybe create a better file path here
-  // maybe hostname/timestamp ?
+
+  std::string_view hostname{
+      client_name.value()};  // hostname or client name (bareos) ???
+  std::string timestamp = libbareos::format("{}", now);
+  pctx->dump_file_name
+      = libbareos::format("@barri@/{}/{}", hostname, timestamp);
+
+  sp->fname = const_cast<char*>(pctx->dump_file_name.c_str());
   sp->type = FT_REG;
   sp->statp.st_mode = 0700 | S_IFREG;
   sp->statp.st_ctime = now;
