@@ -72,7 +72,7 @@ install(
 )
 
 install(
-  FILES job_admin-media-vault.conf
+  FILES job_admin-media_vault.conf
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ
   DESTINATION "${confdir}/bareos-dir.d/job"
 )
