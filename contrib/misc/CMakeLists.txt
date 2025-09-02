@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,5 +19,6 @@
 
 add_subdirectory(bsmc)
 add_subdirectory(chunk_check)
-add_subdirectory(triggerjob)
+add_subdirectory(media_vault)
 add_subdirectory(reschedule_job_as_full)
+add_subdirectory(triggerjob)

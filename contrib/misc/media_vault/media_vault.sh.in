@@ -1,0 +1,7 @@
+#!/bin/bash
+# this helper placed in /usr/lib/bareos/scripts/ use the python 
+# virtualenv by default. if you are not using it comment first and
+# last line
+source ~/.local/share/virtualenvs/bareos_media_vault/bin/activate
+@plugindir@/media_vault.py --config @configdir@/media_vault.ini $@
+deactivate
