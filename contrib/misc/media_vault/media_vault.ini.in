@@ -51,7 +51,7 @@ password=password
 ;; director host address
 address=localhost
 ;; director host port default 9101
-port=@dirport@
+port=@dir_port@
 ; connection timeout default 30
 timeout=5
 ;; bareos protocol to use default 2
