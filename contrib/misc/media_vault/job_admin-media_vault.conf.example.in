@@ -1,0 +1,18 @@
+Job {
+  Name = "job_admin-media_vault"
+  Description = "admin job on bareos-dir to run media_vault script"
+  Type = Admin
+  JobDefs = "DefaultJob"
+  RunScript {
+        Runs When = Before
+        Runs On Failure = yes
+        Runs On Success = yes
+        Runs On Client = no
+        Command = "@scriptdir@/media_vault.sh"
+  }
+
+  Reschedule On Error = yes
+  Reschedule Interval = 3600
+  Reschedule Times = 2
+  Priority = 20
+}
