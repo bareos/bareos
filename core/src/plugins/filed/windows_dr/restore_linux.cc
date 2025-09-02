@@ -34,6 +34,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
+#include <linux/fs.h>
 
 #include <cuchar>
 
@@ -674,6 +676,25 @@ class RestoreToSpecifiedFiles : public GenericHandler {
         logger_->Info("could not expand disk {}: Err={}", current_idx,
                       strerror(errno));
       }
+    }
+    if (S_ISBLK(s.st_mode)) {
+      std::uint64_t blk_size = 0;
+      if (auto status = ioctl(fd, BLKGETSIZE64, &blk_size); status < 0) {
+        throw std::runtime_error{
+            libbareos::format("could not determine disk size of disk {}: {}",
+                              current_idx, strerror(errno))};
+      }
+
+      if (blk_size < disk_size) {
+        throw std::runtime_error{
+            libbareos::format("disk {} is too small: {} < {}", current_idx,
+                              blk_size, disk_size, )};
+      }
+    } else {
+      logger_->Info(
+          "disk {} is neither a block device, nor a regular file.  Continuing "
+          "without size check",
+          current_idx);
     }
 
     auto& res = current_disk.emplace(fd.get(), geometry, disk_size);
