@@ -1533,6 +1533,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_bindir}/bsmc
 %attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bsmc.conf
 %{script_dir}/reschedule_job_as_full.sh
+%attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/media_vault.conf
+%attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/console/console_media_vault.conf
+%attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/console/console_media_vault.conf
+%attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/job/job_media_vault.conf
+%{script_dir}/media_vault.sh
+%{plugin_dir}/media_vault.py
 
 
 %files       contrib-filedaemon-python-plugins
