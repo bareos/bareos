@@ -36,6 +36,7 @@
 
 void restore_data(std::istream& stream, bool raw_file, GenericLogger* logger)
 {
+  // TODO: remove this and use the parser directly here
   do_restore(stream, logger, raw_file);
 }
 
@@ -104,7 +105,7 @@ int main(int argc, char* argv[])
   bool trace = false;
   app.add_flag("--trace", trace, "enable debug tracing");
 
-  auto* save = app.add_subcommand("save");
+  auto* save = app.add_subcommand("save", "create a disaster recovery image");
   save->add_flag("--dry", dry, "do not read/write actual disk data");
 
   save->add_flag("--unreferenced-extents", save_unreferenced_extents,
@@ -119,14 +120,24 @@ int main(int argc, char* argv[])
   save->add_option("--ignore-disks", ignored_disks,
                    "ids of disks to ignore (0, 1, 2, ...)");
 
-  auto* restore = app.add_subcommand("restore");
+  auto* restore = app.add_subcommand("restore",
+                                     R"(
+restore the disks to as vhdx files, or as regular files if --raw is set,
+to the current directory.
+
+The files will be called disk-0.vhdx, disk-1.vhdx, ..., and
+disk-0.raw, disk-1.raw, ... respectively.
+
+By default barri reads the dump from stdin, but you can also specify a path
+via the --from option explicitly.
+)");
   std::string filename;
   restore->add_option("--from", filename,
                       "read from this file instead of stdin");
   bool raw_file{false};
-  restore->add_flag("--raw", raw_file);
+  restore->add_flag("--raw", raw_file, "create simple files");
 
-  auto* version = app.add_subcommand("version");
+  auto* version = app.add_subcommand("version", "output the version");
 
   app.require_subcommand(1, 1);
 
