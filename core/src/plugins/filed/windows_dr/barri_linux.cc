@@ -158,11 +158,6 @@ int main(int argc, char* argv[])
                                 "read from this file instead of stdin")
                    ->check(CLI::ExistingFile);
 
-  auto as_multiplier = [](auto dur) {
-    return std::chrono::duration_cast<std::chrono::steady_clock::duration>(dur)
-        .count();
-  };
-
   auto* location = restore->add_option_group(
       "output", "select where the data will be restored");
 
