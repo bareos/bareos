@@ -19,6 +19,7 @@
    02110-1301, USA.
 */
 
+#include <unistd.h>
 #include <type_traits>
 #define NEW_RESTORE
 #if !defined(PLUGIN_NAME)
@@ -31,6 +32,8 @@
 #include "include/filetypes.h"
 #include "parser.h"
 #include "restore.h"
+
+#include <fcntl.h>
 
 #include <tl/expected.hpp>
 
@@ -65,8 +68,6 @@ struct plugin_arguments {
   using directory = std::string;
   using files = std::vector<std::string>;
 
-  std::variant<std::monostate, directory, files> target;
-
   using Error = tl::unexpected<std::string>;
 
   template <typename... Args>
@@ -89,8 +90,8 @@ struct plugin_arguments {
     static constexpr auto success = std::nullopt;
 
     if (key == "files") {
-      if (parsed.target.index() != 0) {
-        return err("cannot have more than one directory/files value total");
+      if (parsed.target_set()) {
+        return err("cannot have more than one target");
       }
 
       auto& vec = parsed.target.emplace<files>();
@@ -111,8 +112,8 @@ struct plugin_arguments {
 
       return success;
     } else if (key == "directory") {
-      if (parsed.target.index() != 0) {
-        return err("cannot have more than one directory/files value total");
+      if (parsed.target_set()) {
+        return err("cannot have more than one target");
       }
 
       if (value.empty()) {
@@ -122,6 +123,21 @@ struct plugin_arguments {
       auto& dir = parsed.target.emplace<directory>();
 
       dir.assign(value);
+
+      return success;
+    } else if (key == "copy") {
+      if (parsed.target_set()) {
+        return err(
+            "cannot have more than one directory/files/copy value total");
+      }
+
+      if (value.empty()) {
+        return err(
+            "copy cannot be set to an empty string; it should be the filename "
+            "of the copy");
+      }
+
+      parsed.copy_location = value;
 
       return success;
     }
@@ -180,6 +196,17 @@ struct plugin_arguments {
 
     return parsed;
   }
+
+
+  bool target_set() const
+  {
+    if (!copy_location.empty()) { return true; }
+    if (std::get_if<std::monostate>(&target) == nullptr) { return true; }
+    return false;
+  }
+
+  std::variant<std::monostate, directory, files> target;
+  std::string copy_location;
 };
 
 struct plugin_logger : public GenericLogger {
@@ -231,6 +258,8 @@ struct plugin_ctx {
             return restore_options::into_directory(&logger, tgt);
           } else if constexpr (std::is_same_v<T, plugin_arguments::files>) {
             return restore_options::into_files(&logger, tgt);
+          } else if constexpr (std::is_same_v<T, plugin_arguments::files>) {
+            static_assert(0, "handled elsewhere");
           } else if constexpr (std::is_same_v<T, std::monostate>) {
             // nothing was chosen, so just use a sensible default
             return restore_options::into_directory(&logger, "/tmp");
@@ -373,13 +402,20 @@ bRC endRestoreFile(PluginContext* ctx)
 bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 {
   auto* pctx = get_private_context(ctx);
-  (void)pctx;
   switch (pkt->func) {
     case filedaemon::IO_OPEN: {
       if (pctx->has_session()) {
         err_msg(ctx, "context can only be created once");
         pkt->status = -1;
         return bRC_Error;
+      }
+
+      if (!pctx->args->copy_location.empty()) {
+        pkt->filedes
+            = open(pctx->args->copy_location.c_str(), O_RDWR | O_TRUNC);
+        pkt->status = IoStatus::do_io_in_core;
+
+        return bRC_OK;
       }
 
       try {
@@ -415,7 +451,9 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
       return bRC_OK;
     } break;
     case filedaemon::IO_CLOSE: {
-      if (!pctx->has_session()) {
+      if (!pctx->args->copy_location.empty()) {
+        close(pkt->filedes);
+      } else if (!pctx->has_session()) {
         err_msg(ctx, "context can only be closed, if its open");
         pkt->status = -1;
         return bRC_Error;
@@ -428,8 +466,24 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 }
 bRC createFile(PluginContext* ctx, filedaemon::restore_pkt* pkt)
 {
-  (void)ctx;
-  pkt->create_status = CF_EXTRACT;
+  auto* pctx = get_private_context(ctx);
+
+  bool handled = false;
+  if (pctx->args) {
+    if (auto& copy_loc = pctx->args->copy_location; !copy_loc.empty()) {
+      // we just tell bareos to dump the stream into the file system
+
+      if (creat(copy_loc.c_str(), 0600) < 0) {
+        err_msg(ctx, "could not create {}: {}", copy_loc, strerror(errno));
+        return bRC_Stop;
+      }
+      pkt->create_status = CF_EXTRACT;
+
+      handled = true;
+    }
+  }
+
+  if (!handled) { pkt->create_status = CF_EXTRACT; }
   return bRC_OK;
 }
 bRC setFileAttributes(PluginContext* ctx, filedaemon::restore_pkt* pkt)
