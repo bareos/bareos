@@ -19,6 +19,25 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(GNUInstallDirs)
+
+set(CMAKE_MODULE_PATH
+    ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../SOURCES
+    ${PROJECT_SOURCE_DIR}/../SOURCES ${PROJECT_SOURCE_DIR}/cmake
+)
+
+include(BareosLocalBuildDefinitions OPTIONAL
+        RESULT_VARIABLE BareosLocalBuildDefinitionsFile
+)
+
+include(BareosConfigureFile)
+
+bareos_configure_file(
+  FILES
+  media_vault.sh.in
+  media_vault.ini.in
+)
+
 install(
   FILES media_vault.py
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
@@ -27,34 +46,34 @@ install(
 )
 
 install(
-  FILES media_vault.sh
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/media_vault.sh"
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE
   DESTINATION "${scriptdir}"
 )
 
 install(
-  FILES media_vault.ini
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/media_vault.ini"
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ
-  DESTINATION "${configdir}"
+  DESTINATION "${confdir}"
 )
 
 install(
   FILES console_media_vault.conf
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE
-  DESTINATION "${configdir}/bareos-dir.d/console"
+  DESTINATION "${confdir}/bareos-dir.d/console"
 )
 
 install(
   FILES profile_media_vault.conf
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ
-  DESTINATION "${configdir}/bareos-dir.d/profile"
+  DESTINATION "${confdir}/bareos-dir.d/profile"
 )
 
 install(
   FILES job_admin-media-vault.conf
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ
-  DESTINATION "${configdir}/bareos-dir.d/job"
+  DESTINATION "${confdir}/bareos-dir.d/job"
 )
 
