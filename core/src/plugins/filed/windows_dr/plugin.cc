@@ -309,7 +309,9 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
 
   auto now = time(NULL);
   sp->portable = true;  // we do not create windows backup data streams
-  sp->fname = const_cast<char*>("disaster.img");
+  sp->fname = const_cast<char*>(
+      "@barri@/disaster.img");  // maybe create a better file path here
+  // maybe hostname/timestamp ?
   sp->type = FT_REG;
   sp->statp.st_mode = 0700 | S_IFREG;
   sp->statp.st_ctime = now;
