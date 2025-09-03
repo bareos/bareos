@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -104,11 +104,20 @@ struct OSFile {
 
 struct grpc_connection_members;
 
+namespace bareos {
+namespace plugin {
+struct handlePluginEventRequest;
+}
+}  // namespace bareos
+
+
 class grpc_connection {
  public:
   bRC Setup();
 
   bRC handlePluginEvent(filedaemon::bEventType type, void* data);
+  bRC handlePluginEvent(filedaemon::bEventType type,
+                        bareos::plugin::handlePluginEventRequest* req);
 
   bRC startBackupFile(filedaemon::save_pkt* pkt);
   bRC endBackupFile();
@@ -203,5 +212,9 @@ struct grpc_child {
 std::optional<grpc_child> make_connection(PluginContext* ctx,
                                           std::string_view program_path);
 
+bareos::plugin::handlePluginEventRequest* to_grpc(filedaemon::bEventType type,
+                                                  void* data);
+
+void delete_request(bareos::plugin::handlePluginEventRequest* req);
 
 #endif  // BAREOS_PLUGINS_FILED_GRPC_GRPC_IMPL_H_
