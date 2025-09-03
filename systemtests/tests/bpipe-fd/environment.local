@@ -1,0 +1,9 @@
+# these should get overwritten in bpipe-fd
+export BareosClientName='-1'
+export BareosJobId='-1'
+export BareosJobLevel='-1'
+export BareosSinceTime='-1'
+export BareosJobType='-1'
+
+# this should be preserved inside bpipe-fd
+export my_env_variable="still there"

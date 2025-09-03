@@ -1,0 +1,100 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# This test checks whether the environment variables for the bpipe plugin work correctly.
+# Both the read- and the writeprogram use the set environment variables
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+# Windows debug: show environment vars
+if [[ "$(uname -s)" =~ _NT ]]; then
+  nssm get bareos_fd-bpipe-fd AppEnvironmentExtra
+fi
+
+full_log="${tmp}/full.out"
+incr_log="${tmp}/incr.out"
+restore_log="${tmp}/restore.out"
+
+desired_since_time=$(date "+%F %R:%S")
+#yyyy-mm-dd hh:mm:ss
+
+if [ "$(uname -s)" == FreeBSD ]; then
+  desired_timestamp_of_since_time=$(date -j -f "%Y-%m-%d%n %H:%M:%S" "$desired_since_time" "+%s")
+else
+  desired_timestamp_of_since_time=$(date +%s --date="$desired_since_time")
+fi
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${NULL_DEV}
+messages
+
+
+@$out $full_log
+run job=backup-bareos-fd level=Full yes
+wait
+messages
+
+@$out $incr_log
+wait
+run job=backup-bareos-fd level=Incremental since="$desired_since_time" yes
+wait
+messages
+
+@$out $restore_log
+restore jobid=1 client=bareos-fd all done yes
+wait
+messages
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_log "$full_log"
+check_log "$incr_log"
+check_log "$restore_log"
+
+# validate environment variables in readprogram / writeprogram
+expected_output=(
+  "BareosClientName" "bpipe-fd-fd" "bpipe-fd-fd" "bpipe-fd-fd"
+  "BareosJobId" "1" "2" "3"
+  "BareosJobLevel" "F" "I" " "
+  "BareosSinceTime" "0" "$desired_timestamp_of_since_time" "0"
+  "BareosJobType" "B" "B" "R"
+  "my_env_variable" "still there" "still there" "still there"
+)
+
+for ((i = 0; i < ${#expected_output[@]}; i += 4)); do
+  key="${expected_output[i + 0]}"
+  readprogram_F_value="${expected_output[i + 1]}"
+  readprogram_I_value="${expected_output[i + 2]}"
+  writeprogram_value="${expected_output[i + 3]}"
+  if ! grep -q "${key}='${readprogram_F_value}'" "$tmp/readprogram.F.env"; then
+    echo "Environment variable '$key' is wrong in readprogram, expected '${readprogram_F_value}'."
+    cat "$tmp/readprogram.F.env"
+    exit 2
+  fi
+  if ! grep -q "${key}='${readprogram_I_value}'" "$tmp/readprogram.I.env"; then
+    echo "Environment variable '$key' is wrong in readprogram, expected '${readprogram_I_value}'."
+    cat "$tmp/readprogram.I.env"
+    exit 2
+  fi
+  if ! grep -q "${key}='${writeprogram_value}'" "$tmp/writeprogram.env"; then
+    echo "Environment variable '$key' is wrong in writeprogram, expected '${writeprogram_value}'."
+    cat "$tmp/writeprogram.env"
+    exit 2
+  fi
+done
+
+end_test
