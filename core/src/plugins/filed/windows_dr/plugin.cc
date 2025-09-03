@@ -19,6 +19,10 @@
    02110-1301, USA.
 */
 
+#if !defined(PLUGIN_NAME)
+#  error PLUGIN_NAME not set
+#endif
+
 #include "include/bareos.h"
 #include "filed/fd_plugins.h"
 #include "bareos_api.h"
@@ -221,9 +225,9 @@ struct plugin_arguments {
 
     d_msg(300, "got name = '{}'", name);
 
-    if (name != "wdr") {
-      err_msg(ctx, "bad plugin options received, expected 'wdr', got '{}'",
-              name);
+    if (name != PLUGIN_NAME) {
+      err_msg(ctx, "bad plugin options received, expected '{}', got '{}'",
+              PLUGIN_NAME, name);
       return {};
     }
 
