@@ -73,7 +73,7 @@ install(
 )
 
 install(
-  FILES "${CMAKE_CURRENT_BINARY_DIR}/mjob_admin-media_vault.conf"
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/job_admin-media_vault.conf"
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ
   DESTINATION "${confdir}/bareos-dir.d/job"
 )
