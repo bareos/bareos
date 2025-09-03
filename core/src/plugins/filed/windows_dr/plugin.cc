@@ -76,6 +76,24 @@ std::string_view trim_left(std::string_view input)
   return input.substr(chars_to_trim);
 }
 
+std::string_view trim_right(std::string_view input)
+{
+  std::size_t chars_to_keep = input.size();
+
+  for (size_t i = 0; i < input.size(); ++i) {
+    auto c = input[input.size() - i - 1];
+    if (!isspace(c)) { break; }
+    chars_to_keep -= 1;
+  }
+
+  return input.substr(0, chars_to_keep);
+}
+
+std::string_view trim(std::string_view input)
+{
+  return trim_left(trim_right(input));
+}
+
 std::string_view next_part(std::string_view& input, char sep)
 {
   auto sep_pos = input.find_first_of(sep);
@@ -85,7 +103,7 @@ std::string_view next_part(std::string_view& input, char sep)
     input = {};
     return temp;
   } else {
-    auto temp = input.substr(sep_pos);
+    auto temp = input.substr(0, sep_pos);
     input.remove_prefix(sep_pos + 1);
     return temp;
   }
@@ -95,21 +113,26 @@ std::size_t next_option(std::string_view& to_parse,
                         std::span<const std::string_view> keywords,
                         std::string_view* value)
 {
-  d_msg(300, "to_parse = {}", to_parse);
+  // we dont want to change to_parse, if we cannot find a keyword
+  auto working_copy = to_parse;
+  d_msg(300, "to_parse = {}", working_copy);
 
-  auto found = next_part(to_parse, ':');
+  auto found = next_part(working_copy, ':');
 
   auto input = trim_left(found);
   d_msg(300, " => input = {}", input);
 
-  auto key = next_part(input, '=');
+  auto key = trim_right(next_part(input, '='));
+
 
   d_msg(300, " => key = {}, value = {}", key, input);
-  *value = input;
+  *value = trim(input);
 
   for (size_t i = 0; i < keywords.size(); ++i) {
     if (key == keywords[i]) {
       d_msg(300, " => keyword #{}", i);
+      // if we found a keyword, then we update to_parse
+      to_parse = working_copy;
       return i;
     }
   }
@@ -124,7 +147,11 @@ std::optional<std::string> insert_numbers(std::vector<std::size_t>& nums,
   auto current = to_parse;
   d_msg(300, "converting '{}' into a list of numbers", to_parse);
   for (;;) {
-    auto found = next_part(current, ',');
+    current = trim_left(current);
+    if (current.size() == 0) { break; }
+
+
+    auto found = trim_right(next_part(current, ','));
 
     d_msg(300, " => converting '{}'", found);
 
@@ -180,7 +207,8 @@ constexpr std::size_t index_of(std::span<const std::string_view> keywords,
 }
 
 struct plugin_arguments {
-  static plugin_arguments parse(PluginContext* ctx, std::string_view str)
+  static std::optional<plugin_arguments> parse(PluginContext* ctx,
+                                               std::string_view str)
   {
     static constexpr std::string_view keywords[] = {
         "unknown disks",
@@ -189,14 +217,28 @@ struct plugin_arguments {
         "ignore disk",
     };
 
+    auto name = next_part(str, ':');
+
+    d_msg(300, "got name = '{}'", name);
+
+    if (name != "wdr") {
+      err_msg(ctx, "bad plugin options received, expected 'wdr', got '{}'",
+              name);
+      return {};
+    }
+
     plugin_arguments args{};
-    while (str.size() > 0) {
-      std::string_view value;
+    for (;;) {
+      str = trim_left(str);
+
+      if (str.size() == 0) { break; }
+
+      std::string_view value = {};
       switch (next_option(str, keywords, &value)) {
         case index_of(keywords, "unknown disks"): {
           if (!value.empty()) {
             err_msg(ctx, "unexpected value {} for {} flag", value, keywords[0]);
-            return {};
+            return std::nullopt;
           }
           args.save_unknown_disks = true;
         } break;
@@ -204,7 +246,7 @@ struct plugin_arguments {
           if (!value.empty()) {
             err_msg(ctx, "unexpected value {} for {} flag", value,
                     "unknown partitions");
-            return {};
+            return std::nullopt;
           }
           args.save_unknown_partitions = true;
         } break;
@@ -212,26 +254,26 @@ struct plugin_arguments {
           if (!value.empty()) {
             err_msg(ctx, "unexpected value {} for {} flag", value,
                     "unknown extents");
-            return {};
+            return std::nullopt;
           }
           args.save_unknown_extents = true;
         } break;
         case index_of(keywords, "ignore disk"): {
           if (value.empty()) {
             err_msg(ctx, "unexpected empty value for {} option", "ignore disk");
-            return {};
+            return std::nullopt;
           }
           if (auto error = insert_numbers(args.ignored_disks, value)) {
-            err_msg(ctx, "could not parse {} as a list of ints ({})", value,
-                    "ignore disk");
-            return {};
+            err_msg(ctx, "could not parse {} as a list of ints ({}): {}", value,
+                    "ignore disk", error.value());
+            return std::nullopt;
           }
         } break;
         default: {
-          err_msg(ctx, "could not parse '{}' (size = {}) ['{}' (size = {})]",
-                  str, str.size(), value, value.size());
+          err_msg(ctx, "could not parse plugin options string '{}'", str,
+                  str.size());
 
-          str = {};
+          return std::nullopt;
         } break;
       }
     }
@@ -373,9 +415,14 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
   auto* pctx = get_private_context(ctx);
   switch (event->eventType) {
     case filedaemon::bEventPluginCommand: {
-      auto arguments
+      std::optional arguments
           = plugin_arguments::parse(ctx, static_cast<const char*>(data));
-      pctx->set_plugin_args(std::move(arguments));
+
+      if (!arguments) {
+        DebugLog(ctx, 300, "plugin option string could not be parsed");
+        return bRC_Error;
+      }
+      pctx->set_plugin_args(std::move(arguments.value()));
       return bRC_OK;
     } break;
 
@@ -386,9 +433,15 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
     case filedaemon::bEventEstimateCommand:
       [[fallthrough]];
     case filedaemon::bEventRestoreCommand: {
-      auto arguments
+      std::optional arguments
           = plugin_arguments::parse(ctx, static_cast<const char*>(data));
-      pctx->set_plugin_args(std::move(arguments));
+
+      if (!arguments) {
+        DebugLog(ctx, 300, "plugin option string could not be parsed");
+        return bRC_Error;
+      }
+
+      pctx->set_plugin_args(std::move(arguments.value()));
       return bRC_OK;
     } break;
     case filedaemon::bEventLevel: {
