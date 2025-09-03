@@ -12,7 +12,7 @@ Job {
   Allow Mixed Priority = no
   Spool Data = no
   Run Script {
-        command = "sleep 2"
+        command = "sleep 0.25"
         Runs When = Before
   }
 }
