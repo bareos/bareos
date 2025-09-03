@@ -23,6 +23,7 @@
 #define BAREOS_PLUGINS_FILED_WINDOWS_DR_PARSER_H_
 
 #include "file_format.h"
+#include <istream>
 
 struct disk_info {
   std::uint64_t disk_size;
