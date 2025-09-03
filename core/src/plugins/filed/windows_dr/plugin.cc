@@ -30,7 +30,15 @@
 #include <charconv>
 #include <memory>
 
-#define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
+#if defined(MSVC_JOINED_THE_MODERN_WORLD)
+#  define err_msg(ctx, fmt, ...) \
+    JobLog((ctx), M_ERROR, (fmt)__VA_OPT__(, ) __VA_ARGS__)
+#  define d_msg(level, fmt, ...) \
+    DebugLog((level), (fmt)__VA_OPT__(, ) __VA_ARGS__)
+#else
+#  define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
+#  define d_msg(level, ...) DebugLog((level), __VA_ARGS__)
+#endif
 
 bool AmICompatibleWith(filedaemon::PluginApiDefinition* core_info)
 {
@@ -56,12 +64,57 @@ const PluginInformation my_info = {
     .plugin_usage = "...",
 };
 
+std::string_view trim_left(std::string_view input)
+{
+  std::size_t chars_to_trim = 0;
+
+  for (auto& c : input) {
+    if (!isspace(c)) { break; }
+    chars_to_trim += 1;
+  }
+
+  return input.substr(chars_to_trim);
+}
+
+std::string_view next_part(std::string_view& input, char sep)
+{
+  auto sep_pos = input.find_first_of(sep);
+
+  if (sep_pos == input.npos) {
+    auto temp = input;
+    input = {};
+    return temp;
+  } else {
+    auto temp = input.substr(sep_pos);
+    input.remove_prefix(sep_pos + 1);
+    return temp;
+  }
+}
+
 std::size_t next_option(std::string_view& to_parse,
                         std::span<const std::string_view> keywords,
                         std::string_view* value)
 {
-  to_parse.remove_prefix(to_parse.size());
-  *value = {};
+  d_msg(300, "to_parse = {}", to_parse);
+
+  auto found = next_part(to_parse, ':');
+
+  auto input = trim_left(found);
+  d_msg(300, " => input = {}", input);
+
+  auto key = next_part(input, '=');
+
+  d_msg(300, " => key = {}, value = {}", key, input);
+  *value = input;
+
+  for (size_t i = 0; i < keywords.size(); ++i) {
+    if (key == keywords[i]) {
+      d_msg(300, " => keyword #{}", i);
+      return i;
+    }
+  }
+
+  d_msg(300, " => keyword not found");
   return keywords.size();
 }
 
@@ -69,19 +122,11 @@ std::optional<std::string> insert_numbers(std::vector<std::size_t>& nums,
                                           std::string_view to_parse)
 {
   auto current = to_parse;
+  d_msg(300, "converting '{}' into a list of numbers", to_parse);
   for (;;) {
-    auto comma = current.find_first_of(",");
+    auto found = next_part(current, ',');
 
-    auto found = [&] {
-      if (comma == current.npos) {
-        current = {};
-        return current;
-      } else {
-        auto temp = current.substr(0, comma);
-        current.remove_prefix(comma + 1);
-        return temp;
-      }
-    }();
+    d_msg(300, " => converting '{}'", found);
 
     std::size_t number = 0;
     auto conversion_result = std::from_chars(
@@ -101,6 +146,8 @@ std::optional<std::string> insert_numbers(std::vector<std::size_t>& nums,
       }
     }
 
+    d_msg(300, " => left_over = '{}'", left_over);
+
     bool ignore_left_over = true;
 
     for (auto c : left_over) {
@@ -114,6 +161,8 @@ std::optional<std::string> insert_numbers(std::vector<std::size_t>& nums,
       return libbareos::format("'{}' contains unparsable junk ({})", found,
                                left_over);
     }
+
+    d_msg(300, " => parsed {}", number);
 
     nums.push_back(number);
   }
@@ -188,16 +237,6 @@ struct plugin_arguments {
     }
 
     return args;
-
-    // std::string_view current_option;
-    // while (next_option(str, &current_option)) {
-    //   auto [key, value] = parse_kv(current_option);
-
-    //   if (value) {
-    //     if (key == "")
-    //   } else {
-    //   }
-    // }
   }
 
   void apply_dump_context_settings(dump_context* ctx) const
