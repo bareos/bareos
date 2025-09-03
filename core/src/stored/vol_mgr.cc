@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -280,8 +280,8 @@ static void FreeVolItem(VolumeReservationItem* vol)
 {
   Device* dev = nullptr;
 
-  vol->DecUseCount();
   vol->Lock();
+  vol->DecUseCount();
   if (vol->UseCount() > 0) {
     vol->Unlock();
     return;
