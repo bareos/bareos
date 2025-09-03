@@ -89,6 +89,66 @@ static constexpr uint64_t build_magic(const char (&str)[N])
   return value;
 }
 
+struct decoded_version {
+  uint8_t major{};
+  uint8_t minor{};
+  uint8_t patch{};
+
+  constexpr operator uint32_t()
+  {
+    uint32_t major32 = major, minor32 = minor, patch32 = patch;
+    return major32 << 16 | minor32 << 8 | patch32;
+  }
+
+  constexpr decoded_version() = default;
+
+  constexpr decoded_version(uint8_t major_, uint8_t minor_, uint8_t patch_)
+      : major{major_}, minor{minor_}, patch{patch_}
+  {
+  }
+
+  constexpr decoded_version(std::uint32_t encoded)
+      : major{static_cast<std::uint8_t>(encoded >> 16)}
+      , minor{static_cast<std::uint8_t>(encoded >> 8)}
+      , patch{static_cast<std::uint8_t>(encoded >> 0)}
+  {
+  }
+
+  constexpr friend bool operator==(const decoded_version& l,
+                                   const decoded_version& r)
+  {
+    return l.major == r.major && l.minor == r.minor && l.patch == r.patch;
+  }
+};
+
+static_assert(static_cast<std::uint64_t>(decoded_version{15}) == 15);
+static_assert(static_cast<std::uint64_t>(decoded_version{10000000})
+              == 10000000);
+static_assert(decoded_version{
+                  static_cast<std::uint64_t>(decoded_version{1, 0, 0})}
+              == decoded_version{1, 0, 0});
+static_assert(decoded_version{
+                  static_cast<std::uint64_t>(decoded_version{1, 1, 0})}
+              == decoded_version{1, 1, 0});
+static_assert(decoded_version{
+                  static_cast<std::uint64_t>(decoded_version{1, 0, 1})}
+              == decoded_version{1, 0, 1});
+static_assert(decoded_version{
+                  static_cast<std::uint64_t>(decoded_version{1, 1, 1})}
+              == decoded_version{1, 1, 1});
+static_assert(decoded_version{
+                  static_cast<std::uint64_t>(decoded_version{255, 0, 0})}
+              == decoded_version{255, 0, 0});
+static_assert(decoded_version{
+                  static_cast<std::uint64_t>(decoded_version{255, 255, 0})}
+              == decoded_version{255, 255, 0});
+static_assert(decoded_version{
+                  static_cast<std::uint64_t>(decoded_version{255, 0, 255})}
+              == decoded_version{255, 0, 255});
+static_assert(decoded_version{
+                  static_cast<std::uint64_t>(decoded_version{255, 255, 255})}
+              == decoded_version{255, 255, 255});
+
 template <typename T> static void write_stream(writer& stream, const T& t)
 {
   stream.write(reinterpret_cast<const char*>(&t), sizeof(t));
@@ -119,7 +179,7 @@ static void expect_stream(reader& stream,
 
 struct file_header {
   static constexpr std::uint64_t magic_value = build_magic("badrfile");
-  static constexpr std::uint32_t current_version = 100'000'000;
+  static constexpr std::uint32_t current_version = decoded_version{1, 0, 0};
 
   uint32_t disk_count;
   uint32_t version = current_version;
