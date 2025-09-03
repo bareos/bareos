@@ -34,31 +34,8 @@ set -u
 # Fill ${BackupDirectory} with data.
 setup_data
 
-
-# Setup scheduler configuration to run at current time
-if [ $(date +"%S") -ge 50 ]; then
-    sleep 11
-    # to avoid case when we set a scheduled time at for example 13:01 and
-    # before the setup is finished, it becomes 13:02 and schedule doesn't
-    # start. So we give the test extra time to go to the next minute.
-fi
-
-currenttime=$(date +"%H:%M")
-
-[[ -d "${conf}/bareos-dir.d/schedule" ]] || mkdir "${conf}/bareos-dir.d/schedule"
-
-echo "Schedule {
-  Name = \"TestCycle\"
-  Run = Level=Full daily at $currenttime
-}" > "$conf"/bareos-dir.d/schedule/TestCycle.conf
-
-echo "Schedule {
-  Name = \"LastSunday\"
-  Run = last Sun at $currenttime
-}" > "$conf"/bareos-dir.d/schedule/LastSunday.conf
-
 bin/bareos start
 bin/bareos status
 
 # make sure, director is up and running.
-print_debug "$(bin/bconsole <<< "status dir")"
+print_debug "$(bin/bconsole <<<"status dir")"

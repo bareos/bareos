@@ -1979,8 +1979,15 @@ static int PyStatPacket_init(PyStatPacket* self, PyObject* args, PyObject* kwds)
   self->blksize = 4096;
   self->blocks = 1;
 
+  static_assert(std::is_signed_v<decltype(self->atime)>
+                && sizeof(self->atime) == sizeof(long long));
+  static_assert(std::is_signed_v<decltype(self->ctime)>
+                && sizeof(self->atime) == sizeof(long long));
+  static_assert(std::is_signed_v<decltype(self->mtime)>
+                && sizeof(self->atime) == sizeof(long long));
+
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|IKHHIIILIIIIK", kwlist, &self->dev, &self->ino,
+          args, kwds, "|IKHHIIILLLLIK", kwlist, &self->dev, &self->ino,
           &self->mode, &self->nlink, &self->uid, &self->gid, &self->rdev,
           &self->size, &self->atime, &self->mtime, &self->ctime, &self->blksize,
           &self->blocks)) {

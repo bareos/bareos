@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -163,11 +163,11 @@ static PyMemberDef PyStatPacket_members[] = {
     {(char*)"st_rdev", T_UINT, offsetof(PyStatPacket, rdev), 0, (char*)"Rdev"},
     {(char*)"st_size", T_ULONGLONG, offsetof(PyStatPacket, size), 0,
      (char*)"Size"},
-    {(char*)"st_atime", T_UINT, offsetof(PyStatPacket, atime), 0,
+    {(char*)"st_atime", T_LONGLONG, offsetof(PyStatPacket, atime), 0,
      (char*)"Access Time"},
-    {(char*)"st_mtime", T_UINT, offsetof(PyStatPacket, mtime), 0,
+    {(char*)"st_mtime", T_LONGLONG, offsetof(PyStatPacket, mtime), 0,
      (char*)"Modification Time"},
-    {(char*)"st_ctime", T_UINT, offsetof(PyStatPacket, ctime), 0,
+    {(char*)"st_ctime", T_LONGLONG, offsetof(PyStatPacket, ctime), 0,
      (char*)"Change Time"},
     {(char*)"st_blksize", T_UINT, offsetof(PyStatPacket, blksize), 0,
      (char*)"Blocksize"},

@@ -8,7 +8,6 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-
 #shellcheck source=../environment.in
 . ./environment
 
@@ -25,5 +24,19 @@ if [ $ret -ne 0 ]; then
   stop_bareos
   exit $ret
 fi
+
+cat <<EOF >"$tmp/bconcmds"
+@$out $tmp/bscan-list-media.out
+.api 2
+list media=TestVolume001
+EOF
+
+run_bconsole
+
+actual_size=$(stat -c %s storage/TestVolume001)
+
+expect_grep "\"volbytes\": \"${actual_size}\"" \
+  "$tmp/bscan-list-media.out" \
+  "bscan could not find the real size"
 
 end_test
