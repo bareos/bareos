@@ -268,6 +268,8 @@ int main(int argc, char* argv[])
       std::cout << "barri " << BARRI_VERSION " (" BARRI_DATE ")" << std::endl;
       std::cout << "Copyright (C) 2025-2025 Bareos GmbH & Co. KG" << std::endl;
     } else {
+      // this should never happen, as we tell cli11 that we need at least
+      // one subcommand
       throw std::logic_error("i dont know what to do");
     }
 
