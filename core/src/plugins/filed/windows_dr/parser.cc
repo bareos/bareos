@@ -181,9 +181,15 @@ struct restartable_parser {
     header.read(stream);
 
     if (header.version != file_header::current_version) {
+      auto currentv = decoded_version{file_header::current_version};
+      auto headerv = decoded_version{header.version};
+
       throw std::runtime_error{
-          libbareos::format("expected dump version {}, got version {}",
-                            file_header::current_version, header.version),
+          libbareos::format(
+              "expected dump version {}.{}.{} ({}), got version {}.{}.{} ({})",
+              currentv.major, currentv.minor, currentv.patch,
+              file_header::current_version, headerv.major, headerv.minor,
+              headerv.patch, header.version),
       };
     }
 
