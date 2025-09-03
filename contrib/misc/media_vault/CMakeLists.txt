@@ -36,6 +36,7 @@ bareos_configure_file(
   FILES
   media_vault.sh.in
   media_vault.ini.in
+  job_admin-media_vault.conf.in
 )
 
 install(
@@ -72,7 +73,7 @@ install(
 )
 
 install(
-  FILES job_admin-media_vault.conf
+  FILES "${CMAKE_CURRENT_BINARY_DIR}/mjob_admin-media_vault.conf"
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ
   DESTINATION "${confdir}/bareos-dir.d/job"
 )
