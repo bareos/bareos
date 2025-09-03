@@ -30,14 +30,15 @@ endif()
 add_library(progress-bar-logger OBJECT logger.cc)
 target_link_libraries(progress-bar-logger PRIVATE indicators::indicators format)
 
-bareos_add_plugin(wdr-fd)
+bareos_add_plugin(barri-fd)
 target_link_libraries(
-  wdr-fd
+  barri-fd
   PUBLIC Bareos::Lib
   PRIVATE format
 )
+target_compile_definitions(barri-fd PRIVATE PLUGIN_NAME="barri")
 install(
-  TARGETS wdr-fd
+  TARGETS barri-fd
   DESTINATION ${plugindir}
   COMPONENT filedaemon
 )
@@ -55,13 +56,14 @@ if(HAVE_WIN32)
     PUBLIC format Microsoft.GSL::GSL
   )
 
-  target_sources(wdr-fd PRIVATE plugin.cc bareos_api.cc)
-  target_link_libraries(wdr-fd PRIVATE dump)
+  target_sources(barri-fd PRIVATE plugin.cc bareos_api.cc)
+  target_link_libraries(barri-fd PRIVATE dump)
 
-  add_executable(barri barri.cc)
-  target_link_libraries(barri CLI11::CLI11 progress-bar-logger dump format)
+  add_executable(barri-cli barri.cc)
+  target_link_libraries(barri-cli CLI11::CLI11 progress-bar-logger dump format)
   target_compile_definitions(
-    barri PRIVATE BARRI_VERSION="${BAREOS_FULL_VERSION}" BARRI_DATE="${DATE}"
+    barri-cli PRIVATE BARRI_VERSION="${BAREOS_FULL_VERSION}"
+                      BARRI_DATE="${DATE}"
   )
 
   add_executable(copy copy.cc)
@@ -75,22 +77,22 @@ else()
     windows-dr-restore PUBLIC Microsoft.GSL::GSL fmt::fmt-header-only
   )
 
-  target_sources(wdr-fd PRIVATE plugin_linux.cc bareos_api.cc)
-  target_compile_definitions(wdr-fd PRIVATE PLUGIN_NAME="wdr")
-  target_link_libraries(wdr-fd PRIVATE tl::expected windows-dr-restore)
-  # target_link_libraries(wdr-fd PRIVATE dump)
+  target_sources(barri-fd PRIVATE plugin_linux.cc bareos_api.cc)
+  target_link_libraries(barri-fd PRIVATE tl::expected windows-dr-restore)
+  # target_link_libraries(barri-fd PRIVATE dump)
 
-  add_executable(barri barri_linux.cc)
+  add_executable(barri-cli barri_linux.cc)
   target_compile_definitions(
-    barri PRIVATE BARRI_VERSION="${BAREOS_FULL_VERSION}" BARRI_DATE="${DATE}"
+    barri-cli PRIVATE BARRI_VERSION="${BAREOS_FULL_VERSION}"
+                      BARRI_DATE="${DATE}"
   )
   target_link_libraries(
-    barri PRIVATE CLI11::CLI11 ${ZLIB_LIBRARIES} progress-bar-logger
-                  windows-dr-restore
+    barri-cli PRIVATE CLI11::CLI11 ${ZLIB_LIBRARIES} progress-bar-logger
+                      windows-dr-restore
   )
 
   install(
-    TARGETS barri
+    TARGETS barri-cli
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
