@@ -3,5 +3,5 @@
 # virtualenv by default. if you are not using it comment first and
 # last line
 source ~/.local/share/virtualenvs/bareos_media_vault/bin/activate
-@plugindir@/media_vault.py --config @configdir@/media_vault.ini $@
+@plugindir@/media_vault.py --config @confdir@/media_vault.ini $@
 deactivate
