@@ -109,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ndmp-bareos: Introduce incremental loop, restore 2nd file explicitly [PR #2269]
 - systemtest: always incremental add one job with one removed file [PR #2329]
 - webui: add summary subscription report [PR #2340]
+- set environment vars in bpipe fd plugin [PR #2205]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -161,6 +162,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2194]: https://github.com/bareos/bareos/pull/2194
 [PR #2201]: https://github.com/bareos/bareos/pull/2201
 [PR #2202]: https://github.com/bareos/bareos/pull/2202
+[PR #2205]: https://github.com/bareos/bareos/pull/2205
 [PR #2207]: https://github.com/bareos/bareos/pull/2207
 [PR #2211]: https://github.com/bareos/bareos/pull/2211
 [PR #2213]: https://github.com/bareos/bareos/pull/2213
