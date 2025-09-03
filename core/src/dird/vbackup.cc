@@ -541,12 +541,14 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
  */
 static int InsertBootstrapHandler(void* ctx, int, char** row)
 {
-  JobId_t JobId;
-  int FileIndex;
-  RestoreBootstrapRecord* bsr = (RestoreBootstrapRecord*)ctx;
+  auto* rx = reinterpret_cast<RestoreContext*>(ctx);
+  RestoreBootstrapRecord* bsr = rx->bsr.get();
 
-  JobId = str_to_int64(row[3]);
-  FileIndex = str_to_int64(row[2]);
+  // at least one file is found
+  rx->found = true;
+
+  JobId_t JobId = str_to_int64(row[3]);
+  int FileIndex = str_to_int64(row[2]);
   AddFindex(bsr, JobId, FileIndex);
   return 0;
 }
@@ -564,11 +566,20 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
   rx.JobIds = jobids_pm.addr();
 
+  rx.found = false;
+
   if (DbLocker _{jcr.db_batch}; !jcr.db_batch->GetFileList(
           &jcr, rx.JobIds, false /* don't use md5 */, true /* use delta */,
-          InsertBootstrapHandler, (void*)rx.bsr.get())) {
+          InsertBootstrapHandler, (void*)&rx)) {
     Jmsg(&jcr, M_ERROR, 0, "%s\n", jcr.db_batch->strerror());
   }
+
+  if (!rx.found) {
+    Jmsg(&jcr, M_ERROR, 0, "No files were found in the jobids %s\n", rx.JobIds);
+    return false;
+  }
+
+  rx.found = false;
 
   UaContext* ua = new_ua_context(&jcr);
   AddVolumeInformationToBsr(ua, rx.bsr.get());

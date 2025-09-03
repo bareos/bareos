@@ -552,7 +552,7 @@ auto PluginService::FileRead(ServerContext* ctx,
     // socket
     JobLog(bareos::core::JMsgType::JMSG_FATAL,
            FMT_STRING("Could not send chunk from {} to {}: Err={}"),
-           current_file->get(), io, strerror(errno));
+           current_file->get(), io, std::string_view{strerror(errno)});
     return grpc::Status(grpc::StatusCode::INTERNAL, "Error while reading file");
   }
   bp::fileReadResponse resp;
@@ -587,7 +587,7 @@ auto PluginService::FileWrite(ServerContext*,
     if (!full_read(io, buffer.data(), chunk_size)) {
       JobLog(bareos::core::JMsgType::JMSG_FATAL,
              FMT_STRING("Could not read {} bytes from {}: Err={}"), chunk_size,
-             io, strerror(errno));
+             io, std::string_view{strerror(errno)});
       return grpc::Status(grpc::StatusCode::INTERNAL,
                           "Error while reading chunk");
     }
@@ -595,7 +595,7 @@ auto PluginService::FileWrite(ServerContext*,
     if (!full_write(current_file->get(), buffer.data(), chunk_size)) {
       JobLog(bareos::core::JMsgType::JMSG_FATAL,
              FMT_STRING("Could not write {} bytes to {}: Err={}"), chunk_size,
-             current_file->get(), strerror(errno));
+             current_file->get(), std::string_view{strerror(errno)});
       return grpc::Status(grpc::StatusCode::INTERNAL,
                           "Error while writing chunk");
     }
