@@ -27,6 +27,7 @@
 #include "dump.h"
 #include <comdef.h>
 
+#include <charconv>
 #include <memory>
 
 #define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
@@ -48,7 +49,7 @@ const PluginInformation my_info = {
     .plugin_license = "Bareos AGPLv3",
     .plugin_author = "Sebastian Sura",
     .plugin_date = "Juli 2025",
-    .plugin_version = "0.1.0",
+    .plugin_version = "0.9.0",
     .plugin_description
     = "This plugin allows you to backup your windows system for disaster "
       "recovery.",
@@ -64,9 +65,59 @@ std::size_t next_option(std::string_view& to_parse,
   return keywords.size();
 }
 
-bool insert_numbers(std::vector<std::size_t>& nums, std::string_view to_parse)
+std::optional<std::string> insert_numbers(std::vector<std::size_t>& nums,
+                                          std::string_view to_parse)
 {
-  return false;
+  auto current = to_parse;
+  for (;;) {
+    auto comma = current.find_first_of(",");
+
+    auto found = [&] {
+      if (comma == current.npos) {
+        current = {};
+        return current;
+      } else {
+        auto temp = current.substr(0, comma);
+        current.remove_prefix(comma + 1);
+        return temp;
+      }
+    }();
+
+    std::size_t number = 0;
+    auto conversion_result = std::from_chars(
+        found.data(), found.data() + found.size(), number, 10);
+
+    auto left_over = found.substr(conversion_result.ptr - found.data());
+
+    if (conversion_result.ec != std::errc{}) {
+      switch (conversion_result.ec) {
+        case std::errc::invalid_argument: {
+          return libbareos::format("could not parse {} as a number", found);
+        } break;
+        case std::errc::result_out_of_range: {
+          return libbareos::format("'{}' is out of the acceptable range",
+                                   found);
+        } break;
+      }
+    }
+
+    bool ignore_left_over = true;
+
+    for (auto c : left_over) {
+      if (!isspace(c)) {
+        ignore_left_over = false;
+        break;
+      }
+    }
+
+    if (!ignore_left_over) {
+      return libbareos::format("'{}' contains unparsable junk ({})", found,
+                               left_over);
+    }
+
+    nums.push_back(number);
+  }
+  return std::nullopt;
 }
 
 constexpr std::size_t index_of(std::span<const std::string_view> keywords,
@@ -121,7 +172,7 @@ struct plugin_arguments {
             err_msg(ctx, "unexpected empty value for {} option", "ignore disk");
             return {};
           }
-          if (!insert_numbers(args.ignored_disks, value)) {
+          if (auto error = insert_numbers(args.ignored_disks, value)) {
             err_msg(ctx, "could not parse {} as a list of ints ({})", value,
                     "ignore disk");
             return {};
@@ -323,8 +374,7 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
 {
   auto* pctx = get_private_context(ctx);
 
-  const char* Name = nullptr;
-  std::optional client_name = Get<bVar::Client>(ctx);
+  std::optional client_name = bVar::Get<bVar::Client>(ctx);
   if (!client_name) {
     err_msg(ctx, "could not retrieve client name from the bareos api!");
     return bRC_Error;
