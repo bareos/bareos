@@ -4,6 +4,8 @@
 @libdir@/libbareoslmdb.so*
 @libdir@/libbareosndmp.so*
 @libdir@/libbareossd.so*
+@plugindir@/autoxflate-sd.so
+@backenddir@/libbareossd-file.so*
 @scriptdir@/bareos-config
 @scriptdir@/bareos-config-lib.sh
 @scriptdir@/btraceback.gdb
