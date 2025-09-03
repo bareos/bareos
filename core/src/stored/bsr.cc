@@ -108,8 +108,6 @@ static int MatchBlockSesstime(BootStrapRecord* bsr,
 static int MatchBlockSessid(BootStrapRecord* bsr,
                             BsrSessionId* sessid,
                             DeviceBlock* block);
-static BootStrapRecord* find_smallest_volfile(BootStrapRecord* fbsr,
-                                              BootStrapRecord* bsr);
 
 /**
  *
@@ -129,12 +127,9 @@ int MatchBsrBlock(BootStrapRecord* bsr, DeviceBlock* block)
     return 1; /* cannot fast reject */
   }
 
-  for (; bsr; bsr = bsr->next) {
-    if (!MatchBlockSesstime(bsr, bsr->sesstime, block)) { continue; }
-    if (!MatchBlockSessid(bsr, bsr->sessid, block)) { continue; }
-    return 1;
-  }
-  return 0;
+  if (!MatchBlockSesstime(bsr, bsr->sesstime, block)) { return 0; }
+  if (!MatchBlockSessid(bsr, bsr->sessid, block)) { return 0; }
+  return 1;
 }
 
 static int MatchBlockSesstime(BootStrapRecord* bsr,
@@ -224,16 +219,18 @@ int MatchBsr(BootStrapRecord* bsr,
  * Find the next bsr that applies to the current tape.
  *   It is the one with the smallest VolFile position.
  */
-BootStrapRecord* find_next_bsr(BootStrapRecord* root_bsr, Device* dev)
+BootStrapRecord* find_next_bsr(BootStrapRecord* root_bsr,
+                               BootStrapRecord* bsr,
+                               Device* dev)
 {
-  BootStrapRecord* bsr;
-  BootStrapRecord* found_bsr = NULL;
-
   /* Do tape/disk seeking only if CAP_POSITIONBLOCKS is on */
-  if (!root_bsr) {
+  if (!root_bsr || !bsr) {
     Dmsg0(dbglevel, "NULL root bsr pointer passed to find_next_bsr.\n");
     return NULL;
   }
+
+  ASSERT(root_bsr == bsr->root);
+
   if (!root_bsr->use_positioning || !root_bsr->Reposition
       || !dev->HasCap(CAP_POSITIONBLOCKS)) {
     Dmsg2(dbglevel, "No nxt_bsr use_pos=%d repos=%d\n",
@@ -243,114 +240,23 @@ BootStrapRecord* find_next_bsr(BootStrapRecord* root_bsr, Device* dev)
   Dmsg2(dbglevel, "use_pos=%d repos=%d\n", root_bsr->use_positioning,
         root_bsr->Reposition);
   root_bsr->mount_next_volume = false;
-  /* Walk through all bsrs to find the next one to use => smallest file,block */
-  for (bsr = root_bsr; bsr; bsr = bsr->next) {
-    if (bsr->done || !MatchVolume(bsr, bsr->volume, &dev->VolHdr, 1)) {
-      continue;
-    }
-    if (found_bsr == NULL) {
-      found_bsr = bsr;
+
+  if (!bsr->done && MatchVolume(bsr, bsr->volume, &dev->VolHdr, 1)) {
+    return bsr;
+  }
+
+  /* check if next bsr has the same volume */
+  if (auto* next = bsr->next) {
+    if (MatchVolume(next, next->volume, &dev->VolHdr, 1)) {
+      return next;
     } else {
-      found_bsr = find_smallest_volfile(found_bsr, bsr);
-    }
-  }
-  /* If we get to this point and found no bsr, it means
-   *  that any additional bsr's must apply to the next
-   *  tape, so set a flag. */
-  if (found_bsr == NULL) { root_bsr->mount_next_volume = true; }
-  return found_bsr;
-}
-
-/**
- * Get the smallest address from this voladdr part
- * Don't use "done" elements
- */
-static bool GetSmallestVoladdr(BsrVolumeAddress* va, uint64_t* ret)
-{
-  bool ok = false;
-  uint64_t min_val = 0;
-
-  for (; va; va = va->next) {
-    if (!va->done) {
-      if (ok) {
-        min_val = MIN(min_val, va->saddr);
-      } else {
-        min_val = va->saddr;
-        ok = true;
-      }
-    }
-  }
-  *ret = min_val;
-  return ok;
-}
-
-/* FIXME
- * This routine needs to be fixed to only look at items that
- *   are not marked as done.  Otherwise, it can find a bsr
- *   that has already been consumed, and this will cause the
- *   bsr to be used, thus we may seek back and re-read the
- *   same records, causing an error.  This deficiency must
- *   be fixed.  For the moment, it has been kludged in
- *   read_record.c to avoid seeking back if find_next_bsr
- *   returns a bsr pointing to a smaller address (file/block).
- *
- */
-static BootStrapRecord* find_smallest_volfile(BootStrapRecord* found_bsr,
-                                              BootStrapRecord* bsr)
-{
-  BootStrapRecord* return_bsr = found_bsr;
-  BsrVolumeFile* vf;
-  BsrVolumeBlock* vb;
-  uint32_t found_bsr_sfile, bsr_sfile;
-  uint32_t found_bsr_sblock, bsr_sblock;
-  uint64_t found_bsr_saddr, bsr_saddr;
-
-  /* if we have VolAddr, use it, else try with File and Block */
-  if (GetSmallestVoladdr(found_bsr->voladdr, &found_bsr_saddr)) {
-    if (GetSmallestVoladdr(bsr->voladdr, &bsr_saddr)) {
-      if (found_bsr_saddr > bsr_saddr) {
-        return bsr;
-      } else {
-        return found_bsr;
-      }
+      // if it exists, but has a different volume, then notify the caller
+      root_bsr->mount_next_volume = true;
     }
   }
 
-  /* Find the smallest file in the found_bsr */
-  vf = found_bsr->volfile;
-  found_bsr_sfile = vf->sfile;
-  while ((vf = vf->next)) {
-    if (vf->sfile < found_bsr_sfile) { found_bsr_sfile = vf->sfile; }
-  }
-
-  /* Find the smallest file in the bsr */
-  vf = bsr->volfile;
-  bsr_sfile = vf->sfile;
-  while ((vf = vf->next)) {
-    if (vf->sfile < bsr_sfile) { bsr_sfile = vf->sfile; }
-  }
-
-  /* if the bsr file is less than the found_bsr file, return bsr */
-  if (found_bsr_sfile > bsr_sfile) {
-    return_bsr = bsr;
-  } else if (found_bsr_sfile == bsr_sfile) {
-    /* Files are equal */
-    /* find smallest block in found_bsr */
-    vb = found_bsr->volblock;
-    found_bsr_sblock = vb->sblock;
-    while ((vb = vb->next)) {
-      if (vb->sblock < found_bsr_sblock) { found_bsr_sblock = vb->sblock; }
-    }
-    /* Find smallest block in bsr */
-    vb = bsr->volblock;
-    bsr_sblock = vb->sblock;
-    while ((vb = vb->next)) {
-      if (vb->sblock < bsr_sblock) { bsr_sblock = vb->sblock; }
-    }
-    /* Compare and return the smallest */
-    if (found_bsr_sblock > bsr_sblock) { return_bsr = bsr; }
-  }
-  return return_bsr;
+  // next bsr not on this volume (or does not exist)
+  return NULL;
 }
 
 /**
@@ -504,9 +410,7 @@ static int MatchAll(BootStrapRecord* bsr,
   return 1;
 
 no_match:
-  if (bsr->next) {
-    return MatchAll(bsr->next, rec, volrec, sessrec, bsr->done && done, jcr);
-  }
+  if (bsr->next) { return 0; }
   if (bsr->done && done) {
     Dmsg0(dbglevel, "Leave match all -1\n");
     return -1;
@@ -782,26 +686,16 @@ static bool AddRestoreVolume(JobControlRecord* jcr, VolumeList* vol)
 
   if (!next) {                   /* list empty ? */
     jcr->sd_impl->VolList = vol; /* yes, add volume */
-  } else {
-    /* Loop through all but last */
-    for (; next->next; next = next->next) {
-      if (bstrcmp(vol->VolumeName, next->VolumeName)) {
-        /* Save smallest start file */
-        if (vol->start_file < next->start_file) {
-          next->start_file = vol->start_file;
-        }
-        return false; /* already in list */
-      }
-    }
-    /* Check last volume in list */
-    if (bstrcmp(vol->VolumeName, next->VolumeName)) {
-      if (vol->start_file < next->start_file) {
-        next->start_file = vol->start_file;
-      }
-      return false; /* already in list */
-    }
-    next->next = vol; /* add volume */
+    return true;
   }
+
+  /* Loop through all but last */
+  while (next->next) { next = next->next; }
+  if (bstrcmp(vol->VolumeName, next->VolumeName)) {
+    return false; /* already in list */
+  }
+
+  next->next = vol;
   return true;
 }
 
@@ -811,7 +705,6 @@ static bool AddRestoreVolume(JobControlRecord* jcr, VolumeList* vol)
  */
 void CreateRestoreVolumeList(JobControlRecord* jcr)
 {
-  char *p, *n;
   VolumeList* vol;
 
   // Build a list of volumes to be processed
@@ -850,11 +743,16 @@ void CreateRestoreVolumeList(JobControlRecord* jcr)
     }
   } else {
     /* This is the old way -- deprecated */
-    for (p = jcr->sd_impl->dcr->VolumeName; p && *p;) {
-      n = strchr(p, '|'); /* volume name separator */
-      if (n) { *n++ = 0; /* Terminate name */ }
+    for (const char* p = jcr->sd_impl->dcr->VolumeName; p && *p;) {
+      const char* n = strchr(p, '|'); /* volume name separator */
       vol = new_restore_volume();
-      bstrncpy(vol->VolumeName, p, sizeof(vol->VolumeName));
+      if (n) {
+        bstrncpy(vol->VolumeName, p,
+                 MIN((size_t)(n - p), sizeof(vol->VolumeName)));
+        n += 1;
+      } else {
+        bstrncpy(vol->VolumeName, p, sizeof(vol->VolumeName));
+      }
       bstrncpy(vol->MediaType, jcr->sd_impl->dcr->media_type,
                sizeof(vol->MediaType));
       if (AddRestoreVolume(jcr, vol)) {
