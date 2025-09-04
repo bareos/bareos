@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -45,9 +45,10 @@ start_test
 
 file="$(pwd)/tmp/data/weird-files/socket.pl"
 if [[ -f "$tmp/bareos-restores/$file" ]]; then
-    rm "$tmp/bareos-restores/$file"
-fi;
-echo "i overwrite the file" > "$file"
+  rm "$tmp/bareos-restores/$file"
+fi
+old_contents=$(cat "$file")
+echo "i overwrite the file" >"$file"
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 setdebug level=100 storage=File
@@ -80,7 +81,7 @@ status client
 status storage=File
 wait
 @$out $log_home/restore-archive.out
-restore archive
+restore archive where="${log_home}/bareos-restores"
 5
 mark $file
 done
@@ -88,6 +89,7 @@ yes
 wait
 messages
 delete jobid=$backupid
+update jobid=1 jobtype=B
 quit
 END_OF_DATA
 run_bconsole
@@ -97,9 +99,12 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 # since we changed the file they cannot be the same!
-if cmp -s "$log_home/bareos-restores/$file" "$file"; then
-    exit 2
+if cmp -s "$log_home/bareos-restores$file" "$file"; then
+  exit 2
 fi
+
+# restore the old file
+mv "$log_home/bareos-restores$file" "$file"
 
 # since the other tests do not care for the original contents
 # we just leave the changed file instead of changing it back.
