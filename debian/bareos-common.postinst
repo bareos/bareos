@@ -22,20 +22,21 @@ daemon_group=bareos
 
 permissions()
 {
+  chgrp ${daemon_group} /etc/bareos
+  chmod 2755 /etc/bareos
   chown ${daemon_user}:${daemon_group} /var/lib/bareos/
   chown ${daemon_user}:${daemon_group} /var/log/bareos/
 }
 
 case "$1" in
-    configure)
-        permissions
-        ;;
-    abort-upgrade|abort-remove|abort-deconfigure)
-        ;;
-    *)
-        echo "postinst called with unknown argument \`$1'" >&2
-        exit 1
-        ;;
+  configure)
+    permissions
+    ;;
+  abort-upgrade | abort-remove | abort-deconfigure) ;;
+  *)
+    echo "postinst called with unknown argument \`$1'" >&2
+    exit 1
+    ;;
 esac
 
 # dh_installdeb will replace this with shell code automatically
