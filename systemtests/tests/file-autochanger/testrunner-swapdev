@@ -12,6 +12,9 @@ export TestName
 # shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
+# Check that the storage correctly swaps a loaded tape from one device
+#  to the next, when necessary.
+
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
@@ -33,7 +36,24 @@ run_bconsole "$@"
 
 expect_grep "Catalog record for Volume.*Slot 1 successfully created." "${tmp}/label.out" "record was not created successfully"
 expect_grep "OK label" "${tmp}/label.out" "Volume was not labeled correctly"
+expect_grep "Issuing autochanger" "${tmp}/release.out" "Device did not release its volume"
 expect_grep "3001 Mounted Volume: .*" "${tmp}/mount.out" "volume was not mounted"
 expect_grep "Backup OK" "${tmp}/job.out" "Backup was not successful"
+
+expect_grep 'Using Device "File1" (storage/drv_0) to write.' \
+  "${tmp}/job.out" \
+  "job used the wrong device"
+
+expect_grep 'Issuing autochanger "unload slot 1, drive 1" command.' \
+  "${tmp}/job.out" \
+  "slot 1 was not unloaded from drive 1"
+
+expect_grep 'Issuing autochanger "load slot 1, drive 0" command.' \
+  "${tmp}/job.out" \
+  "slot 1 was not loaded into drive 0"
+
+expect_grep 'Autochanger "load slot 1, drive 0", status is OK.' \
+  "${tmp}/job.out" \
+  "slot 1 was not successfully loaded into drive 0"
 
 end_test
