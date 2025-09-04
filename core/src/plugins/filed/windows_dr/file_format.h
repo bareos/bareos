@@ -94,12 +94,6 @@ struct decoded_version {
   uint8_t minor{};
   uint8_t patch{};
 
-  constexpr operator uint32_t()
-  {
-    uint32_t major32 = major, minor32 = minor, patch32 = patch;
-    return major32 << 16 | minor32 << 8 | patch32;
-  }
-
   constexpr decoded_version() = default;
 
   constexpr decoded_version(uint8_t major_, uint8_t minor_, uint8_t patch_)
@@ -113,6 +107,14 @@ struct decoded_version {
       , patch{static_cast<std::uint8_t>(encoded >> 0)}
   {
   }
+
+  constexpr std::uint32_t encode() const
+  {
+    uint32_t major32 = major, minor32 = minor, patch32 = patch;
+    return major32 << 16 | minor32 << 8 | patch32;
+  }
+
+  constexpr operator uint32_t() { return encode(); }
 
   constexpr friend bool operator==(const decoded_version& l,
                                    const decoded_version& r)
@@ -175,11 +177,10 @@ static void expect_stream(reader& stream,
   }
 }
 
-// badr <~> BAreos Disaster Recovery
-
 struct file_header {
-  static constexpr std::uint64_t magic_value = build_magic("badrfile");
-  static constexpr std::uint32_t current_version = decoded_version{1, 0, 0};
+  // barri - file
+  static constexpr auto magic_value = build_magic("barrifil");
+  static constexpr auto current_version = decoded_version{1, 0, 0}.encode();
 
   uint32_t disk_count;
   uint32_t version = current_version;
@@ -214,7 +215,8 @@ struct file_header {
 };
 
 struct disk_header {
-  static constexpr std::uint64_t magic_value = build_magic("badrdisk");
+  // barri - disk
+  static constexpr auto magic_value = build_magic("barridsk");
 
   uint64_t disk_size;
   uint64_t total_extent_size;
@@ -265,7 +267,8 @@ enum part_type : uint8_t
 };
 
 struct part_table_header {
-  static constexpr auto magic_value = build_magic("badrtabl");
+  // barri - table
+  static constexpr auto magic_value = build_magic("barritbl");
   uint32_t partition_count;
   uint8_t part_table_type;
   // at this point we should just divide this into header + data ...
@@ -323,7 +326,8 @@ struct part_table_header {
 };
 
 struct part_table_entry {
-  static constexpr auto magic_value = build_magic("badrtent");
+  // barri - table entry
+  static constexpr auto magic_value = build_magic("barritnt");
 
   uint64_t partition_offset;
   uint64_t partition_length;
@@ -422,7 +426,8 @@ struct part_table_entry_mbr_data {
 };
 
 struct extent_header {
-  static constexpr auto magic_value = build_magic("badrxtnt");
+  // barri - extent
+  static constexpr auto magic_value = build_magic("barrixtn");
 
   uint64_t offset;
   uint64_t length;
