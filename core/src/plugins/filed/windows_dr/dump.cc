@@ -959,13 +959,15 @@ struct dump_context {
       }
 
       if (disk.extents.empty()) {
+        logger->Info("disk {} has no snapshotted data", id,
+                     (int)geo->Geometry.MediaType);
+
         if (save_unknown_disks) {
+          logger->Info(" => backup everything (save-unknown-disks)", id,
+                       (int)geo->Geometry.MediaType);
           disk.extents.push_back(
               {0, 0, static_cast<std::size_t>(geo->DiskSize.QuadPart), hndl});
         } else {
-          logger->Info("disk {} has no snapshotted data", id,
-                       (int)geo->Geometry.MediaType);
-
           logger->PopIndent();
           logger->Info("=> skipped");
           CloseHandle(hndl);
@@ -1104,12 +1106,17 @@ struct dump_context {
       if (first_extent == extents.size()
           || offset + length <= extents[first_extent].partition_offset) {
         if (save_unknown_partitions) {
+          logger->Info(
+              "disk {}/partition {} has no snapshotted data => recorded "
+              "(save-unknown-partitions)",
+              disk_id, part_idx);
           new_extents.push_back({offset, offset, length, disk_handle});
           logger->Trace("saving unknown partition {} ({}-{})",
                         info.PartitionNumber, offset, offset + length);
         } else {
-          logger->Info("skipping disk {}/partition {} (no snapshotted data)",
-                       disk_id, part_idx);
+          logger->Info(
+              "disk {}/partition {} has no snapshotted data => skipped",
+              disk_id, part_idx);
         }
         continue;
       }
