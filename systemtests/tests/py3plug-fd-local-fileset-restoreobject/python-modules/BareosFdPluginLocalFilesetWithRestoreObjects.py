@@ -27,6 +27,7 @@
 
 import bareosfd
 from bareosfd import *
+from binascii import hexlify
 import os
 import re
 import hashlib
@@ -319,8 +320,12 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
             if ROP.object.decode() != "a" * stored_length:
                 bareosfd.JobMessage(
                     M_ERROR,
-                    "bad long restoreobject {} does not match stored object: {}, {}\n".format(
-                        ROP.object_name, ROP.object.decode(), "a" * stored_length
+                    "bad long restoreobject {} does not match stored object: {} (size: {}), {} (size: {})\n".format(
+                        ROP.object_name,
+                        str(hexlify(ROP.object)),
+                        len(ROP.object),
+                        str(hexlify("a" * stored_length)),
+                        stored_length,
                     ),
                 )
         else:

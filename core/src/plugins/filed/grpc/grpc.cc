@@ -216,6 +216,19 @@ struct plugin_ctx {
   std::string cmd;
   std::string plugin_name;
 
+  struct c_free {
+    void operator()(void* ptr) const { free(ptr); }
+  };
+
+  template <typename T> using c_ptr = std::unique_ptr<T, c_free>;
+
+  std::size_t name_storage_size = 0;
+  c_ptr<char> name_storage;
+
+  std::size_t object_storage_size = 0;
+  c_ptr<char> object_storage;
+
+
   std::optional<grpc_child> child;
 };
 
@@ -537,3 +550,34 @@ extern "C" int loadPlugin(filedaemon::PluginApiDefinition* core_info,
 }
 
 extern "C" int unloadPlugin() { return 0; }
+
+char* get_name_storage(PluginContext* ctx, std::size_t minsize)
+{
+  auto pctx = get(ctx);
+
+  if (pctx->name_storage_size == 0) {
+    pctx->name_storage.reset(static_cast<char*>(malloc(minsize)));
+    pctx->name_storage_size = minsize;
+  } else if (pctx->name_storage_size < minsize) {
+    pctx->name_storage.reset(
+        static_cast<char*>(realloc(pctx->name_storage.release(), minsize)));
+    pctx->name_storage_size = minsize;
+  }
+
+  return pctx->name_storage.get();
+}
+char* get_object_storage(PluginContext* ctx, std::size_t minsize)
+{
+  auto pctx = get(ctx);
+
+  if (pctx->object_storage_size == 0) {
+    pctx->object_storage.reset(static_cast<char*>(malloc(minsize)));
+    pctx->object_storage_size = minsize;
+  } else if (pctx->object_storage_size < minsize) {
+    pctx->object_storage.reset(
+        static_cast<char*>(realloc(pctx->object_storage.release(), minsize)));
+    pctx->object_storage_size = minsize;
+  }
+
+  return pctx->object_storage.get();
+}

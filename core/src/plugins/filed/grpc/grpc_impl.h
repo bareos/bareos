@@ -217,4 +217,7 @@ bareos::plugin::handlePluginEventRequest* to_grpc(filedaemon::bEventType type,
 
 void delete_request(bareos::plugin::handlePluginEventRequest* req);
 
+extern char* get_name_storage(PluginContext* ctx, std::size_t minsize);
+extern char* get_object_storage(PluginContext* ctx, std::size_t minsize);
+
 #endif  // BAREOS_PLUGINS_FILED_GRPC_GRPC_IMPL_H_

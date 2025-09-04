@@ -1200,14 +1200,13 @@ class PluginClient {
             pkt->object_name = nullptr;
           }
 
-          // TODO: this is not cleaned up properly.  The only way to do this
-          //       is to use a job-local variable.  Maybe this can be put
-          //       into the plugin context ...
-          pkt->object = reinterpret_cast<char*>(malloc(object.data().size()));
+          pkt->object = get_object_storage(core, object.data().size());
           memcpy(pkt->object, object.data().c_str(), object.data().size());
           pkt->object_len = object.data().size();
-          // TODO: this as well
-          pkt->object_name = strdup(object.name().c_str());
+
+          const auto& name = object.name();
+          pkt->object_name = get_name_storage(core, name.size() + 1);
+          memcpy(pkt->object_name, name.c_str(), name.size() + 1);
           pkt->index = object.index();
         } else if (resp.has_error()) {
           auto& err = resp.error();
