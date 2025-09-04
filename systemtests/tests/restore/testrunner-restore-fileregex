@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -30,10 +30,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
 . functions
@@ -47,13 +47,13 @@ start_test
 fileregex=".*/[Aa]-file.*"
 
 matched_files=()
-while IFS=  read -r -d $'\0'; do
-    matched_files+=("$REPLY")
+while IFS= read -r -d $'\0'; do
+  matched_files+=("$REPLY")
 done < <(find "$BackupDirectory/" -type f -regex "$fileregex" -print0)
 
-echo "Matched files:" > "$log_home/matched.out"
+echo "Matched files:" >"$log_home/matched.out"
 for file in "${matched_files[@]}"; do
-    echo "$file" >> "$log_home/matched.out"
+  echo "$file" >>"$log_home/matched.out"
 done
 
 if [ "${#matched_files[@]}" -eq 0 ]; then

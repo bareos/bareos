@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -25,10 +25,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 debug_level=500
@@ -70,16 +70,16 @@ run_bconsole "$@"
 check_restore_diff "${BackupDirectory}" "$restore_dir"
 
 if is_file_compressed "LD1" "LC2" "${File}"; then
-    echo "LC2 is compressed"
-    estat=3
+  echo "LC2 is compressed"
+  estat=3
 fi
 
 expect_grep "Copying OK" \
-	    "$tmp/copy-local.out" \
-	    "Local copy did not succeed."
+  "$tmp/copy-local.out" \
+  "Local copy did not succeed."
 
 expect_grep "Restore OK" \
-	    "$tmp/restore-LC2.out" \
-	    "Restore from LC2 did not succeed."
+  "$tmp/restore-LC2.out" \
+  "Restore from LC2 did not succeed."
 
 end_test

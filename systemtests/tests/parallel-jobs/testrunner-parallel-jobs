@@ -9,10 +9,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -63,18 +63,18 @@ END_OF_DATA
 run_bconsole
 
 if [[ $(grep -c "Termination:.*Backup OK" "$parallelbackuplog") -ne "$num_jobs" ]]; then
-    echo "Not all backups jobs finished successfully."
-    estat=1
+  echo "Not all backups jobs finished successfully."
+  estat=1
 fi
 
 if [[ $(grep -c "Termination:.*Restore OK" "$parallelrestorelog") -ne "$num_jobs" ]]; then
-    echo "Not all restore jobs finished successfully."
-    estat=2
+  echo "Not all restore jobs finished successfully."
+  estat=2
 fi
 
 for i in $(seq 1 "$num_jobs"); do
-    restoredir="$tmp/restore$i"
-    check_restore_diff "${BackupDirectory}" "$restoredir"
+  restoredir="$tmp/restore$i"
+  check_restore_diff "${BackupDirectory}" "$restoredir"
 done
 
 end_test

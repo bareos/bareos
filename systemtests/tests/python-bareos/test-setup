@@ -3,9 +3,9 @@ set -e
 set -o pipefail
 set -u
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 export TestName="$(get_test_name "$0")"
@@ -17,8 +17,8 @@ export TestName="$(get_test_name "$0")"
 setup_data
 # Extra backup data with number of files.
 mkdir -p ${tmp}/backup-data-numbered-files
-for i in `seq 1000 2000`; do
-    echo $i > ${tmp}/backup-data-numbered-files/${i}.txt
+for i in $(seq 1000 2000); do
+  echo $i >${tmp}/backup-data-numbered-files/${i}.txt
 done
 
 # Create a list of paths to backup,
@@ -28,4 +28,4 @@ echo "${BackupDirectory}/build" >"$tmp/file-list-simple"
 bin/bareos start
 bin/bareos status
 
-print_debug "$(bin/bconsole <<< "status dir")"
+print_debug "$(bin/bconsole <<<"status dir")"

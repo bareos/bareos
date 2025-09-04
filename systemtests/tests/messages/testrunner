@@ -13,10 +13,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 console_messages_file="${BAREOS_LOG_DIR}"/.conmsg
@@ -37,14 +37,16 @@ rm -f "$extra_append_file"
 rm -f "$mail_file"
 rm -f "$operator_file"
 
-function exit_error() {
+function exit_error()
+{
   [ "${1:-}" == "" ] || echo "$1"
   estat=1
   end_test
   exit 1
 }
 
-function check_output_file {
+function check_output_file
+{
   [ -f "$1" ] || exit_error "$1 does not exist"
 
   if ! grep --quiet "!!!This is a test error message!!!" "$1"; then
@@ -52,10 +54,9 @@ function check_output_file {
   fi
 }
 
-
 start_test
 
-"${MESSAGES_TEST_PROGRAM}" > "$stdout_file" 2> "$stderr_file" || exit_error
+"${MESSAGES_TEST_PROGRAM}" >"$stdout_file" 2>"$stderr_file" || exit_error
 
 check_output_file "$console_messages_file"
 check_output_file "$syslog_file"

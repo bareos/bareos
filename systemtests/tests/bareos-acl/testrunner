@@ -8,10 +8,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -20,26 +20,27 @@ start_test
 
 run_bareos "$@"
 
-echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-none.conf > ${logdir}/acl-none.log
-echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-status.conf > ${logdir}/acl-status.log
-echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-status-conf.conf > ${logdir}/acl-status-conf.log
+echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-none.conf >${logdir}/acl-none.log
+echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-status.conf >${logdir}/acl-status.log
+echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-status-conf.conf >${logdir}/acl-status-conf.log
 
 export estat=0
 
-set_error() {
+set_error()
+{
   estat=1
   echo "ACL-test failed, see ${logdir}/$1 for details"
 }
 
-grep -q "status: is an invalid command" ${logdir}/acl-none.log || \
-  set_error "acl-none.log"
+grep -q "status: is an invalid command" ${logdir}/acl-none.log \
+  || set_error "acl-none.log"
 
-grep -q "status conf: is an invalid command" ${logdir}/acl-status.log || \
-  set_error "acl-status.log"
+grep -q "status conf: is an invalid command" ${logdir}/acl-status.log \
+  || set_error "acl-status.log"
 
 # this will match "No deprecated.." and "Deprecated ..."
 # which matches for all database types
-grep -q "eprecated configuration settings detected" ${logdir}/acl-status-conf.log || \
-  set_error "acl-status-conf.log"
+grep -q "eprecated configuration settings detected" ${logdir}/acl-status-conf.log \
+  || set_error "acl-status-conf.log"
 
 end_test

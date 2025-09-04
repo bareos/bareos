@@ -11,10 +11,10 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -46,12 +46,12 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 expect_grep "SD Files Written: *2" \
-            "$tmp/hardlink-backup.out" \
-            "hardlink was not properly backed up/restored."
+  "$tmp/hardlink-backup.out" \
+  "hardlink was not properly backed up/restored."
 
 expect_not_grep "Could not hard link" \
-                "$tmp/hardlink-restore.out" \
-                "hardlink was not properly backed up/restored."
+  "$tmp/hardlink-restore.out" \
+  "hardlink was not properly backed up/restored."
 
 check_two_logs "$tmp/hardlink-backup.out" "tmp/hardlink-restore.out"
 

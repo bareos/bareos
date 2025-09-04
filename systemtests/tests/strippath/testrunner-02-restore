@@ -5,10 +5,10 @@ set -u
 
 TestName=02-restore
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -33,8 +33,8 @@ run_bconsole "$@"
 check_for_zombie_jobs storage=File
 
 expect_grep "Start Restore Job" \
-	    "$tmp/restore.out" \
-	    "Required restore job was not started."
+  "$tmp/restore.out" \
+  "Required restore job was not started."
 
 check_restore_diff "${BackupDirectory}"
 

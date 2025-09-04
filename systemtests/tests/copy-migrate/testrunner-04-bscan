@@ -5,15 +5,16 @@ set -u
 
 TestName=04-bscan
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 log="$tmp/$TestName.log"
 
-check_log() {
+check_log()
+{
   if ! grep -q "$@" "$log"; then
     echo "'$*' not found in $log" >&2
     estat=1

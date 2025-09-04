@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -36,9 +36,9 @@ export TestName
 bucket_name=bareos-test
 
 JobName=backup-bareos-fd
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -62,7 +62,7 @@ echo "Full backup stage"
 run_bconsole
 expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 cat <<END_OF_DATA >${tmp}/bconcmds
@@ -77,7 +77,7 @@ echo "Restore backup stage"
 run_bconsole
 expect_grep "Restore OK" "${tmp}/log2.out" "Full Restore not ok!"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 check_for_zombie_jobs storage=File

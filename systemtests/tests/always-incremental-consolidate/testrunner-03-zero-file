@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,10 +24,10 @@ export TestName
 
 JobName=ai-backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 start_test
 
@@ -65,8 +65,6 @@ empty_job=$(grep "jobid" "$tmp/zero-file_start.out" | tail -n 2 | head -n 1 | se
 second_job=$(grep "jobid" "$tmp/zero-file_start.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
 cons_job=$(grep "jobid" "$tmp/zero-file_consolidate.out" | tail -n 1 | sed 's/["jobid:]//g' | xargs)
 
-
-
 # this is useful in case this test fails to remove the empty job
 # to diagnose the issue
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -86,21 +84,21 @@ END_OF_DATA
 run_bconsole
 
 expect_grep "purging empty jobids ${empty_job}" \
-            "$tmp/zero-file_messages.out" \
-            "Removal of expected empty jobs was not successful"
+  "$tmp/zero-file_messages.out" \
+  "Removal of expected empty jobs was not successful"
 
 expect_grep "No results to list" \
-            "$tmp/empty-files.out" \
-            "Somehow the empty job contains files"
+  "$tmp/empty-files.out" \
+  "Somehow the empty job contains files"
 
 expect_grep "purged JobIds .*${first_job} as they were consolidated into Job $((cons_job + 1))" \
-            "$tmp/zero-file_messages.out" \
-            "consolidation of expected jobs did not happen."
+  "$tmp/zero-file_messages.out" \
+  "consolidation of expected jobs did not happen."
 expect_not_grep "purged JobIds .*${empty_job}.* as they were consolidated into Job $((cons_job + 1))" \
-		"$tmp/zero-file_messages.out" \
-		"consolidation of empty happened."
+  "$tmp/zero-file_messages.out" \
+  "consolidation of empty happened."
 expect_not_grep "purged JobIds .*${second_job}.* as they were consolidated into Job $((cons_job + 1))" \
-		"$tmp/zero-file_messages.out" \
-		"consolidation of last incremental happened."
+  "$tmp/zero-file_messages.out" \
+  "consolidation of last incremental happened."
 
 end_test

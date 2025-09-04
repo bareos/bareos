@@ -32,10 +32,10 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
 . functions
@@ -63,8 +63,8 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 expect_grep "Backup OK" \
-	    "$log_home/create-backup.out" \
-	    "Backup was not created correctly."
+  "$log_home/create-backup.out" \
+  "Backup was not created correctly."
 
 res_dir="${log_home:?}/python-restores"
 
@@ -91,12 +91,12 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-full.out" \
-	    "Required restore job was not started."
+  "$log_home/restore-full.out" \
+  "Required restore job was not started."
 
 expect_grep "Restore OK" \
-	    "$log_home/restore-full.out" \
-	    "Restore job was not successful"
+  "$log_home/restore-full.out" \
+  "Restore job was not successful"
 
 check_restore_diff "${BackupDirectory}" "${res_dir}"
 

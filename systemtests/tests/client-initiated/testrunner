@@ -8,25 +8,26 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-exit_with_error() {
+exit_with_error()
+{
   echo "$1"
   estat=1
   end_test
   exit 1
 }
 
-stop_bareos_daemons() {
+stop_bareos_daemons()
+{
   stop_bareos
 }
-
 
 # Fill ${BackupDirectory} with data.
 setup_data
@@ -63,7 +64,7 @@ start_dir
 sleep 1
 
 echo "Waiting for the director to start"
-if ! echo "status dir" | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf > /dev/null 2>&1; then
+if ! echo "status dir" | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf >/dev/null 2>&1; then
   exit_with_error "Director did not start"
 fi
 echo "Director is running"
@@ -73,11 +74,11 @@ start_fd
 
 echo "Check if the filedaemon is connected to the director"
 i=0
-until echo "status dir" | \
-  "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf | \
-  grep --quiet --word-regexp "${TestName}-fd"; do
+until echo "status dir" \
+  | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf \
+  | grep --quiet --word-regexp "${TestName}-fd"; do
   echo "waiting for client to connect (#$i)... "
-  ((i=i+1))
+  ((i = i + 1))
   sleep 1
   if [ $i -gt 60 ]; then
     exit_with_error "Filedaemon ${TestName} could not connect to director"

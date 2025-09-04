@@ -14,7 +14,7 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName="backup-bareos-fd"
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 . ./database/setup_local_db.sh
 
@@ -23,11 +23,11 @@ DBNAME="backuptest"
 TESTPGHOST="${dbHost}"
 PSQL="${POSTGRES_BIN_PATH}/psql --no-psqlrc --host ${TESTPGHOST}"
 
-[ -d "${TESTPGHOST}" ] && rm -R  "${TESTPGHOST}"
+[ -d "${TESTPGHOST}" ] && rm -R "${TESTPGHOST}"
 mkdir -p "${TESTPGHOST}"
 [ $EUID -eq 0 ] && chown postgres "${TESTPGHOST}"
 
-pushd database > /dev/null
+pushd database >/dev/null
 setup_local_db "${TESTPGHOST}"
 
 # Create a backup group role with nologin but superuser
@@ -41,9 +41,9 @@ CREATE TABLE t(id serial PRIMARY KEY, text VARCHAR(20), created_on TIMESTAMP);
 INSERT INTO t (text, created_on) values ('test for FULL backup', current_timestamp);
 SELECT * FROM t;
 "
-popd > /dev/null
+popd >/dev/null
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -66,7 +66,7 @@ run_bconsole
 
 expect_grep "used role misse.* privileges to read configuration data_directory value" "${tmp}/rlog1.out" "No Role 'Backup Error' not found in job log"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 # Affect db_backup role to backup_group
@@ -89,17 +89,15 @@ messages
 END_OF_DATA
 run_bconsole
 
-
 expect_grep "Backup OK" "${tmp}/rlog2.out" "Set Role Backup OK not found in job log"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 sleep 1
 
-pushd database/ > /dev/null
+pushd database/ >/dev/null
 local_db_stop_server "${TESTPGHOST}"
-popd > /dev/null
-
+popd >/dev/null
 
 end_test

@@ -27,15 +27,15 @@ export TestName
 
 myname=$(basename "$0")
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
 
-echo "Full Data" > "${DB_FILE}"
+echo "Full Data" >"${DB_FILE}"
 
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest db_data_dir= "${DB_DATA_DIR}" -i sqlfiles/SQL_db_filestream_create.sql
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_create_bareos_login_user.sql

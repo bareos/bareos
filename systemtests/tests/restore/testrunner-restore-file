@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -29,10 +29,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 #shellcheck source=functions
@@ -44,20 +44,20 @@ origfile1="$(pwd)/tmp/data/build/src/tests/cats_test.c"
 origfile2="$(pwd)/tmp/data/build/src/tests/bregtest.c"
 origfile3="$(pwd)/tmp/data/build/src/tests/bbatch.c"
 
-for f in "$origfile1" "$origfile2" "$origfile3" ; do
-    if [[ -f "$tmp/bareos-restores/$f" ]]; then
-      rm "$tmp/bareos-restores/$f"
-    fi;
+for f in "$origfile1" "$origfile2" "$origfile3"; do
+  if [[ -f "$tmp/bareos-restores/$f" ]]; then
+    rm "$tmp/bareos-restores/$f"
+  fi
 done
 
 if [[ "$(uname -s)" =~ _NT ]]; then
-    file1=$(cygpath -w "$origfile1")
-    file2=$(cygpath -w "$origfile2")
-    file3=$(cygpath -w "$origfile3")
+  file1=$(cygpath -w "$origfile1")
+  file2=$(cygpath -w "$origfile2")
+  file3=$(cygpath -w "$origfile3")
 else
-    file1="$origfile1"
-    file2="$origfile2"
-    file3="$origfile3"
+  file1="$origfile1"
+  file2="$origfile2"
+  file3="$origfile3"
 fi
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
@@ -89,7 +89,7 @@ messages
 @$out $log_home/restore-from-list-and-time.out
 restore
 8
-$(( $(date +%Y) + 1))
+$(($(date +%Y) + 1))
 $file3
 
 yes
@@ -104,40 +104,40 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 expect_grep "Start Restore Job" \
-	    "$log_home/should-work.out" \
-	    "The first restore job was not started."
+  "$log_home/should-work.out" \
+  "The first restore job was not started."
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-from-selected-job.out" \
-	    "The second restore job was not started."
+  "$log_home/restore-from-selected-job.out" \
+  "The second restore job was not started."
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-from-list-and-time.out" \
-	    "The third restore job was not started."
+  "$log_home/restore-from-list-and-time.out" \
+  "The third restore job was not started."
 
 expect_grep "1 file selected to be restored." \
-	    "$log_home/should-work.out" \
- 	    "Expected success; found failure"
+  "$log_home/should-work.out" \
+  "Expected success; found failure"
 
 dest1="$tmp/bareos-restores/$file1"
 dest2="$tmp/bareos-restores/$file2"
 dest3="$tmp/bareos-restores/$file3"
 if [[ "$(uname -s)" =~ _NT ]]; then
-    dest1=$(remove_colon_from_windows_path "$dest1")
-    dest2=$(remove_colon_from_windows_path "$dest2")
-    dest3=$(remove_colon_from_windows_path "$dest3")
+  dest1=$(remove_colon_from_windows_path "$dest1")
+  dest2=$(remove_colon_from_windows_path "$dest2")
+  dest3=$(remove_colon_from_windows_path "$dest3")
 fi
 
 if ! cmp -s "$dest1" "$origfile1"; then
-    exit 2
+  exit 2
 fi
 
 if ! cmp -s "$dest2" "$origfile2"; then
-    exit 3
+  exit 3
 fi
 
 if ! cmp -s "$dest3" "$origfile3"; then
-    exit 4
+  exit 4
 fi
 
 end_test

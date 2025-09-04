@@ -3,10 +3,10 @@ set -e
 set -o pipefail
 set -u
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 #
@@ -29,8 +29,8 @@ BackupFileExtra=${BackupDirectory}/extrafile.txt
 start_test
 
 for i in 1 2 3 4; do
-    mkdir -p ${BackupDirectory}/data$i
-    echo "test" > ${BackupDirectory}/data${i}/test.dat
+  mkdir -p ${BackupDirectory}/data$i
+  echo "test" >${BackupDirectory}/data${i}/test.dat
 done
 
 # ${tmp}/bconcmds lists the bconsole commands executed by "run_bareos"
@@ -74,12 +74,10 @@ check_restore_diff ${BackupDirectory}/data2
 check_restore_diff ${BackupDirectory}/data3
 check_restore_diff ${BackupDirectory}/data4
 
-
 # do some manual testing
 if ! [ -d ${BackupDirectory} ]; then
-    set_error "Directory ${BackupDirectory} does not exists any more."
+  set_error "Directory ${BackupDirectory} does not exists any more."
 fi
-
 
 check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data2/test.dat" "gzip"
 check_compression "${Storage}" "${VolumeName}" "1" "${BackupDirectory}/data3/test.dat" "gzip" "9"

@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,10 +24,10 @@ export TestName
 
 JobName=ai-backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -61,15 +61,15 @@ END_OF_DATA
 run_bconsole
 
 jobids=$(grep "jobid" "$tmp/full+incr_start.out" | sed 's/["jobid:]//g' | tail -n5)
-fincrs=$(head -n3 <<< "$jobids" | xargs | tr ' ' ',')
-cons=$(tail -n1 <<< "$jobids" | xargs)
+fincrs=$(head -n3 <<<"$jobids" | xargs | tr ' ' ',')
+cons=$(tail -n1 <<<"$jobids" | xargs)
 
 expect_not_grep "^  Termination: *Backup Canceled" \
-		"${tmp}/full+incr_messages.out" \
-		"Some job was canceled"
+  "${tmp}/full+incr_messages.out" \
+  "Some job was canceled"
 
-expect_grep "purged JobIds ${fincrs} as they were consolidated into Job $((cons+1))" \
-            "$tmp/full+incr_messages.out" \
-            "consolidation of expected jobs did not happen."
+expect_grep "purged JobIds ${fincrs} as they were consolidated into Job $((cons + 1))" \
+  "$tmp/full+incr_messages.out" \
+  "consolidation of expected jobs did not happen."
 
 end_test

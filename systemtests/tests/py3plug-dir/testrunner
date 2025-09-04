@@ -16,19 +16,16 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
 LSAN_OPTIONS=suppressions="$(pwd)/lsan-suppressions.txt"
 export LSAN_OPTIONS
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
-
-
 
 # Use a tgz to setup data to be backuped.
 # Fill ${BackupDirectory} with data.

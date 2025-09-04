@@ -18,10 +18,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -31,11 +31,11 @@ wait_jobid()
   JOBID=$1
   TIMEOUT=${2:-5}
 
-  while [ $TIMEOUT -gt 0 ] && ${BCONSOLE} <<< "wait jobid=${JOBID}" | grep "JobStatus=Unknown"; do
+  while [ $TIMEOUT -gt 0 ] && ${BCONSOLE} <<<"wait jobid=${JOBID}" | grep "JobStatus=Unknown"; do
     sleep 1
-    TIMEOUT=$((TIMEOUT-1))
+    TIMEOUT=$((TIMEOUT - 1))
   done
-  ${BCONSOLE} <<< "wait jobid=${JOBID}"
+  ${BCONSOLE} <<<"wait jobid=${JOBID}"
 }
 
 check_jobid()
@@ -44,12 +44,12 @@ check_jobid()
 
   wait_jobid ${JOBID}
   #echo "messages" | ${BCONSOLE}
-  RESULT=$(${BCONSOLE} <<< "list joblog jobid=${JOBID}")
-  if grep 'Fatal error:' <<< "${RESULT}"; then
+  RESULT=$(${BCONSOLE} <<<"list joblog jobid=${JOBID}")
+  if grep 'Fatal error:' <<<"${RESULT}"; then
     set_error "${RESULT}"
     exit 1
   fi
-  if ! grep 'Termination:.*OK' <<< "${RESULT}"; then
+  if ! grep 'Termination:.*OK' <<<"${RESULT}"; then
     set_error "${RESULT}"
     exit 1
   fi
@@ -84,18 +84,16 @@ ${SSH} mkdir -p /ifs/home/regress/${NDMP_FILESYSTEM}
 ${SSH} dd if=/dev/zero of=/ifs/home/regress/${NDMP_FILESYSTEM}/full bs=1M count=20
 ${SSH} "echo ${NDMP_FILESYSTEM} >> /ifs/home/regress/${NDMP_FILESYSTEM}/full"
 
-
 echo "################ running NDMP backup full #####################"
 echo "run job=${NDMPCLIENT}-native level=Full yes" | ${BCONSOLE}
 check_jobid $((STARTJOBID))
-
 
 echo "################ running NDMP backup incremental #####################"
 ${SSH} dd if=/dev/zero of=/ifs/home/regress/${NDMP_FILESYSTEM}/incremental bs=1M count=2
 ${SSH} "echo ${NDMP_FILESYSTEM} >> /ifs/home/regress/${NDMP_FILESYSTEM}/incremental"
 
 echo "run job=${NDMPCLIENT}-native level=Incremental yes" | ${BCONSOLE}
-check_jobid $((STARTJOBID+1))
+check_jobid $((STARTJOBID + 1))
 # restore
 
 # remove files
@@ -103,16 +101,15 @@ cleanup_isilon
 
 echo "################ running NDMP restore full #####################"
 # restore full
-echo "restore jobid=$((STARTJOBID)) client=ndmp fileset=ndmp-fileset restorejob=NDMPRestoreDump all done yes"  | ${BCONSOLE}
-check_jobid $((STARTJOBID+2))
+echo "restore jobid=$((STARTJOBID)) client=ndmp fileset=ndmp-fileset restorejob=NDMPRestoreDump all done yes" | ${BCONSOLE}
+check_jobid $((STARTJOBID + 2))
 
 ${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full | grep ${NDMP_FILESYSTEM}"
 
-
 echo "################ restore full to different RELATIVE location /prefix #####################"
 # restore full to different RELATIVE location "/prefix"
-echo "restore jobid=$((STARTJOBID)) client=ndmp fileset=ndmp-fileset restorejob=NDMPRestoreDump  where=/bareos-restores-${NDMP_FILESYSTEM} all done yes"  | ${BCONSOLE}
-check_jobid $((STARTJOBID+3))
+echo "restore jobid=$((STARTJOBID)) client=ndmp fileset=ndmp-fileset restorejob=NDMPRestoreDump  where=/bareos-restores-${NDMP_FILESYSTEM} all done yes" | ${BCONSOLE}
+check_jobid $((STARTJOBID + 3))
 
 ${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full | grep ${NDMP_FILESYSTEM}"
 #${SSH} "grep ${NDMP_FILESYSTEM} /ifs/home/regress/${NDMP_FILESYSTEM}/bareos-restores-${NDMP_FILESYSTEM}/full"
@@ -120,16 +117,16 @@ ${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full | grep ${NDMP_FILE
 echo "################ restore full to different ABSOLUTE location ^/prefix #####################"
 # restore full to different ABSOLUTE location "^/prefix"
 
-echo "restore jobid=$((STARTJOBID)) client=ndmp fileset=ndmp-fileset restorejob=NDMPRestoreDump  where=^/ifs/data/bareos-restores-${NDMP_FILESYSTEM} all done yes"  | ${BCONSOLE}
-check_jobid $((STARTJOBID+4))
+echo "restore jobid=$((STARTJOBID)) client=ndmp fileset=ndmp-fileset restorejob=NDMPRestoreDump  where=^/ifs/data/bareos-restores-${NDMP_FILESYSTEM} all done yes" | ${BCONSOLE}
+check_jobid $((STARTJOBID + 4))
 
 ${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full | grep ${NDMP_FILESYSTEM}"
 #${SSH} "grep ${NDMP_FILESYSTEM} /ifs/data/bareos-restores-${NDMP_FILESYSTEM}/full"
 
 echo "################ restore incremental #####################"
 # restore incremental
-printf "restore jobid=$((STARTJOBID+1)) client=ndmp fileset=ndmp-fileset restorejob=NDMPRestoreDump select current\rmark /ifs/home/regress/${NDMP_FILESYSTEM}/incremental\rdone\ryes\r" | ${BCONSOLE}
-check_jobid $((STARTJOBID+5))
+printf "restore jobid=$((STARTJOBID + 1)) client=ndmp fileset=ndmp-fileset restorejob=NDMPRestoreDump select current\rmark /ifs/home/regress/${NDMP_FILESYSTEM}/incremental\rdone\ryes\r" | ${BCONSOLE}
+check_jobid $((STARTJOBID + 5))
 
 ${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental | grep ${NDMP_FILESYSTEM}"
 #${SSH} "grep ${NDMP_FILESYSTEM} /ifs/home/regress/${NDMP_FILESYSTEM}/incremental"
@@ -144,7 +141,7 @@ cleanup_isilon
 # echo "run job=ndmp-copy-$NDMPCLIENT yes"  | ${BCONSOLE}
 # echo "wait"  | ${BCONSOLE}
 # echo "messages"  | ${BCONSOLE}
-# 
+#
 # echo "################ restore copy of full job #####################"
 # # restore copy
 # echo "restore jobid=$((STARTJOBID+8)) client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes"  | ${BCONSOLE}
@@ -152,9 +149,9 @@ cleanup_isilon
 # echo "messages"  | ${BCONSOLE}
 # ${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full | grep ${NDMP_FILESYSTEM}"
 # #${SSH} "grep ${NDMP_FILESYSTEM} /ifs/home/regress/${NDMP_FILESYSTEM}/full"
-# 
+#
 # cleanup_isilon
-# 
+#
 # echo "################ restore copy of incremental job #####################"
 # # restore copy of incremental
 # echo "restore jobid=$((STARTJOBID+10)) client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes"  | ${BCONSOLE}
@@ -162,7 +159,7 @@ cleanup_isilon
 # echo "messages"  | ${BCONSOLE}
 # #${SSH} "grep ${NDMP_FILESYSTEM} /ifs/home/regress/${NDMP_FILESYSTEM}/incremental"
 # ${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental | grep ${NDMP_FILESYSTEM}"
-# 
+#
 # # final cleanup
 # cleanup_isilon
 

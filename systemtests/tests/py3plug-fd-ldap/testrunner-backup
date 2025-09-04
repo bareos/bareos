@@ -11,16 +11,16 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
-testdata_opts=( \
-  --address  "$SYSTEMTEST_LDAP_ADDRESS" \
-  --basedn   "$SYSTEMTEST_LDAP_BASEDN" \
-  --binddn   "$SYSTEMTEST_LDAP_BINDDN" \
+testdata_opts=(
+  --address "$SYSTEMTEST_LDAP_ADDRESS"
+  --basedn "$SYSTEMTEST_LDAP_BASEDN"
+  --binddn "$SYSTEMTEST_LDAP_BINDDN"
   --password "$SYSTEMTEST_LDAP_PASSWORD"
 )
 
@@ -30,7 +30,7 @@ tar xzf ../../data/image.tgz
 ./testdata.py "${testdata_opts[@]}" \
   --clean \
   --populate \
-  --dump-backup > backup-data-before.ldif
+  --dump-backup >backup-data-before.ldif
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
@@ -62,9 +62,9 @@ check_for_zombie_jobs storage=File
 check_two_logs
 
 ./testdata.py "${testdata_opts[@]}" \
-  --dump-backup > backup-data-after.ldif
+  --dump-backup >backup-data-after.ldif
 ./testdata.py "${testdata_opts[@]}" \
-  --dump-restore > restored-data.ldif
+  --dump-restore >restored-data.ldif
 
 diff -u backup-data-before.ldif backup-data-after.ldif
 diff -u backup-data-before.ldif restored-data.ldif
