@@ -244,7 +244,7 @@ bRC newPlugin(PluginContext* ctx)
   RegisterBareosEvent(ctx, filedaemon::bEventNewPluginOptions);
 
   // these are the early events that the module _might_ want,
-  // but wouldnt get since its initialised _after_ they are emitted
+  // but would not get since its initialised _after_ they are emitted
   RegisterBareosEvent(ctx, filedaemon::bEventJobStart);
   RegisterBareosEvent(ctx, filedaemon::bEventStartBackupJob);
   RegisterBareosEvent(ctx, filedaemon::bEventStartRestoreJob);
