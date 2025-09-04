@@ -7,11 +7,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -35,7 +34,7 @@ END_OF_DATA
 run_bconsole
 
 expect_grep "JobId 999999 not found in catalog." \
-            "$run_log" \
-            "The run command accepted a jobid that does not exist in the database."
+  "$run_log" \
+  "The run command accepted a jobid that does not exist in the database."
 
 end_test

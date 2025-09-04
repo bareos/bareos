@@ -6,10 +6,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+# shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+# shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -29,7 +29,7 @@ wait
 messages
 END_OF_DATA
 
-run_bconsole
+run_bconsole "$@"
 
 expect_grep "Catalog record for Volume.*Slot 1 successfully created." "${tmp}/label.out" "record was not created successfully"
 expect_grep "OK label" "${tmp}/label.out" "Volume was not labeled correctly"

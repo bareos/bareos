@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -32,10 +32,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
 . functions
@@ -72,29 +72,28 @@ check_for_zombie_jobs storage=File
 
 check_preconditions
 
-
 expect_grep "Try" \
-	    "$log_home/should-hint-non-archive.out" \
-	    "Expected hint to restore from archive not issued."
+  "$log_home/should-hint-non-archive.out" \
+  "Expected hint to restore from archive not issued."
 
 expect_grep "No Full backup" \
-	    "$log_home/should-hint-non-archive.out" \
-	    "Restore should not be able to restore archives."
+  "$log_home/should-hint-non-archive.out" \
+  "Restore should not be able to restore archives."
 
 expect_not_grep "full backup archive" \
-		"$log_home/should-hint-non-archive.out" \
-		"Did not display correct 'restore' hint."
+  "$log_home/should-hint-non-archive.out" \
+  "Did not display correct 'restore' hint."
 
 expect_grep "Try" \
-	    "$log_home/should-hint-archive.out" \
-	    "Expected hint to restore from archive not issued."
+  "$log_home/should-hint-archive.out" \
+  "Expected hint to restore from archive not issued."
 
 expect_grep "No Full backup" \
-	    "$log_home/should-hint-archive.out" \
-	    "Restore should not be able to restore archives."
+  "$log_home/should-hint-archive.out" \
+  "Restore should not be able to restore archives."
 
 expect_grep "full backup archive" \
-	    "$log_home/should-hint-archive.out" \
-	    "Did not display correct 'restore archive' hint."
+  "$log_home/should-hint-archive.out" \
+  "Did not display correct 'restore archive' hint."
 
 end_test

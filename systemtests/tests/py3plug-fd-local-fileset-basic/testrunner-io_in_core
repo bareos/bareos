@@ -18,10 +18,10 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -57,7 +57,7 @@ END_OF_DATA
 
 run_bareos "$@"
 if is_debug; then
-    cat ${working_dir}/*.trace
+  cat ${working_dir}/*.trace
 fi
 check_for_zombie_jobs storage=File
 stop_bareos
@@ -79,11 +79,9 @@ check_for_zombie_jobs storage=File
 check_two_logs
 check_restore_diff ${BackupDirectory}
 
-expect_grep "bread handled in core"\
+expect_grep "bread handled in core" \
   working/py*-fd-local-fileset-basic-fd.trace \
   "io was not handled in core according to trace file."
-
-
 
 end_test
 bin/bareos stop

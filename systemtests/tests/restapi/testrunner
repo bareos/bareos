@@ -7,10 +7,8 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=environment-local.in
-. ./environment-local
 
 # convert requirements.txt into Python list,
 # but exclude comments and Bareos packages
@@ -27,11 +25,10 @@ requirements=$(
   "import pkg_resources;pkg_resources.require($requirements)" \
   || exit 77
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
 
 # Fill ${BackupDirectory} with data.
 setup_data
@@ -40,58 +37,58 @@ start_test
 
 start_bareos
 
-function endpoint_check {
-# $1: method (POST, GET)
-# $2: endpoint_url
-# $3: string to grep for
-# $4: extra curl options
-# $5: repeat n times with a pause of 1 second between tries to get the result
+function endpoint_check
+{
+  # $1: method (POST, GET)
+  # $2: endpoint_url
+  # $3: string to grep for
+  # $4: extra curl options
+  # $5: repeat n times with a pause of 1 second between tries to get the result
 
-method="$1"
-endpoint_url="$2"
-search="$3"
-curl_extra_options="${4:-}"
-maxTry=${5:-1}
+  method="$1"
+  endpoint_url="$2"
+  search="$3"
+  curl_extra_options="${4:-}"
+  maxTry=${5:-1}
 
-url="${REST_API_URL}/$2"
+  url="${REST_API_URL}/$2"
 
-printf \
-'curl --silent --show-error --write-out "%s" \
+  printf \
+    'curl --silent --show-error --write-out "%s" \
   -H "Content-Type: application/json" \
   -H "accept: application/json" \
   -H "Authorization: Bearer %s" \
   -X %s \
   %s \
   %s\n\n
-' "\n%{http_code}\n" "$TOKEN" "$method" "$url" "$curl_extra_options" > ${tmp}/curl.sh
+' "\n%{http_code}\n" "$TOKEN" "$method" "$url" "$curl_extra_options" >${tmp}/curl.sh
 
-# curl doesn't like empty string "" as option, will exit with code 3
-i=0
-found="false"
-while [ $i -lt $maxTry ] && [ $found == "false" ]; do
-    cat ${tmp}/curl.sh >> ${tmp}/../log/curl.log
-    source ${tmp}/curl.sh > ${tmp}/curl.out
-    cat ${tmp}/curl.out >> ${tmp}/../log/curl.log
-    printf 'Searching for "%s": ' "$search" >> ${tmp}/../log/curl.log
+  # curl doesn't like empty string "" as option, will exit with code 3
+  i=0
+  found="false"
+  while [ $i -lt $maxTry ] && [ $found == "false" ]; do
+    cat ${tmp}/curl.sh >>${tmp}/../log/curl.log
+    source ${tmp}/curl.sh >${tmp}/curl.out
+    cat ${tmp}/curl.out >>${tmp}/../log/curl.log
+    printf 'Searching for "%s": ' "$search" >>${tmp}/../log/curl.log
     if grep -q "$search" ${tmp}/curl.out; then
-        found="true"
-        printf "found\n" >> ${tmp}/../log/curl.log
-        printf -- "--------------------------------------\n\n" >> ${tmp}/../log/curl.log
+      found="true"
+      printf "found\n" >>${tmp}/../log/curl.log
+      printf -- "--------------------------------------\n\n" >>${tmp}/../log/curl.log
     else
-        print_debug "ERROR getting endpoint $2 with method $1, try $i of $maxTry"
-        i=$[$i+1]
-        sleep 1
+      print_debug "ERROR getting endpoint $2 with method $1, try $i of $maxTry"
+      i=$(($i + 1))
+      sleep 1
     fi
-done
-    if [ $found == "false" ]; then
-        printf "NOT FOUND\n" >> ${tmp}/../log/curl.log
-        printf -- "--------------------------------------\n\n" >> ${tmp}/../log/curl.log
-        print_debug "ERROR getting endpoint $2 with method $1 in $maxTry tries, expected output: \"$3\""
-        cat ${tmp}/curl.out
-        exit 1
-    fi
+  done
+  if [ $found == "false" ]; then
+    printf "NOT FOUND\n" >>${tmp}/../log/curl.log
+    printf -- "--------------------------------------\n\n" >>${tmp}/../log/curl.log
+    print_debug "ERROR getting endpoint $2 with method $1 in $maxTry tries, expected output: \"$3\""
+    cat ${tmp}/curl.out
+    exit 1
+  fi
 }
-
 
 ## place api tests here
 ## TODO: error handling / make sure api gets stopped
@@ -117,17 +114,17 @@ endpoint_check GET "configuration/schedules" mysched "" 1
 # On some endpoints director returns empty strings, in this case we grep for http status code 204 (empty document by intention)
 endpoint_check PUT "control/schedules/disable/mysched.$$" 200 "" 1
 endpoint_check PUT "control/schedules/enable/mysched.$$" 200 "" 1
-endpoint_check GET "configuration/storages" File  "" 1
-endpoint_check GET "configuration/storages/File" File  "" 1
-endpoint_check GET "configuration/consoles" admin-tls  "" 1
-endpoint_check GET "configuration/consoles/admin-tls" admin-tls  "" 1
-endpoint_check GET "configuration/profiles" operator  "" 1
-endpoint_check GET "configuration/profiles/operator" operator  "" 1
-endpoint_check GET "configuration/profiles" operator  "" 1
-endpoint_check GET "configuration/profiles/operator" operator  "" 1
+endpoint_check GET "configuration/storages" File "" 1
+endpoint_check GET "configuration/storages/File" File "" 1
+endpoint_check GET "configuration/consoles" admin-tls "" 1
+endpoint_check GET "configuration/consoles/admin-tls" admin-tls "" 1
+endpoint_check GET "configuration/profiles" operator "" 1
+endpoint_check GET "configuration/profiles/operator" operator "" 1
+endpoint_check GET "configuration/profiles" operator "" 1
+endpoint_check GET "configuration/profiles/operator" operator "" 1
 endpoint_check POST "configuration/users" string "-d '{\"name\":\"myuser$$\",\"description\":\"string\"}'" 1
-endpoint_check GET "configuration/users" myuser$$  "" 1
-endpoint_check GET "configuration/users/myuser$$" myuser$$  "" 1
+endpoint_check GET "configuration/users" myuser$$ "" 1
+endpoint_check GET "configuration/users/myuser$$" myuser$$ "" 1
 endpoint_check GET "control/clients" bareos-fd "" 1
 endpoint_check GET "control/clients/1" test2-fd "" 1
 endpoint_check PUT "control/clients/disable/bareos-fd" 200 "" 1

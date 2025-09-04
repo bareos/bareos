@@ -3,11 +3,10 @@ set -e
 set -o pipefail
 set -u
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
-#shellcheck source=./reload_test_functions
 . ./reload_test_functions
 
 export director_debug_level=""

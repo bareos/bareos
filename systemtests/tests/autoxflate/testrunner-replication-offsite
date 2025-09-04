@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -25,10 +25,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 debug_level=500
@@ -61,26 +61,24 @@ END_OF_DATA
 
 run_bconsole "$@"
 
-
-
 # There should be no difference, but with autoxflate decompression
 # the restore reports success ("Restore OK") but seems to fail silently
 # and doesn't actually restore anything
 check_restore_diff "${BackupDirectory}" "$restore_dir"
 
 expect_grep "Copying OK" \
-	    "$tmp/copy-offsite.out" \
-	    "Offsite replication did not succeed."
+  "$tmp/copy-offsite.out" \
+  "Offsite replication did not succeed."
 
 expect_grep "Restore OK" \
-	    "$tmp/restore-O1C1.out" \
-	    "Restore from O1C1 did not succeed."
+  "$tmp/restore-O1C1.out" \
+  "Restore from O1C1 did not succeed."
 
 conf="$(dirname ${BAREOS_CONFIG_DIR})/bareos-sd1"
 
 if ! is_file_compressed "1D2" "O1C1" "${File}"; then
-    echo "O1D2 is not compressed"
-    estat=4
+  echo "O1D2 is not compressed"
+  estat=4
 fi
 
 end_test

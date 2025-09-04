@@ -35,7 +35,7 @@ file_size()
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=./environment
+#shellcheck source=../../environment.in
 . ./environment
 #shellcheck source=../../scripts/functions
 . "${rscripts}"/functions

@@ -5,10 +5,10 @@ set -u
 
 TestName=02-copy
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 copy_log="$tmp/copy_log.out"
@@ -37,33 +37,32 @@ SELECT type FROM job WHERE jobid=4;
 quit
 END_OF_DATA
 
-
 run_bconsole "$tmp/bconcmds"
 
 expect_grep "Termination:.*Copying OK" \
-            "$copy_log" \
-            "Copy job did not finish well."
+  "$copy_log" \
+  "Copy job did not finish well."
 
 expect_grep "|.*C.*|" \
-            "$query_results" \
-            "Copy job does not have the expected type."
+  "$query_results" \
+  "Copy job does not have the expected type."
 
 expect_grep "JobId 2: BeforeJob: prevjobid=\*None\* newjobid=\*None\*" \
-            "$copy_log" \
-            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
-			
+  "$copy_log" \
+  "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
+
 expect_grep "JobId 2: AfterJob: prevjobid=\*None\* newjobid=\*None\*" \
-            "$copy_log" \
-            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
-			
+  "$copy_log" \
+  "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
+
 expect_grep "JobId 3: BeforeJob: prevjobid=1 newjobid=4" \
-            "$copy_log" \
-            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
-			
+  "$copy_log" \
+  "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
+
 expect_grep "JobId 3: AfterJob: prevjobid=1 newjobid=4" \
-            "$copy_log" \
-            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
-			
+  "$copy_log" \
+  "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
+
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $query_results
 prune volume=TestVolume001 yes
@@ -77,14 +76,13 @@ END_OF_DATA
 
 run_bconsole "$tmp/bconcmds"
 
-
 expect_grep "|     1 |" \
-            "$query_results" \
-            "Copy jobs were not deleted appropriately after backup volume pruning."
+  "$query_results" \
+  "Copy jobs were not deleted appropriately after backup volume pruning."
 
 expect_grep "|.*B.*|" \
-            "$query_results" \
-            "Copy job was not upgraded to backup after original backup was pruned."
+  "$query_results" \
+  "Copy job was not upgraded to backup after original backup was pruned."
 
 check_for_zombie_jobs storage=File
 

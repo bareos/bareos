@@ -3,14 +3,16 @@ set -e
 set -o pipefail
 set -u
 
-check_option() {
+check_option()
+{
   expect_grep \
     "effective configuration: $1 = '$2'" \
     "$tmp/config-test-$3.out" \
     "$3 is missing or has wrong option $1"
 }
 
-check_not_option() {
+check_not_option()
+{
   expect_not_grep \
     "effective configuration: $1 = '$2'" \
     "$tmp/config-test-$3.out" \
@@ -108,14 +110,14 @@ for i in 1 6 7 8; do
 done
 
 for f in defaults-file override-file both-files; do
-expect_not_grep \
-  "effective configuration: defaults_file" \
-  "$tmp/config-test-$f.out" \
-  "defaults_file option was not consumed"
-expect_not_grep \
-  "effective configuration: overrides_file" \
-  "$tmp/config-test-$f.out" \
-  "overrides_file option was not consumed"
+  expect_not_grep \
+    "effective configuration: defaults_file" \
+    "$tmp/config-test-$f.out" \
+    "defaults_file option was not consumed"
+  expect_not_grep \
+    "effective configuration: overrides_file" \
+    "$tmp/config-test-$f.out" \
+    "overrides_file option was not consumed"
 done
 
 end_test

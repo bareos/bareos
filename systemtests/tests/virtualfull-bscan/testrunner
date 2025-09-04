@@ -13,15 +13,13 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
-
 
 # Fill ${BackupDirectory} with data.
 setup_data
@@ -110,7 +108,6 @@ if [ "$my_jobid_records" -ne "$total_jobid_records" ]; then
   stop_bareos
   exit 1
 fi
-
 
 cat <<END_OF_DATA >"$tmp/bconcmds2"
 @#

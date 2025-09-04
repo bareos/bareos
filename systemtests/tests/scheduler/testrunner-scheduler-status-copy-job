@@ -6,10 +6,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 #
@@ -40,11 +40,11 @@ run_bconsole
 
 #check that `status scheduler job=...` returns scheduled copy jobs
 expect_grep "TestCycle .* Level=Full" \
-            "$enabled_client_log" \
-            "No scheduled jobs for an enabled job were found!"
+  "$enabled_client_log" \
+  "No scheduled jobs for an enabled job were found!"
 
 expect_not_grep "TestCycle .* Level=Full" \
-                "$disabled_client_log" \
-                "a scheduled job for a disabled client was listed!"
+  "$disabled_client_log" \
+  "a scheduled job for a disabled client was listed!"
 
 end_test

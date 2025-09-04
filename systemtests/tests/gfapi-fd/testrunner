@@ -2,56 +2,53 @@
 set -e
 set -u
 
-
 TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
 CTEST_SKIP_RETURN_CODE=77
 
 # check if required sudo commands can be executed, otherwise skip test
 for SUDO_CMD in mount umount rm; do
-  if ! "${SUDO}" -l "${SUDO_CMD}" >/dev/null 2>&1 ; then
-  echo "cannot execute $SUDO_CMD via sudo" && exit "${CTEST_SKIP_RETURN_CODE}"
+  if ! "${SUDO}" -l "${SUDO_CMD}" >/dev/null 2>&1; then
+    echo "cannot execute $SUDO_CMD via sudo" && exit "${CTEST_SKIP_RETURN_CODE}"
   fi
 done
 
-umount_glusterfs(){
-#  make sure umount is successful
-tries=60
-echo "umounting glusterfs..."
-while "${SUDO}" mount | grep "${tmp}/data" >/dev/null 2>&1; do
-  [ $((tries-=1)) -eq 0 ] && {
-    echo "could not umount glustrfs ${tmp}/data"
-    exit 1
-  }
-  "${SUDO}" umount "${tmp}/data"
-  echo -n "."
-  sleep 1
-done
+umount_glusterfs()
+{
+  #  make sure umount is successful
+  tries=60
+  echo "umounting glusterfs..."
+  while "${SUDO}" mount | grep "${tmp}/data" >/dev/null 2>&1; do
+    [ $((tries -= 1)) -eq 0 ] && {
+      echo "could not umount glustrfs ${tmp}/data"
+      exit 1
+    }
+    "${SUDO}" umount "${tmp}/data"
+    echo -n "."
+    sleep 1
+  done
 }
 
 trap umount_glusterfs EXIT
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
-
 
 umount_glusterfs
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-
 # Directory to backup.
 # This directory will be created by setup_data "$@"().
 BackupDirectory="${tmp}/data"
 
-
-[ -d "${tmp}/data" ] ||  mkdir -p "${tmp}/data"
+[ -d "${tmp}/data" ] || mkdir -p "${tmp}/data"
 "${SUDO}" mount -t glusterfs "${gfapi_fd_host}:/${gfapi_fd_testvolume}" "${tmp}/data"
 
 "${SUDO}" rm -Rvf "${tmp}/data"/*
@@ -108,7 +105,6 @@ run_bareos "$@"
 check_for_zombie_jobs storage=File
 stop_bareos
 
-
 #[ -d "${tmp}/bareos-restores" ] && rm -Rvf "${tmp}/bareos-restores"
 #mkdir -p "${tmp}"/bareos-restores/"${tmp}/data"
 #now move the data away from gluster volume, restore and compare to moved data
@@ -138,8 +134,8 @@ run_bareos "$@"
 check_for_zombie_jobs storage=File
 
 check_two_logs
-ln -s  "${tmp}" "${tmp}/bareos-restores"
-check_recursive_diff_of_dirs $tmp/data/weird-files  $tmp/data/$tmp/bareos-restores/data/weird-files
+ln -s "${tmp}" "${tmp}/bareos-restores"
+check_recursive_diff_of_dirs $tmp/data/weird-files $tmp/data/$tmp/bareos-restores/data/weird-files
 
 umount_glusterfs
 end_test
