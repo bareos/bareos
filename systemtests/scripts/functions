@@ -102,6 +102,11 @@ cleanup()
   fi
 }
 
+on_windows_host()
+{
+  [[ "$(uname -s)" =~ _NT ]]
+}
+
 get_test_name()
 {
   testscriptpath=$1
@@ -144,7 +149,7 @@ setup_data()
   # The following files in the "weird files" tar cause problems on windows, so
   # for now they are removed before the tests start.
   # TODO: Make these files also work on windows.
-  if [[ "$(uname -s)" =~ _NT ]]; then
+  if on_windows_host; then
     pushd "$data_dir" || exit 1
     for f in 'weird-files/a-file-with-spaces-at-the-end    ' \
       weird-files/'  ' \

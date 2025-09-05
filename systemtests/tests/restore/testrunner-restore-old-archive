@@ -104,7 +104,15 @@ if cmp -s "$log_home/bareos-restores$file" "$file"; then
 fi
 
 # restore the old file
-mv "$log_home/bareos-restores$file" "$file"
+
+ls "$log_home/bareos-restores"
+
+if on_windows_host; then
+  no_cygdrive=$(sed 's#cygdrive/##' "$file")
+  mv "$log_home/bareos-restores$no_cygdrive" "$file"
+else
+  mv "$log_home/bareos-restores$file" "$file"
+fi
 
 # since the other tests do not care for the original contents
 # we just leave the changed file instead of changing it back.
