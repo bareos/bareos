@@ -6,6 +6,8 @@
 #
 # Source the generic functions.
 #
+
+# shellcheck source=../../core/scripts/bareos-ctl-funcs
 . "${rscripts}/bareos-ctl-funcs"
 
 # remove the colon from a windows path
