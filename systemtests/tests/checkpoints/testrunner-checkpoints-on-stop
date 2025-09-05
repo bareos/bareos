@@ -9,10 +9,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -41,24 +41,23 @@ timeout=0
 timed_checkpoint=""
 volume_checkpoint=""
 
-while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
-do
-    timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' "$messagesfile" || : )
-    volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$messagesfile" || : )
-    sleep 1
-    ((++timeout))
+while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]; do
+  timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' "$messagesfile" || :)
+  volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$messagesfile" || :)
+  sleep 1
+  ((++timeout))
 done
 
 # Check that a timed checkpoint was triggered
 if [[ -z $timed_checkpoint ]]; then
-    echo "Timed checkpoint was not triggered!"
-    estat=1;
+  echo "Timed checkpoint was not triggered!"
+  estat=1
 fi
 
 # Check that a checkpoint happened on a volume change
 if [[ -z $volume_checkpoint ]]; then
-    echo "Checkpoint was not triggered on volume changes!"
-    estat=2;
+  echo "Checkpoint was not triggered on volume changes!"
+  estat=2
 fi
 
 bin/bareos stop
@@ -90,13 +89,13 @@ fi
 
 # Check that the backup was halted
 expect_not_grep "Termination:.*Backup OK" \
-                "$backup_log"\
-                "Backup was run successfully. The backup should fail."
+  "$backup_log" \
+  "Backup was run successfully. The backup should fail."
 
 # Check that the restore works fine
 expect_grep "Termination:            Restore OK" \
-            "$restore_log"\
-            "Restore job did not go well!"
+  "$restore_log" \
+  "Restore job did not go well!"
 
 restorepath="$restore_directory/$tmp/bigdata"
 restorepath=$(remove_colon_from_windows_path "$restorepath")

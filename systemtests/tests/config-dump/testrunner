@@ -4,51 +4,50 @@ set -e
 set -o pipefail
 set -u
 
-
 remove_bconsole_commands_from_output()
 {
-    FILE="$1"
-    # remove first and last line from file
-    sed -i'.bak' -e '1d' -e '$ d' ${FILE}
+  FILE="$1"
+  # remove first and last line from file
+  sed -i'.bak' -e '1d' -e '$ d' ${FILE}
 }
 
 strip_config()
 {
-    # removes files that are known to differ.
-    # Password: will be shown as MD5
-    source="$1"
+  # removes files that are known to differ.
+  # Password: will be shown as MD5
+  source="$1"
 
-    if ! [ -e "${configfile}" ]; then
-        set_error "strip_config: File \"${configfile}\" does not exist."
-        exit 1
-    fi
+  if ! [ -e "${configfile}" ]; then
+    set_error "strip_config: File \"${configfile}\" does not exist."
+    exit 1
+  fi
 
-    grep -v -e "Password = " "${source}"
+  grep -v -e "Password = " "${source}"
 }
 
 dump_config()
 {
-    # start bareos-dir with config file
-    # and export it in 4 different formats:
-    #   plain
-    #   plain-verbose
-    #   json
-    #   json-verbose
-    configfile="$1"
-    ext="$2"
+  # start bareos-dir with config file
+  # and export it in 4 different formats:
+  #   plain
+  #   plain-verbose
+  #   json
+  #   json-verbose
+  configfile="$1"
+  ext="$2"
 
-    if ! [ -e "${configfile}" ]; then
-        set_error "Director config file \"${configfile}\" does not exist."
-        exit 1
-    fi
+  if ! [ -e "${configfile}" ]; then
+    set_error "Director config file \"${configfile}\" does not exist."
+    exit 1
+  fi
 
-    DESC="dump_config ${configfile} ext=${ext}"
-    print_debug "*** start $DESC"
+  DESC="dump_config ${configfile} ext=${ext}"
+  print_debug "*** start $DESC"
 
-    "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc > $tmp/bareos-dir-xc-${ext}.conf
-    BAREOS_CONFIG_DIR="${configfile}" ${rscripts}/bareos-ctl-dir start
+  "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc >$tmp/bareos-dir-xc-${ext}.conf
+  BAREOS_CONFIG_DIR="${configfile}" ${rscripts}/bareos-ctl-dir start
 
-cat <<END_OF_DATA >$tmp/bconcmds
+  cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/log-${ext}.out
 status director
 @$out $tmp/bareos-dir-show-${ext}.conf
@@ -65,98 +64,97 @@ show all verbose
 quit
 END_OF_DATA
 
-    run_bconsole
+  run_bconsole
 
-    remove_bconsole_commands_from_output "$tmp/bareos-dir-show-${ext}.conf"
-    remove_bconsole_commands_from_output "$tmp/bareos-dir-show-verbose-${ext}.conf"
-    remove_bconsole_commands_from_output "$tmp/bareos-dir-show-${ext}.json"
-    remove_bconsole_commands_from_output "$tmp/bareos-dir-show-verbose-${ext}.json"
+  remove_bconsole_commands_from_output "$tmp/bareos-dir-show-${ext}.conf"
+  remove_bconsole_commands_from_output "$tmp/bareos-dir-show-verbose-${ext}.conf"
+  remove_bconsole_commands_from_output "$tmp/bareos-dir-show-${ext}.json"
+  remove_bconsole_commands_from_output "$tmp/bareos-dir-show-verbose-${ext}.json"
 
-    ${rscripts}/bareos-ctl-dir stop
+  ${rscripts}/bareos-ctl-dir stop
 
-    print_debug "*** end   $DESC"
+  print_debug "*** end   $DESC"
 }
 
 diff_files()
 {
-    file1="$1"
-    file2="$2"
-    base1="$(basename "$file1" .conf)"
-    base2="$(basename "$file2" .conf)"
-    difffile="${tmp}/${base1}_${base2}.diff"
-    # --ignore-space-change could be replaced by --ignore-trailing-space,
-    # however, the FreeBSD version of diff does not support this option.
-    DIFF_CMD='diff --ignore-blank-lines --ignore-space-change "${file1}" "${file2}"'
-    if ! eval "$DIFF_CMD" > "${difffile}"; then
-        echo "Differences found. Output of:"
-        eval "echo $DIFF_CMD"
-        cat "${difffile}"
-        set_error "Differences between $file1 and $file2."
-        exit 1
-    fi
+  file1="$1"
+  file2="$2"
+  base1="$(basename "$file1" .conf)"
+  base2="$(basename "$file2" .conf)"
+  difffile="${tmp}/${base1}_${base2}.diff"
+  # --ignore-space-change could be replaced by --ignore-trailing-space,
+  # however, the FreeBSD version of diff does not support this option.
+  DIFF_CMD='diff --ignore-blank-lines --ignore-space-change "${file1}" "${file2}"'
+  if ! eval "$DIFF_CMD" >"${difffile}"; then
+    echo "Differences found. Output of:"
+    eval "echo $DIFF_CMD"
+    cat "${difffile}"
+    set_error "Differences between $file1 and $file2."
+    exit 1
+  fi
 }
 
 compare_export_config()
 {
-    configfile="$1"
-    comparefile="$2"
-    ressource="$3"
-    ressourcename="${4-}"
+  configfile="$1"
+  comparefile="$2"
+  ressource="$3"
+  ressourcename="${4-}"
 
-    if ! [ -e "${configfile}" ]; then
-        set_error "Director config file \"${configfile}\" does not exist."
-        exit 1
-    fi
+  if ! [ -e "${configfile}" ]; then
+    set_error "Director config file \"${configfile}\" does not exist."
+    exit 1
+  fi
 
-    outputfileextension=$(echo "$ressource-$ressourcename")
+  outputfileextension=$(echo "$ressource-$ressourcename")
 
-    DESC="compare_export_config ${configfile} compare=${comparefile} parameter1=${ressource} parameter2=${ressourcename}"
-    print_debug "*** start $DESC"
+  DESC="compare_export_config ${configfile} compare=${comparefile} parameter1=${ressource} parameter2=${ressourcename}"
+  print_debug "*** start $DESC"
 
-    "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc "${ressource}" "${ressourcename}" > $tmp/bareos-dir-xc-${outputfileextension}.conf
+  "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc "${ressource}" "${ressourcename}" >$tmp/bareos-dir-xc-${outputfileextension}.conf
 
-    print_debug "*** end   $DESC"
+  print_debug "*** end   $DESC"
 
-    diff_files "${comparefile}" "$tmp/bareos-dir-xc-${outputfileextension}.conf"
+  diff_files "${comparefile}" "$tmp/bareos-dir-xc-${outputfileextension}.conf"
 }
 
 bareos_dir_failing()
 {
-    configfile="$1"
-    ressource="$2"
-    ressourcename="${3-}"
+  configfile="$1"
+  ressource="$2"
+  ressourcename="${3-}"
 
-    if ! [ -e "${configfile}" ]; then
-        set_error "Director config file \"${configfile}\" does not exist."
-        exit 1
-    fi
+  if ! [ -e "${configfile}" ]; then
+    set_error "Director config file \"${configfile}\" does not exist."
+    exit 1
+  fi
 
-    DESC="bareos_dir_failing ${configfile} parameter1=${ressource} parameter2=${ressourcename}"
-    print_debug "*** start $DESC"
+  DESC="bareos_dir_failing ${configfile} parameter1=${ressource} parameter2=${ressourcename}"
+  print_debug "*** start $DESC"
 
-    if OUT=$("${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc "${ressource}" "${ressourcename}"); then
-        echo "${OUT}"
-        set_error "Starting Director with --xc "${ressource} ${ressourcename}" should fail."
-        exit 1
-    fi
+  if OUT=$("${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc "${ressource}" "${ressourcename}"); then
+    echo "${OUT}"
+    set_error "Starting Director with --xc "${ressource} ${ressourcename}" should fail."
+    exit 1
+  fi
 
-    print_debug "$OUT"
-    print_debug "*** end   $DESC"
+  print_debug "$OUT"
+  print_debug "*** end   $DESC"
 }
 
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
 JobName=backup-bareos-fd
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
 
 start_test
 
@@ -173,7 +171,6 @@ dump_config "${conf}/bareos-dir-full.conf" "full1"
 
 dump_config "${tmp}/bareos-dir-show-verbose-full1.conf" "full2"
 
-
 # compare config export from
 # bareos-dir-19.2.7-xc
 # with re-exported version.
@@ -186,8 +183,8 @@ diff_files "$tmp/bareos-dir-show-verbose-1.conf" "$tmp/bareos-dir-show-verbose-2
 
 # Don't compare directly,
 # as there are known differences.
-strip_config "${conf}/bareos-dir-full.conf" > "${tmp}/bareos-dir-full-stripped.conf"
-strip_config "${tmp}/bareos-dir-show-verbose-full1.conf" > "${tmp}/bareos-dir-show-verbose-full1-stripped.conf"
+strip_config "${conf}/bareos-dir-full.conf" >"${tmp}/bareos-dir-full-stripped.conf"
+strip_config "${tmp}/bareos-dir-show-verbose-full1.conf" >"${tmp}/bareos-dir-show-verbose-full1-stripped.conf"
 diff_files "${tmp}/bareos-dir-full-stripped.conf" "${tmp}/bareos-dir-show-verbose-full1-stripped.conf"
 
 # Compare export and re-export from bareos-dir-full.conf.
@@ -195,7 +192,6 @@ diff_files "${tmp}/bareos-dir-show-full1.conf" "$tmp/bareos-dir-show-full2.conf"
 
 # Compare export and re-export from bareos-dir-full.conf(verbose versions).
 diff_files "${tmp}/bareos-dir-show-verbose-full1.conf" "$tmp/bareos-dir-show-verbose-full2.conf"
-
 
 # export all resources of a type
 compare_export_config "${conf}/bareos-dir-19.2.7-xc.conf" "etc/compare/Console.conf" "console"

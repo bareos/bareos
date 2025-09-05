@@ -6,8 +6,9 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=./environment
+#shellcheck source=../../environment.in
 . ./environment
+#shellcheck source=test-config.in
 . ./test-config
 
 #shellcheck source=../../scripts/functions
@@ -15,7 +16,8 @@ export TestName
 
 start_test
 
-on_error() {
+on_error()
+{
   local lc="${BASH_COMMAND}"
   echo "Error occurred in testrunner script [${lc}]"
   export estat=1
@@ -24,14 +26,14 @@ on_error() {
 trap 'on_error' ERR
 
 echo "Set debug on the Tape-Storage daemon"
-tracefile="$(echo "setdebug level=200 trace=1 storage=Tape-0" | bin/bconsole | grep "^3000" | awk -F"tracefile=" '{print $2}' )"
-: > "${tracefile}" # clear tracefile
+tracefile="$(echo "setdebug level=200 trace=1 storage=Tape-0" | bin/bconsole | grep "^3000" | awk -F"tracefile=" '{print $2}')"
+: >"${tracefile}" # clear tracefile
 
 echo "Label barcodes"
 for i in $(seq ${NUMBER_OF_POOLS}); do
-  pool=$(( i -1 )) #counts from 0
+  pool=$((i - 1)) #counts from 0
   for j in $(seq ${NUMBER_OF_TAPES_PER_POOL}); do
-    slot=$(( j + pool * NUMBER_OF_TAPES_PER_POOL )) #counts from 1
+    slot=$((j + pool * NUMBER_OF_TAPES_PER_POOL)) #counts from 1
     echo "label barcodes slot=${slot} drive=0 pool=Full-${pool} storage=Tape-0 yes" | bin/bconsole | grep -E "(OK label|already exists)"
   done
 done
@@ -42,18 +44,18 @@ rm -f bconsole_backup_jobs
 spooling="spooldata=yes"
 for i in $(seq ${NUMBER_OF_TEST_ROUNDS}); do
   for j in $(seq ${NUMBER_OF_POOLS}); do
-    cat << EOF >> bconsole_backup_jobs
-run job=backup-bareos-fd level=Full storage=Tape-0 pool=Full-$(( j -1 )) ${spooling} yes
+    cat <<EOF >>bconsole_backup_jobs
+run job=backup-bareos-fd level=Full storage=Tape-0 pool=Full-$((j - 1)) ${spooling} yes
 status dir
 EOF
-    if [ $(( NUMBER_OF_SPOOLING_JOBS_PER_ROUND -j )) -le 0 ]; then
+    if [ $((NUMBER_OF_SPOOLING_JOBS_PER_ROUND - j)) -le 0 ]; then
       spooling=""
     fi
   done
 done
 
 # start all the jobs
-bin/bconsole < bconsole_backup_jobs
+bin/bconsole <bconsole_backup_jobs
 
 DevicesFromConfig=$(grep Device= ${current_test_directory}/etc/bareos/bareos-sd.d/autochanger/autochanger.conf | sed -n -e 's/^.*Device=//p')
 tapedevices=($DevicesFromConfig)
@@ -76,26 +78,26 @@ run_bconsole
 
 # Redo the backup to check if drive 0 is still being used
 rm -f bconsole_backup_jobs
-echo "@$out $tmp/log-second-backups.out" >> bconsole_backup_jobs
+echo "@$out $tmp/log-second-backups.out" >>bconsole_backup_jobs
 
 spooling="spooldata=yes"
 for i in $(seq ${NUMBER_OF_TEST_ROUNDS}); do
   for j in $(seq ${NUMBER_OF_POOLS}); do
-    cat << EOF >> bconsole_backup_jobs
-run job=backup-bareos-fd level=Full storage=Tape-0 pool=Full-$(( j -1 )) ${spooling} yes
+    cat <<EOF >>bconsole_backup_jobs
+run job=backup-bareos-fd level=Full storage=Tape-0 pool=Full-$((j - 1)) ${spooling} yes
 status dir
 EOF
-    if [ $(( NUMBER_OF_SPOOLING_JOBS_PER_ROUND -j )) -le 0 ]; then
+    if [ $((NUMBER_OF_SPOOLING_JOBS_PER_ROUND - j)) -le 0 ]; then
       spooling=""
     fi
   done
 done
 
-echo "wait" >> bconsole_backup_jobs
-echo "messages" >> bconsole_backup_jobs
+echo "wait" >>bconsole_backup_jobs
+echo "messages" >>bconsole_backup_jobs
 
 # start all the jobs again
-bin/bconsole < bconsole_backup_jobs
+bin/bconsole <bconsole_backup_jobs
 
 #testing for releasing when device is on autoselect=no
 cat <<END_OF_DATA >"$tmp/bconcmds"
@@ -109,27 +111,24 @@ END_OF_DATA
 run_bconsole
 
 #check the that the labeling went through
-if ! grep "Slot 8 successfully created." "$tmp"/log-label-release-autoselect-no.out &&
-   grep "3999 Device \"autochanger-0\" not found or could not be opened." "$tmp"/log-label-release-autoselect-no.out
-   then
+if ! grep "Slot 8 successfully created." "$tmp"/log-label-release-autoselect-no.out \
+  && grep "3999 Device \"autochanger-0\" not found or could not be opened." "$tmp"/log-label-release-autoselect-no.out; then
   echo "Labeling of a device with autoselect=no was not successful. Check $tmp/log-label-release-autoselect-no.out" >&2
   estat=1
 fi
 
 #check that release went through
-if ! grep "3921 Device \"\"${tapedevices[0]}\" (.*)\" already released."  "$tmp"/log-label-release-autoselect-no.out &&
-     grep "3999 Device \"autochanger-0\" not found or could not be opened." "$tmp"/log-label-release-autoselect-no.out
-   then
+if ! grep "3921 Device \"\"${tapedevices[0]}\" (.*)\" already released." "$tmp"/log-label-release-autoselect-no.out \
+  && grep "3999 Device \"autochanger-0\" not found or could not be opened." "$tmp"/log-label-release-autoselect-no.out; then
   echo "Releasing a device with autoselct=no was not successful. Check $tmp/log-label-release-autoselect-no.out" >&2
   estat=1
 fi
 
 #check that the tapedrive works normally again after the manipulations
-if  ! grep "Using .* \"${tapedevices[0]}" "$tmp"/log-second-backups.out; then
+if ! grep "Using .* \"${tapedevices[0]}" "$tmp"/log-second-backups.out; then
   echo "A device that was on autoselect=no and then back to autoselect=yes was not used. Check $tmp/log-second-backups.out" >&2
   estat=1
 fi
-
 
 check_for_zombie_jobs storage=Tape-0
 

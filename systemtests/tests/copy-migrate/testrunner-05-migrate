@@ -5,10 +5,10 @@ set -u
 
 TestName=05-migrate
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 log="$tmp/$TestName.log"
@@ -43,34 +43,34 @@ END_OF_DATA
 run_bconsole
 
 expect_grep "The following 3 JobIds were chosen to be migrated: 11,12,13" \
-            "$log" \
-            "Expected jobs to be migrated do not match."
+  "$log" \
+  "Expected jobs to be migrated do not match."
 
 expect_grep "JobId 14: BeforeJob: prevjobid=\*None\* newjobid=\*None\*" \
-            "$log" \
-            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
-			
+  "$log" \
+  "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
+
 expect_grep "JobId 14: AfterJob: prevjobid=\*None\* newjobid=\*None\*" \
-            "$log" \
-            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
+  "$log" \
+  "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
 
 expect_grep "JobId 19: BeforeJob: prevjobid=13 newjobid=20" \
-            "$log" \
-            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
-			
+  "$log" \
+  "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
+
 expect_grep "JobId 19: AfterJob: prevjobid=13 newjobid=20" \
-            "$log" \
-            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
+  "$log" \
+  "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
 
 # 1 administrative job that spawns 3 migration jobs
 if [[ $(grep -c "Termination:.*Migration OK" "$log") -ne "4" ]]; then
-    echo "Not all migration jobs finished successfully."
-    estat=1
+  echo "Not all migration jobs finished successfully."
+  estat=1
 fi
 
 if [[ $(grep -c "|.*M.*|" "$query_results") -ne "3" ]]; then
-    echo "Former backup jobs were not successfully converted to 'Migrated Jobs'."
-    estat=2
+  echo "Former backup jobs were not successfully converted to 'Migrated Jobs'."
+  estat=2
 fi
 
 rm -f $query_results
@@ -90,11 +90,11 @@ END_OF_DATA
 
 run_bconsole
 expect_grep "|     4 |" \
-            "$query_results" \
-            "Number of migration admin and worker jobs not met."
+  "$query_results" \
+  "Number of migration admin and worker jobs not met."
 
 expect_grep "|     1 |" \
-            "$query_results" \
-            "Migration jobs were not deleted appropriately after pruning migration volume."
+  "$query_results" \
+  "Migration jobs were not deleted appropriately after pruning migration volume."
 
 end_test

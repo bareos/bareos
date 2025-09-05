@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -30,10 +30,10 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
 . functions
@@ -67,15 +67,14 @@ END_OF_DATA
 run_bconsole
 check_for_zombie_jobs storage=File
 
-for i in 1 2
-do
-    expect_grep "Start Backup JobId" \
-	        "$log_home/create-full-${i}.out" \
-	        "Did not create a backup job."
+for i in 1 2; do
+  expect_grep "Start Backup JobId" \
+    "$log_home/create-full-${i}.out" \
+    "Did not create a backup job."
 
-    expect_grep "Backup OK" \
-	        "$log_home/create-full-${i}.out" \
-	        "Backup was not created correctly."
+  expect_grep "Backup OK" \
+    "$log_home/create-full-${i}.out" \
+    "Backup was not created correctly."
 done
 
 end_test

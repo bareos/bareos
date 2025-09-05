@@ -8,16 +8,16 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 case "$(uname)" in
-#  FreeBSD)
-#    script_opts=("$tmp/log3.out" bin/bconsole)
-#    ;;
+  #  FreeBSD)
+  #    script_opts=("$tmp/log3.out" bin/bconsole)
+  #    ;;
   Linux)
     script_opts=(--return --command bin/bconsole "$tmp/log3.out")
     ;;

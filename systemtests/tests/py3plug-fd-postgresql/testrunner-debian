@@ -20,29 +20,29 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName="backup-bareos-fd"
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 . /etc/os-release
-if ([ -z "${ID}" ] || [ "${ID}" != "debian" ] && [ "${ID}" != "ubuntu" ]);then
- echo "${TestName} test skipped: not debian/ubuntu"
- exit 77;
+if ([ -z "${ID}" ] || [ "${ID}" != "debian" ] && [ "${ID}" != "ubuntu" ]); then
+  echo "${TestName} test skipped: not debian/ubuntu"
+  exit 77
 fi
 if [ $UID -ne 0 ]; then
-# skip test
- echo "${TestName} test skipped: needs to be root to use pg_*cluster system tools"
- exit 77;
+  # skip test
+  echo "${TestName} test skipped: needs to be root to use pg_*cluster system tools"
+  exit 77
 fi
 
 # We need the server version that will be used
 PG_VERSION=$(pg_lsclusters --no-header | awk -F " " '{print $1}' | sort -n | head -n 1)
 if [ ${PG_VERSION} -lt 10 ]; then
-# skip test
- echo "${TestName} test skipped: not compatible with PG <= 10"
- exit 77;
+  # skip test
+  echo "${TestName} test skipped: not compatible with PG <= 10"
+  exit 77
 fi
-if [ $(pg_lsclusters ${PG_VERSION} regress | grep "regress" -c) -eq 1 ];then
-    pg_dropcluster ${PG_VERSION} regress --stop
-    rm -rf /var/tmp/postgresql/wal_archives
+if [ $(pg_lsclusters ${PG_VERSION} regress | grep "regress" -c) -eq 1 ]; then
+  pg_dropcluster ${PG_VERSION} regress --stop
+  rm -rf /var/tmp/postgresql/wal_archives
 fi
 
 pg_createcluster ${PG_VERSION} regress
@@ -61,7 +61,7 @@ chown postgres:postgres /var/tmp/postgresql/wal_archives
   echo "log_error_verbosity = verbose"
   echo "log_statement = 'all'"
   echo "log_temp_files = 0"
-} >> /etc/postgresql/${PG_VERSION}/regress/conf.d/regress.conf
+} >>/etc/postgresql/${PG_VERSION}/regress/conf.d/regress.conf
 pg_ctlcluster ${PG_VERSION} regress start
 
 # setup local database server
@@ -78,7 +78,7 @@ insert into t (text, created_on) values ('test for FULL backup', current_timesta
 select * from t;
 "
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -106,7 +106,7 @@ run_bconsole
 expect_grep "Backup OK" "${tmp}/dlog1.out" "Full Backup not found!"
 
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 # Now add data to the database and run an incremental job
 ${PSQL} ${DBNAME} -c "insert into t (text, created_on) values ('test for INCR backup', current_timestamp)"
@@ -127,7 +127,7 @@ run_bconsole
 expect_grep "Backup OK" "${tmp}/dlog2.out" "First Incremental Backup not found!"
 
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 # run another Incr without db changes - should result in empty backup job (only restore object)
@@ -146,7 +146,7 @@ run_bconsole
 expect_grep "Backup OK" "${tmp}/dlog3.out" "2nd Incremental Backup not found!"
 
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 # Now stop database and try a restore
@@ -169,7 +169,7 @@ run_bconsole
 
 expect_grep "Restore OK" "${tmp}/dlog4.out" "Restore Backup not ok!"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 check_for_zombie_jobs storage=File
 
@@ -180,7 +180,7 @@ check_two_logs "${tmp}/dlog1.out" "${tmp}/dlog4.out"
 # use either recovery.conf or recovery.signal
 # Those files should exist after restore, the plugin create them
 # postgres 11 and lower
-if (( ${PG_VERSION} < 12 )); then
+if ((${PG_VERSION} < 12)); then
   echo "PG_VERSION is ${PG_VERSION} so lower than 12, using recovery.conf"
   recovery_file="/var/lib/postgresql/${PG_VERSION}/regress/recovery.conf"
 else
@@ -188,15 +188,15 @@ else
   echo "PG_VERSION is ${PG_VERSION} so 12+, using postgresql.conf and recovery.signal"
   recovery_file="/var/lib/postgresql/${PG_VERSION}/regress/recovery.signal"
 fi
-if [ ! -f "${recovery_file}" ];then
- echo "${TestName} ${recovery_file} is missing from restore"
- exit 1;
+if [ ! -f "${recovery_file}" ]; then
+  echo "${TestName} ${recovery_file} is missing from restore"
+  exit 1
 fi
 restore_command="restore_command = 'cp /var/tmp/postgresql/wal_archives/%f %p'"
-if (( ${PG_VERSION} < 12 )); then
-  echo "${restore_command}" >> "${recovery_file}"
+if ((${PG_VERSION} < 12)); then
+  echo "${restore_command}" >>"${recovery_file}"
 else
-  echo "${restore_command}" >> "/etc/postgresql/${PG_VERSION}/regress/conf.d/restore.conf"
+  echo "${restore_command}" >>"/etc/postgresql/${PG_VERSION}/regress/conf.d/restore.conf"
 fi
 
 pg_lsclusters ${PG_VERSION} regress
@@ -204,31 +204,32 @@ pg_lsclusters ${PG_VERSION} regress
 echo ""
 echo "Restart restored pg_cluster"
 
-if ! pg_ctlcluster ${PG_VERSION} regress start;then
+if ! pg_ctlcluster ${PG_VERSION} regress start; then
   echo "cluster restart failed after restore"
-   estat=1
+  estat=1
 fi
 
 i=0
-until ${PSQL} ${DBNAME} -c "select * from t" | grep "for INCR"  > ${tmp}/sql.log  ; do
+until ${PSQL} ${DBNAME} -c "select * from t" | grep "for INCR" >${tmp}/sql.log; do
   echo "waiting for query to succeed"
   sleep 1
-  i=$((i+1))
-  if [ $i -gt 10 ]; then echo "timeout waiting for query after recovery"; exit 1; fi
+  i=$((i + 1))
+  if [ $i -gt 10 ]; then
+    echo "timeout waiting for query after recovery"
+    exit 1
+  fi
 done
-if (grep -q "for INCR" ${tmp}/sql.log)
-then
-   estat=0
+if (grep -q "for INCR" ${tmp}/sql.log); then
+  estat=0
 else
-   echo "Error: Database rows not found"
-   estat=1
+  echo "Error: Database rows not found"
+  estat=1
 fi
 
-if [ $(pg_lsclusters ${PG_VERSION} regress | grep "regress" -c) -eq 1 ];then
-    echo "cluster recovery completed"
-    pg_dropcluster ${PG_VERSION} regress --stop
-    rm -rf /var/tmp/postgresql/wal_archives
+if [ $(pg_lsclusters ${PG_VERSION} regress | grep "regress" -c) -eq 1 ]; then
+  echo "cluster recovery completed"
+  pg_dropcluster ${PG_VERSION} regress --stop
+  rm -rf /var/tmp/postgresql/wal_archives
 fi
-
 
 end_test

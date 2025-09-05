@@ -2,6 +2,7 @@
 set -e
 set -o pipefail
 set -u
+set -x
 
 #
 # restore some single files from archives
@@ -9,10 +10,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 #shellcheck source=functions
@@ -23,16 +24,16 @@ start_test
 file1="$(pwd)/tmp/data/build/src/tests/cats_test.c"
 file2="$(pwd)/tmp/data/build/src/tests/bregtest.c"
 file3="$(pwd)/tmp/data/build/src/tests/bbatch.c"
-for f in "$file1" "$file2" "$file3" ; do
-    if [[ -f "$tmp/bareos-restores/$f" ]]; then
-      rm "$tmp/bareos-restores/$f"
-    fi;
+for f in "$file1" "$file2" "$file3"; do
+  if [[ -f "$tmp/bareos-restores/$f" ]]; then
+    rm "$tmp/bareos-restores/$f"
+  fi
 done
 
-if [[ "$(uname -s)" =~ _NT ]]; then
-  filename1="$(cygpath -w -m $file1)"
-  filename2="$(cygpath -w -m $file2)"
-  filename3="$(cygpath -w -m $file3)"
+if on_windows_host; then
+  filename1="$(cygpath -w -m "${file1}")"
+  filename2="$(cygpath -w -m "${file2}")"
+  filename3="$(cygpath -w -m "${file3}")"
 else
   filename1="$file1"
   filename2="$file2"
@@ -69,7 +70,7 @@ messages
 @$out $log_home/restore-from-list-and-time.out
 restore archive
 8
-$(( $(date +%Y) + 1))
+$(($(date +%Y) + 1))
 $filename3
 
 yes
@@ -88,31 +89,40 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 expect_grep "Start Restore Job" \
-	    "$log_home/should-work.out" \
-	    "The first restore job was not started."
+  "$log_home/should-work.out" \
+  "The first restore job was not started."
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-from-selected-job.out" \
-	    "The second restore job was not started."
+  "$log_home/restore-from-selected-job.out" \
+  "The second restore job was not started."
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-from-list-and-time.out" \
-	    "The third restore job was not started."
+  "$log_home/restore-from-list-and-time.out" \
+  "The third restore job was not started."
 
 expect_grep "1 file selected to be restored." \
-	    "$log_home/should-work.out" \
- 	    "Expected success; found failure"
+  "$log_home/should-work.out" \
+  "Expected success; found failure"
 
-if ! cmp -s "$tmp/bareos-restores/$file1" "$file1"; then
-    exit 2
+dest1="$tmp/bareos-restores/$filename1"
+dest2="$tmp/bareos-restores/$filename2"
+dest3="$tmp/bareos-restores/$filename3"
+if on_windows_host; then
+  dest1=$(remove_colon_from_windows_path "$dest1")
+  dest2=$(remove_colon_from_windows_path "$dest2")
+  dest3=$(remove_colon_from_windows_path "$dest3")
 fi
 
-if ! cmp -s "$tmp/bareos-restores/$file2" "$file2"; then
-    exit 3
+if ! cmp -s "$dest1" "$file1"; then
+  exit 2
 fi
 
-if ! cmp -s "$tmp/bareos-restores/$file3" "$file3"; then
-    exit 4
+if ! cmp -s "$dest2" "$file2"; then
+  exit 3
+fi
+
+if ! cmp -s "$dest3" "$file3"; then
+  exit 4
 fi
 
 end_test

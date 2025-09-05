@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,10 +24,10 @@ export TestName
 
 JobName=ai-backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 start_test
 
@@ -62,7 +62,7 @@ run_bconsole
 jobids=$(grep "jobid" "$tmp/consolidate-empty-incrementals_incr.out" | tail -n 3 | sed 's/["jobid:]//g' | xargs | tr ' ' ',')
 
 expect_grep "purging empty jobids ${jobids}" \
-            "$tmp/consolidate-empty-incrementals_messages.out" \
-            "Removal of expected empty jobs was not successful."
+  "$tmp/consolidate-empty-incrementals_messages.out" \
+  "Removal of expected empty jobs was not successful."
 
 end_test

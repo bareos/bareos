@@ -27,10 +27,10 @@ export TestName
 
 myname=$(basename "$0")
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -58,7 +58,7 @@ print_delete_trace
 check_log "${tmp}/${myname}.log"
 
 # check that the updated content is there
-"${SQLCMD}" -Q "SELECT * FROM DBNormalTest.tests.samples" > "$tmp/sql-normal-samples-check.out"
+"${SQLCMD}" -Q "SELECT * FROM DBNormalTest.tests.samples" >"$tmp/sql-normal-samples-check.out"
 expect_grep "Bareos" "$tmp/sql-normal-samples-check.out" "Bareos not found in samples"
 
 end_test

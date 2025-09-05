@@ -4,11 +4,10 @@ set -o pipefail
 set -u
 #trap read debug
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
-#shellcheck source=./reload_test_functions
 . ./reload_test_functions
 
 TestName="$(get_test_name "$0")"
@@ -17,7 +16,6 @@ export estat
 
 bconsole_command_file="$tmp/bconsole_reload_command"
 console_logfile="$tmp/console.log"
-
 
 ############################################
 start_test

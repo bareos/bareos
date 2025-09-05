@@ -6,10 +6,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -26,17 +26,16 @@ start_test
 
 #Testing that -u and -g do not cause problems
 usergroup_dir_log="${tmp}"/usergroup_dir_log.out
-"${rscripts}"/bareos-ctl-dir start "-u randomuser -g randomgroup -d 100" > "$usergroup_dir_log"
+"${rscripts}"/bareos-ctl-dir start "-u randomuser -g randomgroup -d 100" >"$usergroup_dir_log"
 "${rscripts}"/bareos-ctl-dir stop
 
 usergroup_fd_log="${tmp}"/usergroup_fd_log.out
-"${rscripts}"/bareos-ctl-fd start "-u randomuser -g randomgroup -d 100" > "$usergroup_fd_log"
+"${rscripts}"/bareos-ctl-fd start "-u randomuser -g randomgroup -d 100" >"$usergroup_fd_log"
 "${rscripts}"/bareos-ctl-fd stop
 
 usergroup_sd_log="${tmp}"/usergroup_sd_log.out
-"${rscripts}"/bareos-ctl-sd start "-u randomuser -g randomgroup -d 100" > "$usergroup_sd_log"
+"${rscripts}"/bareos-ctl-sd start "-u randomuser -g randomgroup -d 100" >"$usergroup_sd_log"
 "${rscripts}"/bareos-ctl-sd stop
-
 
 #Testing the creation and deletion of pid files with -p
 pid_file="${tmp}"/pid_file.out
@@ -46,15 +45,15 @@ pid_file="${tmp}"/pid_file.out
 "${rscripts}"/bareos-ctl-dir start "-p ${pid_file} -d 100" && sleep 5
 
 if [ ! -s "${pid_file}" ]; then
-    echo "Pid file was not written."
-    estat=1
+  echo "Pid file was not written."
+  estat=1
 fi
 
 "${rscripts}"/bareos-ctl-dir stop
 
 if [ -s "${pid_file}" ]; then
-    echo "Pid file was not removed."
-    estat=2
+  echo "Pid file was not removed."
+  estat=2
 fi
 
 # Client
@@ -62,58 +61,58 @@ fi
 "${rscripts}"/bareos-ctl-fd start "-p ${pid_file} -d 100" && sleep 5
 
 if [ ! -s "${pid_file}" ]; then
-    echo "Pid file was not written."
-    estat=3
+  echo "Pid file was not written."
+  estat=3
 fi
 
 "${rscripts}"/bareos-ctl-fd stop
 
 if [ -s "${pid_file}" ]; then
-    echo "Pid file was not removed."
-    estat=4
+  echo "Pid file was not removed."
+  estat=4
 fi
 
 # Storage
 
-"${rscripts}"/bareos-ctl-sd start "-p ${pid_file} -d 100"  && sleep 5
+"${rscripts}"/bareos-ctl-sd start "-p ${pid_file} -d 100" && sleep 5
 
 if [ ! -s "${pid_file}" ]; then
-    echo "Pid file was not written."
-    estat=5
+  echo "Pid file was not written."
+  estat=5
 fi
 
 "${rscripts}"/bareos-ctl-sd stop
 
 if [ -s "${pid_file}" ]; then
-    echo "Pid file was not removed."
-    estat=6
+  echo "Pid file was not removed."
+  estat=6
 fi
 
 if [ "$(whoami)" != "root" ]; then
-    expect_grep "The commandline options indicate to run as specified user/group" \
-                "$usergroup_dir_log" \
-                "Error parsing user or group options in director daemon."
+  expect_grep "The commandline options indicate to run as specified user/group" \
+    "$usergroup_dir_log" \
+    "Error parsing user or group options in director daemon."
 
-    expect_grep "The commandline options indicate to run as specified user/group" \
-                "$usergroup_fd_log" \
-                "Error parsing user or group options in file daemon."
+  expect_grep "The commandline options indicate to run as specified user/group" \
+    "$usergroup_fd_log" \
+    "Error parsing user or group options in file daemon."
 
-    expect_grep "The commandline options indicate to run as specified user/group" \
-                "$usergroup_sd_log" \
-                "Error parsing user or group options in storage daemon."
+  expect_grep "The commandline options indicate to run as specified user/group" \
+    "$usergroup_sd_log" \
+    "Error parsing user or group options in storage daemon."
 
 else
-    expect_grep "Could not find userid=randomuser" \
-                "$usergroup_dir_log" \
-                "Error parsing user or group options in director daemon with root privileges."
+  expect_grep "Could not find userid=randomuser" \
+    "$usergroup_dir_log" \
+    "Error parsing user or group options in director daemon with root privileges."
 
-    expect_grep "Could not find userid=randomuser" \
-                "$usergroup_fd_log" \
-                "Error parsing user or group options in file daemon with root privileges."
+  expect_grep "Could not find userid=randomuser" \
+    "$usergroup_fd_log" \
+    "Error parsing user or group options in file daemon with root privileges."
 
-    expect_grep "Could not find userid=randomuser" \
-                "$usergroup_sd_log" \
-                "Error parsing user or group options in storage daemon with root privileges."
+  expect_grep "Could not find userid=randomuser" \
+    "$usergroup_sd_log" \
+    "Error parsing user or group options in storage daemon with root privileges."
 fi
 
 end_test

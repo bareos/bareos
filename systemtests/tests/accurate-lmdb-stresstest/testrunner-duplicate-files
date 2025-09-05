@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -33,10 +33,10 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
 . functions
@@ -63,18 +63,18 @@ check_for_zombie_jobs storage=File
 
 # check that accurate is enabled
 expect_grep "Accurate:[[:space:]]*yes" \
-	    "$log_home/create-full.out" \
-	    "Accurate was not enabled."
+  "$log_home/create-full.out" \
+  "Accurate was not enabled."
 
 # check that more than 0 files are in backup
 expect_not_grep "SD Files Written:[[:space:]]*0" \
-	    "$log_home/create-full.out" \
-	    "No files were backed up"
+  "$log_home/create-full.out" \
+  "No files were backed up"
 
 # check that backup was success
 expect_grep "Backup OK" \
-	    "$log_home/create-full.out" \
-	    "Backup was not created correctly."
+  "$log_home/create-full.out" \
+  "Backup was not created correctly."
 
 jobid=$(cat "$log_home/backup-jobid.out" | grep "jobid" | tail -n1 | cut -d':' -f2 | cut -d'"' -f2)
 
@@ -85,7 +85,6 @@ jobid=$(cat "$log_home/backup-jobid.out" | grep "jobid" | tail -n1 | cut -d':' -
 # delete the unique pathname idx and then
 # create duplicate path entries, which then allows us to send
 # duplicate file entries to the fd
-
 
 run_query "DROP INDEX path_name_idx"
 run_query "INSERT INTO Path (path) SELECT path from Path"
@@ -119,27 +118,27 @@ run_bconsole
 
 # check that job is incremental
 expect_grep "Backup Level:[[:space:]]*Incremental" \
-	    "$log_home/create-incremental.out" \
-	    "Accurate was not enabled."
+  "$log_home/create-incremental.out" \
+  "Accurate was not enabled."
 
 # check that accurate is enabled
 expect_grep "Accurate:[[:space:]]*yes" \
-	    "$log_home/create-incremental.out" \
-	    "Accurate was not enabled."
+  "$log_home/create-incremental.out" \
+  "Accurate was not enabled."
 
 # check that we used the htable backend
 expect_grep "accurate_lmdb.cc" \
-	    "$log_home/create-incremental.out" \
-	    "Wrong backend chosen."
+  "$log_home/create-incremental.out" \
+  "Wrong backend chosen."
 
 # check that duplicates were found
 expect_grep "duplicate files were sent by the director" \
-	    "$log_home/create-incremental.out" \
-	    "Warning was not send out."
+  "$log_home/create-incremental.out" \
+  "Warning was not send out."
 
 # check that backup was success
 expect_grep "Backup OK -- with warnings" \
-	    "$log_home/create-incremental.out" \
-	    "Backup was not created correctly."
+  "$log_home/create-incremental.out" \
+  "Backup was not created correctly."
 
 end_test

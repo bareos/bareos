@@ -9,15 +9,16 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-invoke_dir() {
+invoke_dir()
+{
   options=("$@")
   if [ -n "${BAREOS_DIRECTOR_USER:-}" ]; then
     options+=(-u "${BAREOS_DIRECTOR_USER}")
@@ -30,7 +31,8 @@ invoke_dir() {
   fi
   "${BAREOS_DIRECTOR_BINARY}" "${options[@]}"
 }
-invoke_sd() {
+invoke_sd()
+{
   options=("$@")
   if [ -n "${BAREOS_SD_USER:-}" ]; then
     options+=(-u "${BAREOS_SD_USER}")
@@ -43,7 +45,6 @@ invoke_sd() {
   fi
   "${BAREOS_STORAGEDAEMON_BINARY}" "${options[@]}"
 }
-
 
 start_test
 

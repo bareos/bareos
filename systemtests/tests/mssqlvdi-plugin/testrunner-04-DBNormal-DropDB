@@ -27,17 +27,17 @@ export TestName
 
 myname=$(basename "$0")
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
 
-"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i  sqlfiles/SQL_drop_db.sql
+"${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_drop_db.sql
 
-if "${SQLCMD}" -Q "SELECT * FROM DBNormalTest.tests.samples"  | grep Bareos; then
+if "${SQLCMD}" -Q "SELECT * FROM DBNormalTest.tests.samples" | grep Bareos; then
   echo "Database is not empty"
   exit 2
 fi

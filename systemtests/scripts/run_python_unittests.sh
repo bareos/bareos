@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2021 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,7 +24,7 @@ set -u
 
 #shellcheck source=../environment.in
 . ./environment
-#shellcheck source=../scripts/functions
+#shellcheck source=./functions
 . "${rscripts}"/functions
 
 TestName="$(get_test_name "$PWD/$1")"

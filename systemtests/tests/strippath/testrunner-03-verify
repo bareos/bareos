@@ -5,10 +5,10 @@ set -u
 
 TestName=03-verify
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -40,19 +40,19 @@ run_bconsole "$@"
 check_for_zombie_jobs storage=File
 
 expect_grep 'Termination:.*Verify OK' \
-	    "$tmp/verify-initcatalog.out" \
-	    "Verify Init job failed."
+  "$tmp/verify-initcatalog.out" \
+  "Verify Init job failed."
 
 expect_grep 'Termination:.*Verify OK' \
-	    "$tmp/verify-catalog.out" \
-	    "Verify Catalog job failed or unexpectedly found differences."
+  "$tmp/verify-catalog.out" \
+  "Verify Catalog job failed or unexpectedly found differences."
 
 expect_grep 'Termination:.*Verify OK' \
-	    "$tmp/verify-disktocatalog.out" \
-	    "Verify DiskToCatalog job failed or unexpectedly found differences."
+  "$tmp/verify-disktocatalog.out" \
+  "Verify DiskToCatalog job failed or unexpectedly found differences."
 
 expect_grep 'Termination:.*Verify OK' \
-	    "$tmp/verify-volumetocatalog.out" \
-	    "Verify VolumeToCatalog job failed or unexpectedly found differences."
+  "$tmp/verify-volumetocatalog.out" \
+  "Verify VolumeToCatalog job failed or unexpectedly found differences."
 
 end_test
