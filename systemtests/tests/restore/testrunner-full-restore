@@ -38,6 +38,8 @@ export TestName
 #shellcheck source=functions
 . functions
 
+RestoreDirectory="${log_home}/bareos-restores"
+
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
@@ -53,7 +55,7 @@ messages
 @$out $log_home/jobs.out
 list jobs
 @$out $log_home/restore-full.out
-restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
+restore client=bareos-fd fileset=SelfTest where=${RestoreDirectory} select all done yes
 wait
 messages
 setdebug level=10 client trace=0
@@ -72,5 +74,5 @@ expect_grep "Restore OK" \
   "$log_home/restore-full.out" \
   "Restore job was not successful"
 
-check_restore_diff "${BackupDirectory}"
+check_restore_diff "${BackupDirectory}" "${RestoreDirectory}"
 end_test

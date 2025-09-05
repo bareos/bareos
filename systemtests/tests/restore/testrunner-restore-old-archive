@@ -47,7 +47,7 @@ file="$(pwd)/tmp/data/weird-files/socket.pl"
 
 original_file="${log_home}/socket.pl"
 
-cp -p "${file}" "${original_file}"
+cp "${file}" "${original_file}"
 
 if [[ -f "$tmp/bareos-restores/$file" ]]; then
   rm "$tmp/bareos-restores/$file"
