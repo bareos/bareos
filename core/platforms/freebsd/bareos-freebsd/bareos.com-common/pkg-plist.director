@@ -17,6 +17,8 @@
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/pool/Incremental.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/pool/Scratch.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/profile/operator.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/profile/webui-admin.conf.sample
+@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/profile/webui-readonly.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/schedule/WeeklyCycle.conf.sample
 @sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/storage/File.conf.sample

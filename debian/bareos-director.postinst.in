@@ -20,34 +20,25 @@ set -e
 daemon_user=bareos
 daemon_group=bareos
 
-permissions()
-{
-    for dir in /etc/bareos/bareos-dir-export/ /etc/bareos/bareos-dir-export/client; do
-        chown ${daemon_user}:${daemon_group} "$dir"
-        chmod 2750 "$dir"
-    done
-}
-
 case "$1" in
-    configure)
-        if /usr/lib/bareos/scripts/bareos-config deploy_config "@configtemplatedir@" "@confdir@" "bareos-dir"; then
-            /usr/lib/bareos/scripts/bareos-config apply_dbconfig_settings
-        fi
-        permissions
-        # on Univention distributions the ucr command allows to open the firewall
-        if [ -x "/etc/init.d/univention-firewall" ] && which ucr >/dev/null 2>&1; then
-            ucr set \
-                security/packetfilter/package/bareos-director/tcp/@dir_port@/all="ACCEPT" \
-                security/packetfilter/package/bareos-director/tcp/@dir_port@/all/en="bareos-dir"
-            #invoke-rc.d univention-firewall restart
-        fi
-        ;;
-    abort-upgrade|abort-remove|abort-deconfigure)
-        ;;
-    *)
-        echo "postinst called with unknown argument \`$1'" >&2
-        exit 1
-        ;;
+  configure)
+    if ! /usr/lib/bareos/scripts/bareos-config deploy_config --exist "bareos-dir"; then
+      /usr/lib/bareos/scripts/bareos-config deploy_config --init "bareos-dir"
+      /usr/lib/bareos/scripts/bareos-config apply_dbconfig_settings
+    fi
+    # on Univention distributions the ucr command allows to open the firewall
+    if [ -x "/etc/init.d/univention-firewall" ] && which ucr >/dev/null 2>&1; then
+      ucr set \
+        security/packetfilter/package/bareos-director/tcp/@dir_port@/all="ACCEPT" \
+        security/packetfilter/package/bareos-director/tcp/@dir_port@/all/en="bareos-dir"
+      #invoke-rc.d univention-firewall restart
+    fi
+    ;;
+  abort-upgrade | abort-remove | abort-deconfigure) ;;
+  *)
+    echo "postinst called with unknown argument \`$1'" >&2
+    exit 1
+    ;;
 esac
 
 # dh_installdeb will replace this with shell code automatically

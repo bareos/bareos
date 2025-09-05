@@ -21,12 +21,6 @@ project(bareos-contrib)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-else()
-  include(GNUInstallDirs)
-endif()
-include(BareosSetVariableDefaults)
-
 add_subdirectory(fd-plugins)
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
   add_subdirectory(misc)
