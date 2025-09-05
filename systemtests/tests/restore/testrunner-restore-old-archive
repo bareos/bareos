@@ -41,20 +41,38 @@ JobName=backup-bareos-fd
 #shellcheck source=functions
 . functions
 
+save_file()
+{
+  if on_freebsd_host; then
+    cp -p "$1" "$2"
+  else
+    cp --backup "$1" "$2"
+  fi
+}
+
+restore_file()
+{
+  if have_freebsd_host; then
+    mv "$1" "$2"
+  else
+    mv --backup "$1" "$2"
+  fi
+}
+
 start_test
 
 file="$(pwd)/tmp/data/weird-files/socket.pl"
 
 original_file="${log_home}/socket.pl"
 
-cp --backup "${file}" "${original_file}"
+save_file "${file}" "${original_file}"
 
 if [[ -f "$tmp/bareos-restores/$file" ]]; then
   rm "$tmp/bareos-restores/$file"
 fi
 
 if on_windows_host; then
-  bareos_path=$(cygpath -w "${file}")
+  bareos_path=$(cygpath -w "${file}" | sed 's#\\#/#g')
 else
   bareos_path="$file"
 fi
@@ -80,7 +98,7 @@ messages
 quit
 END_OF_DATA
 
-run_bconsole
+run_bconsole "${tmp}/bconcmds"
 # find the new job id
 backupid=$(grep 'Job queued. JobId=' "$log_home/create-newer-backup.out" | sed -n -e 's/^.*JobId=//p')
 cat <<END_OF_DATA >"$tmp/bconcmds"
@@ -103,17 +121,20 @@ delete jobid=$backupid
 update jobid=1 jobtype=B
 quit
 END_OF_DATA
-run_bconsole "$@"
+run_bconsole "${tmp}/bconcmds"
 
 check_for_zombie_jobs storage=File
 
-check_preconditions "$@"
+check_preconditions
 
 check_log "${log_home}/restore-archive.out"
 
 if on_windows_host; then
-  restored_path="$log_home/bareos-restores/$(remove_colon_from_windows_path "${bareos_path}")"
+  # remove_colon_... needs the leading slash
+  removed=$(remove_colon_from_windows_path "/${bareos_path}")
+  restored_path="$log_home/bareos-restores${removed}"
 else
+  echo "not windows!"
   restored_path="$log_home/bareos-restores${bareos_path}"
 fi
 
@@ -131,7 +152,7 @@ fi
 
 # restore the old file
 
-mv --backup "${original_file}" "${file}"
+restore_file "${original_file}" "${file}"
 
 # since the other tests do not care for the original contents
 # we just leave the changed file instead of changing it back.

@@ -19,6 +19,8 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosOSInfo)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(DISABLED_TESTS
       system:always-incremental-consolidate:02-empty-incrementals

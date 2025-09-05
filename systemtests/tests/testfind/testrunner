@@ -26,7 +26,7 @@ selftest_log="$tmp"/selftest_log.out
 wildcard_log="$tmp"/wildcard_log.out
 error_log="$logdir"/bareos.log
 
-if [[ "$(uname -s)" =~ _NT ]]; then
+if [[ "${HAVE_WIN32}" = "1" ]]; then
   expected_files_1=45
   expected_files_2=19
 else

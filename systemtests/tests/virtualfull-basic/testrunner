@@ -18,9 +18,6 @@ JobName=backup-bareos-fd
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-
-
-
 # Fill ${BackupDirectory} with data.
 setup_data
 
@@ -81,7 +78,6 @@ run_bconsole "$tmp/bconcmds2"
 check_for_zombie_jobs storage=File
 check_restore_diff "${BackupDirectory}"
 
-
 cat <<END_OF_DATA >"$tmp/bconcmds3"
 @$out ${NULL_DEV}
 messages
@@ -120,7 +116,7 @@ run_bconsole "$tmp/bconcmds3"
 check_for_zombie_jobs storage=File
 check_two_logs
 
-if [[ "$(uname -s)" =~ _NT ]]; then
+if [[ "${HAVE_WIN32}" = "1" ]]; then
   expected_file_count=".."
 else
   expected_file_count=87

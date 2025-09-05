@@ -29,7 +29,7 @@ for f in "$file1" "$file2" "$file3"; do
   fi
 done
 
-if [[ "$(uname -s)" =~ _NT ]]; then
+if on_windows_host; then
   filename1="$(cygpath -w -m $file1)"
   filename2="$(cygpath -w -m $file2)"
   filename3="$(cygpath -w -m $file3)"

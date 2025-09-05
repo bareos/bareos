@@ -106,7 +106,32 @@ cleanup()
 
 on_windows_host()
 {
-  [[ "$(uname -s)" =~ _NT ]]
+  [[ "${HAVE_WIN32}" = "1" ]]
+}
+
+on_freebsd_host()
+{
+  [[ "${HAVE_FREEBSD_OS}" = "1" ]]
+}
+
+on_linux_host()
+{
+  [[ "${HAVE_LINUX_OS}" = "1" ]]
+}
+
+on_darwin_host()
+{
+  [[ "${HAVE_DARWIN_OS}" = "1" ]]
+}
+
+on_sun_host()
+{
+  [[ "${HAVE_SUN_OS}" = "1" ]]
+}
+
+on_aix_host()
+{
+  [[ "${HAVE_AIX_OS}" = "1" ]]
 }
 
 get_test_name()
@@ -141,7 +166,7 @@ setup_data()
       set_error "setup_data: $tarfile not found."
       exit 1
     fi
-    if [[ "$(uname -s)" =~ _NT ]]; then
+    if on_windows_host; then
       $GTAR --directory="$data_dir" -xf "$tarfile" || : # we expect errors on windows
     else
       $GTAR --directory="$data_dir" -xf "$tarfile" || exit 1
@@ -1238,7 +1263,7 @@ skip_if_root()
 
 skip_if_windows()
 {
-  if [[ "$(uname -s)" =~ _NT ]]; then
+  if on_windows_host; then
     if [ -z "${1+x}" ]; then
       echo "${TestName} test skipped on windows."
     else
