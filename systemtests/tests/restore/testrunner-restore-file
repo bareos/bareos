@@ -20,12 +20,13 @@
 #   02110-1301, USA.
 
 #
-# restore some single files from archives
+# restore some single files
 #
 
 set -e
 set -o pipefail
 set -u
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -50,10 +51,10 @@ for f in "$origfile1" "$origfile2" "$origfile3"; do
   fi
 done
 
-if [[ "$(uname -s)" =~ _NT ]]; then
-  file1=$(cygpath -w "$origfile1")
-  file2=$(cygpath -w "$origfile2")
-  file3=$(cygpath -w "$origfile3")
+if on_windows_host; then
+  file1=$(cygpath -w -m "$origfile1")
+  file2=$(cygpath -w -m "$origfile2")
+  file3=$(cygpath -w -m "$origfile3")
 else
   file1="$origfile1"
   file2="$origfile2"
@@ -122,7 +123,7 @@ expect_grep "1 file selected to be restored." \
 dest1="$tmp/bareos-restores/$file1"
 dest2="$tmp/bareos-restores/$file2"
 dest3="$tmp/bareos-restores/$file3"
-if [[ "$(uname -s)" =~ _NT ]]; then
+if on_windows_host; then
   dest1=$(remove_colon_from_windows_path "$dest1")
   dest2=$(remove_colon_from_windows_path "$dest2")
   dest3=$(remove_colon_from_windows_path "$dest3")

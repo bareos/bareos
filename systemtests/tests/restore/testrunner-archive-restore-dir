@@ -45,7 +45,7 @@ if [[ -d "$tmp/bareos-restores/$dir" ]]; then
   rm -r "$tmp/bareos-restores/$dir"
 fi
 
-if [[ "$(uname -s)" =~ _NT ]]; then
+if on_windows_host; then
   dir="$(cygpath -w -m $dir)"
 fi
 

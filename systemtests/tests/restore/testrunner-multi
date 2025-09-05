@@ -94,17 +94,17 @@ expect_not_grep "No database record found for:" \
   "$log_home/file-and-dir.out" \
   "Something was not restored in test 3"
 
-if ! "$rscripts/diff.pl" -d "$tmp/multi-file/1" -s "$tmp/multi-file/2"; then
+if ! bareos_diff -d "$tmp/multi-file/1" -s "$tmp/multi-file/2"; then
   echo "Error: multi-file"
   estat=1
 fi
 
-if ! "$rscripts/diff.pl" -d "$tmp/multi-dir/1" -s "$tmp/multi-dir/2"; then
+if ! bareos_diff -d "$tmp/multi-dir/1" -s "$tmp/multi-dir/2"; then
   echo "Error: multi-dir"
   estat=1
 fi
 
-if ! "$rscripts/diff.pl" -d "$tmp/files-and-dir/1" -s "$tmp/files-and-dir/2"; then
+if ! bareos_diff -d "$tmp/files-and-dir/1" -s "$tmp/files-and-dir/2"; then
   echo "Error: files-and-dir"
   estat=1
 fi

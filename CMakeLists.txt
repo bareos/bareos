@@ -106,11 +106,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:python-bareos:show
       system:python-bareos:tlspsk
       system:python-bareos:update_all_volumes_all_pools
-      system:restore:archive-restore-file
-      system:restore:full-restore
-      system:restore:restore-file
-      system:restore:restore-fileregex
-      system:restore:multi
       system:scheduler:scheduler-backup
       system:sparse-file
       system:strippath:02-restore

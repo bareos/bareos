@@ -6,6 +6,8 @@
 #
 # Source the generic functions.
 #
+
+# shellcheck source=../../core/scripts/bareos-ctl-funcs
 . "${rscripts}/bareos-ctl-funcs"
 
 # remove the colon from a windows path
@@ -102,6 +104,36 @@ cleanup()
   fi
 }
 
+on_windows_host()
+{
+  [[ "${HAVE_WIN32}" = "1" ]]
+}
+
+on_freebsd_host()
+{
+  [[ "${HAVE_FREEBSD_OS}" = "1" ]]
+}
+
+on_linux_host()
+{
+  [[ "${HAVE_LINUX_OS}" = "1" ]]
+}
+
+on_darwin_host()
+{
+  [[ "${HAVE_DARWIN_OS}" = "1" ]]
+}
+
+on_sun_host()
+{
+  [[ "${HAVE_SUN_OS}" = "1" ]]
+}
+
+on_aix_host()
+{
+  [[ "${HAVE_AIX_OS}" = "1" ]]
+}
+
 get_test_name()
 {
   testscriptpath=$1
@@ -134,7 +166,7 @@ setup_data()
       set_error "setup_data: $tarfile not found."
       exit 1
     fi
-    if [[ "$(uname -s)" =~ _NT ]]; then
+    if on_windows_host; then
       $GTAR --directory="$data_dir" -xf "$tarfile" || : # we expect errors on windows
     else
       $GTAR --directory="$data_dir" -xf "$tarfile" || exit 1
@@ -144,7 +176,7 @@ setup_data()
   # The following files in the "weird files" tar cause problems on windows, so
   # for now they are removed before the tests start.
   # TODO: Make these files also work on windows.
-  if [[ "$(uname -s)" =~ _NT ]]; then
+  if on_windows_host; then
     pushd "$data_dir" || exit 1
     for f in 'weird-files/a-file-with-spaces-at-the-end    ' \
       weird-files/'  ' \
@@ -880,9 +912,14 @@ check_log()
   return 0
 }
 
+bareos_diff()
+{
+  "${PERL}" "$rscripts/diff.pl" "$@"
+}
+
 check_recursive_diff_of_dirs()
 {
-  perl "$rscripts/diff.pl" -s "$1" -d "$2"
+  bareos_diff -s "$1" -d "$2"
 }
 
 check_restore_diff()
@@ -897,7 +934,7 @@ check_restore_diff()
 
   restorepath="$restoredirectory/${dest}"
   restorepath=$(remove_colon_from_windows_path "$restorepath")
-  if ! perl "$rscripts/diff.pl" -d "${restorepath}" -s "${dest}"; then
+  if ! bareos_diff -d "${restorepath}" -s "${dest}"; then
     dstat=1
   fi
 
@@ -929,7 +966,15 @@ check_restore_only_files_diff()
   differences=0
   for i in "$@"; do
     restoresubdir=$(sed 's#/\(.\):#/\1#g' <<<"$i")
-    if ! diff -ur "$i" "${RestoreDirectory}/${restoresubdir}"; then
+
+    if on_windows_host; then
+      removed=$(remove_colon_from_windows_path "/${restoresubdir}")
+      target="${RestoreDirectory}${removed}"
+    else
+      target="${RestoreDirectory}/${restoresubdir}"
+    fi
+
+    if ! diff -ur "$i" "${target}"; then
       differences="$((differences + 1))"
       dstat=1
     fi
@@ -950,14 +995,22 @@ check_restore_files_diff()
   #
 
   # get list of all restored files
-  RESTORED_FILES="$(find "${RestoreDirectory}" -type f | sed -e "s%^${RestoreDirectory}%%" -e 's#/\(.\):#/\1#g')"
+  RESTORED_FILES="$(find "${RestoreDirectory}" -type f | sed -e "s%^${RestoreDirectory}%%")"
+
   # remove all files given as parameter from the list
   for i in "$@"; do
-    RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -Fv "$i")" || true
+    if on_windows_host; then
+      file=$(remove_colon_from_windows_path "/$i")
+    else
+      file="$i"
+    fi
+    RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -Fv "${file}")" || true
   done
   if [ "$RESTORED_FILES" ]; then
     print_debug "given files: $*"
     print_debug "additional restored files: $RESTORED_FILES"
+    echo "$*"
+    echo "${RESTORED_FILES}"
     set_error "More files then given as parameter have been restored."
     return 1
   fi
@@ -968,7 +1021,7 @@ check_restore_files_diff()
 check_restore_bin_diff()
 {
   if test "$debug" -eq 1; then
-    perl "$rscripts/diff.pl" -s "${bin}" -d "${RestoreDirectory}${bin}"
+    bareos_diff -s "${bin}" -d "${RestoreDirectory}${bin}"
     diff -ur "${bin}" "${RestoreDirectory}${bin}"
   else
     diff -ur "${bin}" "${RestoreDirectory}${bin}" >/dev/null 2>&1
@@ -979,7 +1032,7 @@ check_restore_bin_diff()
 check_restore_tmp_build_diff()
 {
   if test "$debug" -eq 1; then
-    perl "$rscripts/diff.pl" -s "${tmpsrc}" -d "${RestoreDirectory}${tmpsrc}"
+    bareos_diff -s "${tmpsrc}" -d "${RestoreDirectory}${tmpsrc}"
     diff -ur "${tmpsrc}" "${RestoreDirectory}${tmpsrc}"
   else
     diff -ur "${tmpsrc}" "${RestoreDirectory}${tmpsrc}" >/dev/null 2>&1
@@ -1231,7 +1284,7 @@ skip_if_root()
 
 skip_if_windows()
 {
-  if [[ "$(uname -s)" =~ _NT ]]; then
+  if on_windows_host; then
     if [ -z "${1+x}" ]; then
       echo "${TestName} test skipped on windows."
     else

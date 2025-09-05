@@ -2,6 +2,7 @@
 set -e
 set -o pipefail
 set -u
+set -x
 
 #
 # restore some single files from archives
@@ -29,10 +30,10 @@ for f in "$file1" "$file2" "$file3"; do
   fi
 done
 
-if [[ "$(uname -s)" =~ _NT ]]; then
-  filename1="$(cygpath -w -m $file1)"
-  filename2="$(cygpath -w -m $file2)"
-  filename3="$(cygpath -w -m $file3)"
+if on_windows_host; then
+  filename1="$(cygpath -w -m "${file1}")"
+  filename2="$(cygpath -w -m "${file2}")"
+  filename3="$(cygpath -w -m "${file3}")"
 else
   filename1="$file1"
   filename2="$file2"
@@ -103,15 +104,24 @@ expect_grep "1 file selected to be restored." \
   "$log_home/should-work.out" \
   "Expected success; found failure"
 
-if ! cmp -s "$tmp/bareos-restores/$file1" "$file1"; then
+dest1="$tmp/bareos-restores/$filename1"
+dest2="$tmp/bareos-restores/$filename2"
+dest3="$tmp/bareos-restores/$filename3"
+if on_windows_host; then
+  dest1=$(remove_colon_from_windows_path "$dest1")
+  dest2=$(remove_colon_from_windows_path "$dest2")
+  dest3=$(remove_colon_from_windows_path "$dest3")
+fi
+
+if ! cmp -s "$dest1" "$file1"; then
   exit 2
 fi
 
-if ! cmp -s "$tmp/bareos-restores/$file2" "$file2"; then
+if ! cmp -s "$dest2" "$file2"; then
   exit 3
 fi
 
-if ! cmp -s "$tmp/bareos-restores/$file3" "$file3"; then
+if ! cmp -s "$dest3" "$file3"; then
   exit 4
 fi
 
