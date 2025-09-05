@@ -961,7 +961,15 @@ check_restore_only_files_diff()
   differences=0
   for i in "$@"; do
     restoresubdir=$(sed 's#/\(.\):#/\1#g' <<<"$i")
-    if ! diff -ur "$i" "${RestoreDirectory}/${restoresubdir}"; then
+
+    if on_windows_host; then
+      removed=$(remove_colon_from_windows_path "/${restoresubdir}")
+      target="${RestoreDirectory}${removed}"
+    else
+      target="${RestoreDirectory}/${restoresubdir}"
+    fi
+
+    if ! diff -ur "$i" "${target}"; then
       differences="$((differences + 1))"
       dstat=1
     fi
@@ -982,14 +990,22 @@ check_restore_files_diff()
   #
 
   # get list of all restored files
-  RESTORED_FILES="$(find "${RestoreDirectory}" -type f | sed -e "s%^${RestoreDirectory}%%" -e 's#/\(.\):#/\1#g')"
+  RESTORED_FILES="$(find "${RestoreDirectory}" -type f | sed -e "s%^${RestoreDirectory}%%")"
+
   # remove all files given as parameter from the list
   for i in "$@"; do
-    RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -Fv "$i")" || true
+    if on_windows_host; then
+      file=$(remove_colon_from_windows_path "/$i")
+    else
+      file="$i"
+    fi
+    RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -Fv "${file}")" || true
   done
   if [ "$RESTORED_FILES" ]; then
     print_debug "given files: $*"
     print_debug "additional restored files: $RESTORED_FILES"
+    echo "$*"
+    echo "${RESTORED_FILES}"
     set_error "More files then given as parameter have been restored."
     return 1
   fi

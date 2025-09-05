@@ -20,12 +20,13 @@
 #   02110-1301, USA.
 
 #
-# restore some single files from archives
+# restore some single files
 #
 
 set -e
 set -o pipefail
 set -u
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -51,9 +52,9 @@ for f in "$origfile1" "$origfile2" "$origfile3"; do
 done
 
 if on_windows_host; then
-  file1=$(cygpath -w "$origfile1")
-  file2=$(cygpath -w "$origfile2")
-  file3=$(cygpath -w "$origfile3")
+  file1=$(cygpath -w -m "$origfile1")
+  file2=$(cygpath -w -m "$origfile2")
+  file3=$(cygpath -w -m "$origfile3")
 else
   file1="$origfile1"
   file2="$origfile2"

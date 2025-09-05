@@ -41,38 +41,20 @@ JobName=backup-bareos-fd
 #shellcheck source=functions
 . functions
 
-save_file()
-{
-  if on_freebsd_host; then
-    cp -p "$1" "$2"
-  else
-    cp --backup "$1" "$2"
-  fi
-}
-
-restore_file()
-{
-  if have_freebsd_host; then
-    mv "$1" "$2"
-  else
-    mv --backup "$1" "$2"
-  fi
-}
-
 start_test
 
 file="$(pwd)/tmp/data/weird-files/socket.pl"
 
 original_file="${log_home}/socket.pl"
 
-save_file "${file}" "${original_file}"
+cp -p "${file}" "${original_file}"
 
 if [[ -f "$tmp/bareos-restores/$file" ]]; then
   rm "$tmp/bareos-restores/$file"
 fi
 
 if on_windows_host; then
-  bareos_path=$(cygpath -w "${file}" | sed 's#\\#/#g')
+  bareos_path=$(cygpath -w -m "${file}")
 else
   bareos_path="$file"
 fi
@@ -152,7 +134,7 @@ fi
 
 # restore the old file
 
-restore_file "${original_file}" "${file}"
+mv "${original_file}" "${file}"
 
 # since the other tests do not care for the original contents
 # we just leave the changed file instead of changing it back.

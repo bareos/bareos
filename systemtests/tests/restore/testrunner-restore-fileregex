@@ -40,7 +40,7 @@ export TestName
 
 # Use own restore directory to ensure it is always
 # clean before restore
-RestoreDirectory="${tmp}/fileregex-restores"
+RestoreDirectory="${log_home}/fileregex-restores"
 
 start_test
 
