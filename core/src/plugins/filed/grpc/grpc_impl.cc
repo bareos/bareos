@@ -368,9 +368,12 @@ class BareosCore : public bc::Core::Service {
         return filedaemon::bEventVssCloseRestore;
       case bc::Event_VssBackupComplete:
         return filedaemon::bEventVssBackupComplete;
-      default:
-        return std::nullopt;
+      case bc::EVENT_TYPE_UNSPECIFIED:
+      case bc::EventType_INT_MIN_SENTINEL_DO_NOT_USE_:
+      case bc::EventType_INT_MAX_SENTINEL_DO_NOT_USE_:
+        break;
     }
+    return std::nullopt;
   }
 
   static std::optional<int> from_grpc(bco::FileType type)
@@ -396,9 +399,19 @@ class BareosCore : public bc::Core::Service {
         return FT_DELETED;
       case bco::HardlinkCopy:
         return FT_LNKSAVED;
-      default:
-        return std::nullopt;
+      case bco::UnchangedFile:
+        return FT_NOCHG;
+      case bco::UnchangedDirectory:
+        return FT_DIRNOCHG;
+      case bco::RestoreObject:
+        return FT_RESTORE_FIRST;
+
+      case bco::FILE_TYPE_UNSPECIFIED:
+      case bco::FileType_INT_MIN_SENTINEL_DO_NOT_USE_:
+      case bco::FileType_INT_MAX_SENTINEL_DO_NOT_USE_:
+        break;
     }
+    return std::nullopt;
   }
 
   static std::optional<filedaemon::bVariable> from_grpc(
@@ -427,9 +440,12 @@ class BareosCore : public bc::Core::Service {
         return filedaemon::bVarUsedConfig;
       case bc::BV_PluginPath:
         return filedaemon::bVarPluginPath;
-      default:
-        return std::nullopt;
+      case bareos::core::BAREOS_STRING_VARIABLE_UNSPECIFIED:
+      case bareos::core::BareosStringVariable_INT_MIN_SENTINEL_DO_NOT_USE_:
+      case bareos::core::BareosStringVariable_INT_MAX_SENTINEL_DO_NOT_USE_:
+        break;
     }
+    return std::nullopt;
   }
 
   static std::optional<filedaemon::bVariable> from_grpc(
@@ -450,9 +466,12 @@ class BareosCore : public bc::Core::Service {
         return filedaemon::bVarAccurate;
       case bc::BV_PrefixLinks:
         return filedaemon::bVarPrefixLinks;
-      default:
-        return std::nullopt;
+      case bareos::core::BAREOS_INT_VARIABLE_UNSPECIFIED:
+      case bareos::core::BareosIntVariable_INT_MIN_SENTINEL_DO_NOT_USE_:
+      case bareos::core::BareosIntVariable_INT_MAX_SENTINEL_DO_NOT_USE_:
+        break;
     }
+    return std::nullopt;
   }
 
   static std::optional<filedaemon::bVariable> from_grpc(
