@@ -1,17 +1,17 @@
-@dir(bareos,bareos,2750) %%ETCDIR%%/bareos-sd.d
-@dir(bareos,bareos,2750) %%ETCDIR%%/bareos-sd.d/autochanger
-@dir(bareos,bareos,2750) %%ETCDIR%%/bareos-sd.d/device
-@dir(bareos,bareos,2750) %%ETCDIR%%/bareos-sd.d/director
-@dir(bareos,bareos,2750) %%ETCDIR%%/bareos-sd.d/ndmp
-@dir(bareos,bareos,2750) %%ETCDIR%%/bareos-sd.d/messages
-@dir(bareos,bareos,2750) %%ETCDIR%%/bareos-sd.d/storage
-@(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/autochanger/FileStorage.conf.example
-@(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/device/FileStorage.conf.example
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/device/FileStorage.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/director/bareos-dir.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/director/bareos-mon.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/messages/Standard.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-sd.d/storage/bareos-sd.conf.sample
+@dir lib/bareos/defaultconfigs/bareos-sd.d/
+@dir lib/bareos/defaultconfigs/bareos-sd.d/autochanger/
+@dir lib/bareos/defaultconfigs/bareos-sd.d/device/
+@dir lib/bareos/defaultconfigs/bareos-sd.d/director/
+@dir lib/bareos/defaultconfigs/bareos-sd.d/ndmp/
+@dir lib/bareos/defaultconfigs/bareos-sd.d/messages/
+@dir lib/bareos/defaultconfigs/bareos-sd.d/storage/
+lib/bareos/defaultconfigs/bareos-sd.d/autochanger/FileStorage.conf.example
+lib/bareos/defaultconfigs/bareos-sd.d/device/FileStorage.conf.example
+lib/bareos/defaultconfigs/bareos-sd.d/device/FileStorage.conf
+lib/bareos/defaultconfigs/bareos-sd.d/director/bareos-dir.conf
+lib/bareos/defaultconfigs/bareos-sd.d/director/bareos-mon.conf
+lib/bareos/defaultconfigs/bareos-sd.d/messages/Standard.conf
+lib/bareos/defaultconfigs/bareos-sd.d/storage/bareos-sd.conf
 sbin/bareos-sd
 lib/bareos/scripts/disk-changer
 share/man/man8/bareos-sd.8.gz
