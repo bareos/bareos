@@ -182,8 +182,6 @@ enum class UnhandledType
   Unknown,
   Plugin,
   Base,
-  UnchangedFile,
-  UnchangedDirectory,
   DirectoryStart,
 };
 
@@ -269,10 +267,10 @@ to_grpc(int32_t type)
       return UnhandledType::Base;
     } break;
     case FT_NOCHG: {
-      return UnhandledType::UnchangedFile;
+      return bco::UnchangedFile;
     } break;
     case FT_DIRNOCHG: {
-      return UnhandledType::UnchangedDirectory;
+      return bco::UnchangedDirectory;
     } break;
     case FT_DIRBEGIN: {
       return UnhandledType::DirectoryStart;
@@ -723,14 +721,6 @@ auto PluginService::startBackupFile(ServerContext*,
             case UnhandledType::Base: {
               JobLog(bc::JMSG_INFO,
                      FMT_STRING("ignoring file of type 'Plugin'"));
-            } break;
-            case UnhandledType::UnchangedFile: {
-              JobLog(bc::JMSG_INFO,
-                     FMT_STRING("ignoring file of type 'UnchangedFile'"));
-            } break;
-            case UnhandledType::UnchangedDirectory: {
-              JobLog(bc::JMSG_INFO,
-                     FMT_STRING("ignoring file of type 'UnchangedDirectory'"));
             } break;
             case UnhandledType::DirectoryStart: {
               JobLog(bc::JMSG_INFO,
