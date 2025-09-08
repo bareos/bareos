@@ -40,12 +40,15 @@
     JobLog((ctx), M_ERROR, (fmt)__VA_OPT__(, ) __VA_ARGS__)
 #  define fatal_msg(ctx, fmt, ...) \
     JobLog((ctx), M_FATAL, (fmt)__VA_OPT__(, ) __VA_ARGS__)
-#  define d_msg(level, fmt, ...) \
+#  define info_msg(ctx, fmt, ...) \
+    JobLog((ctx), M_INFO, (fmt)__VA_OPT__(, ) __VA_ARGS__)
+#  define debug_msg(level, fmt, ...) \
     DebugLog((level), (fmt)__VA_OPT__(, ) __VA_ARGS__)
 #else
 #  define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
 #  define fatal_msg(ctx, ...) JobLog((ctx), M_FATAL, __VA_ARGS__)
-#  define d_msg(level, ...) DebugLog((level), __VA_ARGS__)
+#  define info_msg(ctx, ...) JobLog((ctx), M_INFO, __VA_ARGS__)
+#  define debug_msg(level, ...) DebugLog((level), __VA_ARGS__)
 #endif
 
 bool AmICompatibleWith(filedaemon::PluginApiDefinition* core_info)
@@ -130,29 +133,29 @@ std::size_t next_option(std::string_view& to_parse,
 {
   // we dont want to change to_parse, if we cannot find a keyword
   auto working_copy = to_parse;
-  d_msg(300, "to_parse = {}", working_copy);
+  debug_msg(300, "to_parse = {}", working_copy);
 
   auto found = next_part(working_copy, ':');
 
   auto input = trim_left(found);
-  d_msg(300, " => input = {}", input);
+  debug_msg(300, " => input = {}", input);
 
   auto key = trim_right(next_part(input, '='));
 
 
-  d_msg(300, " => key = {}, value = {}", key, input);
+  debug_msg(300, " => key = {}, value = {}", key, input);
   *value = trim(input);
 
   for (size_t i = 0; i < keywords.size(); ++i) {
     if (key == keywords[i]) {
-      d_msg(300, " => keyword #{}", i);
+      debug_msg(300, " => keyword #{}", i);
       // if we found a keyword, then we update to_parse
       to_parse = working_copy;
       return i;
     }
   }
 
-  d_msg(300, " => keyword not found");
+  debug_msg(300, " => keyword not found");
   return keywords.size();
 }
 
@@ -160,7 +163,7 @@ std::optional<std::string> insert_numbers(std::vector<std::size_t>& nums,
                                           std::string_view to_parse)
 {
   auto current = to_parse;
-  d_msg(300, "converting '{}' into a list of numbers", to_parse);
+  debug_msg(300, "converting '{}' into a list of numbers", to_parse);
   for (;;) {
     current = trim_left(current);
     if (current.size() == 0) { break; }
@@ -168,7 +171,7 @@ std::optional<std::string> insert_numbers(std::vector<std::size_t>& nums,
 
     auto found = trim_right(next_part(current, ','));
 
-    d_msg(300, " => converting '{}'", found);
+    debug_msg(300, " => converting '{}'", found);
 
     std::size_t number = 0;
     auto conversion_result = std::from_chars(
@@ -188,7 +191,7 @@ std::optional<std::string> insert_numbers(std::vector<std::size_t>& nums,
       }
     }
 
-    d_msg(300, " => left_over = '{}'", left_over);
+    debug_msg(300, " => left_over = '{}'", left_over);
 
     bool ignore_left_over = true;
 
@@ -204,7 +207,7 @@ std::optional<std::string> insert_numbers(std::vector<std::size_t>& nums,
                                left_over);
     }
 
-    d_msg(300, " => parsed {}", number);
+    debug_msg(300, " => parsed {}", number);
 
     nums.push_back(number);
   }
@@ -234,7 +237,7 @@ struct plugin_arguments {
 
     auto name = next_part(str, ':');
 
-    d_msg(300, "got name = '{}'", name);
+    debug_msg(300, "got name = '{}'", name);
 
     if (name != PLUGIN_NAME) {
       err_msg(ctx, "bad plugin options received, expected '{}', got '{}'",
@@ -336,8 +339,13 @@ struct plugin_logger : public GenericLogger {
 
   plugin_logger(PluginContext* ctx_) : GenericLogger{false}, ctx{ctx_} {}
 
+  std::span<const char> log() const { return messages; }
+
  private:
   PluginContext* ctx;
+
+  static constexpr std::size_t max_messages_size = 1 << 30;  // 1GB
+  std::vector<char> messages;
 };
 
 struct session_ctx {
@@ -379,7 +387,18 @@ struct plugin_ctx {
   CoUninitializer unititializer{};
   plugin_arguments args{};
 
+  enum class file : std::size_t
+  {
+    Dump,
+    Log,
+    Count,
+  };
+  file current_file = file::Dump;
+
   std::string dump_file_name;
+  std::string log_file_name;
+  time_t timestamp;
+  std::size_t log_bytes_sent = 0;
 };
 
 plugin_ctx* get_private_context(PluginContext* ctx)
@@ -410,6 +429,26 @@ bRC newPlugin(PluginContext* ctx)
   RegisterBareosEvent(ctx, filedaemon::bEventEstimateCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventBackupCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventRestoreObject);
+
+  std::optional client_name = bVar::Get<bVar::Client>(ctx);
+  if (!client_name) {
+    fatal_msg(ctx, "could not retrieve client name from the bareos api!");
+    return bRC_Error;
+  }
+
+  auto now = time(NULL);
+
+  auto pctx = get_private_context(ctx);
+
+  std::string_view hostname{client_name.value()};
+  std::string timestamp = libbareos::format("{}", now);
+  pctx->dump_file_name
+      = libbareos::format("@barri@/{}/{}.barri", hostname, timestamp);
+  pctx->log_file_name
+      = libbareos::format("@barri@/{}/{}.log", hostname, timestamp);
+  pctx->timestamp = now;
+
+
   return bRC_OK;
 }
 
@@ -502,51 +541,67 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
     }
   }
 
-  std::optional client_name = bVar::Get<bVar::Client>(ctx);
-  if (!client_name) {
-    err_msg(ctx, "could not retrieve client name from the bareos api!");
+  if (pctx->current_file == plugin_ctx::file::Dump) {
+    // setting this does not do anything yet.  Maybe it will in the future
+    sp->portable = true;  // we do not create windows backup data streams
+
+    sp->fname = const_cast<char*>(pctx->dump_file_name.c_str());
+    sp->type = FT_REG;
+    sp->statp.st_mode = 0700 | S_IFREG;
+    sp->statp.st_ctime = pctx->timestamp;
+    sp->statp.st_mtime = pctx->timestamp;
+    sp->statp.st_atime = pctx->timestamp;
+    sp->statp.st_size = -1;
+    sp->statp.st_blksize = 4096;
+    sp->statp.st_blocks = 1;
+  } else if (pctx->current_file == plugin_ctx::file::Log) {
+    if (!pctx->current_session) {
+      fatal_msg(ctx, "cannot backup log of a session that does not exist");
+      return bRC_Error;
+    }
+
+    sp->portable = true;  // we do not create windows backup data streams
+
+    sp->fname = const_cast<char*>(pctx->log_file_name.c_str());
+    sp->type = FT_REG;
+    sp->statp.st_mode = 0700 | S_IFREG;
+    sp->statp.st_ctime = pctx->timestamp;
+    sp->statp.st_mtime = pctx->timestamp;
+    sp->statp.st_atime = pctx->timestamp;
+    sp->statp.st_size = pctx->current_session->logger.log().size();
+    sp->statp.st_blksize = 4096;
+    sp->statp.st_blocks = (sp->statp.st_size + 4095) / 4096;
+  } else {
+    err_msg(ctx, "cannot create a third file.");
     return bRC_Error;
   }
 
-  sp->portable = true;  // we do not create windows backup data streams
-
-  auto now = time(NULL);
-
-  std::string_view hostname{client_name.value()};
-  std::string timestamp = libbareos::format("{}", now);
-  pctx->dump_file_name
-      = libbareos::format("@barri@/{}/{}", hostname, timestamp);
-
-  sp->fname = const_cast<char*>(pctx->dump_file_name.c_str());
-  sp->type = FT_REG;
-  sp->statp.st_mode = 0700 | S_IFREG;
-  sp->statp.st_ctime = now;
-  sp->statp.st_mtime = now;
-  sp->statp.st_atime = now;
-  sp->statp.st_size = -1;
-  sp->statp.st_blksize = 4096;
-  sp->statp.st_blocks = 1;
-
   return bRC_OK;
 }
+
 bRC endBackupFile(PluginContext* ctx)
 {
   auto* pctx = get_private_context(ctx);
-  (void)pctx;
+  pctx->current_file = static_cast<plugin_ctx::file>(
+      static_cast<std::size_t>(pctx->current_file) + 1);
+  if (pctx->current_file != plugin_ctx::file::Count) { return bRC_More; }
   return bRC_OK;
 }
+
 bRC startRestoreFile(PluginContext* ctx, const char* file_name)
 {
   (void)ctx;
   (void)file_name;
   return bRC_Error;
 }
+
 bRC endRestoreFile(PluginContext* ctx)
 {
   (void)ctx;
   return bRC_Error;
 }
-bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
+
+bRC pluginIO_Dump(PluginContext* ctx, filedaemon::io_pkt* pkt)
 {
   auto* pctx = get_private_context(ctx);
   switch (pkt->func) {
@@ -580,11 +635,6 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
           std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
       return bRC_OK;
     } break;
-    case filedaemon::IO_WRITE: {
-      err_msg(ctx, "restores are not supported on windows");
-      pkt->status = -1;
-      return bRC_Error;
-    } break;
     case filedaemon::IO_CLOSE: {
       if (!pctx->has_session()) {
         err_msg(ctx, "context can only be closed, if its open");
@@ -595,44 +645,133 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
       return bRC_OK;
     } break;
   }
+
+  fatal_msg(ctx, "unhandled code path: {}", pkt->func);
   return bRC_Error;
 }
+
+bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
+{
+  auto* pctx = get_private_context(ctx);
+  switch (pkt->func) {
+    case filedaemon::IO_OPEN: {
+      if (!pctx->has_session()) {
+        err_msg(ctx, "cannot open log: no session open");
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      return bRC_OK;
+    } break;
+    case filedaemon::IO_READ: {
+      if (pkt->count < 0) {
+        err_msg(ctx, "its impossible to read {} bytes...", pkt->count);
+        pkt->status = -1;
+        return bRC_Error;
+      }
+
+      auto log = pctx->current_session->logger.log();
+
+      std::size_t& log_bytes_sent = pctx->log_bytes_sent;
+      auto bytes_to_read = std::min(log.size() - log_bytes_sent,
+                                    static_cast<std::size_t>(pkt->count));
+
+      memcpy(pkt->buf, log.data() + log_bytes_sent, bytes_to_read);
+      pkt->status = bytes_to_read;
+      log_bytes_sent += bytes_to_read;
+      return bRC_OK;
+    } break;
+    case filedaemon::IO_CLOSE: {
+      pkt->status = 0;
+      return bRC_OK;
+    } break;
+  }
+  fatal_msg(ctx, "unhandled code path: {}", pkt->func);
+  return bRC_Error;
+}
+
+bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
+{
+  auto* pctx = get_private_context(ctx);
+
+  auto handler = [&] {
+    switch (pctx->current_file) {
+      case plugin_ctx::file::Dump: {
+        return &pluginIO_Dump;
+      } break;
+      case plugin_ctx::file::Log: {
+        return &pluginIO_Log;
+      } break;
+    }
+    return static_cast<decltype(&pluginIO_Dump)>(nullptr);
+  }();
+
+  if (!handler) {
+    fatal_msg(ctx, "could not find handler for file {}",
+              static_cast<std::size_t>(pctx->current_file));
+    return bRC_Error;
+  }
+
+
+  switch (pkt->func) {
+    case filedaemon::IO_OPEN:
+      [[fallthrough]];
+    case filedaemon::IO_READ:
+      [[fallthrough]];
+    case filedaemon::IO_CLOSE: {
+      return handler(ctx, pkt);
+    } break;
+
+    case filedaemon::IO_WRITE: {
+      err_msg(ctx, "restores are not supported on the windows plugin");
+      pkt->status = -1;
+      return bRC_Error;
+    } break;
+  }
+  return bRC_Error;
+}
+
 bRC createFile(PluginContext* ctx, filedaemon::restore_pkt* pkt)
 {
   (void)ctx;
   (void)pkt;
   return bRC_Error;
 }
+
 bRC setFileAttributes(PluginContext* ctx, filedaemon::restore_pkt* pkt)
 {
   (void)ctx;
   (void)pkt;
   return bRC_Error;
 }
+
 bRC checkFile(PluginContext* ctx, char* file_name)
 {
   (void)ctx;
   (void)file_name;
   return bRC_Error;
 }
+
 bRC getAcl(PluginContext* ctx, filedaemon::acl_pkt* pkt)
 {
   (void)ctx;
   (void)pkt;
   return bRC_Error;
 }
+
 bRC setAcl(PluginContext* ctx, filedaemon::acl_pkt* pkt)
 {
   (void)ctx;
   (void)pkt;
   return bRC_Error;
 }
+
 bRC getXattr(PluginContext* ctx, filedaemon::xattr_pkt* pkt)
 {
   (void)ctx;
   (void)pkt;
   return bRC_Error;
 }
+
 bRC setXattr(PluginContext* ctx, filedaemon::xattr_pkt* pkt)
 {
   (void)ctx;
