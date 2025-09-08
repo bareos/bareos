@@ -32,6 +32,7 @@
 #include "include/filetypes.h"
 #include "parser.h"
 #include "restore.h"
+#include "plugin.h"
 
 #include <fcntl.h>
 
@@ -39,6 +40,8 @@
 
 #define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
 #define info_msg(ctx, ...) JobLog((ctx), M_INFO, __VA_ARGS__)
+#define fatal_msg(ctx, ...) JobLog((ctx), M_FATAL, __VA_ARGS__)
+#define d_msg(ctx, level, ...) DebugLog((ctx), (level), __VA_ARGS__)
 
 bool AmICompatibleWith(filedaemon::PluginApiDefinition* core_info)
 {
@@ -285,6 +288,20 @@ struct plugin_ctx {
   std::optional<session_ctx> current_session;
 
   std::optional<plugin_arguments> args;
+
+  enum class file_type
+  {
+    None,
+    Dump,
+    Log,
+  };
+
+  file_type current_file_type = file_type::None;
+
+  // this is the debug level on which the backup log is dumped
+  // if its selected to be "restored"
+  std::size_t log_level = 300;
+  std::string log_line_buffer{};
 };
 
 plugin_ctx* get_private_context(PluginContext* ctx)
@@ -379,27 +396,30 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
   err_msg(ctx, "backups are only supported on windows");
   return bRC_Error;
 }
+
 bRC endBackupFile(PluginContext* ctx)
 {
   (void)ctx;
   return bRC_Error;
 }
+
 bRC startRestoreFile(PluginContext* ctx, const char* file_name)
 {
-  auto* pctx = get_private_context(ctx);
-  if (pctx->has_session()) {
-    err_msg(ctx, "this plugin cannot restore more than one 'file' at once");
-    return bRC_Error;
-  }
-  info_msg(ctx, "restore started (file = {})", file_name);
+  (void)ctx;
+  (void)file_name;
   return bRC_OK;
 }
+
 bRC endRestoreFile(PluginContext* ctx)
 {
+  auto* pctx = get_private_context(ctx);
+  pctx->current_file_type = plugin_ctx::file_type::None;
+
   info_msg(ctx, "restore finished");
   return bRC_OK;
 }
-bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
+
+bRC pluginIO_Dump(PluginContext* ctx, filedaemon::io_pkt* pkt)
 {
   auto* pctx = get_private_context(ctx);
   switch (pkt->func) {
@@ -409,6 +429,8 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
         pkt->status = -1;
         return bRC_Error;
       }
+
+      info_msg(ctx, "restore started (file = {})", pkt->fname);
 
       if (!pctx->args->copy_location.empty()) {
         pkt->filedes
@@ -435,11 +457,6 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
         return bRC_Error;
       }
     } break;
-    case filedaemon::IO_READ: {
-      err_msg(ctx, "backups are not supported on windows");
-      pkt->status = -1;
-      return bRC_Error;
-    } break;
     case filedaemon::IO_WRITE: {
       if (pkt->count < 0) {
         err_msg(ctx, "its impossible to read {} bytes...", pkt->count);
@@ -462,6 +479,137 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
       return bRC_OK;
     } break;
   }
+
+  fatal_msg(ctx, "unhandled code path: {}", pkt->func);
+  return bRC_Error;
+}
+
+bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
+{
+  auto* pctx = get_private_context(ctx);
+  switch (pkt->func) {
+    case filedaemon::IO_OPEN: {
+      info_msg(ctx,
+               "starting restore of backup log into debug log (level = {})",
+               pctx->log_level);
+      return bRC_OK;
+    } break;
+    case filedaemon::IO_WRITE: {
+      if (pkt->count < 0) {
+        err_msg(ctx, "its impossible to read {} bytes...", pkt->count);
+        pkt->status = -1;
+        return bRC_Error;
+      }
+      auto& line_buffer = pctx->log_line_buffer;
+      auto data
+          = std::string_view{pkt->buf, static_cast<std::size_t>(pkt->count)};
+
+      pkt->status = pkt->count;
+
+      auto pos = data.find_first_of('\n');
+
+      if (pos == data.npos) {
+        line_buffer.insert(line_buffer.end(), data.begin(), data.end());
+        return bRC_OK;
+      }
+
+      d_msg(pctx->log_level, "--LOG-- {}{}", line_buffer, data.substr(0, pos));
+
+      data = data.substr(pos + 1);
+
+      while (data.size() > 0) {
+        auto next_pos = data.find_first_of('\n');
+        if (next_pos == data.npos) { break; }
+
+        d_msg(pctx->log_level, "--LOG-- {}", data.substr(0, next_pos));
+
+        data = data.substr(next_pos + 1);
+      }
+
+      line_buffer.assign(data);
+
+
+      return bRC_OK;
+    } break;
+    case filedaemon::IO_CLOSE: {
+      auto& line_buffer = pctx->log_line_buffer;
+      if (!line_buffer.empty()) {
+        d_msg(pctx->log_level, "--LOG-- {}", line_buffer);
+      }
+      line_buffer.clear();
+
+      info_msg(ctx, "restore of backup log is done");
+
+      return bRC_OK;
+    } break;
+  }
+
+  fatal_msg(ctx, "unhandled code path: {}", pkt->func);
+  return bRC_Error;
+}
+
+
+bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
+{
+  auto* pctx = get_private_context(ctx);
+
+  if (pkt->func == filedaemon::IO_OPEN) {
+    std::string_view path{pkt->fname};
+
+    auto ending_start = path.find_last_of('.');
+
+    if (ending_start == path.npos) {
+      fatal_msg(ctx, "cannot restore '{}': unknown file ending", path);
+    }
+
+    auto ending = path.substr(ending_start);
+
+    if (ending == log_ending) {
+      pctx->current_file_type = plugin_ctx::file_type::Log;
+    } else if (ending == dump_ending) {
+      pctx->current_file_type = plugin_ctx::file_type::Dump;
+    } else {
+      fatal_msg(ctx, "cannot restore '{}': unknown file ending ({})", path,
+                ending);
+      return bRC_Error;
+    }
+  }
+
+  decltype(&pluginIO) handler = nullptr;
+  switch (pctx->current_file_type) {
+    case plugin_ctx::file_type::Log: {
+      handler = &pluginIO_Log;
+    } break;
+    case plugin_ctx::file_type::Dump: {
+      handler = &pluginIO_Dump;
+    } break;
+    case plugin_ctx::file_type::None: {
+      fatal_msg(ctx, "cannot do plugin io on file of type None!");
+    } break;
+  }
+
+  if (!handler) {
+    fatal_msg(ctx, "internal error: bad file type {}",
+              static_cast<std::size_t>(pctx->current_file_type));
+    return bRC_Error;
+  }
+
+  switch (pkt->func) {
+    case filedaemon::IO_OPEN:
+      [[fallthrough]];
+    case filedaemon::IO_WRITE:
+      [[fallthrough]];
+    case filedaemon::IO_CLOSE: {
+      return handler(ctx, pkt);
+    } break;
+
+    case filedaemon::IO_READ: {
+      err_msg(ctx, "backups are not supported on windows");
+      pkt->status = -1;
+      return bRC_Error;
+    } break;
+  }
+  fatal_msg(ctx, "unknown function {}", pkt->func);
   return bRC_Error;
 }
 bRC createFile(PluginContext* ctx, filedaemon::restore_pkt* pkt)
