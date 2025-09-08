@@ -523,7 +523,8 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 
   event.eventType = eventType;
 
-  Dmsg2(debuglevel, "plugin_ctx=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
+  Dmsg2(debuglevel, "plugin_ctx=%p JobId=%d event=%d\n", plugin_ctx_list,
+        jcr->JobId, eventType);
 
   /* Pass event to every plugin that has requested this event type (except if
    * name is set). If name is set, we pass it only to the plugin with that name.
@@ -562,7 +563,10 @@ bRC GeneratePluginEvent(JobControlRecord* jcr,
 
       if (trigger_plugin_event(jcr, eventType, &event, ctx, value,
                                plugin_ctx_list, &i, &rc)) {
-        break;
+        Dmsg3(
+            debuglevel,
+            "plugin event caused stop (ignored). jcr=%p, event=%d, plugin=%s\n",
+            jcr, eventType, ctx->plugin->file);
       }
     }
   }
