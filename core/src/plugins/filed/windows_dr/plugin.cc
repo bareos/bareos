@@ -27,6 +27,7 @@
 #include "filed/fd_plugins.h"
 #include "bareos_api.h"
 #include "include/filetypes.h"
+#include "include/job_level.h"
 #include "parser.h"
 #include "dump.h"
 #include <comdef.h>
@@ -37,10 +38,13 @@
 #if defined(MSVC_JOINED_THE_MODERN_WORLD)
 #  define err_msg(ctx, fmt, ...) \
     JobLog((ctx), M_ERROR, (fmt)__VA_OPT__(, ) __VA_ARGS__)
+#  define fatal_msg(ctx, fmt, ...) \
+    JobLog((ctx), M_FATAL, (fmt)__VA_OPT__(, ) __VA_ARGS__)
 #  define d_msg(level, fmt, ...) \
     DebugLog((level), (fmt)__VA_OPT__(, ) __VA_ARGS__)
 #else
 #  define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
+#  define fatal_msg(ctx, ...) JobLog((ctx), M_FATAL, __VA_ARGS__)
 #  define d_msg(level, ...) DebugLog((level), __VA_ARGS__)
 #endif
 
@@ -393,8 +397,6 @@ bRC newPlugin(PluginContext* ctx)
   RegisterBareosEvent(ctx, filedaemon::bEventNewPluginOptions);
   RegisterBareosEvent(ctx, filedaemon::bEventPluginCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventJobStart);
-  RegisterBareosEvent(ctx, filedaemon::bEventLevel);
-  // RegisterBareosEvent(ctx, filedaemon::bEventStartBackupJob);
   RegisterBareosEvent(ctx, filedaemon::bEventRestoreCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventEstimateCommand);
   RegisterBareosEvent(ctx, filedaemon::bEventBackupCommand);
@@ -455,20 +457,6 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
       pctx->set_plugin_args(std::move(arguments.value()));
       return bRC_OK;
     } break;
-    case filedaemon::bEventLevel: {
-      intptr_t level = reinterpret_cast<intptr_t>(data);
-
-      if (level == 'F') {
-        // full backups are a-ok!
-        return bRC_OK;
-      }
-
-      err_msg(ctx,
-              "This plugin can only do full backups; backup level requested = "
-              "{} ({})",
-              (char)level, level);
-      return bRC_Error;
-    } break;
   }
   return bRC_Error;
 }
@@ -478,13 +466,31 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
   auto* pctx = get_private_context(ctx);
 
   // first we check if this is a full backup.  If not, we reject the backup
-  if (auto level = bVar::Get<bVar::Level>(); level != L_FULL) {
-    err_msg(
-        ctx,
-        "this plugin only supports full backups, but level={} was requested",
-        level);
+  // we already check this in handle
+  {
+    // one would imagine it would make the most sense to do this check
+    // in handlePluginEvent(bEventLevel), but that does not work:
+    // - the check is not reliable: other plugins can swallow the event
+    // - there is no good way to stop the backup: the return value is basically
+    //   ignored; a fatal error message stops the job in a very bad place,
+    //   leading to bad job logs and stuck jobs.
+    // This is why i moved the check here
 
-    return bRC_Error;
+    auto level = bVar::Get<bVar::Level>(ctx);
+    if (!level) {
+      fatal_msg(ctx,
+                "could not determine the level that we are supposed to be "
+                "running at");
+      return bRC_Error;
+    }
+
+    if (level.value() != L_FULL) {
+      fatal_msg(
+          ctx,
+          "this plugin only supports full backups, but level={} was requested",
+          static_cast<char>(level.value()));
+      return bRC_Stop;
+    }
   }
 
   std::optional client_name = bVar::Get<bVar::Client>(ctx);
@@ -497,8 +503,7 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
 
   auto now = time(NULL);
 
-  std::string_view hostname{
-      client_name.value()};  // hostname or client name (bareos) ???
+  std::string_view hostname{client_name.value()};
   std::string timestamp = libbareos::format("{}", now);
   pctx->dump_file_name
       = libbareos::format("@barri@/{}/{}", hostname, timestamp);
