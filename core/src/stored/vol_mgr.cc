@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -280,8 +280,8 @@ static void FreeVolItem(VolumeReservationItem* vol)
 {
   Device* dev = nullptr;
 
-  vol->DecUseCount();
   vol->Lock();
+  vol->DecUseCount();
   if (vol->UseCount() > 0) {
     vol->Unlock();
     return;
@@ -740,16 +740,42 @@ bool FreeVolume(Device* dev)
     Dmsg1(debuglevel, "=== clear in_use vol=%s\n", vol->vol_name);
     dev->vol = NULL;
 
+    bool is_on_list = false;
+
+    // this is ok, since we locked the volume list
+    for (VolumeReservationItem* other_vol = vol_list->first(); other_vol;
+         other_vol = vol_list->next(other_vol)) {
+      if (other_vol == vol) {
+        vol_list->remove(vol);
+        is_on_list = true;
+        Dmsg2(debuglevel, "=== remove volume %s dev=%s\n", vol->vol_name,
+              dev->print_name());
+        break;
+      }
+    }
+
     /* Volume is on write volume list if one of the folling is applicable:
      *  - The volume is written to.
      *  - Config option filedevice_concurrent_read is not on.
      *  - The device is not of type File. */
-    if (vol->IsWriting() || !me->filedevice_concurrent_read
-        || !dev->CanReadConcurrently()) {
-      vol_list->remove(vol);
+    bool should_be_on_list = vol->IsWriting() || !me->filedevice_concurrent_read
+                             || !dev->CanReadConcurrently();
+
+    if (should_be_on_list != is_on_list) {
+      if (is_on_list) {
+        Emsg0(M_ERROR, 0,
+              T_("logic error detected! trying to free item still on volume "
+                 "list\n"));
+      } else {
+        Emsg0(M_ERROR, 0,
+              T_("logic error detected! trying to remove item not in the "
+                 "volume list\n"));
+      }
+      // this message is split up so we get at least the first message
+      // if vol->vol_name points to unallocated memory ...
+      Emsg1(M_ERROR, 0, T_("  volume = %s (dev = %s)\n"),
+            vol->vol_name ? vol->vol_name : "unset", dev->print_name());
     }
-    Dmsg2(debuglevel, "=== remove volume %s dev=%s\n", vol->vol_name,
-          dev->print_name());
     FreeVolItem(vol);
 
     if (debug_level >= debuglevel) { DebugListVolumes("FreeVolume"); }
