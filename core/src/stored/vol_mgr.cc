@@ -748,6 +748,8 @@ bool FreeVolume(Device* dev)
       if (other_vol == vol) {
         vol_list->remove(vol);
         is_on_list = true;
+        Dmsg2(debuglevel, "=== remove volume %s dev=%s\n", vol->vol_name,
+              dev->print_name());
         break;
       }
     }
@@ -771,11 +773,9 @@ bool FreeVolume(Device* dev)
       }
       // this message is split up so we get at least the first message
       // if vol->vol_name points to unallocated memory ...
-      Emsg1(M_ERROR, 0, T_("  volume = %s\n"),
-            vol->vol_name ? vol->vol_name : "unset");
+      Emsg1(M_ERROR, 0, T_("  volume = %s (dev = %s)\n"),
+            vol->vol_name ? vol->vol_name : "unset", dev->print_name());
     }
-    Dmsg2(debuglevel, "=== remove volume %s dev=%s\n", vol->vol_name,
-          dev->print_name());
     FreeVolItem(vol);
 
     if (debug_level >= debuglevel) { DebugListVolumes("FreeVolume"); }
