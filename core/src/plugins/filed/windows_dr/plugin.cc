@@ -470,6 +470,16 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
 {
   auto* pctx = get_private_context(ctx);
 
+  // first we check if this is a full backup.  If not, we reject the backup
+  if (auto level = bVar::Get<bVar::Level>(); level != L_FULL) {
+    err_msg(
+        ctx,
+        "this plugin only supports full backups, but level={} was requested",
+        level);
+
+    return bRC_Error;
+  }
+
   std::optional client_name = bVar::Get<bVar::Client>(ctx);
   if (!client_name) {
     err_msg(ctx, "could not retrieve client name from the bareos api!");
