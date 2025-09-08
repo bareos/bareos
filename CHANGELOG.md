@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Fixed
+- stored: fix race condition [PR #2363]
+
 ## [23.1.4] - 2025-07-23
 
 ### Fixed
@@ -662,4 +665,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2309]: https://github.com/bareos/bareos/pull/2309
 [PR #2317]: https://github.com/bareos/bareos/pull/2317
 [PR #2323]: https://github.com/bareos/bareos/pull/2323
+[PR #2363]: https://github.com/bareos/bareos/pull/2363
 [unreleased]: https://github.com/bareos/bareos/tree/master
