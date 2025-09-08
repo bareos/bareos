@@ -30,6 +30,7 @@
 #include "include/job_level.h"
 #include "parser.h"
 #include "dump.h"
+#include "plugin.h"
 #include <comdef.h>
 
 #include <charconv>
@@ -334,6 +335,7 @@ struct plugin_logger : public GenericLogger {
     if (messages.size() < max_messages_size) {
       // lets make sure that this does not grow too big.
       messages.insert(messages.end(), message.text.begin(), message.text.end());
+      messages.push_back('\n');
     }
   }
 
@@ -443,9 +445,9 @@ bRC newPlugin(PluginContext* ctx)
   std::string_view hostname{client_name.value()};
   std::string timestamp = libbareos::format("{}", now);
   pctx->dump_file_name
-      = libbareos::format("@barri@/{}/{}.barri", hostname, timestamp);
+      = libbareos::format("@barri@/{}/{}{}", hostname, timestamp, dump_ending);
   pctx->log_file_name
-      = libbareos::format("@barri@/{}/{}.log", hostname, timestamp);
+      = libbareos::format("@barri@/{}/{}{}", hostname, timestamp, log_ending);
   pctx->timestamp = now;
 
 
