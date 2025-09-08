@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -37,7 +37,7 @@ start_test
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/extra.out
 messages
-@$out $tmp/consolidate-duplicates:incr.out
+@$out $tmp/consolidate-duplicates_incr.out
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-19'"
 run job=$JobName level=Incremental yes
 wait
@@ -47,27 +47,32 @@ wait
 @exec "sh -c 'touch ${tmp}/data/weird-files/file-21'"
 run job=$JobName level=Incremental yes
 wait
-@$out $tmp/consolidate-duplicates:incr-messages.out
+@$out $tmp/consolidate-duplicates_incr-messages.out
 messages
-@$out $tmp/consolidate-duplicates:consolidate.out
-run job=Consolidate yes
-run job=Consolidate yes
+END_OF_DATA
+run_bconsole
+when="$(date "+%F %H:%M:")$(printf "%02d" $(($(date "+%S") + 5)))"
+echo "running consolidate when=${when}"
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/consolidate-duplicates_consolidate.out
+run job=Consolidate when="${when}" yes
+run job=Consolidate when="${when}" yes
 wait
-@$out $tmp/consolidate-duplicates:consolidate-messages.out
+@$out $tmp/consolidate-duplicates_consolidate-messages.out
 messages
 END_OF_DATA
 run_bconsole
 
 expect_grep "JobId [[:digit:]]* already running. Duplicate consolidation job of Client \".*\" and FileSet \".*\" not allowed." \
-            "$tmp"/consolidate-duplicates:consolidate-messages.out \
-            "duplicate consolidate virtualfull did not log duplicate job error."
+  "$tmp"/consolidate-duplicates_consolidate-messages.out \
+  "duplicate consolidate virtualfull did not log duplicate job error."
 
 expect_grep "Termination:[[:space:]]*Backup Canceled" \
-            "$tmp"/consolidate-duplicates:consolidate-messages.out \
-            "duplicate consolidate virtualfull was not cancelled."
+  "$tmp"/consolidate-duplicates_consolidate-messages.out \
+  "duplicate consolidate virtualfull was not cancelled."
 
 expect_grep "Termination:[[:space:]]*Backup OK" \
-            "$tmp"/consolidate-duplicates:consolidate-messages.out \
-            "both consolidate virtualfull did not succeed."
+  "$tmp"/consolidate-duplicates_consolidate-messages.out \
+  "both consolidate virtualfull did not succeed."
 
 end_test
