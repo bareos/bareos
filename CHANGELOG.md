@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMWare Plugin: Fix VirtualSerialPort, NVRAM timeouts configurable [PR #2344]
 - doc: storage backend add note about static build [PR #2350]
 - fix next-pool overrides by job [PR #2279]
+- stored: fix race condition [PR #2359]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -207,4 +208,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2341]: https://github.com/bareos/bareos/pull/2341
 [PR #2344]: https://github.com/bareos/bareos/pull/2344
 [PR #2350]: https://github.com/bareos/bareos/pull/2350
+[PR #2359]: https://github.com/bareos/bareos/pull/2359
 [unreleased]: https://github.com/bareos/bareos/tree/master
