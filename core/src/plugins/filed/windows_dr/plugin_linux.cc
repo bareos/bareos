@@ -215,9 +215,9 @@ struct plugin_logger : public GenericLogger {
   void End() override {}
 
   void SetStatus(std::string_view Status) override { (void)Status; }
-  void Output(std::string_view Message) override
+  void Output(Message message) override
   {
-    JobLog(ctx, M_INFO, "{}", Message);
+    JobLog(ctx, M_INFO, "{}", message.text);
   }
 
   plugin_logger(PluginContext* ctx_) : GenericLogger{false}, ctx{ctx_} {}
