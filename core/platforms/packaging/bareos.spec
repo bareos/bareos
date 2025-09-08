@@ -1640,6 +1640,23 @@ getent group %1 > /dev/null || groupadd -r %1 \
 getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} -g %{daemon_group} --shell /bin/false %1 \
 %nil
 
+#%%define rpm_vercmp() \
+#%%{lua:print(rpm.vercmp(rpm.expand('%%1'), rpm.expand('%%2')))} \
+#%%nil
+
+%define rpm_version_lt_disabled() \
+%{lua:if (rpm.vercmp(rpm.expand('%1'), rpm.expand('%2')) < 0) then \
+  print(1) \
+else \
+  print(0) \
+end \
+} \
+%nil
+
+%define rpm_version_lt() \
+[ "%1" ] && [ "%2" ] && [ "$(printf "%1\\n%2\\n" | sort --version-sort | head -n 1)" = "%1" ] \
+%nil
+
 # With the introduction of config subdirectories (bareos-16.2)
 # some config files have been renamed (or even splitted into multiple files).
 # However, bareos is still able to work with the old config files,
@@ -1815,12 +1832,7 @@ a2enmod fcgid &> /dev/null || true
 %post filedaemon
 # update from bareos < 16.2
 %post_backup_file /etc/%{name}/bareos-fd.conf
-# update from bareos < 25
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/client/myself.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-dir.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf"
+
 %{script_dir}/bareos-config deploy_config "bareos-fd"
 %if 0%{?suse_version} >= 1210
 %service_add_post bareos-fd.service
@@ -1914,6 +1926,23 @@ exit 0
 exit 0
 
 %pre filedaemon
+set -x
+if [ $1 -gt 1 ]; then
+  # upgrade
+  OLDVER=$(rpm -q %{name}-filedaemon --qf "%%{version}")
+  if [ "$OLDVER" ]; then
+    # rpm macro with parameter. Rest of line is ignored (taken as parameter).
+    if %rpm_version_lt $OLDVER 25.0.0
+    then
+      # update from bareos < 25
+      %post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/client/myself.conf"
+      %post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-dir.conf"
+      %post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
+      %post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf"
+      %post_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf"
+    fi
+  fi
+fi
 %create_group %{daemon_group}
 %create_user  %{storage_daemon_user}
 exit 0
