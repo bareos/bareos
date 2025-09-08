@@ -65,8 +65,15 @@ const PluginInformation my_info = {
     .plugin_description
     = "This plugin allows you to backup your windows system for disaster "
       "recovery.",
-    .plugin_usage = "...",
-};
+    .plugin_usage = PLUGIN_NAME
+    R"(:unknown disks:unknown partitions:unknown extents:ignore disks=<disks to ignore>
+
+  unknown disks: try to save disks, that contain no snapshotted data
+  unknown partitions: try to save partitions, that contain no snapshotted data
+  unknown extents: try to save even unsnapshotted parts of partitions
+  disks to ignore: a comma-separated list of disk ids (i.e. '1,2,5') of disks
+                   to not backup
+)"};
 
 std::string_view trim_left(std::string_view input)
 {
@@ -218,7 +225,7 @@ struct plugin_arguments {
         "unknown disks",
         "unknown partitions",
         "unknown extents",
-        "ignore disk",
+        "ignore disks",
     };
 
     auto name = next_part(str, ':');
@@ -262,7 +269,7 @@ struct plugin_arguments {
           }
           args.save_unknown_extents = true;
         } break;
-        case index_of(keywords, "ignore disk"): {
+        case index_of(keywords, "ignore disks"): {
           if (value.empty()) {
             err_msg(ctx, "unexpected empty value for {} option", "ignore disk");
             return std::nullopt;
