@@ -284,14 +284,14 @@ struct logger : public GenericLogger {
     // progress_bar->bar.set_option(option::PostfixText(status));
   }
 
-  void Output(std::string_view Message) override
+  void Output(Message message) override
   {
     if (progress_bar) {
       stream() << termcolor::reset;
       erase_line();
       stream().flush();
     }
-    libbareos::println(stderr, "{:{}}{}", "", indent, Message);
+    libbareos::println(stderr, "{:{}}{}", "", indent, message.text);
     if (progress_bar) { progress_bar->print(); }
   }
 

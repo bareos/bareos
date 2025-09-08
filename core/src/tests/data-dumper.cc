@@ -38,9 +38,9 @@ struct logger : GenericLogger {
   {
     std::cerr << "[STATUS] >>" << Status << "<<\n";
   }
-  void Output(std::string_view Message) override
+  void Output(Message message) override
   {
-    std::cerr << "[LOG] >>" << Message << "<<\n";
+    std::cerr << "[LOG] >>" << message.text << "<<\n";
   }
 
   logger() : GenericLogger(true) {}

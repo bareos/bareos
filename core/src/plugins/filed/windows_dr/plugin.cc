@@ -320,9 +320,18 @@ struct plugin_logger : public GenericLogger {
   void End() override {}
 
   void SetStatus(std::string_view Status) override { (void)Status; }
-  void Output(std::string_view Message) override
+  void Output(Message message) override
   {
-    JobLog(ctx, M_INFO, "{}", Message);
+    if (message.is_trace) {
+      DebugLog(ctx, 500, "{}", message.text);
+    } else {
+      JobLog(ctx, M_INFO, "{}", message.text);
+    }
+
+    if (messages.size() < max_messages_size) {
+      // lets make sure that this does not grow too big.
+      messages.insert(messages.end(), message.text.begin(), message.text.end());
+    }
   }
 
   plugin_logger(PluginContext* ctx_) : GenericLogger{false}, ctx{ctx_} {}

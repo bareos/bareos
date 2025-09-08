@@ -57,12 +57,17 @@ class GenericHandler {
 };
 
 struct GenericLogger {
+  struct Message {
+    std::string_view text;
+    bool is_trace;
+  };
+
   virtual void Begin(std::size_t FileSize) = 0;
   virtual void Progressed(std::size_t Amount) = 0;
   virtual void End() = 0;
 
   virtual void SetStatus(std::string_view Status) = 0;
-  virtual void Output(std::string_view Message) = 0;
+  virtual void Output(Message message) = 0;
 
   GenericLogger(bool do_trace) : trace{do_trace} {}
   virtual ~GenericLogger() {}
@@ -73,10 +78,18 @@ struct GenericLogger {
   {
     if constexpr (sizeof...(Args) == 0) {
       auto fmt_view = fmt.get();
-      Output(std::string_view{fmt_view.data(), fmt_view.size()});
+      Message message = {
+          .text = std::string_view{fmt_view.data(), fmt_view.size()},
+          .is_trace = false,
+      };
+      Output(message);
     } else {
       auto formatted = libbareos::format(fmt, std::forward<Args>(args)...);
-      Output(formatted);
+      Message message = {
+          .text = formatted,
+          .is_trace = false,
+      };
+      Output(message);
     }
   }
 
@@ -84,7 +97,14 @@ struct GenericLogger {
             typename = std::enable_if_t<std::is_invocable_v<F>>>
   inline constexpr void Trace(const F& f)
   {
-    if (trace) { Output(f()); }
+    if (trace) {
+      auto generated = f();
+      Message message = {
+          .text = generated,
+          .is_trace = true,
+      };
+      Output(message);
+    }
   }
 
   template <typename... Args>
@@ -94,10 +114,18 @@ struct GenericLogger {
     if (trace) {
       if constexpr (sizeof...(Args) == 0) {
         auto fmt_view = fmt.get();
-        Output(std::string_view{fmt_view.data(), fmt_view.size()});
+        Message message = {
+            .text = std::string_view{fmt_view.data(), fmt_view.size()},
+            .is_trace = true,
+        };
+        Output(message);
       } else {
         auto formatted = libbareos::format(fmt, std::forward<Args>(args)...);
-        Output(formatted);
+        Message message = {
+            .text = formatted,
+            .is_trace = true,
+        };
+        Output(message);
       }
     }
   }
