@@ -944,7 +944,10 @@ bool make_event_request(filedaemon::bEventType type,
         auto* inner = event->mutable_restore_object();
         auto* grop = inner->mutable_rop();
         grop->set_jobid(rop->JobId);
-        // TODO: we need to remove grpc: from this!
+
+        // rop->plugin_name is already the "sanitized" name, i.e.
+        //  the name without grpc:<module-name>:
+
         grop->set_used_cmd_string(rop->plugin_name);
         auto* sent = grop->mutable_sent();
         sent->set_index(rop->object_index);
