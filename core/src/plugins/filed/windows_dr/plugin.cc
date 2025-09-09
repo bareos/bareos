@@ -447,23 +447,9 @@ bRC newPlugin(PluginContext* ctx)
   auto pctx = get_private_context(ctx);
 
   std::string_view hostname{client_name.value()};
-  std::string timestamp = libbareos::format("{}", now);
-
-  struct tm utc_time;
-  if (auto error = gmtime_s(&utc_time, &now); error != 0) {
-    warn_msg(ctx, "could not convert {} to date: {}", now, strerror(error));
-    pctx->dump_file_name = libbareos::format("@barri@/{}/{}{}", hostname,
-                                             timestamp, dump_ending);
-    pctx->log_file_name
-        = libbareos::format("@barri@/{}/{}{}", hostname, timestamp, log_ending);
-  } else {
-    pctx->dump_file_name = libbareos::format(
-        "@barri@/{}/UTC-{:04}-{:02}-{:02}{}", hostname, utc_time.tm_year + 1900,
-        utc_time.tm_mon + 1, utc_time.tm_mday, dump_ending);
-    pctx->log_file_name = libbareos::format(
-        "@barri@/{}/UTC-{:04}-{:02}-{:02}{}", hostname, utc_time.tm_year + 1900,
-        utc_time.tm_mon + 1, utc_time.tm_mday, log_ending);
-  }
+  pctx->dump_file_name
+      = libbareos::format("@barri@/{}{}", hostname, dump_ending);
+  pctx->log_file_name = libbareos::format("@barri@/{}{}", hostname, log_ending);
 
   pctx->timestamp = now;
 
