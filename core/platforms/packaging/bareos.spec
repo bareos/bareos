@@ -1640,21 +1640,15 @@ getent group %1 > /dev/null || groupadd -r %1 \
 getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} -g %{daemon_group} --shell /bin/false %1 \
 %nil
 
-#%%define rpm_vercmp() \
-#%%{lua:print(rpm.vercmp(rpm.expand('%%1'), rpm.expand('%%2')))} \
-#%%nil
-
-%define rpm_version_lt_disabled() \
-%{lua:if (rpm.vercmp(rpm.expand('%1'), rpm.expand('%2')) < 0) then \
-  print(1) \
-else \
-  print(0) \
-end \
-} \
-%nil
-
+# NOTE: rpm macro with parameter. Rest of line is ignored (taken as parameter).
 %define rpm_version_lt() \
 [ "%1" ] && [ "%2" ] && [ "$(printf "%1\\n%2\\n" | sort --version-sort | head -n 1)" = "%1" ] \
+%nil
+
+%define if_package_version_lt() \
+OLDVER=$(rpm -q %1 --qf "%%{version}"); \
+if %rpm_version_lt $OLDVER %2 \
+then \
 %nil
 
 # With the introduction of config subdirectories (bareos-16.2)
@@ -1671,7 +1665,7 @@ end \
 #       Remove our backup, if it exists.
 # This update helper should be removed with bareos-17.
 
-%define post_backup_file() \
+%define pre_backup_file() \
 FILE=%* \
 if [ -f "${FILE}" ]; then \
       cp -a "${FILE}" "${FILE}.rpmupdate.%{version}.keep"; \
@@ -1694,53 +1688,142 @@ if [ -f "%{_sysconfdir}/%{name}/.enable-cap_sys_rawio" ]; then \
 fi\
 %nil
 
-%if 0%{?webui}
-%post webui
-# update from bareos < 25
-%post_backup_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
-%post_backup_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"
+#
+# pre, post and posttrans scriplets
+#
 
-%if 0%{?suse_version}
-a2enmod rewrite &> /dev/null || true
-a2enmod proxy &> /dev/null || true
-a2enmod proxy_fcgi &> /dev/null || true
-a2enmod fcgid &> /dev/null || true
-%endif
+%pre common
+%create_group %{daemon_group}
+%create_user  %{daemon_user}
+exit 0
+
+%post common
+/sbin/ldconfig
+
+%postun common
+/sbin/ldconfig
+
+%pre bconsole
+if [ $1 -gt 1 ]; then
+  # upgrade
+  %if_package_version_lt %{name}-bconsole 25.0.0
+    %pre_backup_file "%{_sysconfdir}/%{name}/bconsole.conf"
+  fi
+fi
+exit 0
+
+%post bconsole
+%{script_dir}/bareos-config deploy_config "bconsole"
+
+%posttrans bconsole
+# update from bareos < 25
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bconsole.conf"
+
+%post database-common
+/sbin/ldconfig
+
+%postun database-common
+/sbin/ldconfig
+
+%post database-postgresql
+/sbin/ldconfig
+
+%post database-tools
+%post_scsicrypto
+
+%postun database-postgresql
+/sbin/ldconfig
+
+%pre filedaemon
+if [ $1 -gt 1 ]; then
+  # upgrade
+  OLDVER=$(rpm -q  --qf "%%{version}")
+  if %rpm_version_lt $OLDVER 16.2.0
+  then
+    %pre_backup_file /etc/%{name}/bareos-fd.conf
+  elif %rpm_version_lt $OLDVER 25.0.0
+  then
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/client/myself.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-dir.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf"
+  fi
+fi
+%create_group %{daemon_group}
+%create_user  %{storage_daemon_user}
+exit 0
+
+%post filedaemon
+%{script_dir}/bareos-config deploy_config "bareos-fd"
+%if 0%{?suse_version} >= 1210
+%service_add_post bareos-fd.service
+/bin/systemctl enable bareos-fd.service >/dev/null 2>&1 || true
+%else
+%add_service_start bareos-fd
 %endif
 
-%posttrans webui
+%posttrans filedaemon
+# update from bareos < 16.2
+%posttrans_restore_file /etc/%{name}/bareos-fd.conf
 # update from bareos < 25
-%posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
-%posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/client/myself.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-dir.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf"
+
+%if 0%{?python_plugins}
+
+%pre filedaemon-ldap-python-plugin
+%if_package_version_lt %{name}-filedaemon-ldap-python-plugin 25.0.0
+  %pre_backup_file /etc/%{name}/bareos-dir.d/plugin-python-ldap.conf
+fi
+exit 0
+
+%posttrans filedaemon-ldap-python-plugin
+%posttrans_restore_file /etc/%{name}/bareos-dir.d/plugin-python-ldap.conf
+
+%endif
+
+%pre director
+if [ $1 -gt 1 ]; then
+  # upgrade
+  OLDVER=$(rpm -q %{name}-director --qf "%%{version}")
+  if %rpm_version_lt $OLDVER 16.2.0
+  then
+    %pre_backup_file /etc/%{name}/bareos-dir.conf
+  elif %rpm_version_lt $OLDVER 25.0.0
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/catalog/MyCatalog.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/client/bareos-fd.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/console/bareos-mon.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/director/bareos-dir.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/fileset/Catalog.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/fileset/LinuxAll.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/fileset/SelfTest.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/fileset/Windows All Drives.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/backup-bareos-fd.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/BackupCatalog.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/jobdefs/DefaultJob.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/RestoreFiles.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/messages/Daemon.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/messages/Standard.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/pool/Differential.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/pool/Full.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/pool/Incremental.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/pool/Scratch.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/profile/operator.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/schedule/WeeklyCycle.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/storage/File.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/director/Director-local.conf"
+  fi
+fi
+%create_group %{daemon_group}
+%create_user  %{director_daemon_user}
+exit 0
 
 %post director
-# update from bareos < 16.2
-%post_backup_file /etc/%{name}/bareos-dir.conf
-# update from bareos < 25
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/catalog/MyCatalog.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/client/bareos-fd.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/console/bareos-mon.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/director/bareos-dir.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/fileset/Catalog.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/fileset/LinuxAll.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/fileset/SelfTest.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/fileset/Windows All Drives.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/backup-bareos-fd.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/BackupCatalog.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/jobdefs/DefaultJob.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/job/RestoreFiles.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/messages/Daemon.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/messages/Standard.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/pool/Differential.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/pool/Full.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/pool/Incremental.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/pool/Scratch.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/profile/operator.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/schedule/WeeklyCycle.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/storage/File.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/director/Director-local.conf"
-
 %{script_dir}/bareos-config deploy_config "bareos-dir"
 %if 0%{?suse_version} >= 1210
 %service_add_post bareos-dir.service
@@ -1777,20 +1860,28 @@ a2enmod fcgid &> /dev/null || true
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-dir.d/storage/File.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/tray-monitor.d/director/Director-local.conf"
 
-%post tools
-%post_scsicrypto
+%pre storage
+if [ $1 -gt 1 ]; then
+  # upgrade
+  OLDVER=$(rpm -q %{name}-storage --qf "%%{version}")
+  if %rpm_version_lt $OLDVER 16.2.0
+  then
+    %pre_backup_file /etc/%{name}/bareos-sd.conf
+  elif %rpm_version_lt $OLDVER 25.0.0
+  then
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/device/FileStorage.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/director/bareos-dir.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/director/bareos-mon.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/messages/Standard.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/storage/bareos-sd.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/storage/StorageDaemon-local.conf"
+  fi
+fi
+%create_group %{daemon_group}
+%create_user  %{storage_daemon_user}
+exit 0
 
 %post storage
-# update from bareos < 16.2
-%post_backup_file /etc/%{name}/bareos-sd.conf
-# update from bareos < 25
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/device/FileStorage.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/director/bareos-dir.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/director/bareos-mon.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/messages/Standard.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/bareos-sd.d/storage/bareos-sd.conf"
-%post_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/storage/StorageDaemon-local.conf"
-
 %{script_dir}/bareos-config deploy_config "bareos-sd" || true
 # pre script has already generated the storage daemon user,
 # but here we add the user to additional groups
@@ -1814,97 +1905,51 @@ a2enmod fcgid &> /dev/null || true
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-sd.d/storage/bareos-sd.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/tray-monitor.d/storage/StorageDaemon-local.conf"
 
-%post storage-fifo
-%post_backup_file /etc/%{name}/bareos-sd.d/device-fifo.conf
+%pre storage-fifo
+if [ $1 -gt 1 ]; then
+  # upgrade
+  %if_package_version_lt %{name}-storage-fifo 25.0.0
+    %pre_backup_file /etc/%{name}/bareos-sd.d/device-fifo.conf
+  fi
+fi
+exit 0
 
 %posttrans storage-fifo
 %posttrans_restore_file /etc/%{name}/bareos-sd.d/device-fifo.conf
 
+%pre storage-tape
+if [ $1 -gt 1 ]; then
+  # upgrade
+  %if_package_version_lt %{name}-storage-tape 25.0.0
+    %pre_backup_file /etc/%{name}/bareos-sd.d/device-tape-with-autoloader.conf
+  fi
+fi
+exit 0
 
 %post storage-tape
-%post_backup_file /etc/%{name}/bareos-sd.d/device-tape-with-autoloader.conf
 %post_scsicrypto
 
 %posttrans storage-tape
 %posttrans_restore_file /etc/%{name}/bareos-sd.d/device-tape-with-autoloader.conf
-%post_scsicrypto
-
-%post filedaemon
-# update from bareos < 16.2
-%post_backup_file /etc/%{name}/bareos-fd.conf
-
-%{script_dir}/bareos-config deploy_config "bareos-fd"
-%if 0%{?suse_version} >= 1210
-%service_add_post bareos-fd.service
-/bin/systemctl enable bareos-fd.service >/dev/null 2>&1 || true
-%else
-%add_service_start bareos-fd
-%endif
-
-%posttrans filedaemon
-# update from bareos < 16.2
-%posttrans_restore_file /etc/%{name}/bareos-fd.conf
-# update from bareos < 25
-%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/client/myself.conf"
-%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-dir.conf"
-%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
-%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf"
-%posttrans_restore_file "%{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf"
-
-%if 0%{?python_plugins}
-
-%post filedaemon-ldap-python-plugin
-%post_backup_file /etc/%{name}/bareos-dir.d/plugin-python-ldap.conf
-
-%posttrans filedaemon-ldap-python-plugin
-%posttrans_restore_file /etc/%{name}/bareos-dir.d/plugin-python-ldap.conf
-
-%endif
-
-
-%post bconsole
-# update from bareos < 25
-%post_backup_file "%{_sysconfdir}/%{name}/bconsole.conf"
-
-%{script_dir}/bareos-config deploy_config "bconsole"
-
-
-%posttrans bconsole
-# update from bareos < 25
-%posttrans_restore_file "%{_sysconfdir}/%{name}/bconsole.conf"
-
-%post common
-/sbin/ldconfig
-
-%postun common
-/sbin/ldconfig
-
-%post database-common
-/sbin/ldconfig
-
-%postun database-common
-/sbin/ldconfig
-
-%post database-postgresql
-/sbin/ldconfig
-
-%post database-tools
-%post_scsicrypto
-
-%postun database-postgresql
-/sbin/ldconfig
-
 
 %if 0%{?build_qt_monitor}
 
+%pre traymonitor
+if [ $1 -gt 1 ]; then
+  # upgrade
+  OLDVER=$(rpm -q %{name}-storage --qf "%%{version}")
+  if %rpm_version_lt $OLDVER 16.2.0
+  then
+    %pre_backup_file /etc/%{name}/tray-monitor.conf
+  elif %rpm_version_lt $OLDVER 25.0.0
+  then
+    %pre_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/monitor/bareos-mon.conf"
+  fi
+fi
+exit 0
+
 %post traymonitor
-# update from bareos < 16.2
-%post_backup_file /etc/%{name}/tray-monitor.conf
-# update from bareos < 25
-%post_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/monitor/bareos-mon.conf"
-
 %{script_dir}/bareos-config deploy_config "tray-monitor"
-
 
 %posttrans traymonitor
 # update from bareos < 16.2
@@ -1912,45 +1957,43 @@ a2enmod fcgid &> /dev/null || true
 # update from bareos < 25
 %posttrans_restore_file "%{_sysconfdir}/%{name}/tray-monitor.d/monitor/bareos-mon.conf"
 
+# endif traymonitor
 %endif
 
+%post tools
+%post_scsicrypto
 
-%pre director
-%create_group %{daemon_group}
-%create_user  %{director_daemon_user}
-exit 0
+%if 0%{?webui}
 
-%pre storage
-%create_group %{daemon_group}
-%create_user  %{storage_daemon_user}
-exit 0
-
-%pre filedaemon
-set -x
+%pre webui
 if [ $1 -gt 1 ]; then
   # upgrade
-  OLDVER=$(rpm -q %{name}-filedaemon --qf "%%{version}")
-  if [ "$OLDVER" ]; then
-    # rpm macro with parameter. Rest of line is ignored (taken as parameter).
-    if %rpm_version_lt $OLDVER 25.0.0
-    then
-      # update from bareos < 25
-      %post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/client/myself.conf"
-      %post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-dir.conf"
-      %post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
-      %post_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf"
-      %post_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf"
-    fi
+  %if_package_version_lt %{name}-webui 25.0.0
+    %pre_backup_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
+    %pre_backup_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"
   fi
 fi
-%create_group %{daemon_group}
-%create_user  %{storage_daemon_user}
 exit 0
 
-%pre common
-%create_group %{daemon_group}
-%create_user  %{daemon_user}
-exit 0
+%post webui
+%if 0%{?suse_version}
+a2enmod rewrite &> /dev/null || true
+a2enmod proxy &> /dev/null || true
+a2enmod proxy_fcgi &> /dev/null || true
+a2enmod fcgid &> /dev/null || true
+%endif
+
+%posttrans webui
+# update from bareos < 25
+%posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
+%posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"
+
+# endif: webui
+%endif
+
+#
+# preun and postun scriptlets
+#
 
 %preun director
 %if 0%{?suse_version} >= 1210
