@@ -1641,10 +1641,19 @@ getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} 
 %nil
 
 # NOTE: rpm macro with parameter. Rest of line is ignored (taken as parameter).
+# usage:
+# if %%rpm_version_lt <version1> <version2>
+# then
+#   <do something>
+# fi
 %define rpm_version_lt() \
 [ "%1" ] && [ "%2" ] && [ "$(printf "%1\\n%2\\n" | sort --version-sort | head -n 1)" = "%1" ] \
 %nil
 
+# usage:
+# %%if_package_version_lt <packagename> <version>
+#   <do something>
+# fi
 %define if_package_version_lt() \
 OLDVER=$(rpm -q %1 --qf "%%{version}"); \
 if %rpm_version_lt $OLDVER %2 \
@@ -1657,13 +1666,12 @@ then \
 # but rpm renames them to *.rpmsave.
 # To keep the bareos working after updating to bareos-16.2,
 # we implement a workaround:
-#   * post: if the old config exists, make a copy of it.
+#   * pre (or post): if the old config exists, make a copy of it.
 #   * (rpm exchanges files on disk)
 #   * posttrans:
 #       if the old config file don't exists but we have created a backup before,
 #       restore the old config file.
 #       Remove our backup, if it exists.
-# This update helper should be removed with bareos-17.
 
 %define pre_backup_file() \
 FILE=%* \
@@ -1737,7 +1745,7 @@ exit 0
 %pre filedaemon
 if [ $1 -gt 1 ]; then
   # upgrade
-  OLDVER=$(rpm -q  --qf "%%{version}")
+  OLDVER=$(rpm -q %{name}-filedaemon --qf "%%{version}")
   if %rpm_version_lt $OLDVER 16.2.0
   then
     %pre_backup_file /etc/%{name}/bareos-fd.conf
@@ -1794,6 +1802,7 @@ if [ $1 -gt 1 ]; then
   then
     %pre_backup_file /etc/%{name}/bareos-dir.conf
   elif %rpm_version_lt $OLDVER 25.0.0
+  then
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/catalog/MyCatalog.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/client/bareos-fd.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-dir.d/console/bareos-mon.conf"
@@ -1957,8 +1966,8 @@ exit 0
 # update from bareos < 25
 %posttrans_restore_file "%{_sysconfdir}/%{name}/tray-monitor.d/monitor/bareos-mon.conf"
 
-# endif traymonitor
 %endif
+#endif traymonitor
 
 %post tools
 %post_scsicrypto
@@ -1988,8 +1997,8 @@ a2enmod fcgid &> /dev/null || true
 %posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-admin.conf"
 %posttrans_restore_file "/etc/bareos/bareos-dir.d/profile/webui-readonly.conf"
 
-# endif: webui
 %endif
+#endif webui
 
 #
 # preun and postun scriptlets
