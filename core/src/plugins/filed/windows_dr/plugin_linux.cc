@@ -261,8 +261,6 @@ struct plugin_ctx {
             return restore_options::into_directory(&logger, tgt);
           } else if constexpr (std::is_same_v<T, plugin_arguments::files>) {
             return restore_options::into_files(&logger, tgt);
-          } else if constexpr (std::is_same_v<T, plugin_arguments::files>) {
-            static_assert(0, "handled elsewhere");
           } else if constexpr (std::is_same_v<T, std::monostate>) {
             // nothing was chosen, so just use a sensible default
             return restore_options::into_directory(&logger, "/tmp");
