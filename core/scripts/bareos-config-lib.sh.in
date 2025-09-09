@@ -498,6 +498,7 @@ deploy_config_init()
     DEST_CONFIG_PATH="${BAREOS_CONFIG_DIR}/${COMPONENT}.conf"
     if [ -f "${DEST_CONFIG_PATH}" ]; then
       info "deploy_config_init(): destination ${DEST_CONFIG_PATH} already exists. Skipped"
+      return 0
     fi
     cp "${SOURCE_CONFIG_PATH}" "${DEST_CONFIG_PATH}" || RC=$?
   fi
