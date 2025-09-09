@@ -511,7 +511,8 @@ bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
         return bRC_OK;
       }
 
-      d_msg(pctx->log_level, "--LOG-- {}{}", line_buffer, data.substr(0, pos));
+      d_msg(ctx, pctx->log_level, "--LOG-- {}{}", line_buffer,
+            data.substr(0, pos));
 
       data = data.substr(pos + 1);
 
@@ -519,7 +520,7 @@ bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
         auto next_pos = data.find_first_of('\n');
         if (next_pos == data.npos) { break; }
 
-        d_msg(pctx->log_level, "--LOG-- {}", data.substr(0, next_pos));
+        d_msg(ctx, pctx->log_level, "--LOG-- {}", data.substr(0, next_pos));
 
         data = data.substr(next_pos + 1);
       }
@@ -532,7 +533,7 @@ bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
     case filedaemon::IO_CLOSE: {
       auto& line_buffer = pctx->log_line_buffer;
       if (!line_buffer.empty()) {
-        d_msg(pctx->log_level, "--LOG-- {}", line_buffer);
+        d_msg(ctx, pctx->log_level, "--LOG-- {}", line_buffer);
       }
       line_buffer.clear();
 
