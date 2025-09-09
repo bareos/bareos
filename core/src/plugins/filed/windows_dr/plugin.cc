@@ -32,11 +32,14 @@
 #include "dump.h"
 #include "plugin.h"
 #include <comdef.h>
+#include <time.h>
 
 #include <charconv>
 #include <memory>
 
 #if defined(MSVC_JOINED_THE_MODERN_WORLD)
+#  define warn_msg(ctx, fmt, ...) \
+    JobLog((ctx), M_WARN, (fmt)__VA_OPT__(, ) __VA_ARGS__)
 #  define err_msg(ctx, fmt, ...) \
     JobLog((ctx), M_ERROR, (fmt)__VA_OPT__(, ) __VA_ARGS__)
 #  define fatal_msg(ctx, fmt, ...) \
@@ -46,6 +49,7 @@
 #  define debug_msg(level, fmt, ...) \
     DebugLog((level), (fmt)__VA_OPT__(, ) __VA_ARGS__)
 #else
+#  define warn_msg(ctx, ...) JobLog((ctx), M_WARNING, __VA_ARGS__)
 #  define err_msg(ctx, ...) JobLog((ctx), M_ERROR, __VA_ARGS__)
 #  define fatal_msg(ctx, ...) JobLog((ctx), M_FATAL, __VA_ARGS__)
 #  define info_msg(ctx, ...) JobLog((ctx), M_INFO, __VA_ARGS__)
@@ -444,12 +448,24 @@ bRC newPlugin(PluginContext* ctx)
 
   std::string_view hostname{client_name.value()};
   std::string timestamp = libbareos::format("{}", now);
-  pctx->dump_file_name
-      = libbareos::format("@barri@/{}/{}{}", hostname, timestamp, dump_ending);
-  pctx->log_file_name
-      = libbareos::format("@barri@/{}/{}{}", hostname, timestamp, log_ending);
-  pctx->timestamp = now;
 
+  struct tm utc_time;
+  if (auto error = gmtime_s(&utc_time, &now); error != 0) {
+    warn_msg(ctx, "could not convert {} to date: {}", now, strerror(error));
+    pctx->dump_file_name = libbareos::format("@barri@/{}/{}{}", hostname,
+                                             timestamp, dump_ending);
+    pctx->log_file_name
+        = libbareos::format("@barri@/{}/{}{}", hostname, timestamp, log_ending);
+  } else {
+    pctx->dump_file_name = libbareos::format(
+        "@barri@/{}/UTC-{:04}-{:02}-{:02}{}", hostname, utc_time.tm_year + 1900,
+        utc_time.tm_mon + 1, utc_time.tm_mday, dump_ending);
+    pctx->log_file_name = libbareos::format(
+        "@barri@/{}/UTC-{:04}-{:02}-{:02}{}", hostname, utc_time.tm_year + 1900,
+        utc_time.tm_mon + 1, utc_time.tm_mday, log_ending);
+  }
+
+  pctx->timestamp = now;
 
   return bRC_OK;
 }
