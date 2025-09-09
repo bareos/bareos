@@ -484,6 +484,8 @@ bRC pluginIO_Dump(PluginContext* ctx, filedaemon::io_pkt* pkt)
 
 bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
 {
+  static constexpr std::string_view backup_log_prefix = "--BACKUP LOG--";
+
   auto* pctx = get_private_context(ctx);
   switch (pkt->func) {
     case filedaemon::IO_OPEN: {
@@ -511,7 +513,7 @@ bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
         return bRC_OK;
       }
 
-      d_msg(ctx, pctx->log_level, "--LOG-- {}{}", line_buffer,
+      d_msg(ctx, pctx->log_level, "{} {}{}", backup_log_prefix, line_buffer,
             data.substr(0, pos));
 
       data = data.substr(pos + 1);
@@ -520,7 +522,8 @@ bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
         auto next_pos = data.find_first_of('\n');
         if (next_pos == data.npos) { break; }
 
-        d_msg(ctx, pctx->log_level, "--LOG-- {}", data.substr(0, next_pos));
+        d_msg(ctx, pctx->log_level, "{} {}", backup_log_prefix,
+              data.substr(0, next_pos));
 
         data = data.substr(next_pos + 1);
       }
@@ -533,7 +536,7 @@ bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
     case filedaemon::IO_CLOSE: {
       auto& line_buffer = pctx->log_line_buffer;
       if (!line_buffer.empty()) {
-        d_msg(ctx, pctx->log_level, "--LOG-- {}", line_buffer);
+        d_msg(ctx, pctx->log_level, "{} {}", backup_log_prefix, line_buffer);
       }
       line_buffer.clear();
 
