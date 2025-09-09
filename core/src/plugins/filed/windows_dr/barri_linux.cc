@@ -159,7 +159,7 @@ int main(int argc, char* argv[])
                    ->check(CLI::ExistingFile);
 
   auto* location = restore->add_option_group(
-      "output", "select where the data will be restored");
+      "output", "select where the data will be restored to");
 
   auto* stdout = location->add_flag(
       "--stdout", "restore the single disk to stdout (for piping purposes)");

@@ -25,7 +25,46 @@
 #include "parser.h"
 
 #if defined(HAVE_WIN32)
-struct restore_options {};
+struct restore_options {
+  struct vhdx_directory {
+    std::string path;
+  };
+  struct raw_directory {
+    std::string path;
+  };
+  struct files {
+    std::vector<std::string> paths;
+  };
+
+  using target_type
+      = std::variant<std::monostate, vhdx_directory, raw_directory, files>;
+
+
+  constexpr restore_options& target(
+      std::variant<vhdx_directory, raw_directory, files> target_)
+  {
+    if (std::get_if<std::monostate>(&target) == nullptr) {
+      throw std::logic_error{"target was already set"};
+    }
+
+    std::visit([](auto&& v) { target.emplace(std::move(v)); }, target_);
+
+    return target;
+  }
+
+  constexpr restore_options& logger(GenericLogger* logger_)
+  {
+    if (logger != nullptr) { throw std::logic_error{"logger vas already set"}; }
+    if (logger_ != nullptr) {
+      throw std::logic_error{"cannot set logger to nullptr"};
+    }
+
+    logger = logger_;
+  }
+
+  GenericLogger* logger{nullptr};
+  target_type target{};
+};
 #else
 
 struct restore_directory {
