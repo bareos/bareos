@@ -80,7 +80,6 @@ static bool file_selection = false;
 static bool force_send_pam_credentials_unencrypted = false;
 static bool use_pam_credentials_file = false;
 static std::string pam_credentials_filename;
-#else
 #endif
 
 /* Command prototypes */
