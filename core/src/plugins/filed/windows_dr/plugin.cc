@@ -532,15 +532,14 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
   auto* pctx = get_private_context(ctx);
 
   // first we check if this is a full backup.  If not, we reject the backup
-  // we already check this in handle
   {
-    // one would imagine it would make the most sense to do this check
-    // in handlePluginEvent(bEventLevel), but that does not work:
-    // - the check is not reliable: other plugins can swallow the event
-    // - there is no good way to stop the backup: the return value is basically
-    //   ignored; a fatal error message stops the job in a very bad place,
-    //   leading to bad job logs and stuck jobs.
-    // This is why i moved the check here
+    /* one would imagine it would make the most sense to do this check
+     * in handlePluginEvent(bEventLevel), but that does not work:
+     * - the check is not reliable: other plugins can swallow the event
+     * - there is no good way to stop the backup: the return value is basically
+     *   ignored; a fatal error message stops the job in a very bad place,
+     *   leading to bad job logs and stuck jobs.
+     * This is why this check was moved here */
 
     auto level = bVar::Get<bVar::Level>(ctx);
     if (!level) {
