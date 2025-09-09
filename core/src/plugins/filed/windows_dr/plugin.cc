@@ -339,7 +339,7 @@ struct plugin_logger : public GenericLogger {
     }
   }
 
-  plugin_logger(PluginContext* ctx_) : GenericLogger{false}, ctx{ctx_} {}
+  plugin_logger(PluginContext* ctx_) : GenericLogger{true}, ctx{ctx_} {}
 
   std::span<const char> log() const { return messages; }
 
