@@ -112,6 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemtest: always incremental add one job with one removed file [PR #2329]
 - webui: add summary subscription report [PR #2340]
 - set environment vars in bpipe fd plugin [PR #2205]
+- systemtest: speed up always-incremental with sleep 0.25 [PR #2358]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -208,5 +209,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2341]: https://github.com/bareos/bareos/pull/2341
 [PR #2344]: https://github.com/bareos/bareos/pull/2344
 [PR #2350]: https://github.com/bareos/bareos/pull/2350
+[PR #2358]: https://github.com/bareos/bareos/pull/2358
 [PR #2359]: https://github.com/bareos/bareos/pull/2359
 [unreleased]: https://github.com/bareos/bareos/tree/master
