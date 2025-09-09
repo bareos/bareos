@@ -692,11 +692,12 @@ SectionIn 1 2 3
   File "mssqlvdi-fd.dll"
   # do not package python3-fd for now
   # File "python3-fd.dll"
+  File "barri-fd.dll"
 
   # Write barri to normal install dir for now
   SetOutPath "$INSTDIR"
   !cd "${CMAKE_BINARY_DIR}\bin"
-  File "barri.exe"
+  File "barri-cli.exe"
 
 SectionEnd
 
