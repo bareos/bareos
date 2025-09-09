@@ -570,7 +570,7 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
 
   if (DbLocker _{jcr.db_batch}; !jcr.db_batch->GetFileList(
           &jcr, rx.JobIds, false /* don't use md5 */, true /* use delta */,
-          InsertBootstrapHandler, (void*)&rx)) {
+          InsertBootstrapHandler, &rx)) {
     Jmsg(&jcr, M_ERROR, 0, "%s\n", jcr.db_batch->strerror());
   }
 
