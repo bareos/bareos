@@ -541,7 +541,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
  */
 static int InsertBootstrapHandler(void* ctx, int, char** row)
 {
-  auto* rx = reinterpret_cast<RestoreContext*>(ctx);
+  auto* rx = static_cast<RestoreContext*>(ctx);
   RestoreBootstrapRecord* bsr = rx->bsr.get();
 
   // at least one file is found
