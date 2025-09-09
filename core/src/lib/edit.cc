@@ -337,17 +337,15 @@ bool DurationToUtime(const char* str, utime_t* value)
 char* edit_utime(utime_t val, char* buf, int buf_len)
 {
   char mybuf[200];
-  static const int32_t mult[]
+  static constexpr utime_t mult[]
       = {60 * 60 * 24 * 365, 60 * 60 * 24 * 30, 60 * 60 * 24, 60 * 60, 60};
   static const char* mod[] = {"year", "month", "day", "hour", "min"};
-  int i;
-  std::size_t times;
 
   *buf = 0;
-  for (i = 0; i < 5; i++) {
-    times = val / mult[i];
+  for (int i = 0; i < 5; i++) {
+    utime_t times = val / mult[i];
     if (times > 0) {
-      val = val - (utime_t)times * mult[i];
+      val = val - times * mult[i];
       Bsnprintf(mybuf, sizeof(mybuf), "%zu %s%s ", times, mod[i],
                 times > 1 ? "s" : "");
       bstrncat(buf, mybuf, buf_len);
