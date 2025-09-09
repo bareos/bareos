@@ -14,14 +14,13 @@ export TestName
 Client=bareos-fd
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
 
 # Fill ${BackupDirectory} with data.
 setup_data
@@ -50,13 +49,12 @@ run_bareos
 
 # get size of backup job
 #sed -r -n -e 's/ *SD Bytes Written: *([0-9,]*) .*/\1/p' tmp/log1.out  | sed s/,//
-VolumeSizeWithJob=`get_file_size ${VolumePath}`
+VolumeSizeWithJob=$(get_file_size ${VolumePath})
 
 # do some manual testing
 if [ ${VolumeSizeWithJob} -lt ${MinVolumeSize} ]; then
-    set_error "Volume size: ${VolumeSizeWithJob} < ${MinVolumeSize}. Something went wrong with the backup."
+  set_error "Volume size: ${VolumeSizeWithJob} < ${MinVolumeSize}. Something went wrong with the backup."
 fi
-
 
 cat <<END_OF_DATA >${tmp}/bconcmds2
 @$out ${tmp}/log2.out w
@@ -73,11 +71,11 @@ check_for_zombie_jobs storage=File1 client=${Client}
 # check tmp/log1.out and tmp/log2.out for errors
 check_two_logs
 
-VolumeSizeAfterTruncate=`get_file_size ${VolumePath}`
+VolumeSizeAfterTruncate=$(get_file_size ${VolumePath})
 
 # do some manual testing
 if [ ${VolumeSizeAfterTruncate} -gt ${MinVolumeSize} ]; then
-    set_error "Volume size: ${VolumeSizeAfterTruncate} > ${MinVolumeSize}. Something went wrong with the truncate command."
+  set_error "Volume size: ${VolumeSizeAfterTruncate} > ${MinVolumeSize}. Something went wrong with the truncate command."
 fi
 
 printf "Volume path:          %s\n" ${VolumePath}

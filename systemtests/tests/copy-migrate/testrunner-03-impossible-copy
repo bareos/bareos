@@ -5,21 +5,23 @@ set -u
 
 TestName=03-impossible-copy
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 log="$tmp/$TestName.log"
 
-check_logged() {
+check_logged()
+{
   if ! grep -q "$@" "$log"; then
     echo "'$*' not found in $log" >&2
     estat=1
   fi
 }
-check_not_logged() {
+check_not_logged()
+{
   if grep -q "$@" "$log"; then
     echo "'$*' found in $log" >&2
     estat=1

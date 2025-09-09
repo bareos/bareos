@@ -10,10 +10,10 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 BackupFile="${tmp}/file-with-chflags"
@@ -26,14 +26,13 @@ RestoreFile="${tmp}/bareos-restores/${BackupFile}"
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-
 chflags_should="${tmp}/chflags_should.txt"
 chflags_is="${tmp}/chflags_is.txt"
 
 mkdir -p "${BackupDirectory}"
 touch "${BackupFile}"
 sudo chflags sunlink "${BackupFile}"
-ls -lo "${BackupFile}" | cut -b -40 > ${chflags_should}
+ls -lo "${BackupFile}" | cut -b -40 >${chflags_should}
 
 start_test
 
@@ -65,7 +64,7 @@ check_for_zombie_jobs storage=File
 
 check_two_logs
 
-ls -lo "${RestoreFile}" | cut -b -40 > "$chflags_is"
+ls -lo "${RestoreFile}" | cut -b -40 >"$chflags_is"
 
 diff -u "$chflags_should" "$chflags_is" || estat=1
 

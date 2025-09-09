@@ -11,20 +11,19 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=mysqldefaults"
 
 JobName=backup-bareos-fd
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 skip_if_root
 
-#shellcheck source=../scripts/mysql.sh
+#shellcheck source=../../scripts/mysql.sh
 . "${rscripts}"/mysql.sh
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
 
 XTRABACKUP="${XTRABACKUP_BINARY} --defaults-file=mysqldefaults"
 xtrabackup_test_db="${db_name}_xtrabackup"
@@ -77,42 +76,38 @@ run_bareos "$@"
 
 mysql_server_stop
 
-
 # Check if xtrabackup has extracted some files at least
 # TODO: verify that xtrabackup --prepare works and eventually do complete datbase restore
-ls -lR  "$tmp/bareos-restores/_percona/"
+ls -lR "$tmp/bareos-restores/_percona/"
 if [ -z "$(ls -A "$tmp"/bareos-restores/_percona/)" ]; then
-       echo "No restore data found"
-       estat=1
+  echo "No restore data found"
+  estat=1
 fi
-
 
 # create new empty data dir
 rm -Rf mysql/data/*
 mkdir -p mysql/data/
 
-TARGETDIR=$(find ./tmp/bareos-restores/_percona/4/ -type d  -name '*001')
-INCDIR1=$(find ./tmp/bareos-restores/_percona/4/ -type d  -name '*002')
-INCDIR2=$(find ./tmp/bareos-restores/_percona/4/ -type d  -name '*002')
+TARGETDIR=$(find ./tmp/bareos-restores/_percona/4/ -type d -name '*001')
+INCDIR1=$(find ./tmp/bareos-restores/_percona/4/ -type d -name '*002')
+INCDIR2=$(find ./tmp/bareos-restores/_percona/4/ -type d -name '*002')
 
 ${XTRABACKUP} --prepare --target-dir=${TARGETDIR}
 # after prepare a file is left in data dir, this seems to be a bug
 rm -Rf mysql/data/*
-${XTRABACKUP} --copy-back --target-dir=${TARGETDIR}  --incremental-dir=${INCDIR1}  --incremental-dir=${INCDIR2}
-
+${XTRABACKUP} --copy-back --target-dir=${TARGETDIR} --incremental-dir=${INCDIR1} --incremental-dir=${INCDIR2}
 
 mysql_server_start
 
 if ! echo "SELECT * from test " | $MYSQL_CLIENT "${xtrabackup_test_db}" | grep "test entry 1"; then
-    echo "test entry 1 not found"
-    estat=2
+  echo "test entry 1 not found"
+  estat=2
 fi
 
 if ! echo "SELECT * from test " | $MYSQL_CLIENT "${xtrabackup_test_db}" | grep "test entry 2"; then
-    echo "test entry 2 not found"
-    estat=3
+  echo "test entry 2 not found"
+  estat=3
 fi
-
 
 check_for_zombie_jobs storage=File
 

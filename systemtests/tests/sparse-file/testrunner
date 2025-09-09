@@ -14,14 +14,13 @@ export TestName
 Client=bareos-fd
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
-
 
 # Fill ${BackupDirectory} with data.
 setup_data
@@ -37,20 +36,20 @@ start_test
 # create a sparse file
 RC=0
 if is_debug; then
-    create_sparse_file -v ${SPARSEFILE_PATH} ${SPARSEFILE_SIZE} || RC=$?
+  create_sparse_file -v ${SPARSEFILE_PATH} ${SPARSEFILE_SIZE} || RC=$?
 else
-    create_sparse_file ${SPARSEFILE_PATH} ${SPARSEFILE_SIZE} || RC=$?
+  create_sparse_file ${SPARSEFILE_PATH} ${SPARSEFILE_SIZE} || RC=$?
 fi
 
 if [ $RC != 0 ]; then
-    set_error "create_sparse_file failed."
-    rm -f ${SPARSEFILE_PATH}
-    exit 1
+  set_error "create_sparse_file failed."
+  rm -f ${SPARSEFILE_PATH}
+  exit 1
 fi
 
 if [ ! -e "${SPARSEFILE_PATH}" ]; then
-    set_error "Failed to create sparse file."
-    exit 1
+  set_error "Failed to create sparse file."
+  exit 1
 fi
 
 cat >${cwd}/tmp/bconcmds <<END_OF_DATA
@@ -82,10 +81,10 @@ stop_bareos
 check_two_logs
 check_restore_diff "${BackupDirectory}"
 
-size_orig=`get_file_size ${SPARSEFILE_PATH}`
-real_size_orig=`get_real_file_size ${SPARSEFILE_PATH}`
-size_restored=`get_file_size ${cwd}/tmp/bareos-restores/${SPARSEFILE_PATH}`
-real_size_restored=`get_real_file_size ${cwd}/tmp/bareos-restores/${SPARSEFILE_PATH}`
+size_orig=$(get_file_size ${SPARSEFILE_PATH})
+real_size_orig=$(get_real_file_size ${SPARSEFILE_PATH})
+size_restored=$(get_file_size ${cwd}/tmp/bareos-restores/${SPARSEFILE_PATH})
+real_size_restored=$(get_real_file_size ${cwd}/tmp/bareos-restores/${SPARSEFILE_PATH})
 
 print_debug "real size orig:     $size_orig"
 print_debug "real size orig:     $real_size_orig"
@@ -93,11 +92,10 @@ print_debug "size restored:      $size_restored"
 print_debug "real size restored: $real_size_restored"
 
 if [ -z "$real_size_restored" ]; then
-    set_error "Failed to determine size of restored sparse file."
+  set_error "Failed to determine size of restored sparse file."
 elif [ $real_size_restored -gt ${SPARSEFILE_REAL_SIZE_LIMIT} ]; then
-    set_error "Restored sparse file ${SPARSEFILE_PATH} is too big (${size} > ${SPARSEFILE_REAL_SIZE_LIMIT})"
+  set_error "Restored sparse file ${SPARSEFILE_PATH} is too big (${size} > ${SPARSEFILE_REAL_SIZE_LIMIT})"
 fi
-
 
 rm -f ${SPARSEFILE_PATH}
 

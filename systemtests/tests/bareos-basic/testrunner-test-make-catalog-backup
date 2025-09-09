@@ -12,10 +12,10 @@ export TestName
 
 JobName=BackupCatalog
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test

@@ -6,15 +6,18 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=./environment
+#shellcheck source=../../environment.in
 . ./environment
+#shellcheck source=test-config.in
 . ./test-config
 
 #shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
+#shellcheck source=../../../core/scripts/bareos-config-lib.sh.in
 . "${rscripts}"/bareos-config-lib.sh
 
-on_error() {
+on_error()
+{
   local lc="${BASH_COMMAND}"
   echo "Error occurred in testrunner script [${lc}]"
   export estat=1
@@ -31,19 +34,20 @@ backup_log="$tmp/${TestName}-backup.out"
 restore_log="$tmp/${TestName}-restore.out"
 export ltodrive changer keyfile mybsc backup_log restore_log
 
-reset_eject_drive() {
+reset_eject_drive()
+{
   # cleanup before bareos tests
-  /usr/bin/mt -f "${ltodrive}" rewind ||:
-  /usr/bin/mt -f "${ltodrive}" weof   ||:
+  /usr/bin/mt -f "${ltodrive}" rewind || :
+  /usr/bin/mt -f "${ltodrive}" weof || :
   ${mybsc} -c ${ltodrive}
   # Empty the drive without failing.
-  /usr/sbin/mtx -f "${changer}" unload 1 0 ||:
-  /usr/sbin/mtx -f "${changer}" inventory ||:
+  /usr/sbin/mtx -f "${changer}" unload 1 0 || :
+  /usr/sbin/mtx -f "${changer}" inventory || :
 }
 
 start_test
 
-# Create kek 
+# Create kek
 if ! ${mybsc} -g "${keyfile}"; then
   printf "Creating KEK failed \n"
   export estat=1
@@ -52,7 +56,7 @@ fi
 # Read keyfile and compare to previously generated
 gen_kek="$(cat ${keyfile})"
 read_kek="$($mybsc -k ${keyfile})"
-if [ "${gen_kek}" != "$read_kek" ];then
+if [ "${gen_kek}" != "$read_kek" ]; then
   printf "Created KEK [%s] differ from Read KEK [%s] failure. \n" "${gen_kek}" "${read_kek}"
   export estat=1
   exit 1
@@ -62,12 +66,12 @@ fi
 # first stage is cleaning any previous run
 sed -i "/Key Encryption Key =.*/d" etc/bareos/bareos-dir.d/director/bareos-dir.conf
 sed -i "/Key Encryption Key =.*/d" etc/bareos/bareos-sd.d/director/bareos-dir.conf
-# we don't use our config-libs set(get)_config_param_in_file 
+# we don't use our config-libs set(get)_config_param_in_file
 # due to bad parsing and writing of complex string like KEK
 # here we also use œ char that will never appear in KEK
 sed -i "s \(^}$\) Key\ Encryption\ Key\ =\ \"${gen_kek}\"\n\1 g" etc/bareos/bareos-dir.d/director/bareos-dir.conf
 sed -i "s \(^}$\) Key\ Encryption\ Key\ =\ \"${gen_kek}\"\n\1 g" etc/bareos/bareos-sd.d/director/bareos-dir.conf
-# Can be checked with 
+# Can be checked with
 echo -n "configured global KEK: "
 sbin/bareos_dir-scsicrypto --config etc/bareos --xc Director | grep -w KeyEncryptionKey
 
@@ -78,12 +82,12 @@ start_bareos
 # Load first tape in, ignore errors
 echo Checking drive and volume state
 # Remove any leftover key from previous run
-if ! ${mybsc} --clear-encryption ${ltodrive};then
+if ! ${mybsc} --clear-encryption ${ltodrive}; then
   printf "clearing encryption on ${ltodrive} failed\n"
   export estat=1
   exit 1
 fi
-/usr/sbin/mtx -f "${changer}" load 1 0 ||:
+/usr/sbin/mtx -f "${changer}" load 1 0 || :
 sleep 1
 /usr/sbin/mtx -f "${changer}" status
 
@@ -94,11 +98,11 @@ sleep 1
 #   Decryption Mode: Disabled
 #   Raw Decryption Mode Disabled (RDMD): Disabled
 #   Volume Contains Encrypted Logical Blocks (VCELB): Disabled
-#   Logical Block encryption parameters: No report 
+#   Logical Block encryption parameters: No report
 # or with quadstor vtl
 #   Logical Block encryption parameters: Drive Managed
 drive_state="$(${mybsc} --drive-encryption-status "${ltodrive}" | awk -F ':' '/[De,En]cryption Mode:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
-if [ "${drive_state}" != "Disabled Disabled" ];then
+if [ "${drive_state}" != "Disabled Disabled" ]; then
   printf "Drive state [%s] differs from expected [Disabled Disabled] \n" "${drive_state}"
   export estat=1
   exit 1
@@ -120,7 +124,7 @@ fi
 #   Encryption Mode External Status (EMES): Disabled
 
 tape_state="$(${mybsc} --volume-encryption-status "${ltodrive}" | awk -F ':' '/Encryption Status:/ {gsub("^ ","",$2);print $2}' | xargs | sed -e 's/\n/ /g')"
-if ( [ "${tape_state}" != "Illegal logical block" ] && [ "$tape_state" != "Unavailable" ] );then
+if ([ "${tape_state}" != "Illegal logical block" ] && [ "$tape_state" != "Unavailable" ]); then
   printf "Tape state [%s] differs from expected [Illegal logical block] or [Unavailable] \n" "${tape_state}"
   export estat=1
   exit 1
@@ -187,12 +191,12 @@ stop_bareos
 sleep 1
 
 expect_grep "Backup OK" \
-            "$backup_log" \
-            "Backup job failed."
+  "$backup_log" \
+  "Backup job failed."
 
 expect_grep "Restore OK" \
-            "$restore_log" \
-            "Restore job failed."
+  "$restore_log" \
+  "Restore job failed."
 
 # todo find a way to detect if encryption is used
 # maybe in the trace log
@@ -209,14 +213,14 @@ check_restore_diff "${BackupDirectory}"
 # Dump cache
 crypto_cache_log=$tmp/crypto_cache.log
 crypto_cache="${working_dir}/bareos-sd.${BAREOS_STORAGE_PORT}.cryptoc"
-if ! "${mybsc}" -d250 --dt --dump-cache "${crypto_cache}" > "${crypto_cache_log}";  then
+if ! "${mybsc}" -d250 --dt --dump-cache "${crypto_cache}" >"${crypto_cache_log}"; then
   printf "Dumping crypto cache failed \n"
   export estat=1
   exit 1
 fi
 expect_grep "${volume}" \
-            "${crypto_cache_log}" \
-            "Volume ${volume} not found in cache dump".
+  "${crypto_cache_log}" \
+  "Volume ${volume} not found in cache dump".
 
 # Check if crypto cache is there and readable.
 # Again clear the key from the drive
@@ -231,7 +235,7 @@ fi
 
 # Using the SD KEK we should be able to unwrap the key in cache
 # then use the key to setup the drive and being then able to
-# to read back data from the volume 
+# to read back data from the volume
 
 # the test should also check that when the drive as no key,
 # then no data can be read from the volume.
@@ -246,35 +250,35 @@ fi
 export confdir=$(pwd)/etc/bareos
 # load the tape into the drive
 slot=$(mtx -f $changer status | awk -F ":" "/VolumeTag=${volume}/ {gsub(\"Storage Element\",\"\",\$1);gsub(\" \",\"\",\$1); print \$1}")
-/usr/sbin/mtx -f "${changer}" load ${slot} 0 ||:
-/usr/bin/mt -f "${ltodrive}" rewind ||:
+/usr/sbin/mtx -f "${changer}" load ${slot} 0 || :
+/usr/bin/mt -f "${ltodrive}" rewind || :
 bls_lj_log=$tmp/bls-label_job_output.log
 tape_device=$(awk -F '=' '/^ .*Name.*=.*tapedrive-0.*/ {gsub(" ","",$2);gsub("\"","",$2);print $2}' etc/bareos/bareos-sd.d/device/tape_devices.conf)
-sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -L -j -V ${volume} ${tape_device} > "${bls_lj_log}"
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -L -j -V ${volume} ${tape_device} >"${bls_lj_log}"
 
 expect_grep "Crypto cache read 1 entries" \
-            "$bls_lj_log" \
-            "bls: no crypto cache entry found."
+  "$bls_lj_log" \
+  "bls: no crypto cache entry found."
 
 expect_grep "JobId             : 1" \
-            "$bls_lj_log" \
-            "BLS jobid not found."
+  "$bls_lj_log" \
+  "BLS jobid not found."
 
 bls_log=$tmp/bls-full_output.log
-sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${tape_device} > "${bls_log}"
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${tape_device} >"${bls_log}"
 expect_grep "bls JobId 0: Ready to read from volume \"${volume}\" on device \"${tape_device}\"" \
-            "${bls_log}" \
-            "BLS failed to read volume."
+  "${bls_log}" \
+  "BLS failed to read volume."
 
 restore_directory=${tmp}/bareos-restores
 rm -rf "${restore_directory}"
-mkdir -p "${restore_directory}" ||:
+mkdir -p "${restore_directory}" || :
 bextract_log="${tmp}/bextract-output.log"
 # Test volume extraction
-sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${tape_device} "${restore_directory}" > "${bextract_log}"
+sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${tape_device} "${restore_directory}" >"${bextract_log}"
 expect_grep "Crypto cache read 1 entries" \
-            "${bextract_log}" \
-            "bextract: no crypto cache entry found."
+  "${bextract_log}" \
+  "bextract: no crypto cache entry found."
 
 check_restore_diff "${BackupDirectory}"
 

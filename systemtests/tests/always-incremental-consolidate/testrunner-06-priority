@@ -25,10 +25,10 @@ export TestName
 
 JobName=ai-backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 start_test
 
@@ -59,27 +59,27 @@ END_OF_DATA
 run_bconsole
 
 expect_grep "Priority:[[:space:]]*10" \
-            "$tmp"/aibackups.out \
-            "always incremental backup doesn't have priority set to 10."
+  "$tmp"/aibackups.out \
+  "always incremental backup doesn't have priority set to 10."
 
 expect_grep "Allow Mixed Priority:[[:space:]]*no" \
-            "$tmp"/aibackups.out \
-            "always incremental backup doesn't have allow mixed priority set to false."
+  "$tmp"/aibackups.out \
+  "always incremental backup doesn't have allow mixed priority set to false."
 
 expect_grep "Priority:[[:space:]]*5" \
-            "$tmp"/consolidatevfs.out \
-            "virtualfull doesn't have the same priority as consolidate job (expected 5)."
+  "$tmp"/consolidatevfs.out \
+  "virtualfull doesn't have the same priority as consolidate job (expected 5)."
 
 expect_grep "Allow Mixed Priority:[[:space:]]*yes" \
-            "$tmp"/consolidatevfs.out \
-            "virtualfull doesn't have same allow mixed priority value as consolidate job (expected true)."
+  "$tmp"/consolidatevfs.out \
+  "virtualfull doesn't have same allow mixed priority value as consolidate job (expected true)."
 
 expect_not_grep "Spooling data" \
-                "$tmp"/aibackups.out \
-                "always incremental backup spooling is not set to false."
+  "$tmp"/aibackups.out \
+  "always incremental backup spooling is not set to false."
 
 expect_grep "Spooling data" \
-            "$tmp"/consolidatevfs.out \
-            "virtualfull doesn't have same spooling value as consolidate job (expected true)."
+  "$tmp"/consolidatevfs.out \
+  "virtualfull doesn't have same spooling value as consolidate job (expected true)."
 
 end_test

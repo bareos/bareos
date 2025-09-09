@@ -27,10 +27,10 @@ export TestName
 
 myname=$(basename "$0")
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -40,13 +40,13 @@ echo "$0" >"${tmp}/data/${myname}"
 
 # this looks weird but im not sure how to output the files in a better way
 (
-    echo -n "sample_one "
-    cat "${DB_FILE}"
-    echo -e "\r"
-    echo -n "Bareos "
-    cat "${DB_FILE2}"
-    echo -e "\r"
-) > "${tmp}/backed-up-data.out"
+  echo -n "sample_one "
+  cat "${DB_FILE}"
+  echo -e "\r"
+  echo -n "Bareos "
+  cat "${DB_FILE2}"
+  echo -e "\r"
+) >"${tmp}/backed-up-data.out"
 
 # we want to make sure that the original files dont need to exist anymore
 # for the restore
@@ -73,14 +73,14 @@ print_delete_trace
 
 check_log "${tmp}/${myname}.log"
 # check that the updated content is there
-"${SQLCMD}" -Q "SELECT * FROM DBFileStreamTest.tests.samples" > "$tmp/sql-stream-samples-check.out"
+"${SQLCMD}" -Q "SELECT * FROM DBFileStreamTest.tests.samples" >"$tmp/sql-stream-samples-check.out"
 expect_grep "Bareos" "$tmp/sql-stream-samples-check.out" "Bareos not found in samples"
 
-"${SQLCMD}" -Q "SELECT fstream_id, fstream_name, fstream_binary.PathName() FROM DBFileStreamTest.tests.files" > "$tmp/sql-stream-files-check.out"
+"${SQLCMD}" -Q "SELECT fstream_id, fstream_name, fstream_binary.PathName() FROM DBFileStreamTest.tests.files" >"$tmp/sql-stream-files-check.out"
 expect_grep "Bareos" "$tmp/sql-stream-files-check.out" "Bareos not found in files"
 
 # there is probably a better way to check this ...
-"${SQLCMD}" -E -Q "set NOCOUNT on; select fstream_name, CONVERT(VARCHAR(50), fstream_binary, 0) as fstream_content from DBFileStreamTest.tests.files" -h -1 -W > "${tmp}/restored-data.out"
+"${SQLCMD}" -E -Q "set NOCOUNT on; select fstream_name, CONVERT(VARCHAR(50), fstream_binary, 0) as fstream_content from DBFileStreamTest.tests.files" -h -1 -W >"${tmp}/restored-data.out"
 
 diff "${tmp}/restored-data.out" "${tmp}/backed-up-data.out"
 end_test

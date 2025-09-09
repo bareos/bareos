@@ -11,10 +11,10 @@
 # check that the correct number of jobs is waiting.
 #
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 exec 4<>"$tmp/flock-latch.lck"

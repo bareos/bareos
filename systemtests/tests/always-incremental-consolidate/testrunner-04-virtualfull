@@ -25,10 +25,10 @@ export TestName
 
 JobName=ai-backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 start_test
 
@@ -68,11 +68,11 @@ END_OF_DATA
 run_bconsole
 
 expect_grep "0	0	A A A A A A A A A A A A A A	.*/" \
-            "$tmp/virtualfull_bvfs.out" \
-            "bvfs_update did not take into consideration VirtualFull Archive."
+  "$tmp/virtualfull_bvfs.out" \
+  "bvfs_update did not take into consideration VirtualFull Archive."
 
 expect_grep "x9mlMotNz6zXMPiL2rDLrg	AI-Longterm" \
-            "$tmp/virtualfull_bvfs.out" \
-            ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
+  "$tmp/virtualfull_bvfs.out" \
+  ".bvfs_versions did not find a file backup up by a VirtualFull Archive."
 
 end_test

@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,10 +23,10 @@ set -e
 set -o pipefail
 set -u
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -35,12 +35,11 @@ bin/bareos start
 bin/bareos status
 
 # make sure, director is up and running.
-print_debug "$(bin/bconsole <<< "status dir")"
+print_debug "$(bin/bconsole <<<"status dir")"
 
 TestName="$(basename "$(pwd)")"
 export TestName
 bucket_name=bareos-test
-
 
 # local test-setup extending
 print_debug "Data preparation starting"
@@ -52,17 +51,17 @@ setup_data
 S3="${S3CMD} --no-check-certificate --config ${S3CFG}"
 
 # create files to test the temporary-file and the stream-download path
-prefetch_size=$(( $(grep prefetch_size etc/libcloud_config.ini | cut -d '=' -f 2) ))
+prefetch_size=$(($(grep prefetch_size etc/libcloud_config.ini | cut -d '=' -f 2)))
 
 #backup via temp file
 dd if=/dev/random \
   of="${tmp}/data/object-size-downloads-to-temporary-file" \
-  bs=$(( prefetch_size -1 )) count=1
+  bs=$((prefetch_size - 1)) count=1
 
 #backup via stream object using the plugin process itself
 dd if=/dev/random \
   of="${tmp}/data/object-size-downloads-with-plugin-process" \
-  bs=$(( prefetch_size +1 )) count=1
+  bs=$((prefetch_size + 1)) count=1
 
 "${rscripts}"/start_minio.sh "$MINIO_PORT" "$TestName"
 

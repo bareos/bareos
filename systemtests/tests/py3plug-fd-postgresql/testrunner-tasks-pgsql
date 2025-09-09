@@ -13,7 +13,7 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName="backup-bareos-fd-tasks-pgsql"
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 . ./database/setup_local_db.sh
 
@@ -23,22 +23,22 @@ TESTPGHOST="${dbHost}"
 PSQL="${POSTGRES_BIN_PATH}/psql --no-psqlrc --host ${TESTPGHOST}"
 RESTORE_DIR="$tmp/bareos-restores/@PGSQL/"
 
-[ -d "${TESTPGHOST}" ] && rm -R  "${TESTPGHOST}"
+[ -d "${TESTPGHOST}" ] && rm -R "${TESTPGHOST}"
 mkdir -p "${TESTPGHOST}"
 [ $EUID -eq 0 ] && chown postgres "${TESTPGHOST}"
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
 
-pushd database > /dev/null
+pushd database >/dev/null
 setup_local_db "${TESTPGHOST}"
 
 if [ $EUID -ne 0 ]; then
-    # Make sure, a database for the current user exists.
-    # Required by the psql command, when called without explicit database.
-    ${PSQL} postgres -c "create database ${USER}" || true
+  # Make sure, a database for the current user exists.
+  # Required by the psql command, when called without explicit database.
+  ${PSQL} postgres -c "create database ${USER}" || true
 fi
 
 # Create Test DB with table and 1 statement
@@ -48,7 +48,7 @@ create table t(id serial primary key, text varchar(20), created_on timestamp);
 insert into t (text, created_on) values ('test for FULL backup', current_timestamp);
 select * from t;
 "
-popd > /dev/null
+popd >/dev/null
 
 echo "First full backup stage"
 
@@ -71,7 +71,7 @@ run_bconsole
 check_log $tmp/log1.out
 expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 echo "First incremental backup stage"
@@ -106,7 +106,7 @@ run_bconsole
 check_log $tmp/restore.log
 expect_grep "Restore OK" "${tmp}/restore.log" "Restore Backup not ok!"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 check_for_zombie_jobs storage=File
@@ -116,30 +116,30 @@ check_two_logs "${tmp}/log1.out" "${tmp}/restore.log"
 # Check if some files are restored
 ls -lR "${RESTORE_DIR}"
 if [ -z "$(ls -A "${RESTORE_DIR}")" ]; then
-    echo "No restore data found"
-    estat=1
+  echo "No restore data found"
+  estat=1
 fi
 
 # delete database
 ${PSQL} postgres -c "drop database ${DBNAME};"
 
 if ${PSQL} ${DBNAME} -c "SELECT * FROM t WHERE id=2;" 2>/dev/null; then
-    echo "database ${DBNAME} should be deleted and command should fail."
-    estat=2
+  echo "database ${DBNAME} should be deleted and command should fail."
+  estat=2
 fi
 
 # restore db
 ${PSQL} postgres -c "create database ${DBNAME}"
-${PSQL} ${DBNAME} < "${RESTORE_DIR}/dump-database-${DBNAME}.sql"
+${PSQL} ${DBNAME} <"${RESTORE_DIR}/dump-database-${DBNAME}.sql"
 
 if ! ${PSQL} ${DBNAME} -c "SELECT * FROM t WHERE id=2;" 2>/dev/null; then
-    echo "test entry not found after restore"
-    estat=3
+  echo "test entry not found after restore"
+  estat=3
 fi
 
 # stop the database server
-pushd database/ > /dev/null
+pushd database/ >/dev/null
 local_db_stop_server "${TESTPGHOST}"
-popd > /dev/null
+popd >/dev/null
 
 end_test

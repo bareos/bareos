@@ -8,15 +8,15 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
 
-rm -f "$tmp/forcebackup-*.out" 
+rm -f "$tmp/forcebackup-*.out"
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
@@ -43,29 +43,28 @@ END_OF_DATA
 run_bconsole
 check_for_zombie_jobs storage=File
 
-
 expect_grep "Backup OK" \
-	    "$tmp/sincetime-full.out" \
-	    "Full Backup was not created correctly."
-	    
+  "$tmp/sincetime-full.out" \
+  "Full Backup was not created correctly."
+
 expect_grep "Backup Level:[[:space:]]*Incremental" \
-            "$tmp/sincetime-incr.out" \
-            "Incremental got upgraded to full."
+  "$tmp/sincetime-incr.out" \
+  "Incremental got upgraded to full."
 
 expect_grep "FD Files Written:       1" \
-            "$tmp/sincetime-incr.out" \
-            "Incremental with SinceTime=0 did not backup file!"
+  "$tmp/sincetime-incr.out" \
+  "Incremental with SinceTime=0 did not backup file!"
 
 expect_grep "Backup OK" \
-	    "$tmp/checkchanges-full.out" \
-	    "Full Backup was not created correctly."
-	    
+  "$tmp/checkchanges-full.out" \
+  "Full Backup was not created correctly."
+
 expect_grep "Backup Level:[[:space:]]*Incremental" \
-            "$tmp/checkchanges-incr.out" \
-            "Incremental got upgraded to full."
+  "$tmp/checkchanges-incr.out" \
+  "Incremental got upgraded to full."
 
 expect_grep "FD Files Written:       1" \
-            "$tmp/checkchanges-incr.out" \
-            "Incremental with CheckChanges=false did not backup file!"
+  "$tmp/checkchanges-incr.out" \
+  "Incremental with CheckChanges=false did not backup file!"
 
 end_test

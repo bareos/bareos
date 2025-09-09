@@ -9,10 +9,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 backupjob=backup-bareos-fd
@@ -23,9 +23,9 @@ csvlog=csvfile.csv
 rm -f $backup_log
 rm -f $csvlog
 
-echo "runnumber,duration" >> $csvlog
+echo "runnumber,duration" >>$csvlog
 
-cat << END_OF_DATA >"$tmp/bconcmds"
+cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
 @$out $backup_log
@@ -38,11 +38,11 @@ END_OF_DATA
 start_test
 
 for i in {1..10}; do
-    rm -f $backup_log
-    run_bconsole
-    elapsedtime=$(grep 'Elapsed time:       ' $backup_log | sed -n -e 's/^.*time:       //p')
-    echo "$i,${elapsedtime}" >> $csvlog
-    rm storage/*
+  rm -f $backup_log
+  run_bconsole
+  elapsedtime=$(grep 'Elapsed time:       ' $backup_log | sed -n -e 's/^.*time:       //p')
+  echo "$i,${elapsedtime}" >>$csvlog
+  rm storage/*
 done
 
 end_test

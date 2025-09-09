@@ -19,7 +19,7 @@ export TestName
 start_test
 
 # Windows debug: show environment vars
-if [[ "$(uname -s)" =~ _NT ]]; then
+if on_windows_host; then
   nssm get bareos_fd-bpipe-fd AppEnvironmentExtra
 fi
 

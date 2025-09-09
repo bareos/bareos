@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,10 +23,10 @@ set -e
 set -o pipefail
 set -u
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -55,14 +55,12 @@ for b in bareos_sd bcopy bextract bls bscan bscrypto btape; do
   sudo setcap cap_sys_rawio=ep "${sb}"
 done
 
-if ! "${rscripts}/invalidate_tapes.sh" ${1:-}
-then
+if ! "${rscripts}/invalidate_tapes.sh" ${1:-}; then
   echo "Could not invalidate tapes"
   exit 1
 fi
 
-if ! "${rscripts}/create_autochanger_configs.sh" ${1:-}
-then
+if ! "${rscripts}/create_autochanger_configs.sh" ${1:-}; then
   echo "Could not create autochanger configs"
   exit 1
 fi

@@ -8,11 +8,11 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
 JobName=bconsole-status-client
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -51,16 +51,16 @@ test -f "$tmp/log2.out" || exit 2
 # check that bareos-fd did not report that its disabled while being enabled
 # and reports being disabled while being disabled
 expect_not_grep "Client \"bareos-fd\" is disabled" \
-		"$tmp/log1.out" \
-		"Error found disabled confirmation while client should be enabled."
+  "$tmp/log1.out" \
+  "Error found disabled confirmation while client should be enabled."
 expect_not_grep "Client \"bareos-fd\" is disabled" \
-		"$tmp/log2.out" \
-		"Error found disabled confirmation while client should be enabled."
+  "$tmp/log2.out" \
+  "Error found disabled confirmation while client should be enabled."
 expect_grep "Client \"bareos-fd\" is disabled" \
-	    "$tmp/log3.out" \
-	    "Error missing disabled confirmation."
+  "$tmp/log3.out" \
+  "Error missing disabled confirmation."
 expect_not_grep "Client \"bareos-fd\" is disabled" \
-		"$tmp/log4.out" \
-		"Error found disabled confirmation while client should be enabled."
+  "$tmp/log4.out" \
+  "Error found disabled confirmation while client should be enabled."
 
 end_test

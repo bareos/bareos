@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -31,10 +31,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
 . functions
@@ -80,34 +80,33 @@ check_for_zombie_jobs storage=File
 
 check_preconditions
 
-
 check_log "$log_home/multi-file.out"
 check_log "$log_home/multi-dir.out"
 check_log "$log_home/file-and-dir.out"
 
 expect_not_grep "No database record found for:" \
-		"$log_home/multi-file.out" \
-		"Something was not restored in test 1"
+  "$log_home/multi-file.out" \
+  "Something was not restored in test 1"
 expect_not_grep "No database record found for:" \
-		"$log_home/multi-dir.out" \
-		"Something was not restored in test 2"
+  "$log_home/multi-dir.out" \
+  "Something was not restored in test 2"
 expect_not_grep "No database record found for:" \
-		"$log_home/file-and-dir.out" \
-		"Something was not restored in test 3"
+  "$log_home/file-and-dir.out" \
+  "Something was not restored in test 3"
 
 if ! "$rscripts/diff.pl" -d "$tmp/multi-file/1" -s "$tmp/multi-file/2"; then
-    echo "Error: multi-file"
-    estat=1
+  echo "Error: multi-file"
+  estat=1
 fi
 
 if ! "$rscripts/diff.pl" -d "$tmp/multi-dir/1" -s "$tmp/multi-dir/2"; then
-    echo "Error: multi-dir"
-    estat=1
+  echo "Error: multi-dir"
+  estat=1
 fi
 
 if ! "$rscripts/diff.pl" -d "$tmp/files-and-dir/1" -s "$tmp/files-and-dir/2"; then
-    echo "Error: files-and-dir"
-    estat=1
+  echo "Error: files-and-dir"
+  estat=1
 fi
 
 end_test

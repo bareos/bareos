@@ -26,7 +26,7 @@ set -u
 #shellcheck source=../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=./functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
