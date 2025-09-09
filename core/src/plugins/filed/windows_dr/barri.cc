@@ -21,6 +21,7 @@
 
 #include <fcntl.h>
 #include <io.h>
+#include <fstream>
 
 #include <vector>
 
@@ -34,10 +35,29 @@
 #include "CLI/Formatter.hpp"
 
 
-void restore_data(std::istream& stream, bool raw_file, GenericLogger* logger)
+void restore_data(std::ifstream& stream, restore_options options)
 {
-  // TODO: remove this and use the parser directly here
-  do_restore(stream, logger, raw_file);
+  auto* writer = writer_begin(std::move(options));
+
+  std::vector<char> buffer_storage;
+  buffer_storage.resize(64 << 10);
+  std::span<char> buffer = std::span{buffer_storage};
+
+  for (;;) {
+    stream.read(buffer.data(), buffer.size());
+
+    if (stream.bad() || stream.exceptions()) {
+      err_msg("could not read from stream: bad = {}, exception = {}",
+              stream.bad() ? "yes" : "no", stream.exceptions() ? "yes" : "no");
+      break;
+    }
+
+    writer_write(writer, buffer.subspan(stream.gcount()));
+
+    if (stream.eof()) { break; }
+  }
+
+  writer_end(writer);
 }
 
 bool dry = false;
@@ -134,8 +154,24 @@ via the --from option explicitly.
   std::string filename;
   restore->add_option("--from", filename,
                       "read from this file instead of stdin");
-  bool raw_file{false};
-  restore->add_flag("--raw", raw_file, "create simple files");
+
+  auto* location = location->add_option_group(
+      "output", "select where the data will be restored to");
+  std::string vhdx_dir;
+  auto* vhdx = location->add_option(
+      "--vhdx-directory", vhdx_dir,
+      "create one vhdx image per restored drive in the given directory");
+  std::string file_dir;
+  auto* directory = location->add_option(
+      "--raw-directory", file_dir,
+      "create one raw image file per restored drive in the given directory");
+  std::vector<std::string> targets;
+  auto* outputs = location
+                      ->add_option("--targets", targets,
+                                   "write the disks into the given paths")
+                      ->check(CLI::ExistingFile);
+
+  location->require_option(1);
 
   auto* version = app.add_subcommand("version", "output the version");
 
@@ -144,20 +180,39 @@ via the --from option explicitly.
   CLI11_PARSE(app, argc, argv);
 
   auto logger = progressbar::get(trace);
+
   try {
     if (*save) {
       _setmode(_fileno(stdout), _O_BINARY);
       dump_data(std::cout, logger);
     } else if (*restore) {
-      if (filename.empty()) {
-        _setmode(_fileno(stdin), _O_BINARY);
-        restore_data(std::cin, raw_file, logger);
-      } else {
+      std::ifstream infile;
+      std::ifstream* input = &std::cin;
+
+      if (!filename.empty()) {
         fprintf(stderr, "using %s as input\n", filename.c_str());
-        std::ifstream infile{filename,
-                             std::ios_base::in | std::ios_base::binary};
-        restore_data(infile, raw_file, logger);
+        infile = std::ifstream{filename,
+                               std::ios_base::in | std::ios_base::binary};
+        input = &infile;
+      } else {
+        _setmode(_fileno(stdin), _O_BINARY);
       }
+
+
+      restore_options options{};
+      options.logger(logger);
+      std::unique_ptr<OutputHandleGenerator> handle_generator;
+      if (*vhdx) {
+        options.target(restore_options::vhdx_directory{vhdx_dir});
+      } else if (*directory) {
+        options.target(restore_options::file_directory{file_dir});
+      } else if (*targets) {
+        options.target(restore_options::files{std::move(targets)});
+      } else {
+        fprintf(stderr, "this should not happen; no target is set.\n");
+      }
+
+      restore_data(*input, std::move(options));
     } else if (*version) {
 #if !defined(BARRI_VERSION)
 #  warning "no barri version defined"
