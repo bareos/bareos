@@ -223,7 +223,7 @@ int BareosDb::GetPathRecord(JobControlRecord* jcr)
 
 int BareosDb::GetPathRecord(JobControlRecord* jcr, const char* new_path)
 {
-  AssertOwnership();
+  CheckOwnership();
   PmStrcpy(path, new_path);
   pnl = strlen(path);
   return GetPathRecord(jcr);
@@ -893,7 +893,7 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
   char esc[MAX_NAME_LENGTH * 2 + 1];
   PoolMem buf(PM_MESSAGE);
 
-  AssertOwnership();
+  CheckOwnership();
 
   Mmsg(cmd,
        "SELECT DISTINCT MediaId FROM Media WHERE Recycle=%d AND Enabled=%d ",
