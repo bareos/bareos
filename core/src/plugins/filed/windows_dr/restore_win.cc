@@ -286,50 +286,88 @@ class VhdxGenerator : public OutputHandleGenerator {
   std::wstring dir;
 };
 
-// void DismountVolume(const named_volume& volume)
-// {
-// }
+struct open_volume {
+  std::wstring guid{};
+  HANDLE hndl{INVALID_HANDLE_VALUE};
 
-std::vector<HANDLE> OpenAll(std::vector<std::wstring> paths)
-{
-  std::vector<HANDLE> result;
-  result.resize(paths.size());
 
-  for (auto& disk_path : paths) {
-    HANDLE output = CreateFileW(disk_path.c_str(), GENERIC_WRITE,
-                                FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
-                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+  open_volume() = default;
+  open_volume(std::wstring guid_, HANDLE hndl_)
+      : guid{std::move(guid_)}, hndl{hndl_}
+  {
+  }
 
-    if (output == INVALID_HANDLE_VALUE) {
-      for (auto hndl : result) { CloseHandle(hndl); }
+  open_volume(const open_volume&) = delete;
+  open_volume& operator=(const open_volume&) = delete;
 
-      throw std::runtime_error{
-          libbareos::format("could not open disk {}: Err={}",
-                            FromUtf16(disk_path), GetLastError())};
+  open_volume(open_volume&& other) { *this = std::move(other); }
+  open_volume& operator=(open_volume&& other)
+  {
+    std::swap(guid, other.guid);
+    std::swap(hndl, other.hndl);
+    return *this;
+  }
+
+  ~open_volume()
+  {
+    if (hndl != INVALID_HANDLE_VALUE) { CloseHandle(hndl); }
+  }
+};
+
+class DiskHandles : public OutputHandleGenerator {
+ public:
+  DiskHandles(std::vector<std::size_t> ids_, GenericLogger* logger_)
+      : ids{std::move(ids_)}, logger{logger_}
+  {
+    handles = OpenAll(ids);
+
+    auto volumes = GetAllVolumes(ids);
+
+    if (volumes.size() > 0) {
+      throw std::runtime_error{"some disk contains volumes"};
     }
 
-    result.push_back(output);
-  }
-}
-
-class FileOpener : public OutputHandleGenerator {
- public:
-  FileOpener(std::vector<std::wstring> paths_, GenericLogger*)
-      : paths{std::move(paths_)}
-  {
-    handles = OpenAll(paths);
-
-    // auto volumes = GetAllVolumes(handles);
-
-    // for (auto& vol : volumes) {
-    //   DismountVolume(vol);
-    // }
+    for (auto& vol : volumes) { DismountVolume(vol); }
   }
 
-  HANDLE Create(disk_info, disk_geometry) override
+  HANDLE Create(disk_info info, disk_geometry) override
   {
     // we should probably log something if the sizes dont match up ...
-    return handles[disk_idx_];
+    HANDLE handle = handles[disk_idx_];
+    {
+      GET_LENGTH_INFORMATION length_info = {0};
+      DWORD bytes_returned = 0;
+
+      if (DeviceIoControl(handle, IOCTL_DISK_GET_LENGTH_INFO, NULL, 0,
+                          &length_info, sizeof(length_info), &bytes_returned,
+                          NULL)) {
+        auto disk_size = length_info.Length.QuadPart;
+
+        if (disk_size < 0) {
+          throw std::logic_error{libbareos::format(
+              "disk size of \\\\.\\PhysicalDrive{} is negative! ({})",
+              ids[disk_idx_], disk_size)};
+        }
+        logger->Trace("disk size = {}", disk_size);
+        if (static_cast<std::uint64_t>(disk_size) < info.disk_size) {
+          logger->Info(
+              "disk \\\\.\\PhysicalDrive{} is too small: actual size = {}, "
+              "required size = {}; continuing anyways",
+              ids[disk_idx_], disk_size, info.disk_size);
+        } else if (static_cast<std::uint64_t>(disk_size) > info.disk_size) {
+          logger->Trace(
+              "disk \\\\.\\PhysicalDrive{} is too large: actual size = {}, "
+              "required size = {}; continuing anyways",
+              ids[disk_idx_], disk_size, info.disk_size);
+        }
+      } else {
+        logger->Info(
+            "could not determine disk size for disk \\\\.\\PhysicalDrive{}: "
+            "Err={}; continuing anyways",
+            ids[disk_idx_], GetLastError());
+      }
+    }
+    return handle;
   }
 
   void Close(HANDLE hndl) override
@@ -341,7 +379,7 @@ class FileOpener : public OutputHandleGenerator {
     disk_idx_ += 1;
   }
 
-  ~FileOpener()
+  ~DiskHandles()
   {
     for (auto hndl : handles) {
       if (hndl != INVALID_HANDLE_VALUE) { CloseHandle(hndl); }
@@ -349,9 +387,198 @@ class FileOpener : public OutputHandleGenerator {
   }
 
  private:
+  std::vector<open_volume> GetAllVolumes(std::span<std::size_t> disk_ids)
+  {
+    /* we want to find all volumes on all disks.
+     * a volume consists of multiple extents, each of which is on exacly one
+     * disk. So what we basically need to do is return a list of all volumes
+     * whose extents are all on the disks with the given disk ids.
+     * If a volume has no extent on _any_ of the given disk ids, then we can
+     * safely ignore it.
+     * _BUT_ if a volume has extents both on a given disk id, and on a disk
+     * _not_ in the list, then we need to error out. There is no way to handle
+     * this correctly, as we will completely destroy the volume.
+     * Maybe in the future we can give the user the option to ignore this
+     * and just continue on, but I am not sure if Windows even allows us to
+     * write to the disk in that case. */
+
+    std::vector<open_volume> volumes;
+
+    wchar_t volume_guid[MAX_PATH];
+    HANDLE iter = FindFirstVolumeW(volume_guid, std::size(volume_guid));
+
+    if (iter == INVALID_HANDLE_VALUE) {
+      throw std::runtime_error{libbareos::format(
+          "could not find first volume: Err={}", GetLastError())};
+    }
+
+    std::vector<char> extent_buffer;
+    extent_buffer.resize(1024 * 1024);
+
+    for (;;) {
+      std::wstring guid{volume_guid};
+      if (guid.size() == 0) {
+        throw std::runtime_error{libbareos::format(
+            "received volume with empty guid; cannot continue")};
+      }
+      while (guid.back() == L'\\') { guid.pop_back(); }
+
+      logger->Trace("found volume {}", FromUtf16(guid));
+
+      HANDLE hndl = CreateFileW(guid.c_str(), GENERIC_READ | GENERIC_WRITE,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                                OPEN_EXISTING, 0, NULL);
+
+      if (hndl == INVALID_HANDLE_VALUE) {
+        auto err = GetLastError();
+        throw std::runtime_error{libbareos::format(
+            "could not open volume {}: Err={}", FromUtf16(guid), err)};
+      }
+
+      std::optional<std::size_t> requested_disk_id;
+      std::optional<std::size_t> not_requested_disk_id;
+
+      DWORD bytes_written = 0;
+      for (;;) {
+        if (!DeviceIoControl(hndl, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,
+                             nullptr, 0, extent_buffer.data(),
+                             extent_buffer.size(), &bytes_written, nullptr)) {
+          auto err = GetLastError();
+
+          if (err != ERROR_MORE_DATA) {
+            throw std::runtime_error{libbareos::format(
+                "could not enumerate all extents for volume {}: Err={}",
+                FromUtf16(guid), err)};
+          }
+
+          extent_buffer.resize(extent_buffer.size() * 2);
+        }
+
+        break;
+      }
+
+      if (bytes_written == 0) {
+        // no extents, so we can safely ignore this volume.
+        logger->Trace("volume {} has no extents -> ignored", FromUtf16(guid));
+        CloseHandle(hndl);
+      } else {
+        auto extents
+            = reinterpret_cast<VOLUME_DISK_EXTENTS*>(extent_buffer.data());
+
+        for (size_t i = 0; i < extents->NumberOfDiskExtents; ++i) {
+          auto& extent = extents->Extents[i];
+
+          if (std::find(std::begin(disk_ids), std::end(disk_ids),
+                        extent.DiskNumber)
+              == std::end(disk_ids)) {
+            not_requested_disk_id = extent.DiskNumber;
+          } else {
+            requested_disk_id = extent.DiskNumber;
+          }
+        }
+
+        /* we now have 4 cases to consider.
+         * | extent on requested | extent on non requested | result |
+         * |---------------------+-------------------------+--------|
+         * |        true         |           true          | error! |
+         * |        false        |           true          | ignore |
+         * |        true         |           false         | keep   |
+         * |        false        |           false         |  (1)   |
+         * |--------------------------------------------------------|
+         * (1): this case is not possible, as this can only happen if
+         *      there are no extents, which we checked above.
+         *      As such we will just ignore it */
+
+
+        if (requested_disk_id && not_requested_disk_id) {
+          throw std::runtime_error{libbareos::format(
+              "volume {} is both on disk {} and disk {}: cannot continue",
+              FromUtf16(guid), requested_disk_id.value(),
+              not_requested_disk_id.value())};
+        } else if (!requested_disk_id && not_requested_disk_id) {
+          // ignore (see above)
+          logger->Trace("volume {} => ignored", FromUtf16(guid));
+          CloseHandle(hndl);
+        } else if (requested_disk_id && !not_requested_disk_id) {
+          logger->Trace("volume {} => kept", FromUtf16(guid));
+          volumes.emplace_back(std::move(guid), hndl);
+        } else {
+          // ignore (see above)
+          logger->Trace("volume {} => ignored (no extents)", FromUtf16(guid));
+          CloseHandle(hndl);
+        }
+      }
+
+      if (!FindNextVolumeW(iter, volume_guid, sizeof(volume_guid))) {
+        auto err = GetLastError();
+        if (err == ERROR_NO_MORE_FILES) { break; }
+        throw std::runtime_error{libbareos::format(
+            "could not find next volume: Err={}", GetLastError())};
+      }
+    }
+
+    FindVolumeClose(iter);
+
+    return volumes;
+  }
+
+  void DismountVolume(const open_volume& volume)
+  {
+    DWORD bytes_returned = 0;
+    // lock ensures that we are the only ones that have an open handle to the
+    // volume this lock is unlocked automatically as soon as the volume handle
+    // is cleaned up
+    if (DeviceIoControl(volume.hndl, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0,
+                        &bytes_returned, NULL)
+        == 0) {
+      auto err = GetLastError();
+      throw std::runtime_error{libbareos::format(
+          "could not lock volume {}: Err={}", FromUtf16(volume.guid), err)};
+    }
+    logger->Trace("volume {} was locked", FromUtf16(volume.guid));
+    if (DeviceIoControl(volume.hndl, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0,
+                        &bytes_returned, NULL)
+        == 0) {
+      auto err = GetLastError();
+      throw std::runtime_error{libbareos::format(
+          "could not dismount volume {}: Err={}", FromUtf16(volume.guid), err)};
+    }
+    logger->Trace("volume {} was dismounted", FromUtf16(volume.guid));
+  }
+
+  std::vector<HANDLE> OpenAll(std::span<std::size_t> ids)
+  {
+    std::vector<HANDLE> result;
+    result.reserve(ids.size());
+
+    for (auto id : ids) {
+      logger->Trace("looking at \\\\.\\PhysicalDrive{}", id);
+      auto disk_path = libbareos::format(L"\\\\.\\PhysicalDrive{}", id);
+      HANDLE output = CreateFileW(disk_path.c_str(), GENERIC_WRITE,
+                                  FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
+                                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+      if (output == INVALID_HANDLE_VALUE) {
+        logger->Trace("opening \\\\.\\PhysicalDrive{} failed", id);
+        auto err = GetLastError();
+        for (auto hndl : result) { CloseHandle(hndl); }
+
+        throw std::runtime_error{
+            libbareos::format("could not open disk {}: Err={}", id, err)};
+      }
+
+      result.push_back(output);
+    }
+
+    return result;
+  }
+
+
   std::size_t disk_idx_ = 0;
-  std::vector<std::wstring> paths;
+  std::vector<std::size_t> ids;
   std::vector<HANDLE> handles;
+
+  GenericLogger* logger;
 };
 
 class RestoreToHandles : public GenericHandler {
@@ -477,12 +704,9 @@ std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
   return std::make_unique<RestoreToHandles>(
       std::make_unique<RawFileGenerator>(dir.path, logger), logger);
 }
-std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger, files paths)
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger, disk_ids ids)
 {
-  (void)paths;
-  (void)logger;
-  return nullptr;
-  // return std::make_unique<RestoreToHandles>(
-  //     std::make_unique<FileOpener>(std::move(paths.paths), logger));
+  return std::make_unique<RestoreToHandles>(
+      std::make_unique<DiskHandles>(ids, logger), logger);
 }
 }  // namespace barri::restore
