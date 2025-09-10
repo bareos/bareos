@@ -28,13 +28,13 @@
 namespace barri::restore {
 #if defined(HAVE_WIN32)
 struct vhdx_directory {
-  std::string path;
+  std::wstring path;
 };
 struct raw_directory {
-  std::string path;
+  std::wstring path;
 };
 struct files {
-  std::vector<std::string> paths;
+  std::vector<std::wstring> paths;
 };
 
 std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
