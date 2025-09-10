@@ -210,20 +210,20 @@ int main(int argc, char* argv[])
         input = std::addressof(opened_file);
       }
 
-      restore_options options = [&] {
+      auto handler = [&] {
+        using namespace barri::restore;
         if (*stdout) {
-          throw std::logic_error("not supported");
-          // strategy = std::make_unique<RestoreToStdout>();
+          return GetHandler(logger, restore_stdout{});
         } else if (*gendir) {
-          return restore_options::into_directory(logger, directory);
+          return GetHandler(logger, restore_directory{directory});
         } else if (*disks) {
-          return restore_options::into_files(logger, filenames);
+          return GetHandler(logger, restore_files{filenames});
         } else {
           throw std::logic_error("i dont know where to restore too!");
         }
       }();
 
-      auto* writer = writer_begin(std::move(options));
+      auto* parser = parse_begin(handler.get(), logger);
 
       std::vector<char> buffer_storage;
       buffer_storage.resize(64 << 10);
@@ -239,12 +239,12 @@ int main(int argc, char* argv[])
           break;
         }
 
-        writer_write(writer, buffer.subspan(input->gcount()));
+        parse_data(parser, buffer.subspan(input->gcount()));
 
         if (input->eof()) { break; }
       }
 
-      writer_end(writer);
+      parse_end(parser);
     } else if (*list) {
       ListContents strategy{logger};
 
