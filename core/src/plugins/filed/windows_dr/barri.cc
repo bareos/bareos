@@ -35,9 +35,11 @@
 #include "CLI/Formatter.hpp"
 
 
-void restore_data(std::ifstream& stream, restore_options options)
+void restore_data(std::ifstream& stream,
+                  GenericHandler* handler,
+                  GenericLogger* logger)
 {
-  auto* writer = writer_begin(std::move(options));
+  auto* parser = parser_begin(handler, logger);
 
   std::vector<char> buffer_storage;
   buffer_storage.resize(64 << 10);
@@ -52,12 +54,12 @@ void restore_data(std::ifstream& stream, restore_options options)
       break;
     }
 
-    writer_write(writer, buffer.subspan(stream.gcount()));
+    parse_data(parser, buffer.subspan(stream.gcount()));
 
     if (stream.eof()) { break; }
   }
 
-  writer_end(writer);
+  parser_end(parser);
 }
 
 bool dry = false;
@@ -187,7 +189,7 @@ via the --from option explicitly.
       dump_data(std::cout, logger);
     } else if (*restore) {
       std::ifstream infile;
-      std::ifstream* input = &std::cin;
+      std::ifstream* input = std::addressof(std::cin);
 
       if (!filename.empty()) {
         fprintf(stderr, "using %s as input\n", filename.c_str());
@@ -199,20 +201,19 @@ via the --from option explicitly.
       }
 
 
-      restore_options options{};
-      options.logger(logger);
-      std::unique_ptr<OutputHandleGenerator> handle_generator;
+      std::unique_ptr<GenericHandler> handle_generator;
       if (*vhdx) {
-        options.target(restore_options::vhdx_directory{vhdx_dir});
+        handle_generator = GetHandler(barri::restore::vhdx_directory{vhdx_dir});
       } else if (*directory) {
-        options.target(restore_options::file_directory{file_dir});
+        handle_generator = GetHandler(barri::restore::file_directory{file_dir});
       } else if (*targets) {
-        options.target(restore_options::files{std::move(targets)});
+        handle_generator
+            = GetHandler(barri::restore::files{std::move(targets)});
       } else {
         fprintf(stderr, "this should not happen; no target is set.\n");
       }
 
-      restore_data(*input, std::move(options));
+      restore_data(*input, handler.get(), logger);
     } else if (*version) {
 #if !defined(BARRI_VERSION)
 #  warning "no barri version defined"

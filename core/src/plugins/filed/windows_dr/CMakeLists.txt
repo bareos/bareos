@@ -46,7 +46,8 @@ install(
 if(HAVE_WIN32)
   add_library(dump OBJECT)
   target_sources(
-    dump PRIVATE dump.cc common.cc com.cc restore.cc parser.cc remove_holes.cc
+    dump PRIVATE dump.cc common.cc com.cc restore_win.cc parser.cc
+                 remove_holes.cc
   )
   target_include_directories(dump PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
   add_library(Bareos::BarriDump ALIAS dump)
