@@ -1134,7 +1134,7 @@ struct dump_context {
   {
     std::vector<std::wstring> volumes;
     wchar_t VolumeGUID[MAX_PATH];
-    HANDLE iter = FindFirstVolumeW(VolumeGUID, sizeof(VolumeGUID));
+    HANDLE iter = FindFirstVolumeW(VolumeGUID, std::size(VolumeGUID));
 
     if (iter == INVALID_HANDLE_VALUE) {
       throw win_error("FindFirstVolumeW", GetLastError());

@@ -205,6 +205,7 @@ struct restartable_parser {
       throw std::logic_error{"extra data at end of file.  Cannot continue."};
     }
 
+    auto start_size = left_over.size() + data.size();
     data_to_read d{left_over, data};
 
     while (!to_parse.empty()) {
@@ -215,9 +216,9 @@ struct restartable_parser {
 
       try {
         std::visit(
-            [this, &d, &ctx](auto&& x) {
+            [this, &d, &ctx](auto&& p) {
               next_storage.clear();
-              x.parse(ctx);
+              p.parse(ctx);
             },
             current);
       } catch (const need_data&) {
@@ -238,6 +239,11 @@ struct restartable_parser {
     // we need to save the left over data, so that the next time we are called
     // we can continue where we left off
     save_rest(d);
+
+
+    // we finally want to update the logger on our progress
+    auto current_size = left_over.size();
+    _logger->Progressed(start_size - current_size);
   }
 
   void save_rest(data_to_read& d)
