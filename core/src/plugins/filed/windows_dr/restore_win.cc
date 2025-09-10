@@ -36,6 +36,8 @@
 #include "partitioning.h"
 #include "format.h"
 
+#include "util.h"
+
 void WriteOverlapped(HANDLE hndl,
                      std::size_t offset,
                      const char* buffer,
@@ -184,9 +186,17 @@ class OutputHandleGenerator {
 
 class RawFileGenerator : public OutputHandleGenerator {
  public:
+  RawFileGenerator(std::wstring dir_path, GenericLogger*)
+      : dir{std::move(dir_path)}
+  {
+    while (dir.back() == L'\\') { dir.pop_back(); }
+  }
+
+
   HANDLE Create(disk_info info, disk_geometry) override
   {
-    auto disk_path = libbareos::format(L"disk-{}.raw", ++disk_idx_);
+    // todo: use path here
+    auto disk_path = libbareos::format(L"{}\\disk-{}.raw", dir, ++disk_idx_);
 
     HANDLE output
         = CreateFileW(disk_path.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
@@ -194,7 +204,7 @@ class RawFileGenerator : public OutputHandleGenerator {
 
     if (output == INVALID_HANDLE_VALUE) {
       throw std::runtime_error{libbareos::format(
-          "could not open disk-{}.raw: Err={}", disk_idx_, GetLastError())};
+          "could not open {}: Err={}", FromUtf16(disk_path), GetLastError())};
     }
 
     // TODO: set file size
@@ -206,13 +216,20 @@ class RawFileGenerator : public OutputHandleGenerator {
 
  private:
   std::size_t disk_idx_ = 0;
+  std::wstring dir;
 };
 
 class VhdxGenerator : public OutputHandleGenerator {
  public:
+  VhdxGenerator(std::wstring dir_path, GenericLogger*)
+      : dir{std::move(dir_path)}
+  {
+    while (dir.back() == L'\\') { dir.pop_back(); }
+  }
+
   HANDLE Create(disk_info info, disk_geometry geo) override
   {
-    auto disk_path = libbareos::format(L"disk-{}.vhdx", ++disk_idx_);
+    auto disk_path = libbareos::format(L"{}\\disk-{}.vhdx", dir, ++disk_idx_);
 
     VIRTUAL_STORAGE_TYPE vst
         = {.DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
@@ -240,7 +257,7 @@ class VhdxGenerator : public OutputHandleGenerator {
 
     if (hres != ERROR_SUCCESS) {
       throw std::runtime_error{libbareos::format(
-          "CreateVirtualDisk(disk-{}.vhdx) returned {}", disk_idx_, hres)};
+          "CreateVirtualDisk({}) returned {}", FromUtf16(disk_path), hres)};
     }
 
     ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
@@ -252,8 +269,8 @@ class VhdxGenerator : public OutputHandleGenerator {
     if (attach_res != ERROR_SUCCESS) {
       CloseHandle(output);
       throw std::runtime_error(
-          libbareos::format("AttachVirtualDisk(disk-{}.vhdx) returned {}\n",
-                            disk_idx_, attach_res));
+          libbareos::format("AttachVirtualDisk({}) returned {}\n",
+                            FromUtf16(disk_path), attach_res));
     }
 
     return output;
@@ -266,6 +283,75 @@ class VhdxGenerator : public OutputHandleGenerator {
 
  private:
   std::size_t disk_idx_ = 0;
+  std::wstring dir;
+};
+
+// void DismountVolume(const named_volume& volume)
+// {
+// }
+
+std::vector<HANDLE> OpenAll(std::vector<std::wstring> paths)
+{
+  std::vector<HANDLE> result;
+  result.resize(paths.size());
+
+  for (auto& disk_path : paths) {
+    HANDLE output = CreateFileW(disk_path.c_str(), GENERIC_WRITE,
+                                FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
+                                OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (output == INVALID_HANDLE_VALUE) {
+      for (auto hndl : result) { CloseHandle(hndl); }
+
+      throw std::runtime_error{
+          libbareos::format("could not open disk {}: Err={}",
+                            FromUtf16(disk_path), GetLastError())};
+    }
+
+    result.push_back(output);
+  }
+}
+
+class FileOpener : public OutputHandleGenerator {
+ public:
+  FileOpener(std::vector<std::wstring> paths_, GenericLogger*)
+      : paths{std::move(paths_)}
+  {
+    handles = OpenAll(paths);
+
+    // auto volumes = GetAllVolumes(handles);
+
+    // for (auto& vol : volumes) {
+    //   DismountVolume(vol);
+    // }
+  }
+
+  HANDLE Create(disk_info, disk_geometry) override
+  {
+    // we should probably log something if the sizes dont match up ...
+    return handles[disk_idx_];
+  }
+
+  void Close(HANDLE hndl) override
+  {
+    FlushFileBuffers(hndl);
+    CloseHandle(hndl);
+
+    handles[disk_idx_] = INVALID_HANDLE_VALUE;
+    disk_idx_ += 1;
+  }
+
+  ~FileOpener()
+  {
+    for (auto hndl : handles) {
+      if (hndl != INVALID_HANDLE_VALUE) { CloseHandle(hndl); }
+    }
+  }
+
+ private:
+  std::size_t disk_idx_ = 0;
+  std::vector<std::wstring> paths;
+  std::vector<HANDLE> handles;
 };
 
 class RestoreToHandles : public GenericHandler {
@@ -377,21 +463,26 @@ class RestoreToHandles : public GenericHandler {
   std::optional<open_disk> disk_;
 };
 
-std::unique_ptr<GenericHandler> GetHandler(barri::restore::vhdx_directory dir,
-                                           GenericLogger* logger)
+#include "restore.h"
+namespace barri::restore {
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
+                                           vhdx_directory dir)
 {
   return std::make_unique<RestoreToHandles>(
-      std::make_unique<VhdxGenerator>(dir.path, logger));
+      std::make_unique<VhdxGenerator>(dir.path, logger), logger);
 }
-std::unique_ptr<GenericHandler> GetHandler(barri::restore::raw_directory dir,
-                                           GenericLogger* logger)
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
+                                           raw_directory dir)
 {
   return std::make_unique<RestoreToHandles>(
-      std::make_unique<RawFileGenerator>(dir.path, logger));
+      std::make_unique<RawFileGenerator>(dir.path, logger), logger);
 }
-std::unique_ptr<GenericHandler> GetHandler(barri::restore::files paths,
-                                           GenericLogger* logger)
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger, files paths)
 {
-  return std::make_unique<RestoreToHandles>(
-      std::make_unique<FileOpener>(std::move(paths.paths), logger));
+  (void)paths;
+  (void)logger;
+  return nullptr;
+  // return std::make_unique<RestoreToHandles>(
+  //     std::make_unique<FileOpener>(std::move(paths.paths), logger));
 }
+}  // namespace barri::restore
