@@ -141,6 +141,7 @@ set(PYFILES
     libcloud/BareosLibcloudApi.py
     libcloud/bareos-fd-libcloud.py
     libcloud/BareosFdPluginLibcloud.py
+    proxmox/bareos-fd-proxmox.py
 )
 
 install(
