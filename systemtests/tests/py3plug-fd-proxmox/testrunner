@@ -1,0 +1,77 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# This systemtest tests the vmware plugin functionality
+# of the Bareos FD by using the supplied module
+#   BareosFdPluginProxmox.py
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+#shellcheck source=../environment.in
+. ./environment
+
+export PATH="${current_test_directory}/sbin:${current_test_directory}/bin:$PATH"
+
+JobName=backup-bareos-fd
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName level=Full yes
+status director
+status client
+status storage=File
+wait
+messages
+
+
+
+@#
+@# now do an incremental
+@#
+run job=$JobName yes
+wait
+messages
+
+
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+restore client=bareos-fd fileset=ProxmoxTest where=$tmp/bareos-restores pluginoptions=python:localvmdk=yes select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos "$@"
+check_for_zombie_jobs storage=File
+
+check_two_logs
+
+# Check restored disk image content
+restored_disk_image=$(find $tmp/bareos-restores -type f  -name "*.vmdk" | tail -1)
+if file "$restored_disk_image" | grep "Proxmox4 disk image"; then
+    echo "Restored disk image type OK"
+else
+    echo "Restored disk image ERROR: is not Proxmox disk image"
+    dstat=1
+fi
+
+end_test
