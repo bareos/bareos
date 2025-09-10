@@ -21,6 +21,7 @@
 
 #include <fcntl.h>
 #include <io.h>
+#include <istream>
 #include <fstream>
 
 #include <vector>
@@ -35,11 +36,11 @@
 #include "CLI/Formatter.hpp"
 
 
-void restore_data(std::ifstream& stream,
+void restore_data(std::istream& stream,
                   GenericHandler* handler,
                   GenericLogger* logger)
 {
-  auto* parser = parser_begin(handler, logger);
+  auto* parser = parse_begin(handler, logger);
 
   std::vector<char> buffer_storage;
   buffer_storage.resize(64 << 10);
@@ -49,7 +50,8 @@ void restore_data(std::ifstream& stream,
     stream.read(buffer.data(), buffer.size());
 
     if (stream.bad() || stream.exceptions()) {
-      err_msg("could not read from stream: bad = {}, exception = {}",
+      fprintf(stderr,
+              "[ERROR] could not read from stream: bad = %s, exception = %s\n",
               stream.bad() ? "yes" : "no", stream.exceptions() ? "yes" : "no");
       break;
     }
@@ -59,7 +61,7 @@ void restore_data(std::ifstream& stream,
     if (stream.eof()) { break; }
   }
 
-  parser_end(parser);
+  parse_end(parser);
 }
 
 bool dry = false;
@@ -157,17 +159,21 @@ via the --from option explicitly.
   restore->add_option("--from", filename,
                       "read from this file instead of stdin");
 
-  auto* location = location->add_option_group(
+  auto* location = restore->add_option_group(
       "output", "select where the data will be restored to");
-  std::string vhdx_dir;
-  auto* vhdx = location->add_option(
-      "--vhdx-directory", vhdx_dir,
-      "create one vhdx image per restored drive in the given directory");
-  std::string file_dir;
-  auto* directory = location->add_option(
-      "--raw-directory", file_dir,
-      "create one raw image file per restored drive in the given directory");
-  std::vector<std::string> targets;
+  std::wstring vhdx_dir;
+  auto* vhdx = location
+                   ->add_option("--vhdx-directory", vhdx_dir,
+                                "create one vhdx image per restored drive in "
+                                "the given directory")
+                   ->check(CLI::ExistingDirectory);
+  std::wstring file_dir;
+  auto* directory = location
+                        ->add_option("--raw-directory", file_dir,
+                                     "create one raw image file per restored "
+                                     "drive in the given directory")
+                        ->check(CLI::ExistingDirectory);
+  std::vector<std::wstring> targets;
   auto* outputs = location
                       ->add_option("--targets", targets,
                                    "write the disks into the given paths")
@@ -189,7 +195,7 @@ via the --from option explicitly.
       dump_data(std::cout, logger);
     } else if (*restore) {
       std::ifstream infile;
-      std::ifstream* input = std::addressof(std::cin);
+      std::istream* input = std::addressof(std::cin);
 
       if (!filename.empty()) {
         fprintf(stderr, "using %s as input\n", filename.c_str());
@@ -201,16 +207,19 @@ via the --from option explicitly.
       }
 
 
-      std::unique_ptr<GenericHandler> handle_generator;
-      if (*vhdx) {
-        handle_generator = GetHandler(barri::restore::vhdx_directory{vhdx_dir});
-      } else if (*directory) {
-        handle_generator = GetHandler(barri::restore::file_directory{file_dir});
-      } else if (*targets) {
-        handle_generator
-            = GetHandler(barri::restore::files{std::move(targets)});
-      } else {
-        fprintf(stderr, "this should not happen; no target is set.\n");
+      std::unique_ptr<GenericHandler> handler;
+      {
+        using namespace barri::restore;
+        if (*vhdx) {
+          handler = GetHandler(logger, vhdx_directory{vhdx_dir});
+        } else if (*directory) {
+          handler = GetHandler(logger, raw_directory{file_dir});
+        } else if (*outputs) {
+          handler = GetHandler(logger, files{std::move(targets)});
+        } else {
+          fprintf(stderr, "this should not happen; no target is set.\n");
+          return 1;
+        }
       }
 
       restore_data(*input, handler.get(), logger);
