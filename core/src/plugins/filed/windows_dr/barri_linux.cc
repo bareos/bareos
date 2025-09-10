@@ -239,7 +239,7 @@ int main(int argc, char* argv[])
           break;
         }
 
-        parse_data(parser, buffer.subspan(input->gcount()));
+        parse_data(parser, buffer.subspan(0, input->gcount()));
 
         if (input->eof()) { break; }
       }
