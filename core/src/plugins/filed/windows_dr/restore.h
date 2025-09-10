@@ -33,15 +33,13 @@ struct vhdx_directory {
 struct raw_directory {
   std::wstring path;
 };
-struct files {
-  std::vector<std::wstring> paths;
-};
+using disk_ids = std::vector<std::size_t>;
 
 std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
                                            vhdx_directory dir);
 std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
                                            raw_directory dir);
-std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger, files paths);
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger, disk_ids ids);
 #else
 struct restore_directory {
   std::string_view path;

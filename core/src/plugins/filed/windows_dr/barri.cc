@@ -35,18 +35,28 @@
 #include "CLI/Config.hpp"
 #include "CLI/Formatter.hpp"
 
+std::atomic<bool> quit = false;
 
 void restore_data(std::istream& stream,
                   GenericHandler* handler,
                   GenericLogger* logger)
 {
+  logger->Trace("starting restore");
+  logger->PushIndent();
+  logger->Trace("starting parser");
   auto* parser = parse_begin(handler, logger);
 
   std::vector<char> buffer_storage;
   buffer_storage.resize(64 << 10);
   std::span<char> buffer = std::span{buffer_storage};
 
+  logger->SetStatus("restoring");
   for (;;) {
+    if (quit.load()) {
+      logger->Info("early stop was requested ...");
+      break;
+    }
+
     stream.read(buffer.data(), buffer.size());
 
     if (stream.bad() || stream.exceptions()) {
@@ -56,12 +66,19 @@ void restore_data(std::istream& stream,
       break;
     }
 
-    parse_data(parser, buffer.subspan(stream.gcount()));
+    auto bytes_read = stream.gcount();
+    if (bytes_read != buffer.size()) {
+      logger->Trace("read {}/{} bytes", bytes_read, buffer.size());
+    }
+    parse_data(parser, buffer.subspan(0, bytes_read));
 
     if (stream.eof()) { break; }
   }
+  logger->PopIndent();
 
+  logger->Trace("stopping parser");
   parse_end(parser);
+  logger->Trace("restore done");
 }
 
 bool dry = false;
@@ -102,14 +119,22 @@ void dump_data(std::ostream& stream, GenericLogger* logger)
 
     try {
       for (;;) {
+        if (quit.load()) {
+          logger->Info("early stop was requested ...");
+          break;
+        }
+
         auto count = dumper_write(dumper, buffer);
         if (!count) { break; }
+
         stream.write(buffer.data(), count);
 
         if (stream.eof() || stream.fail() || stream.bad()) {
           logger->Info(
-              "stream did accept all data (eof = {} | fail = {} | bad = {})",
+              "stream did not accept all data (eof = {} | fail = {} | bad = "
+              "{})",
               stream.eof(), stream.fail(), stream.bad());
+          break;
         }
       }
     } catch (const std::exception& ex) {
@@ -122,6 +147,31 @@ void dump_data(std::ostream& stream, GenericLogger* logger)
   }
   destroy_context(ctx);
 }
+
+BOOL WINAPI SignalHandler(DWORD dwCtrlType)
+{
+  // handle Ctrl+C and so on
+  switch (dwCtrlType) {
+    case CTRL_C_EVENT:
+      [[fallthrough]];
+    case CTRL_BREAK_EVENT:
+      [[fallthrough]];
+    case CTRL_CLOSE_EVENT: {
+      // signal to loops to exit
+      quit = true;
+      return TRUE;
+    } break;
+
+      // cannot do anything useful here
+    case CTRL_LOGOFF_EVENT: {
+    } break;
+    case CTRL_SHUTDOWN_EVENT: {
+    } break;
+  }
+
+  return FALSE;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -162,22 +212,22 @@ via the --from option explicitly.
   auto* location = restore->add_option_group(
       "output", "select where the data will be restored to");
   std::wstring vhdx_dir;
-  auto* vhdx = location
-                   ->add_option("--vhdx-directory", vhdx_dir,
-                                "create one vhdx image per restored drive in "
-                                "the given directory")
-                   ->check(CLI::ExistingDirectory);
+  auto* vhdx_dir_target
+      = location
+            ->add_option("--vhdx-directory", vhdx_dir,
+                         "create one vhdx image per restored drive in "
+                         "the given directory")
+            ->check(CLI::ExistingDirectory);
   std::wstring file_dir;
-  auto* directory = location
-                        ->add_option("--raw-directory", file_dir,
-                                     "create one raw image file per restored "
-                                     "drive in the given directory")
-                        ->check(CLI::ExistingDirectory);
-  std::vector<std::wstring> targets;
-  auto* outputs = location
-                      ->add_option("--targets", targets,
-                                   "write the disks into the given paths")
-                      ->check(CLI::ExistingFile);
+  auto* raw_dir_target
+      = location
+            ->add_option("--raw-directory", file_dir,
+                         "create one raw image file per restored "
+                         "drive in the given directory")
+            ->check(CLI::ExistingDirectory);
+  std::vector<std::size_t> disks;
+  auto* disks_target
+      = location->add_option("--disks", disks, "restore to the given disk ids");
 
   location->require_option(1);
 
@@ -189,6 +239,13 @@ via the --from option explicitly.
 
   auto logger = progressbar::get(trace);
 
+  if (!SetConsoleCtrlHandler(&SignalHandler, TRUE)) {
+    logger->Info("could not setup ctrl-c handler: Err={}", GetLastError());
+  } else {
+    logger->Trace("ctrl-c handler was setup");
+  }
+
+
   try {
     if (*save) {
       _setmode(_fileno(stdout), _O_BINARY);
@@ -198,7 +255,7 @@ via the --from option explicitly.
       std::istream* input = std::addressof(std::cin);
 
       if (!filename.empty()) {
-        fprintf(stderr, "using %s as input\n", filename.c_str());
+        logger->Info("using {} as input", filename.c_str());
         infile = std::ifstream{filename,
                                std::ios_base::in | std::ios_base::binary};
         input = &infile;
@@ -206,22 +263,24 @@ via the --from option explicitly.
         _setmode(_fileno(stdin), _O_BINARY);
       }
 
+      logger->Trace("source chosen");
 
       std::unique_ptr<GenericHandler> handler;
       {
         using namespace barri::restore;
-        if (*vhdx) {
+        if (*vhdx_dir_target) {
           handler = GetHandler(logger, vhdx_directory{vhdx_dir});
-        } else if (*directory) {
+        } else if (*raw_dir_target) {
           handler = GetHandler(logger, raw_directory{file_dir});
-        } else if (*outputs) {
-          handler = GetHandler(logger, files{std::move(targets)});
+        } else if (*disks_target) {
+          handler = GetHandler(logger, disks);
         } else {
-          fprintf(stderr, "this should not happen; no target is set.\n");
+          logger->Info("this should not happen; no target is set.");
           return 1;
         }
       }
 
+      logger->Trace("handler chosen");
       restore_data(*input, handler.get(), logger);
     } else if (*version) {
 #if !defined(BARRI_VERSION)
@@ -238,7 +297,7 @@ via the --from option explicitly.
 
     return 0;
   } catch (const std::exception& ex) {
-    std::cerr << ex.what() << std::endl;
+    std::cerr << "[ERROR] " << ex.what() << std::endl;
 
     return 1;
   }
