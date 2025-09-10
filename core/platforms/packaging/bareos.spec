@@ -367,12 +367,13 @@ Requires(pre): grep
 Requires(pre): openssl
 Requires(pre): sed
 %if 0%{?suse_version}
-Requires(pre): libcap-progs
 Requires(pre): shadow
 %else
 Requires(pre): glibc-common
 Requires(pre): shadow-utils
 %endif
+Requires:   %{_sbindir}/getcap
+Requires:   %{_sbindir}/setcap
 Provides:   %{name}-libs
 
 %package    database-common
