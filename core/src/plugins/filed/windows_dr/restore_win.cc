@@ -198,9 +198,10 @@ class RawFileGenerator : public OutputHandleGenerator {
     // todo: use path here
     auto disk_path = libbareos::format(L"{}\\disk-{}.raw", dir, ++disk_idx_);
 
-    HANDLE output
-        = CreateFileW(disk_path.c_str(), GENERIC_WRITE, FILE_SHARE_WRITE, NULL,
-                      CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+    // some ioctls need GENERIC_READ to work ...
+    HANDLE output = CreateFileW(disk_path.c_str(), GENERIC_READ | GENERIC_WRITE,
+                                FILE_SHARE_WRITE, NULL, CREATE_NEW,
+                                FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (output == INVALID_HANDLE_VALUE) {
       throw std::runtime_error{libbareos::format(
