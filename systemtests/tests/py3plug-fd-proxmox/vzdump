@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "stdout output"
+echo "$@"
+>&2 echo  "stderr output"
