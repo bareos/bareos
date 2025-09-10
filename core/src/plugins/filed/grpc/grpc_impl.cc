@@ -1164,10 +1164,14 @@ class PluginClient {
               [[fallthrough]];
             case bco::HardlinkCopy:
               [[fallthrough]];
+            case bco::UnchangedFile:
+              [[fallthrough]];
             case bco::RegularFile: {
               pkt->fname = strdup(file.file().c_str());
               pkt->link = nullptr;
             } break;
+            case bco::UnchangedDirectory:
+              [[fallthrough]];
             case bco::Directory: {
               pkt->fname = strdup(file.file().c_str());
               // todo: fix this
