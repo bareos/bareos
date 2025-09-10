@@ -270,8 +270,9 @@ class VhdxGenerator : public OutputHandleGenerator {
 
 class RestoreToHandles : public GenericHandler {
  public:
-  RestoreToHandles(OutputHandleGenerator* Generator, GenericLogger* logger)
-      : Generator_{Generator}, logger_{logger}
+  RestoreToHandles(std::unique_ptr<OutputHandleGenerator> Generator,
+                   GenericLogger* logger)
+      : Generator_{std::move(Generator)}, logger_{logger}
   {
   }
 
@@ -361,7 +362,7 @@ class RestoreToHandles : public GenericHandler {
     return disk_->parser;
   }
 
-  OutputHandleGenerator* Generator_ = nullptr;
+  std::unique_ptr<OutputHandleGenerator> Generator_;
   GenericLogger* logger_ = nullptr;
   struct open_disk {
     HANDLE hndl;
@@ -376,16 +377,21 @@ class RestoreToHandles : public GenericHandler {
   std::optional<open_disk> disk_;
 };
 
-void do_restore(std::istream& stream, GenericLogger* logger, bool raw_file)
+std::unique_ptr<GenericHandler> GetHandler(barri::restore::vhdx_directory dir,
+                                           GenericLogger* logger)
 {
-  auto output_generator = [&]() -> std::unique_ptr<OutputHandleGenerator> {
-    if (raw_file) {
-      return std::make_unique<RawFileGenerator>();
-    } else {
-      return std::make_unique<VhdxGenerator>();
-    }
-  }();
-  RestoreToHandles alg{output_generator.get(), logger};
-
-  parse_file_format(logger, stream, &alg);
+  return std::make_unique<RestoreToHandles>(
+      std::make_unique<VhdxGenerator>(dir.path, logger));
+}
+std::unique_ptr<GenericHandler> GetHandler(barri::restore::raw_directory dir,
+                                           GenericLogger* logger)
+{
+  return std::make_unique<RestoreToHandles>(
+      std::make_unique<RawFileGenerator>(dir.path, logger));
+}
+std::unique_ptr<GenericHandler> GetHandler(barri::restore::files paths,
+                                           GenericLogger* logger)
+{
+  return std::make_unique<RestoreToHandles>(
+      std::make_unique<FileOpener>(std::move(paths.paths), logger));
 }

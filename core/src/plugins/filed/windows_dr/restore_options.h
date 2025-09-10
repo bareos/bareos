@@ -67,12 +67,6 @@ struct restore_options {
 };
 #else
 
-struct restore_directory {
-  std::string_view path;
-};
-
-using restore_files = std::span<std::string>;
-
 struct restore_options {
   GenericLogger* logger;
 

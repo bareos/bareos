@@ -22,13 +22,42 @@
 #ifndef BAREOS_PLUGINS_FILED_WINDOWS_DR_RESTORE_H_
 #define BAREOS_PLUGINS_FILED_WINDOWS_DR_RESTORE_H_
 
-#include "restore_options.h"
-#include <span>
+#include "parser.h"
+#include <memory>
 
-struct data_writer;
+namespace barri::restore {
+#if defined(HAVE_WIN32)
+struct vhdx_directory {
+  std::string path;
+};
+struct raw_directory {
+  std::string path;
+};
+struct files {
+  std::vector<std::string> paths;
+};
 
-data_writer* writer_begin(restore_options options);
-std::size_t writer_write(data_writer* writer, std::span<char> data);
-void writer_end(data_writer* writer);
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
+                                           vhdx_directory dir);
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
+                                           raw_directory dir);
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger, files paths);
+#else
+struct restore_directory {
+  std::string_view path;
+};
+
+using restore_files = std::span<std::string>;
+
+struct restore_stdout {};
+
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
+                                           restore_directory dir);
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
+                                           restore_files paths);
+std::unique_ptr<GenericHandler> GetHandler(GenericLogger* logger,
+                                           restore_stdout stream);
+#endif
+};  // namespace barri::restore
 
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_RESTORE_H_

@@ -230,13 +230,20 @@ struct plugin_logger : public GenericLogger {
 };
 
 struct session_ctx {
-  data_writer* writer{};
+  GenericLogger* logger;
+  std::unique_ptr<GenericHandler> handler;
+  restartable_parser* parser{};
 
-  session_ctx(restore_options options) : writer{writer_begin(options)} {}
+  session_ctx(std::unique_ptr<GenericHandler> handler_, GenericLogger* logger_)
+      : logger{logger_}
+      , handler{std::move(handler_)}
+      , parser{parse_begin(handler.get(), logger)}
+  {
+  }
 
   ~session_ctx()
   {
-    if (writer) { writer_end(writer); }
+    if (parser) { parse_end(parser); }
   }
 };
 
@@ -253,23 +260,25 @@ struct plugin_ctx {
     if (!args) { return false; }
     // no target specified
 
-    restore_options options = std::visit(
-        [&](auto& tgt) -> restore_options {
+    using namespace barri::restore;
+
+    if (args->target.index() == 0) { return false; }
+    auto handler = std::visit(
+        [&](auto& tgt) {
           using T = std::remove_reference_t<decltype(tgt)>;
 
           if constexpr (std::is_same_v<T, plugin_arguments::directory>) {
-            return restore_options::into_directory(&logger, tgt);
+            return GetHandler(&logger, restore_directory{tgt});
           } else if constexpr (std::is_same_v<T, plugin_arguments::files>) {
-            return restore_options::into_files(&logger, tgt);
+            return GetHandler(&logger, restore_files{tgt});
           } else if constexpr (std::is_same_v<T, std::monostate>) {
             // nothing was chosen, so just use a sensible default
-            return restore_options::into_directory(&logger, "/tmp");
+            return GetHandler(&logger, restore_directory{"/tmp"});
           }
         },
         args->target);
-    if (args->target.index() == 0) { return false; }
 
-    current_session.emplace(options);
+    current_session.emplace(std::move(handler), &logger);
 
     return true;
   }
@@ -278,7 +287,9 @@ struct plugin_ctx {
   {
     if (!current_session) { return 0; }
 
-    return writer_write(current_session->writer, data);
+    parse_data(current_session->parser, data);
+
+    return data.size();
   }
 
   bool has_session() const { return current_session.has_value(); }
