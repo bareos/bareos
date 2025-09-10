@@ -445,8 +445,9 @@ auto PluginService::handlePluginEvent(
     auto& inner = event.job_start();
     DebugLog(100, FMT_STRING("got job start event ({})."), inner.DebugString());
     filedaemon::bEvent e{filedaemon::bEventJobStart};
-    auto res = funcs.handlePluginEvent(
-        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
+    auto res = funcs.handlePluginEvent(ctx, &e,
+                                       const_cast<char*>(inner.data().c_str()),
+                                       inner.data().size() + 1);
     response->set_res(to_grpc(res));
   } else if (event.has_end_fileset()) {
     auto& inner = event.end_fileset();
@@ -461,8 +462,9 @@ auto PluginService::handlePluginEvent(
   } else if (event.has_backup_command()) {
     auto& inner = event.backup_command();
     filedaemon::bEvent e{filedaemon::bEventBackupCommand};
-    auto res = funcs.handlePluginEvent(
-        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
+    auto res = funcs.handlePluginEvent(ctx, &e,
+                                       const_cast<char*>(inner.data().c_str()),
+                                       inner.data().size() + 1);
     response->set_res(to_grpc(res));
   } else if (event.has_cancel_command()) {
     auto& inner = event.cancel_command();
@@ -482,8 +484,9 @@ auto PluginService::handlePluginEvent(
   } else if (event.has_plugin_command()) {
     auto& inner = event.plugin_command();
     filedaemon::bEvent e{filedaemon::bEventPluginCommand};
-    auto res = funcs.handlePluginEvent(
-        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
+    auto res = funcs.handlePluginEvent(ctx, &e,
+                                       const_cast<char*>(inner.data().c_str()),
+                                       inner.data().size() + 1);
     response->set_res(to_grpc(res));
   } else if (event.has_restore_object()) {
     auto& inner = event.restore_object();
@@ -513,8 +516,9 @@ auto PluginService::handlePluginEvent(
   } else if (event.has_restore_command()) {
     auto& inner = event.restore_command();
     filedaemon::bEvent e{filedaemon::bEventRestoreCommand};
-    auto res = funcs.handlePluginEvent(
-        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
+    auto res = funcs.handlePluginEvent(ctx, &e,
+                                       const_cast<char*>(inner.data().c_str()),
+                                       inner.data().size() + 1);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_init_backup()) {
     auto& inner = event.vss_init_backup();
@@ -524,8 +528,9 @@ auto PluginService::handlePluginEvent(
   } else if (event.has_estimate_command()) {
     auto& inner = event.estimate_command();
     filedaemon::bEvent e{filedaemon::bEventEstimateCommand};
-    auto res = funcs.handlePluginEvent(
-        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
+    auto res = funcs.handlePluginEvent(ctx, &e,
+                                       const_cast<char*>(inner.data().c_str()),
+                                       inner.data().size() + 1);
     response->set_res(to_grpc(res));
   } else if (event.has_start_backup_job()) {
     auto& inner = event.start_backup_job();
@@ -560,8 +565,9 @@ auto PluginService::handlePluginEvent(
   } else if (event.has_new_plugin_options()) {
     auto& inner = event.new_plugin_options();
     filedaemon::bEvent e{filedaemon::bEventNewPluginOptions};
-    auto res = funcs.handlePluginEvent(
-        ctx, &e, const_cast<char*>(inner.data().c_str()), inner.data().size());
+    auto res = funcs.handlePluginEvent(ctx, &e,
+                                       const_cast<char*>(inner.data().c_str()),
+                                       inner.data().size() + 1);
     response->set_res(to_grpc(res));
   } else if (event.has_vss_backup_complete()) {
     auto& inner = event.vss_backup_complete();

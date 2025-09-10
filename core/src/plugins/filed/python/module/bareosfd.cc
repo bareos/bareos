@@ -1979,7 +1979,7 @@ static int PyStatPacket_init(PyStatPacket* self, PyObject* args, PyObject* kwds)
   self->blksize = 4096;
   self->blocks = 1;
 
-  static_assert(std::is_same_v<time_t, std::int64_t>);
+  static_assert(std::is_same_v<decltype(PyStatPacket::atime), long>);
 
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|IKHHIIILlllIK", kwlist, &self->dev, &self->ino,

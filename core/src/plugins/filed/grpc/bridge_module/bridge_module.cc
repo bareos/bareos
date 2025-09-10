@@ -159,10 +159,19 @@ struct plugin_thread {
 
   struct cached_event {
     filedaemon::bEvent event{};
+
     intptr_t ptr_value;
+    std::vector<char> data;
 
     filedaemon::bEvent* type() { return &event; }
-    void* value() { return reinterpret_cast<void*>(ptr_value); }
+    void* value()
+    {
+      if (data.empty()) {
+        return reinterpret_cast<void*>(ptr_value);
+      } else {
+        return reinterpret_cast<void*>(data.data());
+      }
+    }
   };
 
   std::vector<cached_event> cached_events{};
@@ -179,12 +188,15 @@ struct plugin_thread {
     auto& cached = cached_events.emplace_back();
     cached.event = *event;
     if (size != 0) {
-      DebugLog(100, FMT_STRING("cannot cache data of size {}"), size);
-      return false;
+      DebugLog(100, FMT_STRING("caching data of size {} (event = {})"), size,
+               event->eventType);
+      cached.data.assign(static_cast<const char*>(value),
+                         static_cast<const char*>(value) + size);
+    } else {
+      // size is 0 here, so no actual data was stored, i.e. we only care
+      // about the value of the pointer
+      cached.ptr_value = reinterpret_cast<intptr_t>(value);
     }
-    // size is 0 here, so no actual data was stored, i.e. we only care
-    // about the value of the pointer
-    cached.ptr_value = reinterpret_cast<intptr_t>(value);
     return true;
   }
 
