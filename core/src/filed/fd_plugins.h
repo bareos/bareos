@@ -236,7 +236,7 @@ typedef enum
   bEventRestoreObject = 15,
   bEventEndFileSet = 16,
   bEventPluginCommand = 17,
-  bEventOptionPlugin = 18,
+  /* UNUSED */ bEventOptionPlugin = 18,
   bEventHandleBackupFile = 19,
   bEventNewPluginOptions = 20,
   bEventVssInitializeForBackup = 21,
