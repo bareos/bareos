@@ -9,9 +9,3 @@ OS:
        - x86_64
       WINVERSIONS:
          - windows-11-64
-  Debian:
-    "13":
-      TYPE: deb
-      IMAGE: "debian13"
-      ARCH:
-        - x86_64
