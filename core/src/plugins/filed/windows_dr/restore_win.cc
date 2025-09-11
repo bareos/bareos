@@ -172,7 +172,6 @@ class HandleOutput : public Output {
   std::size_t current_offset_ = 0;
   std::size_t size_ = 0;
 
-
   std::vector<char> buffer{};
 };
 
@@ -320,15 +319,17 @@ class DiskHandles : public OutputHandleGenerator {
   DiskHandles(std::vector<std::size_t> ids_, GenericLogger* logger_)
       : ids{std::move(ids_)}, logger{logger_}
   {
-    handles = OpenAll(ids);
+    {
+      auto volumes = GetAllVolumes(ids);
 
-    auto volumes = GetAllVolumes(ids);
-
-    if (volumes.size() > 0) {
-      throw std::runtime_error{"some disk contains volumes"};
+      if (volumes.size() > 0) {
+        // throw std::runtime_error{"some disk contains volumes"};
+        logger->Info("found {} volumes on the selected disks", volumes.size());
+        // for (auto& vol : volumes) { DismountVolume(vol); }
+      }
     }
 
-    for (auto& vol : volumes) { DismountVolume(vol); }
+    handles = OpenAll(ids);
   }
 
   HANDLE Create(disk_info info, disk_geometry) override
@@ -422,6 +423,7 @@ class DiskHandles : public OutputHandleGenerator {
         throw std::runtime_error{libbareos::format(
             "received volume with empty guid; cannot continue")};
       }
+
       while (guid.back() == L'\\') { guid.pop_back(); }
 
       logger->Trace("found volume {}", FromUtf16(guid));
@@ -545,6 +547,14 @@ class DiskHandles : public OutputHandleGenerator {
           "could not dismount volume {}: Err={}", FromUtf16(volume.guid), err)};
     }
     logger->Trace("volume {} was dismounted", FromUtf16(volume.guid));
+    if (DeviceIoControl(volume.hndl, IOCTL_VOLUME_OFFLINE, NULL, 0, NULL, 0,
+                        &bytes_returned, NULL)
+        == 0) {
+      auto err = GetLastError();
+      throw std::runtime_error{libbareos::format(
+          "could not offline volume {}: Err={}", FromUtf16(volume.guid), err)};
+    }
+    logger->Trace("volume {} was offlined", FromUtf16(volume.guid));
   }
 
   std::vector<HANDLE> OpenAll(std::span<std::size_t> ids)
@@ -555,9 +565,9 @@ class DiskHandles : public OutputHandleGenerator {
     for (auto id : ids) {
       logger->Trace("looking at \\\\.\\PhysicalDrive{}", id);
       auto disk_path = libbareos::format(L"\\\\.\\PhysicalDrive{}", id);
-      HANDLE output = CreateFileW(disk_path.c_str(), GENERIC_WRITE,
-                                  FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
-                                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+      HANDLE output
+          = CreateFileW(disk_path.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
+                        NULL, OPEN_EXISTING, 0, NULL);
 
       if (output == INVALID_HANDLE_VALUE) {
         logger->Trace("opening \\\\.\\PhysicalDrive{} failed", id);
