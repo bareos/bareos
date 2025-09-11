@@ -8,7 +8,6 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-
 #shellcheck source=../environment.in
 . ./environment
 
@@ -23,7 +22,6 @@ filesetwithouttext=$tmp/fileset-without-filesettext
 JobName=backup-bareos-fd
 
 rm -f $run_log $filesetwithtext $filesetwithouttext
-
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
@@ -52,17 +50,14 @@ END_OF_DATA
 
 run_bconsole
 
-run_bconsole
-
 # check that the fileset has not the fileset text after it was deleted
-expect_grep "|         1 | SelfTest | FileSet {" \
-            "$filesetwithtext" \
-            "The expected fileset text was not found."
+expect_grep "| *1 *| *SelfTest *| *FileSet *{" \
+  "$filesetwithtext" \
+  "The expected fileset text was not found."
 
 # check that the fileset has the fileset was added by the estimate call
-expect_grep "|         1 | SelfTest |             |" \
-            "$filesetwithouttext" \
-            "The expected fileset without text was not found."
-
+expect_grep "| *1 *| *SelfTest *| *|" \
+  "$filesetwithouttext" \
+  "The expected fileset without text was not found."
 
 end_test
