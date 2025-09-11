@@ -319,14 +319,15 @@ class DiskHandles : public OutputHandleGenerator {
   DiskHandles(std::vector<std::size_t> ids_, GenericLogger* logger_)
       : ids{std::move(ids_)}, logger{logger_}
   {
-    {
-      auto volumes = GetAllVolumes(ids);
+    // we need to keep the volume handles open, to prevent windows to
+    // remount them.  Once they are mounted, we can no longer overwrite
+    // the disk directly.
+    volumes = GetAllVolumes(ids);
 
-      if (volumes.size() > 0) {
-        // throw std::runtime_error{"some disk contains volumes"};
-        logger->Info("found {} volumes on the selected disks", volumes.size());
-        // for (auto& vol : volumes) { DismountVolume(vol); }
-      }
+    if (volumes.size() > 0) {
+      // throw std::runtime_error{"some disk contains volumes"};
+      logger->Info("found {} volumes on the selected disks", volumes.size());
+      for (auto& vol : volumes) { DismountVolume(vol); }
     }
 
     handles = OpenAll(ids);
@@ -547,14 +548,17 @@ class DiskHandles : public OutputHandleGenerator {
           "could not dismount volume {}: Err={}", FromUtf16(volume.guid), err)};
     }
     logger->Trace("volume {} was dismounted", FromUtf16(volume.guid));
-    if (DeviceIoControl(volume.hndl, IOCTL_VOLUME_OFFLINE, NULL, 0, NULL, 0,
-                        &bytes_returned, NULL)
-        == 0) {
-      auto err = GetLastError();
-      throw std::runtime_error{libbareos::format(
-          "could not offline volume {}: Err={}", FromUtf16(volume.guid), err)};
-    }
-    logger->Trace("volume {} was offlined", FromUtf16(volume.guid));
+
+    // setting the volume to offline sadly causes the writes to just stall out
+    // if (DeviceIoControl(volume.hndl, IOCTL_VOLUME_OFFLINE, NULL, 0, NULL, 0,
+    //                     &bytes_returned, NULL)
+    //     == 0) {
+    //   auto err = GetLastError();
+    //   throw std::runtime_error{libbareos::format(
+    //       "could not offline volume {}: Err={}", FromUtf16(volume.guid),
+    //       err)};
+    // }
+    // logger->Trace("volume {} was offlined", FromUtf16(volume.guid));
   }
 
   std::vector<HANDLE> OpenAll(std::span<std::size_t> ids)
@@ -588,6 +592,7 @@ class DiskHandles : public OutputHandleGenerator {
   std::size_t disk_idx_ = 0;
   std::vector<std::size_t> ids;
   std::vector<HANDLE> handles;
+  std::vector<open_volume> volumes;
 
   GenericLogger* logger;
 };
