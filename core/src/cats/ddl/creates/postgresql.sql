@@ -503,17 +503,18 @@ SELECT
     WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
   END::bigint AS vm_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%meta%=' THEN j.jobbytes / 1000000
+    WHEN f.filesettext ILIKE '%{%{%meta%=%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-libcloud%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-qumulo%' THEN j.jobbytes / 1000000
     WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
   END::bigint AS filer_mb,
   CASE
+    WHEN f.filesettext ILIKE '%{%{%meta%=%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%File%=%' THEN j.jobbytes / 1000000
   END::bigint AS normal_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%meta%=' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%meta%=%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-mariabackup%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN NULL
@@ -527,7 +528,7 @@ SELECT
     ELSE j.jobbytes / 1000000
   END::bigint AS unknown_mb,
   CASE
-    WHEN f.filesettext ILIKE '%{%{%meta%=' THEN NULL
+    WHEN f.filesettext ILIKE '%{%{%meta%=%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-mariabackup%' THEN NULL
     WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN NULL
