@@ -1,6 +1,8 @@
+#!/bin/bash
+
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,7 +19,23 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-message("Adding systemtests from ${CMAKE_CURRENT_SOURCE_DIR}")
+#set -e
+#set -o pipefail
+set -u
 
-add_subdirectory(bareos-basic)
-add_subdirectory(restore)
+#shellcheck source=../environment.in
+. ./environment
+
+#shellcheck source=../scripts/functions
+. "${rscripts}"/functions
+
+bin/bareos stop
+bin/bareos status
+
+echo "---------" 1>&2
+echo "${working}"/*.trace 1>&2
+echo "=========" 1>&2
+tail -n +1 "${working}"/*.trace 1>&2
+echo "---------" 1>&2
+
+"${rscripts}"/cleanup

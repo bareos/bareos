@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -46,7 +46,9 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
 @$out $log_home/create-backup.out
-setdebug level=100 storage=File trace=1
+setdebug level=200 dir trace=1
+setdebug level=200 storage=File trace=1
+setdebug level=200 client=bareos-fd trace=1
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName yes
 status director
@@ -66,15 +68,15 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 expect_grep "No prior Full backup Job record found." \
-	    "$log_home/create-backup.out" \
-	    "Bad initial state. No backup should exist yet."
+  "$log_home/create-backup.out" \
+  "Bad initial state. No backup should exist yet."
 
 expect_grep "Start Backup JobId 1" \
-	    "$log_home/create-backup.out" \
-	    "Did not create backup job with id 1."
+  "$log_home/create-backup.out" \
+  "Did not create backup job with id 1."
 
 expect_grep "Backup OK" \
-	    "$log_home/create-backup.out" \
-	    "Backup was not created correctly."
+  "$log_home/create-backup.out" \
+  "Backup was not created correctly."
 
 end_test
