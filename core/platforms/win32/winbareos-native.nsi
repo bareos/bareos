@@ -2106,7 +2106,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bextract.exe"
   Delete "$INSTDIR\bscan.exe"
   Delete "$INSTDIR\bconsole.exe"
-  Delete "$INSTDIR\barri.exe"
+  Delete "$INSTDIR\barri-cli.exe"
   Delete "$INSTDIR\bareos-config-deploy.bat"
 
   Delete "$INSTDIR\*bareos.dll"
