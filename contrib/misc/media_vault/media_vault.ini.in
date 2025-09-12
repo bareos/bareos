@@ -1,6 +1,6 @@
 ; configuration ini file for media_vault.py
 [global]
-; logging dir logs will be
+; location where debug log will be recorded if debug is activated
 log_dir=/var/log/bareos
 
 [vault]
@@ -41,7 +41,7 @@ volstatus_to_archive = False
 ;ftp_dir=/var/tmp/media_vault/iron_report_ftp
 
 [BAREOS]
-; activate debug
+;; activate debug, a debug log will be created in log_dir
 ;debug=True
 ;; console name to use for connection
 name=media_vault
@@ -52,7 +52,7 @@ password=password
 address=localhost
 ;; director host port default 9101
 port=@dir_port@
-; connection timeout default 30
+;; connection timeout default 30
 timeout=5
 ;; bareos protocol to use default 2
 ;protocolversion=2
@@ -61,5 +61,5 @@ timeout=5
 ;pam_password=
 ;; tls_psk_require default true if present
 ;tls_psk_require
-;; tls_version default all
+;; tls_version default all and most secured is tried first
 ;tls_version=v1.2
