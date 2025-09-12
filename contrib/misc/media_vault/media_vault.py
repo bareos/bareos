@@ -45,6 +45,7 @@ except Exception as err_unknown:
 
 
 def filter_maker(level):
+    """ global redefinition for filtering lower log level """
     level = getattr(logging, level)
     def filter(record):
         return record.levelno <= level
@@ -144,7 +145,6 @@ class MediaVault():
     def _check_cli_args(self):
         """cli argument checks"""
         if self.args.debug:
-            # logger.setLevel(logging.DEBUG)
             # if log_dir exist we create a debug log
             if self.args.log_dir:
                 self.log_dir = self.args.log_dir
@@ -156,17 +156,13 @@ class MediaVault():
                 logger_file = logging.FileHandler(log_file, mode='a', encoding='utf-8', delay=False)
                 logger_file.setLevel(logging.DEBUG)
                 formatter = logging.Formatter(
-                    (
-                        '%(asctime)s: %(levelname)s ',
-                        '%(module)s.%(funcName)s: %(message)s'
-                    )
+                        "%(asctime)s: %(levelname)s "
+                        "%(module)s.%(funcName)s: %(message)s"
                 )
                 logger_file.setFormatter(formatter)
                 logger.addHandler(logger_file)
             else:
                 raise ValueError ("log_dir need at least one valid path")
-
-
 
         logger.debug("entering _check_cli_args()")
         # at least one pool need to exist
@@ -231,8 +227,6 @@ class MediaVault():
 
         if self.args.iron_acct:
             self.iron_acct = self.args.iron_acct
-        #else:
-        #    raise ValueError ("iron_acct has to be a valid account number")
 
         # we continue iron check only if iron_name is set
         if self.iron_acct:
@@ -249,15 +243,18 @@ class MediaVault():
             try:
                 if not os.path.isdir(self.ftp_dir):
                     os.makedirs(self.ftp_dir)
-                    print(f"OS Info creating {self.ftp_dir}\n")
-                    logger.debug(f"OS Info creating {self.ftp_dir}\n")
+                    msg = f"OS Info creating {self.ftp_dir}\n"
+                    print(msg)
+                    logger.debug(msg)
             except OSError as os_error:
-                logger.error(f"OS ERROR {os_error}\n", exc_info=True)
-                print(f"Fatal ERROR while makedirs('{self.ftp_dir}') \"{os_error}\"\n")
+                msg_os = f"Fatal ERROR while makedirs('{self.ftp_dir}') \"{os_error}\"\n"
+                print(msg_os)
+                logger.error(msg_os, exc_info=True)
                 raise
             except Exception as err:
-                logger.error(f"Unknown error {err}\n", exc_info=True)
-                print(f"Unknown Error occurred {err}")
+                msg_err= f"Unknown Error occurred {err}\n"
+                print(msg_err)
+                logger.error(msg_err, exc_info=True)
                 raise
 
         logger.debug("leaving _check_cli_args()")
@@ -273,7 +270,8 @@ class MediaVault():
                         f"autochanger {self.autochanger} is not a valid storage"
                     )
         except bareos.exceptions.Error as berr:
-            logger.error(f"{berr}\n", exc_info=True)
+            msg_berr= f"{berr}\n"
+            logger.error(msg_berr, exc_info=True)
             raise
 
         logger.debug("leaving _check_valid_storage()")
@@ -290,7 +288,8 @@ class MediaVault():
                         f"pools {self.pools} are not in pools list ({results})"
                     )
         except bareos.exceptions.Error as berr:
-            logger.error(f"{berr}\n", exc_info=True)
+            msg_berr= f"{berr}\n"
+            logger.error(msg_berr, exc_info=True)
             raise
 
         logger.debug("leaving _check_valid_pools()")
@@ -316,13 +315,13 @@ class MediaVault():
             vol += 1
 
         export_volnames = export_volnames.rstrip('|')
-        logger.debug(f"list to export export_volnames='{export_volnames}'\n")
+        logger.debug("list to export export_volnames='%s'\n",str(export_volnames))
 
         bc_cmd = (
                 f"export volume={export_volnames} storage={self.autochanger} "
                 f"dstslots={self.export_slots}"
                 )
-        logger.debug(f"boncole command:'{bc_cmd}'\n")
+        logger.debug("boncole command:'%s'\n",bc_cmd)
         try:
             # When successful
             # bytearray(b'{"jsonrpc":"2.0","id":null,"result":{}}')
@@ -331,16 +330,16 @@ class MediaVault():
                 logger.debug("bconsole export cmd finish ok'\n")
 
         except bareos.exceptions.JsonRpcErrorReceivedException as json_exp:
-            logger.error(f"{json_exp}\n", exc_info=True)
+            logger.error("%s\n",json_exp, exc_info=True)
             raise bareos.exceptions.Error(json_exp)
         except bareos.exceptions.Error as berr:
-            logger.error(f"{berr}\n", exc_info=True)
+            logger.error("%s\n",berr, exc_info=True)
             raise
 
         self.volumes_exported = exported_volumes
-        logger.debug(
-                f"_bconsole_export_volumes successful\n"
-                f"volumes exported: {len(self.volumes_exported)}\n"
+        logger.debug (
+                "_bconsole_export_volumes successful\n"
+                "volumes exported: %d\n",len(self.volumes_exported)
             )
 
         print(f"Successfully exported volumes: {len(self.volumes_exported)}")
@@ -358,9 +357,9 @@ class MediaVault():
         logger.debug("entering _bconsole_update_slots()\n")
         try:
             result = self.dcj.call(f"update slots storage={self.autochanger}")
-            logger.debug(f"result:'{result}'\n")
+            logger.debug("result:'%s'\n",result)
         except bareos.exceptions.Error as berr:
-            logger.error(f"{berr}\n", exc_info=True)
+            logger.error("Update slots error: %s\n",berr, exc_info=True)
             raise
 
         logger.debug("update slots done\n")
@@ -375,9 +374,9 @@ class MediaVault():
                 result = self.dcj.call(
                         f"update volume={vol['volumename']} volstatus=Archive yes"
                     )
-                logger.debug(f"result:'{result}'\n")
+                logger.debug("result:'%s'\n",result)
             except bareos.exceptions.Error as berr:
-                logger.error(f"{berr}\n", exc_info=True)
+                logger.error("Set volstatus error: %s\n",berr, exc_info=True)
                 raise
 
         logger.debug("leaving _bconsole_set_volstatus()\n")
@@ -503,14 +502,13 @@ class MediaVault():
             print(f"Bareos Exception {str(berr)}")
             sys.exit(1)
 
-
         if self.args.verbose:
             logger.setLevel(logging.INFO)
 
         if self.args.debug:
             logger.setLevel(logging.DEBUG)
 
-        logger.debug(f"args formatted: {parser.format_values()}\n")
+        logger.debug("args formatted: %s\n",parser.format_values())
 
 #       logger.debug(logger.getLogger(me))
 #       logger.debug(f"final args options: {str(self.args)}\n")
@@ -519,10 +517,10 @@ class MediaVault():
         try:
             self._check_cli_args()
         except ValueError as type_err:
-            logger.error(f"ERROR: {type_err}\n", exc_info=True)
+            logger.error("Value ERROR: %s\n",type_err, exc_info=True)
             return False
         except RuntimeError as error:
-            logger.error(f" -- unknown error -- {error}", exc_info=True)
+            logger.error(" -- Runtime unknown error -- %s", error, exc_info=True)
             return False
 
         logger.debug("leaving parse_cli_args()")
@@ -535,8 +533,8 @@ class MediaVault():
         if not self.parse_cli_args():
             logger.error("ERROR: in parse_cli_args()\n", exc_info=True)
             return False
-        logger.debug(f"slot update value {self.update_slots_before}\n")
-        logger.debug(f"volstatus archive value {self.volstatus_to_archive}\n")
+        logger.debug("slot update value %s\n",self.update_slots_before)
+        logger.debug("volstatus archive value %s\n",self.volstatus_to_archive)
         try:
             self.dcj = bareos.bsock.DirectorConsoleJson(**self.bareos_args)
         except bareos.exceptions.Error as berr:
@@ -545,18 +543,18 @@ class MediaVault():
             print(msg)
             return False
 
-        print("Bareos consoles connected\n")
-        logger.debug("consoles connected\n")
+        print("Bareos console connected\n")
+        logger.debug("console connected\n")
 
         # Check bareos resources validity
         try:
             self._check_valid_storage()
             self._check_valid_pools()
         except TypeError as type_err:
-            logger.error(f"{type_err}\n", exc_info=True)
+            logger.error("Type error: %s\n",type_err, exc_info=True)
             return False
         except bareos.exceptions.Error as berr:
-            logger.error(f"Bareos Exception {berr}\n", exc_info=True)
+            logger.error("Bareos Exception %s\n", berr, exc_info=True)
             return False
 
         # Extract vault volumes to export
@@ -568,15 +566,17 @@ class MediaVault():
             self.vault_run_query()
             self.vault_parse_results()
         except bareos.exceptions.Error as berr:
-            logger.error(f"{berr}", exc_info=True)
+            logger.error("Bareos Exception %s\n", berr, exc_info=True)
             return False
         except RuntimeError as error:
-            logger.error(f" -- unknown error -- {error}\n", exc_info=True)
+            logger.error(" -- Runtime unknown error -- %s\n",error, exc_info=True)
             return False
 
         if self.volumes_candidates:
-            print(f"{len(self.volumes_candidates)} candidate(s) volume(s) found\n")
-            logger.debug(f"Candidate(s) Volume(s)found: {str(self.volumes_candidates)}\n")
+            msg = f"{len(self.volumes_candidates)} candidate(s) volume(s) found\n"
+            print(msg)
+            msg_dbg = msg + f"Candidate(s) volume(s): {str(self.volumes_candidates)}\n"
+            logger.debug(msg_dbg)
         else:
             msg = "No candidate volume to export found!\n"
             print(msg)
@@ -587,13 +587,13 @@ class MediaVault():
             self.vault_create_eject_list()
             self.vault_eject_volumes()
         except bareos.exceptions.Error as berr:
-            logger.error(f"Volume export failed {berr}\n", exc_info=True)
+            logger.error("Bareos Exception %s\n", berr, exc_info=True)
             return False
         except RuntimeError as error:
-            logger.error(f" -- unknown error -- {error}\n", exc_info=True)
+            logger.error(" -- Runtime unknown error -- %s\n",error, exc_info=True)
             return False
 
-        logger.debug(f"Volumes exported: {str(self.volumes_exported)}\n")
+        logger.debug("Volumes exported: %s\n",str(self.volumes_exported))
 
         if self.volstatus_to_archive:
             logger.debug("Entering volstatus to 'Archive'\n")
@@ -603,16 +603,13 @@ class MediaVault():
                 print(msg)
                 logger.debug(msg)
             except bareos.exceptions.Error as berr:
-                logger.error(
-                    "Update volume status to archive error\n"
-                    f"{berr}\n", exc_info=True
-                    )
+                logger.error("Bareos Exception %s\n", berr, exc_info=True)
                 return False
             except RuntimeError as error:
-                logger.error(f" -- unknown error -- {error}\n", exc_info=True)
+                logger.error(" -- Runtime unknown error -- %s\n",error, exc_info=True)
                 return False
         else:
-            logger.debug("Volstatus not changed to 'Archive'\n")
+            logger.debug("Volume status not updated to 'Archive'\n")
 
         logger.debug("End of run\n")
         return True
@@ -628,7 +625,7 @@ class MediaVault():
 
         max_age = f"date_trunc('day', now()) - interval '{self.max_age} days'"
         min_age = f"date_trunc('day', now()) - interval '{self.min_age} days'"
-        """" Select all tapes up to last minute if min_age is zero """
+        # Select all tapes up to last minute if min_age is zero
         if self.min_age == 0:
             min_age = "date_trunc('minute', now())"
 
@@ -658,25 +655,25 @@ class MediaVault():
               order by m.lastwritten asc, m.volumename asc;
               """
 
-        logger.debug(f"vault_query: '{sql}'\n")
+        logger.debug("vault_query: '%s'\n",sql)
 
         try:
             self.sql_result = self.dcj.call(f".sql query=\"{sql}\"")["query"]
         except bareos.exceptions.JsonRpcErrorReceivedException as json_exp:
-            logger.error(f"{json_exp}\n", exc_info=True)
+            logger.error("%s\n",json_exp, exc_info=True)
             raise bareos.exceptions.Error(json_exp)
         except bareos.exceptions.Error as berr:
-            logger.error(f"{berr}\n", exc_info=True)
+            logger.error("%s\n",berr, exc_info=True)
             raise berr
 
-        logger.debug(f"vault_sql_result: {self.sql_result}\n")
+        logger.debug("vault_sql_result: %s\n",self.sql_result)
 
 
     def vault_parse_results(self):
         """ Parse sql_result and format to export vault volume list """
         logger.debug("entering vault_parse_results()")
         if len(self.sql_result) <= 0:
-            logger.debug("No candidates Volumes found\n")
+            logger.debug("No candidates volumes found\n")
             return
         for volume in self.sql_result:
             self.volumes_candidates.append(
@@ -691,7 +688,7 @@ class MediaVault():
                 }
             )
 
-        logger.debug(f"Candidates Volumes : {str(self.volumes_candidates)}\n")
+        logger.debug("Candidates Volumes: %s\n", str(self.volumes_candidates))
         logger.debug("leaving vault_parse_results()\n")
 
 
@@ -734,12 +731,14 @@ class MediaVault():
             print(export_list.getvalue())
             export_list.close()
         except OSError as os_error :
-            logger.error(f"OS ERROR {os_error}\n", exc_info=True)
-            print(f"Fatal ERROR can't write \"export_list\" {os_error}\n")
+            msg_err = f"Fatal OS ERROR can't write \"export_list\" {os_error}\n"
+            logger.error(msg_err, exc_info=True)
+            print(msg_err)
             raise
         except Exception as err:
-            logger.error(f"Unknown error {err}\n", exc_info=True)
-            print(f"Unknown Error occurred {err}")
+            msg_err = f"Unknown Error occurred {err}\n"
+            logger.error(msg_err, exc_info=True)
+            print(msg_err)
             raise
 
         logger.debug("leaving vault_create_eject_list()\n")
@@ -778,20 +777,21 @@ class MediaVault():
                     f"-{self.autochanger}-{count}~EndFooterText"
                 )
 
-            logger.debug(f"Creating ftp file: {self.ftp_file}\n")
+            logger.debug("Creating ftp file: %s\n",self.ftp_file)
 
             # We create destination directory if not existent
             try:
                 if not os.path.isdir(self.ftp_dir):
                     os.makedirs(self.ftp_dir)
-                    print(f"OS creating dir {self.ftp_dir}")
-                    logger.debug(f"OS creating dir {self.ftp_dir}")
+                    msg = f"OS creating ftp dir {self.ftp_dir}"
+                    logger.debug(msg)
+                    print(msg)
             except OSError as os_error :
                 msg = f"Fatal ERROR while makedirs('{self.ftp_dir}') \"{os_error}\"\n"
                 logger.error(msg, exc_info=True)
                 raise
             except Exception as err:
-                logger.error(f"Unknown error {err}\n", exc_info=True)
+                logger.error("Unknown error %s\n",err, exc_info=True)
                 raise
 
         # Run export command
@@ -802,11 +802,11 @@ class MediaVault():
             logger.error(msg, exc_info=True)
             raise
         except Exception as err:
-            logger.error(f"Unknown error during export of volumes {err}", exc_info=True)
+            logger.error("Unknown error during export of volumes %s",err, exc_info=True)
             raise
 
         if self.iron_acct:
-            logging.info(f"Writing ftp file {self.ftp_file}")
+            logging.debug("Writing ftp file %s\n",self.ftp_file)
             # Write content to the ftp_file
             try:
                 s = StringIO()
@@ -818,9 +818,9 @@ class MediaVault():
                             f"{vol['returndate']}\n"
                             )
                     s.write(ftp_line)
-                    logging.info(f"{ftp_line}\n")
                 s.write(f"{ftp_file_footer_d}\n")
                 size_s = len(s.getvalue())
+                logging.debug("%s\n",s.getvalue())
 
                 with open(self.ftp_file, "w", encoding="utf-8") as f:
                     size_f = f.write(s.getvalue())
@@ -840,12 +840,14 @@ class MediaVault():
                 logger.error(msg, exc_info=True)
                 raise
             except Exception as err:
-                logger.error(f"Unknown error {err}\n", exc_info=True)
+                msg = f"Unknown error {err}\n"
+                logger.error(msg, exc_info=True)
                 raise
 
-            print(f"Created ftp file: {self.ftp_file}\n")
-            logger.debug(f"Created ftp file: {self.ftp_file}\n")
-            # Force Reading file again to be certify content
+            msg= f"Created ftp file: {self.ftp_file}\n"
+            print(msg)
+            logger.debug(msg)
+            # Force Reading file again to certify content
             try:
                 f_stats = os.stat(self.ftp_file)
                 with open(self.ftp_file, "r", encoding="utf-8") as f:
@@ -895,7 +897,13 @@ class MediaVault():
                 s_value = s.getvalue()
                 print(s_value)
                 print(t_stat)
-                logger.debug((s_value,"\n",t_stat))
+                logger.debug(
+                    (
+                        s_value,
+                        "\n",
+                        t_stat
+                    )
+                )
 
             except OSError as os_error :
                 msg = f"Fatal OS_ERROR can't write \"{self.ftp_file}\" {os_error}\n"
@@ -909,7 +917,7 @@ class MediaVault():
                 print(err)
                 raise
 
-        logger.dubug("leaving vault_eject_volumes()\n")
+        logger.debug("leaving vault_eject_volumes()\n")
 
 
 if __name__ == "__main__":
