@@ -904,12 +904,12 @@ auto PluginService::FileRead(ServerContext*,
     return Status(grpc::StatusCode::INTERNAL, "bad response");
   }
 
-  auto _ = non_blocking{io};
+  auto nb_io = non_blocking{io};
 
-  if (_.error()) {
+  if (auto error = nb_io.error()) {
     JobLog(bc::JMSG_ERROR,
            FMT_STRING("could not set fd {} as nonblocking: Err={}"), io,
-           strerror(_.error().value()));
+           strerror(error.value()));
     return Status(grpc::StatusCode::INTERNAL,
                   "could not set socket to be not blocking");
   }
@@ -952,10 +952,10 @@ auto PluginService::FileRead(ServerContext*,
     }
   }
 
-  _.reset();
-  if (_.error()) {
+  nb_io.reset();
+  if (auto io_error = nb_io.error()) {
     JobLog(bc::JMSG_ERROR, FMT_STRING("could not reset fd {} flags: Err={}"),
-           io, strerror(_.error().value()));
+           io, strerror(io_error.value()));
     return Status(grpc::StatusCode::INTERNAL, "could not reset socket flags");
   }
   return Status::OK;
