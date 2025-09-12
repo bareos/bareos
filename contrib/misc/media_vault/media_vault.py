@@ -81,18 +81,10 @@ logging_config = {
             "formatter": "simple",
             "stream": "ext://sys.stderr",
         },
-        "file":{
-            "class": "logging.FileHandler",
-            "level": "DEBUG",
-            "formatter": "simple",
-            "filename": os.path.join( "/","var","tmp",
-                                f"{me}-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.log"
-                                ),
-        },
     },
     "loggers":{
-        "root": {"level": "INFO", "handlers":["stderr","file"]},
-        f"{me}": {"level": "WARNING", "handlers":["stdout","file"]}
+        "root": {"level": "INFO", "handlers":["stderr"]},
+        f"{me}": {"level": "WARNING", "handlers":["stdout","stderr"]}
     },
 }
 
@@ -102,7 +94,7 @@ logger = logging.getLogger(me)
 class MediaVault():
     """ Class used for volume export management """
     def __init__(self):
-        logger.info("init start")
+        logger.debug("init start")
         now = datetime.datetime.now()
         # DirectorConsoleConnectionJson the main usage
         self.dcj = None
@@ -146,11 +138,36 @@ class MediaVault():
         self.iron_name = None
         self.date_time = now.strftime("%Y%m%d-%H%M%S")
         self.vault_time = now.strftime("%Y-%m-%d, %H:%M:%S")
-        logger.info("init end")
+        logger.debug("init end")
 
 
     def _check_cli_args(self):
         """cli argument checks"""
+        if self.args.debug:
+            # logger.setLevel(logging.DEBUG)
+            # if log_dir exist we create a debug log
+            if self.args.log_dir:
+                self.log_dir = self.args.log_dir
+                if not os.path.isdir(self.log_dir):
+                    raise OSError ("log_dir not found")
+                log_file = os.path.join( self.log_dir,
+                                    f"{me}-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.log"
+                                    )
+                logger_file = logging.FileHandler(log_file, mode='a', encoding='utf-8', delay=False)
+                logger_file.setLevel(logging.DEBUG)
+                formatter = logging.Formatter(
+                    (
+                        '%(asctime)s: %(levelname)s ',
+                        '%(module)s.%(funcName)s: %(message)s'
+                    )
+                )
+                logger_file.setFormatter(formatter)
+                logger.addHandler(logger_file)
+            else:
+                raise ValueError ("log_dir need at least one valid path")
+
+
+
         logger.debug("entering _check_cli_args()")
         # at least one pool need to exist
         if self.args.autochanger and len(self.args.autochanger) > 1:
@@ -212,11 +229,6 @@ class MediaVault():
 
         self.update_slots_before = self.args.update_slots_before
 
-        if self.args.log_dir:
-            self.log_dir = self.args.log_dir
-        else:
-            raise ValueError ("log_dir need at least one valid path")
-
         if self.args.iron_acct:
             self.iron_acct = self.args.iron_acct
         #else:
@@ -238,7 +250,7 @@ class MediaVault():
                 if not os.path.isdir(self.ftp_dir):
                     os.makedirs(self.ftp_dir)
                     print(f"OS Info creating {self.ftp_dir}\n")
-                    logger.info(f"OS Info creating {self.ftp_dir}\n")
+                    logger.debug(f"OS Info creating {self.ftp_dir}\n")
             except OSError as os_error:
                 logger.error(f"OS ERROR {os_error}\n", exc_info=True)
                 print(f"Fatal ERROR while makedirs('{self.ftp_dir}') \"{os_error}\"\n")
@@ -326,10 +338,17 @@ class MediaVault():
             raise
 
         self.volumes_exported = exported_volumes
-        logger.info(
+        logger.debug(
                 f"_bconsole_export_volumes successful\n"
                 f"volumes exported: {len(self.volumes_exported)}\n"
             )
+
+        print(f"Successfully exported volumes: {len(self.volumes_exported)}")
+        print("Exported volumes:")
+        for vol in self.volumes_exported:
+            line = f"  {vol['volumename']}"
+            print(line)
+            logger.debug(line)
 
         logger.debug("leaving _bconsole_export_volumes()\n")
 
@@ -344,7 +363,7 @@ class MediaVault():
             logger.error(f"{berr}\n", exc_info=True)
             raise
 
-        logger.info("update slots done\n")
+        logger.debug("update slots done\n")
         logger.debug("leaving _bconsole_update_slots()\n")
 
 
@@ -366,7 +385,7 @@ class MediaVault():
 
     def parse_cli_args(self):
         """ Parse command line arguments """
-        logger.info("entering parse_cli_args()")
+        logger.debug("entering parse_cli_args()")
 
         parser = configargparse.ArgParser(
             default_config_files=[f'{Path(__file__).stem}.ini'],
@@ -472,9 +491,9 @@ class MediaVault():
 
         try:
             self.args = parser.parse_args()
-            logger.info(self.args)
+            logger.debug(self.args)
             with open(self.args.config,"r",encoding="utf-8") as f:
-                logger.info(f.read())
+                logger.debug(f.read())
             self.bareos_args = (
                 bareos.bsock.DirectorConsoleJson.
                     argparser_get_bareos_parameter(self.args)
@@ -491,9 +510,9 @@ class MediaVault():
         if self.args.debug:
             logger.setLevel(logging.DEBUG)
 
-        logger.info(f"args formatted: {parser.format_values()}\n")
+        logger.debug(f"args formatted: {parser.format_values()}\n")
 
-#       logger.info(logger.getLogger(me))
+#       logger.debug(logger.getLogger(me))
 #       logger.debug(f"final args options: {str(self.args)}\n")
 #       logger.debug(f"final bareos args options: {str(self.bareos_args)}\n")
 
@@ -512,12 +531,12 @@ class MediaVault():
 
     def run(self):
         """ Main loop and entry point """
-        logger.info("entering run()")
+        logger.debug("entering run()")
         if not self.parse_cli_args():
             logger.error("ERROR: in parse_cli_args()\n", exc_info=True)
             return False
-        logger.info(f"slot update value {self.update_slots_before}\n")
-        logger.info(f"volstatus archive value {self.volstatus_to_archive}\n")
+        logger.debug(f"slot update value {self.update_slots_before}\n")
+        logger.debug(f"volstatus archive value {self.volstatus_to_archive}\n")
         try:
             self.dcj = bareos.bsock.DirectorConsoleJson(**self.bareos_args)
         except bareos.exceptions.Error as berr:
@@ -527,7 +546,7 @@ class MediaVault():
             return False
 
         print("Bareos consoles connected\n")
-        logger.info("consoles connected\n")
+        logger.debug("consoles connected\n")
 
         # Check bareos resources validity
         try:
@@ -557,11 +576,11 @@ class MediaVault():
 
         if self.volumes_candidates:
             print(f"{len(self.volumes_candidates)} candidate(s) volume(s) found\n")
-            logger.info(f"Candidate(s) Volume(s)found: {str(self.volumes_candidates)}\n")
+            logger.debug(f"Candidate(s) Volume(s)found: {str(self.volumes_candidates)}\n")
         else:
             msg = "No candidate volume to export found!\n"
             print(msg)
-            logger.info(msg)
+            logger.debug(msg)
             return True
 
         try:
@@ -574,15 +593,15 @@ class MediaVault():
             logger.error(f" -- unknown error -- {error}\n", exc_info=True)
             return False
 
-        logger.info(f"Volumes exported: {str(self.volumes_exported)}\n")
+        logger.debug(f"Volumes exported: {str(self.volumes_exported)}\n")
 
         if self.volstatus_to_archive:
-            logger.info("Entering volstatus to 'Archive'\n")
+            logger.debug("Entering volstatus to 'Archive'\n")
             try:
                 self._bconsole_set_volstatus()
                 msg = "Volstatus updated to 'Archive'\n"
                 print(msg)
-                logger.info(msg)
+                logger.debug(msg)
             except bareos.exceptions.Error as berr:
                 logger.error(
                     "Update volume status to archive error\n"
@@ -593,15 +612,15 @@ class MediaVault():
                 logger.error(f" -- unknown error -- {error}\n", exc_info=True)
                 return False
         else:
-            logger.info("Volstatus not changed to 'Archive'\n")
+            logger.debug("Volstatus not changed to 'Archive'\n")
 
-        logger.info("End of run\n")
+        logger.debug("End of run\n")
         return True
 
 
     def vault_run_query(self):
         """ Run vault query against normal console """
-        logger.info("entering vault_run_query()\n")
+        logger.debug("entering vault_run_query()\n")
 
         s_p = "'"
         s_p += "','".join(self.pools)
@@ -639,7 +658,7 @@ class MediaVault():
               order by m.lastwritten asc, m.volumename asc;
               """
 
-        logger.info(f"vault_query: '{sql}'\n")
+        logger.debug(f"vault_query: '{sql}'\n")
 
         try:
             self.sql_result = self.dcj.call(f".sql query=\"{sql}\"")["query"]
@@ -655,9 +674,9 @@ class MediaVault():
 
     def vault_parse_results(self):
         """ Parse sql_result and format to export vault volume list """
-        logger.info("entering vault_parse_results()")
+        logger.debug("entering vault_parse_results()")
         if len(self.sql_result) <= 0:
-            logger.info("No candidates Volumes found\n")
+            logger.debug("No candidates Volumes found\n")
             return
         for volume in self.sql_result:
             self.volumes_candidates.append(
@@ -672,8 +691,8 @@ class MediaVault():
                 }
             )
 
-        logger.info(f"Candidates Volumes : {str(self.volumes_candidates)}\n")
-        logger.info("leaving vault_parse_results()\n")
+        logger.debug(f"Candidates Volumes : {str(self.volumes_candidates)}\n")
+        logger.debug("leaving vault_parse_results()\n")
 
 
     def vault_create_eject_list(self):
@@ -681,7 +700,7 @@ class MediaVault():
             We will print that list of candidates. When the list is empty,
             operators knows that no more tape have to be ejected.
         """
-        logger.info("entering vault_create_eject_list()\n")
+        logger.debug("entering vault_create_eject_list()\n")
 
         export_list = StringIO()
 
@@ -723,13 +742,13 @@ class MediaVault():
             print(f"Unknown Error occurred {err}")
             raise
 
-        logger.info("leaving vault_create_eject_list()\n")
+        logger.debug("leaving vault_create_eject_list()\n")
 
     def vault_eject_volumes(self):
         """ Export the volumes by using the autochanger's import/export slots
             write exported volumes and return date to the ftp file to be transmitted.
         """
-        logger.info("entering vault_eject_volumes()\n")
+        logger.debug("entering vault_eject_volumes()\n")
         # https://docs.bareos.org/TasksAndConcepts/BareosConsole.html#console-commands
         # export section
         # export storage=<storage-name> srcslots=<slot-selection>
@@ -759,14 +778,14 @@ class MediaVault():
                     f"-{self.autochanger}-{count}~EndFooterText"
                 )
 
-            logger.info(f"Creating ftp file: {self.ftp_file}\n")
+            logger.debug(f"Creating ftp file: {self.ftp_file}\n")
 
             # We create destination directory if not existent
             try:
                 if not os.path.isdir(self.ftp_dir):
                     os.makedirs(self.ftp_dir)
                     print(f"OS creating dir {self.ftp_dir}")
-                    logger.info(f"OS creating dir {self.ftp_dir}")
+                    logger.debug(f"OS creating dir {self.ftp_dir}")
             except OSError as os_error :
                 msg = f"Fatal ERROR while makedirs('{self.ftp_dir}') \"{os_error}\"\n"
                 logger.error(msg, exc_info=True)
@@ -825,7 +844,7 @@ class MediaVault():
                 raise
 
             print(f"Created ftp file: {self.ftp_file}\n")
-            logger.info(f"Created ftp file: {self.ftp_file}\n")
+            logger.debug(f"Created ftp file: {self.ftp_file}\n")
             # Force Reading file again to be certify content
             try:
                 f_stats = os.stat(self.ftp_file)
@@ -873,14 +892,10 @@ class MediaVault():
                             f"{'sha256sum' : <10}{sha256_b : <15}\n"
                             f"{'----------' : <10}\n"
                         )
-                print(
-                    f"{s.getvalue()}\n",
-                    t_stat
-                )
-                logger.info(
-                    f"{s.getvalue()}\n",
-                    t_stat
-                )
+                s_value = s.getvalue()
+                print(s_value)
+                print(t_stat)
+                logger.debug((s_value,"\n",t_stat))
 
             except OSError as os_error :
                 msg = f"Fatal OS_ERROR can't write \"{self.ftp_file}\" {os_error}\n"
@@ -894,11 +909,10 @@ class MediaVault():
                 print(err)
                 raise
 
-        logger.info("leaving vault_eject_volumes()\n")
+        logger.dubug("leaving vault_eject_volumes()\n")
 
 
 if __name__ == "__main__":
-
 
     sys.exit(not MediaVault().run())
 
