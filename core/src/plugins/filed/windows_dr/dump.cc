@@ -1170,6 +1170,53 @@ struct dump_context {
     }
   }
 
+  bool VolumeIsNeeded(const std::wstring& volume_guid)
+  {
+    if (ignored_disk_ids.empty()) { return true; }
+
+    std::wstring copy = volume_guid;
+    if (copy.back() == '\\') { copy.pop_back(); }
+    auto name = FromUtf16(copy);
+    HANDLE volume = CreateFileW(
+        copy.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+
+    if (volume == INVALID_HANDLE_VALUE) {
+      logger->Trace("could not open volume {} ({}) => needed (cannot-check)",
+                    name, GetLastError());
+      return true;
+    }
+
+    disk_map disks;
+
+    try {
+      GetVolumeExtents(disks, volume, volume, false);
+    } catch (...) {
+      logger->Trace(
+          "could not get volume extents for volume {} => needed (cannot-check)",
+          name);
+
+      CloseHandle(volume);
+      return true;
+    }
+
+    bool needed = false;
+    for (const auto& [id, _] : disks) {
+      if (ignored_disk_ids.find(id) == ignored_disk_ids.end()) {
+        logger->Trace("volume {} => needed (disk = {})", name, id);
+        needed = true;
+        break;
+      }
+    }
+
+    if (!needed) {
+      logger->Trace("volume {} => skipped (only-ignored-disks)", name);
+    }
+
+    CloseHandle(volume);
+    return needed;
+  }
+
   std::vector<std::wstring> list_volumes()
   {
     std::vector<std::wstring> volumes;
@@ -1181,9 +1228,16 @@ struct dump_context {
     }
 
     for (;;) {
-      volumes.emplace_back(VolumeGUID);
-      logger->Trace("Volume '{}'", FromUtf16(volumes.back()));
+      // first check if we need to snapshot this volume at all.
 
+      if (VolumeIsNeeded(VolumeGUID)) {
+        volumes.emplace_back(std::move(VolumeGUID));
+        logger->Trace("Volume '{}' => add to snapshot",
+                      FromUtf16(volumes.back()));
+      } else {
+        logger->Trace("Volume '{}' => skipped (not needed)",
+                      FromUtf16(VolumeGUID));
+      }
       if (!FindNextVolumeW(iter, VolumeGUID, sizeof(VolumeGUID))) {
         auto err = GetLastError();
         if (err == ERROR_NO_MORE_FILES) { break; }
@@ -1327,18 +1381,22 @@ struct dump_context {
       return 0;
     }
 
-    logger->Trace(
-        "{} => sectors: {}, clusters: {}({},{})\nmft: {} "
-        "mft-mirror: {} "
-        "mft-zone: {}-{}\n",
-        volume, (size_t)buffer.NumberSectors.QuadPart,
-        (size_t)buffer.TotalClusters.QuadPart,
-        (size_t)buffer.FreeClusters.QuadPart,
-        (size_t)buffer.TotalReserved.QuadPart,
-        (size_t)buffer.MftStartLcn.QuadPart,
-        (size_t)buffer.Mft2StartLcn.QuadPart,
-        (size_t)buffer.MftZoneStart.QuadPart,
-        (size_t)buffer.MftZoneEnd.QuadPart);
+    logger->Trace("volume {} cluster:", volume);
+    logger->PushIndent();
+    {
+      logger->Trace("sectors: {}, clusters: {}({},{})",
+                    (size_t)buffer.NumberSectors.QuadPart,
+                    (size_t)buffer.TotalClusters.QuadPart,
+                    (size_t)buffer.FreeClusters.QuadPart,
+                    (size_t)buffer.TotalReserved.QuadPart);
+      logger->Trace("mft: {} mft-mirror: {} mft-zone: {}-{}",
+                    (size_t)buffer.MftStartLcn.QuadPart,
+                    (size_t)buffer.Mft2StartLcn.QuadPart,
+                    (size_t)buffer.MftZoneStart.QuadPart,
+                    (size_t)buffer.MftZoneEnd.QuadPart);
+    }
+    logger->PopIndent();
+
     return buffer.BytesPerCluster;
   }
 
@@ -1429,7 +1487,10 @@ struct dump_context {
     }
   }
 
-  void GetVolumeExtents(disk_map& disks, HANDLE volume, HANDLE data_volume)
+  void GetVolumeExtents(disk_map& disks,
+                        HANDLE volume,
+                        HANDLE data_volume,
+                        bool consider_bitmap = true)
   {
     size_t cluster_size = GetClusterSize(data_volume);
 
@@ -1479,12 +1540,15 @@ struct dump_context {
 
       auto& disk = disks[extent.DiskNumber];
 
-      auto bits = [&]() -> std::optional<used_bitmap> {
-        if (cluster_size == 0) { return std::nullopt; }
+      std::optional<used_bitmap> bits = std::nullopt;
+      if (consider_bitmap) {
+        bits = [&]() -> std::optional<used_bitmap> {
+          if (cluster_size == 0) { return std::nullopt; }
 
-        return GetBitmap(bitmap_buffer, data_volume, volume_offset,
-                         extent.ExtentLength.QuadPart, cluster_size);
-      }();
+          return GetBitmap(bitmap_buffer, data_volume, volume_offset,
+                           extent.ExtentLength.QuadPart, cluster_size);
+        }();
+      }
 
       if (bits) {
         static constexpr std::size_t min_hole_size = 1;  // 1 mb
