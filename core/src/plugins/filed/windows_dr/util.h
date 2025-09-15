@@ -24,12 +24,15 @@
 
 #include <string>
 #include <string_view>
+#include <cstdint>
+
+#include "format.h"
 
 namespace {
 
 #if defined(HAVE_WIN32)
 
-static inline std::string FromUtf16(std::wstring_view utf16)
+inline std::string FromUtf16(std::wstring_view utf16)
 {
   // WideCharToMultiByte does not handle empty strings
   if (utf16.size() == 0) { return {}; }
@@ -53,7 +56,7 @@ static inline std::string FromUtf16(std::wstring_view utf16)
   return utf8;
 }
 
-static inline std::string FromUtf16(const wchar_t* utf16p)
+inline std::string FromUtf16(const wchar_t* utf16p)
 {
   if (!utf16p) { return {}; }
   return FromUtf16(std::wstring_view{utf16p});
@@ -61,7 +64,7 @@ static inline std::string FromUtf16(const wchar_t* utf16p)
 
 #endif
 
-static inline bool GetBit(unsigned char* data, std::size_t index)
+inline bool GetBit(unsigned char* data, std::size_t index)
 {
   return (data[index / CHAR_BIT] >> (index % CHAR_BIT)) & 0x1;
 }
@@ -69,6 +72,41 @@ static inline bool GetBit(unsigned char* data, std::size_t index)
 template <class... Ts> struct overloads : Ts... {
   using Ts::operator()...;
 };
+
+// convert uint64 number to size string
+std::string human_readable(std::uint64_t value_in)
+{
+  uint64_t value = value_in;
+  int factor;
+  std::string result{};
+  // convert default value string to numeric value
+  static const char* modifier[] = {"EiB", "PiB", "TiB", "GiB", "MiB", "KiB"};
+  const uint64_t multiplier[] = {
+      UINT64_C(1) << 60,  // EiB Exbibyte
+      UINT64_C(1) << 50,  // PiB Pebibyte
+      UINT64_C(1) << 40,  // TiB Tebibyte
+      UINT64_C(1) << 30,  // GiB Gibibyte
+      UINT64_C(1) << 20,  // MiB Mebibyte
+      UINT64_C(1) << 10   // KiB Kibibyte
+  };
+
+  static_assert(std::size(modifier) == std::size(multiplier));
+
+  for (std::size_t i = 0; i < std::size(multiplier); ++i) {
+    auto mult = multiplier[i];
+    if (value_in > mult) {
+      auto tenth_unit = mult / 10;
+      auto tenth_res = value_in / tenth_unit;
+
+      return libbareos::format("{}.{} {}", tenth_res / 10, tenth_res % 10,
+                               modifier[i]);
+      break;
+    }
+  }
+
+  return libbareos::format("{} B", value_in);
+}
+
 }  // namespace
 
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_UTIL_H_
