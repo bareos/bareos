@@ -76,9 +76,6 @@ template <class... Ts> struct overloads : Ts... {
 // convert uint64 number to size string
 std::string human_readable(std::uint64_t value_in)
 {
-  uint64_t value = value_in;
-  int factor;
-  std::string result{};
   // convert default value string to numeric value
   static const char* modifier[] = {"EiB", "PiB", "TiB", "GiB", "MiB", "KiB"};
   const uint64_t multiplier[] = {
