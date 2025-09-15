@@ -784,7 +784,6 @@ struct dump_context {
 
     auto volumes = list_volumes();
 
-
     logger->Info("creating a vss snapshot");
     snapshot.emplace(VssSnapshot::create(logger, backup_components, volumes));
 
@@ -796,6 +795,10 @@ struct dump_context {
     }
 
     auto paths = snapshot->snapshotted_paths(backup_components);
+
+    if (paths.empty()) {
+      throw std::runtime_error("no volumes were snapshotted");
+    }
 
     disk_map candidate_disks;
     for (auto& [path, copy] : paths) {
@@ -1219,11 +1222,15 @@ struct dump_context {
 
       CComPtr<IVssAsync> prepare_job;
       COM_CALL(vss->PrepareForBackup(&prepare_job));
-      WaitOnJob(prepare_job);
+      if (!WaitOnJob(prepare_job)) {
+        throw std::runtime_error("could not prepare vss snapshot");
+      }
 
       CComPtr<IVssAsync> snapshot_job;
       COM_CALL(vss->DoSnapshotSet(&snapshot_job));
-      WaitOnJob(snapshot_job);
+      if (!WaitOnJob(snapshot_job)) {
+        throw std::runtime_error("could not create vss snapshot");
+      }
 
       aborter.backup_components = nullptr;  // not needed anymore
 
