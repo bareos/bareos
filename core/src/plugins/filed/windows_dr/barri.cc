@@ -137,8 +137,8 @@ void dump_data(std::ostream& stream, GenericLogger* logger)
         if (stream.eof() || stream.fail() || stream.bad()) {
           logger->Info(
               "stream did not accept all data (eof = {} | fail = {} | bad = "
-              "{})",
-              stream.eof(), stream.fail(), stream.bad());
+              "{}); tried writing {} bytes",
+              stream.eof(), stream.fail(), stream.bad(), count);
           break;
         }
       }
