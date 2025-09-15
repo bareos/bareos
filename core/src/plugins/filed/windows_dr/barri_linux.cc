@@ -170,9 +170,17 @@ int main(int argc, char* argv[])
 {
   CLI::App app;
 
+  app.description(version_text() + "\n");
+
   app.add_flag("--trace", trace, "print additional status information");
 
-  auto* restore = app.add_subcommand("restore");
+  auto* restore = app.add_subcommand("restore", "restore a barri backup")
+                      ->footer(R"(Examples:
+  # restore the first disk to /dev/sda, the second to /dev/null and the third to /dev/nvme1
+  barri-cli restore --files /dev/sda /dev/null /dev/nvme1
+
+  # restore to some network block device
+  barri-cli restore --stdout | nbdcopy ...)");
   std::string filename;
   auto* from = restore
                    ->add_option("--from", filename,
@@ -195,20 +203,22 @@ int main(int argc, char* argv[])
 
   std::vector<std::string> filenames;
   auto* disks = location
-                    ->add_option("--onto", filenames,
+                    ->add_option("--files", filenames,
                                  "write the restored disks into the given "
-                                 "files; in the given order")
+                                 "drives; in the given order")
                     ->check(CLI::ExistingFile);
 
   location->require_option(1);
 
 
-  auto* list = app.add_subcommand("list");
+  auto* list
+      = app.add_subcommand("list", "list the contents of a barri backup");
   auto* list_from = list->add_option("--from", filename,
                                      "read from this file instead of stdin")
                         ->check(CLI::ExistingFile);
 
-  auto* version = app.add_subcommand("version");
+  auto* version
+      = app.add_subcommand("version", "print the version information");
 
   app.require_subcommand(1, 1);
 
@@ -237,7 +247,7 @@ int main(int argc, char* argv[])
         } else if (*disks) {
           return GetHandler(logger, restore_files{filenames});
         } else {
-          throw std::logic_error("i dont know where to restore too!");
+          throw std::logic_error("I dont know where to restore too!");
         }
       }();
 
