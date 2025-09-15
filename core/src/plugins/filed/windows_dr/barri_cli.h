@@ -47,7 +47,8 @@ static inline std::string version_text()
 #endif
   return libbareos::format(R"(barri - bareos recovery imager
 Version {} ({})
-Copyright (C) 2025-{} Bareos GmbH & Co. KG)",
+Copyright (C) 2025-{} Bareos GmbH & Co. KG
+Get professional support from https://www.bareos.com)",
                            BARRI_VERSION, BARRI_DATE, BARRI_YEAR);
 }
 
