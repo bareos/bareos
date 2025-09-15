@@ -1026,6 +1026,34 @@ struct dump_context {
     return res;
   }
 
+  bool IsSpecialPartition(const PARTITION_INFORMATION_EX& Info)
+  {
+    static constexpr GUID EFI_PARTITION_GUID
+        = {0xC12A7328,
+           0xF81F,
+           0x11D2,
+           {0xBA, 0x4B, 0x00, 0xA0, 0xC9, 0x3E, 0xC9, 0x3B}};
+
+    static constexpr GUID MSR_PARTITION_GUID
+        = {0xE3C9E316,
+           0x0B5C,
+           0x4DB8,
+           {0x81, 0x7D, 0xF9, 0x2D, 0xF0, 0x02, 0x15, 0xAE}};
+
+    if (Info.PartitionStyle == PARTITION_STYLE_GPT) {
+      if (IsEqualGUID(Info.Gpt.PartitionType, EFI_PARTITION_GUID)) {
+        return true;
+      }
+      if (IsEqualGUID(Info.Gpt.PartitionType, MSR_PARTITION_GUID)) {
+        return true;
+      }
+    }
+
+    // im unsure about how to do this on mbr.  Seems like that info
+    // isnt available in _this_ struct.
+    return false;
+  }
+
   void InsertMissingExtents(HANDLE disk_handle,
                             std::size_t disk_id,
                             const partition_layout& layout,
@@ -1066,7 +1094,16 @@ struct dump_context {
       // if no first_extent exists, then we are also in this case.
       if (first_extent == extents.size()
           || offset + length <= extents[first_extent].partition_offset) {
-        if (save_unknown_partitions) {
+        if (IsSpecialPartition(info)) {
+          logger->Info(
+              "disk {}/partition {} has no snapshotted data => recorded "
+              "(special-partition)",
+              disk_id, part_idx);
+          new_extents.push_back({offset, offset, length, disk_handle});
+          logger->Trace("saving unknown partition {} ({}-{})",
+                        info.PartitionNumber, offset, offset + length);
+
+        } else if (save_unknown_partitions) {
           logger->Info(
               "disk {}/partition {} has no snapshotted data => recorded "
               "(save-unknown-partitions)",
