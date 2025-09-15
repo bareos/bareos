@@ -30,6 +30,7 @@
 #include "dump.h"
 #include "com.h"
 #include "restore.h"
+#include "util.h"
 
 #include "CLI/App.hpp"
 #include "CLI/Config.hpp"
