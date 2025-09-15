@@ -19,11 +19,6 @@
    02110-1301, USA.
 */
 
-#include "CLI/CLI.hpp"
-#include "CLI/App.hpp"
-#include "CLI/Config.hpp"
-#include "CLI/Formatter.hpp"
-
 #include <cuchar>
 
 #include "logger.h"
@@ -174,13 +169,27 @@ int main(int argc, char* argv[])
 
   app.add_flag("--trace", trace, "print additional status information");
 
-  auto* restore = app.add_subcommand("restore", "restore a barri backup")
-                      ->footer(R"(Examples:
+  auto name = argc > 0 ? argv[0] : "barri-cli";
+
+  auto* restore
+      = app.add_subcommand("restore",
+                           "restore a barri backup to the given output(s)")
+            ->formatter(std::make_shared<SubcommandFormatter>(
+                R"(This command restores a barri backup to some output.
+The backup is read from stdin;alternatively you can specify a file to read from via the --file option.
+
+When output to a terminal, then progress will be displayed in a progress bar.)"))
+            ->fallthrough()
+            ->footer(libbareos::format(R"(Examples:
   # restore the first disk to /dev/sda, the second to /dev/null and the third to /dev/nvme1
-  barri-cli restore --files /dev/sda /dev/null /dev/nvme1
+  {0} restore --from backup.barri --files /dev/sda /dev/null /dev/nvme1
 
   # restore to some network block device
-  barri-cli restore --stdout | nbdcopy ...)");
+  get-backup | {0} restore --stdout | nbdcopy ...
+
+  # restore to the disks into /tmp/disks
+  cat backup.barri | {0} restore --into /tmp/disks)",
+                                       name));
   std::string filename;
   auto* from = restore
                    ->add_option("--from", filename,
@@ -212,13 +221,28 @@ int main(int argc, char* argv[])
 
 
   auto* list
-      = app.add_subcommand("list", "list the contents of a barri backup");
+      = app.add_subcommand("list", "list the contents of a barri backup")
+            ->formatter(std::make_shared<SubcommandFormatter>(libbareos::format(
+                R"(This command lists the contents of a barri backup.
+This information may be useful if you need to match up which backed up drive should get restored to which path)",
+                name)))
+            ->fallthrough()
+            ->footer(libbareos::format(R"(Examples:
+  # list the contents of a backup from disk
+  {0} list --from backup.barri
+
+  # list the contents of a backup from stdin
+  get-backup | {0} list)",
+                                       name));
   auto* list_from = list->add_option("--from", filename,
                                      "read from this file instead of stdin")
                         ->check(CLI::ExistingFile);
 
   auto* version
-      = app.add_subcommand("version", "print the version information");
+      = app.add_subcommand("version", "print the version information")
+            ->formatter(std::make_shared<SubcommandFormatter>(libbareos::format(
+                R"(This command outputs the version of {0} to stdout)", name)))
+            ->fallthrough();
 
   app.require_subcommand(1, 1);
 

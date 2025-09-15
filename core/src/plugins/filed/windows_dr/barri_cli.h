@@ -25,6 +25,12 @@
 #include <string>
 #include "format.h"
 
+
+#include "CLI/CLI.hpp"
+#include "CLI/App.hpp"
+#include "CLI/Config.hpp"
+#include "CLI/Formatter.hpp"
+
 static inline std::string version_text()
 {
 #if !defined(BARRI_VERSION)
@@ -44,5 +50,30 @@ Version {} ({})
 Copyright (C) 2025-{} Bareos GmbH & Co. KG)",
                            BARRI_VERSION, BARRI_DATE, BARRI_YEAR);
 }
+
+class SubcommandFormatter : public CLI::Formatter {
+ public:
+  SubcommandFormatter() : Formatter()
+  {
+    std::stringstream out;
+    out << version_text() << "\n\n";
+    long_description = out.str();
+  }
+
+  SubcommandFormatter(std::string long_desc) : Formatter()
+  {
+    std::stringstream out;
+    out << version_text() << "\n\n" << long_desc << "\n";
+    long_description = out.str();
+  }
+
+  std::string make_description(const CLI::App*) const override
+  {
+    return long_description;
+  }
+
+ private:
+  std::string long_description;
+};
 
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_BARRI_CLI_H_
