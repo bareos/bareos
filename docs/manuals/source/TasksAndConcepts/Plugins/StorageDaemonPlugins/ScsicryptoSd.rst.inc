@@ -1,3 +1,5 @@
+.. _scsicrypto-sd:
+
 scsicrypto-sd
 ~~~~~~~~~~~~~
 
@@ -70,6 +72,8 @@ The initial setup of SCSI crypto looks something like this:
       bscrypto -g -
 
 For details see :ref:`bscrypto <bscrypto>`.
+
+.. _setup_scsi_capabilities:
 
 Security Setup
 ''''''''''''''
