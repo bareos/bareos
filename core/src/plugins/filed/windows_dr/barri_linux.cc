@@ -1,3 +1,24 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+
 #include "CLI/CLI.hpp"
 #include "CLI/App.hpp"
 #include "CLI/Config.hpp"
@@ -6,8 +27,8 @@
 #include <cuchar>
 
 #include "logger.h"
+#include "barri_cli.h"
 
-#define NEW_RESTORE
 #include "restore.h"
 
 bool trace = false;
@@ -197,10 +218,7 @@ int main(int argc, char* argv[])
 
   try {
     if (*restore) {
-      // std::unique_ptr<GenericHandler> strategy;
-
-
-      // parse_file_format(logger, *input, strategy.get());
+      logger->Info("{}", version_text());
 
       std::ifstream opened_file;
       std::istream* input = std::addressof(std::cin);
@@ -248,6 +266,8 @@ int main(int argc, char* argv[])
     } else if (*list) {
       ListContents strategy{logger};
 
+      logger->Info("{}", version_text());
+
       std::ifstream opened_file;
       std::istream* input = std::addressof(std::cin);
       if (*list_from) {
@@ -257,16 +277,7 @@ int main(int argc, char* argv[])
       }
       parse_file_format(logger, *input, &strategy);
     } else if (*version) {
-#if !defined(BARRI_VERSION)
-#  warning "no barri version defined"
-#  define BARRI_VERSION "unknown"
-#endif
-#if !defined(BARRI_DATE)
-#  warning "no barri date defined"
-#  define BARRI_DATE "unknown"
-#endif
-      std::cout << "barri " << BARRI_VERSION " (" BARRI_DATE ")" << std::endl;
-      std::cout << "Copyright (C) 2025-2025 Bareos GmbH & Co. KG" << std::endl;
+      std::cout << version_text() << std::endl;
     } else {
       // this should never happen, as we tell cli11 that we need at least
       // one subcommand
