@@ -790,3 +790,10 @@ Bareos.
    It is recommended to initialize your LTO-9 tape cartridges before using them
    with Bareos. Modern tape changers usually have an automatic procedure to
    initialize all tapes.
+
+TapeAlert Flags
+---------------
+
+All modern tape drives support extended problem reporting using TapeAlert flags.
+The |sd| can retrieve and report these flags using the :ref:`scsitapealert-sd`
+plugin.
