@@ -35,6 +35,8 @@
 #include "CLI/Config.hpp"
 #include "CLI/Formatter.hpp"
 
+#include "barri_cli.h"
+
 std::atomic<bool> quit = false;
 
 void restore_data(std::istream& stream,
@@ -241,18 +243,28 @@ via the --from option explicitly.
 
   auto logger = progressbar::get(trace);
 
-  if (!SetConsoleCtrlHandler(&SignalHandler, TRUE)) {
-    logger->Info("could not setup ctrl-c handler: Err={}", GetLastError());
-  } else {
-    logger->Trace("ctrl-c handler was setup");
-  }
-
 
   try {
     if (*save) {
+      logger->Info("{}", version_text());
+
+      if (!SetConsoleCtrlHandler(&SignalHandler, TRUE)) {
+        logger->Info("could not setup ctrl-c handler: Err={}", GetLastError());
+      } else {
+        logger->Trace("ctrl-c handler was setup");
+      }
+
       _setmode(_fileno(stdout), _O_BINARY);
       dump_data(std::cout, logger);
     } else if (*restore) {
+      logger->Info("{}", version_text());
+
+      if (!SetConsoleCtrlHandler(&SignalHandler, TRUE)) {
+        logger->Info("could not setup ctrl-c handler: Err={}", GetLastError());
+      } else {
+        logger->Trace("ctrl-c handler was setup");
+      }
+
       std::ifstream infile;
       std::istream* input = std::addressof(std::cin);
 
@@ -285,16 +297,7 @@ via the --from option explicitly.
       logger->Trace("handler chosen");
       restore_data(*input, handler.get(), logger);
     } else if (*version) {
-#if !defined(BARRI_VERSION)
-#  warning "no barri version defined"
-#  define BARRI_VERSION "unknown"
-#endif
-#if !defined(BARRI_DATE)
-#  warning "no barri date defined"
-#  define BARRI_DATE "unknown"
-#endif
-      std::cout << BARRI_VERSION " (" BARRI_DATE ")" << std::endl;
-      std::cout << "Copyright (C) 2025-2025 Bareos GmbH & Co. KG" << std::endl;
+      std::cout << version_text() << std::endl;
     }
 
     return 0;
