@@ -77,8 +77,9 @@ template <class... Ts> struct overloads : Ts... {
 std::string human_readable(std::uint64_t value_in)
 {
   // convert default value string to numeric value
-  static const char* modifier[] = {"EiB", "PiB", "TiB", "GiB", "MiB", "KiB"};
-  const uint64_t multiplier[] = {
+  constexpr std::string_view modifier[]
+      = {"EiB", "PiB", "TiB", "GiB", "MiB", "KiB"};
+  constexpr uint64_t multiplier[] = {
       UINT64_C(1) << 60,  // EiB Exbibyte
       UINT64_C(1) << 50,  // PiB Pebibyte
       UINT64_C(1) << 40,  // TiB Tebibyte
