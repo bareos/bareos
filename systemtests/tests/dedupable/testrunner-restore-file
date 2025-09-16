@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -28,10 +28,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
 . functions
@@ -41,10 +41,10 @@ start_test
 file1="$(pwd)/tmp/data/weird-files/socket.pl"
 file2="$(pwd)/tmp/data/weird-files/softlinkee"
 file3="$(pwd)/tmp/data/weird-files/softlink-to-softlinkee"
-for f in "$file1" "$file2" "$file3" ; do
-    if [[ -f "$tmp/bareos-restores/$f" ]]; then
-	rm "$tmp/bareos-restores/$f"
-    fi;
+for f in "$file1" "$file2" "$file3"; do
+  if [[ -f "$tmp/bareos-restores/$f" ]]; then
+    rm "$tmp/bareos-restores/$f"
+  fi
 done
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
@@ -75,7 +75,7 @@ messages
 @$out $log_home/restore-from-list-and-time.out
 restore
 8
-$(( $(date +%Y) + 1))
+$(($(date +%Y) + 1))
 $file3
 
 yes
@@ -90,39 +90,39 @@ check_for_zombie_jobs storage=Dedup
 check_preconditions
 
 expect_grep "Start Restore Job" \
-	    "$log_home/should-work.out" \
-	    "The first restore job was not started."
+  "$log_home/should-work.out" \
+  "The first restore job was not started."
 expect_grep "Restore OK" \
-	    "$log_home/should-work.out" \
-	    "Restore job was not successful."
+  "$log_home/should-work.out" \
+  "Restore job was not successful."
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-from-selected-job.out" \
-	    "The second restore job was not started."
+  "$log_home/restore-from-selected-job.out" \
+  "The second restore job was not started."
 expect_grep "Restore OK" \
-	    "$log_home/restore-from-selected-job.out" \
-	    "Restore job was not successful."
+  "$log_home/restore-from-selected-job.out" \
+  "Restore job was not successful."
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-from-list-and-time.out" \
-	    "The third restore job was not started."
+  "$log_home/restore-from-list-and-time.out" \
+  "The third restore job was not started."
 expect_grep "Restore OK" \
-	    "$log_home/restore-from-list-and-time.out" \
-	    "Restore job was not successful."
+  "$log_home/restore-from-list-and-time.out" \
+  "Restore job was not successful."
 
 expect_grep "1 file selected to be restored." \
-	    "$log_home/should-work.out" \
- 	    "Expected success; found failure"
+  "$log_home/should-work.out" \
+  "Expected success; found failure"
 
 if ! cmp -s "$tmp/bareos-restores/$file1" "$file1"; then
-    exit 2
+  exit 2
 fi
 
 if ! cmp -s "$tmp/bareos-restores/$file2" "$file2"; then
-    exit 3
+  exit 3
 fi
 
 if ! cmp -s "$tmp/bareos-restores/$file3" "$file3"; then
-    exit 4
+  exit 4
 fi
 end_test

@@ -25,10 +25,10 @@ export TestName
 
 JobName=ai-backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 start_test
 
@@ -51,7 +51,7 @@ wait
 messages
 END_OF_DATA
 run_bconsole
-when="$(date "+%F %H:%M:")$(printf "%02d" $(( $(date "+%S") + 5 )))"
+when="$(date "+%F %H:%M:")$(printf "%02d" $(($(date "+%S") + 5)))"
 echo "running consolidate when=${when}"
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/consolidate-duplicates_consolidate.out
@@ -64,15 +64,15 @@ END_OF_DATA
 run_bconsole
 
 expect_grep "JobId [[:digit:]]* already running. Duplicate consolidation job of Client \".*\" and FileSet \".*\" not allowed." \
-            "$tmp"/consolidate-duplicates_consolidate-messages.out \
-            "duplicate consolidate virtualfull did not log duplicate job error."
+  "$tmp"/consolidate-duplicates_consolidate-messages.out \
+  "duplicate consolidate virtualfull did not log duplicate job error."
 
 expect_grep "Termination:[[:space:]]*Backup Canceled" \
-            "$tmp"/consolidate-duplicates_consolidate-messages.out \
-            "duplicate consolidate virtualfull was not cancelled."
+  "$tmp"/consolidate-duplicates_consolidate-messages.out \
+  "duplicate consolidate virtualfull was not cancelled."
 
 expect_grep "Termination:[[:space:]]*Backup OK" \
-            "$tmp"/consolidate-duplicates_consolidate-messages.out \
-            "both consolidate virtualfull did not succeed."
+  "$tmp"/consolidate-duplicates_consolidate-messages.out \
+  "both consolidate virtualfull did not succeed."
 
 end_test

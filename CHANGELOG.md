@@ -57,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - doc: storage backend add note about static build [PR #2350]
 - fix next-pool overrides by job [PR #2279]
 - stored: fix race condition [PR #2359]
+- dird: fix nextvol crash [PR #2335]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -205,6 +206,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2328]: https://github.com/bareos/bareos/pull/2328
 [PR #2329]: https://github.com/bareos/bareos/pull/2329
 [PR #2332]: https://github.com/bareos/bareos/pull/2332
+[PR #2335]: https://github.com/bareos/bareos/pull/2335
 [PR #2340]: https://github.com/bareos/bareos/pull/2340
 [PR #2341]: https://github.com/bareos/bareos/pull/2341
 [PR #2344]: https://github.com/bareos/bareos/pull/2344

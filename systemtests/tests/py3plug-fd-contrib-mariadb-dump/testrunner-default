@@ -9,28 +9,28 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
 JobName=backup-bareos-fd
 test_db_name="${db_name}_test"
 RESTORE_DIR="${tmp}/bareos-restores/@mariadbbackup@/"
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 skip_if_root
 
 start_test
 
-#shellcheck source=../scripts/mariadb.sh
+#shellcheck source=../../scripts/mariadb.sh
 . "${rscripts}"/mariadb.sh
 
 mariadb_init
 mariadb_server_start
 
-${MARIADB_CLIENT} <<< "create database ${test_db_name}"
-${MARIADB_CLIENT} "${test_db_name}" <<< "CREATE TABLE test (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW());"
-${MARIADB_CLIENT} "${test_db_name}" <<< "insert into test (data) VALUES ('test entry 1')"
+${MARIADB_CLIENT} <<<"create database ${test_db_name}"
+${MARIADB_CLIENT} "${test_db_name}" <<<"CREATE TABLE test (id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, data VARCHAR(100), created TIMESTAMP DEFAULT NOW());"
+${MARIADB_CLIENT} "${test_db_name}" <<<"insert into test (data) VALUES ('test entry 1')"
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out ${NULL_DEV}
@@ -52,14 +52,14 @@ echo "Running first full backup"
 run_bconsole
 expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
 if [ ${estat} -ne 0 ]; then
-    stop_bareos
-    mariadb_server_stop
-    exit ${estat}
+  stop_bareos
+  mariadb_server_stop
+  exit ${estat}
 fi
 
 # Insert more data & rerun a job with a again a full
 # mariadb-dump do only full dumps.
-${MARIADB_CLIENT} "${test_db_name}" <<< "insert into test (data) VALUES ('test entry 2')"
+${MARIADB_CLIENT} "${test_db_name}" <<<"insert into test (data) VALUES ('test entry 2')"
 cat <<END_OF_DATA2 >"$tmp/bconcmds"
 @$out $tmp/log2.out
 run job=$JobName yes
@@ -74,9 +74,9 @@ echo "Running second full backup"
 run_bconsole
 expect_grep "Backup OK" "${tmp}/log2.out" "Full Backup not found!"
 if [ ${estat} -ne 0 ]; then
-    stop_bareos
-    mariadb_server_stop
-    exit ${estat}
+  stop_bareos
+  mariadb_server_stop
+  exit ${estat}
 fi
 
 cat <<END_OF_DATA3 >"${tmp}/bconcmds"
@@ -95,16 +95,16 @@ echo "Running restore backup"
 run_bconsole
 expect_grep "Restore OK" "${tmp}/log3.out" "Restore OK not found!"
 if [ ${estat} -ne 0 ]; then
-    stop_bareos
-    mariadb_server_stop
-    exit ${estat}
+  stop_bareos
+  mariadb_server_stop
+  exit ${estat}
 fi
 
 # Check if some files are restored
 ls -lR "${RESTORE_DIR}"
 if [ -z "$(ls -A "${RESTORE_DIR}")" ]; then
-       echo "No restore data found"
-       estat=1
+  echo "No restore data found"
+  estat=1
 fi
 
 check_for_zombie_jobs storage=File
@@ -112,20 +112,20 @@ stop_bareos
 
 # delete database
 echo "drop databse ${test_db_name} to test reimport"
-${MARIADB_CLIENT} <<< "DROP DATABASE ${test_db_name};"
+${MARIADB_CLIENT} <<<"DROP DATABASE ${test_db_name};"
 
-if ${MARIADB_CLIENT} "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" 2>/dev/null; then
-    echo "database ${test_db_name} should be deleted and command should fail."
-    estat=2
+if ${MARIADB_CLIENT} "${test_db_name}" <<<"SELECT * FROM test WHERE id=2;" 2>/dev/null; then
+  echo "database ${test_db_name} should be deleted and command should fail."
+  estat=2
 fi
 
 # restore db
 echo "restore databse with ${RESTORE_DIR}/${test_db_name}.sql "
-${MARIADB_CLIENT} < "${RESTORE_DIR}/${test_db_name}.sql"
+${MARIADB_CLIENT} <"${RESTORE_DIR}/${test_db_name}.sql"
 
-if ! ${MARIADB_CLIENT} "${test_db_name}" <<< "SELECT * FROM test WHERE id=2;" >/dev/null; then
-    echo "test entry not found after restore"
-    estat=3
+if ! ${MARIADB_CLIENT} "${test_db_name}" <<<"SELECT * FROM test WHERE id=2;" >/dev/null; then
+  echo "test entry not found after restore"
+  estat=3
 fi
 echo "Restore tested ok"
 

@@ -27,15 +27,15 @@ export TestName
 
 myname=$(basename "$0")
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
 
-echo "Incremental Data" > "${DB_FILE2}"
+echo "Incremental Data" >"${DB_FILE2}"
 
 # update first line in brands
 "${SQLCMD}" -Q "UPDATE DBFileStreamTest.tests.samples SET sample_name='Bareos' WHERE sample_id=1"
@@ -64,7 +64,7 @@ print_delete_trace
 check_for_zombie_jobs storage=File
 
 expect_grep "IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)" \
-            "${tmp}/${myname}.log" \
-            "\"IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)\" not found in log"
+  "${tmp}/${myname}.log" \
+  "\"IClientVirtualDeviceSet2::GetConfiguration successful: 0 (NOERROR)\" not found in log"
 
 end_test

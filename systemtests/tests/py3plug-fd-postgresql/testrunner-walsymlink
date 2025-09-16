@@ -14,12 +14,11 @@ set -u
 #
 # It can be used for any PostgreSQL version >= 10.
 
-
 TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName="backup-bareos-fd"
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 . ./database/setup_local_db.sh
 
@@ -28,11 +27,11 @@ DBNAME="backuptest"
 TESTPGHOST="${dbHost}"
 PSQL="${POSTGRES_BIN_PATH}/psql --no-psqlrc --host ${TESTPGHOST}"
 
-[ -d "${TESTPGHOST}" ] && rm -R  "${TESTPGHOST}"
+[ -d "${TESTPGHOST}" ] && rm -R "${TESTPGHOST}"
 mkdir -p "${TESTPGHOST}"
 [ $EUID -eq 0 ] && chown postgres "${TESTPGHOST}"
 
-pushd database > /dev/null
+pushd database >/dev/null
 setup_local_db "${TESTPGHOST}"
 
 # Create Test DB with table and 1 statement
@@ -42,9 +41,9 @@ create table t(id serial primary key, text varchar(20), created_on timestamp);
 insert into t (text, created_on) values ('test for FULL backup', current_timestamp);
 select * from t;
 "
-popd > /dev/null
+popd >/dev/null
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -73,7 +72,7 @@ expect_grep "Backup OK" "${tmp}/slog1.out" "Full Backup not found!"
 expect_grep "Warning: python3-fd-mod: symlink detected in wal_archive_dir option" "${tmp}/slog1.out" "Symlink warning missing!"
 
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 # Now add data to the database and run an incremental job
 ${PSQL} ${DBNAME} -c "insert into t (text, created_on) values ('test for INCR backup', current_timestamp)"
@@ -94,7 +93,7 @@ run_bconsole
 expect_grep "Backup OK" "${tmp}/slog2.out" "First Incremental Backup not found!"
 
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 # run another Incr without db changes - should result in empty backup job (only restore object)
@@ -113,11 +112,11 @@ run_bconsole
 expect_grep "Backup OK" "${tmp}/slog3.out" "2nd Incremental Backup not found!"
 
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 # Now stop database and try a restore
-pushd database/ > /dev/null
+pushd database/ >/dev/null
 echo "destroy pg_cluster"
 local_db_stop_server "$TESTPGHOST"
 # Save previous log
@@ -126,7 +125,7 @@ rm -Rf data
 rm -Rf wal_archive
 rm -f wal_archive_symlink
 echo "------------ stopped"
-popd > /dev/null
+popd >/dev/null
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
@@ -143,24 +142,23 @@ run_bconsole
 
 expect_grep "Restore OK" "${tmp}/slog4.out" "Restore Backup not ok!"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 check_for_zombie_jobs storage=File
 
 sleep 1
 
-pushd database > /dev/null
+pushd database >/dev/null
 #sometimes the pid file remains
-rm -f data/postmaster.pid ||:
+rm -f data/postmaster.pid || :
 # reset log file
-rm -f data/log/* ||:
-rm -f data/pg_wall/* ||:
-
+rm -f data/log/* || :
+rm -f data/pg_wall/* || :
 
 # use either recovery.conf or recovery.signal
 # Those files should exist after restore, the plugin create them
 # postgres 11 and lower
-if (( ${PG_VERSION} < 12 )); then
+if ((${PG_VERSION} < 12)); then
   echo "PG_VERSION is ${PG_VERSION} so lower than 12, using recovery.conf"
   recovery_file="${current_test_directory}/database/data/recovery.conf"
 else
@@ -169,40 +167,41 @@ else
   recovery_file="${current_test_directory}/database/data/recovery.signal"
 fi
 restore_command="restore_command = 'cp ${current_test_directory}/database/wal_archive/%f %p'"
-if [ ! -f "${recovery_file}" ];then
- echo "${TestName} ${recovery_file} is missing from restore"
- exit 1;
+if [ ! -f "${recovery_file}" ]; then
+  echo "${TestName} ${recovery_file} is missing from restore"
+  exit 1
 fi
-if (( ${PG_VERSION} < 12 )); then
-  echo "${restore_command}" >> "${recovery_file}"
+if ((${PG_VERSION} < 12)); then
+  echo "${restore_command}" >>"${recovery_file}"
 else
-  echo "${restore_command}" >> "${current_test_directory}/database/data/postgresql.conf"
+  echo "${restore_command}" >>"${current_test_directory}/database/data/postgresql.conf"
 fi
-
 
 echo "Restart restored pg_cluster"
 local_db_start_server "${TESTPGHOST}"
-popd > /dev/null
+popd >/dev/null
 
 i=0
-until ${PSQL} ${DBNAME} -c "select * from t" | grep "for INCR"  > ${tmp}/sql.log  ; do
+until ${PSQL} ${DBNAME} -c "select * from t" | grep "for INCR" >${tmp}/sql.log; do
   echo "waiting for query to succeed"
   sleep 1
-  i=$((i+1))
-  if [ $i -gt 10 ]; then echo "timeout waiting for query after recovery"; exit 1; fi
+  i=$((i + 1))
+  if [ $i -gt 10 ]; then
+    echo "timeout waiting for query after recovery"
+    exit 1
+  fi
 done
 
-pushd database/ > /dev/null
+pushd database/ >/dev/null
 local_db_stop_server "${TESTPGHOST}"
-popd > /dev/null
+popd >/dev/null
 
 check_two_logs "${tmp}/slog1.out" "${tmp}/slog4.out"
-if (grep -q "for INCR" ${tmp}/sql.log)
-then
-   estat=0
+if (grep -q "for INCR" ${tmp}/sql.log); then
+  estat=0
 else
-   echo "Error: Database rows not found"
-   estat=1
+  echo "Error: Database rows not found"
+  estat=1
 fi
 
 end_test

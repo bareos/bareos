@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,17 +22,17 @@ set -e
 set -o pipefail
 set -u
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
 if [ $# -gt 0 ]; then
-    ARGS=""
-    for i in "$@"; do
-        # get module name (filename without .py extention)
-        ARG=$(basename $i .py)
-        ARGS="$ARGS $ARG"
-    done
-    $PYTHON_EXECUTABLE -m unittest -v $ARGS
+  ARGS=""
+  for i in "$@"; do
+    # get module name (filename without .py extention)
+    ARG=$(basename $i .py)
+    ARGS="$ARGS $ARG"
+  done
+  $PYTHON_EXECUTABLE -m unittest -v $ARGS
 else
-    $PYTHON_EXECUTABLE -m unittest discover -v
+  $PYTHON_EXECUTABLE -m unittest discover -v
 fi

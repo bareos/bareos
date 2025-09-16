@@ -6,11 +6,10 @@ set -u
 #set -x
 #trap read debug
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
-#shellcheck source=./reload_test_functions
 . ./reload_test_functions
 
 TestName="$(get_test_name "$0")"
@@ -23,8 +22,6 @@ console_logfile="$tmp/console.log"
 
 director_debug_level=""
 #director_debug_level="-d 200"
-
-
 
 ############################################
 start_test

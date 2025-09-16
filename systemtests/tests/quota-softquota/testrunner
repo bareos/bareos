@@ -14,25 +14,24 @@ export TestName
 Client=bareos-fd
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-
 check_backup()
 {
-    jobid=$1
-    if grep "^  Termination: *Backup OK" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
-        print_debug "jobid ${jobid}: Backup OK => OK"
-    else
-        print_debug "jobid ${jobid}: Backup failed => NOK"
-        estat=${jobid}
-    fi
-    return $estat
+  jobid=$1
+  if grep "^  Termination: *Backup OK" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+    print_debug "jobid ${jobid}: Backup OK => OK"
+  else
+    print_debug "jobid ${jobid}: Backup failed => NOK"
+    estat=${jobid}
+  fi
+  return $estat
 }
 
 # create test data
@@ -130,45 +129,45 @@ check_backup 2
 check_backup 3
 jobid=3
 if grep -i "Soft Quota exceeded," ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
-   print_debug "jobid ${jobid}: Soft Quota exceeded => OK"
+  print_debug "jobid ${jobid}: Soft Quota exceeded => OK"
 else
-   print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
-   estat=${jobid}
+  print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
+  estat=${jobid}
 fi
 
 check_backup 4
 jobid=4
 if grep -i "Soft Quota exceeded," ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
-   print_debug "jobid ${jobid}: Soft Quota exceeded => OK"
+  print_debug "jobid ${jobid}: Soft Quota exceeded => OK"
 else
-   print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
-   estat=${jobid}
+  print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
+  estat=${jobid}
 fi
 
 # check if job is gets the Grace Time expired and Over Quota warning
 jobid=5
 if grep -i "Fatal error: Soft Quota exceeded / Grace Time expired" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
-   print_debug "jobid ${jobid}: Soft Quota exceeded and Grace Time expired => OK"
+  print_debug "jobid ${jobid}: Soft Quota exceeded and Grace Time expired => OK"
 else
-   print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
-   estat=${jobid}
+  print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
+  estat=${jobid}
 fi
 # check if job is canceled as expected (some job as previous test)
 if grep -i "^  Termination: .*Backup Error" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
-   print_debug "jobid ${jobid}: Backup failed (quota exceeded) => OK"
+  print_debug "jobid ${jobid}: Backup failed (quota exceeded) => OK"
 else
-   print_debug "jobid ${jobid}: no 'Backup Error' message found => NOK"
-   estat=${jobid}
+  print_debug "jobid ${jobid}: no 'Backup Error' message found => NOK"
+  estat=${jobid}
 fi
 
 # check if job is successful
 check_backup 6
 jobid=6
 if grep -i "Soft Quota reset" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
-   print_debug "jobid ${jobid}: Soft Quota reset => OK"
+  print_debug "jobid ${jobid}: Soft Quota reset => OK"
 else
-   print_debug "jobid ${jobid}: no 'Soft Quota reset' message found => NOK"
-   estat=${jobid}
+  print_debug "jobid ${jobid}: no 'Soft Quota reset' message found => NOK"
+  estat=${jobid}
 fi
 
 # end tests and check for error codes

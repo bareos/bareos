@@ -8,10 +8,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -41,24 +41,23 @@ timeout=0
 timed_checkpoint=""
 volume_checkpoint=""
 
-while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]
-do
-    timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' "$messagesfile" || : )
-    volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$messagesfile" || : )
-    sleep 1
-    ((++timeout))
+while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]; do
+  timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' "$messagesfile" || :)
+  volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$messagesfile" || :)
+  sleep 1
+  ((++timeout))
 done
 
 # Check that a timed checkpoint was triggered
 if [[ -z $timed_checkpoint ]]; then
-    echo "Timed checkpoint was not triggered!"
-    estat=1;
+  echo "Timed checkpoint was not triggered!"
+  estat=1
 fi
 
 # Check that a checkpoint happened on a volume change
 if [[ -z $volume_checkpoint ]]; then
-    echo "Checkpoint was not triggered on volume changes!"
-    estat=2;
+  echo "Checkpoint was not triggered on volume changes!"
+  estat=2
 fi
 
 slowjobid=$(grep 'Job queued. JobId=' "$backup_log" | sed -n -e 's/^.*JobId=//p')
@@ -80,15 +79,15 @@ run_bconsole
 
 # Check that a cancel was triggered
 expect_grep "Termination:            Backup Canceled" \
-            "$backup_log" \
-            "Job was not canceled!"
+  "$backup_log" \
+  "Job was not canceled!"
 
 NumberOfBackedUpFiles=0
 while read -a nums; do
-    for num in "${nums[@]}"; do
-	(( NumberOfBackedUpFiles += num ))
-    done
-done <<< "$(grep "entries start" "$backup_log" | cut -d" " -f12)"
+  for num in "${nums[@]}"; do
+    ((NumberOfBackedUpFiles += num))
+  done
+done <<<"$(grep "entries start" "$backup_log" | cut -d" " -f12)"
 
 # Check that part of the files were written despite the cancel
 if [ "$NumberOfBackedUpFiles" -le 0 ]; then
@@ -98,12 +97,12 @@ fi
 
 # Check that the restore of a canceled backup works fine
 expect_grep "Termination:.*Restore OK" \
-            "$restore_log" \
-            "Restore is not OK."
+  "$restore_log" \
+  "Restore is not OK."
 
 expect_grep "Files Restored:         ${NumberOfBackedUpFiles}" \
-            "$restore_log" \
-            "Restore of canceled job did not go well!"
+  "$restore_log" \
+  "Restore of canceled job did not go well!"
 
 restorepath="$restore_directory/$tmp/bigdata"
 restorepath=$(remove_colon_from_windows_path "$restorepath")

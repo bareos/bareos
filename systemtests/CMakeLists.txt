@@ -19,6 +19,8 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+include(BareosOSInfo)
+
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   set(DISABLED_TESTS
       system:always-incremental-consolidate:02-empty-incrementals
@@ -141,6 +143,8 @@ get_filename_component(POSTGRES_BIN_PATH ${PG_CTL} DIRECTORY)
 message(STATUS "POSTGRES_BIN_PATH is ${POSTGRES_BIN_PATH}")
 
 find_program(PERL perl)
+
+message(STATUS "PERL is ${PERL}")
 
 option(RUN_SYSTEMTESTS_ON_INSTALLED_FILES
        "configure the system tests to run on installed files (from packages)"

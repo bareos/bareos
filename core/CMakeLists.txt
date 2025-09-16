@@ -771,6 +771,7 @@ message("   PLUGINS:                      ${PLUGINS} ")
 message("   Build for Test Coverage :     ${coverage} ")
 
 message("   PSCMD:                        ${PSCMD}")
+message("   PERL:                         ${PERL}")
 message("   PS:                           ${PS}")
 message("   PIDOF:                        ${PIDOF}")
 message("   PGREP:                        ${PGREP}")

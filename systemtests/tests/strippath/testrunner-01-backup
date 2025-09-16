@@ -7,10 +7,10 @@ TestName=01-setup
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -32,11 +32,11 @@ run_bconsole "$@"
 check_for_zombie_jobs storage=File
 
 expect_grep 'Catalog record for Volume "TestVolume001", Slot 0 successfully created.' \
-	    "$tmp/backup.out" \
-	    "TestVolume001 was not created." 
+  "$tmp/backup.out" \
+  "TestVolume001 was not created."
 
 expect_grep 'Termination:.*Backup OK' \
-	    "$tmp/backup.out" \
-	    "Backup did not succeed."
+  "$tmp/backup.out" \
+  "Backup did not succeed."
 
 end_test

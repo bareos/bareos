@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -33,10 +33,10 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
 . functions
@@ -44,10 +44,22 @@ JobName=backup-bareos-fd
 start_test
 
 file="$(pwd)/tmp/data/weird-files/socket.pl"
+
+original_file="${log_home}/socket.pl"
+
+cp "${file}" "${original_file}"
+
 if [[ -f "$tmp/bareos-restores/$file" ]]; then
-    rm "$tmp/bareos-restores/$file"
-fi;
-echo "i overwrite the file" > "$file"
+  rm "$tmp/bareos-restores/$file"
+fi
+
+if on_windows_host; then
+  bareos_path=$(cygpath -w -m "${file}")
+else
+  bareos_path="$file"
+fi
+
+echo "i overwrite the file" >"$file"
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 setdebug level=100 storage=File
@@ -68,7 +80,7 @@ messages
 quit
 END_OF_DATA
 
-run_bconsole
+run_bconsole "${tmp}/bconcmds"
 # find the new job id
 backupid=$(grep 'Job queued. JobId=' "$log_home/create-newer-backup.out" | sed -n -e 's/^.*JobId=//p')
 cat <<END_OF_DATA >"$tmp/bconcmds"
@@ -80,26 +92,49 @@ status client
 status storage=File
 wait
 @$out $log_home/restore-archive.out
-restore archive
+restore archive where="${log_home}/bareos-restores"
 5
-mark $file
+mark ${bareos_path}
 done
 yes
 wait
 messages
 delete jobid=$backupid
+update jobid=1 jobtype=B
 quit
 END_OF_DATA
-run_bconsole
+run_bconsole "${tmp}/bconcmds"
 
 check_for_zombie_jobs storage=File
 
 check_preconditions
 
-# since we changed the file they cannot be the same!
-if cmp -s "$log_home/bareos-restores/$file" "$file"; then
-    exit 2
+check_log "${log_home}/restore-archive.out"
+
+if on_windows_host; then
+  # remove_colon_... needs the leading slash
+  removed=$(remove_colon_from_windows_path "/${bareos_path}")
+  restored_path="$log_home/bareos-restores${removed}"
+else
+  echo "not windows!"
+  restored_path="$log_home/bareos-restores${bareos_path}"
 fi
+
+# since we changed the file they cannot be the same!
+if cmp -s "${restored_path}" "${file}"; then
+  echo "we recovered the new file!"
+  exit 2
+fi
+
+# since we changed the file they cannot be the same!
+if ! cmp -s "${restored_path}" "${original_file}"; then
+  echo "we did not recover the old file!"
+  exit 2
+fi
+
+# restore the old file
+
+mv "${original_file}" "${file}"
 
 # since the other tests do not care for the original contents
 # we just leave the changed file instead of changing it back.

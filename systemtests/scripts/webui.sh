@@ -27,7 +27,7 @@ set -e
 set -o pipefail
 set -u
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
 # BAREOS_WEBUI_CONFDIR is often set incorrectly

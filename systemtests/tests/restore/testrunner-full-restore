@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -30,13 +30,15 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
 . functions
+
+RestoreDirectory="${log_home}/bareos-restores"
 
 start_test
 
@@ -53,7 +55,7 @@ messages
 @$out $log_home/jobs.out
 list jobs
 @$out $log_home/restore-full.out
-restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
+restore client=bareos-fd fileset=SelfTest where=${RestoreDirectory} select all done yes
 wait
 messages
 setdebug level=10 client trace=0
@@ -65,12 +67,12 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-full.out" \
-	    "Required restore job was not started."
+  "$log_home/restore-full.out" \
+  "Required restore job was not started."
 
 expect_grep "Restore OK" \
-	    "$log_home/restore-full.out" \
-	    "Restore job was not successful"
+  "$log_home/restore-full.out" \
+  "Restore job was not successful"
 
-check_restore_diff "${BackupDirectory}"
+check_restore_diff "${BackupDirectory}" "${RestoreDirectory}"
 end_test

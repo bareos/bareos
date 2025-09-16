@@ -7,10 +7,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
@@ -38,12 +38,12 @@ END_OF_DATA
 run_bconsole
 
 expect_not_grep "Doing timed backup checkpoint." \
-                "$backup_log" \
-                "Timed checkpoint was triggered for a spooled job. This should not happen here."
+  "$backup_log" \
+  "Timed checkpoint was triggered for a spooled job. This should not happen here."
 
 expect_not_grep "Volume changed, doing checkpoint:" \
-                "$backup_log" \
-                "Checkpoint on volume change was triggered for a spooled job. This should not happen here."
+  "$backup_log" \
+  "Checkpoint on volume change was triggered for a spooled job. This should not happen here."
 
 slowjobid=$(grep 'Job queued. JobId=' "$backup_log" | sed -n -e 's/^.*JobId=//p')
 
@@ -60,7 +60,7 @@ END_OF_DATA
 run_bconsole
 
 expect_grep "Termination:.*Restore OK" \
-            "$restore_log" \
-            "Restore is not OK."
+  "$restore_log" \
+  "Restore is not OK."
 
 end_test

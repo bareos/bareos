@@ -13,20 +13,20 @@
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 start_test
 
 last_job_id=$(last_jobid_or_zero)
 
-full_id=$(( last_job_id + 1 ))
-incremental_1_id=$(( last_job_id + 2 ))
-incremental_2_id=$(( last_job_id + 3 ))
-incremental_3_id=$(( last_job_id + 4 ))
+full_id=$((last_job_id + 1))
+incremental_1_id=$((last_job_id + 2))
+incremental_2_id=$((last_job_id + 3))
+incremental_3_id=$((last_job_id + 4))
 
 # Create some incremental backups
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -59,16 +59,16 @@ END_OF_DATA
 run_bconsole
 
 expect_grep "Backup OK" \
-            "$tmp"/full.out \
-            "full job did not terminate successfully"
+  "$tmp"/full.out \
+  "full job did not terminate successfully"
 expect_grep "Backup OK" \
-            "$tmp"/inc1.out \
-            "first incremental job did not terminate successfully"
+  "$tmp"/inc1.out \
+  "first incremental job did not terminate successfully"
 expect_grep "Backup OK" \
-            "$tmp"/inc2.out \
-            "second incremental job did not terminate successfully"
+  "$tmp"/inc2.out \
+  "second incremental job did not terminate successfully"
 expect_grep "Backup OK" \
-            "$tmp"/inc3.out \
-            "third incremental job did not terminate successfully"
+  "$tmp"/inc3.out \
+  "third incremental job did not terminate successfully"
 
 end_test

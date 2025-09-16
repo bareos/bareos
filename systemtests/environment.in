@@ -9,6 +9,14 @@ PROJECT_BINARY_DIR=@PROJECT_BINARY_DIR@
 bin=@bin@
 sbin=@sbin@
 
+# set to 1 if correct OS, or set to empty
+export HAVE_WIN32=@HAVE_WIN32@
+export HAVE_FREEBSD_OS=@HAVE_FREEBSD_OS@
+export HAVE_LINUX_OS=@HAVE_LINUX_OS@
+export HAVE_DARWIN_OS=@HAVE_DARWIN_OS@
+export HAVE_SUN_OS=@HAVE_SUN_OS@
+export HAVE_AIX_OS=@HAVE_AIX_OS@
+
 BAREOS_UNITTESTS_BINARY_DIR=$CMAKE_BINARY_DIR/core/src/tests
 
 current_test_directory=${PROJECT_BINARY_DIR}/tests/@TEST_NAME@
@@ -125,17 +133,17 @@ export PHP_EXECUTABLE="@PHP@"
 export PYTHON_EXECUTABLE="@PYTHON_EXECUTABLE@"
 
 # On Windows the symlinked programs need to find their DLLs.
-if [[ "$(uname -s)" =~ _NT ]]; then
+if [[ "${HAVE_WIN32}" = "1" ]]; then
   PATH="$(cygpath "@CMAKE_RUNTIME_OUTPUT_DIRECTORY@"):$PATH"
 fi
 
 # Real postgres binaries are hidden on debian, instead there are wrappers
 # which we do not want for our tests.
 # If there are multiple version, select the first.
-if [ -d /usr/lib/postgresql  ]; then
+if [ -d /usr/lib/postgresql ]; then
   POSTGRES_BINARY_DIR=$(dirname $(find -L /usr/lib/postgresql -name psql | sort | head -n 1))
 else
-  if [[ "$(uname -s)" =~ _NT ]]; then
+  if [[ "${HAVE_WIN32}" = "1" ]]; then
     PG_CYGPATH=$(cygpath "@POSTGRES_BIN_PATH@")
     export PATH="$PG_CYGPATH:$PATH"
   fi
@@ -168,7 +176,6 @@ export LC_ALL=C.UTF-8
 # path to real postgres binaries, NOT debian wrappers
 POSTGRES_BIN_PATH="@POSTGRES_BIN_PATH@"
 
-
 XTRABACKUP_BINARY=@XTRABACKUP_BINARY@
 MYSQL_DAEMON_BINARY=@MYSQL_DAEMON_BINARY@
 MYSQL_CLIENT_BINARY=@MYSQL_CLIENT_BINARY@
@@ -179,13 +186,13 @@ MARIADB_DAEMON_BINARY=@MARIADB_DAEMON_BINARY@
 MARIADB_CLIENT_BINARY=@MARIADB_CLIENT_BINARY@
 MARIADB_INSTALL_DB_SCRIPT=@MARIADB_INSTALL_DB_SCRIPT@
 
-
 SUDO=@SUDO@
 IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT=@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
 NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@
 
 export IGNORE_CONFIG_WARNINGS=@IGNORE_CONFIG_WARNINGS@
 export SQLCMD="@SQLCMD@"
+export PERL="@PERL@"
 
 if [ -f environment.local ]; then
   source environment.local

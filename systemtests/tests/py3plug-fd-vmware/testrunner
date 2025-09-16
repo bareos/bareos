@@ -11,20 +11,18 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-bareos-fd
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
 export PATH="${current_test_directory}/sbin:${current_test_directory}/bin:$PATH"
 
 JobName=backup-bareos-fd
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-
 ./reset_cbt.sh
-
 
 start_test
 
@@ -69,12 +67,12 @@ check_for_zombie_jobs storage=File
 check_two_logs
 
 # Check restored disk image content
-restored_disk_image=$(find $tmp/bareos-restores -type f  -name "*.vmdk" | tail -1)
+restored_disk_image=$(find $tmp/bareos-restores -type f -name "*.vmdk" | tail -1)
 if file "$restored_disk_image" | grep "VMware4 disk image"; then
-    echo "Restored disk image type OK"
+  echo "Restored disk image type OK"
 else
-    echo "Restored disk image ERROR: is not VMware disk image"
-    dstat=1
+  echo "Restored disk image ERROR: is not VMware disk image"
+  dstat=1
 fi
 
 end_test

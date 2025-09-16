@@ -1,8 +1,6 @@
-#!/bin/bash
-
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,25 +17,26 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-set -e
-set -o pipefail
-set -u
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(HAVE_WIN32 1)
+endif()
 
-#shellcheck source=../../environment.in
-. ./environment
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(HAVE_DARWIN_OS 1)
+endif()
 
-#shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  set(HAVE_LINUX_OS 1)
+endif()
 
-mkdir -p "$tmp/data"
+if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+  set(HAVE_SUN_OS 1)
+endif()
 
-bin/bareos start
-bin/bareos status
+if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  set(HAVE_FREEBSD_OS 1)
+endif()
 
-#bin/bconsole <<< "setdebug storage=File trace=1 level=1000"
-bin/bconsole <<<"setdebug dir trace=1 level=50"
-
-# make sure, director is up and running.
-print_debug "$(bin/bconsole <<<"status dir")"
+if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
+  set(HAVE_AIX_OS 1)
+endif()

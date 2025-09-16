@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -30,10 +30,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 #shellcheck source=functions
 . functions
@@ -42,10 +42,10 @@ start_test
 
 dir="$(pwd)/tmp/data/build/src/tests"
 if [[ -d "$tmp/bareos-restores/$dir" ]]; then
-    rm -r "$tmp/bareos-restores/$dir"
+  rm -r "$tmp/bareos-restores/$dir"
 fi
 
-if [[ "$(uname -s)" =~ _NT ]]; then
+if on_windows_host; then
   dir="$(cygpath -w -m $dir)"
 fi
 
@@ -78,8 +78,8 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-dir-from-archive.out" \
-	    "The restore job was not started."
+  "$log_home/restore-dir-from-archive.out" \
+  "The restore job was not started."
 
 check_restore_diff "$dir"
 end_test

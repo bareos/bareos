@@ -18,10 +18,10 @@ export TestName
 
 JobName=backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -60,7 +60,7 @@ run_bareos "$@"
 check_for_zombie_jobs storage=File
 
 check_two_logs
-list=( $(find "${BackupDirectory}" -type f) )
+list=($(find "${BackupDirectory}" -type f))
 # Using check_restore_only_files_diff instead of check_restore_diff
 # to don't diff the file attributes, because they are not saved
 check_restore_only_files_diff "${list[@]}"

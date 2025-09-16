@@ -25,10 +25,10 @@ export TestName
 
 JobName=ai-backup-bareos-fd
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 start_test
 
@@ -76,7 +76,7 @@ END_OF_DATA
 run_bconsole
 
 expect_grep "Cannot run always incremental job at level VirtualFull with no jobid" \
-            "${tmp}/consolidatevfs_rerun_canceled.out" \
-            "Aborting rerun without jobis not found"
+  "${tmp}/consolidatevfs_rerun_canceled.out" \
+  "Aborting rerun without jobis not found"
 
 end_test

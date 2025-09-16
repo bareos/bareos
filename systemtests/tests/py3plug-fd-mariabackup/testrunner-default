@@ -10,9 +10,9 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 skip_if_root
@@ -21,7 +21,7 @@ JobName=backup-bareos-fd
 MARIABACKUP="${MARIADB_BACKUP_BINARY} --defaults-file=mariadbdefaults"
 mariabackup_test_db="${db_name}_mariabackup"
 
-#shellcheck source=../scripts/mariadb.sh
+#shellcheck source=../../scripts/mariadb.sh
 . "${rscripts}"/mariadb.sh
 
 mariadb_init
@@ -49,11 +49,11 @@ echo "Run first Full job"
 run_bconsole
 expect_grep "Backup OK" "${tmp}/log1.out" "Backup OK for Full not found in job log"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 # insert data and run incremental
-${MARIADB_CLIENT} "${mariabackup_test_db}" <<< "insert into test (data) VALUES ('test entry 2')"
+${MARIADB_CLIENT} "${mariabackup_test_db}" <<<"insert into test (data) VALUES ('test entry 2')"
 
 cat <<END_OF_DATA2 >"${tmp}/bconcmds"
 @$out ${tmp}/log2.out
@@ -70,7 +70,7 @@ run_bconsole
 
 expect_grep "Backup OK" "${tmp}/log2.out" "Backup OK for incremental not found in job log"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 cat <<END_OF_DATA3 >"$tmp/bconcmds"
@@ -88,9 +88,8 @@ run_bconsole
 
 expect_grep "Backup OK" "${tmp}/log3.out" "Backup OK for empty incremental not found in job log"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
-
 
 cat <<END_OF_DATA4 >"$tmp/bconcmds"
 @$out ${tmp}/log4.out
@@ -106,15 +105,15 @@ run_bconsole
 
 expect_grep "Restore OK" "${tmp}/log4.out" "Restore OK not found in job log"
 if [ ${estat} -ne 0 ]; then
-    exit ${estat}
+  exit ${estat}
 fi
 
 # Check if mariabackup has extracted some files at least
 # TODO: verify that mariabackup --prepare works and eventually do complete database restore
-ls -lR  "${tmp}/bareos-restores/_mariadb-backup/"
+ls -lR "${tmp}/bareos-restores/_mariadb-backup/"
 if [ -z "$(ls -A "${tmp}"/bareos-restores/_mariadb-backup/)" ]; then
-       echo "No restore data found"
-       estat=1
+  echo "No restore data found"
+  estat=1
 fi
 
 mariadb_server_stop
@@ -123,9 +122,9 @@ mariadb_server_stop
 rm -Rf mariadb/data/*
 mkdir -p mariadb/data/
 
-TARGETDIR=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d  -name '*001')
-INCDIR1=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d  -name '*002')
-INCDIR2=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d  -name '*003')
+TARGETDIR=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d -name '*001')
+INCDIR1=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d -name '*002')
+INCDIR2=$(find ./tmp/bareos-restores/_mariadb-backup/4/ -type d -name '*003')
 
 # First, prepare the base backup:
 ${MARIABACKUP} --prepare --target-dir="${TARGETDIR}"
@@ -139,13 +138,13 @@ ${MARIABACKUP} --copy-back --target-dir="${TARGETDIR}"
 mariadb_server_start
 
 if ! echo "SELECT * from test " | ${MARIADB_CLIENT} "${mariabackup_test_db}" | grep "test entry 1"; then
-    echo "test entry 1 not found"
-    estat=2
+  echo "test entry 1 not found"
+  estat=2
 fi
 
 if ! echo "SELECT * from test " | ${MARIADB_CLIENT} "${mariabackup_test_db}" | grep "test entry 2"; then
-    echo "test entry 2 not found"
-    estat=3
+  echo "test entry 2 not found"
+  estat=3
 fi
 
 check_for_zombie_jobs storage=File
