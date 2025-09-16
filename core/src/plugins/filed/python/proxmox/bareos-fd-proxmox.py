@@ -201,11 +201,11 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
         # cat file | qmrestore - 99999
         # cat file | pct restore -  --rootfs is required!
         # detect if we have a vm or a container:
-        if  b"vzdump-lxc" in restorepkt.ofname:
+        if "vzdump-lxc" in restorepkt.ofname:
             self.recoverycommand = f"/usr/sbin/pct - 999999 --force yes"
 
         else:
-            if b"vzdump-qemu" in restorepkt.ofname:
+            if "vzdump-qemu" in restorepkt.ofname:
                 self.recoverycommand = f"/usr/sbin/qmrestore - 999999 --force yes"
         #else:
 
