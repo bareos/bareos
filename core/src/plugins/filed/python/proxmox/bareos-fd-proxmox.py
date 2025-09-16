@@ -37,7 +37,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             "Constructor called in module %s with plugindef=%s\n"
             % (__name__, plugindef)
         )
-        self.mandatory_options_vmid = ["vmid"]
+        self.mandatory_options_guestid = ["guestid"]
         
         super(BareosFdProxmox, self).__init__(plugindef)
         self.events = []
@@ -83,13 +83,13 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # )
         log_path="."
         self.stderr_log_file = tempfile.NamedTemporaryFile(dir=log_path, delete=False, mode='r+b')
-        #vzdump_params = shlex.split(f"/usr/bin/sudo /usr/bin/vzdump {self.options['vmid']} --stdout")
+        #vzdump_params = shlex.split(f"/usr/bin/sudo /usr/bin/vzdump {self.options['guestid']} --stdout")
 
         #--tmpdir is required for ct, otherwise we get 
         #INFO: tar: /var/lib/vz/dump/vzdump-lxc-115-2025_09_11-14_38_44.tmp: Cannot open: Permission denied
 
-        #vzdump_params = shlex.split(f"/usr/bin/vzdump {self.options['vmid']} --stdout --tmpdir=/temp")
-        vzdump_params = shlex.split(f"/usr/bin/vzdump {self.options['vmid']} --stdout")
+        #vzdump_params = shlex.split(f"/usr/bin/vzdump {self.options['guestid']} --stdout --tmpdir=/temp")
+        vzdump_params = shlex.split(f"/usr/bin/vzdump {self.options['guestid']} --stdout")
         vzdump_process = subprocess.Popen(
                     vzdump_params,
                     bufsize=-1,
@@ -172,7 +172,7 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
         #                                    vzdump-qemu-112-2025_09_12-00_00_00.vma 
         now = datetime.now()
         datestring = now.strftime("%Y_%m_%d-%H_%M_%S")
-        self.file_to_backup = f"/var/lib/vz/dump/vzdump-{self.guesttype}-{self.options['vmid']}-{datestring}.vma"
+        self.file_to_backup = f"/var/lib/vz/dump/vzdump-{self.guesttype}-{self.options['guestid']}-{datestring}.vma"
 
         bareosfd.JobMessage( bareosfd.M_INFO, f"Backing up {self.guesttype} guest \"{self.vmname}\"\n" )
 
