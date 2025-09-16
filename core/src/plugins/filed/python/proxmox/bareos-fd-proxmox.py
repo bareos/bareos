@@ -204,8 +204,9 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
         if  b"vzdump-lxc" in restorepkt.filename:
             self.recoverycommand = f"/usr/sbin/pct - 999999 --force yes"
 
-        else if b"vzdump-qemu" in restorepkt.filename:
-            self.recoverycommand = f"/usr/sbin/qmrestore - 999999 --force yes"
+        else:
+            if b"vzdump-qemu" in restorepkt.filename:
+                self.recoverycommand = f"/usr/sbin/qmrestore - 999999 --force yes"
         #else:
 
         log_path="."
