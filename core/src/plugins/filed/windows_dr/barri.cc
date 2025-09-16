@@ -183,8 +183,40 @@ int main(int argc, char* argv[])
   CLI::App app;
   bool trace = false;
   app.add_flag("--trace", trace, "enable debug tracing");
+  app.description(version_text() + "\n");
 
-  auto* save = app.add_subcommand("save", "create a disaster recovery image");
+  auto name = argc > 0 ? argv[0] : "barri-cli";
+
+  auto* save
+      = app.add_subcommand("save", "create a disaster recovery image")
+            ->formatter(std::make_shared<SubcommandFormatter>(libbareos::format(
+                R"(This command creates a barri backup of the currently running system
+and outputs it to standard out.
+
+As powershell can not reliably handle large, binary output,
+we recommend executing {0} in cmd instead.
+
+The standard output stream contains the whole backup image, so you need to save
+it out to somewhere in case you need to restore it.
+
+If you specify --dry, then no backup will be written.
+
+As {0} relies on volume shadow copies, it is important to make sure
+that the service is running before you start the backup.
+
+When executed in a terminal, then the progress will be displayed in a progress bar.)",
+                name)))
+            ->fallthrough()
+            ->footer(libbareos::format(R"(Examples:
+  # create a backup, compress it and then send it to an offsite storage
+  {0} save | zstd -c | ssh somewhere@else:/storage/backup.barri
+
+  # make sure a backup is possible
+  {0} save --dry
+
+  # make a backup to an external usb and store a debug trace
+  {0} save --trace 2>%TEMP%\debug.trace > F:\backup.barri)",
+                                       name));
   save->add_flag("--dry", dry, "do not read/write actual disk data");
 
   save->add_flag("--unreferenced-extents", save_unreferenced_extents,
@@ -199,17 +231,41 @@ int main(int argc, char* argv[])
   save->add_option("--ignore-disks", ignored_disks,
                    "ids of disks to ignore (0, 1, 2, ...)");
 
-  auto* restore = app.add_subcommand("restore",
-                                     R"(
-restore the disks to as vhdx files, or as regular files if --raw is set,
-to the current directory.
+  auto* restore
+      = app.add_subcommand("restore",
+                           "restore a barri backup to the given output(s)")
+            ->formatter(std::make_shared<SubcommandFormatter>(libbareos::format(
+                R"(This command restores a barri backup to some output.
+The backup is read from stdin; alternatively you can specify a file to read from via the --file option.
 
-The files will be called disk-0.vhdx, disk-1.vhdx, ..., and
-disk-0.raw, disk-1.raw, ... respectively.
+If you can restore the disks either
+ * as vhdx files, via the --vhdx-directory option,
+ * as raw files, via the --raw-directory option, or
+ * directly to disk(s), via the --disks option.
 
-By default barri reads the dump from stdin, but you can also specify a path
-via the --from option explicitly.
-)");
+In the first two cases, {0} will create files called disk-X.[vhdx|raw] in the
+given directory.
+
+The --disks option expects as argument a space delimited list of disk ids.
+I.e. if you want to restore the first disk to disk 2 and the second disk to
+disk 1, then you have to specify "--disks 2 1".
+
+You can find out the id of the disks via the disk manager, diskpart or via
+the Get-Disk cmdlet.
+
+When output to a terminal, then progress will be displayed in a progress bar.)",
+                name)))
+            ->fallthrough()
+            ->footer(libbareos::format(R"(Examples:
+  # restore the first disk to Disk 1, the second to Disk 3 and the third to Disk 2
+  {0} restore --from backup.barri --disks 1 3 2
+
+  # restore the disks as vhdx files into some directory
+  get-backup | {0} restore --vhdx-directory "C:\Users\Public\Documents\Hyper-V\Virtual Hard Disks\"
+
+  # restore the disks as raw files in the TEMP directory
+  cat backup.barri | {0} restore --raw-directory %TEMP%)",
+                                       name));
   std::string filename;
   restore->add_option("--from", filename,
                       "read from this file instead of stdin");
@@ -243,7 +299,6 @@ via the --from option explicitly.
   CLI11_PARSE(app, argc, argv);
 
   auto logger = progressbar::get(trace);
-
 
   try {
     if (*save) {
@@ -284,8 +339,10 @@ via the --from option explicitly.
       {
         using namespace barri::restore;
         if (*vhdx_dir_target) {
+          logger->Trace("restore as vhdx files into {}", FromUtf16(vhdx_dir));
           handler = GetHandler(logger, vhdx_directory{vhdx_dir});
         } else if (*raw_dir_target) {
+          logger->Trace("restore as raw files into {}", FromUtf16(file_dir));
           handler = GetHandler(logger, raw_directory{file_dir});
         } else if (*disks_target) {
           handler = GetHandler(logger, disks);
