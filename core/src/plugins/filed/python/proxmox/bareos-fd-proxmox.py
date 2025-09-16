@@ -200,17 +200,24 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
         # restore vms to qmrestore: 
         # cat file | qmrestore - 99999
         # cat file | pct restore -  --rootfs is required!
+        # detect if we have a vm or a container:
+        if "vzdump-lxc" in restorepkt.ofname:
+            self.recoverycommand = f"/usr/sbin/pct - 999999 --force yes"
+
+        else:
+            if "vzdump-qemu" in restorepkt.ofname:
+                self.recoverycommand = f"/usr/sbin/qmrestore - 999999 --force yes"
+        #else:
 
         log_path="."
         self.stderr_log_file = tempfile.NamedTemporaryFile(dir=log_path, delete=False, mode='r+b')
-        vzdump_params = shlex.split(f"/usr/sbin/qmrestore - 999999 --force yes")
+        vzdump_params = shlex.split(self.recoverycommand)
         vzdump_process = subprocess.Popen(
                     vzdump_params,
                     bufsize=-1,
                     stdin=subprocess.PIPE,
-                    stdout=self.stderr_log_file,#open("/dev/null"),
+                    stdout=self.stderr_log_file,
                     stderr=self.stderr_log_file,
-                    #stderr=subprocess.PIPE,
                     close_fds=True,
                 )
         self.vzdump_process = vzdump_process
