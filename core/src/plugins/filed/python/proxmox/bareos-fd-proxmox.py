@@ -202,7 +202,7 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
         # cat file | pct restore -  --rootfs is required!
         # detect if we have a vm or a container:
         if "vzdump-lxc" in restorepkt.ofname:
-            self.recoverycommand = f"/usr/sbin/pct - 999999 --force yes"
+            self.recoverycommand = f"/usr/sbin/pct restore 999999 - --rootfs / --force yes"
 
         else:
             if "vzdump-qemu" in restorepkt.ofname:
