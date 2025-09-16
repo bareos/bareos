@@ -68,8 +68,25 @@ class SubcommandFormatter : public CLI::Formatter {
     long_description = out.str();
   }
 
-  std::string make_description(const CLI::App*) const override
+  std::string make_help(const CLI::App* app,
+                        std::string name,
+                        CLI::AppFormatMode mode) const override
   {
+    std::cout << "( " << (void*)app << ", " << name << ", " << mode << " )"
+              << std::endl;
+    return Formatter::make_help(app, name, mode);
+  }
+
+  std::string make_expanded(const CLI::App* sub) const override
+  {
+    CLI::Formatter formatter{};
+    return formatter.make_expanded(sub);
+  }
+
+  std::string make_description(const CLI::App* app) const override
+  {
+    auto desc = Formatter::make_description(app);
+    std::cout << "pointer:" << (void*)app << std::endl;
     return long_description;
   }
 
