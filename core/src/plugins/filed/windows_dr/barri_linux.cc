@@ -180,14 +180,15 @@ The backup is read from stdin; alternatively you can specify a file to read from
 When output to a terminal, then progress will be displayed in a progress bar.)"))
             ->fallthrough()
             ->footer(libbareos::format(R"(Examples:
-  # restore the first disk to /dev/sda, the second to /dev/null and the third to /dev/nvme1
+  # restore the first disk to /dev/sda, the second to /dev/null
+  # and the third to /dev/nvme1
   {0} restore --from backup.barri --files /dev/sda /dev/null /dev/nvme1
 
   # restore to some network block device
   get-backup | {0} restore --stdout | nbdcopy ...
 
-  # restore the disks into /tmp/disks
-  cat backup.barri | {0} restore --into /tmp/disks)",
+  # restore the disks into /tmp/disks, and save the restore debug trace
+  cat backup.barri | {0} restore --into /tmp/disks --trace 2>/tmp/trace.log)",
                                        name));
   std::string filename;
   auto* from = restore
