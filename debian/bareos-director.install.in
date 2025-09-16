@@ -21,6 +21,8 @@
 @configtemplatedir@/bareos-dir.d/pool/Incremental.conf
 @configtemplatedir@/bareos-dir.d/pool/Scratch.conf
 @configtemplatedir@/bareos-dir.d/profile/operator.conf
+@configtemplatedir@/bareos-dir.d/profile/webui-admin.conf
+@configtemplatedir@/bareos-dir.d/profile/webui-readonly.conf
 @configtemplatedir@/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf
 @configtemplatedir@/bareos-dir.d/schedule/WeeklyCycle.conf
 @configtemplatedir@/bareos-dir.d/storage/File.conf

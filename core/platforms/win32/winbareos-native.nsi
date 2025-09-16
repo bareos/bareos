@@ -1062,10 +1062,6 @@ Section "Bareos Webui" SEC_WEBUI
    Rename  "$PLUGINSDIR\directors.ini" "$APPDATA\${PRODUCT_NAME}\directors.ini"
    Rename  "$PLUGINSDIR\configuration.ini" "$APPDATA\${PRODUCT_NAME}\configuration.ini"
 
-
-   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\profile"
-   Rename  "$PLUGINSDIR\webui-admin.conf" "$INSTDIR\defaultconfigs\bareos-dir.d\profile\webui-admin.conf"
-
    CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
    Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
 
@@ -1607,7 +1603,6 @@ done:
   File "/oname=$PLUGINSDIR\global.php" "webui\config\autoload\global.php"
   File "/oname=$PLUGINSDIR\directors.ini" "webui\install\directors.ini"
   File "/oname=$PLUGINSDIR\configuration.ini" "webui\install\configuration.ini"
-  File "/oname=$PLUGINSDIR\webui-admin.conf" "webui\install\bareos\bareos-dir.d\profile\webui-admin.conf"
   File "/oname=$PLUGINSDIR\admin.conf"  "webui\install\bareos\bareos-dir.d\console\admin.conf.example"
 
   # make first section mandatory
@@ -2063,7 +2058,6 @@ Section Uninstall
   Delete "$APPDATA\${PRODUCT_NAME}\php.ini"
   Delete "$APPDATA\${PRODUCT_NAME}\directors.ini"
   Delete "$APPDATA\${PRODUCT_NAME}\configuration.ini"
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.d\profile\webui-admin.conf"
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.d\console\admin.conf"
 
 ConfDeleteSkip:

@@ -22,6 +22,8 @@ daemon_group=bareos
 
 permissions()
 {
+  chgrp ${daemon_group} /etc/bareos
+  chmod 2755            /etc/bareos
   chown ${daemon_user}:${daemon_group} /var/lib/bareos/
   chown ${daemon_user}:${daemon_group} /var/log/bareos/
 }

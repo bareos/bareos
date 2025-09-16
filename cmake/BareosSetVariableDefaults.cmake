@@ -19,6 +19,8 @@
 
 # check if variables are set via cmdline else set them to default values
 
+include(GNUInstallDirs)
+
 # configure variables
 #
 # strings - directories
@@ -588,17 +590,14 @@ endif()
 if(autochanger_devices_found)
   set(AUTOCHANGER_DEVICES_FOUND
       TRUE
-      PARENT_SCOPE
   )
   set(CHANGER_DEVICE0
       ${changer-device}
-      PARENT_SCOPE
   )
 
   list(JOIN tape-devices "\" \"" joined_tape_devices_0)
   set(TAPE_DEVICES0
       "\"${joined_tape_devices_0}\""
-      PARENT_SCOPE
   )
 
   message(
@@ -611,7 +610,6 @@ endif()
 if(NOT DEFINED gfapi_fd_testvolume)
   set(gfapi_fd_testvolume
       testvol
-      PARENT_SCOPE
   )
 endif()
 

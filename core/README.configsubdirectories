@@ -1,5 +1,5 @@
-Configuration API
-=================
+Configuration Files
+===================
 
 Naming
 ------
@@ -18,12 +18,11 @@ Naming
 
     * $CONFIGDIR refers to the configuration directory. Bareos Linux packages use "/etc/bareos/".
 
-
-
 Changes
 -------
 
-When updating from bareos < 16.2, most of these changes are not relevant, as the legacy configuration will still be used.
+Bareos 16.2 did major changes to the way Bareos treats configuration file.
+However, when updating from bareos < 16.2, most of these changes are activated, as the legacy configuration will still be used.
 
     * configsubdirectories
         * if legacy config file ($CONFIGDIR/$COMPONENT.conf) not found, following wildcard path will be used to load the configuration:
@@ -34,7 +33,8 @@ When updating from bareos < 16.2, most of these changes are not relevant, as the
                 * bareos-dir.d/pool/Full.conf
             * There is one exception: the resource bareos-fd.d/client/myself.conf always has the file name myself.conf, while the name is normally set to the hostname of the system.
         * the -c command line switch takes file and directories as arguments. When the argument is a directory, $COMPONENT.d/*/*.conf is added to load the configuration.
-    * additional package can contain configuration files that are automatically included
+    * package may contain configuration files for other packages.
+        * Deprecated with Bareos 25, as these files are not guaranteed to be copied from the defaultconfigs directory to the live config directory.
         * However, most additional configuration resources require configuration. These configuration come as example files:
             * $CONFIGDIR/$COMPONENT.d/$RESOURCE/$NAME.conf.example
             * For example, the bareos-webui comes with two config resources for the bareos-director:
