@@ -243,7 +243,11 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
             bareosfd.DebugMessage(
                 100, "IO_OPEN: %s\n" % (self.FNAME)
             )
-            IOP.filedes = self.vzdump_process.stdin.fileno()
+            # TODO: Check if restore or backup to determine
+            if self.vzdump_process.stdin:
+                IOP.filedes = self.vzdump_process.stdin.fileno()
+            else:
+                IOP.filedes = self.vzdump_process.stdout.fileno()
             IOP.status = bareosfd.iostat_do_in_core
 
             return bareosfd.bRC_OK
