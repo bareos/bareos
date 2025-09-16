@@ -84,7 +84,6 @@ std::string utf16_to_utf8(std::span<const char16_t> str)
   return result;
 }
 
-
 class ListContents : public GenericHandler {
  public:
   ListContents(GenericLogger* logger) : log{logger} {}
@@ -176,7 +175,7 @@ int main(int argc, char* argv[])
                            "restore a barri backup to the given output(s)")
             ->formatter(std::make_shared<SubcommandFormatter>(
                 R"(This command restores a barri backup to some output.
-The backup is read from stdin;alternatively you can specify a file to read from via the --file option.
+The backup is read from stdin; alternatively you can specify a file to read from via the --file option.
 
 When output to a terminal, then progress will be displayed in a progress bar.)"))
             ->fallthrough()
@@ -187,7 +186,7 @@ When output to a terminal, then progress will be displayed in a progress bar.)")
   # restore to some network block device
   get-backup | {0} restore --stdout | nbdcopy ...
 
-  # restore to the disks into /tmp/disks
+  # restore the disks into /tmp/disks
   cat backup.barri | {0} restore --into /tmp/disks)",
                                        name));
   std::string filename;
