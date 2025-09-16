@@ -8,7 +8,7 @@ FileSet {
    Plugin = "python"
         ":module_path=@python_plugin_module_src_test_dir@"
         ":module_name=bareos-fd-proxmox"
-        ":vmid=116"
+        ":guestid=116"
   }
 }
 FileSet {
@@ -21,7 +21,7 @@ FileSet {
    Plugin = "python"
         ":module_path=/home/pstorz/git/bareos/b/systemtests/tests/py3plug-fd-proxmox/python-modules"
         ":module_name=bareos-fd-proxmox"
-        ":vmid=115"
+        ":guestid=115"
   }
 }
 
