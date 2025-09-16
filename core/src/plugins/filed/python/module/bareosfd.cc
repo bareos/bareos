@@ -1979,11 +1979,23 @@ static int PyStatPacket_init(PyStatPacket* self, PyObject* args, PyObject* kwds)
   self->blksize = 4096;
   self->blocks = 1;
 
+#if defined(HAVE_WIN32)
+  static_assert(std::is_same_v<decltype(PyStatPacket::atime), long long>);
+
   if (!PyArg_ParseTupleAndKeywords(
-          args, kwds, "|IKHHIIILIIIIK", kwlist, &self->dev, &self->ino,
+          args, kwds, "|IKHHIIIKLLLIK", kwlist, &self->dev, &self->ino,
           &self->mode, &self->nlink, &self->uid, &self->gid, &self->rdev,
           &self->size, &self->atime, &self->mtime, &self->ctime, &self->blksize,
           &self->blocks)) {
+#else
+  static_assert(std::is_same_v<decltype(PyStatPacket::atime), long>);
+
+  if (!PyArg_ParseTupleAndKeywords(
+          args, kwds, "|IKHHIIIKlllIK", kwlist, &self->dev, &self->ino,
+          &self->mode, &self->nlink, &self->uid, &self->gid, &self->rdev,
+          &self->size, &self->atime, &self->mtime, &self->ctime, &self->blksize,
+          &self->blocks)) {
+#endif
     return -1;
   }
 

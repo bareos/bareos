@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -114,7 +114,6 @@ def transform_value(value, transform):
 
 
 class BareosFdPluginBaseclass(object):
-
     """Bareos python plugin base class"""
 
     def __init__(self, plugindef, mandatory_options=None):
@@ -462,7 +461,7 @@ class BareosFdPluginBaseclass(object):
         implementation to add files to backup fileset
         """
         bareosfd.DebugMessage(100, "start_backup called\n")
-        return bRC_Skip
+        return bRC_Stop
 
     def end_backup_file(self):
         bareosfd.DebugMessage(100, "end_backup_file() entry point in Python called\n")
