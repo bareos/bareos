@@ -114,7 +114,7 @@ if(HAVE_WIN32)
 else()
   target_sources(bareos PRIVATE bpipe_unix.cc)
   target_sources(bareos PRIVATE scsi_tapealert.cc)
-  target_sources(bareos PRIVATE osinfo.cc)
+  target_sources(bareos PRIVATE osinfo_unix.cc)
 endif()
 
 target_sources(
