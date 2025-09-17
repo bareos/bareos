@@ -50,8 +50,6 @@ END_OF_DATA
 
 run_bconsole
 
-run_bconsole
-
 # check that the fileset has not the fileset text after it was deleted
 expect_grep "|[[:space:]]*1[[:space:]]*|[[:space:]]*SelfTest[[:space:]]*|[[:space:]]*FileSet {" \
   "$filesetwithtext" \
