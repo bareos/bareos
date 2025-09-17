@@ -181,8 +181,8 @@ When output to a terminal, then progress will be displayed in a progress bar.)")
             ->fallthrough()
             ->footer(libbareos::format(R"(Examples:
   # restore the first disk to /dev/sda, the second to /dev/null
-  # and the third to /dev/nvme1
-  {0} restore --from backup.barri --files /dev/sda /dev/null /dev/nvme1
+  # and the third to /dev/nvme1n0
+  {0} restore --from backup.barri --files /dev/sda /dev/null /dev/nvme1n0
 
   # restore to some network block device
   get-backup | {0} restore --stdout | nbdcopy ...
