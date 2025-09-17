@@ -116,7 +116,7 @@ void dump_data(std::ostream& stream, GenericLogger* logger)
 
   auto output_size = compute_plan_size(plan);
 
-  logger->Info("writing backup (expecting {} bytes of output)",
+  logger->Info("writing backup (expecting {} of output)",
                human_readable(output_size));
   logger->Trace(" => exactly {} bytes of output", output_size);
   if (!dry) {
