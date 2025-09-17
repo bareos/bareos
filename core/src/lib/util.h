@@ -38,6 +38,7 @@
 
 #include "lib/ascii_control_characters.h"
 #include "lib/message.h"
+#include "lib/mem_pool.h"
 
 class BareosSocket;
 class ConfigurationParser;
@@ -222,5 +223,18 @@ template <class Enum> inline constexpr auto to_underlying(Enum e)
 {
   return static_cast<std::underlying_type_t<Enum>>(e);
 }
+
+constexpr std::optional<std::pair<std::string_view, std::string_view>>
+split_first(std::string_view input, char c)
+{
+  auto pos = input.find_first_of(c);
+  if (pos == input.npos) { return std::nullopt; }
+
+  return std::pair{input.substr(0, pos), input.substr(pos + 1)};
+}
+
+static_assert(split_first("abc", ',') == std::nullopt);
+static_assert(split_first("abc", 'b')->first == "a");
+static_assert(split_first("abc", 'b')->second == "c");
 
 #endif  // BAREOS_LIB_UTIL_H_
