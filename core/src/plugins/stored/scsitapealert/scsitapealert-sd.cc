@@ -54,10 +54,10 @@ void dispatch_messages(JobControlRecord* jcr,
         "Possible cause: %s\n";
 
   constexpr const char* print_msg
-      = "Tapealert on device \"%s\" with volume \"%s\" from jobid %u: "
+      = "Tapealert on device \"%s\" with volume \"%s\" from jobid %lu: "
         "[%d] %s\n";
   constexpr const char* print_msg_novol
-      = "Tapealert on device \"%s\" from jobid %u: "
+      = "Tapealert on device \"%s\" from jobid %lu: "
         "[%d] %s\n";
 
   const uint64_t jobid{jcr ? jcr->JobId : 0};
