@@ -13,3 +13,15 @@ and an example output when there is a problem could be:
 
 .. literalinclude:: /include/config/SdDeviceAlertCommand2.conf
    :language: bareosconfig
+
+.. warning::
+
+   When the user running the command (i.e. the user running the |sd|) lacks
+   proper privileges to retrieve tapealert flags, ``tapeinfo`` will silently 
+   skip tapealert retrieval. As a result **no alerts will be reported**.
+
+.. note::
+
+   This method of tapealert retrieval is inferior to the :ref:`scsitapealert-sd`
+   plugin, because it only runs when a job finishes and is usually unable to
+   warn you when retrieval fails.
