@@ -49,10 +49,11 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 
 run job=$regularjob_name Level=Incremental yes
 wait
-
-@sleep 6
-
 messages
+
+@# wait for retention period
+@sleep 2
+
 @$out ${log_home}/prune.out
 update volume=TestVolume004 volstatus=Used
 update volume=TestVolumeIncremental volstatus=Used
