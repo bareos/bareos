@@ -41,6 +41,7 @@ start_test
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/full.out
 run job=${NDMPCLIENT}dump level=Full yes
+wait
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
