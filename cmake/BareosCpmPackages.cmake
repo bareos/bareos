@@ -37,9 +37,9 @@ include(CPM)
 # version we'd bundle. Keep module alphabetically ordered.
 CPMAddPackage(
   NAME CLI11
-  VERSION 2.1.2
+  VERSION 2.5.0
   GITHUB_REPOSITORY CLIUtils/CLI11
-  GIT_TAG v2.4.2
+  GIT_TAG v2.5.0
   EXCLUDE_FROM_ALL YES
 )
 
