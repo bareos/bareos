@@ -3,15 +3,9 @@ set -e
 set -o pipefail
 set -u
 #
-# This systemtest tests the plugin functionality
-# of the Bareos FD by using the supplied module
-#   bareos-fd-local-fileset.py
-#
-# The module will backup some files.
-# This plugin is not intended for production,
-# but is only a minimal example that shows
-# how to use the python plugin interface.
-# File attributes like uses and times will not be saved.
+# This systemtest creates a simple backup with
+# the local-fileset plugin and checks that it
+# works correctly.
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -23,33 +17,21 @@ JobName=backup-bareos-fd
 
 #shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
 
-# Fill ${BackupDirectory} with data.
-setup_data
-
-# this test does not work with links, because
-# python 2 does not support setting mtime on links
-# they are restored properly but with wrong timestamps
-# This is supposed to work with the future plugin-fd interface
-# using Python3
-find ${tmp}/data/weird-files -type l -exec rm {} \;
-find tmp/data/weird-files -links +1 -type f -exec rm {} \;
-
-grep py3 <<<"$TestName" && rm tmp/data/weird-files/filename-with-non-utf8-bytestring*
-
-print_debug "$(locale)"
+if [ -f "${working}/${TestName}"-fd.trace ]; then
+  rm "${working}/${TestName}"-fd.trace
+fi
 
 start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
 messages
-@$out $tmp/log1.out
+@$out ${log_home}/log1.out
+@# toggle trace to make sure that bareos creates a new trace file
+setdebug level=800 client trace=0
 setdebug level=800 client trace=1
-label volume=TestVolume001 storage=File pool=Full
-run job=$JobName yes
+run job=$JobName level=Full yes
 status director
 status client
 status storage=File
@@ -57,36 +39,36 @@ wait
 messages
 END_OF_DATA
 
-run_bareos "$@"
-if is_debug; then
-  cat ${working_dir}/*.trace
-fi
+run_bconsole "$@"
 check_for_zombie_jobs storage=File
-stop_bareos
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# now do a restore
 @#
-@$out $tmp/log2.out
-restore client=bareos-fd fileset=PluginTest where=$tmp/bareos-restores select all done yes
+@$out ${log_home}/log2.out
+restore client=bareos-fd fileset=PluginTest where=${log_home}/bareos-restores select all done yes
 status client=bareos-fd
 wait
 messages
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole "$@"
 check_for_zombie_jobs storage=File
 
-check_two_logs
-check_restore_diff ${BackupDirectory}
+check_two_logs "${log_home}/log1.out" "${log_home}/log2.out"
+check_restore_diff "${BackupDirectory}" "${log_home}/bareos-restores"
 
-expect_grep 'name="XATTR name 3", value="XATTR value 3"' tmp/log2.out "could not find recovered XATTR in restore log"
-expect_grep 'content="Hello ACL"' tmp/log2.out "could not find recovered ACL in restore log"
+expect_grep 'name="XATTR name 3", value="XATTR value 3"' \
+  "${log_home}/log2.out" \
+  "could not find recovered XATTR in restore log"
+
+expect_grep 'content="Hello ACL"' \
+  "${log_home}/log2.out" \
+  "could not find recovered ACL in restore log"
 
 expect_grep "Readin.*from file" \
-  working/py*-fd-local-fileset-basic-fd.trace \
+  "${working}/${TestName}"-fd.trace \
   "io was not handled in python according to trace file."
 
 end_test
-bin/bareos stop

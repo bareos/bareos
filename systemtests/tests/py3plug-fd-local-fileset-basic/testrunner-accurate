@@ -1,0 +1,77 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+#
+# This systemtest creates an accurate backup with
+# the local-fileset plugin and checks that it
+# works correctly.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=accurate-backup-bareos-fd
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"${tmp}"/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out ${log_home}/full.out
+run job=$JobName level=Full yes
+status director
+status client
+status storage=File
+wait
+messages
+@$out ${log_home}/incr.out
+run job=$JobName level=Incremental yes
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+check_for_zombie_jobs storage=File
+
+incr_job=$(last_jobid_or_zero)
+
+check_log "${log_home}/incr.out"
+check_log "${log_home}/full.out"
+
+cat <<END_OF_DATA >"${tmp}"/bconcmds
+@$out ${log_home}/files.out
+.api 2
+list files jobid=${incr_job}
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+if grep "\"filename\":" "${log_home}/files.out"; then
+  files=$(grep "\"filename\":" "${log_home}/files.out" | sed 's/.*filename": //')
+
+  for file in ${files}; do
+    # dont forget to remove the quotes
+    stat "${file:1:-1}"
+    bin/bconsole <<<".sql query=\"SELECT *,decode_lstat(lstat) FROM file JOIN path USING (pathid) WHERE path||name='${file:1:-1}'\""
+  done
+fi
+
+expect_grep "Sent Accurate information" \
+  "${log_home}/incr.out" \
+  "No accurate information was sent"
+
+expect_grep "FD Files Written:[[:space:]]*0$" \
+  "${log_home}/incr.out" \
+  "The incremental is not empty"
+
+end_test
