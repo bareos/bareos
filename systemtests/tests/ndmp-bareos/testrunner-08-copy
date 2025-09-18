@@ -1,0 +1,84 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# make sure we can copy ndmp jobs, and also restore them afterwards
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+# remove files
+${SSH} rm -Rf "/ifs/home/regress/${NDMP_FILESYSTEM}"
+
+# first run the copy jobs
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/copy.out
+run job=ndmp-copy-$NDMPCLIENT yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+check_log "${log_home}/copy.out"
+
+# then restore a full copy
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore-full.out
+restore jobid=19 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+check_log "${log_home}/restore-full.out"
+${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/full" | grep "${NDMP_FILESYSTEM}"
+
+# afterwards restore an incremental copy
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore-incr.out
+restore jobid=29 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump all done yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+check_log "${log_home}/restore-incr.out"
+${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental" | grep "${NDMP_FILESYSTEM}"
+
+check_for_zombie_jobs storage=isilonfile client=bareos-fd
+
+end_test
