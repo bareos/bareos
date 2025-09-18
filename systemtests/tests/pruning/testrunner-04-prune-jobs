@@ -43,8 +43,11 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 run job=$regularjob_name Level=Full yes
 run job=$regularjob_name Level=Full yes
 wait
-@sleep 2
 messages
+
+@# wait for retention period
+@sleep 2
+
 @$out ${log_home}/prune.out
 prune jobs pool=Full yes
 wait
