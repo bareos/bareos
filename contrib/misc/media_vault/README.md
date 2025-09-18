@@ -88,7 +88,7 @@ Console {
 You can copy the given example
 
 ```bash
-cp console_media_vault.conf /etc/bareos/bareos-dir.d/console/media_vault.conf
+cp console_media_vault.conf.example /etc/bareos/bareos-dir.d/console/media_vault.conf
 chmod 0640 /etc/bareos/bareos-dir.d/console/media_vault.conf
 chown bareos:bareos /etc/bareos/bareos-dir.d/console/media_vault.conf
 ```
@@ -120,7 +120,7 @@ Profile {
 #### installation of dedicated profile for restricted console
 
 ```bash
-cp profile_media_vault.conf /etc/bareos/bareos-dir.d/profile/media_vault.conf
+cp profile_media_vault.conf.example /etc/bareos/bareos-dir.d/profile/media_vault.conf
 chmod 0640 /etc/bareos/bareos-dir.d/profile/media_vault.conf
 chown bareos:bareos /etc/bareos/bareos-dir.d/profile/media_vault.conf
 ```
@@ -142,7 +142,7 @@ Remember to verify that it is readable by running user ``bareos``.
 #### Installation of a default configuration file
 
 ```bash
-cp media_vault.ini.in /etc/bareos/media_vault.ini
+cp media_vault.ini.example.in /etc/bareos/media_vault.ini
 chmod 640 /etc/bareos/media_vault.ini
 chown root:bareos /etc/bareos/media_vault.ini
 ```
@@ -166,7 +166,7 @@ To run the script execute the following
 ```bash
 su bareos -l -s /bin/bash
 source ~/.local/share/virtualenvs/bareos_media_vault/bin/activate && \
-/usr/lib64/bareos/plugins/media_vault.py --config /etc/bareos/media_vault.ini && \
+/usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault.ini && \
 deactivate
 ```
 
@@ -315,8 +315,8 @@ For example:
 ```bash
 su bareos -l -s /bin/bash
 source ~/.local/share/virtualenvs/bareos_media_vault/bin/activate && \
-/usr/lib64/bareos/plugins/media_vault.py --config /etc/bareos/media_vault_autochanger-0.ini && \
-/usr/lib64/bareos/plugins/media_vault.py --config /etc/bareos/media_vault_autochanger-1.ini && \
+/usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault_autochanger-0.ini && \
+/usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault_autochanger-1.ini && \
 deactivate
 ```
 
