@@ -36,7 +36,7 @@ bareos_configure_file(
   FILES
   media_vault.sh.in
   media_vault.ini.example.in
-  job_admin-media_vault.conf.in
+  job_admin-media_vault.conf.example.in
 )
 
 install(
