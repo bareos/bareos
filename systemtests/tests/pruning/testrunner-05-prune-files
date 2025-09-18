@@ -1,0 +1,62 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# run multiple jobs and verify that pruning of files works
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/prune.out
+prune files pool=Full yes
+wait
+@$out ${log_home}/restore.out
+restore jobid=11
+no
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Pruned Files from 1 Jobs" \
+  "${log_home}/prune.out" \
+  "Expected number of files pruned not found"
+
+expect_grep "Most likely your retention policy pruned the files." \
+  "${log_home}/restore.out" \
+  "Restore command found files, when they should have been pruned"
+
+end_test

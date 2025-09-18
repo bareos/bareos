@@ -1,0 +1,67 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# run multiple jobs and verify that pruning of all failed jobs from a pool works
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/backup.out
+run job=$smallvoljob_name level=Full yes
+run job=$smallvoljob_name level=Full yes
+run job=$smallvoljob_name level=Full yes
+run job=$failingjob_name level=Full yes
+run job=$failingjob_name level=Full yes
+run job=$failingjob_name level=Full yes
+wait
+messages
+@$out ${log_home}/purge.out
+purge jobs jobstatus=E pool=SmallFull yes
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "3 Jobs on Pool \"SmallFull\" purged from catalog" \
+  "${log_home}/purge.out" \
+  "Correct number of jobs with warnings to purge on specific pool was not found."
+
+expect_grep "Purging the following 3 JobIds: 18,19,20" \
+  "${log_home}/purge.out" \
+  "Expected purged jobids with warnings in specific pool not found" \
+  "Purging the"
+
+end_test
