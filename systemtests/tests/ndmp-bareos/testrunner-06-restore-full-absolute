@@ -1,0 +1,62 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# make sure we can restore a full backup to some absolute location
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+restore_path="/ifs/data/bareos-restores-${NDMP_FILESYSTEM}"
+
+# remove files
+${SSH} rm -Rf "${restore_path}"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore.out
+restore jobid=1 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump where=^${restore_path} all done yes
+wait
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${log_home}/restore.out"
+
+${SSH} "cat ${restore_path}/testfile" | diff - sbin/bareos_dir-ndmp-bareos
+${SSH} "cat ${restore_path}/testfile2" | diff - sbin/bareos_sd-ndmp-bareos
+${SSH} "tail -c 200 ${restore_path}/full" | grep "${NDMP_FILESYSTEM}"
+
+check_for_zombie_jobs storage=isilonfile client=bareos-fd
+
+end_test
