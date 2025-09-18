@@ -1,0 +1,80 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# run multiple jobs and verify that pruning of all volumes works from a pool
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+touch "${tmp}/data/weird-files/newfilecreatedjustforthistest"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/incr.out
+@#
+@# Prune all volumes of a given pool
+@#
+@#
+
+run job=$regularjob_name Level=Incremental yes
+wait
+
+@sleep 6
+
+messages
+@$out ${log_home}/prune.out
+update volume=TestVolume004 volstatus=Used
+update volume=TestVolumeIncremental volstatus=Used
+
+prune volume all pool=Incremental yes
+
+wait
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_log "${log_home}/incr.out"
+
+expect_grep "Purging the following 1 JobIds: 9" \
+  "${log_home}/prune.out" \
+  "Pruned jobs from volume all pool pruning not found" \
+  "Purging the"
+
+expect_grep "Volume \"TestVolumeIncremental\" contains no jobs after pruning." \
+  "${log_home}/prune.out" \
+  "Volume still contains jobs, or wrong volume pruned." \
+  "Volume.*contains no jobs after pruning."
+
+end_test
