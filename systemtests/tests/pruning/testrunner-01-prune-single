@@ -65,11 +65,13 @@ yes
 wait
 messages
 
+@# wait for retention period
+@sleep 2
+
 @$out ${log_home}/prune.out
 @#
 @# now prune using the commandline
 @#
-@sleep 6
 update volume=TestVolume001 volstatus=Used
 prune volume=TestVolume001 yes
 wait

@@ -54,7 +54,8 @@ run job=$regularjob_name Level=Full yes
 wait
 update volume=TestVolume003 volstatus=Used
 
-@sleep 6
+@# wait for retention period
+@sleep 2
 
 @$out ${log_home}/prune.out
 messages
