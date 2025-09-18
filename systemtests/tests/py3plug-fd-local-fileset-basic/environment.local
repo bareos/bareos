@@ -1,5 +1,3 @@
-#!/bin/bash
-
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
@@ -19,35 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-set -e
-set -o pipefail
-set -u
-
-#shellcheck source=../../environment.in
-. ./environment
-
-#shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
-
-# Fill ${BackupDirectory} with data.
-setup_data
-
-bin/bareos start
-bin/bareos status
-
-# make sure, director is up and running.
-print_debug "$(bin/bconsole <<<"status dir")"
-
-# this test does not work with links, because
-# python 2 does not support setting mtime on links
-# they are restored properly but with wrong timestamps
-# This is supposed to work with the future plugin-fd interface
-# using Python3
-find ${tmp}/data/weird-files -type l -exec rm {} \;
-find tmp/data/weird-files -links +1 -type f -exec rm {} \;
-
-rm tmp/data/weird-files/filename-with-non-utf8-bytestring*
-
-print_debug "$(locale)"
+runner_name="$(basename "$0")"
+export log_home="${tmp}/${runner_name}"
+mkdir -p "${log_home}"
