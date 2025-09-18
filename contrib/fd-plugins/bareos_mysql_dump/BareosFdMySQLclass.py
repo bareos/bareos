@@ -156,7 +156,7 @@ class BareosFdMySQLclass(BareosFdPluginBaseclass):
                 M_ERROR,
                 "No databases to backup.\n"
             )
-            return bRC_Skip
+            return bRC_Stop
 
         db = self.databases.pop()
 

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,7 @@
 
 import bareosfd
 from bareosfd import *
+from binascii import hexlify
 import os
 import re
 import hashlib
@@ -176,7 +177,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
         bareosfd.DebugMessage(100, "start_backup_file() called\n")
         if not self.files_to_backup:
             bareosfd.DebugMessage(100, "No files to backup\n")
-            return bRC_Skip
+            return bRC_Stop
 
         file_to_backup = self.files_to_backup.pop()
 
@@ -319,8 +320,12 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
             if ROP.object.decode() != "a" * stored_length:
                 bareosfd.JobMessage(
                     M_ERROR,
-                    "bad long restoreobject {} does not match stored object: {}, {}\n".format(
-                        ROP.object_name, ROP.object.decode(), "a" * stored_length
+                    "bad long restoreobject {} does not match stored object: {} (size: {}), {} (size: {})\n".format(
+                        ROP.object_name,
+                        str(hexlify(ROP.object)),
+                        len(ROP.object),
+                        str(hexlify("a" * stored_length)),
+                        stored_length,
                     ),
                 )
         else:

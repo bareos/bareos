@@ -1404,7 +1404,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         bareosfd.DebugMessage(100, "start_backup_file called\n")
         if not self.paths_to_backup:
             bareosfd.DebugMessage(100, "No files to backup\n")
-            return bareosfd.bRC_Skip
+            return bareosfd.bRC_Stop
 
         try:
             self.file_to_backup = self.paths_to_backup.popleft()

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - stored: fix race condition [PR #2362]
+- grpc: fix missing some early events [PR #2371]
 
 ## [24.0.5] - 2025-09-02
 
@@ -515,4 +516,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2345]: https://github.com/bareos/bareos/pull/2345
 [PR #2351]: https://github.com/bareos/bareos/pull/2351
 [PR #2362]: https://github.com/bareos/bareos/pull/2362
+[PR #2371]: https://github.com/bareos/bareos/pull/2371
 [unreleased]: https://github.com/bareos/bareos/tree/master

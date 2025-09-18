@@ -14,6 +14,9 @@ enum FileType {
   Junction = 8;
   Deleted = 9;
   HardlinkCopy = 10; // hardlink pointing to file already backed up
+  UnchangedFile = 11;
+  UnchangedDirectory = 12;
+  RestoreObject = 25; // FT_RESTORE_FIRST
 };
 
 enum FileErrorType {
