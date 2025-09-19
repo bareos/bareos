@@ -8,7 +8,7 @@ FileSet {
    Plugin = "python"
         ":module_path=@python_plugin_module_src_test_dir@"
         ":module_name=bareos-fd-proxmox"
-        ":guestid=112"
+        ":guestid=999001"
   }
 }
 FileSet {
@@ -21,7 +21,7 @@ FileSet {
    Plugin = "python"
         ":module_path=@python_plugin_module_src_test_dir@"
         ":module_name=bareos-fd-proxmox"
-        ":guestid=117"
+        ":guestid=999002"
   }
 }
 
