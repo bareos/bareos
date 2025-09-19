@@ -133,7 +133,7 @@ if(${docs-build-json})
     OUTPUT ${USAGE_DIR}/bareos-dir.txt
     COMMAND bareos-dir --help >/dev/null
     COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bareos-dir>
-            ${USAGE_DIR}
+            > ${USAGE_DIR}/bareos-dir.txt
     DEPENDS bareos-dir
   )
 
@@ -141,7 +141,7 @@ if(${docs-build-json})
     OUTPUT ${USAGE_DIR}/bareos-sd.txt
     COMMAND bareos-sd --help >/dev/null
     COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bareos-sd>
-            ${USAGE_DIR}
+            > ${USAGE_DIR}/bareos-sd.txt
     DEPENDS bareos-sd
   )
 
@@ -149,15 +149,15 @@ if(${docs-build-json})
     OUTPUT ${USAGE_DIR}/bareos-fd.txt
     COMMAND bareos-fd --help >/dev/null
     COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bareos-fd>
-            ${USAGE_DIR}
+            > ${USAGE_DIR}/bareos-fd.txt
     DEPENDS bareos-fd
   )
 
   add_custom_command(
     OUTPUT ${USAGE_DIR}/bconsole.txt
     COMMAND bconsole --help >/dev/null
-    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bconsole>
-            ${USAGE_DIR}
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bconsole> >
+            ${USAGE_DIR}/bconsole.txt
     DEPENDS bconsole
   )
 
@@ -171,31 +171,31 @@ if(${docs-build-json})
     OUTPUT ${USAGE_DIR}/bareos-dbcheck.txt
     COMMAND bareos-dbcheck --help >/dev/null
     COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh
-            $<TARGET_FILE:bareos-dbcheck> ${USAGE_DIR}
+            $<TARGET_FILE:bareos-dbcheck> > ${USAGE_DIR}/bareos-dbcheck.txt
     DEPENDS bareos-dbcheck
   )
 
   add_custom_command(
     OUTPUT ${USAGE_DIR}/bcopy.txt
     COMMAND bcopy --help >/dev/null
-    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bcopy>
-            ${USAGE_DIR}
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bcopy> >
+            ${USAGE_DIR}/bcopy.txt
     DEPENDS bcopy
   )
 
   add_custom_command(
     OUTPUT ${USAGE_DIR}/bextract.txt
     COMMAND bextract --help >/dev/null
-    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bextract>
-            ${USAGE_DIR}
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bextract> >
+            ${USAGE_DIR}/bextract.txt
     DEPENDS bextract
   )
 
   add_custom_command(
     OUTPUT ${USAGE_DIR}/bls.txt
     COMMAND bls --help >/dev/null
-    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bls>
-            ${USAGE_DIR}
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bls> >
+            ${USAGE_DIR}/bls.txt
     DEPENDS bls
   )
 
@@ -203,47 +203,47 @@ if(${docs-build-json})
     OUTPUT ${USAGE_DIR}/bpluginfo.txt
     COMMAND bpluginfo --help >/dev/null
     COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bpluginfo>
-            ${USAGE_DIR}
+            > ${USAGE_DIR}/bpluginfo.txt
     DEPENDS bpluginfo
   )
 
   add_custom_command(
     OUTPUT ${USAGE_DIR}/bregex.txt
     COMMAND bregex --help >/dev/null
-    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bregex>
-            ${USAGE_DIR}
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bregex> >
+            ${USAGE_DIR}/bregex.txt
     DEPENDS bregex
   )
 
   add_custom_command(
     OUTPUT ${USAGE_DIR}/bscan.txt
     COMMAND bscan --help >/dev/null
-    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bscan>
-            ${USAGE_DIR}
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bscan> >
+            ${USAGE_DIR}/bscan.txt
     DEPENDS bscan
   )
 
   add_custom_command(
     OUTPUT ${USAGE_DIR}/bsmtp.txt
     COMMAND bsmtp --help > /dev/null
-    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bsmtp>
-            ${USAGE_DIR}
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bsmtp> >
+            ${USAGE_DIR}/bsmtp.txt
     DEPENDS bsmtp
   )
 
   add_custom_command(
     OUTPUT ${USAGE_DIR}/btape.txt
     COMMAND btape --help >/dev/null
-    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:btape>
-            ${USAGE_DIR}
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:btape> >
+            ${USAGE_DIR}/btape.txt
     DEPENDS btape
   )
 
   add_custom_command(
     OUTPUT ${USAGE_DIR}/bwild.txt
     COMMAND bwild --help >/dev/null
-    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bwild>
-            ${USAGE_DIR}
+    COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh $<TARGET_FILE:bwild> >
+            ${USAGE_DIR}/bwild.txt
     DEPENDS bwild
   )
 
@@ -251,7 +251,7 @@ if(${docs-build-json})
     OUTPUT ${USAGE_DIR}/bdedupestimate.txt
     COMMAND bdedupestimate --help >/dev/null
     COMMAND ${PROJECT_SOURCE_DIR}/scripts/get-usage.sh
-            $<TARGET_FILE:bdedupestimate> ${USAGE_DIR}
+            $<TARGET_FILE:bdedupestimate> > ${USAGE_DIR}/bdedupestimate.txt
     DEPENDS bdedupestimate
   )
 
