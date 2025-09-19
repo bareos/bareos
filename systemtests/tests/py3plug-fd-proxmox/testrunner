@@ -71,11 +71,10 @@ END_OF_DATA2
 
 run_bareos "$@"
 
-
 qm start "${VMID}"
 
 # make sure VMID was recovered
-qm list | grep -v "${VMID}"
+qm list | grep "${VMID}"
 
 
 check_for_zombie_jobs storage=File
