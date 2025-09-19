@@ -1,6 +1,7 @@
-Usage: bareos-dir [OPTIONS]
+bareos-dir [OPTIONS]
 
-Options:
+
+OPTIONS:
     -h,-?,--help
         Print this help message and exit. 
 

@@ -1,6 +1,7 @@
-Usage: bdedupestimate [OPTIONS] devicename
+bdedupestimate [OPTIONS] devicename
 
-Positionals:
+
+POSITIONALS:
     devicename TEXT
         REQUIRED
         Specify the input device name (either as name of a Bareos Storage 
@@ -8,7 +9,7 @@ Positionals:
         Storage Daemon Device resource). 
 
 
-Options:
+OPTIONS:
     -h,-?,--help
         Print this help message and exit. 
 
