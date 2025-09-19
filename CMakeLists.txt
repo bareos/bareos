@@ -92,7 +92,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:py3plug-fd-basic:config
       system:py3plug-fd-basic:forcebackup
       system:py3plug-fd-basic:jobmsg
-      system:py3plug-fd-proxmox
       system:python-bareos:acl
       system:python-bareos:bvfs
       system:python-bareos:delete
