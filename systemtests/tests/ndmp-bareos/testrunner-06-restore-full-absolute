@@ -23,31 +23,40 @@ set -e
 set -o pipefail
 set -u
 
+#
+# make sure we can restore a full backup to some absolute location
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
 #shellcheck source=../../environment.in
 . ./environment
 
 #shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
 
-# Fill ${BackupDirectory} with data.
-setup_data
+start_test
 
-bin/bareos start
-bin/bareos status
+restore_path="/ifs/data/bareos-restores-${NDMP_FILESYSTEM}"
 
-# make sure, director is up and running.
-print_debug "$(bin/bconsole <<<"status dir")"
+# remove files
+${SSH} rm -Rf "${restore_path}"
 
-# this test does not work with links, because
-# python 2 does not support setting mtime on links
-# they are restored properly but with wrong timestamps
-# This is supposed to work with the future plugin-fd interface
-# using Python3
-find ${tmp}/data/weird-files -type l -exec rm {} \;
-find tmp/data/weird-files -links +1 -type f -exec rm {} \;
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore.out
+restore jobid=1 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump where=^${restore_path} all done yes
+wait
+END_OF_DATA
 
-rm tmp/data/weird-files/filename-with-non-utf8-bytestring*
+run_bconsole "${tmp}/bconcmds"
 
-print_debug "$(locale)"
+check_log "${log_home}/restore.out"
+
+${SSH} "cat ${restore_path}/testfile" | diff - sbin/bareos_dir-ndmp-bareos
+${SSH} "cat ${restore_path}/testfile2" | diff - sbin/bareos_sd-ndmp-bareos
+${SSH} "tail -c 200 ${restore_path}/full" | grep "${NDMP_FILESYSTEM}"
+
+check_for_zombie_jobs storage=isilonfile client=bareos-fd
+
+end_test

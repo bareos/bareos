@@ -23,31 +23,45 @@ set -e
 set -o pipefail
 set -u
 
+#
+# run multiple jobs and verify that pruning of all failed jobs from a pool works
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
 #shellcheck source=../../environment.in
 . ./environment
 
 #shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
 
-# Fill ${BackupDirectory} with data.
-setup_data
+start_test
 
-bin/bareos start
-bin/bareos status
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/backup.out
+run job=$smallvoljob_name level=Full yes
+run job=$smallvoljob_name level=Full yes
+run job=$smallvoljob_name level=Full yes
+run job=$failingjob_name level=Full yes
+run job=$failingjob_name level=Full yes
+run job=$failingjob_name level=Full yes
+wait
+messages
+@$out ${log_home}/purge.out
+purge jobs jobstatus=E pool=SmallFull yes
+quit
+END_OF_DATA
 
-# make sure, director is up and running.
-print_debug "$(bin/bconsole <<<"status dir")"
+run_bconsole
 
-# this test does not work with links, because
-# python 2 does not support setting mtime on links
-# they are restored properly but with wrong timestamps
-# This is supposed to work with the future plugin-fd interface
-# using Python3
-find ${tmp}/data/weird-files -type l -exec rm {} \;
-find tmp/data/weird-files -links +1 -type f -exec rm {} \;
+expect_grep "3 Jobs on Pool \"SmallFull\" purged from catalog" \
+  "${log_home}/purge.out" \
+  "Correct number of jobs with warnings to purge on specific pool was not found."
 
-rm tmp/data/weird-files/filename-with-non-utf8-bytestring*
+expect_grep "Purging the following 3 JobIds: 18,19,20" \
+  "${log_home}/purge.out" \
+  "Expected purged jobids with warnings in specific pool not found" \
+  "Purging the"
 
-print_debug "$(locale)"
+end_test

@@ -23,31 +23,48 @@ set -e
 set -o pipefail
 set -u
 
+#
+# run multiple jobs and verify that pruning of jobs works
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
 #shellcheck source=../../environment.in
 . ./environment
 
 #shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
 
-# Fill ${BackupDirectory} with data.
-setup_data
+start_test
 
-bin/bareos start
-bin/bareos status
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${log_home}/backup.out
+run job=$regularjob_name Level=Full yes
+run job=$regularjob_name Level=Full yes
+wait
+messages
 
-# make sure, director is up and running.
-print_debug "$(bin/bconsole <<<"status dir")"
+@# wait for retention period
+@sleep 2
 
-# this test does not work with links, because
-# python 2 does not support setting mtime on links
-# they are restored properly but with wrong timestamps
-# This is supposed to work with the future plugin-fd interface
-# using Python3
-find ${tmp}/data/weird-files -type l -exec rm {} \;
-find tmp/data/weird-files -links +1 -type f -exec rm {} \;
+@$out ${log_home}/prune.out
+prune jobs pool=Full yes
+wait
+quit
+END_OF_DATA
 
-rm tmp/data/weird-files/filename-with-non-utf8-bytestring*
+run_bconsole
 
-print_debug "$(locale)"
+check_log "${log_home}/backup.out"
+
+expect_grep "Purging the following 2 JobIds: 8,10" \
+  "${log_home}/prune.out" \
+  "Expected pruned jobids not found" \
+  "Purging the"
+
+expect_grep "Pruned 2 Jobs for client bareos-fd from catalog." \
+  "${log_home}/prune.out" \
+  "Expected number of jobs pruned not found"
+
+end_test

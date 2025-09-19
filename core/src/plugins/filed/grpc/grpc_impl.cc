@@ -1173,11 +1173,17 @@ class PluginClient {
             case bco::UnchangedDirectory:
               [[fallthrough]];
             case bco::Directory: {
-              pkt->fname = strdup(file.file().c_str());
-              // todo: fix this
-              auto path = file.file();
-              path += "/";
-              pkt->link = strdup(path.c_str());
+              std::string name = file.file();
+              while (name.size() > 1 && name.back() == '/') { name.pop_back(); }
+
+              // for directories:
+              // pkt->fname _should not_ end in a '/'
+              // pkt->link _should_ end in a '/'
+              pkt->fname = strdup(name.c_str());
+
+              if (name.back() != '/') { name += '/'; }
+
+              pkt->link = strdup(name.c_str());
             } break;
             case bco::SoftLink: {
               pkt->fname = strdup(file.file().c_str());

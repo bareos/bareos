@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,17 @@ set -e
 set -o pipefail
 set -u
 
+#
+# Requirements:
+# * This tests is implemented for a Isilon NDMP storage.
+# * To create and delete backup data,
+#   password-less SSH root access to the Isilon storage is required.
+# * run cmake with parameter matching your environment:
+#     -Dndmp_data_agent_address=<ip.of.data.agent> \
+#     -Dndmp_data_agent_user=<user> \
+#     -Dndmp_data_agent_password=<password>
+#
+
 #shellcheck source=../../environment.in
 . ./environment
 
@@ -31,23 +42,18 @@ set -u
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-# Fill ${BackupDirectory} with data.
-setup_data
-
 bin/bareos start
 bin/bareos status
 
 # make sure, director is up and running.
 print_debug "$(bin/bconsole <<<"status dir")"
 
-# this test does not work with links, because
-# python 2 does not support setting mtime on links
-# they are restored properly but with wrong timestamps
-# This is supposed to work with the future plugin-fd interface
-# using Python3
-find ${tmp}/data/weird-files -type l -exec rm {} \;
-find tmp/data/weird-files -links +1 -type f -exec rm {} \;
+cleanup_isilon
 
-rm tmp/data/weird-files/filename-with-non-utf8-bytestring*
-
-print_debug "$(locale)"
+${SSH} mkdir -p /ifs/home/regress/${NDMP_FILESYSTEM}
+${SSH} dd if=/dev/zero of=/ifs/home/regress/${NDMP_FILESYSTEM}/full bs=1M count=20
+${SSH} "echo ${NDMP_FILESYSTEM} >> /ifs/home/regress/${NDMP_FILESYSTEM}/full"
+${SSH} "cat - > /ifs/home/regress/${NDMP_FILESYSTEM}/testfile" <sbin/bareos_dir-ndmp-bareos
+# we need an additional file, so the restore doesn't pick the last file of the volume and
+# data stream
+${SSH} "cat - > /ifs/home/regress/${NDMP_FILESYSTEM}/testfile2" <sbin/bareos_sd-ndmp-bareos
