@@ -21,6 +21,18 @@ if(MSVC)
   return()
 endif()
 
+# cmake_host_system_information() was added in 3.22
+if(CMAKE_VERSION VERSION_GREATER 3.22)
+  cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
+  message(STATUS "${PRETTY_NAME}")
+
+  cmake_host_system_information(RESULT DISTRO QUERY DISTRIB_INFO)
+
+  foreach(VAR IN LISTS DISTRO)
+    message(STATUS "${VAR}=`${${VAR}}`")
+  endforeach()
+endif
+
 # always add "src" package snippet
 set(DEBIAN_CONTROL_SNIPPETS "src")
 
@@ -100,6 +112,10 @@ else()
 
   if(NOT client-only)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-contrib-tools")
+  endif()
+
+  if(NOT client-only)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "proxmox")
   endif()
 
 endif()
