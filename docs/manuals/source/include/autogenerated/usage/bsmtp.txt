@@ -1,12 +1,13 @@
-Usage: bsmtp [OPTIONS] recipients...
+bsmtp [OPTIONS] recipients...
 
-Positionals:
+
+POSITIONALS:
     recipients TEXT ...
         REQUIRED
         List of recipients. 
 
 
-Options:
+OPTIONS:
     --version
         Display program version information and exit 
 

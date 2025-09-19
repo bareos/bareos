@@ -1,6 +1,7 @@
-Usage: bareos-fd [OPTIONS]
+bareos-fd [OPTIONS]
 
-Options:
+
+OPTIONS:
     -h,-?,--help
         Print this help message and exit. 
 
