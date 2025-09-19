@@ -23,8 +23,10 @@ JobName=backup-proxmox-vm
 "${rscripts}"/setup
 
 VMID=999001
+qm stop "${VMID}" || :
 qm destroy "${VMID}" || :
 qm create "${VMID}" --ostype l26 --memory 512 --name plugtestvm --scsi0 ZFS:2
+qm start "${VMID}"
 
 start_test
 
@@ -45,6 +47,7 @@ END_OF_DATA
 
 run_bareos "$@"
 
+qm stop "${VMID}"
 qm destroy "${VMID}"
 
 # make sure VMID was destroyed
@@ -68,9 +71,10 @@ END_OF_DATA2
 
 run_bareos "$@"
 
-# make sure VMID was  recovered
-qm list | grep -v "${VMID}"
+qm start "${VMID}"
 
+# make sure VMID was recovered
+qm list | grep "${VMID}"
 
 
 check_for_zombie_jobs storage=File
