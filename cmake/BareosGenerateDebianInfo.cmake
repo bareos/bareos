@@ -140,7 +140,8 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-contrib-tools")
   endif()
 
-  if(DIST_ID STREQUAL "debian" AND DIST_VERSION_ID MATCHES "13.*")
+  if(DIST_ID STREQUAL "debian" AND DIST_VERSION_ID STREQUAL "13")
+    message(STATUS "${DIST_ID} - ${DIST_VERSION_ID}: adding proxmox plugin")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "proxmox")
   endif()
 
