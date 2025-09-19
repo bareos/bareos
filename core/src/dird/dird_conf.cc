@@ -44,6 +44,7 @@
  *
  */
 
+#include "lib/resource_item.h"
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
 #include "dird.h"
@@ -268,8 +269,8 @@ static const ResourceItem cat_items[] = {
   { "DbName", CFG_TYPE_STR, ITEM(res_cat, db_name), {config::Required{}}},
   { "DbSocket", CFG_TYPE_STR, ITEM(res_cat, db_socket), {config::Alias{"Socket"}}},
   /* Turned off for the moment */
-  { "MultipleConnections", CFG_TYPE_BIT, ITEM(res_cat, mult_db_connections), {}},
-  { "DisableBatchInsert", CFG_TYPE_BOOL, ITEM(res_cat, disable_batch_insert), {config::DefaultValue{"false"}}},
+  { "MultipleConnections", CFG_TYPE_BIT, ITEM(res_cat, mult_db_connections), {config::DeprecatedSince{25,0,0}}},
+  { "DisableBatchInsert", CFG_TYPE_BOOL, ITEM(res_cat, disable_batch_insert), {config::DeprecatedSince{25,0,0}, config::DefaultValue{"false"}}},
   { "Reconnect", CFG_TYPE_BOOL, ITEM(res_cat, try_reconnect), {config::IntroducedIn{15, 1, 0}, config::DefaultValue{"true"}, config::Description{"Try to reconnect a database connection when it is dropped"}}},
   { "ExitOnFatal", CFG_TYPE_BOOL, ITEM(res_cat, exit_on_fatal), {config::IntroducedIn{15, 1, 0}, config::DefaultValue{"false"}, config::Description{"Make any fatal error in the connection to the database exit the program"}}},
   { "MinConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_min_connections), {config::DefaultValue{"1"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the minimum number of connections to a database to keep in this database pool."}}},
