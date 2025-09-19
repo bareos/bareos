@@ -25,5 +25,3 @@ FileSet {
   }
 }
 
-lua require"cmp.utils.feedkeys".run(2)
-
