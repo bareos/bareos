@@ -20,7 +20,6 @@
 
 set -e
 set -u
-set -x
 
 FULLPATH="$1"
 FLAG="${2:---help}"
