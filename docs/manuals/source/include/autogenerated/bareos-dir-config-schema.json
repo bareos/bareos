@@ -1945,13 +1945,17 @@
         "MultipleConnections": {
           "datatype": "BIT",
           "code": 0,
-          "equals": true
+          "deprecated": true,
+          "equals": true,
+          "versions": "-25.0.0"
         },
         "DisableBatchInsert": {
           "datatype": "BOOLEAN",
           "code": 0,
           "default_value": "false",
-          "equals": true
+          "deprecated": true,
+          "equals": true,
+          "versions": "-25.0.0"
         },
         "Reconnect": {
           "datatype": "BOOLEAN",
