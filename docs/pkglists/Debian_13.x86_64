@@ -23,6 +23,7 @@ amd64/bareos-filedaemon-libcloud-python-plugin
 amd64/bareos-filedaemon-mariabackup-python-plugin
 amd64/bareos-filedaemon-percona-xtrabackup-python-plugin
 amd64/bareos-filedaemon-postgresql-python-plugin
+amd64/bareos-filedaemon-proxmox-python-plugin
 amd64/bareos-filedaemon-python-plugins-common
 amd64/bareos-filedaemon-python3-plugin
 amd64/bareos-storage
