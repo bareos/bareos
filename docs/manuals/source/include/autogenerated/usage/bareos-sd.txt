@@ -1,6 +1,7 @@
-Usage: bareos-sd [OPTIONS]
+bareos-sd [OPTIONS]
 
-Options:
+
+OPTIONS:
     -h,-?,--help
         Print this help message and exit. 
 
