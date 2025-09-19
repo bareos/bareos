@@ -21,44 +21,6 @@ if(MSVC)
   return()
 endif()
 
-# cmake_host_system_information() was added in 3.22
-if(CMAKE_VERSION VERSION_GREATER 3.22)
-  cmake_host_system_information(RESULT PRETTY_NAME QUERY DISTRIB_PRETTY_NAME)
-  message(STATUS "${PRETTY_NAME}")
-  
-  cmake_host_system_information(RESULT DIST_ID QUERY DISTRIB_ID)
-  message(STATUS "${DIST_ID}")
-  
-  cmake_host_system_information(RESULT DIST_VERSION_ID QUERY DISTRIB_VERSION_ID)
-  message(STATUS "${DIST_VERSION_ID}")
-
-
-#--  DISTRO_ANSI_COLOR=`0;38;2;60;110;180` 
-#--  DISTRO_BUG_REPORT_URL=`https://bugzilla.redhat.com/` 
-#--  DISTRO_CPE_NAME=`cpe:/o:fedoraproject:fedora:42` 
-#--  DISTRO_DEFAULT_HOSTNAME=`fedora` 
-#--  DISTRO_DOCUMENTATION_URL=`https://docs.fedoraproject.org/en-US/fedora/f42/` 
-#--  DISTRO_HOME_URL=`https://fedoraproject.org/` 
-#--  DISTRO_ID=`fedora` 
-#--  DISTRO_LOGO=`fedora-logo-icon` 
-#--  DISTRO_NAME=`Fedora Linux` 
-#--  DISTRO_PLATFORM_ID=`platform:f42` 
-#--  DISTRO_PRETTY_NAME=`Fedora Linux 42 (Adams)` 
-#--  DISTRO_REDHAT_BUGZILLA_PRODUCT=`Fedora` 
-#--  DISTRO_REDHAT_BUGZILLA_PRODUCT_VERSION=`42` 
-#--  DISTRO_REDHAT_SUPPORT_PRODUCT=`Fedora` 
-#--  DISTRO_REDHAT_SUPPORT_PRODUCT_VERSION=`42` 
-#--  DISTRO_RELEASE_TYPE=`stable` 
-#--  DISTRO_SUPPORT_END=`2026-05-13` 
-#--  DISTRO_SUPPORT_URL=`https://ask.fedoraproject.org/` 
-#--  DISTRO_VERSION=`42 (Adams)` 
-#--  DISTRO_VERSION_ID=`42` 
-
-  # foreach(VAR IN LISTS DISTRO)
-  #   message(STATUS " ${VAR}=`${${VAR}}` ")
-  # endforeach()
-endif()
-
 # always add "src" package snippet
 set(DEBIAN_CONTROL_SNIPPETS "src")
 
@@ -140,9 +102,21 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-contrib-tools")
   endif()
 
-  if(DIST_ID STREQUAL "debian" AND DIST_VERSION_ID STREQUAL "13")
-    message(STATUS "${DIST_ID} - ${DIST_VERSION_ID}: adding proxmox plugin")
-    list(APPEND DEBIAN_CONTROL_SNIPPETS "proxmox")
+  # cmake_host_system_information() was added in 3.22
+  if(CMAKE_VERSION VERSION_GREATER 3.22)
+
+    cmake_host_system_information(RESULT DIST_ID QUERY DISTRIB_ID)
+    message(STATUS "${DIST_ID}")
+
+    cmake_host_system_information(RESULT DIST_VERSION_ID QUERY DISTRIB_VERSION_ID)
+    message(STATUS "${DIST_VERSION_ID}")
+
+    # debian 12 and 13 are the base for proxmox-ve currently
+    if(DIST_ID STREQUAL "debian" AND DIST_VERSION_ID GREATER_EQUAL "13")
+      message(STATUS "${DIST_ID} - ${DIST_VERSION_ID}: adding proxmox plugin")
+      list(APPEND DEBIAN_CONTROL_SNIPPETS "proxmox")
+    endif()
+
   endif()
 
 endif()
