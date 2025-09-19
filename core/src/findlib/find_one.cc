@@ -577,6 +577,7 @@ static inline int process_directory(JobControlRecord* jcr,
   link[len++] = '/'; /* add back one */
   link[len] = 0;
 
+  ff_pkt->type = FT_DIREND;  // make sure CheckChanges knows its a directory
   ff_pkt->link = link;
   if (!CheckChanges(jcr, ff_pkt)) {
     // Incremental/Full+Base option, directory entry not changed

@@ -48,6 +48,15 @@ struct grpc_connection {
     grpc::AddInsecureChannelFromFd(server.get(), sockfd);
   }
 
+  grpc_connection(std::unique_ptr<bc::Core::Stub> stub_,
+                  std::unique_ptr<grpc::Server> server_,
+                  std::vector<std::unique_ptr<grpc::Service>> services_)
+      : stub{std::move(stub_)}
+      , server{std::move(server_)}
+      , services{std::move(services_)}
+  {
+  }
+
   grpc_connection() = delete;
 };
 

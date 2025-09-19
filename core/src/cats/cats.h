@@ -584,7 +584,8 @@ class BareosDb : public BareosDbQueryEnum {
   void ListDashes(OutputFormatter* send);
 
  public:
-  char* strerror();
+  char* strerror(libbareos::source_location loc
+                 = libbareos::source_location::current());
   bool CheckMaxConnections(JobControlRecord* jcr, uint32_t max_concurrent_jobs);
   bool CheckTablesVersion(JobControlRecord* jcr);
   bool QueryDb(JobControlRecord* jcr,
@@ -1038,10 +1039,10 @@ class BareosDb : public BareosDbQueryEnum {
       = 0;
 
  protected:
-  void AssertOwnership(libbareos::source_location l
-                       = libbareos::source_location::current())
+  void CheckOwnership(libbareos::source_location l
+                      = libbareos::source_location::current())
   {
-    if (!is_private_) { RwlAssertWriterIsMe(&lock_, l); }
+    if (!is_private_) { RwlCheckWriterIsMe(&lock_, l); }
   }
 };
 

@@ -626,7 +626,7 @@ bool BareosDbPostgresql::SqlQueryWithHandler(const char* query,
 bool BareosDbPostgresql::SqlQueryWithoutHandler(const char* query,
                                                 query_flags flags)
 {
-  AssertOwnership();
+  CheckOwnership();
   auto result
       = postgres::try_query(db_handle_, try_reconnect_ && !transaction_, query);
   if (result) {
@@ -715,7 +715,7 @@ SQL_ROW BareosDbPostgresql::SqlFetchRow(void)
 
 const char* BareosDbPostgresql::sql_strerror(void)
 {
-  AssertOwnership();
+  CheckOwnership();
   return PQerrorMessage(db_handle_);
 }
 
@@ -948,7 +948,7 @@ bail_out:
 
 bool BareosDbPostgresql::SqlBatchStartFileTable(JobControlRecord*)
 {
-  AssertOwnership();
+  CheckOwnership();
   const char* query = "COPY batch FROM STDIN";
 
   Dmsg0(500, "SqlBatchStartFileTable started\n");
@@ -1012,7 +1012,7 @@ bail_out:
 bool BareosDbPostgresql::SqlBatchEndFileTable(JobControlRecord*,
                                               const char* error)
 {
-  AssertOwnership();
+  CheckOwnership();
   int res;
   int count = 30;
   PGresult* pg_result;
@@ -1113,7 +1113,7 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
   const char* digest;
   char ed1[50], ed2[50], ed3[50];
 
-  AssertOwnership();
+  CheckOwnership();
   esc_name = CheckPoolMemorySize(esc_name, fnl * 2 + 1);
   pgsql_copy_escape(esc_name, fname, fnl);
 
