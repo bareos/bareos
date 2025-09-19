@@ -1,0 +1,1 @@
+../../../../core/src/plugins/filed/python/proxmox/bareos-fd-proxmox.py
