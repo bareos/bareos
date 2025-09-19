@@ -19,6 +19,15 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
-if(TARGET python3-fd AND enable_proxmox_plugin)
+find_program(VZDUMP vzdump)
+find_program(PCT pct)
+find_program(QMRESTORE qmrestore)
+
+if (VZDUMP AND PCT AND QMRESTORE AND TARGET python3-fd AND enable_proxmox_plugin)
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+else()
+  create_systemtest(
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
+    "disabled as not all requirements were met"
+  )
 endif()
