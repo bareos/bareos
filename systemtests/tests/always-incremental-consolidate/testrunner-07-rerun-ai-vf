@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -76,7 +76,7 @@ END_OF_DATA
 run_bconsole
 
 expect_grep "Cannot run always incremental job at level VirtualFull with no jobid" \
-            "${tmp}/consolidatevfs_rerun_canceled.out" \
-            "Aborting rerun without jobis not found"
+  "${tmp}/consolidatevfs_rerun_canceled.out" \
+  "Aborting rerun without jobis not found"
 
 end_test
