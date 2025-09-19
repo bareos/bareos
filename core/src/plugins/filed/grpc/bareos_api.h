@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -71,9 +71,9 @@ struct Severity {
   const char* file{};
   int line{};
 
-  Severity(int severity_,
-           const char* file_ = __builtin_FILE(),
-           int line_ = __builtin_LINE())
+  constexpr Severity(int severity_,
+                     const char* file_ = __builtin_FILE(),
+                     int line_ = __builtin_LINE())
       : severity{severity_}, file{file_}, line{line_}
   {
   }
@@ -84,9 +84,9 @@ struct Type {
   const char* file{};
   int line{};
 
-  Type(int type_,
-       const char* file_ = __builtin_FILE(),
-       int line_ = __builtin_LINE())
+  constexpr Type(int type_,
+                 const char* file_ = __builtin_FILE(),
+                 int line_ = __builtin_LINE())
       : type{type_}, file{file_}, line{line_}
   {
   }
@@ -118,12 +118,12 @@ void DebugLog(PluginContext* ctx,
 }
 
 template <typename... Args>
-void JobLog(PluginContext* ctx,
-            Type type,
-            fmt::format_string<Args...> fmt,
-            Args&&... args)
+constexpr void JobLog(PluginContext* ctx,
+                      Type type,
+                      fmt::format_string<Args...> fmt,
+                      Args&&... args)
 {
-  auto formatted = fmt::format(fmt, args...);
+  auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
 
   internal::JobMessage(ctx, type.file, type.line, type.type, formatted.c_str());
 }
