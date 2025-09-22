@@ -49,19 +49,19 @@ END_OF_DATA
 run_bareos "$@"
 
 for i in {0..3}; do
-  expect_grep "Device \\\"ImplicitAutchangerDevice000$i\\\""\
+  expect_grep "Device \"ImplicitAutchangerDevice000$i\""\
     $tmp/status-storage.out\
-    "Device \\\"ImplicitAutchangerDevice000$i\\\" was not created."
+    "Device \"ImplicitAutchangerDevice000$i\" was not created."
 done
 
 for i in {1..3}; do
-  expect_grep "Using Device \\\"ImplicitAutchangerDevice000$i\\\" (storage) to write."\
+  expect_grep "Using Device \"ImplicitAutchangerDevice000$i\" (storage) to write."\
     $tmp/backup-log.out\
-    "Device \\\"ImplicitAutchangerDevice000$i\\\" was not used."
+    "Device \"ImplicitAutchangerDevice000$i\" was not used."
 done
 
-expect_not_grep "Using Device \\\"ImplicitAutchangerDevice\\\" (storage) to write."\
+expect_not_grep "Using Device \"ImplicitAutchangerDevice\" (storage) to write."\
   $tmp/backup-log.out\
-  "Used device \\\"ImplicitAutchangerDevice\\\". This device has count > 1 so only copies with serial numbers of this device should be used."
+  "Used device \"ImplicitAutchangerDevice\". This device has count > 1 so only copies with serial numbers of this device should be used."
 
 end_test
