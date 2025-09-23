@@ -22,11 +22,13 @@ JobName=backup-proxmox-vm
 "${rscripts}"/cleanup
 "${rscripts}"/setup
 
-GUESTID=999001
-qm stop "${GUESTID}" || :
-qm destroy "${GUESTID}" || :
-qm create "${GUESTID}" --ostype l26 --memory 512 --name plugtestvm --scsi0 ZFS:2
-qm start "${GUESTID}"
+BACKGUESTID=999010
+RESTGUESTID=999011
+
+qm stop "${BACKGUESTID}" || :
+qm destroy "${BACKGUESTID}" || :
+qm create "${BACKGUESTID}" --ostype l26 --memory 512 --name plugtestvm --scsi0 ZFS:2
+qm start "${BACKGUESTID}"
 
 start_test
 
@@ -47,11 +49,11 @@ END_OF_DATA
 
 run_bareos "$@"
 
-qm stop "${GUESTID}"
-qm destroy "${GUESTID}"
+qm stop "${BACKGUESTID}"
+qm destroy "${BACKGUESTID}"
 
-# make sure GUESTID was destroyed
-qm list | grep -v "${GUESTID}"
+# make sure BACKGUESTID was destroyed
+qm list | grep -v "${BACKGUESTID}"
 
 cat <<END_OF_DATA2 >$tmp/bconcmds
 @#
@@ -59,7 +61,7 @@ cat <<END_OF_DATA2 >$tmp/bconcmds
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-fd fileset=ProxmoxTestVM where=/ select all done
+restore client=bareos-fd fileset=ProxmoxTestVM where=/ select all done  pluginoptions=python:guestid=${RESTGUESTID}
 yes
 wait
 messages
@@ -67,31 +69,22 @@ quit
 
 END_OF_DATA2
 
-# pluginoptions=python:localvmdk=yes 
 
 run_bareos "$@"
 
-qm start "${GUESTID}"
+qm start "${RESTGUESTID}"
 
-# make sure GUESTID was recovered
-qm list | grep "${GUESTID}"
+# make sure RESTGUESTID was recovered
+qm list | grep "${RESTGUESTID}"
+
+# cleanup
+qm stop "${RESTGUESTID}"
+qm destroy "${RESTGUESTID}"
 
 
 check_for_zombie_jobs storage=File
 
 check_two_logs
 
-
-
-
-
-# Check restored disk image content
-#restored_disk_image=$(find $tmp/bareos-restores -type f  -name "*.vmdk" | tail -1)
-#if file "$restored_disk_image" | grep "Proxmox4 disk image"; then
-#    echo "Restored disk image type OK"
-#else
-#    echo "Restored disk image ERROR: is not Proxmox disk image"
-#    dstat=1
-#fi
 
 end_test
