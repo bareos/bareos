@@ -23,11 +23,13 @@ JobName=backup-proxmox-ct
 "${rscripts}"/setup
 
 TEMPLATE=local:vztmpl/fedora-42-default_20250428_amd64.tar.xz
-GUESTID=999002
-pct stop "${GUESTID}" || :
-pct destroy "${GUESTID}" || :
-pct create "${GUESTID}" "${TEMPLATE}"
-pct start "${GUESTID}"
+BACKGUESTID=999002
+RESTGUESTID=999002
+
+pct stop "${BACKGUESTID}" || :
+pct destroy "${BACKGUESTID}" || :
+pct create "${BACKGUESTID}" "${TEMPLATE}"
+pct start "${BACKGUESTID}"
 
 start_test
 
@@ -48,11 +50,11 @@ END_OF_DATA
 
 run_bareos "$@"
 
-pct stop "${GUESTID}"
-pct destroy "${GUESTID}"
+pct stop "${BACKGUESTID}"
+pct destroy "${BACKGUESTID}"
 
-# make sure GUESTID was destroyed
-#pct list | grep -v "${GUESTID}"
+# make sure BACKGUESTID was destroyed
+# pct list | grep -v "${BACKGUESTID}"
 
 cat <<END_OF_DATA2 >$tmp/bconcmds
 @#
@@ -60,7 +62,7 @@ cat <<END_OF_DATA2 >$tmp/bconcmds
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-fd fileset=ProxmoxTestCT where=/ select all done
+restore client=bareos-fd fileset=ProxmoxTestCT where=/ select all done pluginoptions=python:guestid=${RESTGUESTID}
 yes
 wait
 messages
@@ -68,33 +70,22 @@ quit
 
 END_OF_DATA2
 
-# pluginoptions=python:localvmdk=yes 
 
 run_bareos "$@"
 
-pct start "${GUESTID}"
+pct start "${RESTGUESTID}"
 
-# make sure GUESTID was recovered
-pct list | grep "${GUESTID}"
+# make sure RESTGUESTID was recovered
+pct list | grep "${RESTGUESTID}"
+
+# cleanup
+pct stop "${RESTGUESTID}"
+pct destroy "${RESTGUESTID}"
 
 
 check_for_zombie_jobs storage=File
 
 check_two_logs
 
-
-# cleanup
-pct stop "${GUESTID}"
-pct destroy "${GUESTID}"
-
-
-# Check restored disk image content
-#restored_disk_image=$(find $tmp/bareos-restores -type f  -name "*.vmdk" | tail -1)
-#if file "$restored_disk_image" | grep "Proxmox4 disk image"; then
-#    echo "Restored disk image type OK"
-#else
-#    echo "Restored disk image ERROR: is not Proxmox disk image"
-#    dstat=1
-#fi
 
 end_test
