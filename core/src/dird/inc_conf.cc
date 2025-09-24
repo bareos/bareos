@@ -35,11 +35,8 @@
 #include "lib/parse_conf.h"
 #include "include/compiler_macro.h"
 
-#ifndef HAVE_REGEX_H
-#  include "lib/bregex.h"
-#else
-#  include <regex.h>
-#endif
+#include "lib/bregex.h"
+
 #include "findlib/find.h"
 
 #include "inc_conf.h"
