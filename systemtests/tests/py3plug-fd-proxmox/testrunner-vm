@@ -24,10 +24,11 @@ JobName=backup-proxmox-vm
 
 BACKGUESTID=999010
 RESTGUESTID=999011
+GUESTNAME=plugtestvm
 
 qm stop "${BACKGUESTID}" || :
 qm destroy "${BACKGUESTID}" || :
-qm create "${BACKGUESTID}" --ostype l26 --memory 512 --name plugtestvm --scsi0 ZFS:2
+qm create "${BACKGUESTID}" --ostype l26 --memory 512 --name "${GUESTNAME}" --scsi0 ZFS:2
 qm start "${BACKGUESTID}"
 
 start_test
@@ -57,12 +58,12 @@ qm list | grep -v "${BACKGUESTID}"
 
 cat <<END_OF_DATA2 >$tmp/bconcmds
 @#
-@# now do a restore
+@# now do a restore to guest
 @#
 @$out $tmp/log2.out
 wait
 setdebug client=bareos-fd level=1000 trace=1
-restore client=bareos-fd fileset=ProxmoxTestVM where=/ select all done  pluginoptions=python:guestid=${RESTGUESTID}:restoretodisk=yes
+restore client=bareos-fd fileset=ProxmoxTestVM where=/ select all done  pluginoptions=python:guestid=${RESTGUESTID}
 yes
 wait
 messages
@@ -83,9 +84,36 @@ qm stop "${RESTGUESTID}"
 qm destroy "${RESTGUESTID}"
 
 
+cat <<END_OF_DATA3 >$tmp/bconcmds
+@#
+@# now do a restore to file
+@#
+@$out $tmp/log3.out
+wait
+setdebug client=bareos-fd level=1000 trace=1
+restore client=bareos-fd fileset=ProxmoxTestVM where=/ select all done  pluginoptions=python:guestid=${RESTGUESTID}:restoretodisk=yes
+yes
+wait
+messages
+quit
+
+END_OF_DATA3
+
+
+run_bareos "$@"
+
 check_for_zombie_jobs storage=File
 
-check_two_logs
+RESTOREFILE=$(grep -o "/var/lib/vz/dump.*vma" "${tmp}/log1.out")
 
+head "$RESTOREFILE"  > "${tmp}/diskhead"
+
+expect_grep "name: ${GUESTNAME}" \
+ "${tmp}/diskhead" \
+ "did not find expected vm name in vma dump file"
+
+#check_log "${tmp}/log1.out"
+#check_log "${tmp}/log2.out"
+#check_log "${tmp}/log3.out"
 
 end_test
