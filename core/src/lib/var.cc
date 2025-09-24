@@ -20,10 +20,8 @@
 #include "include/bareos.h"
 #if defined(HAVE_PCREPOSIX)
 #  include <pcreposix.h>
-#elif defined(HAVE_WIN32)
-#  include "bregex.h"
 #else
-#  include <regex.h>
+#  include "bregex.h"
 #endif
 #include "var.h"
 
@@ -1694,8 +1692,7 @@ static int parse_name(var_t* var,
   const char* p;
 
   /* parse as long as name class characters are found */
-  for (p = begin; p != end && var->syntax_nameclass[(int)(*p)]; p++)
-    ;
+  for (p = begin; p != end && var->syntax_nameclass[(int)(*p)]; p++);
   return (p - begin);
 }
 

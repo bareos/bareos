@@ -46,37 +46,43 @@
 
 #ifndef BAREOS_LIB_BREGEX_H_
 #define BAREOS_LIB_BREGEX_H_
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifdef HAVE_REGEX_H
+#  include <regex.h>
+#else
 
-#ifndef REGEXPR_H
-#  define REGEXPR_H
+#  define NEED_BREGEX_IMPLEMENTATION
+
+#  ifdef __cplusplus
+extern "C" {
+#  endif
+
+#  ifndef REGEXPR_H
+#    define REGEXPR_H
 
 /* If we pull in this header, make sure we only get our own library
  *  bregex.c
  */
-#  define regex_t b_regex_t
-#  define regmatch_t b_regmatch_t
-#  define re_syntax b_re_syntax
-#  define re_syntax_table b_re_syntax_table
-#  define ReCompileInitialize b_re_compile_initialize
-#  define ReSetSyntax b_re_set_syntax
-#  define re_compile_pattern b_re_compile_pattern
-#  define ReMatch b_re_match
-#  define ReSearch b_re_search
-#  define ReCompileFastmap b_re_compile_fastmap
-#  define re_comp b_re_comp
-#  define re_exec b_re_exec
-#  define regcomp b_regcomp
-#  define regexec b_regexec
-#  define regerror b_regerror
-#  define regfree b_regfree
+#    define regex_t b_regex_t
+#    define regmatch_t b_regmatch_t
+#    define re_syntax b_re_syntax
+#    define re_syntax_table b_re_syntax_table
+#    define ReCompileInitialize b_re_compile_initialize
+#    define ReSetSyntax b_re_set_syntax
+#    define re_compile_pattern b_re_compile_pattern
+#    define ReMatch b_re_match
+#    define ReSearch b_re_search
+#    define ReCompileFastmap b_re_compile_fastmap
+#    define re_comp b_re_comp
+#    define re_exec b_re_exec
+#    define regcomp b_regcomp
+#    define regexec b_regexec
+#    define regerror b_regerror
+#    define regfree b_regfree
 
 
-#  define RE_NREGS 100 /* number of registers available */
+#    define RE_NREGS 100 /* number of registers available */
 
-#  define regoff_t int
+#    define regoff_t int
 
 typedef struct {
   regoff_t rm_so;
@@ -84,13 +90,13 @@ typedef struct {
 } regmatch_t;
 
 
-#  define REG_EXTENDED (1 << 1)
-#  define REG_ICASE (1 << 2)
-#  define REG_NOSUB (1 << 3)
-#  define REG_NEWLINE (1 << 4)
-#  define REG_NOTBOL (1 << 5)
+#    define REG_EXTENDED (1 << 1)
+#    define REG_ICASE (1 << 2)
+#    define REG_NOSUB (1 << 3)
+#    define REG_NEWLINE (1 << 4)
+#    define REG_NOTBOL (1 << 5)
 
-#  define REG_NOMATCH -1
+#    define REG_NOMATCH -1
 
 /* clang-format off */
 struct regex_t {
@@ -117,26 +123,27 @@ typedef struct re_registers {
 } * regexp_registers_t;
 
 /* bit definitions for syntax */
-#  define RE_NO_BK_PARENS 1        /* no quoting for parentheses */
-#  define RE_NO_BK_VBAR 2          /* no quoting for vertical bar */
-#  define RE_BK_PLUS_QM 4          /* quoting needed for + and ? */
-#  define RE_TIGHT_VBAR 8          /* | binds tighter than ^ and $ */
-#  define RE_NEWLINE_OR 16         /* treat newline as or */
-#  define RE_CONTEXT_INDEP_OPS 32  /* ^$?*+ are special in all contexts */
-#  define RE_ANSI_HEX 64           /* ansi sequences (\n etc) and \xhh */
-#  define RE_NO_GNU_EXTENSIONS 128 /* no gnu extensions */
+#    define RE_NO_BK_PARENS 1        /* no quoting for parentheses */
+#    define RE_NO_BK_VBAR 2          /* no quoting for vertical bar */
+#    define RE_BK_PLUS_QM 4          /* quoting needed for + and ? */
+#    define RE_TIGHT_VBAR 8          /* | binds tighter than ^ and $ */
+#    define RE_NEWLINE_OR 16         /* treat newline as or */
+#    define RE_CONTEXT_INDEP_OPS 32  /* ^$?*+ are special in all contexts */
+#    define RE_ANSI_HEX 64           /* ansi sequences (\n etc) and \xhh */
+#    define RE_NO_GNU_EXTENSIONS 128 /* no gnu extensions */
 
 /* definitions for some common regexp styles */
-#  define RE_SYNTAX_AWK (RE_NO_BK_PARENS | RE_NO_BK_VBAR | RE_CONTEXT_INDEP_OPS)
-#  define RE_SYNTAX_EGREP (RE_SYNTAX_AWK | RE_NEWLINE_OR)
-#  define RE_SYNTAX_GREP (RE_BK_PLUS_QM | RE_NEWLINE_OR)
-#  define RE_SYNTAX_EMACS 0
+#    define RE_SYNTAX_AWK \
+      (RE_NO_BK_PARENS | RE_NO_BK_VBAR | RE_CONTEXT_INDEP_OPS)
+#    define RE_SYNTAX_EGREP (RE_SYNTAX_AWK | RE_NEWLINE_OR)
+#    define RE_SYNTAX_GREP (RE_BK_PLUS_QM | RE_NEWLINE_OR)
+#    define RE_SYNTAX_EMACS 0
 
-#  define Sword 1
-#  define Swhitespace 2
-#  define Sdigit 4
-#  define Soctaldigit 8
-#  define Shexdigit 16
+#    define Sword 1
+#    define Swhitespace 2
+#    define Sdigit 4
+#    define Soctaldigit 8
+#    define Shexdigit 16
 
 /* Rename all exported symbols to avoid conflicts with similarly named
    symbols in some systems' standard C libraries... */
@@ -202,10 +209,13 @@ int regexec(regex_t* preg,
 size_t regerror(int errcode, regex_t* preg, char* errbuf, size_t errbuf_size);
 void regfree(regex_t* preg);
 
-#endif /* REGEXPR_H */
+#  endif /* REGEXPR_H */
 
 
-#ifdef __cplusplus
+#  ifdef __cplusplus
 }
+#  endif
+
 #endif
+
 #endif  // BAREOS_LIB_BREGEX_H_

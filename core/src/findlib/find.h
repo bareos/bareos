@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,11 +58,8 @@ extern "C" {
 
 #include "lib/fnmatch.h"
 
-#ifndef HAVE_REGEX_H
-#  include "lib/bregex.h"
-#else
-#  include <regex.h>
-#endif
+#include "lib/bregex.h"
+
 #ifdef USE_READDIR_R
 #  ifndef HAVE_READDIR_R
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -57,14 +57,24 @@
 #include "include/bareos.h"
 #include "bregex.h"
 
-#define set_error(x) bufp->errmsg = ((char*)(x))
-#define got_error bufp->errmsg != NULL
+// we only need this implementation if we do _not_ use the systems
+// regex.h
+#if defined(NEED_BREGEX_IMPLEMENTATION)
+
+#  if HAVE_WIN32
+#    pragma message("you are using the bareos implementation of regex")
+#  else
+#    warning "you are using the bareos implementation of regex"
+#  endif
+
+#  define set_error(x) bufp->errmsg = ((char*)(x))
+#  define got_error bufp->errmsg != NULL
 
 /* The original code blithely assumed that sizeof(short) == 2.  Not
  * always true.  Original instances of "(short)x" were replaced by
  * SHORT(x), where SHORT is #defined below.  */
 
-#define SHORT(x) ((x) & 0x8000 ? (x)-0x10000 : (x))
+#  define SHORT(x) ((x) & 0x8000 ? (x) - 0x10000 : (x))
 
 /* The stack implementation is taken from an idea by Andrew Kuchling.
  * It's a doubly linked list of arrays. The advantages of this over a
@@ -103,8 +113,8 @@ typedef union item_t {
   } cntr;
 } item_t;
 
-#define B_STACK_PAGE_SIZE 256
-#define NUM_REGISTERS 256
+#  define B_STACK_PAGE_SIZE 256
+#  define NUM_REGISTERS 256
 
 /* A 'page' of stack items. */
 
@@ -170,204 +180,205 @@ typedef struct match_state {
 /* state.stack.index = 0; \ */
 /* state.level = 1 */
 
-#define NEW_STATE(state, nregs)               \
-  {                                           \
-    int i;                                    \
-    for (i = 0; i < nregs; i++) {             \
-      state.start[i] = NULL;                  \
-      state.end[i] = NULL;                    \
-      state.changed[i] = 0;                   \
-    }                                         \
-    state.stack.current = &state.stack.first; \
-    state.stack.first.prev = NULL;            \
-    state.stack.first.next = NULL;            \
-    state.stack.index = 0;                    \
-    state.level = 1;                          \
-    state.count = 0;                          \
-    state.level = 0;                          \
-    state.point = 0;                          \
-  }
+#  define NEW_STATE(state, nregs)               \
+    {                                           \
+      int i;                                    \
+      for (i = 0; i < nregs; i++) {             \
+        state.start[i] = NULL;                  \
+        state.end[i] = NULL;                    \
+        state.changed[i] = 0;                   \
+      }                                         \
+      state.stack.current = &state.stack.first; \
+      state.stack.first.prev = NULL;            \
+      state.stack.first.next = NULL;            \
+      state.stack.index = 0;                    \
+      state.level = 1;                          \
+      state.count = 0;                          \
+      state.level = 0;                          \
+      state.point = 0;                          \
+    }
 
 /* Free any memory that might have been malloc'd */
 
-#define FREE_STATE(state)                               \
-  while (state.stack.first.next != NULL) {              \
-    state.stack.current = state.stack.first.next;       \
-    state.stack.first.next = state.stack.current->next; \
-    free(state.stack.current);                          \
-  }
+#  define FREE_STATE(state)                               \
+    while (state.stack.first.next != NULL) {              \
+      state.stack.current = state.stack.first.next;       \
+      state.stack.first.next = state.stack.current->next; \
+      free(state.stack.current);                          \
+    }
 
 /* Discard the top 'count' stack items. */
 
-#define STACK_DISCARD(stack, count, on_error)  \
-  stack.index -= count;                        \
-  while (stack.index < 0) {                    \
-    if (stack.current->prev == NULL) on_error; \
-    stack.current = stack.current->prev;       \
-    stack.index += B_STACK_PAGE_SIZE;          \
-  }
+#  define STACK_DISCARD(stack, count, on_error)  \
+    stack.index -= count;                        \
+    while (stack.index < 0) {                    \
+      if (stack.current->prev == NULL) on_error; \
+      stack.current = stack.current->prev;       \
+      stack.index += B_STACK_PAGE_SIZE;          \
+    }
 
 /* Store a pointer to the previous item on the stack. Used to pop an
  * item off of the stack. */
 
-#define STACK_PREV(stack, top, on_error)       \
-  if (stack.index == 0) {                      \
-    if (stack.current->prev == NULL) on_error; \
-    stack.current = stack.current->prev;       \
-    stack.index = B_STACK_PAGE_SIZE - 1;       \
-  } else {                                     \
-    stack.index--;                             \
-  }                                            \
-  top = &(stack.current->items[stack.index])
+#  define STACK_PREV(stack, top, on_error)       \
+    if (stack.index == 0) {                      \
+      if (stack.current->prev == NULL) on_error; \
+      stack.current = stack.current->prev;       \
+      stack.index = B_STACK_PAGE_SIZE - 1;       \
+    } else {                                     \
+      stack.index--;                             \
+    }                                            \
+    top = &(stack.current->items[stack.index])
 
 /* Store a pointer to the next item on the stack. Used to push an item
  * on to the stack. */
 
-#define STACK_NEXT(stack, top, on_error)                               \
-  if (stack.index == B_STACK_PAGE_SIZE) {                              \
-    if (stack.current->next == NULL) {                                 \
-      stack.current->next = (item_page_t*)malloc(sizeof(item_page_t)); \
-      if (stack.current->next == NULL) on_error;                       \
-      stack.current->next->prev = stack.current;                       \
-      stack.current->next->next = NULL;                                \
-    }                                                                  \
-    stack.current = stack.current->next;                               \
-    stack.index = 0;                                                   \
-  }                                                                    \
-  top = &(stack.current->items[stack.index++])
+#  define STACK_NEXT(stack, top, on_error)                               \
+    if (stack.index == B_STACK_PAGE_SIZE) {                              \
+      if (stack.current->next == NULL) {                                 \
+        stack.current->next = (item_page_t*)malloc(sizeof(item_page_t)); \
+        if (stack.current->next == NULL) on_error;                       \
+        stack.current->next->prev = stack.current;                       \
+        stack.current->next->next = NULL;                                \
+      }                                                                  \
+      stack.current = stack.current->next;                               \
+      stack.index = 0;                                                   \
+    }                                                                    \
+    top = &(stack.current->items[stack.index++])
 
 /* Store a pointer to the item that is 'count' items back in the
  * stack. STACK_BACK(stack, top, 1, on_error) is equivalent to
  * STACK_TOP(stack, top, on_error).  */
 
-#define STACK_BACK(stack, top, count, on_error) \
-  {                                             \
-    int index;                                  \
-    item_page_t* current;                       \
-    current = stack.current;                    \
-    index = stack.index - (count);              \
-    while (index < 0) {                         \
-      if (current->prev == NULL) on_error;      \
-      current = current->prev;                  \
-      index += B_STACK_PAGE_SIZE;               \
-    }                                           \
-    top = &(current->items[index]);             \
-  }
+#  define STACK_BACK(stack, top, count, on_error) \
+    {                                             \
+      int index;                                  \
+      item_page_t* current;                       \
+      current = stack.current;                    \
+      index = stack.index - (count);              \
+      while (index < 0) {                         \
+        if (current->prev == NULL) on_error;      \
+        current = current->prev;                  \
+        index += B_STACK_PAGE_SIZE;               \
+      }                                           \
+      top = &(current->items[index]);             \
+    }
 
 /* Store a pointer to the top item on the stack. Execute the
  * 'on_error' code if there are no items on the stack. */
 
-#define STACK_TOP(stack, top, on_error)                         \
-  if (stack.index == 0) {                                       \
-    if (stack.current->prev == NULL) on_error;                  \
-    top = &(stack.current->prev->items[B_STACK_PAGE_SIZE - 1]); \
-  } else {                                                      \
-    top = &(stack.current->items[stack.index - 1]);             \
-  }
+#  define STACK_TOP(stack, top, on_error)                         \
+    if (stack.index == 0) {                                       \
+      if (stack.current->prev == NULL) on_error;                  \
+      top = &(stack.current->prev->items[B_STACK_PAGE_SIZE - 1]); \
+    } else {                                                      \
+      top = &(stack.current->items[stack.index - 1]);             \
+    }
 
 /* Test to see if the stack is empty */
 
-#define STACK_EMPTY(stack) ((stack.index == 0) && (stack.current->prev == NULL))
+#  define STACK_EMPTY(stack) \
+    ((stack.index == 0) && (stack.current->prev == NULL))
 
 /* Return the start of register 'reg' */
 
-#define GET_REG_START(state, reg) (state.start[reg])
+#  define GET_REG_START(state, reg) (state.start[reg])
 
 /* Return the end of register 'reg' */
 
-#define GET_REG_END(state, reg) (state.end[reg])
+#  define GET_REG_END(state, reg) (state.end[reg])
 
 /* Set the start of register 'reg'. If the state of the register needs
  * saving, push it on the stack. */
 
-#define SET_REG_START(state, reg, text, on_error) \
-  if (state.changed[reg] < state.level) {         \
-    item_t* item;                                 \
-    STACK_NEXT(state.stack, item, on_error);      \
-    item->reg.num = reg;                          \
-    item->reg.start = state.start[reg];           \
-    item->reg.end = state.end[reg];               \
-    item->reg.level = state.changed[reg];         \
-    state.changed[reg] = state.level;             \
-    state.count++;                                \
-  }                                               \
-  state.start[reg] = text
+#  define SET_REG_START(state, reg, text, on_error) \
+    if (state.changed[reg] < state.level) {         \
+      item_t* item;                                 \
+      STACK_NEXT(state.stack, item, on_error);      \
+      item->reg.num = reg;                          \
+      item->reg.start = state.start[reg];           \
+      item->reg.end = state.end[reg];               \
+      item->reg.level = state.changed[reg];         \
+      state.changed[reg] = state.level;             \
+      state.count++;                                \
+    }                                               \
+    state.start[reg] = text
 
 /* Set the end of register 'reg'. If the state of the register needs
  * saving, push it on the stack. */
 
-#define SET_REG_END(state, reg, text, on_error) \
-  if (state.changed[reg] < state.level) {       \
-    item_t* item;                               \
-    STACK_NEXT(state.stack, item, on_error);    \
-    item->reg.num = reg;                        \
-    item->reg.start = state.start[reg];         \
-    item->reg.end = state.end[reg];             \
-    item->reg.level = state.changed[reg];       \
-    state.changed[reg] = state.level;           \
-    state.count++;                              \
-  }                                             \
-  state.end[reg] = text
+#  define SET_REG_END(state, reg, text, on_error) \
+    if (state.changed[reg] < state.level) {       \
+      item_t* item;                               \
+      STACK_NEXT(state.stack, item, on_error);    \
+      item->reg.num = reg;                        \
+      item->reg.start = state.start[reg];         \
+      item->reg.end = state.end[reg];             \
+      item->reg.level = state.changed[reg];       \
+      state.changed[reg] = state.level;           \
+      state.count++;                              \
+    }                                             \
+    state.end[reg] = text
 
-#define PUSH_FAILURE(state, xcode, xtext, on_error) \
-  {                                                 \
-    item_t* item;                                   \
-    STACK_NEXT(state.stack, item, on_error);        \
-    item->fail.code = xcode;                        \
-    item->fail.text = xtext;                        \
-    item->fail.count = state.count;                 \
-    item->fail.level = state.level;                 \
-    item->fail.phantom = 0;                         \
-    state.count = 0;                                \
-    state.level++;                                  \
-    state.point++;                                  \
-  }
+#  define PUSH_FAILURE(state, xcode, xtext, on_error) \
+    {                                                 \
+      item_t* item;                                   \
+      STACK_NEXT(state.stack, item, on_error);        \
+      item->fail.code = xcode;                        \
+      item->fail.text = xtext;                        \
+      item->fail.count = state.count;                 \
+      item->fail.level = state.level;                 \
+      item->fail.phantom = 0;                         \
+      state.count = 0;                                \
+      state.level++;                                  \
+      state.point++;                                  \
+    }
 
 /* Update the last failure point with a new position in the text. */
 
-#define UPDATE_FAILURE(state, xtext, on_error)                \
-  {                                                           \
-    item_t* item;                                             \
-    STACK_BACK(state.stack, item, state.count + 1, on_error); \
-    if (!item->fail.phantom) {                                \
-      item_t* item2;                                          \
-      STACK_NEXT(state.stack, item2, on_error);               \
-      item2->fail.code = item->fail.code;                     \
-      item2->fail.text = xtext;                               \
-      item2->fail.count = state.count;                        \
-      item2->fail.level = state.level;                        \
-      item2->fail.phantom = 1;                                \
-      state.count = 0;                                        \
-      state.level++;                                          \
-      state.point++;                                          \
-    } else {                                                  \
-      STACK_DISCARD(state.stack, state.count, on_error);      \
-      STACK_TOP(state.stack, item, on_error);                 \
-      item->fail.text = xtext;                                \
-      state.count = 0;                                        \
-      state.level++;                                          \
-    }                                                         \
-  }
+#  define UPDATE_FAILURE(state, xtext, on_error)                \
+    {                                                           \
+      item_t* item;                                             \
+      STACK_BACK(state.stack, item, state.count + 1, on_error); \
+      if (!item->fail.phantom) {                                \
+        item_t* item2;                                          \
+        STACK_NEXT(state.stack, item2, on_error);               \
+        item2->fail.code = item->fail.code;                     \
+        item2->fail.text = xtext;                               \
+        item2->fail.count = state.count;                        \
+        item2->fail.level = state.level;                        \
+        item2->fail.phantom = 1;                                \
+        state.count = 0;                                        \
+        state.level++;                                          \
+        state.point++;                                          \
+      } else {                                                  \
+        STACK_DISCARD(state.stack, state.count, on_error);      \
+        STACK_TOP(state.stack, item, on_error);                 \
+        item->fail.text = xtext;                                \
+        state.count = 0;                                        \
+        state.level++;                                          \
+      }                                                         \
+    }
 
-#define POP_FAILURE(state, xcode, xtext, on_empty, on_error) \
-  {                                                          \
-    item_t* item;                                            \
-    do {                                                     \
-      while (state.count > 0) {                              \
-        STACK_PREV(state.stack, item, on_error);             \
-        state.start[item->reg.num] = item->reg.start;        \
-        state.end[item->reg.num] = item->reg.end;            \
-        state.changed[item->reg.num] = item->reg.level;      \
-        state.count--;                                       \
-      }                                                      \
-      STACK_PREV(state.stack, item, on_empty);               \
-      xcode = item->fail.code;                               \
-      xtext = item->fail.text;                               \
-      state.count = item->fail.count;                        \
-      state.level = item->fail.level;                        \
-      state.point--;                                         \
-    } while (item->fail.text == NULL);                       \
-  }
+#  define POP_FAILURE(state, xcode, xtext, on_empty, on_error) \
+    {                                                          \
+      item_t* item;                                            \
+      do {                                                     \
+        while (state.count > 0) {                              \
+          STACK_PREV(state.stack, item, on_error);             \
+          state.start[item->reg.num] = item->reg.start;        \
+          state.end[item->reg.num] = item->reg.end;            \
+          state.changed[item->reg.num] = item->reg.level;      \
+          state.count--;                                       \
+        }                                                      \
+        STACK_PREV(state.stack, item, on_empty);               \
+        xcode = item->fail.code;                               \
+        xtext = item->fail.text;                               \
+        state.count = item->fail.count;                        \
+        state.level = item->fail.level;                        \
+        state.point--;                                         \
+      } while (item->fail.text == NULL);                       \
+    }
 
 enum regexp_compiled_ops
 {                       /* opcodes for compiled regexp */
@@ -434,10 +445,10 @@ static unsigned char precedences[Rnum_ops];
 static int regexp_context_indep_ops;
 static int regexp_ansi_sequences;
 
-#define NUM_LEVELS 5    /* number of precedence levels in use */
-#define MAX_NESTING 100 /* max nesting level of operators */
+#  define NUM_LEVELS 5    /* number of precedence levels in use */
+#  define MAX_NESTING 100 /* max nesting level of operators */
 
-#define SYNTAX(ch) re_syntax_table[(unsigned char)(ch)]
+#  define SYNTAX(ch) re_syntax_table[(unsigned char)(ch)]
 
 unsigned char re_syntax_table[256];
 
@@ -874,127 +885,127 @@ static int ReOptimize(regex_t* bufp)
   }
 }
 
-#define NEXTCHAR(var)                       \
-  {                                         \
-    if (pos >= size) goto ends_prematurely; \
-    (var) = regex[pos];                     \
-    pos++;                                  \
-  }
+#  define NEXTCHAR(var)                       \
+    {                                         \
+      if (pos >= size) goto ends_prematurely; \
+      (var) = regex[pos];                     \
+      pos++;                                  \
+    }
 
-#define ALLOC(amount)                                    \
-  {                                                      \
-    if (pattern_offset + (amount) > alloc) {             \
-      alloc += 256 + (amount);                           \
-      pattern = (unsigned char*)realloc(pattern, alloc); \
-      if (!pattern) goto out_of_memory;                  \
-    }                                                    \
-  }
+#  define ALLOC(amount)                                    \
+    {                                                      \
+      if (pattern_offset + (amount) > alloc) {             \
+        alloc += 256 + (amount);                           \
+        pattern = (unsigned char*)realloc(pattern, alloc); \
+        if (!pattern) goto out_of_memory;                  \
+      }                                                    \
+    }
 
-#define STORE(ch) pattern[pattern_offset++] = (ch)
+#  define STORE(ch) pattern[pattern_offset++] = (ch)
 
-#define CURRENT_LEVEL_START (starts[starts_base + current_level])
+#  define CURRENT_LEVEL_START (starts[starts_base + current_level])
 
-#define SET_LEVEL_START starts[starts_base + current_level] = pattern_offset
+#  define SET_LEVEL_START starts[starts_base + current_level] = pattern_offset
 
-#define PUSH_LEVEL_STARTS                           \
-  if (starts_base < (MAX_NESTING - 1) * NUM_LEVELS) \
-    starts_base += NUM_LEVELS;                      \
-  else                                              \
-    goto too_complex
+#  define PUSH_LEVEL_STARTS                           \
+    if (starts_base < (MAX_NESTING - 1) * NUM_LEVELS) \
+      starts_base += NUM_LEVELS;                      \
+    else                                              \
+      goto too_complex
 
-#define POP_LEVEL_STARTS starts_base -= NUM_LEVELS
+#  define POP_LEVEL_STARTS starts_base -= NUM_LEVELS
 
-#define PUT_ADDR(offset, addr)                  \
-  {                                             \
-    int disp = (addr) - (offset)-2;             \
-    pattern[(offset)] = disp & 0xff;            \
-    pattern[(offset) + 1] = (disp >> 8) & 0xff; \
-  }
+#  define PUT_ADDR(offset, addr)                  \
+    {                                             \
+      int disp = (addr) - (offset) - 2;           \
+      pattern[(offset)] = disp & 0xff;            \
+      pattern[(offset) + 1] = (disp >> 8) & 0xff; \
+    }
 
-#define INSERT_JUMP(pos, type, addr)                                     \
-  {                                                                      \
-    int _insert_jump_a, _insert_jump_p = (pos), _insert_jump_t = (type), \
-                        _insert_jump_ad = (addr);                        \
-    for (_insert_jump_a = pattern_offset - 1;                            \
-         _insert_jump_a >= _insert_jump_p; _insert_jump_a--)             \
-      pattern[_insert_jump_a + 3] = pattern[_insert_jump_a];             \
-    pattern[_insert_jump_p] = _insert_jump_t;                            \
-    PUT_ADDR(_insert_jump_p + 1, _insert_jump_ad);                       \
-    pattern_offset += 3;                                                 \
-  }
+#  define INSERT_JUMP(pos, type, addr)                                     \
+    {                                                                      \
+      int _insert_jump_a, _insert_jump_p = (pos), _insert_jump_t = (type), \
+                          _insert_jump_ad = (addr);                        \
+      for (_insert_jump_a = pattern_offset - 1;                            \
+           _insert_jump_a >= _insert_jump_p; _insert_jump_a--)             \
+        pattern[_insert_jump_a + 3] = pattern[_insert_jump_a];             \
+      pattern[_insert_jump_p] = _insert_jump_t;                            \
+      PUT_ADDR(_insert_jump_p + 1, _insert_jump_ad);                       \
+      pattern_offset += 3;                                                 \
+    }
 
-#define SETBIT(buf, offset, bit) \
-  (buf)[(offset) + (bit) / 8] |= (1 << ((bit) & 7))
+#  define SETBIT(buf, offset, bit) \
+    (buf)[(offset) + (bit) / 8] |= (1 << ((bit) & 7))
 
-#define SET_FIELDS               \
-  {                              \
-    bufp->allocated = alloc;     \
-    bufp->buffer = pattern;      \
-    bufp->used = pattern_offset; \
-  }
+#  define SET_FIELDS               \
+    {                              \
+      bufp->allocated = alloc;     \
+      bufp->buffer = pattern;      \
+      bufp->used = pattern_offset; \
+    }
 
-#define GETHEX(var)                             \
-  {                                             \
-    unsigned char gethex_ch, gethex_value;      \
-    NEXTCHAR(gethex_ch);                        \
-    gethex_value = HexCharToDecimal(gethex_ch); \
-    if (gethex_value == 16) goto hex_error;     \
-    NEXTCHAR(gethex_ch);                        \
-    gethex_ch = HexCharToDecimal(gethex_ch);    \
-    if (gethex_ch == 16) goto hex_error;        \
-    (var) = gethex_value * 16 + gethex_ch;      \
-  }
+#  define GETHEX(var)                             \
+    {                                             \
+      unsigned char gethex_ch, gethex_value;      \
+      NEXTCHAR(gethex_ch);                        \
+      gethex_value = HexCharToDecimal(gethex_ch); \
+      if (gethex_value == 16) goto hex_error;     \
+      NEXTCHAR(gethex_ch);                        \
+      gethex_ch = HexCharToDecimal(gethex_ch);    \
+      if (gethex_ch == 16) goto hex_error;        \
+      (var) = gethex_value * 16 + gethex_ch;      \
+    }
 
-#define ANSI_TRANSLATE(ch)                                \
-  {                                                       \
-    switch (ch) {                                         \
-      case 'a':                                           \
-      case 'A': {                                         \
-        ch = 7; /* audible bell */                        \
-        break;                                            \
-      }                                                   \
-      case 'b':                                           \
-      case 'B': {                                         \
-        ch = 8; /* backspace */                           \
-        break;                                            \
-      }                                                   \
-      case 'f':                                           \
-      case 'F': {                                         \
-        ch = 12; /* form feed */                          \
-        break;                                            \
-      }                                                   \
-      case 'n':                                           \
-      case 'N': {                                         \
-        ch = 10; /* line feed */                          \
-        break;                                            \
-      }                                                   \
-      case 'r':                                           \
-      case 'R': {                                         \
-        ch = 13; /* carriage return */                    \
-        break;                                            \
-      }                                                   \
-      case 't':                                           \
-      case 'T': {                                         \
-        ch = 9; /* tab */                                 \
-        break;                                            \
-      }                                                   \
-      case 'v':                                           \
-      case 'V': {                                         \
-        ch = 11; /* vertical tab */                       \
-        break;                                            \
-      }                                                   \
-      case 'x': /* hex code */                            \
-      case 'X': {                                         \
-        GETHEX(ch);                                       \
-        break;                                            \
-      }                                                   \
-      default: {                                          \
-        /* other characters passed through */             \
-        if (translate) ch = translate[(unsigned char)ch]; \
-        break;                                            \
-      }                                                   \
-    }                                                     \
-  }
+#  define ANSI_TRANSLATE(ch)                                \
+    {                                                       \
+      switch (ch) {                                         \
+        case 'a':                                           \
+        case 'A': {                                         \
+          ch = 7; /* audible bell */                        \
+          break;                                            \
+        }                                                   \
+        case 'b':                                           \
+        case 'B': {                                         \
+          ch = 8; /* backspace */                           \
+          break;                                            \
+        }                                                   \
+        case 'f':                                           \
+        case 'F': {                                         \
+          ch = 12; /* form feed */                          \
+          break;                                            \
+        }                                                   \
+        case 'n':                                           \
+        case 'N': {                                         \
+          ch = 10; /* line feed */                          \
+          break;                                            \
+        }                                                   \
+        case 'r':                                           \
+        case 'R': {                                         \
+          ch = 13; /* carriage return */                    \
+          break;                                            \
+        }                                                   \
+        case 't':                                           \
+        case 'T': {                                         \
+          ch = 9; /* tab */                                 \
+          break;                                            \
+        }                                                   \
+        case 'v':                                           \
+        case 'V': {                                         \
+          ch = 11; /* vertical tab */                       \
+          break;                                            \
+        }                                                   \
+        case 'x': /* hex code */                            \
+        case 'X': {                                         \
+          GETHEX(ch);                                       \
+          break;                                            \
+        }                                                   \
+        default: {                                          \
+          /* other characters passed through */             \
+          if (translate) ch = translate[(unsigned char)ch]; \
+          break;                                            \
+        }                                                   \
+      }                                                     \
+    }
 
 const char* re_compile_pattern(regex_t* bufp, unsigned char* regex)
 {
@@ -1335,27 +1346,27 @@ too_complex:
   return "Regular expression too complex";
 }
 
-#undef CHARAT
-#undef NEXTCHAR
-#undef GETHEX
-#undef ALLOC
-#undef STORE
-#undef CURRENT_LEVEL_START
-#undef SET_LEVEL_START
-#undef PUSH_LEVEL_STARTS
-#undef POP_LEVEL_STARTS
-#undef PUT_ADDR
-#undef INSERT_JUMP
-#undef SETBIT
-#undef SET_FIELDS
+#  undef CHARAT
+#  undef NEXTCHAR
+#  undef GETHEX
+#  undef ALLOC
+#  undef STORE
+#  undef CURRENT_LEVEL_START
+#  undef SET_LEVEL_START
+#  undef PUSH_LEVEL_STARTS
+#  undef POP_LEVEL_STARTS
+#  undef PUT_ADDR
+#  undef INSERT_JUMP
+#  undef SETBIT
+#  undef SET_FIELDS
 
-#define PREFETCH \
-  if (text == textend) goto fail
+#  define PREFETCH \
+    if (text == textend) goto fail
 
-#define NEXTCHAR(var)           \
-  PREFETCH;                     \
-  var = (unsigned char)*text++; \
-  if (translate) var = translate[var]
+#  define NEXTCHAR(var)           \
+    PREFETCH;                     \
+    var = (unsigned char)*text++; \
+    if (translate) var = translate[var]
 
 int regcomp(regex_t* bufp, const char* regex, int cflags)
 {
@@ -1763,8 +1774,8 @@ error:
 }
 
 
-#undef PREFETCH
-#undef NEXTCHAR
+#  undef PREFETCH
+#  undef NEXTCHAR
 
 int ReSearch(regex_t* bufp,
              unsigned char* str,
@@ -1867,3 +1878,5 @@ int ReSearch(regex_t* bufp,
 ** c-file-style: "python"
 ** End:
 */
+
+#endif

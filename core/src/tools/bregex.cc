@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,11 +29,7 @@
 #include "include/exit_codes.h"
 #include "lib/cli.h"
 
-#ifndef HAVE_REGEX_H
-#  include "lib/bregex.h"
-#else
-#  include <regex.h>
-#endif
+#include "lib/bregex.h"
 
 int main(int argc, char** argv)
 {
