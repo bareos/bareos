@@ -10,7 +10,7 @@ FileSet {
              ":module_name=bareos-fd-ldap"
              ":uri=ldap\\"
              "://@SYSTEMTEST_LDAP_ADDRESS_ESCAPED@"
-             ":basedn=ou=backup,@SYSTEMTEST_LDAP_BASEDN@"
+             ":basedn=ou=backup-@TEST_NAME@,@SYSTEMTEST_LDAP_BASEDN@"
              ":bind_dn=@SYSTEMTEST_LDAP_BINDDN@"
              ":password=@SYSTEMTEST_LDAP_PASSWORD@"
   }

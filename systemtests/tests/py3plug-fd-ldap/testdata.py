@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -56,7 +56,7 @@ def ldap_create_or_fail(conn, dn, modlist):
         sys.exit(1)
 
 
-def action_clean(conn, basedn):
+def action_clean(conn, basedn, testname):
     """
     Clean up all objects in our subtrees (ldap-variant of "rm -rf").
 
@@ -64,7 +64,10 @@ def action_clean(conn, basedn):
     longest to shortest dn, so we remove parent objects later
     """
 
-    for subtree_dn in ["ou=backup,%s" % basedn, "ou=restore,%s" % basedn]:
+    for subtree_dn in [
+        f"ou=backup-{testname},{basedn}",
+        f"ou=restore-{testname},{basedn}",
+    ]:
         try:
             for dn in sorted(
                 map(
@@ -80,17 +83,20 @@ def action_clean(conn, basedn):
             pass
 
 
-def action_populate(conn, basedn):
+def action_populate(conn, basedn, testname):
     """Populate our backup data"""
     ldap_create_or_fail(
         conn,
-        "ou=backup,%s" % basedn,
-        {"objectClass": [b"organizationalUnit"], "ou": [b"restore"]},
+        f"ou=backup-{testname},{basedn}",
+        {
+            "objectClass": [b"organizationalUnit"],
+            "ou": [f"restore-{testname}".encode()],
+        },
     )
 
     ldap_create_or_fail(
         conn,
-        "cn=No JPEG,ou=backup,%s" % basedn,
+        f"cn=No JPEG,ou=backup-{testname},{basedn}",
         {
             "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
             "uid": [b"njpeg"],
@@ -109,7 +115,7 @@ def action_populate(conn, basedn):
 
     ldap_create_or_fail(
         conn,
-        "cn=Small JPEG,ou=backup,%s" % basedn,
+        f"cn=Small JPEG,ou=backup-{testname},{basedn}",
         {
             "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
             "uid": [b"sjpeg"],
@@ -129,7 +135,7 @@ def action_populate(conn, basedn):
 
     ldap_create_or_fail(
         conn,
-        "cn=Medium JPEG,ou=backup,%s" % basedn,
+        f"cn=Medium JPEG,ou=backup-{testname},{basedn}",
         {
             "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
             "uid": [b"mjpeg"],
@@ -149,7 +155,7 @@ def action_populate(conn, basedn):
 
     ldap_create_or_fail(
         conn,
-        "cn=Large JPEG,ou=backup,%s" % basedn,
+        f"cn=Large JPEG,ou=backup-{testname},{basedn}",
         {
             "objectClass": [b"inetOrgPerson", b"posixAccount", b"shadowAccount"],
             "uid": [b"ljpeg"],
@@ -167,13 +173,13 @@ def action_populate(conn, basedn):
 
     ldap_create_or_fail(
         conn,
-        "o=Bareos GmbH & Co. KG,ou=backup,%s" % basedn,
+        f"o=Bareos GmbH & Co. KG,ou=backup-{testname},{basedn}",
         {"objectClass": [b"top", b"organization"], "o": [b"Bareos GmbH & Co. KG"]},
     )
 
     ldap_create_or_fail(
         conn,
-        "ou=automount,ou=backup,%s" % basedn,
+        f"ou=automount,ou=backup-{testname},{basedn}",
         {"objectClass": [b"top", b"organizationalUnit"], "ou": [b"automount"]},
     )
 
@@ -190,7 +196,7 @@ def action_populate(conn, basedn):
 
     ldap_create_or_fail(
         conn,
-        "ou=weird-names,ou=backup,%s" % basedn,
+        f"ou=weird-names,ou=backup-{testname},{basedn}",
         {"objectClass": [b"top", b"organizationalUnit"], "ou": [b"weird-names"]},
     )
 
@@ -210,17 +216,19 @@ def action_populate(conn, basedn):
         b"with=equals",
         b"with>greater-than",
     ]:
+        escaped_ou = ldap.dn.escape_dn_chars(ou.decode("utf8"))
         ldap_create_or_fail(
             conn,
-            "ou=%s,ou=weird-names,ou=backup,%s"
-            % (ldap.dn.escape_dn_chars(ou.decode("utf8")), basedn),
+            f"ou={escaped_ou},ou=weird-names,ou=backup-{testname},{basedn}",
             {"objectClass": [b"top", b"organizationalUnit"], "ou": [ou]},
         )
 
     # creating the DN using the normal method wouldn't work, so we create a
     # temporary LDIF and parse that.
     ldif_data = io.BytesIO()
-    ldif_data.write("dn: ou=böses encoding,ou=weird-names,ou=backup,".encode("utf8"))
+    ldif_data.write(
+        f"dn: ou=böses encoding,ou=weird-names,ou=backup-{testname},".encode("utf8")
+    )
     ldif_data.write(b"%s\n" % basedn.encode("utf8"))
     ldif_data.write(b"objectClass: top\n")
     ldif_data.write(b"objectClass: organizationalUnit\n")
@@ -293,6 +301,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--basedn", "-b", default=b"dc=example,dc=org", help="LDAP base dn"
     )
+    parser.add_argument("--testname", "-t", default=b"py3plug-fd-ldap", help="testname")
     parser.add_argument(
         "--binddn", "-D", default=b"cn=admin,dc=example,dc=org", help="LDAP bind dn"
     )
@@ -311,20 +320,20 @@ if __name__ == "__main__":
 
     conn = ldap_connect(args.address, args.binddn, args.password)
     if args.clean:
-        action_clean(conn, args.basedn)
+        action_clean(conn, args.basedn, args.testname)
     if args.populate:
-        action_populate(conn, args.basedn)
+        action_populate(conn, args.basedn, args.testname)
     if args.dump_backup:
         action_dump(
             conn,
-            "ou=backup,%s" % args.basedn,
+            f"ou=backup-{args.testname},{args.basedn}",
             shorten=not args.full_value,
             rewrite_dn=not args.real_dn,
         )
     if args.dump_restore:
         action_dump(
             conn,
-            "ou=restore,%s" % args.basedn,
+            f"ou=restore-{args.testname},{args.basedn}",
             shorten=not args.full_value,
             rewrite_dn=not args.real_dn,
         )
