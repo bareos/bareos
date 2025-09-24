@@ -20,6 +20,7 @@ JobName=backup-bareos-fd
 testdata_opts=(
   --address "$SYSTEMTEST_LDAP_ADDRESS"
   --basedn "$SYSTEMTEST_LDAP_BASEDN"
+  --testname "$TestName"
   --binddn "$SYSTEMTEST_LDAP_BINDDN"
   --password "$SYSTEMTEST_LDAP_PASSWORD"
 )
@@ -37,6 +38,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $tmp/log1.out
 setdebug level=100 storage=File
+show fileset=PluginTest
 run job=$JobName yes
 status director
 status client
@@ -48,7 +50,7 @@ messages
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-fd fileset=PluginTest regexwhere=!ou=backup!ou=restore! select all done
+restore client=bareos-fd fileset=PluginTest regexwhere=!ou=backup-${TestName}!ou=restore-${TestName}! select all done
 yes
 wait
 messages
