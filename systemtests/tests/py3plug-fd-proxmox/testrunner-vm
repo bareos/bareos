@@ -61,7 +61,8 @@ cat <<END_OF_DATA2 >$tmp/bconcmds
 @#
 @$out $tmp/log2.out
 wait
-restore client=bareos-fd fileset=ProxmoxTestVM where=/ select all done  pluginoptions=python:guestid=${RESTGUESTID}
+setdebug client=bareos-fd level=1000 trace=1
+restore client=bareos-fd fileset=ProxmoxTestVM where=/ select all done  pluginoptions=python:guestid=${RESTGUESTID}:restoretodisk=yes
 yes
 wait
 messages
