@@ -166,7 +166,7 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
         datestring = now.strftime("%Y_%m_%d-%H_%M_%S")
         self.file_to_backup = f"/var/lib/vz/dump/vzdump-{self.guesttype}-{self.options['guestid']}-{datestring}.vma"
 
-        bareosfd.JobMessage( bareosfd.M_INFO, f"Backing up {self.guesttype} guest \"{self.vmname}\"\n" )
+        bareosfd.JobMessage( bareosfd.M_INFO, f"Backing up {self.guesttype} guest \"{self.vmname}\" to virtual file {self.file_to_backup}\n" )
 
         # create a regular stat packet
         statp = bareosfd.StatPacket()
@@ -248,6 +248,7 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
                 IOP.status = bareosfd.iostat_do_in_core
                 self.file = open(self.FNAME, "wb")
                 IOP.filedes = self.file.fileno()
+                bareosfd.JobMessage( bareosfd.M_INFO, f"restoring to file {self.FNAME}\n")
                 return bareosfd.bRC_OK
             #return super(BareosFdProxmox, self).plugin_io(IOP)
 
@@ -265,6 +266,11 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
             bareosfd.DebugMessage(
                 100, "IO_CLOSE: %s\n" % (self.FNAME)
             )
+
+            if self.options.get("restoretodisk") == "yes":
+                self.file.close()
+                return bareosfd.bRC_OK
+
             for line in self.current_logfile.readlines():
                 bareosfd.JobMessage( bareosfd.M_INFO, line)
 
