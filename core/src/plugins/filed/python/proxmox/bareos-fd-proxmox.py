@@ -75,20 +75,12 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         bareosfd.DebugMessage(100, __name__ + ":start_backup_file() called\n")
 
-
-
         # bareosfd.JobMessage(
         #     bareosfd.M_INFO,
         #     "Starting backup of %s\n" % (self.file_to_backup),
         # )
         log_path="."
         self.stderr_log_file = tempfile.NamedTemporaryFile(dir=log_path, delete=False, mode='r+b')
-        #vzdump_params = shlex.split(f"/usr/bin/sudo /usr/bin/vzdump {self.options['guestid']} --stdout")
-
-        #--tmpdir is required for ct, otherwise we get 
-        #INFO: tar: /var/lib/vz/dump/vzdump-lxc-115-2025_09_11-14_38_44.tmp: Cannot open: Permission denied
-
-        #vzdump_params = shlex.split(f"/usr/bin/vzdump {self.options['guestid']} --stdout --tmpdir=/temp")
         vzdump_params = shlex.split(f"/usr/bin/vzdump {self.options['guestid']} --stdout")
         vzdump_process = subprocess.Popen(
                     vzdump_params,
@@ -197,17 +189,19 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
             100,
             "create_file() called with %s\n" % (restorepkt),
         )
-        # restore vms to qmrestore: 
-        # cat file | qmrestore - 99999
-        # cat file | pct restore -  --rootfs is required!
-        # detect if we have a vm or a container:
+
+        if self.options.get("restoretodisk") == "yes":
+            restorepkt.create_status = bareosfd.CF_CORE
+            return bareosfd.bRC_OK
+
+
+
         if "vzdump-lxc" in restorepkt.ofname:
             self.recoverycommand = f"/usr/sbin/pct restore {self.options['guestid']} - --rootfs / --force yes"
 
         else:
             if "vzdump-qemu" in restorepkt.ofname:
                 self.recoverycommand = f"/usr/sbin/qmrestore - {self.options['guestid']} --force yes"
-        #else:
 
         log_path="."
         self.stderr_log_file = tempfile.NamedTemporaryFile(dir=log_path, delete=False, mode='r+b')
@@ -250,6 +244,13 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
             bareosfd.DebugMessage(
                 100, "IO_OPEN: %s\n" % (self.FNAME)
             )
+            if self.options.get("restoretodisk") == "yes":
+                IOP.status = bareosfd.iostat_do_in_core
+                self.file = open(self.FNAME, "wb")
+                IOP.filedes = self.file.fileno()
+                return bareosfd.bRC_OK
+            #return super(BareosFdProxmox, self).plugin_io(IOP)
+
             # TODO: Check if restore or backup to determine
             if self.vzdump_process.stdin:
                 IOP.filedes = self.vzdump_process.stdin.fileno()
@@ -266,6 +267,16 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
             )
             for line in self.current_logfile.readlines():
                 bareosfd.JobMessage( bareosfd.M_INFO, line)
+
+            # check for process return code
+            if self.vzdump_process.returncode:
+                bareosfd.DebugMessage(
+                100,
+                "plugin_io() bareos_vadp_dumper returncode: %s\n"
+                % (bareos_vadp_dumper_returncode),
+                )
+                return bareosfd.bRC_ERR
+
             return bareosfd.bRC_OK
 
         elif IOP.func == bareosfd.IO_SEEK:
@@ -308,6 +319,15 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
         # print rest of vzdump log 
         for line in self.current_logfile.readlines():
             bareosfd.JobMessage( bareosfd.M_INFO, line)
+        
+        # check for return code
+        if self.vzdump_process.returncode:
+            bareosfd.DebugMessage(
+                100,
+                "end_backup_file() bareos_vadp_dumper returncode: %s\n"
+                % (bareos_vadp_dumper_returncode),
+            )
+            return bareosfd.bRC_ERR
 
         bareosfd.DebugMessage(100, "end_backup_file(): returning bRC_OK\n")
         return bareosfd.bRC_OK
