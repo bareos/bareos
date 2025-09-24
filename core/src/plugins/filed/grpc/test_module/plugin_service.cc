@@ -148,19 +148,25 @@ auto PluginService::handlePluginEvent(
   if (event.has_level()) {
     auto& inner = event.level();
     DebugLog(100, FMT_STRING("got level event {{level = {}}}"), inner.level());
+    response->set_res(bp::RC_OK);
   } else if (event.has_since()) {
     auto& inner = event.since();
     DebugLog(100, FMT_STRING("got since event {{time = {}}}"),
              inner.since().seconds());
+
+    response->set_res(bp::RC_OK);
   } else if (event.has_job_end()) {
     auto& inner = event.job_end();
     DebugLog(100, FMT_STRING("got job end event ({}). shutting down ..."),
              inner.DebugString());
 
     shutdown.set_value();
+
+    response->set_res(bp::RC_OK);
   } else if (event.has_job_start()) {
     auto& inner = event.job_start();
     DebugLog(100, FMT_STRING("got job start event ({})."), inner.DebugString());
+    response->set_res(bp::RC_OK);
   } else if (event.has_end_fileset()) {
     auto& inner = event.end_fileset();
   } else if (event.has_option_plugin()) {
@@ -195,6 +201,10 @@ auto PluginService::handlePluginEvent(
     response->set_res(bp::RC_OK);
   } else if (event.has_restore_command()) {
     auto& inner = event.restore_command();
+
+    DebugLog(100, FMT_STRING("got restore command event ({})."),
+             inner.DebugString());
+
     response->set_res(bp::RC_OK);  // there is nothing for us to do
   } else if (event.has_vss_init_backup()) {
     auto& inner = event.vss_init_backup();
@@ -219,6 +229,11 @@ auto PluginService::handlePluginEvent(
     auto& inner = event.vss_init_restore();
   } else if (event.has_start_restore_job()) {
     auto& inner = event.start_restore_job();
+
+    DebugLog(100, FMT_STRING("got start restore job event ({})."),
+             inner.DebugString());
+
+    response->set_res(bp::RC_OK);  // there is nothing for us to do
   } else if (event.has_vss_close_restore()) {
     auto& inner = event.vss_close_restore();
   } else if (event.has_handle_backup_file()) {
