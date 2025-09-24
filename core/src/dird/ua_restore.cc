@@ -64,7 +64,6 @@ static int LastFullHandler(void* ctx, int num_fields, char** row);
 static int JobidHandler(void* ctx, int num_fields, char** row);
 static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx);
 static int FilesetHandler(void* ctx, int num_fields, char** row);
-static void FreeNameList(NameList* name_list);
 static bool SelectBackupsBeforeDate(UaContext* ua,
                                     RestoreContext* rx,
                                     char* date);
@@ -407,7 +406,6 @@ static void free_rx(RestoreContext* rx)
   FreeAndNullPoolMemory(rx->fname);
   FreeAndNullPoolMemory(rx->path);
   FreeAndNullPoolMemory(rx->query);
-  FreeNameList(&rx->name_list);
 }
 
 static bool HasValue(UaContext* ua, int i)
@@ -1641,17 +1639,6 @@ static int FilesetHandler(void* ctx, int, char** row)
   /* row[0] = FileSet (name) */
   if (row[0]) { AddPrompt((UaContext*)ctx, row[0]); }
   return 0;
-}
-
-// Free names in the list
-static void FreeNameList(NameList* name_list)
-{
-  int i;
-
-  for (i = 0; i < name_list->num_ids; i++) { free(name_list->name[i]); }
-  BfreeAndNull(name_list->name);
-  name_list->max_ids = 0;
-  name_list->num_ids = 0;
 }
 
 void FindStorageResource(UaContext* ua,
