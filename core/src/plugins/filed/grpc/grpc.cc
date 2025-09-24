@@ -111,7 +111,10 @@ struct plugin_ctx {
 
   bool re_setup(PluginContext* bareos_ctx, const void* data)
   {
-    if (needs_setup()) { return setup(bareos_ctx, data); }
+    if (needs_setup()) {
+      DebugLog(150, "plugin was not setup yet, so setting it up now...");
+      return setup(bareos_ctx, data);
+    }
 
     if (!bareos_ctx || !data) { return false; }
 
@@ -317,6 +320,39 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
         return bRC_Error;
       }
 
+      DebugLog(ctx, 100, FMT_STRING("using cmd string \"{}\" for the module"),
+               plugin->cmd);
+
+      auto cached = plugin->clear_cached_events();
+
+      DebugLog(ctx, 100, FMT_STRING("inserting {} cached events"),
+               cached.size());
+
+      bool cached_err = false;
+      for (auto& cached_event : cached) {
+        DebugLog(ctx, 100, FMT_STRING("inserting cached {}-event"),
+                 static_cast<std::size_t>(cached_event.type()));
+        if (plugin->child->con.handlePluginEvent(cached_event.type(),
+                                                 cached_event.req())
+            == bRC_Error) {
+          cached_err = true;
+        }
+      }
+
+      // we do not want to give "grpc:" to the plugin
+      bRC res = plugin->child->con.handlePluginEvent(
+          bEventPluginCommand, (void*)plugin->cmd.c_str());
+      if (cached_err) { return bRC_Error; }
+      return res;
+    } break;
+    case bEventNewPluginOptions:
+      [[fallthrough]];
+    case bEventBackupCommand:
+      [[fallthrough]];
+    case bEventEstimateCommand:
+      [[fallthrough]];
+    case bEventRestoreCommand: {
+      if (!plugin->re_setup(ctx, data)) { return bRC_Error; }
 
       DebugLog(ctx, 100, FMT_STRING("using cmd string \"{}\" for the plugin"),
                plugin->cmd);
@@ -337,28 +373,11 @@ bRC handlePluginEvent(PluginContext* ctx, filedaemon::bEvent* event, void* data)
         }
       }
 
-
       // we do not want to give "grpc:" to the plugin
       bRC res = plugin->child->con.handlePluginEvent(
-          bEventPluginCommand, (void*)plugin->cmd.c_str());
+          bEventType(event->eventType), (void*)plugin->cmd.c_str());
       if (cached_err) { return bRC_Error; }
       return res;
-    } break;
-    case bEventNewPluginOptions:
-      [[fallthrough]];
-    case bEventBackupCommand:
-      [[fallthrough]];
-    case bEventEstimateCommand:
-      [[fallthrough]];
-    case bEventRestoreCommand: {
-      if (!plugin->re_setup(ctx, data)) { return bRC_Error; }
-
-
-      DebugLog(ctx, 100, FMT_STRING("using cmd string \"{}\" for the plugin"),
-               plugin->cmd);
-      // we do not want to give "grpc:" to the plugin
-      return plugin->child->con.handlePluginEvent(bEventType(event->eventType),
-                                                  (void*)plugin->cmd.c_str());
     } break;
     case bEventRestoreObject: {
       // the case where data == nullptr, happens if this is the last
