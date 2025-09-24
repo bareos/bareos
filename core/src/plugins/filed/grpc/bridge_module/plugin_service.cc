@@ -1019,7 +1019,11 @@ auto PluginService::createFile(ServerContext*,
   memcpy(&rp.statp, request->stats().c_str(), sizeof(rp.statp));
   rp.ofname = request->output_name().c_str();
   rp.olname = request->soft_link_to().c_str();
-  rp.where = request->where().c_str();
+  if (request->has_where()) {
+    rp.where = request->where().c_str();
+  } else {
+    rp.where = nullptr;
+  }
   switch (request->replace()) {
     case bareos::common::ReplaceIfNewer: {
       rp.replace = REPLACE_IFNEWER;
