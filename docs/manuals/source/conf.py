@@ -83,6 +83,9 @@ rst_epilog = """
 .. |ktls| replace:: Kernel TLS
 .. |github| replace:: GitHub
 
+.. |proxmox| replace:: Proxmox
+.. |proxmox ve| replace:: Proxmox Virtual Environment
+
 """
 
 

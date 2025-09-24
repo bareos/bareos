@@ -1,7 +1,7 @@
 .. _ProxmoxPlugin:
 
 Proxmox Plugin
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 .. index::
    single: Plugin; Proxmox
