@@ -165,7 +165,7 @@ message createFileRequest {
   bytes stats = 6;
   optional int64 delta_seq = 4;
   bareos.common.ReplaceType replace = 5;
-  bytes where = 7; // needed by the vmware plugin
+  optional bytes where = 7; // needed by the vmware plugin
 };
 
 enum CreateFileStatus {
