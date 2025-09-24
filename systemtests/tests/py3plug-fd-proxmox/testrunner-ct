@@ -25,10 +25,11 @@ JobName=backup-proxmox-ct
 TEMPLATE=local:vztmpl/fedora-42-default_20250428_amd64.tar.xz
 BACKGUESTID=999002
 RESTGUESTID=999002
+GUESTNAME=plugtestct
 
 pct stop "${BACKGUESTID}" || :
 pct destroy "${BACKGUESTID}" || :
-pct create "${BACKGUESTID}" "${TEMPLATE}"
+pct create "${BACKGUESTID}" "${TEMPLATE}" --hostname ${GUESTNAME}
 pct start "${BACKGUESTID}"
 
 start_test
@@ -62,6 +63,7 @@ cat <<END_OF_DATA2 >$tmp/bconcmds
 @#
 @$out $tmp/log2.out
 wait
+setdebug client=bareos-fd level=1000 trace=1
 restore client=bareos-fd fileset=ProxmoxTestCT where=/ select all done pluginoptions=python:guestid=${RESTGUESTID}
 yes
 wait
@@ -71,7 +73,7 @@ quit
 END_OF_DATA2
 
 
-run_bareos "$@"
+run_bconsole "$@"
 
 pct start "${RESTGUESTID}"
 
@@ -83,9 +85,37 @@ pct stop "${RESTGUESTID}"
 pct destroy "${RESTGUESTID}"
 
 
+cat <<END_OF_DATA3 >$tmp/bconcmds
+@#
+@# now do a restore to file
+@#
+@$out $tmp/log3.out
+wait
+setdebug client=bareos-fd level=1000 trace=1
+restore client=bareos-fd fileset=ProxmoxTestCT where=/ select all done  pluginoptions=python:guestid=${RESTGUESTID}:restoretodisk=yes
+yes
+wait
+messages
+quit
+
+END_OF_DATA3
+
+
+run_bconsole "$@"
+
 check_for_zombie_jobs storage=File
 
-check_two_logs
+RESTOREFILE=$(grep -o "/var/lib/vz/dump.*vma" "${tmp}/log1.out")
 
+head "$RESTOREFILE"  > "${tmp}/diskhead"
 
+expect_grep "name: ${GUESTNAME}" \
+ "${tmp}/diskhead" \
+ "did not find expected vm name in vma dump file"
+
+check_log "${tmp}/log1.out"
+check_log "${tmp}/log2.out"
+check_log "${tmp}/log3.out"
+
+stop_bareos
 end_test
