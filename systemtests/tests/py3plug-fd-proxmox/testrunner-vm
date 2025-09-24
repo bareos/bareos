@@ -72,7 +72,7 @@ quit
 END_OF_DATA2
 
 
-run_bareos "$@"
+run_bconsole "$@"
 
 qm start "${RESTGUESTID}"
 
@@ -100,7 +100,7 @@ quit
 END_OF_DATA3
 
 
-run_bareos "$@"
+run_bconsole "$@"
 
 check_for_zombie_jobs storage=File
 
@@ -112,8 +112,9 @@ expect_grep "name: ${GUESTNAME}" \
  "${tmp}/diskhead" \
  "did not find expected vm name in vma dump file"
 
-#check_log "${tmp}/log1.out"
-#check_log "${tmp}/log2.out"
-#check_log "${tmp}/log3.out"
+check_log "${tmp}/log1.out"
+check_log "${tmp}/log2.out"
+check_log "${tmp}/log3.out"
 
+stop_bareos
 end_test
