@@ -76,15 +76,12 @@ if(NOT MSVC)
     HAVE_LINUX_XATTR ${CMAKE_BINARY_DIR}/compile_tests
     ${PROJECT_SOURCE_DIR}/src/compile_tests/linux_xattr.c
   )
-  if(HAVE_LINUX_XATTR)
-    set(HAVE_GETXATTR 1)
-    set(HAVE_LGETXATTR 1)
-    set(HAVE_LISTXATTR 1)
-    set(HAVE_LLISTXATTR 1)
-    set(HAVE_LSETXATTR 1)
-    set(HAVE_SETXATTR 1)
-    set(HAVE_SYS_XATTR_H 1)
-  endif()
+
+  # MacOS extended attributes
+  try_compile(
+    HAVE_DARWIN_XATTR ${CMAKE_BINARY_DIR}/compile_tests
+    ${PROJECT_SOURCE_DIR}/src/compile_tests/darwin_xattr.c
+  )
 
   include(CheckFunctionExists)
 
