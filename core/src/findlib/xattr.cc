@@ -321,31 +321,14 @@ BxattrExitCode SerializeAndSendXattrStream(JobControlRecord* jcr,
 // This is a supported OS, See what kind of interface we should use.
 #  if defined(HAVE_AIX_OS)
 
-#    if (!defined(HAVE_LISTEA) && !defined(HAVE_LLISTEA))  \
-        || (!defined(HAVE_GETEA) && !defined(HAVE_LGETEA)) \
-        || (!defined(HAVE_SETEA) && !defined(HAVE_LSETEA))
+#    if (!defined(HAVE_AIX_EA)
 #      error "Missing full support for the Extended Attributes (EA) functions."
 #    endif
 
-#    ifdef HAVE_SYS_EA_H
-#      include <sys/ea.h>
-#    else
-#      error "Missing sys/ea.h header file"
-#    endif
+#    include <sys/ea.h>
 
 // Define the supported XATTR streams for this OS
 static int os_default_xattr_streams[1] = {STREAM_XATTR_AIX};
-
-// Fallback to the non l-functions when those are not available.
-#    if defined(HAVE_GETEA) && !defined(HAVE_LGETEA)
-#      define lgetea getea
-#    endif
-#    if defined(HAVE_SETEA) && !defined(HAVE_LSETEA)
-#      define lsetea setea
-#    endif
-#    if defined(HAVE_LISTEA) && !defined(HAVE_LLISTEA)
-#      define llistea listea
-#    endif
 
 static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
                                               XattrBuildData* xattr_data,

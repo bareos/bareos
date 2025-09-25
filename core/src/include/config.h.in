@@ -174,8 +174,8 @@
 // Define to 1 if you have the `getaddrinfo' function
 #cmakedefine HAVE_GETADDRINFO @HAVE_GETADDRINFO@
 
-// Define to 1 if you have the `getea' function
-#cmakedefine HAVE_GETEA @HAVE_GETEA@
+// Define if you have AIX EA support
+#cmakedefine HAVE_AIX_EA
 
 // Define to 1 if you have the `gethostbyname2' function
 #cmakedefine HAVE_GETHOSTBYNAME2 @HAVE_GETHOSTBYNAME2@
@@ -219,9 +219,6 @@
 // Define to 1 if you have the `lchown' function
 #cmakedefine HAVE_LCHOWN @HAVE_LCHOWN@
 
-// Define to 1 if you have the `lgetea' function
-#cmakedefine HAVE_LGETEA @HAVE_LGETEA@
-
 // Define to 1 if you have the `lgetxattr' function
 #cmakedefine HAVE_LGETXATTR @HAVE_LGETXATTR@
 
@@ -234,14 +231,8 @@
 // Define to 1 if you are running Linux
 #cmakedefine HAVE_LINUX_OS @HAVE_LINUX_OS@
 
-// Define to 1 if you have the `listea' function
-#cmakedefine HAVE_LISTEA @HAVE_LISTEA@
-
 // Define to 1 if you have the `listxattr' function
 #cmakedefine HAVE_LISTXATTR @HAVE_LISTXATTR@
-
-// Define to 1 if you have the `llistea' function
-#cmakedefine HAVE_LLISTEA @HAVE_LLISTEA@
 
 // Define to 1 if you have the `llistxattr' function
 #cmakedefine HAVE_LLISTXATTR @HAVE_LLISTXATTR@
@@ -257,9 +248,6 @@
 
 // Low level SCSI Interface support
 #cmakedefine HAVE_LOWLEVEL_SCSI_INTERFACE @HAVE_LOWLEVEL_SCSI_INTERFACE@
-
-// Define to 1 if you have the `lsetea' function
-#cmakedefine HAVE_LSETEA @HAVE_LSETEA@
 
 // Define to 1 if you have the `lsetxattr' function
 #cmakedefine HAVE_LSETXATTR @HAVE_LSETXATTR@
@@ -318,9 +306,6 @@
 // Define to 1 if you have the <pcre2posix.h> header file
 #cmakedefine HAVE_PCRE2_POSIX_H @HAVE_PCRE2_POSIX_H@
 
-// Define to 1 if you have the `setea' function
-#cmakedefine HAVE_SETEA @HAVE_SETEA@
-
 // Define to 1 if you have the `setreuid' function
 #cmakedefine HAVE_SETREUID @HAVE_SETREUID@
 
@@ -347,9 +332,6 @@
 
 // Define if you want to use cap_* functions
 #cmakedefine ENABLE_CAPABILITY
-
-// Define to 1 if you have the <sys/ea.h> header file
-#cmakedefine HAVE_SYS_EA_H @HAVE_SYS_EA_H@
 
 // Define to 1 if you have the <sys/mman.h> header file
 #undef HAVE_SYS_MMAN_H
