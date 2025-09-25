@@ -478,15 +478,6 @@ to the restore process via *plugin options*:
 
 
 
-Restore using Bareos WebUI
-''''''''''''''''''''''''''
-
-TODO: Verify that this is true!
-
-When using the WebUI to restore a Proxmox Plugin job.
-The Bareos WebUI will detect if a plugin based jobs is restore and will then
-show an additional *Plugin options* field, here a plugin options string
-starting with ``python:`` as described above can be entered.
 
 Restore to ``.vma`` dump File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -561,6 +552,13 @@ can be recovered just like any other proxmox local backup:
    :width: 90.0%
 
 
+Restore using Bareos WebUI
+''''''''''''''''''''''''''
+
+When using the WebUI to restore a Proxmox Plugin job.
+The Bareos WebUI will detect if a plugin based jobs is about to be restored and will
+show an additional *Plugin options* field. Add the required plugin options string here
+starting with ``python:`` as described above.
 
 
 Description of all Plugin Options
