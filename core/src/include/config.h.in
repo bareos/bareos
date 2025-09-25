@@ -204,9 +204,6 @@
 // Define to 1 if you have the <grp.h> header file
 #cmakedefine HAVE_GRP_H @HAVE_GRP_H@
 
-// Define to 1 if you have the `inet_ntop' function
-#cmakedefine HAVE_INET_NTOP @HAVE_INET_NTOP@
-
 // Define to 1 if ioctl request is unsigned long int
 #cmakedefine HAVE_IOCTL_ULINT_REQUEST @HAVE_IOCTL_ULINT_REQUEST@
 
