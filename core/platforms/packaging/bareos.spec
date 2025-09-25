@@ -922,11 +922,7 @@ cmake  .. \
 %endif
   -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
   -DVERSION_STRING=%version
-%if 0%{?make_build:1}
-%make_build
-%else
-%__make %{?_smp_mflags};
-%endif
+cmake --build "." %{?_smp_mflags}
 
 %check
 # run unit tests
@@ -937,8 +933,7 @@ REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
 
 %install
 pushd %{CMAKE_BUILDDIR}
-make DESTDIR=%{buildroot} install/fast
-
+env DESTDIR=%{buildroot} cmake --build "." --target install
 popd
 
 
