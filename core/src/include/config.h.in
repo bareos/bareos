@@ -171,9 +171,6 @@
 // Define to 1 if you have the `futimesat' function
 #cmakedefine HAVE_FUTIMESAT @HAVE_FUTIMESAT@
 
-// Define to 1 if you have the `getaddrinfo' function
-#cmakedefine HAVE_GETADDRINFO @HAVE_GETADDRINFO@
-
 // Define if you have AIX EA support
 #cmakedefine HAVE_AIX_EA
 

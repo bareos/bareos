@@ -30,7 +30,6 @@ if(NOT MSVC)
     set(HAVE_FSEEKO 1)
     set(HAVE_FUTIMENS 1)
     set(HAVE_FUTIMES 1)
-    set(HAVE_GETADDRINFO 1)
     set(HAVE_GETHOSTBYNAME2 1)
     set(HAVE_GETPAGESIZE 1)
     set(HAVE_GLOB 1)
@@ -106,8 +105,6 @@ if(NOT MSVC)
   check_function_exists(closefrom HAVE_CLOSEFROM)
 
 else()
-  # windows provides these functions
-  set(HAVE_GETADDRINFO 1)
   # we provide implementations for these
   set(HAVE_GLOB 1)
   set(HAVE_LCHOWN 1)
