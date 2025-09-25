@@ -611,17 +611,12 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
 
 #  elif defined(HAVE_DARWIN_OS) || defined(HAVE_LINUX_OS)
 
-#    if (!defined(HAVE_LISTXATTR) && !defined(HAVE_LLISTXATTR))  \
-        || (!defined(HAVE_GETXATTR) && !defined(HAVE_LGETXATTR)) \
-        || (!defined(HAVE_SETXATTR) && !defined(HAVE_LSETXATTR))
+#    if (defined(HAVE_DARWIN_OS) && !defined(HAVE_DARWIN_XATTR)) \
+        || (defined(HAVE_LINUX_OS) && !defined(HAVE_LINUX_XATTR))
 #      error "Missing full support for the XATTR functions."
 #    endif
 
-#    ifdef HAVE_SYS_XATTR_H
-#      include <sys/xattr.h>
-#    else
-#      error "Missing sys/xattr.h header file"
-#    endif
+#    include <sys/xattr.h>
 
 // Define the supported XATTR streams for this OS
 #    if defined(HAVE_DARWIN_OS)
@@ -652,17 +647,6 @@ static const char* xattr_skiplist[]
         getxattr((path), (name), (value), (size), 0, XATTR_NOFOLLOW)
 #      define lsetxattr(path, name, value, size, flags) \
         setxattr((path), (name), (value), (size), (flags), XATTR_NOFOLLOW)
-#    else
-// Fallback to the non l-functions when those are not available.
-#      if defined(HAVE_GETXATTR) && !defined(HAVE_LGETXATTR)
-#        define lgetxattr getxattr
-#      endif
-#      if defined(HAVE_SETXATTR) && !defined(HAVE_LSETXATTR)
-#        define lsetxattr setxattr
-#      endif
-#      if defined(HAVE_LISTXATTR) && !defined(HAVE_LLISTXATTR)
-#        define llistxattr listxattr
-#      endif
 #    endif
 
 static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,

@@ -189,8 +189,11 @@
 // Define to 1 if you have the `getpagesize' function
 #cmakedefine HAVE_GETPAGESIZE @HAVE_GETPAGESIZE@
 
-// Define to 1 if you have the `getxattr' function
-#cmakedefine HAVE_GETXATTR @HAVE_GETXATTR@
+// Define if you have Linux xattr support
+#cmakedefine HAVE_LINUX_XATTR
+
+// Define if you have MacOS/Darwin xattr support
+#cmakedefine HAVE_DARWIN_XATTR
 
 // Define to 1 if you have gfapi lib
 #cmakedefine HAVE_GFAPI @HAVE_GFAPI@
@@ -219,9 +222,6 @@
 // Define to 1 if you have the `lchown' function
 #cmakedefine HAVE_LCHOWN @HAVE_LCHOWN@
 
-// Define to 1 if you have the `lgetxattr' function
-#cmakedefine HAVE_LGETXATTR @HAVE_LGETXATTR@
-
 // Define to 1 if you have the `util' library (-lutil)
 #cmakedefine HAVE_LIBUTIL @HAVE_LIBUTIL@
 
@@ -230,12 +230,6 @@
 
 // Define to 1 if you are running Linux
 #cmakedefine HAVE_LINUX_OS @HAVE_LINUX_OS@
-
-// Define to 1 if you have the `listxattr' function
-#cmakedefine HAVE_LISTXATTR @HAVE_LISTXATTR@
-
-// Define to 1 if you have the `llistxattr' function
-#cmakedefine HAVE_LLISTXATTR @HAVE_LLISTXATTR@
 
 // Define to 1 if LMDB support should be enabled
 #cmakedefine HAVE_LMDB @HAVE_LMDB@
@@ -248,9 +242,6 @@
 
 // Low level SCSI Interface support
 #cmakedefine HAVE_LOWLEVEL_SCSI_INTERFACE @HAVE_LOWLEVEL_SCSI_INTERFACE@
-
-// Define to 1 if you have the `lsetxattr' function
-#cmakedefine HAVE_LSETXATTR @HAVE_LSETXATTR@
 
 // Define to 1 if you have the `lutimes' function
 #cmakedefine HAVE_LUTIMES @HAVE_LUTIMES@
@@ -309,9 +300,6 @@
 // Define to 1 if you have the `setreuid' function
 #cmakedefine HAVE_SETREUID @HAVE_SETREUID@
 
-// Define to 1 if you have the `setxattr' function
-#cmakedefine HAVE_SETXATTR @HAVE_SETXATTR@
-
 // Define to 1 if the SHA-2 family of digest algorithms is available
 #cmakedefine HAVE_SHA2 @HAVE_SHA2@
 
@@ -356,9 +344,6 @@
 
 // Define to 1 if you have the <sys/time.h> header file
 #cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
-
-// Define to 1 if you have the <sys/xattr.h> header file
-#cmakedefine HAVE_SYS_XATTR_H @HAVE_SYS_XATTR_H@
 
 // Define to 1 if you have the <ucontext.h> header file
 #cmakedefine HAVE_UCONTEXT_H @HAVE_UCONTEXT_H@
