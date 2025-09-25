@@ -135,29 +135,8 @@
 // Define to 1 if you have the <execinfo.h> header file
 #cmakedefine HAVE_EXECINFO_H @HAVE_EXECINFO_H@
 
-// Define to 1 if you have the `extattr_get_file' function
-#cmakedefine HAVE_EXTATTR_GET_FILE @HAVE_EXTATTR_GET_FILE@
-
-// Define to 1 if you have the `extattr_get_link' function
-#cmakedefine HAVE_EXTATTR_GET_LINK @HAVE_EXTATTR_GET_LINK@
-
-// Define to 1 if you have the `extattr_list_file' function
-#cmakedefine HAVE_EXTATTR_LIST_FILE @HAVE_EXTATTR_LIST_FILE@
-
-// Define to 1 if you have the `extattr_list_link' function
-#cmakedefine HAVE_EXTATTR_LIST_LINK @HAVE_EXTATTR_LIST_LINK@
-
-// Define to 1 if you have the `extattr_namespace_to_string' function
-#cmakedefine HAVE_EXTATTR_NAMESPACE_TO_STRING @HAVE_EXTATTR_NAMESPACE_TO_STRING@
-
-// Define to 1 if you have the `extattr_set_file' function
-#cmakedefine HAVE_EXTATTR_SET_FILE @HAVE_EXTATTR_SET_FILE@
-
-// Define to 1 if you have the `extattr_set_link' function
-#cmakedefine HAVE_EXTATTR_SET_LINK @HAVE_EXTATTR_SET_LINK@
-
-// Define to 1 if you have the `extattr_string_to_namespace' function
-#cmakedefine HAVE_EXTATTR_STRING_TO_NAMESPACE @HAVE_EXTATTR_STRING_TO_NAMESPACE@
+// Define if you have FreeBSD extattr support
+#cmakedefine HAVE_FREEBSD_EXTATTR
 
 // Define to 1 if you want Extended acl support
 #cmakedefine HAVE_EXTENDED_ACL @HAVE_EXTENDED_ACL@
@@ -371,9 +350,6 @@
 
 // Define to 1 if you have the <sys/ea.h> header file
 #cmakedefine HAVE_SYS_EA_H @HAVE_SYS_EA_H@
-
-// Define to 1 if you have the <sys/extattr.h> header file
-#cmakedefine HAVE_SYS_EXTATTR_H @HAVE_SYS_EXTATTR_H@
 
 // Define to 1 if you have the <sys/mman.h> header file
 #undef HAVE_SYS_MMAN_H

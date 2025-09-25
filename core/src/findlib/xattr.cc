@@ -979,37 +979,16 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
 
 #  elif defined(HAVE_FREEBSD_OS)
 
-#    if (!defined(HAVE_EXTATTR_GET_LINK) && !defined(HAVE_EXTATTR_GET_FILE)) \
-        || (!defined(HAVE_EXTATTR_SET_LINK)                                  \
-            && !defined(HAVE_EXTATTR_SET_FILE))                              \
-        || (!defined(HAVE_EXTATTR_LIST_LINK)                                 \
-            && !defined(HAVE_EXTATTR_LIST_FILE))                             \
-        || !defined(HAVE_EXTATTR_NAMESPACE_TO_STRING)                        \
-        || !defined(HAVE_EXTATTR_STRING_TO_NAMESPACE)
+#    if !defined(HAVE_FREEBSD_EXTATTR)
 #      error "Missing full support for the extattr functions."
 #    endif
 
-#    ifdef HAVE_SYS_EXTATTR_H
-#      include <sys/extattr.h>
-#    else
-#      error "Missing sys/extattr.h header file"
-#    endif
+#    include <sys/extattr.h>
 
 #    ifdef HAVE_LIBUTIL_H
 #      include <libutil.h>
 #    endif
 
-#    if !defined(HAVE_EXTATTR_GET_LINK) && defined(HAVE_EXTATTR_GET_FILE)
-#      define extattr_get_link extattr_get_file
-#    endif
-#    if !defined(HAVE_EXTATTR_SET_LINK) && defined(HAVE_EXTATTR_SET_FILE)
-#      define extattr_set_link extattr_set_file
-#    endif
-#    if !defined(HAVE_EXTATTR_LIST_LINK) && defined(HAVE_EXTATTR_LIST_FILE)
-#      define extattr_list_link extattr_list_file
-#    endif
-
-#    if defined(HAVE_FREEBSD_OS)
 static int os_default_xattr_streams[1] = {STREAM_XATTR_FREEBSD};
 static int os_default_xattr_namespaces[2]
     = {EXTATTR_NAMESPACE_USER, EXTATTR_NAMESPACE_SYSTEM};
@@ -1017,7 +996,6 @@ static const char* xattr_acl_skiplist[4]
     = {"system.posix1e.acl_access", "system.posix1e.acl_default",
        "system.nfs4.acl", NULL};
 static const char* xattr_skiplist[1] = {NULL};
-#    endif
 
 static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
                                               XattrBuildData* xattr_data,

@@ -569,7 +569,7 @@ if(${acl})
   endif()
 endif()
 
-if("${HAVE_SYS_XATTR_H}" OR "${HAVE_SYS_EXTATTR_H}")
+if(HAVE_SYS_XATTR_H OR HAVE_FREEBSD_EXTATTR)
   set(HAVE_XATTR 1)
   set(have_xattr YES)
 endif()
