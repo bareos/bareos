@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -346,7 +346,6 @@ int main(int argc, char* argv[])
     exit(BEXIT_FAILURE);
   }
 
-#ifdef HAVE_GETADDRINFO
   int res;
   struct addrinfo hints;
   struct addrinfo *ai, *rp;
@@ -366,18 +365,6 @@ int main(int argc, char* argv[])
   strncpy(my_hostname, ai->ai_canonname, sizeof(my_hostname) - 1);
   my_hostname[sizeof(my_hostname) - 1] = '\0';
   freeaddrinfo(ai);
-#else
-  struct hostent* hp;
-  struct sockaddr_in sin;
-
-  if ((hp = gethostbyname(my_hostname)) == NULL) {
-    Pmsg2(0, T_("Fatal gethostbyname for myself failed \"%s\": ERR=%s\n"),
-          my_hostname, strerror(errno));
-    exit(BEXIT_FAILURE);
-  }
-  strncpy(my_hostname, hp->h_name, sizeof(my_hostname) - 1);
-  my_hostname[sizeof(my_hostname) - 1] = '\0';
-#endif
   Dmsg1(20, "My hostname is: %s\n", my_hostname);
 
   //  Determine from address.
@@ -413,7 +400,6 @@ int main(int argc, char* argv[])
 #endif
   //  Connect to smtp daemon on mailhost.
 lookup_host:
-#ifdef HAVE_GETADDRINFO
   memset(&hints, 0, sizeof(struct addrinfo));
   switch (default_resolv_type) {
     case RESOLV_PROTO_ANY:
@@ -445,13 +431,13 @@ lookup_host:
     exit(BEXIT_FAILURE);
   }
   for (rp = ai; rp != NULL; rp = rp->ai_next) {
-#  if defined(HAVE_WIN32)
+#if defined(HAVE_WIN32)
     s = WSASocket(rp->ai_family, rp->ai_socktype, rp->ai_protocol, NULL, 0, 0);
     if (s == INVALID_SOCKET) { continue; }
-#  else
+#else
     s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
     if (s < 0) { continue; }
-#  endif
+#endif
 
     if (connect(s, rp->ai_addr, rp->ai_addrlen) != -1) { break; }
 
@@ -464,45 +450,6 @@ lookup_host:
   }
 
   freeaddrinfo(ai);
-#else
-  if ((hp = gethostbyname(mailhost.c_str())) == NULL) {
-    Pmsg2(0, T_("Error unknown mail host \"%s\": ERR=%s\n"), mailhost.c_str(),
-          strerror(errno));
-    if (!Bstrcasecmp(mailhost.c_str(), "localhost")) {
-      Pmsg0(0, T_("Retrying connection using \"localhost\".\n"));
-      mailhost = "localhost";
-      goto lookup_host;
-    }
-    exit(BEXIT_FAILURE);
-  }
-
-  if (hp->h_addrtype != AF_INET) {
-    Pmsg1(0, T_("Fatal error: Unknown address family for smtp host: %d\n"),
-          hp->h_addrtype);
-    exit(BEXIT_FAILURE);
-  }
-  memset((char*)&sin, 0, sizeof(sin));
-  memcpy((char*)&sin.sin_addr, hp->h_addr, hp->h_length);
-  sin.sin_family = hp->h_addrtype;
-  sin.sin_port = htons(mailport);
-#  if defined(HAVE_WIN32)
-  if ((s = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, 0)) < 0) {
-    Pmsg1(0, T_("Fatal socket error: ERR=%s\n"), strerror(errno));
-    exit(BEXIT_FAILURE);
-  }
-#  else
-  if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    Pmsg1(0, T_("Fatal socket error: ERR=%s\n"), strerror(errno));
-    exit(BEXIT_FAILURE);
-  }
-#  endif
-  if (connect(s, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
-    Pmsg2(0, T_("Fatal connect error to %s: ERR=%s\n"), mailhost.c_str(),
-          strerror(errno));
-    exit(BEXIT_FAILURE);
-  }
-  Dmsg0(20, "Connected\n");
-#endif
 
 #if defined(HAVE_WIN32)
   int fdSocket = _open_osfhandle(s, _O_RDWR | _O_BINARY);
