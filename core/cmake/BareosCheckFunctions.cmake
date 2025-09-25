@@ -46,7 +46,6 @@ if(NOT MSVC)
     set(HAVE_UNLINKAT 1)
     set(HAVE_UTIMES 1)
 
-    set(HAVE_SYS_TIME_H 1)
     set(HAVE_POLL_H 1)
   else()
     message(
@@ -114,8 +113,6 @@ else()
   # we provide implementations for these
   set(HAVE_GLOB 1)
   set(HAVE_LCHOWN 1)
-
-  set(HAVE_SYS_TIME_H 1)
 endif()
 
 check_cxx_source_compiles(
