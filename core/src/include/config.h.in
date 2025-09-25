@@ -195,9 +195,6 @@
 // Define to 1 if you have gfapi lib
 #cmakedefine HAVE_GFAPI @HAVE_GFAPI@
 
-// Define to 1 if you have the `glob' function
-#cmakedefine HAVE_GLOB @HAVE_GLOB@
-
 // Define to 1 if you have the <grp.h> header file
 #cmakedefine HAVE_GRP_H @HAVE_GRP_H@
 
