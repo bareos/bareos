@@ -70,15 +70,6 @@ if(NOT MSVC)
     HAVE_AIX_EA ${CMAKE_BINARY_DIR}/compile_tests
     ${PROJECT_SOURCE_DIR}/src/compile_tests/aix_ea.c
   )
-  if(HAVE_AIX_EA)
-    set(HAVE_GETEA 1)
-    set(HAVE_LGETEA 1)
-    set(HAVE_LISTEA 1)
-    set(HAVE_LLISTEA 1)
-    set(HAVE_LSETEA 1)
-    set(HAVE_SETEA 1)
-    set(HAVE_SYS_EA 1)
-  endif()
 
   # Linux extended attributes
   try_compile(
