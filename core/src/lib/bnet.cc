@@ -52,10 +52,6 @@
 #  define INADDR_NONE -1
 #endif
 
-#ifndef HAVE_GETADDRINFO
-static pthread_mutex_t ip_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
-
 /**
  * Receive a message from the other end. Each message consists of
  * two packets. The first is a header that contains the size
