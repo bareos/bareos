@@ -24,6 +24,8 @@ else()
   cmake_minimum_required(VERSION 3.17...3.31)
 endif()
 
+message("Using ${CMAKE_GENERATOR} as build tool")
+
 get_property(HAVE_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(HAVE_MULTI_CONFIG)
   message(
