@@ -32,7 +32,6 @@ if(NOT MSVC)
     set(HAVE_FUTIMES 1)
     set(HAVE_GETHOSTBYNAME2 1)
     set(HAVE_GETPAGESIZE 1)
-    set(HAVE_GLOB 1)
     set(HAVE_LCHOWN 1)
     set(HAVE_LOCALTIME_R 1)
     set(HAVE_LUTIMES 1)
@@ -106,7 +105,6 @@ if(NOT MSVC)
 
 else()
   # we provide implementations for these
-  set(HAVE_GLOB 1)
   set(HAVE_LCHOWN 1)
 endif()
 
