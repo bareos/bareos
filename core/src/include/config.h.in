@@ -210,9 +210,6 @@
 // Define to 1 if you have the `lchmod' function
 #cmakedefine HAVE_LCHMOD @HAVE_LCHMOD@
 
-// Define to 1 if you have the `lchown' function
-#cmakedefine HAVE_LCHOWN @HAVE_LCHOWN@
-
 // Define to 1 if you have the `util' library (-lutil)
 #cmakedefine HAVE_LIBUTIL @HAVE_LIBUTIL@
 
