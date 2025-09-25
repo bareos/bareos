@@ -64,17 +64,6 @@ if(NOT MSVC)
     HAVE_FREEBSD_EXTATTR ${CMAKE_BINARY_DIR}/compile_tests
     ${PROJECT_SOURCE_DIR}/src/compile_tests/freebsd_extattr.c
   )
-  if(HAVE_FREEBSD_EXTATTR)
-    set(HAVE_EXTATTR_GET_FILE 1)
-    set(HAVE_EXTATTR_GET_LINK 1)
-    set(HAVE_EXTATTR_LIST_FILE 1)
-    set(HAVE_EXTATTR_LIST_LINK 1)
-    set(HAVE_EXTATTR_NAMESPACE_TO_STRING 1)
-    set(HAVE_EXTATTR_SET_FILE 1)
-    set(HAVE_EXTATTR_SET_LINK 1)
-    set(HAVE_EXTATTR_STRING_TO_NAMESPACE 1)
-    set(HAVE_SYS_EXTATTR_H 1)
-  endif()
 
   # AIX extended attributes
   try_compile(
