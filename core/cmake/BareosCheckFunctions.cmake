@@ -19,10 +19,10 @@
 
 if(NOT MSVC)
   try_compile(
-    HAVE_SYSTEM_INTERFACES ${CMAKE_BINARY_DIR}/compile_tests
+    HAVE_CORE_SYSTEM_INTERFACES ${CMAKE_BINARY_DIR}/compile_tests
     ${PROJECT_SOURCE_DIR}/src/compile_tests/core_system_interfaces.c
   )
-  if(HAVE_SYSTEM_INTERFACES)
+  if(HAVE_CORE_SYSTEM_INTERFACES)
     set(HAVE_FCHMOD 1)
     set(HAVE_FCHOWN 1)
     set(HAVE_FCHOWNAT 1)
@@ -55,28 +55,37 @@ if(NOT MSVC)
   endif()
 
   # FreeBSD extended attributes
-  try_compile(
-    HAVE_FREEBSD_EXTATTR ${CMAKE_BINARY_DIR}/compile_tests
-    ${PROJECT_SOURCE_DIR}/src/compile_tests/freebsd_extattr.c
-  )
+  if(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+    try_compile(
+      HAVE_FREEBSD_EXTATTR ${CMAKE_BINARY_DIR}/compile_tests
+      ${PROJECT_SOURCE_DIR}/src/compile_tests/freebsd_extattr.c
+    )
+  endif()
 
   # AIX extended attributes
-  try_compile(
-    HAVE_AIX_EA ${CMAKE_BINARY_DIR}/compile_tests
-    ${PROJECT_SOURCE_DIR}/src/compile_tests/aix_ea.c
-  )
+  if(CMAKE_SYSTEM_NAME MATCHES "AIX")
+    message(WARNING "AIX compile test for EA is untested.")
+    try_compile(
+      HAVE_AIX_EA ${CMAKE_BINARY_DIR}/compile_tests
+      ${PROJECT_SOURCE_DIR}/src/compile_tests/aix_ea.c
+    )
+  endif()
 
   # Linux extended attributes
-  try_compile(
-    HAVE_LINUX_XATTR ${CMAKE_BINARY_DIR}/compile_tests
-    ${PROJECT_SOURCE_DIR}/src/compile_tests/linux_xattr.c
-  )
+  if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    try_compile(
+      HAVE_LINUX_XATTR ${CMAKE_BINARY_DIR}/compile_tests
+      ${PROJECT_SOURCE_DIR}/src/compile_tests/linux_xattr.c
+    )
+  endif()
 
   # MacOS extended attributes
-  try_compile(
-    HAVE_DARWIN_XATTR ${CMAKE_BINARY_DIR}/compile_tests
-    ${PROJECT_SOURCE_DIR}/src/compile_tests/darwin_xattr.c
-  )
+  if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    try_compile(
+      HAVE_DARWIN_XATTR ${CMAKE_BINARY_DIR}/compile_tests
+      ${PROJECT_SOURCE_DIR}/src/compile_tests/darwin_xattr.c
+    )
+  endif()
 
   include(CheckFunctionExists)
 
