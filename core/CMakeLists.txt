@@ -265,7 +265,7 @@ else()
   add_compile_definitions("_FILE_OFFSET_BITS=64")
 endif()
 
-include(BareosDisableWarnings)
+include(BareosCompilerFlags)
 if(MSVC)
   set(BAREOS_WARNING_FLAGS
       /W4 # enable all reasonable warnings, but disable the following

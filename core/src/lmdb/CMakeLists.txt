@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
-include(BareosDisableWarnings)
+include(BareosCompilerFlags)
 
 if(HAVE_FREEBSD_OS)
   add_definitions(-D_WANT_SEMUN=1)

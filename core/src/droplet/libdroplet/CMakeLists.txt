@@ -96,7 +96,7 @@ add_library(
   src/backend/posix/replyparser.c
 )
 
-include(BareosDisableWarnings)
+include(BareosCompilerFlags)
 bareos_disable_warnings(
   TARGETS
   droplet
