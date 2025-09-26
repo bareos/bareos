@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "bareos",
+  "dependencies": [
+    {
+      "name": "openssl",
+      "default-features": false,
+      "features": [
+        "tools"
+      ]
+    },
+    "lzo",
+    "zlib",
+    "jansson",
+    "pthread",
+    "gettext",
+    {
+      "name": "qtbase",
+      "default-features": false,
+      "features": [
+        "widgets",
+        "png"
+      ]
+    },
+    "libpq",
+    "readline",
+    "gtest",
+    "libxml2",
+    "utfcpp",
+    "xxhash",
+    "tl-expected",
+    "ms-gsl",
+    "cli11",
+    "pcre2"
+  ],
+  "overrides": [
+    {
+      "name": "cli11",
+      "version-string": "2.4.2"
+    }
+  ],
+  "builtin-baseline": "5e605ddb03c9d1d93692a77dfdabceceb8b8113f"
+}
