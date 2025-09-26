@@ -47,6 +47,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(CheckPIESupported)
 check_pie_supported()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+include(BareosDisableWarnings)
 
 # setting Wall last basically makes it impossible to turn off certain things as
 # often the last option wins, so Wall turns on everything you tried to turn off,
@@ -159,30 +160,6 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18.0)
   if(LD_SUPPORTS_AS_NEEDED AND NOT CMAKE_LINK_WHAT_YOU_USE)
     add_link_options("-Wl,--as-needed")
   endif()
-endif()
-
-include(CheckCCompilerFlag)
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-Wsuggest-override CXX_SUPPORTS_Wsuggest_override)
-if(CXX_SUPPORTS_Wsuggest_override)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
-endif()
-
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-  # make format-security issues a compiler-error
-  check_cxx_compiler_flag(-Wformat CXX_SUPPORTS_Wformat)
-  if(CXX_SUPPORTS_Wformat)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat")
-  endif()
-  check_cxx_compiler_flag(-Wformat-security CXX_SUPPORTS_Wformat_security)
-  if(CXX_SUPPORTS_Wformat_security)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat-security")
-  endif()
-endif()
-
-check_cxx_compiler_flag(-Winvalid-offsetof CXX_SUPPORTS_Winvalid_offsetof)
-if(CXX_SUPPORTS_Winvalid_offsetof)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")
 endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
