@@ -28,8 +28,6 @@
 #ifndef BAREOS_LIB_BREG_H_
 #define BAREOS_LIB_BREG_H_
 
-// #undef HAVE_REGEX_H
-
 #include "bregex.h"
 
 /* Usage:
