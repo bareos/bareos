@@ -68,6 +68,9 @@ function(bareos_add_compile_flags)
     endif()
 
   endforeach()
+  # TODO(arogge): this should probably not mutate CMAKE_*_FLAGS
+  #               using add_compile_options() + generator expressions
+  #               is probably still a lot better than this
   list(JOIN cxx_flags " " cxx_flags_str)
   set(CMAKE_CXX_FLAGS
       "${CMAKE_CXX_FLAGS} ${cxx_flags_str}"
