@@ -17,11 +17,10 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# pre-seed the CC_SUPPORT/CXX_SUPPORTS variables if we alrady know to avoid
+# pre-seed the C_SUPPORT/CXX_SUPPORTS variables we already know about to avoid
 # running the compiler
-
 function(bareos_known_compiler_flags)
-  set(options C_ONLY CC_ONLY CXX_ONLY UNSUPPORTED)
+  set(options C_ONLY CXX_ONLY UNSUPPORTED)
   set(oneValueArgs ID SINCE)
   set(multiValueArgs FLAGS)
   cmake_parse_arguments(
@@ -37,14 +36,14 @@ function(bareos_known_compiler_flags)
   if(ARG_SINCE AND ARG_UNSUPPORTED)
     message(FATAL_ERROR "SINCE and UNSUPPORTED cannot be used together")
   endif()
-  if(ARG_CXX_ONLY AND (ARG_C_ONLY OR ARG_CC_ONLY))
+  if(ARG_CXX_ONLY AND (ARG_C_ONLY))
     message(FATAL_ERROR "C_ONLY and CXX_ONLY cannot be used together")
   endif()
   if(NOT ARG_ID)
     message(FATAL_ERROR "argument ID is missing")
   endif()
 
-  if(ARG_C_ONLY OR ARG_CC_ONLY)
+  if(ARG_C_ONLY)
     set(langs C)
   elseif(ARG_CXX_ONLY)
     set(langs CXX)
@@ -64,12 +63,6 @@ function(bareos_known_compiler_flags)
         set(supported "")
       endif()
 
-      # fixup poorly chosen name: while the CMake LANG is "C", our
-      # cache-variables start with "CC"
-      if(lang STREQUAL "C")
-        set(lang CC)
-      endif()
-
       foreach(flag IN LISTS ARG_FLAGS)
         string(REGEX REPLACE "^-" "" raw_flag "${flag}")
         string(REPLACE "-" "_" mangled_flag "${raw_flag}")
@@ -86,8 +79,11 @@ endfunction()
 bareos_known_compiler_flags(
   ID GNU
   SINCE 8.5.0
-  FLAGS -Wcast-function-type
+  FLAGS -Wall
+        -Wcast-function-type
         -Wdeprecated-declarations
+        -Werror
+        -Wextra
         -Wformat
         -Wformat-security
         -Wimplicit-fallthrough
@@ -119,18 +115,21 @@ bareos_known_compiler_flags(
 bareos_known_compiler_flags(
   ID Clang
   SINCE 18.1.8
-  FLAGS -Wc99-designator
-        -Wdeprecated-non-prototype
-        -Wnon-literal-null-conversion
-        -Wenum-conversion
+  FLAGS -Wall
+        -Wc99-designator
         -Wcast-function-type
         -Wdeprecated-declarations
+        -Wdeprecated-non-prototype
+        -Wenum-conversion
+        -Werror
+        -Wextra
         -Wformat
         -Wformat-security
         -Wimplicit-fallthrough
         -Wincompatible-pointer-types
         -Winvalid-offsetof
         -Wmissing-field-initializers
+        -Wnon-literal-null-conversion
         -Wold-style-definition
         -Wshadow
         -Wsign-compare
