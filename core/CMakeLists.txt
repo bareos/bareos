@@ -47,11 +47,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(CheckPIESupported)
 check_pie_supported()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-include(BareosDisableWarnings)
 
 # setting Wall last basically makes it impossible to turn off certain things as
 # often the last option wins, so Wall turns on everything you tried to turn off,
 # as such we set these right at the start
+include(BareosCompilerFlags)
 if(MSVC)
   set(BAREOS_WARNING_FLAGS
       /W4 # enable all reasonable warnings, but disable the following
@@ -63,12 +63,17 @@ if(MSVC)
       /wd4389 # sign mismatch
       /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
   )
+  list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 else()
-  set(BAREOS_WARNING_FLAGS -Werror -Wall -Wextra -Wshadow)
+  bareos_add_compile_flags(-Werror -Wall -Wextra -Wshadow)
+  bareos_add_compile_flags(-Wsuggest-override -Wno-invalid-offsetof CXX_ONLY)
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    bareos_add_compile_flags(-Wformat -Wformat-security)
+  endif()
 endif()
-list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
+
 
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
