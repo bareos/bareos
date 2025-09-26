@@ -491,9 +491,6 @@ Permissive licenses:
  src/lib/bsnprintf.c
    * Copyright Patrick Powell 1995
 
- src/bregex.c/h
-   * Copyright (c) 1991 Tatu Ylonen, Espoo, Finland
-
  src/lib/sha1.c/h
    Copyright (C) The Internet Society (2001).  All Rights Reserved.
 

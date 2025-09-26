@@ -18,11 +18,7 @@
 /* bareos-check-sources:disable-copyright-check */
 
 #include "include/bareos.h"
-#if defined(HAVE_PCREPOSIX)
-#  include <pcreposix.h>
-#else
-#  include "bregex.h"
-#endif
+#include "bregex.h"
 #include "var.h"
 
 /* support for OSSP ex based exception throwing */
