@@ -140,30 +140,6 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18.0)
   endif()
 endif()
 
-include(CheckCCompilerFlag)
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-Wsuggest-override CXX_SUPPORTS_Wsuggest_override)
-if(CXX_SUPPORTS_Wsuggest_override)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
-endif()
-
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-  # make format-security issues a compiler-error
-  check_cxx_compiler_flag(-Wformat CXX_SUPPORTS_Wformat)
-  if(CXX_SUPPORTS_Wformat)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat")
-  endif()
-  check_cxx_compiler_flag(-Wformat-security CXX_SUPPORTS_Wformat_security)
-  if(CXX_SUPPORTS_Wformat_security)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat-security")
-  endif()
-endif()
-
-check_cxx_compiler_flag(-Winvalid-offsetof CXX_SUPPORTS_Winvalid_offsetof)
-if(CXX_SUPPORTS_Winvalid_offsetof)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")
-endif()
-
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   include_directories(/usr/include)
 endif()
@@ -289,6 +265,7 @@ else()
   add_compile_definitions("_FILE_OFFSET_BITS=64")
 endif()
 
+include(BareosDisableWarnings)
 if(MSVC)
   set(BAREOS_WARNING_FLAGS
       /W4 # enable all reasonable warnings, but disable the following
@@ -300,12 +277,16 @@ if(MSVC)
       /wd4389 # sign mismatch
       /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
   )
+  list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 else()
-  set(BAREOS_WARNING_FLAGS -Werror -Wall -Wextra -Wshadow)
+  bareos_add_compile_flags(-Werror -Wall -Wextra -Wshadow)
+  bareos_add_compile_flags(-Wsuggest-override -Wno-invalid-offsetof CXX_ONLY)
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    bareos_add_compile_flags(-Wformat -Wformat-security)
+  endif()
 endif()
-list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
 
