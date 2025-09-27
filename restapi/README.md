@@ -47,7 +47,7 @@ https://docs.bareos.org/Configuration/Director.html#console-resource
 From inside the module directory run:
 
 ```
-uvicorn bareos-restapi:app --reload
+uvicorn bareos_restapi:app --reload
 ```
 
 * Serve the Swagger UI to explore the REST API: http://127.0.0.1:8000/docs
