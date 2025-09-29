@@ -119,9 +119,6 @@ RHEL and derivatives, Fedora
    single: Platform; Fedora
    single: Platform; EL
 
-Bareos :sinceVersion:`15.2.0: requires: jansson` requires the Jansson library package.
-On RHEL 7 it is available through the RHEL Server Optional channel.
-
 The RHEL_* repository is for Red Hat Enterprise Linux,
 the EL_* repositories are for RHEL derivatives,
 like AlmaLinux, CentOS Stream, Oracle and Rocky Linux.
@@ -293,12 +290,25 @@ Other Platforms
 
 If your PostgreSQL administration user is **postgres** (default), use the following commands:
 
+Linux
+^^^^^
+
 .. code-block:: shell-session
-   :caption: Setup Bareos catalog with PostgreSQL
+   :caption: Setup Bareos catalog with PostgreSQL (Linux)
 
    su postgres -c /usr/lib/bareos/scripts/create_bareos_database
    su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
    su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
+
+FreeBSD
+^^^^^^^
+
+.. code-block:: shell-session
+   :caption: Setup Bareos catalog with PostgreSQL (FreeBSD)
+
+   su postgres -c /usr/local/lib/bareos/scripts/create_bareos_database
+   su postgres -c /usr/local/lib/bareos/scripts/make_bareos_tables
+   su postgres -c /usr/local/lib/bareos/scripts/grant_bareos_privileges
 
 
 .. _section-StartDaemons:
