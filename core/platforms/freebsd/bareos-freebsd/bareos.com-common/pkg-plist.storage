@@ -1,17 +1,17 @@
-@dir lib/bareos/defaultconfigs/bareos-sd.d/
-@dir lib/bareos/defaultconfigs/bareos-sd.d/autochanger/
-@dir lib/bareos/defaultconfigs/bareos-sd.d/device/
-@dir lib/bareos/defaultconfigs/bareos-sd.d/director/
-@dir lib/bareos/defaultconfigs/bareos-sd.d/ndmp/
-@dir lib/bareos/defaultconfigs/bareos-sd.d/messages/
-@dir lib/bareos/defaultconfigs/bareos-sd.d/storage/
-lib/bareos/defaultconfigs/bareos-sd.d/autochanger/FileStorage.conf.example
-lib/bareos/defaultconfigs/bareos-sd.d/device/FileStorage.conf.example
-lib/bareos/defaultconfigs/bareos-sd.d/device/FileStorage.conf
-lib/bareos/defaultconfigs/bareos-sd.d/director/bareos-dir.conf
-lib/bareos/defaultconfigs/bareos-sd.d/director/bareos-mon.conf
-lib/bareos/defaultconfigs/bareos-sd.d/messages/Standard.conf
-lib/bareos/defaultconfigs/bareos-sd.d/storage/bareos-sd.conf
+@dir %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/
+@dir %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/autochanger/
+@dir %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/device/
+@dir %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/director/
+@dir %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/ndmp/
+@dir %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/messages/
+@dir %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/storage/
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/autochanger/FileStorage.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/device/FileStorage.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/device/FileStorage.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/director/bareos-dir.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/director/bareos-mon.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/messages/Standard.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/storage/bareos-sd.conf
 sbin/bareos-sd
 lib/bareos/scripts/disk-changer
 share/man/man8/bareos-sd.8.gz
