@@ -407,7 +407,7 @@ deploy_config_usage()
   if [ "$1" ]; then
     error "$1"
   fi
-  info "Usage: deploy_config [--init] <COMPONENT>"
+  info "Usage: deploy_config [--init | --add-missing | --exist] <COMPONENT>"
 }
 
 deploy_config()
@@ -417,6 +417,10 @@ deploy_config()
   #   deploy_config --init COMPONENT
   #       0: config deployed or skipped, because dest already exists.
   #       >0: error, including, dest already exists.
+  #   deploy_config --add-missing COMPONENT
+  #       0: missing files added to target config.
+  #          If no files are missing, stills returns 0.
+  #       >0: error
   #   deploy_config --exist COMPONENT
   #     0: dest does not exist, so config would be deployed if called with --init
   #     >0: dest already exist
@@ -433,6 +437,8 @@ deploy_config()
     if [ "$1" = "--init" ]; then
       # default
       MODE="init"
+    elif [ "$1" = "--add-missing" ]; then
+      MODE="add-missing"
     elif [ "$1" = "--exist" ]; then
       MODE="exist"
     else
@@ -447,6 +453,8 @@ deploy_config()
   RC=0
   if [ "${MODE}" = "init" ]; then
     deploy_config_init "${COMPONENT}" || RC=$?
+  elif [ "${MODE}" = "add-missing" ]; then
+    deploy_config_add_missing "${COMPONENT}" || RC=$?
   elif [ "${MODE}" = "exist" ]; then
     config_exists "${COMPONENT}" || RC=$?
   else
@@ -463,7 +471,7 @@ config_exists()
 
   if [ -z "$COMPONENT" ]; then
     deploy_config_usage "missing component"
-    return 1
+    return 2
   fi
 
   local DEST_CONFIG_PATH
@@ -477,7 +485,7 @@ deploy_config_init()
 
   if [ -z "$COMPONENT" ]; then
     deploy_config_usage "missing component"
-    return 1
+    return 2
   fi
 
   local SOURCE_CONFIG_PATH
@@ -496,7 +504,57 @@ deploy_config_init()
     mkdir -p "${DEST_CONFIG_PATH}"
     # On macOS, only single letter cp options are available.
     # -r: --recursive
-    cp -r "${SOURCE_CONFIG_PATH}/." "${DEST_CONFIG_PATH}/." || RC=$?
+    cp -r "${SOURCE_CONFIG_PATH}/." "${DEST_CONFIG_PATH}" || RC=$?
+  else
+    DEST_CONFIG_PATH="${BAREOS_CONFIG_DIR}/${COMPONENT}.conf"
+    if [ -f "${DEST_CONFIG_PATH}" ]; then
+      info "deploy_config_init(): destination ${DEST_CONFIG_PATH} already exists. Skipped"
+      return 0
+    fi
+    cp "${SOURCE_CONFIG_PATH}" "${DEST_CONFIG_PATH}" || RC=$?
+  fi
+
+  if [ $RC -eq 0 ]; then
+    config_finalize "${BAREOS_CONFIG_DIR}" "${COMPONENT}" || RC=$?
+  fi
+
+  return $RC
+}
+
+deploy_config_add_missing()
+{
+  local COMPONENT=${1:-}
+
+  if [ -z "$COMPONENT" ]; then
+    deploy_config_usage "missing component"
+    return 2
+  fi
+
+  local SOURCE_CONFIG_PATH
+  if ! SOURCE_CONFIG_PATH="$(get_config_path2 "${BAREOS_CONFIG_TEMPLATE_DIR}" "${COMPONENT}")"; then
+    return 1
+  fi
+
+  local DEST_CONFIG_PATH
+  RC=0
+  if [ -d "${SOURCE_CONFIG_PATH}" ]; then
+    DEST_CONFIG_PATH="${BAREOS_CONFIG_DIR}/${COMPONENT}.d/"
+    mkdir -p "${DEST_CONFIG_PATH}"
+
+    #
+    # Copy all files, but do not overwrite existing file.
+    # Use verbose to detect, when new files have been copied.
+    # On macOS, only single letter cp options are available.
+    # -v: --verbose
+    # -r: --recursive
+    # -n: --no-clobber
+    #
+    OUT=$(cp -v -r -n "${SOURCE_CONFIG_PATH}/." "${DEST_CONFIG_PATH}")
+    printf "%s" "${OUT}"
+    if [ "${OUT}" ]; then
+      RC=0
+    fi
+
   else
     DEST_CONFIG_PATH="${BAREOS_CONFIG_DIR}/${COMPONENT}.conf"
     if [ -f "${DEST_CONFIG_PATH}" ]; then
@@ -527,7 +585,9 @@ config_finalize()
     return 1
   fi
 
-  if [ "${COMPONENT}" = "tray-monitor" ]; then
+  if [ "${COMPONENT}" = "bareos-dir" ]; then
+    configure_bareos_dir "${DEST}"
+  elif [ "${COMPONENT}" = "tray-monitor" ]; then
     configure_tray_monitor "${DEST}"
   fi
 
@@ -601,6 +661,14 @@ config_set_permissions()
     # bareos.d and bareos-dir-export (for exporting configuration).
     config_set_permissions "${DEST}" "bareos-dir-export"
   fi
+}
+
+configure_bareos_dir()
+{
+  local DEST="$1"
+  local COMPONENT="bareos-dir"
+
+  mkdir -p "${DEST}/bareos-dir-export/client/"
 }
 
 configure_tray_monitor()
