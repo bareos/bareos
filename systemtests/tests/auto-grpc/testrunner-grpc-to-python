@@ -48,7 +48,7 @@ python_client="bareos-fd2"
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/create-backup.out
+@$out ${runner_tmp}/create-backup.out
 setdebug level=200 client=${grpc_client} trace=1
 run job=$JobName client=${grpc_client} fileset=PythonTest yes
 status director
@@ -56,7 +56,7 @@ status client=${grpc_client}
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
 END_OF_DATA
 
@@ -65,28 +65,28 @@ run_bconsole
 check_for_zombie_jobs storage=File client="${grpc_client}"
 
 expect_grep "Backup OK" \
-  "$log_home/create-backup.out" \
+  "${runner_tmp}/create-backup.out" \
   "Backup was not created correctly."
 
 expect_grep "Client:[[:space:]]*\"${grpc_client}\"" \
-  "$log_home/create-backup.out" \
+  "${runner_tmp}/create-backup.out" \
   "backup job was ran on wrong client"
 
-res_dir="${log_home:?}/python-restores"
+res_dir="${runner_tmp:?}/python-restores"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/restore-setup.out
+@$out ${runner_tmp}/restore-setup.out
 setdebug level=200 client=${python_client} trace=1
 status director
 status client=${python_client}
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/restore-full.out
+@$out ${runner_tmp}/restore-full.out
 restore client=${grpc_client} restoreclient=${python_client} fileset=PythonTest \
  where=${res_dir} select all done yes
 wait
@@ -97,15 +97,15 @@ run_bconsole
 check_for_zombie_jobs storage=File client="${python_client}"
 
 expect_grep "Start Restore Job" \
-  "$log_home/restore-full.out" \
+  "${runner_tmp}/restore-full.out" \
   "Required restore job was not started."
 
 expect_grep "Restore Client:[[:space:]]*\"${python_client}\"" \
-  "$log_home/restore-full.out" \
+  "${runner_tmp}/restore-full.out" \
   "restore job was ran on wrong client"
 
 expect_grep "Restore OK" \
-  "$log_home/restore-full.out" \
+  "${runner_tmp}/restore-full.out" \
   "Restore job was not successful"
 
 check_restore_diff "${BackupDirectory}" "${res_dir}"

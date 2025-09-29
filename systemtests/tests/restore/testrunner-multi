@@ -44,28 +44,28 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/setup.out
+@$out ${runner_tmp}/setup.out
 setdebug level=100 storage=File
 status director
 status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/multi-file.out
+@$out ${runner_tmp}/multi-file.out
 restore client=bareos-fd fileset=SelfTest where=$tmp/multi-file/1 file=$tmp/data/weird-files/2 file=$tmp/data/weird-files/1 yes
 restore client=bareos-fd fileset=SelfTest where=$tmp/multi-file/2 file=$tmp/data/weird-files/1 yes
 restore client=bareos-fd fileset=SelfTest where=$tmp/multi-file/2 file=$tmp/data/weird-files/2 yes
 wait
 messages
-@$out $log_home/multi-dir.out
+@$out ${runner_tmp}/multi-dir.out
 restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/1 directory=$tmp/data/weird-files/simple-dir-1/ directory=$tmp/data/weird-files/simple-dir-2/ yes
 restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/2 directory=$tmp/data/weird-files/simple-dir-2/ yes
 restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/multi-dir/2 directory=$tmp/data/weird-files/simple-dir-1/ yes
 wait
 messages
-@$out $log_home/file-and-dir.out
+@$out ${runner_tmp}/file-and-dir.out
 restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/files-and-dir/1 directory=$tmp/data/build/src/tests/ file=$tmp/data/weird-files/2 file=$tmp/data/weird-files/1 yes
 restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/files-and-dir/2 directory=$tmp/data/build/src/tests/ yes
 restore jobid=1 client=bareos-fd fileset=SelfTest where=$tmp/files-and-dir/2 file=$tmp/data/weird-files/2 yes
@@ -80,18 +80,18 @@ check_for_zombie_jobs storage=File
 
 check_preconditions
 
-check_log "$log_home/multi-file.out"
-check_log "$log_home/multi-dir.out"
-check_log "$log_home/file-and-dir.out"
+check_log "${runner_tmp}/multi-file.out"
+check_log "${runner_tmp}/multi-dir.out"
+check_log "${runner_tmp}/file-and-dir.out"
 
 expect_not_grep "No database record found for:" \
-  "$log_home/multi-file.out" \
+  "${runner_tmp}/multi-file.out" \
   "Something was not restored in test 1"
 expect_not_grep "No database record found for:" \
-  "$log_home/multi-dir.out" \
+  "${runner_tmp}/multi-dir.out" \
   "Something was not restored in test 2"
 expect_not_grep "No database record found for:" \
-  "$log_home/file-and-dir.out" \
+  "${runner_tmp}/file-and-dir.out" \
   "Something was not restored in test 3"
 
 if ! bareos_diff -d "$tmp/multi-file/1" -s "$tmp/multi-file/2"; then

@@ -52,13 +52,13 @@ fi
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 setdebug level=100 storage=File
-@$out $log_home/log1.out
+@$out ${runner_tmp}/log1.out
 status director
 status client
 status storage=File
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/restore-dir-from-archive.out
+@$out ${runner_tmp}/restore-dir-from-archive.out
 update jobid=1 jobtype=A
 restore archive
 11
@@ -78,7 +78,7 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 expect_grep "Start Restore Job" \
-  "$log_home/restore-dir-from-archive.out" \
+  "${runner_tmp}/restore-dir-from-archive.out" \
   "The restore job was not started."
 
 check_restore_diff "$dir"

@@ -32,8 +32,8 @@ export TestName
 #shellcheck source=../../environment.in
 . ./environment
 runner_name="$(basename "$0")"
-log_home="${tmp}/${runner_name}"
-mkdir -p "${log_home}"
+runner_tmp="${tmp}/${runner_name}"
+mkdir -p "${runner_tmp}"
 
 #shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
@@ -43,15 +43,15 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/setup.out
+@$out ${runner_tmp}/setup.out
 status director
 status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/restore-full.out
+@$out ${runner_tmp}/restore-full.out
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
 wait
 messages
@@ -62,11 +62,11 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 expect_grep "Start Restore Job" \
-  "$log_home/restore-full.out" \
+  "${runner_tmp}/restore-full.out" \
   "Required restore job was not started."
 
 expect_grep "Restore OK" \
-  "$log_home/restore-full.out" \
+  "${runner_tmp}/restore-full.out" \
   "Required restore job did not finish successfully"
 
 check_restore_diff "${BackupDirectory}"

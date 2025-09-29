@@ -30,14 +30,14 @@ export TestName
 . ./environment
 
 runner_name="$(basename "$0")"
-log_home="${tmp}/${runner_name}"
-mkdir -p "${log_home}"
+runner_tmp="${tmp}/${runner_name}"
+mkdir -p "${runner_tmp}"
 
 #shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
-copy_log="$log_home/copy_log.out"
-query_results="$log_home/query_results.out"
+copy_log="${runner_tmp}/copy_log.out"
+query_results="${runner_tmp}/query_results.out"
 
 start_test
 

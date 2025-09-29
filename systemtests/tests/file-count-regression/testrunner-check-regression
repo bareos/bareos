@@ -23,7 +23,7 @@ start_test
 cat <<END_OF_DATA >"$tmp/make-full"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/create-full.out
+@$out ${runner_tmp}/create-full.out
 setdebug level=100 storage=File
 run job=$JobName yes
 wait
@@ -37,7 +37,7 @@ END_OF_DATA
 cat <<END_OF_DATA >"$tmp/make-incr"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/create-incremental.out
+@$out ${runner_tmp}/create-incremental.out
 run job=$JobName yes
 wait
 status director
@@ -50,7 +50,7 @@ END_OF_DATA
 cat <<END_OF_DATA >"$tmp/restore"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/restore.out
+@$out ${runner_tmp}/restore.out
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restore select yes
 cd $tmp
 markdir data
@@ -74,6 +74,6 @@ run_bconsole "$tmp/restore"
 check_for_zombie_jobs storage=File
 
 expect_not_grep "File count mismatch" \
-  "$log_home/restore.out" \
+  "${runner_tmp}/restore.out" \
   "Regression detected: file count mismatch"
 end_test

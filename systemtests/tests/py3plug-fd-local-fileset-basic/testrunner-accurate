@@ -24,14 +24,14 @@ start_test
 cat <<END_OF_DATA >"${tmp}"/bconcmds
 @$out ${NULL_DEV}
 messages
-@$out ${log_home}/full.out
+@$out ${runner_tmp}/full.out
 run job=$JobName level=Full yes
 status director
 status client
 status storage=File
 wait
 messages
-@$out ${log_home}/incr.out
+@$out ${runner_tmp}/incr.out
 run job=$JobName level=Incremental yes
 status director
 status client
@@ -45,19 +45,19 @@ check_for_zombie_jobs storage=File
 
 incr_job=$(last_jobid_or_zero)
 
-check_log "${log_home}/incr.out"
-check_log "${log_home}/full.out"
+check_log "${runner_tmp}/incr.out"
+check_log "${runner_tmp}/full.out"
 
 cat <<END_OF_DATA >"${tmp}"/bconcmds
-@$out ${log_home}/files.out
+@$out ${runner_tmp}/files.out
 .api 2
 list files jobid=${incr_job}
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-if grep "\"filename\":" "${log_home}/files.out"; then
-  files=$(grep "\"filename\":" "${log_home}/files.out" | sed 's/.*filename": //')
+if grep "\"filename\":" "${runner_tmp}/files.out"; then
+  files=$(grep "\"filename\":" "${runner_tmp}/files.out" | sed 's/.*filename": //')
 
   for file in ${files}; do
     # dont forget to remove the quotes
@@ -67,11 +67,11 @@ if grep "\"filename\":" "${log_home}/files.out"; then
 fi
 
 expect_grep "Sent Accurate information" \
-  "${log_home}/incr.out" \
+  "${runner_tmp}/incr.out" \
   "No accurate information was sent"
 
 expect_grep "FD Files Written:[[:space:]]*0$" \
-  "${log_home}/incr.out" \
+  "${runner_tmp}/incr.out" \
   "The incremental is not empty"
 
 end_test

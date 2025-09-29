@@ -64,21 +64,21 @@ fi
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 setdebug level=100 storage=File
-@$out $log_home/log1.out
+@$out ${runner_tmp}/log1.out
 status director
 status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/should-work.out
+@$out ${runner_tmp}/should-work.out
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores \
 	file=$file1 \
 	done yes
 wait
 messages
-@$out $log_home/restore-from-selected-job.out
+@$out ${runner_tmp}/restore-from-selected-job.out
 restore
 12
 1
@@ -87,7 +87,7 @@ done
 yes
 wait
 messages
-@$out $log_home/restore-from-list-and-time.out
+@$out ${runner_tmp}/restore-from-list-and-time.out
 restore
 8
 $(($(date +%Y) + 1))
@@ -105,19 +105,19 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 expect_grep "Start Restore Job" \
-  "$log_home/should-work.out" \
+  "${runner_tmp}/should-work.out" \
   "The first restore job was not started."
 
 expect_grep "Start Restore Job" \
-  "$log_home/restore-from-selected-job.out" \
+  "${runner_tmp}/restore-from-selected-job.out" \
   "The second restore job was not started."
 
 expect_grep "Start Restore Job" \
-  "$log_home/restore-from-list-and-time.out" \
+  "${runner_tmp}/restore-from-list-and-time.out" \
   "The third restore job was not started."
 
 expect_grep "1 file selected to be restored." \
-  "$log_home/should-work.out" \
+  "${runner_tmp}/should-work.out" \
   "Expected success; found failure"
 
 dest1="$tmp/bareos-restores/$file1"

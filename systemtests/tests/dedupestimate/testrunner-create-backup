@@ -43,23 +43,23 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/misc.out
+@$out ${runner_tmp}/misc.out
 setdebug level=100 storage=File trace=1
 label volume=TestVolume001 storage=File pool=Full
 messages
-@$out $log_home/create-full-1.out
+@$out ${runner_tmp}/create-full-1.out
 run job=$JobName level=Full yes
 wait
 messages
-@$out $log_home/create-full-2.out
+@$out ${runner_tmp}/create-full-2.out
 run job=$JobName level=Full yes
 wait
 messages
-@$out $log_home/misc.out
+@$out ${runner_tmp}/misc.out
 status director
 status client
 status storage=File
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
 quit
 END_OF_DATA
@@ -69,11 +69,11 @@ check_for_zombie_jobs storage=File
 
 for i in 1 2; do
   expect_grep "Start Backup JobId" \
-    "$log_home/create-full-${i}.out" \
+    "${runner_tmp}/create-full-${i}.out" \
     "Did not create a backup job."
 
   expect_grep "Backup OK" \
-    "$log_home/create-full-${i}.out" \
+    "${runner_tmp}/create-full-${i}.out" \
     "Backup was not created correctly."
 done
 
