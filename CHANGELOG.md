@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - stored: fix race condition [PR #2359]
 - dird: fix nextvol crash [PR #2335]
 - grpc: fix missing some early events [PR #2333]
+- grpc: fix extra / for directories [PR #2373]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -215,4 +216,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2350]: https://github.com/bareos/bareos/pull/2350
 [PR #2358]: https://github.com/bareos/bareos/pull/2358
 [PR #2359]: https://github.com/bareos/bareos/pull/2359
+[PR #2373]: https://github.com/bareos/bareos/pull/2373
 [unreleased]: https://github.com/bareos/bareos/tree/master
