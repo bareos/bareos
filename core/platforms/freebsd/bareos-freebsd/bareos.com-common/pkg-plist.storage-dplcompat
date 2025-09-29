@@ -1,4 +1,4 @@
 lib/libbareossd-dplcompat.so
 lib/bareos/scripts/s3cmd-wrapper.sh
-lib/bareos/defaultconfigs/bareos-dir.d/storage/dplcompat.conf.example
-lib/bareos/defaultconfigs/bareos-sd.d/device/dplcompat.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/storage/dplcompat.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/device/dplcompat.conf.example

@@ -1,0 +1,66 @@
+#!/bin/sh
+set -e
+
+initialize_bareos()
+{
+    COMPONENT="$1"
+    echo "$PKG_NAME: initializing bareos configuration, logs to ${LOGFILE}"
+    /usr/local/lib/bareos/scripts/bareos-config deploy_config "${COMPONENT}"
+    # >>${LOGFILE} 2>&1 || echo "bareos-config deploy_config ${COMPONENT}: failed"
+}
+
+LOGFILE=/tmp/bareos-setup.log
+
+echo "$PKG_NAME: upgrade=${PKG_UPGRADE}, pkg-postinstall, logs to ${LOGFILE}"
+
+# . /usr/local/lib/bareos/scripts/bareos-config-lib.sh
+
+COMPONENT=""
+case "$PKG_NAME" in
+bareos.com-director)
+    COMPONENT="bareos-dir"
+    ;;
+
+bareos.com-filedaemon)
+    COMPONENT="bareos-fd"
+    ;;
+
+bareos.com-storage)
+    COMPONENT="bareos-sd"
+    ;;
+
+bareos.com-bconsole)
+    COMPONENT="bconsole"
+    ;;
+esac
+
+echo "COMPONENT=$COMPONENT"
+VERSION=$(pkg query '%v' "$PKG_NAME")
+echo "VERSION=$VERSION"
+
+if [ "${COMPONENT}" ]; then
+
+    if [ -z "${PKG_UPGRADE}" ]; then
+        # initial install
+        echo "initial install"
+        initialize_bareos "${COMPONENT}"
+    else
+        # upgrade
+        echo "upgrade"
+
+        BAREOS_CONFIG_DIR="/usr/local/etc/bareos/"
+        # ${COMPONENT}.d.$OLDVERSION.keep
+        KEEP_CONFIG_PATH="${BAREOS_CONFIG_DIR}/${COMPONENT}.d-migration-keep"
+        DEST_CONFIG_PATH="${BAREOS_CONFIG_DIR}/${COMPONENT}.d"
+        if [ -d "${KEEP_CONFIG_PATH}" ]; then
+            if [ -d "${DEST_CONFIG_PATH}" ]; then
+                mv "${DEST_CONFIG_PATH}" "${DEST_CONFIG_PATH}-migration-backup-${VERSION}"
+            fi
+            mv "${KEEP_CONFIG_PATH}" "${DEST_CONFIG_PATH}"
+        fi
+    fi
+else
+    echo "no COMPONENT"
+fi
+
+echo "end ${PKG_UPGRADE}"

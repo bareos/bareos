@@ -1,5 +1,5 @@
 
 lib/bareos/plugins/bareos-fd-ldap.py
-lib/bareos/defaultconfigs/bareos-dir.d/fileset/plugin-ldap.conf.example
-lib/bareos/defaultconfigs/bareos-dir.d/job/backup-ldap.conf.example
-lib/bareos/defaultconfigs/bareos-dir.d/job/restore-ldap.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/fileset/plugin-ldap.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/backup-ldap.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/restore-ldap.conf.example
