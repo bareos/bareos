@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -45,20 +45,20 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/setup.out
+@$out ${runner_tmp}/setup.out
 setdebug level=100 storage=File
 status director
 status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/should-hint-non-archive.out
+@$out ${runner_tmp}/should-hint-non-archive.out
 restore archive client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
 wait
 messages
-@$out $log_home/should-hint-archive.out
+@$out ${runner_tmp}/should-hint-archive.out
 update jobid=1 jobtype=A
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
 wait
@@ -72,29 +72,28 @@ check_for_zombie_jobs storage=File
 
 check_preconditions
 
-
 expect_grep "Try" \
-	    "$log_home/should-hint-non-archive.out" \
-	    "Expected hint to restore from archive not issued."
+  "${runner_tmp}/should-hint-non-archive.out" \
+  "Expected hint to restore from archive not issued."
 
 expect_grep "No Full backup" \
-	    "$log_home/should-hint-non-archive.out" \
-	    "Restore should not be able to restore archives."
+  "${runner_tmp}/should-hint-non-archive.out" \
+  "Restore should not be able to restore archives."
 
 expect_not_grep "full backup archive" \
-		"$log_home/should-hint-non-archive.out" \
-		"Did not display correct 'restore' hint."
+  "${runner_tmp}/should-hint-non-archive.out" \
+  "Did not display correct 'restore' hint."
 
 expect_grep "Try" \
-	    "$log_home/should-hint-archive.out" \
-	    "Expected hint to restore from archive not issued."
+  "${runner_tmp}/should-hint-archive.out" \
+  "Expected hint to restore from archive not issued."
 
 expect_grep "No Full backup" \
-	    "$log_home/should-hint-archive.out" \
-	    "Restore should not be able to restore archives."
+  "${runner_tmp}/should-hint-archive.out" \
+  "Restore should not be able to restore archives."
 
 expect_grep "full backup archive" \
-	    "$log_home/should-hint-archive.out" \
-	    "Did not display correct 'restore archive' hint."
+  "${runner_tmp}/should-hint-archive.out" \
+  "Did not display correct 'restore archive' hint."
 
 end_test

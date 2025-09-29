@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -181,7 +181,7 @@ struct HfsPlusInfo {
 struct FindFilesPacket {
   char* top_fname{nullptr};          /**< Full filename before descending */
   char* fname{nullptr};              /**< Full filename */
-  char* link{nullptr};               /**< Link if file linked */
+  char* link_or_dir{nullptr};               /**< Link if file linked, or canonical directory path */
   char* object_name{nullptr};        /**< Object name */
   char* object{nullptr};             /**< Restore object */
   char* plugin{nullptr};             /**< Current Options{Plugin=} name */

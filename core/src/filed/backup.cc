@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -533,7 +533,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   switch (ff_pkt->type) {
     case FT_LNKSAVED: /* Hard linked, file already saved */
       Dmsg2(130, "FT_LNKSAVED hard link: %s => %s\n", ff_pkt->fname,
-            ff_pkt->link);
+            ff_pkt->link_or_dir);
       break;
     case FT_REGE:
       Dmsg1(130, "FT_REGE saving: %s\n", ff_pkt->fname);
@@ -544,7 +544,8 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       has_file_data = true;
       break;
     case FT_LNK:
-      Dmsg2(130, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
+      Dmsg2(130, "FT_LNK saving: %s -> %s\n", ff_pkt->fname,
+            ff_pkt->link_or_dir);
       break;
     case FT_RESTORE_FIRST:
       Dmsg1(100, "FT_RESTORE_FIRST saving: %s\n", ff_pkt->fname);
@@ -585,7 +586,7 @@ int SaveFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     case FT_REPARSE:
     case FT_JUNCTION:
     case FT_DIREND:
-      Dmsg1(130, "FT_DIREND: %s\n", ff_pkt->link);
+      Dmsg1(130, "FT_DIREND: %s\n", ff_pkt->link_or_dir);
       break;
     case FT_SPEC:
       Dmsg1(130, "FT_SPEC saving: %s\n", ff_pkt->fname);
@@ -1674,17 +1675,18 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
     case FT_LNK:
     case FT_LNKSAVED:
       Dmsg3(300, "Link %d %s to %s\n", jcr->JobFiles, ff_pkt->fname,
-            ff_pkt->link);
+            ff_pkt->link_or_dir);
       status = sd->fsend("%ld %d %s%c%s%c%s%c%s%c%u%c", jcr->JobFiles,
                          ff_pkt->type, ff_pkt->fname, 0, attribs.c_str(), 0,
-                         ff_pkt->link, 0, attribsEx, 0, ff_pkt->delta_seq, 0);
+                         ff_pkt->link_or_dir, 0, attribsEx, 0,
+                         ff_pkt->delta_seq, 0);
       break;
     case FT_DIREND:
     case FT_REPARSE:
       /* Here link is the canonical filename (i.e. with trailing slash) */
       status = sd->fsend("%ld %d %s%c%s%c%c%s%c%u%c", jcr->JobFiles,
-                         ff_pkt->type, ff_pkt->link, 0, attribs.c_str(), 0, 0,
-                         attribsEx, 0, ff_pkt->delta_seq, 0);
+                         ff_pkt->type, ff_pkt->link_or_dir, 0, attribs.c_str(),
+                         0, 0, attribsEx, 0, ff_pkt->delta_seq, 0);
       break;
     case FT_PLUGIN_CONFIG:
     case FT_RESTORE_FIRST:
@@ -1805,10 +1807,10 @@ void StripPath(FindFilesPacket* ff_pkt)
   }
 
   PmStrcpy(ff_pkt->fname_save, ff_pkt->fname);
-  if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-    PmStrcpy(ff_pkt->link_save, ff_pkt->link);
+  if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link_or_dir) {
+    PmStrcpy(ff_pkt->link_save, ff_pkt->link_or_dir);
     Dmsg2(500, "strcpy link_save=%d link=%d\n", strlen(ff_pkt->link_save),
-          strlen(ff_pkt->link));
+          strlen(ff_pkt->link_or_dir));
   }
 
   /* Strip path. If it doesn't succeed put it back. If it does, and there
@@ -1816,7 +1818,7 @@ void StripPath(FindFilesPacket* ff_pkt)
    * back them both back. Do not strip symlinks. I.e. if either stripping
    * fails don't strip anything. */
   if ((ff_pkt->type != FT_DIREND && ff_pkt->type != FT_REPARSE)
-      || ff_pkt->fname == ff_pkt->link) {
+      || ff_pkt->fname == ff_pkt->link_or_dir) {
     if (!do_strip(ff_pkt->StripPath, ff_pkt->fname)) {
       UnstripPath(ff_pkt);
       goto rtn;
@@ -1824,13 +1826,15 @@ void StripPath(FindFilesPacket* ff_pkt)
   }
 
   // Strip links but not symlinks
-  if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-    if (!do_strip(ff_pkt->StripPath, ff_pkt->link)) { UnstripPath(ff_pkt); }
+  if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link_or_dir) {
+    if (!do_strip(ff_pkt->StripPath, ff_pkt->link_or_dir)) {
+      UnstripPath(ff_pkt);
+    }
   }
 
 rtn:
   Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname_save,
-        ff_pkt->fname, ff_pkt->link);
+        ff_pkt->fname, ff_pkt->link_or_dir);
 }
 
 void UnstripPath(FindFilesPacket* ff_pkt)
@@ -1840,11 +1844,11 @@ void UnstripPath(FindFilesPacket* ff_pkt)
   }
 
   strcpy(ff_pkt->fname, ff_pkt->fname_save);
-  if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link) {
-    Dmsg2(500, "strcpy link=%s link_save=%s\n", ff_pkt->link,
+  if (ff_pkt->type != FT_LNK && ff_pkt->fname != ff_pkt->link_or_dir) {
+    Dmsg2(500, "strcpy link=%s link_save=%s\n", ff_pkt->link_or_dir,
           ff_pkt->link_save);
-    strcpy(ff_pkt->link, ff_pkt->link_save);
-    Dmsg2(500, "strcpy link=%d link_save=%d\n", strlen(ff_pkt->link),
+    strcpy(ff_pkt->link_or_dir, ff_pkt->link_save);
+    Dmsg2(500, "strcpy link=%d link_save=%d\n", strlen(ff_pkt->link_or_dir),
           strlen(ff_pkt->link_save));
   }
 }

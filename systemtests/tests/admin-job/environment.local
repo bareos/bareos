@@ -20,6 +20,6 @@
 #   02110-1301, USA.
 
 runner_name="$(basename "$0")"
-log_home="${tmp}/${runner_name}"
-mkdir -p "${log_home}"
-rm -rf "${log_home}"/*
+runner_tmp="${tmp}/${runner_name}"
+mkdir -p "${runner_tmp}"
+rm -rf "${runner_tmp}"/*

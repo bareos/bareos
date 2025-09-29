@@ -79,6 +79,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:py3plug-fd-local-fileset-restoreobject
       system:py3plug-sd
       system:py3plug-fd-local-fileset-basic:basic
+      system:py3plug-fd-local-fileset-basic:accurate
       system:py3plug-fd-local-fileset-basic:io_in_core
       system:py3plug-fd-basic:cancel-check
       system:py3plug-fd-basic:cancel-check-no-wait

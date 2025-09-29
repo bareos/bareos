@@ -695,7 +695,7 @@ bRC PluginOptionHandleFile(JobControlRecord* jcr,
   sp->portable = true;
   CopyBits(FO_MAX, ff_pkt->flags, sp->flags);
   sp->cmd = cmd;
-  sp->link = ff_pkt->link;
+  sp->link = ff_pkt->link_or_dir;
   sp->statp = ff_pkt->statp;
   sp->type = ff_pkt->type;
   sp->fname = ff_pkt->fname;
@@ -895,7 +895,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
         PmStrcpy(link, sp.link);
 
         ff_pkt->fname = fname.c_str();
-        ff_pkt->link = link.c_str();
+        ff_pkt->link_or_dir = link.c_str();
 
         PluginUpdateFfPkt(ff_pkt, &sp);
       }
@@ -940,7 +940,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
                     fname.c_str());
               ff_pkt->no_read = true;
             } else {
-              ff_pkt->link = hl.name.data();
+              ff_pkt->link_or_dir = hl.name.data();
               ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
               ff_pkt->LinkFI = hl.FileIndex;
               ff_pkt->digest = hl.digest.data();
@@ -2596,7 +2596,7 @@ static bRC bareosCheckChanges(PluginContext* ctx, save_pkt* sp)
     const auto orig_incremental{ff_pkt->incremental};
 
     ff_pkt->fname = sp->fname;
-    ff_pkt->link = sp->link;
+    ff_pkt->link_or_dir = sp->link;
     if (sp->save_time) {
       ff_pkt->save_time = sp->save_time;
       ff_pkt->incremental = true;

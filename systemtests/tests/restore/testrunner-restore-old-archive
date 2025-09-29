@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -45,21 +45,21 @@ start_test
 
 file="$(pwd)/tmp/data/weird-files/socket.pl"
 if [[ -f "$tmp/bareos-restores/$file" ]]; then
-    rm "$tmp/bareos-restores/$file"
-fi;
-echo "i overwrite the file" > "$file"
+  rm "$tmp/bareos-restores/$file"
+fi
+echo "i overwrite the file" >"$file"
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 setdebug level=100 storage=File
-@$out $log_home/log1.out
+@$out ${runner_tmp}/log1.out
 status director
 status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/create-newer-backup.out
+@$out ${runner_tmp}/create-newer-backup.out
 update jobid=1 jobtype=A
 run job=$JobName
 yes
@@ -70,16 +70,16 @@ END_OF_DATA
 
 run_bconsole
 # find the new job id
-backupid=$(grep 'Job queued. JobId=' "$log_home/create-newer-backup.out" | sed -n -e 's/^.*JobId=//p')
+backupid=$(grep 'Job queued. JobId=' "${runner_tmp}/create-newer-backup.out" | sed -n -e 's/^.*JobId=//p')
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 setdebug level=100 storage=File
-@$out $log_home/log1.out
+@$out ${runner_tmp}/log1.out
 status director
 status client
 status storage=File
 wait
-@$out $log_home/restore-archive.out
+@$out ${runner_tmp}/restore-archive.out
 restore archive
 5
 mark $file
@@ -97,8 +97,8 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 # since we changed the file they cannot be the same!
-if cmp -s "$log_home/bareos-restores/$file" "$file"; then
-    exit 2
+if cmp -s "${runner_tmp}/bareos-restores/$file" "$file"; then
+  exit 2
 fi
 
 # since the other tests do not care for the original contents

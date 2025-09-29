@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -39,7 +39,7 @@ export TestName
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $log_home/log.out
+@$out ${runner_tmp}/log.out
 status storage=Dedup
 label volume=TestVol pool=Incremental
 purge volume=TestVol
@@ -52,7 +52,7 @@ END_OF_DATA
 run_bconsole
 
 expect_not_grep "Error" \
-		"$log_home/log.out" \
-		"Something went wrong."
+  "${runner_tmp}/log.out" \
+  "Something went wrong."
 
 end_test

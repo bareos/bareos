@@ -1,8 +1,6 @@
-#!/bin/bash
-
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,26 +17,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-set -e
-set -o pipefail
-
-#shellcheck source=../../environment.in
-. ./environment
-
-#shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
-
-if [ "$1" == "" ]; then
-  echo "Expecting path to data to backup."
-  exit -1
-fi
-
-echo "$1" >$tmp/file-list
-
-bin/bareos start
-bin/bareos status
-
-# make sure that the director is up and running.
-print_debug "$(bin/bconsole <<<"status dir")"
+runner_name="$(basename "$0")"
+export runner_tmp="${tmp}/${runner_name}"
+mkdir -p "${runner_tmp}"

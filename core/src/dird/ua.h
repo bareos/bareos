@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -179,17 +179,6 @@ struct TreeContext {
   ~TreeContext() = default;
 };
 
-struct NameList {
-  char** name = nullptr; /**< List of names */
-  int num_ids = 0;       /**< Ids stored */
-  int max_ids = 0;       /**< Size of array */
-  int num_del = 0;       /**< Number deleted */
-  int tot_ids = 0;       /**< Total to process */
-
-  NameList() = default;
-  ~NameList() = default;
-};
-
 // Context for restore job.
 struct RestoreContext {
   enum class JobTypeFilter
@@ -226,7 +215,6 @@ struct RestoreContext {
   int pnl = 0; /**< Path length */
   bool found = false;
   bool all = false; /**< Mark all as default */
-  NameList name_list;
 
   RestoreContext() = default;
   ~RestoreContext() = default;

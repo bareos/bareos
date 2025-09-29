@@ -104,7 +104,8 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 
   switch (ff_pkt->type) {
     case FT_LNKSAVED: /* Hard linked, file already saved */
-      Dmsg2(30, "FT_LNKSAVED saving: %s => %s\n", ff_pkt->fname, ff_pkt->link);
+      Dmsg2(30, "FT_LNKSAVED saving: %s => %s\n", ff_pkt->fname,
+            ff_pkt->link_or_dir);
       break;
     case FT_REGE:
       Dmsg1(30, "FT_REGE saving: %s\n", ff_pkt->fname);
@@ -113,7 +114,8 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
       Dmsg1(30, "FT_REG saving: %s\n", ff_pkt->fname);
       break;
     case FT_LNK:
-      Dmsg2(30, "FT_LNK saving: %s -> %s\n", ff_pkt->fname, ff_pkt->link);
+      Dmsg2(30, "FT_LNK saving: %s -> %s\n", ff_pkt->fname,
+            ff_pkt->link_or_dir);
       break;
     case FT_DIRBEGIN:
       jcr->fd_impl->num_files_examined--; /* correct file count */
@@ -225,15 +227,16 @@ static int VerifyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
   // Send file attributes to Director (note different format than for Storage)
   Dmsg2(400, "send Attributes inx=%d fname=%s\n", jcr->JobFiles, ff_pkt->fname);
   if (ff_pkt->type == FT_LNK || ff_pkt->type == FT_LNKSAVED) {
-    status = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
-                        STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts,
-                        ff_pkt->fname, 0, attribs.c_str(), 0, ff_pkt->link, 0);
+    status
+        = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
+                     STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
+                     0, attribs.c_str(), 0, ff_pkt->link_or_dir, 0);
   } else if (ff_pkt->type == FT_DIREND || ff_pkt->type == FT_REPARSE
              || ff_pkt->type == FT_JUNCTION) {
     // Here link is the canonical filename (i.e. with trailing slash)
     status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
                         STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts,
-                        ff_pkt->link, 0, attribs.c_str(), 0, 0);
+                        ff_pkt->link_or_dir, 0, attribs.c_str(), 0, 0);
   } else {
     status = dir->fsend("%d %d %s %s%c%s%c%c", jcr->JobFiles,
                         STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts,

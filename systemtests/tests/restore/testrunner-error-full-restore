@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -50,16 +50,16 @@ mv storage/TestVolume001{,.c}
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/setup.out
+@$out ${runner_tmp}/setup.out
 setdebug level=100 storage=File
 status director
 status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/should-hang.out
+@$out ${runner_tmp}/should-hang.out
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
 @sleep 6
 messages
@@ -71,7 +71,7 @@ run_bconsole
 bin/bareos restart
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $log_home/should-show-error.out
+@$out ${runner_tmp}/should-show-error.out
 wait
 messages
 quit
@@ -83,8 +83,8 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 expect_grep "Termination:.*Restore Error" \
-            "$log_home/should-show-error.out" \
-            "Restore of job in removed volume was not set as failed!"
+  "${runner_tmp}/should-show-error.out" \
+  "Restore of job in removed volume was not set as failed!"
 
 mv storage/TestVolume001{.c,}
 
