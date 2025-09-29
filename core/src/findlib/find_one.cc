@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -66,7 +66,7 @@ static inline FindFilesPacket* new_dir_ff_pkt(FindFilesPacket* ff_pkt)
 
   *dir_ff_pkt = *ff_pkt;
   dir_ff_pkt->fname = strdup(ff_pkt->fname);
-  dir_ff_pkt->link = strdup(ff_pkt->link);
+  dir_ff_pkt->link_or_dir = strdup(ff_pkt->link_or_dir);
   dir_ff_pkt->sys_fname = GetPoolMemory(PM_FNAME);
   dir_ff_pkt->included_files_list = NULL;
   dir_ff_pkt->excluded_files_list = NULL;
@@ -83,7 +83,7 @@ static inline FindFilesPacket* new_dir_ff_pkt(FindFilesPacket* ff_pkt)
 static void FreeDirFfPkt(FindFilesPacket* dir_ff_pkt)
 {
   free(dir_ff_pkt->fname);
-  free(dir_ff_pkt->link);
+  free(dir_ff_pkt->link_or_dir);
   if (dir_ff_pkt->sys_fname) { FreePoolMemory(dir_ff_pkt->sys_fname); }
   if (dir_ff_pkt->fname_save) { FreePoolMemory(dir_ff_pkt->fname_save); }
   if (dir_ff_pkt->link_save) { FreePoolMemory(dir_ff_pkt->link_save); }
@@ -448,7 +448,7 @@ static inline int process_hardlink(JobControlRecord* jcr,
     rtn_stat = 1; /* ignore */
   } else {
     // some other file was already backed up!
-    ff_pkt->link = hl.name.data();
+    ff_pkt->link_or_dir = hl.name.data();
     ff_pkt->type = FT_LNKSAVED; /* Handle link, file already saved */
     ff_pkt->LinkFI = hl.FileIndex;
     ff_pkt->linked = NULL;
@@ -525,8 +525,8 @@ static inline int process_symlink(JobControlRecord* jcr,
   }
 
   buffer[size] = 0;
-  ff_pkt->link = buffer; /* point to link */
-  ff_pkt->type = FT_LNK; /* got a real link */
+  ff_pkt->link_or_dir = buffer; /* point to link */
+  ff_pkt->type = FT_LNK;        /* got a real link */
 
   rtn_stat = HandleFile(jcr, ff_pkt, top_level);
   if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
@@ -573,7 +573,7 @@ static inline int process_directory(JobControlRecord* jcr,
   link[len++] = '/'; /* add back one */
   link[len] = 0;
 
-  ff_pkt->link = link;
+  ff_pkt->link_or_dir = link;
   if (!CheckChanges(jcr, ff_pkt)) {
     // Incremental/Full+Base option, directory entry not changed
     ff_pkt->type = FT_DIRNOCHG;
@@ -648,14 +648,14 @@ static inline int process_directory(JobControlRecord* jcr,
     if (ff_pkt->linked) { ff_pkt->linked->FileIndex = ff_pkt->FileIndex; }
     free(link);
     FreeDirFfPkt(dir_ff_pkt);
-    ff_pkt->link = ff_pkt->fname; /* reset "link" */
+    ff_pkt->link_or_dir = ff_pkt->fname; /* reset "link" */
     if (BitIsSet(FO_KEEPATIME, ff_pkt->flags)) {
       RestoreFileTimes(ff_pkt, fname);
     }
     return rtn_stat;
   }
 
-  ff_pkt->link = ff_pkt->fname; /* reset "link" */
+  ff_pkt->link_or_dir = ff_pkt->fname; /* reset "link" */
 
   // Descend into or "recurse" into the directory to read all the files in it.
   errno = 0;
@@ -899,7 +899,7 @@ int FindOneFile(JobControlRecord* jcr,
   int rtn_stat;
   bool done = false;
 
-  ff_pkt->link = ff_pkt->fname = fname;
+  ff_pkt->link_or_dir = ff_pkt->fname = fname;
   ff_pkt->type = FT_UNSET;
   if (lstat(fname, &ff_pkt->statp) != 0) {
     // Cannot stat file

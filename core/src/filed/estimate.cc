@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -111,7 +111,7 @@ static int TallyFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
     memcpy(&attr.statp, &ff_pkt->statp, sizeof(struct stat));
     attr.type = ff_pkt->type;
     attr.ofname = (POOLMEM*)ff_pkt->fname;
-    attr.olname = (POOLMEM*)ff_pkt->link;
+    attr.olname = (POOLMEM*)ff_pkt->link_or_dir;
     PrintLsOutput(jcr, &attr);
   }
   return 1;
