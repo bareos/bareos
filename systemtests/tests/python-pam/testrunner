@@ -22,10 +22,10 @@ set -u
 # However, providing the PAM credentials to bconsole as file (bconsole -p CREDENTIALS_FILE) does work.
 #
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -56,15 +56,15 @@ fi
 
 output=/dev/null
 if is_debug; then
-    export PAM_WRAPPER_DEBUGLEVEL=4
-    output=/dev/stdout
-    LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f -d 200 >$output 2>&1 &
+  export PAM_WRAPPER_DEBUGLEVEL=4
+  output=/dev/stdout
+  LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f -d 200 >$output 2>&1 &
 else
-    LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f        >$output 2>&1 &
+  LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f >$output 2>&1 &
 fi
 
-# make sure, director is up and running.
-print_debug "$(bin/bconsole <<< "status dir")"
+# make sure that the director is up and running.
+print_debug "$(bin/bconsole <<<"status dir")"
 
 #
 # run Python Unit Tests
@@ -76,6 +76,6 @@ if ! ${rscripts}/bareos-ctl-dir status >/dev/null; then
   exit 1
 fi
 
-stop_bareos > $output 2>&1
+stop_bareos >$output 2>&1
 
 end_test

@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,10 +23,10 @@ set -e
 set -o pipefail
 set -u
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 "${rscripts}"/cleanup
 "${rscripts}"/setup
@@ -36,14 +36,14 @@ setup_data
 
 # Count number of directories to be stripped to fully
 # strip away $BackupDirectory prefix
-strip_count="${BackupDirectory//[!\/]}"
+strip_count="${BackupDirectory//[!\/]/}"
 strip_count="${#strip_count}"
 
 # Clear additional configs
-rm -f  "${config_directory_dir_additional_test_config}"/*
+rm -f "${config_directory_dir_additional_test_config}"/*
 
 # Create fileset strip path setting
-cat <<END_OF_DATA > "$config_directory_dir_additional_test_config/strippath-fileset-job.conf"
+cat <<END_OF_DATA >"$config_directory_dir_additional_test_config/strippath-fileset-job.conf"
 FileSet {
   Name = "SelfTestStripPath"
   Description = "fileset just to backup some files for selftest"
@@ -61,5 +61,5 @@ END_OF_DATA
 bin/bareos start
 bin/bareos status
 
-# make sure, director is up and running.
-print_debug "$(bin/bconsole <<< "status dir")"
+# make sure that the director is up and running.
+print_debug "$(bin/bconsole <<<"status dir")"
