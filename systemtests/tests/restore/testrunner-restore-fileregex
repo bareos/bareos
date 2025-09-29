@@ -40,7 +40,7 @@ export TestName
 
 # Use own restore directory to ensure it is always
 # clean before restore
-RestoreDirectory="${log_home}/fileregex-restores"
+RestoreDirectory="${runner_tmp}/fileregex-restores"
 
 start_test
 
@@ -51,9 +51,9 @@ while IFS= read -r -d $'\0'; do
   matched_files+=("$REPLY")
 done < <(find "$BackupDirectory/" -type f -regex "$fileregex" -print0)
 
-echo "Matched files:" >"$log_home/matched.out"
+echo "Matched files:" >"${runner_tmp}/matched.out"
 for file in "${matched_files[@]}"; do
-  echo "$file" >>"$log_home/matched.out"
+  echo "$file" >>"${runner_tmp}/matched.out"
 done
 
 if [ "${#matched_files[@]}" -eq 0 ]; then
@@ -63,9 +63,9 @@ fi
 
 # Restore all files but filter by fileregex
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/restore.out
+@$out ${runner_tmp}/restore.out
 restore client=bareos-fd fileset=SelfTest \
     where="$RestoreDirectory" \
     fileregex="$fileregex" \

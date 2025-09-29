@@ -1173,11 +1173,17 @@ class PluginClient {
             case bco::UnchangedDirectory:
               [[fallthrough]];
             case bco::Directory: {
-              pkt->fname = strdup(file.file().c_str());
-              // todo: fix this
-              auto path = file.file();
-              path += "/";
-              pkt->link = strdup(path.c_str());
+              std::string name = file.file();
+              while (name.size() > 1 && name.back() == '/') { name.pop_back(); }
+
+              // for directories:
+              // pkt->fname _should not_ end in a '/'
+              // pkt->link _should_ end in a '/'
+              pkt->fname = strdup(name.c_str());
+
+              if (name.back() != '/') { name += '/'; }
+
+              pkt->link = strdup(name.c_str());
             } break;
             case bco::SoftLink: {
               pkt->fname = strdup(file.file().c_str());
@@ -1549,7 +1555,7 @@ class PluginClient {
     req.set_soft_link_to(pkt->olname);
     req.set_replace(*replace_type);
     req.set_delta_seq(pkt->delta_seq);
-    req.set_where(pkt->where);
+    if (pkt->where) { req.set_where(pkt->where); }
 
     bp::createFileResponse resp;
     grpc::ClientContext ctx;
@@ -2644,8 +2650,12 @@ bRC grpc_connection::setFileAttributes(filedaemon::restore_pkt* pkt)
 
   bool do_in_core = false;
 
-  auto res = client->setFileAttributes(pkt->ofname, pkt->statp, pkt->attrEx,
-                                       pkt->where, &do_in_core);
+  std::string_view where = pkt->where ? pkt->where : "";
+  std::string_view attrEx = pkt->attrEx ? pkt->attrEx : "";
+  std::string_view ofname = pkt->ofname ? pkt->ofname : "";
+
+  auto res = client->setFileAttributes(ofname, pkt->statp, attrEx, where,
+                                       &do_in_core);
   if (res != bRC_Error && do_in_core) { pkt->create_status = CF_CORE; }
 
   return res;

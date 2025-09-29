@@ -167,7 +167,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
   StripPath(ff_pkt);
 
   if (S_ISDIR(ff_pkt->statp.st_mode)) {
-    fname = ff_pkt->link;
+    fname = ff_pkt->link_or_dir;
   } else {
     fname = ff_pkt->fname;
   }

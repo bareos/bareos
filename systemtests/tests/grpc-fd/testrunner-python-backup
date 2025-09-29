@@ -45,7 +45,7 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
-@$out $log_home/create-backup.out
+@$out ${runner_tmp}/create-backup.out
 setdebug level=200 client trace=1
 run job=$JobName fileset=PythonTest yes
 status director
@@ -53,7 +53,7 @@ status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
 quit
 END_OF_DATA
@@ -63,24 +63,24 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 expect_grep "Backup OK" \
-  "$log_home/create-backup.out" \
+  "${runner_tmp}/create-backup.out" \
   "Backup was not created correctly."
 
-res_dir="${log_home:?}/python-restores"
+res_dir="${runner_tmp:?}/python-restores"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out /dev/null
 messages
-@$out $log_home/restore-setup.out
+@$out ${runner_tmp}/restore-setup.out
 setdebug level=200 client trace=1
 status director
 status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/restore-full.out
+@$out ${runner_tmp}/restore-full.out
 restore client=bareos-fd fileset=PythonTest where=${res_dir} select all done yes
 wait
 messages
@@ -91,11 +91,11 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 expect_grep "Start Restore Job" \
-  "$log_home/restore-full.out" \
+  "${runner_tmp}/restore-full.out" \
   "Required restore job was not started."
 
 expect_grep "Restore OK" \
-  "$log_home/restore-full.out" \
+  "${runner_tmp}/restore-full.out" \
   "Restore job was not successful"
 
 check_restore_diff "${BackupDirectory}" "${res_dir}"

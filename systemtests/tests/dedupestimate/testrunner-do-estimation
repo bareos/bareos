@@ -45,17 +45,17 @@ start_test
 for blocksize in 1 4 16 32 128; do
   run_bdedupestimate -b ${blocksize}k -v -V "${Volume}" "${Storage}"
 
-  mv "${tmp}/bdedupestimate.out" "${log_home}/dedup-${blocksize}.out"
+  mv "${tmp}/bdedupestimate.out" "${runner_tmp}/dedup-${blocksize}.out"
   expect_grep "Using block size ${blocksize} k" \
-    "${log_home}/dedup-${blocksize}.out" \
+    "${runner_tmp}/dedup-${blocksize}.out" \
     "Bad block size was used"
 
   expect_grep "Using device: \"${Storage}\" for reading" \
-    "${log_home}/dedup-${blocksize}.out" \
+    "${runner_tmp}/dedup-${blocksize}.out" \
     "Wrong device was used for reading."
 
   expect_not_grep "Dedup factor: x1.00" \
-    "${log_home}/dedup-${blocksize}.out" \
+    "${runner_tmp}/dedup-${blocksize}.out" \
     "Found bad dedup estimation"
 done
 

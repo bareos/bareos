@@ -43,7 +43,7 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/create-backup.out
+@$out ${runner_tmp}/create-backup.out
 setdebug level=200 all
 label volume=TestVolume001 storage=Dedup pool=Full
 run job=$JobName yes
@@ -52,7 +52,7 @@ status client
 status storage=Dedup
 wai
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
 quit
 END_OF_DATA
@@ -64,15 +64,15 @@ check_for_zombie_jobs storage=Dedup
 check_preconditions
 
 expect_grep "No prior Full backup Job record found." \
-  "$log_home/create-backup.out" \
+  "${runner_tmp}/create-backup.out" \
   "Bad initial state. No backup should exist yet."
 
 expect_grep "Start Backup JobId 1" \
-  "$log_home/create-backup.out" \
+  "${runner_tmp}/create-backup.out" \
   "Did not create backup job with id 1."
 
 expect_grep "Backup OK" \
-  "$log_home/create-backup.out" \
+  "${runner_tmp}/create-backup.out" \
   "Backup was not created correctly."
 
 end_test

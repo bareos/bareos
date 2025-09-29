@@ -32,8 +32,8 @@ export TestName
 #shellcheck source=../../environment.in
 . ./environment
 runner_name="$(basename "$0")"
-log_home="${tmp}/${runner_name}"
-mkdir -p "${log_home}"
+runner_tmp="${tmp}/${runner_name}"
+mkdir -p "${runner_tmp}"
 
 #shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
@@ -43,26 +43,26 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/setup.out
+@$out ${runner_tmp}/setup.out
 status director
 status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
 END_OF_DATA
 
 run_bconsole
 
 expect_grep ".*|.*C.*|.*" \
-  "$log_home/jobs.out" \
+  "${runner_tmp}/jobs.out" \
   "No backup copy job found."
 
-copy_job_id=$(grep ".*|.*C.*|.*" "$log_home/jobs.out" | cut -d'|' -f2 | sed 's/[[:space:]]//g')
+copy_job_id=$(grep ".*|.*C.*|.*" "${runner_tmp}/jobs.out" | cut -d'|' -f2 | sed 's/[[:space:]]//g')
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $log_home/restore-full.out
+@$out ${runner_tmp}/restore-full.out
 restore jobid=${copy_job_id} where=$tmp/local-copy-restores select all done yes
 wait
 messages
@@ -73,11 +73,11 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 expect_grep "Start Restore Job" \
-  "$log_home/restore-full.out" \
+  "${runner_tmp}/restore-full.out" \
   "Required restore job was not started."
 
 expect_grep "Restore OK" \
-  "$log_home/restore-full.out" \
+  "${runner_tmp}/restore-full.out" \
   "Required restore job did not finish successfully."
 
 check_restore_diff "${BackupDirectory}" "$tmp/local-copy-restores"

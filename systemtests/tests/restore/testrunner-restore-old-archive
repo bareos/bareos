@@ -45,7 +45,7 @@ start_test
 
 file="$(pwd)/tmp/data/weird-files/socket.pl"
 
-original_file="${log_home}/socket.pl"
+original_file="${runner_tmp}/socket.pl"
 
 cp "${file}" "${original_file}"
 
@@ -63,15 +63,15 @@ echo "i overwrite the file" >"$file"
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 setdebug level=100 storage=File
-@$out $log_home/log1.out
+@$out ${runner_tmp}/log1.out
 status director
 status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/create-newer-backup.out
+@$out ${runner_tmp}/create-newer-backup.out
 update jobid=1 jobtype=A
 run job=$JobName
 yes
@@ -82,17 +82,17 @@ END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 # find the new job id
-backupid=$(grep 'Job queued. JobId=' "$log_home/create-newer-backup.out" | sed -n -e 's/^.*JobId=//p')
+backupid=$(grep 'Job queued. JobId=' "${runner_tmp}/create-newer-backup.out" | sed -n -e 's/^.*JobId=//p')
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 setdebug level=100 storage=File
-@$out $log_home/log1.out
+@$out ${runner_tmp}/log1.out
 status director
 status client
 status storage=File
 wait
-@$out $log_home/restore-archive.out
-restore archive where="${log_home}/bareos-restores"
+@$out ${runner_tmp}/restore-archive.out
+restore archive where="${runner_tmp}/bareos-restores"
 5
 mark ${bareos_path}
 done
@@ -109,15 +109,15 @@ check_for_zombie_jobs storage=File
 
 check_preconditions
 
-check_log "${log_home}/restore-archive.out"
+check_log "${runner_tmp}/restore-archive.out"
 
 if on_windows_host; then
   # remove_colon_... needs the leading slash
   removed=$(remove_colon_from_windows_path "/${bareos_path}")
-  restored_path="$log_home/bareos-restores${removed}"
+  restored_path="${runner_tmp}/bareos-restores${removed}"
 else
   echo "not windows!"
-  restored_path="$log_home/bareos-restores${bareos_path}"
+  restored_path="${runner_tmp}/bareos-restores${bareos_path}"
 fi
 
 # since we changed the file they cannot be the same!
