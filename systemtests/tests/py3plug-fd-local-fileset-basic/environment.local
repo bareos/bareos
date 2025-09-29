@@ -18,5 +18,5 @@
 #   02110-1301, USA.
 
 runner_name="$(basename "$0")"
-export log_home="${tmp}/${runner_name}"
-mkdir -p "${log_home}"
+export runner_tmp="${tmp}/${runner_name}"
+mkdir -p "${runner_tmp}"

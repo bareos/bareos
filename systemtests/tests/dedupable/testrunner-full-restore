@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -42,16 +42,16 @@ start_test
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
-@$out $log_home/setup.out
+@$out ${runner_tmp}/setup.out
 setdebug level=100 storage=Dedup
 status director
 status client
 status storage=Dedup
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/restore-full.out
+@$out ${runner_tmp}/restore-full.out
 restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done yes
 wait
 messages
@@ -64,12 +64,12 @@ check_for_zombie_jobs storage=Dedup
 check_preconditions
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-full.out" \
-	    "Required restore job was not started."
+  "${runner_tmp}/restore-full.out" \
+  "Required restore job was not started."
 
 expect_grep "Restore OK" \
-	    "$log_home/restore-full.out" \
-	    "Restore job was not successful."
+  "${runner_tmp}/restore-full.out" \
+  "Restore job was not successful."
 
 check_restore_diff "${BackupDirectory}"
 end_test

@@ -23,10 +23,10 @@ start_test
 file1="$(pwd)/tmp/data/build/src/tests/cats_test.c"
 file2="$(pwd)/tmp/data/build/src/tests/bregtest.c"
 file3="$(pwd)/tmp/data/build/src/tests/bbatch.c"
-for f in "$file1" "$file2" "$file3" ; do
-    if [[ -f "$tmp/bareos-restores/$f" ]]; then
-      rm "$tmp/bareos-restores/$f"
-    fi;
+for f in "$file1" "$file2" "$file3"; do
+  if [[ -f "$tmp/bareos-restores/$f" ]]; then
+    rm "$tmp/bareos-restores/$f"
+  fi
 done
 
 if [[ "$(uname -s)" =~ _NT ]]; then
@@ -41,22 +41,22 @@ fi
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 setdebug level=100 storage=File
-@$out $log_home/log1.out
+@$out ${runner_tmp}/log1.out
 status director
 status client
 status storage=File
 wait
 messages
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/should-work.out
+@$out ${runner_tmp}/should-work.out
 update jobid=1 jobtype=A
 restore archive client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores \
 	file=$filename1 \
 	done yes
 wait
 messages
-@$out $log_home/restore-from-selected-job.out
+@$out ${runner_tmp}/restore-from-selected-job.out
 restore archive
 12
 1
@@ -66,10 +66,10 @@ done
 yes
 wait
 messages
-@$out $log_home/restore-from-list-and-time.out
+@$out ${runner_tmp}/restore-from-list-and-time.out
 restore archive
 8
-$(( $(date +%Y) + 1))
+$(($(date +%Y) + 1))
 $filename3
 
 yes
@@ -88,31 +88,31 @@ check_for_zombie_jobs storage=File
 check_preconditions
 
 expect_grep "Start Restore Job" \
-	    "$log_home/should-work.out" \
-	    "The first restore job was not started."
+  "${runner_tmp}/should-work.out" \
+  "The first restore job was not started."
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-from-selected-job.out" \
-	    "The second restore job was not started."
+  "${runner_tmp}/restore-from-selected-job.out" \
+  "The second restore job was not started."
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-from-list-and-time.out" \
-	    "The third restore job was not started."
+  "${runner_tmp}/restore-from-list-and-time.out" \
+  "The third restore job was not started."
 
 expect_grep "1 file selected to be restored." \
-	    "$log_home/should-work.out" \
- 	    "Expected success; found failure"
+  "${runner_tmp}/should-work.out" \
+  "Expected success; found failure"
 
 if ! cmp -s "$tmp/bareos-restores/$file1" "$file1"; then
-    exit 2
+  exit 2
 fi
 
 if ! cmp -s "$tmp/bareos-restores/$file2" "$file2"; then
-    exit 3
+  exit 3
 fi
 
 if ! cmp -s "$tmp/bareos-restores/$file3" "$file3"; then
-    exit 4
+  exit 4
 fi
 
 end_test

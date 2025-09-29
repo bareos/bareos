@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -40,18 +40,18 @@ start_test
 
 dir="$(pwd)/tmp/data/build/src/tests"
 if [[ -d "$tmp/bareos-restores/$dir" ]]; then
-    rm -r "$tmp/bareos-restores/$dir"
+  rm -r "$tmp/bareos-restores/$dir"
 fi
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 setdebug level=100 storage=Dedup
-@$out $log_home/log1.out
+@$out ${runner_tmp}/log1.out
 status director
 status client
 status storage=Dedup
-@$out $log_home/jobs.out
+@$out ${runner_tmp}/jobs.out
 list jobs
-@$out $log_home/restore-dir.out
+@$out ${runner_tmp}/restore-dir.out
 restore where=$tmp/bareos-restores/
 11
 1
@@ -69,12 +69,12 @@ check_for_zombie_jobs storage=Dedup
 check_preconditions
 
 expect_grep "Start Restore Job" \
-	    "$log_home/restore-dir.out" \
-	    "The restore job was not started."
+  "${runner_tmp}/restore-dir.out" \
+  "The restore job was not started."
 
 expect_grep "Restore OK" \
-	    "$log_home/restore-dir.out" \
-	    "Restore job was not successful."
+  "${runner_tmp}/restore-dir.out" \
+  "Restore job was not successful."
 
 check_restore_diff "$dir"
 end_test

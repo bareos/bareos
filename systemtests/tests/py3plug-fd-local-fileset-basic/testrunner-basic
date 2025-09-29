@@ -27,7 +27,7 @@ start_test
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
 messages
-@$out ${log_home}/log1.out
+@$out ${runner_tmp}/log1.out
 @# toggle trace to make sure that bareos creates a new trace file
 setdebug level=800 client trace=0
 setdebug level=800 client trace=1
@@ -46,8 +46,8 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# now do a restore
 @#
-@$out ${log_home}/log2.out
-restore client=bareos-fd fileset=PluginTest where=${log_home}/bareos-restores select all done yes
+@$out ${runner_tmp}/log2.out
+restore client=bareos-fd fileset=PluginTest where=${runner_tmp}/bareos-restores select all done yes
 status client=bareos-fd
 wait
 messages
@@ -56,15 +56,15 @@ END_OF_DATA
 run_bconsole "$@"
 check_for_zombie_jobs storage=File
 
-check_two_logs "${log_home}/log1.out" "${log_home}/log2.out"
-check_restore_diff "${BackupDirectory}" "${log_home}/bareos-restores"
+check_two_logs "${runner_tmp}/log1.out" "${runner_tmp}/log2.out"
+check_restore_diff "${BackupDirectory}" "${runner_tmp}/bareos-restores"
 
 expect_grep 'name="XATTR name 3", value="XATTR value 3"' \
-  "${log_home}/log2.out" \
+  "${runner_tmp}/log2.out" \
   "could not find recovered XATTR in restore log"
 
 expect_grep 'content="Hello ACL"' \
-  "${log_home}/log2.out" \
+  "${runner_tmp}/log2.out" \
   "could not find recovered ACL in restore log"
 
 expect_grep "Readin.*from file" \

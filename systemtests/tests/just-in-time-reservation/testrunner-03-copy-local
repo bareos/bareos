@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -30,14 +30,14 @@ export TestName
 . ./environment
 
 runner_name="$(basename "$0")"
-log_home="${tmp}/${runner_name}"
-mkdir -p "${log_home}"
+runner_tmp="${tmp}/${runner_name}"
+mkdir -p "${runner_tmp}"
 
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
 
-copy_log="$log_home/copy_log.out"
-query_results="$log_home/query_results.out"
+copy_log="${runner_tmp}/copy_log.out"
+query_results="${runner_tmp}/query_results.out"
 
 start_test
 
@@ -54,34 +54,34 @@ END_OF_DATA
 run_bconsole "$tmp/bconcmds"
 
 expect_grep "Termination:.*Copying OK" \
-            "$copy_log" \
-            "Copy job did not finish well."
+  "$copy_log" \
+  "Copy job did not finish well."
 
 expect_grep "BeforeJob: prevjobid=\*None\* newjobid=\*None\*" \
-            "$copy_log" \
-            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
+  "$copy_log" \
+  "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
 
 expect_grep "AfterJob: prevjobid=\*None\* newjobid=\*None\*" \
-            "$copy_log" \
-            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
+  "$copy_log" \
+  "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
 
 expect_grep "New Backup JobId" \
-            "$copy_log" \
-            "No new backup jobid was created."
+  "$copy_log" \
+  "No new backup jobid was created."
 
 new_job_id=$(grep "New Backup JobId:" "$copy_log" | sed -n -e 's/^.*JobId:[[:space:]]*//p')
 
 expect_grep "Using just in time reservation for job" \
-            "$copy_log" \
-            "Copy job did not use just in time reservation."
+  "$copy_log" \
+  "Copy job did not use just in time reservation."
 
 expect_grep "BeforeJob: prevjobid=1 newjobid=${new_job_id}" \
-            "$copy_log" \
-            "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
+  "$copy_log" \
+  "Before runscript does not return expected previous jobid (%O) and new jobid (%N)."
 
 expect_grep "AfterJob: prevjobid=1 newjobid=${new_job_id}" \
-            "$copy_log" \
-            "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
+  "$copy_log" \
+  "After runscript does not return expected previous jobid (%O) and new jobid (%N)."
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $query_results
@@ -92,9 +92,8 @@ END_OF_DATA
 run_bconsole "$tmp/bconcmds"
 
 expect_grep "|.*C.*|" \
-            "$query_results" \
-            "Copy job does not have the expected type."
-
+  "$query_results" \
+  "Copy job does not have the expected type."
 
 check_for_zombie_jobs storage=File
 

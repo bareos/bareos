@@ -44,7 +44,7 @@ start_test
 
 # prepare purged volume with data
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out ${log_home}/log-purge.out
+@$out ${runner_tmp}/log-purge.out
 label volume=ToBePurged storage=File pool=PurgePool
 run job=backup-bareos-fd pool=PurgePool yes
 wait
@@ -58,7 +58,7 @@ SIZE_TO_BEAT=$(file_size storage/ToBePurged)
 
 # truncate volume
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out ${log_home}/log-truncate.out
+@$out ${runner_tmp}/log-truncate.out
 run job=admin-truncate yes
 wait
 messages
@@ -68,7 +68,7 @@ run_bconsole
 
 # truncate nothing (as volume is too small)
 cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out ${log_home}/log-truncate-nothing.out
+@$out ${runner_tmp}/log-truncate-nothing.out
 run job=admin-truncate yes
 wait
 messages
@@ -81,11 +81,11 @@ TRUNCATED_SIZE=$(file_size storage/ToBePurged)
 echo "$SIZE_TO_BEAT < $TRUNCATED_SIZE"
 
 expect_grep "Termination:[[:space:]]*Admin OK" \
-  "${log_home}/log-truncate.out" \
+  "${runner_tmp}/log-truncate.out" \
   "Actual Truncate admin job did not end successfully"
 
 expect_grep "Termination:[[:space:]]*Admin OK" \
-  "${log_home}/log-truncate-nothing.out" \
+  "${runner_tmp}/log-truncate-nothing.out" \
   "Empty Truncate admin job did not end successfully"
 
 if [ "$SIZE_TO_BEAT" -le "$TRUNCATED_SIZE" ]; then
