@@ -116,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: add summary subscription report [PR #2340]
 - set environment vars in bpipe fd plugin [PR #2205]
 - systemtest: speed up always-incremental with sleep 0.25 [PR #2358]
+- cats: fix missing locks [PR #2331]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -207,6 +208,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2321]: https://github.com/bareos/bareos/pull/2321
 [PR #2328]: https://github.com/bareos/bareos/pull/2328
 [PR #2329]: https://github.com/bareos/bareos/pull/2329
+[PR #2331]: https://github.com/bareos/bareos/pull/2331
 [PR #2332]: https://github.com/bareos/bareos/pull/2332
 [PR #2333]: https://github.com/bareos/bareos/pull/2333
 [PR #2335]: https://github.com/bareos/bareos/pull/2335
