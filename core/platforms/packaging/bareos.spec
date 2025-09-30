@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2024 Bareos GmbH & Co KG
+#               2013-2025 Bareos GmbH & Co KG
 #
 
 Name:       bareos
@@ -284,9 +284,7 @@ Summary:    Bareos client Meta-All-In-One package
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-bconsole = %{version}
 Requires:   %{name}-filedaemon = %{version}
-%if 0%{?suse_version}
 Recommends: %{name}-traymonitor = %{version}
-%endif
 
 %package    director
 Summary:    Bareos Director daemon
@@ -296,12 +294,10 @@ Requires:   %{name}-database-common = %{version}
 Requires:   %{name}-database-tools
 %if 0%{?suse_version}
 Requires(pre): shadow
-# Don't use this option on anything other then SUSE derived distributions
-# as Fedora & others don't know this tag
-Recommends: logrotate
 %else
 Requires(pre): shadow-utils
 %endif
+Recommends: logrotate
 Provides:   %{name}-dir
 
 %package    storage
@@ -311,12 +307,11 @@ Requires:   %{name}-common = %{version}
 Provides:   %{name}-sd
 %if 0%{?suse_version}
 Requires(pre): shadow
-Recommends: bareos-tools
 %else
 Requires(pre): shadow-utils
-# Recommends would be enough, however only supported by Fedora >= 24.
-Requires: bareos-tools
 %endif
+Recommends: bareos-tools
+Recommends: logrotate
 
 %package    storage-dedupable
 Summary:    Dedupable storage format for the Bareos Storage daemon
@@ -389,6 +384,8 @@ Requires(pre): shadow
 Requires(pre): glibc-common
 Requires(pre): shadow-utils
 %endif
+Requires:   %{_sbindir}/getcap
+Requires:   %{_sbindir}/setcap
 Provides:   %{name}-libs
 
 %package    database-common
@@ -726,9 +723,7 @@ This package provides some additional tools, not part of the Bareos project.
 Summary:     Additional File Daemon Python plugins, not part of the Bareos project
 Group:       Productivity/Archiving/Backup
 Requires:    bareos-filedaemon-python-plugin
-%if 0%{?rhel} != 7
-Suggests:   bareos-filedaemon-python3-plugin = %{version}
-%endif
+Suggests:    bareos-filedaemon-python3-plugin = %{version}
 
 %description contrib-filedaemon-python-plugins
 %{dscr}
@@ -1236,8 +1231,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %endif
 %{_sbindir}/bareos-sd
 %{script_dir}/disk-changer
-%{plugin_dir}/autoxflate-sd.so
-%{backend_dir}/libbareossd-file*.so
 %{_mandir}/man8/bareos-sd.8.gz
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-sd.service
@@ -1372,6 +1365,9 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %if !0%{?client_only}
 %{library_dir}/libbareosndmp.so*
 %{library_dir}/libbareossd.so*
+%{backend_dir}/libbareossd-file*.so
+%dir %{plugin_dir}
+%{plugin_dir}/autoxflate-sd.so
 %endif
 # generic stuff needed from multiple bareos packages
 %dir /usr/lib/%{name}/
@@ -1382,7 +1378,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %if "%{_libdir}" != "/usr/lib/"
 %dir %{_libdir}/%{name}/
 %endif
-%dir %{plugin_dir}
 %if !0%{?client_only}
 %{_bindir}/bsmtp
 %{_sbindir}/bsmtp
