@@ -1232,6 +1232,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     // Use first JobId as estimate of the number of files to restore
     ua->db->FillQuery(rx->query, BareosDb::SQL_QUERY::uar_count_files,
                       edit_int64(JobId, ed1));
+    rx->found = false;
     if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }
@@ -1266,6 +1267,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     // Find out if any Job is purged
     Mmsg(rx->query, "SELECT SUM(PurgedFiles) FROM Job WHERE JobId IN (%s)",
          rx->JobIds);
+    rx->found = false;
     if (!ua->db->SqlQuery(rx->query, RestoreCountHandler, (void*)rx)) {
       ua->ErrorMsg("%s\n", ua->db->strerror());
     }

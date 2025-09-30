@@ -921,7 +921,7 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
   int retval = false;
   std::string err{};
 
-  new (mr) MediaDbRecord();  // placement new instead of memset
+  *mr = {};
 
   i = FindArgWithValue(ua, NT_("volume"));
   if (i >= 0) {
@@ -935,7 +935,10 @@ bool SelectMediaDbr(UaContext* ua, MediaDbRecord* mr)
   if (mr->VolumeName[0] == 0) {
     PoolDbRecord pr;
     // Get the pool from pool=<pool-name>
-    if (!GetPoolDbr(ua, &pr)) { goto bail_out; }
+    if (DbLocker _{ua->db}; !GetPoolDbr(ua, &pr)) {
+      err = ua->db->strerror();
+      goto bail_out;
+    }
 
     mr->PoolId = pr.PoolId;
     ua->db->ListMediaRecords(ua->jcr, mr, NULL, false, ua->send, HORZ_LIST);

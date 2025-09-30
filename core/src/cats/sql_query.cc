@@ -87,7 +87,7 @@ void BareosDb::FillQueryVaList(POOLMEM*& query,
 {
   PoolMem query_tmp(PM_MESSAGE);
 
-  AssertOwnership();
+  CheckOwnership();
   FillQueryVaList(query_tmp, predefined_query, arg_ptr);
   PmMemcpy(query, query_tmp, query_tmp.strlen() + 1);
 }

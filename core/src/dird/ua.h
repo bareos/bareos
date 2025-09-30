@@ -211,10 +211,10 @@ struct RestoreContext {
   POOLMEM* fname = nullptr; /**< Filename only */
   POOLMEM* path = nullptr;  /**< Path only */
   POOLMEM* query = nullptr;
-  int fnl = 0; /**< Filename length */
-  int pnl = 0; /**< Path length */
-  bool found = false;
-  bool all = false; /**< Mark all as default */
+  int fnl = 0;        /**< Filename length */
+  int pnl = 0;        /**< Path length */
+  bool found = false; /**< the last handler found at least one result */
+  bool all = false;   /**< Mark all as default */
 
   RestoreContext() = default;
   ~RestoreContext() = default;
