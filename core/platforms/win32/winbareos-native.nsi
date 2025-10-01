@@ -686,11 +686,19 @@ SectionIn 1 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
+
   !cd "${CMAKE_BINARY_DIR}\plugins"
   File "bpipe-fd.dll"
   File "mssqlvdi-fd.dll"
   # do not package python3-fd for now
   # File "python3-fd.dll"
+  File "barri-fd.dll"
+
+  # Write barri to normal install dir for now
+  SetOutPath "$INSTDIR"
+  !cd "${CMAKE_BINARY_DIR}\bin"
+  File "barri-cli.exe"
+
 SectionEnd
 
 
@@ -2093,6 +2101,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bextract.exe"
   Delete "$INSTDIR\bscan.exe"
   Delete "$INSTDIR\bconsole.exe"
+  Delete "$INSTDIR\barri-cli.exe"
   Delete "$INSTDIR\bareos-config-deploy.bat"
 
   Delete "$INSTDIR\*bareos.dll"

@@ -102,4 +102,6 @@ endif()
 
 add_subdirectory(grpc)
 
+add_subdirectory(windows_dr)
+
 include(DebugEdit)

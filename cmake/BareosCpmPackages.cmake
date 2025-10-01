@@ -37,9 +37,9 @@ include(CPM)
 # version we'd bundle. Keep module alphabetically ordered.
 CPMAddPackage(
   NAME CLI11
-  VERSION 2.1.2
+  VERSION 2.5.0
   GITHUB_REPOSITORY CLIUtils/CLI11
-  GIT_TAG v2.4.2
+  GIT_TAG v2.5.0
   EXCLUDE_FROM_ALL YES
 )
 
@@ -104,6 +104,13 @@ if(xxHash_ADDED)
     set(XXHASH_ENABLE_DISPATCH 1)
   endif()
 endif()
+
+CPMAddPackage(
+  NAME indicators
+  VERSION "2.3"
+  GITHUB_REPOSITORY "sebsura/indicators"
+  GIT_TAG "dev/ssura/master/fix-stderr-output"
+)
 
 # Dump package information from CPM into a YAML file
 file(WRITE "${CMAKE_BINARY_DIR}/cpm-packages.yaml"

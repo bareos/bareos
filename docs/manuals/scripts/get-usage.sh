@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,11 +22,8 @@ set -e
 set -u
 
 FULLPATH="$1"
-TARGETDIR="$2"
-FLAG="${3:---help}"
+FLAG="${2:---help}"
 
-COMMAND=$(basename "${FULLPATH}")
+PROGNAME=$(basename "${FULLPATH}")
 
-USAGE=$("${FULLPATH}" "$FLAG")
-
-sed --expression='/Usage:/,$!d' --expression='s|Usage: .*/|Usage: |' <<<"${USAGE}" > "${TARGETDIR}/${COMMAND}.txt"
+"${FULLPATH}" "${FLAG}" | tail -n +2 | sed --expression="/${PROGNAME}/,\$!d" | sed --expression='1s|.*/||'

@@ -1,12 +1,13 @@
-Usage: bpluginfo [OPTIONS] plugin_file.so
+bpluginfo [OPTIONS] plugin_file.so
 
-Positionals:
+
+POSITIONALS:
     plugin_file.so TEXT
         REQUIRED
         Plugin file. 
 
 
-Options:
+OPTIONS:
     -h,-?,--help
         Print this help message and exit. 
 
@@ -24,3 +25,4 @@ Options:
 
     -v,--verbose
         Verbose. 
+

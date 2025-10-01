@@ -1,6 +1,7 @@
-Usage: bareos-dbcheck [OPTIONS]
+bareos-dbcheck [OPTIONS]
 
-Options:
+
+OPTIONS:
     -h,-?,--help
         Print this help message and exit. 
 
@@ -37,17 +38,32 @@ Options:
         Verbose user messages. 
 
 [Option Group: Manual credentials]
-  Setting database credentials manually. Can only be used when no configuration is given.
-  Positionals:
-      working_directory TEXT
-          Path to working directory. 
-      database_name TEXT
-          Database name. 
-      user TEXT
-          Database user name. 
-      password TEXT
-          Database password. 
-      host TEXT
-          Database host. 
-      port INT:POSITIVE
-          Database port 
+  Setting database credentials manually. Can only be used when no configuration is 
+  given. 
+  
+  
+POSITIONALS:
+    working_directory TEXT
+        Path to working directory. 
+
+    database_name TEXT
+        Database name. 
+
+    user TEXT
+        Database user name. 
+
+    password TEXT
+        Database password. 
+
+    host TEXT
+        Database host. 
+
+    port INT:POSITIVE
+        Database port 
+
+
+OPTIONS:
+    -h,-?,--help
+        Print this help message and exit. 
+
+
