@@ -645,7 +645,7 @@ SectionIn 1 2 3
   SetOutPath "$INSTDIR"
   File "bareos-config-deploy.bat"
   !cd "${CMAKE_BINARY_DIR}\bin"
-  File bareos-fd.exe
+  File "bareos-fd.exe"
   File "bareos.dll"
   File "bareosfastlz.dll"
   File "bareosfind.dll"
@@ -659,6 +659,7 @@ SectionIn 1 2 3
   File "pthreadVCE3.dll"
   File "zlib1.dll"
   File "xxhash.dll"
+  File "pcre-posix.dll"
 
   !cd "C:\Program Files\Git\usr\bin"
   File "sed.exe"
