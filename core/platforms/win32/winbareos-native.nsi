@@ -752,6 +752,7 @@ SectionIn 2
   File "zlib1.dll"
   File "pcre2-posix.dll"
   File "pcre2-8.dll"
+  File "fmt.dll"
 
   CreateDirectory "C:\bareos-storage"
 
@@ -2106,6 +2107,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\*bareoslmdb.dll"
   Delete "$INSTDIR\*bareossql.dll"
 
+  Delete "$INSTDIR\fmt.dll"
   Delete "$INSTDIR\libcrypto-*.dll"
   Delete "$INSTDIR\libgcc_s_*-1.dll"
   Delete "$INSTDIR\libhistory8.dll"
