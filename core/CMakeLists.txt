@@ -41,11 +41,8 @@ include(BareosHelper)
 
 # switch on CXX 20 Support
 #
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  set(CMAKE_CXX_STANDARD 20)
-else()
-  set(CMAKE_CXX_STANDARD 17)
-endif()
+set(CMAKE_CXX_STANDARD 20)
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # enable PIC/PIE by default
 include(CheckPIESupported)
