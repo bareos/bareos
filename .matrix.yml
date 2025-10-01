@@ -5,6 +5,12 @@ OS:
       IMAGE: fedora42
       ARCH:
       - x86_64
+  Debian:
+    "13":
+      TYPE: deb
+      IMAGE: "debian13"
+      ARCH:
+        - x86_64
   EL:
     "10":
       TYPE: rpm
