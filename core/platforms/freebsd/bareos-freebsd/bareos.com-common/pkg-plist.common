@@ -1,5 +1,4 @@
-
-@dir(bareos,root,2755) %%ETCDIR%%
+@dir(bareos,wheel,2755) %%ETCDIR%%
 @dir(bareos,bareos,755) lib/bareos
 @dir(bareos,bareos,755) lib/bareos/scripts
 @dir %%BAREOS_CONFIG_TEMPLATE_DIR%%

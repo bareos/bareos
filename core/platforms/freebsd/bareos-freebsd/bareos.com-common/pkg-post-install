@@ -3,64 +3,82 @@ set -e
 
 initialize_bareos()
 {
-    COMPONENT="$1"
-    echo "$PKG_NAME: initializing bareos configuration, logs to ${LOGFILE}"
-    /usr/local/lib/bareos/scripts/bareos-config deploy_config "${COMPONENT}"
-    # >>${LOGFILE} 2>&1 || echo "bareos-config deploy_config ${COMPONENT}: failed"
+  COMPONENT="$1"
+  echo "$PKG_NAME: initializing Bareos configuration (pkg-post-install, upgrade=${PKG_UPGRADE:-false}), logs to ${LOGFILE}"
+  deploy_config --init "${COMPONENT}" >>${LOGFILE} 2>&1
+  create_deploy_config_version_file
 }
 
-LOGFILE=/tmp/bareos-setup.log
+create_deploy_config_version_file()
+{
+  cat >"${VERSION_FILE}" <<EOF
+# This file contains, in its last line,
+# the pkg version of when deploy_config last modified the configuration.
+# This is required as in Bareos 25
+# config files are no longer marked as @sample files.
+# Therefore unmodified default config files get removed
+# when updating from Bareos <= 24.
+# The post-install script will re-add
+# the missing default configuration files from the current pkg.
+# WARNING:
+# Manually deleting this marker file may result in unwanted effects.
+EOF
+  pkg query '%v' "$PKG_NAME" >>"${VERSION_FILE}"
+}
 
-echo "$PKG_NAME: upgrade=${PKG_UPGRADE}, pkg-postinstall, logs to ${LOGFILE}"
+get_last_deploy_config_version()
+{
+  tail -n 1 "${VERSION_FILE}"
+}
 
-# . /usr/local/lib/bareos/scripts/bareos-config-lib.sh
+. /usr/local/lib/bareos/scripts/bareos-config-lib.sh
+LOGFILE="/var/log/bareos/bareos-setup.log"
+VERSION_FILE=""
 
 COMPONENT=""
 case "$PKG_NAME" in
-bareos.com-director)
+  bareos.com-director)
     COMPONENT="bareos-dir"
     ;;
 
-bareos.com-filedaemon)
+  bareos.com-filedaemon)
     COMPONENT="bareos-fd"
     ;;
 
-bareos.com-storage)
+  bareos.com-storage)
     COMPONENT="bareos-sd"
     ;;
 
-bareos.com-bconsole)
+  bareos.com-bconsole)
     COMPONENT="bconsole"
     ;;
 esac
 
-echo "COMPONENT=$COMPONENT"
-VERSION=$(pkg query '%v' "$PKG_NAME")
-echo "VERSION=$VERSION"
-
 if [ "${COMPONENT}" ]; then
 
-    if [ -z "${PKG_UPGRADE}" ]; then
-        # initial install
-        echo "initial install"
-        initialize_bareos "${COMPONENT}"
+  VERSION_FILE="${BAREOS_CONFIG_DIR}/.${COMPONENT}.deploy_config.version"
+
+  if [ -z "${PKG_UPGRADE}" ]; then
+    # initial install
+    initialize_bareos "${COMPONENT}"
+  else
+    # upgrade
+    UPDATE_CONFIG=""
+    if ! [ -e "${VERSION_FILE}" ]; then
+      UPDATE_CONFIG=1
     else
-        # upgrade
-        echo "upgrade"
-
-        BAREOS_CONFIG_DIR="/usr/local/etc/bareos/"
-        # ${COMPONENT}.d.$OLDVERSION.keep
-        KEEP_CONFIG_PATH="${BAREOS_CONFIG_DIR}/${COMPONENT}.d-migration-keep"
-        DEST_CONFIG_PATH="${BAREOS_CONFIG_DIR}/${COMPONENT}.d"
-        if [ -d "${KEEP_CONFIG_PATH}" ]; then
-            if [ -d "${DEST_CONFIG_PATH}" ]; then
-                mv "${DEST_CONFIG_PATH}" "${DEST_CONFIG_PATH}-migration-backup-${VERSION}"
-            fi
-            mv "${KEEP_CONFIG_PATH}" "${DEST_CONFIG_PATH}"
-        fi
+      VERSION=$(get_last_deploy_config_version)
+      if [ "${VERSION%%.*}" -lt "25" ]; then
+        UPDATE_CONFIG=1
+      fi
     fi
-else
-    echo "no COMPONENT"
-fi
+    if [ "${UPDATE_CONFIG}" ]; then
+      echo "$PKG_NAME: (pkg-post-install, upgrade=${PKG_UPGRADE:-false})"
+      echo "  Upgrading from $PKG_NAME < 25 removes unmodified default configuration files."
+      echo "  These will be re-added now."
+      deploy_config --add-missing "${COMPONENT}" >>${LOGFILE} 2>&1
+      create_deploy_config_version_file
+    fi
+  fi
 
-echo "end ${PKG_UPGRADE}"
+fi

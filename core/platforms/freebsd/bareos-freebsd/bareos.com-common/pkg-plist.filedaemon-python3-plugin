@@ -1,3 +1,2 @@
-
 lib/bareos/plugins/python3-fd.so
 %%PYTHON_SITELIBDIR%%/bareosfd%%PYTHON_TAG%%.so

@@ -1,4 +1,3 @@
-
 @dir %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-fd.d/
 @dir %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-fd.d/client/
 @dir %%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-fd.d/director/
