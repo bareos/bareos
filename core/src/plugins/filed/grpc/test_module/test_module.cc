@@ -43,6 +43,15 @@ struct grpc_connection {
   std::unique_ptr<grpc::Server> server;
   std::vector<std::unique_ptr<grpc::Service>> services;
 
+  grpc_connection(std::unique_ptr<bc::Core::Stub>&& stub_,
+                  std::unique_ptr<grpc::Server>&& server_,
+                  std::vector<std::unique_ptr<grpc::Service>>&& services_)
+      : stub{std::move(stub_)}
+      , server{std::move(server_)}
+      , services{std::move(services_)}
+  {
+  }
+
   void connect(int sockfd)
   {
     grpc::AddInsecureChannelFromFd(server.get(), sockfd);
