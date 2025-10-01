@@ -94,7 +94,7 @@ else()
 
   install(
     TARGETS barri-cli
-    DESTINATION ${plugindir}
+    DESTINATION ${bindir}
     COMPONENT filedaemon
   )
 endif()
