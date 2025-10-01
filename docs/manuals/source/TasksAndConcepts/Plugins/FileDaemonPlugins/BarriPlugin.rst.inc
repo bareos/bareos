@@ -62,156 +62,200 @@ It is included in Bareos since :sinceVersion:`25.0.0: Barri Plugin`.
 Installation
 ^^^^^^^^^^^^
 
-TODO
+Linux
+  Install the package **bareos-filedaemon-barri-plugin** via your package manager (e.g. apt or dnf)
+Windows
+  Install the Windows installation package
 
-Configuration
-^^^^^^^^^^^^^
 
-Make sure to add or enable the following settings in your |fd| configuration:
+Configuration of the Windows FD
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Make sure to add or enable the following settings in your Windows |fd| configuration:
 
 .. code-block:: bareosconfig
    :caption: bareos-fd.d/client/myself.conf
 
    Client {
      ...
-     Plugin Directory = /usr/lib/bareos/plugins
-     Plugin Names = python3
+     Plugin Directory = "C:/Program Files/bareos/plugins"
+     Plugin Names = "barri"
      ...
    }
 
-Note: Depending on the platform, the Plugin Directory may also be :file:`/usr/lib64/bareos/plugins`
+After a restart of the bareos service on windows, the ouput of the **status client** command shows that the plugin
+was successfully loaded:
 
-To define the backup of a VM in Bareos, a job definition and a fileset resource must be added to the Bareos director configuration. In vCenter, VMs are usually organized in datacenters and folders. The following example shows how to configure the backup of the VM named *websrv1* in the datacenter *mydc1* folder *webservers* on the vCenter server :command:`vcenter.example.org`:
+.. code-block:: bconsole
+   :caption: status client on windows |fd| with barri plugin loaded
+
+   *<input>status client=windowsdr-fd</input>
+   [...] 
+   windr-fd Version: 25.0.0~pre1046.c3bf07897 (29 September 2025)  VSS Microsoft Windows 8 Professional (build 9200), 64-bit
+   Daemon started 01-Okt-25 10:01. Jobs: run=0 running=0, self-compiled binary
+    Sizeof: boffset_t=8 size_t=8 debug=0 trace=0 bwlimit=0kB/s
+   Plugin Info:
+    Plugin     : barri-fd.dll
+    Description: This plugin allows you to backup your windows system for disaster recovery.
+    Version    : 0.9.0 (Juli 2025)
+    Author     : Sebastian Sura
+    License    : Bareos AGPLv3
+    Usage      : barri:unknown disks:unknown partitions:unknown extents:ignore disks=<disks to ignore>
+   
+     unknown disks: try to save disks, that contain no snapshotted data
+     unknown partitions: try to save partitions, that contain no snapshotted data
+     unknown extents: try to save even unsnapshotted parts of partitions
+     disks to ignore: a comma-separated list of disk ids (i.e. '1,2,5') of disks
+                      to not backup
+   
+   [...] 
+   
+
+Now a fileset and a job need to be configured on the bareos server.
+Make sure to set the fileset option ``Portabel = yes``.
+
+.. note::
+
+   Please be sure to set the fileset option ``Portable = yes``
+   
+
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.conf: Barri Plugin Job and FileSet definition
 
    Job {
-     Name = "vm-websrv1"
+     Name = "barri"
+     Client = "windowsdr-fd"
      JobDefs = "DefaultJob"
-     FileSet = "vm-websrv1_fileset"
+     FileSet = "barri_fileset"
    }
 
    FileSet {
-     Name = "vm-websrv1_fileset"
+     Name = "barri_fileset"
 
      Include {
        Options {
             Signature = XXH128
             Compression = LZ4
+            Portable = yes  # this is required
        }
-       Plugin = "python"
-                ":module_name=bareos-fd-vmware"
-                ":dc=mydc1:folder=/webservers"
-                ":vmname=websrv1"
-                ":vcserver=vcenter.example.org"
-                ":vcuser=bakadm@vsphere.local"
-                ":vcpass=Bak.Adm-1234"
+       Plugin = "barri"
      }
    }
 
 
-Backup
-^^^^^^
-
-Before running the first backup, CBT (Changed Block Tracking) must be enabled for the VMs to be backed up.
-
-Since :sinceVersion:`22.1.1: Barri Plugin: enable_cbt` the plugin will try to
-enable CBT automatically when the plugin option **enable_cbt=yes** is set (see below).
-Since :sinceVersion:`23.0.0: Barri Plugin: enable_cbt` this option is set to **yes** by default.
-
-As of https://knowledge.broadcom.com/external/article?legacyId=2075984 manually enabling CBT is currently not working properly. The API however works properly. To enable CBT use the Script :command:`vmware_cbt_tool.py`, it is packaged in the bareos-vmware-plugin package:
-
-.. code-block:: shell-session
-   :caption: usage of vmware\_cbt\_tool.py
-
-   user@host:~$ vmware_cbt_tool.py --help
-   usage: vmware_cbt_tool.py [-h] -s HOST [-o PORT] -u USER [-p PASSWORD] -d
-                             DATACENTER [-f FOLDER] [-v VMNAME]
-                             [--vm-uuid VM_UUID] [--enablecbt] [--disablecbt]
-                             [--resetcbt] [--info] [--listall] [--sslverify]
-                             [--dumpvmconfig]
-
-   Process args for enabling/disabling/resetting CBT
-
-   optional arguments:
-     -h, --help            show this help message and exit
-     -s HOST, --host HOST  Remote host to connect to
-     -o PORT, --port PORT  Port to connect on
-     -u USER, --user USER  User name to use when connecting to host
-     -p PASSWORD, --password PASSWORD
-                           Password to use when connecting to host
-     -d DATACENTER, --datacenter DATACENTER
-                           DataCenter Name
-     -f FOLDER, --folder FOLDER
-                           Folder Name (must start with /, use / for root folder
-     -v VMNAME, --vmname VMNAME
-                           Names of the Virtual Machines
-     --vm-uuid VM_UUID     Instance UUIDs of the Virtual Machines
-     --enablecbt           Enable CBT
-     --disablecbt          Disable CBT
-     --resetcbt            Reset CBT (disable, then enable)
-     --info                Show information (CBT supported and enabled or
-                           disabled)
-     --listall             List all VMs in the given datacenter with UUID and
-                           containing folder
-     --sslverify           Force SSL certificate verification
-     --dumpvmconfig        Dump VM config metadata to JSON file
+Backup with the Windows barri-fd Plugin 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
+   It is not possible to recover a backup created with the barri-fd plugin on windows back to a filedaemon with the barri plugin on windows.
+   In a running windows it is not possible to overwrite the drives.
 
-   The options :command:`--vm-uuid` and :command:`--listall` have been added in version :sinceVersion:`17.2.8: Barri Plugin: new options in vmware\_cbt\_tool.py`, the tool is also able now to process non-ascii character arguments for the :command:`--folder` and :command:`--vmname` arguments and vApp names can be used like folder name components.
+   
 
-With :command:`--listall` all VMs in the given datacenter are reported in a tabular output including instance UUID and containing Folder/vApp name.
+In order to make a backup, run the job defined above (``barri``) to make a disaster recovery image backup.
 
-Without the option :command:`--sslverify` also self-signed SSL certificates will
-be accepted, but a warning message will be emitted in this case.
-
-The option :command:`--dumpvmconfig` is helpful to debug issues with the transformation
-of VM config metadata for recreating virtual machines.
-The JSON file will be written to the current working directory when this option is used.
-
-For the above configuration example, the command to enable CBT would be
-
-.. code-block:: shell-session
-   :caption: Example using vmware\_cbt\_tool.py
-
-   user@host:~$ vmware_cbt_tool.py -s vcenter.example.org -u bakadm@vsphere.local -p Bak.Adm-1234 -d mydc1 -f /webservers -v websrv1 --enablecbt
-
-Note: CBT does not work if the virtual hardware version is 6 or earlier.
-
-After enabling CBT, Backup Jobs can be run or scheduled as usual, for example in :command:`bconsole`:
-
-:bcommand:`run job=vm-websrv1 level=Full`
-
-Restore
-^^^^^^^
-
-For restoring to the same still exising VM from which the backup has been taken, the VM must be **powered off** and **no snapshot** must exist. In :command:`bconsole` use the restore menu 5, select the correct FileSet and enter :bcommand:`mark *`, then :bcommand:`done`. After restore has finished, the VM will be set to its previous powerstate. So if it was powered on at backup time, it will be powered on after restore. This can be changed by using the plugin option :command:`restore_powerstate` (see below).
-
-Since :sinceVersion:`22.0.0: Barri Plugin: recreate VMs` the plugin will recreate the VM if it does not exist. By passing plugin options, with this version it is also possible to recreate the VM in a different folder, datacenter, host, cluster, resource pool or datastore, see below for details. The MAC address and the UUID of the VM will be restored, too. Restoring to a different VM location, eg, by passing a different folder, will **create a new VM** even **if the VM** which was backed up **still exists**. In this case, the new VM will get a new generated MAC address and UUID.
-
-.. note::
-
-   When restoring a VM to a different location while the backed up VM still exists and a static IP is configured within the VM: To avoid IP address conflicts, make sure to also add the plugin option :command:`restore_powerstate=off` and disable or change the network adapter configuration of the VM before powering it on.
-
-To restore to a different folder, datacenter, host, cluster, resource pool or datastore, the corresponding plugin options must be passed. All plugin options which have been effective at backup time will be passed on restore and each individual option can be overridden by passing an options string at restore time. For example, to restore to a different VM name and different datastore, pass the following plugin option string:
 
 .. code-block:: bconsole
-   :caption: Example restore plugin options string
+   :caption: running the disaster recovery backup with the windows filedaemon plugin
 
-   python:datastore=datastore2:vmname=testvm1restored
+   *<input>run job=barri yes</input>
+   *<input>messages<input>
+     [...]
+     [...] windr-fd JobId 1: Version: 25.0.0~pre1046.c3bf07897 (29 September 2025) Microsoft Windows 8 Professional (build 9200), 64-bit
+     [...] windr-fd JobId 1: setting up vss
+     [...] bareos-sd JobId 1: JustInTime Reservation: Finding drive to reserve.
+     [...] bareos-dir JobId 1: Created new Volume "Full-0001" in catalog.
+     [...] bareos-sd JobId 1: Using Device "FileStorage" (/var/lib/bareos/storage) to write.
+     [...] bareos-sd JobId 1: Labeled new Volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage).
+     [...] bareos-sd JobId 1: Moving to end of data on volume "Full-0001"
+     [...] bareos-sd JobId 1: Ready to append to end of Volume "Full-0001" size=223
+     [...] windr-fd JobId 1: creating a vss snapshot
+     [...] windr-fd JobId 1: ... done! (=> Id = {FE763C79-9FC4-429F-80A1-458EAA09FE54})
+     [...] windr-fd JobId 1: examining volume \\?\Volume{ea8f2bab-dd31-4ba5-aa39-482c24b2589e}\ (\\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy8)
+     [...] windr-fd JobId 1: ... done!
+     [...] windr-fd JobId 1: examining volume \\?\Volume{106f2185-d422-407a-b928-198db1c4566d}\ (\\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy9)
+     [...] windr-fd JobId 1: ... done!
+     [...] windr-fd JobId 1: examining volume \\?\Volume{5d9d24bf-b2fd-47a4-8577-594f29792d0e}\ (\\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy10)
+     [...] windr-fd JobId 1: ... done!
+     [...] windr-fd JobId 1: collecting info from disk \\.\PhysicalDrive0
+     [...] windr-fd JobId 1: => recorded!
+     [...] windr-fd JobId 1: generating backup plan
+     [...] windr-fd JobId 1: disk 0/partition 1 has no snapshotted data => recorded (special-partition)
+     [...] windr-fd JobId 1: ... done!
+     [...] bareos-sd JobId 1: Releasing device "FileStorage" (/var/lib/bareos/storage).
+     [...] bareos-sd JobId 1: Elapsed time=00:16:57, Transfer rate=34.22 M Bytes/second
+     [...] bareos-dir JobId 1: Insert of attributes batch table with 2 entries start
+     [...] bareos-dir JobId 1: Insert of attributes batch table done
+     [...] bareos-dir JobId 1: Bareos bareos-dir 25.0.0~pre1074.e81033063 (01Oct25):
+     Build OS:               AlmaLinux Kitten release 10 (Lion Cub)
+     JobId:                  1
+     Job:                    barri.2025-10-01_14.37.37_04
+     Backup Level:           Full (upgraded from Incremental)
+     Client:                 "windowsdr-fd" 25.0.0~pre1046.c3bf07897 (29Sep25) Microsoft Windows 8 Professional (build 9200), 64-bit,Windows-x64
+     FileSet:                "barri_fileset" 2025-10-01 14:37:37
+     Pool:                   "Full" (From Job FullPool override)
+     Catalog:                "MyCatalog" (From Client resource)
+     Storage:                "File" (From Job resource)
+     Scheduled time:         01-Okt-2025 14:37:37
+     Start time:             01-Okt-2025 14:37:39
+     End time:               01-Okt-2025 14:54:38
+     Elapsed time:           16 mins 59 secs
+     Priority:               10
+     Allow Mixed Priority:   no
+     FD Files Written:       2
+     SD Files Written:       2
+     FD Bytes Written:       34,806,828,300 (34.80 GB)
+     SD Bytes Written:       34,806,828,529 (34.80 GB)
+     Rate:                   34157,8 KB/s
+     Software Compression:   66,0 % (lz4)
+     VSS:                    no
+     Encryption:             no
+     Accurate:               no
+     Volume name(s):         Full-0001
+     Volume Session Id:      3
+     Volume Session Time:    1759317946
+     Last Volume Bytes:      34,812,710,996 (34.81 GB)
+     Non-fatal FD errors:    0
+     SD Errors:              0
+     FD termination status:  OK
+     SD termination status:  OK
+     Bareos binary info:     Bareos pre-release (UNSUPPORTED): Get professional support from https://www.bareos.com
+     Job triggered by:       User
+     Termination:            Backup OK
 
-All other plugin options which are not passed explicitily on restore will be the same as at backup time.
 
-Note that most plugin options are used for backup and restore, but there are some which can be only used on restore, for example to prevent from powering on the VM automatically after restore if it was powered on at backup time, use this plugin options string:
+As the joblog tells us, two files have been backed up. With the command ``list files jobid=1`` we can check what files have been backed up:
+
 
 .. code-block:: bconsole
-   :caption: Example restore plugin options string with powerstate
+   :caption: list of files that have been backed up
 
-   python:restore_datastore=datastore2:vmname=testvm1restored:restore_powerstate=off
+   *<input>list files jobid=1</input>
+    [...]
+    @barri@/windr-fd.barri
+    @barri@/windr-fd.log
 
-See below for a complete restore example and description of all plugin options.
+The plugin backed up two files:
+
+``windr-fd.barri``
+  This is the `.barri` file containing the disaster recovery data itself.
+``windr-fd.log``
+  This file contains a logfile that was recorded during the creation of the ``.barri`` file.
+
+
+Restore with the Linux FD Plugin
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+Restore with the Linux barri-cli commandline tool
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+Restore with the Windows barri-cli.exe commandline tool
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 
 Restore using Bareos WebUI
