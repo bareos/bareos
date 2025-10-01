@@ -1,4 +1,10 @@
 OS:
+  Fedora:
+    "42":
+      TYPE: rpm
+      IMAGE: fedora42
+      ARCH:
+      - x86_64
   EL:
     "10":
       TYPE: rpm
