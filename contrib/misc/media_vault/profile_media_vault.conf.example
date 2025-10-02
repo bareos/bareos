@@ -1,0 +1,17 @@
+Profile {
+   Name = "media_vault"
+   Description = "Profile allowing Bareos autoloader & tape operations with media_vault.py"
+
+   Command ACL = show, umount, unmount, mount, export, update, .api, .sql
+   Command ACL = !*all*
+
+   Catalog ACL = *all*
+   Client ACL = *all*
+   FileSet ACL = *all*
+   Job ACL = *all*
+   Plugin Options ACL = *all*
+   Pool ACL = *all*
+   Schedule ACL = *all*
+   Storage ACL = *all*
+   Where ACL = *all*
+}

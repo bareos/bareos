@@ -1,6 +1,7 @@
-#   BAREOS® - Backup Archiving REcovery Open Sourced
+#!/bin/bash
+#   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -16,9 +17,10 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
-
-add_subdirectory(bsmc)
-add_subdirectory(chunk_check)
-add_subdirectory(media_vault)
-add_subdirectory(reschedule_job_as_full)
-add_subdirectory(triggerjob)
+#
+# this helper placed in /usr/lib/bareos/scripts/ use the python 
+# virtualenv by default. if you are not using it comment first and
+# last line
+source ~/.local/share/virtualenvs/bareos_media_vault/bin/activate
+@plugindir@/media_vault.py --config @confdir@/media_vault.ini $@
+deactivate

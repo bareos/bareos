@@ -1,0 +1,11 @@
+Console {
+  Name = "media_vault"
+  Password = ""
+  Description = "Restricted console used by media_vault.py script"
+  Profile = "media_vault"
+
+  # As python before version 3.12 does not support TLS-PSK without extension (ssl-psk)
+  # and the director has TLS enabled by default, we need to either disable TLS or setup
+  # TLS with certificates.
+  TLS Enable = Yes
+}
