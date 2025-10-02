@@ -24,6 +24,9 @@ else()
   cmake_minimum_required(VERSION 3.17...3.31)
 endif()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
+
 get_property(HAVE_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(HAVE_MULTI_CONFIG)
   message(
@@ -32,12 +35,27 @@ if(HAVE_MULTI_CONFIG)
   )
 endif()
 
-project(bareos NONE)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+if(NOT CMAKE_BUILD_TYPE)
+  if(CMAKE_C_FLAGS OR CMAKE_CXX_FLAGS)
+    set(CMAKE_BUILD_TYPE "CustomFlags")
+  else()
+    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+  endif()
+endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core/cmake")
+include(BareosVersionFromGit)
+include(BareosExtractVersionInfo)
+
+project(bareos C CXX)
+
+include(RemoveNDebugFlag)
+include(BareosOutputDirectories)
+include(BareosCpmPackages)
+# include PrefixMap before BareosCcache so hash_dir is set correctly
+include(PrefixMap)
+include(BareosCcache)
 
 option(coverage "Enable test coverage analysis" OFF)
 if(coverage)
@@ -124,9 +142,6 @@ add_custom_target(
 set(default_build_type "Debug")
 
 include(CMakePrintHelpers)
-find_package(Git)
-include(BareosVersionFromGit)
-include(BareosExtractVersionInfo)
 include(BareosGetDistInfo)
 include(ForceOption)
 
@@ -184,41 +199,20 @@ if(docs-build-json)
   endif()
 endif()
 
-if(docs-only)
-  set(BUILD_BAREOS_BINARIES no)
-else()
-  set(BUILD_BAREOS_BINARIES yes)
-endif()
-
 if(NOT hostname)
   site_name(hostname)
 endif()
 
-if(BUILD_BAREOS_BINARIES)
-  project(bareos C CXX)
-  include(RemoveNDebugFlag)
-  if(NOT CMAKE_BUILD_TYPE
-     AND NOT CMAKE_C_FLAGS
-     AND NOT CMAKE_CXX_FLAGS
-  )
-    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+add_subdirectory(core)
+if(ENABLE_WEBUI)
+  add_subdirectory(webui)
+endif()
+if(NOT client-only)
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    add_subdirectory(contrib)
   endif()
-  include(BareosOutputDirectories)
-  include(BareosCpmPackages)
-  # include PrefixMap before BareosCcache so hash_dir is set correctly
-  include(PrefixMap)
-  include(BareosCcache)
-  add_subdirectory(core)
-  if(ENABLE_WEBUI)
-    add_subdirectory(webui)
-  endif()
-  if(NOT client-only)
-    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-      add_subdirectory(contrib)
-    endif()
-    if(ENABLE_SYSTEMTESTS)
-      add_subdirectory(systemtests)
-    endif()
+  if(ENABLE_SYSTEMTESTS)
+    add_subdirectory(systemtests)
   endif()
 endif()
 

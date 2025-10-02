@@ -88,7 +88,7 @@ else()
 endif()
 
 # extract  db version from cats.h
-file(STRINGS ${PROJECT_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
+file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
      REGEX .*BDB_VERSION.*
 )
 string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
