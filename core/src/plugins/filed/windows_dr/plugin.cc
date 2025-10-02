@@ -667,7 +667,7 @@ bRC pluginIO_Log(PluginContext* ctx, filedaemon::io_pkt* pkt)
     } break;
     case filedaemon::IO_READ: {
       if (pkt->count < 0) {
-        err_msg(ctx, "its impossible to read {} bytes...", pkt->count);
+        err_msg(ctx, "it is impossible to read {} bytes...", pkt->count);
         pkt->status = -1;
         return bRC_Error;
       }

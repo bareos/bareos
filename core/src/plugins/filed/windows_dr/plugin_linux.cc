@@ -59,8 +59,8 @@ const PluginInformation my_info = {
     .plugin_magic = FD_PLUGIN_MAGIC,
     .plugin_license = "Bareos AGPLv3",
     .plugin_author = "Sebastian Sura",
-    .plugin_date = "Juli 2025",
-    .plugin_version = "0.1.0",
+    .plugin_date = "July 2025",
+    .plugin_version = "1.0.0",
     .plugin_description
     = "This plugin allows you to backup your windows system for disaster "
       "recovery.",
@@ -308,7 +308,7 @@ struct plugin_ctx {
   file_type current_file_type = file_type::None;
 
   // this is the debug level on which the backup log is dumped
-  // if its selected to be "restored"
+  // if it is selected to be "restored"
   std::size_t log_level = 300;
   std::string log_line_buffer{};
 };
