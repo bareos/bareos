@@ -508,7 +508,7 @@ findIncludeExcludeItem* allocate_new_incexe(void)
 {
   findIncludeExcludeItem* incexe
       = (findIncludeExcludeItem*)malloc(sizeof(findIncludeExcludeItem));
-  new (incexe) findIncludeExcludeItem{};
+  incexe = new (incexe) findIncludeExcludeItem{};
 
   return incexe;
 }

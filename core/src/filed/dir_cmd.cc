@@ -366,6 +366,8 @@ void CleanupFileset(JobControlRecord* jcr)
     }
 
     fileset->exclude_list.destroy();
+
+    std::destroy_at(fileset);
     free(fileset);
   }
   jcr->fd_impl->ff->fileset = nullptr;
