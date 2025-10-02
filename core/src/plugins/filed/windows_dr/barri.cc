@@ -199,34 +199,35 @@ we recommend executing {0} in cmd instead.
 The standard output stream contains the whole backup image, so you need to save
 it out to somewhere in case you need to restore it.
 
-If you specify --dry, then no backup will be written.
+If you specify --dry, then the full process of preparing a backup will be
+executed, but no backup will be written.
 
 As {0} relies on volume shadow copies, it is important to make sure
 that the service is running before you start the backup.
 
-When executed in a terminal, then the progress will be displayed in a progress bar.)",
+When executed in a terminal, the progress will be displayed in a progress bar.)",
                 name)))
             ->fallthrough()
             ->footer(libbareos::format(R"(Examples:
-  # create a backup, compress it and then send it to an offsite storage
-  {0} save | zstd -c | ssh somewhere@else:/storage/backup.barri
+  # create a backup, compress it and then send it to an offsite storage via ssh
+  {0} save | zstd --stdout | ssh somewhere@else:/storage/backup.barri
 
   # make sure a backup is possible
   {0} save --dry
 
-  # make a backup to an external usb and store a debug trace
+  # make a backup to an external usb drive and store a debug trace
   {0} save --trace 2>%TEMP%\debug.trace > F:\backup.barri)",
                                        name));
   save->add_flag("--dry", dry, "do not read/write actual disk data");
 
-  save->add_flag("--unreferenced-extents", save_unreferenced_extents,
-                 "save even unsnapshotted data from partitions that contain "
-                 "snapshotted data");
-  save->add_flag("--unreferenced-partitions", save_unreferenced_partitions,
+  save->add_flag("--save-unreferenced-disks", save_unreferenced_disks,
+                 "save completey unsnapshotted disks");
+  save->add_flag("--save-unreferenced-partitions", save_unreferenced_partitions,
                  "save even unsnapshotted partitions from disks that contain "
                  "snapshotted partitions");
-  save->add_flag("--unreferenced-disks", save_unreferenced_disks,
-                 "save completey unsnapshotted disks");
+  save->add_flag("--save-unreferenced-extents", save_unreferenced_extents,
+                 "save even unsnapshotted data from partitions that contain "
+                 "snapshotted data");
 
   save->add_option("--ignore-disks", ignored_disks,
                    "ids of disks to ignore (0, 1, 2, ...)");
@@ -239,56 +240,56 @@ When executed in a terminal, then the progress will be displayed in a progress b
 The backup is read from stdin; alternatively you can specify a file to read from via the --file option.
 
 If you can restore the disks either
- * as vhdx files, via the --vhdx-directory option,
- * as raw files, via the --raw-directory option, or
- * directly to disk(s), via the --disks option.
+ * as vhdx files, via the --to-vhdx-directory option,
+ * as raw files, via the --to-raw-directory option, or
+ * directly to disk(s), via the --to-disks option.
 
 In the first two cases, {0} will create files called disk-X.[vhdx|raw] in the
 given directory.
 
-The --disks option expects as argument a space delimited list of disk ids.
+The --to-disks option expects as argument a space delimited list of disk ids.
 I.e. if you want to restore the first disk to disk 2 and the second disk to
-disk 1, then you have to specify "--disks 2 1".
+disk 1, then you have to specify "--to-disks 2 1".
 
-You can find out the id of the disks via the disk manager, diskpart or via
-the Get-Disk cmdlet.
+You can find out the id of the disks via the disk manager in the gui,
+"diskpart" in the cli or via the "Get-Disk" cmdlet in powershell.
 
-When output to a terminal, then progress will be displayed in a progress bar.)",
+When output to a terminal, the progress will be displayed in a progress bar.)",
                 name)))
             ->fallthrough()
             ->footer(libbareos::format(R"(Examples:
   # restore the first disk to Disk 1, the second to Disk 3 and the third to Disk 2
-  {0} restore --from backup.barri --disks 1 3 2
+  {0} restore --from backup.barri --to-disks 1 3 2
 
   # restore the disks as vhdx files into some directory
-  get-backup | {0} restore --vhdx-directory "C:\Users\Public\Documents\Hyper-V\Virtual Hard Disks\"
+  get-backup | {0} restore --to-vhdx-directory "C:\Users\Public\Documents\Hyper-V\Virtual Hard Disks\"
 
   # restore the disks as raw files in the TEMP directory
-  cat backup.barri | {0} restore --raw-directory %TEMP%)",
+  {0} restore --to-raw-directory %TEMP% < backup.barri)",
                                        name));
   std::string filename;
   restore->add_option("--from", filename,
-                      "read from this file instead of stdin");
+                      "read from the given file instead of stdin");
 
   auto* location = restore->add_option_group(
       "output", "select where the data will be restored to");
   std::wstring vhdx_dir;
   auto* vhdx_dir_target
       = location
-            ->add_option("--vhdx-directory", vhdx_dir,
+            ->add_option("--to-vhdx-directory", vhdx_dir,
                          "create one vhdx image per restored drive in "
                          "the given directory")
             ->check(CLI::ExistingDirectory);
   std::wstring file_dir;
   auto* raw_dir_target
       = location
-            ->add_option("--raw-directory", file_dir,
+            ->add_option("--to-raw-directory", file_dir,
                          "create one raw image file per restored "
                          "drive in the given directory")
             ->check(CLI::ExistingDirectory);
   std::vector<std::size_t> disks;
-  auto* disks_target
-      = location->add_option("--disks", disks, "restore to the given disk ids");
+  auto* disks_target = location->add_option("--to-disks", disks,
+                                            "restore to the given disk ids");
 
   location->require_option(1);
 
