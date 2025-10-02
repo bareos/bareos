@@ -66,9 +66,6 @@ if(HAVE_WIN32)
     barri-cli PRIVATE BARRI_VERSION="${BAREOS_FULL_VERSION}"
                       BARRI_DATE="${DATE}" BARRI_YEAR="${BAREOS_YEAR}"
   )
-
-  add_executable(copy copy.cc)
-  add_executable(count count.cc)
 else()
   target_compile_options(progress-bar-logger PRIVATE "-Wno-shadow")
 
@@ -80,7 +77,6 @@ else()
 
   target_sources(barri-fd PRIVATE plugin_linux.cc bareos_api.cc)
   target_link_libraries(barri-fd PRIVATE tl::expected windows-dr-restore)
-  # target_link_libraries(barri-fd PRIVATE dump)
 
   add_executable(barri-cli barri_linux.cc)
   target_compile_definitions(
