@@ -114,8 +114,8 @@ part_type from_win32(PARTITION_STYLE style)
     }
   }
 
-  // TODO: we should report an error here and exit
-  return part_type::Raw;
+  throw std::runtime_error(libbareos::format(
+      "encountered unknown partition style: {:x}. Aborting ...", (int)style));
 }
 
 part_table_entry from_win32(const PARTITION_INFORMATION_EX& info)
