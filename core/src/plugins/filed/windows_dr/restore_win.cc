@@ -547,17 +547,6 @@ class DiskHandles : public OutputHandleGenerator {
           "could not dismount volume {}: Err={}", FromUtf16(volume.guid), err)};
     }
     logger->Trace("volume {} was dismounted", FromUtf16(volume.guid));
-
-    // setting the volume to offline sadly causes the writes to just stall out
-    // if (DeviceIoControl(volume.hndl, IOCTL_VOLUME_OFFLINE, NULL, 0, NULL, 0,
-    //                     &bytes_returned, NULL)
-    //     == 0) {
-    //   auto err = GetLastError();
-    //   throw std::runtime_error{libbareos::format(
-    //       "could not offline volume {}: Err={}", FromUtf16(volume.guid),
-    //       err)};
-    // }
-    // logger->Trace("volume {} was offlined", FromUtf16(volume.guid));
   }
 
   std::vector<HANDLE> OpenAll(std::span<std::size_t> ids)
