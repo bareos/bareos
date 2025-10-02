@@ -335,7 +335,6 @@ class DiskHandles : public OutputHandleGenerator {
 
   HANDLE Create(disk_info info, disk_geometry) override
   {
-    // we should probably log something if the sizes dont match up ...
     HANDLE handle = handles[disk_idx_];
     {
       GET_LENGTH_INFORMATION length_info = {0};
