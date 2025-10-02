@@ -5,6 +5,7 @@ FileSet {
   Include {
     Options {
       Signature = XXH128
+      @global_fileset_options@
     }
    #File = "@sbindir@"
     File=<@tmpdir@/file-list

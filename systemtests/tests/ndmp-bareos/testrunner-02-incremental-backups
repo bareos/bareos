@@ -1,6 +1,8 @@
+#!/bin/bash
+
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,14 +19,39 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+set -e
+set -o pipefail
+set -u
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-  set(global_fileset_options "XAttr Support = No")
-else()
-  set(global_fileset_options "")
-endif()
+#
+# run multiple incremental backups
+#
 
-create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+TestName="$(basename "$(pwd)")"
+export TestName
 
-add_requirement("${SYSTEMTEST_PREFIX}${BASENAME}" "failing-virtual" "simple")
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+for ID in $(seq 1 10); do
+  ${SSH} "echo ${NDMP_FILESYSTEM}-${ID} >> /ifs/home/regress/${NDMP_FILESYSTEM}/incremental"
+
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/incr-${ID}.out
+run job=${NDMPCLIENT}dump level=Incremental yes
+wait
+END_OF_DATA
+
+  run_bconsole "${tmp}/bconcmds"
+
+  check_log "${log_home}/incr-${ID}.out"
+done
+
+check_for_zombie_jobs storage=isilonfile client=bareos-fd
+
+end_test

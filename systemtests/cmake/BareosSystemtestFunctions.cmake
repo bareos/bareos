@@ -950,3 +950,46 @@ function(systemtest_requires test required_test)
                                                          "${_fixtures}"
   )
 endfunction()
+
+function(add_requirement test_basename test requirement)
+  get_test_property("${test_basename}:${test}" FIXTURES_REQUIRED fixtures)
+  set_tests_properties(
+    "${test_basename}:${test}"
+    PROPERTIES FIXTURES_REQUIRED
+               "${fixtures};${test_basename}/${requirement}-fixture"
+  )
+endfunction()
+
+function(add_alphabetic_requirements prefix test_subdir)
+  set(test_dir "${tests_dir}/${test_subdir}")
+  set(test_basename "${prefix}${test_subdir}")
+
+  if(EXISTS ${test_dir}/testrunner)
+    return()
+  endif()
+
+  file(
+    GLOB all_test_files
+    LIST_DIRECTORIES false
+    RELATIVE "${test_dir}"
+    CONFIGURE_DEPENDS "${test_dir}/testrunner-*"
+  )
+
+  list(SORT "${all_test_files}")
+
+  set(all_tests "")
+  foreach(file ${all_test_files})
+    string(REPLACE "testrunner-" "" test ${file})
+    list(APPEND all_tests "${test}")
+  endforeach()
+
+  set(tests "${all_tests}")
+  set(prevs "${all_tests}")
+
+  list(POP_BACK prevs)
+  list(POP_FRONT tests)
+
+  foreach(iter IN ZIP_LISTS tests prevs)
+    add_requirement("${test_basename}" "${iter_0}" "${iter_1}")
+  endforeach()
+endfunction()

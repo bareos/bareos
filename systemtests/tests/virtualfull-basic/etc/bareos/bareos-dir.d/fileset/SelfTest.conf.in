@@ -6,8 +6,8 @@ FileSet {
     Options {
       Signature = XXH128
       HardLinks = Yes
+      @global_fileset_options@
     }
-   #File = "@sbindir@"
     File=<@tmpdir@/file-list
   }
 }
