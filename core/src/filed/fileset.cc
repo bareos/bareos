@@ -79,7 +79,7 @@ bool InitFileset(JobControlRecord* jcr)
   ff = jcr->fd_impl->ff;
   if (ff->fileset) { return false; }
   fileset = (findFILESET*)malloc(sizeof(findFILESET));
-  *fileset = findFILESET{};
+  fileset = new (fileset) findFILESET{};
 
   ff->fileset = fileset;
   fileset->state = state_none;
