@@ -443,6 +443,8 @@ bool BareosSocketTCP::SendPacket(int32_t* hdr, int32_t pktsiz)
 {
   Enter(400);
 
+  Dmsg1(800, "Sending:\nvvvvvvv\n%*s\n^^^^^^^\n", pktsiz, (char*)(hdr + 1));
+
   int32_t rc;
   bool ok = true;
 
@@ -677,6 +679,8 @@ int32_t BareosSocketTCP::recv()
    * Note, we ensured above that the buffer is at least one byte longer than
    * the message length. */
   msg[nbytes] = 0; /* Terminate in case it is a string */
+
+  Dmsg1(800, "Received:\nvvvvvvv\n%s\n^^^^^^^\n", msg);
 
   /* The following uses *lots* of resources so turn it on only for serious
    * debugging. */

@@ -1525,7 +1525,7 @@ void OpensslCleanupThreads(void)
   CRYPTO_set_dynlock_destroy_callback(NULL);
 }
 
-void LogSSLError(int ssl_error)
+void LogSSLError(int ssl_error, libbareos::source_location loc)
 {
   struct ssl_error_code {
     int error_code;
@@ -1555,8 +1555,15 @@ void LogSSLError(int ssl_error)
           std::begin(ssl_error_codes), std::end(ssl_error_codes),
           [ssl_error](const auto& val) { return val.error_code == ssl_error; });
       iter != std::end(ssl_error_codes)) {
-    Dmsg1(iter->level, "SSL_get_error() returned %s\n", iter->name);
+    if (iter->level <= debug_level) {
+      d_msg(loc.file_name(), loc.line(), iter->level,
+            "SSL_get_error() returned %s\n", iter->name);
+    }
     return;
   }
-  Dmsg1(50, "SSL_get_error() returned unknown error value %d\n", ssl_error);
+
+  if (50 <= debug_level) {
+    d_msg(loc.file_name(), loc.line(), 50,
+          "SSL_get_error() returned unknown error value %d\n", ssl_error);
+  }
 }

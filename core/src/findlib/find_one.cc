@@ -63,8 +63,60 @@ static inline FindFilesPacket* new_dir_ff_pkt(FindFilesPacket* ff_pkt)
   FindFilesPacket* dir_ff_pkt;
 
   dir_ff_pkt = (FindFilesPacket*)malloc(sizeof(FindFilesPacket));
+  dir_ff_pkt = new (dir_ff_pkt) FindFilesPacket;
 
-  *dir_ff_pkt = *ff_pkt;
+  dir_ff_pkt->top_fname = ff_pkt->top_fname;
+  dir_ff_pkt->fname = ff_pkt->fname;
+  dir_ff_pkt->link = ff_pkt->link;
+  dir_ff_pkt->object_name = ff_pkt->object_name;
+  dir_ff_pkt->object = ff_pkt->object;
+  dir_ff_pkt->plugin = ff_pkt->plugin;
+  dir_ff_pkt->sys_fname = ff_pkt->sys_fname;
+  dir_ff_pkt->fname_save = ff_pkt->fname_save;
+  dir_ff_pkt->link_save = ff_pkt->link_save;
+  dir_ff_pkt->ignoredir_fname = ff_pkt->ignoredir_fname;
+  dir_ff_pkt->digest = ff_pkt->digest;
+  dir_ff_pkt->statp = ff_pkt->statp;
+  dir_ff_pkt->digest_len = ff_pkt->digest_len;
+  dir_ff_pkt->digest_stream = ff_pkt->digest_stream;
+  dir_ff_pkt->FileIndex = ff_pkt->FileIndex;
+  dir_ff_pkt->LinkFI = ff_pkt->LinkFI;
+  dir_ff_pkt->delta_seq = ff_pkt->delta_seq;
+  dir_ff_pkt->object_index = ff_pkt->object_index;
+  dir_ff_pkt->object_len = ff_pkt->object_len;
+  dir_ff_pkt->object_compression = ff_pkt->object_compression;
+  dir_ff_pkt->type = ff_pkt->type;
+  dir_ff_pkt->ff_errno = ff_pkt->ff_errno;
+  dir_ff_pkt->bfd = ff_pkt->bfd;
+  dir_ff_pkt->save_time = ff_pkt->save_time;
+  dir_ff_pkt->accurate_found = ff_pkt->accurate_found;
+  dir_ff_pkt->incremental = ff_pkt->incremental;
+  dir_ff_pkt->no_read = ff_pkt->no_read;
+
+  memcpy(dir_ff_pkt->VerifyOpts, ff_pkt->VerifyOpts, sizeof(ff_pkt->VerifyOpts));
+  memcpy(dir_ff_pkt->AccurateOpts, ff_pkt->AccurateOpts, sizeof(ff_pkt->AccurateOpts));
+  memcpy(dir_ff_pkt->BaseJobOpts, ff_pkt->BaseJobOpts, sizeof(ff_pkt->BaseJobOpts));
+  memcpy(dir_ff_pkt->flags, ff_pkt->flags, sizeof(ff_pkt->flags));
+
+  dir_ff_pkt->included_files_list = ff_pkt->included_files_list;
+  dir_ff_pkt->excluded_files_list = ff_pkt->excluded_files_list;
+  dir_ff_pkt->excluded_paths_list = ff_pkt->excluded_paths_list;
+  dir_ff_pkt->fileset = ff_pkt->fileset;
+  dir_ff_pkt->FileSave = ff_pkt->FileSave;
+  dir_ff_pkt->CheckFct = ff_pkt->CheckFct;
+  dir_ff_pkt->Compress_algo = ff_pkt->Compress_algo;
+  dir_ff_pkt->Compress_level = ff_pkt->Compress_level;
+  dir_ff_pkt->StripPath = ff_pkt->StripPath;
+  dir_ff_pkt->size_match = ff_pkt->size_match;
+  dir_ff_pkt->cmd_plugin = ff_pkt->cmd_plugin;
+  dir_ff_pkt->opt_plugin = ff_pkt->opt_plugin;
+  dir_ff_pkt->fstypes = ff_pkt->fstypes.copy();
+  dir_ff_pkt->drivetypes = ff_pkt->drivetypes.copy();
+  dir_ff_pkt->linkhash = ff_pkt->linkhash;
+  dir_ff_pkt->linked = ff_pkt->linked;
+  dir_ff_pkt->volhas_attrlist = ff_pkt->volhas_attrlist;
+  dir_ff_pkt->hfsinfo = ff_pkt->hfsinfo;
+
   dir_ff_pkt->fname = strdup(ff_pkt->fname);
   dir_ff_pkt->link_or_dir = strdup(ff_pkt->link_or_dir);
   dir_ff_pkt->sys_fname = GetPoolMemory(PM_FNAME);
