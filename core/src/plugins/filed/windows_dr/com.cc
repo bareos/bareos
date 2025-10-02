@@ -49,14 +49,12 @@ __declspec(dllexport) const char* hresult_as_str(HRESULT hr)
       break;
     case VSS_E_BAD_STATE:
       return "Object is not initialized; called during restore or not called "
-             "in "
-             "correct sequence";
+             "in correct sequence";
       break;
     case VSS_E_WRITER_INFRASTRUCTURE:
       return "The writer infrastructure is not operating properly. Check that "
-             "the "
-             "Event Service and VSS have been started, and check for errors "
-             "associated with those services in the error log";
+             "the Event Service and VSS have been started, and check for "
+             "errors associated with those services in the error log";
       break;
     case VSS_S_ASYNC_CANCELLED:
       return "The asynchronous operation was canceled by a previous call to "
@@ -67,9 +65,8 @@ __declspec(dllexport) const char* hresult_as_str(HRESULT hr)
       break;
     case RPC_E_CHANGED_MODE:
       return "Previous call to CoInitializeEx specified the multithread "
-             "apartment "
-             "(MTA). This call indicates single-threaded apartment has "
-             "occurred";
+             "apartment (MTA). This call indicates single-threaded apartment "
+             "has occurred";
       break;
     case S_FALSE:
       return "No writer found for the current component";
