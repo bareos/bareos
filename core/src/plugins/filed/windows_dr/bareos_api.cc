@@ -104,8 +104,6 @@ bool checkChanges(PluginContext* ctx,
 
     auto result = fd.core->checkChanges(ctx, &pkt);
 
-    // TODO: also return the delta sequence number
-
     return result != bRC_Seen;
   }
 
@@ -129,8 +127,6 @@ bool AcceptFile(PluginContext* ctx,
     pkt.link = const_cast<char*>(file.c_str());
 
     auto result = fd.core->AcceptFile(ctx, &pkt);
-
-    // TODO: also return the delta sequence number
 
     return result != bRC_Seen;
   }

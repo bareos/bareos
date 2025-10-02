@@ -46,14 +46,6 @@ void UnregisterBareosEvent(PluginContext* ctx, filedaemon::bEventType event);
 bool SetBareosValue(PluginContext* ctx, filedaemon::bVariable var, void* value);
 bool GetBareosValue(PluginContext* ctx, filedaemon::bVariable var, void* value);
 
-// bRC AddExclude(PluginContext* ctx, const char* file);
-// bRC AddInclude(PluginContext* ctx, const char* file);
-// bRC AddOptions(PluginContext* ctx, const char* opts);
-// bRC AddRegex(PluginContext* ctx, const char* item, int type);
-// bRC AddWild(PluginContext* ctx, const char* item, int type);
-// bRC NewOptions(PluginContext* ctx);
-// bRC NewInclude(PluginContext* ctx);
-// bRC NewPreInclude(PluginContext* ctx);
 bool checkChanges(PluginContext* ctx,
                   const std::string& file,
                   int type,
