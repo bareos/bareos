@@ -32,7 +32,7 @@ if(HAVE_MULTI_CONFIG)
   )
 endif()
 
-project(bareos NONE)
+project(bareos C CXX)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
@@ -184,41 +184,32 @@ if(docs-build-json)
   endif()
 endif()
 
-if(docs-only)
-  set(BUILD_BAREOS_BINARIES no)
-else()
-  set(BUILD_BAREOS_BINARIES yes)
-endif()
-
 if(NOT hostname)
   site_name(hostname)
 endif()
 
-if(BUILD_BAREOS_BINARIES)
-  project(bareos C CXX)
-  include(RemoveNDebugFlag)
-  if(NOT CMAKE_BUILD_TYPE
-     AND NOT CMAKE_C_FLAGS
-     AND NOT CMAKE_CXX_FLAGS
-  )
-    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+include(RemoveNDebugFlag)
+if(NOT CMAKE_BUILD_TYPE
+   AND NOT CMAKE_C_FLAGS
+   AND NOT CMAKE_CXX_FLAGS
+)
+  set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+endif()
+include(BareosOutputDirectories)
+include(BareosCpmPackages)
+# include PrefixMap before BareosCcache so hash_dir is set correctly
+include(PrefixMap)
+include(BareosCcache)
+add_subdirectory(core)
+if(ENABLE_WEBUI)
+  add_subdirectory(webui)
+endif()
+if(NOT client-only)
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    add_subdirectory(contrib)
   endif()
-  include(BareosOutputDirectories)
-  include(BareosCpmPackages)
-  # include PrefixMap before BareosCcache so hash_dir is set correctly
-  include(PrefixMap)
-  include(BareosCcache)
-  add_subdirectory(core)
-  if(ENABLE_WEBUI)
-    add_subdirectory(webui)
-  endif()
-  if(NOT client-only)
-    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-      add_subdirectory(contrib)
-    endif()
-    if(ENABLE_SYSTEMTESTS)
-      add_subdirectory(systemtests)
-    endif()
+  if(ENABLE_SYSTEMTESTS)
+    add_subdirectory(systemtests)
   endif()
 endif()
 
