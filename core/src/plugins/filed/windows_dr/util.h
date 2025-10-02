@@ -37,7 +37,7 @@ inline std::string FromUtf16(std::wstring_view utf16)
   // WideCharToMultiByte does not handle empty strings
   if (utf16.size() == 0) { return {}; }
 
-  // if the buffer is to small (or not supplied) the function returns
+  // if the buffer is too small (or not supplied) the function returns
   // the number of bytes required
   DWORD required = WideCharToMultiByte(CP_UTF8, 0, utf16.data(), utf16.size(),
                                        nullptr, 0, nullptr, nullptr);

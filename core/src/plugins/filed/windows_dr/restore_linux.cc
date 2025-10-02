@@ -54,7 +54,8 @@ std::size_t io_block_size(int fd)
   auto blocksize = static_cast<std::size_t>(recommended);
 
   // we never want to use less than `default_blocksize` bytes, so
-  // if recommended is smaller, we take the next multiple thats bigger than it.
+  // if `recommended` is smaller, we take the next multiple that is bigger than
+  // it.
   if (blocksize < default_blocksize) {
     auto factor = (default_blocksize + blocksize - 1) % blocksize;
     blocksize = factor * blocksize;

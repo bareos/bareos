@@ -54,7 +54,7 @@ struct restore_options {
 
   constexpr restore_options& logger(GenericLogger* logger_)
   {
-    if (logger != nullptr) { throw std::logic_error{"logger vas already set"}; }
+    if (logger != nullptr) { throw std::logic_error{"logger was already set"}; }
     if (logger_ != nullptr) {
       throw std::logic_error{"cannot set logger to nullptr"};
     }
