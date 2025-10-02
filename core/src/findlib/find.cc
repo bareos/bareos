@@ -200,8 +200,8 @@ int FindFiles(JobControlRecord* jcr,
         ff->Compress_level = fo->Compress_level;
         ff->StripPath = fo->StripPath;
         ff->size_match = fo->size_match;
-        ff->fstypes = fo->fstype.copy();
-        ff->drivetypes = fo->Drivetype.copy();
+        ff->fstypes = fo->fstype;
+        ff->drivetypes = fo->Drivetype;
         if (fo->plugin != NULL) {
           ff->plugin = fo->plugin; /* TODO: generate a plugin event ? */
           ff->opt_plugin = true;
@@ -311,8 +311,8 @@ bool AcceptFile(FindFilesPacket* ff)
     CopyBits(FO_MAX, fo->flags, ff->flags);
     ff->Compress_algo = fo->Compress_algo;
     ff->Compress_level = fo->Compress_level;
-    ff->fstypes = fo->fstype.copy();
-    ff->drivetypes = fo->Drivetype.copy();
+    ff->fstypes = fo->fstype;
+    ff->drivetypes = fo->Drivetype;
 
     fnm_flags = BitIsSet(FO_IGNORECASE, ff->flags) ? FNM_CASEFOLD : 0;
     fnm_flags |= BitIsSet(FO_ENHANCEDWILD, ff->flags) ? FNM_PATHNAME : 0;
@@ -498,6 +498,7 @@ void TermFindFiles(FindFilesPacket* ff)
     if (ff->link_save) { FreePoolMemory(ff->link_save); }
     if (ff->ignoredir_fname) { FreePoolMemory(ff->ignoredir_fname); }
     TermFindOne(ff);
+    std::destroy_at(ff);
     free(ff);
   }
 }
@@ -568,8 +569,6 @@ findFOPTS* start_options(FindFilesPacket* ff)
     fo->wilddir.init(1, true);
     fo->wildfile.init(1, true);
     fo->wildbase.init(1, true);
-    fo->fstype.init(1, true);
-    fo->Drivetype.init(1, true);
     incexe->current_opts = fo;
     incexe->opts_list.append(fo);
   }
@@ -594,8 +593,6 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   fo->wilddir.init(1, true);
   fo->wildfile.init(1, true);
   fo->wildbase.init(1, true);
-  fo->fstype.init(1, true);
-  fo->Drivetype.init(1, true);
 
   Dmsg1(500, "incexe at %p\n", incexe);
   incexe->current_opts = fo;

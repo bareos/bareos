@@ -599,9 +599,9 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       current_opts = start_options(ff);
       state = state_options;
       if (subcode == ' ') {
-        current_opts->fstype.append(strdup(item));
+        current_opts->fstype.push_back(strdup(item));
       } else if (subcode == 'D') {
-        current_opts->Drivetype.append(strdup(item));
+        current_opts->Drivetype.push_back(strdup(item));
       } else {
         state = state_error;
       }

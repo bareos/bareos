@@ -63,59 +63,7 @@ static inline FindFilesPacket* new_dir_ff_pkt(FindFilesPacket* ff_pkt)
   FindFilesPacket* dir_ff_pkt;
 
   dir_ff_pkt = (FindFilesPacket*)malloc(sizeof(FindFilesPacket));
-  dir_ff_pkt = new (dir_ff_pkt) FindFilesPacket;
-
-  dir_ff_pkt->top_fname = ff_pkt->top_fname;
-  dir_ff_pkt->fname = ff_pkt->fname;
-  dir_ff_pkt->link = ff_pkt->link;
-  dir_ff_pkt->object_name = ff_pkt->object_name;
-  dir_ff_pkt->object = ff_pkt->object;
-  dir_ff_pkt->plugin = ff_pkt->plugin;
-  dir_ff_pkt->sys_fname = ff_pkt->sys_fname;
-  dir_ff_pkt->fname_save = ff_pkt->fname_save;
-  dir_ff_pkt->link_save = ff_pkt->link_save;
-  dir_ff_pkt->ignoredir_fname = ff_pkt->ignoredir_fname;
-  dir_ff_pkt->digest = ff_pkt->digest;
-  dir_ff_pkt->statp = ff_pkt->statp;
-  dir_ff_pkt->digest_len = ff_pkt->digest_len;
-  dir_ff_pkt->digest_stream = ff_pkt->digest_stream;
-  dir_ff_pkt->FileIndex = ff_pkt->FileIndex;
-  dir_ff_pkt->LinkFI = ff_pkt->LinkFI;
-  dir_ff_pkt->delta_seq = ff_pkt->delta_seq;
-  dir_ff_pkt->object_index = ff_pkt->object_index;
-  dir_ff_pkt->object_len = ff_pkt->object_len;
-  dir_ff_pkt->object_compression = ff_pkt->object_compression;
-  dir_ff_pkt->type = ff_pkt->type;
-  dir_ff_pkt->ff_errno = ff_pkt->ff_errno;
-  dir_ff_pkt->bfd = ff_pkt->bfd;
-  dir_ff_pkt->save_time = ff_pkt->save_time;
-  dir_ff_pkt->accurate_found = ff_pkt->accurate_found;
-  dir_ff_pkt->incremental = ff_pkt->incremental;
-  dir_ff_pkt->no_read = ff_pkt->no_read;
-
-  memcpy(dir_ff_pkt->VerifyOpts, ff_pkt->VerifyOpts, sizeof(ff_pkt->VerifyOpts));
-  memcpy(dir_ff_pkt->AccurateOpts, ff_pkt->AccurateOpts, sizeof(ff_pkt->AccurateOpts));
-  memcpy(dir_ff_pkt->BaseJobOpts, ff_pkt->BaseJobOpts, sizeof(ff_pkt->BaseJobOpts));
-  memcpy(dir_ff_pkt->flags, ff_pkt->flags, sizeof(ff_pkt->flags));
-
-  dir_ff_pkt->included_files_list = ff_pkt->included_files_list;
-  dir_ff_pkt->excluded_files_list = ff_pkt->excluded_files_list;
-  dir_ff_pkt->excluded_paths_list = ff_pkt->excluded_paths_list;
-  dir_ff_pkt->fileset = ff_pkt->fileset;
-  dir_ff_pkt->FileSave = ff_pkt->FileSave;
-  dir_ff_pkt->CheckFct = ff_pkt->CheckFct;
-  dir_ff_pkt->Compress_algo = ff_pkt->Compress_algo;
-  dir_ff_pkt->Compress_level = ff_pkt->Compress_level;
-  dir_ff_pkt->StripPath = ff_pkt->StripPath;
-  dir_ff_pkt->size_match = ff_pkt->size_match;
-  dir_ff_pkt->cmd_plugin = ff_pkt->cmd_plugin;
-  dir_ff_pkt->opt_plugin = ff_pkt->opt_plugin;
-  dir_ff_pkt->fstypes = ff_pkt->fstypes.copy();
-  dir_ff_pkt->drivetypes = ff_pkt->drivetypes.copy();
-  dir_ff_pkt->linkhash = ff_pkt->linkhash;
-  dir_ff_pkt->linked = ff_pkt->linked;
-  dir_ff_pkt->volhas_attrlist = ff_pkt->volhas_attrlist;
-  dir_ff_pkt->hfsinfo = ff_pkt->hfsinfo;
+  dir_ff_pkt = new (dir_ff_pkt) FindFilesPacket(*ff_pkt);
 
   dir_ff_pkt->fname = strdup(ff_pkt->fname);
   dir_ff_pkt->link_or_dir = strdup(ff_pkt->link_or_dir);
@@ -154,7 +102,6 @@ static bool AcceptFstype(FindFilesPacket*, void*) { return true; }
 #else
 static bool AcceptFstype(FindFilesPacket* ff, void*)
 {
-  int i;
   char fs[1000];
   bool accept = true;
 
@@ -163,14 +110,14 @@ static bool AcceptFstype(FindFilesPacket* ff, void*)
     if (!fstype(ff->fname, fs, sizeof(fs))) {
       Dmsg1(50, "Cannot determine file system type for \"%s\"\n", ff->fname);
     } else {
-      for (i = 0; i < ff->fstypes.size(); ++i) {
-        if (bstrcmp(fs, (char*)ff->fstypes.get(i))) {
+      for (size_t i = 0; i < ff->fstypes.size(); ++i) {
+        if (bstrcmp(fs, (char*)ff->fstypes[i])) {
           Dmsg2(100, "Accepting fstype %s for \"%s\"\n", fs, ff->fname);
           accept = true;
           break;
         }
         Dmsg3(200, "fstype %s for \"%s\" does not match %s\n", fs, ff->fname,
-              ff->fstypes.get(i));
+              ff->fstypes[i]);
       }
     }
   }
@@ -186,7 +133,6 @@ static bool AcceptFstype(FindFilesPacket* ff, void*)
 #if defined(HAVE_WIN32)
 static inline bool AcceptDrivetype(FindFilesPacket* ff, void*)
 {
-  int i;
   char dt[100];
   bool accept = true;
 
@@ -195,14 +141,14 @@ static inline bool AcceptDrivetype(FindFilesPacket* ff, void*)
     if (!Drivetype(ff->fname, dt, sizeof(dt))) {
       Dmsg1(50, "Cannot determine drive type for \"%s\"\n", ff->fname);
     } else {
-      for (i = 0; i < ff->drivetypes.size(); ++i) {
-        if (bstrcmp(dt, (char*)ff->drivetypes.get(i))) {
+      for (size_t i = 0; i < ff->drivetypes.size(); ++i) {
+        if (bstrcmp(dt, (char*)ff->drivetypes[i])) {
           Dmsg2(100, "Accepting drive type %s for \"%s\"\n", dt, ff->fname);
           accept = true;
           break;
         }
         Dmsg3(200, "drive type %s for \"%s\" does not match %s\n", dt,
-              ff->fname, ff->drivetypes.get(i));
+              ff->fname, ff->drivetypes[i]);
       }
     }
   }

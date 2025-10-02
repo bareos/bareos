@@ -29,6 +29,8 @@
 #ifndef BAREOS_FINDLIB_FIND_H_
 #define BAREOS_FINDLIB_FIND_H_
 
+#include <vector>
+
 #include "include/fileopts.h"
 #include "bfile.h"
 #include "lib/htable.h"
@@ -134,19 +136,19 @@ struct findFOPTS {
   int StripPath{};          /**< Strip path count */
   struct s_sz_matching* size_match{}; /**< Perform size matching ? */
   b_fileset_shadow_type shadow_type{
-      check_shadow_none};        /**< Perform fileset shadowing check ? */
-  char VerifyOpts[MAX_OPTS]{};   /**< Verify options */
-  char AccurateOpts[MAX_OPTS]{}; /**< Accurate mode options */
-  char* plugin{};                /**< Plugin that handle this section */
-  alist<regex_t*> regex;         /**< Regex string(s) */
-  alist<regex_t*> regexdir;      /**< Regex string(s) for directories */
-  alist<regex_t*> regexfile;     /**< Regex string(s) for files */
-  alist<const char*> wild;       /**< Wild card strings */
-  alist<const char*> wilddir;    /**< Wild card strings for directories */
-  alist<const char*> wildfile;   /**< Wild card strings for files */
-  alist<const char*> wildbase;   /**< Wild card strings for basenames */
-  alist<const char*> fstype;     /**< File system type limitation */
-  alist<const char*> Drivetype;  /**< Drive type limitation */
+      check_shadow_none};             /**< Perform fileset shadowing check ? */
+  char VerifyOpts[MAX_OPTS]{};        /**< Verify options */
+  char AccurateOpts[MAX_OPTS]{};      /**< Accurate mode options */
+  char* plugin{};                     /**< Plugin that handle this section */
+  alist<regex_t*> regex;              /**< Regex string(s) */
+  alist<regex_t*> regexdir;           /**< Regex string(s) for directories */
+  alist<regex_t*> regexfile;          /**< Regex string(s) for files */
+  alist<const char*> wild;            /**< Wild card strings */
+  alist<const char*> wilddir;         /**< Wild card strings for directories */
+  alist<const char*> wildfile;        /**< Wild card strings for files */
+  alist<const char*> wildbase;        /**< Wild card strings for basenames */
+  std::vector<const char*> fstype;    /**< File system type limitation */
+  std::vector<const char*> Drivetype; /**< Drive type limitation */
 };
 
 // This is either an include item or an exclude item
@@ -229,8 +231,8 @@ struct FindFilesPacket {
   struct s_sz_matching* size_match{nullptr}; /**< Perform size matching ? */
   bool cmd_plugin{false}; /**< Set if we have a command plugin */
   bool opt_plugin{false}; /**< Set if we have an option plugin */
-  alist<const char*> fstypes;          /**< Allowed file system types */
-  alist<const char*> drivetypes;       /**< Allowed drive types */
+  std::vector<const char*> fstypes;          /**< Allowed file system types */
+  std::vector<const char*> drivetypes;       /**< Allowed drive types */
 
   // List of all hard linked files found
   LinkHash* linkhash{nullptr};       /**< Hard linked files */
