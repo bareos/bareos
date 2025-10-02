@@ -247,159 +247,187 @@ The plugin backed up two files:
 Restore with the Linux FD Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Start Live Linux
+* Start Live Linux. In this example we use Fedora42 Live Linux.
 * Install bareos-filedaemon and bareos-filedaemon bareos-filedaemon-barri-plugin
 
 * Configure:
 
-root@localhost-live:/etc/bareos/bareos-fd.d# cat client/myself.conf 
-Client {
-  Name = localhost-live-fd
 
-  # remove comment from "Plugin Directory" to load plugins from specified directory.
-  # if "Plugin Names" is defined, only the specified plugins will be loaded,
-  # otherwise all filedaemon plugins (*-fd.so) from the "Plugin Directory".
-  #
-  Plugin Directory = "/usr/lib64/bareos/plugins"
-  Plugin Names = "barri"
-}
+.. code-block:: bareosconfig
+   :caption: :file:`/etc/bareos/bareos-fd.d/client/myself.conf` on linux live system
+
+   Client {
+     Name = localhost-live-fd
+     Plugin Directory = "/usr/lib64/bareos/plugins"
+     Plugin Names = "barri"
+   }
 
 
+Now we need to determine which device the target disk or disks have.
+This can be achieved by using the command :command:`lsblk` which shows us
+the detected block devices of the computer:
 
-Detect which device(s) the disk(s) for recovery is(are):
+.. code-block:: sh
+   :caption: use ``lsblk`` to determine the target disk(s)
+   :emphasize-lines: 9
 
-lsblk
-nvme0n1     259:0    0 238.5G  0 disk 
+   NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+   loop0         7:0    0     2G  1 loop /run/rootfsbase
+   sda           8:0    1 117.2G  0 disk 
+   ├─sda1        8:1    1   2.2G  0 part /run/initramfs/live
+   └─sda2        8:2    1    30M  0 part 
+   sdb           8:16   1 120.3G  0 disk 
+   └─sdb1        8:17   1 120.3G  0 part /run/media/liveuser/SanDisk
+   zram0       251:0    0     8G  0 disk [SWAP]
+   <input>nvme0n1     259:0    0 238.5G  0 disk</input>
+
+The demo system has currently two usb devices which show up as ``sda`` and ``sdb`` and a
+nvme device shown as ``nvme0n1``. 
+As the ``nvme0n1`` has a size of ``238.5G``, it is the device that we need to restore to.
+
+The target device of the disaster recovery is passed to the barri filedaemon plugin via the plugin options as follows:
+
+.. code-block:: bareosconfig
+
+   barri:files=/dev/first_device_to_be_restored[,/dev/second_device_to_be_restored]...
+
+Which results in our case to:
+
+.. code-block:: bareosconfig
+
+   barri:<input>files=/dev/nvme0n1</input>
 
 
-*restore jobid=1
-You have selected the following JobId: 1
+.. code-block:: bconsole
+   :caption: Example restore to local VMDK
 
-Building directory tree for JobId(s) 1 ...  
-2 files inserted into the tree.
-
-You are now entering file selection mode where you add (mark) and
-remove (unmark) files to be restored. No files are initially added, unless
-you used the "all" keyword on the command line.
-Enter "done" to leave this mode.
-
-cwd is: /
-$ mark *
-3 files newly marked.
-$ dpne
-Invalid command "dpne". Enter "done" to exit.
-$ done
-Bootstrap records written to /var/lib/bareos/bareos-dir.restore.3.bsr
-
-The job will require the following
-   Volume(s)                 Storage(s)                SD Device(s)
-===========================================================================
+   *<input>restore jobid=1</input>
+   You have selected the following JobId: 1
    
-    Full-0001                 File                      FileStorage              
-
-Volumes marked with "*" are online.
-
-
-2 files selected to be restored.
-
-Defined Clients:
-1: bareos-fd
-2: linuxlive-fd
-3: windowsdr-fd
-Select the Client (1-3): 2
-Using Catalog "MyCatalog"
-Run Restore job
-JobName:         RestoreFiles
-Bootstrap:       /var/lib/bareos/bareos-dir.restore.3.bsr
-Where:           /tmp/bareos-restores
-Replace:         Always
-FileSet:         LinuxAll
-Backup Client:   linuxlive-fd
-Restore Client:  linuxlive-fd
-Format:          Native
-Storage:         File
-When:            2025-10-02 15:10:49
-Catalog:         MyCatalog
-Priority:        10
-Plugin Options:  *None*
-OK to run? (yes/mod/no): mod
-Parameters to modify:
- 1: Level
- 2: Storage
- 3: Job
- 4: FileSet
- 5: Restore Client
- 6: Backup Format
- 7: When
- 8: Priority
- 9: Bootstrap
-10: Where
-11: File Relocation
-12: Replace
-13: JobId
-14: Plugin Options
-Select parameter to modify (1-14): 14
-Please enter Plugin Options string: barri:files=/dev/nvme0n1
-Run Restore job
-JobName:         RestoreFiles
-Bootstrap:       /var/lib/bareos/bareos-dir.restore.3.bsr
-Where:           /tmp/bareos-restores
-Replace:         Always
-FileSet:         LinuxAll
-Backup Client:   linuxlive-fd
-Restore Client:  linuxlive-fd
-Format:          Native
-Storage:         File
-When:            2025-10-02 15:10:49
-Catalog:         MyCatalog
-Priority:        10
-Plugin Options:  barri:files=/dev/nvme0n1
-OK to run? (yes/mod/no): yes
-messages
- 2025-10-02 15:15:48 bareos-dir JobId 5: Version: 25.0.0~pre1074.e81033063 (01 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
- 2025-10-02 15:15:48 bareos-dir JobId 5: Start Restore Job RestoreFiles.2025-10-02_15.15.46_16
- 2025-10-02 15:15:48 bareos-dir JobId 5: Connected Storage daemon at barri-server.bareos:9103, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
- 2025-10-02 15:15:48 bareos-dir JobId 5:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
- 2025-10-02 15:15:48 bareos-dir JobId 5: Using Device "FileStorage" to read.
- 2025-10-02 15:15:48 bareos-dir JobId 5: Connected Client: linuxlive-fd at linuxlive:9102, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
- 2025-10-02 15:15:48 bareos-dir JobId 5:  Handshake: Immediate TLS 
- 2025-10-02 15:15:48 bareos-dir JobId 5:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
- 2025-10-02 15:15:50 bareos-sd JobId 5: Connected File Daemon at linuxlive:9102, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
- 2025-10-02 15:15:52 bareos-sd JobId 5: Version: 25.0.0~pre1074.e81033063 (01 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
- 2025-10-02 15:15:53 bareos-sd JobId 5: Ready to read from volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage).
- 2025-10-02 15:15:53 bareos-sd JobId 5: Forward spacing Volume "Full-0001" to file:block 0:223.
- 2025-10-02 15:15:53 localhost-live-fd JobId 5: Version: 25.0.0~pre1077.b73cecf21 (01 October 2025) Fedora 42
- 2025-10-02 15:15:53 localhost-live-fd JobId 5: restore started (file = /tmp/bareos-restores/@barri@/windr-fd.barri)
- 2025-10-02 15:15:53 localhost-live-fd JobId 5: Restoring 1 Disks
- 2025-10-02 15:15:53 localhost-live-fd JobId 5: Restoring disk 0
- 2025-10-02 15:15:53 localhost-live-fd JobId 5: disk 0 is neither a block device, nor a regular file.  Continuing without size check
- 2025-10-02 15:33:26 bareos-sd JobId 5: End of Volume at file 8 on device "FileStorage" (/var/lib/bareos/storage), Volume "Full-0001"
- 2025-10-02 15:33:26 bareos-sd JobId 5: End of all volumes.
- 2025-10-02 15:33:26 bareos-sd JobId 5: Releasing device "FileStorage" (/var/lib/bareos/storage).
- 2025-10-02 15:33:26 localhost-live-fd JobId 5: restore finished
- 2025-10-02 15:33:26 localhost-live-fd JobId 5: starting restore of backup log into debug log (level = 300)
- 2025-10-02 15:33:26 localhost-live-fd JobId 5: restore of backup log is done
- 2025-10-02 15:33:26 localhost-live-fd JobId 5: restore finished
- 2025-10-02 15:33:27 bareos-dir JobId 5: Bareos bareos-dir 25.0.0~pre1074.e81033063 (01Oct25):
-  Build OS:               AlmaLinux Kitten release 10 (Lion Cub)
-  JobId:                  5
-  Job:                    RestoreFiles.2025-10-02_15.15.46_16
-  Restore Client:         "linuxlive-fd" 25.0.0~pre1077.b73cecf21 (01Oct25) Fedora 42,redhat
-  Start time:             02-Okt-2025 15:15:48
-  End time:               02-Okt-2025 15:33:27
-  Elapsed time:           17 mins 39 secs
-  Files Expected:         2
-  Files Restored:         2
-  Bytes Restored:         102,381,443,939
-  Rate:                   96677,5 KB/s
-  FD Errors:              0
-  FD termination status:  OK
-  SD termination status:  OK
-  Bareos binary info:     Bareos pre-release (UNSUPPORTED): Get professional support from https://www.bareos.com
-  Job triggered by:       User
-  Termination:            Restore OK
-
-
+   Building directory tree for JobId(s) 1 ...  
+   2 files inserted into the tree.
+   
+   You are now entering file selection mode where you add (mark) and
+   remove (unmark) files to be restored. No files are initially added, unless
+   you used the "all" keyword on the command line.
+   Enter "done" to leave this mode.
+   
+   cwd is: /
+   $ <input>mark *</input>
+   3 files newly marked.
+   $ <input>done</input>
+   Bootstrap records written to /var/lib/bareos/bareos-dir.restore.3.bsr
+   
+   The job will require the following
+      Volume(s)                 Storage(s)                SD Device(s)
+   ===========================================================================
+      
+       Full-0001                 File                      FileStorage              
+   
+   Volumes marked with "*" are online.
+   
+   
+   2 files selected to be restored.
+   
+   Defined Clients:
+   1: bareos-fd
+   2: linuxlive-fd
+   3: windowsdr-fd
+   Select the Client (1-3): <input>2</input>
+   Using Catalog "MyCatalog"
+   Run Restore job
+   JobName:         RestoreFiles
+   Bootstrap:       /var/lib/bareos/bareos-dir.restore.3.bsr
+   Where:           /tmp/bareos-restores
+   Replace:         Always
+   FileSet:         LinuxAll
+   Backup Client:   linuxlive-fd
+   Restore Client:  linuxlive-fd
+   Format:          Native
+   Storage:         File
+   When:            2025-10-02 15:10:49
+   Catalog:         MyCatalog
+   Priority:        10
+   Plugin Options:  *None*
+   OK to run? (yes/mod/no): <input>mod</input>
+   Parameters to modify:
+    1: Level
+    2: Storage
+    3: Job
+    4: FileSet
+    5: Restore Client
+    6: Backup Format
+    7: When
+    8: Priority
+    9: Bootstrap
+   10: Where
+   11: File Relocation
+   12: Replace
+   13: JobId
+   14: Plugin Options
+   Select parameter to modify (1-14): <input>14</input>
+   Please enter Plugin Options string: <input>barri:files=/dev/nvme0n1</input>
+   Run Restore job
+   JobName:         RestoreFiles
+   Bootstrap:       /var/lib/bareos/bareos-dir.restore.3.bsr
+   Where:           /tmp/bareos-restores
+   Replace:         Always
+   FileSet:         LinuxAll
+   Backup Client:   linuxlive-fd
+   Restore Client:  linuxlive-fd
+   Format:          Native
+   Storage:         File
+   When:            2025-10-02 15:10:49
+   Catalog:         MyCatalog
+   Priority:        10
+   Plugin Options:  barri:files=/dev/nvme0n1
+   OK to run? (yes/mod/no): <input>yes</input>
+   * you have messages
+   <input>messages</input>
+     [...] bareos-dir JobId 5: Version: 25.0.0~pre1074.e81033063 (01 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
+     [...] bareos-dir JobId 5: Start Restore Job RestoreFiles.2025-10-02_15.15.46_16
+     [...] bareos-dir JobId 5: Connected Storage daemon at barri-server.bareos:9103, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+     [...] bareos-dir JobId 5:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+     [...] bareos-dir JobId 5: Using Device "FileStorage" to read.
+     [...] bareos-dir JobId 5: Connected Client: linuxlive-fd at linuxlive:9102, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+     [...] bareos-dir JobId 5:  Handshake: Immediate TLS 
+     [...] bareos-dir JobId 5:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+     [...] bareos-sd JobId 5: Connected File Daemon at linuxlive:9102, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+     [...] bareos-sd JobId 5: Version: 25.0.0~pre1074.e81033063 (01 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
+     [...] bareos-sd JobId 5: Ready to read from volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage).
+     [...] bareos-sd JobId 5: Forward spacing Volume "Full-0001" to file:block 0:223.
+     [...] localhost-live-fd JobId 5: Version: 25.0.0~pre1077.b73cecf21 (01 October 2025) Fedora 42
+     [...] localhost-live-fd JobId 5: restore started (file = /tmp/bareos-restores/@barri@/windr-fd.barri)
+     [...] localhost-live-fd JobId 5: Restoring 1 Disks
+     [...] localhost-live-fd JobId 5: Restoring disk 0
+     [...] localhost-live-fd JobId 5: disk 0 is neither a block device, nor a regular file.  Continuing without size check
+     [...] bareos-sd JobId 5: End of Volume at file 8 on device "FileStorage" (/var/lib/bareos/storage), Volume "Full-0001"
+     [...] bareos-sd JobId 5: End of all volumes.
+     [...] bareos-sd JobId 5: Releasing device "FileStorage" (/var/lib/bareos/storage).
+     [...] localhost-live-fd JobId 5: restore finished
+     [...] localhost-live-fd JobId 5: starting restore of backup log into debug log (level = 300)
+     [...] localhost-live-fd JobId 5: restore of backup log is done
+     [...] localhost-live-fd JobId 5: restore finished
+     [...] bareos-dir JobId 5: Bareos bareos-dir 25.0.0~pre1074.e81033063 (01Oct25):
+     Build OS:               AlmaLinux Kitten release 10 (Lion Cub)
+     JobId:                  5
+     Job:                    RestoreFiles.2025-10-02_15.15.46_16
+     Restore Client:         "linuxlive-fd" 25.0.0~pre1077.b73cecf21 (01Oct25) Fedora 42,redhat
+     Start time:             02-Okt-2025 15:15:48
+     End time:               02-Okt-2025 15:33:27
+     Elapsed time:           17 mins 39 secs
+     Files Expected:         2
+     Files Restored:         2
+     Bytes Restored:         102,381,443,939
+     Rate:                   96677,5 KB/s
+     FD Errors:              0
+     FD termination status:  OK
+     SD termination status:  OK
+     Bareos binary info:     Bareos pre-release (UNSUPPORTED): Get professional support from https://www.bareos.com
+     Job triggered by:       User
+     Termination:            Restore OK
+   
+   
 
 
 
