@@ -28,12 +28,6 @@
 
 bool trace = false;
 
-// template <typename... T>
-// void trace_msg(fmt::format_string<T...> fmt, T&&... args)
-// {
-//   if (trace) { fmt::println(stderr, fmt, std::forward<T>(args)...); }
-// }
-
 template <typename... T> void err_msg(fmt::format_string<T...> fmt, T&&... args)
 {
   fmt::println(stderr, fmt, std::forward<T>(args)...);
@@ -177,18 +171,20 @@ int main(int argc, char* argv[])
                 R"(This command restores a barri backup to some output.
 The backup is read from stdin; alternatively you can specify a file to read from via the --file option.
 
-When output to a terminal, then progress will be displayed in a progress bar.)"))
+When output to a terminal, the progress will be displayed in a progress bar.)"))
             ->fallthrough()
             ->footer(libbareos::format(R"(Examples:
-  # restore the first disk to /dev/sda, the second to /dev/null
-  # and the third to /dev/nvme1n0
-  {0} restore --from backup.barri --files /dev/sda /dev/null /dev/nvme1n0
+  # restore
+  #   - the first disk to /dev/sda,
+  #   - the second disk to /dev/null (i.e. it is not restored), and
+  #   - the third disk to /dev/nvme1n0
+  {0} restore --from backup.barri --to-disks /dev/sda /dev/null /dev/nvme1n0
 
   # restore to some network block device
   get-backup | {0} restore --stdout | nbdcopy ...
 
   # restore the disks into /tmp/disks, and save the restore debug trace
-  cat backup.barri | {0} restore --into /tmp/disks --trace 2>/tmp/trace.log)",
+  cat backup.barri | {0} restore --to-raw-directory /tmp/disks --trace 2>/tmp/trace.log)",
                                        name));
   std::string filename;
   auto* from = restore
@@ -206,15 +202,15 @@ When output to a terminal, then progress will be displayed in a progress bar.)")
   auto* gendir
       = location
             ->add_option(
-                "--into", directory,
+                "--to-raw-directory", directory,
                 "restore the disks to raw files in the given directory")
             ->check(CLI::ExistingDirectory);
 
   std::vector<std::string> filenames;
   auto* disks = location
-                    ->add_option("--files", filenames,
+                    ->add_option("--to-disks", filenames,
                                  "write the restored disks into the given "
-                                 "drives; in the given order")
+                                 "disk devices; in the given order")
                     ->check(CLI::ExistingFile);
 
   location->require_option(1);
