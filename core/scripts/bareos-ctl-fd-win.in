@@ -38,7 +38,7 @@ case "$1" in
     nssm set "${srv_name}" AppDirectory "$(cygpath -w "${srv_rundir}")"
     nssm set "${srv_name}" AppStdout "$(cygpath -w "${srv_rundir}")/log/${srv_name}.stdout.log"
     nssm set "${srv_name}" AppStdErr "$(cygpath -w "${srv_rundir}")/log/${srv_name}.stderr.log"
-    nssm set "${srv_name}" AppExit Default Restart
+    nssm set "${srv_name}" AppExit Default Exit
     nssm set "${srv_name}" AppNoConsole 1
     nssm set "${srv_name}" DisplayName "${srv_name}"
     nssm set "${srv_name}" ObjectName LocalSystem
