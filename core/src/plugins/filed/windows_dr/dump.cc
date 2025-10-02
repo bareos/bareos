@@ -242,13 +242,6 @@ struct disk_reader {
       return true;
     }
 
-    // bool ready()
-    // {
-    //   if (!done) { done = HasOverlappedIoCompleted(&overlapped); }
-
-    //   return done;
-    // }
-
     bool wait()
     {
       if (done) { return true; }
@@ -295,7 +288,7 @@ struct disk_reader {
       if (done) { return; }
       auto res = CancelIoEx(hndl, &overlapped);
       logger->Trace("cancel returned {}", res);
-      // we need for the cancel to actually happen
+      // we need to wait for the cancel to actually happen
       wait();
     }
 
@@ -429,13 +422,12 @@ struct disk_reader {
     auto aligned_offset = (offset / sector_size) * sector_size;
 
     if (!cache.read(hndl, aligned_offset, disk_size)) {
-      logger->Trace("cache couldnt read ... Err={}", GetLastError());
+      logger->Trace("cache could not read ... Err={}", GetLastError());
     }
   }
 
   std::size_t do_fill(HANDLE hndl, std::size_t offset, std::span<char> output)
   {
-    // logger->Trace( "fill {} {}", hndl, offset);
     std::size_t bytes_written = 0;
     bool refreshed = false;
     for (;;) {
@@ -589,7 +581,7 @@ struct dump_context {
   dump_context(GenericLogger* logger_) : logger{logger_} {}
   ~dump_context()
   {
-    // we need to away to always delete these shadow copies
+    // we need to find a way to always delete these shadow copies
     // currently you can remove orphaned shadow copies via
     // diskshadow > delete shadows all
 
@@ -1651,8 +1643,6 @@ struct dump_context {
       logger->Trace("    length: {}", entry.PartitionLength.QuadPart);
       logger->Trace("    number: {}", entry.PartitionNumber);
       logger->Trace("    rewrite?: {}", entry.RewritePartition ? "yes" : "no");
-      // logger->Trace( "    service?: {}",
-      //         entry.IsServicePartition ? "yes" : "no");
     }
     return std::nullopt;
   }
