@@ -1,5 +1,5 @@
 Fileset {
-  Name = "isilon-fileset"
+  Name = "omnios-fileset"
   Include {
     Options {
         # meta = "USER=root"
@@ -10,6 +10,6 @@ Fileset {
         meta = "BUTYPE=DUMP"
 
     }
-    File = /ifs/home/regress/ndmp-bareos/@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
+    File = /export/home/regress/ndmp-native/@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
   }
 }
