@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -223,7 +223,7 @@ int CreateFile(JobControlRecord* jcr,
 
           if (IsBopen(bfd)) {
             Qmsg1(jcr, M_ERROR, 0, T_("bpkt already open filedes=%d\n"),
-                  bfd->filedes);
+                  Bgetfd(bfd));
             bclose(bfd);
           }
 
@@ -309,7 +309,7 @@ int CreateFile(JobControlRecord* jcr,
             }
             if (IsBopen(bfd)) {
               Qmsg1(jcr, M_ERROR, 0, T_("bpkt already open filedes=%d\n"),
-                    bfd->filedes);
+                    Bgetfd(bfd));
             }
             Dmsg2(400, "open %s flags=%08o\n", attr->ofname, flags);
             if ((bopen(bfd, attr->ofname, flags, 0, 0)) < 0) {
@@ -445,7 +445,7 @@ int CreateFile(JobControlRecord* jcr,
       if (!IsPortableBackup(bfd)) {
         if (IsBopen(bfd)) {
           Qmsg1(jcr, M_ERROR, 0, T_("bpkt already open filedes=%d\n"),
-                bfd->filedes);
+                Bgetfd(bfd));
         }
         if (bopen(bfd, attr->ofname, O_WRONLY | O_BINARY, 0,
                   attr->statp.st_rdev)

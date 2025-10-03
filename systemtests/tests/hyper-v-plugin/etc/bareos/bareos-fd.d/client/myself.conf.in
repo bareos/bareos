@@ -1,0 +1,10 @@
+Client {
+  Name = @basename@-fd
+
+  Plugin Directory = "@FD_PLUGINS_DIR_TO_TEST@"
+  Plugin Names = "hyper-v"
+
+  Working Directory =  "@working_dir@"
+  FD Port = @fd_port@
+
+}

@@ -1,0 +1,12 @@
+FileSet {
+  Name = "SelfTest"
+  Description = "fileset just to backup some files for selftest"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = xxh128
+      HardLinks = Yes
+    }
+    Plugin = "hyper-v:"
+  }
+}
