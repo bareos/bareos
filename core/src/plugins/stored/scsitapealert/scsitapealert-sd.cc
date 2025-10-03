@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,7 @@
 #include "stored/device_control_record.h"
 #include "stored/stored.h"
 #include "lib/scsi_tapealert.h"
+#include "scsitapealert-sd.h"
 
 using namespace storagedaemon;
 
@@ -37,6 +38,45 @@ using namespace storagedaemon;
 #define PLUGIN_VERSION "1"
 #define PLUGIN_DESCRIPTION "SCSI Tape Alert Storage Daemon Plugin"
 #define PLUGIN_USAGE "(No usage yet)"
+
+namespace {
+
+void dispatch_messages(JobControlRecord* jcr,
+                       const char* device,
+                       const char* volume,
+                       uint64_t flags)
+{
+  constexpr const char* job_msg
+      = "TapeAlert on device \"%s\" with volume \"%s\": [%d] %s\n%s\n"
+        "Possible cause: %s\n";
+  constexpr const char* job_msg_novol
+      = "TapeAlert on device \"%s\": [%d] %s\n%s\n"
+        "Possible cause: %s\n";
+
+  constexpr const char* print_msg
+      = "TapeAlert on device \"%s\" with volume \"%s\" from jobid %lu: "
+        "[%d] %s\n";
+  constexpr const char* print_msg_novol
+      = "TapeAlert on device \"%s\" from jobid %lu: [%d] %s\n";
+
+  const uint64_t jobid{jcr ? jcr->JobId : 0};
+
+  for (auto& flag : scsitapealert::flags) {
+    if (flag.present_in(flags)) {
+      if (volume && volume[0] != '\0') {
+        Jmsg(jcr, flag.type, 0, job_msg, device, volume, flag.no, flag.name,
+             flag.message, flag.cause);
+        Pmsg0(-1, print_msg, device, volume, jobid, flag.no, flag.name);
+      } else {
+        Jmsg(jcr, flag.type, 0, job_msg_novol, device, flag.no, flag.name,
+             flag.message, flag.cause);
+        Pmsg0(-1, print_msg_novol, device, jobid, flag.no, flag.name);
+      }
+    }
+  }
+}
+
+}  // namespace
 
 // Forward referenced functions
 static bRC newPlugin(PluginContext* ctx);
@@ -118,8 +158,10 @@ static bRC newPlugin(PluginContext* ctx)
 
   // Only register plugin events we are interested in.
   bareos_core_functions->registerBareosEvents(
-      ctx, 6, bSdEventVolumeLoad, bSdEventLabelVerified, bSdEventReadError,
-      bSdEventWriteError, bSdEventVolumeUnload, bSdEventDeviceRelease);
+      ctx, 10, bSdEventDeviceInit, bSdEventVolumeLoad, bSdEventLabelVerified,
+      bSdEventLabelWrite, bSdEventReadError, bSdEventWriteError,
+      bSdEventVolumeUnload, bSdEventDeviceRelease, bSdEventDeviceOpen,
+      bSdEventDeviceClose);
 
   return bRC_OK;
 }
@@ -155,10 +197,16 @@ static bRC setPluginValue(PluginContext*, pVariable var, void*)
 static bRC handlePluginEvent(PluginContext*, bSdEvent* event, void* value)
 {
   switch (event->eventType) {
+    case bSdEventDeviceClose:
+    case bSdEventDeviceInit:
+    case bSdEventDeviceOpen:
+    case bSdEventDeviceRelease:
     case bSdEventLabelVerified:
+    case bSdEventLabelWrite:
     case bSdEventReadError:
-    case bSdEventWriteError:
+    case bSdEventVolumeLoad:
     case bSdEventVolumeUnload:
+    case bSdEventWriteError:
       return handle_tapealert_readout(value);
     default:
       Dmsg1(debuglevel, "scsitapealert-sd: Unknown event %d\n",
@@ -211,6 +259,8 @@ static bRC handle_tapealert_readout(void* value)
         "scsitapealert-sd: tapealerts on device %s, calling UpdateTapeAlerts\n",
         dev->archive_device_string);
     bareos_core_functions->UpdateTapeAlert(dcr, flags);
+    dispatch_messages(dcr->jcr, device_resource->resource_name_,
+                      dev->getVolCatName(), flags);
   }
 
   return bRC_OK;
