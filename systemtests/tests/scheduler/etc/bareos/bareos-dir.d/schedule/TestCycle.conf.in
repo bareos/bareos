@@ -1,0 +1,4 @@
+Schedule {
+  Name = "TestCycle"
+  Run = Level=Full feb 29 at 0:00
+}
