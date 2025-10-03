@@ -588,17 +588,11 @@ else() # no error
   endif()
 endif()
 if(autochanger_devices_found)
-  set(AUTOCHANGER_DEVICES_FOUND
-      TRUE
-  )
-  set(CHANGER_DEVICE0
-      ${changer-device}
-  )
+  set(AUTOCHANGER_DEVICES_FOUND TRUE)
+  set(CHANGER_DEVICE0 ${changer-device})
 
   list(JOIN tape-devices "\" \"" joined_tape_devices_0)
-  set(TAPE_DEVICES0
-      "\"${joined_tape_devices_0}\""
-  )
+  set(TAPE_DEVICES0 "\"${joined_tape_devices_0}\"")
 
   message(
     STATUS
@@ -608,9 +602,7 @@ endif()
 
 # gfapi-fd
 if(NOT DEFINED gfapi_fd_testvolume)
-  set(gfapi_fd_testvolume
-      testvol
-  )
+  set(gfapi_fd_testvolume testvol)
 endif()
 
 set(DUMP_VARS
