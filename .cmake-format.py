@@ -86,6 +86,10 @@ additional_commands = {
         "flags": ["", ""],
         "kwargs": {"BAREOS_DB_NAME": "*", "DEBIAN_DB_NAME": "*"},
     },
+    "bareos_known_compiler_flags": {
+        "flags": ["UNSUPPORTED", "C_ONLY", "CXX_ONLY"],
+            "kwargs": { "ID": "1", "SINCE": "1", "FLAGS": "*" },
+    },
     "CPMAddPackage": {
         "pargs": 0,
         "flags": ["", ""],

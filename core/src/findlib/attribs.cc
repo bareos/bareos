@@ -57,14 +57,8 @@ static bool set_win32_attributes(JobControlRecord* jcr,
 void WinError(JobControlRecord* jcr, const char* prefix, POOLMEM* ofile);
 #endif /* HAVE_WIN32 */
 
-// For old systems that don't have lchown() use chown()
-
-#ifndef HAVE_LCHOWN
-#  define lchown chown
-#endif
-
-// For old systems that don't have lchmod() use chmod()
-#ifndef HAVE_LCHMOD
+// For old systems that don't have lchmod() or where it is a stub use chmod()
+#if !defined(HAVE_LCHMOD) || defined(__stub_lchmod) || defined(__stub___lchmod)
 #  define lchmod chmod
 #endif
 
@@ -415,7 +409,7 @@ bool SetAttributes(JobControlRecord* jcr,
       ok = false;
     }
 
-#ifdef HAVE_LCHMOD
+#if defined(HAVE_LCHMOD) && !defined(__stub_lchmod) && !defined(__stub___lchmod)
     if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && !suppress_errors) {
       BErrNo be;
 
@@ -428,7 +422,7 @@ bool SetAttributes(JobControlRecord* jcr,
     if (!ofd->cmd_plugin) {
       ok = RestoreFileAttributes(jcr, attr, ofd);
 
-#ifdef HAVE_CHFLAGS
+#if defined(HAVE_CHFLAGS) && !defined(__stub_chflags)
       /* FreeBSD user flags
        *
        * Note, this should really be done before the utime() above,
