@@ -1,4 +1,3 @@
-
 lib/libbareossd-tape.so
 lib/bareos/scripts/mtx-changer
 @sample  %%ETCDIR%%/mtx-changer.conf.sample
@@ -6,8 +5,8 @@ share/man/man8/bscrypto.8.gz
 share/man/man8/btape.8.gz
 sbin/bscrypto
 sbin/btape
-@(bareos,bareos,0640)  %%ETCDIR%%/bareos-dir.d/storage/Tape.conf.example
-@(bareos,bareos,0640)  %%ETCDIR%%/bareos-sd.d/autochanger/autochanger-0.conf.example
-@(bareos,bareos,0640)  %%ETCDIR%%/bareos-sd.d/device/tapedrive-0.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/storage/Tape.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/autochanger/autochanger-0.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-sd.d/device/tapedrive-0.conf.example
 lib/bareos/plugins/scsicrypto-sd.so
 lib/bareos/plugins/scsitapealert-sd.so

@@ -1,3 +1,3 @@
 bin/bconsole
 sbin/bconsole
-@sample(,,640) %%ETCDIR%%/bconsole.conf.sample
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bconsole.conf

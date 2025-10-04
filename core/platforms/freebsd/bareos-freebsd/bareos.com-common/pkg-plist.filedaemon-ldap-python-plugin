@@ -1,5 +1,4 @@
-
 lib/bareos/plugins/bareos-fd-ldap.py
-@(bareos,bareos,0640)  %%ETCDIR%%/bareos-dir.d/fileset/plugin-ldap.conf.example
-@(bareos,bareos,0640)  %%ETCDIR%%/bareos-dir.d/job/backup-ldap.conf.example
-@(bareos,bareos,0640)  %%ETCDIR%%/bareos-dir.d/job/restore-ldap.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/fileset/plugin-ldap.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/backup-ldap.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/restore-ldap.conf.example

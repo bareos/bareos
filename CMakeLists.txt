@@ -208,6 +208,7 @@ if(BUILD_BAREOS_BINARIES)
   # include PrefixMap before BareosCcache so hash_dir is set correctly
   include(PrefixMap)
   include(BareosCcache)
+  include(BareosSetVariableDefaults)
   add_subdirectory(core)
   if(ENABLE_WEBUI)
     add_subdirectory(webui)
