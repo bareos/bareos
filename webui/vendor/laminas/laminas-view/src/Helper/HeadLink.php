@@ -453,7 +453,7 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
                 $extras['media'] = implode(',', $extras['media']);
             }
         }
-        
+
         $extras = [];
 
         $href  = (string) $href;
