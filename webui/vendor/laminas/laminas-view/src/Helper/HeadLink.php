@@ -374,6 +374,8 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
         $conditionalStylesheet = false;
         $href                  = array_shift($args);
 
+        $extras = [];
+
         if ($this->isDuplicateStylesheet($href)) {
             return false;
         }
@@ -451,6 +453,8 @@ class HeadLink extends Placeholder\Container\AbstractStandalone
                 $extras['media'] = implode(',', $extras['media']);
             }
         }
+        
+        $extras = [];
 
         $href  = (string) $href;
         $type  = (string) $type;

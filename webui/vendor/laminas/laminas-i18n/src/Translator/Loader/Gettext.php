@@ -136,7 +136,7 @@ class Gettext extends AbstractFileLoader
                 }
             }
         }
-
+/*
         // Read header entries
         if (array_key_exists('', $textDomain)) {
             $rawHeaders = explode("\n", trim($textDomain['']));
@@ -155,8 +155,8 @@ class Gettext extends AbstractFileLoader
         fclose($this->file);
 
         return $textDomain;
+ */
     }
-
     /**
      * Read a single integer from the current file.
      *
