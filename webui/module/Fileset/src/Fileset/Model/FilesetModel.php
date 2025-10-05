@@ -39,7 +39,7 @@ class FilesetModel
         if (isset($bsock)) {
             $cmd = 'list filesets';
             $result = $bsock->send_command($cmd, 2);
-            $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $filesets = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $filesets['result']['filesets'];
         } else {
             throw new \Exception('Missing argument.');
@@ -59,7 +59,7 @@ class FilesetModel
         if (isset($bsock, $id)) {
             $cmd = 'llist fileset filesetid=' . $id . '';
             $result = $bsock->send_command($cmd, 2);
-            $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $fileset = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $fileset['result']['filesets'];
         } else {
             throw new \Exception('Missing argument.');
@@ -78,7 +78,7 @@ class FilesetModel
         if (isset($bsock)) {
             $cmd = '.filesets';
             $result = $bsock->send_command($cmd, 2);
-            $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $filesets = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $filesets['result']['filesets'];
         } else {
             throw new \Exception('Missing argument.');

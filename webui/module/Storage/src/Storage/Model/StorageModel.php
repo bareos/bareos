@@ -39,7 +39,7 @@ class StorageModel
         if (isset($bsock)) {
             $cmd = 'list storages';
             $result = $bsock->send_command($cmd, 2);
-            $storages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $storages = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $storages['result']['storages'];
         } else {
             throw new \Exception('Missing argument.');
@@ -59,7 +59,7 @@ class StorageModel
         if (isset($bsock, $storage)) {
             $cmd = 'status storage="' . $storage . '" slots';
             $result = $bsock->send_command($cmd, 2);
-            $slots = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $slots = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $slots['result']['contents'];
         } else {
             throw new \Exception('Missing argument.');
@@ -255,7 +255,7 @@ class StorageModel
         if (isset($bsock, $storage)) {
             $cmd = 'status storage="' . $storage . '" slots';
             $slots = $bsock->send_command($cmd, 2);
-            $result = \Zend\Json\Json::decode($slots, \Zend\Json\Json::TYPE_ARRAY);
+            $result = \Laminas\Json\Json::decode($slots, \Laminas\Json\Json::TYPE_ARRAY);
             return $result['result']['contents'];
         } else {
             throw new \Exception('Missing argument.');

@@ -26,7 +26,7 @@
 
 namespace Application\View\Helper;
 
-use Zend\View\Helper\AbstractHelper;
+use Laminas\View\Helper\AbstractHelper;
 
 class UpdateAlert extends AbstractHelper
 {

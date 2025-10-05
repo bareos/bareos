@@ -1,0 +1,77 @@
+{
+    "name": "laminas/laminas-form",
+    "description": " ",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "form"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-form/",
+        "issues": "https://github.com/laminas/laminas-form/issues",
+        "source": "https://github.com/laminas/laminas-form",
+        "rss": "https://github.com/laminas/laminas-form/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.6-dev",
+            "dev-develop": "2.7-dev"
+        }
+    },
+    "require": {
+        "php": ">=5.5",
+        "laminas/laminas-hydrator": "~1.0",
+        "laminas/laminas-inputfilter": "~2.5",
+        "laminas/laminas-stdlib": "~2.7",
+        "laminas/laminas-zendframework-bridge": "^1.0"
+    },
+    "require-dev": {
+        "doctrine/annotations": "~1.0",
+        "fabpot/php-cs-fixer": "1.7.*",
+        "laminas/laminas-cache": "~2.5",
+        "laminas/laminas-captcha": "~2.5",
+        "laminas/laminas-code": "~2.5",
+        "laminas/laminas-di": "~2.5",
+        "laminas/laminas-eventmanager": "~2.5",
+        "laminas/laminas-filter": "~2.5",
+        "laminas/laminas-i18n": "~2.5",
+        "laminas/laminas-mvc": "~2.5",
+        "laminas/laminas-recaptcha": "*",
+        "laminas/laminas-servicemanager": "~2.5",
+        "laminas/laminas-session": "~2.5",
+        "laminas/laminas-text": "~2.5",
+        "laminas/laminas-validator": "~2.5",
+        "laminas/laminas-view": "~2.5",
+        "phpunit/phpunit": "~4.0"
+    },
+    "suggest": {
+        "laminas/laminas-captcha": "Laminas\\Captcha component",
+        "laminas/laminas-code": "Laminas\\Code component",
+        "laminas/laminas-eventmanager": "Laminas\\EventManager component",
+        "laminas/laminas-filter": "Laminas\\Filter component",
+        "laminas/laminas-i18n": "Laminas\\I18n component",
+        "laminas/laminas-recaptcha": "Laminas\\ReCaptcha component",
+        "laminas/laminas-servicemanager": "Laminas\\ServiceManager component",
+        "laminas/laminas-validator": "Laminas\\Validator component",
+        "laminas/laminas-view": "Laminas\\View component"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\Form\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\Form\\": "test/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-form": "self.version"
+    }
+}

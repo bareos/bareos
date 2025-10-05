@@ -25,7 +25,7 @@
 
 namespace Auth\Form;
 
-use Zend\Form\Form;
+use Laminas\Form\Form;
 
 class LoginForm extends Form
 {
@@ -160,7 +160,7 @@ class LoginForm extends Form
         $this->add(
             array(
                 'name' => 'bareos_updates',
-                'type' => 'Zend\Form\Element\Hidden',
+                'type' => 'Laminas\Form\Element\Hidden',
                 'attributes' => array(
                     'value' => 'false',
                     'id' => 'bareos_updates'

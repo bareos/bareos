@@ -44,10 +44,10 @@ class MediaModel
             while (true) {
                 $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
                 if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-                    $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $error = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     return $error['result']['error'];
                 } else {
-                    $volumes = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $volumes = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     if (empty($volumes['result'])) {
                         return false; // No matching records found
                     }
@@ -77,7 +77,7 @@ class MediaModel
         if (isset($bsock, $volume)) {
             $cmd = 'llist volume="' . $volume . '"';
             $result = $bsock->send_command($cmd, 2);
-            $volume = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $volume = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $volume['result']['volume'];
         } else {
             throw new \Exception('Missing argument.');
@@ -98,10 +98,10 @@ class MediaModel
             $cmd = 'llist jobs volume="' . $volume . '"';
             $result = $bsock->send_command($cmd, 2);
             if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-                $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                $error = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                 return $error['result']['error'];
             } else {
-                $volume = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                $volume = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                 return $volume['result']['jobs'];
             }
         } else {

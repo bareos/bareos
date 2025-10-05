@@ -25,9 +25,9 @@
 
 namespace Job\Controller;
 
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
-use Zend\Json\Json;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
+use Laminas\Json\Json;
 use Job\Form\JobForm;
 use Job\Form\RunJobForm;
 use Job\Model\Job;

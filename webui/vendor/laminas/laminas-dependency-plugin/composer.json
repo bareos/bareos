@@ -1,0 +1,48 @@
+{
+    "name": "laminas/laminas-dependency-plugin",
+    "description": "Replace zendframework and zfcampus packages with their Laminas Project equivalents.",
+    "type": "composer-plugin",
+    "license": "BSD-3-Clause",
+    "config": {
+        "sort-packages": true
+    },
+    "require": {
+        "php": "^7.3 || ~8.0.0 || ~8.1.0",
+        "composer-plugin-api": "^1.1 || ^2.0"
+    },
+    "require-dev": {
+        "composer/composer": "^1.9 || ^2.0",
+        "laminas/laminas-coding-standard": "^2.2.1",
+        "mikey179/vfsstream": "^1.6.10@alpha",
+        "phpunit/phpunit": "^9.5.5",
+        "psalm/plugin-phpunit": "^0.15.1",
+        "roave/security-advisories": "dev-master",
+        "vimeo/psalm": "^4.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\DependencyPlugin\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\DependencyPlugin\\": "test/"
+        },
+        "files": ["autoload/composer-2.0.php"]
+    },
+    "extra": {
+        "class": "Laminas\\DependencyPlugin\\DependencyRewriterPluginDelegator"
+    },
+    "scripts": {
+        "check": [
+            "@cs-check",
+            "@compat",
+            "@test"
+        ],
+        "cs-check": "phpcs",
+        "cs-fix": "phpcbf",
+        "static-analysis": "psalm --shepherd --stats",
+        "test": "phpunit --colors=always",
+        "test-coverage": "phpunit --colors=always --coverage-clover clover.xml"
+    }
+}

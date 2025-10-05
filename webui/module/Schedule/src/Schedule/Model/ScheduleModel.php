@@ -25,8 +25,8 @@
 
 namespace Schedule\Model;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
+use Laminas\ServiceManager\ServiceLocatorAwareInterface;
+use Laminas\ServiceManager\ServiceLocatorInterface;
 
 class ScheduleModel
 {
@@ -42,7 +42,7 @@ class ScheduleModel
         if (isset($bsock)) {
             $cmd = '.schedule';
             $result = $bsock->send_command($cmd, 2);
-            $schedules = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $schedules = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $schedules['result']['schedules'];
         } else {
             throw new \Exception('Missing argument.');
