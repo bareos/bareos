@@ -39,7 +39,7 @@ class DirectorModel
         if (isset($bsock)) {
             $cmd = '.help';
             $result = $bsock->send_command($cmd, 2);
-            $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $messages = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $messages['result'];
         } else {
             throw new \Exception('Missing argument.');
@@ -58,7 +58,7 @@ class DirectorModel
         if (isset($bsock)) {
             $cmd = 'version';
             $result = $bsock->send_command($cmd, 2);
-            $version = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $version = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $version['result']['version'];
         } else {
             throw new \Exception('Missing argument.');
@@ -93,7 +93,7 @@ class DirectorModel
         if ($api != 2) {
             $cmd = 'status subscription';
             $result = $bsock->send_command($cmd, 2);
-            $status = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $status = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             if (empty($status['result'])) {
                 return false;
             }
@@ -103,7 +103,7 @@ class DirectorModel
         $result = $bsock->send_command($cmd, $api);
 
         if ($api == 2) {
-            $status = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $status = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             if (isset($status['error'])) {
                 return false;
             }
@@ -136,7 +136,7 @@ class DirectorModel
                 $cmd = 'list log limit=' . $limit;
             }
             $result = $bsock->send_command($cmd, 2);
-            $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $messages = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $messages['result']['log'];
         } else {
             throw new \Exception('Missing argument.');

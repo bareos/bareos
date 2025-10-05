@@ -1,0 +1,62 @@
+{
+    "name": "laminas/laminas-hydrator",
+    "description": " ",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "hydrator"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-hydrator/",
+        "issues": "https://github.com/laminas/laminas-hydrator/issues",
+        "source": "https://github.com/laminas/laminas-hydrator",
+        "rss": "https://github.com/laminas/laminas-hydrator/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-release-1.0": "1.0-dev",
+            "dev-release-1.1": "1.1-dev",
+            "dev-master": "2.0-dev",
+            "dev-develop": "2.1-dev"
+        }
+    },
+    "require": {
+        "php": "^5.5 || ^7.0",
+        "laminas/laminas-stdlib": "^2.7 || ^3.0",
+        "laminas/laminas-zendframework-bridge": "^1.0"
+    },
+    "require-dev": {
+        "laminas/laminas-eventmanager": "^2.6.2 || ^3.0",
+        "laminas/laminas-filter": "^2.6",
+        "laminas/laminas-inputfilter": "^2.6",
+        "laminas/laminas-serializer": "^2.6.1",
+        "laminas/laminas-servicemanager": "^2.7.5 || ^3.0.3",
+        "phpunit/phpunit": "~4.0",
+        "squizlabs/php_codesniffer": "^2.0@dev"
+    },
+    "suggest": {
+        "laminas/laminas-eventmanager": "^2.6.2 || ^3.0, to support aggregate hydrator usage",
+        "laminas/laminas-filter": "^2.6, to support naming strategy hydrator usage",
+        "laminas/laminas-serializer": "^2.6.1, to use the SerializableStrategy",
+        "laminas/laminas-servicemanager": "^2.7.5 || ^3.0.3, to support hydrator plugin manager usage"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\Hydrator\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\Hydrator\\": "test/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-hydrator": "self.version"
+    }
+}

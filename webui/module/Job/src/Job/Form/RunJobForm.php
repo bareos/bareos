@@ -25,8 +25,8 @@
 
 namespace Job\Form;
 
-use Zend\Form\Form;
-use Zend\Form\Element;
+use Laminas\Form\Form;
+use Laminas\Form\Element;
 
 class RunJobForm extends Form
 {
@@ -260,7 +260,7 @@ class RunJobForm extends Form
         // Priority
         $this->add(array(
             'name' => 'priority',
-            'type' => 'Zend\Form\Element\Text',
+            'type' => 'Laminas\Form\Element\Text',
             'options' => array(
                 'label' => _('Priority'),
             ),
@@ -275,7 +275,7 @@ class RunJobForm extends Form
         if (isset($jobdefaults['type'])) {
             $this->add(array(
                 'name' => 'type',
-                'type' => 'Zend\Form\Element\Text',
+                'type' => 'Laminas\Form\Element\Text',
                 'options' => array(
                     'label' => _('Type'),
                     'empty_option' => '',
@@ -290,7 +290,7 @@ class RunJobForm extends Form
         } else {
             $this->add(array(
                 'name' => 'type',
-                'type' => 'Zend\Form\Element\Text',
+                'type' => 'Laminas\Form\Element\Text',
                 'options' => array(
                     'label' => _('Type'),
                     'empty_option' => '',
@@ -343,7 +343,7 @@ class RunJobForm extends Form
       // Backup Format
       $this->add(array(
          'name' => 'backupformat',
-         'type' => 'Zend\Form\Element\Text',
+         'type' => 'Laminas\Form\Element\Text',
          'options' => array(
             'label' => _('Backup Format'),
          ),
@@ -358,7 +358,7 @@ class RunJobForm extends Form
         // When
         $this->add(array(
             'name' => 'when',
-            'type' => 'Zend\Form\Element\Text',
+            'type' => 'Laminas\Form\Element\Text',
             'options' => array(
                 'label' => _('When'),
             ),

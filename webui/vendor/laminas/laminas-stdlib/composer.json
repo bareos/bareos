@@ -1,0 +1,58 @@
+{
+    "name": "laminas/laminas-stdlib",
+    "description": " ",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "stdlib"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-stdlib/",
+        "issues": "https://github.com/laminas/laminas-stdlib/issues",
+        "source": "https://github.com/laminas/laminas-stdlib",
+        "rss": "https://github.com/laminas/laminas-stdlib/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "require": {
+        "php": "^5.6 || ^7.0",
+        "laminas/laminas-hydrator": "~1.1",
+        "laminas/laminas-zendframework-bridge": "^1.0",
+        "symfony/polyfill-php73": "^1.19"
+    },
+    "require-dev": {
+        "athletic/athletic": "~0.1",
+        "fabpot/php-cs-fixer": "1.7.*",
+        "laminas/laminas-config": "~2.5",
+        "laminas/laminas-eventmanager": "^2.6.1",
+        "laminas/laminas-filter": "~2.5",
+        "laminas/laminas-inputfilter": "~2.5",
+        "laminas/laminas-serializer": "~2.5",
+        "laminas/laminas-servicemanager": "^2.7.5 || ^3.0.3",
+        "phpunit/phpunit": "^5.7.27 || ^6.5.14 || ^7.5.20"
+    },
+    "suggest": {
+        "laminas/laminas-eventmanager": "To support aggregate hydrator usage",
+        "laminas/laminas-filter": "To support naming strategy hydrator usage",
+        "laminas/laminas-serializer": "Laminas\\Serializer component",
+        "laminas/laminas-servicemanager": "To support hydrator plugin manager usage"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\Stdlib\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\Stdlib\\": "test/",
+            "LaminasBench\\Stdlib\\": "benchmark/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-stdlib": "self.version"
+    }
+}
