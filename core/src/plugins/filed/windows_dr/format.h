@@ -26,9 +26,7 @@
 namespace libbareos {
 using std::format;
 using std::format_string;
-using std::make_format_args;
-using std::println;
-using std::vformat;
+using std::format_to;
 }  // namespace libbareos
 #else
 #  include <fmt/format.h>
@@ -36,9 +34,7 @@ using std::vformat;
 namespace libbareos {
 using fmt::format;
 using fmt::format_string;
-using fmt::make_format_args;
-using fmt::println;
-using fmt::vformat;
+using fmt::format_to;
 }  // namespace libbareos
 #endif
 
