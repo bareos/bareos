@@ -419,11 +419,11 @@ class MediaVault():
             dest="min_age",default=1,type=int
         )
         parser.add_argument(
-            "--return_time", help="how much days vaulting is expected (default 90)",
+            "--return_time", help="how many days vaulting is expected (default 90)",
             dest="return_time",default=90,type=int
         )
         parser.add_argument(
-            "--min_volgb", help="minimal volume gigabytes (default 4096GB, 4TB)",
+            "--min_volgb", help="minimal volume size in gigabytes without unit (default 4096GB, 4TB)",
             dest="min_volgb",default=4096,type=int
         )
         parser.add_argument(

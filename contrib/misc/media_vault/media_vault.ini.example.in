@@ -13,9 +13,9 @@ autochanger=autochanger-0
 ; the current day is day 0
 max_age=21
 min_age=1
-; how much days we expect as vault return
+; in how many days do we expect the return from the vault
 return_time=90
-; minimal volume in gigabytes without unit (default is 4096 GB = 4TB)
+; minimal volume size in gigabytes without unit (default is 4096 = 4TB).
 min_volgb=4096
 ; comma separated list of volume status to consider to export (default Full,Used)
 ; if you add Append any volume in Append mode with the minimal min_volgb will also be exported
