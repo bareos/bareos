@@ -38,7 +38,6 @@ target_sources(
           bnet_network_dump_private.cc
           bpipe.cc
           breg.cc
-          bregex.cc
           bsnprintf.cc
           bsock.cc
           bsock_tcp.cc
@@ -102,7 +101,7 @@ target_sources(
 )
 
 if(HAVE_WIN32)
-  target_sources(bareos PRIVATE bpipe_win32.cc)
+  target_sources(bareos PRIVATE bpipe_win32.cc bregex.cc)
   target_sources(
     bareos PRIVATE ../win32/compat/compat.cc ../win32/compat/glob.cc
                    ../win32/compat/winapi.cc
