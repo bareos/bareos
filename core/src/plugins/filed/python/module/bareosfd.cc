@@ -341,53 +341,54 @@ static inline bool PySavePacketToNative(
     // Special code for handling restore objects.
     if (IS_FT_OBJECT(sp->type)) {
       // See if a proper restore object was created.
-      if (pSavePkt->object_len > 0) {
-        /* As this has to linger as long as the backup is running we save it
-         * in our plugin context. */
-        bool object_name_exists = pSavePkt->object_name;
-        bool object_name_is_unicode = PyUnicode_Check(pSavePkt->object_name);
-        bool object_exists = pSavePkt->object;
-        bool object_is_bytearray = PyByteArray_Check(pSavePkt->object);
-        if (object_name_exists && object_name_is_unicode && object_exists
-            && object_is_bytearray) {
-          char* buf;
-
-          if (plugin_priv_ctx->object_name) {
-            free(plugin_priv_ctx->object_name);
-          }
-          plugin_priv_ctx->object_name
-              = strdup(PyUnicode_AsUTF8(pSavePkt->object_name));
-          sp->object_name = plugin_priv_ctx->object_name;
-
-          sp->object_len = pSavePkt->object_len;
-          sp->index = pSavePkt->object_index;
-
-          if ((buf = PyByteArray_AsString(pSavePkt->object))) {
-            if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
-            plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
-            memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
-            sp->object = plugin_priv_ctx->object;
-          } else {
-            return false;
-          }
-        } else {
-          std::string err_string{};
-          if (!object_name_exists) { err_string = "object name missing"; };
-          if (!object_name_is_unicode) {
-            err_string = "object name must be unicode type";
-          };
-          if (!object_exists) { err_string = "object missing"; };
-          if (!object_is_bytearray) {
-            err_string = "object needs to be of type bytearray";
-          };
-
-          PyErr_SetString(PyExc_RuntimeError, err_string.c_str());
-          return false;
-        }
-      } else {
+      if (pSavePkt->object_len <= 0) {
         PyErr_SetString(PyExc_RuntimeError, "pSavePkt->object_len is <=0");
         return false;
       }
+
+      /* As this has to linger as long as the backup is running we save it
+       * in our plugin context. */
+      bool object_name_exists = pSavePkt->object_name;
+      bool object_name_is_unicode = PyUnicode_Check(pSavePkt->object_name);
+      bool object_exists = pSavePkt->object;
+      bool object_is_bytearray = PyByteArray_Check(pSavePkt->object);
+
+      if (!object_name_exists) {
+        PyErr_SetString(PyExc_RuntimeError, "object name missing");
+        return false;
+      }
+
+      if (!object_name_is_unicode) {
+        PyErr_SetString(PyExc_RuntimeError, "object name must be unicode type");
+        return false;
+      }
+
+      if (!object_exists) {
+        PyErr_SetString(PyExc_RuntimeError, "object missing");
+        return false;
+      }
+
+      if (!object_is_bytearray) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "object needs to be of type bytearray");
+        return false;
+      }
+
+      if (plugin_priv_ctx->object_name) { free(plugin_priv_ctx->object_name); }
+      plugin_priv_ctx->object_name
+          = strdup(PyUnicode_AsUTF8(pSavePkt->object_name));
+      sp->object_name = plugin_priv_ctx->object_name;
+
+      sp->object_len = pSavePkt->object_len;
+      sp->index = pSavePkt->object_index;
+
+      char* buf = PyByteArray_AsString(pSavePkt->object);
+      if (!buf) { return false; }
+
+      if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
+      plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
+      memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
+      sp->object = plugin_priv_ctx->object;
     } else {
       sp->no_read = pSavePkt->no_read;
       sp->delta_seq = pSavePkt->delta_seq;
