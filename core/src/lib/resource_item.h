@@ -37,11 +37,11 @@ template <typename T> class dlist;
 
 namespace config {
 struct DefaultValue {
-  const char* value;
+  const char* value{};
 };
 
 struct Version {
-  size_t major, minor, patch;
+  size_t major{}, minor{}, patch{};
 };
 
 struct DeprecatedSince {
@@ -53,7 +53,10 @@ struct IntroducedIn {
 };
 
 struct Code {
-  size_t value;
+  size_t value{};
+
+  Code() = delete;
+  Code(size_t val) : value{val} {}
 };
 
 struct Required {};
@@ -175,7 +178,7 @@ struct ResourceItem {
                const int type_,
                std::size_t offset_,
                BareosResource** allocated_resource_,
-               ResourceItemFlags&& resource_flags)
+               ResourceItemFlags resource_flags)
       : name{name_}
       , type{type_}
       , offset{offset_}
