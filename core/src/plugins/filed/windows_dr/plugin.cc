@@ -323,9 +323,31 @@ struct plugin_arguments {
 };
 
 struct plugin_logger : public GenericLogger {
-  void Begin(std::size_t FileSize) override { (void)FileSize; }
-  void Progressed(std::size_t Amount) override { (void)Amount; }
-  void End() override {}
+  using Clock = std::chrono::steady_clock;
+
+  void Begin(std::size_t FileSize) override
+  {
+    current_file_size = FileSize;
+    current_file_offset = 0;
+    last_file_offset = 0;
+    last_time_stamp = Clock::now();
+
+    data_milestone = FileSize / 10;  // around ~10 prints
+  }
+  void Progressed(std::size_t Amount) override
+  {
+    current_file_offset += Amount;
+
+    auto current_ts = Clock::now();
+
+    bool time_elapsed = current_ts - last_time_stamp > time_milestone;
+    bool milestone_reached
+        = current_file_offset - last_file_offset > data_milestone;
+    if (time_elapsed || milestone_reached) {
+      print_progress(current_ts, current_file_offset);
+    }
+  }
+  void End() override { current_file_size = 0; }
 
   void SetStatus(std::string_view Status) override { (void)Status; }
   void Output(Message message) override
@@ -348,7 +370,47 @@ struct plugin_logger : public GenericLogger {
   std::span<const char> log() const { return messages; }
 
  private:
+  void print_progress(Clock::time_point current_ts, std::size_t current_offset)
+  {
+    if (!current_file_size) { return; }
+
+    auto data_written = current_offset - last_file_offset;
+    auto as_mb = static_cast<double>(data_written) / (1 << 20);
+
+    auto progress = static_cast<double>(current_offset)
+                    / static_cast<double>(current_file_size);
+
+    auto seconds = std::chrono::duration_cast<std::chrono::seconds>(
+        current_ts - last_time_stamp);
+
+    auto speed
+        = static_cast<double>(as_mb) / static_cast<double>(seconds.count());
+
+
+    std::string log_msg = libbareos::format(
+        "{:3.0}% [{}{}{}{}{}{}{}{}{}] {:.1} MB/s", 100 * progress,
+        progress > 0.1 ? "=" : " ", progress > 0.2 ? "=" : " ",
+        progress > 0.3 ? "=" : " ", progress > 0.4 ? "=" : " ",
+        progress > 0.5 ? "=" : " ", progress > 0.6 ? "=" : " ",
+        progress > 0.7 ? "=" : " ", progress > 0.8 ? "=" : " ",
+        progress > 0.9 ? "=" : " ", speed);
+
+    Message msg = {log_msg};
+
+    Output(msg);
+
+    last_file_offset = current_offset;
+    last_time_stamp = current_ts;
+  }
+
   PluginContext* ctx;
+
+  Clock::time_point last_time_stamp;
+  std::size_t last_file_offset;
+  std::size_t current_file_offset = 0;
+  std::size_t current_file_size = 0;
+  std::size_t data_milestone = 0;
+  static constexpr Clock::duration time_milestone = std::chrono::minutes(5);
 
   static constexpr std::size_t max_messages_size = 1 << 30;  // 1GB
   std::vector<char> messages;
