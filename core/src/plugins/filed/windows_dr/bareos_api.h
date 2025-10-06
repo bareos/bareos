@@ -91,8 +91,7 @@ void DebugLog(Severity severity,
               libbareos::format_string<Args...> fmt,
               Args&&... args)
 {
-  auto formatted
-      = libbareos::vformat(fmt, libbareos::make_format_args(args...));
+  auto formatted = libbareos::format(fmt, std::forward<Args>(args)...);
 
   internal::DebugMessage(nullptr, severity.file, severity.line,
                          severity.severity, formatted.c_str());
@@ -104,8 +103,7 @@ void DebugLog(PluginContext* ctx,
               libbareos::format_string<Args...> fmt,
               Args&&... args)
 {
-  auto formatted
-      = libbareos::vformat(fmt, libbareos::make_format_args(args...));
+  auto formatted = libbareos::format(fmt, std::forward<Args>(args)...);
 
   internal::DebugMessage(ctx, severity.file, severity.line, severity.severity,
                          formatted.c_str());
