@@ -101,7 +101,8 @@ if(HAVE_GFAPI AND ENABLE_GFAPI_FD)
 endif()
 
 add_subdirectory(grpc)
-
-add_subdirectory(windows_dr)
+if(NOT client-only)
+  add_subdirectory(windows_dr)
+endif()
 
 include(DebugEdit)
