@@ -859,8 +859,8 @@ CC=gcc-13  ; export CC
 CXX=g++-13 ; export CXX
 %endif
 
-CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ;
-CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
+CFLAGS="${CFLAGS:-%build_cflags}" ; export CFLAGS ;
+CXXFLAGS="${CXXFLAGS:-%build_cxxflags}" ; export CXXFLAGS ;
 
 # use our own cmake call instead of cmake macro as it is different on different platforms/versions
 cmake  .. \
