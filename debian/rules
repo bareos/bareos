@@ -50,7 +50,8 @@ define CONFIGURE_COMMON
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Drpath=no \
   -DVERSION_STRING=$(BAREOS_VERSION) \
-  -DCPM_indicators_SOURCE=/dependencies/indicators-dev-ssura-master-fix-stderr-output
+  -DCPM_indicators_SOURCE=/dependencies/indicators-dev-ssura-master-fix-stderr-output \
+  -DCPM_CLI11_SOURCE=/dependencies/CLI11-2.5.0
 endef
 
 
