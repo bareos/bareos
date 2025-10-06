@@ -162,10 +162,11 @@ endif()
 
 if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-   AND CMAKE_CXX_COMPILER_VERSION MATCHES "^12"
+   AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "12.0.0"
 )
   # work around compiler/stdlib bug see
-  # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562#c17
+  # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562#c17 this still occurs on
+  # 15.2.1
   set_source_files_properties(
     cli.cc PROPERTIES COMPILE_FLAGS "-Wno-maybe-uninitialized"
   )
