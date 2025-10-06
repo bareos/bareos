@@ -51,7 +51,7 @@ wait
 messages
 END_OF_DATA
 run_bconsole
-when="$(date "+%F %H:%M:")$(printf "%02d" $(($(date "+%S") + 5)))"
+when="$(date "+%F %H:%M:%S" --date="@$(($(date +%s) + 5))")"
 echo "running consolidate when=${when}"
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/consolidate-duplicates_consolidate.out
