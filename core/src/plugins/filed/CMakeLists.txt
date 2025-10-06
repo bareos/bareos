@@ -101,7 +101,9 @@ if(HAVE_GFAPI AND ENABLE_GFAPI_FD)
 endif()
 
 add_subdirectory(grpc)
-if(NOT client-only)
+
+# windows barri disaster recovery not available on client-only and not on FreeBSD
+if(NOT client-only AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   add_subdirectory(windows_dr)
 endif()
 
