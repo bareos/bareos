@@ -23,7 +23,6 @@ list(APPEND CMAKE_MESSAGE_INDENT "   ")
 
 project(droplet C)
 
-set(default_build_type "Debug")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 find_package(LibXml2)

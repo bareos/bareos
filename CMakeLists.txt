@@ -139,7 +139,6 @@ add_custom_target(
   uninstall "${CMAKE_COMMAND}" -P
             "${CMAKE_CURRENT_SOURCE_DIR}/cmake/uninstall.cmake"
 )
-set(default_build_type "Debug")
 
 include(CMakePrintHelpers)
 include(BareosGetDistInfo)
