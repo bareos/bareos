@@ -72,25 +72,27 @@ struct GenericLogger {
   GenericLogger(bool do_trace) : trace{do_trace} {}
   virtual ~GenericLogger() {}
 
-  template <typename... Args>
+  inline constexpr void Info(std::string_view view)
+  {
+    Message message = {
+        .text = view,
+        .is_trace = false,
+    };
+    Output(message);
+  }
+
+  template <typename Arg, typename... Args>
   inline constexpr void Info(libbareos::format_string<Args...> fmt,
+                             Arg&& arg,
                              Args&&... args)
   {
-    if constexpr (sizeof...(Args) == 0) {
-      auto fmt_view = fmt.get();
-      Message message = {
-          .text = std::string_view{fmt_view.data(), fmt_view.size()},
-          .is_trace = false,
-      };
-      Output(message);
-    } else {
-      auto formatted = libbareos::format(fmt, std::forward<Args>(args)...);
-      Message message = {
-          .text = formatted,
-          .is_trace = false,
-      };
-      Output(message);
-    }
+    auto formatted = libbareos::format(fmt, std::forward<Arg>(arg),
+                                       std::forward<Args>(args)...);
+    Message message = {
+        .text = formatted,
+        .is_trace = false,
+    };
+    Output(message);
   }
 
   template <typename F /* : () -> std::is_convertible_v<std::string_view> */,
