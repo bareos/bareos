@@ -160,7 +160,7 @@ In order to make a backup, run the job defined above (``barri``) to make a disas
    :caption: running the disaster recovery backup with the windows filedaemon plugin
 
    *<input>run job=barri yes</input>
-   *<input>messages<input>
+   *<input>messages</input>
      [...]
      [...] windr-fd JobId 1: Version: 25.0.0~pre1046.c3bf07897 (29 September 2025) Microsoft Windows 8 Professional (build 9200), 64-bit
      [...] windr-fd JobId 1: setting up vss
