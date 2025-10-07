@@ -40,15 +40,6 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME common)
 include(GNUInstallDirs)
 include(BareosHelper)
 
-# switch on CXX 20 Support
-#
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# enable PIC/PIE by default
-include(CheckPIESupported)
-check_pie_supported()
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
