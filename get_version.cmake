@@ -23,7 +23,6 @@ if(NOT DEFINED VERSION_STRING)
       "${CMAKE_CURRENT_LIST_DIR}/webui/cmake"
   )
 
-  find_package(Git QUIET)
   include(BareosVersionFromGit)
 
   include(BareosVersion OPTIONAL RESULT_VARIABLE BareosVersionFile)

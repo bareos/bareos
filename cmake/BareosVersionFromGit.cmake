@@ -17,6 +17,7 @@
 
 # Extract version information and commit timestamp if run in a git checkout
 
+find_package(Git QUIET)
 if(Git_FOUND)
   execute_process(
     COMMAND ${GIT_EXECUTABLE} log -1 --pretty=format:%ct
