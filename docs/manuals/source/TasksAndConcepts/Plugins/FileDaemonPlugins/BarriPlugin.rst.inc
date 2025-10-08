@@ -1,7 +1,7 @@
 .. _BarriPlugin:
 
 Barri Plugin
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
 
 .. index::
    single: Plugin; Barri
@@ -299,7 +299,7 @@ Which results in our case to:
 
 
 .. code-block:: bconsole
-   :caption: Example restore to local VMDK
+   :caption: Example disaster restore via plugin in linux live system
 
    *<input>restore jobid=1</input>
    You have selected the following JobId: 1
@@ -429,16 +429,340 @@ Which results in our case to:
    
    
 
+Restore the :file:`.barri` image to the filesystem
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Additionally to the option to restore the :file:`.barri` disaster recovery image via the filedaemon plugin, it is also possible
+to recover the :file:`.barri` image file to the filesystem. This is required to recover a Windows Computer via the 
+Linux of Windows version of the :commmand:`barri-cli` tool.
+
+Recovering the :file:`.barri` image file to the filesystem is easy. When
+recovered to a filedaemon that has not loaded the **barri** plugin, the restore
+will go into the filesystem. Just mark the :file:`.barri` disaster recovery
+image for recovery and send the restore to the filedaemon of the bareos
+server:
+
+
+.. code-block:: bconsole
+   :caption: Example restore to the filesystem
+
+   *<input>restore jobid=13</input>
+   You have selected the following JobId: 13
+   
+   Building directory tree for JobId(s) 13 ...  
+   2 files inserted into the tree.
+   
+   You are now entering file selection mode where you add (mark) and
+   remove (unmark) files to be restored. No files are initially added, unless
+   you used the "all" keyword on the command line.
+   Enter "done" to leave this mode.
+   
+   cwd is: /
+   $ <input>mark *</input>
+   3 files newly marked.
+   $ <input>done</input>
+   Bootstrap records written to /var/lib/bareos/bareos-dir.restore.7.bsr
+   [...]
+   2 files selected to be restored.
+   
+   Defined Clients:
+   1: bareos-fd
+   2: linuxlive-fd
+   3: windowsdr-fd
+   Select the Client (1-3): <input>1</input>
+   Using Catalog "MyCatalog"
+   Run Restore job
+   JobName:         RestoreFiles
+   [...]
+   Plugin Options:  *None*
+   OK to run? (yes/mod/no): <input>yes</input>
+   [...]
+   * <input>messages</input>
+   [...] bareos-dir JobId 14: Version: 25.0.0~pre1074.e81033063 (01 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
+   [...] bareos-dir JobId 14: Start Restore Job RestoreFiles.2025-10-08_09.31.59_10
+   [...] bareos-dir JobId 14: Connected Storage daemon at barri-server.bareos:9103, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] bareos-dir JobId 14:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] bareos-dir JobId 14: Using Device "FileStorage" to read.
+   [...] bareos-dir JobId 14: Probing client protocol... (result will be saved until config reload)
+   [...] bareos-dir JobId 14: Connected Client: bareos-fd at localhost:9102, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] bareos-dir JobId 14:    Handshake: Immediate TLS 
+   [...] bareos-dir JobId 14:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] barri-server.bareos-fd JobId 14: Connected Storage daemon at barri-server.bareos:9103, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] barri-server.bareos-fd JobId 14:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] bareos-sd JobId 14: Version: 25.0.0~pre1074.e81033063 (01 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
+   [...] bareos-sd JobId 14: Ready to read from volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage).
+   [...] barri-server.bareos-fd JobId 14: Version: 25.0.0~pre1074.e81033063 (01 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
+   [...] bareos-sd JobId 14: Forward spacing Volume "Full-0001" to file:block 0:223.
+   [...] bareos-sd JobId 14: End of Volume at file 12 on device "FileStorage" (/var/lib/bareos/storage), Volume "Full-0001"
+   [...] bareos-sd JobId 14: Ready to read from volume "Full-0002" on device "FileStorage" (/var/lib/bareos/storage).
+   [...] bareos-sd JobId 14: Forward spacing Volume "Full-0002" to file:block 0:223.
+   [...] bareos-sd JobId 14: End of Volume at file 0 on device "FileStorage" (/var/lib/bareos/storage), Volume "Full-0002"
+   [...] bareos-sd JobId 14: End of all volumes.
+   [...] bareos-sd JobId 14: Releasing device "FileStorage" (/var/lib/bareos/storage).
+   [...] bareos-dir JobId 14: Bareos bareos-dir 25.0.0~pre1074.e81033063 (01Oct25):
+    Build OS:               AlmaLinux Kitten release 10 (Lion Cub)
+    JobId:                  14
+    Job:                    RestoreFiles.2025-10-08_09.31.59_10
+    Restore Client:         "bareos-fd" 25.0.0~pre1074.e81033063 (01Oct25) AlmaLinux Kitten release 10 (Lion Cub),redhat
+    Start time:             08-Okt-2025 09:32:01
+    End time:               08-Okt-2025 09:47:20
+    Elapsed time:           15 mins 19 secs
+    Files Expected:         2
+    Files Restored:         2
+    Bytes Restored:         133,917,942,676
+    Rate:                   145721,4 KB/s
+    FD Errors:              0
+    FD termination status:  OK
+    SD termination status:  OK
+    Bareos binary info:     Bareos pre-release (UNSUPPORTED): Get professional support from https://www.bareos.com
+    Job triggered by:       User
+    Termination:            Restore OK
+
+
+The file will be restored into the file :file:`<where>/@barri@/winddr-fd.barri`.
+
+
 
 
 Restore with the Linux barri-cli commandline tool
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :command:`barri-cli` linux commandline tool is part of the **bareos-filedaemon-barri-plugin** package.
+To be able to use it in a linux live system, you can either install it into the live system, or install it onto another
+computer and copy the tool into the live system via portable drive.
+
+After installation, the :command:`barri-cli` is available as :file:`/usr/bin/barri-cli`.
+
+For the recovery we prepare a USB drive with both the :file:`barri-cli` binary and the :file:`windr-fd.barri` disaster recovery
+image.
+
+The recovery process is as follows:
+
+#. Boot the computer to be recovered into a live linux system. In this test we used the Fedora Live Installation System.
+#. Mount the prepared USB drive with :command:`barri-cli` and the :file:`.barri` image file into the live system.
+#. Open a shell with root rights in a terminal and change to the USB Drive mount point. (e.g. :file:`/run/media/liveuser/Barri`)
+#. Use :command:`lsblk` to determine the name of the drive(s) that the recovery should overwrite. In our case it is :file:`nvme0n1`
+#. Call barri-cli to restore the :file:`windr-fd.barri` onto the drive.
+
+.. code-block:: sh
+   :caption: recover from a live linux with :command:`barri-cli`
+
+   root@livesystem: <input>./barri-cli restore --files /dev/nvme0n1 < @barri@/windr-fd.barri</input>
+   barri - bareos recovery imager
+   Version 25.0.0~pre1093.c2d6db38b (06 October 2025)
+   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Get professional support from https://www.bareos.com
+   Restoring 1 Disks
+   Restoring disk 0
+   disk 0 is neither a block device, nor a regular file.  Continuing without size check
+   [====>                                             ] 9% [00m:43s<07m:22s] 261.80 MiB/s                                                       
+   
+
+
+
+
+
+As barri-cli read the image file from the **standard input filedescriptor** (**stdin**) it is very flexible.
+If the live linux has network connectivity, the barri file can be piped
+directly through ssh. Also it is possible to provide the image via http,
+network drive or any other means that make sense in your environment.
+
+Examples:
+
+.. code-block:: sh
+   :caption: Provide the image via ssh to :command:`barri-cli`
+
+   <input>ssh root@livesytem barri-cli restore --files /dev/nvme0n1 < /path/to/barri/image.barri</input>
+
+.. code-block:: sh
+   :caption: Provide the image via curl download to :command:`barri-cli`
+
+   <input>curl --silent http://url/of/the/barri_file.barri | barri-cli restore --files /dev/nvme0n1</input>
 
 
 
 Restore with the Windows barri-cli.exe commandline tool
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Using the Windows Version of :command:`barri-cli` might be needed in case that the drives that your computer
+uses is not recognized by the linux live system. In this case, you need to prepare a Windows PE live system
+and add the required drivers so that the Windows live system recognizes the disks.
+
+
+
+Preparing :command:`barri-cli.exe` to be run on an USB Stick
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+barri-cli.exe depends on the c++ runtime dlls and on zlib1.dll.
+We suggest to create a folder barri on your USB Stick (F:) and copy the required files into that folder with the following commands:
+
+.. code-block:: bat
+   :caption: copy_barri_cli_to_drive.bat
+   
+   rem Set your driveletter in the next line
+   set DRIVE=E:\
+   
+   set BARRIDIR=%DRIVE%\barri
+   md %BARRIDIR%
+   copy "C:\Program Files\Bareos\barri-cli.exe" %BARRIDIR%
+   copy "C:\Program Files\Bareos\zlib1.dll" %BARRIDIR%
+   copy "C:\Windows\System32\msvcp140*.dll" %BARRIDIR%
+   copy "C:\Windows\System32\vcruntime140*.dll" %BARRIDIR%
+
+
+
+
+
+Creating a Windows PE image 
+'''''''''''''''''''''''''''
+
+Please check the
+`Microsoft Documentation <https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/winpe-create-usb-bootable-drive?view=windows-11>`_
+for the details. We will only give a short overview of the steps to create a Windows PE Boot Image.
+
+* Install the Windows **Assessment and Deployment Kit (ADK) deployment tools** and the **ADK Windows PE Add-ons**
+* Start the "Start the Deployment and Imaging Tools Environment as an administrator" which  lies in :file:`C:\\Program Files (x86)\\Windows Kits\\10\\Assessment and Deployment Kit\\Deployment Tools\\DandISetEnv.bat`
+  
+Change into the Windows PE Directory for amd64:
+
+.. code-block:: bat
+
+   cd "..\Windows Preinstallation Environment\amd64"
+   C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment\amd64>
+
+Prepare the Windows PE Working Set:
+
+.. code-block:: bat
+
+   copype amd64 C:\WinPE_amd64
+   md C:\WinPE_amd64\mount
+   Dism /Mount-Image /ImageFile:"en-us\winpe.wim" /index:1 /MountDir:"C:\WinPE_amd64\mount"
+
+Add latest updates to the Image:
+
+.. code-block:: bat
+
+   Dism /Add-Package /Image:"C:\WinPE_amd64\mount" /PackagePath:"C:\Users\User\Downloads\windows10.0-kb5065744-x86_b709e76641ebeb7eb36e79dfb9f469b9611a82b8.msu"
+   Dism /Add-Package /Image:"C:\WinPE_amd64\mount" /PackagePath:"C:\Users\User\Downloads\windows10.0-kb5065755-x86-ndp48_69a8659b2ce13e5d2db14494a95683ef39dd0b42.msu"
+
+
+Lock in the updates:
+
+.. code-block:: bat
+
+   md C:\temp
+   Dism /Cleanup-Image /Image:C:\WinPE_amd64\mount /Startcomponentcleanup /Resetbase /ScratchDir:C:\temp
+
+Unmount the Image
+
+.. code-block:: bat
+
+   Dism /Unmount-Image /MountDir:"C:\WinPE_amd64\mount" /commit
+
+Write the Windows PE Bootmedium to Drive D:
+
+.. code-block:: bat
+
+   MakeWinPEMedia /UFD C:\WinPE_amd64 D: /bootex
+
+.. note::
+
+   Installing the Updates was required to successfully boot with Secure Boot enabled in our test environment.
+
+.. note::
+
+   The Windows PE Boot Medium cannot exceed 32GB Size. For Workarounds please read the Microsoft Documentation
+
+
+Recovery in Windows PE using barri-cli.exe
+''''''''''''''''''''''''''''''''''''''''''
+
+Now use the just created USB Drive to boot the Computer that you want to restore. After successful bootup the computer
+show a cmd.exe commandline window:
+
+
+.. image:: /include/images/WindowsPE.*
+   :width: 80.0%
+
+
+It is now safe to remove the Windows PE USB Disk.
+
+Now connect the USB Drive to the Windows PE Computer. You can use the commandline tool :command:`diskpart` to determine
+both the detected disks and volumes:
+
+.. code-block:: sh
+
+   X:\Windows\System32><input>diskpart</input>
+   
+   Microsoft DiskPart version 10.0.26100.1
+   
+   Copyright (C) Microsoft Corporation.
+   On computer: MININT-DE9S2KM
+   DISKPART> 
+
+.. code-block:: sh
+   :caption: use diskpart **list disk** to determine the disks to recover to
+
+   DISKPART> <input>list disk</input>
+   
+     Disk ###  Status         Size     Free     Dyn  Gpt
+     --------  -------------  -------  -------  ---  ---
+     Disk 0    Online          256 GB   234 GB        *
+     Disk 1    Online          460 GB  1024 KB
+
+Take note what disk number(s) the disks have that you want to recover to.
+Here we want to recover disk **0**.
+
+.. code-block:: sh
+   :caption: use diskpart **list volume** to determine the drive letters of our USB drive
+
+   DISKPART> <input>list volume</input>
+   
+     Volume ###  Ltr  Label        Fs     Type        Size     Status     Info
+     ----------  ---  -----------  -----  ----------  -------  ---------  --------
+     Volume 0     D   CESE_X64FRE  UDF    CD-ROM      4875 MB  Healthy
+     Volume 1                      NTFS   Partition    256 GB  Healthy
+     Volume 2                      FAT32  Partition    100 MB  Healthy    Hidden
+     Volume 3     C   Barri        NTFS   Partition    460 GB  Healthy
+   DISKPART><input>exit</input>
+
+Now change the directory to the USB drive containing :command:`barri-cli.exe`
+and the :file:`.barri` image file.
+In our case the drive is :file:`C:`.
+To recover a :file:`.barri` image, we call :command:`barri-cli.exe` in the following way:
+
+.. code-block:: sh
+
+   C:\barri\barri-cli.exe --to-disks <disks to write to> < <path_to_barri_file>
+
+Applied to our example this leads to:
+
+.. code-block:: sh
+
+   C:\barri\barri-cli.exe --to-disks 0 < @barri@\windr-fd.barri
+
+   barri - bareos recovery imager
+   Version 25.0.0~pre1152.a0abe56e3 (09 October 2025)
+   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Get professional support from https://www.bareos.com
+   found 3 volumes on the selected disks
+    begin disk { size: 256060514304, extent count: 20582 }
+   [>                                                 ] 0% [00:00s<00:00s]
+   [=>                                                ] 2% [00m:32s<09m:01s] 120.50 MiB/s                                 
+   [...]
+   [=================================================>] 99% [13m:54s<00m:01s] 152.25 MiB/s                                 
+   disk done
+   [=================================================>] 99% [13m:55s<00m:01s] 152.25 MiB/s                                 
+   [==================================================] 100% [13m:56s<00m:00s] Done                                        
+   
+   
+
+.. note:: 
+
+   If the target disk is not empty it can be required to remove all volumes from the disk using diskpart before barri can recover the image.
+
+When all disks have been recovered, you can unplug all removable drives and close the Windows PE commandline window.
+The computer will restart and the recovered OS will start.
 
 
 Restore using Bareos WebUI
