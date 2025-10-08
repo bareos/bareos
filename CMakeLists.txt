@@ -35,6 +35,12 @@ if(HAVE_MULTI_CONFIG)
   )
 endif()
 
+option(coverage "Enable test coverage analysis" OFF)
+if(coverage)
+  set(CMAKE_BUILD_TYPE Debug)
+  include(BareosTestCoverage)
+endif()
+
 # as some CPM-provided packages do set CMAKE_BUILD_TYPE if it is not set, we set
 # a default. When there is user-provided CMAKE_C_FLAGS or CMAKE_CXX_FLAGS (also
 # via $CFLAGS $CXXFLAGS environment variables), use CustomFlags as dummy value
@@ -74,12 +80,6 @@ include(BareosCpmPackages)
 # include PrefixMap before BareosCcache so hash_dir is set correctly
 include(PrefixMap)
 include(BareosCcache)
-
-option(coverage "Enable test coverage analysis" OFF)
-if(coverage)
-  set(CMAKE_BUILD_TYPE Debug)
-  include(BareosTestCoverage)
-endif()
 
 option(ENABLE_SYSTEMTESTS "Enable the systemtest suite" ON)
 option(CPM_ONLY "Add CPM packages and exit" OFF)
