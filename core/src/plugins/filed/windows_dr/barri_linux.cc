@@ -23,14 +23,18 @@
 
 #include "logger.h"
 #include "barri_cli.h"
+#include "format.h"
 
 #include "restore.h"
 
 bool trace = false;
 
-template <typename... T> void err_msg(fmt::format_string<T...> fmt, T&&... args)
+template <typename... T>
+void err_msg(libbareos::format_string<T...> fmt, T&&... args)
 {
-  fmt::println(stderr, fmt, std::forward<T>(args)...);
+  libbareos::format_to(std::ostream_iterator<char>(std::cerr), fmt,
+                       std::forward<T>(args)...);
+  std::cerr << '\n';
 }
 
 std::string guid_to_string(guid id)
@@ -53,8 +57,8 @@ std::string guid_to_string(guid id)
   std::memcpy(&Fifth, id.Data, sizeof(Fifth));
   offset += sizeof(Fifth);
 
-  return fmt::format("{:08X}-{:04X}-{:04X}-{:08X}{:04X}", First, Second, Third,
-                     Fourth, Fifth);
+  return libbareos::format("{:08X}-{:04X}-{:04X}-{:08X}{:04X}", First, Second,
+                           Third, Fourth, Fifth);
 }
 
 std::string utf16_to_utf8(std::span<const char16_t> str)
