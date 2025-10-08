@@ -260,41 +260,43 @@ struct plugin_arguments {
       switch (next_option(str, keywords, &value)) {
         case index_of(keywords, "unknown disks"): {
           if (!value.empty()) {
-            err_msg(ctx, "unexpected value {} for {} flag", value, keywords[0]);
+            fatal_msg(ctx, "unexpected value {} for {} flag", value,
+                      keywords[0]);
             return std::nullopt;
           }
           args.save_unknown_disks = true;
         } break;
         case index_of(keywords, "unknown partitions"): {
           if (!value.empty()) {
-            err_msg(ctx, "unexpected value {} for {} flag", value,
-                    "unknown partitions");
+            fatal_msg(ctx, "unexpected value {} for {} flag", value,
+                      "unknown partitions");
             return std::nullopt;
           }
           args.save_unknown_partitions = true;
         } break;
         case index_of(keywords, "unknown extents"): {
           if (!value.empty()) {
-            err_msg(ctx, "unexpected value {} for {} flag", value,
-                    "unknown extents");
+            fatal_msg(ctx, "unexpected value {} for {} flag", value,
+                      "unknown extents");
             return std::nullopt;
           }
           args.save_unknown_extents = true;
         } break;
         case index_of(keywords, "ignore disks"): {
           if (value.empty()) {
-            err_msg(ctx, "unexpected empty value for {} option", "ignore disk");
+            fatal_msg(ctx, "unexpected empty value for {} option",
+                      "ignore disk");
             return std::nullopt;
           }
           if (auto error = insert_numbers(args.ignored_disks, value)) {
-            err_msg(ctx, "could not parse {} as a list of ints ({}): {}", value,
-                    "ignore disk", error.value());
+            fatal_msg(ctx, "could not parse {} as a list of ints ({}): {}",
+                      value, "ignore disk", error.value());
             return std::nullopt;
           }
         } break;
         default: {
-          err_msg(ctx, "could not parse plugin options string '{}'", str,
-                  str.size());
+          fatal_msg(ctx, "could not parse plugin options string '{}'", str,
+                    str.size());
 
           return std::nullopt;
         } break;
