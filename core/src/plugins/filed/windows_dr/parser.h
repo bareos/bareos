@@ -82,7 +82,7 @@ struct GenericLogger {
   }
 
   template <typename Arg, typename... Args>
-  inline constexpr void Info(libbareos::format_string<Args...> fmt,
+  inline constexpr void Info(libbareos::format_string<Arg, Args...> fmt,
                              Arg&& arg,
                              Args&&... args)
   {
