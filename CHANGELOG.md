@@ -71,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - added build-dep to libutfcpp-dev in debian-like environments [PR #2056]
+- add media_vault tool to contrib [PR #2357]
 
 ### Changed
 - plugins: Fix typo in postgresql plugin [PR #2066]
@@ -220,6 +221,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2344]: https://github.com/bareos/bareos/pull/2344
 [PR #2347]: https://github.com/bareos/bareos/pull/2347
 [PR #2350]: https://github.com/bareos/bareos/pull/2350
+[PR #2357]: https://github.com/bareos/bareos/pull/2357
 [PR #2358]: https://github.com/bareos/bareos/pull/2358
 [PR #2359]: https://github.com/bareos/bareos/pull/2359
 [PR #2370]: https://github.com/bareos/bareos/pull/2370
