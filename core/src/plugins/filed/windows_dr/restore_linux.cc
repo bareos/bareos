@@ -122,7 +122,7 @@ struct auto_fd {
     return *this;
   }
 
-  operator bool() const { return fd >= 0; }
+  bool ok() const { return fd >= 0; }
 
   int get() { return fd; }
 
@@ -454,7 +454,7 @@ class RestoreToGeneratedFiles : public GenericHandler {
   RestoreToGeneratedFiles(std::filesystem::path directory)
   {
     directory_fd = auto_fd{open(directory.c_str(), O_DIRECTORY | O_RDONLY)};
-    if (!directory_fd) {
+    if (!directory_fd.ok()) {
       throw std::runtime_error(fmt::format("cannot open '{}': {}",
                                            directory.c_str(), strerror(errno)));
     }
@@ -469,7 +469,7 @@ class RestoreToGeneratedFiles : public GenericHandler {
       auto_fd fd{openat(directory_fd.get(), disk_name.c_str(),
                         O_CREAT | O_WRONLY | O_EXCL, 0664)};
 
-      if (!fd) {
+      if (!fd.ok()) {
         throw std::runtime_error{
             fmt::format("could not open '{}': {}", disk_name, strerror(errno))};
       }
@@ -665,7 +665,7 @@ class RestoreToSpecifiedFiles : public GenericHandler {
     auto& fd = disk_files[current_idx];
 
     struct stat s = {};
-    if (fstat(fd, &s) < 0) {
+    if (fstat(fd.get(), &s) < 0) {
       throw std::runtime_error{libbareos::format(
           "could not stat disk {}: Err={}", current_idx, strerror(errno))};
     }
@@ -680,7 +680,7 @@ class RestoreToSpecifiedFiles : public GenericHandler {
       }
     } else if (S_ISBLK(s.st_mode)) {
       std::uint64_t blk_size = 0;
-      if (auto status = ioctl(fd, BLKGETSIZE64, &blk_size); status < 0) {
+      if (auto status = ioctl(fd.get(), BLKGETSIZE64, &blk_size); status < 0) {
         throw std::runtime_error{
             libbareos::format("could not determine disk size of disk {}: {}",
                               current_idx, strerror(errno))};
@@ -726,7 +726,7 @@ std::vector<auto_fd> open_files(std::span<std::string> filenames)
   for (auto& filename : filenames) {
     auto_fd fd{open(filename.c_str(), O_WRONLY, 0664)};
 
-    if (!fd) {
+    if (!fd.get()) {
       throw std::runtime_error{libbareos::format("could not open '{}': {}",
                                                  filename, strerror(errno))};
     }
