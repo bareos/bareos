@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,6 +68,27 @@ template <typename T> class alist {
   // Ueb disable non pointer initialization
   alist(int num = 1, bool own = true) { init(num, own); }
   ~alist() { destroy(); }
+  alist(const alist&) = delete;
+  alist& operator=(const alist&) = delete;
+  alist(alist&& other) { *this = std::move(other); };
+  alist& operator=(alist&& other)
+  {
+    std::swap(items, other.items);
+    std::swap(num_items, other.num_items);
+    std::swap(max_items, other.max_items);
+    std::swap(num_grow, other.num_grow);
+    std::swap(own_items, other.own_items);
+    return *this;
+  }
+
+  alist copy()
+  {
+    alist cp(num_items, false);
+
+    for (int i = 0; i < num_items; ++i) { cp.append(get(i)); }
+
+    return cp;
+  }
 
   /* This allows us to do explicit initialization,
    *   allowing us to mix C++ classes inside malloc'ed
