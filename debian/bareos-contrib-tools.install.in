@@ -3,3 +3,9 @@
 @bindir@/bsmc
 @confdir@/bsmc.conf
 @scriptdir@/reschedule_job_as_full.sh
+@confdir@/media_vault.ini.example
+@confdir@/bareos-dir.d/console/console_media_vault.conf.example
+@confdir@/bareos-dir.d/profile/profile_media_vault.conf.example
+@confdir@/bareos-dir.d/job/job_admin-media_vault.conf.example
+@scriptdir@/media_vault.sh
+@scriptdir@/media_vault.py

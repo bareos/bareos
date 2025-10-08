@@ -1,0 +1,65 @@
+; configuration ini file for media_vault.py
+[global]
+; location where debug log will be recorded if debug is activated
+log_dir=/var/log/bareos
+
+[vault]
+; comma separated list of pools to consider with similar retention adequate to return_time
+pools=tapes
+; autochanger library storage name to use
+autochanger=autochanger-0
+; min_age and max_age define a range of days
+; only tapes that were last written to in this range of days are considered for vaulting
+; the current day is day 0
+max_age=21
+min_age=1
+; in how many days do we expect the return from the vault
+return_time=90
+; minimal volume size in gigabytes without unit (default is 4096 = 4TB).
+min_volgb=4096
+; comma separated list of volume status to consider to export (default Full,Used)
+; if you add Append any volume in Append mode with the minimal min_volgb will also be exported
+; its volstatus will be updated to Used.
+volume_status=full,used
+; export/import slots range
+export_slots=21-24
+; return date format need to be a valid format used by postgresql to_char() function
+returndate_format=YYYYMMDD
+; run update slots before any other action to update autoloader status
+; default True
+update_slots_before = True
+; This flag if present will order to update the volstatus to Archive afterwards
+; default False
+volstatus_to_archive = False
+;; iron account number uncomment if you want to create an export report
+;; you must also fulfill the parameters iron_name and ftp_dir
+;iron_acct=123456
+;; iron name provider
+;iron_name=IronSimulation
+;; the export list directory where the ftp file will be stored
+;ftp_dir=/var/tmp/media_vault/iron_report_ftp
+
+[BAREOS]
+;; activate debug, a debug log will be created in log_dir
+;debug=True
+;; console name to use for connection
+name=media_vault
+;; console password to use. Typical bareos password can be generated with
+;; ``RANDFILE=/dev/urandom openssl rand -base64 33``
+;; set the same password here and in the bareos director console media_vault
+password=
+;; director host address
+address=localhost
+;; director host port default 9101
+port=@dir_port@
+;; connection timeout default 30
+timeout=5
+;; bareos protocol to use default 2
+;protocolversion=2
+;; bareos optional pam user and password to use
+;pam_username=
+;pam_password=
+;; tls_psk_require default true
+;tls_psk_require
+;; tls_version default all and most secured is tried first
+;tls_version=v1.2
