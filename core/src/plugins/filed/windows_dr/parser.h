@@ -109,26 +109,27 @@ struct GenericLogger {
     }
   }
 
-  template <typename... Args>
-  inline constexpr void Trace(libbareos::format_string<Args...> fmt,
+  inline constexpr void Trace(std::string_view view)
+  {
+    Message message = {
+        .text = view,
+        .is_trace = true,
+    };
+    Output(message);
+  }
+  template <typename Arg, typename... Args>
+  inline constexpr void Trace(libbareos::format_string<Arg, Args...> fmt,
+                              Arg&& arg,
                               Args&&... args)
   {
     if (trace) {
-      if constexpr (sizeof...(Args) == 0) {
-        auto fmt_view = fmt.get();
-        Message message = {
-            .text = std::string_view{fmt_view.data(), fmt_view.size()},
-            .is_trace = true,
-        };
-        Output(message);
-      } else {
-        auto formatted = libbareos::format(fmt, std::forward<Args>(args)...);
-        Message message = {
-            .text = formatted,
-            .is_trace = true,
-        };
-        Output(message);
-      }
+      auto formatted = libbareos::format(fmt, std::forward<Arg>(arg),
+                                         std::forward<Args>(args)...);
+      Message message = {
+          .text = formatted,
+          .is_trace = true,
+      };
+      Output(message);
     }
   }
 
