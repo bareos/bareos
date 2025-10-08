@@ -1138,7 +1138,8 @@ apply_dbconfig_settings()
   # check if dbconfig is enabled
   [ "${dbc_install}" = "true" ] && [ "${dbc_upgrade}" = "true" ] || return 0
 
-  if [ -n "${dbc_dbserver}" ]; then
+  # Set the address only if not localhost, so local connection use socket
+  if [ -n "${dbc_dbserver}" ] && [ "${dbc_dbserver}" != "localhost" ]; then
     set_config_param "bareos-dir" "Catalog" "MyCatalog" "dbaddress" "${dbc_dbserver}"
   fi
 
