@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - grpc: fix missing some early events [PR #2333]
 - grpc: fix extra / for directories [PR #2373]
 - packaging: add setcap/getcap requirements [PR #2347]
+- scsicrypto: don't expose kek in job log [PR #2386]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -225,4 +226,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2370]: https://github.com/bareos/bareos/pull/2370
 [PR #2373]: https://github.com/bareos/bareos/pull/2373
 [PR #2381]: https://github.com/bareos/bareos/pull/2381
+[PR #2386]: https://github.com/bareos/bareos/pull/2386
 [unreleased]: https://github.com/bareos/bareos/tree/master
