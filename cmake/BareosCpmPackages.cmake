@@ -105,15 +105,15 @@ if(xxHash_ADDED)
   endif()
 endif()
 
-
-# TODO: create one variable that sets "build windows_dr" instead of this here and where
-# windows_dr is added to the project in core/src/plugins/filed/CMakeLists.txt
+# TODO: create one variable that sets "build windows_dr" instead of this here
+# and where windows_dr is added to the project in
+# core/src/plugins/filed/CMakeLists.txt
 if(NOT client-only AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   CPMAddPackage(
     NAME indicators
-    VERSION "2.3"
+    VERSION "5.0"
     GITHUB_REPOSITORY "sebsura/indicators"
-    GIT_TAG "dev/ssura/master/fix-stderr-output"
+    GIT_TAG "7853f903907d831604574fa7c24c0e3d98e4aa4b"
   )
 endif()
 # Dump package information from CPM into a YAML file
