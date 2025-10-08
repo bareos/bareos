@@ -22,6 +22,7 @@
 #define BAREOS_LIB_CRYPTO_OPENSSL_H_
 
 #include "crypto.h"
+#include "lib/source_location.h"
 
 #define VarArgMacroSelect(_1, _2, _3, _4, ...) _4
 #define OpensslPostErrors(...)                        \
@@ -44,6 +45,8 @@ int OpensslInitThreads(void);
 void OpensslCleanupThreads(void);
 DIGEST* OpensslDigestNew(JobControlRecord* jcr, crypto_digest_t type);
 
-void LogSSLError(int ssl_error);
+void LogSSLError(int ssl_error,
+                 libbareos::source_location loc
+                 = libbareos::source_location::current());
 
 #endif  // BAREOS_LIB_CRYPTO_OPENSSL_H_

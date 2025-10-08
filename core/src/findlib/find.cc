@@ -114,8 +114,7 @@ FindFilesPacket* init_find_files()
   FindFilesPacket* ff;
 
   ff = (FindFilesPacket*)malloc(sizeof(FindFilesPacket));
-  FindFilesPacket empty_ff;
-  *ff = empty_ff;
+  ff = new (ff) FindFilesPacket;
 
   ff->sys_fname = GetPoolMemory(PM_FNAME);
 
@@ -499,6 +498,7 @@ void TermFindFiles(FindFilesPacket* ff)
     if (ff->link_save) { FreePoolMemory(ff->link_save); }
     if (ff->ignoredir_fname) { FreePoolMemory(ff->ignoredir_fname); }
     TermFindOne(ff);
+    std::destroy_at(ff);
     free(ff);
   }
 }
@@ -508,7 +508,7 @@ findIncludeExcludeItem* allocate_new_incexe(void)
 {
   findIncludeExcludeItem* incexe
       = (findIncludeExcludeItem*)malloc(sizeof(findIncludeExcludeItem));
-  new (incexe) findIncludeExcludeItem{};
+  incexe = new (incexe) findIncludeExcludeItem{};
 
   return incexe;
 }
@@ -528,6 +528,9 @@ findIncludeExcludeItem* new_include(findFILESET* fileset)
 {
   // New include
   fileset->incexe = allocate_new_incexe();
+  Dmsg1(500, "new incexe = %p\n", fileset->incexe);
+  // Dmsg1(500, "include list = %p\n", fileset->include_list.);
+
   fileset->include_list.append(fileset->incexe);
 
   return fileset->incexe;
@@ -549,13 +552,16 @@ findIncludeExcludeItem* new_preinclude(findFILESET* fileset)
 
 findFOPTS* start_options(FindFilesPacket* ff)
 {
+  Dmsg1(500, "ff = %p\n", ff);
+  Dmsg1(500, "ff->fileset = %p\n", ff->fileset);
+  Dmsg1(500, "ff->fileset->incexe = %p\n", ff->fileset->incexe);
   int state = ff->fileset->state;
   findIncludeExcludeItem* incexe = ff->fileset->incexe;
 
   if (state != state_options) {
     ff->fileset->state = state_options;
     findFOPTS* fo = (findFOPTS*)malloc(sizeof(findFOPTS));
-    *fo = findFOPTS{};
+    fo = new (fo) findFOPTS;
     fo->regex.init(1, true);
     fo->regexdir.init(1, true);
     fo->regexfile.init(1, true);
@@ -563,8 +569,6 @@ findFOPTS* start_options(FindFilesPacket* ff)
     fo->wilddir.init(1, true);
     fo->wildfile.init(1, true);
     fo->wildbase.init(1, true);
-    fo->fstype.init(1, true);
-    fo->Drivetype.init(1, true);
     incexe->current_opts = fo;
     incexe->opts_list.append(fo);
   }
@@ -578,7 +582,10 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   findFOPTS* fo;
 
   fo = (findFOPTS*)malloc(sizeof(findFOPTS));
-  *fo = findFOPTS{};
+  fo = new (fo) findFOPTS;
+
+  Dmsg1(500, "new options at %p\n", fo);
+
   fo->regex.init(1, true);
   fo->regexdir.init(1, true);
   fo->regexfile.init(1, true);
@@ -586,9 +593,12 @@ void NewOptions(FindFilesPacket* ff, findIncludeExcludeItem* incexe)
   fo->wilddir.init(1, true);
   fo->wildfile.init(1, true);
   fo->wildbase.init(1, true);
-  fo->fstype.init(1, true);
-  fo->Drivetype.init(1, true);
+
+  Dmsg1(500, "incexe at %p\n", incexe);
   incexe->current_opts = fo;
+
   incexe->opts_list.prepend(fo);
   ff->fileset->state = state_options;
+
+  Dmsg1(500, "new options created\n");
 }

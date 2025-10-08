@@ -114,7 +114,7 @@ std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
 static inline bool WantedDriveType(const char* drive,
                                    findIncludeExcludeItem* incexe)
 {
-  int i, j;
+  int i;
   char dt[16];
   findFOPTS* fo;
   bool done = false;
@@ -133,8 +133,8 @@ static inline bool WantedDriveType(const char* drive,
      * selection to false. */
     if (fo->Drivetype.size()) { wanted = false; }
 
-    for (j = 0; !done && j < fo->Drivetype.size(); j++) {
-      if (Bstrcasecmp(dt, (char*)fo->Drivetype.get(j))) {
+    for (size_t j = 0; !done && j < fo->Drivetype.size(); j++) {
+      if (Bstrcasecmp(dt, (char*)fo->Drivetype[j])) {
         wanted = true;
         done = true;
       }

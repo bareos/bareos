@@ -79,7 +79,7 @@ bool InitFileset(JobControlRecord* jcr)
   ff = jcr->fd_impl->ff;
   if (ff->fileset) { return false; }
   fileset = (findFILESET*)malloc(sizeof(findFILESET));
-  *fileset = findFILESET{};
+  fileset = new (fileset) findFILESET{};
 
   ff->fileset = fileset;
   fileset->state = state_none;
@@ -510,10 +510,13 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
 // Add options to the current fileset
 int AddOptionsFlagsToFileset(JobControlRecord* jcr, const char* item)
 {
+  Dmsg1(500, "ff = %p\n", jcr->fd_impl->ff);
   findFOPTS* current_opts = start_options(jcr->fd_impl->ff);
 
+  Dmsg1(500, "current_opts = %p\n", current_opts);
   SetOptionsAndFlags(current_opts, item);
 
+  Dmsg1(500, "done...\n");
   return state_options;
 }
 
@@ -526,17 +529,24 @@ void AddFileset(JobControlRecord* jcr, const char* item)
   findFOPTS* current_opts;
 
   // Get code, optional subcode, and position item past the dividing space
-  Dmsg1(100, "%s\n", item);
+  Dmsg1(100, "code = %s\n", item);
   code = item[0];
-  if (code != '\0') { ++item; }
+  if (code != '\0') {
+    Dmsg1(100, "skipping %c\n", code);
+    ++item;
+  }
 
   subcode = ' '; /* A space is always a valid subcode */
   if (item[0] != '\0' && item[0] != ' ') {
     subcode = item[0];
+    Dmsg1(100, "skipping %c\n", subcode);
     ++item;
   }
 
-  if (*item == ' ') { ++item; }
+  if (*item == ' ') {
+    Dmsg1(100, "skipping %c\n", *item);
+    ++item;
+  }
 
   // Skip all lines we receive after an error
   if (state == state_error) {
@@ -554,7 +564,19 @@ void AddFileset(JobControlRecord* jcr, const char* item)
   }
   switch (code) {
     case 'I':
+      Dmsg1(500, "creating new include\n");
+      Dmsg1(500, " - %p\n", jcr);
+      if (jcr) {
+        Dmsg1(500, "   - %p\n", jcr->fd_impl);
+        if (jcr->fd_impl) {
+          Dmsg1(500, "     - %p\n", jcr->fd_impl->ff);
+          if (jcr->fd_impl->ff) {
+            Dmsg1(500, "       - %p\n", jcr->fd_impl->ff->fileset);
+          }
+        }
+      }
       (void)new_include(jcr->fd_impl->ff->fileset);
+      Dmsg1(500, "created new include\n");
       break;
     case 'E':
       (void)new_exclude(jcr->fd_impl->ff->fileset);
@@ -577,9 +599,9 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       current_opts = start_options(ff);
       state = state_options;
       if (subcode == ' ') {
-        current_opts->fstype.append(strdup(item));
+        current_opts->fstype.push_back(strdup(item));
       } else if (subcode == 'D') {
-        current_opts->Drivetype.append(strdup(item));
+        current_opts->Drivetype.push_back(strdup(item));
       } else {
         state = state_error;
       }
@@ -613,6 +635,8 @@ void AddFileset(JobControlRecord* jcr, const char* item)
       break;
   }
   ff->fileset->state = state;
+
+  Dmsg1(500, "return addfileset\n");
 }
 
 bool TermFileset(JobControlRecord* jcr)

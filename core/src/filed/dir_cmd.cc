@@ -325,13 +325,17 @@ void CleanupFileset(JobControlRecord* jcr)
         fo->wilddir.destroy();
         fo->wildfile.destroy();
         fo->wildbase.destroy();
-        fo->fstype.destroy();
-        fo->Drivetype.destroy();
+        for (auto* ptr : fo->fstype) { free(const_cast<char*>(ptr)); }
+        for (auto* ptr : fo->Drivetype) { free(const_cast<char*>(ptr)); }
+
+        std::destroy_at(fo);
       }
       incexe->opts_list.destroy();
       incexe->name_list.destroy();
       incexe->plugin_list.destroy();
       incexe->ignoredir.destroy();
+
+      std::destroy_at(incexe);
     }
     fileset->include_list.destroy();
 
@@ -348,15 +352,22 @@ void CleanupFileset(JobControlRecord* jcr)
         fo->wilddir.destroy();
         fo->wildfile.destroy();
         fo->wildbase.destroy();
-        fo->fstype.destroy();
-        fo->Drivetype.destroy();
+        for (auto* ptr : fo->fstype) { free(const_cast<char*>(ptr)); }
+        for (auto* ptr : fo->Drivetype) { free(const_cast<char*>(ptr)); }
+
+        std::destroy_at(fo);
       }
       incexe->opts_list.destroy();
       incexe->name_list.destroy();
       incexe->plugin_list.destroy();
       incexe->ignoredir.destroy();
+
+      std::destroy_at(incexe);
     }
+
     fileset->exclude_list.destroy();
+
+    std::destroy_at(fileset);
     free(fileset);
   }
   jcr->fd_impl->ff->fileset = nullptr;

@@ -298,11 +298,15 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
 
   while (nleft > 0) {
     int nwritten = 0;
+    Dmsg1(1000, "waiting for %s\n", write ? "write" : "read");
+
     if (write) {
       nwritten = SSL_write(openssl_, ptr, nleft);
     } else {
       nwritten = SSL_read(openssl_, ptr, nleft);
     }
+
+    Dmsg1(1000, " --> received %d bytes\n", nwritten);
 
     int ssl_error = SSL_get_error(openssl_, nwritten);
     LogSSLError(ssl_error);

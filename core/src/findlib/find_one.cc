@@ -63,8 +63,8 @@ static inline FindFilesPacket* new_dir_ff_pkt(FindFilesPacket* ff_pkt)
   FindFilesPacket* dir_ff_pkt;
 
   dir_ff_pkt = (FindFilesPacket*)malloc(sizeof(FindFilesPacket));
+  dir_ff_pkt = new (dir_ff_pkt) FindFilesPacket(*ff_pkt);
 
-  *dir_ff_pkt = *ff_pkt;
   dir_ff_pkt->fname = strdup(ff_pkt->fname);
   dir_ff_pkt->link_or_dir = strdup(ff_pkt->link_or_dir);
   dir_ff_pkt->sys_fname = GetPoolMemory(PM_FNAME);
@@ -102,7 +102,6 @@ static bool AcceptFstype(FindFilesPacket*, void*) { return true; }
 #else
 static bool AcceptFstype(FindFilesPacket* ff, void*)
 {
-  int i;
   char fs[1000];
   bool accept = true;
 
@@ -111,14 +110,14 @@ static bool AcceptFstype(FindFilesPacket* ff, void*)
     if (!fstype(ff->fname, fs, sizeof(fs))) {
       Dmsg1(50, "Cannot determine file system type for \"%s\"\n", ff->fname);
     } else {
-      for (i = 0; i < ff->fstypes.size(); ++i) {
-        if (bstrcmp(fs, (char*)ff->fstypes.get(i))) {
+      for (size_t i = 0; i < ff->fstypes.size(); ++i) {
+        if (bstrcmp(fs, (char*)ff->fstypes[i])) {
           Dmsg2(100, "Accepting fstype %s for \"%s\"\n", fs, ff->fname);
           accept = true;
           break;
         }
         Dmsg3(200, "fstype %s for \"%s\" does not match %s\n", fs, ff->fname,
-              ff->fstypes.get(i));
+              ff->fstypes[i]);
       }
     }
   }
@@ -134,7 +133,6 @@ static bool AcceptFstype(FindFilesPacket* ff, void*)
 #if defined(HAVE_WIN32)
 static inline bool AcceptDrivetype(FindFilesPacket* ff, void*)
 {
-  int i;
   char dt[100];
   bool accept = true;
 
@@ -143,14 +141,14 @@ static inline bool AcceptDrivetype(FindFilesPacket* ff, void*)
     if (!Drivetype(ff->fname, dt, sizeof(dt))) {
       Dmsg1(50, "Cannot determine drive type for \"%s\"\n", ff->fname);
     } else {
-      for (i = 0; i < ff->drivetypes.size(); ++i) {
-        if (bstrcmp(dt, (char*)ff->drivetypes.get(i))) {
+      for (size_t i = 0; i < ff->drivetypes.size(); ++i) {
+        if (bstrcmp(dt, (char*)ff->drivetypes[i])) {
           Dmsg2(100, "Accepting drive type %s for \"%s\"\n", dt, ff->fname);
           accept = true;
           break;
         }
         Dmsg3(200, "drive type %s for \"%s\" does not match %s\n", dt,
-              ff->fname, ff->drivetypes.get(i));
+              ff->fname, ff->drivetypes[i]);
       }
     }
   }
