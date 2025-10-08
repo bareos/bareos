@@ -13,7 +13,7 @@ DIRECTOR_DAEMON_USER = $(DAEMON_USER)
 STORAGE_DAEMON_USER = $(DAEMON_USER)
 FILE_DAEMON_USER = root
 STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
-BAREOS_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | sed 's/Version: //g')
+BAREOS_VERSION := $(shell dpkg-parsechangelog --show-field Version)
 DIST_ID_REL := $(shell lsb_release --id --release --short | tr -d '\n')
 
 define CONFIGURE_COMMON
@@ -55,6 +55,11 @@ define CONFIGURE_COMMON
 endef
 
 
+ifeq ($(DIST_ID_REL),Debian11)
+# debian 11 sadly ships with the last version of fmt that does not contain
+# some needed functions that barri needs
+CONFIGURE_COMMON       += -DENABLE_BARRI=no
+endif
 
 ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
 CONFIGURE_COMMON       += -Dacl=no -Dxattr=no -Dscsi-crypto=no -Dndmp=no

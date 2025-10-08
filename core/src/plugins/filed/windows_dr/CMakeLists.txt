@@ -67,11 +67,6 @@ if(HAVE_WIN32)
                       BARRI_DATE="${DATE}" BARRI_YEAR="${BAREOS_YEAR}"
   )
 else()
-  if(FMT_VERSION VERSION_LESSER "8.0.0")
-    message(INFO "fmt >= 8.0.0 is required for barri")
-    return()
-  endif()
-
   target_compile_options(progress-bar-logger PRIVATE "-Wno-shadow")
 
   add_library(windows-dr-restore OBJECT)
