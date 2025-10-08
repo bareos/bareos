@@ -32,9 +32,7 @@ bool trace = false;
 template <typename... T>
 void err_msg(libbareos::format_string<T...> fmt, T&&... args)
 {
-  libbareos::format_to(std::ostream_iterator<char>(std::cerr), fmt,
-                       std::forward<T>(args)...);
-  std::cerr << '\n';
+  std::cerr << libbareos::format(fmt, std::forward<T>(args)...) << '\n';
 }
 
 std::string guid_to_string(guid id)

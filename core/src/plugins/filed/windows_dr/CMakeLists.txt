@@ -24,7 +24,7 @@ add_library(format INTERFACE)
 if(HAVE_WIN32)
   target_compile_options(format INTERFACE "-DUSE_STD_FMT=1")
 else()
-  target_link_libraries(format INTERFACE fmt::fmt-header-only)
+  target_link_libraries(format INTERFACE fmt::fmt)
 endif()
 
 add_library(progress-bar-logger OBJECT logger.cc)
@@ -71,9 +71,7 @@ else()
 
   add_library(windows-dr-restore OBJECT)
   target_sources(windows-dr-restore PRIVATE restore_linux.cc parser.cc)
-  target_link_libraries(
-    windows-dr-restore PUBLIC Microsoft.GSL::GSL fmt::fmt-header-only
-  )
+  target_link_libraries(windows-dr-restore PUBLIC Microsoft.GSL::GSL format)
 
   target_sources(barri-fd PRIVATE plugin_linux.cc bareos_api.cc)
   target_link_libraries(barri-fd PRIVATE tl::expected windows-dr-restore)
