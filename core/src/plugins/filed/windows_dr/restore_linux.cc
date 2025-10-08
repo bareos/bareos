@@ -670,15 +670,15 @@ class RestoreToSpecifiedFiles : public GenericHandler {
           "could not stat disk {}: Err={}", current_idx, strerror(errno))};
     }
 
-    if (S_ISREG(s.st_mode) && s.st_size >= 0
-        && static_cast<std::size_t>(s.st_size) < disk_size) {
-      // file is too small; lets try to enlarge it
-      if (ftruncate(fd.get(), disk_size) < 0) {
-        logger_->Info("could not expand disk {}: Err={}", current_idx,
-                      strerror(errno));
+    if (S_ISREG(s.st_mode)) {
+      if (s.st_size >= 0 && static_cast<std::size_t>(s.st_size) < disk_size) {
+        // file is too small; lets try to enlarge it
+        if (ftruncate(fd.get(), disk_size) < 0) {
+          logger_->Info("could not expand disk {}: Err={}", current_idx,
+                        strerror(errno));
+        }
       }
-    }
-    if (S_ISBLK(s.st_mode)) {
+    } else if (S_ISBLK(s.st_mode)) {
       std::uint64_t blk_size = 0;
       if (auto status = ioctl(fd, BLKGETSIZE64, &blk_size); status < 0) {
         throw std::runtime_error{
