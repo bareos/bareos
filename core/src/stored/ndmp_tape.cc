@@ -73,10 +73,8 @@
 #    include <arpa/nameser.h>
 #  endif
 
-#  ifdef HAVE_POLL_H
+#  ifdef HAVE_POLL
 #    include <poll.h>
-#  elif HAVE_SYS_POLL_H
-#    include <sys/poll.h>
 #  endif
 #endif /* #if HAVE_NDMP */
 
