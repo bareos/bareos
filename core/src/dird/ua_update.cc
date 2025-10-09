@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,7 @@
  * Update command processing
  */
 
+#include "cats/cats.h"
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
@@ -149,7 +150,7 @@ static void UpdateVolstatus(UaContext* ua, const char* val, MediaDbRecord* mr)
     bstrncpy(mr->VolStatus, kw[i], sizeof(mr->VolStatus));
     Mmsg(query, "UPDATE Media SET VolStatus='%s' WHERE MediaId=%s",
          mr->VolStatus, edit_int64(mr->MediaId, ed1));
-    if (!ua->db->SqlQuery(query.c_str())) {
+    if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
       ua->ErrorMsg("%s", ua->db->strerror());
     } else {
       ua->InfoMsg(T_("New Volume status is: %s\n"), mr->VolStatus);
@@ -168,7 +169,7 @@ static void UpdateVolretention(UaContext* ua, char* val, MediaDbRecord* mr)
   }
   Mmsg(query, "UPDATE Media SET VolRetention=%s WHERE MediaId=%s",
        edit_uint64(mr->VolRetention, ed1), edit_int64(mr->MediaId, ed2));
-  if (!ua->db->SqlQuery(query.c_str())) {
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
     ua->InfoMsg(T_("New retention period is: %s\n"),
@@ -187,7 +188,7 @@ static void UpdateVoluseduration(UaContext* ua, char* val, MediaDbRecord* mr)
   }
   Mmsg(query, "UPDATE Media SET VolUseDuration=%s WHERE MediaId=%s",
        edit_uint64(mr->VolUseDuration, ed1), edit_int64(mr->MediaId, ed2));
-  if (!ua->db->SqlQuery(query.c_str())) {
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
     ua->InfoMsg(T_("New use duration is: %s\n"),
@@ -202,7 +203,7 @@ static void UpdateVolmaxjobs(UaContext* ua, char* val, MediaDbRecord* mr)
 
   Mmsg(query, "UPDATE Media SET MaxVolJobs=%s WHERE MediaId=%s", val,
        edit_int64(mr->MediaId, ed1));
-  if (!ua->db->SqlQuery(query.c_str())) {
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
     ua->InfoMsg(T_("New max jobs is: %s\n"), val);
@@ -216,7 +217,7 @@ static void UpdateVolmaxfiles(UaContext* ua, char* val, MediaDbRecord* mr)
 
   Mmsg(query, "UPDATE Media SET MaxVolFiles=%s WHERE MediaId=%s", val,
        edit_int64(mr->MediaId, ed1));
-  if (!ua->db->SqlQuery(query.c_str())) {
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
     ua->InfoMsg(T_("New max files is: %s\n"), val);
@@ -235,7 +236,7 @@ static void UpdateVolmaxbytes(UaContext* ua, char* val, MediaDbRecord* mr)
   }
   Mmsg(query, "UPDATE Media SET MaxVolBytes=%s WHERE MediaId=%s",
        edit_uint64(maxbytes, ed1), edit_int64(mr->MediaId, ed2));
-  if (!ua->db->SqlQuery(query.c_str())) {
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
     ua->InfoMsg(T_("New Max bytes is: %s\n"), edit_uint64(maxbytes, ed1));
@@ -256,7 +257,7 @@ static void UpdateVolrecycle(UaContext* ua, char* val, MediaDbRecord* mr)
   Mmsg(query, "UPDATE Media SET Recycle=%d WHERE MediaId=%s", recycle ? 1 : 0,
        edit_int64(mr->MediaId, ed1));
 
-  if (!ua->db->SqlQuery(query.c_str())) {
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
     ua->InfoMsg(T_("New Recycle flag is: %s\n"),
@@ -278,7 +279,7 @@ static void UpdateVolinchanger(UaContext* ua, char* val, MediaDbRecord* mr)
   Mmsg(query, "UPDATE Media SET InChanger=%d WHERE MediaId=%s",
        InChanger ? 1 : 0, edit_int64(mr->MediaId, ed1));
 
-  if (!ua->db->SqlQuery(query.c_str())) {
+  if (DbLocker _{ua->db}; !ua->db->SqlQuery(query.c_str())) {
     ua->ErrorMsg("%s", ua->db->strerror());
   } else {
     ua->InfoMsg(T_("New InChanger flag is: %s\n"),
@@ -291,12 +292,12 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
   PoolDbRecord pr;
 
   pr.PoolId = mr->PoolId;
-  if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
+  if (DbLocker _{ua->db}; !ua->db->GetPoolRecord(ua->jcr, &pr)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     return;
   }
   mr->Slot = atoi(val);
-  if (pr.MaxVols > 0 && mr->Slot > (int)pr.MaxVols) {
+  if ((pr.MaxVols > 0 && mr->Slot > (int)pr.MaxVols) || mr->Slot < 0) {
     ua->ErrorMsg(T_("Invalid slot, it must be between 0 and MaxVols=%d\n"),
                  pr.MaxVols);
     return;
@@ -304,7 +305,7 @@ static void UpdateVolslot(UaContext* ua, char* val, MediaDbRecord* mr)
   /* Make sure to use db_update... rather than doing this directly,
    * so that any Slot is handled correctly. */
   SetStorageidInMr(NULL, mr);
-  if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
     ua->ErrorMsg(T_("Error updating media record Slot: ERR=%s"),
                  ua->db->strerror());
   } else {
@@ -323,10 +324,11 @@ void UpdateVolPool(UaContext* ua,
   char ed1[50], ed2[50];
 
   bstrncpy(pr.Name, val, sizeof(pr.Name));
+
+  DbLocker _{ua->db};
   if (!GetPoolDbr(ua, &pr)) { return; }
   mr->PoolId = pr.PoolId; /* set new PoolId */
 
-  DbLocker _{ua->db};
   Mmsg(query, "UPDATE Media SET PoolId=%s WHERE MediaId=%s",
        edit_int64(mr->PoolId, ed1), edit_int64(mr->MediaId, ed2));
   if (!ua->db->SqlQuery(query.c_str())) {
@@ -352,6 +354,7 @@ void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
   char ed1[50], ed2[50];
   const char* poolname;
 
+  DbLocker _{ua->db};
   if (val && *val) { /* update volume recyclepool="Scratch" */
     // If a pool name is given, look up the PoolId
     bstrncpy(pr.Name, val, sizeof(pr.Name));
@@ -364,7 +367,6 @@ void UpdateVolRecyclepool(UaContext* ua, char* val, MediaDbRecord* mr)
     poolname = T_("*None*");
   }
 
-  DbLocker _{ua->db};
   Mmsg(query, "UPDATE Media SET RecyclePoolId=%s WHERE MediaId=%s",
        edit_int64(mr->RecyclePoolId, ed1), edit_int64(mr->MediaId, ed2));
   if (!ua->db->SqlQuery(query.c_str())) {
@@ -381,11 +383,11 @@ void UpdateVolStorage(UaContext* ua, char* val, MediaDbRecord* mr)
   PoolMem query(PM_MESSAGE);
   char ed1[50], ed2[50];
 
+  DbLocker _{ua->db};
   bstrncpy(sr.Name, val, sizeof(sr.Name));
   if (!GetStorageDbr(ua, &sr)) { return; }
   mr->StorageId = sr.StorageId; /* set new StorageId */
 
-  DbLocker _{ua->db};
   Mmsg(query, "UPDATE Media SET StorageId=%s WHERE MediaId=%s",
        edit_int64(mr->StorageId, ed1), edit_int64(mr->MediaId, ed2));
   if (!ua->db->SqlQuery(query.c_str())) {
@@ -404,7 +406,7 @@ static void UpdateVolFromPool(UaContext* ua, MediaDbRecord* mr)
     return;
   }
   SetPoolDbrDefaultsInMediaDbr(mr, &pr);
-  if (!ua->db->UpdateMediaDefaults(ua->jcr, mr)) {
+  if (DbLocker _{ua->db}; !ua->db->UpdateMediaDefaults(ua->jcr, mr)) {
     ua->ErrorMsg(T_("Error updating Volume record: ERR=%s"),
                  ua->db->strerror());
   } else {
@@ -418,6 +420,8 @@ static void UpdateAllVolsFromPool(UaContext* ua, const char* pool_name)
 {
   PoolDbRecord pr;
   MediaDbRecord mr;
+
+  DbLocker _{ua->db};
 
   bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
   if (!GetPoolDbr(ua, &pr)) { return; }
@@ -439,14 +443,14 @@ static void UpdateAllVols(UaContext* ua)
   PoolDbRecord pr;
   MediaDbRecord mr;
 
-  if (!ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
+  if (DbLocker _{ua->db}; !ua->db->GetPoolIds(ua->jcr, &num_pools, &ids)) {
     ua->ErrorMsg(T_("Error obtaining pool ids. ERR=%s\n"), ua->db->strerror());
     return;
   }
 
   for (i = 0; i < num_pools; i++) {
     pr.PoolId = ids[i];
-    if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
+    if (DbLocker _{ua->db}; !ua->db->GetPoolRecord(ua->jcr, &pr)) {
       ua->WarningMsg(T_("Updating all pools, but skipped PoolId=%d. ERR=%s\n"),
                      ua->db->strerror());
       continue;
@@ -458,7 +462,7 @@ static void UpdateAllVols(UaContext* ua)
     SetPoolDbrDefaultsInMediaDbr(&mr, &pr);
     mr.PoolId = pr.PoolId;
 
-    if (!ua->db->UpdateMediaDefaults(ua->jcr, &mr)) {
+    if (DbLocker _{ua->db}; !ua->db->UpdateMediaDefaults(ua->jcr, &mr)) {
       ua->ErrorMsg(T_("Error updating Volume records: ERR=%s"),
                    ua->db->strerror());
     } else {
@@ -475,7 +479,7 @@ static void UpdateVolenabled(UaContext* ua, char* val, MediaDbRecord* mr)
   mr->Enabled = GetEnabled(ua, val);
   if (mr->Enabled < 0) { return; }
   SetStorageidInMr(NULL, mr);
-  if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
     ua->ErrorMsg(T_("Error updating media record Enabled: ERR=%s"),
                  ua->db->strerror());
   } else {
@@ -493,7 +497,7 @@ static void UpdateVolActiononpurge(UaContext* ua, char* val, MediaDbRecord* mr)
   }
 
   SetStorageidInMr(NULL, mr);
-  if (!ua->db->UpdateMediaRecord(ua->jcr, mr)) {
+  if (DbLocker _{ua->db}; !ua->db->UpdateMediaRecord(ua->jcr, mr)) {
     ua->ErrorMsg(T_("Error updating media record ActionOnPurge: ERR=%s"),
                  ua->db->strerror());
   } else {
@@ -575,7 +579,7 @@ static bool UpdateVolume(UaContext* ua)
           break;
         case 9:
           pr.PoolId = mr.PoolId;
-          if (!ua->db->GetPoolRecord(ua->jcr, &pr)) {
+          if (DbLocker _{ua->db}; !ua->db->GetPoolRecord(ua->jcr, &pr)) {
             ua->ErrorMsg("%s", ua->db->strerror());
             break;
           }
@@ -860,19 +864,22 @@ static bool UpdatePool(UaContext* ua)
   PoolResource* pool;
   PoolMem query(PM_MESSAGE);
 
-  pool = get_pool_resource(ua);
-  if (!pool) { return false; }
+  {
+    DbLocker _{ua->db};
+    pool = get_pool_resource(ua);
+    if (!pool) { return false; }
 
-  bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
-  if (!GetPoolDbr(ua, &pr)) { return false; }
+    bstrncpy(pr.Name, pool->resource_name_, sizeof(pr.Name));
+    if (!GetPoolDbr(ua, &pr)) { return false; }
 
-  SetPooldbrFromPoolres(&pr, pool, POOL_OP_UPDATE); /* update */
-  SetPooldbrReferences(ua->jcr, ua->db, &pr, pool);
+    SetPooldbrFromPoolres(&pr, pool, POOL_OP_UPDATE); /* update */
+    SetPooldbrReferences(ua->jcr, ua->db, &pr, pool);
 
-  id = ua->db->UpdatePoolRecord(ua->jcr, &pr);
-  if (id <= 0) {
-    ua->ErrorMsg(T_("UpdatePoolRecord returned %d. ERR=%s\n"), id,
-                 ua->db->strerror());
+    id = ua->db->UpdatePoolRecord(ua->jcr, &pr);
+    if (id <= 0) {
+      ua->ErrorMsg(T_("UpdatePoolRecord returned %d. ERR=%s\n"), id,
+                   ua->db->strerror());
+    }
   }
   ua->db->FillQuery(query, BareosDb::SQL_QUERY::list_pool,
                     edit_int64(pr.PoolId, ed1));
@@ -910,6 +917,7 @@ static bool UpdateJob(UaContext* ua)
     return false;
   }
   jr.JobId = str_to_int64(ua->argv[i]);
+  DbLocker _{ua->db};
   if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     return false;
