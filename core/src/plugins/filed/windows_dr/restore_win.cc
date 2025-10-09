@@ -468,14 +468,41 @@ class DiskHandles : public OutputHandleGenerator {
         auto* desc
             = reinterpret_cast<STORAGE_DEVICE_DESCRIPTOR*>(buffer.data());
         switch (desc->DeviceType) {
-          case FILE_DEVICE_CD_ROM: {
-            logger->Trace("volume {} is on a CD -> ignored", FromUtf16(guid));
-            CloseHandle(hndl);
-          } break;
-          default: {
+            // see
+            // https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/scsi/ns-scsi-_inquirydata
+            //
+            // DIRECT_ACCESS_DEVICE 0x00 	Disk
+            // SEQUENTIAL_ACCESS_DEVICE 0x01 	Tape device
+            // PRINTER_DEVICE 0x02 	Printer
+            // PROCESSOR_DEVICE 0x03 	Scanner, printer, etc
+            // WRITE_ONCE_READ_MULTIPLE_DEVICE 0x04 	WORM
+            // READ_ONLY_DIRECT_ACCESS_DEVICE 0x05 	CD-ROM
+            // SCANNER_DEVICE 0x06 	Scanner
+            // OPTICAL_DEVICE 0x07 	Optical disk
+            // MEDIUM_CHANGER 0x08 	Jukebox
+            // COMMUNICATION_DEVICE 0x09 	Network device
+            // ARRAY_CONTROLLER_DEVICE 0x0C 	Array controller
+            // SCSI_ENCLOSURE_DEVICE 0x0D 	SCSI enclosure device
+            // REDUCED_BLOCK_DEVICE 0x0E 	For example, 1394 disk
+            // OPTICAL_CARD_READER_WRITER_DEVICE 0x0F 	Optical card
+            // reader/writer BRIDGE_CONTROLLER_DEVICE 0x10 	Bridge
+            // controller OBJECT_BASED_STORAGE_DEVICE 0x11 	OSD device
+            // HOST_MANAGED_ZONED_BLOCK_DEVICE 0x14 	Host managed zoned block
+            // device UNKNOWN_OR_NO_DEVICE 0x1F 	Unknown or no device
+            // type LOGICAL_UNIT_NOT_PRESENT_DEVICE 0x7F 	A logical unit
+            // is not present
+
+          case 0x00:
+          case 0x14:
+          case 0x0E: {
             logger->Trace("look at extents of volume {} of type {:x}",
                           FromUtf16(guid), desc->DeviceType);
             check_extents = true;
+          } break;
+          default: {
+            logger->Trace("volume {} is not a disk (type = {:x})",
+                          FromUtf16(guid), desc->DeviceType);
+            CloseHandle(hndl);
           }
         }
       }
