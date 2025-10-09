@@ -22,8 +22,6 @@ if(NOT MSVC)
   include(CheckIncludeFileCXX)
 
   # assume POSIX required headers are present
-  set(HAVE_GRP_H 1)
-  set(HAVE_PWD_H 1)
   set(HAVE_REGEX_H 1)
   set(HAVE_SYS_POLL_H 1)
   set(HAVE_SYS_STATVFS_H 1)
