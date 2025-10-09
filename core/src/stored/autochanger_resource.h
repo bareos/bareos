@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,6 +26,9 @@
 
 #include "lib/bareos_resource.h"
 
+#include <string>
+#include <memory>
+
 template <typename T> class alist;
 
 namespace storagedaemon {
@@ -34,6 +37,10 @@ class DeviceResource;
 class AutochangerResource : public BareosResource {
  public:
   AutochangerResource();
+
+  static std::unique_ptr<AutochangerResource> CreateImplicitAutochanger(
+      const std::string& device_name);
+
   virtual ~AutochangerResource() = default;
   AutochangerResource& operator=(const AutochangerResource& rhs);
   bool PrintConfig(OutputFormatterResource& send,
@@ -42,11 +49,13 @@ class AutochangerResource : public BareosResource {
                    bool verbose = false) override;
 
 
-  alist<DeviceResource*>*
-      device_resources;   /**< List of DeviceResource device pointers */
-  char* changer_name;     /**< Changer device name */
-  char* changer_command;  /**< Changer command  -- external program */
-  brwlock_t changer_lock; /**< One changer operation at a time */
+  alist<DeviceResource*>* device_resources{
+      nullptr};                   /**< List of DeviceResource device pointers */
+  char* changer_name{nullptr};    /**< Changer device name */
+  char* changer_command{nullptr}; /**< Changer command  -- external program */
+  brwlock_t changer_lock;         /**< One changer operation at a time */
+ private:
+  bool implicitly_created_{false};
 };
 } /* namespace storagedaemon */
 
