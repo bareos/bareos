@@ -195,9 +195,6 @@
 // Define to 1 if you have gfapi lib
 #cmakedefine HAVE_GFAPI @HAVE_GFAPI@
 
-// Define to 1 if you have the <grp.h> header file
-#cmakedefine HAVE_GRP_H @HAVE_GRP_H@
-
 // Define to 1 if ioctl request is unsigned long int
 #cmakedefine HAVE_IOCTL_ULINT_REQUEST @HAVE_IOCTL_ULINT_REQUEST@
 
@@ -269,9 +266,6 @@
 
 // Define to 1 if you have the `prctl' function
 #cmakedefine HAVE_PRCTL @HAVE_PRCTL@
-
-// Define to 1 if you have the <pwd.h> header file
-#cmakedefine HAVE_PWD_H @HAVE_PWD_H@
 
 // Define to 1 if python support should be enabled
 #cmakedefine HAVE_PYTHON @HAVE_PYTHON@
