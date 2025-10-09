@@ -473,7 +473,8 @@ class DiskHandles : public OutputHandleGenerator {
             CloseHandle(hndl);
           } break;
           default: {
-            logger->Trace("look at extents of volume {}", FromUtf16(guid));
+            logger->Trace("look at extents of volume {} of type {:x}",
+                          FromUtf16(guid), desc->DeviceType);
             check_extents = true;
           }
         }
