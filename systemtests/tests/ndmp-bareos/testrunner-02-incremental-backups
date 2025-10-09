@@ -38,7 +38,7 @@ export TestName
 
 start_test
 
-for ID in $(seq 1 10); do
+for ID in {1..10}; do
   ${SSH} "echo ${NDMP_FILESYSTEM}-${ID} >> /ifs/home/regress/${NDMP_FILESYSTEM}/incremental"
 
   cat <<END_OF_DATA >"${tmp}/bconcmds"
