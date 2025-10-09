@@ -3,7 +3,7 @@
 # A NDMP Client.
 #
 Client {
-  Name = isilon
+  Name = ndmp-fd
   Address = @ndmp_data_agent_address@
   Port = 10000
   Protocol = NDMPv4                         # Need to specify protocol before password as protocol determines password encoding used.
