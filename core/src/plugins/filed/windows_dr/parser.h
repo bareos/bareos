@@ -111,12 +111,15 @@ struct GenericLogger {
 
   inline constexpr void Trace(std::string_view view)
   {
-    Message message = {
-        .text = view,
-        .is_trace = true,
-    };
-    Output(message);
+    if (trace) {
+      Message message = {
+          .text = view,
+          .is_trace = true,
+      };
+      Output(message);
+    }
   }
+
   template <typename Arg, typename... Args>
   inline constexpr void Trace(libbareos::format_string<Arg, Args...> fmt,
                               Arg&& arg,
