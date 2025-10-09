@@ -524,10 +524,8 @@ int ndmos_chan_poll(struct ndmchan* chtab[], unsigned n_chtab, int milli_timo)
  * INFINITELY SUPERIOR to select(2).
  */
 
-#ifdef HAVE_POLL_H
+#ifdef HAVE_POLL
 #include <poll.h>
-#elif HAVE_SYS_POLL_H
-#include <sys/poll.h>
 #endif
 
 int ndmos_chan_poll(struct ndmchan* chtab[], unsigned n_chtab, int milli_timo)
