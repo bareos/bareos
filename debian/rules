@@ -15,6 +15,7 @@ FILE_DAEMON_USER = root
 STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
 BAREOS_VERSION := $(shell dpkg-parsechangelog --show-field Version)
 DIST_ID_REL := $(shell lsb_release --id --release --short | tr -d '\n')
+WORK_DIR := $(shell pwd)
 
 define CONFIGURE_COMMON
   -Dsbindir=/usr/sbin \
@@ -50,8 +51,8 @@ define CONFIGURE_COMMON
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Drpath=no \
   -DVERSION_STRING=$(BAREOS_VERSION) \
-  -DCPM_indicators_SOURCE=deps/indicators \
-  -DCPM_CLI11_SOURCE=deps/cli11
+  -DCPM_indicators_SOURCE=$(WORK_DIR)/deps/indicators \
+  -DCPM_CLI11_SOURCE=$(WORK_DIR)/deps/cli11
 endef
 
 
