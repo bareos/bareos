@@ -23,11 +23,6 @@ JobName=backup-to-pool1
 JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
-
-# Fill ${BackupDirectory} with data.
-setup_data
 
 start_test
 
@@ -71,7 +66,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole "$@"
 check_for_zombie_jobs storage=File
 
 # rename the storages instead of deleting them
