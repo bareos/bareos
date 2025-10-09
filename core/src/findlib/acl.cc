@@ -1628,14 +1628,8 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 #  endif   /* HAVE_ACL */
 
 #  if defined(HAVE_AFS_ACL)
-
-#    if defined(HAVE_AFS_AFSINT_H) && defined(HAVE_AFS_VENUS_H)
-#      include <afs/afsint.h>
-#      include <afs/venus.h>
-#    else
-#      error \
-          "configure failed to detect availability of afs/afsint.h and/or afs/venus.h"
-#    endif
+#    include <afs/afsint.h>
+#    include <afs/venus.h>
 
 /**
  * External references to functions in the libsys library function not in
