@@ -41,8 +41,6 @@ if(NOT MSVC)
     set(HAVE_SETREUID 1)
     set(HAVE_UNLINKAT 1)
     set(HAVE_UTIMES 1)
-
-    set(HAVE_POLL_H 1)
   else()
     message(
       SEND_ERROR
