@@ -469,7 +469,7 @@ class DiskHandles : public OutputHandleGenerator {
             = reinterpret_cast<STORAGE_DEVICE_DESCRIPTOR*>(buffer.data());
         switch (desc->DeviceType) {
           case FILE_DEVICE_CD_ROM: {
-            logger->Trace("volume {} is on a disk -> ignored", FromUtf16(guid));
+            logger->Trace("volume {} is on a CD -> ignored", FromUtf16(guid));
             CloseHandle(hndl);
           } break;
           default: {
