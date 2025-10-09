@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - grpc: fix missing some early events [PR #2371]
 - grpc: fix extra / for directories [PR #2377]
 - packaging: add setcap/getcap requirements [PR #2374]
+- scsicrypto: don't expose kek in job log [PR #2387]
 
 ### Changed
 - systemtest: speed up always-incremental with sleep 0.25 [PR #2366]
@@ -527,4 +528,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2374]: https://github.com/bareos/bareos/pull/2374
 [PR #2377]: https://github.com/bareos/bareos/pull/2377
 [PR #2382]: https://github.com/bareos/bareos/pull/2382
+[PR #2387]: https://github.com/bareos/bareos/pull/2387
 [unreleased]: https://github.com/bareos/bareos/tree/master
