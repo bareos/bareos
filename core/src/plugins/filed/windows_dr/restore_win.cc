@@ -438,77 +438,120 @@ class DiskHandles : public OutputHandleGenerator {
             "could not open volume {}: Err={}", FromUtf16(guid), err)};
       }
 
-      std::optional<std::size_t> requested_disk_id;
-      std::optional<std::size_t> not_requested_disk_id;
+      bool check_extents = false;
+      // first check that this is an actual disk volume
+      {
+        STORAGE_PROPERTY_QUERY query = {};
+        query.PropertyId = StorageDeviceProperty;
+        query.QueryType = PropertyStandardQuery;
+        std::vector<char> buffer;
+        buffer.resize(1024);
+        DWORD bytes_returned;
+        for (;;) {
+          if (!DeviceIoControl(hndl, IOCTL_STORAGE_QUERY_PROPERTY, &query,
+                               sizeof(query), buffer.data(), buffer.size(),
+                               &bytes_returned, NULL)) {
+            auto err = GetLastError();
+            if (err == ERROR_MORE_DATA) {
+              buffer.resize(buffer.size() * 2);
+              continue;
+            }
 
-      DWORD bytes_written = 0;
-      for (;;) {
-        if (!DeviceIoControl(hndl, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,
-                             nullptr, 0, extent_buffer.data(),
-                             extent_buffer.size(), &bytes_written, nullptr)) {
-          auto err = GetLastError();
-
-          if (err != ERROR_MORE_DATA) {
             throw std::runtime_error{libbareos::format(
-                "could not enumerate all extents for volume {}: Err={}",
+                "could not query storage device for volume {}: Err={}",
                 FromUtf16(guid), err)};
           }
 
-          extent_buffer.resize(extent_buffer.size() * 2);
+          break;
         }
 
-        break;
-      }
-
-      if (bytes_written == 0) {
-        // no extents, so we can safely ignore this volume.
-        logger->Trace("volume {} has no extents -> ignored", FromUtf16(guid));
-        CloseHandle(hndl);
-      } else {
-        auto extents
-            = reinterpret_cast<VOLUME_DISK_EXTENTS*>(extent_buffer.data());
-
-        for (size_t i = 0; i < extents->NumberOfDiskExtents; ++i) {
-          auto& extent = extents->Extents[i];
-
-          if (std::find(std::begin(disk_ids), std::end(disk_ids),
-                        extent.DiskNumber)
-              == std::end(disk_ids)) {
-            not_requested_disk_id = extent.DiskNumber;
-          } else {
-            requested_disk_id = extent.DiskNumber;
+        auto* desc
+            = reinterpret_cast<STORAGE_DEVICE_DESCRIPTOR*>(buffer.data());
+        switch (desc->DeviceType) {
+          case FILE_DEVICE_CD_ROM: {
+            logger->Trace("volume {} is on a disk -> ignored", FromUtf16(guid));
+            CloseHandle(hndl);
+          } break;
+          default: {
+            logger->Trace("look at extents of volume {}", FromUtf16(guid));
+            check_extents = true;
           }
         }
+      }
 
-        /* we now have 4 cases to consider.
-         * | extent on requested | extent on non requested | result |
-         * |---------------------+-------------------------+--------|
-         * |        true         |           true          | error! |
-         * |        false        |           true          | ignore |
-         * |        true         |           false         | keep   |
-         * |        false        |           false         |  (1)   |
-         * |--------------------------------------------------------|
-         * (1): this case is not possible, as this can only happen if
-         *      there are no extents, which we checked above.
-         *      As such we will just ignore it */
+      if (check_extents) {
+        std::optional<std::size_t> requested_disk_id;
+        std::optional<std::size_t> not_requested_disk_id;
 
+        DWORD bytes_written = 0;
+        for (;;) {
+          if (!DeviceIoControl(hndl, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS,
+                               nullptr, 0, extent_buffer.data(),
+                               extent_buffer.size(), &bytes_written, nullptr)) {
+            auto err = GetLastError();
 
-        if (requested_disk_id && not_requested_disk_id) {
-          throw std::runtime_error{libbareos::format(
-              "volume {} is both on disk {} and disk {}: cannot continue",
-              FromUtf16(guid), requested_disk_id.value(),
-              not_requested_disk_id.value())};
-        } else if (!requested_disk_id && not_requested_disk_id) {
-          // ignore (see above)
-          logger->Trace("volume {} => ignored", FromUtf16(guid));
+            if (err != ERROR_MORE_DATA) {
+              throw std::runtime_error{libbareos::format(
+                  "could not enumerate all extents for volume {}: Err={}",
+                  FromUtf16(guid), err)};
+            }
+
+            extent_buffer.resize(extent_buffer.size() * 2);
+          }
+
+          break;
+        }
+
+        if (bytes_written == 0) {
+          // no extents, so we can safely ignore this volume.
+          logger->Trace("volume {} has no extents -> ignored", FromUtf16(guid));
           CloseHandle(hndl);
-        } else if (requested_disk_id && !not_requested_disk_id) {
-          logger->Trace("volume {} => kept", FromUtf16(guid));
-          volumes.emplace_back(std::move(guid), hndl);
         } else {
-          // ignore (see above)
-          logger->Trace("volume {} => ignored (no extents)", FromUtf16(guid));
-          CloseHandle(hndl);
+          auto extents
+              = reinterpret_cast<VOLUME_DISK_EXTENTS*>(extent_buffer.data());
+
+          for (size_t i = 0; i < extents->NumberOfDiskExtents; ++i) {
+            auto& extent = extents->Extents[i];
+
+            if (std::find(std::begin(disk_ids), std::end(disk_ids),
+                          extent.DiskNumber)
+                == std::end(disk_ids)) {
+              not_requested_disk_id = extent.DiskNumber;
+            } else {
+              requested_disk_id = extent.DiskNumber;
+            }
+          }
+
+          /* we now have 4 cases to consider.
+           * | extent on requested | extent on non requested | result |
+           * |---------------------+-------------------------+--------|
+           * |        true         |           true          | error! |
+           * |        false        |           true          | ignore |
+           * |        true         |           false         | keep   |
+           * |        false        |           false         |  (1)   |
+           * |--------------------------------------------------------|
+           * (1): this case is not possible, as this can only happen if
+           *      there are no extents, which we checked above.
+           *      As such we will just ignore it */
+
+
+          if (requested_disk_id && not_requested_disk_id) {
+            throw std::runtime_error{libbareos::format(
+                "volume {} is both on disk {} and disk {}: cannot continue",
+                FromUtf16(guid), requested_disk_id.value(),
+                not_requested_disk_id.value())};
+          } else if (!requested_disk_id && not_requested_disk_id) {
+            // ignore (see above)
+            logger->Trace("volume {} => ignored", FromUtf16(guid));
+            CloseHandle(hndl);
+          } else if (requested_disk_id && !not_requested_disk_id) {
+            logger->Trace("volume {} => kept", FromUtf16(guid));
+            volumes.emplace_back(std::move(guid), hndl);
+          } else {
+            // ignore (see above)
+            logger->Trace("volume {} => ignored (no extents)", FromUtf16(guid));
+            CloseHandle(hndl);
+          }
         }
       }
 
