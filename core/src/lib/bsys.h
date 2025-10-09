@@ -48,7 +48,6 @@ void WritePidFile(int pidfile_fd,
                   const char* pidfile_path,
                   const char* progname);
 int DeletePidFile(std::string pidfile_path);
-void drop(char* uid, char* gid, bool keep_readall_caps);
 int Bmicrosleep(int32_t sec, int32_t usec);
 char* bfgets(char* s, int size, FILE* fd);
 char* bfgets(POOLMEM*& s, FILE* fd);
