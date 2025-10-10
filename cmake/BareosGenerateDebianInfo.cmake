@@ -102,6 +102,10 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-contrib-tools")
   endif()
 
+  if(enable_proxmox_plugin)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "proxmox")
+  endif()
+
 endif()
 
 include(BareosConfigureFile)
