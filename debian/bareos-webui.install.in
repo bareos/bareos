@@ -1,0 +1,6 @@
+@configtemplatedir@/bareos-dir.d/console/admin.conf.example
+@configtemplatedir@/bareos-dir.d/profile/webui-limited.conf.example
+/etc/apache2/conf-available/bareos-webui.conf
+/etc/bareos-webui/directors.ini
+/etc/bareos-webui/configuration.ini
+/usr/share/bareos-webui

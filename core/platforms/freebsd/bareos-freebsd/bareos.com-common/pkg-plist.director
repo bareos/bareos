@@ -1,26 +1,29 @@
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/catalog/MyCatalog.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/client/bareos-fd.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/console/bareos-mon.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/director/bareos-dir.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/Catalog.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/LinuxAll.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/fileset/SelfTest.conf.sample
-@sample(bareos,bareos,0640) "%%ETCDIR%%/bareos-dir.d/fileset/Windows All Drives.conf.sample"
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/job/backup-bareos-fd.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/job/BackupCatalog.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/jobdefs/DefaultJob.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/job/RestoreFiles.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/messages/Daemon.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/messages/Standard.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/pool/Differential.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/pool/Full.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/pool/Incremental.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/pool/Scratch.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/profile/operator.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/schedule/WeeklyCycle.conf.sample
-@sample(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/storage/File.conf.sample
-@(bareos,bareos,0640) %%ETCDIR%%/bareos-dir.d/storage/File.conf.example
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/catalog/MyCatalog.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/client/bareos-fd.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/console/bareos-mon.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/director/bareos-dir.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/fileset/Catalog.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/fileset/LinuxAll.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/fileset/SelfTest.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/fileset/Windows All Drives.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/backup-bareos-fd.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/BackupCatalog.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/jobdefs/DefaultJob.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/job/RestoreFiles.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/messages/Daemon.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/messages/Standard.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/pool/Differential.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/pool/Full.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/pool/Incremental.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/pool/Scratch.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/profile/operator.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/profile/webui-admin.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/profile/webui-readonly.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/schedule/WeeklyCycle.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/storage/File.conf
+%%BAREOS_CONFIG_TEMPLATE_DIR%%/bareos-dir.d/storage/File.conf.example
+@dir(bareos,wheel,2750) %%ETCDIR%%/bareos-dir-export/client/
 lib/bareos/scripts/delete_catalog_backup
 lib/bareos/scripts/make_catalog_backup
 sbin/bareos-dir

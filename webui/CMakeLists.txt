@@ -19,8 +19,6 @@
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 project(bareos-webui)
 
-include(GNUInstallDirs)
-
 set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../SOURCES
     ${PROJECT_SOURCE_DIR}/../SOURCES ${PROJECT_SOURCE_DIR}/cmake
@@ -135,16 +133,10 @@ if(NOT client-only)
   )
 
   install(FILES install/bareos/bareos-dir.d/console/admin.conf.example
-          DESTINATION ${confdir}/bareos-dir.d/console/
-  )
-  install(FILES install/bareos/bareos-dir.d/profile/webui-admin.conf
-          DESTINATION ${confdir}/bareos-dir.d/profile/
+          DESTINATION ${configtemplatedir}/bareos-dir.d/console/
   )
   install(FILES install/bareos/bareos-dir.d/profile/webui-limited.conf.example
-          DESTINATION ${confdir}/bareos-dir.d/profile/
-  )
-  install(FILES install/bareos/bareos-dir.d/profile/webui-readonly.conf
-          DESTINATION ${confdir}/bareos-dir.d/profile/
+          DESTINATION ${configtemplatedir}/bareos-dir.d/profile/
   )
   install(FILES install/apache/bareos-webui.conf DESTINATION ${HTTPD_CONF}/)
 

@@ -1,0 +1,84 @@
+#!/bin/sh
+set -e
+
+initialize_bareos()
+{
+  COMPONENT="$1"
+  echo "$PKG_NAME: initializing Bareos configuration (pkg-post-install, upgrade=${PKG_UPGRADE:-false}), logs to ${LOGFILE}"
+  deploy_config --init "${COMPONENT}" >>${LOGFILE} 2>&1
+  create_deploy_config_version_file
+}
+
+create_deploy_config_version_file()
+{
+  cat >"${VERSION_FILE}" <<EOF
+# This file contains, in its last line,
+# the pkg version of when deploy_config last modified the configuration.
+# This is required as in Bareos 25
+# config files are no longer marked as @sample files.
+# Therefore unmodified default config files get removed
+# when updating from Bareos <= 24.
+# The post-install script will re-add
+# the missing default configuration files from the current pkg.
+# WARNING:
+# Manually deleting this marker file may result in unwanted effects.
+EOF
+  pkg query '%v' "$PKG_NAME" >>"${VERSION_FILE}"
+}
+
+get_last_deploy_config_version()
+{
+  tail -n 1 "${VERSION_FILE}"
+}
+
+. /usr/local/lib/bareos/scripts/bareos-config-lib.sh
+LOGFILE="/var/log/bareos/bareos-setup.log"
+VERSION_FILE=""
+
+COMPONENT=""
+case "$PKG_NAME" in
+  bareos.com-director)
+    COMPONENT="bareos-dir"
+    ;;
+
+  bareos.com-filedaemon)
+    COMPONENT="bareos-fd"
+    ;;
+
+  bareos.com-storage)
+    COMPONENT="bareos-sd"
+    ;;
+
+  bareos.com-bconsole)
+    COMPONENT="bconsole"
+    ;;
+esac
+
+if [ "${COMPONENT}" ]; then
+
+  VERSION_FILE="${BAREOS_CONFIG_DIR}/.${COMPONENT}.deploy_config.version"
+
+  if [ -z "${PKG_UPGRADE}" ]; then
+    # initial install
+    initialize_bareos "${COMPONENT}"
+  else
+    # upgrade
+    UPDATE_CONFIG=""
+    if ! [ -e "${VERSION_FILE}" ]; then
+      UPDATE_CONFIG=1
+    else
+      VERSION=$(get_last_deploy_config_version)
+      if [ "${VERSION%%.*}" -lt "25" ]; then
+        UPDATE_CONFIG=1
+      fi
+    fi
+    if [ "${UPDATE_CONFIG}" ]; then
+      echo "$PKG_NAME: (pkg-post-install, upgrade=${PKG_UPGRADE:-false})"
+      echo "  Upgrading from $PKG_NAME < 25 removes unmodified default configuration files."
+      echo "  These will be re-added now."
+      deploy_config --add-missing "${COMPONENT}" >>${LOGFILE} 2>&1
+      create_deploy_config_version_file
+    fi
+  fi
+
+fi

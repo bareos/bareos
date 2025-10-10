@@ -1,0 +1,27 @@
+#!/bin/sh
+set -e
+
+bareos_deinstall()
+{
+  local COMPONENT="$1"
+  echo "deinstalling $PKG_NAME (pkg-post-deinstall, upgrade=${PKG_UPGRADE:-false})"
+  echo "shutting down ${COMPONENT} ..."
+  service "${COMPONENT}" status && service "${COMPONENT}" stop || echo "already stopped"
+}
+
+case "$PKG_NAME" in
+  bareos.com-director)
+    bareos_deinstall "bareos-dir"
+    sysrc -x bareosdir_enable || true
+    ;;
+
+  bareos.com-filedaemon)
+    bareos_deinstall "bareos-fd"
+    sysrc -x bareosfd_enable || true
+    ;;
+
+  bareos.com-storage)
+    bareos_deinstall "bareos-sd"
+    sysrc -x bareossd_enable || true
+    ;;
+esac

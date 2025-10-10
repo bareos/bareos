@@ -17,27 +17,14 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-daemon_user=bareos
-daemon_group=bareos
-
-
-permissions()
-{
-  CONFIGDIR="@confdir@/tray-monitor.d/"
-  chown -R root:${daemon_group} ${CONFIGDIR}
-  chmod -R u=rwX,go=rX ${CONFIGDIR}
-}
-
 case "$1" in
-    configure)
-        /usr/lib/bareos/scripts/bareos-config deploy_config "@configtemplatedir@" "@confdir@" "tray-monitor" || true
-        permissions
-        ;;
-    abort-upgrade|abort-remove|abort-deconfigure)
-        ;;
-    *)
-        echo "postinst called with unknown argument \`$1'" >&2
-        exit 1
+  configure)
+    /usr/lib/bareos/scripts/bareos-config deploy_config "bconsole"
+    ;;
+  abort-upgrade | abort-remove | abort-deconfigure) ;;
+  *)
+    echo "postinst called with unknown argument \`$1'" >&2
+    exit 1
     ;;
 esac
 

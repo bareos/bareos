@@ -13,6 +13,8 @@ DEBUG_MK_SCRIPTS_DEPENDS_LIST=yes
 #sysutils
 
 ETCDIR=${PREFIX}/etc/bareos
+BAREOS_CONFIG_TEMPLATE_DIR=${PREFIX}/lib/bareos/defaultconfigs
+PLIST_SUB+=	BAREOS_CONFIG_TEMPLATE_DIR=${BAREOS_CONFIG_TEMPLATE_DIR}
 
 CONFLICTS?=	bacula-* bareos-*
 
@@ -86,6 +88,7 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dlibdir=/usr/local/lib \
   -Darchivedir=/var/lib/bareos/storage \
   -Dbackenddir=/usr/local/lib \
+  -Dconfigtemplatedir=/usr/local/lib/bareos/defaultconfigs \
   -Dscriptdir=/usr/local/lib/bareos/scripts \
   -Dworkingdir=/var/lib/bareos \
   -Dplugindir=/usr/local/lib/bareos/plugins \
