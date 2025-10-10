@@ -23,10 +23,8 @@ if(NOT MSVC)
     ${PROJECT_SOURCE_DIR}/src/compile_tests/core_system_interfaces.c
   )
   if(HAVE_CORE_SYSTEM_INTERFACES)
-    set(HAVE_FCHOWNAT 1)
     set(HAVE_FDATASYNC 1)
     set(HAVE_FSEEKO 1)
-    set(HAVE_FUTIMES 1)
     set(HAVE_GETHOSTBYNAME2 1)
     set(HAVE_GETPAGESIZE 1)
     set(HAVE_LOCALTIME_R 1)
@@ -95,7 +93,6 @@ if(NOT MSVC)
 
   # Missing on MacOS
   check_function_exists(posix_fadvise HAVE_POSIX_FADVISE)
-  check_function_exists(futimesat HAVE_FUTIMESAT)
 
   # GNU extensions
   check_function_exists(backtrace HAVE_BACKTRACE)

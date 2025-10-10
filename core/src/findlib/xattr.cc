@@ -1427,12 +1427,6 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
 #      include <sys/acl.h>
 #    endif
 
-#    if !defined(HAVE_OPENAT) || !defined(HAVE_UNLINKAT) \
-        || !defined(HAVE_FCHOWNAT) || !defined(HAVE_FUTIMESAT)
-#      error \
-          "Unable to compile code because of missing openat, unlinkat, fchownat or futimesat function"
-#    endif
-
 // Define the supported XATTR streams for this OS
 #    if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
 static int os_default_xattr_streams[2]
