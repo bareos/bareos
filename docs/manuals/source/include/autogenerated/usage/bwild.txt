@@ -1,6 +1,7 @@
-Usage: bwild [OPTIONS]
+bwild [OPTIONS]
 
-Options:
+
+OPTIONS:
     -h,-?,--help
         Print this help message and exit. 
 
@@ -25,3 +26,4 @@ Options:
 
     -n,--not-match
         Print line that do not match. 
+

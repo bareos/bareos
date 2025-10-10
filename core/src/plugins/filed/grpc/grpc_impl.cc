@@ -1762,7 +1762,6 @@ struct grpc_connection_members {
                           std::vector<std::unique_ptr<grpc::Service>> services_,
                           std::shared_ptr<grpc::Channel> channel_,
                           std::unique_ptr<grpc::Server> server_)
-
       : client{std::move(client_)}
       , services{std::move(services_)}
       , channel{std::move(channel_)}
