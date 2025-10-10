@@ -213,9 +213,6 @@
 // Define to 1 to use the old sockopt option
 #cmakedefine HAVE_OLD_SOCKOPT @HAVE_OLD_SOCKOPT@
 
-// Define to 1 if you have the `openat' function
-#cmakedefine HAVE_OPENAT @HAVE_OPENAT@
-
 // Define to 1 if you have the `poll' function
 #cmakedefine HAVE_POLL @HAVE_POLL@
 
