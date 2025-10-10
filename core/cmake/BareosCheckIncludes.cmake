@@ -23,7 +23,6 @@ if(NOT MSVC)
 
   # assume POSIX required headers are present
   set(HAVE_REGEX_H 1)
-  set(HAVE_SYS_STATVFS_H 1)
 
   check_include_files(alloca.h HAVE_ALLOCA_H)
   check_include_files(arpa/nameser.h HAVE_ARPA_NAMESER_H)
