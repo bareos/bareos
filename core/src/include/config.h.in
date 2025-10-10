@@ -147,9 +147,6 @@
 // Define to 1 if you are running FreeBSD
 #cmakedefine HAVE_FREEBSD_OS @HAVE_FREEBSD_OS@
 
-// Define to 1 if you have the `fseeko' function
-#cmakedefine HAVE_FSEEKO @HAVE_FSEEKO@
-
 // Define if you have AIX EA support
 #cmakedefine HAVE_AIX_EA
 
