@@ -252,9 +252,6 @@
 // Define to 1 if you have the <regex.h> header file
 #cmakedefine HAVE_REGEX_H @HAVE_REGEX_H@
 
-// Define to 1 if you have the `setreuid' function
-#cmakedefine HAVE_SETREUID @HAVE_SETREUID@
-
 // Define to 1 if the SHA-2 family of digest algorithms is available
 #cmakedefine HAVE_SHA2 @HAVE_SHA2@
 
