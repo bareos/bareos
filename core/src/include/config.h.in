@@ -219,9 +219,6 @@
 // Low level SCSI Interface support
 #cmakedefine HAVE_LOWLEVEL_SCSI_INTERFACE @HAVE_LOWLEVEL_SCSI_INTERFACE@
 
-// Define to 1 if you have the `lutimes' function
-#cmakedefine HAVE_LUTIMES @HAVE_LUTIMES@
-
 // Define to 1 if you have lzo lib
 #cmakedefine HAVE_LZO @HAVE_LZO@
 
@@ -314,9 +311,6 @@
 
 // Define to 1 if you have the `unlinkat' function
 #cmakedefine HAVE_UNLINKAT @HAVE_UNLINKAT@
-
-// Define to 1 if you have the `utimes' function
-#cmakedefine HAVE_UTIMES @HAVE_UTIMES@
 
 // Extended Attributes support
 #cmakedefine HAVE_XATTR @HAVE_XATTR@
