@@ -48,9 +48,8 @@
 extern "C" {
 #  include <sys/utime.h>
 }
-#elif !defined(HAVE_UTIMES) && !defined(HAVE_LUTIMES)
+#elif defined(HAVE_WIN32)
 #  include <utime.h>
-#else
 #endif
 
 

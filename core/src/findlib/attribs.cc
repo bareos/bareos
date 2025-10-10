@@ -244,10 +244,6 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
       ok = false;
     }
   } else {
-#else
-  {
-#endif
-#if defined(HAVE_LUTIMES)
     struct timeval restore_times[2];
 
     restore_times[0].tv_sec = attr->statp.st_atime;
@@ -262,35 +258,20 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
             attr->ofname, be.bstrerror());
       ok = false;
     }
-#elif defined(HAVE_UTIMES)
-    struct timeval restore_times[2];
-
-    restore_times[0].tv_sec = attr->statp.st_atime;
-    restore_times[0].tv_usec = 0;
-    restore_times[1].tv_sec = attr->statp.st_mtime;
-    restore_times[1].tv_usec = 0;
-
-    if (utimes(attr->ofname, restore_times) < 0 && !suppress_errors) {
-      BErrNo be;
-
-      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),
-            attr->ofname, be.bstrerror());
-      ok = false;
-    }
-#else
-struct utimbuf restore_times;
-
-restore_times.actime = attr->statp.st_atime;
-restore_times.modtime = attr->statp.st_mtime;
-if (utime(attr->ofname, &restore_times) < 0 && !suppress_errors) {
-  BErrNo be;
-
-  Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),
-        attr->ofname, be.bstrerror());
-  ok = false;
-}
-#endif /* HAVE_LUTIMES */
   }
+#else
+  struct utimbuf restore_times;
+
+  restore_times.actime = attr->statp.st_atime;
+  restore_times.modtime = attr->statp.st_mtime;
+  if (utime(attr->ofname, &restore_times) < 0 && !suppress_errors) {
+    BErrNo be;
+
+    Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),
+          attr->ofname, be.bstrerror());
+    ok = false;
+  }
+#endif
 
   return ok;
 }
