@@ -1,0 +1,55 @@
+{
+    "name": "laminas/laminas-serializer",
+    "description": "provides an adapter based interface to simply generate storable representation of PHP types by different facilities, and recover",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "serializer"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-serializer/",
+        "issues": "https://github.com/laminas/laminas-serializer/issues",
+        "source": "https://github.com/laminas/laminas-serializer",
+        "rss": "https://github.com/laminas/laminas-serializer/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.6-dev",
+            "dev-develop": "2.7-dev"
+        }
+    },
+    "require": {
+        "php": "^5.5 || ^7.0",
+        "laminas/laminas-json": "^2.5",
+        "laminas/laminas-math": "^2.6",
+        "laminas/laminas-stdlib": "^2.7 || ^3.0",
+        "laminas/laminas-zendframework-bridge": "^1.0"
+    },
+    "require-dev": {
+        "fabpot/php-cs-fixer": "1.7.*",
+        "laminas/laminas-servicemanager": "^2.7.5 || ^3.0.3",
+        "phpunit/phpunit": "^4.0"
+    },
+    "suggest": {
+        "laminas/laminas-servicemanager": "To support plugin manager support"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\Serializer\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\Serializer\\": "test/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-serializer": "self.version"
+    }
+}

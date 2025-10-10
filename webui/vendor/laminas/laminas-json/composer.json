@@ -1,0 +1,58 @@
+{
+    "name": "laminas/laminas-json",
+    "description": "provides convenience methods for serializing native PHP to JSON and decoding JSON to native PHP",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "json"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-json/",
+        "issues": "https://github.com/laminas/laminas-json/issues",
+        "source": "https://github.com/laminas/laminas-json",
+        "rss": "https://github.com/laminas/laminas-json/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.6-dev",
+            "dev-develop": "2.7-dev"
+        }
+    },
+    "require": {
+        "php": "^5.5 || ^7.0",
+        "laminas/laminas-zendframework-bridge": "^1.0"
+    },
+    "require-dev": {
+        "fabpot/php-cs-fixer": "1.7.*",
+        "laminas/laminas-http": "^2.5.4",
+        "laminas/laminas-server": "^2.6.1",
+        "laminas/laminas-stdlib": "^2.5 || ^3.0",
+        "laminas/laminas-xml": "^1.0.2",
+        "phpunit/phpunit": "~4.0"
+    },
+    "suggest": {
+        "laminas/laminas-http": "Laminas\\Http component, required to use Laminas\\Json\\Server",
+        "laminas/laminas-server": "Laminas\\Server component, required to use Laminas\\Json\\Server",
+        "laminas/laminas-stdlib": "Laminas\\Stdlib component, for use with caching Laminas\\Json\\Server responses",
+        "laminas/laminas-xml": "To support Laminas\\Json\\Json::fromXml() usage"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\Json\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\Json\\": "test/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-json": "self.version"
+    }
+}

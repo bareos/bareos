@@ -39,7 +39,7 @@ class PoolModel
         if (isset($bsock)) {
             $cmd = 'llist pools';
             $result = $bsock->send_command($cmd, 2);
-            $pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $pools = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $pools['result']['pools'];
         } else {
             throw new \Exception('Missing argument.');
@@ -63,7 +63,7 @@ class PoolModel
                 $cmd = '.pools type="' . $type . '"';
             }
             $pools = $bsock->send_command($cmd, 2);
-            $result = \Zend\Json\Json::decode($pools, \Zend\Json\Json::TYPE_ARRAY);
+            $result = \Laminas\Json\Json::decode($pools, \Laminas\Json\Json::TYPE_ARRAY);
             return $result['result']['pools'];
         } else {
             throw new \Exception('Missing argument.');
@@ -83,7 +83,7 @@ class PoolModel
         if (isset($bsock, $pool)) {
             $cmd = 'llist pool="' . $pool . '"';
             $result = $bsock->send_command($cmd, 2);
-            $pool = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $pool = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $pool['result']['pools'];
         } else {
             throw new \Exception('Missing argument.');
@@ -108,10 +108,10 @@ class PoolModel
             while (true) {
                 $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
                 if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-                    $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $error = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     return $error['result']['error'];
                 } else {
-                    $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $media = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     if (empty($media['result'])) {
                         return false; // No matching records found
                     }

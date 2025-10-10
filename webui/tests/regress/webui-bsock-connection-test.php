@@ -30,8 +30,8 @@ require_once 'vendor/Bareos/library/Bareos/BSock/BareosBase64.php';
 require_once 'vendor/Bareos/library/Bareos/BSock/BareosBSockInterface.php';
 require_once 'vendor/Bareos/library/Bareos/BSock/BareosBSock.php';
 
-use Zend\ServiceManager\FactoryInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
+use Laminas\ServiceManager\FactoryInterface;
+use Laminas\ServiceManager\ServiceLocatorInterface;
 
 $config = array(
       'debug' => false,

@@ -25,8 +25,8 @@
 
 namespace Api\Controller;
 
-use Zend\Mvc\Controller\AbstractRestfulController;
-use Zend\Json\Json;
+use Laminas\Mvc\Controller\AbstractRestfulController;
+use Laminas\Json\Json;
 use Exception;
 
 class ConsoleController extends AbstractRestfulController

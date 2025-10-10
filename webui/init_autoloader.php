@@ -39,8 +39,8 @@ if ($zf2Path) {
         $loader->add('Zend', $zf2Path);
     } else {
         include $zf2Path . '/Zend/Loader/AutoloaderFactory.php';
-        Zend\Loader\AutoloaderFactory::factory(array(
-            'Zend\Loader\StandardAutoloader' => array(
+        Laminas\Loader\AutoloaderFactory::factory(array(
+            'Laminas\Loader\StandardAutoloader' => array(
                 'autoregister_zf' => true
             )
         ));
@@ -49,8 +49,8 @@ if ($zf2Path) {
     // Zend Framework available in normal include path? Use it.
     if (stream_resolve_include_path("Zend/Loader/AutoloaderFactory.php")) {
         include 'Zend/Loader/AutoloaderFactory.php';
-        Zend\Loader\AutoloaderFactory::factory(array(
-            'Zend\Loader\StandardAutoloader' => array(
+        Laminas\Loader\AutoloaderFactory::factory(array(
+            'Laminas\Loader\StandardAutoloader' => array(
                 'autoregister_zf' => true
             )
         ));
@@ -59,7 +59,7 @@ if ($zf2Path) {
 
 /*
 try {
-   if (!class_exists('Zend\Loader\AutoloaderFactory')) {
+   if (!class_exists('Laminas\Loader\AutoloaderFactory')) {
       throw new RuntimeException('
          Unable to load Zend Framework 2.<br /><br />
          Please install Zend Framework 2 package from your distribution repository.<br />

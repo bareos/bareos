@@ -1,0 +1,57 @@
+{
+    "name": "laminas/laminas-servicemanager",
+    "description": " ",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "servicemanager"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-servicemanager/",
+        "issues": "https://github.com/laminas/laminas-servicemanager/issues",
+        "source": "https://github.com/laminas/laminas-servicemanager",
+        "rss": "https://github.com/laminas/laminas-servicemanager/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.7-dev",
+            "dev-develop": "3.0-dev"
+        }
+    },
+    "require": {
+        "php": "^5.5 || ^7.0",
+        "container-interop/container-interop": "~1.0",
+        "laminas/laminas-zendframework-bridge": "^1.0"
+    },
+    "require-dev": {
+        "athletic/athletic": "dev-master",
+        "fabpot/php-cs-fixer": "1.7.*",
+        "laminas/laminas-di": "~2.5",
+        "laminas/laminas-mvc": "~2.5",
+        "phpunit/phpunit": "~4.0"
+    },
+    "suggest": {
+        "laminas/laminas-di": "Laminas\\Di component",
+        "ocramius/proxy-manager": "ProxyManager 0.5.* to handle lazy initialization of services"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\ServiceManager\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\ServiceManager\\": "test/",
+            "LaminasBench\\ServiceManager\\": "benchmarks/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-servicemanager": "self.version"
+    }
+}

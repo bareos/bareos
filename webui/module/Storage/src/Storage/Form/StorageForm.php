@@ -25,8 +25,8 @@
 
 namespace Storage\Form;
 
-use Zend\Form\Form;
-use Zend\Form\Element;
+use Laminas\Form\Form;
+use Laminas\Form\Element;
 
 class StorageForm extends Form
 {
@@ -45,7 +45,7 @@ class StorageForm extends Form
         // storage
         $this->add(array(
             'name' => 'storage',
-            'type' => 'Zend\Form\Element\Hidden',
+            'type' => 'Laminas\Form\Element\Hidden',
             'attributes' => array(
                 'value' => $this->storage,
                 'id' => 'storage'
