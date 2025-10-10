@@ -38,4 +38,17 @@ JobControlRecord* NewDirectorJcr(JCR_free_HANDLER* DirdFreeJcr)
   return jcr;
 }
 
+JobControlRecord* NewDirectorJcr(
+    JCR_free_HANDLER* DirdFreeJcr,
+    std::shared_ptr<ConfigResourcesContainer> job_resources)
+{
+  JobControlRecord* jcr = new_jcr(DirdFreeJcr);
+  jcr->dir_impl = new DirectorJcrImpl(std::move(job_resources));
+  register_jcr(jcr);
+  Dmsg1(10, "NewDirectorJcr: configuration_resources_ is at %p %s\n",
+        my_config->config_resources_container_->configuration_resources_.data(),
+        my_config->config_resources_container_->TimeStampAsString().c_str());
+  return jcr;
+}
+
 } /* namespace directordaemon */

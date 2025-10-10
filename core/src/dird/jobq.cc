@@ -629,7 +629,14 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
        * conflicts.  We now create a new job, copying the
        * appropriate fields. */
       jcr->setJobStatusWithPriorityCheck(JS_WaitStartTime);
-      njcr = NewDirectorJcr(DirdFreeJcr);
+
+      /* TODO:
+       * should we actually try to use the _current_ version of all these
+       * resources ??
+       */
+
+      njcr = NewDirectorJcr(DirdFreeJcr,
+                            jcr->dir_impl->job_config_resources_container_);
       SetJcrDefaults(njcr, jcr->dir_impl->res.job);
       njcr->dir_impl->reschedule_count = jcr->dir_impl->reschedule_count;
       njcr->sched_time = jcr->sched_time;
