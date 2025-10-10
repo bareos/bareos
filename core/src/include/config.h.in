@@ -204,9 +204,6 @@
 // Define to 1 if you have the <mtio.h> header file
 #cmakedefine HAVE_MTIO_H @HAVE_MTIO_H@
 
-// Define to 1 if you have the `nanosleep' function
-#cmakedefine HAVE_NANOSLEEP @HAVE_NANOSLEEP@
-
 // Define to 1 if NDMP support should be enabled
 #cmakedefine HAVE_NDMP @HAVE_NDMP@
 
