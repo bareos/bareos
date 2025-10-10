@@ -1284,7 +1284,6 @@ Catalog {
   DbName = "@db_name@"
   # DbSocket =
   # MultipleConnections = No
-  # DisableBatchInsert = No
   # Reconnect = Yes
   # ExitOnFatal = No
   # MinConnections = 1

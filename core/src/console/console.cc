@@ -95,11 +95,7 @@ static int SleepCmd(FILE* input, BareosSocket* UA_sock);
 static int ExecCmd(FILE* input, BareosSocket* UA_sock);
 static int EolCmd(FILE* input, BareosSocket* UA_sock);
 
-#ifndef HAVE_REGEX_H
-#  include "lib/bregex.h"
-#else
-#  include <regex.h>
-#endif
+#include "lib/bregex.h"
 
 extern "C" void GotSigstop(int) { stop = true; }
 extern "C" void GotSigcontinue(int) { stop = false; }

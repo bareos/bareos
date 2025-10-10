@@ -126,12 +126,6 @@ License: BSD-2-clause
     */
 
 
-Files: core/src/lib/bregex.h core/src/lib/bregex.cc
-Copyright: 1991 Tatu Ylonen, Espoo, Finland
-           2006-2010 Free Software Foundation Europe e.V.
-License: permissive and AGPL-3.0-only
-
-
 Files: core/src/lib/bsnprintf.cc
 Copyright: 1995 Patrick Powell
            2005-2012 Free Software Foundation Europe e.V.

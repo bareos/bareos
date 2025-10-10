@@ -38,7 +38,6 @@ target_sources(
           bnet_network_dump_private.cc
           bpipe.cc
           breg.cc
-          bregex.cc
           bsnprintf.cc
           bsock.cc
           bsock_tcp.cc
@@ -109,6 +108,9 @@ if(HAVE_WIN32)
   )
   target_sources(bareos PRIVATE osinfo_win32.cc)
   target_link_libraries(bareos PUBLIC ws2_32)
+
+  find_package(pcre2 CONFIG REQUIRED)
+  target_link_libraries(bareos PUBLIC PCRE2::POSIX)
 else()
   target_sources(bareos PRIVATE bpipe_unix.cc)
   target_sources(bareos PRIVATE scsi_tapealert.cc)

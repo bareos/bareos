@@ -80,4 +80,5 @@ else()
   # we provide tho following headers
   set(HAVE_SYS_MTIO_H 1)
   set(HAVE_SYS_TIME_H 1)
+  set(HAVE_PCRE2_POSIX_H 1)
 endif()
