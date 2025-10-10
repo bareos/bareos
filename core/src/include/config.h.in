@@ -255,9 +255,6 @@
 // Define to 1 if you have the <pcre2posix.h> header file
 #cmakedefine HAVE_PCRE2_POSIX_H @HAVE_PCRE2_POSIX_H@
 
-// Define to 1 if you have the `setreuid' function
-#cmakedefine HAVE_SETREUID @HAVE_SETREUID@
-
 // Define to 1 if the SHA-2 family of digest algorithms is available
 #cmakedefine HAVE_SHA2 @HAVE_SHA2@
 

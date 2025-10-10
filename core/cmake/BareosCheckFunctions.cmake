@@ -32,7 +32,6 @@ if(NOT MSVC)
     set(HAVE_OPENAT 1)
     set(HAVE_POLL 1)
     set(HAVE_READDIR_R 1)
-    set(HAVE_SETREUID 1)
     set(HAVE_UNLINKAT 1)
   else()
     message(
