@@ -26,7 +26,6 @@ if(NOT MSVC)
     set(HAVE_GETPAGESIZE 1)
     set(HAVE_POLL 1)
     set(HAVE_READDIR_R 1)
-    set(HAVE_UNLINKAT 1)
   else()
     message(
       SEND_ERROR
