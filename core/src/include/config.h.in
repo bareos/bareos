@@ -150,9 +150,6 @@
 // Define if you have AIX EA support
 #cmakedefine HAVE_AIX_EA
 
-// Define to 1 if you have the `gethostbyname2' function
-#cmakedefine HAVE_GETHOSTBYNAME2 @HAVE_GETHOSTBYNAME2@
-
 // Define to 1 if you have the `getmntent' function
 #cmakedefine HAVE_GETMNTENT @HAVE_GETMNTENT@
 
