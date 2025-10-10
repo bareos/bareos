@@ -141,12 +141,6 @@
 // Define to 1 if you want Extended acl support
 #cmakedefine HAVE_EXTENDED_ACL @HAVE_EXTENDED_ACL@
 
-// Define to 1 if you have the `fchmod' function
-#cmakedefine HAVE_FCHMOD @HAVE_FCHMOD@
-
-// Define to 1 if you have the `fchown' function
-#cmakedefine HAVE_FCHOWN @HAVE_FCHOWN@
-
 // Define to 1 if you have the `fchownat' function
 #cmakedefine HAVE_FCHOWNAT @HAVE_FCHOWNAT@
 
@@ -161,9 +155,6 @@
 
 // Define to 1 if you have the `fseeko' function
 #cmakedefine HAVE_FSEEKO @HAVE_FSEEKO@
-
-// Define to 1 if you have the `futimens' function
-#cmakedefine HAVE_FUTIMENS @HAVE_FUTIMENS@
 
 // Define to 1 if you have the `futimes' function
 #cmakedefine HAVE_FUTIMES @HAVE_FUTIMES@
