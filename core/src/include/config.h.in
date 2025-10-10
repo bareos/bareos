@@ -192,9 +192,6 @@
 // Define to 1 if LMDB support should be enabled
 #cmakedefine HAVE_LMDB @HAVE_LMDB@
 
-// Define to 1 if you have the `localtime_r' function
-#cmakedefine HAVE_LOCALTIME_R @HAVE_LOCALTIME_R@
-
 // Define if you have the 'long double' type
 #cmakedefine HAVE_LONG_DOUBLE @HAVE_LONG_DOUBLE@
 
