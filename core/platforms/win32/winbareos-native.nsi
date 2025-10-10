@@ -689,6 +689,7 @@ SectionIn 1 2 3
   !cd "${CMAKE_BINARY_DIR}\plugins"
   File "bpipe-fd.dll"
   File "mssqlvdi-fd.dll"
+  File "hyper-v-fd.dll"
   # do not package python3-fd for now
   # File "python3-fd.dll"
 SectionEnd

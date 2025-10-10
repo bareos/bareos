@@ -1,5 +1,6 @@
 info shared
 info file
+info proc mappings
 info registers
 
 print my_name
