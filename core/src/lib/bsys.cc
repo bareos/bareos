@@ -169,7 +169,7 @@ int Bmicrosleep(int32_t sec, int32_t usec)
   timeout.tv_sec = sec;
   timeout.tv_nsec = static_cast<decltype(timeout.tv_nsec)>(usec) * 1000l;
 
-#ifdef HAVE_NANOSLEEP
+#if !defined(HAVE_WIN32)
   status = nanosleep(&timeout, NULL);
   if (!(status < 0 && errno == ENOSYS)) { return status; }
   // If we reach here it is because nanosleep is not supported by the OS
