@@ -474,22 +474,6 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...)
  *               OS Dependent defines
  * =============================================================
  */
-#ifndef HAVE_WIN32
-#  if defined(__digital__) && defined(__unix__)
-/* Tru64 - it does have fseeko and ftello , but since ftell/fseek are also 64
- * bit */
-/* take this 'shortcut' */
-#    define fseeko fseek
-#    define ftello ftell
-#  else
-#    ifndef HAVE_FSEEKO
-/* Bad news. This OS cannot handle 64 bit fseeks and ftells */
-#      define fseeko fseek
-#      define ftello ftell
-#    endif
-#  endif /* __digital__ && __unix__ */
-#endif   /* HAVE_WIN32 */
-
 #ifdef HAVE_DARWIN_OS
 /* Apparently someone forgot to wrap Getdomainname as a C function */
 #  ifdef __cplusplus
