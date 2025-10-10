@@ -144,9 +144,6 @@
 // Define to 1 if you have the fcntl F_CLOSEM flag
 #cmakedefine HAVE_FCNTL_F_CLOSEM @HAVE_FCNTL_F_CLOSEM@
 
-// Define to 1 if you have the `fdatasync' function
-#cmakedefine HAVE_FDATASYNC @HAVE_FDATASYNC@
-
 // Define to 1 if you are running FreeBSD
 #cmakedefine HAVE_FREEBSD_OS @HAVE_FREEBSD_OS@
 
