@@ -23,7 +23,6 @@ if(NOT MSVC)
     ${PROJECT_SOURCE_DIR}/src/compile_tests/core_system_interfaces.c
   )
   if(HAVE_CORE_SYSTEM_INTERFACES)
-    set(HAVE_GETHOSTBYNAME2 1)
     set(HAVE_GETPAGESIZE 1)
     set(HAVE_LOCALTIME_R 1)
     set(HAVE_NANOSLEEP 1)
