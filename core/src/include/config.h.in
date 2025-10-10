@@ -279,9 +279,6 @@
 // Define to 1 if you have the <umem.h> header file
 #cmakedefine HAVE_UMEM_H @HAVE_UMEM_H@
 
-// Define to 1 if you have the `unlinkat' function
-#cmakedefine HAVE_UNLINKAT @HAVE_UNLINKAT@
-
 // Extended Attributes support
 #cmakedefine HAVE_XATTR @HAVE_XATTR@
 
