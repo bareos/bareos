@@ -141,9 +141,6 @@
 // Define to 1 if you want Extended acl support
 #cmakedefine HAVE_EXTENDED_ACL @HAVE_EXTENDED_ACL@
 
-// Define to 1 if you have the `fchownat' function
-#cmakedefine HAVE_FCHOWNAT @HAVE_FCHOWNAT@
-
 // Define to 1 if you have the fcntl F_CLOSEM flag
 #cmakedefine HAVE_FCNTL_F_CLOSEM @HAVE_FCNTL_F_CLOSEM@
 
@@ -155,12 +152,6 @@
 
 // Define to 1 if you have the `fseeko' function
 #cmakedefine HAVE_FSEEKO @HAVE_FSEEKO@
-
-// Define to 1 if you have the `futimes' function
-#cmakedefine HAVE_FUTIMES @HAVE_FUTIMES@
-
-// Define to 1 if you have the `futimesat' function
-#cmakedefine HAVE_FUTIMESAT @HAVE_FUTIMESAT@
 
 // Define if you have AIX EA support
 #cmakedefine HAVE_AIX_EA
