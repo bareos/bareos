@@ -34,6 +34,8 @@
 #include <comdef.h>
 #include <time.h>
 
+#include "util.h"
+
 #include <charconv>
 #include <memory>
 
@@ -345,7 +347,7 @@ struct plugin_logger : public GenericLogger {
     bool time_elapsed = current_ts - last_time_stamp > time_milestone;
     bool milestone_reached
         = current_file_offset - last_file_offset > data_milestone;
-    if (time_elapsed || milestone_reached) {
+    if (time_elapsed || milestone_reached || last_file_offset == 0) {
       print_progress(current_ts, current_file_offset);
     }
   }
@@ -377,7 +379,6 @@ struct plugin_logger : public GenericLogger {
     if (!current_file_size) { return; }
 
     auto data_written = current_offset - last_file_offset;
-    auto as_mb = static_cast<double>(data_written) / (1 << 20);
 
     auto progress = static_cast<double>(current_offset)
                     / static_cast<double>(current_file_size);
@@ -385,17 +386,19 @@ struct plugin_logger : public GenericLogger {
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(
         current_ts - last_time_stamp);
 
-    auto speed
-        = static_cast<double>(as_mb) / static_cast<double>(seconds.count());
-
+    auto speed_human = human_readable(data_written);
 
     std::string log_msg = libbareos::format(
-        "{:3.0}% [{}{}{}{}{}{}{}{}{}] {:.1} MB/s", 100 * progress,
-        progress > 0.1 ? "=" : " ", progress > 0.2 ? "=" : " ",
-        progress > 0.3 ? "=" : " ", progress > 0.4 ? "=" : " ",
-        progress > 0.5 ? "=" : " ", progress > 0.6 ? "=" : " ",
-        progress > 0.7 ? "=" : " ", progress > 0.8 ? "=" : " ",
-        progress > 0.9 ? "=" : " ", speed);
+        "{:3.0f}% [{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}] {}/s", 100 * progress,
+        progress > 0.1 ? "=" : " ", progress > 0.15 ? "=" : " ",
+        progress > 0.2 ? "=" : " ", progress > 0.25 ? "=" : " ",
+        progress > 0.3 ? "=" : " ", progress > 0.35 ? "=" : " ",
+        progress > 0.4 ? "=" : " ", progress > 0.45 ? "=" : " ",
+        progress > 0.5 ? "=" : " ", progress > 0.55 ? "=" : " ",
+        progress > 0.6 ? "=" : " ", progress > 0.65 ? "=" : " ",
+        progress > 0.7 ? "=" : " ", progress > 0.75 ? "=" : " ",
+        progress > 0.8 ? "=" : " ", progress > 0.85 ? "=" : " ",
+        progress > 0.9 ? "=" : " ", progress > 0.95 ? "=" : " ", speed_human);
 
     Message msg = {log_msg};
 
