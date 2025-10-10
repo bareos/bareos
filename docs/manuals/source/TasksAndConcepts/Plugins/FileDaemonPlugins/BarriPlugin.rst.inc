@@ -432,9 +432,10 @@ Which results in our case to:
 Restore the :file:`.barri` image to the filesystem
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Additionally to the option to restore the :file:`.barri` disaster recovery image via the filedaemon plugin, it is also possible
-to recover the :file:`.barri` image file to the filesystem. This is required to recover a Windows Computer via the 
-Linux of Windows version of the :commmand:`barri-cli` tool.
+Additionally to the option to restore the :file:`.barri` disaster recovery
+image via the filedaemon plugin, it is also possible to recover the
+:file:`.barri` image file to the filesystem. This is required to recover a
+Windows Computer via the Linux of Windows version of the :commmand:`barri-cli` tool.
 
 Recovering the :file:`.barri` image file to the filesystem is easy. When
 recovered to a filedaemon that has not loaded the **barri** plugin, the restore
