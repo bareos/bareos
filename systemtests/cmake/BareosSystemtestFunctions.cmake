@@ -52,7 +52,10 @@ macro(create_systemtests_directory)
   file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/systemtests/tls/minio/)
 
   configurefilestosystemtest("core" "scripts" "*.in" @ONLY "")
-  configurefilestosystemtest("core" "scripts" "bareos-ctl-funcs" @ONLY "")
+  configurefilestosystemtest(
+    "systemtests" "scripts" "bareos-ctl-funcs" @ONLY ""
+  )
+  configurefilestosystemtest("systemtests" "scripts" "bareos-ctl-*.in" @ONLY "")
   configurefilestosystemtest("core" "scripts" "btraceback.gdb" @ONLY "")
 
   configurefilestosystemtest("core/src/cats" "scripts/ddl" "*" @ONLY "ddl")
@@ -61,6 +64,10 @@ macro(create_systemtests_directory)
 
   # install special windows start scripts
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    file(REMOVE ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd
+         ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-sd
+         ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir
+    )
     file(RENAME ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd-win
          ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd
     )
@@ -69,6 +76,11 @@ macro(create_systemtests_directory)
     )
     file(RENAME ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir-win
          ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir
+    )
+  else()
+    file(REMOVE ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd-win
+         ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-sd-win
+         ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir-win
     )
   endif()
 

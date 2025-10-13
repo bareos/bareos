@@ -23,7 +23,7 @@ BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 #
 # Source the generic functions.
 #
-. "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
+. "bareos-ctl-funcs"
 
 case "$1" in
   start)

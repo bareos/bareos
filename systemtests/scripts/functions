@@ -8,7 +8,7 @@
 #
 
 # shellcheck source=../../core/scripts/bareos-ctl-funcs
-. "${rscripts}/bareos-ctl-funcs"
+. "bareos-ctl-funcs"
 
 # remove the colon from a windows path
 # required to determine the restore path as the colon is omitted if restored to

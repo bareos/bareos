@@ -995,10 +995,6 @@ for F in  \
 %endif
     %{_sbindir}/btestls \
     %{script_dir}/bareos \
-    %{script_dir}/bareos-ctl-dir \
-    %{script_dir}/bareos-ctl-fd \
-    %{script_dir}/bareos-ctl-funcs \
-    %{script_dir}/bareos-ctl-sd \
     %{script_dir}/btraceback.dbx \
     %{script_dir}/btraceback.mdb \
     %{_docdir}/%{name}/INSTALL \

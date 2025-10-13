@@ -1,7 +1,7 @@
 #! /bin/sh
 #
-# bareos-ctl-sd  This shell script takes care of starting and stopping
-#		 the Bareos Storage daemon
+# bareos-ctl-dir This shell script takes care of starting and stopping
+#		 the Bareos Director daemon
 #
 # description: Backup Archiving REcovery Open Sourced.
 #
@@ -11,29 +11,29 @@ export AWK="@AWK@"
 export PIDOF="@PIDOF@"
 export PGREP="@PGREP@"
 
-if [ -z "$BAREOS_STORAGEDAEMON_BINARY" ]; then
-  #echo "BAREOS_STORAGEDAEMON_BINARY undefined, nothing to do"
+if [ -z "$BAREOS_DIRECTOR_BINARY" ]; then
+  #echo "BAREOS_DIRECTOR_BINARY undefined, nothing to do"
   exit 0
 fi
 
 export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-}
 BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
 
-srv_name=$(basename "${BAREOS_STORAGEDAEMON_BINARY}" .exe)
-srv_sbindir=$(dirname "${BAREOS_STORAGEDAEMON_BINARY}")
+srv_name=$(basename "${BAREOS_DIRECTOR_BINARY}" .exe)
+srv_sbindir=$(dirname "${BAREOS_DIRECTOR_BINARY}")
 srv_rundir=$(dirname "$srv_sbindir")
 srv_configdir=${BAREOS_CONFIG_DIR}
-srv_libdir="$(dirname "$(readlink "${BAREOS_STORAGEDAEMON_BINARY}")")"
+srv_libdir="$(dirname "$(readlink "${BAREOS_DIRECTOR_BINARY}")")"
 
 #
 # Source the generic functions.
 #
-. "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
+. "bareos-ctl-funcs"
 
 case "$1" in
   start)
     exec 3>&1 4>&2 >/dev/null 2>&1
-    nssm install $srv_name $(cygpath -w "${BAREOS_STORAGEDAEMON_BINARY}")
+    nssm install $srv_name $(cygpath -w "${BAREOS_DIRECTOR_BINARY}")
     nssm set $srv_name AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
     nssm set $srv_name AppDirectory "$(cygpath -w ${srv_rundir})"
     nssm set $srv_name AppStdout "$(cygpath -w ${srv_rundir})/log/${srv_name}.stdout.log"
