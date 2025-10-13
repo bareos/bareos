@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,9 +23,6 @@ bareos_configure_file(
   FILES
   bareos-config-lib.sh.in
   bareos-config.in
-  bareos-ctl-dir.in
-  bareos-ctl-fd.in
-  bareos-ctl-sd.in
   bareos-glusterfind-wrapper.in
   bareos.in
   btraceback.in
@@ -48,13 +45,6 @@ if(NOT client-only)
                 WORLD_READ WORLD_EXECUTE
     DESTINATION "${sbindir}"
   )
-  install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-fd
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-                WORLD_READ WORLD_EXECUTE
-    DESTINATION "${scriptdir}"
-    COMPONENT filedaemon
-  )
 
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos
@@ -76,7 +66,7 @@ install(
 )
 if(NOT client-only)
   install(
-    FILES bareos-ctl-funcs btraceback.dbx btraceback.mdb
+    FILES btraceback.dbx btraceback.mdb
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
     DESTINATION "${scriptdir}"
   )
@@ -95,8 +85,6 @@ if(NOT client-only)
     FILES ${CMAKE_CURRENT_BINARY_DIR}/mtx-changer
           ${CMAKE_CURRENT_BINARY_DIR}/disk-changer
           ${CMAKE_CURRENT_BINARY_DIR}/bareos-glusterfind-wrapper
-          ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-dir
-          ${CMAKE_CURRENT_BINARY_DIR}/bareos-ctl-sd
           s3cmd-wrapper.sh
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
                 WORLD_READ WORLD_EXECUTE
