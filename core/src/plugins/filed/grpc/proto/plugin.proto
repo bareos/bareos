@@ -36,6 +36,12 @@ service Plugin {
 message SetupRequest {};
 message SetupResponse {};
 
+message PluginRequest {
+};
+
+message PluginResponse {
+};
+
 // ---- Handle Plugin Events ----
 
 message handlePluginEventRequest {
