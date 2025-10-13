@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2023 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -192,19 +192,10 @@ class BareosFdPluginLocalFileset(BareosFdPluginLocalFilesBaseclass):  # noqa
                 self.file = open(self.FNAME, "rb")
 
             if "do_io_in_core" in self.options:
-                bareosfd.JobMessage(
-                    bareosfd.M_INFO,
-                    "doing io in core as requested by plugin option\n",
-                )
                 # do io in core
                 IOP.filedes = self.file.fileno()
                 IOP.status = bareosfd.iostat_do_in_core
             else:
-                bareosfd.JobMessage(
-                    bareosfd.M_INFO,
-                    "doing io in plugin\n",
-                )
-
                 #  do io in plugin
                 IOP.status = bareosfd.iostat_do_in_plugin
 

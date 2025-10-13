@@ -341,6 +341,7 @@ void JobMessage(bc::JMsgType type,
                 const char* fun,
                 std::string_view msg)
 {
+  return;
   bc::JobMessageRequest req;
   req.set_type(type);
   req.set_msg(msg.data(), msg.size());
@@ -359,6 +360,7 @@ void DebugMessage(int level,
                   const char* file,
                   const char* fun)
 {
+  return;
   bc::DebugMessageRequest req;
   req.set_level(level);
   req.set_msg(msg.data(), msg.size());
@@ -828,6 +830,7 @@ bRC Wrapper_JobMessage(PluginContext*,
                        const char* fmt,
                        ...)
 {
+  return bRC_OK;
   // todo: jobmsg should contain mtime!
   (void)mtime;
   auto gtype = [&]() -> std::optional<bc::JMsgType> {
@@ -913,6 +916,7 @@ bRC Wrapper_DebugMessage(PluginContext*,
                          const char* fmt,
                          ...)
 {
+  return bRC_OK;
   va_list args, copy;
   va_start(args, fmt);
   va_copy(copy, args);
