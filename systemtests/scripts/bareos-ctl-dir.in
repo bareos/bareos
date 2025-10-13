@@ -18,12 +18,12 @@ export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
 BAREOS_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT:-@dir_port@}
 BAREOS_DIRECTOR_USER=${BAREOS_DIRECTOR_USER-@dir_user@}
 BAREOS_DIRECTOR_GROUP=${BAREOS_DIRECTOR_GROUP-@dir_group@}
-BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
+BAREOS_SCRIPTS_DIR=${BAREOS_SCRIPTS_DIR:-@scriptdir@}
 
 #
 # Source the generic functions.
 #
-. "bareos-ctl-funcs"
+. "${BAREOS_SCRIPTS_DIR}/bareos-ctl-funcs"
 
 case "$1" in
   start)
