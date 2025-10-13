@@ -8,38 +8,53 @@ import "common.proto";
 service Plugin {
   rpc Setup (SetupRequest) returns (SetupResponse);
 
-  rpc handlePluginEvent (handlePluginEventRequest) returns (handlePluginEventResponse);
-  rpc startBackupFile (startBackupFileRequest) returns (startBackupFileResponse);
-  rpc endBackupFile (endBackupFileRequest) returns (endBackupFileResponse);
-  rpc startRestoreFile (startRestoreFileRequest) returns (startRestoreFileResponse);
-  rpc endRestoreFile (endRestoreFileRequest) returns (endRestoreFileResponse);
-
-  // rpc pluginIO (pluginIORequest) returns pluginIOResponse;
-
-  rpc FileOpen (fileOpenRequest) returns (fileOpenResponse);
-  // the following File* operations always operate on the currently
-  // open file
-  rpc FileSeek (fileSeekRequest) returns (fileSeekResponse);
+  rpc StartSession (stream PluginRequest) returns (stream PluginResponse);
   rpc FileRead (fileReadRequest) returns (stream fileReadResponse);
-  rpc FileWrite (fileWriteRequest) returns (fileWriteResponse);
-  rpc FileClose (fileCloseRequest) returns (fileCloseResponse);
-
-  rpc createFile (createFileRequest) returns (createFileResponse);
-  rpc setFileAttributes (setFileAttributesRequest) returns (setFileAttributesResponse);
-  rpc checkFile (checkFileRequest) returns (checkFileResponse);
-  rpc getAcl (getAclRequest) returns (getAclResponse);
-  rpc setAcl (setAclRequest) returns (setAclResponse);
-  rpc getXattr (getXattrRequest) returns (getXattrResponse);
-  rpc setXattr (setXattrRequest) returns (setXattrResponse);
 }
 
 message SetupRequest {};
 message SetupResponse {};
 
 message PluginRequest {
+  oneof request {
+    handlePluginEventRequest handle_plugin = 10;
+    startBackupFileRequest start_backup = 11;
+    endBackupFileRequest end_backup_file = 12;
+    startRestoreFileRequest start_restore_file = 13;
+    endRestoreFileRequest end_restore_file = 14;
+    fileOpenRequest file_open = 15;
+    fileSeekRequest file_seek = 16;
+    fileWriteRequest file_write = 17;
+    fileCloseRequest file_close = 18;
+    createFileRequest create_file = 19;
+    setFileAttributesRequest set_file_attributes = 20;
+    checkFileRequest check_file = 21;
+    getAclRequest get_acl = 22;
+    setAclRequest set_acl = 23;
+    getXattrRequest get_xattr = 24;
+    setXattrRequest set_xattr = 25;
+  };
 };
 
 message PluginResponse {
+  oneof response {
+    handlePluginEventResponse handle_plugin = 10;
+    startBackupFileResponse start_backup = 11;
+    endBackupFileResponse end_backup_file = 12;
+    startRestoreFileResponse start_restore_file = 13;
+    endRestoreFileResponse end_restore_file = 14;
+    fileOpenResponse file_open = 15;
+    fileSeekResponse file_seek = 16;
+    fileWriteResponse file_write = 17;
+    fileCloseResponse file_close = 18;
+    createFileResponse create_file = 19;
+    setFileAttributesResponse set_file_attributes = 20;
+    checkFileResponse check_file = 21;
+    getAclResponse get_acl = 22;
+    setAclResponse set_acl = 23;
+    getXattrResponse get_xattr = 24;
+    setXattrResponse set_xattr = 25;
+  };
 };
 
 // ---- Handle Plugin Events ----

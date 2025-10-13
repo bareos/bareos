@@ -1041,23 +1041,39 @@ class PluginClient {
 
     if (!status.ok()) { return bRC_Error; }
 
+    client_ctx = std::make_unique<grpc::ClientContext>();
+
+    writer = stub_->StartSession(client_ctx.get());
+
     return bRC_OK;
   }
 
   bRC handlePluginEvent(filedaemon::bEventType type,
                         bp::handlePluginEventRequest* req)
   {
-    bp::handlePluginEventResponse resp;
+    bp::PluginResponse resp;
     grpc::ClientContext ctx;
-    grpc::Status status = stub_->handlePluginEvent(&ctx, *req, &resp);
 
-    if (!status.ok()) {
-      DebugLog(50, FMT_STRING("rpc did not succeed for event {} ({}): Err={}"),
-               int(type), int(status.error_code()), status.error_message());
-      return bRC_Error;
-    }
+    bp::PluginRequest actual_req;
+    *actual_req.mutable_handle_plugin() = std::move(*req);
+    bool write_ok = writer->Write(actual_req);
+    if (!write_ok) { return bRC_Error; }
 
-    auto res = resp.res();
+    bool read_ok = writer->Read(&resp);
+    if (!read_ok) { return bRC_Error; }
+
+    // grpc::Status status = stub_->handlePluginEvent(&ctx, *req, &resp);
+
+    // if (!status.ok()) {
+    //   DebugLog(50, FMT_STRING("rpc did not succeed for event {} ({}):
+    //   Err={}"),
+    //            int(type), int(status.error_code()), status.error_message());
+    //   return bRC_Error;
+    // }
+
+    if (!resp.has_handle_plugin()) { return bRC_Error; }
+
+    auto res = resp.handle_plugin().res();
 
     DebugLog(100, FMT_STRING("plugin handled event {} with res = {} ({})"),
              int(type), bp::ReturnCode_Name(res), int(res));
@@ -1107,20 +1123,23 @@ class PluginClient {
 
   bRC startBackupFile(filedaemon::save_pkt* pkt)
   {
-    bp::startBackupFileRequest req;
-    req.set_no_read(pkt->no_read);
-    req.set_portable(pkt->portable);
+    bp::PluginRequest req;
+    auto* inner_req = req.mutable_start_backup();
+    inner_req->set_no_read(pkt->no_read);
+    inner_req->set_portable(pkt->portable);
 
     auto inner = strip_prefix(pkt->cmd);
 
-    req.set_cmd(inner.data(), inner.size());
-    req.set_flags(pkt->flags, sizeof(pkt->flags));
+    inner_req->set_cmd(inner.data(), inner.size());
+    inner_req->set_flags(pkt->flags, sizeof(pkt->flags));
 
-    bp::startBackupFileResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->startBackupFile(&ctx, req, &resp);
+    bp::PluginResponse outer_resp;
+    if (!writer->Write(req)) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+
+    if (!outer_resp.has_start_backup()) { return bRC_Error; }
+    auto& resp = outer_resp.start_backup();
 
     switch (resp.result()) {
       case bareos::plugin::SBF_OK: {
@@ -1294,14 +1313,16 @@ class PluginClient {
 
   bRC endBackupFile()
   {
-    bp::endBackupFileRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_end_backup_file();
+    (void)req;
 
-    bp::endBackupFileResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->endBackupFile(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_end_backup_file()) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
-
+    auto& resp = outer_resp.end_backup_file();
     switch (resp.result()) {
       case bareos::plugin::EBF_Done:
         return bRC_OK;
@@ -1314,30 +1335,36 @@ class PluginClient {
 
   bRC startRestoreFile(std::string_view cmd)
   {
-    bp::startRestoreFileRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_start_restore_file();
 
     auto inner = strip_prefix(cmd);
-
     req.set_command(inner.data(), inner.size());
 
-    bp::startRestoreFileResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->startRestoreFile(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_start_restore_file()) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
+    auto& resp = outer_resp.start_restore_file();
+    (void)resp;
 
     return bRC_OK;
   }
 
   bRC endRestoreFile()
   {
-    bp::endRestoreFileRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_end_restore_file();
+    (void)req;
 
-    bp::endRestoreFileResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->endRestoreFile(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_end_restore_file()) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
+    auto& resp = outer_resp.end_restore_file();
+    (void)resp;
 
     return bRC_OK;
   }
@@ -1348,17 +1375,18 @@ class PluginClient {
                int32_t mode,
                bool* io_in_core)
   {
-    bp::fileOpenRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_file_open();
     req.set_mode(mode);
     req.set_flags(flags);
     req.set_file(name.data(), name.size());
 
-    bp::fileOpenResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->FileOpen(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_file_open()) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
-
+    auto& resp = outer_resp.file_open();
     DebugLog(100, FMT_STRING("FileOpen {{io_in_core = {}}}"),
              resp.io_in_core());
 
@@ -1369,6 +1397,10 @@ class PluginClient {
 
   bRC FileSeek(int whence, int64_t offset)
   {
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_file_seek();
+
     bp::SeekStart start;
     switch (whence) {
       case SEEK_SET: {
@@ -1385,15 +1417,15 @@ class PluginClient {
       }
     }
 
-    bp::fileSeekRequest req;
     req.set_whence(start);
     req.set_offset(offset);
 
-    bp::fileSeekResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->FileSeek(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_file_seek()) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
+    auto& resp = outer_resp.file_seek();
+    (void)resp;
 
     return bRC_OK;
   }
@@ -1435,18 +1467,16 @@ class PluginClient {
 
   bRC FileWrite(size_t size, size_t* num_bytes_written)
   {
-    bp::fileWriteRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_file_write();
     req.set_bytes_written(size);
 
-    bp::fileWriteResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->FileWrite(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_file_write()) { return bRC_Error; }
 
-    if (!status.ok()) {
-      DebugLog(50, FMT_STRING("file write error {}: {}"),
-               int(status.error_code()), status.error_message());
-      return bRC_Error;
-    }
+    auto& resp = outer_resp.file_write();
 
     *num_bytes_written = resp.bytes_written();
 
@@ -1457,13 +1487,17 @@ class PluginClient {
 
   bRC FileClose()
   {
-    bp::fileCloseRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_file_close();
+    (void)req;
 
-    bp::fileCloseResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->FileClose(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_file_close()) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
+    auto& resp = outer_resp.file_close();
+    (void)resp;
 
     return bRC_OK;
   }
@@ -1534,7 +1568,9 @@ class PluginClient {
 
   bRC createFile(filedaemon::restore_pkt* pkt)
   {
-    bp::createFileRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_create_file();
 
     auto replace_type = grpc_replace_type(pkt->replace);
     auto file_type = grpc_file_type(pkt->type);
@@ -1557,11 +1593,11 @@ class PluginClient {
     req.set_delta_seq(pkt->delta_seq);
     if (pkt->where) { req.set_where(pkt->where); }
 
-    bp::createFileResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->createFile(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_create_file()) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
+    auto& resp = outer_resp.create_file();
 
     switch (resp.status()) {
       case bareos::plugin::CF_Created: {
@@ -1591,18 +1627,21 @@ class PluginClient {
                         std::string_view where,
                         bool* do_in_core)
   {
-    bp::setFileAttributesRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_set_file_attributes();
+
     req.set_file(name.data(), name.size());
     req.set_stats((char*)&statp, sizeof(statp));
     req.set_extended_attributes(extended_attributes.data(),
                                 extended_attributes.size());
     req.set_where(where.data(), where.size());
 
-    bp::setFileAttributesResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->setFileAttributes(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_set_file_attributes()) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
+    auto& resp = outer_resp.set_file_attributes();
 
     *do_in_core = resp.set_attributes_in_core();
 
@@ -1610,13 +1649,17 @@ class PluginClient {
   }
   bRC checkFile(std::string_view name)
   {
-    bp::checkFileRequest req;
-    req.set_file(name.data(), name.size());
-    bp::checkFileResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->checkFile(&ctx, req, &resp);
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_check_file();
 
-    if (!status.ok()) { return bRC_Error; }
+    req.set_file(name.data(), name.size());
+
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_check_file()) { return bRC_Error; }
+
+    auto& resp = outer_resp.check_file();
 
     if (resp.seen()) { return bRC_Seen; }
 
@@ -1625,34 +1668,36 @@ class PluginClient {
 
   bRC setAcl(std::string_view file, std::string_view content)
   {
-    bp::setAclRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_set_acl();
+
     req.set_file(file.data(), file.size());
     req.mutable_content()->set_data(content.data(), content.size());
 
-    bp::setAclResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->setAcl(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_set_acl()) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
+    auto& resp = outer_resp.set_acl();
+    (void)resp;
 
     return bRC_OK;
   }
 
   bRC getAcl(std::string_view file, char** buffer, size_t* size)
   {
-    bp::getAclRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_get_acl();
+
     req.set_file(file.data(), file.size());
 
-    bp::getAclResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->getAcl(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_get_acl()) { return bRC_Error; }
 
-    if (!status.ok()) {
-      DebugLog(50,
-               FMT_STRING("rpc did not succeed for event getAcl ({}): Err={}"),
-               int(status.error_code()), status.error_message());
-      return bRC_Error;
-    }
+    auto& resp = outer_resp.get_acl();
 
     auto& data = resp.content().data();
     *buffer = reinterpret_cast<char*>(malloc(data.size() + 1));
@@ -1667,17 +1712,21 @@ class PluginClient {
                std::string_view key,
                std::string_view value)
   {
-    bp::setXattrRequest req;
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_set_xattr();
+
     req.set_file(file.data(), file.size());
     auto* xattr = req.mutable_attribute();
     xattr->set_key(key.data(), key.size());
     xattr->set_value(value.data(), value.size());
 
-    bp::setXattrResponse resp;
-    grpc::ClientContext ctx;
-    grpc::Status status = stub_->setXattr(&ctx, req, &resp);
+    if (!writer->Write(outer_req)) { return bRC_Error; }
+    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_set_xattr()) { return bRC_Error; }
 
-    if (!status.ok()) { return bRC_Error; }
+    auto& resp = outer_resp.set_xattr();
+    (void)resp;
 
     return bRC_OK;
   }
@@ -1693,14 +1742,17 @@ class PluginClient {
 
     if (current_xattr_index == std::numeric_limits<size_t>::max()) {
       // we need to grab them now
-      bp::getXattrRequest req;
+      bp::PluginRequest outer_req;
+      bp::PluginResponse outer_resp;
+      auto& req = *outer_req.mutable_get_xattr();
+
       req.set_file(file.data(), file.size());
 
-      bp::getXattrResponse resp;
-      grpc::ClientContext ctx;
-      grpc::Status status = stub_->getXattr(&ctx, req, &resp);
+      if (!writer->Write(outer_req)) { return bRC_Error; }
+      if (!writer->Read(&outer_resp)) { return bRC_Error; }
+      if (!outer_resp.has_get_xattr()) { return bRC_Error; }
 
-      if (!status.ok()) { return bRC_Error; }
+      auto& resp = outer_resp.get_xattr();
 
       xattribute_cache.assign(
           std::make_move_iterator(std::begin(resp.attributes())),
@@ -1735,6 +1787,20 @@ class PluginClient {
     }
   }
 
+  PluginClient(const PluginClient&) = delete;
+  PluginClient& operator=(const PluginClient&) = delete;
+  PluginClient(PluginClient&&) = default;
+  PluginClient& operator=(PluginClient&&) = default;
+
+  ~PluginClient()
+  {
+    if (writer) {
+      writer->WritesDone();
+      auto status = writer->Finish();
+      (void)status;
+    }
+  }
+
  private:
   std::unique_ptr<bp::Plugin::Stub> stub_{};
   PluginContext* core{nullptr};
@@ -1749,6 +1815,11 @@ class PluginClient {
   {
     ::DebugLog(core, severity, std::move(fmt), std::forward<Args>(args)...);
   }
+
+  std::unique_ptr<grpc::ClientContext> client_ctx{};
+  std::unique_ptr<
+      grpc::ClientReaderWriterInterface<bp::PluginRequest, bp::PluginResponse>>
+      writer;
 };
 }  // namespace
 
