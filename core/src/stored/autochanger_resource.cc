@@ -66,30 +66,32 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
                                       bool hide_sensitive_data,
                                       bool verbose)
 {
-  if (implicitly_created_) { return false; }
+  if (implicitly_created_) { return true; }
   std::unordered_set<DeviceResource*> original_copy_devices;
   alist<DeviceResource*>* original_alist = device_resources;
   alist<DeviceResource*>* temp_alist
       = new alist<DeviceResource*>(original_alist->size(), not_owned_by_alist);
   for (auto* device_resource : original_alist) {
-    if (DeviceResource* original_copy_device = device_resource->multiplied_device_resource) {
-      if (original_copy_devices.find(original_copy_device) == original_copy_devices.end()) {
+    if (DeviceResource* original_copy_device
+        = device_resource->multiplied_device_resource) {
+      if (original_copy_devices.find(original_copy_device)
+          == original_copy_devices.end()) {
         DeviceResource* d = new DeviceResource(*original_copy_device);
         temp_alist->append(d);
         original_copy_devices.insert(original_copy_device);
       }
-    }
-    else {
+    } else {
       DeviceResource* d = new DeviceResource(*device_resource);
       temp_alist->append(d);
     }
   }
   device_resources = temp_alist;
-  BareosResource::PrintConfig(send, *my_config, hide_sensitive_data, verbose);
+  bool res = BareosResource::PrintConfig(send, *my_config, hide_sensitive_data,
+                                         verbose);
   device_resources = original_alist;
   for (auto* device_resource : temp_alist) { delete device_resource; }
   delete temp_alist;
-  return true;
+  return res;
 }
 
 } /* namespace storagedaemon */
