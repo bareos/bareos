@@ -109,10 +109,13 @@ constexpr void DebugLog(Severity severity,
                         fmt::format_string<Args...> fmt,
                         Args&&... args)
 {
-  auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
+  (void)sizeof(fmt);
+  (void)sizeof...(args);
+  (void)sizeof(severity);
+  // auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
 
-  DebugMessage(severity.severity, formatted, severity.line, severity.file,
-               severity.function);
+  // DebugMessage(severity.severity, formatted, severity.line, severity.file,
+  //              severity.function);
 }
 
 template <typename... Args>
@@ -120,9 +123,12 @@ constexpr void JobLog(Type type,
                       fmt::format_string<Args...> fmt,
                       Args&&... args)
 {
-  auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
+  (void)sizeof(type);
+  (void)sizeof(fmt);
+  (void)sizeof...(args);
+  // auto formatted = fmt::format(fmt, std::forward<Args>(args)...);
 
-  JobMessage(type.type, type.line, type.file, type.function, formatted);
+  // JobMessage(type.type, type.line, type.file, type.function, formatted);
 }
 
 bool Bareos_SetString(bc::BareosStringVariable var, std::string_view val);
