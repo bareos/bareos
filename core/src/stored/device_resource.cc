@@ -161,15 +161,16 @@ bool DeviceResource::PrintConfig(OutputFormatterResource& send,
                                  bool hide_sensitive_data,
                                  bool verbose)
 {
-  if (multiplied_device_resource) { return false; }
+  if (multiplied_device_resource) { return true; }
   // This should only be the case for devices that where multiplied, i.e. count
   // > 1 to avoid naming collision with its implicit autochanger.
   ASSERT((count > 1) == (resource_name_[0] == '$'));
   bool dollar_prefixed = (resource_name_[0] == '$');
   if (dollar_prefixed) { ++resource_name_; }
-  BareosResource::PrintConfig(send, *my_config, hide_sensitive_data, verbose);
+  bool res = BareosResource::PrintConfig(send, *my_config, hide_sensitive_data,
+                                         verbose);
   if (dollar_prefixed) { --resource_name_; }
-  return true;
+  return res;
 }
 
 std::unique_ptr<DeviceResource> DeviceResource::CreateCopy(
