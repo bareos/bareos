@@ -77,55 +77,55 @@ class PluginService : public bp::Plugin::Service {
 
   Status handlePluginEvent(ServerContext*,
                            const bp::handlePluginEventRequest* request,
-                           bp::handlePluginEventResponse* response) override;
+                           bp::handlePluginEventResponse* response);
   Status startBackupFile(ServerContext*,
                          const bp::startBackupFileRequest* request,
-                         bp::startBackupFileResponse* response) override;
+                         bp::startBackupFileResponse* response);
   Status endBackupFile(ServerContext*,
                        const bp::endBackupFileRequest* request,
-                       bp::endBackupFileResponse* response) override;
+                       bp::endBackupFileResponse* response);
   Status startRestoreFile(ServerContext*,
                           const bp::startRestoreFileRequest* request,
-                          bp::startRestoreFileResponse* response) override;
+                          bp::startRestoreFileResponse* response);
   Status endRestoreFile(ServerContext*,
                         const bp::endRestoreFileRequest* request,
-                        bp::endRestoreFileResponse* response) override;
+                        bp::endRestoreFileResponse* response);
   Status FileOpen(ServerContext*,
                   const bp::fileOpenRequest* request,
-                  bp::fileOpenResponse* response) override;
+                  bp::fileOpenResponse* response);
   Status FileSeek(ServerContext*,
                   const bp::fileSeekRequest* request,
-                  bp::fileSeekResponse* response) override;
+                  bp::fileSeekResponse* response);
   Status FileRead(ServerContext*,
                   const bp::fileReadRequest* request,
-                  grpc::ServerWriter<bp::fileReadResponse>* writer) override;
+                  grpc::ServerWriter<bp::fileReadResponse>* writer);
   Status FileWrite(ServerContext*,
                    const bp::fileWriteRequest* request,
-                   bp::fileWriteResponse* response) override;
+                   bp::fileWriteResponse* response);
   Status FileClose(ServerContext*,
                    const bp::fileCloseRequest* request,
-                   bp::fileCloseResponse* response) override;
+                   bp::fileCloseResponse* response);
   Status createFile(ServerContext*,
                     const bp::createFileRequest* request,
-                    bp::createFileResponse* response) override;
+                    bp::createFileResponse* response);
   Status setFileAttributes(ServerContext*,
                            const bp::setFileAttributesRequest* request,
-                           bp::setFileAttributesResponse* response) override;
+                           bp::setFileAttributesResponse* response);
   Status checkFile(ServerContext*,
                    const bp::checkFileRequest* request,
-                   bp::checkFileResponse* response) override;
+                   bp::checkFileResponse* response);
   Status getAcl(ServerContext*,
                 const bp::getAclRequest* request,
-                bp::getAclResponse* response) override;
+                bp::getAclResponse* response);
   Status setAcl(ServerContext*,
                 const bp::setAclRequest* request,
-                bp::setAclResponse* response) override;
+                bp::setAclResponse* response);
   Status getXattr(ServerContext*,
                   const bp::getXattrRequest* request,
-                  bp::getXattrResponse* response) override;
+                  bp::getXattrResponse* response);
   Status setXattr(ServerContext*,
                   const bp::setXattrRequest* request,
-                  bp::setXattrResponse* response) override;
+                  bp::setXattrResponse* response);
 
   bool handle_arguments(std::string_view argstring);
 
