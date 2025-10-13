@@ -5,6 +5,15 @@ set -u
 
 # run bscan and make sure it does not crash
 
+file_size()
+{
+  if [ "$(uname)" = FreeBSD ]; then
+    stat -f %z "$@"
+  else
+    stat -c %s "$@"
+  fi
+}
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -31,9 +40,9 @@ cat <<EOF >"$tmp/bconcmds"
 list media=TestVolume001
 EOF
 
-run_bconsole
+run_bconsole "$tmp/bconcmds"
 
-actual_size=$(stat -c %s storage/TestVolume001)
+actual_size=$(file_size storage/TestVolume001)
 
 expect_grep "\"volbytes\": \"${actual_size}\"" \
   "$tmp/bscan-list-media.out" \
