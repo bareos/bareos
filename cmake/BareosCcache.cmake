@@ -20,7 +20,7 @@
 find_program(CCACHE_PROGRAM ccache)
 if(CCACHE_PROGRAM)
   set(CCACHE_CMDLINE "${CCACHE_PROGRAM}")
-  list(APPEND CCACHE_CMDLINE "base_dir=${CMAKE_SOURCE_DIR}")
+  # list(APPEND CCACHE_CMDLINE "base_dir=${CMAKE_SOURCE_DIR}")
   if(CCACHE_MAY_HASHDIR)
     list(APPEND CCACHE_CMDLINE "hash_dir=true")
   else()

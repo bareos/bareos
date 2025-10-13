@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,7 +36,7 @@ void DebugMessage(/* optional */ PluginContext* ctx,
                   int level,
                   const char* string)
 {
-  if (fd.core) {
+  if (0 && fd.core) {
     fd.core->DebugMessage(ctx, file, line, level, "%s\n", string);
   }
 }
@@ -47,7 +47,7 @@ void JobMessage(PluginContext* ctx,
                 int type,
                 const char* string)
 {
-  if (fd.core) {
+  if (0 && fd.core) {
     fd.core->JobMessage(ctx, file, line, type, 0, "%s\n", string);
   }
 }

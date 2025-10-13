@@ -101,6 +101,7 @@ std::optional<int> receive_fd(int unix_socket, int expected_name)
   const unsigned char* data = CMSG_DATA(control);
 
   // size checked above
+
   memcpy(&fd, data, sizeof(fd));
 
   DebugLog(100, FMT_STRING("got fd = {}"), fd);
