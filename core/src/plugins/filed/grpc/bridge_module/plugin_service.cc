@@ -1186,4 +1186,154 @@ auto PluginService::setXattr(ServerContext*,
   return Status::OK;
 }
 
+
+auto PluginService::StartSession(
+    ServerContext* context,
+    ::grpc::ServerReaderWriter<bp::PluginResponse, bp::PluginRequest>* stream)
+    -> Status
+{
+  bp::PluginRequest outer_req;
+
+  while (stream->Read(&outer_req)) {
+    bp::PluginResponse outer_resp;
+    switch (outer_req.request_case()) {
+      case bareos::plugin::PluginRequest::kHandlePlugin: {
+        auto status
+            = this->handlePluginEvent(context, &outer_req.handle_plugin(),
+                                      outer_resp.mutable_handle_plugin());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kStartBackup: {
+        auto status = this->startBackupFile(context, &outer_req.start_backup(),
+                                            outer_resp.mutable_start_backup());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kEndBackupFile: {
+        auto status = this->endBackupFile(context, &outer_req.end_backup_file(),
+                                          outer_resp.mutable_end_backup_file());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kStartRestoreFile: {
+        auto status
+            = this->startRestoreFile(context, &outer_req.start_restore_file(),
+                                     outer_resp.mutable_start_restore_file());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kEndRestoreFile: {
+        auto status
+            = this->endRestoreFile(context, &outer_req.end_restore_file(),
+                                   outer_resp.mutable_end_restore_file());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kFileOpen: {
+        auto status = this->FileOpen(context, &outer_req.file_open(),
+                                     outer_resp.mutable_file_open());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kFileSeek: {
+        auto status = this->FileSeek(context, &outer_req.file_seek(),
+                                     outer_resp.mutable_file_seek());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kFileWrite: {
+        auto status = this->FileWrite(context, &outer_req.file_write(),
+                                      outer_resp.mutable_file_write());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kFileClose: {
+        auto status = this->FileClose(context, &outer_req.file_close(),
+                                      outer_resp.mutable_file_close());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kCreateFile: {
+        auto status = this->createFile(context, &outer_req.create_file(),
+                                       outer_resp.mutable_create_file());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kSetFileAttributes: {
+        auto status
+            = this->setFileAttributes(context, &outer_req.set_file_attributes(),
+                                      outer_resp.mutable_set_file_attributes());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kCheckFile: {
+        auto status = this->checkFile(context, &outer_req.check_file(),
+                                      outer_resp.mutable_check_file());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kGetAcl: {
+        auto status = this->getAcl(context, &outer_req.get_acl(),
+                                   outer_resp.mutable_get_acl());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kSetAcl: {
+        auto status = this->setAcl(context, &outer_req.set_acl(),
+                                   outer_resp.mutable_set_acl());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kGetXattr: {
+        auto status = this->getXattr(context, &outer_req.get_xattr(),
+                                     outer_resp.mutable_get_xattr());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kSetXattr: {
+        auto status = this->setXattr(context, &outer_req.set_xattr(),
+                                     outer_resp.mutable_set_xattr());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
+      default: {
+      } break;
+    }
+  }
+  return Status::OK;
+}
+
 #pragma GCC diagnostic pop

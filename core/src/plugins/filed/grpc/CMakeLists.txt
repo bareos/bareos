@@ -97,15 +97,10 @@ if(ENABLE_GRPC)
     COMPONENT filedaemon
   )
 
-  add_executable(
-    grpc-test-module test_module/test_module.cc test_module/plugin_service.cc
-  )
-  target_link_libraries(grpc-test-module fmt::fmt grpc-proto)
-  install(
-    TARGETS grpc-test-module
-    DESTINATION ${plugindir}/grpc
-    COMPONENT filedaemon
-  )
+  # add_executable( grpc-test-module test_module/test_module.cc
+  # test_module/plugin_service.cc ) target_link_libraries(grpc-test-module
+  # fmt::fmt grpc-proto) install( TARGETS grpc-test-module DESTINATION
+  # ${plugindir}/grpc COMPONENT filedaemon )
 
   add_executable(
     bareos-grpc-fd-plugin-bridge bridge_module/bridge_module.cc
