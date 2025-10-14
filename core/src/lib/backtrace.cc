@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009-2017, Farooq Mela
- * Copyright (C) 2019-2022 Bareos GmbH & Co. KG
+ * Copyright (C) 2019-2025 Bareos GmbH & Co. KG
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
 
 #include <vector>
 
-#if defined HAVE_EXECINFO_H && defined HAVE_BACKTRACE \
+#if __has_include(<execinfo.h>) && defined HAVE_BACKTRACE \
     && defined HAVE_BACKTRACE_SYMBOLS
 
 #  include <stdlib.h>
@@ -85,5 +85,5 @@ std::vector<BacktraceInfo> Backtrace(int, int)
 {
   return std::vector<BacktraceInfo>();
 }
-#endif /* defined HAVE_EXECINFO_H && defined HAVE_BACKTRACE && \
+#endif /* __has_include(<execinfo.h>) && defined HAVE_BACKTRACE && \
    defined HAVE_BACKTRACE_SYMBOLS */

@@ -1076,7 +1076,7 @@ static char** backtrace_symbols(void* const* array, int size)
  */
 #  ifndef HAVE_BACKTRACE
 
-#    ifdef HAVE_UCONTEXT_H
+#    if __has_include(<ucontext.h>)
 #      include <ucontext.h>
 #    endif
 
@@ -1123,11 +1123,11 @@ static int backtrace(void** buffer, int count)
 #if defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) \
     && defined(HAVE_GCC)
 
-#  ifdef HAVE_CXXABI_H
+#  if __has_include(<cxxabi.h>)
 #    include <cxxabi.h>
 #  endif
 
-#  ifdef HAVE_EXECINFO_H
+#  if __has_include(<execinfo.h>)
 #    include <execinfo.h>
 #  endif
 
@@ -1181,14 +1181,12 @@ void stack_trace()
 
 // Support strack_trace support on Solaris when using the SUNPRO_CC compiler.
 #elif defined(HAVE_SUN_OS) && !defined(HAVE_NON_WORKING_WALKCONTEXT) \
-    && defined(HAVE_UCONTEXT_H) && defined(HAVE_DEMANGLE_H)          \
-    && defined(HAVE_CPLUS_DEMANGLE) && defined(__SUNPRO_CC)
+    && __has_include(<ucontext.h>) && __has_include(<demangle.h>)    \
+    && defined(__SUNPRO_CC)
 
-#  ifdef HAVE_UCONTEXT_H
-#    include <ucontext.h>
-#  endif
+#  include <ucontext.h>
 
-#  if defined(HAVE_EXECINFO_H)
+#  if has_include(<execinfo.h>)
 #    include <execinfo.h>
 #  endif
 

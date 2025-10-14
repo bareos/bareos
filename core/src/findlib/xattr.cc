@@ -955,7 +955,7 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
 
 #    include <sys/extattr.h>
 
-#    ifdef HAVE_LIBUTIL_H
+#    if __has_include(<libutil.h>)
 #      include <libutil.h>
 #    endif
 
@@ -1426,29 +1426,29 @@ static BxattrExitCode (*os_parse_xattr_streams)(JobControlRecord* jcr,
  * opaque extended attributes will use the prefix "SUNW".
  *
  */
-#    ifdef HAVE_SYS_ATTR_H
+#    if __has_include(<sys/attr.h>)
 #      include <sys/attr.h>
 #    endif
 
-#    ifdef HAVE_ATTR_H
+#    if __has_include(<attr.h>)
 #      include <attr.h>
 #    endif
 
-#    ifdef HAVE_SYS_NVPAIR_H
+#    if __has_include(<sys/nvpair.h>)
 #      include <sys/nvpair.h>
 #    endif
 
-#    ifdef HAVE_SYS_ACL_H
+#    if __has_include(<sys/acl.h>)
 #      include <sys/acl.h>
 #    endif
 
 // Define the supported XATTR streams for this OS
-#    if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
+#    if __has_include(<sys/nvpair.h>) && defined(_PC_SATTR_ENABLED)
 static int os_default_xattr_streams[2]
     = {STREAM_XATTR_SOLARIS, STREAM_XATTR_SOLARIS_SYS};
 #    else
 static int os_default_xattr_streams[1] = {STREAM_XATTR_SOLARIS};
-#    endif /* defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED) */
+#    endif /* __has_include(<sys/nvpair.h>) && defined(_PC_SATTR_ENABLED) */
 
 /**
  * This code creates a temporary cache with entries for each xattr which has
@@ -1497,7 +1497,7 @@ static inline void DropXattrLinkCache(XattrBuildData* xattr_data)
   xattr_data->link_cache = NULL;
 }
 
-#    if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
+#    if __has_include(<sys/nvpair.h>) && defined(_PC_SATTR_ENABLED)
 /**
  * This function returns true if a non default extended system attribute
  * list is associated with fd and returns false when an error has occurred
@@ -1561,7 +1561,7 @@ bail_out:
   if (response != NULL) { nvlist_free(response); }
   return retval;
 }
-#    endif /* HAVE_SYS_NVPAIR_H && _PC_SATTR_ENABLED */
+#    endif /* __has_include(<sys/nvpair.h>) && _PC_SATTR_ENABLED */
 
 #    if defined(HAVE_ACL) && !defined(HAVE_EXTENDED_ACL)
 /**
@@ -2100,7 +2100,7 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
     Dmsg3(400, "processing extended attribute %s%s on file \"%s\"\n",
           current_xattr_namespace, dp->d_name, xattr_data->last_fname);
 
-#    if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
+#    if __has_include(<sys/nvpair.h>) && defined(_PC_SATTR_ENABLED)
     // We are not interested in read-only extensible attributes.
     if (bstrcmp(dp->d_name, VIEW_READONLY)) {
       Dmsg3(400,
@@ -2127,7 +2127,7 @@ static BxattrExitCode solaris_save_xattrs(JobControlRecord* jcr,
                          dp->d_name, false, STREAM_XATTR_SOLARIS_SYS);
       continue;
     }
-#    endif /* HAVE_SYS_NVPAIR_H && _PC_SATTR_ENABLED */
+#    endif /* __has_include(<sys/nvpair.h>) && _PC_SATTR_ENABLED */
 
     // Save the xattr.
     solaris_save_xattr(jcr, xattr_data, attrdirfd, current_xattr_namespace,
@@ -2607,7 +2607,7 @@ static BxattrExitCode solaris_parse_xattr_streams(JobControlRecord* jcr,
 
   // First make sure we can restore xattr on the filesystem.
   switch (stream) {
-#    if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
+#    if __has_include(<sys/nvpair.h>) && defined(_PC_SATTR_ENABLED)
     case STREAM_XATTR_SOLARIS_SYS:
       if (pathconf(xattr_data->last_fname, _PC_SATTR_ENABLED) <= 0) {
         Mmsg1(jcr->errmsg,
