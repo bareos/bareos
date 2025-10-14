@@ -174,9 +174,6 @@
 // Define to 1 if you have the `lchmod' function
 #cmakedefine HAVE_LCHMOD @HAVE_LCHMOD@
 
-// Define to 1 if you have the `util' library (-lutil)
-#cmakedefine HAVE_LIBUTIL @HAVE_LIBUTIL@
-
 // Define to 1 if you have the <libutil.h> header file
 #cmakedefine HAVE_LIBUTIL_H @HAVE_LIBUTIL_H@
 
