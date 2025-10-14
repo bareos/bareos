@@ -886,10 +886,67 @@ struct non_blocking {
   ~non_blocking() { reset(); }
 };
 
-auto PluginService::FileRead(ServerContext*,
-                             const bp::fileReadRequest* request,
-                             grpc::ServerWriter<bp::fileReadResponse>* writer)
-    -> Status
+const char* PluginService::non_blocking_write(int fd,
+                                              int32_t byte_count,
+                                              char* buffer)
+{
+  auto set_io_to_nonblocking = non_blocking{io};
+
+  if (set_io_to_nonblocking.error()) {
+    JobLog(bc::JMSG_ERROR,
+           FMT_STRING("could not set fd {} as nonblocking: Err={}"), io,
+           strerror(set_io_to_nonblocking.error().value()));
+    return "could not set socket to be not blocking";
+  }
+
+  int32_t bytes_sent = 0;
+  while (bytes_sent < byte_count) {
+    auto written = write(io, buffer + bytes_sent, byte_count - bytes_sent);
+    if (written < 0) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        struct pollfd pfd = {};
+        pfd.fd = io;
+        pfd.events = POLLOUT;
+        int timeout = 5 * 1000;  // we wait at most 5 seconds
+        int poll_res = poll(&pfd, 1, 5 * 1000);
+        if (poll_res < 0) {
+          JobLog(bc::JMSG_ERROR,
+                 FMT_STRING("could not write missing {} bytes to io socket {} "
+                            "as poll failed: Err={}"),
+                 byte_count - bytes_sent, io, strerror(errno));
+          return "io socket full";
+        } else if (poll_res == 0) {
+          JobLog(bc::JMSG_ERROR,
+                 FMT_STRING("could not write missing {} bytes to io socket {} "
+                            "after waiting {}ms for data to become available"),
+                 byte_count - bytes_sent, io, timeout);
+          return "io socket full";
+        }
+      } else {
+        JobLog(bc::JMSG_ERROR,
+               FMT_STRING("could not write {} bytes to io socket {}: Err={}"),
+               byte_count - bytes_sent, io, strerror(errno));
+        return "io socket write not successful";
+      }
+    } else {
+      bytes_sent += written;
+    }
+  }
+
+  set_io_to_nonblocking.reset();
+  if (set_io_to_nonblocking.error()) {
+    JobLog(bc::JMSG_ERROR, FMT_STRING("could not reset fd {} flags: Err={}"),
+           io, strerror(set_io_to_nonblocking.error().value()));
+    return "could not reset socket flags";
+  }
+
+  return nullptr;
+}
+
+auto PluginService::FileRead(
+    ServerContext*,
+    const bp::fileReadRequest* request,
+    grpc::internal::WriterInterface<bp::PluginResponse>* writer) -> Status
 {
   filedaemon::io_pkt pkt;
   pkt.func = filedaemon::IO_READ;
@@ -902,60 +959,18 @@ auto PluginService::FileRead(ServerContext*,
     return Status(grpc::StatusCode::INTERNAL, "bad response");
   }
 
-  auto nb_io = non_blocking{io};
+  auto set_io_to_nonblocking = non_blocking{io};
 
-  if (auto error = nb_io.error()) {
-    JobLog(bc::JMSG_ERROR,
-           FMT_STRING("could not set fd {} as nonblocking: Err={}"), io,
-           strerror(error.value()));
-    return Status(grpc::StatusCode::INTERNAL,
-                  "could not set socket to be not blocking");
-  }
-
-  bp::fileReadResponse resp;
+  bp::PluginResponse outer_resp;
+  bp::fileReadResponse& resp = *outer_resp.mutable_file_read();
   resp.set_size(pkt.status);
-  writer->Write(resp);
-  int32_t bytes_sent = 0;
-  while (bytes_sent < pkt.status) {
-    auto written = write(io, pkt.buf + bytes_sent, pkt.status - bytes_sent);
-    if (written < 0) {
-      if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        struct pollfd pfd = {};
-        pfd.fd = io;
-        pfd.events = POLLOUT;
-        int timeout = 5 * 1000;  // we wait at most 5 seconds
-        int poll_res = poll(&pfd, 1, 5 * 1000);
-        if (poll_res < 0) {
-          JobLog(bc::JMSG_ERROR,
-                 FMT_STRING("could not write missing {} bytes to io socket {} "
-                            "as poll failed: Err={}"),
-                 pkt.status - bytes_sent, io, strerror(errno));
-          return Status(grpc::StatusCode::INTERNAL, "io socket full");
-        } else if (poll_res == 0) {
-          JobLog(bc::JMSG_ERROR,
-                 FMT_STRING("could not write missing {} bytes to io socket {} "
-                            "after waiting {}ms for data to become available"),
-                 pkt.status - bytes_sent, io, timeout);
-          return Status(grpc::StatusCode::INTERNAL, "io socket full");
-        }
-      } else {
-        JobLog(bc::JMSG_ERROR,
-               FMT_STRING("could not write {} bytes to io socket {}: Err={}"),
-               pkt.status - bytes_sent, io, strerror(errno));
-        return Status(grpc::StatusCode::INTERNAL,
-                      "io socket write not successful");
-      }
-    } else {
-      bytes_sent += written;
-    }
+
+  writer->Write(outer_resp);
+
+  if (auto* err_msg = non_blocking_write(io, pkt.status, pkt.buf)) {
+    return Status(grpc::StatusCode::INTERNAL, err_msg);
   }
 
-  nb_io.reset();
-  if (auto io_error = nb_io.error()) {
-    JobLog(bc::JMSG_ERROR, FMT_STRING("could not reset fd {} flags: Err={}"),
-           io, strerror(io_error.value()));
-    return Status(grpc::StatusCode::INTERNAL, "could not reset socket flags");
-  }
   return Status::OK;
 }
 auto PluginService::FileWrite(ServerContext*,
@@ -1197,6 +1212,14 @@ auto PluginService::StartSession(
   while (stream->Read(&outer_req)) {
     bp::PluginResponse outer_resp;
     switch (outer_req.request_case()) {
+      case bareos::plugin::PluginRequest::kSetup: {
+        auto status = this->Setup(context, &outer_req.setup(),
+                                  outer_resp.mutable_setup());
+
+        if (!status.ok()) { return status; }
+
+        stream->Write(outer_resp);
+      } break;
       case bareos::plugin::PluginRequest::kHandlePlugin: {
         auto status
             = this->handlePluginEvent(context, &outer_req.handle_plugin(),
@@ -1255,6 +1278,11 @@ auto PluginService::StartSession(
         if (!status.ok()) { return status; }
 
         stream->Write(outer_resp);
+      } break;
+      case bareos::plugin::PluginRequest::kFileRead: {
+        auto status = this->FileRead(context, &outer_req.file_read(), stream);
+
+        if (!status.ok()) { return status; }
       } break;
       case bareos::plugin::PluginRequest::kFileWrite: {
         auto status = this->FileWrite(context, &outer_req.file_write(),
@@ -1330,6 +1358,8 @@ auto PluginService::StartSession(
         stream->Write(outer_resp);
       } break;
       default: {
+        return Status(grpc::StatusCode::UNIMPLEMENTED,
+                      "this is not implemented");
       } break;
     }
   }

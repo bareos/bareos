@@ -6,10 +6,7 @@ import "events.proto";
 import "common.proto";
 
 service Plugin {
-  rpc Setup (SetupRequest) returns (SetupResponse);
-
   rpc StartSession (stream PluginRequest) returns (stream PluginResponse);
-  rpc FileRead (fileReadRequest) returns (stream fileReadResponse);
 }
 
 message SetupRequest {};
@@ -33,6 +30,8 @@ message PluginRequest {
     setAclRequest set_acl = 23;
     getXattrRequest get_xattr = 24;
     setXattrRequest set_xattr = 25;
+    SetupRequest setup = 26;
+    fileReadRequest file_read = 27;
   };
 };
 
@@ -54,6 +53,8 @@ message PluginResponse {
     setAclResponse set_acl = 23;
     getXattrResponse get_xattr = 24;
     setXattrResponse set_xattr = 25;
+    SetupResponse setup = 26;
+    fileReadResponse file_read = 27;
   };
 };
 

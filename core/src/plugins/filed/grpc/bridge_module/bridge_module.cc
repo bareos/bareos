@@ -413,6 +413,7 @@ void DebugMessage(int level,
                   const char* file,
                   const char* fun)
 {
+  return;
   bc::CoreRequest outer_req;
   auto& req = *outer_req.mutable_debugmessage();
   req.set_level(level);
@@ -425,11 +426,6 @@ void DebugMessage(int level,
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return; }
-  if (!writer->Read(&outer_resp)) { return; }
-  if (!outer_resp.has_debugmessage()) { return; }
-
-  auto& resp = outer_resp.debugmessage();
-  (void)resp;
 }
 bool Bareos_SetString(bc::BareosStringVariable var, std::string_view val)
 {
