@@ -28,10 +28,8 @@
 
 #include "include/bareos.h"
 
-#if HAVE_POSTGRESQL
-
-#  include "cats.h"
-#  include "lib/edit.h"
+#include "cats.h"
+#include "lib/edit.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -95,7 +93,7 @@ bool BareosDb::DeletePoolRecord(JobControlRecord* jcr, PoolDbRecord* pr)
   return true;
 }
 
-#  define MAX_DEL_LIST_LEN 1000000
+#define MAX_DEL_LIST_LEN 1000000
 
 struct s_del_ctx {
   std::vector<JobId_t> ids;
@@ -257,4 +255,3 @@ void BareosDb::PurgeJobs(const char* jobids)
   Mmsg(query, "DELETE FROM Job WHERE JobId IN (%s)", jobids);
   SqlQuery(query.c_str());
 }
-#endif /* HAVE_POSTGRESQL */
