@@ -57,8 +57,11 @@ extern "C" {
 
 #include "lib/fnmatch.h"
 
-#include "lib/bregex.h"
-
+#if __has_include(<regex.h>)
+#  include <regex.h>
+#else
+#  include "lib/bregex.h"
+#endif
 #ifdef USE_READDIR_R
 #  ifndef HAVE_READDIR_R
 int Readdir_r(DIR* dirp, struct dirent* entry, struct dirent** result);
