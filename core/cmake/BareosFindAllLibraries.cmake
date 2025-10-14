@@ -149,7 +149,6 @@ endif()
 
 include(BareosFindLibrary)
 
-bareosfindlibrary("util")
 bareosfindlibrary("acl")
 if(NOT ${CMAKE_CXX_COMPILER_ID} MATCHES SunPro)
   find_package(GTest 1.8 CONFIG)
