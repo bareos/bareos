@@ -20,7 +20,7 @@
 */
 #include "include/config.h"
 #include <pthread.h>
-#if defined(HAVE_PTHREAD_NP_H)
+#if __has_include(<pthread_np.h>)
 #  include <pthread_np.h>
 #endif
 #include "pthread_detach_if_not_detached.h"
