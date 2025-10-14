@@ -46,11 +46,6 @@
 
 #include "fastlz/fastlzlib.h"
 
-#ifndef HAVE_COMPRESS_BOUND
-#  define compressBound(sourceLen) \
-    (sourceLen + (sourceLen >> 12) + (sourceLen >> 14) + (sourceLen >> 25) + 13)
-#endif
-
 static const std::string kCompressorNameUnknown = "Unknown";
 static const std::string kCompressorNameGZIP = "GZIP";
 static const std::string kCompressorNameLZO = "LZO";
