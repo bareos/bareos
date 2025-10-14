@@ -520,7 +520,7 @@ if("${PAM_FOUND}")
 endif()
 
 option(ENABLE_CAPABILITY "Enable keep readall capability in filedaemon"
-       "${HAVE_CAPABILITY_H}"
+       "${HAVE_SYS_CAPABILITY_H}"
 )
 
 try_compile(
