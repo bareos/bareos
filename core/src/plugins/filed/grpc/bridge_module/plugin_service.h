@@ -78,12 +78,12 @@ class PluginService : public bp::Plugin::Service {
   }
 
  private:
+  const char* non_blocking_write(int fd, int32_t byte_count, char* buffer);
+
   using ServerContext = ::grpc::ServerContext;
   using Status = ::grpc::Status;
 
-  Status Setup(ServerContext*,
-               const bp::SetupRequest*,
-               bp::SetupResponse*) override;
+  Status Setup(ServerContext*, const bp::SetupRequest*, bp::SetupResponse*);
 
   Status StartSession(
       ServerContext* context,
@@ -113,7 +113,7 @@ class PluginService : public bp::Plugin::Service {
                   bp::fileSeekResponse* response);
   Status FileRead(ServerContext*,
                   const bp::fileReadRequest* request,
-                  grpc::ServerWriter<bp::fileReadResponse>* writer) override;
+                  grpc::internal::WriterInterface<bp::PluginResponse>* writer);
   Status FileWrite(ServerContext*,
                    const bp::fileWriteRequest* request,
                    bp::fileWriteResponse* response);

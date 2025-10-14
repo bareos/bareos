@@ -562,8 +562,6 @@ class BareosCore : public bc::Core::Service {
               = this->Bareos_DebugMessage(ctx, &outer_req.debugmessage(),
                                           outer_resp.mutable_debugmessage());
           if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
         } break;
         case bareos::core::CoreRequest::kSetString: {
           auto status = this->Bareos_SetString(ctx, &outer_req.setstring(),
@@ -1160,17 +1158,21 @@ class PluginClient {
 
   bRC Setup()
   {
-    bp::SetupRequest req;
-    bp::SetupResponse resp;
-    grpc::ClientContext ctx;
-
-    auto status = stub_->Setup(&ctx, req, &resp);
-
-    if (!status.ok()) { return bRC_Error; }
-
     client_ctx = std::make_unique<grpc::ClientContext>();
 
     writer = stub_->StartSession(client_ctx.get());
+    bp::PluginRequest req;
+    bp::PluginResponse resp;
+
+    (void)req.mutable_setup();
+
+    bool write_ok = writer->Write(req);
+    if (!write_ok) { return bRC_Error; }
+
+    bool read_ok = writer->Read(&resp);
+    if (!read_ok) { return bRC_Error; }
+
+    if (!resp.has_setup()) { return bRC_Error; }
 
     return bRC_OK;
   }
@@ -1558,39 +1560,49 @@ class PluginClient {
   }
 
   struct read_iter {
-    bp::fileReadRequest req;
-    grpc::ClientContext ctx;
     PluginContext* pctx;
-    std::unique_ptr<grpc::ClientReader<bp::fileReadResponse>> reader;
+    bp::PluginRequest outer_req;
 
-    read_iter(bp::Plugin::Stub* stub, size_t size, PluginContext* plugin_ctx)
-        : pctx{plugin_ctx}
+    grpc::ClientReaderWriterInterface<bp::PluginRequest, bp::PluginResponse>*
+        file_writer;
+    read_iter(
+        grpc::ClientReaderWriterInterface<bp::PluginRequest,
+                                          bp::PluginResponse>* file_writer_,
+        size_t size,
+        PluginContext* plugin_ctx)
+        : pctx{plugin_ctx}, file_writer{file_writer_}
     {
+      auto& req = *outer_req.mutable_file_read();
       req.set_num_bytes(size);
-      reader = stub->FileRead(&ctx, req);
+      bool ok = file_writer->Write(outer_req);
+      (void)ok;
     }
 
     bool next(size_t* size)
     {
-      bp::fileReadResponse resp;
-      if (!reader->Read(&resp)) { return false; }
-      *size = resp.size();
+      bp::PluginResponse outer_resp;
+      if (!file_writer->Read(&outer_resp)) { return false; }
+      if (!outer_resp.has_file_read()) { return false; }
+      *size = outer_resp.file_read().size();
       return true;
     }
 
     bRC result()
     {
-      auto status = reader->Finish();
-      if (!status.ok()) {
-        ::DebugLog(pctx, 50, FMT_STRING("file read error {}: {}"),
-                   int(status.error_code()), status.error_message());
-        return bRC_Error;
-      }
+      // auto status = reader->Finish();
+      // if (!status.ok()) {
+      //   ::DebugLog(pctx, 50, FMT_STRING("file read error {}: {}"),
+      //              int(status.error_code()), status.error_message());
+      //   return bRC_Error;
+      // }
       return bRC_OK;
     }
   };
 
-  read_iter FileRead(size_t size) { return read_iter{stub_.get(), size, core}; }
+  read_iter FileRead(size_t size)
+  {
+    return read_iter{writer.get(), size, core};
+  }
 
   bRC FileWrite(size_t size, size_t* num_bytes_written)
   {
@@ -2738,7 +2750,7 @@ bRC grpc_connection::pluginIO(filedaemon::io_pkt* pkt, int iosock)
 
       size_t bytes_read = 0;
       size_t current = 0;
-      while (iter.next(&current)) {
+      if (iter.next(&current)) {
         DebugLog(100, FMT_STRING("received {} bytes"), current);
         if (!full_read(iosock, pkt->buf + bytes_read, current)) {
           JobLog(nullptr, M_FATAL,
