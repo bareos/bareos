@@ -207,9 +207,6 @@
 // Define to 1 if you have the `posix_fadvise' function
 #cmakedefine HAVE_POSIX_FADVISE @HAVE_POSIX_FADVISE@
 
-// Set if you have an PostgreSQL Database
-#cmakedefine HAVE_POSTGRESQL @HAVE_POSTGRESQL@
-
 // Define to 1 if you have the `prctl' function
 #cmakedefine HAVE_PRCTL @HAVE_PRCTL@
 

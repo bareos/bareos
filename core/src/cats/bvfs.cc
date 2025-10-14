@@ -26,18 +26,16 @@
  */
 #include "include/bareos.h"
 
-#if HAVE_POSTGRESQL
+#include "cats/cats.h"
+#include "cats/sql.h"
+#include "lib/htable.h"
+#include "cats/bvfs.h"
+#include "lib/edit.h"
 
-#  include "cats/cats.h"
-#  include "cats/sql.h"
-#  include "lib/htable.h"
-#  include "cats/bvfs.h"
-#  include "lib/edit.h"
+#include <unordered_set>
 
-#  include <unordered_set>
-
-#  define dbglevel 10
-#  define dbglevel_sql 15
+#define dbglevel 10
+#define dbglevel_sql 15
 
 class pathid_cache {
   std::unordered_set<uint64_t> cache;
@@ -838,5 +836,3 @@ bail_out:
   db->SqlQuery(query.c_str());
   return retval;
 }
-
-#endif /* HAVE_POSTGRESQL */

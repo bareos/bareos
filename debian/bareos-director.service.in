@@ -9,7 +9,7 @@ Requires=network.target nss-lookup.target time-sync.target
 After=network-online.target nss-lookup.target local-fs.target remote-fs.target time-sync.target postgresql.service
 # Dependency about the database
 # We let administrators decide if they need it (if local db instance)
-# Wants=@DEFAULT_DB_TYPE@.service
+# Wants=postgresql.service
 # Check if working dir exist
 ConditionPathExists=@working_dir@
 # Limit the number of restart per day

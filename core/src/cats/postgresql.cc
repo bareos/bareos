@@ -33,19 +33,17 @@
 
 #include "include/bareos.h"
 
-#ifdef HAVE_POSTGRESQL
-
-#  include "cats.h"
-#  include "libpq-fe.h"
-#  include "postgres_ext.h"     /* needed for NAMEDATALEN */
-#  include "pg_config_manual.h" /* get NAMEDATALEN on version 8.3 or later */
-#  include "postgresql.h"
-#  include "lib/edit.h"
-#  include "lib/berrno.h"
-#  include "lib/dlist.h"
+#include "cats.h"
+#include "libpq-fe.h"
+#include "postgres_ext.h"     /* needed for NAMEDATALEN */
+#include "pg_config_manual.h" /* get NAMEDATALEN on version 8.3 or later */
+#include "postgresql.h"
+#include "lib/edit.h"
+#include "lib/berrno.h"
+#include "lib/dlist.h"
 
 /* pull in the generated queries definitions */
-#  include "postgresql_queries.inc"
+#include "postgresql_queries.inc"
 
 /* -----------------------------------------------------------------------
  *
@@ -143,11 +141,11 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
     have_batch_insert_ = false;
   } else {
     disabled_batch_insert_ = false;
-#  if defined(USE_BATCH_FILE_INSERT)
+#if defined(USE_BATCH_FILE_INSERT)
     have_batch_insert_ = PQisthreadsafe();
-#  else
+#else
     have_batch_insert_ = false;
-#  endif /* USE_BATCH_FILE_INSERT */
+#endif /* USE_BATCH_FILE_INSERT */
   }
   errmsg = GetPoolMemory(PM_EMSG); /* get error message buffer */
   *errmsg = 0;
@@ -1151,5 +1149,3 @@ bool BareosDbPostgresql::SqlBatchInsertFileTable(JobControlRecord*,
 
   return true;
 }
-
-#endif /* HAVE_POSTGRESQL */

@@ -32,10 +32,8 @@
 
 #include "include/bareos.h"
 
-#if HAVE_POSTGRESQL
-
-#  include "cats.h"
-#  include "lib/edit.h"
+#include "cats.h"
+#include "lib/edit.h"
 
 /* Forward referenced subroutines */
 
@@ -915,4 +913,3 @@ void DbDebugPrint(JobControlRecord* jcr, FILE* fp)
 
   mdb->DbDebugPrint(fp);
 }
-#endif /* HAVE_POSTGRESQL */
