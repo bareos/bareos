@@ -36,7 +36,7 @@ void DebugMessage(/* optional */ PluginContext* ctx,
                   int level,
                   const char* string)
 {
-  if (0 && fd.core) {
+  if (fd.core) {
     fd.core->DebugMessage(ctx, file, line, level, "%s\n", string);
   }
 }
@@ -47,7 +47,7 @@ void JobMessage(PluginContext* ctx,
                 int type,
                 const char* string)
 {
-  if (0 && fd.core) {
+  if (fd.core) {
     fd.core->JobMessage(ctx, file, line, type, 0, "%s\n", string);
   }
 }

@@ -489,9 +489,137 @@ class BareosCore : public bc::Core::Service {
 
 
  private:
+  grpc::Status StartSession(
+      grpc::ServerContext* ctx,
+      ::grpc::ServerReaderWriter<bc::CoreResponse, bc::CoreRequest>* stream)
+      override
+  {
+    bc::CoreRequest outer_req;
+
+    while (stream->Read(&outer_req)) {
+      bc::CoreResponse outer_resp;
+      switch (outer_req.request_case()) {
+        case bareos::core::CoreRequest::kRegister: {
+          auto status = this->Events_Register(ctx, &outer_req.register_(),
+                                              outer_resp.mutable_register_());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kUnregister: {
+          auto status = this->Events_Register(ctx, &outer_req.register_(),
+                                              outer_resp.mutable_register_());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kGetInstanceCount: {
+          auto status = this->Bareos_getInstanceCount(
+              ctx, &outer_req.getinstancecount(),
+              outer_resp.mutable_getinstancecount());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kCheckChanges: {
+          auto status
+              = this->Bareos_checkChanges(ctx, &outer_req.checkchanges(),
+                                          outer_resp.mutable_checkchanges());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kAcceptFile: {
+          auto status = this->Bareos_AcceptFile(
+              ctx, &outer_req.acceptfile(), outer_resp.mutable_acceptfile());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kSetSeen: {
+          auto status = this->Bareos_SetSeen(ctx, &outer_req.setseen(),
+                                             outer_resp.mutable_setseen());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kClearSeen: {
+          auto status = this->Bareos_ClearSeen(ctx, &outer_req.clearseen(),
+                                               outer_resp.mutable_clearseen());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kJobMessage: {
+          auto status = this->Bareos_JobMessage(
+              ctx, &outer_req.jobmessage(), outer_resp.mutable_jobmessage());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kDebugMessage: {
+          auto status
+              = this->Bareos_DebugMessage(ctx, &outer_req.debugmessage(),
+                                          outer_resp.mutable_debugmessage());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kSetString: {
+          auto status = this->Bareos_SetString(ctx, &outer_req.setstring(),
+                                               outer_resp.mutable_setstring());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kGetString: {
+          auto status = this->Bareos_GetString(ctx, &outer_req.getstring(),
+                                               outer_resp.mutable_getstring());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kSetInt: {
+          auto status = this->Bareos_SetInt(ctx, &outer_req.setint(),
+                                            outer_resp.mutable_setint());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kGetInt: {
+          auto status = this->Bareos_GetInt(ctx, &outer_req.getint(),
+                                            outer_resp.mutable_getint());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kSetFlag: {
+          auto status = this->Bareos_SetFlag(ctx, &outer_req.setflag(),
+                                             outer_resp.mutable_setflag());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        case bareos::core::CoreRequest::kGetFlag: {
+          auto status = this->Bareos_GetFlag(ctx, &outer_req.getflag(),
+                                             outer_resp.mutable_getflag());
+          if (!status.ok()) { return status; }
+
+          stream->Write(outer_resp);
+        } break;
+        default: {
+          return grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+                              "unknown core request");
+        } break;
+      }
+    }
+
+    return grpc::Status::OK;
+  }
+
   grpc::Status Events_Register(grpc::ServerContext*,
                                const bc::RegisterRequest* req,
-                               bc::RegisterResponse*) override
+                               bc::RegisterResponse*)
   {
     for (auto event : req->event_types()) {
       if (!bc::EventType_IsValid(event)) {
@@ -521,7 +649,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Events_Unregister(grpc::ServerContext*,
                                  const bc::UnregisterRequest* req,
-                                 bc::UnregisterResponse*) override
+                                 bc::UnregisterResponse*)
   {
     for (auto event : req->event_types()) {
       if (!bc::EventType_IsValid(event)) {
@@ -550,39 +678,38 @@ class BareosCore : public bc::Core::Service {
   }
 
   // grpc::Status Fileset_AddExclude(grpc::ServerContext*, const
-  // bc::AddExcludeRequest* request, bc::AddExcludeResponse* response) override
+  // bc::AddExcludeRequest* request, bc::AddExcludeResponse* response)
   // {
   // }
   // grpc::Status Fileset_AddInclude(grpc::ServerContext*, const
-  // bc::AddIncludeRequest* request, bc::AddIncludeResponse* response) override
+  // bc::AddIncludeRequest* request, bc::AddIncludeResponse* response)
   // {
   // }
   // grpc::Status Fileset_AddOptions(grpc::ServerContext*, const
-  // bc::AddOptionsRequest* request, bc::AddOptionsResponse* response) override
+  // bc::AddOptionsRequest* request, bc::AddOptionsResponse* response)
   // {
   // }
   // grpc::Status Fileset_AddRegex(grpc::ServerContext*, const
-  // bc::AddRegexRequest* request, bc::AddRegexResponse* response) override {
+  // bc::AddRegexRequest* request, bc::AddRegexResponse* response) {
   // }
   // grpc::Status Fileset_AddWild(grpc::ServerContext*, const
-  // bc::AddWildRequest* request, bc::AddWildResponse* response) override {
+  // bc::AddWildRequest* request, bc::AddWildResponse* response) {
   // }
   // grpc::Status Fileset_NewOptions(grpc::ServerContext*, const
-  // bc::NewOptionsRequest* request, bc::NewOptionsResponse* response) override
+  // bc::NewOptionsRequest* request, bc::NewOptionsResponse* response)
   // {
   // }
   // grpc::Status Fileset_NewInclude(grpc::ServerContext*, const
-  // bc::NewIncludeRequest* request, bc::NewIncludeResponse* response) override
+  // bc::NewIncludeRequest* request, bc::NewIncludeResponse* response)
   // {
   // }
   // grpc::Status Fileset_NewPreInclude(grpc::ServerContext*, const
   // bc::NewPreIncludeRequest* request, bc::NewPreIncludeResponse* response)
-  // override {
+  // {
   // }
-  grpc::Status Bareos_getInstanceCount(
-      grpc::ServerContext*,
-      const bc::getInstanceCountRequest*,
-      bc::getInstanceCountResponse* response) override
+  grpc::Status Bareos_getInstanceCount(grpc::ServerContext*,
+                                       const bc::getInstanceCountRequest*,
+                                       bc::getInstanceCountResponse* response)
   {
     // there is only one instance per process.  Its also pretty easy to give a
     // real answer here (i guess).
@@ -592,7 +719,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Bareos_checkChanges(grpc::ServerContext*,
                                    const bc::checkChangesRequest* request,
-                                   bc::checkChangesResponse* response) override
+                                   bc::checkChangesResponse* response)
   {
     auto type = request->type();
 
@@ -630,7 +757,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Bareos_SetString(grpc::ServerContext*,
                                 const bc::SetStringRequest* request,
-                                bc::SetStringResponse*) override
+                                bc::SetStringResponse*)
   {
     auto var = request->var();
 
@@ -654,7 +781,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Bareos_GetString(grpc::ServerContext*,
                                 const bc::GetStringRequest* request,
-                                bc::GetStringResponse* response) override
+                                bc::GetStringResponse* response)
   {
     auto var = request->var();
 
@@ -686,7 +813,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Bareos_SetInt(grpc::ServerContext*,
                              const bc::SetIntRequest* request,
-                             bc::SetIntResponse*) override
+                             bc::SetIntResponse*)
   {
     auto var = request->var();
 
@@ -710,7 +837,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Bareos_GetInt(grpc::ServerContext*,
                              const bc::GetIntRequest* request,
-                             bc::GetIntResponse* response) override
+                             bc::GetIntResponse* response)
   {
     auto var = request->var();
 
@@ -737,7 +864,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Bareos_SetFlag(grpc::ServerContext*,
                               const bc::SetFlagRequest* request,
-                              bc::SetFlagResponse*) override
+                              bc::SetFlagResponse*)
   {
     auto var = request->var();
 
@@ -761,7 +888,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Bareos_GetFlag(grpc::ServerContext*,
                               const bc::GetFlagRequest* request,
-                              bc::GetFlagResponse* response) override
+                              bc::GetFlagResponse* response)
   {
     auto var = request->var();
 
@@ -788,7 +915,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Bareos_AcceptFile(grpc::ServerContext*,
                                  const bc::AcceptFileRequest* request,
-                                 bc::AcceptFileResponse* response) override
+                                 bc::AcceptFileResponse* response)
   {
     auto& stats = request->stats();
     struct stat statp;
@@ -812,7 +939,7 @@ class BareosCore : public bc::Core::Service {
   }
   grpc::Status Bareos_SetSeen(grpc::ServerContext*,
                               const bc::SetSeenRequest* request,
-                              bc::SetSeenResponse*) override
+                              bc::SetSeenResponse*)
   {
     auto result = [&] {
       if (request->has_file()) {
@@ -829,7 +956,7 @@ class BareosCore : public bc::Core::Service {
   }
   grpc::Status Bareos_ClearSeen(grpc::ServerContext*,
                                 const bc::ClearSeenRequest* request,
-                                bc::ClearSeenResponse*) override
+                                bc::ClearSeenResponse*)
   {
     auto result = [&] {
       if (request->has_file()) {
@@ -847,7 +974,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Bareos_JobMessage(grpc::ServerContext*,
                                  const bc::JobMessageRequest* req,
-                                 bc::JobMessageResponse*) override
+                                 bc::JobMessageResponse*)
   {
     JobLog(core, Type{req->type(), req->file().c_str(), (int)req->line()},
            FMT_STRING("{}"), req->msg());
@@ -857,7 +984,7 @@ class BareosCore : public bc::Core::Service {
 
   grpc::Status Bareos_DebugMessage(grpc::ServerContext*,
                                    const bc::DebugMessageRequest* req,
-                                   bc::DebugMessageResponse*) override
+                                   bc::DebugMessageResponse*)
   {
     DebugLog(core,
              Severity{(int)req->level(), req->file().c_str(), (int)req->line()},
