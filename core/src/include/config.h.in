@@ -111,9 +111,6 @@
 // Define to 1 if you have the `closefrom' function
 #cmakedefine HAVE_CLOSEFROM @HAVE_CLOSEFROM@
 
-// Define to 1 if you have compressBound
-#cmakedefine HAVE_COMPRESS_BOUND @HAVE_COMPRESS_BOUND@
-
 // Define to 1 if cplus_demangle exists in libdemangle
 #cmakedefine HAVE_CPLUS_DEMANGLE @HAVE_CPLUS_DEMANGLE@
 
