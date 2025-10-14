@@ -183,9 +183,6 @@
 // Define to 1 if LMDB support should be enabled
 #cmakedefine HAVE_LMDB @HAVE_LMDB@
 
-// Define if you have the 'long double' type
-#cmakedefine HAVE_LONG_DOUBLE @HAVE_LONG_DOUBLE@
-
 // Low level SCSI Interface support
 #cmakedefine HAVE_LOWLEVEL_SCSI_INTERFACE @HAVE_LOWLEVEL_SCSI_INTERFACE@
 
