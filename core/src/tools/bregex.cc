@@ -29,7 +29,11 @@
 #include "include/exit_codes.h"
 #include "lib/cli.h"
 
-#include "lib/bregex.h"
+#if __has_include(<regex.h>)
+#  include <regex.h>
+#else
+#  include "lib/bregex.h"
+#endif
 
 int main(int argc, char** argv)
 {

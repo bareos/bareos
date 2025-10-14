@@ -22,11 +22,9 @@
 #ifndef BAREOS_LIB_BREGEX_H_
 #define BAREOS_LIB_BREGEX_H_
 
-#include "include/config.h"
-
-#if defined(HAVE_REGEX_H)
+#if __has_include(<regex.h>)
 #  include <regex.h>
-#elif defined(HAVE_PCRE2_POSIX_H)
+#elif __has_include(<pcre2posix.h>)
 #  include <pcre2posix.h>
 #else
 #  error "no suitable regex engine found."

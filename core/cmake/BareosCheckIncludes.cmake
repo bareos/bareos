@@ -21,9 +21,6 @@ if(NOT MSVC)
   include(CheckIncludeFiles)
   include(CheckIncludeFileCXX)
 
-  # assume POSIX required headers are present
-  set(HAVE_REGEX_H 1)
-
   check_include_files("sys/types.h;sys/acl.h" HAVE_SYS_ACL_H)
   check_include_files(sys/capability.h HAVE_SYS_CAPABILITY_H)
 
@@ -41,7 +38,4 @@ if(NOT MSVC)
   check_include_files(dev/scsipi/scsipi_all.h HAVE_DEV_SCSIPI_SCSIPI_ALL_H)
 
   check_include_files(scsi/uscsi_all.h HAVE_USCSI_ALL_H)
-else()
-  # we provide tho following headers
-  set(HAVE_PCRE2_POSIX_H 1)
 endif()
