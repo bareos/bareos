@@ -28,7 +28,6 @@
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "lib/cli.h"
-
 #include "lib/bregex.h"
 
 int main(int argc, char** argv)
