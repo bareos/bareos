@@ -82,6 +82,7 @@ bareos_known_compiler_flags(
   FLAGS -Wall
         -Wcast-function-type
         -Wdeprecated-declarations
+        -Wenum-compare
         -Werror
         -Wextra
         -Wformat
@@ -120,6 +121,7 @@ bareos_known_compiler_flags(
         -Wcast-function-type
         -Wdeprecated-declarations
         -Wdeprecated-non-prototype
+        -Wenum-compare
         -Wenum-conversion
         -Werror
         -Wextra
@@ -142,6 +144,30 @@ bareos_known_compiler_flags(
 
 bareos_known_compiler_flags(
   ID Clang
+  UNSUPPORTED
+  FLAGS -Wstringop-overflow
+)
+
+bareos_known_compiler_flags(
+  ID AppleClang
+  SINCE 15.0.0
+  FLAGS -Wall
+        -Wc99-designator
+        -Werror
+        -Wextra
+        -Wformat
+        -Wformat-security
+        -Wimplicit-fallthrough
+        -Winvalid-offsetof
+        -Wshadow
+        -Wsuggest-override
+        -Wunused-parameter
+        -fdebug-prefix-map
+        -fmacro-prefix-map
+)
+
+bareos_known_compiler_flags(
+  ID AppleClang
   UNSUPPORTED
   FLAGS -Wstringop-overflow
 )
