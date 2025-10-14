@@ -7,31 +7,63 @@ import "google/protobuf/timestamp.proto";
 import "common.proto";
 
 service Core {
-  rpc Events_Register (RegisterRequest) returns (RegisterResponse);
-  rpc Events_Unregister (UnregisterRequest) returns (UnregisterResponse);
-  rpc Fileset_AddExclude (AddExcludeRequest) returns (AddExcludeResponse);
-  rpc Fileset_AddInclude (AddIncludeRequest) returns (AddIncludeResponse);
-  rpc Fileset_AddOptions (AddOptionsRequest) returns (AddOptionsResponse);
-  rpc Fileset_AddRegex (AddRegexRequest) returns (AddRegexResponse);
-  rpc Fileset_AddWild (AddWildRequest) returns (AddWildResponse);
-  rpc Fileset_NewOptions (NewOptionsRequest) returns (NewOptionsResponse);
-  rpc Fileset_NewInclude (NewIncludeRequest) returns (NewIncludeResponse);
-  rpc Fileset_NewPreInclude (NewPreIncludeRequest) returns (NewPreIncludeResponse);
-  rpc Bareos_getInstanceCount (getInstanceCountRequest) returns (getInstanceCountResponse);
-  rpc Bareos_checkChanges (checkChangesRequest) returns (checkChangesResponse);
-  rpc Bareos_AcceptFile (AcceptFileRequest) returns (AcceptFileResponse);
-  rpc Bareos_SetSeen (SetSeenRequest) returns (SetSeenResponse);
-  rpc Bareos_ClearSeen (ClearSeenRequest) returns (ClearSeenResponse);
-  rpc Bareos_JobMessage (JobMessageRequest) returns (JobMessageResponse);
-  rpc Bareos_DebugMessage (DebugMessageRequest) returns (DebugMessageResponse);
+  rpc StartSession (stream CoreRequest) returns (stream CoreResponse);
+};
 
+message CoreRequest {
+  oneof request {
+    RegisterRequest Register = 10;
+    UnregisterRequest Unregister = 11;
+    AddExcludeRequest AddExclude = 12;
+    AddIncludeRequest AddInclude = 13;
+    AddOptionsRequest AddOptions = 14;
+    AddRegexRequest AddRegex = 15;
+    AddWildRequest AddWild = 16;
+    NewOptionsRequest NewOptions = 17;
+    NewIncludeRequest NewInclude = 18;
+    NewPreIncludeRequest NewPreInclude = 19;
+    getInstanceCountRequest getInstanceCount = 20;
+    checkChangesRequest checkChanges = 21;
+    AcceptFileRequest AcceptFile = 22;
+    SetSeenRequest SetSeen = 23;
+    ClearSeenRequest ClearSeen = 24;
+    JobMessageRequest JobMessage = 25;
+    DebugMessageRequest DebugMessage = 26;
+    SetStringRequest SetString = 27;
+    GetStringRequest GetString = 28;
+    SetIntRequest SetInt = 29;
+    GetIntRequest GetInt = 30;
+    SetFlagRequest SetFlag = 31;
+    GetFlagRequest GetFlag = 32;
+  };
+};
 
-  rpc Bareos_SetString (SetStringRequest) returns (SetStringResponse);
-  rpc Bareos_GetString (GetStringRequest) returns (GetStringResponse);
-  rpc Bareos_SetInt (SetIntRequest) returns (SetIntResponse);
-  rpc Bareos_GetInt (GetIntRequest) returns (GetIntResponse);
-  rpc Bareos_SetFlag (SetFlagRequest) returns (SetFlagResponse);
-  rpc Bareos_GetFlag (GetFlagRequest) returns (GetFlagResponse);
+message CoreResponse {
+  oneof response {
+    RegisterResponse Register = 10;
+    UnregisterResponse Unregister = 11;
+    AddExcludeResponse AddExclude = 12;
+    AddIncludeResponse AddInclude = 13;
+    AddOptionsResponse AddOptions = 14;
+    AddRegexResponse AddRegex = 15;
+    AddWildResponse AddWild = 16;
+    NewOptionsResponse NewOptions = 17;
+    NewIncludeResponse NewInclude = 18;
+    NewPreIncludeResponse NewPreInclude = 19;
+    getInstanceCountResponse getInstanceCount = 20;
+    checkChangesResponse checkChanges = 21;
+    AcceptFileResponse AcceptFile = 22;
+    SetSeenResponse SetSeen = 23;
+    ClearSeenResponse ClearSeen = 24;
+    JobMessageResponse JobMessage = 25;
+    DebugMessageResponse DebugMessage = 26;
+    SetStringResponse SetString = 27;
+    GetStringResponse GetString = 28;
+    SetIntResponse SetInt = 29;
+    GetIntResponse GetInt = 30;
+    SetFlagResponse SetFlag = 31;
+    GetFlagResponse GetFlag = 32;
+  };
 };
 
 enum EventType {
