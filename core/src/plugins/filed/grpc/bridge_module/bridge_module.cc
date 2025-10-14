@@ -92,37 +92,51 @@ struct connection_builder {
 
 #include <fcntl.h>
 
-bc::Core::Stub* global_stub{nullptr};
+struct core_connection {
+  grpc::ClientReaderWriterInterface<bc::CoreRequest, bc::CoreResponse>*
+      client_writer{nullptr};
+};
 
-static inline bc::Core::Stub* stub() { return global_stub; }
+core_connection global_core_connection;
+
+static inline auto request_writer()
+{
+  return global_core_connection.client_writer;
+}
 
 bool Register(std::basic_string_view<bc::EventType> types)
 {
-  bc::RegisterRequest req;
-
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_register_();
   for (auto type : types) { req.add_event_types(type); }
 
+  bc::CoreResponse outer_resp;
 
-  bc::RegisterResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Events_Register(&ctx, req, &resp);
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return false; }
+  if (!writer->Read(&outer_resp)) { return false; }
+  if (!outer_resp.has_register_()) { return false; }
 
-  if (!status.ok()) { return false; }
+  auto& resp = outer_resp.register_();
+  (void)resp;
 
   return true;
 }
 bool Unregister(std::basic_string_view<bc::EventType> types)
 {
-  bc::UnregisterRequest req;
-
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_unregister();
   for (auto type : types) { req.add_event_types(type); }
 
+  bc::CoreResponse outer_resp;
 
-  bc::UnregisterResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Events_Unregister(&ctx, req, &resp);
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return false; }
+  if (!writer->Read(&outer_resp)) { return false; }
+  if (!outer_resp.has_unregister()) { return false; }
 
-  if (!status.ok()) { return false; }
+  auto& resp = outer_resp.unregister();
+  (void)resp;
 
   return true;
 }
@@ -136,12 +150,17 @@ struct plugin_thread {
 
   template <typename F> bRC submit(F f)
   {
+    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
     callback task(std::move(f));
+    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
 
+    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
     auto fut = task.get_future();
 
+    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
     if (!enqueue_task(std::move(task))) { return bRC_Error; }
 
+    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
     return fut.get();
   }
 
@@ -228,15 +247,17 @@ struct plugin_thread {
       fprintf(stderr, "WaitForReady failed.\n");
       return;
     }
-    DebugLog(100, FMT_STRING("plugin thread starting (ctx={})..."),
-             (void*)&pctx);
+    // DebugLog(100, FMT_STRING("plugin thread starting (ctx={})..."),
+    //          (void*)&pctx);
     for (;;) {
       std::optional cb = out.get();
+
       if (!cb) { break; }
+
       (*cb)(&pctx);
     }
-    DebugLog(100, FMT_STRING("plugin thread stopping (ctx={})..."),
-             (void*)&pctx);
+    // DebugLog(100, FMT_STRING("plugin thread stopping (ctx={})..."),
+    //          (void*)&pctx);
   }
 
   PluginContext pctx{};
@@ -263,12 +284,18 @@ void NewPreInclude() { return; }
 
 std::optional<size_t> getInstanceCount()
 {
-  bc::getInstanceCountRequest req;
-  bc::getInstanceCountResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_getInstanceCount(&ctx, req, &resp);
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_getinstancecount();
+  (void)req;
 
-  if (!status.ok()) { return std::nullopt; }
+  bc::CoreResponse outer_resp;
+
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return false; }
+  if (!writer->Read(&outer_resp)) { return false; }
+  if (!outer_resp.has_getinstancecount()) { return false; }
+
+  auto& resp = outer_resp.getinstancecount();
 
   return resp.instance_count();
 }
@@ -278,7 +305,8 @@ std::optional<bool> checkChanges(bco::FileType ft,
                                  time_t timestamp,
                                  const struct stat& statp)
 {
-  bc::checkChangesRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_checkchanges();
   req.set_type(ft);
   req.set_file(name.data(), name.size());
   // if (link_name) { req.set_link_target(link_name->data(), link_name->size());
@@ -286,52 +314,69 @@ std::optional<bool> checkChanges(bco::FileType ft,
   req.mutable_since_time()->set_seconds(timestamp);
   req.set_stats(&statp, sizeof(statp));
 
-  bc::checkChangesResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_checkChanges(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
 
-  if (!status.ok()) { return std::nullopt; }
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return false; }
+  if (!writer->Read(&outer_resp)) { return false; }
+  if (!outer_resp.has_checkchanges()) { return false; }
+
+  auto& resp = outer_resp.checkchanges();
 
   return resp.old();
 }
 std::optional<bool> AcceptFile(std::string_view name, const struct stat& statp)
 {
-  bc::AcceptFileRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_acceptfile();
   req.set_file(name.data(), name.size());
   req.set_stats(&statp, sizeof(statp));
 
-  bc::AcceptFileResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_AcceptFile(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
 
-  if (!status.ok()) { return std::nullopt; }
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return false; }
+  if (!writer->Read(&outer_resp)) { return false; }
+  if (!outer_resp.has_acceptfile()) { return false; }
+
+  auto& resp = outer_resp.acceptfile();
 
   return resp.skip();
 }
 
 bool SetSeen(std::optional<std::string_view> name)
 {
-  bc::SetSeenRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_setseen();
   if (name) { req.set_file(name->data(), name->size()); }
 
-  bc::SetSeenResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_SetSeen(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
 
-  if (!status.ok()) { return false; }
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return false; }
+  if (!writer->Read(&outer_resp)) { return false; }
+  if (!outer_resp.has_setseen()) { return false; }
+
+  auto& resp = outer_resp.setseen();
+  (void)resp;
 
   return true;
 }
 bool ClearSeen(std::optional<std::string_view> name)
 {
-  bc::ClearSeenRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_clearseen();
   if (name) { req.set_file(name->data(), name->size()); }
 
-  bc::ClearSeenResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_ClearSeen(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
 
-  if (!status.ok()) { return false; }
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return false; }
+  if (!writer->Read(&outer_resp)) { return false; }
+  if (!outer_resp.has_clearseen()) { return false; }
+
+  auto& resp = outer_resp.clearseen();
+  (void)resp;
 
   return true;
 }
@@ -341,17 +386,25 @@ void JobMessage(bc::JMsgType type,
                 const char* fun,
                 std::string_view msg)
 {
-  return;
-  bc::JobMessageRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_jobmessage();
   req.set_type(type);
   req.set_msg(msg.data(), msg.size());
   req.set_line(line);
   req.set_file(file);
   req.set_function(fun);
 
-  bc::JobMessageResponse resp;
-  grpc::ClientContext ctx;
-  (void)stub()->Bareos_JobMessage(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
+
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return; }
+  if (!writer->Read(&outer_resp)) { return; }
+  if (!outer_resp.has_jobmessage()) { return; }
+
+  auto& resp = outer_resp.jobmessage();
+  (void)resp;
+
+  return;
 }
 
 void DebugMessage(int level,
@@ -360,93 +413,129 @@ void DebugMessage(int level,
                   const char* file,
                   const char* fun)
 {
-  return;
-  bc::DebugMessageRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_debugmessage();
   req.set_level(level);
   req.set_msg(msg.data(), msg.size());
   req.set_line(line);
   req.set_file(file);
   req.set_function(fun);
 
-  bc::DebugMessageResponse resp;
-  grpc::ClientContext ctx;
-  (void)stub()->Bareos_DebugMessage(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
+
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return; }
+  if (!writer->Read(&outer_resp)) { return; }
+  if (!outer_resp.has_debugmessage()) { return; }
+
+  auto& resp = outer_resp.debugmessage();
+  (void)resp;
 }
 bool Bareos_SetString(bc::BareosStringVariable var, std::string_view val)
 {
-  bc::SetStringRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_setstring();
   req.set_var(var);
   req.set_value(val.data(), val.size());
 
-  bc::SetStringResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_SetString(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
 
-  if (!status.ok()) { return false; }
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return false; }
+  if (!writer->Read(&outer_resp)) { return false; }
+  if (!outer_resp.has_setstring()) { return false; }
+
+  auto& resp = outer_resp.setstring();
+  (void)resp;
+
   return true;
 }
 std::optional<std::string> Bareos_GetString(bc::BareosStringVariable var)
 {
-  bc::GetStringRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_getstring();
   req.set_var(var);
 
-  bc::GetStringResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_GetString(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
 
-  if (!status.ok()) { return std::nullopt; }
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return std::nullopt; }
+  if (!writer->Read(&outer_resp)) { return std::nullopt; }
+  if (!outer_resp.has_getstring()) { return std::nullopt; }
+
+  auto& resp = *outer_resp.mutable_getstring();
   return std::move(*resp.release_value());
 }
 
 bool Bareos_SetInt(bc::BareosIntVariable var, int val)
 {
-  bc::SetIntRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_setint();
   req.set_var(var);
   req.set_value(val);
 
-  bc::SetIntResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_SetInt(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
 
-  if (!status.ok()) { return false; }
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return false; }
+  if (!writer->Read(&outer_resp)) { return false; }
+  if (!outer_resp.has_setint()) { return false; }
+
+  auto& resp = outer_resp.setint();
+  (void)resp;
+
   return true;
 }
 std::optional<int> Bareos_GetInt(bc::BareosIntVariable var)
 {
-  bc::GetIntRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_getint();
   req.set_var(var);
 
-  bc::GetIntResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_GetInt(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
 
-  if (!status.ok()) { return std::nullopt; }
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return std::nullopt; }
+  if (!writer->Read(&outer_resp)) { return std::nullopt; }
+  if (!outer_resp.has_getint()) { return std::nullopt; }
+
+  auto& resp = outer_resp.getint();
   return resp.value();
 }
 
 bool Bareos_SetFlag(bc::BareosFlagVariable var, bool val)
 {
-  bc::SetFlagRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_setflag();
   req.set_var(var);
   req.set_value(val);
 
-  bc::SetFlagResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_SetFlag(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
 
-  if (!status.ok()) { return false; }
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return false; }
+  if (!writer->Read(&outer_resp)) { return false; }
+  if (!outer_resp.has_setflag()) { return false; }
+
+  auto& resp = outer_resp.setflag();
+  (void)resp;
+
   return true;
 }
 std::optional<bool> Bareos_GetFlag(bc::BareosFlagVariable var)
 {
-  bc::GetFlagRequest req;
+  bc::CoreRequest outer_req;
+  auto& req = *outer_req.mutable_getflag();
   req.set_var(var);
 
-  bc::GetFlagResponse resp;
-  grpc::ClientContext ctx;
-  grpc::Status status = stub()->Bareos_GetFlag(&ctx, req, &resp);
+  bc::CoreResponse outer_resp;
 
-  if (!status.ok()) { return std::nullopt; }
+  auto* writer = request_writer();
+  if (!writer->Write(outer_req)) { return std::nullopt; }
+  if (!writer->Read(&outer_resp)) { return std::nullopt; }
+  if (!outer_resp.has_getflag()) { return std::nullopt; }
+
+  auto& resp = outer_resp.getflag();
   return resp.value();
 }
 
@@ -830,7 +919,6 @@ bRC Wrapper_JobMessage(PluginContext*,
                        const char* fmt,
                        ...)
 {
-  return bRC_OK;
   // todo: jobmsg should contain mtime!
   (void)mtime;
   auto gtype = [&]() -> std::optional<bc::JMsgType> {
@@ -916,7 +1004,6 @@ bRC Wrapper_DebugMessage(PluginContext*,
                          const char* fmt,
                          ...)
 {
-  return bRC_OK;
   va_list args, copy;
   va_start(args, fmt);
   va_copy(copy, args);
@@ -1040,8 +1127,9 @@ bool setup()
 
 template <typename F> bRC plugin_run(PluginContext* ctx, F&& f)
 {
-  auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
-  return thrd->submit(std::move(f));
+  bRC result = f(ctx);
+
+  return result;
 }
 
 std::optional<std::string_view> inferior_setup(PluginContext* ctx,
@@ -1560,7 +1648,7 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
     exit(1);
   }
 
-  global_stub = client->get();
+  auto* stub = client->get();
 
   plugin_thread plugin{};
 
@@ -1576,7 +1664,14 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
     exit(1);
   }
 
+
+  auto client_ctx = std::make_unique<grpc::ClientContext>();
+  auto client_writer = stub->StartSession(client_ctx.get());
+
+  global_core_connection.client_writer = client_writer.get();
+
   DebugLog(100, FMT_STRING("setting up ..."));
+
   if (!setup()) {
     DebugLog(50, FMT_STRING("setup failed"));
     SetReady(false);
