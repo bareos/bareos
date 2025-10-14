@@ -389,12 +389,9 @@ if(NOT client-only)
 
 endif() # NOT client-only
 
-if(HAVE_EXECINFO_H
-   AND HAVE_BACKTRACE
-   AND HAVE_BACKTRACE_SYMBOLS
-)
+if(HAVE_BACKTRACE AND HAVE_BACKTRACE_SYMBOLS)
   bareos_add_test(test_backtrace LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
-endif() # HAVE_EXECINFO_H ..
+endif()
 
 if(NOT HAVE_WIN32 AND NOT client-only)
   bareos_add_test(

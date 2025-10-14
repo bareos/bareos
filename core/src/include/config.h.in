@@ -75,23 +75,8 @@
 // FIXME: this is used, but never configured
 #cmakedefine HAVE_AFS_ACL @HAVE_AFS_ACL@
 
-// Define to 1 if you have the <afs/afsint.h> header file
-#cmakedefine HAVE_AFS_AFSINT_H @HAVE_AFS_AFSINT_H@
-
-// Define to 1 if you have the <afs/venus.h> header file
-#cmakedefine HAVE_AFS_VENUS_H @HAVE_AFS_VENUS_H@
-
 // Define to 1 if you are running AIX
 #cmakedefine HAVE_AIX_OS @HAVE_AIX_OS@
-
-// Define to 1 if you have <alloca.h> and it should be used (not on Ultrix)
-#cmakedefine HAVE_ALLOCA_H @HAVE_ALLOCA_H@
-
-// Define to 1 if you have the <arpa/nameser.h> header file
-#cmakedefine HAVE_ARPA_NAMESER_H @HAVE_ARPA_NAMESER_H@
-
-// Define to 1 if you have the <attr.h> header file
-#cmakedefine HAVE_ATTR_H @HAVE_ATTR_H@
 
 // Define to 1 if you have the `backtrace' function
 #cmakedefine HAVE_BACKTRACE @HAVE_BACKTRACE@
@@ -111,20 +96,11 @@
 // Define to 1 if cplus_demangle exists in libdemangle
 #cmakedefine HAVE_CPLUS_DEMANGLE @HAVE_CPLUS_DEMANGLE@
 
-// Define to 1 if you have the <cxxabi.h> header file
-#cmakedefine HAVE_CXXABI_H @HAVE_CXXABI_H@
-
 // Define to 1 if you are running OSX
 #cmakedefine HAVE_DARWIN_OS @HAVE_DARWIN_OS@
 
-// Define to 1 if you have the <demangle.h> header file
-#cmakedefine HAVE_DEMANGLE_H @HAVE_DEMANGLE_H@
-
 // Define to 1 if dynamic loading of storage backends is enabled
 #cmakedefine HAVE_DYNAMIC_SD_BACKENDS @HAVE_DYNAMIC_SD_BACKENDS@
-
-// Define to 1 if you have the <execinfo.h> header file
-#cmakedefine HAVE_EXECINFO_H @HAVE_EXECINFO_H@
 
 // Define if you have FreeBSD extattr support
 #cmakedefine HAVE_FREEBSD_EXTATTR
@@ -171,9 +147,6 @@
 // Define to 1 if you have the `lchmod' function
 #cmakedefine HAVE_LCHMOD @HAVE_LCHMOD@
 
-// Define to 1 if you have the <libutil.h> header file
-#cmakedefine HAVE_LIBUTIL_H @HAVE_LIBUTIL_H@
-
 // Define to 1 if you are running Linux
 #cmakedefine HAVE_LINUX_OS @HAVE_LINUX_OS@
 
@@ -185,9 +158,6 @@
 
 // Define to 1 if you have lzo lib
 #cmakedefine HAVE_LZO @HAVE_LZO@
-
-// Define to 1 if you have the <mtio.h> header file
-#cmakedefine HAVE_MTIO_H @HAVE_MTIO_H@
 
 // Define to 1 if NDMP support should be enabled
 #cmakedefine HAVE_NDMP @HAVE_NDMP@
@@ -231,35 +201,11 @@
 // Define to 1 if you have the <sys/acl.h> header file
 #cmakedefine HAVE_SYS_ACL_H @HAVE_SYS_ACL_H@
 
-// Define to 1 if you have the <sys/attr.h> header file
-#cmakedefine HAVE_SYS_ATTR_H @HAVE_SYS_ATTR_H@
-
 // Define to 1 if you have the <sys/capability.h> header file
 #cmakedefine HAVE_SYS_CAPABILITY_H @HAVE_SYS_CAPABILITY_H@
 
 // Define if you want to use cap_* functions
 #cmakedefine ENABLE_CAPABILITY
-
-// Define to 1 if you have the <sys/mman.h> header file
-#undef HAVE_SYS_MMAN_H
-
-// Define to 1 if you have the <sys/mtio.h> header file
-#cmakedefine HAVE_SYS_MTIO_H @HAVE_SYS_MTIO_H@
-
-// Define to 1 if you have the <sys/nvpair.h> header file
-#cmakedefine HAVE_SYS_NVPAIR_H @HAVE_SYS_NVPAIR_H@
-
-// Define to 1 if you have the <sys/prctl.h> header file
-#cmakedefine HAVE_SYS_PRCTL_H @HAVE_SYS_PRCTL_H@
-
-// Define to 1 if you have the <sys/tape.h> header file
-#cmakedefine HAVE_SYS_TAPE_H @HAVE_SYS_TAPE_H@
-
-// Define to 1 if you have the <ucontext.h> header file
-#cmakedefine HAVE_UCONTEXT_H @HAVE_UCONTEXT_H@
-
-// Define to 1 if you have the <umem.h> header file
-#cmakedefine HAVE_UMEM_H @HAVE_UMEM_H@
 
 // Extended Attributes support
 #cmakedefine HAVE_XATTR @HAVE_XATTR@

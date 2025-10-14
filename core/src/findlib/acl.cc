@@ -521,7 +521,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 
 #      include <sys/types.h>
 
-#      ifdef HAVE_SYS_ACL_H
+#      if __has_include(<sys/acl.h>)
 #        include <sys/acl.h>
 #      else
 #        error "configure failed to detect availability of sys/acl.h"
@@ -1223,7 +1223,7 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 #      endif
 
 #    elif defined(HAVE_SUN_OS)
-#      ifdef HAVE_SYS_ACL_H
+#      if __has_include(<sys/acl.h>)
 #        include <sys/acl.h>
 #      else
 #        error "configure failed to detect availability of sys/acl.h"
