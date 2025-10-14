@@ -69,7 +69,7 @@
 #  include <vector>
 #  include <arpa/inet.h>
 #  include <netdb.h>
-#  ifdef HAVE_ARPA_NAMESER_H
+#  if __has_include(<arpa/nameser.h>)
 #    include <arpa/nameser.h>
 #  endif
 

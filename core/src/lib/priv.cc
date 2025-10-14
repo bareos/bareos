@@ -27,8 +27,8 @@
 #include "lib/berrno.h"
 
 #undef ENABLE_KEEP_READALL_CAPS_SUPPORT
-#if defined(ENABLE_CAPABILITY) && defined(HAVE_SYS_PRCTL_H) \
-    && defined(HAVE_SYS_CAPABILITY_H) && defined(HAVE_PRCTL)
+#if defined(ENABLE_CAPABILITY) && __has_include(<sys/prctl.h>) \
+    && __has_include(<sys/capability.h>) && defined(HAVE_PRCTL)
 #  include <sys/prctl.h>
 #  include <sys/capability.h>
 #  if defined(PR_SET_KEEPCAPS)
