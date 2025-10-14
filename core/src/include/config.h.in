@@ -126,9 +126,6 @@
 // Define to 1 if dynamic loading of storage backends is enabled
 #cmakedefine HAVE_DYNAMIC_SD_BACKENDS @HAVE_DYNAMIC_SD_BACKENDS@
 
-// Define to 1 if OpenSSL library has ENGINE_load_pk11 available
-#cmakedefine HAVE_ENGINE_LOAD_PK11 @HAVE_ENGINE_LOAD_PK11@
-
 // Define to 1 if you have the <execinfo.h> header file
 #cmakedefine HAVE_EXECINFO_H @HAVE_EXECINFO_H@
 
