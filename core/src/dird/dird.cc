@@ -54,10 +54,10 @@
 
 #include "dird/reload.h"
 
-#ifndef HAVE_REGEX_H
-#  include "lib/bregex.h"
-#else
+#if __has_include(<regex.h>)
 #  include <regex.h>
+#else
+#  include "lib/bregex.h"
 #endif
 #include <dirent.h>
 #define NAMELEN(dirent) (strlen((dirent)->d_name))

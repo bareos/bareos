@@ -36,10 +36,10 @@
 #include "include/bareos.h"
 #include "lib/berrno.h"
 #include "lib/recent_job_results_list.h"
-#ifndef HAVE_REGEX_H
-#  include "lib/bregex.h"
-#else
+#if __has_include(<regex.h>)
 #  include <regex.h>
+#else
+#  include "lib/bregex.h"
 #endif
 #include "lib/bpipe.h"
 

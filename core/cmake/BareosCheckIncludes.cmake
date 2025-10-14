@@ -21,9 +21,6 @@ if(NOT MSVC)
   include(CheckIncludeFiles)
   include(CheckIncludeFileCXX)
 
-  # assume POSIX required headers are present
-  set(HAVE_REGEX_H 1)
-
   check_include_files("sys/types.h;sys/acl.h" HAVE_SYS_ACL_H)
   check_include_files(sys/capability.h HAVE_SYS_CAPABILITY_H)
 
