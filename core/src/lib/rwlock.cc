@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -261,7 +261,7 @@ int RwlWriteunlock(brwlock_t* rwl)
   return (status == 0 ? status2 : status);
 }
 
-void RwlAssertWriterIsMe(brwlock_t* rwl, libbareos::source_location loc)
+void RwlCheckWriterIsMe(brwlock_t* rwl, libbareos::source_location loc)
 {
   auto* function = loc.function_name();
   auto* file = loc.file_name();
@@ -271,13 +271,18 @@ void RwlAssertWriterIsMe(brwlock_t* rwl, libbareos::source_location loc)
   bool is_locked = rwl->w_active > 0;
   bool is_me = pthread_equal(rwl->writer_id, pthread_self());
 
+  auto as_string = [](bool b) { return b ? "yes" : "no"; };
+
   if (!is_ok || !is_locked || !is_me) {
-    Emsg1(M_ERROR, 0, T_("Failed assert called from %s %s:%d\n"), function,
-          file, line);
-    Pmsg1(000, T_("Failed assert called from %s %s:%d\n"), function, file,
-          line);
+    Emsg1(
+        M_ERROR, 0,
+        T_("Rwl Check failed %s %s:%d => { ok = %s, locked = %s, me = %s }\n"),
+        function, file, line, as_string(is_ok), as_string(is_locked),
+        as_string(is_me));
+    Pmsg1(
+        000,
+        T_("Rwl Check failed %s %s:%d => { ok = %s, locked = %s, me = %s }\n"),
+        function, file, line, as_string(is_ok), as_string(is_locked),
+        as_string(is_me));
   }
-  ASSERT(is_ok);
-  ASSERT(is_locked);
-  ASSERT(is_me);
 }
