@@ -1598,13 +1598,6 @@ if test "$FIRST_ARG" = "0" ; then \
 fi \
 %nil
 
-%define restart_on_update() \
-test -n "$FIRST_ARG" || FIRST_ARG=$1 \
-if test "$FIRST_ARG" -ge 1 ; then \
-  /bin/systemctl try-restart %1.service >/dev/null 2>&1 || true \
-fi \
-%nil
-
 %else
 # non suse, init.d
 
@@ -1617,13 +1610,6 @@ test -n "$FIRST_ARG" || FIRST_ARG=$1 \
 if test "$FIRST_ARG" = "0" ; then \
   /sbin/service %1 stop >/dev/null 2>&1 || \
   /sbin/chkconfig --del %1 || true \
-fi \
-%nil
-
-%define restart_on_update() \
-test -n "$FIRST_ARG" || FIRST_ARG=$1 \
-if test "$FIRST_ARG" -ge 1 ; then \
-  /sbin/service %1 condrestart >/dev/null 2>&1 || true \
 fi \
 %nil
 
@@ -1751,6 +1737,14 @@ if [ $1 -gt 1 ]; then
     %pre_backup_file /etc/%{name}/bareos-fd.conf
   elif %rpm_version_lt $OLDVER 25.0.0
   then
+    # The postun of the old package will try to restart the service.
+    # However, it will fail as the required config files
+    # will only be restored in posttrans.
+    # Therefore we create this marker and restart the service in posttrans.
+    if /bin/systemctl --quiet is-active bareos-fd.service; then
+      mkdir -p "%{_localstatedir}/lib/rpm-state/bareos/restart/"
+      touch "%{_localstatedir}/lib/rpm-state/bareos/restart/bareos-fd.service"
+    fi
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/client/myself.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-dir.conf"
     %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
@@ -1771,6 +1765,21 @@ exit 0
 %add_service_start bareos-fd
 %endif
 
+%preun filedaemon
+%if 0%{?suse_version} >= 1210
+%service_del_preun bareos-fd.service
+%else
+%stop_on_removal bareos-fd
+%endif
+
+%postun filedaemon
+%if 0%{?suse_version} >= 1210
+%service_del_postun bareos-fd.service
+%else
+/bin/systemctl try-restart bareos-fd.service >/dev/null 2>&1 || true
+%endif
+%insserv_cleanup
+
 %posttrans filedaemon
 # update from bareos < 16.2
 %posttrans_restore_file /etc/%{name}/bareos-fd.conf
@@ -1780,6 +1789,13 @@ exit 0
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf"
 %posttrans_restore_file "%{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf"
+if [ -e "%{_localstatedir}/lib/rpm-state/bareos/restart/bareos-fd.service" ]; then
+  if ! /bin/systemctl --quiet is-active bareos-fd.service; then
+    /bin/systemctl start bareos-fd.service >/dev/null 2>&1 || true
+  fi
+  rm "%{_localstatedir}/lib/rpm-state/bareos/restart/bareos-fd.service"
+fi
+
 
 %if 0%{?python_plugins}
 
@@ -1840,6 +1856,17 @@ exit 0
 %else
 %add_service_start bareos-dir
 %endif
+
+%preun director
+%if 0%{?suse_version} >= 1210
+%service_del_preun bareos-dir.service
+%else
+%stop_on_removal bareos-dir
+%endif
+
+%postun director
+# to prevent aborting jobs, no restart on update
+%insserv_cleanup
 
 %posttrans director
 # update from bareos < 16.2
@@ -1902,6 +1929,17 @@ exit 0
 %else
 %add_service_start bareos-sd
 %endif
+
+%preun storage
+%if 0%{?suse_version} >= 1210
+%service_del_preun bareos-sd.service
+%else
+%stop_on_removal bareos-sd
+%endif
+
+%postun storage
+# to prevent aborting jobs, no restart on update
+%insserv_cleanup
 
 %posttrans storage
 # update from bareos < 16.2
@@ -1999,46 +2037,5 @@ a2enmod fcgid &> /dev/null || true
 
 %endif
 #endif webui
-
-#
-# preun and postun scriptlets
-#
-
-%preun director
-%if 0%{?suse_version} >= 1210
-%service_del_preun bareos-dir.service
-%else
-%stop_on_removal bareos-dir
-%endif
-
-%preun storage
-%if 0%{?suse_version} >= 1210
-%service_del_preun bareos-sd.service
-%else
-%stop_on_removal bareos-sd
-%endif
-
-%preun filedaemon
-%if 0%{?suse_version} >= 1210
-%service_del_preun bareos-fd.service
-%else
-%stop_on_removal bareos-fd
-%endif
-
-%postun director
-# to prevent aborting jobs, no restart on update
-%insserv_cleanup
-
-%postun storage
-# to prevent aborting jobs, no restart on update
-%insserv_cleanup
-
-%postun filedaemon
-%if 0%{?suse_version} >= 1210
-%service_del_postun bareos-fd.service
-%else
-%restart_on_update bareos-fd
-%endif
-%insserv_cleanup
 
 %changelog
