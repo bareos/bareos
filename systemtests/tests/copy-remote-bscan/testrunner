@@ -82,8 +82,8 @@ END_OF_DATA
 
 run_bconsole "$tmp/bconcmds"
 
-oldconf="${conf}"
-conf="${conf}-remote"
+oldconf="${BAREOS_CONFIG_DIR}"
+conf="${BAREOS_CONFIG_DIR}-remote"
 run_bscan_db -vv -d100 -s -V TestCopyVolume001 RemoteFileStorage
 ret=$?
 conf="${oldconf}"

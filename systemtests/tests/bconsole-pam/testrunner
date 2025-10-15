@@ -26,7 +26,7 @@ export TestName
 #shellcheck source=../../environment.in
 . ./environment
 
-usepam_and_acl_config=$conf/bareos-dir.d/console/has_usepam_and_profile_with_acl.conf
+usepam_and_acl_config=${BAREOS_CONFIG_DIR}/bareos-dir.d/console/has_usepam_and_profile_with_acl.conf
 rm -f $usepam_and_acl_config
 
 JobName=backup-bareos-fd
@@ -60,20 +60,20 @@ output=/dev/null
 if is_debug; then
   export PAM_WRAPPER_DEBUGLEVEL=4
   output=/dev/stdout
-  LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f -d 200 >$output 2>&1 &
+  LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f -d 200 >${output} 2>&1 &
 else
-  LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f >$output 2>&1 &
+  LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f >${output} 2>&1 &
 fi
 
 sleep 1
 
-cat <<END_OF_DATA >"$tmp"/bconcmds
-@$out $tmp/log1.out
+cat <<END_OF_DATA >"${tmp}"/bconcmds
+@$out ${tmp}/log1.out
 status director
 quit
 END_OF_DATA
 
-if ! "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" -p etc/user1.cred <"$tmp"/bconcmds >"${tmp}"/log1.out 2>"${tmp}"/err1.out; then
+if ! "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" -p etc/user1.cred <"$tmp"/bconcmds >"${tmp}"/log1.out 2>"${tmp}"/err1.out; then
   cat "${tmp}"/log1.out
   cat "${tmp}"/err1.out
   set_error "Failed to login as user user1."
@@ -88,7 +88,7 @@ fi
 
 print_debug "OK: login as user1 succeeded."
 
-if "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" -p etc/user2.cred <"$tmp"/bconcmds >"${tmp}"/log2.out 2>"${tmp}"/err2.out; then
+if "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" -p etc/user2.cred <"$tmp"/bconcmds >"${tmp}"/log2.out 2>"${tmp}"/err2.out; then
   cat "${tmp}"/log2.out
   cat "${tmp}"/err2.out
   set_error "Login as user user2 succeeded. This should NOT happen."
@@ -105,7 +105,7 @@ quit
 END_OF_DATA
 
 ## create user3
-if ! "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" -p etc/user1.cred <"$tmp"/bconcmds-add-user >"${tmp}"/log4.out 2>"${tmp}"/err4.out; then
+if ! "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" -p etc/user1.cred <"$tmp"/bconcmds-add-user >"${tmp}"/log4.out 2>"${tmp}"/err4.out; then
   cat "${tmp}"/log4.out
   cat "${tmp}"/err4.out
   set_error "Failed to login as user user1 and add new user3."
@@ -119,7 +119,7 @@ quit
 END_OF_DATA
 
 ##login as user 3
-if ! "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" -p etc/user3.cred <"$tmp"/bconcmds-user3 >"${tmp}"/log6.out 2>"${tmp}"/err6.out; then
+if ! "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" -p etc/user3.cred <"$tmp"/bconcmds-user3 >"${tmp}"/log6.out 2>"${tmp}"/err6.out; then
   cat "${tmp}"/log6.out
   cat "${tmp}"/err6.out
   set_error "Failed to login as user user3."
@@ -132,7 +132,7 @@ if ! grep -q "Running Jobs:" "${tmp}"/log5.out; then
   exit 1
 fi
 
-if "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" -p etc/user4locked.cred <"$tmp"/bconcmds >"${tmp}"/log7.out 2>"${tmp}"/err7.out; then
+if "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" -p etc/user4locked.cred <"$tmp"/bconcmds >"${tmp}"/log7.out 2>"${tmp}"/err7.out; then
   cat "${tmp}"/log7.out
   cat "${tmp}"/err7.out
   set_error "Login as user user4locked succeeded. This should NOT happen."
@@ -151,27 +151,27 @@ echo "Console {
   Password = \"secret\"
   UsePamAuthentication = yes
   Profile = \"operator\"
-}" >$usepam_and_acl_config
+}" >${usepam_and_acl_config}
 
-cat <<END_OF_DATA >"$tmp"/bconcmds
+cat <<END_OF_DATA >"${tmp}"/bconcmds
 @$out ${NULL_DEV}
 messages
-@$out $tmp/usepam_acl.out
+@$out ${tmp}/usepam_acl.out
 reload
 messages
 quit
 END_OF_DATA
 
-${BAREOS_BCONSOLE_BINARY} -c ${conf} -p etc/user1.cred <$tmp/bconcmds >${tmp}/log1.out 2>${tmp}/err1.out
+${BAREOS_BCONSOLE_BINARY} -c ${BAREOS_CONFIG_DIR} -p etc/user1.cred <$tmp/bconcmds >${tmp}/log1.out 2>${tmp}/err1.out
 
 expect_not_grep "reloaded" \
-  "$tmp/usepam_acl.out" \
+  "${tmp}/usepam_acl.out" \
   "Reload was succesful. This should not happen"
 
 expect_grep "Combining \`Use Pam Authentication\` with ACL commands or \`Profile\` in Console(s) \`usepam_acl\` is not allowed" \
-  "$tmp/usepam_acl.out" \
+  "${tmp}/usepam_acl.out" \
   "Use Pam Authentication with ACL error was not shown"
 
-stop_bareos >$output 2>&1
+stop_bareos >${output} 2>&1
 
 end_test

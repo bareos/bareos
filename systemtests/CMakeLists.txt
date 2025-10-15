@@ -205,7 +205,7 @@ set(archivedir "${PROJECT_BINARY_DIR}/archivedir")
 set(bin ${PROJECT_BINARY_DIR}/bin)
 set(bindir ${PROJECT_BINARY_DIR}/bin)
 
-set(BAREOS_CONFIG_DIR ${conf})
+set(BAREOS_CONFIG_DIR ${BAREOS_CONFIG_DIR})
 set(db_name "regress")
 set(db_port "5432")
 set(db_user "${systemtest_db_user}")

@@ -37,35 +37,35 @@ EOF
 test_reload_will_not_crash_director() {
   create_console_command_file
 
-  if  ! "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf < "$bconsole_command_file" 2>&1 >> /dev/null
+  if  ! "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}"/bconsole.conf < "${bconsole_command_file}" 2>&1 >> /dev/null
   then
     exit_with_error "BConsole finished with errors"
   fi
 
-  if  ! "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf < "$bconsole_command_file" 2>&1 >> /dev/null
+  if  ! "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}"/bconsole.conf < "${bconsole_command_file}" 2>&1 >> /dev/null
   then
     exit_with_error "Bareos Director seems to have crashed after reload"
   fi
 }
 
 remove_console_logfiles() {
-  rm -f "$console_logfile"
-  rm -f "$console_show_client_output_file"
+  rm -f "${console_logfile}"
+  rm -f "${console_show_client_output_file}"
 }
 
 remove_console_logfile() {
-  rm -f "$console_logfile"
+  rm -f "${console_logfile}"
 }
 
 find_added_client_in_config() {
-  echo "show client" | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf > "$console_show_client_output_file"
-  if ! grep -wq "bareos-fd-2" "$console_show_client_output_file"; then
+  echo "show client" | "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}"/bconsole.conf > "${console_show_client_output_file}"
+  if ! grep -wq "bareos-fd-2" "${console_show_client_output_file}"; then
     exit_with_error 'Could not find client "bareos-fd-2" in console output'
   fi
 }
 
 add_another_client() {
-cat <<END_OF_DATA > "$temporary_config_file"
+cat <<END_OF_DATA > "${temporary_config_file}"
 Client {
   Name = bareos-fd-2
   Description = "Another Client resource."
@@ -78,13 +78,13 @@ END_OF_DATA
 find_error_string_in_console_log() {
   local err
   err="$1"
-  if ! grep -q "$err" "$console_logfile"; then
+  if ! grep -q "$err" "${console_logfile}"; then
     exit_with_error "Could not find error string in console output"
   fi
 }
 
 add_duplicate_job_to_config() {
-cat <<END_OF_DATA2 > "$temporary_job_config_file"
+cat <<END_OF_DATA2 > "${temporary_job_config_file}"
 Job {
   Name = "backup-bareos-fd"
   JobDefs = "DefaultJob"
@@ -94,14 +94,14 @@ END_OF_DATA2
 }
 
 add_empty_job_to_config() {
-cat <<END_OF_DATA3 > "$temporary_job_config_file"
+cat <<END_OF_DATA3 > "${temporary_job_config_file}"
 Job {
 }
 END_OF_DATA3
 }
 
 add_duplicate_dir_to_config() {
-cat <<END_OF_DATA4 > "$temporary_director_config_file"
+cat <<END_OF_DATA4 > "${temporary_director_config_file}"
 Director {                            # define myself
   Name = bareos-dir-2
   QueryFile = "@scriptdir@/query.sql"
@@ -115,7 +115,7 @@ END_OF_DATA4
 }
 
 add_uncommented_string_to_config() {
-cat <<END_OF_DATA5 > "$temporary_config_file"
+cat <<END_OF_DATA5 > "${temporary_config_file}"
 This is an uncommented string that causes a config abort.
 END_OF_DATA5
 }

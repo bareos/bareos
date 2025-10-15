@@ -2,7 +2,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -120,7 +120,7 @@ class Base(unittest.TestCase):
         if not available or set use defaults.
         """
 
-        config_directory = os.environ.get("confdir")
+        config_directory = os.environ.get("BAREOS_CONFIG_DIR")
         if config_directory:
             cls.config_directory = config_directory
 
