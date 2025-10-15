@@ -4,4 +4,8 @@
 
 This directive specifies the maximum number of total Director Jobs that should run concurrently.
 
+.. warning::
+
+   Director must be restarted in order to apply modified values!
+
 See also the section about :ref:`Concurrent Jobs <ConcurrentJobs>`.
