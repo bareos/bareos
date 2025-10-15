@@ -24,7 +24,9 @@ Installing a Bareos Client on Linux Distributions
 The installation of a Bareos client on a Linux (and FreeBSD) system
 is identical as described for Bareos server installations.
 
-Just install the package **bareos-filedaemon** or **bareos-client** (**bareos-filedaemon**, **bareos-bconsole** and **bareos-traymonitor**) instead of the meta-package **bareos**.
+Just install the package **bareos-filedaemon** or
+**bareos-client** (**bareos-filedaemon**, **bareos-bconsole** and **bareos-traymonitor**)
+instead of the meta-package **bareos**.
 
 If there is no specific Bareos repository for your Linux distribution,
 consider using the :ref:`section-UniversalLinuxClient` instead.
@@ -57,17 +59,18 @@ built in a way to have minimal dependencies to other libraries.
 It incorporates all functionality for normal backup and restore operations,
 however it has only limited plugin support.
 
-Currently it is provided as a Debian package.
-However, it is planed to provide it also in other formats.
+Currently it is provided as a Debian (x86, arm) and RPM (x86, arm) package.
 
 The ULC have extra repositories, their names starting with **ULC_**
-(e.g. **ULC_deb_OpenSSL_1.1**)
+(e.g. **ULC_deb_OpenSSL_3.0**)
 at https://download.bareos.com/bareos/release/ and https://download.bareos.org/current/.
 There will be different repositories depending on packaging standard
 and remaining dependencies.
 These repositories contain the **bareos-universal-client** package
 and sometimes their corresponding debug package.
 You can either add the repository to your system
+(e.g. by the :file:`add_bareos_repositories*.sh` scripts provided in the repository,
+see the description of the other platforms)
 or only download and install the package file.
 
 One of ULC's goals is to support new platforms
