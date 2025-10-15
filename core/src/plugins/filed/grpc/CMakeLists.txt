@@ -119,4 +119,8 @@ if(ENABLE_GRPC)
   )
 
   include(DebugEdit)
+
+  bareos_add_test(
+    protobuf_socket_test LINK_LIBRARIES GTest::gtest_main grpc-proto
+  )
 endif()
