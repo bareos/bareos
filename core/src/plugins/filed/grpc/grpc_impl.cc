@@ -21,21 +21,15 @@
 
 #include "common.pb.h"
 #include "events.pb.h"
-#include "plugin.grpc.pb.h"
 #include "plugin.pb.h"
-#include "bareos.grpc.pb.h"
 #include "bareos.pb.h"
 #include "include/baconfig.h"
 #include "filed/fd_plugins.h"
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/server_posix.h>
-#include <grpcpp/create_channel_posix.h>
+#include "prototools.h"
 
 #include "plugins/filed/grpc/grpc_impl.h"
 #include <fcntl.h>
 #include <thread>
-#include <grpcpp/impl/codegen/channel_interface.h>
-#include <grpcpp/security/server_credentials.h>
 #include <sys/poll.h>
 #include <sys/wait.h>
 
@@ -298,10 +292,99 @@ void do_std_io(std::atomic<bool>* quit,
   }
 }
 
+// struct SocketStream final : public google::protobuf::io::ZeroCopyInputStream
+// {
+//   int fd;
+//   std::vector<char> buffer;
+//   std::size_t offset = 0;
+//   std::size_t total_offset = 0;
 
-class BareosCore : public bc::Core::Service {
+//   SocketStream(int socket_fd, std::size_t buffer_size)
+//     : fd{socket_fd}
+//     , buffer(buffer_size)
+//   {
+//   }
+
+
+//   bool Next(const void **data, int* size) override {
+//     offset = 0;
+//     total_offset += offset;
+
+//     *data = buffer.data();
+//     *size = offset;
+//     return true;
+//   }
+//   void BackUp(int count) override {
+//     offset -= count;
+//   }
+//   bool Skip(int count) override {
+
+//     std::size_t left_in_buffer = buffer.size() - offset;
+
+
+//     (void) count;
+//     return false;
+//   }
+//   int64_t ByteCount() const override {
+//     return total_offset;
+//   }
+// };
+
+enum StatusCode
+{
+  ALL_OK,
+  INVALID_ARGUMENT,
+  INTERNAL,
+};
+
+struct Status {
+  Status(StatusCode, std::string) {}
+  bool ok() const { return true; }
+  Status() {};
+
+  static Status OK;
+};
+
+class BareosCore {
  public:
-  BareosCore(PluginContext* ctx) : core{ctx} {}
+  BareosCore(PluginContext* ctx,
+             std::unique_ptr<prototools::ProtoBidiStream> stream)
+      : core{ctx}
+      , connection{std::move(stream)}
+      , thrd{std::jthread(BareosCore::do_answer_calls,
+                          connection.get(),
+                          core,
+                          this)}
+  {
+  }
+
+  BareosCore& operator=(const BareosCore&) = delete;
+  BareosCore(const BareosCore&) = delete;
+  BareosCore& operator=(BareosCore&&) = delete;
+  BareosCore(BareosCore&&) = delete;
+
+  static void do_answer_calls(prototools::ProtoBidiStream* stream,
+                              PluginContext* ctx,
+                              BareosCore* core)
+  {
+    DebugLog(ctx, 100, "starting answering requests");
+    for (;;) {
+      bc::CoreRequest req;
+
+      if (!stream->Read(req)) {
+        DebugLog(ctx, 100, "error during reading => stop listening");
+        break;
+      }
+      bc::CoreResponse resp;
+      if (!core->HandleRequest(&req, &resp)) {
+        // sent some kind of error message ?
+      }
+
+      stream->Write(resp);
+    }
+
+    // TODO: the socket should get killed here
+  }
 
   static std::optional<filedaemon::bEventType> from_grpc(bc::EventType type)
   {
@@ -489,140 +572,100 @@ class BareosCore : public bc::Core::Service {
 
 
  private:
-  grpc::Status StartSession(
-      grpc::ServerContext* ctx,
-      ::grpc::ServerReaderWriter<bc::CoreResponse, bc::CoreRequest>* stream)
-      override
+  bool HandleRequest(const bc::CoreRequest* outer_req,
+                     bc::CoreResponse* outer_resp)
   {
-    bc::CoreRequest outer_req;
-
-    while (stream->Read(&outer_req)) {
-      bc::CoreResponse outer_resp;
-      switch (outer_req.request_case()) {
-        case bareos::core::CoreRequest::kRegister: {
-          auto status = this->Events_Register(ctx, &outer_req.register_(),
-                                              outer_resp.mutable_register_());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kUnregister: {
-          auto status = this->Events_Register(ctx, &outer_req.register_(),
-                                              outer_resp.mutable_register_());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kGetInstanceCount: {
-          auto status = this->Bareos_getInstanceCount(
-              ctx, &outer_req.getinstancecount(),
-              outer_resp.mutable_getinstancecount());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kCheckChanges: {
-          auto status
-              = this->Bareos_checkChanges(ctx, &outer_req.checkchanges(),
-                                          outer_resp.mutable_checkchanges());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kAcceptFile: {
-          auto status = this->Bareos_AcceptFile(
-              ctx, &outer_req.acceptfile(), outer_resp.mutable_acceptfile());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kSetSeen: {
-          auto status = this->Bareos_SetSeen(ctx, &outer_req.setseen(),
-                                             outer_resp.mutable_setseen());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kClearSeen: {
-          auto status = this->Bareos_ClearSeen(ctx, &outer_req.clearseen(),
-                                               outer_resp.mutable_clearseen());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kJobMessage: {
-          auto status = this->Bareos_JobMessage(
-              ctx, &outer_req.jobmessage(), outer_resp.mutable_jobmessage());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kDebugMessage: {
-          auto status
-              = this->Bareos_DebugMessage(ctx, &outer_req.debugmessage(),
-                                          outer_resp.mutable_debugmessage());
-          if (!status.ok()) { return status; }
-        } break;
-        case bareos::core::CoreRequest::kSetString: {
-          auto status = this->Bareos_SetString(ctx, &outer_req.setstring(),
-                                               outer_resp.mutable_setstring());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kGetString: {
-          auto status = this->Bareos_GetString(ctx, &outer_req.getstring(),
-                                               outer_resp.mutable_getstring());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kSetInt: {
-          auto status = this->Bareos_SetInt(ctx, &outer_req.setint(),
-                                            outer_resp.mutable_setint());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kGetInt: {
-          auto status = this->Bareos_GetInt(ctx, &outer_req.getint(),
-                                            outer_resp.mutable_getint());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kSetFlag: {
-          auto status = this->Bareos_SetFlag(ctx, &outer_req.setflag(),
-                                             outer_resp.mutable_setflag());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        case bareos::core::CoreRequest::kGetFlag: {
-          auto status = this->Bareos_GetFlag(ctx, &outer_req.getflag(),
-                                             outer_resp.mutable_getflag());
-          if (!status.ok()) { return status; }
-
-          stream->Write(outer_resp);
-        } break;
-        default: {
-          return grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
-                              "unknown core request");
-        } break;
+    switch (outer_req->request_case()) {
+      case bareos::core::CoreRequest::kRegister: {
+        auto status = this->Events_Register(&outer_req->register_(),
+                                            outer_resp->mutable_register_());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kUnregister: {
+        auto status = this->Events_Register(&outer_req->register_(),
+                                            outer_resp->mutable_register_());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kGetInstanceCount: {
+        auto status = this->Bareos_getInstanceCount(
+            &outer_req->getinstancecount(),
+            outer_resp->mutable_getinstancecount());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kCheckChanges: {
+        auto status = this->Bareos_checkChanges(
+            &outer_req->checkchanges(), outer_resp->mutable_checkchanges());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kAcceptFile: {
+        auto status = this->Bareos_AcceptFile(&outer_req->acceptfile(),
+                                              outer_resp->mutable_acceptfile());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kSetSeen: {
+        auto status = this->Bareos_SetSeen(&outer_req->setseen(),
+                                           outer_resp->mutable_setseen());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kClearSeen: {
+        auto status = this->Bareos_ClearSeen(&outer_req->clearseen(),
+                                             outer_resp->mutable_clearseen());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kJobMessage: {
+        auto status = this->Bareos_JobMessage(&outer_req->jobmessage(),
+                                              outer_resp->mutable_jobmessage());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kDebugMessage: {
+        auto status = this->Bareos_DebugMessage(
+            &outer_req->debugmessage(), outer_resp->mutable_debugmessage());
+        return status.ok();
       }
+      case bareos::core::CoreRequest::kSetString: {
+        auto status = this->Bareos_SetString(&outer_req->setstring(),
+                                             outer_resp->mutable_setstring());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kGetString: {
+        auto status = this->Bareos_GetString(&outer_req->getstring(),
+                                             outer_resp->mutable_getstring());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kSetInt: {
+        auto status = this->Bareos_SetInt(&outer_req->setint(),
+                                          outer_resp->mutable_setint());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kGetInt: {
+        auto status = this->Bareos_GetInt(&outer_req->getint(),
+                                          outer_resp->mutable_getint());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kSetFlag: {
+        auto status = this->Bareos_SetFlag(&outer_req->setflag(),
+                                           outer_resp->mutable_setflag());
+        return status.ok();
+      } break;
+      case bareos::core::CoreRequest::kGetFlag: {
+        auto status = this->Bareos_GetFlag(&outer_req->getflag(),
+                                           outer_resp->mutable_getflag());
+        return status.ok();
+      } break;
+      default: {
+        // return grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
+        //                     "unknown core request");
+        return false;
+      } break;
     }
-
-    return grpc::Status::OK;
   }
 
-  grpc::Status Events_Register(grpc::ServerContext*,
-                               const bc::RegisterRequest* req,
-                               bc::RegisterResponse*)
+  Status Events_Register(const bc::RegisterRequest* req, bc::RegisterResponse*)
   {
     for (auto event : req->event_types()) {
       if (!bc::EventType_IsValid(event)) {
-        return grpc::Status(
-            grpc::StatusCode::INVALID_ARGUMENT,
+        return Status(
+            StatusCode::INVALID_ARGUMENT,
             fmt::format(FMT_STRING("event {} is not a valid bareos event"),
                         event));
       }
@@ -632,8 +675,8 @@ class BareosCore : public bc::Core::Service {
       // for some reason event is an int ??
       std::optional bareos_type = from_grpc(static_cast<bc::EventType>(event));
       if (!bareos_type) {
-        return grpc::Status(
-            grpc::StatusCode::INTERNAL,
+        return Status(
+            StatusCode::INTERNAL,
             fmt::format(
                 FMT_STRING("could not convert valid event {} to bareos event"),
                 event));
@@ -642,17 +685,16 @@ class BareosCore : public bc::Core::Service {
       RegisterBareosEvent(core, *bareos_type);
     }
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Events_Unregister(grpc::ServerContext*,
-                                 const bc::UnregisterRequest* req,
-                                 bc::UnregisterResponse*)
+  Status Events_Unregister(const bc::UnregisterRequest* req,
+                           bc::UnregisterResponse*)
   {
     for (auto event : req->event_types()) {
       if (!bc::EventType_IsValid(event)) {
-        return grpc::Status(
-            grpc::StatusCode::INVALID_ARGUMENT,
+        return Status(
+            StatusCode::INVALID_ARGUMENT,
             fmt::format(FMT_STRING("event {} is not a valid bareos event"),
                         event));
       }
@@ -662,8 +704,8 @@ class BareosCore : public bc::Core::Service {
       // for some reason event is an int ??
       std::optional bareos_type = from_grpc(static_cast<bc::EventType>(event));
       if (!bareos_type) {
-        return grpc::Status(
-            grpc::StatusCode::INTERNAL,
+        return Status(
+            StatusCode::INTERNAL,
             fmt::format(
                 FMT_STRING("could not convert valid event {} to bareos event"),
                 event));
@@ -672,70 +714,67 @@ class BareosCore : public bc::Core::Service {
       UnregisterBareosEvent(core, *bareos_type);
     }
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  // grpc::Status Fileset_AddExclude(grpc::ServerContext*, const
+  // Status Fileset_AddExclude( const
   // bc::AddExcludeRequest* request, bc::AddExcludeResponse* response)
   // {
   // }
-  // grpc::Status Fileset_AddInclude(grpc::ServerContext*, const
+  // Status Fileset_AddInclude( const
   // bc::AddIncludeRequest* request, bc::AddIncludeResponse* response)
   // {
   // }
-  // grpc::Status Fileset_AddOptions(grpc::ServerContext*, const
+  // Status Fileset_AddOptions( const
   // bc::AddOptionsRequest* request, bc::AddOptionsResponse* response)
   // {
   // }
-  // grpc::Status Fileset_AddRegex(grpc::ServerContext*, const
+  // Status Fileset_AddRegex( const
   // bc::AddRegexRequest* request, bc::AddRegexResponse* response) {
   // }
-  // grpc::Status Fileset_AddWild(grpc::ServerContext*, const
+  // Status Fileset_AddWild( const
   // bc::AddWildRequest* request, bc::AddWildResponse* response) {
   // }
-  // grpc::Status Fileset_NewOptions(grpc::ServerContext*, const
+  // Status Fileset_NewOptions( const
   // bc::NewOptionsRequest* request, bc::NewOptionsResponse* response)
   // {
   // }
-  // grpc::Status Fileset_NewInclude(grpc::ServerContext*, const
+  // Status Fileset_NewInclude( const
   // bc::NewIncludeRequest* request, bc::NewIncludeResponse* response)
   // {
   // }
-  // grpc::Status Fileset_NewPreInclude(grpc::ServerContext*, const
+  // Status Fileset_NewPreInclude( const
   // bc::NewPreIncludeRequest* request, bc::NewPreIncludeResponse* response)
   // {
   // }
-  grpc::Status Bareos_getInstanceCount(grpc::ServerContext*,
-                                       const bc::getInstanceCountRequest*,
-                                       bc::getInstanceCountResponse* response)
+  Status Bareos_getInstanceCount(const bc::getInstanceCountRequest*,
+                                 bc::getInstanceCountResponse* response)
   {
     // there is only one instance per process.  Its also pretty easy to give a
     // real answer here (i guess).
     response->set_instance_count(1);
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Bareos_checkChanges(grpc::ServerContext*,
-                                   const bc::checkChangesRequest* request,
-                                   bc::checkChangesResponse* response)
+  Status Bareos_checkChanges(const bc::checkChangesRequest* request,
+                             bc::checkChangesResponse* response)
   {
     auto type = request->type();
 
     auto bareos_type = from_grpc(type);
 
     if (!bareos_type) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
-          fmt::format(FMT_STRING("could not parse {} as bareos type"),
-                      int(type)));
+      return Status(StatusCode::INVALID_ARGUMENT,
+                    fmt::format(FMT_STRING("could not parse {} as bareos type"),
+                                int(type)));
     }
 
     auto& stats = request->stats();
     struct stat statp;
 
     if (stats.size() != sizeof(statp)) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(
               FMT_STRING(
                   "stats is not a valid stats object: size mismatch {} != {}"),
@@ -750,177 +789,167 @@ class BareosCore : public bc::Core::Service {
 
     response->set_old(!result);
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Bareos_SetString(grpc::ServerContext*,
-                                const bc::SetStringRequest* request,
-                                bc::SetStringResponse*)
+  Status Bareos_SetString(const bc::SetStringRequest* request,
+                          bc::SetStringResponse*)
   {
     auto var = request->var();
 
     std::optional bareos_var = from_grpc(var);
 
     if (!bareos_var) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
     }
 
     if (!SetBareosValue(core, *bareos_var,
                         const_cast<char*>(request->value().c_str()))) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("set not supported for {}"), int(var)));
     }
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Bareos_GetString(grpc::ServerContext*,
-                                const bc::GetStringRequest* request,
-                                bc::GetStringResponse* response)
+  Status Bareos_GetString(const bc::GetStringRequest* request,
+                          bc::GetStringResponse* response)
   {
     auto var = request->var();
 
     std::optional bareos_var = from_grpc(var);
 
     if (!bareos_var) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
     }
 
     const char* str = nullptr;
 
     if (!GetBareosValue(core, *bareos_var, &str)) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("get not supported for {}"), int(var)));
     }
 
     if (str == nullptr) {
-      return grpc::Status(grpc::StatusCode::INTERNAL,
-                          "nullptr returned by core");
+      return Status(StatusCode::INTERNAL, "nullptr returned by core");
     }
 
     response->set_value(str);
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Bareos_SetInt(grpc::ServerContext*,
-                             const bc::SetIntRequest* request,
-                             bc::SetIntResponse*)
+  Status Bareos_SetInt(const bc::SetIntRequest* request, bc::SetIntResponse*)
   {
     auto var = request->var();
 
     std::optional bareos_var = from_grpc(var);
 
     if (!bareos_var) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
     }
 
     int val = request->value();
     if (!SetBareosValue(core, *bareos_var, &val)) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("set not supported for {}"), int(var)));
     }
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Bareos_GetInt(grpc::ServerContext*,
-                             const bc::GetIntRequest* request,
-                             bc::GetIntResponse* response)
+  Status Bareos_GetInt(const bc::GetIntRequest* request,
+                       bc::GetIntResponse* response)
   {
     auto var = request->var();
 
     std::optional bareos_var = from_grpc(var);
 
     if (!bareos_var) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
     }
 
     int value{0};
 
     if (!GetBareosValue(core, *bareos_var, &value)) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("get not supported for {}"), int(var)));
     }
 
     response->set_value(value);
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Bareos_SetFlag(grpc::ServerContext*,
-                              const bc::SetFlagRequest* request,
-                              bc::SetFlagResponse*)
+  Status Bareos_SetFlag(const bc::SetFlagRequest* request, bc::SetFlagResponse*)
   {
     auto var = request->var();
 
     std::optional bareos_var = from_grpc(var);
 
     if (!bareos_var) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
     }
 
     bool val = request->value();
     if (!SetBareosValue(core, *bareos_var, &val)) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("set not supported for {}"), int(var)));
     }
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Bareos_GetFlag(grpc::ServerContext*,
-                              const bc::GetFlagRequest* request,
-                              bc::GetFlagResponse* response)
+  Status Bareos_GetFlag(const bc::GetFlagRequest* request,
+                        bc::GetFlagResponse* response)
   {
     auto var = request->var();
 
     std::optional bareos_var = from_grpc(var);
 
     if (!bareos_var) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("unknown string variable {}"), int(var)));
     }
 
     bool value{false};
 
     if (!GetBareosValue(core, *bareos_var, &value)) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(FMT_STRING("get not supported for {}"), int(var)));
     }
 
     response->set_value(value);
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Bareos_AcceptFile(grpc::ServerContext*,
-                                 const bc::AcceptFileRequest* request,
-                                 bc::AcceptFileResponse* response)
+  Status Bareos_AcceptFile(const bc::AcceptFileRequest* request,
+                           bc::AcceptFileResponse* response)
   {
     auto& stats = request->stats();
     struct stat statp;
 
     if (stats.size() != sizeof(statp)) {
-      return grpc::Status(
-          grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(
+          StatusCode::INVALID_ARGUMENT,
           fmt::format(
               FMT_STRING(
                   "stats is not a valid stats object: size mismatch {} != {}"),
@@ -933,11 +962,9 @@ class BareosCore : public bc::Core::Service {
 
     response->set_skip(!result);
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
-  grpc::Status Bareos_SetSeen(grpc::ServerContext*,
-                              const bc::SetSeenRequest* request,
-                              bc::SetSeenResponse*)
+  Status Bareos_SetSeen(const bc::SetSeenRequest* request, bc::SetSeenResponse*)
   {
     auto result = [&] {
       if (request->has_file()) {
@@ -948,13 +975,12 @@ class BareosCore : public bc::Core::Service {
     }();
 
     if (result == bRC_Error) {
-      return grpc::Status(grpc::StatusCode::INTERNAL, "something went wrong!");
+      return Status(StatusCode::INTERNAL, "something went wrong!");
     }
-    return grpc::Status::OK;
+    return Status::OK;
   }
-  grpc::Status Bareos_ClearSeen(grpc::ServerContext*,
-                                const bc::ClearSeenRequest* request,
-                                bc::ClearSeenResponse*)
+  Status Bareos_ClearSeen(const bc::ClearSeenRequest* request,
+                          bc::ClearSeenResponse*)
   {
     auto result = [&] {
       if (request->has_file()) {
@@ -965,34 +991,34 @@ class BareosCore : public bc::Core::Service {
     }();
 
     if (result == bRC_Error) {
-      return grpc::Status(grpc::StatusCode::INTERNAL, "something went wrong!");
+      return Status(StatusCode::INTERNAL, "something went wrong!");
     }
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Bareos_JobMessage(grpc::ServerContext*,
-                                 const bc::JobMessageRequest* req,
-                                 bc::JobMessageResponse*)
+  Status Bareos_JobMessage(const bc::JobMessageRequest* req,
+                           bc::JobMessageResponse*)
   {
     JobLog(core, Type{req->type(), req->file().c_str(), (int)req->line()},
            FMT_STRING("{}"), req->msg());
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
-  grpc::Status Bareos_DebugMessage(grpc::ServerContext*,
-                                   const bc::DebugMessageRequest* req,
-                                   bc::DebugMessageResponse*)
+  Status Bareos_DebugMessage(const bc::DebugMessageRequest* req,
+                             bc::DebugMessageResponse*)
   {
     DebugLog(core,
              Severity{(int)req->level(), req->file().c_str(), (int)req->line()},
              FMT_STRING("{}"), req->msg());
 
-    return grpc::Status::OK;
+    return Status::OK;
   }
 
  private:
   PluginContext* core{nullptr};
+  std::unique_ptr<prototools::ProtoBidiStream> connection;
+  std::jthread thrd;
 };
 
 bool make_event_request(filedaemon::bEventType type,
@@ -1150,26 +1176,23 @@ bool make_event_request(filedaemon::bEventType type,
 
 class PluginClient {
  public:
-  PluginClient(std::shared_ptr<grpc::ChannelInterface> channel,
-               PluginContext* ctx)
-      : stub_(bp::Plugin::NewStub(channel)), core{ctx}
+  PluginClient(PluginContext* ctx,
+               std::unique_ptr<prototools::ProtoBidiStream> s)
+      : stream{std::move(s)}, core{ctx}
   {
   }
 
   bRC Setup()
   {
-    client_ctx = std::make_unique<grpc::ClientContext>();
-
-    writer = stub_->StartSession(client_ctx.get());
     bp::PluginRequest req;
     bp::PluginResponse resp;
 
     (void)req.mutable_setup();
 
-    bool write_ok = writer->Write(req);
+    bool write_ok = stream->Write(req);
     if (!write_ok) { return bRC_Error; }
 
-    bool read_ok = writer->Read(&resp);
+    bool read_ok = stream->Read(resp);
     if (!read_ok) { return bRC_Error; }
 
     if (!resp.has_setup()) { return bRC_Error; }
@@ -1181,17 +1204,16 @@ class PluginClient {
                         bp::handlePluginEventRequest* req)
   {
     bp::PluginResponse resp;
-    grpc::ClientContext ctx;
 
     bp::PluginRequest actual_req;
     *actual_req.mutable_handle_plugin() = std::move(*req);
-    bool write_ok = writer->Write(actual_req);
+    bool write_ok = stream->Write(actual_req);
     if (!write_ok) { return bRC_Error; }
 
-    bool read_ok = writer->Read(&resp);
+    bool read_ok = stream->Read(resp);
     if (!read_ok) { return bRC_Error; }
 
-    // grpc::Status status = stub_->handlePluginEvent(&ctx, *req, &resp);
+    // Status status = stub_->handlePluginEvent(*req, &resp);
 
     // if (!status.ok()) {
     //   DebugLog(50, FMT_STRING("rpc did not succeed for event {} ({}):
@@ -1263,9 +1285,9 @@ class PluginClient {
     inner_req->set_flags(pkt->flags, sizeof(pkt->flags));
 
     bp::PluginResponse outer_resp;
-    if (!writer->Write(req)) { return bRC_Error; }
+    if (!stream->Write(req)) { return bRC_Error; }
 
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
 
     if (!outer_resp.has_start_backup()) { return bRC_Error; }
     auto& resp = outer_resp.start_backup();
@@ -1447,8 +1469,8 @@ class PluginClient {
     auto& req = *outer_req.mutable_end_backup_file();
     (void)req;
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_end_backup_file()) { return bRC_Error; }
 
     auto& resp = outer_resp.end_backup_file();
@@ -1471,8 +1493,8 @@ class PluginClient {
     auto inner = strip_prefix(cmd);
     req.set_command(inner.data(), inner.size());
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_start_restore_file()) { return bRC_Error; }
 
     auto& resp = outer_resp.start_restore_file();
@@ -1488,8 +1510,8 @@ class PluginClient {
     auto& req = *outer_req.mutable_end_restore_file();
     (void)req;
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_end_restore_file()) { return bRC_Error; }
 
     auto& resp = outer_resp.end_restore_file();
@@ -1511,8 +1533,8 @@ class PluginClient {
     req.set_flags(flags);
     req.set_file(name.data(), name.size());
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_file_open()) { return bRC_Error; }
 
     auto& resp = outer_resp.file_open();
@@ -1549,8 +1571,8 @@ class PluginClient {
     req.set_whence(start);
     req.set_offset(offset);
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_file_seek()) { return bRC_Error; }
 
     auto& resp = outer_resp.file_seek();
@@ -1562,26 +1584,23 @@ class PluginClient {
   struct read_iter {
     PluginContext* pctx;
     bp::PluginRequest outer_req;
+    prototools::ProtoBidiStream* stream;
 
-    grpc::ClientReaderWriterInterface<bp::PluginRequest, bp::PluginResponse>*
-        file_writer;
-    read_iter(
-        grpc::ClientReaderWriterInterface<bp::PluginRequest,
-                                          bp::PluginResponse>* file_writer_,
-        size_t size,
-        PluginContext* plugin_ctx)
-        : pctx{plugin_ctx}, file_writer{file_writer_}
+    read_iter(prototools::ProtoBidiStream* file_writer_,
+              size_t size,
+              PluginContext* plugin_ctx)
+        : pctx{plugin_ctx}, stream{file_writer_}
     {
       auto& req = *outer_req.mutable_file_read();
       req.set_num_bytes(size);
-      bool ok = file_writer->Write(outer_req);
+      bool ok = stream->Write(outer_req);
       (void)ok;
     }
 
     bool next(size_t* size)
     {
       bp::PluginResponse outer_resp;
-      if (!file_writer->Read(&outer_resp)) { return false; }
+      if (!stream->Read(outer_resp)) { return false; }
       if (!outer_resp.has_file_read()) { return false; }
       *size = outer_resp.file_read().size();
       return true;
@@ -1601,7 +1620,7 @@ class PluginClient {
 
   read_iter FileRead(size_t size)
   {
-    return read_iter{writer.get(), size, core};
+    return read_iter{stream.get(), size, core};
   }
 
   bRC FileWrite(size_t size, size_t* num_bytes_written)
@@ -1611,8 +1630,8 @@ class PluginClient {
     auto& req = *outer_req.mutable_file_write();
     req.set_bytes_written(size);
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_file_write()) { return bRC_Error; }
 
     auto& resp = outer_resp.file_write();
@@ -1631,8 +1650,8 @@ class PluginClient {
     auto& req = *outer_req.mutable_file_close();
     (void)req;
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_file_close()) { return bRC_Error; }
 
     auto& resp = outer_resp.file_close();
@@ -1732,8 +1751,8 @@ class PluginClient {
     req.set_delta_seq(pkt->delta_seq);
     if (pkt->where) { req.set_where(pkt->where); }
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_create_file()) { return bRC_Error; }
 
     auto& resp = outer_resp.create_file();
@@ -1776,8 +1795,8 @@ class PluginClient {
                                 extended_attributes.size());
     req.set_where(where.data(), where.size());
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_set_file_attributes()) { return bRC_Error; }
 
     auto& resp = outer_resp.set_file_attributes();
@@ -1794,8 +1813,8 @@ class PluginClient {
 
     req.set_file(name.data(), name.size());
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_check_file()) { return bRC_Error; }
 
     auto& resp = outer_resp.check_file();
@@ -1814,8 +1833,8 @@ class PluginClient {
     req.set_file(file.data(), file.size());
     req.mutable_content()->set_data(content.data(), content.size());
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_set_acl()) { return bRC_Error; }
 
     auto& resp = outer_resp.set_acl();
@@ -1832,8 +1851,8 @@ class PluginClient {
 
     req.set_file(file.data(), file.size());
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_get_acl()) { return bRC_Error; }
 
     auto& resp = outer_resp.get_acl();
@@ -1860,8 +1879,8 @@ class PluginClient {
     xattr->set_key(key.data(), key.size());
     xattr->set_value(value.data(), value.size());
 
-    if (!writer->Write(outer_req)) { return bRC_Error; }
-    if (!writer->Read(&outer_resp)) { return bRC_Error; }
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_set_xattr()) { return bRC_Error; }
 
     auto& resp = outer_resp.set_xattr();
@@ -1887,8 +1906,8 @@ class PluginClient {
 
       req.set_file(file.data(), file.size());
 
-      if (!writer->Write(outer_req)) { return bRC_Error; }
-      if (!writer->Read(&outer_resp)) { return bRC_Error; }
+      if (!stream->Write(outer_req)) { return bRC_Error; }
+      if (!stream->Read(outer_resp)) { return bRC_Error; }
       if (!outer_resp.has_get_xattr()) { return bRC_Error; }
 
       auto& resp = outer_resp.get_xattr();
@@ -1931,17 +1950,8 @@ class PluginClient {
   PluginClient(PluginClient&&) = default;
   PluginClient& operator=(PluginClient&&) = default;
 
-  ~PluginClient()
-  {
-    if (writer) {
-      writer->WritesDone();
-      auto status = writer->Finish();
-      (void)status;
-    }
-  }
-
  private:
-  std::unique_ptr<bp::Plugin::Stub> stub_{};
+  std::unique_ptr<prototools::ProtoBidiStream> stream{};
   PluginContext* core{nullptr};
 
   size_t current_xattr_index{std::numeric_limits<size_t>::max()};
@@ -1954,112 +1964,37 @@ class PluginClient {
   {
     ::DebugLog(core, severity, std::move(fmt), std::forward<Args>(args)...);
   }
-
-  std::unique_ptr<grpc::ClientContext> client_ctx{};
-  std::unique_ptr<
-      grpc::ClientReaderWriterInterface<bp::PluginRequest, bp::PluginResponse>>
-      writer;
 };
 }  // namespace
 
 struct grpc_connection_members {
+  // the order here is important
+  // 1) destroy the plugin client.  This way our code has one last chance
+  //    to send stuff to the inferior
+  // 2) destroy the client_sock.  This way the inferior still has the chance
+  //    to understand whats happening and send some debug/job messages
+  // 3) destroy the server; this way we are sure that the other side
+  //    has finished sending its messages.
+  // 4) destroy the server socket.
+
+  Socket server_sock;
+  std::unique_ptr<BareosCore> server;
+  Socket client_sock;
   PluginClient client;
-  std::vector<std::unique_ptr<grpc::Service>> services;
-  std::shared_ptr<grpc::Channel> channel;
-  std::unique_ptr<grpc::Server> server;
 
   grpc_connection_members(PluginClient client_,
-                          std::vector<std::unique_ptr<grpc::Service>> services_,
-                          std::shared_ptr<grpc::Channel> channel_,
-                          std::unique_ptr<grpc::Server> server_)
-      : client{std::move(client_)}
-      , services{std::move(services_)}
-      , channel{std::move(channel_)}
+                          std::unique_ptr<BareosCore> server_,
+                          Socket client_sock_,
+                          Socket server_sock_)
+
+      : server_sock{std::move(server_sock_)}
       , server{std::move(server_)}
+      , client_sock{std::move(client_sock_)}
+      , client{std::move(client_)}
   {
   }
 
   grpc_connection_members() = delete;
-};
-
-struct connection_builder {
-  PluginContext* ctx;
-  std::shared_ptr<grpc::Channel> channel{};
-  std::optional<PluginClient> opt_client{};
-  std::unique_ptr<grpc::Server> opt_server{};
-  std::vector<std::unique_ptr<grpc::Service>> services{};
-
-  template <typename... Args>
-  connection_builder(PluginContext* pctx, Args&&... args) : ctx{pctx}
-  {
-    (services.emplace_back(std::forward<Args>(args)), ...);
-  }
-
-  connection_builder& connect_client(Socket s)
-  {
-    // TODO: test what happens if the child is already dead at this point
-    //       or if it does not create the server
-    channel = grpc::CreateInsecureChannelFromFd("", s.get());
-
-    if (channel) {
-      ::DebugLog(ctx, 100, FMT_STRING("could connect to client over socket {}"),
-                 s.get());
-
-      s.release();
-      opt_client.emplace(channel, ctx);
-
-    } else {
-      ::DebugLog(ctx, 50,
-                 FMT_STRING("could not connect to client over socket {}"),
-                 s.get());
-    }
-
-    return *this;
-  }
-
-  connection_builder& connect_server(Socket s)
-  {
-    try {
-      grpc::ServerBuilder builder;
-
-      for (auto& service : services) { builder.RegisterService(service.get()); }
-
-      opt_server = builder.BuildAndStart();
-
-      if (!opt_server) {
-        ::DebugLog(ctx, 50, FMT_STRING("grpc server could not get started"),
-                   s.get());
-        return *this;
-      }
-
-      grpc::AddInsecureChannelFromFd(opt_server.get(), s.release());
-
-    } catch (const std::exception& e) {
-      ::DebugLog(ctx, 50,
-                 FMT_STRING("could not attach socket {} to server: Err={}"),
-                 s.get(), e.what());
-      opt_server.reset();
-    } catch (...) {
-      opt_server.reset();
-    }
-
-    return *this;
-  }
-
-
-  std::optional<grpc_connection> build()
-  {
-    if (!opt_client) { return std::nullopt; }
-    if (!opt_server) { return std::nullopt; }
-
-    grpc_connection con{};
-
-    con.members = new grpc_connection_members{
-        std::move(opt_client.value()), std::move(services), std::move(channel),
-        std::move(opt_server)};
-
-    return con;
-  }
 };
 
 struct grpc_connection_builder {
@@ -2309,10 +2244,17 @@ struct grpc_connection_builder {
 
   std::optional<grpc_connection> make_connection_from(grpc_connections& io)
   {
-    return connection_builder{ctx, std::make_unique<BareosCore>(ctx)}
-        .connect_client(std::move(io.grpc_child))
-        .connect_server(std::move(io.grpc_parent))
-        .build();
+    auto server_stream
+        = std::make_unique<prototools::ProtoBidiStream>(io.grpc_parent.get());
+    auto core = std::make_unique<BareosCore>(ctx, std::move(server_stream));
+    auto client_stream
+        = std::make_unique<prototools::ProtoBidiStream>(io.grpc_child.get());
+    PluginClient client{ctx, std::move(client_stream)};
+    auto members = std::make_unique<grpc_connection_members>(
+        std::move(client), std::move(core), std::move(io.grpc_parent),
+        std::move(io.grpc_child));
+    grpc_connection con{std::move(members)};
+    return con;
   }
 
   bool SetNonBlocking(Socket& s)
@@ -2355,12 +2297,12 @@ struct grpc_connection_builder {
     auto& parent_io = total_io->first;
     auto& child_io = total_io->second;
 
-    if (!SetNonBlocking(parent_io.grpc_parent)
-        || !SetNonBlocking(parent_io.grpc_child)
-        || !SetNonBlocking(child_io.grpc_parent)
-        || !SetNonBlocking(child_io.grpc_child)) {
-      return std::nullopt;
-    }
+    // if (!SetNonBlocking(parent_io.grpc_parent)
+    //     || !SetNonBlocking(parent_io.grpc_child)
+    //     || !SetNonBlocking(child_io.grpc_parent)
+    //     || !SetNonBlocking(child_io.grpc_child)) {
+    //   return std::nullopt;
+    // }
 
     DebugLog(100, FMT_STRING("Created pipes Out: {} <> {}, Err: {} <> {}"),
              parent_io.std_out.get(), child_io.std_out.get(),
@@ -2517,7 +2459,15 @@ process::~process()
   }
 }
 
-grpc_connection::~grpc_connection() { delete members; }
+
+grpc_connection::grpc_connection(grpc_connection&& other) = default;
+grpc_connection& grpc_connection::operator=(grpc_connection&& other) = default;
+grpc_connection::~grpc_connection() = default;
+grpc_connection::grpc_connection(
+    std::unique_ptr<grpc_connection_members> members_)
+    : members{std::move(members_)}
+{
+}
 
 
 bareos::plugin::handlePluginEventRequest* to_grpc(filedaemon::bEventType type,

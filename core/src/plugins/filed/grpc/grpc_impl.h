@@ -135,23 +135,20 @@ class grpc_connection {
   bRC getXattr(filedaemon::xattr_pkt* pkt);
   bRC setXattr(filedaemon::xattr_pkt* pkt);
 
-  friend struct connection_builder;
+  grpc_connection(std::unique_ptr<grpc_connection_members> members_);
 
   grpc_connection(const grpc_connection&) = delete;
   grpc_connection& operator=(const grpc_connection&) = delete;
-  grpc_connection(grpc_connection&& other) { *this = std::move(other); }
-  grpc_connection& operator=(grpc_connection&& other)
-  {
-    std::swap(members, other.members);
-    return *this;
-  }
+
+  grpc_connection(grpc_connection&& other);
+  grpc_connection& operator=(grpc_connection&& other);
 
   ~grpc_connection();
 
  private:
   grpc_connection() = default;
 
-  grpc_connection_members* members{nullptr};
+  std::unique_ptr<grpc_connection_members> members{nullptr};
   bool do_io_in_core{false};
 };
 
