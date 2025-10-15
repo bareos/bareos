@@ -74,7 +74,7 @@ if(ENABLE_GRPC)
     message(DEBUG " proto: ${protosrcs} / ${protohdrs}")
     message(DEBUG " grpc: ${grpcsrcs} / ${grpchdrs}")
 
-    target_sources(${target} PRIVATE ${protosrcs} ${grpcsrcs})
+    target_sources(${target} PRIVATE ${protosrcs})
     target_include_directories(${target} PUBLIC ${PROTO_OUTPUT_DIR})
   endfunction()
 
@@ -83,10 +83,7 @@ if(ENABLE_GRPC)
     grpc-proto "proto/plugin.proto" "proto/events.proto" "proto/bareos.proto"
     "proto/common.proto"
   )
-  target_link_libraries(
-    grpc-proto PUBLIC gRPC::grpc++_reflection gRPC::grpc++
-                      protobuf::libprotobuf
-  )
+  target_link_libraries(grpc-proto PUBLIC protobuf::libprotobuf)
 
   bareos_add_plugin(grpc-fd)
   target_sources(grpc-fd PRIVATE grpc.cc grpc_impl.cc bareos_api.cc)
