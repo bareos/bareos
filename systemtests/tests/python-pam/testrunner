@@ -58,9 +58,9 @@ output=/dev/null
 if is_debug; then
   export PAM_WRAPPER_DEBUGLEVEL=4
   output=/dev/stdout
-  LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f -d 200 >$output 2>&1 &
+  LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f -d 200 >$output 2>&1 &
 else
-  LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${conf}" -f >$output 2>&1 &
+  LD_PRELOAD="${preload_libs}" "${BAREOS_DIRECTOR_BINARY}" -c "${BAREOS_CONFIG_DIR}" -f >$output 2>&1 &
 fi
 
 # make sure that the director is up and running.

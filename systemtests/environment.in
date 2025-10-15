@@ -23,9 +23,8 @@ BAREOS_UNITTESTS_BINARY_DIR=$CMAKE_BINARY_DIR/core/src/tests
 
 current_test_directory=${PROJECT_BINARY_DIR}/tests/@TEST_NAME@
 
-conf=${current_test_directory}/etc/bareos
-export confdir=${conf}
-configs=${conf}
+# conf=${current_test_directory}/etc/bareos
+# export confdir=${conf}
 
 export config_directory_dir_additional_test_config=@config_directory_dir_additional_test_config@
 
@@ -60,7 +59,7 @@ export fd_password="@fd_password@"
 
 # exported variables used by start/stop and other bareos scripts
 # to override the defaults
-export BAREOS_CONFIG_DIR=${conf}
+export BAREOS_CONFIG_DIR=${current_test_directory}/etc/bareos
 export BAREOS_LOG_DIR=${logdir}
 export BAREOS_SCRIPTS_DIR=${scripts}
 export BAREOS_SBIN_DIR=${sbin}

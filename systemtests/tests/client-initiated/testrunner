@@ -64,7 +64,7 @@ start_dir
 sleep 1
 
 echo "Waiting for the director to start"
-if ! echo "status dir" | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf >/dev/null 2>&1; then
+if ! echo "status dir" | "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}"/bconsole.conf >/dev/null 2>&1; then
   exit_with_error "Director did not start"
 fi
 echo "Director is running"
@@ -75,7 +75,7 @@ start_fd
 echo "Check if the filedaemon is connected to the director"
 i=0
 until echo "status dir" \
-  | "${BAREOS_BCONSOLE_BINARY}" -c "$conf"/bconsole.conf \
+  | "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}"/bconsole.conf \
   | grep --quiet --word-regexp "${TestName}-fd"; do
   echo "waiting for client to connect (#$i)... "
   ((i = i + 1))
@@ -87,7 +87,7 @@ done
 
 echo "Filedaemon is connected, running backup and restore"
 
-run_bconsole "$tmp/bconcmds"
+run_bconsole "${tmp}/bconcmds"
 
 check_for_zombie_jobs storage=File
 

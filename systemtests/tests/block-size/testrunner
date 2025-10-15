@@ -1,4 +1,39 @@
 #!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+#
+# Run a full backup, followed by 3 accurate incrementals
+# then do a consolidation. The first 3 jobs will got consolidated
+# the last incremental is kept
+# (job->AlwaysIncrementalKeepNumber default is 1)
+#
+# Run a batch of 3 incrementals with no files
+# Run consolidation : jobid with no files will get purged
+#
+# Run a batch of 3 incrementals the second with no files
+# Then a consolidation: VF and last incremental of first run
+# plus first incremental of 3rd run are consolidated when
+# 2nd increment with no files is purged
+# Last incremental is kept as is.
+#
 set -e
 set -o pipefail
 set -u
@@ -47,7 +82,7 @@ bls_blocks()
 {
   DEVICE="$1"
   VOLUME="${2:-*}"
-  ${BAREOS_BLS_BINARY} -c ${configs} ${DEVICE} -V"${VOLUME}" -k -d 250
+  ${BAREOS_BLS_BINARY} -c ${BAREOS_CONFIG_DIR} ${DEVICE} -V"${VOLUME}" -k -d 250
 }
 
 get_block_size()
@@ -77,8 +112,8 @@ cat <<END_OF_DATA >tmp/bconcmds
 @$out tmp/log1.out
 label storage=File1 pool=File volume=${VolumeName} yes
 label barcodes storage=Tape-0 pool=Tape drive=0 slot=1 yes
-run job=$JobName level=Full pool=File yes
-run job=$JobName level=Full pool=Tape yes
+run job=${JobName} level=Full pool=File yes
+run job=${JobName} level=Full pool=Tape yes
 wait
 messages
 @#
