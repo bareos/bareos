@@ -114,10 +114,8 @@ class PluginService {
                   bp::fileOpenResponse* response);
   Status FileSeek(const bp::fileSeekRequest* request,
                   bp::fileSeekResponse* response);
-  // Status FileRead(
-  //                 const bp::fileReadRequest* request,
-  //                 grpc::internal::WriterInterface<bp::PluginResponse>*
-  //                 writer);
+  Status FileRead(const bp::fileReadRequest* request,
+                  bp::fileReadResponse* response);
   Status FileWrite(const bp::fileWriteRequest* request,
                    bp::fileWriteResponse* response);
   Status FileClose(const bp::fileCloseRequest* request,
