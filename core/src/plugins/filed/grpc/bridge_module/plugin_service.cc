@@ -929,36 +929,25 @@ const char* PluginService::non_blocking_write(int fd,
   return nullptr;
 }
 
-// auto PluginService::FileRead(
+auto PluginService::FileRead(const bp::fileReadRequest* request,
+                             bp::fileReadResponse* response) -> Status
+{
+  filedaemon::io_pkt pkt;
+  pkt.func = filedaemon::IO_READ;
+  pkt.count = request->num_bytes();
+  pkt.buf = buffer(request->num_bytes());
 
-//     const bp::fileReadRequest* request,
-//     grpc::internal::WriterInterface<bp::PluginResponse>* writer) -> Status
-// {
-//   filedaemon::io_pkt pkt;
-//   pkt.func = filedaemon::IO_READ;
-//   pkt.count = request->num_bytes();
-//   pkt.buf = buffer(request->num_bytes());
+  auto res = funcs.pluginIO(ctx, &pkt);
 
-//   auto res = funcs.pluginIO(ctx, &pkt);
+  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
-//   if (res != bRC_OK) {
-//     return Status(StatusCode::INTERNAL, "bad response");
-//   }
+  auto* data = response->mutable_data();
+  data->resize(pkt.status);
+  memcpy(data->data(), pkt.buf, data->size());
 
-//   auto set_io_to_nonblocking = non_blocking{io};
+  return Status::OK;
+}
 
-//   bp::PluginResponse outer_resp;
-//   bp::fileReadResponse& resp = *outer_resp.mutable_file_read();
-//   resp.set_size(pkt.status);
-
-//   writer->Write(outer_resp);
-
-//   if (auto* err_msg = non_blocking_write(io, pkt.status, pkt.buf)) {
-//     return Status(StatusCode::INTERNAL, err_msg);
-//   }
-
-//   return Status::OK;
-// }
 auto PluginService::FileWrite(const bp::fileWriteRequest* request,
                               bp::fileWriteResponse* response) -> Status
 {
@@ -1403,11 +1392,10 @@ bool PluginService::HandleRequest(const bp::PluginRequest& outer_req,
 
     } break;
     case bareos::plugin::PluginRequest::kFileRead: {
-      // auto status = this->FileRead(&outer_req.file_read(),
-      //                              stream);
+      auto status = this->FileRead(&outer_req.file_read(),
+                                   outer_resp.mutable_file_read());
 
-      // if (!status.ok()) { return false; }
-      return false;
+      if (!status.ok()) { return false; }
     } break;
     case bareos::plugin::PluginRequest::kFileWrite: {
       auto status = this->FileWrite(&outer_req.file_write(),

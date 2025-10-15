@@ -1581,46 +1581,25 @@ class PluginClient {
     return bRC_OK;
   }
 
-  struct read_iter {
-    PluginContext* pctx;
-    bp::PluginRequest outer_req;
-    prototools::ProtoBidiStream* stream;
-
-    read_iter(prototools::ProtoBidiStream* file_writer_,
-              size_t size,
-              PluginContext* plugin_ctx)
-        : pctx{plugin_ctx}, stream{file_writer_}
-    {
-      auto& req = *outer_req.mutable_file_read();
-      req.set_num_bytes(size);
-      bool ok = stream->Write(outer_req);
-      (void)ok;
-    }
-
-    bool next(size_t* size)
-    {
-      bp::PluginResponse outer_resp;
-      if (!stream->Read(outer_resp)) { return false; }
-      if (!outer_resp.has_file_read()) { return false; }
-      *size = outer_resp.file_read().size();
-      return true;
-    }
-
-    bRC result()
-    {
-      // auto status = reader->Finish();
-      // if (!status.ok()) {
-      //   ::DebugLog(pctx, 50, FMT_STRING("file read error {}: {}"),
-      //              int(status.error_code()), status.error_message());
-      //   return bRC_Error;
-      // }
-      return bRC_OK;
-    }
-  };
-
-  read_iter FileRead(size_t size)
+  bRC FileRead(char* buf, size_t size, int32_t* bytes_read)
   {
-    return read_iter{stream.get(), size, core};
+    bp::PluginRequest outer_req;
+    bp::PluginResponse outer_resp;
+    auto& req = *outer_req.mutable_file_read();
+    req.set_num_bytes(size);
+
+    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) { return bRC_Error; }
+    if (!outer_resp.has_file_read()) { return bRC_Error; }
+
+    auto& resp = outer_resp.file_read();
+
+    auto& data = resp.data();
+    if (data.size() > size) { return bRC_Error; }
+
+    *bytes_read = static_cast<typeof(*bytes_read)>(data.size());
+    memcpy(buf, data.data(), data.size());
+    return bRC_OK;
   }
 
   bRC FileWrite(size_t size, size_t* num_bytes_written)
@@ -2643,19 +2622,6 @@ bool send_fd(int unix_socket, int fd)
   return false;
 }
 
-static bool full_read(int fd, char* data, size_t size)
-{
-  size_t bytes_read = 0;
-  while (bytes_read < size) {
-    auto res = read(fd, data + bytes_read, size - bytes_read);
-    DebugLog(100, FMT_STRING("read(fd = {}, buffer = {}, count = {}) -> {}"),
-             fd, (void*)(data + bytes_read), size - bytes_read, res);
-    if (res < 0) { return false; }
-    bytes_read += res;
-  }
-  return true;
-}
-
 bRC grpc_connection::pluginIO(filedaemon::io_pkt* pkt, int iosock)
 {
   PluginClient* client = &members->client;
@@ -2694,40 +2660,7 @@ bRC grpc_connection::pluginIO(filedaemon::io_pkt* pkt, int iosock)
       return res;
     } break;
     case filedaemon::IO_READ: {
-      auto iter = client->FileRead(pkt->count);
-
-      DebugLog(100, FMT_STRING("trying to read {} bytes"), pkt->count);
-
-      size_t bytes_read = 0;
-      size_t current = 0;
-      if (iter.next(&current)) {
-        DebugLog(100, FMT_STRING("received {} bytes"), current);
-        if (!full_read(iosock, pkt->buf + bytes_read, current)) {
-          JobLog(nullptr, M_FATAL,
-                 FMT_STRING("could not read additional {} bytes from socket "
-                            "({} were already read): Err={}"),
-                 current, bytes_read, strerror(errno));
-          pkt->io_errno = errno;
-          return bRC_Error;
-        }
-        DebugLog(100, FMT_STRING("read {} bytes successfully"), current);
-        bytes_read += current;
-      }
-
-      auto res = iter.result();
-
-      if (res == bRC_Error) { return res; }
-
-      if ((ssize_t)bytes_read > pkt->count) {
-        JobLog(nullptr, M_FATAL,
-               FMT_STRING(
-                   "plugin wrote to many bytes (wanted = {}, received = {})"),
-               pkt->count, bytes_read);
-        return bRC_Error;
-      }
-
-      pkt->status = bytes_read;
-      return bRC_OK;
+      return client->FileRead(pkt->buf, pkt->count, &pkt->status);
     } break;
     case filedaemon::IO_WRITE: {
       DebugLog(100, FMT_STRING("writing {} bytes into socket"), pkt->count);

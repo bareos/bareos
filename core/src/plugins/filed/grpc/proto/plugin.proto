@@ -170,7 +170,7 @@ message fileSeekResponse {
 message fileReadResponse {
   // the read request may be split into multiple chunks.
   // the total size shall not exceed the requested size
-  uint64 size = 1;
+  bytes data = 1;
 };
 message fileWriteResponse {
   int64 bytes_written = 1;
