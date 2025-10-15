@@ -102,7 +102,7 @@ Relation between Bareos components and configuration
 
    ,                                    "(default path on Unix)",                "(default path on Unix)"
 
-   "bareos-dir",                        :file:`bareos-dir.conf`,                 :file:`bareos-dir.d`
+   bareos-dir,                          :file:`bareos-dir.conf`,                 :file:`bareos-dir.d`
    :ref:`DirectorChapter`,              (:file:`/etc/bareos/bareos-dir.conf`),   (:file:`/etc/bareos/bareos-dir.d/`)
 
    bareos-sd,                           :file:`bareos-sd.conf`,                  :file:`bareos-sd.d`
@@ -184,6 +184,66 @@ Resource file conventions
    Disable/remove configuration resource files:
 
    Normally you should not remove resources that are already in use (jobs, clients, ...). Instead you should disable them by adding the directive ``Enable = no``. Otherwise you take the risk that orphaned entries are kept in the Bareos catalog. However, if a resource has not been used or all references have been cleared from the database, they can also be removed from the configuration.
+
+Configuration Deployment
+------------------------
+
+Since Bareos :sinceVersion:`25.0.0: Config Deployment`,
+on upgrade none of the Bareos components
+(`bareos-dir`, `bareos-sd`, `bareos-fd`, `bconsole` and `bareos-traymonitor`)
+modify/extend an existing configuration.
+Package configuration files are stored in the Bareos Template Configuration Path (see :ref:`section-BareosPaths`).
+The package use :command:`bareos-config deploy_config $COMPONENT` to deploy the configuration. 
+On fresh installation it:
+
+* copies the config files from the Bareos Template Configuration Path (Linux: :file:`/usr/lib/bareos/defaultconfigs/`) to the Bareos Configuration Path (Linux: :file:`/etc/bareos/`)
+
+* make necessary adjustments (generate and set random passwords, set hostname, ...)
+
+* set directory and file permissions
+
+If the configuration path already exist, all these actions are skipped.
+
+
+Behavior
+~~~~~~~~
+
+* On upgrades, the existing configuration files for the components `bareos-dir`, `bareos-sd`, `bareos-fd`, `bconsole` and `bareos-traymonitor` will not get modified.
+* The packages only contain configuration files in the Bareos Template Configuration Path.
+  They no longer contain their configuration in the Bareos Configuration Path.
+* Configuration files from sub-packages will probably not get installed,
+  especially if the sub-package is installed after the main package (e.g. the **bareos-storage-tape** package is installed after the **bareos-storage** package). This also applies to configuration example files (:file:`*.conf.example`).
+
+Upgrades from Bareos < 25 to Bareos >= 25
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Switching to use the Bareos Template Configuration Path had some challenges on RPM-based systems and FreeBSD.
+The other platforms did already use Bareos Template Configuration Path before.
+
+.. index::
+   single: Linux; RPM
+
+When upgrading from Bareos < 25 to Bareos >= 25 with RPM packages,
+RPM would delete or rename the old configuration,
+as these files no longer belong to the package.
+Therefore we use a package pre-script to backup the config files
+and restore them with a post-script (posttrans).
+The normal automated restart of the |fd| will fail in between, but a proper restart will be performed at the end.
+In short: for this scenario we created workarounds
+so that the Administrator should not notice any trouble when upgrading.
+
+The :os:`FreeBSD` packaging mechanism prevents that a backup of the old configuration could be done,
+therefore unmodified configuration files from the old package get removed.
+As a workaround, when upgrading from Bareos <= 24, the package will redeploy any missing configuration file from the Bareos Template Configuration Path of the new package.
+This should leave the content of the configuration directory will no changes when upgrading to Bareos 25.
+However, we can't guarantee that direct upgrades from Bareos <= 24 to Bareos >= 26 also don't result in content changes.
+To be save, FreeBSD users should first upgrade to Bareos 25.
+
+On both platforms, timestamps and permissions of the configuration files can change.
+
+Also note, that the files
+:file:`bareos-dir.d/profile/webui-admin.conf` and :file:`bareos-dir.d/profile/webui-readonly.conf`
+have been moved from the **bareos-webui** to the **bareos-director** package.
 
 
 Configuration File Format
