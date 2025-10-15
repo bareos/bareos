@@ -24,7 +24,7 @@ Additionally, the following table gives an overview on the available package ver
    SLES, current, v12.4, v12.4, v12.4
    Ubuntu, current, v12.4, v12.4, v12.4
    :ref:`Univention Corporate Linux <section-UniventionCorporateServer>`, current, v12.4, v12.4, v12.4
-   :ref:`Universal Linux Client <section-UniversalLinuxClient>`, openSSL 1.1, v21.0, v21.0, v21.0
+   :ref:`Universal Linux Client <section-UniversalLinuxClient>`, , v21.0, v21.0, v21.0
 
    :strong:`MS Windows`
    :ref:`MS Windows <section-windows>` 32bit, 10/8/7, v12.4, v15.2, v15.2
