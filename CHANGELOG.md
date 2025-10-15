@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs rear: update to rear >= 2.8 [PR #2220]
 - docs: Python plugin dependencies installation [PR #2315]
 - docs: update disaster recovery chapter [PR #2310]
+- Update dir-director-MaximumConcurrentJobs.rst.inc with a warning about MaximumConcurrentJobs modification on running Directors [PR #2394]
 
 ### Added
 - added build-dep to libutfcpp-dev in debian-like environments [PR #2056]
@@ -220,6 +221,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2332]: https://github.com/bareos/bareos/pull/2332
 [PR #2333]: https://github.com/bareos/bareos/pull/2333
 [PR #2335]: https://github.com/bareos/bareos/pull/2335
+[PR #2338]: https://github.com/bareos/bareos/pull/2338
 [PR #2340]: https://github.com/bareos/bareos/pull/2340
 [PR #2341]: https://github.com/bareos/bareos/pull/2341
 [PR #2344]: https://github.com/bareos/bareos/pull/2344
@@ -232,4 +234,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2373]: https://github.com/bareos/bareos/pull/2373
 [PR #2381]: https://github.com/bareos/bareos/pull/2381
 [PR #2386]: https://github.com/bareos/bareos/pull/2386
+[PR #2394]: https://github.com/bareos/bareos/pull/2394
 [unreleased]: https://github.com/bareos/bareos/tree/master
