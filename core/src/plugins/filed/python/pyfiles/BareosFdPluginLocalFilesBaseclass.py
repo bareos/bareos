@@ -141,6 +141,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
         elif os.path.isdir(self.file_to_backup):
             savepkt.type = bareosfd.FT_DIREND
             savepkt.link = self.file_to_backup
+            savepkt.no_read = True
             bareosfd.DebugMessage(
                 150, "file %s type is: FT_DIREND\n" % self.file_to_backup
             )
