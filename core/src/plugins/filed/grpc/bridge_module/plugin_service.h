@@ -25,9 +25,9 @@
 #include <sys/stat.h>
 #include <future>
 #include <optional>
-#include "plugin.grpc.pb.h"
 #include "plugin.pb.h"
 
+#include "../prototools.h"
 #include "filed/fd_plugins.h"
 
 namespace bp = bareos::plugin;
@@ -59,7 +59,7 @@ struct PluginFunctions {
   bRC (*setXattr)(PluginContext* ctx, filedaemon::xattr_pkt* xp);
 };
 
-class PluginService : public bp::Plugin::Service {
+class PluginService {
  public:
   PluginService(PluginContext* context,
                 int io_sock,
@@ -77,69 +77,62 @@ class PluginService : public bp::Plugin::Service {
     if (io >= 0) { close(io); }
   }
 
+  bool HandleRequest(const bp::PluginRequest& req, bp::PluginResponse& resp);
+
  private:
   const char* non_blocking_write(int fd, int32_t byte_count, char* buffer);
 
-  using ServerContext = ::grpc::ServerContext;
-  using Status = ::grpc::Status;
+  enum class StatusCode
+  {
+    INTERNAL,
+    INVALID_ARGUMENT,
+    UNIMPLEMENTED,
+    FAILED_PRECONDITION,
+  };
+  struct Status {
+    Status(StatusCode, std::string) {}
 
-  Status Setup(ServerContext*, const bp::SetupRequest*, bp::SetupResponse*);
+    static Status OK;
+    static Status CANCELLED;
 
-  Status StartSession(
-      ServerContext* context,
-      ::grpc::ServerReaderWriter<bp::PluginResponse, bp::PluginRequest>* stream)
-      override;
+    bool ok() const { return true; }
+  };
 
-  Status handlePluginEvent(ServerContext*,
-                           const bp::handlePluginEventRequest* request,
+  Status Setup(const bp::SetupRequest*, bp::SetupResponse*);
+
+  Status handlePluginEvent(const bp::handlePluginEventRequest* request,
                            bp::handlePluginEventResponse* response);
-  Status startBackupFile(ServerContext*,
-                         const bp::startBackupFileRequest* request,
+  Status startBackupFile(const bp::startBackupFileRequest* request,
                          bp::startBackupFileResponse* response);
-  Status endBackupFile(ServerContext*,
-                       const bp::endBackupFileRequest* request,
+  Status endBackupFile(const bp::endBackupFileRequest* request,
                        bp::endBackupFileResponse* response);
-  Status startRestoreFile(ServerContext*,
-                          const bp::startRestoreFileRequest* request,
+  Status startRestoreFile(const bp::startRestoreFileRequest* request,
                           bp::startRestoreFileResponse* response);
-  Status endRestoreFile(ServerContext*,
-                        const bp::endRestoreFileRequest* request,
+  Status endRestoreFile(const bp::endRestoreFileRequest* request,
                         bp::endRestoreFileResponse* response);
-  Status FileOpen(ServerContext*,
-                  const bp::fileOpenRequest* request,
+  Status FileOpen(const bp::fileOpenRequest* request,
                   bp::fileOpenResponse* response);
-  Status FileSeek(ServerContext*,
-                  const bp::fileSeekRequest* request,
+  Status FileSeek(const bp::fileSeekRequest* request,
                   bp::fileSeekResponse* response);
-  Status FileRead(ServerContext*,
-                  const bp::fileReadRequest* request,
-                  grpc::internal::WriterInterface<bp::PluginResponse>* writer);
-  Status FileWrite(ServerContext*,
-                   const bp::fileWriteRequest* request,
+  // Status FileRead(
+  //                 const bp::fileReadRequest* request,
+  //                 grpc::internal::WriterInterface<bp::PluginResponse>*
+  //                 writer);
+  Status FileWrite(const bp::fileWriteRequest* request,
                    bp::fileWriteResponse* response);
-  Status FileClose(ServerContext*,
-                   const bp::fileCloseRequest* request,
+  Status FileClose(const bp::fileCloseRequest* request,
                    bp::fileCloseResponse* response);
-  Status createFile(ServerContext*,
-                    const bp::createFileRequest* request,
+  Status createFile(const bp::createFileRequest* request,
                     bp::createFileResponse* response);
-  Status setFileAttributes(ServerContext*,
-                           const bp::setFileAttributesRequest* request,
+  Status setFileAttributes(const bp::setFileAttributesRequest* request,
                            bp::setFileAttributesResponse* response);
-  Status checkFile(ServerContext*,
-                   const bp::checkFileRequest* request,
+  Status checkFile(const bp::checkFileRequest* request,
                    bp::checkFileResponse* response);
-  Status getAcl(ServerContext*,
-                const bp::getAclRequest* request,
-                bp::getAclResponse* response);
-  Status setAcl(ServerContext*,
-                const bp::setAclRequest* request,
-                bp::setAclResponse* response);
-  Status getXattr(ServerContext*,
-                  const bp::getXattrRequest* request,
+  Status getAcl(const bp::getAclRequest* request, bp::getAclResponse* response);
+  Status setAcl(const bp::setAclRequest* request, bp::setAclResponse* response);
+  Status getXattr(const bp::getXattrRequest* request,
                   bp::getXattrResponse* response);
-  Status setXattr(ServerContext*,
-                  const bp::setXattrRequest* request,
+  Status setXattr(const bp::setXattrRequest* request,
                   bp::setXattrResponse* response);
 
   PluginFunctions funcs{};

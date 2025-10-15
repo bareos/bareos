@@ -152,9 +152,7 @@ bool send_fd(int unix_socket, int fd)
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
-auto PluginService::Setup(ServerContext*,
-                          const bp::SetupRequest*,
-                          bp::SetupResponse*) -> Status
+auto PluginService::Setup(const bp::SetupRequest*, bp::SetupResponse*) -> Status
 {
   auto events = std::array{
       bc::EventType::Event_JobStart,       bc::EventType::Event_JobEnd,
@@ -172,8 +170,7 @@ auto PluginService::Setup(ServerContext*,
   }
 
   if (funcs.newPlugin(ctx) != bRC_OK) {
-    return grpc::Status(grpc::StatusCode::INTERNAL,
-                        "newPlugin returned bad value");
+    return Status(StatusCode::INTERNAL, "newPlugin returned bad value");
   }
   return Status::OK;
 }
@@ -409,7 +406,7 @@ static const char* event_case_to_str(bp::events::Event::EventCase ec)
 }
 
 auto PluginService::handlePluginEvent(
-    ServerContext*,
+
     const bp::handlePluginEventRequest* request,
     bp::handlePluginEventResponse* response) -> Status
 {
@@ -611,21 +608,20 @@ auto PluginService::handlePluginEvent(
     auto res = funcs.handlePluginEvent(ctx, &e, nullptr, 0);
     response->set_res(to_grpc(res));
   } else {
-    return Status(grpc::StatusCode::INVALID_ARGUMENT, "unknown event type");
+    return Status(StatusCode::INVALID_ARGUMENT, "unknown event type");
   }
 
   if (response->res() == bp::RETURN_CODE_UNSPECIFIED) {
     std::string emsg = fmt::format(FMT_STRING("i lied about handling event {}"),
                                    int(event.event_case()));
 
-    return Status(grpc::StatusCode::UNIMPLEMENTED, emsg);
+    return Status(StatusCode::UNIMPLEMENTED, emsg);
   }
 
   return Status::OK;
 }
 
-auto PluginService::startBackupFile(ServerContext*,
-                                    const bp::startBackupFileRequest* request,
+auto PluginService::startBackupFile(const bp::startBackupFileRequest* request,
                                     bp::startBackupFileResponse* response)
     -> Status
 {
@@ -633,8 +629,7 @@ auto PluginService::startBackupFile(ServerContext*,
 
 
   if (sizeof(sp.flags) != request->flags().size()) {
-    return Status(grpc::StatusCode::INVALID_ARGUMENT,
-                  "flags size is not matching");
+    return Status(StatusCode::INVALID_ARGUMENT, "flags size is not matching");
   }
   memcpy(sp.flags, request->flags().data(), sizeof(sp.flags));
 
@@ -657,7 +652,7 @@ auto PluginService::startBackupFile(ServerContext*,
       return Status::OK;
     } break;
     default: {
-      return Status(grpc::StatusCode::INTERNAL, "bad return value");
+      return Status(StatusCode::INTERNAL, "bad return value");
     }
   }
 
@@ -671,10 +666,10 @@ auto PluginService::startBackupFile(ServerContext*,
 
         if constexpr (std::is_same_v<T, bco::FileType>) {
           if (!sp.fname) {
-            return Status(grpc::StatusCode::INTERNAL, "no file name set");
+            return Status(StatusCode::INTERNAL, "no file name set");
           }
           if (arg == bco::FILE_TYPE_UNSPECIFIED) {
-            return Status(grpc::StatusCode::INTERNAL, "bad file type");
+            return Status(StatusCode::INTERNAL, "bad file type");
           }
 
           auto* file = response->mutable_file();
@@ -695,7 +690,7 @@ auto PluginService::startBackupFile(ServerContext*,
           auto* error = response->mutable_error();
 
           if (!sp.fname) {
-            return Status(grpc::StatusCode::INTERNAL, "no file name set");
+            return Status(StatusCode::INTERNAL, "no file name set");
           }
 
           error->set_file(sp.fname);
@@ -703,10 +698,10 @@ auto PluginService::startBackupFile(ServerContext*,
 
         } else if constexpr (std::is_same_v<T, bco::ObjectType>) {
           if (!sp.object_name) {
-            return Status(grpc::StatusCode::INTERNAL, "no object name set");
+            return Status(StatusCode::INTERNAL, "no object name set");
           }
           if (arg == bco::OBJECT_TYPE_UNSPECIFIED) {
-            return Status(grpc::StatusCode::INTERNAL, "bad object type");
+            return Status(StatusCode::INTERNAL, "bad object type");
           }
 
           auto* obj = response->mutable_object();
@@ -719,7 +714,7 @@ auto PluginService::startBackupFile(ServerContext*,
             case UnhandledType::Unknown: {
               JobLog(bc::JMSG_ERROR, FMT_STRING("unknown file type {}"),
                      sp.type);
-              return Status(grpc::StatusCode::INTERNAL, "unknown file type");
+              return Status(StatusCode::INTERNAL, "unknown file type");
             } break;
             case UnhandledType::Plugin: {
               JobLog(bc::JMSG_INFO,
@@ -748,8 +743,7 @@ auto PluginService::startBackupFile(ServerContext*,
       },
       type);
 }
-auto PluginService::endBackupFile(ServerContext*,
-                                  const bp::endBackupFileRequest* request,
+auto PluginService::endBackupFile(const bp::endBackupFileRequest* request,
                                   bp::endBackupFileResponse* response) -> Status
 {
   auto res = funcs.endBackupFile(ctx);
@@ -762,38 +756,35 @@ auto PluginService::endBackupFile(ServerContext*,
       response->set_result(bp::EBF_More);
     } break;
     default: {
-      return Status(grpc::StatusCode::INTERNAL, "bad return value");
+      return Status(StatusCode::INTERNAL, "bad return value");
     } break;
   }
 
   return Status::OK;
 }
-auto PluginService::startRestoreFile(ServerContext*,
-                                     const bp::startRestoreFileRequest* request,
+auto PluginService::startRestoreFile(const bp::startRestoreFileRequest* request,
                                      bp::startRestoreFileResponse*) -> Status
 {
   auto res = funcs.startRestoreFile(ctx, request->command().c_str());
 
   if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad return value");
+    return Status(StatusCode::INTERNAL, "bad return value");
   }
 
   return Status::OK;
 }
-auto PluginService::endRestoreFile(ServerContext*,
-                                   const bp::endRestoreFileRequest* request,
+auto PluginService::endRestoreFile(const bp::endRestoreFileRequest* request,
                                    bp::endRestoreFileResponse*) -> Status
 {
   auto res = funcs.endRestoreFile(ctx);
 
   if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad return value");
+    return Status(StatusCode::INTERNAL, "bad return value");
   }
 
   return Status::OK;
 }
-auto PluginService::FileOpen(ServerContext*,
-                             const bp::fileOpenRequest* request,
+auto PluginService::FileOpen(const bp::fileOpenRequest* request,
                              bp::fileOpenResponse* resp) -> Status
 {
   filedaemon::io_pkt pkt;
@@ -803,23 +794,20 @@ auto PluginService::FileOpen(ServerContext*,
   pkt.flags = request->flags();
   auto res = funcs.pluginIO(ctx, &pkt);
 
-  if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad response");
-  }
+  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
   if (pkt.status == IoStatus::do_io_in_core) {
     resp->set_io_in_core(true);
     if (!send_fd(io, pkt.filedes)) {
       JobLog(bc::JMSG_FATAL, "could not send fd {} to core. Err={}",
              pkt.filedes, strerror(errno));
-      return Status(grpc::StatusCode::INTERNAL, "could not send fd to core");
+      return Status(StatusCode::INTERNAL, "could not send fd to core");
     }
   }
 
   return Status::OK;
 }
-auto PluginService::FileSeek(ServerContext*,
-                             const bp::fileSeekRequest* request,
+auto PluginService::FileSeek(const bp::fileSeekRequest* request,
                              bp::fileSeekResponse*) -> Status
 {
   filedaemon::io_pkt pkt;
@@ -837,15 +825,13 @@ auto PluginService::FileSeek(ServerContext*,
       pkt.whence = SEEK_END;
     } break;
     default:
-      return Status(grpc::StatusCode::INVALID_ARGUMENT,
+      return Status(StatusCode::INVALID_ARGUMENT,
                     "invalid start position for seek");
   }
 
   auto res = funcs.pluginIO(ctx, &pkt);
 
-  if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad response");
-  }
+  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
   return Status::OK;
 }
@@ -943,38 +929,37 @@ const char* PluginService::non_blocking_write(int fd,
   return nullptr;
 }
 
-auto PluginService::FileRead(
-    ServerContext*,
-    const bp::fileReadRequest* request,
-    grpc::internal::WriterInterface<bp::PluginResponse>* writer) -> Status
-{
-  filedaemon::io_pkt pkt;
-  pkt.func = filedaemon::IO_READ;
-  pkt.count = request->num_bytes();
-  pkt.buf = buffer(request->num_bytes());
+// auto PluginService::FileRead(
 
-  auto res = funcs.pluginIO(ctx, &pkt);
+//     const bp::fileReadRequest* request,
+//     grpc::internal::WriterInterface<bp::PluginResponse>* writer) -> Status
+// {
+//   filedaemon::io_pkt pkt;
+//   pkt.func = filedaemon::IO_READ;
+//   pkt.count = request->num_bytes();
+//   pkt.buf = buffer(request->num_bytes());
 
-  if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad response");
-  }
+//   auto res = funcs.pluginIO(ctx, &pkt);
 
-  auto set_io_to_nonblocking = non_blocking{io};
+//   if (res != bRC_OK) {
+//     return Status(StatusCode::INTERNAL, "bad response");
+//   }
 
-  bp::PluginResponse outer_resp;
-  bp::fileReadResponse& resp = *outer_resp.mutable_file_read();
-  resp.set_size(pkt.status);
+//   auto set_io_to_nonblocking = non_blocking{io};
 
-  writer->Write(outer_resp);
+//   bp::PluginResponse outer_resp;
+//   bp::fileReadResponse& resp = *outer_resp.mutable_file_read();
+//   resp.set_size(pkt.status);
 
-  if (auto* err_msg = non_blocking_write(io, pkt.status, pkt.buf)) {
-    return Status(grpc::StatusCode::INTERNAL, err_msg);
-  }
+//   writer->Write(outer_resp);
 
-  return Status::OK;
-}
-auto PluginService::FileWrite(ServerContext*,
-                              const bp::fileWriteRequest* request,
+//   if (auto* err_msg = non_blocking_write(io, pkt.status, pkt.buf)) {
+//     return Status(StatusCode::INTERNAL, err_msg);
+//   }
+
+//   return Status::OK;
+// }
+auto PluginService::FileWrite(const bp::fileWriteRequest* request,
                               bp::fileWriteResponse* response) -> Status
 {
   filedaemon::io_pkt pkt;
@@ -983,21 +968,18 @@ auto PluginService::FileWrite(ServerContext*,
   pkt.buf = buffer(request->bytes_written());
 
   if (!full_read(io, pkt.buf, pkt.count)) {
-    return Status(grpc::StatusCode::INTERNAL, "io socket read not successful");
+    return Status(StatusCode::INTERNAL, "io socket read not successful");
   }
 
   auto res = funcs.pluginIO(ctx, &pkt);
 
-  if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad response");
-  }
+  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
   response->set_bytes_written(pkt.status);
 
   return Status::OK;
 }
-auto PluginService::FileClose(ServerContext*,
-                              const bp::fileCloseRequest* request,
+auto PluginService::FileClose(const bp::fileCloseRequest* request,
                               bp::fileCloseResponse*) -> Status
 {
   filedaemon::io_pkt pkt;
@@ -1005,15 +987,12 @@ auto PluginService::FileClose(ServerContext*,
 
   auto res = funcs.pluginIO(ctx, &pkt);
 
-  if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad response");
-  }
+  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
   return Status::OK;
 }
 
-auto PluginService::createFile(ServerContext*,
-                               const bp::createFileRequest* request,
+auto PluginService::createFile(const bp::createFileRequest* request,
                                bp::createFileResponse* response) -> Status
 {
   filedaemon::restore_pkt rp = {};
@@ -1022,7 +1001,7 @@ auto PluginService::createFile(ServerContext*,
   if (!type) {
     JobLog(bc::JMSG_ERROR, FMT_STRING("received unknown file type {}"),
            int(request->ft()));
-    return Status(grpc::StatusCode::FAILED_PRECONDITION, "unknown file type");
+    return Status(StatusCode::FAILED_PRECONDITION, "unknown file type");
   }
 
   rp.type = type.value();
@@ -1030,7 +1009,7 @@ auto PluginService::createFile(ServerContext*,
     JobLog(bc::JMSG_ERROR,
            FMT_STRING("bad stats value (size = {}, should be {})"),
            request->stats().size(), sizeof(rp.statp));
-    return Status(grpc::StatusCode::INVALID_ARGUMENT, "bad stats value");
+    return Status(StatusCode::INVALID_ARGUMENT, "bad stats value");
   }
   memcpy(&rp.statp, request->stats().c_str(), sizeof(rp.statp));
   rp.ofname = request->output_name().c_str();
@@ -1056,15 +1035,13 @@ auto PluginService::createFile(ServerContext*,
     default: {
       JobLog(bc::JMSG_ERROR, FMT_STRING("bad replace value {}"),
              int(request->replace()));
-      return Status(grpc::StatusCode::INVALID_ARGUMENT, "bad replace value");
+      return Status(StatusCode::INVALID_ARGUMENT, "bad replace value");
     } break;
   }
   rp.delta_seq = request->delta_seq();
 
   auto res = funcs.createFile(ctx, &rp);
-  if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad response");
-  }
+  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
   switch (rp.create_status) {
     case CF_SKIP: {
@@ -1088,13 +1065,13 @@ auto PluginService::createFile(ServerContext*,
   return Status::OK;
 }
 auto PluginService::setFileAttributes(
-    ServerContext*,
+
     const bp::setFileAttributesRequest* request,
     bp::setFileAttributesResponse* response) -> Status
 {
   filedaemon::restore_pkt rp = {};
   if (sizeof(rp.statp) != request->stats().size()) {
-    return Status(grpc::StatusCode::INVALID_ARGUMENT, "bad stats");
+    return Status(StatusCode::INVALID_ARGUMENT, "bad stats");
   }
   memcpy(&rp.statp, request->stats().c_str(), sizeof(rp.statp));
   rp.attrEx = request->extended_attributes().c_str();
@@ -1104,22 +1081,18 @@ auto PluginService::setFileAttributes(
   rp.create_status = CF_ERROR;
   rp.filedes = kInvalidFiledescriptor;
   auto res = funcs.setFileAttributes(ctx, &rp);
-  if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad response");
-  }
+  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
   response->set_set_attributes_in_core(rp.create_status == CF_CORE);
 
   return Status::OK;
 }
-auto PluginService::checkFile(ServerContext*,
-                              const bp::checkFileRequest* request,
+auto PluginService::checkFile(const bp::checkFileRequest* request,
                               bp::checkFileResponse* response) -> Status
 {
   return Status::CANCELLED;
 }
-auto PluginService::getAcl(ServerContext*,
-                           const bp::getAclRequest* request,
+auto PluginService::getAcl(const bp::getAclRequest* request,
                            bp::getAclResponse* response) -> Status
 {
   filedaemon::acl_pkt acl = {};
@@ -1127,17 +1100,14 @@ auto PluginService::getAcl(ServerContext*,
 
   auto res = funcs.getAcl(ctx, &acl);
 
-  if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad response");
-  }
+  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
   auto* content = response->mutable_content();
   content->set_data(acl.content, acl.content_length);
 
   return Status::OK;
 }
-auto PluginService::setAcl(ServerContext*,
-                           const bp::setAclRequest* request,
+auto PluginService::setAcl(const bp::setAclRequest* request,
                            bp::setAclResponse*) -> Status
 {
   filedaemon::acl_pkt acl = {};
@@ -1147,14 +1117,11 @@ auto PluginService::setAcl(ServerContext*,
 
   auto res = funcs.setAcl(ctx, &acl);
 
-  if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad response");
-  }
+  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
   return Status::OK;
 }
-auto PluginService::getXattr(ServerContext*,
-                             const bp::getXattrRequest* request,
+auto PluginService::getXattr(const bp::getXattrRequest* request,
                              bp::getXattrResponse* response) -> Status
 {
   filedaemon::xattr_pkt pkt = {};
@@ -1165,7 +1132,7 @@ auto PluginService::getXattr(ServerContext*,
     auto res = funcs.getXattr(ctx, &pkt);
 
     if (res != bRC_OK && res != bRC_More) {
-      return Status(grpc::StatusCode::INTERNAL, "bad response");
+      return Status(StatusCode::INTERNAL, "bad response");
     }
 
     bp::Xattribute attr{};
@@ -1178,8 +1145,7 @@ auto PluginService::getXattr(ServerContext*,
   }
   return Status::OK;
 }
-auto PluginService::setXattr(ServerContext*,
-                             const bp::setXattrRequest* request,
+auto PluginService::setXattr(const bp::setXattrRequest* request,
                              bp::setXattrResponse* response) -> Status
 {
   filedaemon::xattr_pkt pkt = {};
@@ -1193,177 +1159,334 @@ auto PluginService::setXattr(ServerContext*,
 
   auto res = funcs.setXattr(ctx, &pkt);
 
-  if (res != bRC_OK) {
-    return Status(grpc::StatusCode::INTERNAL, "bad response");
-  }
+  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
 
   return Status::OK;
 }
 
 
-auto PluginService::StartSession(
-    ServerContext* context,
-    ::grpc::ServerReaderWriter<bp::PluginResponse, bp::PluginRequest>* stream)
-    -> Status
+// auto PluginService::StartSession(
+//     ::ServerReaderWriter<bp::PluginResponse, bp::PluginRequest>* stream)
+//     -> Status
+// {
+//   bp::PluginRequest outer_req;
+
+//   while (stream->Read(&outer_req)) {
+//     bp::PluginResponse outer_resp;
+//     switch (outer_req.request_case()) {
+//       case bareos::plugin::PluginRequest::kSetup: {
+//         auto status = this->Setup(context, &outer_req.setup(),
+//                                   outer_resp.mutable_setup());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kHandlePlugin: {
+//         auto status
+//             = this->handlePluginEvent(context, &outer_req.handle_plugin(),
+//                                       outer_resp.mutable_handle_plugin());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kStartBackup: {
+//         auto status = this->startBackupFile(context,
+//         &outer_req.start_backup(),
+//                                             outer_resp.mutable_start_backup());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kEndBackupFile: {
+//         auto status = this->endBackupFile(context,
+//         &outer_req.end_backup_file(),
+//                                           outer_resp.mutable_end_backup_file());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kStartRestoreFile: {
+//         auto status
+//             = this->startRestoreFile(context,
+//             &outer_req.start_restore_file(),
+//                                      outer_resp.mutable_start_restore_file());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kEndRestoreFile: {
+//         auto status
+//             = this->endRestoreFile(context, &outer_req.end_restore_file(),
+//                                    outer_resp.mutable_end_restore_file());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kFileOpen: {
+//         auto status = this->FileOpen(context, &outer_req.file_open(),
+//                                      outer_resp.mutable_file_open());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kFileSeek: {
+//         auto status = this->FileSeek(context, &outer_req.file_seek(),
+//                                      outer_resp.mutable_file_seek());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kFileRead: {
+//         auto status = this->FileRead(context, &outer_req.file_read(),
+//         stream);
+
+//         if (!status.ok()) { return status; }
+//       } break;
+//       case bareos::plugin::PluginRequest::kFileWrite: {
+//         auto status = this->FileWrite(context, &outer_req.file_write(),
+//                                       outer_resp.mutable_file_write());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kFileClose: {
+//         auto status = this->FileClose(context, &outer_req.file_close(),
+//                                       outer_resp.mutable_file_close());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kCreateFile: {
+//         auto status = this->createFile(context, &outer_req.create_file(),
+//                                        outer_resp.mutable_create_file());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kSetFileAttributes: {
+//         auto status
+//             = this->setFileAttributes(context,
+//             &outer_req.set_file_attributes(),
+//                                       outer_resp.mutable_set_file_attributes());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kCheckFile: {
+//         auto status = this->checkFile(context, &outer_req.check_file(),
+//                                       outer_resp.mutable_check_file());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kGetAcl: {
+//         auto status = this->getAcl(context, &outer_req.get_acl(),
+//                                    outer_resp.mutable_get_acl());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kSetAcl: {
+//         auto status = this->setAcl(context, &outer_req.set_acl(),
+//                                    outer_resp.mutable_set_acl());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kGetXattr: {
+//         auto status = this->getXattr(context, &outer_req.get_xattr(),
+//                                      outer_resp.mutable_get_xattr());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       case bareos::plugin::PluginRequest::kSetXattr: {
+//         auto status = this->setXattr(context, &outer_req.set_xattr(),
+//                                      outer_resp.mutable_set_xattr());
+
+//         if (!status.ok()) { return status; }
+
+//         stream->Write(outer_resp);
+//       } break;
+//       default: {
+//         return Status(StatusCode::UNIMPLEMENTED,
+//                       "this is not implemented");
+//       } break;
+//     }
+//   }
+//   return Status::OK;
+// }
+
+bool PluginService::HandleRequest(const bp::PluginRequest& outer_req,
+                                  bp::PluginResponse& outer_resp)
 {
-  bp::PluginRequest outer_req;
+  switch (outer_req.request_case()) {
+    case bareos::plugin::PluginRequest::kSetup: {
+      auto status = this->Setup(&outer_req.setup(), outer_resp.mutable_setup());
 
-  while (stream->Read(&outer_req)) {
-    bp::PluginResponse outer_resp;
-    switch (outer_req.request_case()) {
-      case bareos::plugin::PluginRequest::kSetup: {
-        auto status = this->Setup(context, &outer_req.setup(),
-                                  outer_resp.mutable_setup());
+      if (!status.ok()) { return false; }
 
-        if (!status.ok()) { return status; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kHandlePlugin: {
-        auto status
-            = this->handlePluginEvent(context, &outer_req.handle_plugin(),
-                                      outer_resp.mutable_handle_plugin());
+    } break;
+    case bareos::plugin::PluginRequest::kHandlePlugin: {
+      auto status = this->handlePluginEvent(&outer_req.handle_plugin(),
+                                            outer_resp.mutable_handle_plugin());
 
-        if (!status.ok()) { return status; }
+      if (!status.ok()) { return false; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kStartBackup: {
-        auto status = this->startBackupFile(context, &outer_req.start_backup(),
-                                            outer_resp.mutable_start_backup());
 
-        if (!status.ok()) { return status; }
+    } break;
+    case bareos::plugin::PluginRequest::kStartBackup: {
+      auto status = this->startBackupFile(&outer_req.start_backup(),
+                                          outer_resp.mutable_start_backup());
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kEndBackupFile: {
-        auto status = this->endBackupFile(context, &outer_req.end_backup_file(),
-                                          outer_resp.mutable_end_backup_file());
+      if (!status.ok()) { return false; }
 
-        if (!status.ok()) { return status; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kStartRestoreFile: {
-        auto status
-            = this->startRestoreFile(context, &outer_req.start_restore_file(),
-                                     outer_resp.mutable_start_restore_file());
+    } break;
+    case bareos::plugin::PluginRequest::kEndBackupFile: {
+      auto status = this->endBackupFile(&outer_req.end_backup_file(),
+                                        outer_resp.mutable_end_backup_file());
 
-        if (!status.ok()) { return status; }
+      if (!status.ok()) { return false; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kEndRestoreFile: {
-        auto status
-            = this->endRestoreFile(context, &outer_req.end_restore_file(),
-                                   outer_resp.mutable_end_restore_file());
 
-        if (!status.ok()) { return status; }
+    } break;
+    case bareos::plugin::PluginRequest::kStartRestoreFile: {
+      auto status
+          = this->startRestoreFile(&outer_req.start_restore_file(),
+                                   outer_resp.mutable_start_restore_file());
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kFileOpen: {
-        auto status = this->FileOpen(context, &outer_req.file_open(),
-                                     outer_resp.mutable_file_open());
+      if (!status.ok()) { return false; }
 
-        if (!status.ok()) { return status; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kFileSeek: {
-        auto status = this->FileSeek(context, &outer_req.file_seek(),
-                                     outer_resp.mutable_file_seek());
+    } break;
+    case bareos::plugin::PluginRequest::kEndRestoreFile: {
+      auto status = this->endRestoreFile(&outer_req.end_restore_file(),
+                                         outer_resp.mutable_end_restore_file());
 
-        if (!status.ok()) { return status; }
+      if (!status.ok()) { return false; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kFileRead: {
-        auto status = this->FileRead(context, &outer_req.file_read(), stream);
 
-        if (!status.ok()) { return status; }
-      } break;
-      case bareos::plugin::PluginRequest::kFileWrite: {
-        auto status = this->FileWrite(context, &outer_req.file_write(),
-                                      outer_resp.mutable_file_write());
+    } break;
+    case bareos::plugin::PluginRequest::kFileOpen: {
+      auto status = this->FileOpen(&outer_req.file_open(),
+                                   outer_resp.mutable_file_open());
 
-        if (!status.ok()) { return status; }
+      if (!status.ok()) { return false; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kFileClose: {
-        auto status = this->FileClose(context, &outer_req.file_close(),
-                                      outer_resp.mutable_file_close());
 
-        if (!status.ok()) { return status; }
+    } break;
+    case bareos::plugin::PluginRequest::kFileSeek: {
+      auto status = this->FileSeek(&outer_req.file_seek(),
+                                   outer_resp.mutable_file_seek());
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kCreateFile: {
-        auto status = this->createFile(context, &outer_req.create_file(),
-                                       outer_resp.mutable_create_file());
+      if (!status.ok()) { return false; }
 
-        if (!status.ok()) { return status; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kSetFileAttributes: {
-        auto status
-            = this->setFileAttributes(context, &outer_req.set_file_attributes(),
-                                      outer_resp.mutable_set_file_attributes());
+    } break;
+    case bareos::plugin::PluginRequest::kFileRead: {
+      // auto status = this->FileRead(&outer_req.file_read(),
+      //                              stream);
 
-        if (!status.ok()) { return status; }
+      // if (!status.ok()) { return false; }
+      return false;
+    } break;
+    case bareos::plugin::PluginRequest::kFileWrite: {
+      auto status = this->FileWrite(&outer_req.file_write(),
+                                    outer_resp.mutable_file_write());
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kCheckFile: {
-        auto status = this->checkFile(context, &outer_req.check_file(),
-                                      outer_resp.mutable_check_file());
+      if (!status.ok()) { return false; }
 
-        if (!status.ok()) { return status; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kGetAcl: {
-        auto status = this->getAcl(context, &outer_req.get_acl(),
-                                   outer_resp.mutable_get_acl());
+    } break;
+    case bareos::plugin::PluginRequest::kFileClose: {
+      auto status = this->FileClose(&outer_req.file_close(),
+                                    outer_resp.mutable_file_close());
 
-        if (!status.ok()) { return status; }
+      if (!status.ok()) { return false; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kSetAcl: {
-        auto status = this->setAcl(context, &outer_req.set_acl(),
-                                   outer_resp.mutable_set_acl());
 
-        if (!status.ok()) { return status; }
+    } break;
+    case bareos::plugin::PluginRequest::kCreateFile: {
+      auto status = this->createFile(&outer_req.create_file(),
+                                     outer_resp.mutable_create_file());
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kGetXattr: {
-        auto status = this->getXattr(context, &outer_req.get_xattr(),
-                                     outer_resp.mutable_get_xattr());
+      if (!status.ok()) { return false; }
 
-        if (!status.ok()) { return status; }
 
-        stream->Write(outer_resp);
-      } break;
-      case bareos::plugin::PluginRequest::kSetXattr: {
-        auto status = this->setXattr(context, &outer_req.set_xattr(),
-                                     outer_resp.mutable_set_xattr());
+    } break;
+    case bareos::plugin::PluginRequest::kSetFileAttributes: {
+      auto status
+          = this->setFileAttributes(&outer_req.set_file_attributes(),
+                                    outer_resp.mutable_set_file_attributes());
 
-        if (!status.ok()) { return status; }
+      if (!status.ok()) { return false; }
 
-        stream->Write(outer_resp);
-      } break;
-      default: {
-        return Status(grpc::StatusCode::UNIMPLEMENTED,
-                      "this is not implemented");
-      } break;
-    }
+
+    } break;
+    case bareos::plugin::PluginRequest::kCheckFile: {
+      auto status = this->checkFile(&outer_req.check_file(),
+                                    outer_resp.mutable_check_file());
+
+      if (!status.ok()) { return false; }
+
+
+    } break;
+    case bareos::plugin::PluginRequest::kGetAcl: {
+      auto status
+          = this->getAcl(&outer_req.get_acl(), outer_resp.mutable_get_acl());
+
+      if (!status.ok()) { return false; }
+
+
+    } break;
+    case bareos::plugin::PluginRequest::kSetAcl: {
+      auto status
+          = this->setAcl(&outer_req.set_acl(), outer_resp.mutable_set_acl());
+
+      if (!status.ok()) { return false; }
+
+
+    } break;
+    case bareos::plugin::PluginRequest::kGetXattr: {
+      auto status = this->getXattr(&outer_req.get_xattr(),
+                                   outer_resp.mutable_get_xattr());
+
+      if (!status.ok()) { return false; }
+
+
+    } break;
+    case bareos::plugin::PluginRequest::kSetXattr: {
+      auto status = this->setXattr(&outer_req.set_xattr(),
+                                   outer_resp.mutable_set_xattr());
+
+      if (!status.ok()) { return false; }
+
+
+    } break;
+    default: {
+      return false;
+    } break;
   }
-  return Status::OK;
+  return true;
 }
 
 #pragma GCC diagnostic pop
