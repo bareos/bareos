@@ -21,14 +21,9 @@
 
 #include "events.pb.h"
 #include "include/filetypes.h"
-#include "plugin.grpc.pb.h"
 #include "plugin.pb.h"
-#include "bareos.grpc.pb.h"
 #include "bareos.pb.h"
 #include "filed/fd_plugins.h"
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/create_channel_posix.h>
-#include <grpcpp/server_posix.h>
 #include <dlfcn.h>
 #include <clocale>
 
@@ -51,50 +46,10 @@
 #include "plugin_service.h"
 #include "bridge_module.h"
 
-
-struct connection_builder {
-  static std::optional<std::unique_ptr<bc::Core::Stub>> connect_client(
-      int sockfd)
-  {
-    try {
-      return bc::Core::NewStub(grpc::CreateInsecureChannelFromFd("", sockfd));
-    } catch (...) {
-      return std::nullopt;
-    }
-  }
-
-  static std::optional<std::unique_ptr<grpc::Server>> connect_server(
-      int sockfd,
-      const std::vector<std::unique_ptr<grpc::Service>>& services)
-  {
-    try {
-      grpc::ServerBuilder builder;
-
-      for (auto& service : services) { builder.RegisterService(service.get()); }
-
-      auto server = builder.BuildAndStart();
-
-      if (!server) { return std::nullopt; }
-
-      grpc::AddInsecureChannelFromFd(server.get(), sockfd);
-
-      return server;
-    } catch (const std::exception& e) {
-      // DebugLog(50, FMT_STRING("could not attach socket {} to server:
-      // Err={}"),
-      //          sockfd, e.what());
-      return std::nullopt;
-    } catch (...) {
-      return std::nullopt;
-    }
-  }
-};
-
 #include <fcntl.h>
 
 struct core_connection {
-  grpc::ClientReaderWriterInterface<bc::CoreRequest, bc::CoreResponse>*
-      client_writer{nullptr};
+  prototools::ProtoBidiStream* client_writer;
 };
 
 core_connection global_core_connection;
@@ -114,7 +69,7 @@ bool Register(std::basic_string_view<bc::EventType> types)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return false; }
-  if (!writer->Read(&outer_resp)) { return false; }
+  if (!writer->Read(outer_resp)) { return false; }
   if (!outer_resp.has_register_()) { return false; }
 
   auto& resp = outer_resp.register_();
@@ -132,7 +87,7 @@ bool Unregister(std::basic_string_view<bc::EventType> types)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return false; }
-  if (!writer->Read(&outer_resp)) { return false; }
+  if (!writer->Read(outer_resp)) { return false; }
   if (!outer_resp.has_unregister()) { return false; }
 
   auto& resp = outer_resp.unregister();
@@ -292,7 +247,7 @@ std::optional<size_t> getInstanceCount()
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return false; }
-  if (!writer->Read(&outer_resp)) { return false; }
+  if (!writer->Read(outer_resp)) { return false; }
   if (!outer_resp.has_getinstancecount()) { return false; }
 
   auto& resp = outer_resp.getinstancecount();
@@ -318,7 +273,7 @@ std::optional<bool> checkChanges(bco::FileType ft,
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return false; }
-  if (!writer->Read(&outer_resp)) { return false; }
+  if (!writer->Read(outer_resp)) { return false; }
   if (!outer_resp.has_checkchanges()) { return false; }
 
   auto& resp = outer_resp.checkchanges();
@@ -336,7 +291,7 @@ std::optional<bool> AcceptFile(std::string_view name, const struct stat& statp)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return false; }
-  if (!writer->Read(&outer_resp)) { return false; }
+  if (!writer->Read(outer_resp)) { return false; }
   if (!outer_resp.has_acceptfile()) { return false; }
 
   auto& resp = outer_resp.acceptfile();
@@ -354,7 +309,7 @@ bool SetSeen(std::optional<std::string_view> name)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return false; }
-  if (!writer->Read(&outer_resp)) { return false; }
+  if (!writer->Read(outer_resp)) { return false; }
   if (!outer_resp.has_setseen()) { return false; }
 
   auto& resp = outer_resp.setseen();
@@ -372,7 +327,7 @@ bool ClearSeen(std::optional<std::string_view> name)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return false; }
-  if (!writer->Read(&outer_resp)) { return false; }
+  if (!writer->Read(outer_resp)) { return false; }
   if (!outer_resp.has_clearseen()) { return false; }
 
   auto& resp = outer_resp.clearseen();
@@ -398,7 +353,7 @@ void JobMessage(bc::JMsgType type,
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return; }
-  if (!writer->Read(&outer_resp)) { return; }
+  if (!writer->Read(outer_resp)) { return; }
   if (!outer_resp.has_jobmessage()) { return; }
 
   auto& resp = outer_resp.jobmessage();
@@ -438,7 +393,7 @@ bool Bareos_SetString(bc::BareosStringVariable var, std::string_view val)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return false; }
-  if (!writer->Read(&outer_resp)) { return false; }
+  if (!writer->Read(outer_resp)) { return false; }
   if (!outer_resp.has_setstring()) { return false; }
 
   auto& resp = outer_resp.setstring();
@@ -456,7 +411,7 @@ std::optional<std::string> Bareos_GetString(bc::BareosStringVariable var)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return std::nullopt; }
-  if (!writer->Read(&outer_resp)) { return std::nullopt; }
+  if (!writer->Read(outer_resp)) { return std::nullopt; }
   if (!outer_resp.has_getstring()) { return std::nullopt; }
 
   auto& resp = *outer_resp.mutable_getstring();
@@ -474,7 +429,7 @@ bool Bareos_SetInt(bc::BareosIntVariable var, int val)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return false; }
-  if (!writer->Read(&outer_resp)) { return false; }
+  if (!writer->Read(outer_resp)) { return false; }
   if (!outer_resp.has_setint()) { return false; }
 
   auto& resp = outer_resp.setint();
@@ -492,7 +447,7 @@ std::optional<int> Bareos_GetInt(bc::BareosIntVariable var)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return std::nullopt; }
-  if (!writer->Read(&outer_resp)) { return std::nullopt; }
+  if (!writer->Read(outer_resp)) { return std::nullopt; }
   if (!outer_resp.has_getint()) { return std::nullopt; }
 
   auto& resp = outer_resp.getint();
@@ -510,7 +465,7 @@ bool Bareos_SetFlag(bc::BareosFlagVariable var, bool val)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return false; }
-  if (!writer->Read(&outer_resp)) { return false; }
+  if (!writer->Read(outer_resp)) { return false; }
   if (!outer_resp.has_setflag()) { return false; }
 
   auto& resp = outer_resp.setflag();
@@ -528,7 +483,7 @@ std::optional<bool> Bareos_GetFlag(bc::BareosFlagVariable var)
 
   auto* writer = request_writer();
   if (!writer->Write(outer_req)) { return std::nullopt; }
-  if (!writer->Read(&outer_resp)) { return std::nullopt; }
+  if (!writer->Read(outer_resp)) { return std::nullopt; }
   if (!outer_resp.has_getflag()) { return std::nullopt; }
 
   auto& resp = outer_resp.getflag();
@@ -1633,62 +1588,51 @@ void SetReady(bool result)
 
 void HandleConnection(int server_sock, int client_sock, int io_sock)
 {
-  std::promise<void> shutdown_signal;
+  (void)io_sock;
 
-  auto barrier = shutdown_signal.get_future();
+  {
+    prototools::ProtoBidiStream server{server_sock};
+    prototools::ProtoBidiStream client{client_sock};
 
-  std::optional client = connection_builder::connect_client(client_sock);
+    plugin_thread plugin{};
 
-  if (!client) {
-    fprintf(stderr, "could not create client grpc connection ...\n");
-    exit(1);
+    global_core_connection.client_writer = &client;
+
+    DebugLog(100, FMT_STRING("setting up ..."));
+
+    std::promise<void> shutdown;
+    PluginService service{plugin.ctx(), io_sock, funcs, std::move(shutdown)};
+
+    if (!setup()) {
+      DebugLog(50, FMT_STRING("setup failed"));
+      SetReady(false);
+    } else {
+      DebugLog(100, FMT_STRING(
+                        "... successfully.\nwaiting for server to finish ..."));
+      SetReady(true);
+
+
+      {
+        bp::PluginRequest req;
+        bp::PluginResponse resp;
+        while (server.Read(req)) {
+          resp.clear_response();
+          if (!service.HandleRequest(req, resp)) {
+            // some error here
+          }
+          server.Write(resp);
+        }
+      }
+
+
+      DebugLog(100, FMT_STRING("grpc server finished: closing connections"));
+    }
+    // destroy the server before killing the plugin thread
+    DebugLog(100, FMT_STRING("shutdown - shutting down the grpc server"));
   }
-
-  auto* stub = client->get();
-
-  plugin_thread plugin{};
-
-  std::vector<std::unique_ptr<grpc::Service>> services{};
-  services.push_back(std::make_unique<PluginService>(
-      plugin.ctx(), io_sock, funcs, std::move(shutdown_signal)));
-
-  std::optional server
-      = connection_builder::connect_server(server_sock, services);
-
-  if (!server) {
-    fprintf(stderr, "Could not establish server grpc connection ...\n");
-    exit(1);
-  }
-
-
-  auto client_ctx = std::make_unique<grpc::ClientContext>();
-  auto client_writer = stub->StartSession(client_ctx.get());
-
-  global_core_connection.client_writer = client_writer.get();
-
-  DebugLog(100, FMT_STRING("setting up ..."));
-
-  if (!setup()) {
-    DebugLog(50, FMT_STRING("setup failed"));
-    SetReady(false);
-  } else {
-    DebugLog(100,
-             FMT_STRING("... successfully.\nwaiting for server to finish ..."));
-    SetReady(true);
-
-    barrier.wait();  // wait for the server to order a shutdown
-
-    DebugLog(100, FMT_STRING("grpc server finished: closing connections"));
-  }
-  // destroy the server before killing the plugin thread
-  DebugLog(100, FMT_STRING("shutdown - shutting down the grpc server"));
-  server->get()->Shutdown();
-  // destroy the services (as they have a reference to the plugin_thread)
-  DebugLog(100, FMT_STRING("shutdown - stopping the server services"));
-  services.clear();
   // finally destroy the plugin thread
-  DebugLog(100, FMT_STRING("shutdown - stopping plugin thread"));
-  plugin.join();
+  // DebugLog(100, FMT_STRING("shutdown - stopping plugin thread"));
+  // plugin.join();
   DebugLog(100, FMT_STRING("shutdown - finished"));
   if (plugin_data.plugin_handle) { dlclose(plugin_data.plugin_handle); }
 }
