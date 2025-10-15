@@ -25,7 +25,6 @@
 #include <optional>
 #include <sys/stat.h>
 
-#include "bareos.grpc.pb.h"
 #include "bareos.pb.h"
 
 #include <fmt/format.h>
