@@ -31,6 +31,8 @@
 
 #include "bareos_api.h"
 
+#include "grpc-fd_export.h"
+
 namespace {
 bool next_section(std::string_view& input, std::string& output, char delimiter)
 {
@@ -545,10 +547,11 @@ bool AmICompatibleWith(filedaemon::PluginApiDefinition* core_info)
   return true;
 }
 
-extern "C" int loadPlugin(filedaemon::PluginApiDefinition* core_info,
-                          filedaemon::CoreFunctions* core_funcs,
-                          PluginInformation** plugin_info,
-                          filedaemon::PluginFunctions** plugin_funcs)
+extern "C" GRPC_FD_EXPORT int loadPlugin(
+    filedaemon::PluginApiDefinition* core_info,
+    filedaemon::CoreFunctions* core_funcs,
+    PluginInformation** plugin_info,
+    filedaemon::PluginFunctions** plugin_funcs)
 {
   SetupBareosApi(core_funcs);
 
@@ -568,7 +571,7 @@ extern "C" int loadPlugin(filedaemon::PluginApiDefinition* core_info,
   return 0;
 }
 
-extern "C" int unloadPlugin() { return 0; }
+extern "C" GRPC_FD_EXPORT int unloadPlugin() { return 0; }
 
 char* get_name_storage(PluginContext* ctx, std::size_t minsize)
 {
