@@ -68,18 +68,21 @@ struct ProtoOutputStream {
   ProtoOutputStream(ProtoOutputStream&&) = delete;
   ProtoOutputStream& operator=(ProtoOutputStream&&) = delete;
 
-  template <typename Message> bool Write(Message& msg)
+  template <typename Message> bool WriteBuffered(Message& msg)
   {
-    {
-      google::protobuf::io::CodedOutputStream coded{&stream};
-      uint64_t size = msg.ByteSizeLong();
-      coded.WriteVarint64(size);
-      int pre = coded.ByteCount();
-      msg.SerializeWithCachedSizes(&coded);
-      if (coded.HadError()) { return false; }
-      int post = coded.ByteCount();
-      if (post - pre != static_cast<std::int64_t>(size)) { return false; }
-    }
+    google::protobuf::io::CodedOutputStream coded{&stream};
+    uint64_t size = msg.ByteSizeLong();
+    coded.WriteVarint64(size);
+    int pre = coded.ByteCount();
+    msg.SerializeWithCachedSizes(&coded);
+    if (coded.HadError()) { return false; }
+    int post = coded.ByteCount();
+    if (post - pre != static_cast<std::int64_t>(size)) { return false; }
+    return true;
+  }
+  template <typename Message> inline bool Write(Message& msg)
+  {
+    WriteBuffered(msg);
 
     // this api is only used to send single messages
     // so we need to flush after every write as it never makes sense
@@ -115,6 +118,12 @@ struct ProtoBidiStream {
   {
     write_count += 1;
     return output.Write(msg);
+  }
+
+  template <typename Message> bool WriteBuffered(Message& msg)
+  {
+    write_count += 1;
+    return output.WriteBuffered(msg);
   }
 };
 };  // namespace prototools

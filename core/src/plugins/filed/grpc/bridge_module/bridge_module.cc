@@ -380,7 +380,7 @@ void DebugMessage(int level,
   bc::CoreResponse outer_resp;
 
   auto* writer = request_writer();
-  if (!writer->Write(outer_req)) { return; }
+  if (!writer->WriteBuffered(outer_req)) { return; }
 }
 bool Bareos_SetString(bc::BareosStringVariable var, std::string_view val)
 {
