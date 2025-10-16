@@ -1988,17 +1988,19 @@ struct grpc_connection_members {
   //    has finished sending its messages.
   // 4) destroy the server socket.
 
+  PluginContext* pctx;
   Socket server_sock;
   std::unique_ptr<BareosCore> server;
   Socket client_sock;
   PluginClient client;
 
-  grpc_connection_members(PluginClient client_,
+  grpc_connection_members(PluginContext* ctx,
+                          PluginClient client_,
                           std::unique_ptr<BareosCore> server_,
                           Socket client_sock_,
                           Socket server_sock_)
-
-      : server_sock{std::move(server_sock_)}
+      : pctx{ctx}
+      , server_sock{std::move(server_sock_)}
       , server{std::move(server_)}
       , client_sock{std::move(client_sock_)}
       , client{std::move(client_)}
@@ -2262,7 +2264,7 @@ struct grpc_connection_builder {
         = std::make_unique<prototools::ProtoBidiStream>(io.grpc_child.get());
     PluginClient client{ctx, std::move(client_stream)};
     auto members = std::make_unique<grpc_connection_members>(
-        std::move(client), std::move(core), std::move(io.grpc_parent),
+        ctx, std::move(client), std::move(core), std::move(io.grpc_parent),
         std::move(io.grpc_child));
     grpc_connection con{std::move(members)};
     return con;
@@ -2668,11 +2670,11 @@ bRC grpc_connection::pluginIO(filedaemon::io_pkt* pkt, int iosock)
         return res;
       }
       if (io_in_core) {
-        DebugLog(100, FMT_STRING("using io_in_core"));
+        DebugLog(members->pctx, 100, FMT_STRING("using io_in_core"));
         std::optional fd = receive_fd(iosock, -1);
 
         if (!fd) {
-          JobLog(nullptr, M_FATAL,
+          JobLog(members->pctx, M_FATAL,
                  FMT_STRING("plugin wanted to do io_in_core, but did not send "
                             "an fd: Err={}"),
                  strerror(errno));
