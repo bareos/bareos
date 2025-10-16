@@ -294,7 +294,7 @@ Linux
 ^^^^^
 
 .. code-block:: shell-session
-   :caption: Setup Bareos catalog with PostgreSQL (:os:`Linux`)
+   :caption: Setup Bareos catalog with PostgreSQL (Linux)
 
    su postgres -c /usr/lib/bareos/scripts/create_bareos_database
    su postgres -c /usr/lib/bareos/scripts/make_bareos_tables
@@ -304,7 +304,7 @@ FreeBSD
 ^^^^^^^
 
 .. code-block:: shell-session
-   :caption: Setup Bareos catalog with PostgreSQL (:os:`FreeBSD`)
+   :caption: Setup Bareos catalog with PostgreSQL (FreeBSD)
 
    su postgres -c /usr/local/lib/bareos/scripts/create_bareos_database
    su postgres -c /usr/local/lib/bareos/scripts/make_bareos_tables
