@@ -92,6 +92,8 @@ struct ProtoBidiStream {
   ProtoInputStream input;
   ProtoOutputStream output;
 
+  std::size_t read_count{}, write_count{};
+
   // for a bidirectional file descriptor; think socket
   ProtoBidiStream(int bidi_fd) : ProtoBidiStream(bidi_fd, bidi_fd) {}
 
@@ -105,11 +107,13 @@ struct ProtoBidiStream {
 
   template <typename Message> bool Read(Message& msg)
   {
+    read_count += 1;
     return input.Read(msg);
   }
 
   template <typename Message> bool Write(Message& msg)
   {
+    write_count += 1;
     return output.Write(msg);
   }
 };
