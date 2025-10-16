@@ -88,16 +88,18 @@ Products
 --------
 
 .. csv-table:: Product Names
-   :header: "Text to be Displayed", "Text Formatting"
+   :header: "Text to be Displayed", "Text Formatting", "Description"
 
-   |github|,     ``|github|``
-   |ktls|,       ``|ktls|``
-   |mysql|,      ``|mysql|``
-   open-source,  open-source
-   OpenSSL,      OpenSSL
-   |postgresql|, ``|postgresql|``
-   ReaR,         ReaR
-   reST,         reST
-   TLS-PSK,      TLS-PSK
-   |vmware|,     ``|vmware|``
-   |vsphere|,    ``|vsphere|``
+   arm64,        arm64,            ARM64 compatible CPUs
+   |github|,     ``|github|``,
+   |ktls|,       ``|ktls|``,       Linux Kernel TLS
+   |mysql|,      ``|mysql|``,
+   open-source,  open-source,
+   OpenSSL,      OpenSSL,
+   |postgresql|, ``|postgresql|``,
+   ReaR,         ReaR,             Relax-and-Recover - Linux Disaster Recovery, https://relax-and-recover.org/
+   reST,         reST,             reStructuredText
+   TLS-PSK,      TLS-PSK,          Transport Layer Security pre-shared key ciphersuites (TLS-PSK)
+   |vmware|,     ``|vmware|``,
+   |vsphere|,    ``|vsphere|``,
+   x86,          x86,              Intel compatible CPUs
