@@ -1207,6 +1207,7 @@ class PluginClient {
 
   bRC Setup()
   {
+    if (!check_no_prediction()) {}
     bp::PluginRequest req;
     bp::PluginResponse resp;
 
@@ -1226,6 +1227,8 @@ class PluginClient {
   bRC handlePluginEvent(filedaemon::bEventType type,
                         bp::handlePluginEventRequest* req)
   {
+    if (!check_no_prediction()) {}
+
     bp::PluginResponse resp;
 
     bp::PluginRequest actual_req;
@@ -1279,6 +1282,8 @@ class PluginClient {
 
   bRC handlePluginEvent(filedaemon::bEventType type, void* data)
   {
+    if (!check_no_prediction()) {}
+
     bp::handlePluginEventRequest req;
 
     switch (type) {
@@ -1295,20 +1300,31 @@ class PluginClient {
     return handlePluginEvent(type, &req);
   }
 
+  std::optional<int32_t> cached_flags{};
+
   bRC startBackupFile(filedaemon::save_pkt* pkt)
   {
-    bp::PluginRequest req;
-    auto* inner_req = req.mutable_start_backup();
-    inner_req->set_no_read(pkt->no_read);
-    inner_req->set_portable(pkt->portable);
+    if (!check_prediction(START_BACKUP_FILE)) {
+      bp::PluginRequest req;
+      auto* inner_req = req.mutable_start_backup();
+      inner_req->set_no_read(pkt->no_read);
+      inner_req->set_portable(pkt->portable);
+      auto inner = strip_prefix(pkt->cmd);
 
-    auto inner = strip_prefix(pkt->cmd);
+      auto& cached = cached_start_backup.emplace();
+      cached.command.assign(inner);
+      cached.no_read = pkt->no_read;
+      cached.portable = pkt->portable;
+      memcpy(cached.flags, pkt->flags, sizeof(pkt->flags));
 
-    inner_req->set_cmd(inner.data(), inner.size());
-    inner_req->set_flags(pkt->flags, sizeof(pkt->flags));
+      inner_req->set_cmd(inner.data(), inner.size());
+      inner_req->set_flags(pkt->flags, sizeof(pkt->flags));
+
+      if (!stream->Write(req)) { return bRC_Error; }
+    }
+
 
     bp::PluginResponse outer_resp;
-    if (!stream->Write(req)) { return bRC_Error; }
 
     if (!stream->Read(outer_resp)) { return bRC_Error; }
 
@@ -1412,6 +1428,23 @@ class PluginClient {
           }
           // THIS is unused, so we always clear it to be sure
           ClearBit(FO_PORTABLE_DATA, pkt->flags);
+
+          if (pkt->type == FT_LNK) {
+            expect_acl = false;
+            expect_xattr = true;
+          } else {
+            expect_acl = true;
+            expect_xattr = true;
+          }
+
+
+          cached_file.emplace(pkt->fname);
+
+          if (!pkt->no_read) {
+            predict(FILE_OPEN);
+          } else if (expect_acl || expect_xattr) {
+            predict(expect_acl ? GET_ACL : GET_XATTR);
+          }
         } else if (resp.has_object()) {
           DebugLog(100, FMT_STRING("received an object"));
           auto& object = resp.object();
@@ -1433,6 +1466,8 @@ class PluginClient {
           pkt->object_name = get_name_storage(core, name.size() + 1);
           memcpy(pkt->object_name, name.c_str(), name.size() + 1);
           pkt->index = object.index();
+
+          predict(END_BACKUP_FILE);
         } else if (resp.has_error()) {
           auto& err = resp.error();
 
@@ -1473,7 +1508,6 @@ class PluginClient {
           DebugLog(100, FMT_STRING("received nothing"));
           return bRC_Error;
         }
-
         return bRC_OK;
       }
       case bareos::plugin::SBF_Stop:
@@ -1487,21 +1521,31 @@ class PluginClient {
 
   bRC endBackupFile()
   {
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_end_backup_file();
-    (void)req;
+    cached_file.reset();
 
-    if (!stream->Write(outer_req)) { return bRC_Error; }
+    if (!check_prediction(END_BACKUP_FILE)) {
+      bp::PluginRequest outer_req;
+      auto& req = *outer_req.mutable_end_backup_file();
+      (void)req;
+
+      if (!stream->Write(outer_req)) { return bRC_Error; }
+    }
+
+
+    bp::PluginResponse outer_resp{};
     if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_end_backup_file()) { return bRC_Error; }
 
     auto& resp = outer_resp.end_backup_file();
     switch (resp.result()) {
-      case bareos::plugin::EBF_Done:
+      case bareos::plugin::EBF_Done: {
+        cached_start_backup.reset();
         return bRC_OK;
-      case bareos::plugin::EBF_More:
+      }
+      case bareos::plugin::EBF_More: {
+        predict(START_BACKUP_FILE);
         return bRC_More;
+      }
       default:
         return bRC_Error;
     }
@@ -1509,6 +1553,8 @@ class PluginClient {
 
   bRC startRestoreFile(std::string_view cmd)
   {
+    if (!check_no_prediction()) {}
+
     bp::PluginRequest outer_req;
     bp::PluginResponse outer_resp;
     auto& req = *outer_req.mutable_start_restore_file();
@@ -1528,6 +1574,7 @@ class PluginClient {
 
   bRC endRestoreFile()
   {
+    if (!check_no_prediction()) {}
     bp::PluginRequest outer_req;
     bp::PluginResponse outer_resp;
     auto& req = *outer_req.mutable_end_restore_file();
@@ -1549,14 +1596,20 @@ class PluginClient {
                int32_t mode,
                bool* io_in_core)
   {
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_file_open();
-    req.set_mode(mode);
-    req.set_flags(flags);
-    req.set_file(name.data(), name.size());
+    if (!check_prediction(FILE_OPEN)) {
+      cached_flags = flags;
 
-    if (!stream->Write(outer_req)) { return bRC_Error; }
+      bp::PluginRequest outer_req;
+      auto& req = *outer_req.mutable_file_open();
+      req.set_mode(mode);
+      req.set_flags(flags);
+      req.set_file(name.data(), name.size());
+
+      if (!stream->Write(outer_req)) { return bRC_Error; }
+    } else {
+      assert(name == *cached_file);
+    }
+    bp::PluginResponse outer_resp;
     if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_file_open()) { return bRC_Error; }
 
@@ -1566,11 +1619,17 @@ class PluginClient {
 
     *io_in_core = resp.io_in_core();
 
+    if (!resp.io_in_core()) {
+      predict(FILE_READ);  // TODO: or FILE_WRITE
+    } else {
+      predict(FILE_CLOSE);
+    }
     return bRC_OK;
   }
 
   bRC FileSeek(int whence, int64_t offset)
   {
+    if (!check_no_prediction()) {}
     bp::PluginRequest outer_req;
     bp::PluginResponse outer_resp;
     auto& req = *outer_req.mutable_file_seek();
@@ -1606,12 +1665,14 @@ class PluginClient {
 
   bRC FileRead(char* buf, size_t size, int32_t* bytes_read)
   {
-    bp::PluginRequest outer_req;
+    if (!check_prediction(FILE_READ)) {
+      cached_size = size;
+      bp::PluginRequest outer_req;
+      auto& req = *outer_req.mutable_file_read();
+      req.set_num_bytes(size);
+      if (!stream->Write(outer_req)) { return bRC_Error; }
+    }
     bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_file_read();
-    req.set_num_bytes(size);
-
-    if (!stream->Write(outer_req)) { return bRC_Error; }
     if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_file_read()) { return bRC_Error; }
 
@@ -1621,12 +1682,18 @@ class PluginClient {
     if (data.size() > size) { return bRC_Error; }
 
     *bytes_read = static_cast<typeof(*bytes_read)>(data.size());
-    memcpy(buf, data.data(), data.size());
+    if (data.size() > 0) {
+      memcpy(buf, data.data(), data.size());
+      predict(FILE_READ);
+    } else {
+      predict(FILE_CLOSE);
+    }
     return bRC_OK;
   }
 
   bRC FileWrite(size_t size, size_t* num_bytes_written)
   {
+    if (!check_prediction(FILE_WRITE)) {}
     bp::PluginRequest outer_req;
     bp::PluginResponse outer_resp;
     auto& req = *outer_req.mutable_file_write();
@@ -1647,6 +1714,7 @@ class PluginClient {
 
   bRC FileClose()
   {
+    if (!check_prediction(FILE_CLOSE)) {}
     bp::PluginRequest outer_req;
     bp::PluginResponse outer_resp;
     auto& req = *outer_req.mutable_file_close();
@@ -1658,6 +1726,10 @@ class PluginClient {
 
     auto& resp = outer_resp.file_close();
     (void)resp;
+
+    if (expect_xattr || expect_acl) {
+      predict(expect_acl ? GET_ACL : GET_XATTR);
+    }
 
     return bRC_OK;
   }
@@ -1728,6 +1800,8 @@ class PluginClient {
 
   bRC createFile(filedaemon::restore_pkt* pkt)
   {
+    if (!check_no_prediction()) {}
+
     bp::PluginRequest outer_req;
     bp::PluginResponse outer_resp;
     auto& req = *outer_req.mutable_create_file();
@@ -1787,6 +1861,8 @@ class PluginClient {
                         std::string_view where,
                         bool* do_in_core)
   {
+    if (!check_no_prediction()) {}
+
     bp::PluginRequest outer_req;
     bp::PluginResponse outer_resp;
     auto& req = *outer_req.mutable_set_file_attributes();
@@ -1809,6 +1885,7 @@ class PluginClient {
   }
   bRC checkFile(std::string_view name)
   {
+    if (!check_no_prediction()) {}
     bp::PluginRequest outer_req;
     bp::PluginResponse outer_resp;
     auto& req = *outer_req.mutable_check_file();
@@ -1828,6 +1905,7 @@ class PluginClient {
 
   bRC setAcl(std::string_view file, std::string_view content)
   {
+    if (!check_no_prediction()) {}
     bp::PluginRequest outer_req;
     bp::PluginResponse outer_resp;
     auto& req = *outer_req.mutable_set_acl();
@@ -1847,13 +1925,18 @@ class PluginClient {
 
   bRC getAcl(std::string_view file, char** buffer, size_t* size)
   {
-    bp::PluginRequest outer_req;
+    if (!check_prediction(GET_ACL)) {
+      bp::PluginRequest outer_req;
+      auto& req = *outer_req.mutable_get_acl();
+      req.set_file(file.data(), file.size());
+      if (!stream->Write(outer_req)) { return bRC_Error; }
+    } else {
+      assert(*cached_file == file);
+    }
+
     bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_get_acl();
 
-    req.set_file(file.data(), file.size());
 
-    if (!stream->Write(outer_req)) { return bRC_Error; }
     if (!stream->Read(outer_resp)) { return bRC_Error; }
     if (!outer_resp.has_get_acl()) { return bRC_Error; }
 
@@ -1865,6 +1948,7 @@ class PluginClient {
 
     memcpy(*buffer, data.data(), data.size() + 1);
 
+    predict(GET_XATTR);  // only sometimes
     return bRC_OK;
   }
 
@@ -1872,6 +1956,7 @@ class PluginClient {
                std::string_view key,
                std::string_view value)
   {
+    if (!check_no_prediction()) {}
     bp::PluginRequest outer_req;
     bp::PluginResponse outer_resp;
     auto& req = *outer_req.mutable_set_xattr();
@@ -1902,13 +1987,16 @@ class PluginClient {
 
     if (current_xattr_index == std::numeric_limits<size_t>::max()) {
       // we need to grab them now
-      bp::PluginRequest outer_req;
+      if (!check_prediction(GET_XATTR)) {
+        bp::PluginRequest outer_req;
+        auto& req = *outer_req.mutable_get_xattr();
+        req.set_file(file.data(), file.size());
+        if (!stream->Write(outer_req)) { return bRC_Error; }
+      } else {
+        assert(*cached_file == file);
+      }
+
       bp::PluginResponse outer_resp;
-      auto& req = *outer_req.mutable_get_xattr();
-
-      req.set_file(file.data(), file.size());
-
-      if (!stream->Write(outer_req)) { return bRC_Error; }
       if (!stream->Read(outer_resp)) { return bRC_Error; }
       if (!outer_resp.has_get_xattr()) { return bRC_Error; }
 
@@ -1919,6 +2007,8 @@ class PluginClient {
           std::make_move_iterator(std::end(resp.attributes())));
 
       current_xattr_index = 0;
+    } else {
+      check_no_prediction();
     }
 
     if (current_xattr_index == xattribute_cache.size()) {
@@ -1940,6 +2030,8 @@ class PluginClient {
     memcpy(*value_buf, val.data(), val.size() + 1);
 
     if (current_xattr_index == xattribute_cache.size()) {
+      predict(END_BACKUP_FILE);
+
       current_xattr_index = -1;  // reset
       return bRC_OK;
     } else {
@@ -1960,7 +2052,6 @@ class PluginClient {
     }
   }
 
-
  private:
   std::unique_ptr<prototools::ProtoBidiStream> stream{};
   PluginContext* core{nullptr};
@@ -1975,6 +2066,174 @@ class PluginClient {
   {
     ::DebugLog(core, severity, std::move(fmt), std::forward<Args>(args)...);
   }
+
+  enum step
+  {
+    HANDLE_EVENT,
+    START_BACKUP_FILE,
+    END_BACKUP_FILE,
+    FILE_OPEN,
+    FILE_READ,
+    FILE_WRITE,
+    FILE_CLOSE,
+    GET_ACL,
+    GET_XATTR,
+  };
+
+  const char* step_name(step Step)
+  {
+    switch (Step) {
+      case HANDLE_EVENT:
+        return "handle-event";
+      case START_BACKUP_FILE:
+        return "start-backup-file";
+      case END_BACKUP_FILE:
+        return "end-backup-file";
+      case FILE_OPEN:
+        return "file-open";
+      case FILE_READ:
+        return "file-read";
+      case FILE_WRITE:
+        return "file-write";
+      case FILE_CLOSE:
+        return "file-close";
+      case GET_XATTR:
+        return "get-xattr";
+      case GET_ACL:
+        return "get-acl";
+    }
+
+    return "<unknown>";
+  }
+
+  std::optional<step> predicted_step{std::nullopt};
+  std::optional<size_t> cached_size{std::nullopt};
+  std::optional<std::string> cached_file{std::nullopt};
+  bool expect_xattr{};
+  bool expect_acl{};
+
+  struct start_backup {
+    std::string command;
+    bool no_read;
+    bool portable;
+    char flags[FOPTS_BYTES];
+  };
+  std::optional<start_backup> cached_start_backup{std::nullopt};
+
+  void predict(step Step)
+  {
+    return;
+
+    switch (Step) {
+      case HANDLE_EVENT: {
+      } break;
+      case START_BACKUP_FILE: {
+        if (!cached_start_backup) { return; }
+
+        bp::PluginRequest req;
+        auto* inner_req = req.mutable_start_backup();
+        inner_req->set_no_read(cached_start_backup->no_read);
+        inner_req->set_portable(cached_start_backup->portable);
+        inner_req->set_cmd(cached_start_backup->command);
+        inner_req->set_flags(cached_start_backup->flags,
+                             sizeof(cached_start_backup->flags));
+
+        if (!stream->Write(req)) {
+          // return bRC_Error;
+        }
+      } break;
+      case END_BACKUP_FILE: {
+        bp::PluginRequest predicted_outer_req;
+        auto& predicted_req = *predicted_outer_req.mutable_end_backup_file();
+        (void)predicted_req;
+
+        if (!stream->Write(predicted_outer_req)) {
+          // return bRC_Error;
+        }
+      } break;
+      case FILE_OPEN: {
+        if (!cached_flags) { return; }
+        if (!cached_file) { return; }
+        bp::PluginRequest predicted_outer_req;
+        auto& predicted_req = *predicted_outer_req.mutable_file_open();
+        predicted_req.set_mode(0);
+        predicted_req.set_flags(*cached_flags);
+        predicted_req.set_file(*cached_file);
+
+        if (!stream->Write(predicted_outer_req)) {
+          // return bRC_Error;
+        }
+      } break;
+      case FILE_READ: {
+        if (!cached_size) { return; }
+        bp::PluginRequest outer_predicted_req;
+        auto& predicted_req = *outer_predicted_req.mutable_file_read();
+        predicted_req.set_num_bytes(*cached_size);
+        if (!stream->Write(outer_predicted_req)) {
+          // return bRC_Error;
+        }
+      } break;
+      case FILE_WRITE: {
+      } break;
+      case FILE_CLOSE: {
+      } break;
+      case GET_ACL: {
+        if (!cached_file) { return; }
+        bp::PluginRequest outer_req;
+        auto& req = *outer_req.mutable_get_acl();
+        req.set_file(*cached_file);
+
+        if (!stream->Write(outer_req)) {
+          // return bRC_Error;
+        }
+      } break;
+      case GET_XATTR: {
+        if (!cached_file) { return; }
+        if (current_xattr_index != std::numeric_limits<size_t>::max()) {
+          return;
+        }
+        bp::PluginRequest outer_req;
+        auto& req = *outer_req.mutable_get_xattr();
+        req.set_file(*cached_file);
+        if (!stream->Write(outer_req)) {
+          // return bRC_Error;
+        }
+      } break;
+    }
+
+    predicted_step = Step;
+  }
+
+  void clear_prediction() { predicted_step.reset(); }
+
+  bool check_no_prediction()
+  {
+    return false;
+    if (predicted_step) {
+      JobLog(core, M_ERROR, "predicted {} but got unpredicted",
+             step_name(*predicted_step));
+
+      predicted_step.reset();
+      return false;
+    }
+    return true;
+  }
+
+  bool check_prediction(step Step)
+  {
+    return false;
+    bool prediction_ok = predicted_step && *predicted_step == Step;
+
+    if (!prediction_ok) {
+      JobLog(core, M_ERROR, "predicted {} but got {}",
+             predicted_step ? step_name(*predicted_step) : "<none>",
+             step_name(Step));
+    }
+
+    predicted_step.reset();
+
+    return prediction_ok;
+  }
 };
 }  // namespace
 
@@ -1988,10 +2247,10 @@ struct grpc_connection_members {
   //    has finished sending its messages.
   // 4) destroy the server socket.
 
-  PluginContext* pctx;
-  Socket server_sock;
-  std::unique_ptr<BareosCore> server;
-  Socket client_sock;
+  PluginContext* pctx{nullptr};
+  Socket server_sock{};
+  std::unique_ptr<BareosCore> server{};
+  Socket client_sock{};
   PluginClient client;
 
   grpc_connection_members(PluginContext* ctx,
