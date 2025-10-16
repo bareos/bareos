@@ -384,11 +384,18 @@ class BareosCore {
         break;
       }
       bc::CoreResponse resp;
-      if (!core->HandleRequest(&req, &resp)) {
-        // sent some kind of error message ?
+      switch (core->HandleRequest(&req, &resp)) {
+        case CallResult::Response: {
+          stream->Write(resp);
+        } break;
+        case CallResult::NoResponse: {
+          // nothing to do
+        } break;
+        case CallResult::Error: {
+          // sent some kind of error message ?
+          assert(0);
+        } break;
       }
-
-      stream->Write(resp);
     }
 
     // TODO: the socket should get killed here
@@ -580,90 +587,98 @@ class BareosCore {
 
 
  private:
-  bool HandleRequest(const bc::CoreRequest* outer_req,
-                     bc::CoreResponse* outer_resp)
+  enum class CallResult
+  {
+    Response,
+    NoResponse,
+    Error,
+  };
+
+
+  CallResult HandleRequest(const bc::CoreRequest* outer_req,
+                           bc::CoreResponse* outer_resp)
   {
     switch (outer_req->request_case()) {
       case bareos::core::CoreRequest::kRegister: {
         auto status = this->Events_Register(&outer_req->register_(),
                                             outer_resp->mutable_register_());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kUnregister: {
         auto status = this->Events_Register(&outer_req->register_(),
                                             outer_resp->mutable_register_());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kGetInstanceCount: {
         auto status = this->Bareos_getInstanceCount(
             &outer_req->getinstancecount(),
             outer_resp->mutable_getinstancecount());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kCheckChanges: {
         auto status = this->Bareos_checkChanges(
             &outer_req->checkchanges(), outer_resp->mutable_checkchanges());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kAcceptFile: {
         auto status = this->Bareos_AcceptFile(&outer_req->acceptfile(),
                                               outer_resp->mutable_acceptfile());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kSetSeen: {
         auto status = this->Bareos_SetSeen(&outer_req->setseen(),
                                            outer_resp->mutable_setseen());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kClearSeen: {
         auto status = this->Bareos_ClearSeen(&outer_req->clearseen(),
                                              outer_resp->mutable_clearseen());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kJobMessage: {
         auto status = this->Bareos_JobMessage(&outer_req->jobmessage(),
                                               outer_resp->mutable_jobmessage());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kDebugMessage: {
         auto status = this->Bareos_DebugMessage(
             &outer_req->debugmessage(), outer_resp->mutable_debugmessage());
-        return status.ok();
+        return status.ok() ? CallResult::NoResponse : CallResult::Error;
       }
       case bareos::core::CoreRequest::kSetString: {
         auto status = this->Bareos_SetString(&outer_req->setstring(),
                                              outer_resp->mutable_setstring());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kGetString: {
         auto status = this->Bareos_GetString(&outer_req->getstring(),
                                              outer_resp->mutable_getstring());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kSetInt: {
         auto status = this->Bareos_SetInt(&outer_req->setint(),
                                           outer_resp->mutable_setint());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kGetInt: {
         auto status = this->Bareos_GetInt(&outer_req->getint(),
                                           outer_resp->mutable_getint());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kSetFlag: {
         auto status = this->Bareos_SetFlag(&outer_req->setflag(),
                                            outer_resp->mutable_setflag());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       case bareos::core::CoreRequest::kGetFlag: {
         auto status = this->Bareos_GetFlag(&outer_req->getflag(),
                                            outer_resp->mutable_getflag());
-        return status.ok();
+        return status.ok() ? CallResult::Response : CallResult::Error;
       } break;
       default: {
         // return grpc::Status(grpc::StatusCode::UNIMPLEMENTED,
         //                     "unknown core request");
-        return false;
+        return CallResult::Error;
       } break;
     }
   }
