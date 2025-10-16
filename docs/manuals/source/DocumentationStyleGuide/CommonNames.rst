@@ -97,7 +97,7 @@ Products
    open-source,  open-source,
    OpenSSL,      OpenSSL,
    |postgresql|, ``|postgresql|``,
-   ReaR,         ReaR,             Relax-and-Recover - Linux Disaster Recovery, https://relax-and-recover.org/
+   ReaR,         ReaR,             `Relax-and-Recover <https://relax-and-recover.org/>` - Linux Disaster Recovery
    reST,         reST,             reStructuredText
    TLS-PSK,      TLS-PSK,          Transport Layer Security pre-shared key ciphersuites (TLS-PSK)
    |vmware|,     ``|vmware|``,

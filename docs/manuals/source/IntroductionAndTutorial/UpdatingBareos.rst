@@ -416,7 +416,7 @@ When updating Bareos through the distribution packaging mechanism,
 the existing configuration files are kept as they are.
 
 As long as your configuration didn't show any deprecation warnings before the upgrade,
-normally no configuration changes are required on upgrades.
+If your configuration didn't show any deprecation warnings prior the upgrade, no configuration change will be required on upgrades.
 Check the :ref:`Release Notes <releasenotes>` for breaking changes or other special cases.
 
 

@@ -273,12 +273,12 @@ However, the file paths in the packages differ, due to the varying requirements 
      - :file:`/usr/local/lib/bareos/scripts/`
      - :file:`/usr/local/bareos/lib/bareos/scripts/`
      - :file:`$INSTDIR\\scripts\\`
-   * - Python plugins<br> (default)
+   * - Python plugins (default)
      - :file:`/usr/lib/bareos/plugins/`
      - :file:`/usr/local/lib/bareos/plugins/`
      - :file:`/usr/local/bareos/lib/bareos/plugins/`
      - :file:`$INSTDIR\\plugins\\`
-   * - Storage<br> (default)
+   * - Storage (default)
      - :file:`/var/lib/bareos/storage/`
      - :file:`/var/lib/bareos/storage/`
      - not used
