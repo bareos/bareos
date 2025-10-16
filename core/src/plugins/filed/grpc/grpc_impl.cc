@@ -363,6 +363,14 @@ class BareosCore {
   BareosCore& operator=(BareosCore&&) = delete;
   BareosCore(BareosCore&&) = delete;
 
+  ~BareosCore()
+  {
+    if (connection) {
+      DebugLog(core, 100, "server = {{ writes = {}, reads = {}}}",
+               connection->write_count, connection->read_count);
+    }
+  }
+
   static void do_answer_calls(prototools::ProtoBidiStream* stream,
                               PluginContext* ctx,
                               BareosCore* core)
@@ -1928,6 +1936,15 @@ class PluginClient {
   PluginClient& operator=(const PluginClient&) = delete;
   PluginClient(PluginClient&&) = default;
   PluginClient& operator=(PluginClient&&) = default;
+
+  ~PluginClient()
+  {
+    if (stream) {
+      DebugLog(100, "client = {{ writes = {}, reads = {}}}",
+               stream->write_count, stream->read_count);
+    }
+  }
+
 
  private:
   std::unique_ptr<prototools::ProtoBidiStream> stream{};
