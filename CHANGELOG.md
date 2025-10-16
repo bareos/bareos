@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+- Update dir-director-MaximumConcurrentJobs.rst.inc with a warning about MaximumConcurrentJobs modification on running Directors [PR #2397]
+
 ## [24.0.6] - 2025-10-15
 
 ### Fixed
@@ -534,4 +537,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2378]: https://github.com/bareos/bareos/pull/2378
 [PR #2382]: https://github.com/bareos/bareos/pull/2382
 [PR #2387]: https://github.com/bareos/bareos/pull/2387
+[PR #2397]: https://github.com/bareos/bareos/pull/2397
 [unreleased]: https://github.com/bareos/bareos/tree/master
