@@ -1618,9 +1618,11 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
         while (server.Read(req)) {
           resp.clear_response();
           if (!service.HandleRequest(req, resp)) {
-            // some error here
+            // TODO: some error here
           }
-          server.Write(resp);
+          if (!server.Write(resp)) {
+            // TODO: some other error here
+          }
         }
       }
 
