@@ -2122,8 +2122,6 @@ class PluginClient {
 
   void predict(step Step)
   {
-    return;
-
     switch (Step) {
       case HANDLE_EVENT: {
       } break;
@@ -2208,7 +2206,6 @@ class PluginClient {
 
   bool check_no_prediction()
   {
-    return false;
     if (predicted_step) {
       JobLog(core, M_ERROR, "predicted {} but got unpredicted",
              step_name(*predicted_step));
@@ -2221,7 +2218,6 @@ class PluginClient {
 
   bool check_prediction(step Step)
   {
-    return false;
     bool prediction_ok = predicted_step && *predicted_step == Step;
 
     if (!prediction_ok) {
