@@ -56,8 +56,8 @@ static const int debuglevel = 150;
 #define PLUGIN_DATE "April 2025"
 #define PLUGIN_VERSION "1"
 #define PLUGIN_DESCRIPTION "Bareos Hyper-V Windows File Daemon Plugin"
-#define PLUGIN_USAGE            \
-  "\n  hyper-v:config=<path>\n" \
+#define PLUGIN_USAGE                          \
+  "\n  hyper-v:config=<path>:vmname=<name>\n" \
   ""
 
 using filedaemon::bEvent;
@@ -3793,6 +3793,20 @@ std::size_t read_file_contents(PluginContext* ctx,
   return bytes_read;
 }
 
+static std::string read_value(std::string_view& in)
+{
+  std::string s;
+  while (in.size() > 0) {
+    if (in.front() == ':') {
+      in.remove_prefix(1);
+      break;
+    }
+    s += in
+  }
+
+  return s;
+}
+
 /**
  * Parse the plugin definition passed in.
  *
@@ -3837,58 +3851,107 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
   }
 
   rest = rest.substr(1);
-  DBGC(ctx, "continuing with {}", rest);
+  std::optional<std::string> path;
+  std::optional<std::string> name;
 
-  constexpr std::string_view config_path = "config";
+  while (rest.size() > 0) {
+    // make sure that we make progress while parsing
+    auto starting_size = rest.size();
 
-  if (rest.size() < config_path.size()) {
-    Jmsg(ctx, M_ERROR,
-         "bad plugin definition (missing data after ':' at %llu): %.*s\n",
-         static_cast<long long unsigned>(input.size() - rest.size()),
-         static_cast<int>(input.size()), input.data());
+    constexpr std::string_view config_path = "config";
+    constexpr std::string_view vmname = "vmname";
+
+    DBGC(ctx, "continuing with {}", rest);
+
+    if (rest.starts_with(config_path)) {
+      DBGC(ctx, "found config-path directive");
+      rest = rest.substr(config_path.size());
+      DBGC(ctx, "continuing with {}", rest);
+
+      if (rest.size() == 0 || rest[0] != '=') {
+        Jmsg(ctx, M_ERROR,
+             "bad plugin definition (expected '=' at %llu): %.*s\n",
+             static_cast<long long unsigned>(input.size() - rest.size()),
+             static_cast<int>(input.size()), input.data());
+        return bRC_Error;
+      }
+
+      rest = rest.substr(1);
+      DBGC(ctx, "continuing with {}", rest);
+
+      std::string path_value = read_value(rest);
+
+      if (path_value.size() == 0) {
+        Jmsg(ctx, M_ERROR,
+             "bad plugin definition (expected config path at %llu): %.*s\n",
+             static_cast<long long unsigned>(input.size() - rest.size()),
+             static_cast<int>(input.size()), input.data());
+        return bRC_Error;
+      }
+
+      path.emplace(std::move(path_value));
+      DBGC(ctx, "found config path = {}", *path);
+    } else if (rest.starts_with(vmname)) {
+      DBGC(ctx, "found vmname directive");
+      rest = rest.substr(vmname.size());
+      DBGC(ctx, "continuing with {}", rest);
+
+      if (rest.size() == 0 || rest[0] != '=') {
+        Jmsg(ctx, M_ERROR,
+             "bad plugin definition (expected '=' at %llu): %.*s\n",
+             static_cast<long long unsigned>(input.size() - rest.size()),
+             static_cast<int>(input.size()), input.data());
+        return bRC_Error;
+      }
+
+      rest = rest.substr(1);
+      DBGC(ctx, "continuing with {}", rest);
+
+      std::string name_value = read_value(rest);
+
+      if (name_value.size() == 0) {
+        Jmsg(ctx, M_ERROR,
+             "bad plugin definition (expected config path at %llu): %.*s\n",
+             static_cast<long long unsigned>(input.size() - rest.size()),
+             static_cast<int>(input.size()), input.data());
+        return bRC_Error;
+      }
+
+      name.emplace(std::move(name_value));
+      DBGC(ctx, "found config path = {}", *path);
+    } else {
+      Jmsg(
+          ctx, M_ERROR,
+          "bad plugin definition (unknown directive after ':' at %llu): %.*s\n",
+          static_cast<long long unsigned>(input.size() - rest.size()),
+          static_cast<int>(input.size()), input.data());
+      return bRC_Error;
+    }
+
+    if (rest.size() == starting_size) {
+      Jmsg(ctx, M_ERROR,
+           "internal error while trying to parse the plugin definition "
+           "occured: %.*s\n",
+           static_cast<int>(rest.size()), rest.data());
+      return bRC_Error;
+    }
+  }
+
+  if (!path) {
+    Jmsg(ctx, M_ERROR, "no config file was specified\n");
     return bRC_Error;
   }
 
-  if (rest.substr(0, config_path.size()) != config_path) {
-    Jmsg(ctx, M_ERROR, "bad plugin definition (unknown option at %llu): %.*s\n",
-         static_cast<long long unsigned>(input.size() - rest.size()),
-         static_cast<int>(input.size()), input.data());
-    return bRC_Error;
-  }
-
-  rest = rest.substr(config_path.size());
-  DBGC(ctx, "continuing with {}", rest);
-
-  if (rest.size() == 0 || rest[0] != '=') {
-    Jmsg(ctx, M_ERROR, "bad plugin definition (expected '=' at %llu): %.*s\n",
-         static_cast<long long unsigned>(input.size() - rest.size()),
-         static_cast<int>(input.size()), input.data());
-    return bRC_Error;
-  }
-
-  rest = rest.substr(1);
-  DBGC(ctx, "continuing with {}", rest);
-
-  if (rest.size() == 0) {
-    Jmsg(ctx, M_ERROR,
-         "bad plugin definition (expected config path at %llu): %.*s\n",
-         static_cast<long long unsigned>(input.size() - rest.size()),
-         static_cast<int>(input.size()), input.data());
-    return bRC_Error;
-  }
-
-  std::string path{rest};
-  DBGC(ctx, "found config path = {}", path);
-  std::wstring wpath = utf8_to_utf16(path);
-  DBGC(ctx, L"found config path = {}", wpath);
+  std::wstring wpath = utf8_to_utf16(*path);
+  DBGC(ctx, L"found config path = L\"{}\"", wpath);
 
   HANDLE config_handle
       = CreateFileW(wpath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
                     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  DBGC(ctx, "opened {} at {}", path, fmt_as_ptr(config_handle));
+  DBGC(ctx, "opened {} at {}", *path, fmt_as_ptr(config_handle));
   if (config_handle == INVALID_HANDLE_VALUE) {
-    Jmsg(ctx, M_ERROR, "could not open config file %s: Err=%ls\n", path.c_str(),
-         format_win32_error().c_str());
+    Jmsg(ctx, M_ERROR, "could not open config file %s: Err=%ls\n",
+         path->c_str(), format_win32_error().c_str());
     return bRC_Error;
   }
 
@@ -3896,7 +3959,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
 
   if (!GetFileSizeEx(config_handle, &file_size_li)) {
     Jmsg(ctx, M_ERROR, "could not determine size of config file %s: Err=%ls\n",
-         path.c_str(), format_win32_error().c_str());
+         path->c_str(), format_win32_error().c_str());
     CloseHandle(config_handle);
     return bRC_Error;
   }
@@ -3908,7 +3971,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
   auto bytes_read
       = read_file_contents(ctx, config_handle, file_content.get(), file_size);
   if (bytes_read == 0) {
-    Jmsg(ctx, M_ERROR, "could read file %s: Err=%ls\n", path.c_str(),
+    Jmsg(ctx, M_ERROR, "could not read file %s: Err=%ls\n", path->c_str(),
          format_win32_error().c_str());
     CloseHandle(config_handle);
     return bRC_Error;
@@ -3916,7 +3979,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     Jmsg(ctx, M_ERROR,
          "could read complete file %s: only %llu out of expected %llu bytes "
          "were read\n",
-         path.c_str(), static_cast<long long unsigned>(bytes_read),
+         path->c_str(), static_cast<long long unsigned>(bytes_read),
          static_cast<long long unsigned>(file_size));
     CloseHandle(config_handle);
     return bRC_Error;
@@ -3936,11 +3999,12 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
                    JSON_REJECT_DUPLICATES | JSON_DISABLE_EOF_CHECK, &jerr);
 
   if (!json) {
-    JERR(ctx, "failed to parse config file {} as json: {} (at {}:{})", path,
+    JERR(ctx, "failed to parse config file {} as json: {} (at {}:{})", *path,
          jerr.text, jerr.line, jerr.column);
     return bRC_Error;
   }
 
+  if (name) { json_object_set_new(json, "vmname", json_string(name->c_str())); }
   p_ctx->config = json;
 
   return bRC_OK;
