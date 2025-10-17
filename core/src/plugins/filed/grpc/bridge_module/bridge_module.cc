@@ -368,7 +368,6 @@ void DebugMessage(int level,
                   const char* file,
                   const char* fun)
 {
-  return;
   bc::CoreRequest outer_req;
   auto& req = *outer_req.mutable_debugmessage();
   req.set_level(level);
