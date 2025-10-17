@@ -1588,50 +1588,45 @@ void SetReady(bool result)
 
 void HandleConnection(int server_sock, int client_sock, int io_sock)
 {
-  (void)io_sock;
+  prototools::ProtoBidiStream server{server_sock};
+  prototools::ProtoBidiStream client{client_sock};
+  global_core_connection.client_writer = &client;
 
-  {
-    prototools::ProtoBidiStream server{server_sock};
-    prototools::ProtoBidiStream client{client_sock};
+  plugin_thread plugin{};
 
-    plugin_thread plugin{};
+  DebugLog(100, FMT_STRING("setting up ..."));
 
-    global_core_connection.client_writer = &client;
+  bool done = false;
+  PluginService service{plugin.ctx(), io_sock, funcs, &done};
 
-    DebugLog(100, FMT_STRING("setting up ..."));
-
-    std::promise<void> shutdown;
-    PluginService service{plugin.ctx(), io_sock, funcs, std::move(shutdown)};
-
-    if (!setup()) {
-      DebugLog(50, FMT_STRING("setup failed"));
-      SetReady(false);
-    } else {
-      DebugLog(100, FMT_STRING(
-                        "... successfully.\nwaiting for server to finish ..."));
-      SetReady(true);
+  if (!setup()) {
+    DebugLog(50, FMT_STRING("setup failed"));
+    SetReady(false);
+  } else {
+    DebugLog(100,
+             FMT_STRING("... successfully.\nwaiting for server to finish ..."));
+    SetReady(true);
 
 
-      {
-        bp::PluginRequest req;
-        bp::PluginResponse resp;
-        while (server.Read(req)) {
-          resp.clear_response();
-          if (!service.HandleRequest(req, resp)) {
-            // TODO: some error here
-          }
-          if (!server.Write(resp)) {
-            // TODO: some other error here
-          }
+    {
+      bp::PluginRequest req;
+      bp::PluginResponse resp;
+      while (!done && server.Read(req)) {
+        resp.clear_response();
+        if (!service.HandleRequest(req, resp)) {
+          // TODO: some error here
+        }
+        if (!server.Write(resp)) {
+          // TODO: some other error here
         }
       }
-
-
-      DebugLog(100, FMT_STRING("grpc server finished: closing connections"));
     }
-    // destroy the server before killing the plugin thread
-    DebugLog(100, FMT_STRING("shutdown - shutting down the grpc server"));
+
+
+    DebugLog(100, FMT_STRING("grpc server finished: closing connections"));
   }
+  // destroy the server before killing the plugin thread
+  DebugLog(100, FMT_STRING("shutdown - shutting down the grpc server"));
   // finally destroy the plugin thread
   // DebugLog(100, FMT_STRING("shutdown - stopping plugin thread"));
   // plugin.join();
