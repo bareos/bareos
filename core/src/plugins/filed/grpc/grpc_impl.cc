@@ -2263,6 +2263,12 @@ struct grpc_connection_members {
   }
 
   grpc_connection_members() = delete;
+
+  ~grpc_connection_members()
+  {
+    client_sock.close();
+    server_sock.close();
+  }
 };
 
 struct grpc_connection_builder {

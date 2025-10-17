@@ -107,7 +107,6 @@ struct ProtoBidiStream {
   ProtoBidiStream(ProtoBidiStream&&) = delete;
   ProtoBidiStream& operator=(ProtoBidiStream&&) = delete;
 
-
   template <typename Message> bool Read(Message& msg)
   {
     read_count += 1;
