@@ -86,8 +86,23 @@ if(ENABLE_GRPC)
   target_link_libraries(grpc-proto PUBLIC protobuf::libprotobuf)
 
   bareos_add_plugin(grpc-fd)
-  target_sources(grpc-fd PRIVATE grpc.cc grpc_impl.cc bareos_api.cc)
+
+  include(GenerateExportHeader)
+  generate_export_header(grpc-fd)
+
+  target_sources(
+    grpc-fd
+    PRIVATE grpc.cc grpc_impl.cc bareos_api.cc
+    PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS
+           $<TARGET_PROPERTY:grpc-fd,BINARY_DIR> FILES
+           ${CMAKE_CURRENT_BINARY_DIR}/grpc-fd_export.h
+  )
   target_link_libraries(grpc-fd Bareos::Lib fmt::fmt grpc-proto)
+  set_target_properties(
+    grpc-fd PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN
+                                                    ON
+  )
+
   install(
     TARGETS grpc-fd
     DESTINATION ${plugindir}
@@ -108,6 +123,10 @@ if(ENABLE_GRPC)
     # python-fd.so
     bareos-grpc-fd-plugin-bridge fmt::fmt grpc-proto Python3::Module
     ${CMAKE_DL_LIBS}
+  )
+  set_target_properties(
+    bareos-grpc-fd-plugin-bridge PROPERTIES CXX_VISIBILITY_PRESET hidden
+                                            VISIBILITY_INLINES_HIDDEN ON
   )
   install(
     TARGETS bareos-grpc-fd-plugin-bridge
