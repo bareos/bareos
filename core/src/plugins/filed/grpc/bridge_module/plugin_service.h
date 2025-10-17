@@ -64,7 +64,7 @@ class PluginService {
   PluginService(PluginContext* context,
                 int io_sock,
                 PluginFunctions functions,
-                std::promise<void>&& shutdown_signal)
+                bool* shutdown_signal)
       : funcs{functions}
       , ctx{context}
       , io{io_sock}
@@ -137,7 +137,7 @@ class PluginService {
   PluginContext* ctx{nullptr};
   int io{};
 
-  std::promise<void> shutdown;
+  bool* shutdown;
 
   std::vector<char> vec;
 
