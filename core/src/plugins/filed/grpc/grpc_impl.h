@@ -57,10 +57,13 @@ struct Socket {
     return fd;
   }
 
-  ~Socket()
+  void close()
   {
-    if (os >= 0) close(os);
+    if (os >= 0) ::close(os);
+    os = -1;
   }
+
+  ~Socket() { close(); }
 
  private:
   int os{-1};
