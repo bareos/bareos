@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Here we set some extra variables that the tests needs.
 #
 # print_delete_trace

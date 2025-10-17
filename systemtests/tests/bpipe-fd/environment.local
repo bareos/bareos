@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # these should get overwritten in bpipe-fd
 export BareosClientName='-1'
 export BareosJobId='-1'
