@@ -257,7 +257,7 @@ bool TryReserveAfterUse(JobControlRecord* jcr, bool append)
   }
 
   ClearReserveMessages(jcr);
-  return found;
+  return found && !jcr->IsJobCanceled();
 }
 
 /**
