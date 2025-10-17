@@ -1443,7 +1443,7 @@ class PluginClient {
           if (!pkt->no_read) {
             predict(FILE_OPEN);
           } else if (expect_acl || expect_xattr) {
-            predict(expect_acl ? GET_ACL : GET_XATTR);
+            // predict(expect_acl ? GET_ACL : GET_XATTR);
           }
         } else if (resp.has_object()) {
           DebugLog(100, FMT_STRING("received an object"));
@@ -1467,7 +1467,7 @@ class PluginClient {
           memcpy(pkt->object_name, name.c_str(), name.size() + 1);
           pkt->index = object.index();
 
-          predict(END_BACKUP_FILE);
+          // predict(END_BACKUP_FILE);
         } else if (resp.has_error()) {
           auto& err = resp.error();
 
@@ -1621,9 +1621,9 @@ class PluginClient {
     *io_in_core = resp.io_in_core();
 
     if (!resp.io_in_core()) {
-      predict(FILE_READ);  // TODO: or FILE_WRITE
+      // predict(FILE_READ);  // TODO: or FILE_WRITE
     } else {
-      predict(FILE_CLOSE);
+      // predict(FILE_CLOSE);
     }
     return bRC_OK;
   }
@@ -1729,7 +1729,7 @@ class PluginClient {
     (void)resp;
 
     if (expect_xattr || expect_acl) {
-      predict(expect_acl ? GET_ACL : GET_XATTR);
+      // predict(expect_acl ? GET_ACL : GET_XATTR);
     }
 
     return bRC_OK;
@@ -1950,7 +1950,7 @@ class PluginClient {
 
     memcpy(*buffer, data.data(), data.size() + 1);
 
-    predict(GET_XATTR);  // only sometimes
+    // predict(GET_XATTR);  // only sometimes
     return bRC_OK;
   }
 
@@ -2222,6 +2222,9 @@ class PluginClient {
 
   bool check_prediction(step Step)
   {
+    // if we didnt predict anything, then everything is good
+    if (!predicted_step) { return false; }
+
     bool prediction_ok = predicted_step && *predicted_step == Step;
 
     if (!prediction_ok) {
