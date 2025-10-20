@@ -183,10 +183,15 @@ class OutputHandleGenerator {
   virtual ~OutputHandleGenerator() {}
 };
 
+static inline AsLargeInteger(uint64_t x)
+{
+  return LARGE_INTEGER{.QuadPart = x};
+}
+
 class RawFileGenerator : public OutputHandleGenerator {
  public:
-  RawFileGenerator(std::wstring dir_path, GenericLogger*)
-      : dir{std::move(dir_path)}
+  RawFileGenerator(std::wstring dir_path, GenericLogger* logger)
+      : dir{std::move(dir_path)}, log{logger}
   {
     while (dir.back() == L'\\') { dir.pop_back(); }
   }
@@ -207,8 +212,29 @@ class RawFileGenerator : public OutputHandleGenerator {
           "could not open {}: Err={}", FromUtf16(disk_path), GetLastError())};
     }
 
-    // TODO: set file size
-    (void)info;
+    DWORD bytes_written;
+    if (DeviceIoControl(output, FSCTL_SET_SPARSE, NULL, 0, NULL, 0,
+                        &bytes_written, NULL)
+        != 0) {
+      if (!SetFilePointerEx(output, AsLargeInteger(info.disk_size), NULL,
+                            FILE_BEGIN)
+          || !SetEndOfFile(output)) {
+        log->Info("could enlarge {} to required size", disk_path);
+      }
+
+      if (!SetFilePointerEx(output, {}, NULL, FILE_BEGIN)) {
+        throw std::runtime_error
+        {
+          libbareos::format(
+              "could not reset file pointer after enlarging the file")
+        }
+      }
+    } else {
+      log->Info(
+          "could not set {} to sparse (Err={}); will not try to set it to "
+          "correct size",
+          disk_path, GetLastError());
+    }
 
     return output;
   }
@@ -217,6 +243,7 @@ class RawFileGenerator : public OutputHandleGenerator {
  private:
   std::size_t disk_idx_ = 0;
   std::wstring dir;
+  GenericLogger* log;
 };
 
 class VhdxGenerator : public OutputHandleGenerator {
