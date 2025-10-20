@@ -14,14 +14,12 @@ case "$1" in
        @sbindir@/bareos-sd $2
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-sd
        ;;
     stop)
        echo "Stopping the Bareos Storage daemon: "
 #      killproc @sbindir@/bareos-sd
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bareos-sd
        ;;
     restart)
        $0 stop

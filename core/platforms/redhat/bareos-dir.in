@@ -53,7 +53,6 @@ case "$1" in
       daemon --user ${DIR_USER} @sbindir@/bareos-dir $2 ${DIR_OPTIONS}
       RETVAL=$?
       echo
-      [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-dir
     else
       echo "Configuration check failed, please check log file for errors"
     fi
@@ -63,7 +62,6 @@ case "$1" in
     killproc @sbindir@/bareos-dir
     RETVAL=$?
     echo
-    [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bareos-dir
     ;;
   restart)
     $0 stop

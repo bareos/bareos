@@ -93,7 +93,6 @@ CMAKE_ARGS+= -DCMAKE_VERBOSE_MAKEFILE=ON \
   -Dworkingdir=/var/lib/bareos \
   -Dplugindir=/usr/local/lib/bareos/plugins \
   -Dlogdir=/var/log/bareos \
-  -Dsubsys-dir=/var/lock \
   -Dreadline=${LOCALBASE} \
   -Dscsi-crypto=no\
   -Dndmp=yes\

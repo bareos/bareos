@@ -84,7 +84,6 @@ macro(create_systemtests_directory)
     )
   endif()
 
-  file(MAKE_DIRECTORY ${subsysdir})
   file(MAKE_DIRECTORY ${sbindir})
   file(MAKE_DIRECTORY ${bindir})
   file(MAKE_DIRECTORY ${scripts})

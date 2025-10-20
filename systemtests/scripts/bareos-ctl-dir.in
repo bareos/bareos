@@ -12,7 +12,6 @@ export AWK="@AWK@"
 export PIDOF="@PIDOF@"
 export PGREP="@PGREP@"
 
-SUBSYSDIR=@subsysdir@
 BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY:-@sbindir@/bareos-dir}"
 export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
 BAREOS_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT:-@dir_port@}
