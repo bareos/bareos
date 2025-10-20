@@ -23,9 +23,6 @@ BAREOS_UNITTESTS_BINARY_DIR=$CMAKE_BINARY_DIR/core/src/tests
 
 current_test_directory=${PROJECT_BINARY_DIR}/tests/@TEST_NAME@
 
-# conf=${current_test_directory}/etc/bareos
-# export confdir=${conf}
-
 export config_directory_dir_additional_test_config=@config_directory_dir_additional_test_config@
 
 working=${current_test_directory}/working

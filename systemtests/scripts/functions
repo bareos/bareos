@@ -1345,9 +1345,6 @@ plugindir="${plugindir:-"${cwd}/bin/plugins"}"
 plugindirtmp="${plugindirtmp:-"$working/plugins"}"
 
 # Bareos conf files
-#conf=${conf:-"${cwd}/bin"}
-#confdir="$conf"
-#configs="$conf"
 BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR:-"${cwd}/bin"}"
 
 # Regress scripts
@@ -1365,8 +1362,6 @@ tmpsrc=${tmpsrc:-"${cwd}/tmp/build"}
 
 export BAREOS_CONFIG_DIR
 export bin
-#export conf
-#export confdir
 export dumps
 export plugindir
 export plugindirtmp
