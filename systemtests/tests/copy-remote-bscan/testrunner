@@ -83,10 +83,10 @@ END_OF_DATA
 run_bconsole "$tmp/bconcmds"
 
 oldconf="${BAREOS_CONFIG_DIR}"
-conf="${BAREOS_CONFIG_DIR}-remote"
+BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR}-remote"
 run_bscan_db -vv -d100 -s -V TestCopyVolume001 RemoteFileStorage
 ret=$?
-conf="${oldconf}"
+BAREOS_CONFIG_DIR="${oldconf}"
 
 if [ $ret -ne 0 ]; then
   echo "bscan exit code: $ret"
