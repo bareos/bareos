@@ -1033,7 +1033,7 @@ class BareosCore {
   {
     DebugLog(core,
              Severity{(int)req->level(), req->file().c_str(), (int)req->line()},
-             FMT_STRING("{}"), req->msg());
+             req->msg().c_str());
 
     return Status::OK;
   }

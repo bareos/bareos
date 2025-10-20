@@ -105,6 +105,14 @@ void DebugLog(Severity severity,
                          severity.severity, formatted.c_str());
 }
 
+static inline void DebugLog(PluginContext* ctx,
+                            Severity severity,
+                            const char* str)
+{
+  internal::DebugMessage(ctx, severity.file, severity.line, severity.severity,
+                         str);
+}
+
 template <typename... Args>
 void DebugLog(PluginContext* ctx,
               Severity severity,
