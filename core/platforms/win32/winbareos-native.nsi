@@ -691,10 +691,19 @@ SectionIn 1 2 3
   !cd "${CMAKE_BINARY_DIR}\plugins"
   File "bpipe-fd.dll"
   File "mssqlvdi-fd.dll"
+  File "hyper-v-fd.dll"
   # do not package python3-fd for now
   # File "python3-fd.dll"
 SectionEnd
 
+Section /o "Hyper-V File Daemon Plugin " SEC_FDPLUGIN_HYPERV
+SectionIn 1 2 3
+  SetShellVarContext all
+  SetOutPath "$INSTDIR\Plugins"
+  SetOverwrite ifnewer
+  !cd "${CMAKE_BINARY_DIR}\plugins"
+  File "hyper-v-fd.dll"
+SectionEnd
 
 
 Section "Open Firewall for File Daemon" SEC_FIREWALL_FD
@@ -1167,6 +1176,7 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FD} "Installs the Bareos File Daemon and required Files"
   !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_FD} "Programs belonging to the Bareos File Daemon (client)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FDPLUGINS} "Installs the Bareos File Daemon Plugins"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FDPLUGIN_HYPERV} "Installs the Bareos Hyper-V File Daemon Plugin"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_FD} "Opens the needed ports for the File Daemon in the windows firewall"
 
   ; SD
@@ -1622,6 +1632,7 @@ done:
   SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
   SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED}   # traymon
   SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} #  fd plugins
+  SectionSetFlags ${SEC_FDPLUGIN_HYPERV} ${SF_SELECTED} #  fd plugin hyper-v
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
   SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
