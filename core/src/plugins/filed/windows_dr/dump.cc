@@ -1882,8 +1882,8 @@ struct dump_context {
 
       plan.emplace_back(writer.get());
 
-      // logger->Trace( "copying extent ({}, {})", extent.handle_offset,
-      //         extent.length);
+      logger->Trace("copying extent ({}, {})", extent.handle_offset,
+                    extent.length);
 
       plan.emplace_back(
           insert_from{extent.hndl, extent.handle_offset, extent.length});
@@ -1900,10 +1900,10 @@ struct dump_context {
 
     if (res != TRUE) { return std::nullopt; }
 
-    // if (sizeof(geo) != bytes_written) {
-    //   logger->Trace( "drive geometry: bad read.  got {} bytes",
-    //   bytes_written); return std::nullopt;
-    // }
+    if (sizeof(geo) != bytes_written) {
+      logger->Trace("drive geometry: bad read.  got {} bytes", bytes_written);
+      return std::nullopt;
+    }
 
     return geo;
   }
@@ -1958,8 +1958,8 @@ struct data_dumper {
                          std::span<char> buffer)
   {
     if (offset == 0) {
-      // logger->SetStatus("inserting meta data");
-      // logger->Trace("writing {} bytes", bytes.size());
+      logger->SetStatus("inserting meta data");
+      logger->Trace("writing {} bytes", bytes.size());
     }
 
     auto bytes_left = bytes.size() - offset;
@@ -1976,16 +1976,16 @@ struct data_dumper {
                          std::span<char> buffer)
   {
     if (offset == 0) {
-      // logger->SetStatus("inserting from file");
-      // logger->Trace("inserting {} bytes", from.length);
+      logger->SetStatus("inserting from file");
+      logger->Trace("inserting {} bytes", from.length);
     }
 
     auto bytes_left = from.length - offset;
     auto bytes_to_write = std::min(bytes_left, buffer.size());
 
     if (bytes_to_write == 0) {
-      // logger->Trace("bytes_to_write = 0!!! {} {} {} {}", bytes_left,
-      //               buffer.size(), offset, current_offset);
+      logger->Trace("bytes_to_write = 0!!! {} {} {} {}", bytes_left,
+                    buffer.size(), offset, current_offset);
     }
 
     return reader.do_fill(from.hndl, from.offset + offset,
@@ -2012,7 +2012,7 @@ struct data_dumper {
 
       bytes_written += write_result;
       if (write_result == 0) {
-        // logger->Trace("write done");
+        logger->Trace("write done");
         current_index += 1;
         current_offset = 0;
       } else {

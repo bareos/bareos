@@ -186,8 +186,8 @@ struct plugin_arguments {
       }();
 
       if (current_arg.size() == 0) {
-        // ignore this for now, maybe this should be an error
-        continue;
+        return err("empty argument detected at index {}; this is not supported",
+                   current_arg.data() - cmdline.data());
       }
 
       auto eq_pos = current_arg.find_first_of("=");
