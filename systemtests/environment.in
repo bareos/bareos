@@ -72,13 +72,6 @@ export BAREOS_STORAGE2_PORT=@sd2_port@
 export BAREOS_WEBUI_PORT=@php_port@
 export MINIO_PORT=@minio_port@
 
-export BAREOS_FD_USER=""
-export BAREOS_FD_GROUP=""
-export BAREOS_SD_USER=""
-export BAREOS_SD_GROUP=""
-export BAREOS_DIRECTOR_USER=""
-export BAREOS_DIRECTOR_GROUP=""
-
 export CMAKE_BINARY_DIR
 
 export BAREOS_DIRECTOR_BINARY=$(dirname "@BAREOS_DIR_BINARY@")/$CMAKE_CONFIG_TYPE/$(basename "@BAREOS_DIR_BINARY@")

@@ -15,8 +15,6 @@ export PGREP="@PGREP@"
 BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY:-@sbindir@/bareos-dir}"
 export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
 BAREOS_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT:-@dir_port@}
-BAREOS_DIRECTOR_USER=${BAREOS_DIRECTOR_USER-@dir_user@}
-BAREOS_DIRECTOR_GROUP=${BAREOS_DIRECTOR_GROUP-@dir_group@}
 BAREOS_SCRIPTS_DIR=${BAREOS_SCRIPTS_DIR:-@scriptdir@}
 
 #
@@ -29,14 +27,6 @@ case "$1" in
     if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
       echo "Starting the Bareos Director daemon"
       OPTIONS=''
-      if [ "${BAREOS_DIRECTOR_USER}" != '' ]; then
-        OPTIONS="${OPTIONS} -u ${BAREOS_DIRECTOR_USER}"
-      fi
-
-      if [ "${BAREOS_DIRECTOR_GROUP}" != '' ]; then
-        OPTIONS="${OPTIONS} -g ${BAREOS_DIRECTOR_GROUP}"
-      fi
-
       if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
         OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
       fi
