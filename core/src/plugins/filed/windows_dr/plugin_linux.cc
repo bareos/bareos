@@ -64,7 +64,15 @@ const PluginInformation my_info = {
     .plugin_description
     = "This plugin allows you to backup your windows system for disaster "
       "recovery.",
-    .plugin_usage = "...",
+    .plugin_usage = R"(barri-fd:<target>,
+  where <target> is one of the following:
+    files=file1,file2,file3 - restore the disks to the chosen files
+    directory=dir           - restore the disks into the directory
+    copy=path               - copy the barri image to the following path
+
+  The copy option allows you to restore the image via the barri cli tool instead
+  of this filedaemon plugin.
+)",
 };
 
 struct plugin_arguments {
