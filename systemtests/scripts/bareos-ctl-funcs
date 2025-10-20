@@ -184,14 +184,7 @@ status()
     return 0
   fi
 
-  # See if the subsys lock exists
-  if [ -f ${SUBSYSDIR}/$base ]; then
-    echo "$base dead but subsys locked"
-    return 2
-  fi
-
   echo "$base is stopped"
-
   return 3
 }
 

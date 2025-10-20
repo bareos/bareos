@@ -16,14 +16,12 @@ case "$1" in
        fi
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-fd
        ;;
     'stop')
        echo "Stopping the Bareos File daemon: "
        kill  `ps -ef | grep @sbindir@/bareos-fd | grep -v grep | awk {'print $2'}`
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bareos-fd
        ;;
     'restart')
        $0 stop

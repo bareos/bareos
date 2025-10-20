@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -34,8 +34,6 @@ Vendor: 	The Bareos Team
 %define script_dir     /opt/freeware/bareos/scripts
 %define working_dir    /opt/freeware/var/bareos/working
 %define bsr_dir        /opt/freeware/var/bareos/working
-# TODO: use /run ?
-%define _subsysdir     /var/lock
 
 #
 # Generic daemon user and group

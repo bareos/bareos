@@ -12,7 +12,6 @@ export AWK="@AWK@"
 export PIDOF="@PIDOF@"
 export PGREP="@PGREP@"
 
-SUBSYSDIR=@subsysdir@
 BAREOS_FILEDAEMON_BINARY=${BAREOS_FILEDAEMON_BINARY:-@sbindir@/bareos-fd}
 export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
 BAREOS_FD_PORT=${BAREOS_FD_PORT:-@fd_port@}

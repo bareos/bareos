@@ -246,6 +246,7 @@ cmake  .. \
   -Dworkingdir=%{working_dir} \
   -Dplugindir=%{plugin_dir} \
   -Dlogdir=%{log_dir} \
+  -Dlogdir=/var/log/bareos \
   -Dscsi-crypto=yes \
   -Dndmp=yes \
 %if 0%{?build_qt_monitor}

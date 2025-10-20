@@ -15,14 +15,12 @@ case "$1" in
        @sbindir@/bareos-dir $2
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-dir
        ;;
     stop)
        echo "Stopping the Director daemon: "
 #      killproc @sbindir@/bareos-dir
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bareos-dir
        ;;
     restart)
        $0 stop

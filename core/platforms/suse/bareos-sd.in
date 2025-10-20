@@ -30,12 +30,12 @@ case "$1" in
     start)
        echo -n "Starting the Bareos Storage daemon: "
        /sbin/startproc -u @sd_user@ -g @sd_group@ @sbindir@/bareos-sd $2
-       rc_status -v && touch @subsysdir@/bareos-sd
+       rc_status -v
        ;;
     stop)
        echo -n "Stopping the Bareos Storage daemon: "
        /sbin/killproc @sbindir@/bareos-sd
-       rc_status -v && rm -f @subsysdir@/bareos-sd
+       rc_status -v
        ;;
     restart)
        $0 stop
