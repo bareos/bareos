@@ -250,12 +250,12 @@ struct restartable_parser {
   {
     if (d.data2.empty()) {
       // if data2 is empty, then data1 (left_over) was completely cleared,
-      // so we dont have to be careful now
+      // so we do not have to be careful now
 
       left_over.assign(d.data1.begin(), d.data1.end());
     } else {
       // the previous leftovers were not cleared completely
-      // we have to be careful now sice d.data1 and leftover are actually
+      // we have to be careful now since d.data1 and leftover are actually
       // the same thing (or at least views into the same thing)
       assert(left_over.size() >= d.data1.size());
       auto parsed_bytes = left_over.size() - d.data1.size();
@@ -271,7 +271,6 @@ struct restartable_parser {
 
   void set_logger(GenericLogger* logger) { _logger = logger; }
 
-  // ~restartable_parser() { }
   bool done() const { return to_parse.empty(); }
 
   GenericLogger* _logger{nullptr};

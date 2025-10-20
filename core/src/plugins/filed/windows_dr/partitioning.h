@@ -437,12 +437,27 @@ class Parser {
     STARTED,
   };
 
+  static inline std::string_view state_str(state s)
+  {
+    switch (s) {
+      case state::INITED: {
+        return "inited";
+      } break;
+      case state::STARTED: {
+        return "started";
+      } break;
+    }
+
+    return "unknown";
+  }
+
   void check_state(state s)
   {
     if (current_state != s) {
-      // TODO: better error message heer
       throw std::logic_error{
-          "bad state switch inside part table parsing logic"};
+          libbareos::format("bad state switch inside part table parsing logic: "
+                            "wanted {}, but got {}",
+                            state_str(s), state_str(current_state))};
     }
   }
 
