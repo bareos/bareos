@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - grpc: fix extra / for directories [PR #2373]
 - packaging: add setcap/getcap requirements [PR #2347]
 - scsicrypto: don't expose kek in job log [PR #2386]
+- RPM: fix restarting bareos-fd on upgrades from bareos <= 24 [PR #2395]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -235,4 +236,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2381]: https://github.com/bareos/bareos/pull/2381
 [PR #2386]: https://github.com/bareos/bareos/pull/2386
 [PR #2394]: https://github.com/bareos/bareos/pull/2394
+[PR #2395]: https://github.com/bareos/bareos/pull/2395
 [unreleased]: https://github.com/bareos/bareos/tree/master
