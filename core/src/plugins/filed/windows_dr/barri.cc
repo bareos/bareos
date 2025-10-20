@@ -262,6 +262,7 @@ When output to a terminal, the progress will be displayed in a progress bar.)",
   {0} restore --from backup.barri --to-disks 1 3 2
 
   # restore the disks as vhdx files into some directory
+  # here `get-backup` is any command that outputs the barri image to stdout
   get-backup | {0} restore --to-vhdx-directory "C:\Users\Public\Documents\Hyper-V\Virtual Hard Disks\"
 
   # restore the disks as raw files in the TEMP directory
