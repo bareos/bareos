@@ -3801,7 +3801,7 @@ static std::string read_value(std::string_view& in)
       in.remove_prefix(1);
       break;
     }
-    s += in
+    s += in;
   }
 
   return s;
@@ -3986,7 +3986,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
   }
 
   CloseHandle(config_handle);
-  DBGC(ctx, "sucessfully loaded config file {} into memory at {}", path,
+  DBGC(ctx, "sucessfully loaded config file {} into memory at {}", *path,
        fmt_as_ptr(file_content.get()));
 
   std::string_view config_content{file_content.get(), file_size};
