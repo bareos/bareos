@@ -279,9 +279,7 @@ struct logger : public GenericLogger {
 
   void SetStatus(std::string_view status) override
   {
-    (void)status;
-    // if (!progress_bar) { return; }
-    // progress_bar->bar.set_option(option::PostfixText(status));
+    Trace("switching status to '{}'", status);
   }
 
   void Output(Message message) override
@@ -396,14 +394,7 @@ struct logger : public GenericLogger {
   };
 
 
-  logger(bool trace) : GenericLogger{trace}
-  {
-    // indicators::show_console_cursor(false);
-  }
-  ~logger()
-  {
-    // indicators::show_console_cursor(true);
-  }
+  logger(bool trace) : GenericLogger{trace} {}
   std::optional<progress_bar> progress_bar;
 };
 
