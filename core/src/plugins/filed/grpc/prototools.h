@@ -25,6 +25,8 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <pthread.h>
+#include <span>
 
 namespace prototools {
 struct ProtoInputStream {
@@ -123,6 +125,164 @@ struct ProtoBidiStream {
   {
     write_count += 1;
     return output.WriteBuffered(msg);
+  }
+};
+
+struct Lock {
+  pthread_mutex_t* mut{nullptr};
+
+  Lock() {}
+
+  Lock(pthread_mutex_t* m) : mut{m} { pthread_mutex_lock(mut); }
+
+  void lock(pthread_mutex_t* m)
+  {
+    mut = m;
+    pthread_mutex_lock(mut);
+  }
+
+  void unlock()
+  {
+    pthread_mutex_unlock(mut);
+    mut = nullptr;
+  }
+
+  Lock(const Lock& l) = delete;
+  Lock& operator=(const Lock& l) = delete;
+
+  Lock(Lock&& l) { std::swap(l.mut, mut); }
+  Lock& operator=(Lock&& l)
+  {
+    std::swap(l.mut, mut);
+    return *this;
+  }
+
+  ~Lock()
+  {
+    if (mut) { pthread_mutex_unlock(mut); }
+  }
+};
+
+struct InMemoryProtoQueue {
+  using size_type = std::uint32_t;
+
+
+  struct queue_data {
+    size_type read_head;
+    size_type write_head;
+  };
+
+  struct control_block {
+    pthread_mutex_t mutex;
+    pthread_cond_t queue_changed;
+
+    queue_data queue;
+  };
+
+  queue_data cached;
+
+
+  control_block* ctrl;
+  std::span<uint8_t> data;
+
+  std::span<uint8_t> allocate(std::size_type size)
+  {
+    if (size > data.size()) {
+      // ??
+      return {};
+    }
+
+    if (data.size() - size <= cached.write_head - cached.read_head) {
+    } else {
+      Lock l{&ctrl->mutex};
+      while (ctrl->queue.write_head + size - ctrl->queue.read_head
+             > data.size()) {
+        pthread_cond_wait(&ctrl->queue_changed, &ctrl->mutex);
+      }
+
+      cached = ctrl->queue;
+    }
+
+
+    return data.subspan(cached.write_head, size);
+  }
+
+  inline void update_write_head(std::span<uint8_t> written)
+  {
+    Lock l{&ctrl->mutex};
+    assert(data.data() + ctrl->queue.write_head == written.data());
+
+    ctrl->queue.write_head += written.size();
+
+    cached = ctrl->queue;
+    pthread_cond_broadcast(&ctrl->queue_changed);
+  }
+
+  template <typename Message> bool Write(Message& msg)
+  {
+    uint64_t size = msg.ByteSizeLong();
+
+    auto buffer = allocate(size + sizeof(size));
+
+    memcpy(buffer.data(), &size, sizeof(size));
+    auto* end
+        = msg.SerializeWithCachedSizesToArray(buffer.data() + sizeof(size));
+
+    if (end != &*buffer.end()) {
+      // ??
+    }
+
+    update_write_head(buffer);
+
+    return true;
+  }
+
+  inline std::span<uint8_t> wait_on_data(size_type size)
+  {
+    if (size > data.size()) {
+      // ???
+      assert(0);
+    }
+
+    if (size > cached.write_head - cached.read_head) {
+      Lock l{&ctrl->mutex};
+      while (ctrl->queue.write_head - ctrl->queue.read_head > size) {
+        pthread_cond_wait(&ctrl->queue_changed, &ctrl->mutex);
+      }
+
+      cached = ctrl->queue;
+    }
+
+    return data.subspan(cached.read_head, size);
+  }
+
+  inline void update_read_head(std::span<uint8_t> written)
+  {
+    Lock l{&ctrl->mutex};
+    assert(data.data() + ctrl->queue.read_head == written.data());
+
+    ctrl->queue.read_head += written.size();
+
+    cached = ctrl->queue;
+    pthread_cond_broadcast(&ctrl->queue_changed);
+  }
+
+  template <typename Message> bool Read(Message& msg)
+  {
+    size_type size;
+
+    auto size_data = wait_on_data(sizeof(size));
+
+    std::memcpy(&size, size_data.data(), sizeof(size));
+
+    auto complete_packet = wait_on_data(sizeof(size) + size);
+    auto msg_data = complete_packet.subspan(sizeof(size));
+
+    if (!msg.ParseFromArray(msg_data.data(), msg_data.size())) { return false; }
+
+    update_read_head(complete_packet);
+
+    return true;
   }
 };
 };  // namespace prototools
