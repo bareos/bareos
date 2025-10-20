@@ -1054,10 +1054,10 @@ struct dump_context {
                             const partition_layout& layout,
                             std::vector<partition_extent>& extents)
   {
-    /* extents currently contains all extents _from the current disk_ that we
-     * wish to save (they are probably all coming from the volumes that we
-     * snapshotted) our task is now to insert relevant extents that were not
-     * part of the snapshot. */
+    // extents currently contains all extents _from the current disk_ that we
+    // wish to save (they are probably all coming from the volumes that we
+    // snapshotted) our task is now to insert relevant extents that were not
+    // part of the snapshot.
     // we assume that the extents & the layout are sorted
 
     std::vector<partition_extent> new_extents;
