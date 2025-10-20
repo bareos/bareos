@@ -183,6 +183,7 @@ When output to a terminal, the progress will be displayed in a progress bar.)"))
   {0} restore --from backup.barri --to-disks /dev/sda /dev/null /dev/nvme1n0
 
   # restore to some network block device
+  # here `get-backup` is any command that outputs the barri image to stdout
   get-backup | {0} restore --stdout | nbdcopy ...
 
   # restore the disks into /tmp/disks, and save the restore debug trace
@@ -230,6 +231,7 @@ This information may be useful if you need to match up which backed up drive sho
   {0} list --from backup.barri
 
   # list the contents of a backup from stdin
+  # here `get-backup` is any command that outputs the barri image to stdout
   get-backup | {0} list)",
                                        name));
   auto* list_from = list->add_option("--from", filename,
