@@ -30,6 +30,7 @@
 #include <cstring>
 #include <span>
 #include <cstdint>
+#include <limits>
 
 #include <lib/source_location.h>
 
@@ -90,19 +91,19 @@ static constexpr uint64_t build_magic(const char (&str)[N])
 }
 
 struct decoded_version {
-  uint8_t major{};
+  uint16_t major{};
   uint8_t minor{};
   uint8_t patch{};
 
   constexpr decoded_version() = default;
 
-  constexpr decoded_version(uint8_t major_, uint8_t minor_, uint8_t patch_)
+  constexpr decoded_version(uint16_t major_, uint8_t minor_, uint8_t patch_)
       : major{major_}, minor{minor_}, patch{patch_}
   {
   }
 
   constexpr decoded_version(std::uint32_t encoded)
-      : major{static_cast<std::uint8_t>(encoded >> 16)}
+      : major{static_cast<std::uint16_t>(encoded >> 16)}
       , minor{static_cast<std::uint8_t>(encoded >> 8)}
       , patch{static_cast<std::uint8_t>(encoded >> 0)}
   {
@@ -123,33 +124,26 @@ struct decoded_version {
   }
 };
 
-static_assert(static_cast<std::uint64_t>(decoded_version{15}) == 15);
-static_assert(static_cast<std::uint64_t>(decoded_version{10000000})
-              == 10000000);
-static_assert(decoded_version{
-                  static_cast<std::uint64_t>(decoded_version{1, 0, 0})}
-              == decoded_version{1, 0, 0});
-static_assert(decoded_version{
-                  static_cast<std::uint64_t>(decoded_version{1, 1, 0})}
-              == decoded_version{1, 1, 0});
-static_assert(decoded_version{
-                  static_cast<std::uint64_t>(decoded_version{1, 0, 1})}
-              == decoded_version{1, 0, 1});
-static_assert(decoded_version{
-                  static_cast<std::uint64_t>(decoded_version{1, 1, 1})}
-              == decoded_version{1, 1, 1});
-static_assert(decoded_version{
-                  static_cast<std::uint64_t>(decoded_version{255, 0, 0})}
-              == decoded_version{255, 0, 0});
-static_assert(decoded_version{
-                  static_cast<std::uint64_t>(decoded_version{255, 255, 0})}
-              == decoded_version{255, 255, 0});
-static_assert(decoded_version{
-                  static_cast<std::uint64_t>(decoded_version{255, 0, 255})}
-              == decoded_version{255, 0, 255});
-static_assert(decoded_version{
-                  static_cast<std::uint64_t>(decoded_version{255, 255, 255})}
-              == decoded_version{255, 255, 255});
+static constexpr bool test_decode(decoded_version v)
+{
+  return v == decoded_version{static_cast<std::uint32_t>(v)};
+}
+
+static constexpr bool test_encode(std::uint32_t v)
+{
+  return v == decoded_version{v}.encode();
+}
+
+static_assert(test_encode(15));
+static_assert(test_encode(std::numeric_limits<std::uint32_t>::max()));
+static_assert(test_decode(decoded_version{1, 0, 0}));
+static_assert(test_decode(decoded_version{1, 1, 0}));
+static_assert(test_decode(decoded_version{1, 0, 1}));
+static_assert(test_decode(decoded_version{1, 1, 1}));
+static_assert(test_decode(decoded_version{255, 0, 0}));
+static_assert(test_decode(decoded_version{255, 255, 0}));
+static_assert(test_decode(decoded_version{255, 0, 255}));
+static_assert(test_decode(decoded_version{255, 255, 255}));
 
 template <typename T> static void write_stream(writer& stream, const T& t)
 {
