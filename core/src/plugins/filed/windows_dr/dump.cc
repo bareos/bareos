@@ -1044,8 +1044,8 @@ struct dump_context {
       }
     }
 
-    // im unsure about how to do this on mbr.  Seems like that info
-    // isnt available in _this_ struct.
+    // as far as I know, these partitions only exist on gpt formatted disks
+    // so for mbr, we can just return false
     return false;
   }
 
