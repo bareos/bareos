@@ -102,7 +102,7 @@ Relation between Bareos components and configuration
 
    ,                                    "(default path on Unix)",                "(default path on Unix)"
 
-   "bareos-dir",                        :file:`bareos-dir.conf`,                 :file:`bareos-dir.d`
+   bareos-dir,                          :file:`bareos-dir.conf`,                 :file:`bareos-dir.d`
    :ref:`DirectorChapter`,              (:file:`/etc/bareos/bareos-dir.conf`),   (:file:`/etc/bareos/bareos-dir.d/`)
 
    bareos-sd,                           :file:`bareos-sd.conf`,                  :file:`bareos-sd.d`
@@ -185,83 +185,68 @@ Resource file conventions
 
    Normally you should not remove resources that are already in use (jobs, clients, ...). Instead you should disable them by adding the directive ``Enable = no``. Otherwise you take the risk that orphaned entries are kept in the Bareos catalog. However, if a resource has not been used or all references have been cleared from the database, they can also be removed from the configuration.
 
+Configuration Deployment
+------------------------
 
-   .. warning::
+Since Bareos :sinceVersion:`25.0.0: Config Deployment`,
+on upgrade none of the Bareos components
+(**bareos-dir**, **bareos-sd**, **bareos-fd**, **bconsole** and **bareos-traymonitor**)
+modify/extend an existing configuration.
+Package configuration files are stored in the Bareos Template Configuration Path (see :ref:`section-BareosPaths`).
+The package use :command:`bareos-config deploy_config $COMPONENT` to deploy the configuration. 
+On fresh installation it:
 
-      If you want to remove a configuration resource that is part of a Bareos package,
-      replace the resource configuration file by an empty file.
-      This prevents the resource from reappearing in the course of a package update.
+* copies the config files from the Bareos Template Configuration Path (Linux: :file:`/usr/lib/bareos/defaultconfigs/`) to the Bareos Configuration Path (Linux: :file:`/etc/bareos/`)
 
+* make necessary adjustments (generate and set random passwords, set hostname, ...)
 
-Using Subdirectories Configuration Scheme
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* set directory and file permissions
 
-New installation
-''''''''''''''''
-
--  The Subdirectories Configuration Scheme is used by default from Bareos :sinceVersion:`16.2.4: Subdirectory Configuration Scheme used as Default` onwards.
-
--  They will be usable immediately after installing a Bareos component.
-
--  If additional packages entail example configuration files (:file:`NAME.conf.example`), copy them to :file:`NAME.conf`, modify it as required and reload or restart the component.
-
-.. _section-UpdateToConfigurationSubdirectories:
-
-Updates from Bareos < 16.2.4
-''''''''''''''''''''''''''''
-
--  When updating to a Bareos version containing the Subdirectories Configuration, the existing configuration will not be touched and is still the default configuration.
-
-   .. warning::
-
-      Problems can occur if you have implemented an own wildcard mechanism to load your configuration
-      from the same subdirectories as used by the new packages (:file:`CONFIGDIR/COMPONENT.d/*/*.conf`).
-      In this case, newly installed configuration resource files can alter
-      your current configuration by adding resources.
-
-      Best create a copy of your configuration directory before updating Bareos and modify your existing configuration file to use that other directory.
-
--  As long as the old configuration file (:file:`CONFIGDIR/COMPONENT.conf`) exists, it will be used.
-
--  The correct way of migrating to the new configuration scheme would be to split the configuration file into resources, store them in the resource directories and then remove the original configuration file.
-
-   -  For migrating the |dir| configuration, the script `bareos-migrate-config.sh <https://github.com/bareos/bareos/blob/master/contrib/misc/bareos-migrate-config/bareos-migrate-config.sh>`_ exists. Being called, it connects via :command:`bconsole` to a running |dir| and creates subdirectories with the resource configuration files.
-
-      .. code-block:: shell-session
-         :caption: bareos-migrate-config.sh
-
-         # prepare temporary directory
-         mkdir /tmp/bareos-dir.d
-         cd /tmp/bareos-dir.d
-
-         # download migration script
-         wget https://raw.githubusercontent.com/bareos/bareos/master/contrib/misc/bareos-migrate-config/bareos-migrate-config.sh
-
-         # execute the script
-         bash bareos-migrate-config.sh
-
-         # backup old configuration
-         mv /etc/bareos/bareos-dir.conf /etc/bareos/bareos-dir.conf.bak
-         mv /etc/bareos/bareos-dir.d /etc/bareos/bareos-dir.d.bak
-
-         # make sure, that all packaged configuration resources exists,
-         # otherwise they will be added when updating Bareos.
-         for i in `find  /etc/bareos/bareos-dir.d.bak/ -name *.conf -type f -printf "%P\n"`; do touch "$i"; done
-
-         # install newly generated configuration
-         cp -a /tmp/bareos-dir.d /etc/bareos/
-
-      Restart the |dir| and verify your configuration. Also make sure, that all resource configuration files coming from Bareos packages exists, in doubt as empty files, see :ref:`remove configuration resource files <section-deleteConfigurationResourceFiles>`.
-
-   -  Another way, without splitting the configuration into resource files is:
-
-      .. code-block:: shell-session
-         :caption: move configuration to subdirectory
-
-         mkdir CONFIGDIR/COMPONENT.d/migrate && mv CONFIGDIR/COMPONENT.conf CONFIGDIR/COMPONENT.d/migrate
+If the configuration path already exist, all these actions are skipped.
 
 
-      Resources defined in both, the new configuration directory scheme and the old configuration file, must be removed from one of the places, best from the old configuration file, after verifying that the settings are identical with the new settings.
+Behavior
+~~~~~~~~
+
+* On upgrades, the existing configuration files for the components
+  **bareos-dir**, **bareos-sd**, **bareos-fd**, **bconsole** and **bareos-traymonitor**
+  will not get modified.
+* The packages only contain configuration files in the Bareos Template Configuration Path.
+  They no longer contain their configuration in the Bareos Configuration Path.
+* Configuration files from sub-packages will probably not get installed,
+  especially if the sub-package is installed after the main package (e.g. the **bareos-storage-tape** package is installed after the **bareos-storage** package). This also applies to configuration example files (:file:`*.conf.example`).
+
+Upgrades from Bareos < 25 to Bareos >= 25
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Switching to use the Bareos Template Configuration Path had some challenges on RPM-based systems and FreeBSD.
+The other platforms did already use Bareos Template Configuration Path before.
+
+.. index::
+   single: Linux; RPM
+
+When upgrading from Bareos < 25 to Bareos >= 25 with RPM packages,
+RPM would delete or rename the old configuration,
+as these files no longer belong to the package.
+Therefore we use a package pre-script to backup the config files
+and restore them with a post-script (posttrans).
+The normal automated restart of the |fd| will fail in between, but a proper restart will be performed at the end.
+In short: for this scenario we created workarounds
+so that the Administrator should not notice any trouble when upgrading.
+
+The :os:`FreeBSD` packaging mechanism prevents that a backup of the old configuration could be done,
+therefore unmodified configuration files from the old package get removed.
+As a workaround, when upgrading from Bareos <= 24, the package will redeploy any missing configuration file from the Bareos Template Configuration Path of the new package.
+This should leave the content of the configuration directory will no changes when upgrading to Bareos 25.
+However, we can't guarantee that direct upgrades from Bareos <= 24 to Bareos >= 26 also don't result in content changes.
+To be save, FreeBSD users should first upgrade to Bareos 25.
+
+On both platforms, timestamps and permissions of the configuration files can change.
+
+Also note, that the files
+:file:`bareos-dir.d/profile/webui-admin.conf` and :file:`bareos-dir.d/profile/webui-readonly.conf`
+have been moved from the **bareos-webui** to the **bareos-director** package.
+
 
 Configuration File Format
 -------------------------

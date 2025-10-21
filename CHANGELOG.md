@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes
 - Bareos 25 disables SSL on the PostgreSQL connection, as we have observed strange issues with SSL enabled.[Issue #1965]
-- Bareos 25 and later will not modify or extend existing configuration directories on package updates [PR #2338]
+- Bareos 25 and later will not modify or extend existing configuration directories on package updates [PR #2338]  
   Note: on FreeBSD unmodified configuration changes from Bareos <= 24 will get removed and
   replaced by the new default configuration of the current package.
 
@@ -74,6 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: Python plugin dependencies installation [PR #2315]
 - docs: update disaster recovery chapter [PR #2310]
 - Update dir-director-MaximumConcurrentJobs.rst.inc with a warning about MaximumConcurrentJobs modification on running Directors [PR #2394]
+- doc: don't alter configuration on package updates [PR #2392]
 
 ### Added
 - added build-dep to libutfcpp-dev in debian-like environments [PR #2056]
@@ -235,6 +236,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2373]: https://github.com/bareos/bareos/pull/2373
 [PR #2381]: https://github.com/bareos/bareos/pull/2381
 [PR #2386]: https://github.com/bareos/bareos/pull/2386
+[PR #2392]: https://github.com/bareos/bareos/pull/2392
 [PR #2394]: https://github.com/bareos/bareos/pull/2394
 [PR #2395]: https://github.com/bareos/bareos/pull/2395
 [unreleased]: https://github.com/bareos/bareos/tree/master

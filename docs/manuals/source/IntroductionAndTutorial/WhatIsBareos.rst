@@ -16,7 +16,7 @@ History
 
 Bareos is a fork of the open source project `Bacula <https://www.bacula.org>`_ version 5.2. In 2010 the Bacula community developer Marco van Wieringen started to collect rejected or neglected community contributions in his own branch. This branch was later on the base of Bareos and since then was enriched by a lot of new features.
 
-This documentation also bases on the `original Bacula documentation <https://www.bacula.org/5.2.x-manuals/en/main/main/>`_, it is technically also a fork of the documenation created following the rules of the GNU Free Documentation License.
+This documentation also bases on the `original Bacula documentation <https://www.bacula.org/5.2.x-manuals/en/main/main/>`_, it is technically also a fork of the documentation created following the rules of the GNU Free Documentation License.
 
 Original author of Bacula and its documentation is Kern Sibbald. We thank Kern and all contributors to Bacula and it’s documentation. We maintain a list of contributors to Bacula (until the time we’ve started the fork) and Bareos in our `AUTHORS <https://github.com/bareos/bareos/blob/master/AUTHORS>`_ file.
 
@@ -44,8 +44,6 @@ Bareos Director
 The Director is the central control program for all the other daemons. It schedules and supervises all the backup, restore, verify and archive operations. The system administrator uses the Bareos Director to schedule backups and to recover files. The Director runs as a daemon (or service) in the background.
 
 .. _UADef:
-
-
 
 Bareos Console
 ~~~~~~~~~~~~~~
@@ -89,7 +87,9 @@ To perform a successful save or restore, the following four daemons must be conf
 Bareos Version Numbers and Releases
 -----------------------------------
 
-:index:`\ <single: Version numbers>`\  :index:`\ <single: Releases>`\
+.. index::
+   single: Version numbers
+   single: Releases
 
 Bareos :sinceVersion:`20.0.0: Semantic Versioning` follows `Semantic Versioning <https://semver.org/spec/v2.0.0.html>`_ with a few special considerations:
 
@@ -240,6 +240,49 @@ For a simple comparison of the two editions, please see the following table:
 
 This binary release policy is in place since Bareos >= 22.
 
+
+.. _section-BareosPaths:
+
+Bareos Paths
+------------
+
+Bareos tries to keep the handling of Bareos as similar as possible across different platforms.
+However, the file paths in the packages differ, due to the varying requirements of each platform.
+
+.. list-table:: Bareos Paths
+   :header-rows: 1
+   :stub-columns: 1
+
+   * - 
+     - :os:`Linux`
+     - :os:`FreeBSD`
+     - :os:`macOS`
+     - :os:`Windows`
+   * - Configuration
+     - :file:`/etc/bareos/`
+     - :file:`/usr/local/etc/bareos/`
+     - :file:`/usr/local/bareos/etc/bareos/`
+     - :file:`C:\\ProgramData\\Bareos\\`
+   * - Configuration templates
+     - :file:`/usr/lib/bareos/defaultconfigs/`
+     - :file:`/usr/local/lib/bareos/defaultconfigs/`
+     - :file:`/usr/local/bareos/lib/bareos/defaultconfigs/`
+     - :file:`$INSTDIR\\defaultconfigs\\`
+   * - Scripts
+     - :file:`/usr/lib/bareos/scripts/`
+     - :file:`/usr/local/lib/bareos/scripts/`
+     - :file:`/usr/local/bareos/lib/bareos/scripts/`
+     - :file:`$INSTDIR\\scripts\\`
+   * - Python plugins (default)
+     - :file:`/usr/lib/bareos/plugins/`
+     - :file:`/usr/local/lib/bareos/plugins/`
+     - :file:`/usr/local/bareos/lib/bareos/plugins/`
+     - :file:`$INSTDIR\\plugins\\`
+   * - Storage (default)
+     - :file:`/var/lib/bareos/storage/`
+     - :file:`/var/lib/bareos/storage/`
+     - not used
+     - :file:`C:\\bareos-storage\\`
 
 
 Quick Start

@@ -415,22 +415,8 @@ Updating the configuration files
 When updating Bareos through the distribution packaging mechanism,
 the existing configuration files are kept as they are.
 
-However, configuration files installed by Bareos packages
-that have been manually removed by the user will get reinstalled by the package,
-see :ref:`section-ConfigurationResourceFileConventions`.
-
-
-If you don’t want to modify the behavior, there is normally no need to modify the configuration.
-
-However, in some rare cases, configuration changes are required. These cases are described in the :ref:`Release Notes <releasenotes>`.
-
-
-With Bareos version >= 16.2.4 the default configuration uses the :ref:`section-SubdirectoryConfigurationScheme`.
-This scheme offers various improvements. However, if your are updating from earlier versions, your existing single configuration files (:file:`/etc/bareos/bareos-*.conf`) stay in place and are contentiously used by Bareos.
-The new default configuration resource files will also be installed (:file:`/etc/bareos/bareos-*.d/*/*.conf`).
-However, they will only be used, when the legacy configuration file does not exist.
-
-See :ref:`section-UpdateToConfigurationSubdirectories` for details and how to migrate to :ref:`section-SubdirectoryConfigurationScheme`.
+If your configuration didn't show any deprecation warnings prior the upgrade, no configuration change will be required on upgrades.
+Check the :ref:`Release Notes <releasenotes>` for breaking changes or other special cases.
 
 
 .. _sectionUpdateDatabaseScheme:
