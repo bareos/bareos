@@ -381,8 +381,9 @@ class Parser {
     created.id = data.partition_id;
     created.partition_type = data.partition_type;
 
-    static_assert(std::is_same_v<decltype(created.name), decltype(data.name)>);
-    std::memcpy(created.name, data.name, sizeof(data.name));
+    static_assert(
+        std::is_same_v<decltype(created.name), decltype(data.name.data)>);
+    std::memcpy(created.name, data.name.data, sizeof(data.name.data));
 
     created.start_lba = entry.partition_offset / geometry.bytes_per_sector;
     created.end_lba = (entry.partition_offset + entry.partition_length)

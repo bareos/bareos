@@ -43,6 +43,15 @@ install(
   COMPONENT filedaemon
 )
 
+add_library(parser OBJECT)
+target_sources(
+  parser
+  PRIVATE parser.cc
+  PUBLIC FILE_SET HEADERS BASE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}" FILES
+         "parser.h"
+)
+target_link_libraries(parser PUBLIC format)
+
 if(HAVE_WIN32)
   add_library(dump OBJECT)
   target_sources(
@@ -98,5 +107,7 @@ bareos_add_test(
   LINK_LIBRARIES GTest::gtest_main
   ADDITIONAL_SOURCES remove_holes.cc
 )
+
+bareos_add_test(test_file_format LINK_LIBRARIES GTest::gtest_main parser)
 
 include(DebugEdit)

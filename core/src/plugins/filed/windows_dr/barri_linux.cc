@@ -138,7 +138,7 @@ class ListContents : public GenericHandler {
     log->Info("    - Type = {}", guid_to_string(data.partition_type));
     log->Info("    - Attributes = {:08X}", data.attributes);
 
-    log->Info("    - Name = {}", utf16_to_utf8(data.name));
+    log->Info("    - Name = {}", utf16_to_utf8(data.name.data));
   }
   void EndPartTable() override {}
 
