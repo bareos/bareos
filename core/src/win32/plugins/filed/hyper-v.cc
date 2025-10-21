@@ -54,7 +54,7 @@ static const int debuglevel = 150;
 #define PLUGIN_LICENSE "Bareos AGPLv3"
 #define PLUGIN_AUTHOR "Sebastian Sura"
 #define PLUGIN_DATE "April 2025"
-#define PLUGIN_VERSION "1"
+#define PLUGIN_VERSION "1.0.1"
 #define PLUGIN_DESCRIPTION "Bareos Hyper-V Windows File Daemon Plugin"
 #define PLUGIN_USAGE                          \
   "\n  hyper-v:config=<path>:vmname=<name>\n" \
@@ -3793,15 +3793,27 @@ std::size_t read_file_contents(PluginContext* ctx,
   return bytes_read;
 }
 
-static std::string read_value(std::string_view& in)
+enum class ValueType
+{
+  String,
+  Path,
+};
+
+static std::string read_value(std::string_view& in,
+                              ValueType type = ValueType::String)
 {
   std::string s;
+
   while (in.size() > 0) {
-    if (in.front() == ':') {
-      in.remove_prefix(1);
-      break;
-    }
-    s += in;
+    auto c = in.front();
+    in.remove_prefix(1);
+
+    // in paths we ignore ":" if its in the second place
+    // i.e. config=C://test:name=k
+    // will get split into 'config' '=' 'C://test' ':' 'name' '=' 'k'
+    // even though there is a ':' here ~~~^
+    if (c == ':' && (type != ValueType::Path || s.size() != 1)) { break; }
+    s += c;
   }
 
   return s;
@@ -3879,7 +3891,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
       rest = rest.substr(1);
       DBGC(ctx, "continuing with {}", rest);
 
-      std::string path_value = read_value(rest);
+      std::string path_value = read_value(rest, ValueType::Path);
 
       if (path_value.size() == 0) {
         Jmsg(ctx, M_ERROR,
