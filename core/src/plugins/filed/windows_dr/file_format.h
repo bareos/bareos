@@ -57,6 +57,8 @@ static_assert(sizeof(char16_t) == 2);
 
 struct guid {
   char Data[16];
+
+  constexpr auto operator<=>(const guid&) const = default;
 };
 
 struct partition_info_raw {};
@@ -117,11 +119,7 @@ struct decoded_version {
 
   constexpr operator uint32_t() { return encode(); }
 
-  constexpr friend bool operator==(const decoded_version& l,
-                                   const decoded_version& r)
-  {
-    return l.major == r.major && l.minor == r.minor && l.patch == r.patch;
-  }
+  constexpr auto operator<=>(const decoded_version&) const = default;
 };
 
 static constexpr bool test_decode(decoded_version v)
@@ -176,10 +174,10 @@ struct file_header {
   static constexpr auto magic_value = build_magic("barrifil");
   static constexpr auto current_version = decoded_version{1, 0, 0}.encode();
 
-  uint32_t disk_count;
-  uint32_t version = current_version;
+  uint32_t disk_count{};
+  uint32_t version{};
   // NOTE: this is the size of everything _but_ this header!
-  uint64_t file_size = 0;
+  uint64_t file_size{};
   // todo: we should add _all_ disk sizes here
   // this makes it easier for the restore code to decide to which disk
   // it should restore to!
@@ -187,7 +185,7 @@ struct file_header {
 
   file_header() = default;
   file_header(uint32_t disk_count_, uint64_t file_size_)
-      : disk_count{disk_count_}, file_size{file_size_}
+      : disk_count{disk_count_}, version{current_version}, file_size{file_size_}
   {
   }
 
@@ -206,6 +204,8 @@ struct file_header {
     read_stream(stream, disk_count);
     read_stream(stream, file_size);
   }
+
+  constexpr auto operator<=>(const file_header&) const = default;
 };
 
 struct disk_header {
@@ -251,6 +251,8 @@ struct disk_header {
     read_stream(stream, bytes_per_sector);
     read_stream(stream, extent_count);
   }
+
+  constexpr auto operator<=>(const disk_header&) const = default;
 };
 
 enum part_type : uint8_t
@@ -317,6 +319,8 @@ struct part_table_header {
     read_stream(stream, Data);
     read_stream(stream, Data2);
   }
+
+  constexpr auto operator<=>(const part_table_header&) const = default;
 };
 
 struct part_table_entry {
@@ -331,6 +335,20 @@ struct part_table_entry {
   bool is_service_partition;  // (useless ?)
 
   part_table_entry() = default;
+  part_table_entry(uint64_t partition_offset_,
+                   uint64_t partition_length_,
+                   uint32_t partition_number_,
+                   part_type partition_style_,
+                   bool rewrite_partition_,
+                   bool is_service_partition_)
+      : partition_offset{partition_offset_}
+      , partition_length{partition_length_}
+      , partition_number{partition_number_}
+      , partition_style{partition_style_}
+      , rewrite_partition{rewrite_partition_}
+      , is_service_partition{is_service_partition_}
+  {
+  }
 
   void write(writer& stream) const
   {
@@ -353,6 +371,8 @@ struct part_table_entry {
     read_stream(stream, rewrite_partition);
     read_stream(stream, is_service_partition);
   }
+
+  constexpr auto operator<=>(const part_table_entry&) const = default;
 };
 
 static inline void write_guid(writer& stream, const guid& id)
@@ -366,19 +386,35 @@ static inline void read_guid(reader& stream, guid& id)
 }
 
 struct part_table_entry_gpt_data {
+  struct part_name {
+    char16_t data[36];
+
+    constexpr auto operator<=>(const part_name&) const = default;
+  };
+
   guid partition_type;
   guid partition_id;
   uint64_t attributes;
-  char16_t name[36];
+  part_name name;
 
   part_table_entry_gpt_data() = default;
+  part_table_entry_gpt_data(guid partition_type_,
+                            guid partition_id_,
+                            uint64_t attributes_,
+                            part_name name_)
+      : partition_type{partition_type_}
+      , partition_id{partition_id_}
+      , attributes{attributes_}
+      , name{name_}
+  {
+  }
 
   void write(writer& stream) const
   {
     write_guid(stream, partition_type);
     write_guid(stream, partition_id);
     write_stream(stream, attributes);
-    write_stream(stream, name);
+    write_stream(stream, name.data);
   }
 
   void read(reader& stream)
@@ -386,8 +422,10 @@ struct part_table_entry_gpt_data {
     read_guid(stream, partition_type);
     read_guid(stream, partition_id);
     read_stream(stream, attributes);
-    read_stream(stream, name);
+    read_stream(stream, name.data);
   }
+
+  constexpr auto operator<=>(const part_table_entry_gpt_data&) const = default;
 };
 
 struct part_table_entry_mbr_data {
@@ -399,6 +437,18 @@ struct part_table_entry_mbr_data {
 
 
   part_table_entry_mbr_data() = default;
+  part_table_entry_mbr_data(guid partition_id_,
+                            uint32_t num_hidden_sectors_,
+                            uint8_t partition_type_,
+                            bool bootable_,
+                            bool recognized_)
+      : partition_id{partition_id_}
+      , num_hidden_sectors{num_hidden_sectors_}
+      , partition_type{partition_type_}
+      , bootable{bootable_}
+      , recognized{recognized_}
+  {
+  }
 
   void write(writer& stream) const
   {
@@ -417,6 +467,8 @@ struct part_table_entry_mbr_data {
     read_stream(stream, bootable);
     read_stream(stream, recognized);
   }
+
+  constexpr auto operator<=>(const part_table_entry_mbr_data&) const = default;
 };
 
 struct extent_header {
@@ -427,6 +479,10 @@ struct extent_header {
   uint64_t length;
 
   extent_header() = default;
+  extent_header(uint64_t offset_, uint64_t length_)
+      : offset{offset_}, length{length_}
+  {
+  }
 
   void write(writer& stream) const
   {
@@ -441,6 +497,8 @@ struct extent_header {
     read_stream(stream, offset);
     read_stream(stream, length);
   }
+
+  constexpr auto operator<=>(const extent_header&) const = default;
 };
 
 #endif  // BAREOS_PLUGINS_FILED_WINDOWS_DR_FILE_FORMAT_H_
