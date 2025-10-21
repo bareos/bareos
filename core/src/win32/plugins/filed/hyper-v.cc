@@ -4782,15 +4782,12 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
     std::string_view output = rp->ofname;
     if (rp->where) {
       std::string_view where = rp->where;
-      if (output.size() >= where.size()
-          && output.substr(0, where.size()) == where) {
-        return output.substr(where.size());
-      } else {
-        return output;
-      }
-    } else {
-      return output;
+      if (output.starts_with(where)) { output.remove_prefix(where.size()); }
     }
+    // when the name is combined with e.g. where,
+    // then a slash may be inserted
+    if (output.starts_with('/')) { output.remove_prefix(1); }
+    return output;
   }();
 
   TRCC(ctx, "actual name = {}", actual_name);
@@ -4799,10 +4796,9 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
   // <prefix>/<vm name>/path
   // we need to check that the path given conforms to this and extract
   // the vm name/path.
-  constexpr std::string_view prefix = "/@hyper-v@/";
+  constexpr std::string_view prefix = "@hyper-v@/";
 
-  if (actual_name.size() <= prefix.size()
-      || actual_name.substr(0, prefix.size()) != prefix) {
+  if (!actual_name.starts_with(prefix)) {
     JERR(ctx, "File {} was not created by this plugin (missing prefix {})",
          actual_name, prefix);
     return bRC_Error;
