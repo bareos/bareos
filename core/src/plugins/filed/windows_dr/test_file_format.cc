@@ -24,6 +24,7 @@
 #include "file_format.h"
 
 #include <span>
+#include <stack>
 
 struct vec_writer : public writer {
   vec_writer(std::vector<char>* buffer) : buf{buffer} {}
@@ -50,10 +51,17 @@ struct span_reader : public reader {
   std::span<char>* buf;
 };
 
-template <typename T> void write_into(std::vector<char>& vec, T target)
+template <typename T> void write_into(std::vector<char>& vec, const T& target)
 {
   vec_writer w{&vec};
   target.write(w);
+}
+
+template <>
+void write_into<std::vector<char>>(std::vector<char>& vec,
+                                   const std::vector<char>& target)
+{
+  vec.insert(vec.end(), target.begin(), target.end());
 }
 
 template <typename T> T read_from(std::span<char>* span)
@@ -166,36 +174,162 @@ TYPED_TEST(EntryTypeTestSuite, PingPong)
 
 template <typename... T> void ignore(T...) {}
 
-struct TestHandler : GenericHandler {
-  void BeginRestore(std::size_t num_disks) override { ignore(num_disks); }
-  void EndRestore() override {}
-  void BeginDisk(disk_info info) override { ignore(info); }
-  void EndDisk() override {}
+using Element = std::variant<file_header,
+                             disk_header,
+                             part_table_header,
+                             part_table_entry,
+                             part_table_entry_gpt_data,
+                             part_table_entry_mbr_data,
+                             extent_header,
+                             std::vector<char>>;
 
-  void BeginMbrTable(const partition_info_mbr& mbr) override { ignore(mbr); }
-  void BeginGptTable(const partition_info_gpt& gpt) override { ignore(gpt); }
+struct TestHandler
+    : public GenericHandler
+    , public GenericLogger {
+  std::vector<Element> parsed_elements;
+  std::stack<std::size_t> open_elements;
+
+  TestHandler() : GenericLogger{true} {}
+
+  template <typename ElementType> std::size_t push(ElementType el)
+  {
+    parsed_elements.emplace_back(std::move(el));
+
+    auto idx = parsed_elements.size() - 1;
+    open_elements.push(idx);
+
+    return idx;
+  }
+
+  template <typename ElementType> ElementType* try_peek()
+  {
+    if (open_elements.empty()) {
+      throw std::runtime_error("cannot pop from empty stack");
+    }
+
+    return std::get_if<ElementType>(&parsed_elements[open_elements.top()]);
+  }
+
+  template <typename ElementType> ElementType* peek()
+  {
+    if (auto* element = try_peek<ElementType>()) {
+      return element;
+    } else {
+      throw std::runtime_error{"unexpected element type on top"};
+    }
+  }
+
+  template <typename ElementType> void pop()
+  {
+    // make sure the top element has the right type
+    ignore(peek<ElementType>());
+
+    open_elements.pop();
+  }
+
+  void BeginRestore(std::size_t num_disks) override
+  {
+    switch (open_elements.size()) {
+      case 0: {
+        push(file_header{static_cast<uint32_t>(num_disks), 0});
+      } break;
+      case 1: {
+        auto* hdr = peek<file_header>();
+        hdr->disk_count = num_disks;
+      } break;
+      default: {
+        throw std::runtime_error{"Begin: bad state"};
+      } break;
+    }
+  }
+  void EndRestore() override
+  {
+    if (open_elements.size() != 1) {
+      throw std::runtime_error{"EndRestore: bad state"};
+    }
+
+    pop<file_header>();
+  }
+  void BeginDisk(disk_info info) override
+  {
+    push(disk_header{info.disk_size, info.total_extent_size, 0, 0,
+                     info.extent_count});
+  }
+  void EndDisk() override { pop<disk_header>(); }
+
+  void BeginMbrTable(const partition_info_mbr& mbr) override
+  {
+    push(part_table_header{
+        0,
+        part_type::Mbr,
+        mbr.CheckSum,
+        mbr.Signature,
+        0,
+        {},
+        mbr.bootstrap,
+    });
+  }
+  void BeginGptTable(const partition_info_gpt& gpt) override
+  {
+    push(part_table_header{
+        0,
+        part_type::Gpt,
+        gpt.MaxPartitionCount,
+        gpt.StartingUsableOffset,
+        gpt.UsableLength,
+        gpt.DiskId.Data,
+        gpt.bootstrap,
+    });
+  }
   void BeginRawTable(const partition_info_raw& raw) override { ignore(raw); }
   void MbrEntry(const part_table_entry& entry,
                 const part_table_entry_mbr_data& data) override
   {
+    auto* table = peek<part_table_header>();
+    table->partition_count += 1;
     ignore(entry, data);
   }
   void GptEntry(const part_table_entry& entry,
                 const part_table_entry_gpt_data& data) override
   {
+    auto* table = peek<part_table_header>();
+    table->partition_count += 1;
     ignore(entry, data);
   }
-  void EndPartTable() override {}
+  void EndPartTable() override { pop<part_table_header>(); }
 
-  void BeginExtent(extent_header header) override { ignore(header); }
-  void ExtentData(std::span<const char> data) override { ignore(data); }
-  void EndExtent() override {}
-};
+  void BeginExtent(extent_header header) override { push(header); }
+  void ExtentData(std::span<const char> data) override
+  {
+    auto* extent_data = try_peek<std::vector<char>>();
+    if (extent_data) {
+      extent_data->insert(extent_data->end(), data.begin(), data.end());
+    } else {
+      push(std::vector<char>(data.begin(), data.end()));
+    }
+  }
+  void EndExtent() override
+  {
+    // if we read data, we need to pop it
+    if (try_peek<std::vector<char>>()) { pop<std::vector<char>>(); }
+    pop<extent_header>();
+  }
 
-struct TestLogger : GenericLogger {
-  TestLogger() : GenericLogger(true) {}
-
-  void Begin(std::size_t FileSize) override { ignore(FileSize); }
+  void Begin(std::size_t FileSize) override
+  {
+    switch (open_elements.size()) {
+      case 0: {
+        push(file_header{0, FileSize});
+      } break;
+      case 1: {
+        auto* hdr = peek<file_header>();
+        hdr->file_size = FileSize;
+      } break;
+      default: {
+        throw std::runtime_error{"Begin: bad state"};
+      } break;
+    }
+  }
   void Progressed(std::size_t Amount) override { ignore(Amount); }
   void End() override {}
 
@@ -203,13 +337,173 @@ struct TestLogger : GenericLogger {
   void Output(Message message) override { ignore(message); }
 };
 
-TEST(parser, Parse)
+std::vector<Element> GenerateTestData()
 {
-  TestHandler handler;
-  TestLogger logger;
-  auto* parser = parse_begin(&handler, &logger);
+  std::vector<Element> elements;
 
-  std::span<char> data;
-  parse_data(parser, data);
+  {
+    // disk 1
+
+    elements.emplace_back(disk_header{1234512, 0, 0, 0, 5});
+    elements.emplace_back(part_table_header{0, part_type::Mbr, 0, 0, 0});
+    elements.emplace_back(extent_header{10, 0});
+    elements.emplace_back(extent_header{20, 0});
+    elements.emplace_back(extent_header{30, 0});
+    elements.emplace_back(extent_header{40, 0});
+    elements.emplace_back(extent_header{50, 0});
+  }
+
+  {
+    // disk 2
+
+    elements.emplace_back(disk_header{1234512, 0, 0, 0, 3});
+    elements.emplace_back(part_table_header{0, part_type::Mbr, 0, 0, 0});
+    elements.emplace_back(extent_header{1000, 50});
+    elements.emplace_back(std::vector<char>(50));
+    elements.emplace_back(extent_header{2000, 150});
+    elements.emplace_back(std::vector<char>(150));
+    elements.emplace_back(extent_header{3000, 250});
+    elements.emplace_back(std::vector<char>(250));
+  }
+  return elements;
+}
+
+std::vector<char> WriteTestData(std::vector<Element>& elements,
+                                std::vector<std::size_t>& sizes)
+{
+  // at this points elements is still lacking the file header
+
+  sizes.clear();
+  sizes.reserve(elements.size() + 1);
+
+
+  std::vector<char> data;
+  std::uint32_t disk_count = 0;
+  for (auto& elem : elements) {
+    auto current = data.size();
+    std::visit(
+        [&](auto&& x) {
+          if constexpr (std::is_same_v<std::remove_reference_t<decltype(x)>,
+                                       disk_header>) {
+            disk_count += 1;
+          }
+          write_into(data, x);
+        },
+        elem);
+    sizes.push_back(data.size() - current);
+  }
+
+  file_header hdr{disk_count, data.size()};
+  std::vector<char> header_data;
+  write_into(header_data, hdr);
+  elements.emplace(elements.begin(), hdr);
+  data.insert(data.begin(), header_data.begin(), header_data.end());
+  sizes.emplace(sizes.begin(), header_data.size());
+
+
+  return data;
+}
+
+TEST(parser, Parse_PerfectSize)
+{
+  auto test_data = GenerateTestData();
+  std::vector<std::size_t> test_data_sizes;
+  auto bytes = WriteTestData(test_data, test_data_sizes);
+
+  TestHandler handler;
+  auto* parser = parse_begin(&handler, &handler);
+
+  std::size_t current = 0;
+  for (size_t i = 0; i < test_data.size(); ++i) {
+    std::span data{bytes.begin() + (current),
+                   bytes.begin() + (current + test_data_sizes[i])};
+    parse_data(parser, data);
+    current += test_data_sizes[i];
+
+    EXPECT_EQ(handler.parsed_elements.size(), i + 1);
+  }
+  ASSERT_EQ(current, bytes.size());
+  EXPECT_TRUE(handler.open_elements.empty());
+
   parse_end(parser);
+
+  EXPECT_EQ(test_data, handler.parsed_elements);
+}
+
+TEST(parser, Parse_Halfs)
+{
+  auto test_data = GenerateTestData();
+  std::vector<std::size_t> test_data_sizes;
+  auto bytes = WriteTestData(test_data, test_data_sizes);
+
+  TestHandler handler;
+  auto* parser = parse_begin(&handler, &handler);
+
+  std::size_t current = 0;
+  for (size_t i = 0; i < test_data.size(); ++i) {
+    auto middle = current + test_data_sizes[i] / 2;
+    std::span data1{bytes.begin() + (current), bytes.begin() + (middle)};
+    parse_data(parser, data1);
+    // nothing parsed yet
+    if (std::get_if<std::vector<char>>(&test_data[i]) == nullptr) {
+      // if we are parsing a vector then it is expected for there
+      // to be partial successes, so we dont check this in that case
+      EXPECT_EQ(handler.parsed_elements.size(), i);
+    }
+    std::span data2{bytes.begin() + (middle),
+                    bytes.begin() + (current + test_data_sizes[i])};
+    parse_data(parser, data2);
+    current += test_data_sizes[i];
+
+    EXPECT_EQ(handler.parsed_elements.size(), i + 1);
+  }
+  ASSERT_EQ(current, bytes.size());
+  EXPECT_TRUE(handler.open_elements.empty());
+
+  parse_end(parser);
+
+  EXPECT_EQ(test_data, handler.parsed_elements);
+}
+
+TEST(parser, Parse_100Bytes)
+{
+  auto test_data = GenerateTestData();
+  std::vector<std::size_t> test_data_sizes;
+  auto bytes = WriteTestData(test_data, test_data_sizes);
+  ignore(test_data_sizes);
+
+  TestHandler handler;
+  auto* parser = parse_begin(&handler, &handler);
+
+  for (size_t i = 0; i < bytes.size(); i += 100) {
+    auto end = [&]() -> std::size_t {
+      if (bytes.size() < i + 100) { return bytes.size(); }
+      return i + 100;
+    }();
+    std::span data{bytes.begin() + (i), bytes.begin() + (end)};
+    parse_data(parser, data);
+  }
+  EXPECT_TRUE(handler.open_elements.empty());
+
+  parse_end(parser);
+
+  EXPECT_EQ(test_data, handler.parsed_elements);
+}
+
+TEST(parser, Parse_AllAtOnce)
+{
+  auto test_data = GenerateTestData();
+  std::vector<std::size_t> test_data_sizes;
+  auto bytes = WriteTestData(test_data, test_data_sizes);
+  ignore(test_data_sizes);
+
+  TestHandler handler;
+  auto* parser = parse_begin(&handler, &handler);
+
+  parse_data(parser, bytes);
+  EXPECT_TRUE(handler.open_elements.empty());
+
+  parse_end(parser);
+
+  EXPECT_EQ(test_data, handler.parsed_elements);
 }

@@ -461,6 +461,9 @@ struct restartable_parser {
 
     void parse(context& ctx)
     {
+      // _togo == 0 should never happen, this is only here for testing purposes
+      if (_togo == 0) { return; }
+
       std::size_t bytes_read = 0;
       while (bytes_read < _togo) {
         auto span = ctx.stream().take_contiguous(_togo - bytes_read);
