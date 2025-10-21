@@ -190,7 +190,7 @@ Configuration Deployment
 
 Since Bareos :sinceVersion:`25.0.0: Config Deployment`,
 on upgrade none of the Bareos components
-(`bareos-dir`, `bareos-sd`, `bareos-fd`, `bconsole` and `bareos-traymonitor`)
+(**bareos-dir**, **bareos-sd**, **bareos-fd**, **bconsole** and **bareos-traymonitor**)
 modify/extend an existing configuration.
 Package configuration files are stored in the Bareos Template Configuration Path (see :ref:`section-BareosPaths`).
 The package use :command:`bareos-config deploy_config $COMPONENT` to deploy the configuration. 
@@ -208,7 +208,9 @@ If the configuration path already exist, all these actions are skipped.
 Behavior
 ~~~~~~~~
 
-* On upgrades, the existing configuration files for the components `bareos-dir`, `bareos-sd`, `bareos-fd`, `bconsole` and `bareos-traymonitor` will not get modified.
+* On upgrades, the existing configuration files for the components
+  **bareos-dir**, **bareos-sd**, **bareos-fd**, **bconsole** and **bareos-traymonitor**
+  will not get modified.
 * The packages only contain configuration files in the Bareos Template Configuration Path.
   They no longer contain their configuration in the Bareos Configuration Path.
 * Configuration files from sub-packages will probably not get installed,
