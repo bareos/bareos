@@ -1302,7 +1302,9 @@ struct Service {
   }
 
   // returns std::nullopt if there is not exactly one match
-  std::optional<ClassObject> query_single(const String& query) const
+  std::optional<ClassObject> query_single(const String& query,
+                                          std::size_t* actual_count
+                                          = nullptr) const
   {
     DBG(L"executing query {}", query.as_view());
 
@@ -1326,6 +1328,8 @@ struct Service {
 
       total_count += found_count;
     }
+
+    if (actual_count) { *actual_count = total_count; }
 
     if (total_count > 1) {
       TRC(L"{} instances found for query {}, not sure which to choose",
@@ -1385,13 +1389,15 @@ struct Service {
     return query_all(squery);
   }
 
-  std::optional<ComputerSystem> get_vm_by_name(std::wstring_view vm_name) const
+  std::optional<ComputerSystem> get_vm_by_name(std::wstring_view vm_name,
+                                               std::size_t* actual_count
+                                               = nullptr) const
   {
     auto query = std::format(
         L"SELECT * FROM Msvm_ComputerSystem WHERE ElementName=\"{}\"", vm_name);
     auto cpy = String::copy(query);
 
-    std::optional system = query_single(cpy);
+    std::optional system = query_single(cpy, actual_count);
     if (!system) { return std::nullopt; }
     return ComputerSystem{std::move(system).value()};
   }
@@ -3029,14 +3035,23 @@ static std::optional<WMI::ComputerSystem> get_system_by_name(
     const WMI::Service& srvc,
     std::string_view vm_name)
 {
+  std::size_t found_count = 0;
+
   auto wname = utf8_to_utf16(vm_name);
-  auto vm = srvc.get_vm_by_name(wname);
+  auto vm = srvc.get_vm_by_name(wname, &found_count);
   if (!vm) {
     // TODO: this could also mean that there are no vms with that name ...
     //  if there is no such vm, we should just create an error, so that the
     //  other found vms can still get backed up.
     //  Maybe this should always just be an error ?
-    JFATAL(ctx, "there are mulitple vms named {}.  Cannot continue.", vm_name);
+    if (found_count > 1) {
+      JFATAL(ctx, "there are mulitple vms named {}.  Cannot continue.",
+             vm_name);
+    } else if (found_count == 0) {
+      JFATAL(ctx, "there are no vms named {}.  Cannot continue.", vm_name);
+    } else {
+      JFATAL(ctx, "internal error occured while searching for vm {}", vm_name);
+    }
     return std::nullopt;
   }
 
