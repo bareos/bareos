@@ -3602,7 +3602,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
               JFATAL(
                   ctx,
                   L"cannot backup {} as it was not part of the last backup.  "
-                  L"It will be part of the next full.",
+                  L"Please run a new full.",
                   path.as_view());
               prepared.disks_to_backup.pop_back();
               return bRC_Skip;
