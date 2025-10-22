@@ -3560,10 +3560,11 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
             }
             if (prepared.rct_id == nullptr) {
               // no disk found
-              JERR(ctx,
-                   L"cannot backup {} as it was not part of the last backup.  "
-                   L"It will be part of the next full.",
-                   path.as_view());
+              JFATAL(
+                  ctx,
+                  L"cannot backup {} as it was not part of the last backup.  "
+                  L"It will be part of the next full.",
+                  path.as_view());
               prepared.disks_to_backup.pop_back();
               return bRC_Skip;
             } else {
@@ -4838,7 +4839,6 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
     restore_ctx->restored_definition_files.emplace_back(
         WMI::String::copy(tmp_path));
   }
-
 
   const VIRTUAL_STORAGE_TYPE vst_vhd = {
       .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHD,
