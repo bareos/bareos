@@ -4660,7 +4660,6 @@ static void create_dirs(std::wstring_view path)
   if (last_slash != path.npos) { ensure_paths(path.substr(0, last_slash)); }
 }
 
-
 static std::optional<std::wstring> original_path_of_disk(
     PluginContext* ctx,
     plugin_ctx* p_ctx,
@@ -4678,7 +4677,6 @@ static std::optional<std::wstring> original_path_of_disk(
       break;
     }
   }
-
 
   if (found.empty()) {
     JWARN(ctx,
@@ -4725,22 +4723,22 @@ static HANDLE create_file(std::wstring_view path)
 static bool is_volume_file(std::string_view path)
 {
   static constexpr std::string_view disks_path_start = "disks/";
-  if (path.size() < disks_path_start.size()) { return false; }
 
-  auto first_chars = path.substr(0, disks_path_start.size());
+  return path.starts_with(disks_path_start);
+}
 
-  return first_chars == disks_path_start;
+static bool is_config_file(std::string_view path)
+{
+  static constexpr std::string_view configs_path_start = "config/";
+
+  return path.starts_with(configs_path_start);
 }
 
 static bool is_definition_file(std::string_view path)
 {
   static constexpr std::string_view definition_file_ending = ".vmcx";
-  static constexpr auto min_size = definition_file_ending.size();
-  if (path.size() < min_size) { return false; }
 
-  auto last_chars = path.substr(path.size() - min_size, min_size);
-
-  return last_chars == definition_file_ending;
+  return path.ends_with(definition_file_ending);
 }
 
 /**
@@ -4834,14 +4832,22 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
   TRCC(ctx, L"tmp_path = {}", tmp_path);
 
-  bool def_file = is_definition_file(actual_path);
+  bool config_file = is_config_file(actual_path);
   bool disk_file = is_volume_file(actual_path);
 
-  if (def_file && disk_file) {
-    JERR(ctx,
-         "File {} is both a configuration file and a disk file; cannot handle "
-         "this",
-         actual_name);
+  if (config_file && disk_file) {
+    JFATAL(ctx,
+           "File {} is both a config file and a disk file; this should not be "
+           "possible",
+           actual_name);
+    return bRC_Error;
+  }
+
+  if (!config_file && !disk_file) {
+    JFATAL(ctx,
+           "File {} is neither a config file nor a disk file; this should not "
+           "be possible",
+           actual_name);
     return bRC_Error;
   }
 
@@ -4853,7 +4859,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
       return bRC_Error;
     }
 
-    if (def_file) {
+    if (is_definition_file(actual_path)) {
       DBGC(ctx, L"found definitions file at {}", tmp_path);
       restore_ctx->restored_definition_files.emplace_back(
           WMI::String::copy(tmp_path));
