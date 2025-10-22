@@ -3185,7 +3185,8 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   JINFO(ctx, L"created snapshot with name '{}'", snapshot_name);
 
-  JINFO(ctx, "exporting system definition for {}", vm_name);
+  JINFO(ctx, "exporting system definition for {} to {}", vm_name,
+        utf16_to_utf8(dir));
 
   std::optional<WMI::ReferencePoint> refpoint = std::nullopt;
   uint32_t delta_seq = 0;
