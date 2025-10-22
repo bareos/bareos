@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -166,6 +166,12 @@ TEST_F(Globbing, globbing_in_markcmd)
   // testing full paths
   FakeCdCmd(ua, &tree, "/");
   EXPECT_EQ(FakeMarkCmd(ua, &tree, "*"), files.size());
+  FakeUnmarkCmd(ua, &tree, "*");
+
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "/"), files.size());
+  FakeUnmarkCmd(ua, &tree, "*");
+
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "C:/"), 5);
   FakeUnmarkCmd(ua, &tree, "*");
 
   EXPECT_EQ(
