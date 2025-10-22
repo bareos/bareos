@@ -4766,7 +4766,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
     return bRC_Error;
   }
 
-  if (restore_ctx->hndl) {
+  if (restore_ctx->hndl || restore_ctx->disk_handle) {
     JERR(ctx,
          "instructed to create file '{}' while another file is still being "
          "worked on",
@@ -4834,10 +4834,36 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
   TRCC(ctx, L"tmp_path = {}", tmp_path);
 
-  if (is_definition_file(actual_path)) {
-    DBGC(ctx, L"found definitions file at {}", tmp_path);
-    restore_ctx->restored_definition_files.emplace_back(
-        WMI::String::copy(tmp_path));
+  bool def_file = is_definition_file(actual_path);
+  bool disk_file = is_volume_file(actual_path);
+
+  if (def_file && disk_file) {
+    JERR(ctx,
+         "File {} is both a configuration file and a disk file; cannot handle "
+         "this",
+         actual_name);
+    return bRC_Error;
+  }
+
+  if (!disk_file) {
+    HANDLE h = create_file(tmp_path);
+    if (h == INVALID_HANDLE_VALUE) {
+      JERR(ctx, L"could not create file {}: Err={}", tmp_path,
+           format_win32_error(GetLastError()));
+      return bRC_Error;
+    }
+
+    if (def_file) {
+      DBGC(ctx, L"found definitions file at {}", tmp_path);
+      restore_ctx->restored_definition_files.emplace_back(
+          WMI::String::copy(tmp_path));
+    }
+
+    restore_ctx->hndl = h;
+
+    DBGC(ctx, L"created file '{}'", tmp_path);
+    rp->create_status = CF_EXTRACT;
+    return bRC_OK;
   }
 
   const VIRTUAL_STORAGE_TYPE vst_vhd = {
@@ -4850,7 +4876,6 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
       .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
   };
 
-
   VIRTUAL_STORAGE_TYPE vst = [&] {
     if (actual_path.back() == 'x') {
       DBGC(ctx, "{} -> vhdx", actual_path);
@@ -4862,121 +4887,104 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
   }();
 
   try {
-    if (is_volume_file(actual_path)) {
-      auto last_slash = actual_path.find_last_of("\\/");
-      // we know that there is at least one slash, because
-      // it contains disks/
-      ASSERT(last_slash != actual_path.npos);
-      if (last_slash == actual_path.size()) {
-        JERR(ctx, "bad disk name {} (trailing slash)", actual_name);
-        rp->create_status = CF_ERROR;
-        return bRC_Error;
-      }
-
-      auto disk_handle = INVALID_HANDLE_VALUE;
-
-      if (rp->delta_seq > 0) {
-        std::string disk_name{
-            actual_path.substr(last_slash + 1, actual_path.npos)};
-
-        auto found = restore_ctx->disk_map.find(disk_name);
-
-        if (found == restore_ctx->disk_map.end()) {
-          JERR(ctx,
-               "Somehow we are trying to restore an incremental image of {}, "
-               "but the full was not restored first",
-               disk_name);
-          return bRC_Error;
-        }
-
-        disk_info& info = found->second;
-
-        DBGC(ctx, L"found in disk map {} => {}", utf8_to_utf16(disk_name),
-             info.path);
-
-        OPEN_VIRTUAL_DISK_PARAMETERS params = {};
-        params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
-        params.Version2.ReadOnly = FALSE;
-        params.Version2.GetInfoOnly = FALSE;
-
-        auto result = OpenVirtualDisk(
-            &vst, info.path.c_str(), VIRTUAL_DISK_ACCESS_NONE,
-            OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
-
-
-        if (result != ERROR_SUCCESS) {
-          JERR(ctx,
-               L"could not open hard disk at {} for writing.  Err={} ({:X})",
-               tmp_path, format_win32_error(result), result);
-          return bRC_Error;
-        }
-
-        TRCC(ctx, L"open hard disk {} at {}", info.path,
-             fmt_as_ptr(disk_handle));
-      } else {
-        std::string disk_name{
-            actual_path.substr(last_slash + 1, actual_path.npos)};
-
-        auto created_path = original_path_of_disk(ctx, p_ctx, disk_name);
-
-        if (!created_path) {
-          JWARN(ctx, L"restoring disk {} to {} instead.",
-                utf8_to_utf16(disk_name), tmp_path);
-          created_path = tmp_path;
-        }
-
-        DBGC(ctx, L"disk map {} => {}", utf8_to_utf16(disk_name), created_path);
-        restore_ctx->disk_map[disk_name] = disk_info{created_path};
-
-        auto virtual_size = rp->statp.st_size;
-        auto block_size = rp->statp.st_blksize;
-        auto sector_size = rp->statp.st_blocks;
-
-        create_dirs(tmp_path);
-
-        CREATE_VIRTUAL_DISK_PARAMETERS params;
-        params.Version = CREATE_VIRTUAL_DISK_VERSION_1;
-        params.Version1 = {
-            .UniqueId = 0,  // let the system try to create a unique id
-            .MaximumSize = virtual_size,
-            .BlockSizeInBytes = block_size,
-            .SectorSizeInBytes = static_cast<ULONG>(sector_size),
-            .ParentPath = NULL,
-            .SourcePath = NULL,
-        };
-
-        auto result = CreateVirtualDisk(
-            &vst, created_path.c_str(), VIRTUAL_DISK_ACCESS_ALL, NULL,
-            CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &disk_handle);
-
-        if (result != ERROR_SUCCESS) {
-          JERR(ctx, L"could not create initial hard disk at {}.  Err={} ({:X})",
-               created_path, format_win32_error(result), result);
-          return bRC_Error;
-        }
-
-        TRCC(ctx, L"created hard disk {} at {}", tmp_path.c_str(),
-             fmt_as_ptr(disk_handle));
-      }
-
-      restore_ctx->disk_handle = disk_handle;
-      restore_ctx->current_offset = 0;
-      rp->create_status = CF_EXTRACT;
-
-      return bRC_OK;
-    }
-
-    HANDLE h = create_file(tmp_path);
-    if (h == INVALID_HANDLE_VALUE) {
-      JERR(ctx, L"could not create file {}: Err={}", tmp_path,
-           format_win32_error(GetLastError()));
+    auto last_slash = actual_path.find_last_of("\\/");
+    // we know that there is at least one slash, because
+    // it contains disks/
+    ASSERT(last_slash != actual_path.npos);
+    if (last_slash == actual_path.size()) {
+      JERR(ctx, "bad disk name {} (trailing slash)", actual_name);
+      rp->create_status = CF_ERROR;
       return bRC_Error;
     }
 
-    restore_ctx->hndl = h;
+    auto disk_handle = INVALID_HANDLE_VALUE;
 
-    DBGC(ctx, L"created file '{}'", tmp_path);
+    if (rp->delta_seq > 0) {
+      std::string disk_name{
+          actual_path.substr(last_slash + 1, actual_path.npos)};
+
+      auto found = restore_ctx->disk_map.find(disk_name);
+
+      if (found == restore_ctx->disk_map.end()) {
+        JERR(ctx,
+             "Somehow we are trying to restore an incremental image of {}, "
+             "but the full was not restored first",
+             disk_name);
+        return bRC_Error;
+      }
+
+      disk_info& info = found->second;
+
+      DBGC(ctx, L"found in disk map {} => {}", utf8_to_utf16(disk_name),
+           info.path);
+
+      OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+      params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+      params.Version2.ReadOnly = FALSE;
+      params.Version2.GetInfoOnly = FALSE;
+
+      auto result
+          = OpenVirtualDisk(&vst, info.path.c_str(), VIRTUAL_DISK_ACCESS_NONE,
+                            OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
+
+
+      if (result != ERROR_SUCCESS) {
+        JERR(ctx, L"could not open hard disk at {} for writing.  Err={} ({:X})",
+             tmp_path, format_win32_error(result), result);
+        return bRC_Error;
+      }
+
+      TRCC(ctx, L"open hard disk {} at {}", info.path, fmt_as_ptr(disk_handle));
+    } else {
+      std::string disk_name{
+          actual_path.substr(last_slash + 1, actual_path.npos)};
+
+      auto created_path = original_path_of_disk(ctx, p_ctx, disk_name);
+
+      if (!created_path) {
+        JWARN(ctx, L"restoring disk {} to {} instead.",
+              utf8_to_utf16(disk_name), tmp_path);
+        created_path = tmp_path;
+      }
+
+      DBGC(ctx, L"disk map {} => {}", utf8_to_utf16(disk_name), created_path);
+      restore_ctx->disk_map[disk_name] = disk_info{created_path};
+
+      auto virtual_size = rp->statp.st_size;
+      auto block_size = rp->statp.st_blksize;
+      auto sector_size = rp->statp.st_blocks;
+
+      create_dirs(tmp_path);
+
+      CREATE_VIRTUAL_DISK_PARAMETERS params;
+      params.Version = CREATE_VIRTUAL_DISK_VERSION_1;
+      params.Version1 = {
+          .UniqueId = 0,  // let the system try to create a unique id
+          .MaximumSize = virtual_size,
+          .BlockSizeInBytes = block_size,
+          .SectorSizeInBytes = static_cast<ULONG>(sector_size),
+          .ParentPath = NULL,
+          .SourcePath = NULL,
+      };
+
+      auto result = CreateVirtualDisk(
+          &vst, created_path.c_str(), VIRTUAL_DISK_ACCESS_ALL, NULL,
+          CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &disk_handle);
+
+      if (result != ERROR_SUCCESS) {
+        JERR(ctx, L"could not create initial hard disk at {}.  Err={} ({:X})",
+             created_path, format_win32_error(result), result);
+        return bRC_Error;
+      }
+
+      TRCC(ctx, L"created hard disk {} at {}", tmp_path.c_str(),
+           fmt_as_ptr(disk_handle));
+    }
+
+    restore_ctx->disk_handle = disk_handle;
+    restore_ctx->current_offset = 0;
     rp->create_status = CF_EXTRACT;
+
     return bRC_OK;
   } catch (const std::exception& ex) {
     JERR(ctx, L"could not create file '{}'. Err={}", tmp_path,
