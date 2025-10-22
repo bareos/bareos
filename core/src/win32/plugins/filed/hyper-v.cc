@@ -3133,7 +3133,7 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   system_srvc.rename(
       srvc, snapshot,
-      WMI::String::copy(std::format(L"Bareos - {}", p_ctx->jobid)));
+      WMI::String::copy(std::format(L"Bareos JobId {}", p_ctx->jobid)));
 
   std::optional<WMI::ReferencePoint> refpoint = std::nullopt;
   uint32_t delta_seq = 0;
