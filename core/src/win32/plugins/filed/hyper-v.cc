@@ -2553,6 +2553,15 @@ static bRC freePlugin(PluginContext* ctx)
             CloseHandle(prepared->disk_to_backup.value());
             prepared->disk_to_backup.reset();
           }
+
+          if (!prepared->tmp_dir.empty()
+              && PathFileExistsW(prepared->tmp_dir.c_str())) {
+            if (RemoveDirectoryW(prepared->tmp_dir.c_str())) {
+              JWARN(ctx, L"could not delete directory '{}': {}",
+                    prepared->tmp_dir, format_win32_error());
+            }
+          }
+
         } else if constexpr (std::is_same_v<T, std::monostate>) {
           // nothing to do here
         } else {
