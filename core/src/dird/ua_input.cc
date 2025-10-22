@@ -199,7 +199,7 @@ int GetEnabled(UaContext* ua, const char* val)
       // we got an overflow
       Enabled = -1;
     } else if (errno == EINVAL) {
-      // some other issue occured (i.e. base 10 is not supported...)
+      // some other issue occurred (i.e. base 10 is not supported...)
       Enabled = -1;
     } else {
       Enabled = parsed;

@@ -44,7 +44,7 @@ static ConnectionHandshakeMode GetHandshakeMode(
 
   if (!bs->EvaluateCleartextBareosHello(cleartext_hello, client_name,
                                         r_code_str, version)) {
-    Dmsg0(100, "Error occured when trying to peek cleartext hello\n");
+    Dmsg0(100, "Error occurred when trying to peek cleartext hello\n");
     return ConnectionHandshakeMode::CloseConnection;
   }
 

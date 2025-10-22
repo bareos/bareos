@@ -1420,7 +1420,7 @@ bail_out:
   if (read_error) {
     // the following code recognizes read errors by looking at
     // the value inside sd->message_length; if its negative then a
-    // read error occured. Otherwise everything went fine.
+    // read error occurred. Otherwise everything went fine.
     sd->message_length = -1;
   }
   return retval;

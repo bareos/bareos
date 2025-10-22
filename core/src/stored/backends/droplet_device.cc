@@ -204,8 +204,8 @@ static dpl_status_t chunked_volume_truncate_callback(dpl_sysmd_t*,
  * Generic function that walks a dirname and calls the callback
  * function for each entry it finds in that directory.
  *
- * @return: true - if no error occured
- *          false - if an error has occured. Sets dev_errno and errmsg to the
+ * @return: true - if no error occurred
+ *          false - if an error has occurred. Sets dev_errno and errmsg to the
  * first error.
  */
 bool DropletDevice::ForEachChunkInDirectoryRunCallback(

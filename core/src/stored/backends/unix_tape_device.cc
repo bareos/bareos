@@ -101,7 +101,7 @@ ssize_t unix_tape_device::d_read(int t_fd, void* buffer, size_t count)
         ret = std::min(tmpret, static_cast<ssize_t>(count));
         break;  // successful read
       } else if (errno != ENOMEM) {
-        break;  // some other error occured
+        break;  // some other error occurred
       }
     }
   }
