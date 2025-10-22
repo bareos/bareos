@@ -255,7 +255,7 @@ bool TlsOpenSslPrivate::init()
   return true;
 }
 
-// report any errors that occured
+// report any errors that occurred
 int TlsOpenSslPrivate::OpensslVerifyPeer(int preverify_ok,
                                          X509_STORE_CTX* store)
 { /* static */

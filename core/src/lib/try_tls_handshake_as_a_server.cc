@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,7 @@ static ConnectionHandshakeMode GetHandshakeMode(
 
   if (!bs->EvaluateCleartextBareosHello(cleartext_hello, client_name,
                                         r_code_str, version)) {
-    Dmsg0(100, "Error occured when trying to peek cleartext hello\n");
+    Dmsg0(100, "Error occurred when trying to peek cleartext hello\n");
     return ConnectionHandshakeMode::CloseConnection;
   }
 
