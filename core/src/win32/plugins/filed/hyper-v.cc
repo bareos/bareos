@@ -3016,7 +3016,7 @@ static std::vector<std::wstring> get_files_in_dir(std::wstring_view dir)
   return files;
 }
 
-static restore_object get_info(PluginContext* ctx,
+static restore_object get_info(PluginContext*,
                                const WMI::ComputerSystem& system,
                                const std::vector<backed_up_disk>& disks)
 {
@@ -3120,7 +3120,8 @@ WMI::ReferencePoint ref_point_of_system(PluginContext* ctx,
 
 static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 {
-  TRCC(ctx, L"start backup file");
+  JINFO(ctx, "preparing backup of {}", vm_name);
+
   auto* p_ctx = plugin_ctx::get(ctx);
 
   auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
@@ -3136,13 +3137,18 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
   // do this first, so we dont create a snapshot for nothing
   std::wstring dir = make_temp_dir(p_ctx->jobid);
 
+  JINFO(ctx, "creating snapshot of {} ...", vm_name);
+
   auto snapshot = snapshot_srvc.create_snapshot(
       srvc, vm.value(), p_ctx->snapshot_settings,
       WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
 
-  system_srvc.rename(
-      srvc, snapshot,
-      WMI::String::copy(std::format(L"Bareos JobId {}", p_ctx->jobid)));
+  auto snapshot_name = std::format(L"Bareos JobId {}", p_ctx->jobid);
+  system_srvc.rename(srvc, snapshot, WMI::String::copy(snapshot_name));
+
+  JINFO(ctx, L"created snapshot with name '{}'", snapshot_name);
+
+  JINFO(ctx, "exporting system definition for {}", vm_name);
 
   std::optional<WMI::ReferencePoint> refpoint = std::nullopt;
   uint32_t delta_seq = 0;
@@ -3180,6 +3186,8 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
                                          export_settings);
   }
 
+  JINFO(ctx, L"retrieving information from snapshot ...");
+
   std::optional<analyzed_ref_point> analyzed;
   if (refpoint) { analyzed = analyze_ref_point(ctx, srvc, refpoint.value()); }
 
@@ -3190,6 +3198,8 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
   prepared.files_to_backup = get_files_in_dir(dir);
   prepared.disks_to_backup
       = get_disk_paths_of_snapshot(srvc, prepared.vm_snapshot);
+
+  JINFO(ctx, L"finished preparing backup");
 
   return true;
 }
@@ -3482,6 +3492,9 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
     if (prepared.files_to_backup.size() > 0) {
       auto& path = prepared.files_to_backup.back();
+
+      JINFO(ctx, L"Starting backup of metadata {}", path);
+
       DBGC(ctx, L"transforming {} ...", path);
       p_ctx->current_path = create_vm_path(prepared.vm_name, L"config", path);
       DBGC(ctx, "into {}!", p_ctx->current_path);
@@ -3506,6 +3519,8 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
     if (prepared.disks_to_backup.size() > 0) {
       auto& path = prepared.disks_to_backup.back();
+
+      JINFO(ctx, L"Starting backup of disk {}", path.as_view());
 
       VIRTUAL_STORAGE_TYPE vst = {
           .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
@@ -4616,7 +4631,6 @@ static bRC end_restore_job(PluginContext* ctx)
 
       destroyer.release();
       system_srvc.realize_planned_system(srvc, std::move(planned_system));
-
     } catch (const std::exception& ex) {
       JERR(ctx, "plugin was not able to restore the vm");
       return bRC_Error;
@@ -4954,13 +4968,15 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
       std::string disk_name{
           actual_path.substr(last_slash + 1, actual_path.npos)};
 
-      auto created_path = original_path_of_disk(ctx, p_ctx, disk_name);
+      auto new_path = original_path_of_disk(ctx, p_ctx, disk_name);
 
-      if (!created_path) {
+      if (!new_path) {
         JWARN(ctx, L"restoring disk {} to {} instead.",
               utf8_to_utf16(disk_name), tmp_path);
-        created_path = tmp_path;
+        new_path.emplace(tmp_path);
       }
+
+      auto created_path = *new_path;
 
       DBGC(ctx, L"disk map {} => {}", utf8_to_utf16(disk_name), created_path);
       restore_ctx->disk_map[disk_name] = disk_info{created_path};
