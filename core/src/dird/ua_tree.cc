@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -463,6 +463,11 @@ static int MarkElements(UaContext* ua, TreeContext* tree, bool extract = true)
 
     if (parts[0].size() == 0) {
       // we are trying to mark from the root
+      if (parts.size() == 1) {
+        // split_paths is designed so that this should not happen
+        // but just in case, we do the right thing here
+        parts.push_back("*");
+      }
       stack.push_back({tree->root, 1});
     } else if (parts[0].size() == 2 && parts[0][1] == ':') {
       // maybe we are trying to mark from a windows root
@@ -483,7 +488,14 @@ static int MarkElements(UaContext* ua, TreeContext* tree, bool extract = true)
       // if we ever have a bug report because of this, we could easily
       // allow the use of './' to make clear that we want a relative
       // path
-      if (!found_root) { stack.push_back({tree->node, 0}); }
+      if (found_root) {
+        if (parts.size() == 1) {
+          // this can happen if somebody tries to mark C: or C:/, etc.
+          parts.push_back("*");
+        }
+      } else {
+        stack.push_back({tree->node, 0});
+      }
     } else {
       stack.push_back({tree->node, 0});
     }
