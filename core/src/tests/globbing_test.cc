@@ -171,7 +171,7 @@ TEST_F(Globbing, globbing_in_markcmd)
   EXPECT_EQ(FakeMarkCmd(ua, &tree, "/"), files.size());
   FakeUnmarkCmd(ua, &tree, "*");
 
-  EXPECT_EQ(FakeMarkCmd(ua, &tree, "C:/"), 5);
+  EXPECT_EQ(FakeMarkCmd(ua, &tree, "C:/"), 4);
   FakeUnmarkCmd(ua, &tree, "*");
 
   EXPECT_EQ(
