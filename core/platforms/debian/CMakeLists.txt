@@ -136,8 +136,6 @@ macro(bareos_install_sql_files_to_dbconfig_common)
         "${CMAKE_CURRENT_LIST_DIR}/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/${DB_CONFIG_COMMON_DEBIAN_DB_NAME}/2170"
       DESTINATION
         "${CMAKE_INSTALL_FULL_DATAROOTDIR}/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/${DB_CONFIG_COMMON_DEBIAN_DB_NAME}"
-      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-                  WORLD_READ
     )
     install(
       FILES
@@ -145,8 +143,6 @@ macro(bareos_install_sql_files_to_dbconfig_common)
       DESTINATION
         "${CMAKE_INSTALL_FULL_DATAROOTDIR}/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/${DB_CONFIG_COMMON_DEBIAN_DB_NAME}"
       RENAME 2003
-      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-                  WORLD_READ
     )
     install(
       FILES
@@ -154,8 +150,6 @@ macro(bareos_install_sql_files_to_dbconfig_common)
       DESTINATION
         "${CMAKE_INSTALL_FULL_DATAROOTDIR}/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/${DB_CONFIG_COMMON_DEBIAN_DB_NAME}"
       RENAME 2004
-      PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-                  WORLD_READ
     )
   endif()
 
