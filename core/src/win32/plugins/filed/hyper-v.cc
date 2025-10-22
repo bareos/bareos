@@ -2275,6 +2275,7 @@ struct plugin_ctx {
     std::optional<HANDLE> hndl;
 
     std::vector<WMI::String> restored_definition_files;
+    std::vector<std::wstring> created_files;
 
     std::optional<HANDLE> disk_handle;
     std::optional<range> current_range;
@@ -2539,6 +2540,20 @@ static bRC freePlugin(PluginContext* ctx)
         using T = std::decay_t<decltype(val)>;
 
         if constexpr (std::is_same_v<T, plugin_ctx::restore>) {
+          // maybe this should only happen if the restore was successful?
+          for (auto& path : val.created_files) {
+            if (!DeleteFileW(path.c_str())) {
+              JWARN(ctx, L"could not delete file '{}': {}", path,
+                    format_win32_error());
+            }
+          }
+
+          if (!val.tmp_dir.empty() && PathFileExistsW(val.tmp_dir.c_str())) {
+            if (RemoveDirectoryW(val.tmp_dir.c_str())) {
+              JWARN(ctx, L"could not delete directory '{}': {}", val.tmp_dir,
+                    format_win32_error());
+            }
+          }
         } else if constexpr (std::is_same_v<T, plugin_ctx::backup>) {
           auto* prepared
               = std::get_if<plugin_ctx::backup::prepared_backup>(&val.state);
@@ -4891,6 +4906,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
     restore_ctx->hndl = h;
 
     DBGC(ctx, L"created file '{}'", tmp_path);
+    restore_ctx->created_files.emplace_back(std::move(tmp_path));
     rp->create_status = CF_EXTRACT;
     return bRC_OK;
   }
