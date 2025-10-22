@@ -4698,23 +4698,22 @@ static void create_dirs(std::wstring_view path)
   if (last_slash != path.npos) { ensure_paths(path.substr(0, last_slash)); }
 }
 
-static std::optional<std::wstring> original_path_of_disk(
+static std::optional<std::wstring> original_disk_directory(
     PluginContext* ctx,
     plugin_ctx* p_ctx,
-    std::string_view disk_name)
+    std::wstring_view wdisk_name)
 {
   std::wstring found;
-
-  auto wdisk_name = utf8_to_utf16(disk_name);
 
   for (auto& received_disk : p_ctx->received_disks) {
     if (wdisk_name == received_disk.name) {
       DBGC(ctx, L"disk {} => original directory {}", wdisk_name,
            received_disk.directory);
-      found = received_disk.directory;
-      break;
+      return received_disk.directory;
     }
   }
+
+  return std::nullopt;
 
   if (found.empty()) {
     JWARN(ctx,
@@ -4858,18 +4857,6 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
   TRCC(ctx, "vm_name = {}, path = {}", vm_name, actual_path);
 
-  // we need to include the vm name to support restoring multiple vms at once
-  std::wstring tmp_path
-      = std::format(L"{}\\{}\\{}", restore_ctx->tmp_dir, utf8_to_utf16(vm_name),
-                    utf8_to_utf16(actual_path));
-
-  std::replace(std::begin(tmp_path), std::end(tmp_path), L'/', L'\\');
-  // std::replace(std::begin(tmp_path),
-  //              std::end(tmp_path),
-  //              L"\\\\"; L"\\");
-
-  TRCC(ctx, L"tmp_path = {}", tmp_path);
-
   bool config_file = is_config_file(actual_path);
   bool disk_file = is_volume_file(actual_path);
 
@@ -4890,6 +4877,15 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
   }
 
   if (!disk_file) {
+    // we need to include the vm name to support restoring multiple vms at once
+    std::wstring tmp_path
+        = std::format(L"{}\\{}\\{}", restore_ctx->tmp_dir,
+                      utf8_to_utf16(vm_name), utf8_to_utf16(actual_path));
+
+    std::replace(std::begin(tmp_path), std::end(tmp_path), L'/', L'\\');
+
+    TRCC(ctx, L"tmp_path = {}", tmp_path);
+
     HANDLE h = create_file(tmp_path);
     if (h == INVALID_HANDLE_VALUE) {
       JERR(ctx, L"could not create file {}: Err={}", tmp_path,
@@ -4975,7 +4971,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
       if (result != ERROR_SUCCESS) {
         JERR(ctx, L"could not open hard disk at {} for writing.  Err={} ({:X})",
-             tmp_path, format_win32_error(result), result);
+             info.path, format_win32_error(result), result);
         return bRC_Error;
       }
 
@@ -4984,15 +4980,42 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
       std::string disk_name{
           actual_path.substr(last_slash + 1, actual_path.npos)};
 
-      auto new_path = original_path_of_disk(ctx, p_ctx, disk_name);
+      auto wdisk_name = utf8_to_utf16(disk_name);
+      auto directory = original_disk_directory(ctx, p_ctx, wdisk_name);
 
-      if (!new_path) {
-        JWARN(ctx, L"restoring disk {} to {} instead.",
-              utf8_to_utf16(disk_name), tmp_path);
-        new_path.emplace(tmp_path);
+      if (!directory) {
+        JFATAL(ctx,
+               L"Could not determine the original directory of the disk {}",
+               wdisk_name);
+        return bRC_Error;
       }
 
-      auto created_path = *new_path;
+      if (!PathFileExistsW(directory->c_str())) {
+        JWARN(ctx,
+              L"Original directory '{}' of the disk {} does not exist anymore.",
+              *directory, wdisk_name);
+        return bRC_Error;
+      }
+
+      auto created_path = std::format(L"{}\\{}", *directory, wdisk_name);
+
+      for (size_t i = 0; i < 5; ++i) {
+        if (!PathFileExistsW(created_path.c_str())) { break; }
+
+        // if the old path (still) exists, then we do not want to overwrite it
+        // instead create a differently named file
+
+        created_path = std::format(L"{}\\b{}-{}-{}", *directory, p_ctx->jobid,
+                                   i, wdisk_name);
+      }
+
+      if (PathFileExistsW(created_path.c_str())) {
+        JFATAL(
+            ctx,
+            L"could not create a suitable file for the disk {} in directory {}",
+            wdisk_name, *directory);
+        return bRC_Error;
+      }
 
       DBGC(ctx, L"disk map {} => {}", utf8_to_utf16(disk_name), created_path);
       restore_ctx->disk_map[disk_name] = disk_info{created_path};
@@ -5000,8 +5023,6 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
       auto virtual_size = rp->statp.st_size;
       auto block_size = rp->statp.st_blksize;
       auto sector_size = rp->statp.st_blocks;
-
-      create_dirs(tmp_path);
 
       CREATE_VIRTUAL_DISK_PARAMETERS params;
       params.Version = CREATE_VIRTUAL_DISK_VERSION_1;
@@ -5024,7 +5045,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
         return bRC_Error;
       }
 
-      TRCC(ctx, L"created hard disk {} at {}", tmp_path.c_str(),
+      TRCC(ctx, L"created hard disk {} at {}", created_path.c_str(),
            fmt_as_ptr(disk_handle));
     }
 
@@ -5034,11 +5055,10 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
     return bRC_OK;
   } catch (const std::exception& ex) {
-    JERR(ctx, L"could not create file '{}'. Err={}", tmp_path,
-         utf8_to_utf16(ex.what()));
+    JERR(ctx, "could not restore file '{}'. Err={}", rp->ofname, ex.what());
     return bRC_Error;
   } catch (...) {
-    JERR(ctx, L"could not create file '{}'.", tmp_path);
+    JERR(ctx, "could not restore file '{}'", rp->ofname);
     return bRC_Error;
   }
 }
