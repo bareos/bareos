@@ -4682,16 +4682,14 @@ static std::optional<std::wstring> original_path_of_disk(
   if (found.empty()) {
     JWARN(ctx,
           L"Could not determine the original directory of the disk {}.  "
-          L"Somehow this information was lost.  Disk will be restored to a "
-          L"temporary location instead",
+          L"Somehow this information was lost.",
           wdisk_name);
     return std::nullopt;
   }
 
   if (!PathFileExistsW(found.c_str())) {
     JWARN(ctx,
-          L"Original directory '{}' of the disk {} does not exist anymore.  "
-          L"Disk will be restored to a temporary location instead",
+          L"Original directory '{}' of the disk {} does not exist anymore.",
           found, wdisk_name);
     return std::nullopt;
   }
@@ -4701,9 +4699,7 @@ static std::optional<std::wstring> original_path_of_disk(
   complete_path += wdisk_name;
 
   if (PathFileExistsW(complete_path.c_str())) {
-    JWARN(ctx,
-          L"Original path '{}' of the disk {} already exists.  Disk will be "
-          L"restored to a temporary location instead",
+    JWARN(ctx, L"Original path '{}' of the disk {} already exists.",
           complete_path, wdisk_name);
     return std::nullopt;
   }
@@ -4921,8 +4917,13 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
         std::string disk_name{
             actual_path.substr(last_slash + 1, actual_path.npos)};
 
-        auto created_path
-            = original_path_of_disk(ctx, p_ctx, disk_name).value_or(tmp_path);
+        auto created_path = original_path_of_disk(ctx, p_ctx, disk_name);
+
+        if (!created_path) {
+          JWARN(ctx, L"restoring disk {} to {} instead.",
+                utf8_to_utf16(disk_name), tmp_path);
+          created_path = tmp_path;
+        }
 
         DBGC(ctx, L"disk map {} => {}", utf8_to_utf16(disk_name), created_path);
         restore_ctx->disk_map[disk_name] = disk_info{created_path};
