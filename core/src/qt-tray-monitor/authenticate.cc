@@ -65,7 +65,7 @@ static std::map<AuthenticationResult, std::string>
          "Daemon response could not be read"},
         {AuthenticationResult::kRejectedByDaemon,
          "Authentication was rejected by the daemon"},
-        {AuthenticationResult::kUnknownDaemon, "Unkown daemon type"}};
+        {AuthenticationResult::kUnknownDaemon, "Unknown daemon type"}};
 
 bool GetAuthenticationResultString(AuthenticationResult err,
                                    std::string& buffer)
