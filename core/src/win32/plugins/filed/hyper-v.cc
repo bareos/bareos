@@ -1819,8 +1819,6 @@ class VirtualSystemSnapshotService : ClassObject {
 
   Class clz;
 };
-
-
 };  // namespace WMI
 
 struct com_context {
@@ -2270,18 +2268,19 @@ struct plugin_ctx {
   struct restore {
     WMI::VirtualSystemManagementService system_srvc;
 
-    std::wstring tmp_dir;
+    std::wstring tmp_dir{};
 
-    std::optional<HANDLE> hndl;
+    std::optional<HANDLE> hndl{};
 
-    std::vector<WMI::String> restored_definition_files;
-    std::vector<std::wstring> created_files;
+    std::vector<WMI::String> restored_definition_files{};
+    std::vector<std::wstring> created_files{};
 
-    std::optional<HANDLE> disk_handle;
-    std::optional<range> current_range;
-    std::size_t current_offset;
+    std::wstring default_disk_loc{};
+    std::optional<HANDLE> disk_handle{};
+    std::optional<range> current_range{};
+    std::size_t current_offset{};
 
-    std::unordered_map<std::string, disk_info> disk_map;
+    std::unordered_map<std::string, disk_info> disk_map{};
   };
 
   int jobid;
@@ -2664,8 +2663,31 @@ static bool start_restore_job(PluginContext* ctx)
   if (!system_mgmt) { return false; }
 
   std::wstring dir = make_temp_dir(p_ctx->jobid);
-  p_ctx->current_state.emplace<plugin_ctx::restore>(
+  auto& restore_ctx = p_ctx->current_state.emplace<plugin_ctx::restore>(
       std::move(system_mgmt.value()), std::move(dir));
+
+  try {
+    auto query = WMI::String::copy(
+        L"SELECT * FROM Msvm_VirtualSystemManagementServiceSettingData");
+    auto obj = srvc.query_single(query);
+    if (obj) {
+      auto default_loc
+          = obj->get<WMI::cim_type::string>(L"DefaultVirtualHardDiskPath");
+      restore_ctx.default_disk_loc = std::wstring{default_loc.as_view()};
+      DBGC(ctx, L"default disk loc = {}", restore_ctx.default_disk_loc);
+      if (!PathFileExistsW(restore_ctx.default_disk_loc.c_str())) {
+        JWARN(ctx, L"default hyper-v disk location '{}' does not exist",
+              restore_ctx.default_disk_loc);
+        restore_ctx.default_disk_loc = {};
+      }
+    }
+  } catch (const std::exception& e) {
+    JWARN(ctx, "could not determine default hyper-v disk location ({})",
+          e.what());
+  } catch (...) {
+    JWARN(ctx, "could not determine default hyper-v disk location");
+  }
+
 
   return true;
 }
@@ -4714,33 +4736,6 @@ static std::optional<std::wstring> original_disk_directory(
   }
 
   return std::nullopt;
-
-  if (found.empty()) {
-    JWARN(ctx,
-          L"Could not determine the original directory of the disk {}.  "
-          L"Somehow this information was lost.",
-          wdisk_name);
-    return std::nullopt;
-  }
-
-  if (!PathFileExistsW(found.c_str())) {
-    JWARN(ctx,
-          L"Original directory '{}' of the disk {} does not exist anymore.",
-          found, wdisk_name);
-    return std::nullopt;
-  }
-
-  std::wstring complete_path = std::move(found);
-  complete_path += L"\\";
-  complete_path += wdisk_name;
-
-  if (PathFileExistsW(complete_path.c_str())) {
-    JWARN(ctx, L"Original path '{}' of the disk {} already exists.",
-          complete_path, wdisk_name);
-    return std::nullopt;
-  }
-
-  return complete_path;
 }
 
 // creates the file at path and all directories above it
@@ -4984,17 +4979,32 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
       auto directory = original_disk_directory(ctx, p_ctx, wdisk_name);
 
       if (!directory) {
-        JFATAL(ctx,
-               L"Could not determine the original directory of the disk {}",
-               wdisk_name);
-        return bRC_Error;
-      }
-
-      if (!PathFileExistsW(directory->c_str())) {
-        JWARN(ctx,
+        if (!restore_ctx->default_disk_loc.empty()) {
+          JERR(ctx,
+               L"Could not determine the original directory of the disk {}; "
+               L"trying default location '{}' instead",
+               wdisk_name, restore_ctx->default_disk_loc);
+          directory = restore_ctx->default_disk_loc;
+        } else {
+          JFATAL(ctx,
+                 L"Could not determine the original directory of the disk {}",
+                 wdisk_name);
+          return bRC_Error;
+        }
+      } else if (!PathFileExistsW(directory->c_str())) {
+        if (!restore_ctx->default_disk_loc.empty()) {
+          JWARN(ctx,
+                L"Original directory '{}' of the disk {} does not exist "
+                L"anymore; trying default location '{}' instead",
+                *directory, wdisk_name, restore_ctx->default_disk_loc);
+          directory = restore_ctx->default_disk_loc;
+        } else {
+          JWARN(
+              ctx,
               L"Original directory '{}' of the disk {} does not exist anymore.",
               *directory, wdisk_name);
-        return bRC_Error;
+          return bRC_Error;
+        }
       }
 
       auto created_path = std::format(L"{}\\{}", *directory, wdisk_name);
