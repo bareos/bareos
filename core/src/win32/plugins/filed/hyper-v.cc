@@ -5008,7 +5008,9 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
         }
       }
 
-      auto created_path = std::format(L"{}\\{}", *directory, wdisk_name);
+      auto first_path = std::format(L"{}\\{}", *directory, wdisk_name);
+      auto created_path = first_path;
+      bool warn_on_path_change = false;
 
       for (size_t i = 0; i < 5; ++i) {
         if (!PathFileExistsW(created_path.c_str())) { break; }
@@ -5016,8 +5018,9 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
         // if the old path (still) exists, then we do not want to overwrite it
         // instead create a differently named file
 
-        created_path = std::format(L"{}\\b{}-{}-{}", *directory, p_ctx->jobid,
-                                   i, wdisk_name);
+        warn_on_path_change = true;
+        created_path = std::format(L"{}\\bareos-{}-{}-{}", *directory,
+                                   p_ctx->jobid, i, wdisk_name);
       }
 
       if (PathFileExistsW(created_path.c_str())) {
@@ -5026,6 +5029,11 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
             L"could not create a suitable file for the disk {} in directory {}",
             wdisk_name, *directory);
         return bRC_Error;
+      }
+
+      if (warn_on_path_change) {
+        JWARN(ctx, L"'{}' already exists, using '{}' for restore instead",
+              first_path, created_path);
       }
 
       DBGC(ctx, L"disk map {} => {}", utf8_to_utf16(disk_name), created_path);
