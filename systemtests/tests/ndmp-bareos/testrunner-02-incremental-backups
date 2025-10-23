@@ -1,0 +1,75 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# run multiple incremental backups
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+# Incremental Part
+# Isilon can have now up to 32, but the Solaris/omnios NDMP still only accepts 9.
+# So we limit to 9 on omnios
+# https://docs.bareos.org/BareosMainReference/TasksAndConcepts/NdmpBackupsWithBareos.html#ndmp-backup-level
+limit=10
+if [ "${NDMP_TEST}" = "omnios" ];then
+  limit=9
+fi
+echo "############# running NDMP ${NDMP_TEST} backup incrementals limit set to ${limit} ##################"
+
+make_remote_data_incremental
+
+for ID in $(seq 1 ${limit}); do
+  ${SSH} "echo \"${NDMP_FILESYSTEM}-${ID}\" >> \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/incremental\""
+
+  cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/incr-${ID}.out
+run job=NDMPBackupDump fileset=${NDMP_CLIENT}-fileset level=Incremental yes
+wait
+END_OF_DATA
+
+  run_bconsole "${tmp}/bconcmds"
+
+  check_log "${log_home}/incr-${ID}.out"
+done
+
+#
+# Job cancelling doesn't work that well and lead to all sort of issues
+# it might be a good idea to test this
+#
+
+#uncomment once fixed
+#check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
+
+end_test

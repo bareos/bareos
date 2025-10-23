@@ -21,6 +21,9 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "data" "*.gz" COPYONLY "")
 
   configurefilestosystemtest("systemtests" "scripts" "functions" @ONLY "")
+  configurefilestosystemtest(
+    "systemtests" "scripts" "functions-ndmp.in" @ONLY ""
+  )
   configurefilestosystemtest("systemtests" "scripts" "cleanup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "redirect_output" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "mysql.sh" @ONLY "")
