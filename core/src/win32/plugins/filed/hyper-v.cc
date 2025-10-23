@@ -4544,6 +4544,10 @@ static bRC end_restore_job(PluginContext* ctx)
   for (auto& definition_file : restore_ctx->restored_definition_files) {
     bool generate_new_id = true;
 
+    JINFO(ctx,
+          L"trying create a new vm from the restored configuration file '{}'",
+          definition_file.as_view());
+
     try {
       auto planned_system = system_srvc.import_system_definition(
           srvc, definition_file, generate_new_id);
@@ -4589,6 +4593,9 @@ static bRC end_restore_job(PluginContext* ctx)
           L"Msvm_SettingsDefineState");
 
       DBGC(ctx, "found {} settings", settings.size());
+
+      JINFO(ctx, L"Update the configuration of the created vm");
+
 
       for (auto& setting : settings) {
         TRCC(ctx, L"setting = {}", setting.to_string().as_view());
@@ -4651,6 +4658,8 @@ static bRC end_restore_job(PluginContext* ctx)
 
           auto& found_path = found->second.path;
 
+          JINFO(ctx, L"updating disk path '{}' to restored disk '{}'",
+                path_during_backup.as_view(), found_path);
           set_disk_path(disk_setting, found_path);
 
           TRCC(ctx, L"updated disk setting = {}",
@@ -4665,6 +4674,7 @@ static bRC end_restore_job(PluginContext* ctx)
         }
       }
 
+      JINFO(ctx, L"validating created vm");
       system_srvc.validate_planned_system(srvc, planned_system);
 
       // todo: disconnect/delete ethernet (in case the original vm still uses
@@ -4672,6 +4682,8 @@ static bRC end_restore_job(PluginContext* ctx)
       //   maybe change some path root settings
 
       destroyer.release();
+
+      JINFO(ctx, L"realizing created vm");
       system_srvc.realize_planned_system(srvc, std::move(planned_system));
     } catch (const std::exception& ex) {
       JERR(ctx, "plugin was not able to restore the vm");
@@ -4824,6 +4836,8 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
   TRCC(ctx, "actual name = {}", actual_name);
 
+  auto wactual_name = utf8_to_utf16(actual_name);
+
   // paths that we create have the following structure:
   // <prefix>/<vm name>/path
   // we need to check that the path given conforms to this and extract
@@ -4901,8 +4915,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
     restore_ctx->hndl = h;
 
-    JINFO(ctx, L"restoring metadata file '{}' as '{}'",
-          utf8_to_utf16(rp->ofname), tmp_path);
+    JINFO(ctx, L"restoring metadata file '{}' as '{}'", wactual_name, tmp_path);
     DBGC(ctx, L"created file '{}'", tmp_path);
     restore_ctx->created_files.emplace_back(std::move(tmp_path));
     rp->create_status = CF_EXTRACT;
@@ -5077,8 +5090,8 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
       TRCC(ctx, L"created hard disk {} at {}", created_path.c_str(),
            fmt_as_ptr(disk_handle));
 
-      JINFO(ctx, L"restoring disk  {} ('{}') to '{}'", wdisk_name,
-            utf8_to_utf16(rp->ofname), created_path);
+      JINFO(ctx, L"restoring disk  {} ('{}') to '{}'", wdisk_name, wactual_name,
+            created_path);
     }
 
     restore_ctx->disk_handle = disk_handle;
