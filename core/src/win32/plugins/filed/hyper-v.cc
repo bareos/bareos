@@ -3157,7 +3157,7 @@ WMI::ReferencePoint ref_point_of_system(PluginContext* ctx,
 
 static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 {
-  JINFO(ctx, "preparing backup of {}", vm_name);
+  JINFO(ctx, "preparing backup of VM '{}'", vm_name);
 
   auto* p_ctx = plugin_ctx::get(ctx);
 
@@ -3174,7 +3174,7 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
   // do this first, so we dont create a snapshot for nothing
   std::wstring dir = make_temp_dir(p_ctx->jobid);
 
-  JINFO(ctx, "creating snapshot of {} ...", vm_name);
+  JINFO(ctx, "creating snapshot of VM '{}' ...", vm_name);
 
   auto snapshot = snapshot_srvc.create_snapshot(
       srvc, vm.value(), p_ctx->snapshot_settings,
@@ -3185,7 +3185,7 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   JINFO(ctx, L"created snapshot with name '{}'", snapshot_name);
 
-  JINFO(ctx, "exporting system definition for {} to {}", vm_name,
+  JINFO(ctx, "exporting system definition for VM '{}' to {}", vm_name,
         utf16_to_utf8(dir));
 
   std::optional<WMI::ReferencePoint> refpoint = std::nullopt;
@@ -3503,13 +3503,13 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
   try {
     if (std::get_if<std::monostate>(&p_ctx->current_state)) {
-      DBG(L"Backup is not started.  Doing so now...");
+      DBGC(ctx, L"Backup is not started.  Doing so now...");
       if (!start_backup_job(ctx)) { return bRC_Error; }
     }
 
     auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
     if (!std::get_if<plugin_ctx::backup::prepared_backup>(&bstate.state)) {
-      DBG(L"Backup is not prepared.  Doing so now...");
+      DBGC(ctx, L"Backup is not prepared.  Doing so now...");
 
       json_t* val = json_object_get(p_ctx->config, "vmname");
       if (!val) {
