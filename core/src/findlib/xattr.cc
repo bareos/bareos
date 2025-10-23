@@ -1546,7 +1546,7 @@ static inline void DropXattrLinkCache(XattrBuildData* xattr_data)
 #    if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
 /**
  * This function returns true if a non default extended system attribute
- * list is associated with fd and returns false when an error has occured
+ * list is associated with fd and returns false when an error has occurred
  * or when only extended system attributes other than archive,
  * av_modified or crtime are set.
  *

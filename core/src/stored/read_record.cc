@@ -254,7 +254,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
           DisplayTapeErrorStatus(jcr, dcr->dev);
           if (forge_on || jcr->sd_impl->ignore_label_errors) {
             dcr->dev->fsr(1); /* try skipping bad record */
-            Pmsg0(000, T_("Did fsr in attemp to skip bad record.\n"));
+            Pmsg0(000, T_("Did fsr in attempt to skip bad record.\n"));
             continue;
           }
           *status = false;

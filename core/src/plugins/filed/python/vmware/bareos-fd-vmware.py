@@ -3030,7 +3030,7 @@ class BareosVADPWrapper(object):
         self.dumper_process = bareos_vadp_dumper_process
         self.dumper_stderr_log = bareos_vadp_dumper_logfile
 
-        # check if dumper is running to catch any error that occured
+        # check if dumper is running to catch any error that occurred
         # immediately after starting it
         if not self.check_dumper():
             return False

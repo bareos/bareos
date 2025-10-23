@@ -37,16 +37,16 @@ if username and password:
                 print "# This Bareos version has not been released for your"
                 print "# specific version of UCS."
             else:
-                print "# An unexpected error has occured while contacting"
+                print "# An unexpected error has occurred while contacting"
                 print "# server download.bareos.com"
             sys.stderr.write("failed to enable the bareos.com repository\n")
     except Exception as e:
         msg = repr(e)
         print "# The bareos.com repository is disabled."
         print "# deb {url} / ".format(url=bareos_com_url)
-        print "# An exception occured when contacting download.bareos.com"
+        print "# An exception occurred when contacting download.bareos.com"
         print "# {msg}".format(msg=msg)
-        sys.stderr.write("An exception occured when contacting download.bareos.com\n")
+        sys.stderr.write("An exception occurred when contacting download.bareos.com\n")
         sys.stderr.write("{msg}\n".format(msg=msg))
 else:
     print "# The bareos.com repository is disabled."
