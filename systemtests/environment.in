@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Default CMAKE_CONFIG_TYPE to be empty.
 # CTest will set this for multi-configuration builds (see ctest --build-config)
 : "${CMAKE_CONFIG_TYPE:=}"

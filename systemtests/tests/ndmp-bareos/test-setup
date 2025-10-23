@@ -1,0 +1,59 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# Requirements:
+# * This tests is implemented for a Isilon NDMP storage.
+# * To create and delete backup data,
+#   password-less SSH root access to the Isilon storage is required.
+# * run cmake with parameter matching your environment:
+#     -Dndmp_data_agent_address=<ip.of.data.agent> \
+#     -Dndmp_data_agent_user=<user> \
+#     -Dndmp_data_agent_password=<password>
+#
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+"${rscripts}"/cleanup
+"${rscripts}"/setup
+
+bin/bareos start
+bin/bareos status
+
+# make sure the director is up and running.
+print_debug "$(bin/bconsole <<<"status dir")"
+
+cleanup_isilon
+
+${SSH} mkdir -p "/ifs/home/regress/${NDMP_FILESYSTEM}"
+${SSH} dd if=/dev/zero of="/ifs/home/regress/${NDMP_FILESYSTEM}/full" bs=1M count=20
+${SSH} "echo ${NDMP_FILESYSTEM} >> /ifs/home/regress/${NDMP_FILESYSTEM}/full"
+${SSH} "cat - > /ifs/home/regress/${NDMP_FILESYSTEM}/testfile" <sbin/bareos_dir-ndmp-bareos
+# we need an additional file, so the restore doesn't pick the last file of the volume and
+# data stream
+${SSH} "cat - > /ifs/home/regress/${NDMP_FILESYSTEM}/testfile2" <sbin/bareos_sd-ndmp-bareos

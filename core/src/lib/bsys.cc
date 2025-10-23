@@ -36,11 +36,7 @@
 #include "include/bareos.h"
 #include "lib/berrno.h"
 #include "lib/recent_job_results_list.h"
-#ifndef HAVE_REGEX_H
-#  include "lib/bregex.h"
-#else
-#  include <regex.h>
-#endif
+#include "lib/bregex.h"
 #include "lib/bpipe.h"
 
 #include <fstream>
