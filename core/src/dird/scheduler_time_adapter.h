@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@ class TimeSource {
   virtual time_t SystemTime() = 0;
   virtual void SleepFor(std::chrono::seconds wait_interval) = 0;
   virtual void Terminate() = 0;
+  virtual void WakeUp() = 0;
   virtual ~TimeSource() = default;
 };
 

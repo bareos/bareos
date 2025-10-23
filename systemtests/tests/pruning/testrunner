@@ -48,9 +48,9 @@ label volume=TestVolumeIncremental storage=File pool=Incremental
 status director
 status client
 status storage=File
+run job=$regularjob_name Level=Full yes
+run job=$regularjob_name Level=Full yes
 wait
-run job=$regularjob_name Level=Full yes
-run job=$regularjob_name Level=Full yes
 messages
 
 @$out $restore_log

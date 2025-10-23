@@ -1981,6 +1981,8 @@ static int PyStatPacket_init(PyStatPacket* self, PyObject* args, PyObject* kwds)
 
 #if defined(HAVE_WIN32)
   static_assert(std::is_same_v<decltype(PyStatPacket::atime), long long>);
+  static_assert(std::is_same_v<decltype(PyStatPacket::ctime), long long>);
+  static_assert(std::is_same_v<decltype(PyStatPacket::mtime), long long>);
 
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|IKHHIIIKLLLIK", kwlist, &self->dev, &self->ino,
@@ -1989,6 +1991,8 @@ static int PyStatPacket_init(PyStatPacket* self, PyObject* args, PyObject* kwds)
           &self->blocks)) {
 #else
   static_assert(std::is_same_v<decltype(PyStatPacket::atime), long>);
+  static_assert(std::is_same_v<decltype(PyStatPacket::ctime), long>);
+  static_assert(std::is_same_v<decltype(PyStatPacket::mtime), long>);
 
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|IKHHIIIKlllIK", kwlist, &self->dev, &self->ino,

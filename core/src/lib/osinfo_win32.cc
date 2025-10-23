@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -140,9 +140,64 @@ const char* GetOsInfoString()
 typedef void(WINAPI* PGNSI)(LPSYSTEM_INFO);
 typedef BOOL(WINAPI* PGPI)(DWORD, DWORD, DWORD, DWORD, PDWORD);
 
+static std::string Reg_GetStringValue(HKEY key, const char* value)
+{
+  DWORD Type;
+  DWORD Size;
+  if (auto ret
+      = RegGetValueA(key, "", value, RRF_RT_REG_SZ, &Type, nullptr, &Size);
+      ret != ERROR_SUCCESS) {
+    throw std::runtime_error{"cannot determine size"};
+  }
+
+  if (Type != REG_SZ) { throw std::runtime_error{"bad type"}; }
+
+  // size includes the terminating 0
+  if (Size <= 0) { throw std::runtime_error{"bad size"}; }
+  std::string result;
+  result.resize(Size - 1);
+
+  if (auto ret = RegGetValueA(key, "", value, RRF_RT_REG_SZ, &Type,
+                              result.data(), &Size);
+      ret != ERROR_SUCCESS) {
+    throw std::runtime_error{"could not get value"};
+  }
+
+  return result;
+}
+
+static bool GetVersionStringFromRegistry(LPTSTR osbuf, int maxsiz)
+{
+  HKEY hKey;
+  auto ret = RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+                           "Software\\Microsoft\\Windows NT\\CurrentVersion", 0,
+                           KEY_READ, &hKey);
+
+  if (ret != ERROR_SUCCESS) {
+    // Dmsg0(100, "could not open registry key\n");
+    return false;
+  }
+
+  bool ok = true;
+  try {
+    std::string product_name = Reg_GetStringValue(hKey, "ProductName");
+    std::string lcu_ver = Reg_GetStringValue(hKey, "LCUVer");
+
+    snprintf(osbuf, maxsiz, "%s (%s)", product_name.c_str(), lcu_ver.c_str());
+  } catch (const std::exception& e) {
+    (void)e;
+    // Dmsg0(100, "could not get some registry value: %s\n", e.what());
+    ok = false;
+  }
+
+  RegCloseKey(hKey);
+  return ok;
+}
+
 // Get Windows version display string
 static bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz)
 {
+  if (GetVersionStringFromRegistry(osbuf, maxsiz)) { return true; }
   OSVERSIONINFOEX osvi;
   SYSTEM_INFO si;
   BOOL bOsVersionInfoEx;
