@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bareos 25 and later will not modify or extend existing configuration directories on package updates [PR #2338]  
   Note: on FreeBSD unmodified configuration changes from Bareos <= 24 will get removed and
   replaced by the new default configuration of the current package.
+### Storage -> Device `Count` behavior changes
+
+If the `Count` directive is specified with a value > 1,
+duplicated devices will be created starting from serial-number 0000 up to `Count`.
+The 0000 device is automatically assigned 'Autoselect=No'. 
+Additionally, an autochanger resource is created with the name of the device the `Count` directive is specified for.
+The duplicated devices will be assigned to this autochanger unless they are used in another autochanger already.
+
+See explanations and example in documentation https://docs.bareos.org/TasksAndConcepts/VolumeManagement.html#concurrent-disk-jobs
+
+### Configuring a disk Autochanger
+If you want to run multiple jobs in parallel to the same disk storage,
+you can now simply specify the `count` directive in the (Storage -> Device) configuration
+to the number you've specified in `MaximumConcurrentJobs` (Director -> Storage).
+
+If you want to migrate from your manually configured disk autochanger to simply using the `count` directive:
+1. remove the disk autochanger resource
+2. have a storage device with a specified `count` directive (with value >1)
+3. wherever you used the disk autochanger name before, use the name of the device from step 2.
 
 ### Removed
 - config: deprecate file daemon as alias for client in FD config [PR #2187]

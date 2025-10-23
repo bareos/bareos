@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,19 +22,32 @@
 */
 
 #include "stored/autochanger_resource.h"
+#include "stored_conf.h"
 #include "lib/alist.h"
 #include "stored/device_resource.h"
 #include "stored/stored_globals.h"
 
+#include <unordered_set>
+
 namespace storagedaemon {
 
 AutochangerResource::AutochangerResource()
-    : BareosResource()
-    , device_resources(nullptr)
-    , changer_name(nullptr)
-    , changer_command(nullptr)
 {
-  return;
+  rcode_ = R_AUTOCHANGER;
+  rcode_str_ = "Autochanger";
+}
+
+std::unique_ptr<AutochangerResource>
+AutochangerResource::CreateImplicitAutochanger(const std::string& device_name)
+{
+  auto autochanger = std::make_unique<AutochangerResource>();
+  autochanger->device_resources
+      = new alist<DeviceResource*>(10, not_owned_by_alist);
+  autochanger->resource_name_ = strdup(device_name.c_str());
+  autochanger->changer_name = strdup("/dev/null");
+  autochanger->changer_command = strdup("");
+  autochanger->implicitly_created_ = true;
+  return autochanger;
 }
 
 AutochangerResource& AutochangerResource::operator=(
@@ -53,15 +66,19 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
                                       bool hide_sensitive_data,
                                       bool verbose)
 {
+  if (implicitly_created_) { return true; }
+  std::unordered_set<DeviceResource*> original_copy_devices;
   alist<DeviceResource*>* original_alist = device_resources;
   alist<DeviceResource*>* temp_alist
       = new alist<DeviceResource*>(original_alist->size(), not_owned_by_alist);
   for (auto* device_resource : original_alist) {
-    if (device_resource->multiplied_device_resource) {
-      if (device_resource->multiplied_device_resource == device_resource) {
-        DeviceResource* d = new DeviceResource(*device_resource);
-        d->MultipliedDeviceRestoreBaseName();
+    if (DeviceResource* original_copy_device
+        = device_resource->multiplied_device_resource) {
+      if (original_copy_devices.find(original_copy_device)
+          == original_copy_devices.end()) {
+        DeviceResource* d = new DeviceResource(*original_copy_device);
         temp_alist->append(d);
+        original_copy_devices.insert(original_copy_device);
       }
     } else {
       DeviceResource* d = new DeviceResource(*device_resource);
@@ -69,11 +86,12 @@ bool AutochangerResource::PrintConfig(OutputFormatterResource& send,
     }
   }
   device_resources = temp_alist;
-  BareosResource::PrintConfig(send, *my_config, hide_sensitive_data, verbose);
+  bool res = BareosResource::PrintConfig(send, *my_config, hide_sensitive_data,
+                                         verbose);
   device_resources = original_alist;
   for (auto* device_resource : temp_alist) { delete device_resource; }
   delete temp_alist;
-  return true;
+  return res;
 }
 
 } /* namespace storagedaemon */
