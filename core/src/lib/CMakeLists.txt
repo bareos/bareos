@@ -75,7 +75,6 @@ target_sources(
           path_list.cc
           plugins.cc
           bpoll.cc
-          priv.cc
           recent_job_results_list.cc
           rblist.cc
           runscript.cc
@@ -110,9 +109,9 @@ if(HAVE_WIN32)
   target_sources(bareos PRIVATE osinfo_win32.cc)
   target_link_libraries(bareos PUBLIC ws2_32)
 else()
-  target_sources(bareos PRIVATE bpipe_unix.cc)
-  target_sources(bareos PRIVATE scsi_tapealert.cc)
-  target_sources(bareos PRIVATE osinfo.cc)
+  target_sources(
+    bareos PRIVATE bpipe_unix.cc scsi_tapealert.cc osinfo.cc priv.cc
+  )
 endif()
 
 target_sources(
@@ -162,7 +161,7 @@ endif()
 
 if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-   AND CMAKE_CXX_COMPILER_VERSION MATCHES "^12"
+   AND CMAKE_CXX_COMPILER_VERSION MATCHES "^1[234]"
 )
   # work around compiler/stdlib bug see
   # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562#c17

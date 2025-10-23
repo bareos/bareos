@@ -19,77 +19,34 @@
 
 # determine value of HAVE_LOWLEVEL_SCSI_INTERFACE
 
-if(${scsi-crypto})
-
+if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS AND ${scsi-crypto})
+  include(CheckIncludeFiles)
   add_library(bareos-low-level-scsi INTERFACE)
-  # LINUX: check if HAVE_SCSI_SG_H and HAVE_SCSI_SCSI_H are true
   if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    if("${HAVE_SCSI_SG_H}" AND "${HAVE_SCSI_SCSI_H}")
-      set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-    else()
-      set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
-      message(
-        FATAL_ERROR
-          "scsi crypto support selected but required headers are missing"
-      )
-    endif()
+    check_include_files(
+      "stddef.h;scsi/scsi.h;scsi/sg.h" HAVE_LOWLEVEL_SCSI_INTERFACE
+    )
+  elseif(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    check_include_files(
+      "sys/types.h;sys/scsi/impl/uscsi.h" HAVE_LOWLEVEL_SCSI_INTERFACE
+    )
+  elseif(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+    check_include_files(
+      "stdio.h;camlib.h;cam/scsi/scsi_message.h" HAVE_LOWLEVEL_SCSI_INTERFACE
+    )
+    target_link_libraries(bareos-low-level-scsi PRIVATE cam)
+  elseif(${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
+    check_include_files("dev/scsipi/scsipi_all.h" HAVE_LOWLEVEL_SCSI_INTERFACE)
+  elseif(${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
+    check_include_files("scsi/uscsi_all.h" HAVE_LOWLEVEL_SCSI_INTERFACE)
   endif()
 
-  # SUN: check if HAVE_SYS_SCSI_IMPL_USCSI_H
-  if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-    if("${HAVE_SYS_SCSI_IMPL_USCSI_H}")
-      set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-    else()
-      set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
-      message(
-        FATAL_ERROR
-          "scsi crypto support selected but required headers are missing"
-      )
-    endif()
+  if(NOT HAVE_LOWLEVEL_SCSI_INTERFACE)
+    message(
+      FATAL_ERROR
+        "scsi crypto support selected but required headers are missing"
+    )
   endif()
 
-  # FREEBSD: HAVE_CAMLIB_H and HAVE_CAM_SCSI_SCSI_MESSAGE_H also add
-  # CAM_LIBS="-lcam"
-  if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-    if("${HAVE_CAMLIB_H}" AND "${HAVE_CAM_SCSI_SCSI_MESSAGE_H}")
-      set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-      target_link_libraries(bareos-low-level-scsi PRIVATE cam)
-    else()
-      set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
-      message(
-        FATAL_ERROR
-          "scsi crypto support selected but required headers are missing"
-      )
-    endif()
-  endif()
-
-  # NETBSD: HAVE_DEV_SCSIPI_SCSIPI_ALL_H
-  if(${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
-    if("${HAVE_DEV_SCSIPI_SCSIPI_ALL_H}")
-      set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-    else()
-      set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
-      message(
-        FATAL_ERROR
-          "scsi crypto support selected but required headers are missing"
-      )
-    endif()
-  endif()
-
-  # OPENBSD: HAVE_USCSI_ALL_H
-  if(${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
-    if("${HAVE_USCSI_ALL_H}")
-      set(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
-    else()
-      set(HAVE_LOWLEVEL_SCSI_INTERFACE 0)
-      message(
-        FATAL_ERROR
-          "scsi crypto support selected but required headers are missing"
-      )
-    endif()
-  endif()
-
-  if(HAVE_LOWLEVEL_SCSI_INTERFACE)
-    add_library(Bareos::LowLevelScsi ALIAS bareos-low-level-scsi)
-  endif()
+  add_library(Bareos::LowLevelScsi ALIAS bareos-low-level-scsi)
 endif()

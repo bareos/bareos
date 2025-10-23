@@ -33,12 +33,10 @@
 #include "include/bareos.h"
 #include <algorithm>
 
-#if HAVE_POSTGRESQL
-
-#  include "cats.h"
-#  include "sql.h"
-#  include "lib/edit.h"
-#  include "lib/volume_session_info.h"
+#include "cats.h"
+#include "sql.h"
+#include "lib/edit.h"
+#include "lib/volume_session_info.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -1882,6 +1880,3 @@ bool BareosDb::VerifyMediaIdsFromSingleStorage(JobControlRecord* jcr,
   }
   return true;
 }
-
-
-#endif /* HAVE_POSTGRESQL */

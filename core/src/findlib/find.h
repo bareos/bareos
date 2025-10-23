@@ -48,9 +48,8 @@
 extern "C" {
 #  include <sys/utime.h>
 }
-#elif !defined(HAVE_UTIMES) && !defined(HAVE_LUTIMES)
+#elif defined(HAVE_WIN32)
 #  include <utime.h>
-#else
 #endif
 
 
@@ -58,10 +57,10 @@ extern "C" {
 
 #include "lib/fnmatch.h"
 
-#ifndef HAVE_REGEX_H
-#  include "lib/bregex.h"
-#else
+#if __has_include(<regex.h>)
 #  include <regex.h>
+#else
+#  include "lib/bregex.h"
 #endif
 #ifdef USE_READDIR_R
 #  ifndef HAVE_READDIR_R
