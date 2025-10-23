@@ -3561,7 +3561,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
     if (prepared.disks_to_backup.size() > 0) {
       auto& path = prepared.disks_to_backup.back();
 
-      JINFO(ctx, L"Starting backup of disk {}", path.as_view());
+      JINFO(ctx, L"Starting backup of disk '{}'", path.as_view());
 
       VIRTUAL_STORAGE_TYPE vst = {
           .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
@@ -3712,6 +3712,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
       prepared.backed_up_disks.emplace_back(utf16_to_utf8(path.as_view()),
                                             utf16_to_utf8(disk_path));
 
+      JINFO(ctx, L"Backing up disk '{}' as '{}'", path.as_view(), disk_path);
       {
         disk_name name;
         name.directory = directory_path(path.get());
