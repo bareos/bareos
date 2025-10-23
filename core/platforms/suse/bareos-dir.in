@@ -47,7 +47,7 @@ case "$1" in
     if [ $? -eq 0 ]; then
       echo -n "Starting the Bareos Director: "
       /sbin/startproc -u @dir_user@ -g @dir_group@ @sbindir@/bareos-dir $2
-      rc_status -v && touch @subsysdir@/bareos-dir
+      rc_status -v
     else
       echo "Configuration check failed, please check log file for errors"
       rc_failed
@@ -56,7 +56,7 @@ case "$1" in
   stop)
     echo -n "Stopping the Director daemon: "
     /sbin/killproc @sbindir@/bareos-dir
-    rc_status -v && rm -f @subsysdir@/bareos-dir
+    rc_status -v
     ;;
   restart)
     $0 stop

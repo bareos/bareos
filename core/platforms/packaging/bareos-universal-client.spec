@@ -20,8 +20,6 @@ Vendor:     The Bareos Team
 %define script_dir     /usr/lib/%{name}/scripts
 %define working_dir    /var/lib/%{name}
 %define bsr_dir        /var/lib/%{name}
-# TODO: use /run ?
-%define _subsysdir     /var/lock
 
 #
 # Generic daemon user and group
@@ -249,7 +247,6 @@ cmake  .. \
   -Dworkingdir=%{working_dir} \
   -Dplugindir=%{plugin_dir} \
   -Dlogdir=/var/log/bareos \
-  -Dsubsysdir=%{_subsysdir} \
   -Dscsi-crypto=yes \
   -Dndmp=yes \
 %if 0%{?build_qt_monitor}

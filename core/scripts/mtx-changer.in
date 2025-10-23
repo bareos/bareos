@@ -50,13 +50,13 @@
 max_wait_drive=300
 
 # source our conf file
-if test ! -r "${confdir:-@confdir@}/mtx-changer.conf"; then
+if test ! -r "${BAREOS_CONFIG_DIR:-@confdir@}/mtx-changer.conf"; then
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-  echo "ERROR: ${confdir:-@confdir@}/mtx-changer.conf file not found!!!!"
+  echo "ERROR: ${BAREOS_CONFIG_DIR:-@confdir@}/mtx-changer.conf file not found!!!!"
   echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
   exit 1
 fi
-. "${confdir:-@confdir@}/mtx-changer.conf"
+. "${BAREOS_CONFIG_DIR:-@confdir@}/mtx-changer.conf"
 
 MTX=${MTX:-@MTX@}
 if test ! -x "${MTX}"; then

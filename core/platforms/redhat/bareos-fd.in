@@ -40,14 +40,12 @@ case "$1" in
        daemon --user ${FD_USER} @sbindir@/bareos-fd $2 ${FD_OPTIONS}
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-fd
        ;;
     stop)
        echo -n "Stopping Bareos File services: "
        killproc @sbindir@/bareos-fd
        RETVAL=$?
        echo
-       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bareos-fd
        ;;
     restart)
        $0 stop

@@ -13,7 +13,7 @@ export TestName
 #shellcheck source=../../environment.in
 . ./environment
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 skip_if_root
 
@@ -22,7 +22,7 @@ MARIABACKUP="${MARIADB_BACKUP_BINARY} --defaults-file=mariadbdefaults"
 mariabackup_test_db="${db_name}_mariabackup"
 
 #shellcheck source=../../scripts/mariadb.sh
-. "${rscripts}"/mariadb.sh
+. "${BAREOS_SCRIPTS_DIR}"/mariadb.sh
 
 mariadb_init
 mariadb_server_start

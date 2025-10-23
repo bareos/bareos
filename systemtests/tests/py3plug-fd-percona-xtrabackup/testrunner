@@ -17,13 +17,13 @@ MYSQL_CLIENT="${MYSQL_CLIENT_BINARY} --defaults-file=mysqldefaults"
 
 JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 skip_if_root
 
 #shellcheck source=../../scripts/mysql.sh
-. "${rscripts}"/mysql.sh
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+. "${BAREOS_SCRIPTS_DIR}"/mysql.sh
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 XTRABACKUP="${XTRABACKUP_BINARY} --defaults-file=mysqldefaults"
 xtrabackup_test_db="${db_name}_xtrabackup"

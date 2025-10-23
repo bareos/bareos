@@ -21,7 +21,6 @@ BACSDBIN=@sbindir@
 BACSDCFG=@confdir@
 BACDIRBIN=@sbindir@
 BACDIRCFG=@confdir@
-SUBSYSDIR=@subsysdir@
 
 DIR_PORT=@dir_port@
 FD_PORT=@fd_port@
@@ -147,11 +146,6 @@ status() {
        fi
    fi
 
-    # See if the subsys lock exists
-    if [ -f ${SUBSYSDIR}/$base ] ; then
-	echo "$base not running, but subsys locked"
-	return 2
-    fi
     echo "$base is stopped"
     return 3
 }

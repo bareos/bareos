@@ -28,7 +28,7 @@ JobName=ai-backup-bareos-fd
 . ./environment
 
 #shellcheck source=../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 start_test
 
 # Delete file during incremental, do a consolidation and check deleted file disappears
@@ -81,23 +81,23 @@ END_OF_DATA
 run_bconsole
 # Deleted files always have a fileindex of 0, where as non deleted files always have a fileindex > 0.
 expect_grep " \"fileindex\": \"0\"" \
-            "$tmp/delete-file_sql.out" \
-            ".sql did not find a deleted file backup."
+  "$tmp/delete-file_sql.out" \
+  ".sql did not find a deleted file backup."
 
 expect_grep "purging empty jobids ${empty_job}" \
-            "$tmp/delete-file_messages.out" \
-            "Removal of expected empty jobs was not successful"
+  "$tmp/delete-file_messages.out" \
+  "Removal of expected empty jobs was not successful"
 
 expect_grep "purged JobIds .*${delete_job} as they were consolidated into Job ${jobid}" \
-            "$tmp/delete-file_messages.out" \
-            "consolidation of job with deletion did not happen."
+  "$tmp/delete-file_messages.out" \
+  "consolidation of job with deletion did not happen."
 
 expect_not_grep "purged JobIds .*${empty_job}.* as they were consolidated into Job ${jobid}" \
-		"$tmp/delete-file_messages.out" \
-		"empty job was consolidated."
+  "$tmp/delete-file_messages.out" \
+  "empty job was consolidated."
 
 expect_not_grep "purged JobIds .*${lastinc_job}.* as they were consolidated into Job ${jobid}" \
-		"$tmp/delete-file_messages.out" \
-		"last incremental job was consolidated."
+  "$tmp/delete-file_messages.out" \
+  "last incremental job was consolidated."
 
 end_test

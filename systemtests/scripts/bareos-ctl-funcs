@@ -1,5 +1,22 @@
 #! /bin/bash
-
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
 # A function to find the pid of a program.
 pidofproc()
 {
@@ -134,16 +151,16 @@ check_config()
 {
   echo "Checking Configuration for $1"
   log_file="${tmp}/bareos-$1-config-test.out"
-  "$2" -t "${@:3}" &>"$log_file"
+  "$2" -t "${@:3}" &>"${log_file}"
 
   if ! ${IGNORE_CONFIG_WARNINGS}; then
-    if grep -q "There are configuration warnings" "$log_file"; then
+    if grep -q "There are configuration warnings" "${log_file}"; then
       echo "Fail: There are configuration warnings when running $2 -t ${*:3}, see below." >&2
-      cat "$log_file"
+      cat "${log_file}"
       return 7
     fi
   else
-    cat "$log_file"
+    cat "${log_file}"
   fi
   return 0
 }
@@ -167,14 +184,7 @@ status()
     return 0
   fi
 
-  # See if the subsys lock exists
-  if [ -f ${SUBSYSDIR}/$base ]; then
-    echo "$base dead but subsys locked"
-    return 2
-  fi
-
   echo "$base is stopped"
-
   return 3
 }
 

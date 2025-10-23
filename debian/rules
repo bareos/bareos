@@ -29,7 +29,6 @@ define CONFIGURE_COMMON
   -Dplugindir=/usr/lib/bareos/plugins \
   -Dworkingdir=/var/lib/bareos \
   -Dlogdir=/var/log/bareos \
-  -Dsubsysdir=/var/lock \
   -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
   -Dwebuiconfdir=/etc/bareos-webui \
   -Dscsi-crypto=yes \

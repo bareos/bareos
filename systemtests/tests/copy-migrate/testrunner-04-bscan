@@ -9,7 +9,7 @@ TestName=04-bscan
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 log="$tmp/$TestName.log"
 

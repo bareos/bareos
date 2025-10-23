@@ -29,7 +29,7 @@ export TestName
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 debug_level=500
 File="bbatch.c"
@@ -41,7 +41,7 @@ start_test
 # 2) Copy from offsite to offsite-copy; since autoxflate on replication is off
 #    the data should still be compressed
 # 3) Restore from offsite-copy
-cat <<END_OF_DATA >"$tmp/bconcmds"
+cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${tmp}/copy-to-offsite.out
 setdebug level=$debug_level storage=O11
 setdebug level=$debug_level storage=L2
@@ -71,9 +71,9 @@ expect_grep "Restore OK" \
   "$tmp/restore-O1V1.out" \
   "Restore from O1V1 did not succeed."
 
-conf="$(dirname ${BAREOS_CONFIG_DIR})/bareos-sd1"
+remote_conf="$(dirname ${BAREOS_CONFIG_DIR})/bareos-sd1"
 
-if ! is_file_compressed "1D1" "O1V1" "${File}"; then
+if ! is_file_compressed "1D1" "O1V1" "${File}" "${remote_conf}"; then
   echo "O1D1 is not compressed"
   estat=3
 fi

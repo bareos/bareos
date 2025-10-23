@@ -29,7 +29,7 @@ export TestName
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 debug_level=500
 File="bbatch.c"
@@ -42,7 +42,7 @@ start_test
 # 2) Copy from offsite to offsite-copy; since autoxflate on replication is off
 #    the data should still be compressed
 # 3) Restore from offsite-copy
-cat <<END_OF_DATA >"$tmp/bconcmds"
+cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${tmp}/copy-to-local.out
 messages
 setdebug level=$debug_level storage=O12
@@ -54,9 +54,9 @@ update volume=LC2 volstatus=Used
 messages
 messages
 @$out ${tmp}/restore-LC2.out
-restore jobid=17 client=bareos-fd where=$restore_dir all done yes
+restore jobid=17 client=bareos-fd where=${restore_dir} all done yes
 wait
-setdebug level=0 storage=O11
+setdebug level=0 storage=L2
 setdebug level=0 storage=O12
 messages
 quit
@@ -67,7 +67,7 @@ run_bconsole "$@"
 # There should be no difference, but with autoxflate decompression
 # the restore reports success ("Restore OK") but seems to fail silently
 # and doesn't actually restore anything
-check_restore_diff "${BackupDirectory}" "$restore_dir"
+check_restore_diff "${BackupDirectory}" "${restore_dir}"
 
 if is_file_compressed "LD1" "LC2" "${File}"; then
   echo "LC2 is compressed"

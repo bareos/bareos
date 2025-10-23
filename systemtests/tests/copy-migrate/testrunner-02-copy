@@ -9,7 +9,7 @@ TestName=02-copy
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 copy_log="$tmp/copy_log.out"
 query_results="$tmp/query_results.out"
@@ -86,14 +86,13 @@ expect_grep "|.*B.*|" \
 
 check_for_zombie_jobs storage=File
 
-
 # check whether next-pool directive overrides work (in job resource > in pool resource)
 expect_grep "NextPool:      FullCopy" \
-            "$tmp/copy-summary.out" \
-            "Wrong next pool selected for job 'copy' ."
+  "$tmp/copy-summary.out" \
+  "Wrong next pool selected for job 'copy' ."
 
 expect_grep "NextPool:      AnotherFullCopy" \
-            "$tmp/copy-with-next-pool-override-summary.out" \
-            "Wrong next pool selected for job 'copy-with-next-pool-override' ."
+  "$tmp/copy-with-next-pool-override-summary.out" \
+  "Wrong next pool selected for job 'copy-with-next-pool-override' ."
 
 end_test

@@ -13,7 +13,7 @@ export TestName
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
 
@@ -69,7 +69,7 @@ END_OF_DATA
     echo "Killing the FD"
     pkill -KILL -f "${BAREOS_FILEDAEMON_BINARY}"
     sleep 3
-    "${rscripts}"/bareos-ctl-fd start
+    "${BAREOS_SCRIPTS_DIR}"/bareos-ctl-fd start
   fi
 
   if [ "$daemon" == "sd" ]; then
@@ -77,14 +77,14 @@ END_OF_DATA
     echo "Killing the SD"
     pkill -KILL -f "${BAREOS_STORAGEDAEMON_BINARY}"
     sleep 3
-    "${rscripts}"/bareos-ctl-sd start
+    "${BAREOS_SCRIPTS_DIR}"/bareos-ctl-sd start
   fi
   if [ "$daemon" == "dir" ]; then
 
     echo "Killing the DIR"
     pkill -KILL -f "${BAREOS_DIRECTOR_BINARY}"
     sleep 3
-    "${rscripts}"/bareos-ctl-dir start
+    "${BAREOS_SCRIPTS_DIR}"/bareos-ctl-dir start
   fi
 
   cat <<END_OF_DATA >"$tmp/bconcmds"

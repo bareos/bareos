@@ -93,10 +93,6 @@ if(MSVC)
       "C:/bareos-storage"
       CACHE STRING "Bareos archive directory"
   )
-  set(subsysdir
-      "${workingdir}"
-      CACHE STRING "subsys directory"
-  )
   set(logdir
       "C:/ProgramData/${CMAKE_PROJECT_NAME}/logs"
       CACHE STRING "log directory"
@@ -162,10 +158,6 @@ elseif(USE_RELATIVE_PATHS)
       "${workingdir}/storage"
       CACHE STRING "Bareos archive directory"
   )
-  set(subsysdir
-      "${workingdir}"
-      CACHE STRING "subsys directory"
-  )
   set(logdir
       "${CMAKE_INSTALL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}"
       CACHE STRING "log directory"
@@ -230,10 +222,6 @@ else() # if(USE_RELATIVE_PATHS)
   set(archivedir
       "${workingdir}/storage"
       CACHE STRING "Bareos archive directory"
-  )
-  set(subsysdir
-      "${workingdir}"
-      CACHE STRING "subsys directory"
   )
   set(logdir
       "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/${CMAKE_PROJECT_NAME}"

@@ -34,7 +34,7 @@ runner_tmp="${tmp}/${runner_name}"
 mkdir -p "${runner_tmp}"
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 migrate_log="${runner_tmp}/migration_log.out"
 query_results="${runner_tmp}/query_results.out"

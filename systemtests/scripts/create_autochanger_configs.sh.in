@@ -22,16 +22,16 @@ set -u
 
 . ./environment
 . ./test-config
-. "${rscripts}/redirect_output"
+. "${BAREOS_SCRIPTS_DIR}/redirect_output"
 
 echo "=== $0 Running ==="
 
-autochanger_conf_file="${conf}/bareos-sd.d/autochanger/autochanger.conf"
-tape_device_conf_file="${conf}/bareos-sd.d/device/tape_devices.conf"
+autochanger_conf_file="${BAREOS_CONFIG_DIR}/bareos-sd.d/autochanger/autochanger.conf"
+tape_device_conf_file="${BAREOS_CONFIG_DIR}/bareos-sd.d/device/tape_devices.conf"
 
-dir_storage_conf_file="${conf}/bareos-dir.d/storage/Tape.conf"
+dir_storage_conf_file="${BAREOS_CONFIG_DIR}/bareos-dir.d/storage/Tape.conf"
 
-[[ -d "${conf}/bareos-sd.d/autochanger" ]] || mkdir "${conf}/bareos-sd.d/autochanger"
+[[ -d "${BAREOS_CONFIG_DIR}/bareos-sd.d/autochanger" ]] || mkdir "${BAREOS_CONFIG_DIR}/bareos-sd.d/autochanger"
 
 rm -f "${autochanger_conf_file}"
 rm -f "${tape_device_conf_file}"
@@ -51,7 +51,7 @@ Autochanger {
   Name = "autochanger-${changer_index}"
   Changer Device = ${changer_device}
 
-  Changer Command = "${rscripts}/mtx-changer %c %o %S %a %d"
+  Changer Command = "${BAREOS_SCRIPTS_DIR}/mtx-changer %c %o %S %a %d"
 EOF
   ####
 
@@ -77,7 +77,7 @@ EOF
     echo "  Attaching ${tape_device} to autochanger"
 
     #### add the type device
-    cat <<EOF >>${conf}/bareos-sd.d/autochanger/autochanger.conf
+    cat <<EOF >>${BAREOS_CONFIG_DIR}/bareos-sd.d/autochanger/autochanger.conf
   Device=${bareos_tape_device_name}
 EOF
     ####
