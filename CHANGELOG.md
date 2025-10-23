@@ -129,6 +129,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cats: fix missing locks [PR #2331]
 - storage: improve tapealert plugin [PR #2370]
 - correct backend init command in PyPI instructions (fixes #2380) [PR #2381]
+- debian: Do not make dbconfig sql files executable [PR #2404]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -241,4 +242,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2394]: https://github.com/bareos/bareos/pull/2394
 [PR #2395]: https://github.com/bareos/bareos/pull/2395
 [PR #2401]: https://github.com/bareos/bareos/pull/2401
+[PR #2404]: https://github.com/bareos/bareos/pull/2404
 [unreleased]: https://github.com/bareos/bareos/tree/master
