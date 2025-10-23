@@ -10,9 +10,9 @@ export TestName
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 # Fill ${BackupDirectory} with data.
 setup_data
@@ -26,30 +26,30 @@ start_test
 
 #Testing that -u and -g do not cause problems
 usergroup_dir_log="${tmp}"/usergroup_dir_log.out
-"${rscripts}"/bareos-ctl-dir start "-u randomuser -g randomgroup -d 100" >"$usergroup_dir_log"
-"${rscripts}"/bareos-ctl-dir stop
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-dir start "-u randomuser -g randomgroup -d 100" >"$usergroup_dir_log"
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-dir stop
 
 usergroup_fd_log="${tmp}"/usergroup_fd_log.out
-"${rscripts}"/bareos-ctl-fd start "-u randomuser -g randomgroup -d 100" >"$usergroup_fd_log"
-"${rscripts}"/bareos-ctl-fd stop
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-fd start "-u randomuser -g randomgroup -d 100" >"$usergroup_fd_log"
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-fd stop
 
 usergroup_sd_log="${tmp}"/usergroup_sd_log.out
-"${rscripts}"/bareos-ctl-sd start "-u randomuser -g randomgroup -d 100" >"$usergroup_sd_log"
-"${rscripts}"/bareos-ctl-sd stop
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-sd start "-u randomuser -g randomgroup -d 100" >"$usergroup_sd_log"
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-sd stop
 
 #Testing the creation and deletion of pid files with -p
 pid_file="${tmp}"/pid_file.out
 
 # Director
 
-"${rscripts}"/bareos-ctl-dir start "-p ${pid_file} -d 100" && sleep 5
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-dir start "-p ${pid_file} -d 100" && sleep 5
 
 if [ ! -s "${pid_file}" ]; then
   echo "Pid file was not written."
   estat=1
 fi
 
-"${rscripts}"/bareos-ctl-dir stop
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-dir stop
 
 if [ -s "${pid_file}" ]; then
   echo "Pid file was not removed."
@@ -58,14 +58,14 @@ fi
 
 # Client
 
-"${rscripts}"/bareos-ctl-fd start "-p ${pid_file} -d 100" && sleep 5
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-fd start "-p ${pid_file} -d 100" && sleep 5
 
 if [ ! -s "${pid_file}" ]; then
   echo "Pid file was not written."
   estat=3
 fi
 
-"${rscripts}"/bareos-ctl-fd stop
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-fd stop
 
 if [ -s "${pid_file}" ]; then
   echo "Pid file was not removed."
@@ -74,14 +74,14 @@ fi
 
 # Storage
 
-"${rscripts}"/bareos-ctl-sd start "-p ${pid_file} -d 100" && sleep 5
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-sd start "-p ${pid_file} -d 100" && sleep 5
 
 if [ ! -s "${pid_file}" ]; then
   echo "Pid file was not written."
   estat=5
 fi
 
-"${rscripts}"/bareos-ctl-sd stop
+"${BAREOS_SCRIPTS_DIR}"/bareos-ctl-sd stop
 
 if [ -s "${pid_file}" ]; then
   echo "Pid file was not removed."

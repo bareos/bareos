@@ -12,7 +12,7 @@ myname=$(basename "$0")
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 expected_files=3
 

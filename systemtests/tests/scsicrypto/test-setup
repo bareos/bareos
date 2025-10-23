@@ -27,9 +27,9 @@ set -u
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 # copy and paste the etc/sudoers.d/build file to /etc/
 # to make the user build able to execute the following.
@@ -55,12 +55,12 @@ for b in bareos_sd bcopy bextract bls bscan bscrypto btape; do
   sudo setcap cap_sys_rawio=ep "${sb}"
 done
 
-if ! "${rscripts}/invalidate_tapes.sh" ${1:-}; then
+if ! "${BAREOS_SCRIPTS_DIR}/invalidate_tapes.sh" ${1:-}; then
   echo "Could not invalidate tapes"
   exit 1
 fi
 
-if ! "${rscripts}/create_autochanger_configs.sh" ${1:-}; then
+if ! "${BAREOS_SCRIPTS_DIR}/create_autochanger_configs.sh" ${1:-}; then
   echo "Could not create autochanger configs"
   exit 1
 fi

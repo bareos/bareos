@@ -29,7 +29,7 @@ JobName=ai-backup-bareos-fd
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 start_test
 
 # Check consolidate ai virtual full can't be rerun manually (without a jobid list).

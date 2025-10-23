@@ -32,9 +32,9 @@ JobName=backup-s3-fd
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
-"${rscripts}"/start_minio.sh "$MINIO_PORT" "$TestName"
+"${BAREOS_SCRIPTS_DIR}"/start_minio.sh "$MINIO_PORT" "$TestName"
 
 # shortcut for s3cmd
 S3="${S3CMD} --no-check-certificate --config ${S3CFG}"

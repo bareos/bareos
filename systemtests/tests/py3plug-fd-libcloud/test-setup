@@ -27,9 +27,9 @@ set -u
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 bin/bareos start
 bin/bareos status
@@ -63,7 +63,7 @@ dd if=/dev/random \
   of="${tmp}/data/object-size-downloads-with-plugin-process" \
   bs=$((prefetch_size + 1)) count=1
 
-"${rscripts}"/start_minio.sh "$MINIO_PORT" "$TestName"
+"${BAREOS_SCRIPTS_DIR}"/start_minio.sh "$MINIO_PORT" "$TestName"
 
 # create s3 content for test
 ${S3} rb --recursive --force s3://$bucket_name || echo "s3://$bucket_name does not exist"

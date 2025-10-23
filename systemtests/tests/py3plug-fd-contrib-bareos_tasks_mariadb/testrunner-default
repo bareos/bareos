@@ -17,12 +17,12 @@ test_db_name="${db_name}_test"
 RESTORE_DIR="${tmp}/bareos-restores/@MARIADB/"
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 skip_if_root
 
 #shellcheck source=../../scripts/mariadb.sh
-. "${rscripts}"/mariadb.sh
+. "${BAREOS_SCRIPTS_DIR}"/mariadb.sh
 
 start_test
 

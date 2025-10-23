@@ -28,7 +28,7 @@ mkdir -p "${TESTPGHOST}"
 [ $EUID -eq 0 ] && chown postgres "${TESTPGHOST}"
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
 

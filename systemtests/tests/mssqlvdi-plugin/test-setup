@@ -27,13 +27,13 @@ set -u
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBNormalTest -i sqlfiles/SQL_drop_db.sql
 "${SQLCMD}" -S "${COMPUTERNAME}" -E -b -v myDB=DBFileStreamTest -i sqlfiles/SQL_drop_db.sql
 
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 bin/bareos start
 bin/bareos status
