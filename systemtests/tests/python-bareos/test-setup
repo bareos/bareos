@@ -6,12 +6,12 @@ set -u
 #shellcheck source=../../environment.in
 . ./environment
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 export TestName="$(get_test_name "$0")"
 
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 # Fill ${BackupDirectory} with data.
 setup_data

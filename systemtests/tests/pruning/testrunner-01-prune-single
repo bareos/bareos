@@ -34,7 +34,7 @@ export TestName
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
 
@@ -51,8 +51,8 @@ status director
 status client
 status storage=File
 wait
-run job=$regularjob_name Level=Full yes
-run job=$regularjob_name Level=Full yes
+run job=${regularjob_name} Level=Full yes
+run job=${regularjob_name} Level=Full yes
 messages
 
 @$out ${log_home}/restore.out

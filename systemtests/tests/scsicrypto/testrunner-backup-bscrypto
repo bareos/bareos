@@ -12,9 +12,9 @@ export TestName
 . ./test-config
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 #shellcheck source=../../../core/scripts/bareos-config-lib.sh.in
-. "${rscripts}"/bareos-config-lib.sh
+. "${BAREOS_SCRIPTS_DIR}"/bareos-config-lib.sh
 
 on_error()
 {

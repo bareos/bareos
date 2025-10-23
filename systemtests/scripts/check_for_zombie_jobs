@@ -8,7 +8,7 @@
 . ./environment
 
 # shellcheck source=./functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 # check_for_zombie_jobs storage=STORAGE [client=localhost-fd]
 

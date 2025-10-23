@@ -25,7 +25,7 @@
 # Source the generic functions.
 #
 
-# shellcheck source=../../core/scripts/bareos-ctl-funcs
+# shellcheck source=bareos-ctl-funcs
 . "${BAREOS_SCRIPTS_DIR}/bareos-ctl-funcs"
 
 # remove the colon from a windows path
@@ -118,9 +118,9 @@ check_encoding()
 cleanup()
 {
   if has_tape_drive; then
-    "${rscripts}/cleanup-tape"
+    "${BAREOS_SCRIPTS_DIR}/cleanup-tape"
   else
-    "${rscripts}/cleanup"
+    "${BAREOS_SCRIPTS_DIR}/cleanup"
   fi
 }
 
@@ -543,17 +543,17 @@ check_duration_lt()
 
 start_dir()
 {
-  ${rscripts}/bareos-ctl-dir start
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir start
 }
 
 start_fd()
 {
-  ${BAREOS_CTL_FD_RUNNER:-} ${rscripts}/bareos-ctl-fd start
+  ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd start
 }
 
 start_sd()
 {
-  ${rscripts}/bareos-ctl-sd start
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd start
 }
 
 start_bareos()
@@ -567,7 +567,7 @@ start_bareos()
   start_fd
 
   # check daemons
-  DAEMON_STATUS_OUT="$("${rscripts}/bareos" status)"
+  DAEMON_STATUS_OUT="$("${BAREOS_SCRIPTS_DIR}/bareos" status)"
   DAEMON_STATUS=$?
   print_debug "$DAEMON_STATUS_OUT"
 
@@ -588,7 +588,7 @@ traceback()
   name="$(basename "$1")"
   pid=$(pidof "$name")
   if [ "$pid" != "" ]; then
-    "${rscripts}/btraceback" "$1" "$pid" "${BAREOS_WORKING_DIR}"
+    "${BAREOS_SCRIPTS_DIR}/btraceback" "$1" "$pid" "${BAREOS_WORKING_DIR}"
   fi
 }
 
@@ -758,9 +758,9 @@ waitpid()
 
 stop_bareos()
 {
-  ${rscripts}/bareos-ctl-dir stop
-  ${rscripts}/bareos-ctl-fd stop
-  ${rscripts}/bareos-ctl-sd stop
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir stop
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd stop
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd stop
 }
 
 run_python_unittests()
@@ -837,7 +837,7 @@ get_file_size()
 
 check_for_zombie_jobs()
 {
-  "${rscripts}/check_for_zombie_jobs" "$@"
+  "${BAREOS_SCRIPTS_DIR}/check_for_zombie_jobs" "$@"
 }
 
 change_jobname()
@@ -937,7 +937,7 @@ check_log()
 
 bareos_diff()
 {
-  "${PERL}" "${rscripts}/diff.pl" "$@"
+  "${PERL}" "${BAREOS_SCRIPTS_DIR}/diff.pl" "$@"
 }
 
 check_recursive_diff_of_dirs()
@@ -1089,7 +1089,7 @@ end_test()
   # Stop the Bareos daemons only
   # if a single test is defined.
   if [[ "$0" == *testrunner ]]; then
-    "${rscripts}/bareos" stop
+    "${BAREOS_SCRIPTS_DIR}/bareos" stop
   fi
 
   if [ "$estat" != "0" ]; then
@@ -1134,21 +1134,21 @@ end_test()
     echo "=== ${TestName}: OK at ${ENDDATE} === "
     echo "=== ${TestName}: OK at ${ENDDATE} === " >>test.out
     #if ! is_debug; then
-    #   ${rscripts}/cleanup
+    #   ${BAREOS_SCRIPTS_DIR}/cleanup
     #fi
   fi
 }
 
 copy_tape_confs()
 {
-  "${rscripts}/cleanup-tape"
-  "${rscripts}/copy-tape-confs"
+  "${BAREOS_SCRIPTS_DIR}/cleanup-tape"
+  "${BAREOS_SCRIPTS_DIR}/copy-tape-confs"
 }
 
 copy_test_confs()
 {
-  "${rscripts}/cleanup"
-  "${rscripts}/copy-test-confs"
+  "${BAREOS_SCRIPTS_DIR}/cleanup"
+  "${BAREOS_SCRIPTS_DIR}/copy-test-confs"
 }
 
 disable_plugins()
@@ -1192,10 +1192,10 @@ rewind_drive()
 load_slot1()
 {
   # Get a tape from slot1
-  slot="$("${scripts}/$MTX" "${AUTOCHANGER}" loaded 0 "${TAPE_DRIVE}" "$DRIVE1")"
+  slot="$("${BAREOS_SCRIPTS_DIR}/$MTX" "${AUTOCHANGER}" loaded 0 "${TAPE_DRIVE}" "$DRIVE1")"
   case $slot in
     0)
-      "${scripts}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
       slot="$SLOT1"
       ;;
     "$SLOT1")
@@ -1203,8 +1203,8 @@ load_slot1()
       ;;
     *)
       rewind_drive "${TAPE_DRIVE}"
-      "${scripts}/$MTX" "${AUTOCHANGER}" unload "$slot" "${TAPE_DRIVE}" "$DRIVE1"
-      "${scripts}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/$MTX" "${AUTOCHANGER}" unload "$slot" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
       slot="$SLOT1"
       ;;
   esac
@@ -1219,17 +1219,17 @@ load_other_slot()
   rewind_drive "${TAPE_DRIVE}"
   case $1 in
     0)
-      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
       slot=1
       ;;
     $SLOT1)
-      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
-      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT2" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT2" "${TAPE_DRIVE}" "$DRIVE1"
       slot=2
       ;;
     $SLOT2)
-      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
-      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
       slot=1
       ;;
     *)
@@ -1335,9 +1335,6 @@ dumps="${dumps:-"${cwd}/dumps"}"
 bin="${bin:-"${cwd}/bin"}"
 tmp="${tmp:-"${cwd}/tmp"}"
 
-# Bareos scripts
-scripts="${scripts:-"${cwd}/bin"}"
-
 # Bareos Plugin Directory
 plugindir="${plugindir:-"${cwd}/bin/plugins"}"
 # some tests (BASE) load only the plugins copied to plugindirtmp,
@@ -1348,7 +1345,7 @@ plugindirtmp="${plugindirtmp:-"$working/plugins"}"
 BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR:-"${cwd}/bin"}"
 
 # Regress scripts
-rscripts=${rscripts:-"${cwd}/scripts"}
+BAREOS_SCRIPTS_DIR=${BAREOS_SCRIPTS_DIR:-"${cwd}/scripts"}
 
 # Regress configs
 rconfigs=${rconfigs:-"${cwd}/configs"}
@@ -1365,8 +1362,7 @@ export bin
 export dumps
 export plugindir
 export plugindirtmp
-export rscripts
-export scripts
+export BAREOS_SCRIPTS_DIR
 export src
 export tmp
 export tmpsrc

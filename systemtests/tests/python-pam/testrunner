@@ -26,9 +26,9 @@ set -u
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -71,7 +71,7 @@ print_debug "$(bin/bconsole <<<"status dir")"
 #
 run_python_unittests "pamlogintest"
 
-if ! ${rscripts}/bareos-ctl-dir status >/dev/null; then
+if ! ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir status >/dev/null; then
   set_error "Director does not run anymore. This should not happen."
   exit 1
 fi

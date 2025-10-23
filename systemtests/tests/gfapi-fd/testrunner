@@ -38,11 +38,11 @@ umount_glusterfs()
 trap umount_glusterfs EXIT
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 umount_glusterfs
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 # Directory to backup.
 # This directory will be created by setup_data "$@"().

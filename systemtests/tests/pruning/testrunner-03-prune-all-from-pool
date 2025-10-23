@@ -34,7 +34,7 @@ export TestName
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
 
@@ -47,7 +47,7 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 @#
 @#
 
-run job=$regularjob_name Level=Incremental yes
+run job=${regularjob_name} Level=Incremental yes
 wait
 messages
 

@@ -10,7 +10,7 @@ export TestName
 . ./environment
 
 # shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 # Check that the storage correctly swaps a loaded tape from one device
 #  to the next, when necessary.

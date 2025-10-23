@@ -9,7 +9,7 @@ set -u
 #shellcheck source=../../environment.in
 . ./environment
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 . ./reload_test_functions
 
 TestName="$(get_test_name "$0")"

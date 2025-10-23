@@ -14,7 +14,7 @@ JobName=backup-bareos-fd
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 BackupFile="${tmp}/file-with-chflags"
 RestoreFile="${tmp}/bareos-restores/${BackupFile}"
@@ -23,8 +23,8 @@ RestoreFile="${tmp}/bareos-restores/${BackupFile}"
 [ -f "${BackupFile}" ] && sudo chflags nosunlink "${BackupFile}"
 [ -f "${RestoreFile}" ] && sudo chflags nosunlink "${RestoreFile}"
 
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 chflags_should="${tmp}/chflags_should.txt"
 chflags_is="${tmp}/chflags_is.txt"

@@ -25,7 +25,7 @@ set -u
 #shellcheck source=../environment.in
 . ./environment
 #shellcheck source=./functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 TestName="$(get_test_name "$PWD/$1")"
 

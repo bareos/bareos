@@ -12,9 +12,9 @@ JobName=backup-bareos-fd
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
-"${rscripts}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/cleanup
 
 start_test
 

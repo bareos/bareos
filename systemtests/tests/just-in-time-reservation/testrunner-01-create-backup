@@ -38,7 +38,7 @@ runner_tmp="${tmp}/${runner_name}"
 mkdir -p "${runner_tmp}"
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
 

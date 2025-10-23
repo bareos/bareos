@@ -29,10 +29,11 @@ MTX_RETURNCODE=0
 MTX_MOCK_FILE=mtx-status-empty.txt
 export MTX MTX_RETURNCODE MTX_MOCK_FILE
 
-test_mtx_changer() {
+test_mtx_changer()
+{
   echo "Testing mtx-changer with profile $1"
   MTX_MOCK_FILE="mtx-status-$1.txt"
-  "${rscripts}/mtx-changer" /dev/sg0 listall > "${tmp}/listall-$1.out"
+  "${BAREOS_SCRIPTS_DIR}/mtx-changer" /dev/sg0 listall >"${tmp}/listall-$1.out"
   diff -u "listall-$1.expected" "${tmp}/listall-$1.out" | cat -vet
 }
 

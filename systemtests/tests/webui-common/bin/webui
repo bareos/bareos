@@ -13,7 +13,7 @@ set -u
 
 case "${1-}" in
   start)
-    ${rscripts}/webui.sh >"$tmp/webui-php.out" 2>&1 &
+    ${BAREOS_SCRIPTS_DIR}/webui.sh >"$tmp/webui-php.out" 2>&1 &
     echo $! >php_pidfile
     echo "opening webui via xdg-open ..."
     xdg-open "http://127.0.0.1:${BAREOS_WEBUI_PORT}"
