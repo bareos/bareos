@@ -4544,8 +4544,7 @@ static bRC end_restore_job(PluginContext* ctx)
   for (auto& definition_file : restore_ctx->restored_definition_files) {
     bool generate_new_id = true;
 
-    JINFO(ctx,
-          L"trying create a new vm from the restored configuration file '{}'",
+    JINFO(ctx, L"creating a new vm from the restored configuration file '{}'",
           definition_file.as_view());
 
     try {
@@ -4594,7 +4593,7 @@ static bRC end_restore_job(PluginContext* ctx)
 
       DBGC(ctx, "found {} settings", settings.size());
 
-      JINFO(ctx, L"Update the configuration of the created vm");
+      JINFO(ctx, L"updating the configuration of the created vm");
 
 
       for (auto& setting : settings) {
@@ -4658,7 +4657,7 @@ static bRC end_restore_job(PluginContext* ctx)
 
           auto& found_path = found->second.path;
 
-          JINFO(ctx, L"updating disk path '{}' to restored disk '{}'",
+          JINFO(ctx, L" - changing disk path '{}' to restored disk '{}'",
                 path_during_backup.as_view(), found_path);
           set_disk_path(disk_setting, found_path);
 
