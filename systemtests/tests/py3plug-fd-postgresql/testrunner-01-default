@@ -73,6 +73,25 @@ expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
 if [ ${estat} -ne 0 ]; then
   exit ${estat}
 fi
+
+# We want to test with wal compression enabled
+if ((${PG_VERSION} < 15)); then
+  echo "PG_VERSION is ${PG_VERSION} (<15), so we set 'wal_compression=on' "
+  CMP="on"
+else
+  # postgres 15+
+  echo "PG_VERSION is ${PG_VERSION} (15+), so we set 'wal_compression=lz4'"
+  CMP="lz4"
+fi
+${PSQL} postgres -c "alter system set wal_compression='${CMP}';"
+${PSQL} postgres -c "select pg_reload_conf();"
+# check compression is enabled
+ret=$(${PSQL} postgres -tA --csv -c "select name,setting,unit from pg_settings where name='wal_compression';" | awk -F "," '{print $2}')
+if [ ${ret} = 'off' ];then
+  echo "compression failed to be set"
+  exit 2
+fi
+
 # Now add data to the database and run an incremental job
 ${PSQL} ${DBNAME} -c "insert into t (text, created_on) values ('test for INCR backup', current_timestamp)"
 
