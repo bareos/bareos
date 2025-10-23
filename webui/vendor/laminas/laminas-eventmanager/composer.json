@@ -1,0 +1,52 @@
+{
+    "name": "laminas/laminas-eventmanager",
+    "description": " ",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "eventmanager"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-eventmanager/",
+        "issues": "https://github.com/laminas/laminas-eventmanager/issues",
+        "source": "https://github.com/laminas/laminas-eventmanager",
+        "rss": "https://github.com/laminas/laminas-eventmanager/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-release-2.6": "2.6-dev",
+            "dev-master": "3.0-dev",
+            "dev-develop": "3.1-dev"
+        }
+    },
+    "require": {
+        "php": "^5.5 || ^7.0",
+        "laminas/laminas-stdlib": "^2.7",
+        "laminas/laminas-zendframework-bridge": "^1.0"
+    },
+    "require-dev": {
+        "athletic/athletic": "dev-master",
+        "fabpot/php-cs-fixer": "1.7.*",
+        "phpunit/phpunit": "~4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\EventManager\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\EventManager\\": "test/",
+            "LaminasBench\\EventManager\\": "benchmarks/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-eventmanager": "self.version"
+    }
+}

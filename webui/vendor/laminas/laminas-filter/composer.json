@@ -1,0 +1,59 @@
+{
+    "name": "laminas/laminas-filter",
+    "description": "provides a set of commonly needed data filters",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "filter"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-filter/",
+        "issues": "https://github.com/laminas/laminas-filter/issues",
+        "source": "https://github.com/laminas/laminas-filter",
+        "rss": "https://github.com/laminas/laminas-filter/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.6-dev",
+            "dev-develop": "2.7-dev"
+        }
+    },
+    "require": {
+        "php": "^5.5 || ^7.0",
+        "laminas/laminas-stdlib": "^2.7 || ^3.0",
+        "laminas/laminas-zendframework-bridge": "^1.0"
+    },
+    "require-dev": {
+        "fabpot/php-cs-fixer": "1.7.*",
+        "laminas/laminas-crypt": "^2.6",
+        "laminas/laminas-servicemanager": "^2.7.5 || ^3.0.3",
+        "laminas/laminas-uri": "^2.5",
+        "pear/archive_tar": "^1.4",
+        "phpunit/phpunit": "~4.0"
+    },
+    "suggest": {
+        "laminas/laminas-crypt": "Laminas\\Crypt component, for encryption filters",
+        "laminas/laminas-i18n": "Laminas\\I18n component for filters depending on i18n functionality",
+        "laminas/laminas-servicemanager": "Laminas\\ServiceManager component, for using the filter chain functionality",
+        "laminas/laminas-uri": "Laminas\\Uri component, for the UriNormalize filter"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\Filter\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\Filter\\": "test/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-filter": "~2.6.1.0"
+    }
+}

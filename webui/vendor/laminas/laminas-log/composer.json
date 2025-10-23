@@ -1,0 +1,67 @@
+{
+    "name": "laminas/laminas-log",
+    "description": "component for general purpose logging",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "log",
+        "logging"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-log/",
+        "issues": "https://github.com/laminas/laminas-log/issues",
+        "source": "https://github.com/laminas/laminas-log",
+        "rss": "https://github.com/laminas/laminas-log/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.6-dev",
+            "dev-develop": "2.7-dev"
+        }
+    },
+    "require": {
+        "php": ">=5.5",
+        "laminas/laminas-servicemanager": "~2.5",
+        "laminas/laminas-stdlib": "~2.5",
+        "laminas/laminas-zendframework-bridge": "^1.0",
+        "psr/log": "~1.0"
+    },
+    "require-dev": {
+        "fabpot/php-cs-fixer": "1.7.*",
+        "laminas/laminas-console": "~2.5",
+        "laminas/laminas-db": "~2.5",
+        "laminas/laminas-escaper": "~2.5",
+        "laminas/laminas-filter": "~2.5",
+        "laminas/laminas-mail": "~2.5",
+        "laminas/laminas-mvc": "~2.5",
+        "laminas/laminas-validator": "~2.5",
+        "phpunit/phpunit": "~4.0"
+    },
+    "suggest": {
+        "ext-mongo": "mongodb extetension to use MongoDB writer",
+        "laminas/laminas-console": "Laminas\\Console component to use the RequestID log processor",
+        "laminas/laminas-db": "Laminas\\Db component to use the database log writer",
+        "laminas/laminas-escaper": "Laminas\\Escaper component, for use in the XML log formatter",
+        "laminas/laminas-mail": "Laminas\\Mail component to use the email log writer",
+        "laminas/laminas-validator": "Laminas\\Validator component to block invalid log messages"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\Log\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\Log\\": "test/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-log": "self.version"
+    }
+}

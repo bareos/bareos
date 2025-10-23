@@ -122,7 +122,7 @@ class ClientModel
                 $cmd .= ' limit=' . $limit;
             }
             $result = $bsock->send_command($cmd, 2);
-            $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $backups = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
 
             if (!isset($limit)) {
                 $filesets_pluginjob = array();
@@ -130,7 +130,7 @@ class ClientModel
                     if (!array_key_exists($backup['fileset'], $filesets_pluginjob)) {
                         $cmd = 'show fileset="' . $backup['fileset'] . '"';
                         $result = $bsock->send_command($cmd, 2);
-                        $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                        $fileset = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                         $filesets_pluginjob[$backup['fileset']] = false;
                         if (!empty($fileset['result']['filesets'][$backup['fileset']]['include'][0]['plugin'])) {
                             $filesets_pluginjob[$backup['fileset']] = true;
@@ -170,7 +170,7 @@ class ClientModel
                 $cmd .= ' limit=' . $limit;
             }
             $result = $bsock->send_command($cmd, 2);
-            $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $backups = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $backups['result']['jobs'];
         } else {
             throw new \Exception('Missing argument.');

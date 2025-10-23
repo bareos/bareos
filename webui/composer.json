@@ -1,48 +1,52 @@
 {
-   "name": "bareos/bareos-webui",
-   "description": "A Web-Frontend to manage Bareos",
-   "license": "AGPL3",
-   "keywords": [
-      "bareos",
-      "webinterface"
-   ],
-   "homepage": "http://www.bareos.org/",
-   "repositories": [
-      {
-         "type": "composer",
-         "url": "https://packages.zendframework.com/"
-      }
-   ],
-   "require": {
-      "php": ">=5.3.23",
-      "zendframework/zend-stdlib": "2.7.*",
-      "zendframework/zend-config": "2.6.*",
-      "zendframework/zend-eventmanager": "2.6.*",
-      "zendframework/zend-filter": "2.6.*",
-      "zendframework/zend-serializer": "2.6.*",
-      "zendframework/zend-servicemanager": "2.7.*",
-      "zendframework/zend-json": "2.6.*",
-      "zendframework/zend-i18n": "2.6.*",
-      "zendframework/zend-mvc": "2.6.*",
-      "zendframework/zend-view": "2.6.*",
-      "zendframework/zend-version": "2.5.*",
-      "zendframework/zend-session": "2.7.*",
-      "zendframework/zend-validator": "2.10.*",
-      "zendframework/zend-inputfilter": "2.6.*",
-      "zendframework/zend-form": "2.6.*",
-      "zendframework/zend-loader": "2.6.*",
-      "zendframework/zend-modulemanager": "2.6.*",
-      "zendframework/zend-cache": "2.6.*",
-      "zendframework/zend-log": "2.6.*",
-      "zendframework/zend-console": "2.6.*",
-      "zendframework/zend-http": "2.8.*",
-      "zendframework/zend-escaper": "2.6.*",
-      "zendframework/zend-uri": "2.6.*",
-      "zendframework/zend-navigation": "2.6.*"
-   },
-   "config": {
-      "platform": {
-         "php": "8.0.20"
-      }
-   }
+    "name": "bareos/bareos-webui",
+    "description": "A Web-Frontend to manage Bareos",
+    "license": "AGPL3",
+    "keywords": [
+        "bareos",
+        "webinterface"
+    ],
+    "homepage": "http://www.bareos.org/",
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://packages.zendframework.com/"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.23",
+        "laminas/laminas-stdlib": "2.7.*",
+        "laminas/laminas-config": "2.6.*",
+        "laminas/laminas-eventmanager": "2.6.*",
+        "laminas/laminas-filter": "2.6.*",
+        "laminas/laminas-serializer": "2.6.*",
+        "laminas/laminas-servicemanager": "2.7.*",
+        "laminas/laminas-json": "2.6.*",
+        "laminas/laminas-i18n": "2.6.*",
+        "laminas/laminas-mvc": "2.6.*",
+        "laminas/laminas-view": "2.6.*",
+        "zendframework/zend-version": "2.5.*",
+        "laminas/laminas-session": "2.7.*",
+        "laminas/laminas-validator": "2.10.*",
+        "laminas/laminas-inputfilter": "2.6.*",
+        "laminas/laminas-form": "2.6.*",
+        "laminas/laminas-loader": "2.6.*",
+        "laminas/laminas-modulemanager": "2.6.*",
+        "laminas/laminas-cache": "2.6.*",
+        "laminas/laminas-log": "2.6.*",
+        "laminas/laminas-console": "2.6.*",
+        "laminas/laminas-http": "2.8.*",
+        "laminas/laminas-escaper": "2.6.*",
+        "laminas/laminas-uri": "2.6.*",
+        "laminas/laminas-navigation": "2.6.*",
+        "laminas/laminas-dependency-plugin": "^2.1"
+    },
+    "config": {
+        "platform": {
+            "php": "7.4.33"
+        },
+        "allow-plugins": {
+            "laminas/laminas-dependency-plugin": true
+        }
+    }
 }
