@@ -2663,6 +2663,9 @@ static bool start_restore_job(PluginContext* ctx)
   if (!system_mgmt) { return false; }
 
   std::wstring dir = make_temp_dir(p_ctx->jobid);
+
+  JINFO(ctx, L"using '{}' as temporary hyper-v import directory", dir);
+
   auto& restore_ctx = p_ctx->current_state.emplace<plugin_ctx::restore>(
       std::move(system_mgmt.value()), std::move(dir));
 
@@ -4897,6 +4900,8 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
     restore_ctx->hndl = h;
 
+    JINFO(ctx, L"restoring metadata file '{}' as '{}'",
+          utf8_to_utf16(rp->ofname), tmp_path);
     DBGC(ctx, L"created file '{}'", tmp_path);
     restore_ctx->created_files.emplace_back(std::move(tmp_path));
     rp->create_status = CF_EXTRACT;
@@ -4952,8 +4957,12 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
       disk_info& info = found->second;
 
-      DBGC(ctx, L"found in disk map {} => {}", utf8_to_utf16(disk_name),
-           info.path);
+      auto wdisk_name = utf8_to_utf16(disk_name);
+
+      DBGC(ctx, L"found in disk map {} => {}", wdisk_name, info.path);
+
+      JINFO(ctx, L"restoring incremental image of '{}' (level {}) to '{}'",
+            wdisk_name, rp->delta_seq, info.path);
 
       OPEN_VIRTUAL_DISK_PARAMETERS params = {};
       params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
@@ -5036,7 +5045,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
               first_path, created_path);
       }
 
-      DBGC(ctx, L"disk map {} => {}", utf8_to_utf16(disk_name), created_path);
+      DBGC(ctx, L"disk map {} => {}", wdisk_name, created_path);
       restore_ctx->disk_map[disk_name] = disk_info{created_path};
 
       auto virtual_size = rp->statp.st_size;
@@ -5066,6 +5075,9 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
       TRCC(ctx, L"created hard disk {} at {}", created_path.c_str(),
            fmt_as_ptr(disk_handle));
+
+      JINFO(ctx, L"restoring disk  {} ('{}') to '{}'", wdisk_name,
+            utf8_to_utf16(rp->ofname), created_path);
     }
 
     restore_ctx->disk_handle = disk_handle;
