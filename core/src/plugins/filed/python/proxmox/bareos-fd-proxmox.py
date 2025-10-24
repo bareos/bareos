@@ -318,9 +318,6 @@ ERROR: could not notify via target `mail-to-root`: could not notify via endpoint
     def end_backup_file(self):
 
         bareosfd.DebugMessage(100, "end_backup_file() called\n")
-        #if self.vadp.disk_devices or self.vadp.files_to_backup:
-        #    bareosfd.DebugMessage(100, "end_backup_file(): returning bRC_More\n")
-        #    return bareosfd.bRC_More
 
         # print rest of vzdump log 
         for line in self.current_logfile.readlines():
