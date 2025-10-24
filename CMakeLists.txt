@@ -21,7 +21,7 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
   cmake_minimum_required(VERSION 3.25...3.31)
 else()
-  cmake_minimum_required(VERSION 3.23...3.31)
+  cmake_minimum_required(VERSION 3.17...3.31)
 endif()
 
 get_property(HAVE_MULTI_CONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
