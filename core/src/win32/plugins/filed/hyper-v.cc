@@ -56,8 +56,8 @@ static const int debuglevel = 150;
 #define PLUGIN_DATE "April 2025"
 #define PLUGIN_VERSION "1.0.1"
 #define PLUGIN_DESCRIPTION "Bareos Hyper-V Windows File Daemon Plugin"
-#define PLUGIN_USAGE                          \
-  "\n  hyper-v:config=<path>:vmname=<name>\n" \
+#define PLUGIN_USAGE                               \
+  "\n  hyper-v:config_file=<path>:vmname=<name>\n" \
   ""
 
 using filedaemon::bEvent;
@@ -2276,7 +2276,7 @@ struct plugin_ctx {
     std::optional<HANDLE> hndl{};
 
     std::vector<WMI::String> restored_definition_files{};
-    std::vector<std::wstring> created_files{};
+    std::vector<std::wstring> temporary_files{};
 
     std::wstring default_disk_loc{};
     std::optional<HANDLE> disk_handle{};
@@ -2542,7 +2542,7 @@ static bRC freePlugin(PluginContext* ctx)
 
         if constexpr (std::is_same_v<T, plugin_ctx::restore>) {
           // maybe this should only happen if the restore was successful?
-          for (auto& path : val.created_files) {
+          for (auto& path : val.temporary_files) {
             if (!DeleteFileW(path.c_str())) {
               JWARN(ctx, L"could not delete file '{}': {}", path,
                     format_win32_error());
@@ -3949,14 +3949,14 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     // make sure that we make progress while parsing
     auto starting_size = rest.size();
 
-    constexpr std::string_view config_path = "config";
+    constexpr std::string_view config_file = "config_file";
     constexpr std::string_view vmname = "vmname";
 
     DBGC(ctx, "continuing with {}", rest);
 
-    if (rest.starts_with(config_path)) {
-      DBGC(ctx, "found config-path directive");
-      rest = rest.substr(config_path.size());
+    if (rest.starts_with(config_file)) {
+      DBGC(ctx, "found config-file directive");
+      rest = rest.substr(config_file.size());
       DBGC(ctx, "continuing with {}", rest);
 
       if (rest.size() == 0 || rest[0] != '=') {
@@ -4933,7 +4933,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
     JINFO(ctx, L"restoring metadata file '{}' as '{}'", wactual_name, tmp_path);
     DBGC(ctx, L"created file '{}'", tmp_path);
-    restore_ctx->created_files.emplace_back(std::move(tmp_path));
+    restore_ctx->temporary_files.emplace_back(std::move(tmp_path));
     rp->create_status = CF_EXTRACT;
     return bRC_OK;
   }
