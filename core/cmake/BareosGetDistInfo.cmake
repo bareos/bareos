@@ -54,8 +54,8 @@ if(CMAKE_VERSION VERSION_GREATER 3.22)
 
   # debian 12 and 13 are the base for proxmox-ve currently
   if(DIST_ID STREQUAL "debian" AND DIST_VERSION_ID GREATER_EQUAL "12")
-    message(STATUS "${DIST_ID} - ${DIST_VERSION_ID}: setting enable_proxmox_plugin")
-    set(enable_proxmox_plugin ON)
+    message(STATUS "${DIST_ID} - ${DIST_VERSION_ID}: setting ENABLE_PROXMOX_PLUGIN")
+    set(ENABLE_PROXMOX_PLUGIN ON)
   endif()
 
 endif()

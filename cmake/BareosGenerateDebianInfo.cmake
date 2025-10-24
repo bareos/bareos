@@ -102,7 +102,7 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-contrib-tools")
   endif()
 
-  if(enable_proxmox_plugin)
+  if(ENABLE_PROXMOX_PLUGIN)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "proxmox")
   endif()
 
