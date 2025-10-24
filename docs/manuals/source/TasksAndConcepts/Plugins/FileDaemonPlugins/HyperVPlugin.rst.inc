@@ -35,7 +35,6 @@ Configuration
 ^^^^^^^^^^^^^
 
 The |hyperv| Plugin expects the Name of the Virtual Machine to be backed up as plugin parameter `vmname`.
-TODO: config file optional
 
 Make sure to add or enable the following settings in your |fd| configuration and restart the |fd| service.
 
@@ -68,7 +67,7 @@ To verify that the plugin was loaded, execute :command:`status client` and look 
     Author     : Sebastian Sura
     License    : Bareos AGPLv3
     Usage      : 
-     hyper-v:config=<path>:vmname=<name>
+     hyper-v:config_file=<path>:vmname=<name>
     [...]
    
    
@@ -99,7 +98,7 @@ The next step is to configure a fileset for each VM to be backed up. In our case
          ...
          Compression = LZ4 # recommended if using dynamic disks
        }
-       Plugin = "hyper-v:config=C:\\hyper-v.conf:vmname=Alma10"
+       Plugin = "hyper-v:vmname=Alma10"
      }
    }
 
