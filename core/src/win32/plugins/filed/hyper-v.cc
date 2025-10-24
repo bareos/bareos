@@ -4020,7 +4020,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
       }
 
       name.emplace(std::move(name_value));
-      DBGC(ctx, "found config path = {}", *path);
+      DBGC(ctx, "found vm name = {}", *name);
     } else {
       Jmsg(
           ctx, M_ERROR,
