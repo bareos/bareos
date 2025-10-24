@@ -66,12 +66,12 @@ OS:
   Fedora:
     "43":
       TYPE: rpm
-      IMAGE: fedora42
+      IMAGE: fedora43
       ARCH:
       - x86_64
     "42":
       TYPE: rpm
-      IMAGE: fedora41
+      IMAGE: fedora42
       ARCH:
       - x86_64
   Debian:
