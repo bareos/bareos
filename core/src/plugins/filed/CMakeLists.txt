@@ -102,4 +102,14 @@ endif()
 
 add_subdirectory(grpc)
 
+option(ENABLE_BARRI "enable building of barri" ON)
+if(client-only OR ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+  # windows barri disaster recovery not available on client-only and not on
+  # FreeBSD
+  set(ENABLE_BARRI OFF)
+endif()
+if(ENABLE_BARRI)
+  add_subdirectory(windows_dr)
+endif()
+
 include(DebugEdit)

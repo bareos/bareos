@@ -1,6 +1,7 @@
-Usage: bcopy [OPTIONS] [input-archive] [output-archive]
+bcopy [OPTIONS] [input-archive] [output-archive]
 
-Positionals:
+
+POSITIONALS:
     input-archive  
         Specify the input device name (either as name of a Bareos Storage 
         Daemon Device resource or identical to the Archive Device in a Bareos 
@@ -12,7 +13,7 @@ Positionals:
         Storage Daemon Device resource). 
 
 
-Options:
+OPTIONS:
     -h,-?,--help
         Print this help message and exit. 
 
@@ -51,3 +52,4 @@ Options:
     -w,--working-directory <directory>
         Default: /tmp
         specify working directory. 
+

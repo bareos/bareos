@@ -1,6 +1,7 @@
-Usage: bareos-fd [OPTIONS]
+bareos-fd [OPTIONS]
 
-Options:
+
+OPTIONS:
     -h,-?,--help
         Print this help message and exit. 
 
@@ -60,3 +61,4 @@ Options:
     --xs,--export-schema
         Excludes: --xc
         Print configuration schema in JSON format and exit 
+
