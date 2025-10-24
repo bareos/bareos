@@ -70,7 +70,10 @@ using filedaemon::restore_pkt;
 using filedaemon::save_pkt;
 
 struct json_deleter {
-  void operator()(json_t* ptr) const { json_decref(ptr); }
+  void operator()(json_t* ptr) const
+  {
+    if (ptr) { json_decref(ptr); }
+  }
 };
 using json_ptr = std::unique_ptr<json_t, json_deleter>;
 
@@ -2302,14 +2305,13 @@ struct plugin_ctx {
 
   WMI::VirtualSystemSnapshotSettingData snapshot_settings;
 
-  json_t* config{nullptr};
+  struct config {
+    std::string vm_name;
+  };
+
+  config cfg;
 
   bool is_full() const { return job_level == JobLevel::Full; }
-
-  ~plugin_ctx()
-  {
-    if (config) { json_decref(config); }
-  }
 };
 
 
@@ -3514,18 +3516,13 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
     if (!std::get_if<plugin_ctx::backup::prepared_backup>(&bstate.state)) {
       DBGC(ctx, L"Backup is not prepared.  Doing so now...");
 
-      json_t* val = json_object_get(p_ctx->config, "vmname");
-      if (!val) {
-        JERR(ctx, "No 'vmname' set in config file");
-        return bRC_Error;
-      }
-      const char* vmname = json_string_value(val);
-      if (!val) {
-        JERR(ctx, "'vmname' is not a string in config file");
+      auto& vm_name = p_ctx->cfg.vm_name;
+      if (vm_name.empty()) {
+        JERR(ctx, "No 'vmname' given");
         return bRC_Error;
       }
 
-      if (!prepare_backup(ctx, vmname)) { return bRC_Error; }
+      if (!prepare_backup(ctx, vm_name)) { return bRC_Error; }
     }
 
     auto& prepared
@@ -4031,13 +4028,11 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     }
   }
 
-  json_t* json = nullptr;
+  auto& cfg = p_ctx->cfg;
 
-  if (!path) {
-    DBGC(ctx, "no config path defined; using blank json object");
+  // first load the config from the configuration file
 
-    json = json_object();
-  } else {
+  if (path) {
     std::wstring wpath = utf8_to_utf16(*path);
     DBGC(ctx, L"found config path = L\"{}\"", wpath);
 
@@ -4091,18 +4086,37 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     TRCC(ctx, "content = {}", config_content);
 
     json_error_t jerr = {};
-    json = json_loadb(config_content.data(), config_content.size(),
-                      JSON_REJECT_DUPLICATES | JSON_DISABLE_EOF_CHECK, &jerr);
+    json_ptr json{json_loadb(config_content.data(), config_content.size(),
+                             JSON_REJECT_DUPLICATES | JSON_DISABLE_EOF_CHECK,
+                             &jerr)};
 
     if (!json) {
-      JERR(ctx, "failed to parse config file {} as json: {} (at {}:{})", *path,
-           jerr.text, jerr.line, jerr.column);
+      JFATAL(ctx, "failed to parse config file {} as json: {} (at {}:{})",
+             *path, jerr.text, jerr.line, jerr.column);
       return bRC_Error;
+    }
+
+    if (json_t* val = json_object_get(json.get(), "vmname")) {
+      const char* vmname = json_string_value(val);
+      if (!val) {
+        JFATAL(ctx, "'vmname' is not a string in config file");
+        return bRC_Error;
+      }
+      cfg.vm_name = vmname;
     }
   }
 
-  if (name) { json_object_set_new(json, "vmname", json_string(name->c_str())); }
-  p_ctx->config = json;
+  // then update it with values from the plugin line
+  if (name) {
+    TRCC(ctx, "overwriting previous vmname with name from plugin line");
+    cfg.vm_name = std::move(*name);
+  }
+
+  // finally make sure that the config is ok!
+  if (cfg.vm_name.empty()) {
+    JFATAL(ctx, "'vmname' not given or is empty.  Cannot continue.");
+    return bRC_Error;
+  }
 
   return bRC_OK;
 }
@@ -4688,7 +4702,7 @@ static bRC end_restore_job(PluginContext* ctx)
       JINFO(ctx, L"realizing created vm");
       system_srvc.realize_planned_system(srvc, std::move(planned_system));
     } catch (const std::exception& ex) {
-      JERR(ctx, "plugin was not able to restore the vm");
+      JERR(ctx, "plugin was not able to restore the vm (Err={})", ex.what());
       return bRC_Error;
     } catch (...) {
       return bRC_Error;
