@@ -97,10 +97,11 @@ using EntryTypesWithMagic = ::testing::Types<file_header,
 TYPED_TEST_SUITE(MagicEntryTypeTestSuite, EntryTypesWithMagic);
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsuggest-override"
+#if !defined(HAVE_WIN32)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
 TYPED_TEST(MagicEntryTypeTestSuite, MagicMismatch)
-#pragma GCC diagnostic pop
 {
   TypeParam orig{};
 
@@ -114,6 +115,9 @@ TYPED_TEST(MagicEntryTypeTestSuite, MagicMismatch)
 
   ASSERT_THROW(read_from<TypeParam>(&to_be_read), std::runtime_error);
 }
+#if !defined(HAVE_WIN32)
+#  pragma GCC diagnostic pop
+#endif
 
 struct repeat {
   explicit repeat(char byte) : c{byte} {}
@@ -163,10 +167,11 @@ void insert_test_value(extent_header& val)
   val = {repeat{0x01}, repeat{0x02}};
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsuggest-override"
+#if !defined(HAVE_WIN32)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
 TYPED_TEST(EntryTypeTestSuite, PingPong)
-#pragma GCC diagnostic pop
 {
   TypeParam orig;
   insert_test_value(orig);
@@ -184,6 +189,9 @@ TYPED_TEST(EntryTypeTestSuite, PingPong)
 
   EXPECT_EQ(orig, copy);
 }
+#if !defined(HAVE_WIN32)
+#  pragma GCC diagnostic pop
+#endif
 
 template <typename... T> void ignore(T...) {}
 
