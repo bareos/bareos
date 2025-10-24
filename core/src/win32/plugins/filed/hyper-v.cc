@@ -41,6 +41,8 @@
 #include <initguid.h>  // ask virtdisk.h to include guid definitions
 #include <virtdisk.h>
 
+#include <filesystem>
+
 // polyfill for C++23
 template <class Enum>
 constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
@@ -2550,9 +2552,13 @@ static bRC freePlugin(PluginContext* ctx)
           }
 
           if (!val.tmp_dir.empty() && PathFileExistsW(val.tmp_dir.c_str())) {
-            if (RemoveDirectoryW(val.tmp_dir.c_str())) {
+            std::error_code ec = {};
+            auto num_removed
+                = std::filesystem::remove_all(val.tmp_dir.c_str(), ec);
+            DBGC(ctx, L"remove({}) deleted {} files", val.tmp_dir, num_removed);
+            if (num_removed == static_cast<std::uintmax_t>(-1)) {
               JWARN(ctx, L"could not delete directory '{}': {}", val.tmp_dir,
-                    format_win32_error());
+                    format_win32_error(ec.value()));
             }
           }
         } else if constexpr (std::is_same_v<T, plugin_ctx::backup>) {
@@ -2572,9 +2578,14 @@ static bRC freePlugin(PluginContext* ctx)
 
           if (!prepared->tmp_dir.empty()
               && PathFileExistsW(prepared->tmp_dir.c_str())) {
-            if (RemoveDirectoryW(prepared->tmp_dir.c_str())) {
+            std::error_code ec = {};
+            auto num_removed
+                = std::filesystem::remove_all(prepared->tmp_dir.c_str(), ec);
+            DBGC(ctx, L"remove({}) deleted {} files", prepared->tmp_dir,
+                 num_removed);
+            if (num_removed == static_cast<std::uintmax_t>(-1)) {
               JWARN(ctx, L"could not delete directory '{}': {}",
-                    prepared->tmp_dir, format_win32_error());
+                    prepared->tmp_dir, format_win32_error(ec.value()));
             }
           }
 
