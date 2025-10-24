@@ -143,6 +143,10 @@ set(PYFILES
     libcloud/BareosFdPluginLibcloud.py
 )
 
+if(ENABLE_PROXMOX_PLUGIN)
+  list(APPEND PYFILES proxmox/bareos-fd-proxmox.py)
+endif()
+
 install(
   FILES ${PYFILES}
   DESTINATION ${plugindir}
