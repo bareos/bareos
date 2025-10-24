@@ -137,8 +137,8 @@ part_table_entry_gpt_data from_win32(const PARTITION_INFORMATION_GPT& gpt)
   Result.partition_id = to_disk_format(gpt.PartitionId);
   Result.attributes = gpt.Attributes;
 
-  static_assert(sizeof(Result.name) == sizeof(gpt.Name));
-  std::memcpy(Result.name, gpt.Name, sizeof(gpt.Name));
+  static_assert(sizeof(Result.name.data) == sizeof(gpt.Name));
+  std::memcpy(Result.name.data, gpt.Name, sizeof(gpt.Name));
 
   return Result;
 }
