@@ -4031,71 +4031,74 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     }
   }
 
+  json_t* json = nullptr;
+
   if (!path) {
-    Jmsg(ctx, M_ERROR, "no config file was specified\n");
-    return bRC_Error;
-  }
+    DBGC(ctx, "no config path defined; using blank json object");
 
-  std::wstring wpath = utf8_to_utf16(*path);
-  DBGC(ctx, L"found config path = L\"{}\"", wpath);
+    json = json_object();
+  } else {
+    std::wstring wpath = utf8_to_utf16(*path);
+    DBGC(ctx, L"found config path = L\"{}\"", wpath);
 
-  HANDLE config_handle
-      = CreateFileW(wpath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
-                    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-  DBGC(ctx, "opened {} at {}", *path, fmt_as_ptr(config_handle));
-  if (config_handle == INVALID_HANDLE_VALUE) {
-    Jmsg(ctx, M_ERROR, "could not open config file %s: Err=%ls\n",
-         path->c_str(), format_win32_error().c_str());
-    return bRC_Error;
-  }
+    HANDLE config_handle
+        = CreateFileW(wpath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
+                      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    DBGC(ctx, "opened {} at {}", *path, fmt_as_ptr(config_handle));
+    if (config_handle == INVALID_HANDLE_VALUE) {
+      Jmsg(ctx, M_ERROR, "could not open config file %s: Err=%ls\n",
+           path->c_str(), format_win32_error().c_str());
+      return bRC_Error;
+    }
 
-  LARGE_INTEGER file_size_li = {};
+    LARGE_INTEGER file_size_li = {};
 
-  if (!GetFileSizeEx(config_handle, &file_size_li)) {
-    Jmsg(ctx, M_ERROR, "could not determine size of config file %s: Err=%ls\n",
-         path->c_str(), format_win32_error().c_str());
+    if (!GetFileSizeEx(config_handle, &file_size_li)) {
+      Jmsg(ctx, M_ERROR,
+           "could not determine size of config file %s: Err=%ls\n",
+           path->c_str(), format_win32_error().c_str());
+      CloseHandle(config_handle);
+      return bRC_Error;
+    }
+
+    std::size_t file_size = static_cast<std::size_t>(file_size_li.QuadPart);
+
+    auto file_content = std::make_unique<char[]>(file_size);
+
+    auto bytes_read
+        = read_file_contents(ctx, config_handle, file_content.get(), file_size);
+    if (bytes_read == 0) {
+      Jmsg(ctx, M_ERROR, "could not read file %s: Err=%ls\n", path->c_str(),
+           format_win32_error().c_str());
+      CloseHandle(config_handle);
+      return bRC_Error;
+    } else if (bytes_read != file_size) {
+      Jmsg(ctx, M_ERROR,
+           "could read complete file %s: only %llu out of expected %llu bytes "
+           "were read\n",
+           path->c_str(), static_cast<long long unsigned>(bytes_read),
+           static_cast<long long unsigned>(file_size));
+      CloseHandle(config_handle);
+      return bRC_Error;
+    }
+
     CloseHandle(config_handle);
-    return bRC_Error;
-  }
+    DBGC(ctx, "sucessfully loaded config file {} into memory at {}", *path,
+         fmt_as_ptr(file_content.get()));
 
-  std::size_t file_size = static_cast<std::size_t>(file_size_li.QuadPart);
+    std::string_view config_content{file_content.get(), file_size};
 
-  auto file_content = std::make_unique<char[]>(file_size);
+    TRCC(ctx, "content = {}", config_content);
 
-  auto bytes_read
-      = read_file_contents(ctx, config_handle, file_content.get(), file_size);
-  if (bytes_read == 0) {
-    Jmsg(ctx, M_ERROR, "could not read file %s: Err=%ls\n", path->c_str(),
-         format_win32_error().c_str());
-    CloseHandle(config_handle);
-    return bRC_Error;
-  } else if (bytes_read != file_size) {
-    Jmsg(ctx, M_ERROR,
-         "could read complete file %s: only %llu out of expected %llu bytes "
-         "were read\n",
-         path->c_str(), static_cast<long long unsigned>(bytes_read),
-         static_cast<long long unsigned>(file_size));
-    CloseHandle(config_handle);
-    return bRC_Error;
-  }
+    json_error_t jerr = {};
+    json = json_loadb(config_content.data(), config_content.size(),
+                      JSON_REJECT_DUPLICATES | JSON_DISABLE_EOF_CHECK, &jerr);
 
-  CloseHandle(config_handle);
-  DBGC(ctx, "sucessfully loaded config file {} into memory at {}", *path,
-       fmt_as_ptr(file_content.get()));
-
-  std::string_view config_content{file_content.get(), file_size};
-
-  TRCC(ctx, "content = {}", config_content);
-
-  json_error_t jerr = {};
-  auto* json
-      = json_loadb(config_content.data(), config_content.size(),
-                   JSON_REJECT_DUPLICATES | JSON_DISABLE_EOF_CHECK, &jerr);
-
-  if (!json) {
-    JERR(ctx, "failed to parse config file {} as json: {} (at {}:{})", *path,
-         jerr.text, jerr.line, jerr.column);
-    return bRC_Error;
+    if (!json) {
+      JERR(ctx, "failed to parse config file {} as json: {} (at {}:{})", *path,
+           jerr.text, jerr.line, jerr.column);
+      return bRC_Error;
+    }
   }
 
   if (name) { json_object_set_new(json, "vmname", json_string(name->c_str())); }
