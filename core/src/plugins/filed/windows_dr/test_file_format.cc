@@ -96,7 +96,11 @@ using EntryTypesWithMagic = ::testing::Types<file_header,
 
 TYPED_TEST_SUITE(MagicEntryTypeTestSuite, EntryTypesWithMagic);
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 TYPED_TEST(MagicEntryTypeTestSuite, MagicMismatch)
+#pragma GCC diagnostic pop
 {
   TypeParam orig{};
 
@@ -159,7 +163,10 @@ void insert_test_value(extent_header& val)
   val = {repeat{0x01}, repeat{0x02}};
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-override"
 TYPED_TEST(EntryTypeTestSuite, PingPong)
+#pragma GCC diagnostic pop
 {
   TypeParam orig;
   insert_test_value(orig);
