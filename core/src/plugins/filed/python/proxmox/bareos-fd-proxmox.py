@@ -95,53 +95,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         os.rename(self.stderr_log_file.name, "vzdump.log")
        
         bareosfd.JobMessage( bareosfd.M_INFO, f"Executing {vzdump_params}\n")
-        """
-LXC:
-INFO: starting new backup job: vzdump 115
-INFO: Starting Backup of VM 115 (lxc)
-INFO: Backup started at 2025-09-11 13:42:05
-INFO: status = running
-INFO: CT Name: container1
-INFO: including mount point rootfs ('/') in backup
-INFO: backup mode: snapshot
-INFO: ionice priority: 7
-INFO: create storage snapshot 'vzdump'
-INFO: sending archive to stdout
-INFO: Total bytes written: 564357120 (539MiB, 93MiB/s)
-INFO: cleanup temporary 'vzdump' snapshot
-INFO: Finished Backup of VM 115 (00:00:06)
-INFO: Backup finished at 2025-09-11 13:42:11
-INFO: Backup job finished successfully
-ERROR: could not notify via target `mail-to-root`: could not notify via endpoint(s): mail-to-root: no recipients provided for the mail, cannot send it.
-
-KVM:
-
-INFO: starting new backup job: vzdump 112
-INFO: Starting Backup of VM 112 (qemu)
-INFO: Backup started at 2025-09-11 13:43:11
-INFO: status = running
-INFO: VM Name: winrecover
-INFO: include disk 'sata0' 'ZFS:vm-112-disk-1' 20G
-INFO: exclude disk 'efidisk0' 'ZFS:vm-112-disk-0' (efidisk but no OMVF BIOS)
-INFO: include disk 'tpmstate0' 'ZFS:vm-112-disk-2' 4M
-INFO: backup mode: snapshot
-INFO: ionice priority: 7
-INFO: sending archive to stdout
-INFO: attaching TPM drive to QEMU for backup
-INFO: started backup task '3fef2565-ac97-4258-a3a4-c8d2cfd2e8cd'
-INFO: resuming VM again
-INFO:  20% (4.2 GiB of 20.0 GiB) in 3s, read: 1.4 GiB/s, write: 1.4 GiB/s
-INFO:  44% (8.8 GiB of 20.0 GiB) in 7s, read: 1.2 GiB/s, write: 1.1 GiB/s
-INFO:  91% (18.3 GiB of 20.0 GiB) in 10s, read: 3.2 GiB/s, write: 693.6 MiB/s
-INFO: 100% (20.0 GiB of 20.0 GiB) in 11s, read: 1.7 GiB/s, write: 0 B/s
-INFO: backup is sparse: 9.36 GiB (46%) total zero data
-INFO: transferred 20.00 GiB in 11 seconds (1.8 GiB/s)
-INFO: Finished Backup of VM 112 (00:00:12)
-INFO: Backup finished at 2025-09-11 13:43:23
-INFO: Backup job finished successfully
-ERROR: could not notify via target `mail-to-root`: could not notify via endpoint(s): mail-to-root: no recipients provided for the mail, cannot send it.
-
-"""
         # wait for vzdump to start backup ('sending archive to stdout ....')
         started = False
         while not started:
