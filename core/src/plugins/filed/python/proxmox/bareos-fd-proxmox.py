@@ -75,10 +75,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         bareosfd.DebugMessage(100, __name__ + ":start_backup_file() called\n")
 
-        # bareosfd.JobMessage(
-        #     bareosfd.M_INFO,
-        #     "Starting backup of %s\n" % (self.file_to_backup),
-        # )
         log_path="."
         self.stderr_log_file = tempfile.NamedTemporaryFile(dir=log_path, delete=False, mode='r+b')
         vzdump_params = shlex.split(f"/usr/bin/vzdump {self.options['guestid']} --stdout")
