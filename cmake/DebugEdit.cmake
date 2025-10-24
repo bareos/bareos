@@ -19,27 +19,27 @@
 
 find_program(DEBUGEDIT_PROG debugedit HINTS /usr/lib/rpm)
 
-option(DEBUGEDIT_REWRITE
-       "Rewrite DW_AT_comp_dir in ELF objects to the real path" ON
-)
-
-if(DEBUGEDIT_REWRITE
-   AND DEBUGEDIT_PROG
-   AND NOT HAVE_WIN32
-)
-  get_directory_property(directory_targets BUILDSYSTEM_TARGETS)
-  foreach(target ${directory_targets})
-    get_target_property(target_type ${target} TYPE)
-    if(target_type STREQUAL EXECUTABLE
-       OR target_type STREQUAL SHARED_LIBRARY
-       OR target_type STREQUAL MODULE_LIBRARY
-    )
-      add_custom_command(
-        TARGET ${target}
-        POST_BUILD
-        COMMAND ${DEBUGEDIT_PROG} -b /usr/src/bareos -d ${CMAKE_SOURCE_DIR}
-                $<TARGET_FILE:${target}>
-      )
-    endif()
-  endforeach()
-endif()
+# option(DEBUGEDIT_REWRITE
+#        "Rewrite DW_AT_comp_dir in ELF objects to the real path" ON
+# )
+#
+# if(DEBUGEDIT_REWRITE
+#    AND DEBUGEDIT_PROG
+#    AND NOT HAVE_WIN32
+# )
+#   get_directory_property(directory_targets BUILDSYSTEM_TARGETS)
+#   foreach(target ${directory_targets})
+#     get_target_property(target_type ${target} TYPE)
+#     if(target_type STREQUAL EXECUTABLE
+#        OR target_type STREQUAL SHARED_LIBRARY
+#        OR target_type STREQUAL MODULE_LIBRARY
+#     )
+#       add_custom_command(
+#         TARGET ${target}
+#         POST_BUILD
+#         COMMAND ${DEBUGEDIT_PROG} -b /usr/src/bareos -d ${CMAKE_SOURCE_DIR}
+#                 $<TARGET_FILE:${target}>
+#       )
+#     endif()
+#   endforeach()
+# endif()
