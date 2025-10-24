@@ -291,9 +291,9 @@ struct part_table_header {
       , Data2{}
   {
     assert(Data_.size() <= std::size(Data));
-    memcpy(Data, Data_.data(), Data_.size());
+    if (Data_.size() > 0) { memcpy(Data, Data_.data(), Data_.size()); }
     assert(Data2_.size() <= std::size(Data2));
-    memcpy(Data2, Data2_.data(), Data2_.size());
+    if (Data2_.size() > 0) { memcpy(Data2, Data2_.data(), Data2_.size()); }
   }
 
   void write(writer& stream) const
