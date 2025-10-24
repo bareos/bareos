@@ -114,6 +114,12 @@ TYPED_TEST(MagicEntryTypeTestSuite, MagicMismatch)
 struct repeat {
   explicit repeat(char byte) : c{byte} {}
 
+  operator bool() const
+  {
+    // needed because asan/ubsan are too smart
+    return c % 2 == 0;
+  }
+
   template <typename T> operator T() const
   {
     static_assert(std::is_trivial_v<T>);
