@@ -41,12 +41,9 @@
 /******************************************************************************/
 
 LOCAL ulong reflect P_((ulong v, int b));
-LOCAL ulong reflect(v, b)
-    /* Returns the value v with the bottom b [0,32] bits reflected. */
-    /* Example: reflect(0x3e23L,3) == 0x3e26                        */
-    ulong v;
-int b;
-{
+/* Returns the value v with the bottom b [0,32] bits reflected. */
+/* Example: reflect(0x3e23L,3) == 0x3e26                        */
+LOCAL ulong reflect(ulong v, int b) {
   int i;
   ulong t = v;
   for (i = 0; i < b; i++) {
@@ -62,26 +59,21 @@ int b;
 /******************************************************************************/
 
 LOCAL ulong widmask P_((p_cm_t));
-LOCAL ulong widmask(p_cm)
-    /* Returns a longword whose value is (2^p_cm->cm_width)-1.     */
-    /* The trick is to do this portably (e.g. without doing <<32). */
-    p_cm_t p_cm;
-{
+/* Returns a longword whose value is (2^p_cm->cm_width)-1.     */
+/* The trick is to do this portably (e.g. without doing <<32). */
+LOCAL ulong widmask(p_cm_t p_cm) {
   return (((1L << (p_cm->cm_width - 1)) - 1L) << 1) | 1L;
 }
 
 /******************************************************************************/
 
-void cm_ini(p_cm) p_cm_t p_cm;
-{
+void cm_ini(p_cm_t p_cm) {
   p_cm->cm_reg = p_cm->cm_init;
 }
 
 /******************************************************************************/
 
-void cm_nxt(p_cm, ch) p_cm_t p_cm;
-int ch;
-{
+void cm_nxt(p_cm_t p_cm, int ch) {
   int i;
   ulong uch = (ulong)ch;
   ulong topbit = BITMASK(p_cm->cm_width - 1);
@@ -99,17 +91,13 @@ int ch;
 
 /******************************************************************************/
 
-void cm_blk(p_cm, blk_adr, blk_len) p_cm_t p_cm;
-p_ubyte_ blk_adr;
-ulong blk_len;
-{
+void cm_blk(p_cm_t p_cm, p_ubyte_ blk_adr, ulong blk_len) {
   while (blk_len--) cm_nxt(p_cm, *blk_adr++);
 }
 
 /******************************************************************************/
 
-ulong cm_crc(p_cm) p_cm_t p_cm;
-{
+ulong cm_crc(p_cm_t p_cm) {
   if (p_cm->cm_refot)
     return p_cm->cm_xorot ^ reflect(p_cm->cm_reg, p_cm->cm_width);
   else
@@ -118,9 +106,7 @@ ulong cm_crc(p_cm) p_cm_t p_cm;
 
 /******************************************************************************/
 
-ulong cm_tab(p_cm, index) p_cm_t p_cm;
-int index;
-{
+ulong cm_tab(p_cm_t p_cm, int index) {
   int i;
   ulong r;
   ulong topbit = BITMASK(p_cm->cm_width - 1);
