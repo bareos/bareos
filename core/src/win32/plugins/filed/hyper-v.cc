@@ -3859,7 +3859,6 @@ static bRC end_backup_file(PluginContext* ctx)
       return bRC_More;
     } else {
       TRCC(ctx, "prepared files done");
-      bstate->state.emplace<std::monostate>();
     }
   }
   /* We would return bRC_More if we wanted start_backup_file to be called again
