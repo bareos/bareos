@@ -31,6 +31,7 @@
 #include <virtdisk.h>
 #include <zlib.h>
 #include <optional>
+#include <cstdint>
 
 #include "parser.h"
 #include "partitioning.h"
