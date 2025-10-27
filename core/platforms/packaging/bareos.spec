@@ -50,7 +50,7 @@ Vendor:     The Bareos Team
 %define enable_grpc 1
 
 # cmake build directory
-%define CMAKE_BUILDDIR       %{_vpath_builddir}
+%define CMAKE_BUILDDIR       cmake-build
 
 
 BuildRequires: rpcgen
@@ -847,6 +847,9 @@ export PATH=$PATH:/usr/lib64/qt5/bin:/usr/lib/qt5/bin
 export MTX=/usr/sbin/mtx
 
 
+mkdir %{CMAKE_BUILDDIR}
+pushd %{CMAKE_BUILDDIR}
+
 # use modernized GCC 14 toolchain for C++20 support
 %if 0%{?rhel} && 0%{?rhel} <= 9
 source /opt/rh/gcc-toolset-14/enable
@@ -862,7 +865,7 @@ CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ;
 CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
 
 # use our own cmake call instead of cmake macro as it is different on different platforms/versions
-cmake  -S "." -B "%{CMAKE_BUILDDIR}" \
+cmake  .. \
   -DCMAKE_VERBOSE_MAKEFILE=ON \
   -DCMAKE_INSTALL_PREFIX:PATH=/usr \
   -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib \
@@ -918,14 +921,26 @@ cmake  -S "." -B "%{CMAKE_BUILDDIR}" \
 %endif
   -Dwebuiconfdir=%{_sysconfdir}/bareos-webui \
   -DVERSION_STRING=%version
-%cmake_build
+%if 0%{?make_build:1}
+%make_build
+%else
+%__make %{?_smp_mflags};
+%endif
 
 %check
+# run unit tests
+pushd %{CMAKE_BUILDDIR}
+
 # run the tests and fail build if test fails
-REGRESS_DEBUG=1 %ctest -V -S %{CMAKE_BUILDDIR}/CTestScript.cmake || echo "ctest result:$?"
+REGRESS_DEBUG=1 ctest -V -S CTestScript.cmake || echo "ctest result:$?"
 
 %install
-%cmake_install
+pushd %{CMAKE_BUILDDIR}
+make DESTDIR=%{buildroot} install/fast
+
+popd
+
+
 
 install -d -m 755 %{buildroot}/usr/share/applications
 install -d -m 755 %{buildroot}/usr/share/pixmaps
