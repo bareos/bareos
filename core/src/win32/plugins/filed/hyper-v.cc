@@ -3843,6 +3843,7 @@ static bRC end_backup_file(PluginContext* ctx)
       // The destructor should just do it on its own...
       TRCC(ctx, "prepared->error");
       bstate->state.emplace<std::monostate>();
+      JERR(ctx, "encountered error during backup");
       return bRC_Error;
     }
 
