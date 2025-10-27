@@ -507,5 +507,3 @@ bareos_add_test(bpipe_env_test LINK_LIBRARIES GTest::gtest_main Bareos::Lib)
 target_compile_definitions(
   bpipe_env_test PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:env_tester>\""
 )
-
-include(DebugEdit)

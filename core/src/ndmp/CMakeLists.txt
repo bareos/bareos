@@ -219,5 +219,3 @@ if(build_ndmjob)
   add_executable(ndmjob ${NDMJOB_SRCS})
   target_link_libraries(ndmjob bareosndmp)
 endif()
-
-include(DebugEdit)

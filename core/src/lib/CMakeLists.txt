@@ -187,5 +187,3 @@ set_target_properties(
   bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                     SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
-
-include(DebugEdit)

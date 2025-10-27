@@ -57,5 +57,3 @@ install(
   DESTINATION ${libdir}
   COMPONENT filedaemon
 )
-
-include(DebugEdit)

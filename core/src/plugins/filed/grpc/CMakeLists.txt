@@ -123,5 +123,4 @@ if(ENABLE_GRPC)
     COMPONENT filedaemon
   )
 
-  include(DebugEdit)
 endif()

@@ -154,5 +154,3 @@ install(
   DESTINATION ${plugindir}
   COMPONENT filedaemon
 )
-
-include(DebugEdit)

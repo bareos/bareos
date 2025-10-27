@@ -186,4 +186,3 @@ install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
 install(CODE "set(SRC_DIR \"${PROJECT_BINARY_DIR}\")")
 
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-dird-configfiles.cmake)
-include(DebugEdit)

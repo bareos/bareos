@@ -105,5 +105,3 @@ install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
 # install bsmtp for non-root directors
 install(TARGETS bsmtp DESTINATION "${bindir}")
 install(TARGETS bsmtp DESTINATION "${sbindir}")
-
-include(DebugEdit)

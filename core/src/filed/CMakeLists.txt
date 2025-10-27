@@ -124,5 +124,3 @@ install(CODE "set(SRC_DIR \"${PROJECT_BINARY_DIR}\")" COMPONENT filedaemon)
 install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-filed-configfiles.cmake
         COMPONENT filedaemon
 )
-
-include(DebugEdit)

@@ -101,5 +101,3 @@ if(HAVE_DYNAMIC_SD_BACKENDS)
                                       unix_file_device.cc
   )
 endif()
-
-include(DebugEdit)

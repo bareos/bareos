@@ -42,5 +42,3 @@ install(
               WORLD_READ WORLD_EXECUTE
   DESTINATION "${sbindir}"
 )
-
-include(DebugEdit)

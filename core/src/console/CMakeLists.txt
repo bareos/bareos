@@ -69,4 +69,3 @@ install(
   bareos_install_single_config_file(\"${CMAKE_CURRENT_BINARY_DIR}/bconsole.conf\" \"${configtemplatedir}\" \".\")
 "
 )
-include(DebugEdit)

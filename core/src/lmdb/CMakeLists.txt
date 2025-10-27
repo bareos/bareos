@@ -43,4 +43,3 @@ endif()
 
 install(TARGETS bareoslmdb DESTINATION ${libdir})
 
-include(DebugEdit)

@@ -67,5 +67,3 @@ bareos_add_benchmark(
 bareos_add_benchmark(
   digest LINK_LIBRARIES Bareos::Lib benchmark::benchmark_main
 )
-
-include(DebugEdit)

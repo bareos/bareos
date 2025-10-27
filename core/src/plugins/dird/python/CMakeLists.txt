@@ -76,5 +76,3 @@ if(Python3_FOUND)
     )
   endif()
 endif()
-
-include(DebugEdit)

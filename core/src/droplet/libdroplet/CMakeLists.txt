@@ -116,5 +116,3 @@ target_include_directories(droplet PUBLIC include ${JSONC_INCLUDE_DIRS})
 target_link_libraries(
   droplet PRIVATE LibXml2::LibXml2 ${JSONC_LIBRARIES} OpenSSL::SSL
 )
-
-include(DebugEdit)

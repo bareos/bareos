@@ -80,5 +80,3 @@ install(
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ddl/versions.map
         DESTINATION ${scriptdir}/ddl
 )
-
-include(DebugEdit)

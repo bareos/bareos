@@ -182,5 +182,3 @@ install(SCRIPT ${PROJECT_SOURCE_DIR}/cmake/install-stored-configfiles.cmake)
 install(DIRECTORY DESTINATION "${archivedir}")
 
 add_subdirectory(backends)
-
-include(DebugEdit)

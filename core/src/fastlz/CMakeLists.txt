@@ -40,4 +40,3 @@ set_target_properties(
                           SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 
-include(DebugEdit)

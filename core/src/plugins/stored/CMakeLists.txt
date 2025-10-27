@@ -56,5 +56,3 @@ if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS)
     target_link_libraries(scsitapealert-sd Bareos::LibSD)
   endif()
 endif()
-
-include(DebugEdit)
