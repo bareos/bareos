@@ -36,6 +36,8 @@ The **dbconfig-common** configuration (and credentials) is done by the **bareos-
 
 The Bareos database backend will get automatically configured in :file:`/etc/bareos/bareos-dir.d/catalog/MyCatalog.conf`. If the Server is not running locally you need to specify :config:option:`dir/catalog/DbAddress`\  in the catalog resource. A later reconfiguration might require manual changes.
 
+.. note::
+   If you need to debug installation or configuration steps, you can export the variable **dbc_debug** with :command:`export dbc_debug=1` command before using **apt** or **dpkg-reconfigure**.
 
 .. _CatMaintenanceManualConfiguration:
 

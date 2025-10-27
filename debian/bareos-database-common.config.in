@@ -11,8 +11,6 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
     . @scriptdir@/bareos-config-lib.sh
     if [ -f /usr/share/dbconfig-common/dpkg/config ]; then
         . /usr/share/dbconfig-common/dpkg/config
-
-        dbc_debug=1
         # prevent errors by using || true
         dbc_dbname=@db_name@ || true
         dbc_dbuser=@db_user@ || true
