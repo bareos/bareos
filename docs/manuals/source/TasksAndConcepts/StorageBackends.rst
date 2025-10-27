@@ -23,6 +23,8 @@ A Bareos Storage Daemon can use various storage backends:
 **GFAPI** (GlusterFS)
    is used to access a GlusterFS storage.
 
+   .. deprecated:: 25.0.0
+
 **Dedupable**
    is used to support filesystem block-based deduplication, see :ref:`SdBackendDedupable`.
 
@@ -33,6 +35,8 @@ A Bareos Storage Daemon can use various storage backends:
 
 GFAPI Storage Backend
 ---------------------
+
+.. deprecated:: 25.0.0
 
 **GFAPI** (GlusterFS)
 
@@ -52,6 +56,7 @@ for Bareos integration. You can use following snippet to configure it as storage
 Adapt server and volume name to your environment.
 
 :sinceVersion:`15.2.0: GlusterFS Storage`
+
 
 .. _SdBackendDedupable:
 

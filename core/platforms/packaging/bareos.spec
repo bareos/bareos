@@ -326,7 +326,7 @@ Requires:   %{name}-storage = %{version}
 
 %if 0%{?glusterfs}
 %package    storage-glusterfs
-Summary:    GlusterFS support for the Bareos Storage daemon
+Summary:    GlusterFS support for the Bareos Storage daemon (deprecated)
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common  = %{version}
 Requires:   %{name}-storage = %{version}
@@ -612,7 +612,7 @@ This package contains the common files for the python storage plugins.
 
 %if 0%{?glusterfs}
 %package    filedaemon-glusterfs-plugin
-Summary:    GlusterFS plugin for Bareos File daemon
+Summary:    GlusterFS plugin for Bareos File daemon (deprecated)
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
 Requires:   glusterfs
@@ -621,7 +621,7 @@ Requires:   glusterfs
 %{dscr}
 
 This package contains the GlusterFS plugin for the file daemon
-
+(deprecated since version 25.0.0)
 %endif
 
 %if 0%{?webui}
@@ -776,6 +776,7 @@ This package contains the Storage backend for Object Storage (via scripts).
 %{dscr}
 
 This package contains the Storage backend for GlusterFS.
+(deprecated since version 25.0.0)
 %endif
 
 %description storage-fifo

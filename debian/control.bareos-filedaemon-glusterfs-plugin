@@ -7,3 +7,4 @@ Description: Backup Archiving Recovery Open Sourced - file daemon GlusterFS plug
  data across a network of computers of different kinds.
  .
  This package provides the GlusterFS plugin for the file daemon.
+ (deprecated since 25.0.0)

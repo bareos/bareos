@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bareos 25 and later will not modify or extend existing configuration directories on package updates [PR #2338]  
   Note: on FreeBSD unmodified configuration changes from Bareos <= 24 will get removed and
   replaced by the new default configuration of the current package.
+- Glusterfs FD plugin and SD backend is deprecated and will get removed in 26.
 
 ### Removed
 - config: deprecate file daemon as alias for client in FD config [PR #2187]
