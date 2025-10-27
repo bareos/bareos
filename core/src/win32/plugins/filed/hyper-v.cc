@@ -2509,6 +2509,7 @@ static bRC newPlugin(PluginContext* ctx)
 
     using filedaemon::bEventBackupCommand;
     using filedaemon::bEventEndRestoreJob;
+    using filedaemon::bEventJobEnd;
     using filedaemon::bEventLevel;
     using filedaemon::bEventNewPluginOptions;
     using filedaemon::bEventPluginCommand;
@@ -2519,10 +2520,10 @@ static bRC newPlugin(PluginContext* ctx)
 
     // Only register the events we are really interested in.
     bareos_core_functions->registerBareosEvents(
-        ctx, 10, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
+        ctx, 11, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
         bEventPluginCommand, bEventEndRestoreJob, bEventNewPluginOptions,
         bEventStartBackupJob, bEventStartRestoreJob, bEventEndRestoreJob,
-        bEventRestoreObject);
+        bEventRestoreObject, bEventJobEnd);
 
     return bRC_OK;
   } catch (const win_error& err) {
@@ -2532,8 +2533,7 @@ static bRC newPlugin(PluginContext* ctx)
   }
 }
 
-// Free a plugin instance, i.e. release our private storage
-static bRC freePlugin(PluginContext* ctx)
+static bRC free_current_state(PluginContext* ctx)
 {
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
@@ -2597,9 +2597,22 @@ static bRC freePlugin(PluginContext* ctx)
       },
       p_ctx->current_state);
 
+  p_ctx->current_state.emplace<std::monostate>();
+  return bRC_OK;
+}
+
+
+// Free a plugin instance, i.e. release our private storage
+static bRC freePlugin(PluginContext* ctx)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  auto res = free_current_state(ctx);
+
   delete p_ctx;
 
-  return bRC_OK;
+  return res;
 }
 
 // Return some plugin value (none defined)
@@ -2926,6 +2939,7 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
 
   using filedaemon::bEventBackupCommand;
   using filedaemon::bEventEndRestoreJob;
+  using filedaemon::bEventJobEnd;
   using filedaemon::bEventLevel;
   using filedaemon::bEventNewPluginOptions;
   using filedaemon::bEventPluginCommand;
@@ -2935,6 +2949,9 @@ static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
   using filedaemon::bEventStartRestoreJob;
 
   switch (event->eventType) {
+    case bEventJobEnd: {
+      return free_current_state(ctx);
+    } break;
     case bEventLevel: {
       return bRC_Error;
     } break;
