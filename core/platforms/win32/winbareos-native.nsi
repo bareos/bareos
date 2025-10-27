@@ -645,7 +645,7 @@ SectionIn 1 2 3
   SetOutPath "$INSTDIR"
   File "bareos-config-deploy.bat"
   !cd "${CMAKE_BINARY_DIR}\bin"
-  File bareos-fd.exe
+  File "bareos-fd.exe"
   File "bareos.dll"
   File "bareosfastlz.dll"
   File "bareosfind.dll"
@@ -659,6 +659,8 @@ SectionIn 1 2 3
   File "pthreadVCE3.dll"
   File "zlib1.dll"
   File "xxhash.dll"
+  File "pcre2-posix.dll"
+  File "pcre2-8.dll"
 
   !cd "C:\Program Files\Git\usr\bin"
   File "sed.exe"
@@ -748,6 +750,9 @@ SectionIn 2
   File "lzo2.dll"
   File "pthreadVCE3.dll"
   File "zlib1.dll"
+  File "pcre2-posix.dll"
+  File "pcre2-8.dll"
+  File "fmt.dll"
 
   CreateDirectory "C:\bareos-storage"
 
@@ -825,6 +830,8 @@ SectionIn 2
   File "lzo2.dll"
   File "pthreadVCE3.dll"
   File "zlib1.dll"
+  File "pcre2-posix.dll"
+  File "pcre2-8.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
@@ -1000,6 +1007,8 @@ SectionIn 1 2
   File "pcre2-16.dll"
   File "pthreadVCE3.dll"
   File "zlib1.dll"
+  File "pcre2-posix.dll"
+  File "pcre2-8.dll"
 
   #
   SetOutPath "$INSTDIR\platforms"
@@ -1131,6 +1140,8 @@ SectionIn 2
   File "pthreadVCE3.dll"
   File "readline.dll"
   File "zlib1.dll"
+  File "pcre2-posix.dll"
+  File "pcre2-8.dll"
   !insertmacro InstallConfFile "bconsole.conf"
   #Rename  "$PLUGINSDIR\bconsole.conf"   "$INSTDIR\defaultconfigs\bconsole.conf"
 
@@ -2096,6 +2107,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\*bareoslmdb.dll"
   Delete "$INSTDIR\*bareossql.dll"
 
+  Delete "$INSTDIR\fmt.dll"
   Delete "$INSTDIR\libcrypto-*.dll"
   Delete "$INSTDIR\libgcc_s_*-1.dll"
   Delete "$INSTDIR\libhistory8.dll"
@@ -2121,6 +2133,8 @@ ConfDeleteSkip:
   Delete "$INSTDIR\*bz2*.dll"
   Delete "$INSTDIR\libssp-0.dll"
   Delete "$INSTDIR\libintl-8.dll"
+  Delete "$INSTDIR\pcre2-posix.dll"
+  Delete "$INSTDIR\pcre2-8.dll"
 
   RMDir /r "$INSTDIR\platforms"
 

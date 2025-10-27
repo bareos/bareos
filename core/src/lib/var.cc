@@ -18,13 +18,7 @@
 /* bareos-check-sources:disable-copyright-check */
 
 #include "include/bareos.h"
-#if defined(HAVE_PCREPOSIX)
-#  include <pcreposix.h>
-#elif defined(HAVE_WIN32)
-#  include "bregex.h"
-#else
-#  include <regex.h>
-#endif
+#include "bregex.h"
 #include "var.h"
 
 /* support for OSSP ex based exception throwing */
@@ -1694,8 +1688,7 @@ static int parse_name(var_t* var,
   const char* p;
 
   /* parse as long as name class characters are found */
-  for (p = begin; p != end && var->syntax_nameclass[(int)(*p)]; p++)
-    ;
+  for (p = begin; p != end && var->syntax_nameclass[(int)(*p)]; p++);
   return (p - begin);
 }
 

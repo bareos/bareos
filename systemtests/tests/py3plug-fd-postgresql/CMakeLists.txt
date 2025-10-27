@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,8 @@ if(TARGET python3-fd)
      AND (${PostgreSQL_VERSION_STRING} VERSION_GREATER_EQUAL "10")
   )
     create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+
+    add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME})
   else()
     create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
   endif()

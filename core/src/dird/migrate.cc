@@ -62,11 +62,7 @@
 
 #include "cats/sql.h"
 
-#ifndef HAVE_REGEX_H
-#  include "lib/bregex.h"
-#else
-#  include <regex.h>
-#endif
+#include "lib/bregex.h"
 
 namespace directordaemon {
 

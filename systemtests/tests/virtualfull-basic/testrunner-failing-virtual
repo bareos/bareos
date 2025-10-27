@@ -1,0 +1,124 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# This test checks that virtualfull backups recognize certain failure conditions
+#  and, as such, fail the backup.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${test_home}/full.out
+run job=$JobName level=Full yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+check_log "${test_home}/full.out"
+
+FULL_ID=$(last_jobid_or_zero)
+INC_1_ID=$((FULL_ID + 1))
+INC_2_ID=$((FULL_ID + 2))
+INC_3_ID=$((FULL_ID + 3))
+
+PREV_INCR_ID=2 # this does not exist anymore
+PREV_FULL_ID=3 # this is actually a virtualfull
+
+touch "${tmp}"/data/*.c
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/incrs.out
+run job=$JobName level=Incremental yes
+wait
+run job=$JobName level=Incremental yes
+wait
+run job=$JobName level=Incremental yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${test_home}/incrs.out"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/purge.out
+list jobs
+purge files jobid=${FULL_ID}
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+# we expect the following virtual fulls to fail
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/virtual-1.out
+run job=$JobName jobid=${INC_2_ID},${INC_3_ID} level=VirtualFull yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/virtual-2.out
+run job=$JobName jobid=${PREV_FULL_ID},${PREV_INCR_ID},${INC_1_ID} level=VirtualFull yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/virtual-3.out
+run job=$JobName jobid=${PREV_FULL_ID},${FULL_ID},${INC_1_ID} level=VirtualFull yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+check_for_zombie_jobs storage=File
+
+expect_grep "Fatal error: Could not create bootstrap file" \
+  "${test_home}/virtual-1.out" \
+  "Job with no files contained did not fail as expected"
+
+expect_grep "JobId ${PREV_INCR_ID} not found in catalog." \
+  "${test_home}/virtual-2.out" \
+  "Consolidating missing jobids did not fail as expected"
+
+expect_grep "Termination:.*Backup Error" \
+  "${test_home}/virtual-3.out" \
+  "Consolidating jobs with pruned files did not fail as expected"
+
+end_test

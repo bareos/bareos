@@ -519,9 +519,6 @@ License: Bareos
      src/lib/bsnprintf.c
        * Copyright Patrick Powell 1995
     .
-     src/bregex.c/h
-       * Copyright (c) 1991 Tatu Ylonen, Espoo, Finland
-    .
      src/lib/sha1.c/h
        Copyright (C) The Internet Society (2001).  All Rights Reserved.
     .
@@ -1322,12 +1319,6 @@ License: BSD-2-clause
     * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
     * SUCH DAMAGE.
     */
-
-
-Files: core/src/lib/bregex.h core/src/lib/bregex.cc
-Copyright: 1991 Tatu Ylonen, Espoo, Finland
-           2006-2010 Free Software Foundation Europe e.V.
-License: permissive and AGPL-3.0-only
 
 
 Files: core/src/lib/bsnprintf.cc

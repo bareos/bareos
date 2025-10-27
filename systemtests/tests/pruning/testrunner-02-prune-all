@@ -1,0 +1,97 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# run multiple jobs and verify that pruning of all volumes works
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${log_home}/backup-pre.out
+@#
+@# now do the same but using the prune all command
+@#
+@#
+
+run job=$regularjob_name Level=Full yes
+run job=$regularjob_name Level=Full yes
+wait
+update volume=TestVolume002 volstatus=Used
+
+run job=$regularjob_name Level=Full yes
+run job=$regularjob_name Level=Full yes
+wait
+update volume=TestVolume003 volstatus=Used
+
+@# wait for retention period
+@sleep 2
+
+@$out ${log_home}/prune.out
+messages
+prune volume all yes
+wait
+
+@$out ${log_home}/backup-post.out
+run job=$regularjob_name Level=Full yes
+wait
+
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_log "${log_home}/backup-pre.out"
+check_log "${log_home}/backup-post.out"
+
+expect_grep "Purging the following 2 JobIds: 4,5" \
+  "${log_home}/prune.out" \
+  "Pruned jobs from volume all pruning not found" \
+  "Purging the"
+
+expect_grep "Volume \"TestVolume002\" contains no jobs after pruning." \
+  "${log_home}/prune.out" \
+  "Volume still contains jobs, or wrong volume pruned." \
+  "Volume.*contains no jobs after pruning."
+
+expect_grep "Purging the following 2 JobIds: 6,7" \
+  "${log_home}/prune.out" \
+  "Pruned jobs from volume all pruning not found" \
+  "Purging the"
+
+expect_grep "Volume \"TestVolume003\" contains no jobs after pruning." \
+  "${log_home}/prune.out" \
+  "Volume still contains jobs, or wrong volume pruned." \
+  "Volume.*contains no jobs after pruning."
+
+end_test

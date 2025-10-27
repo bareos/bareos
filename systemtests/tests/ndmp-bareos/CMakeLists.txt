@@ -55,9 +55,7 @@ if(ndmp_data_agent_address)
       endif()
 
       create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-      set_tests_properties(
-        ${SYSTEMTEST_PREFIX}${BASENAME} PROPERTIES TIMEOUT 400 COST 1.0
-      )
+      add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME})
     else()
       create_systemtest(
         ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT

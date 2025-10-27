@@ -30,11 +30,7 @@
 #include <optional>
 #include <type_traits>
 
-#if defined(HAVE_WIN32)
-#  include "bregex.h"
-#else
-#  include <regex.h>
-#endif
+#include "bregex.h"
 
 #include "lib/ascii_control_characters.h"
 #include "lib/message.h"

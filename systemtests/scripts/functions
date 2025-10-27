@@ -31,12 +31,14 @@ last_jobid_or_zero()
 {
   # return the last jobid if it exists, or 0, so that
   # result + 1 is the next jobid
+  set +o pipefail
   "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<EOD | tail -n3 | head -n1 | cut -d'|' -f2 | xargs
 sqlquery
 SELECT CASE
 WHEN is_called THEN last_value ELSE 0 END
 FROM job_jobid_seq;
 EOD
+  set -o pipefail
 }
 
 wait_for_jobs_to_terminate()
@@ -1383,3 +1385,7 @@ sd_pid=0
 dir_pid=0
 
 trap "{ estat=999; end_test; }" TERM INT
+
+if [ -f functions.local ]; then
+  source functions.local
+fi

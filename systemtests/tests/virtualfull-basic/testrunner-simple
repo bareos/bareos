@@ -1,0 +1,117 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# Create a full and and an incremental, and consolidate them
+#  via a virtualfull.  Afterwards check that the virtualfull
+#  worked via a restore.
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${rscripts}"/functions
+
+start_test
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${test_home}/label.out
+setdebug level=100 storage=File
+label volume=TestVolume001 storage=File pool=Full
+label volume=TestVolume002 storage=File pool=Incremental
+label volume=TestVolume003 storage=File pool=VirtualFull
+@$out ${test_home}/full.out
+run job=$JobName level=Full yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${test_home}/full.out"
+
+touch "${tmp}"/data/*.c
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/incr.out
+list jobs
+run job=$JobName level=Incremental yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${test_home}/incr.out"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${test_home}/virtual.out
+list jobs
+run job=$JobName level=VirtualFull yes
+wait
+messages
+@$out ${test_home}/status.out
+list jobs
+status director
+status client
+status storage=File
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${test_home}/virtual.out"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@# make sure we really restore the virtualfull
+@$out ${test_home}/restore.out
+purge volume=TestVolume001 yes
+purge volume=TestVolume002 yes
+
+restore client=bareos-fd fileset=SelfTest where=${test_home}/bareos-restores select all done
+yes
+wait
+messages
+END_OF_DATA
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${test_home}/restore.out"
+
+check_for_zombie_jobs storage=File
+
+check_restore_diff "${BackupDirectory}" "${test_home}/bareos-restores"
+
+if on_windows_host; then
+  expected_file_count=".."
+else
+  expected_file_count=87
+fi
+
+expect_grep "Consolidating JobIds 1,2 containing ${expected_file_count} files" \
+  "${test_home}/virtual.out" \
+  "Consolidation message was not emitted"
+
+end_test
