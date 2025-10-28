@@ -34,4 +34,4 @@ export TestName
 
 cleanup_isilon
 
-"${rscripts}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/cleanup
