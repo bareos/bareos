@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - dird: fix mark crash [PR #2402]
+- Fix droplet build [PR #2414]
 
 ## [24.0.6] - 2025-10-15
 
@@ -542,4 +543,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2387]: https://github.com/bareos/bareos/pull/2387
 [PR #2397]: https://github.com/bareos/bareos/pull/2397
 [PR #2402]: https://github.com/bareos/bareos/pull/2402
+[PR #2414]: https://github.com/bareos/bareos/pull/2414
 [unreleased]: https://github.com/bareos/bareos/tree/master
