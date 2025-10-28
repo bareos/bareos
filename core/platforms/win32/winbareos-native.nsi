@@ -1174,7 +1174,7 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FD} "Installs the Bareos File Daemon and required Files"
   !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_FD} "Programs belonging to the Bareos File Daemon (client)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FDPLUGINS} "Installs the Bareos File Daemon Plugins"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FDPLUGIN_HYPERV} "Installs the Bareos File Daemon Plugins"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FDPLUGIN_HYPERV} "Installs the Bareos Hyper-V File Daemon Plugin"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_FD} "Opens the needed ports for the File Daemon in the windows firewall"
 
   ; SD
