@@ -22,8 +22,20 @@ include(BareosConfigureFile)
 include(BareosPlugins)
 
 if(Python3_FOUND)
+
   bareos_add_plugin(python3-fd)
+
+  include(GenerateExportHeader)
+  generate_export_header(python3-fd)
+
   target_sources(python3-fd PRIVATE python-fd.cc)
+  target_include_directories(python3-fd PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
+  set_target_properties(
+    python3-fd PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN
+                                                       ON
+  )
+
   install(
     TARGETS python3-fd
     DESTINATION ${plugindir}
