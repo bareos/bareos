@@ -22,14 +22,14 @@
 #shellcheck source=../environment.in
 . ./environment
 
-CONF_ROOT="${BAREOS_CONFIG_DIR}/../"
+CONF_ROOT="$(dirname "${BAREOS_CONFIG_DIR}")/"
 
 for confdir in "${CONF_ROOT}"*; do
   BAREOS_STORAGEDAEMON_BINARY_TO_USE=""
   BAREOS_FILEDAEMON_BINARY_TO_USE=""
   BAREOS_DIRECTOR_BINARY_TO_USE=""
-  dirname="$(basename "${confdir}")"
-  daemonsuffix="${dirname//bareos/}"
+  dir_name="$(basename "${confdir}")"
+  daemonsuffix="${dir_name//bareos/}"
   if [ -d "${confdir}/bareos-sd.d" ]; then
     # create binary with correct name
     if [ -n "${daemonsuffix}" ]; then
@@ -56,5 +56,5 @@ for confdir in "${CONF_ROOT}"*; do
   BAREOS_STORAGEDAEMON_BINARY="${BAREOS_STORAGEDAEMON_BINARY_TO_USE}" \
   BAREOS_FILEDAEMON_BINARY="${BAREOS_FILEDAEMON_BINARY_TO_USE}" \
   BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY_TO_USE}" \
-  BAREOS_CONFIG_DIR="$(pwd)/${confdir}" "${BAREOS_SCRIPTS_DIR}"/bareos "$@"
+  BAREOS_CONFIG_DIR="${confdir}" "${BAREOS_SCRIPTS_DIR}"/bareos "$@"
 done
