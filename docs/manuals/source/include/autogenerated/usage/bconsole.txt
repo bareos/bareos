@@ -1,7 +1,6 @@
-bconsole [OPTIONS]
+Usage: bconsole [OPTIONS]
 
-
-OPTIONS:
+Options:
     -h,-?,--help
         Print this help message and exit. 
 
@@ -22,6 +21,12 @@ OPTIONS:
 
     -l,--list-directors
         List defined Directors. 
+
+    -p,--pam-credentials-filename <path>:FILE
+        PAM Credentials file. 
+
+    -o
+        Force sending pam credentials unencrypted. 
 
     -s,--no-signals
         No signals (for debugging) 

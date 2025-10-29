@@ -1,7 +1,6 @@
-bwild [OPTIONS]
+Usage: bwild [OPTIONS]
 
-
-OPTIONS:
+Options:
     -h,-?,--help
         Print this help message and exit. 
 

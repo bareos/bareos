@@ -1,13 +1,12 @@
-bpluginfo [OPTIONS] plugin_file.so
+Usage: bpluginfo [OPTIONS] plugin_file.so
 
-
-POSITIONALS:
+Positionals:
     plugin_file.so TEXT
         REQUIRED
         Plugin file. 
 
 
-OPTIONS:
+Options:
     -h,-?,--help
         Print this help message and exit. 
 

@@ -1,7 +1,6 @@
-bextract [OPTIONS] [bareos-archive-device-name] [target-directory]
+Usage: bextract [OPTIONS] [bareos-archive-device-name] [target-directory]
 
-
-POSITIONALS:
+Positionals:
     bareos-archive-device-name  
         Specify the input device name (either as name of a Bareos Storage 
         Daemon Device resource or identical to the Archive Device in a Bareos 
@@ -11,7 +10,7 @@ POSITIONALS:
         Specify directory where to store files. 
 
 
-OPTIONS:
+Options:
     -h,-?,--help
         Print this help message and exit. 
 
