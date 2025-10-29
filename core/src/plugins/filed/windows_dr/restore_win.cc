@@ -184,7 +184,7 @@ class OutputHandleGenerator {
   virtual ~OutputHandleGenerator() {}
 };
 
-static inline AsLargeInteger(std::uint64_t x)
+static inline LARGE_INTEGER AsLargeInteger(std::uint64_t x)
 {
   return LARGE_INTEGER{.QuadPart = x};
 }

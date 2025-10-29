@@ -198,8 +198,11 @@ When output to a terminal, the progress will be displayed in a progress bar.)"))
   auto* location = restore->add_option_group(
       "output", "select where the data will be restored to");
 
+  // this is only used to disambiguate an overload
+  bool stdout_unused = false;
   auto* stdout = location->add_flag(
-      "--stdout", "restore the single disk to stdout (for piping purposes)");
+      "--stdout", stdout_unused,
+      "restore the single disk to stdout (for piping purposes)");
 
   std::string directory;
   auto* gendir
@@ -270,9 +273,8 @@ This information may be useful if you need to match up which backed up drive sho
           return GetHandler(logger, restore_directory{directory});
         } else if (*disks) {
           return GetHandler(logger, restore_files{filenames});
-        } else {
-          throw std::logic_error("I dont know where to restore too!");
         }
+        throw std::logic_error("I dont know where to restore too!");
       }();
 
       auto* parser = parse_begin(handler.get(), logger);
