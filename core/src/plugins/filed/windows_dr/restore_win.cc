@@ -184,7 +184,7 @@ class OutputHandleGenerator {
   virtual ~OutputHandleGenerator() {}
 };
 
-static inline AsLargeInteger(uint64_t x)
+static inline AsLargeInteger(std::uint64_t x)
 {
   return LARGE_INTEGER{.QuadPart = x};
 }
@@ -224,11 +224,8 @@ class RawFileGenerator : public OutputHandleGenerator {
       }
 
       if (!SetFilePointerEx(output, {}, NULL, FILE_BEGIN)) {
-        throw std::runtime_error
-        {
-          libbareos::format(
-              "could not reset file pointer after enlarging the file")
-        }
+        throw std::runtime_error{libbareos::format(
+            "could not reset file pointer after enlarging the file")};
       }
     } else {
       log->Info(
