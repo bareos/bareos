@@ -51,8 +51,7 @@ define CONFIGURE_COMMON
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Drpath=no \
   -DVERSION_STRING=$(BAREOS_VERSION) \
-  -DCPM_indicators_SOURCE=$(WORK_DIR)/../deps/indicators \
-  -DCPM_CLI11_SOURCE=$(WORK_DIR)/../deps/cli11
+  -DCPM_indicators_SOURCE=$(WORK_DIR)/../deps/indicators
 endef
 
 
