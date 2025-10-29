@@ -83,6 +83,10 @@ if(ENABLE_GRPC)
     grpc-proto "proto/plugin.proto" "proto/events.proto" "proto/bareos.proto"
     "proto/common.proto"
   )
+  set_target_properties(
+    grpc-proto PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN
+                                                       ON
+  )
   target_link_libraries(grpc-proto PUBLIC protobuf::libprotobuf)
 
   bareos_add_plugin(grpc-fd)

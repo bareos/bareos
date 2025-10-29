@@ -35,6 +35,8 @@
 #endif
 #include "include/version_hex.h"
 
+#include "python3-fd_export.h"
+
 #define PLUGIN_DAEMON "fd"
 
 #define PLUGIN_NAME "python3"
@@ -964,7 +966,7 @@ PluginFunctions pluginFuncs
 extern "C" {
 
 // Plugin called here when it is first loaded
-BAREOS_EXPORT bRC
+PYTHON3_FD_EXPORT bRC
 loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
            CoreFunctions* lbareos_core_functions,
            PluginInformation** plugin_information,
@@ -1014,7 +1016,7 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
  * Plugin called here when it is unloaded, normally when Bareos is going to
  * exit.
  */
-BAREOS_EXPORT
+PYTHON3_FD_EXPORT
 bRC unloadPlugin()
 {
   /* Terminate Python if it was initialized correctly */
