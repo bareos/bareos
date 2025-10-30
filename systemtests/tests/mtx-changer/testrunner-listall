@@ -1,4 +1,22 @@
 #!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
 set -e
 set -u
 set -o pipefail
@@ -11,11 +29,12 @@ MTX_RETURNCODE=0
 MTX_MOCK_FILE=mtx-status-empty.txt
 export MTX MTX_RETURNCODE MTX_MOCK_FILE
 
-test_mtx_changer() {
+test_mtx_changer()
+{
   echo "Testing mtx-changer with profile $1"
   MTX_MOCK_FILE="mtx-status-$1.txt"
-  "${rscripts}/mtx-changer" /dev/sg0 listall > "$tmp/listall-$1.out"
-  diff -u "listall-$1.expected" "$tmp/listall-$1.out" | cat -vet
+  "${BAREOS_SCRIPTS_DIR}/mtx-changer" /dev/sg0 listall >"${tmp}/listall-$1.out"
+  diff -u "listall-$1.expected" "${tmp}/listall-$1.out" | cat -vet
 }
 
 test_mtx_changer empty

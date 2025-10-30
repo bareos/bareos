@@ -1,4 +1,22 @@
 #!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
 #
 # A set of useful functions to be sourced in each test
 #
@@ -7,8 +25,8 @@
 # Source the generic functions.
 #
 
-# shellcheck source=../../core/scripts/bareos-ctl-funcs
-. "${rscripts}/bareos-ctl-funcs"
+# shellcheck source=bareos-ctl-funcs
+. "${BAREOS_SCRIPTS_DIR}/bareos-ctl-funcs"
 
 # remove the colon from a windows path
 # required to determine the restore path as the colon is omitted if restored to
@@ -21,9 +39,9 @@ remove_colon_from_windows_path()
 generate_test_data()
 {
   subdir=$1
-  mkdir -p "$tmp/$subdir"
+  mkdir -p "${tmp}/$subdir"
   for i in 1 2 3 4 5 6 7 8 9 10; do
-    "${BAREOS_GENTESTDATA_BINARY}" --size=1048576 >"$tmp/$subdir/testfile$i.bin"
+    "${BAREOS_GENTESTDATA_BINARY}" --size=1048576 >"${tmp}/$subdir/testfile$i.bin"
   done
 }
 
@@ -32,7 +50,7 @@ last_jobid_or_zero()
   # return the last jobid if it exists, or 0, so that
   # result + 1 is the next jobid
   set +o pipefail
-  "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<EOD | tail -n3 | head -n1 | cut -d'|' -f2 | xargs
+  "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<EOD | tail -n3 | head -n1 | cut -d'|' -f2 | xargs
 sqlquery
 SELECT CASE
 WHEN is_called THEN last_value ELSE 0 END
@@ -47,7 +65,7 @@ wait_for_jobs_to_terminate()
   max_wait_in_seconds=$2
   start_time=$SECONDS
   while ((SECONDS - start_time <= max_wait_in_seconds)); do
-    if "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<<"status ${status_of_what}" | grep "No Jobs running."; then
+    if "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<<"status ${status_of_what}" | grep "No Jobs running."; then
       break
     fi
     sleep 1
@@ -69,13 +87,13 @@ copy_configs()
       fi
     done
     if [ "$FOUND" ]; then
-      /bin/cp "${FOUND}" "${conf}"
+      /bin/cp "${FOUND}" "${BAREOS_CONFIG_DIR}"
     else
       # copy all config files from subdirectories,
       # start with the most generic.
       for directory in $CONFIGDIRS; do
         if [ -d "${rconfigs}/${directory}/${component}.d" ]; then
-          /bin/cp -r "${rconfigs}/${directory}/${component}.d" "${conf}"
+          /bin/cp -r "${rconfigs}/${directory}/${component}.d" "${BAREOS_CONFIG_DIR}"
         fi
       done
     fi
@@ -84,14 +102,14 @@ copy_configs()
   # copy certificates
   for directory in $CONFIGDIRS; do
     if [ -d "${rconfigs}/${directory}/tls/" ]; then
-      /bin/cp -r "${rconfigs}/${directory}/tls" "${conf}"
+      /bin/cp -r "${rconfigs}/${directory}/tls" "${BAREOS_CONFIG_DIR}"
     fi
   done
 }
 
 check_encoding()
 {
-  if "${BAREOS_DIRECTOR_BINARY}" -d50 -t -c "${conf}" 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null; then
+  if "${BAREOS_DIRECTOR_BINARY}" -d50 -t -c "${BAREOS_CONFIG_DIR}" 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null; then
     echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
     exit 1
   fi
@@ -100,9 +118,9 @@ check_encoding()
 cleanup()
 {
   if has_tape_drive; then
-    "${rscripts}/cleanup-tape"
+    "${BAREOS_SCRIPTS_DIR}/cleanup-tape"
   else
-    "${rscripts}/cleanup"
+    "${BAREOS_SCRIPTS_DIR}/cleanup"
   fi
 }
 
@@ -161,7 +179,7 @@ setup_data()
   fi
 
   [ -d "$data_dir" ] || mkdir "$data_dir"
-  echo "$data_dir" >"$tmp/file-list"
+  echo "$data_dir" >"${tmp}/file-list"
 
   for tarfile in "../../data/small.tgz" "../../data/weird-files.tar.gz"; do
     if [ ! -f "$tarfile" ]; then
@@ -245,8 +263,8 @@ start_test()
   STARTDATE="$(date +%R:%S)"
   echo " "
   echo " "
-  echo "=== $TestName: starting at $STARTDATE ==="
-  echo "=== $TestName: starting at $STARTDATE ===" >>"${working}/log"
+  echo "=== ${TestName}: starting at $STARTDATE ==="
+  echo "=== ${TestName}: starting at $STARTDATE ===" >>"${working}/log"
   echo "="
   echo "="
   export TestName
@@ -269,8 +287,8 @@ require_root()
   if [ "$(id -u)" != 0 ]; then
     echo " "
     echo "You must be root to run this test."
-    echo "  ===== !!!! $TestName not run at $(date +%R:%S) ==="
-    echo "  ===== !!!! $TestName not run at $(date +%R:%S) !!!! ===== " >>test.out
+    echo "  ===== !!!! ${TestName} not run at $(date +%R:%S) ==="
+    echo "  ===== !!!! ${TestName} not run at $(date +%R:%S) !!!! ===== " >>test.out
     echo " "
     exit 1
   fi
@@ -285,7 +303,7 @@ has_tape_drive()
 require_tape_drive()
 {
   if ! has_tape_drive; then
-    echo "This test $TestName needs a tape drive, but has none."
+    echo "This test ${TestName} needs a tape drive, but has none."
     exit 1
   fi
 }
@@ -293,7 +311,7 @@ require_tape_drive()
 require_second_drive()
 {
   if [ "${TAPE_DRIVE1}" = "/dev/null" ]; then
-    echo "This test $TestName has a Job $JobName which needs a second drive, but has none."
+    echo "This test ${TestName} has a Job $JobName which needs a second drive, but has none."
     exit 1
   fi
 }
@@ -301,7 +319,7 @@ require_second_drive()
 require_autochanger()
 {
   if [ "${AUTOCHANGER}" = "/dev/null" ]; then
-    echo "This test $TestName needs an autochanger, but has none."
+    echo "This test ${TestName} needs an autochanger, but has none."
     exit 1
   fi
 }
@@ -309,7 +327,7 @@ require_autochanger()
 require_linux()
 {
   if [ "$(uname)" != 'Linux' ]; then
-    echo "This test $TestName runs only on Linux"
+    echo "This test ${TestName} runs only on Linux"
     exit 1
   fi
 }
@@ -317,7 +335,7 @@ require_linux()
 skip_if_no_autochanger()
 {
   if [ "${AUTOCHANGER}" = "/dev/null" ]; then
-    echo "$TestName test skipped. No autochanger."
+    echo "${TestName} test skipped. No autochanger."
     exit 1
   fi
 }
@@ -341,7 +359,7 @@ set_debug()
 print_debug()
 {
   if echo "$*" | grep -q ERROR >/dev/null; then
-    echo "$*" >>"$tmp/err.log"
+    echo "$*" >>"${tmp}/err.log"
   fi
   if is_debug; then
     echo "$*" >&2
@@ -384,7 +402,7 @@ log_stdin()
 set_error()
 {
   estat=9
-  echo "ERROR: $*" >>"$tmp/err.log"
+  echo "ERROR: $*" >>"${tmp}/err.log"
   echo "ERROR: $*"
 }
 
@@ -434,9 +452,10 @@ bls_files_verbose()
 {
   local STORAGE=${1}
   local VOLUME=${2}
+  local LOCAL_CONF=${3:-${BAREOS_CONFIG_DIR}}
   # JobId is not yet evaluated
 
-  "${BAREOS_BLS_BINARY}" -V "${VOLUME}" -c "${conf}" -v "${STORAGE}"
+  "${BAREOS_BLS_BINARY}" -V "${VOLUME}" -c "${LOCAL_CONF}" -v "${STORAGE}"
   return $?
 }
 
@@ -445,11 +464,13 @@ is_file_compressed()
   local STORAGE=${1}
   local VOLUME=${2}
   local FILENAME=${3}
+  local LOCAL_CONF=${4:-${BAREOS_CONFIG_DIR}}
 
-  print_debug "Is ${FILENAME} compressed on ${STORAGE}->${VOLUME} ?"
-  if OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" | grep -A1 "${FILENAME}" | grep -i "COMPRESSED"); then
+  print_debug "Is ${FILENAME} compressed on ${STORAGE}->${VOLUME} (${LOCAL_CONF})?"
+  if OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" "${LOCAL_CONF}" | grep -A1 "${FILENAME}" | grep -i "COMPRESSED"); then
     return 0
   else
+    print_debug ${OUT}
     return 1
   fi
 }
@@ -522,17 +543,17 @@ check_duration_lt()
 
 start_dir()
 {
-  ${rscripts}/bareos-ctl-dir start
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir start
 }
 
 start_fd()
 {
-  ${BAREOS_CTL_FD_RUNNER:-} ${rscripts}/bareos-ctl-fd start
+  ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd start
 }
 
 start_sd()
 {
-  ${rscripts}/bareos-ctl-sd start
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd start
 }
 
 start_bareos()
@@ -546,7 +567,7 @@ start_bareos()
   start_fd
 
   # check daemons
-  DAEMON_STATUS_OUT="$("${rscripts}/bareos" status)"
+  DAEMON_STATUS_OUT="$("bin/bareos" status)"
   DAEMON_STATUS=$?
   print_debug "$DAEMON_STATUS_OUT"
 
@@ -567,7 +588,7 @@ traceback()
   name="$(basename "$1")"
   pid=$(pidof "$name")
   if [ "$pid" != "" ]; then
-    "${rscripts}/btraceback" "$1" "$pid" "${BAREOS_WORKING_DIR}"
+    "${BAREOS_SCRIPTS_DIR}/btraceback" "$1" "$pid" "${BAREOS_WORKING_DIR}"
   fi
 }
 
@@ -577,20 +598,20 @@ run_bconsole()
   local error_code=0
   local timeout=${BCONSOLE_TIMEOUT:-180s}
   if [ -f "$bconsole_file" ]; then
-    check_config bconsole ${BAREOS_BCONSOLE_BINARY} -c ${conf} || exit $?
+    check_config bconsole ${BAREOS_BCONSOLE_BINARY} -c ${BAREOS_CONFIG_DIR} || exit $?
     # 'cmd || ec=$?' is used to prevent "set -e" from killing the script
     # before we had the chance to kill the daemons (in case of timeout)
     if test "$debug" -eq 1; then
-      timeout "${timeout}" "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <"$bconsole_file" || error_code=$?
+      timeout "${timeout}" "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <"$bconsole_file" || error_code=$?
     else
-      timeout "${timeout}" "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <"$bconsole_file" 2>&1 >/dev/null || error_code=$?
+      timeout "${timeout}" "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <"$bconsole_file" 2>&1 >/dev/null || error_code=$?
     fi
   fi
   if ((error_code == 124)); then
     echo "+----------------------------------------+" >&2
     echo "| bconsole timed out, getting tracebacks |" >&2
     echo "+----------------------------------------+" >&2
-    timeout 10s "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<<"messages" || :
+    timeout 10s "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<<"messages" || :
     traceback "${BAREOS_FILEDAEMON_BINARY}" || :
     traceback "${BAREOS_STORAGEDAEMON_BINARY}" || :
     traceback "${BAREOS_DIRECTOR_BINARY}" || :
@@ -601,9 +622,9 @@ run_bconsole()
 run_btape()
 {
   if test "$debug" -eq 1; then
-    "${bin}/btape" -c "${conf}" tape <"${tmp}/bconcmds" | tee "${tmp}/btape.out"
+    "${bin}/btape" -c "${BAREOS_CONFIG_DIR}" tape <"${tmp}/bconcmds" | tee "${tmp}/btape.out"
   else
-    "${bin}/btape" -c "${conf}" tape <"${tmp}/bconcmds" >"${tmp}/btape.out" 2>&1
+    "${bin}/btape" -c "${BAREOS_CONFIG_DIR}" tape <"${tmp}/bconcmds" >"${tmp}/btape.out" 2>&1
   fi
 }
 
@@ -611,9 +632,9 @@ run_bscan()
 {
   print_debug "bscanning with ${BAREOS_BSCAN_BINARY}"
   if test "$debug" -eq 1; then
-    "${BAREOS_BSCAN_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bscan.out"
+    "${BAREOS_BSCAN_BINARY}" -c "${BAREOS_CONFIG_DIR}" "$@" </dev/null | tee "${tmp}/bscan.out"
   else
-    "${BAREOS_BSCAN_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bscan.out"
+    "${BAREOS_BSCAN_BINARY}" -c "${BAREOS_CONFIG_DIR}" "$@" </dev/null 2>&1 >"${tmp}/bscan.out"
   fi
 }
 
@@ -621,9 +642,9 @@ run_bls()
 {
   print_debug "bls with ${BAREOS_BLS_BINARY}"
   if test "$debug" -eq 1; then
-    "${BAREOS_BLS_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bls.out"
+    "${BAREOS_BLS_BINARY}" -c "${BAREOS_CONFIG_DIR}" "$@" </dev/null | tee "${tmp}/bls.out"
   else
-    "${BAREOS_BLS_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bls.out"
+    "${BAREOS_BLS_BINARY}" -c "${BAREOS_CONFIG_DIR}" "$@" </dev/null 2>&1 >"${tmp}/bls.out"
   fi
 }
 
@@ -631,9 +652,9 @@ run_bextract()
 {
   print_debug "bextract with ${BAREOS_BEXTRACT_BINARY}"
   if test "$debug" -eq 1; then
-    "${BAREOS_BEXTRACT_BINARY}" -c "${conf}" "$@" </dev/null | tee "${tmp}/bextract.out"
+    "${BAREOS_BEXTRACT_BINARY}" -c "${BAREOS_CONFIG_DIR}" "$@" </dev/null | tee "${tmp}/bextract.out"
   else
-    "${BAREOS_BEXTRACT_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bextract.out"
+    "${BAREOS_BEXTRACT_BINARY}" -c "${BAREOS_CONFIG_DIR}" "$@" </dev/null 2>&1 >"${tmp}/bextract.out"
   fi
 }
 
@@ -663,9 +684,9 @@ run_bcopy()
 {
   print_debug "bcopying with ${BAREOS_BCOPY_BINARY}"
   if test "$debug" -eq 1; then
-    "${BAREOS_BCOPY_BINARY}" -c "${conf}" -d 500 "$@" </dev/null | tee "${tmp}/bcopy.out"
+    "${BAREOS_BCOPY_BINARY}" -c "${BAREOS_CONFIG_DIR}" -d 500 "$@" </dev/null | tee "${tmp}/bcopy.out"
   else
-    "${BAREOS_BCOPY_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bcopy.out"
+    "${BAREOS_BCOPY_BINARY}" -c "${BAREOS_CONFIG_DIR}" "$@" </dev/null 2>&1 >"${tmp}/bcopy.out"
   fi
 }
 
@@ -673,9 +694,9 @@ run_bdedupestimate()
 {
   print_debug "bestimating with ${BAREOS_BDEDUPESTIMATE_BINARY}"
   if test "$debug" -eq 1; then
-    "${BAREOS_BDEDUPESTIMATE_BINARY}" -c "${conf}" -d 500 "$@" </dev/null | tee "${tmp}/bdedupestimate.out"
+    "${BAREOS_BDEDUPESTIMATE_BINARY}" -c "${BAREOS_CONFIG_DIR}" -d 500 "$@" </dev/null | tee "${tmp}/bdedupestimate.out"
   else
-    "${BAREOS_BDEDUPESTIMATE_BINARY}" -c "${conf}" "$@" </dev/null 2>&1 >"${tmp}/bdedupestimate.out"
+    "${BAREOS_BDEDUPESTIMATE_BINARY}" -c "${BAREOS_CONFIG_DIR}" "$@" </dev/null 2>&1 >"${tmp}/bdedupestimate.out"
   fi
 }
 
@@ -737,9 +758,9 @@ waitpid()
 
 stop_bareos()
 {
-  ${rscripts}/bareos-ctl-dir stop
-  ${rscripts}/bareos-ctl-fd stop
-  ${rscripts}/bareos-ctl-sd stop
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir stop
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd stop
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd stop
 }
 
 run_python_unittests()
@@ -816,7 +837,7 @@ get_file_size()
 
 check_for_zombie_jobs()
 {
-  "${rscripts}/check_for_zombie_jobs" "$@"
+  "${BAREOS_SCRIPTS_DIR}/check_for_zombie_jobs" "$@"
 }
 
 change_jobname()
@@ -828,10 +849,10 @@ change_jobname()
     oldname=$1
     newname=$2
   fi
-  rm -f "$tmp/1" "$tmp/2"
-  mv "${conf}/bareos-dir.conf" "$tmp/1"
-  echo "s%${oldname}%${newname}%g" >"$tmp/2"
-  sed -f "$tmp/2" "$tmp/1" >"$conf/bareos-dir.conf"
+  rm -f "${tmp}/1" "${tmp}/2"
+  mv "${BAREOS_CONFIG_DIR}/bareos-dir.conf" "${tmp}/1"
+  echo "s%${oldname}%${newname}%g" >"${tmp}/2"
+  sed -f "${tmp}/2" "${tmp}/1" >"${BAREOS_CONFIG_DIR}/bareos-dir.conf"
   #  echo "Job ${oldname} changed to ${newname}"
 }
 
@@ -843,31 +864,31 @@ check_two_logs()
   default_restore_log="${tmp}/log2.out"
   restore_log=${2:-${default_restore_log}}
 
-  if grep "^  Termination: *Backup OK" "$backup_log" >/dev/null 2>&1; then
+  if grep "^  Termination: *Backup OK" "${backup_log}" >/dev/null 2>&1; then
     bstat=${bstat:-$?}
   fi
 
-  if grep "^  Termination: .*Backup Error" "$backup_log" >/dev/null 2>&1; then
+  if grep "^  Termination: .*Backup Error" "${backup_log}" >/dev/null 2>&1; then
     echo "Backup error!"
     bstat=2
   fi
 
-  if grep "^  Termination: *Restore OK" "$restore_log" >/dev/null 2>&1; then
+  if grep "^  Termination: *Restore OK" "${restore_log}" >/dev/null 2>&1; then
     rstat=${rstat:-$?}
   fi
 
-  if grep "^  Termination: .*Restore Error" "$restore_log" >/dev/null 2>&1; then
+  if grep "^  Termination: .*Restore Error" "${restore_log}" >/dev/null 2>&1; then
     echo "Restore error!"
     rstat=2
   fi
-  if grep ".* Warning: File count mismatch" "$restore_log" >/dev/null 2>&1; then
+  if grep ".* Warning: File count mismatch" "${restore_log}" >/dev/null 2>&1; then
     echo "File count mismatch in restore!"
     rstat=3
   fi
-  if grep "^  Termination: .*Verify Differences" "$restore_log" >/dev/null 2>&1; then
+  if grep "^  Termination: .*Verify Differences" "${restore_log}" >/dev/null 2>&1; then
     rstat=4
   fi
-  if grep "Encoding error for database" "$backup_log" >/dev/null; then
+  if grep "Encoding error for database" "${backup_log}" >/dev/null; then
     print_debug "Found database encoding error"
     bstat=2
   fi
@@ -916,7 +937,7 @@ check_log()
 
 bareos_diff()
 {
-  "${PERL}" "$rscripts/diff.pl" "$@"
+  "${PERL}" "${BAREOS_SCRIPTS_DIR}/diff.pl" "$@"
 }
 
 check_recursive_diff_of_dirs()
@@ -934,7 +955,7 @@ check_restore_diff()
   restoredirectory=${2:-${RestoreDirectory}}
   result=0
 
-  restorepath="$restoredirectory/${dest}"
+  restorepath="${restoredirectory}/${dest}"
   restorepath=$(remove_colon_from_windows_path "$restorepath")
   if ! bareos_diff -d "${restorepath}" -s "${dest}"; then
     dstat=1
@@ -953,10 +974,10 @@ check_restore_diff()
   fi
 
   if [ "$result" -ne 0 ] && [ "${dstat:-0}" -eq 0 ]; then
-    dstat="$result"
+    dstat="${result}"
   fi
 
-  return "$result"
+  return "${result}"
 }
 
 check_restore_only_files_diff()
@@ -1002,15 +1023,15 @@ check_restore_files_diff()
   # remove all files given as parameter from the list
   for i in "$@"; do
     if on_windows_host; then
-      file=$(remove_colon_from_windows_path "/$i")
+      file=$(remove_colon_from_windows_path "/${i}")
     else
-      file="$i"
+      file="${i}"
     fi
-    RESTORED_FILES="$(printf "%s" "$RESTORED_FILES" | grep -Fv "${file}")" || true
+    RESTORED_FILES="$(printf "%s" "${RESTORED_FILES}" | grep -Fv "${file}")" || true
   done
-  if [ "$RESTORED_FILES" ]; then
+  if [ "${RESTORED_FILES}" ]; then
     print_debug "given files: $*"
-    print_debug "additional restored files: $RESTORED_FILES"
+    print_debug "additional restored files: ${RESTORED_FILES}"
     echo "$*"
     echo "${RESTORED_FILES}"
     set_error "More files then given as parameter have been restored."
@@ -1054,37 +1075,37 @@ end_test()
   # Remove exit trap (set in start_test)
   trap '' EXIT
   notracedump="${notracedump:-no}"
-  if [ "$notracedump" != "yes" ]; then
+  if [ "${notracedump}" != "yes" ]; then
     cat "${working}"/bareos.*.traceback 2>/dev/null || :
     cp -f "${working}"/bareos.*.traceback "${dumps}" 2>/dev/null || :
     cat "${working}"/*.bactrace 2>/dev/null || :
     cp -f "${working}"/*.bactrace "${dumps}" 2>/dev/null || :
   fi
-  if [ -f "$tmp/err.log" ]; then
-    cat "$tmp/err.log"
+  if [ -f "${tmp}/err.log" ]; then
+    cat "${tmp}/err.log"
   fi
   ENDDATE="$(date +%R:%S)"
 
   # Stop the Bareos daemons only
   # if a single test is defined.
   if [[ "$0" == *testrunner ]]; then
-    "${rscripts}/bareos" stop
+    "bin/bareos" stop
   fi
 
   if [ "$estat" != "0" ]; then
     echo " "
-    echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! "
+    echo "  !!!!! ${TestName} failed!!! ${ENDDATE} !!!!! "
     echo "   Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
-    echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! " >>test.out
+    echo "  !!!!! ${TestName} failed!!! ${ENDDATE} !!!!! " >>test.out
     echo "   Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
     echo " "
     exit 1
   fi
   if [ "$zstat" != "0" ]; then
     echo " "
-    echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! "
+    echo "  !!!!! ${TestName} failed!!! ${ENDDATE} !!!!! "
     echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
-    echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! " >>test.out
+    echo "  !!!!! ${TestName} failed!!! ${ENDDATE} !!!!! " >>test.out
     echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
     echo " "
     exit 1
@@ -1092,9 +1113,9 @@ end_test()
   if [ "$dstat" != "0" ] || [ "$bstat" != "0" ] || [ "$rstat" != "0" ]; then
     echo " "
     echo " "
-    echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! "
+    echo "  !!!!! ${TestName} failed!!! ${ENDDATE} !!!!! "
     echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
-    echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! " >>test.out
+    echo "  !!!!! ${TestName} failed!!! ${ENDDATE} !!!!! " >>test.out
     echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
     if [ $bstat -ne 0 ] || [ $rstat -ne 0 ]; then
       echo "  !!!!! Bad termination status       !!!!! "
@@ -1110,39 +1131,39 @@ end_test()
   else
     echo "="
     echo "="
-    echo "=== $TestName: OK at $ENDDATE === "
-    echo "=== $TestName: OK at $ENDDATE === " >>test.out
+    echo "=== ${TestName}: OK at ${ENDDATE} === "
+    echo "=== ${TestName}: OK at ${ENDDATE} === " >>test.out
     #if ! is_debug; then
-    #   ${rscripts}/cleanup
+    #   ${BAREOS_SCRIPTS_DIR}/cleanup
     #fi
   fi
 }
 
 copy_tape_confs()
 {
-  "${rscripts}/cleanup-tape"
-  "${rscripts}/copy-tape-confs"
+  "${BAREOS_SCRIPTS_DIR}/cleanup-tape"
+  "${BAREOS_SCRIPTS_DIR}/copy-tape-confs"
 }
 
 copy_test_confs()
 {
-  "${rscripts}/cleanup"
-  "${rscripts}/copy-test-confs"
+  "${BAREOS_SCRIPTS_DIR}/cleanup"
+  "${BAREOS_SCRIPTS_DIR}/copy-test-confs"
 }
 
 disable_plugins()
 {
-  for i in ${conf}/bareos-fd.conf; do
-    sed 's/Plugin/#Plugin/' "$i" >"$tmp/1"
-    cp -f "$tmp/1" "$i"
+  for i in ${BAREOS_CONFIG_DIR}/bareos-fd.conf; do
+    sed 's/Plugin/#Plugin/' "$i" >"${tmp}/1"
+    cp -f "${tmp}/1" "$i"
   done
 }
 
 update_win32()
 {
-  if [ -d "$cwd/build/src/win32/release32" ] \
-    && [ -d "$cwd/build/src/win32/release64" ] \
-    || [ -d "$cwd/release32" ] && [ -d "$cwd/release64" ]; then
+  if [ -d "${cwd}/build/src/win32/release32" ] \
+    && [ -d "${cwd}/build/src/win32/release64" ] \
+    || [ -d "${cwd}/release32" ] && [ -d "${cwd}/release64" ]; then
     echo -ne "Try to upgrade the FileDaemon:\t"
     wget -qO - "$WIN32_ADDR:8091/install"
   fi
@@ -1171,10 +1192,10 @@ rewind_drive()
 load_slot1()
 {
   # Get a tape from slot1
-  slot="$("${scripts}/$MTX" "${AUTOCHANGER}" loaded 0 "${TAPE_DRIVE}" "$DRIVE1")"
+  slot="$("${BAREOS_SCRIPTS_DIR}/$MTX" "${AUTOCHANGER}" loaded 0 "${TAPE_DRIVE}" "$DRIVE1")"
   case $slot in
     0)
-      "${scripts}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
       slot="$SLOT1"
       ;;
     "$SLOT1")
@@ -1182,8 +1203,8 @@ load_slot1()
       ;;
     *)
       rewind_drive "${TAPE_DRIVE}"
-      "${scripts}/$MTX" "${AUTOCHANGER}" unload "$slot" "${TAPE_DRIVE}" "$DRIVE1"
-      "${scripts}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/$MTX" "${AUTOCHANGER}" unload "$slot" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/$MTX" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
       slot="$SLOT1"
       ;;
   esac
@@ -1198,17 +1219,17 @@ load_other_slot()
   rewind_drive "${TAPE_DRIVE}"
   case $1 in
     0)
-      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
       slot=1
       ;;
     $SLOT1)
-      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
-      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT2" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT2" "${TAPE_DRIVE}" "$DRIVE1"
       slot=2
       ;;
     $SLOT2)
-      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
-      "${scripts}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" unload "$1" "${TAPE_DRIVE}" "$DRIVE1"
+      "${BAREOS_SCRIPTS_DIR}/${AUTOCHANGER_SCRIPT}" "${AUTOCHANGER}" load "$SLOT1" "${TAPE_DRIVE}" "$DRIVE1"
       slot=1
       ;;
     *)
@@ -1309,49 +1330,39 @@ cwd="$(pwd)"
 db_name="${db_name:-"regress"}"
 db_user="${db_user:-"regress"}"
 db_password="${db_password:-""}"
-working="${working:-"$cwd/working"}"
-dumps="${dumps:-"$cwd/dumps"}"
-bin="${bin:-"$cwd/bin"}"
-tmp="${tmp:-"$cwd/tmp"}"
-
-# Bareos scripts
-scripts="${scripts:-"$cwd/bin"}"
+working="${working:-"${cwd}/working"}"
+dumps="${dumps:-"${cwd}/dumps"}"
+bin="${bin:-"${cwd}/bin"}"
+tmp="${tmp:-"${cwd}/tmp"}"
 
 # Bareos Plugin Directory
-plugindir="${plugindir:-"$cwd/bin/plugins"}"
+plugindir="${plugindir:-"${cwd}/bin/plugins"}"
 # some tests (BASE) load only the plugins copied to plugindirtmp,
 # to avoid that all plugins get loaded.
 plugindirtmp="${plugindirtmp:-"$working/plugins"}"
 
 # Bareos conf files
-conf=${conf:-"$cwd/bin"}
-confdir="$conf"
-configs="$conf"
-BAREOS_CONFIG_DIR="$conf"
+BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR:-"${cwd}/bin"}"
 
 # Regress scripts
-rscripts=${rscripts:-"$cwd/scripts"}
+BAREOS_SCRIPTS_DIR=${BAREOS_SCRIPTS_DIR:-"${cwd}/scripts"}
 
 # Regress configs
-rconfigs=${rconfigs:-"$cwd/configs"}
+rconfigs=${rconfigs:-"${cwd}/configs"}
 
 # Bareos source directory when copied here
 #  also build directory
-src=${src:-"$cwd/build"}
+src=${src:-"${cwd}/build"}
 
 # Temp source directory so we don't mess up $src
-tmpsrc=${tmpsrc:-"$cwd/tmp/build"}
+tmpsrc=${tmpsrc:-"${cwd}/tmp/build"}
 
 export BAREOS_CONFIG_DIR
 export bin
-export conf
-export confdir
-export configs
 export dumps
 export plugindir
 export plugindirtmp
-export rscripts
-export scripts
+export BAREOS_SCRIPTS_DIR
 export src
 export tmp
 export tmpsrc
@@ -1364,8 +1375,8 @@ export BAREOS_DIR_PORT=$dirport
 export BAREOS_FD_PORT=$fdport
 export BAREOS_SD_PORT=$sdport
 
-export PERLLIB="$cwd"
-export PERL5LIB="$cwd"
+export PERLLIB="${cwd}"
+export PERL5LIB="${cwd}"
 
 mkdir -p "${working}"
 mkdir -p "${tmp}"

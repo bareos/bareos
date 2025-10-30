@@ -10,9 +10,9 @@ export TestName
 
 JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 exit_failure()
 {
@@ -24,5 +24,6 @@ start_test
 
 pushd "${BAREOS_UNITTESTS_BINARY_DIR}" >/dev/null
 "${CATALOG_TEST_PROGRAM}" || exit_failure
+popd 
 
 end_test

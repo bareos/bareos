@@ -32,6 +32,6 @@ JobName=backup-s3-fd
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
-$"${rscripts}"/stop_minio.sh "$TestName"
+$"${BAREOS_SCRIPTS_DIR}"/stop_minio.sh "$TestName"

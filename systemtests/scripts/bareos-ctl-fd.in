@@ -12,32 +12,21 @@ export AWK="@AWK@"
 export PIDOF="@PIDOF@"
 export PGREP="@PGREP@"
 
-SUBSYSDIR=@subsysdir@
 BAREOS_FILEDAEMON_BINARY=${BAREOS_FILEDAEMON_BINARY:-@sbindir@/bareos-fd}
 export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
 BAREOS_FD_PORT=${BAREOS_FD_PORT:-@fd_port@}
-BAREOS_FD_USER=${BAREOS_FD_USER-@fd_user@}
-BAREOS_FD_GROUP=${BAREOS_FD_GROUP-@fd_group@}
-BAREOS_SCRIPT_DIR=${BAREOS_SCRIPT_DIR:-@scriptdir@}
+BAREOS_SCRIPTS_DIR=${BAREOS_SCRIPTS_DIR:-@scriptdir@}
 
 #
 # Source the generic functions.
 #
-. "${BAREOS_SCRIPT_DIR}/bareos-ctl-funcs"
+. "${BAREOS_SCRIPTS_DIR}/bareos-ctl-funcs"
 
 case "$1" in
   start)
     if [ -x ${BAREOS_FILEDAEMON_BINARY} ]; then
       echo "Starting the Bareos File daemon as $(whoami)"
       OPTIONS=''
-      if [ "${BAREOS_FD_USER}" != '' ]; then
-        OPTIONS="${OPTIONS} -u ${BAREOS_FD_USER}"
-      fi
-
-      if [ "${BAREOS_FD_GROUP}" != '' ]; then
-        OPTIONS="${OPTIONS} -g ${BAREOS_FD_GROUP}"
-      fi
-
       if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
         OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
       fi

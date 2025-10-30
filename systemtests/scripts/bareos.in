@@ -1,0 +1,59 @@
+#! /bin/sh
+#
+# bareos       This shell script takes care of starting and stopping
+#	       the bareos daemons.
+#
+# description: Backup Archiving REcovery Open Sourced.
+#
+#
+export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_SCRIPTS_DIR=${BAREOS_SCRIPTS_DIR:-@scriptdir@}
+#
+# Disable Glibc malloc checks, it doesn't help and it keeps from getting
+#   good dumps
+MALLOC_CHECK_=0
+export MALLOC_CHECK_
+
+case "$1" in
+  start)
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd $1 $2
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd ] && ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd $1 $2
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir $1 $2
+    ;;
+
+  stop)
+    # Stop the FD first so that SD will fail jobs and update catalog
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd ] && ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd $1 $2
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd $1 $2
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir $1 $2
+    ;;
+
+  restart)
+    $0 stop
+    sleep 2
+    $0 start
+    ;;
+
+  status)
+    if [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir ] && [ -n "${BAREOS_DIRECTOR_BINARY}" ]; then
+      ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir status
+      status_dir=$?
+    fi
+    if [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd ] && [ -n "${BAREOS_STORAGEDAEMON_BINARY}" ]; then
+      ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd status
+      status_sd=$?
+    fi
+    if [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd ] && [ -n "${BAREOS_FILEDAEMON_BINARY}" ]; then
+      ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd status
+      status_fd=$?
+    fi
+    status_all=$(expr ${status_dir:-0} + ${status_sd:-0} + ${status_fd:-0})
+    exit ${status_all}
+    ;;
+
+  *)
+    echo "Usage: $0 {start|stop|restart|status}"
+    exit 1
+    ;;
+esac
+exit 0

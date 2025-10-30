@@ -15,7 +15,7 @@ JobName=backup-bareos-fd
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 testdata_opts=(
   --address "$SYSTEMTEST_LDAP_ADDRESS"

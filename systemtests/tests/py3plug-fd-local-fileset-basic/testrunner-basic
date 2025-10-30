@@ -16,7 +16,7 @@ JobName=backup-bareos-fd
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 if [ -f "${working}/${TestName}"-fd.trace ]; then
   rm "${working}/${TestName}"-fd.trace

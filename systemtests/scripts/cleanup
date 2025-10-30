@@ -32,6 +32,6 @@ tail -n +1 "${working:?}"/*.traceback 2>/dev/null || true
 
 deletefiles
 
-${scripts}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
+${BAREOS_SCRIPTS_DIR}/drop_bareos_database ${DBTYPE} >/dev/null 2>&1
 
 exit 0

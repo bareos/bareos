@@ -36,9 +36,9 @@ JobName=backup-bareos-fd
 
 JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 mkdir -p "${archivedir}-remote"
 find "${archivedir}-remote" -mindepth 1 -delete
 
@@ -82,11 +82,11 @@ END_OF_DATA
 
 run_bconsole "$tmp/bconcmds"
 
-oldconf="${conf}"
-conf="${conf}-remote"
+oldconf="${BAREOS_CONFIG_DIR}"
+BAREOS_CONFIG_DIR="${BAREOS_CONFIG_DIR}-remote"
 run_bscan_db -vv -d100 -s -V TestCopyVolume001 RemoteFileStorage
 ret=$?
-conf="${oldconf}"
+BAREOS_CONFIG_DIR="${oldconf}"
 
 if [ $ret -ne 0 ]; then
   echo "bscan exit code: $ret"

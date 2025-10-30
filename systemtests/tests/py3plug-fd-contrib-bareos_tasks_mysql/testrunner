@@ -17,14 +17,14 @@ test_db_name="${db_name}_test"
 RESTORE_DIR="$tmp/bareos-restores/@MYSQL/"
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 skip_if_root
 
 #shellcheck source=../../scripts/mysql.sh
-. "${rscripts}"/mysql.sh
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+. "${BAREOS_SCRIPTS_DIR}"/mysql.sh
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 start_test
 

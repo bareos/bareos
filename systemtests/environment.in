@@ -23,10 +23,6 @@ BAREOS_UNITTESTS_BINARY_DIR=$CMAKE_BINARY_DIR/core/src/tests
 
 current_test_directory=${PROJECT_BINARY_DIR}/tests/@TEST_NAME@
 
-conf=${current_test_directory}/etc/bareos
-export confdir=${conf}
-configs=${conf}
-
 export config_directory_dir_additional_test_config=@config_directory_dir_additional_test_config@
 
 working=${current_test_directory}/working
@@ -40,8 +36,6 @@ systemtests_s3_use_https=@systemtests_s3_use_https@
 export NULL_DEV=@OS_NULL_DEVICE@
 
 dumps=${current_test_directory}/dumps
-rscripts=${PROJECT_BINARY_DIR}/scripts
-scripts=@scripts@
 cats=${PROJECT_BINARY_DIR}/cats
 src=${PROJECT_BINARY_DIR}/src
 tmpsrc=${PROJECT_BINARY_DIR}/tmpsrc
@@ -60,9 +54,9 @@ export fd_password="@fd_password@"
 
 # exported variables used by start/stop and other bareos scripts
 # to override the defaults
-export BAREOS_CONFIG_DIR=${conf}
+export BAREOS_CONFIG_DIR=${current_test_directory}/etc/bareos
 export BAREOS_LOG_DIR=${logdir}
-export BAREOS_SCRIPTS_DIR=${scripts}
+export BAREOS_SCRIPTS_DIR=@scriptdir@
 export BAREOS_SBIN_DIR=${sbin}
 export BAREOS_WORKING_DIR=${working}
 export BASEPORT=@BASEPORT@
@@ -72,13 +66,6 @@ export BAREOS_STORAGE_PORT=@sd_port@
 export BAREOS_STORAGE2_PORT=@sd2_port@
 export BAREOS_WEBUI_PORT=@php_port@
 export MINIO_PORT=@minio_port@
-
-export BAREOS_FD_USER=""
-export BAREOS_FD_GROUP=""
-export BAREOS_SD_USER=""
-export BAREOS_SD_GROUP=""
-export BAREOS_DIRECTOR_USER=""
-export BAREOS_DIRECTOR_GROUP=""
 
 export CMAKE_BINARY_DIR
 
@@ -105,7 +92,6 @@ export BAREOS_RANDOM_COMMANDS_BINARY=$(dirname "@RANDOM_COMMANDS_BINARY@")/$CMAK
 
 export archivedir
 
-export scripts
 export DBTYPE
 export tmp
 

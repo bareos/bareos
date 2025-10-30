@@ -6,7 +6,7 @@ set -u
 #shellcheck source=../../environment.in
 . ./environment
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 . ./reload_test_functions
 
 export director_debug_level=""
@@ -16,7 +16,7 @@ export director_debug_level=""
 stop_director
 
 #cleanup possible leftover from last run
-${rscripts}/cleanup
-${rscripts}/setup
+${BAREOS_SCRIPTS_DIR}/cleanup
+${BAREOS_SCRIPTS_DIR}/setup
 
 start_director

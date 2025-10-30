@@ -14,7 +14,7 @@ export TestName
 
 JobName=bconsole-dotstatus
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
 rm -f "$tmp/log2.out"

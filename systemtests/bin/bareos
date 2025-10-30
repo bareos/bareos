@@ -1,39 +1,60 @@
 #!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
 # script to start and stop daemons for individual test
 
 #shellcheck source=../environment.in
 . ./environment
 
-for confdir in etc/bareos*; do
+CONF_ROOT="$(dirname "${BAREOS_CONFIG_DIR}")/"
+
+for confdir in "${CONF_ROOT}"*; do
   BAREOS_STORAGEDAEMON_BINARY_TO_USE=""
   BAREOS_FILEDAEMON_BINARY_TO_USE=""
   BAREOS_DIRECTOR_BINARY_TO_USE=""
-  daemonsuffix="$(sed 's#etc/bareos##g' <<<$confdir)"
-  if [ -d "$confdir/bareos-sd.d" ]; then
+  dir_name="$(basename "${confdir}")"
+  daemonsuffix="${dir_name//bareos/}"
+  if [ -d "${confdir}/bareos-sd.d" ]; then
     # create binary with correct name
-    if [ -n "$daemonsuffix" ]; then
+    if [ -n "${daemonsuffix}" ]; then
       cp -af "${BAREOS_STORAGEDAEMON_BINARY}" "${BAREOS_STORAGEDAEMON_BINARY}${daemonsuffix}"
     fi
     BAREOS_STORAGEDAEMON_BINARY_TO_USE="${BAREOS_STORAGEDAEMON_BINARY}${daemonsuffix}"
   fi
 
-  if [ -d "$confdir/bareos-fd.d" ]; then
+  if [ -d "${confdir}/bareos-fd.d" ]; then
     # create binary with correct name
-    if [ -n "$daemonsuffix" ]; then
+    if [ -n "${daemonsuffix}" ]; then
       cp -af "${BAREOS_FILEDAEMON_BINARY}" "${BAREOS_FILEDAEMON_BINARY}${daemonsuffix}"
     fi
     BAREOS_FILEDAEMON_BINARY_TO_USE="${BAREOS_FILEDAEMON_BINARY}${daemonsuffix}"
   fi
 
-  if [ -d "$confdir/bareos-dir.d" ]; then
+  if [ -d "${confdir}/bareos-dir.d" ]; then
     # create binary with correct name
-    if [ -n "$daemonsuffix" ]; then
+    if [ -n "${daemonsuffix}" ]; then
       cp -af "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_BINARY}${daemonsuffix}"
     fi
     BAREOS_DIRECTOR_BINARY_TO_USE="${BAREOS_DIRECTOR_BINARY}${daemonsuffix}"
   fi
-  BAREOS_STORAGEDAEMON_BINARY="$BAREOS_STORAGEDAEMON_BINARY_TO_USE" \
-    BAREOS_FILEDAEMON_BINARY="$BAREOS_FILEDAEMON_BINARY_TO_USE" \
-    BAREOS_DIRECTOR_BINARY="$BAREOS_DIRECTOR_BINARY_TO_USE" \
-    BAREOS_CONFIG_DIR=$(pwd)/"$confdir" "${rscripts}"/bareos "$@"
+  BAREOS_STORAGEDAEMON_BINARY="${BAREOS_STORAGEDAEMON_BINARY_TO_USE}" \
+  BAREOS_FILEDAEMON_BINARY="${BAREOS_FILEDAEMON_BINARY_TO_USE}" \
+  BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY_TO_USE}" \
+  BAREOS_CONFIG_DIR="${confdir}" "${BAREOS_SCRIPTS_DIR}"/bareos "$@"
 done

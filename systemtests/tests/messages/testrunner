@@ -17,7 +17,7 @@ export TestName
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 console_messages_file="${BAREOS_LOG_DIR}"/.conmsg
 syslog_file="${BAREOS_LOG_DIR}"/syslog

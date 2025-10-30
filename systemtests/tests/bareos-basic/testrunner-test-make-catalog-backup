@@ -16,7 +16,7 @@ JobName=BackupCatalog
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
 
@@ -75,7 +75,7 @@ stop_bareos
 OLDVERSIONID="$(psql --no-psqlrc -q -d "${db_name}" -t -c "select max(versionid) from version;" | head -n1 | sed -e 's, ,,g')"
 
 print_debug "Deleting tables in database \"${db_name}\" "
-"${scripts}/drop_bareos_tables" "${DBTYPE}" >/dev/null 2>&1
+"${BAREOS_SCRIPTS_DIR}/drop_bareos_tables" "${DBTYPE}" >/dev/null 2>&1
 
 # Check if the drop remove all tables
 if [ -n "$(psql --no-psqlrc -q -d "${db_name}" -t -c "\dt+")" ]; then

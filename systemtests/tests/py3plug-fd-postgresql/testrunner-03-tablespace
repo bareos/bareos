@@ -37,7 +37,7 @@ setup_local_tablespace "${TESTPGHOST}"
 popd >/dev/null
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 # Create Test DB with table and 1 statement
 ${PSQL} postgres -c "create database $DBNAME tablespace table_space"

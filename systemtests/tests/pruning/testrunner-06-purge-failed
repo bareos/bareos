@@ -34,15 +34,15 @@ export TestName
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${log_home}/backup.out
-run job=$failingjob_name level=Full yes
-run job=$failingjob_name level=Full yes
-run job=$failingjob_name level=Full yes
+run job=${failingjob_name} level=Full yes
+run job=${failingjob_name} level=Full yes
+run job=${failingjob_name} level=Full yes
 wait
 messages
 @$out ${log_home}/purge.out

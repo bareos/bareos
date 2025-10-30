@@ -15,7 +15,7 @@
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 exec 4<>"$tmp/flock-latch.lck"
 if ! flock -n 4; then

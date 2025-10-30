@@ -15,16 +15,14 @@ Vendor:     The Bareos Team
 #Packager:  {_packager}
 
 %define confdir           %{_sysconfdir}/bareos
-%define configtemplatedir /usr/lib/%{name}/defaultconfigs
+%define configtemplatedir %{_prefix}/lib/%{name}/defaultconfigs
 %define library_dir       %{_libdir}/%{name}
 %define backend_dir       %{_libdir}/%{name}/backends
 %define plugin_dir        %{_libdir}/%{name}/plugins
-%define script_dir        /usr/lib/%{name}/scripts
-%define working_dir       /var/lib/%{name}
+%define script_dir        %{_prefix}/lib/%{name}/scripts
+%define working_dir       %{_sharedstatedir}/%{name}
 %define log_dir           /var/log/%{name}
 %define bsr_dir           %{_sharedstatedir}/%{name}
-# TODO: use /run ?
-%define _subsysdir        /var/lock
 
 #
 # Generic daemon user and group
@@ -869,12 +867,12 @@ CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
 # use our own cmake call instead of cmake macro as it is different on different platforms/versions
 cmake  .. \
   -DCMAKE_VERBOSE_MAKEFILE=ON \
-  -DCMAKE_INSTALL_PREFIX:PATH=/usr \
-  -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib \
-  -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
-  -DLIB_INSTALL_DIR:PATH=/usr/lib \
-  -DSYSCONF_INSTALL_DIR:PATH=/etc \
-  -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
+  -DCMAKE_INSTALL_PREFIX:PATH=%{_prefix} \
+  -DCMAKE_INSTALL_LIBDIR:PATH=%{_prefix}/lib \
+  -DINCLUDE_INSTALL_DIR:PATH=%{_includedir} \
+  -DLIB_INSTALL_DIR:PATH=%{_prefix}/lib \
+  -DSYSCONF_INSTALL_DIR:PATH=%{_sysconfdir} \
+  -DSHARE_INSTALL_PREFIX:PATH=%{_datadir} \
   -DBUILD_SHARED_LIBS:BOOL=ON \
   -Dprefix=%{_prefix}\
   -Dlibdir=%{library_dir} \
@@ -882,14 +880,13 @@ cmake  .. \
   -Dsysconfdir=%{_sysconfdir} \
   -Dconfdir=%{confdir} \
   -Dmandir=%{_mandir} \
-  -Darchivedir=/var/lib/%{name}/storage \
+  -Darchivedir=%{_sharedstatedir}/%{name}/storage \
   -Dbackenddir=%{backend_dir} \
   -Dconfigtemplatedir=%{configtemplatedir} \
   -Dscriptdir=%{script_dir} \
   -Dworkingdir=%{working_dir} \
   -Dplugindir=%{plugin_dir} \
   -Dlogdir=%{log_dir} \
-  -Dsubsysdir=%{_subsysdir} \
   -Dscsi-crypto=yes \
   -Dndmp=yes \
 %if 0%{?build_qt_monitor}
@@ -995,10 +992,6 @@ for F in  \
 %endif
     %{_sbindir}/btestls \
     %{script_dir}/bareos \
-    %{script_dir}/bareos-ctl-dir \
-    %{script_dir}/bareos-ctl-fd \
-    %{script_dir}/bareos-ctl-funcs \
-    %{script_dir}/bareos-ctl-sd \
     %{script_dir}/btraceback.dbx \
     %{script_dir}/btraceback.mdb \
     %{_docdir}/%{name}/INSTALL \

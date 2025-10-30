@@ -13,14 +13,14 @@ JobName=backup-bareos-fd
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
 
 # use our creates sql statements for the old database
 export SQL_DDL_DIR="${current_test_directory}/bareos_15_db_2004_ddl"
-"${rscripts}"/setup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 # use the default ddl directory with the current sql definitions
 unset SQL_DDL_DIR
 
-"${scripts}/update_bareos_tables" -f
+"${BAREOS_SCRIPTS_DIR}/update_bareos_tables" -f

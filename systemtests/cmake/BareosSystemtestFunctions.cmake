@@ -52,7 +52,10 @@ macro(create_systemtests_directory)
   file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/systemtests/tls/minio/)
 
   configurefilestosystemtest("core" "scripts" "*.in" @ONLY "")
-  configurefilestosystemtest("core" "scripts" "bareos-ctl-funcs" @ONLY "")
+  configurefilestosystemtest(
+    "systemtests" "scripts" "bareos-ctl-funcs" @ONLY ""
+  )
+  configurefilestosystemtest("systemtests" "scripts" "bareos*" @ONLY "")
   configurefilestosystemtest("core" "scripts" "btraceback.gdb" @ONLY "")
 
   configurefilestosystemtest("core/src/cats" "scripts/ddl" "*" @ONLY "ddl")
@@ -61,6 +64,10 @@ macro(create_systemtests_directory)
 
   # install special windows start scripts
   if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    file(REMOVE ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd
+         ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-sd
+         ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir
+    )
     file(RENAME ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd-win
          ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd
     )
@@ -70,12 +77,16 @@ macro(create_systemtests_directory)
     file(RENAME ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir-win
          ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir
     )
+  else()
+    file(REMOVE ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-fd-win
+         ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-sd-win
+         ${CMAKE_BINARY_DIR}/systemtests/scripts/bareos-ctl-dir-win
+    )
   endif()
 
-  file(MAKE_DIRECTORY ${subsysdir})
   file(MAKE_DIRECTORY ${sbindir})
   file(MAKE_DIRECTORY ${bindir})
-  file(MAKE_DIRECTORY ${scripts})
+  file(MAKE_DIRECTORY ${scriptdir})
   file(MAKE_DIRECTORY ${working})
   file(MAKE_DIRECTORY ${archivedir})
 endmacro()
@@ -515,13 +526,13 @@ macro(prepare_testdir_for_daemon_run)
   if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
     set(bin /bin)
     set(sbin /sbin)
-    set(scripts ${SCRIPTS_DIR_TO_TEST})
+    set(scriptdir ${SCRIPTS_DIR_TO_TEST})
     set(python_plugin_module_src_dir ${PYTHON_PLUGINS_DIR_TO_TEST})
     set(python_plugin_module_src_test_dir ${PYTHON_PLUGINS_DIR_TO_TEST})
   else()
     set(bin ${PROJECT_BINARY_DIR}/bin)
     set(sbin ${PROJECT_BINARY_DIR}/sbin)
-    set(scripts ${PROJECT_BINARY_DIR}/scripts)
+    set(scriptdir ${PROJECT_BINARY_DIR}/scripts)
     set(python_plugin_module_src_dir ${CMAKE_SOURCE_DIR}/core/src/plugins)
     set(python_plugin_module_src_test_dir
         ${current_test_directory}/python-modules

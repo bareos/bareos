@@ -45,7 +45,7 @@ dump_config()
   print_debug "*** start $DESC"
 
   "${BAREOS_DIRECTOR_BINARY}" -c "${configfile}" --xc >$tmp/bareos-dir-xc-${ext}.conf
-  BAREOS_CONFIG_DIR="${configfile}" ${rscripts}/bareos-ctl-dir start
+  BAREOS_CONFIG_DIR="${configfile}" ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir start
 
   cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/log-${ext}.out
@@ -71,7 +71,7 @@ END_OF_DATA
   remove_bconsole_commands_from_output "$tmp/bareos-dir-show-${ext}.json"
   remove_bconsole_commands_from_output "$tmp/bareos-dir-show-verbose-${ext}.json"
 
-  ${rscripts}/bareos-ctl-dir stop
+  ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir stop
 
   print_debug "*** end   $DESC"
 }
@@ -151,23 +151,23 @@ export TestName
 
 JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 start_test
 
 # bareos-dir-19.2.7-xc.conf:
 # output of bareos-dir --xc (manually adapted)
 # from a default installation of version 19.2.7
-dump_config "${conf}/bareos-dir-19.2.7-xc.conf" "1"
+dump_config "${BAREOS_CONFIG_DIR}/bareos-dir-19.2.7-xc.conf" "1"
 
 dump_config "${tmp}/bareos-dir-show-1.conf" "2"
 
 # bareos-dir-full.conf:
 # configuration with as many config directives set.
-dump_config "${conf}/bareos-dir-full.conf" "full1"
+dump_config "${BAREOS_CONFIG_DIR}/bareos-dir-full.conf" "full1"
 
 dump_config "${tmp}/bareos-dir-show-verbose-full1.conf" "full2"
 
@@ -183,7 +183,7 @@ diff_files "$tmp/bareos-dir-show-verbose-1.conf" "$tmp/bareos-dir-show-verbose-2
 
 # Don't compare directly,
 # as there are known differences.
-strip_config "${conf}/bareos-dir-full.conf" >"${tmp}/bareos-dir-full-stripped.conf"
+strip_config "${BAREOS_CONFIG_DIR}/bareos-dir-full.conf" >"${tmp}/bareos-dir-full-stripped.conf"
 strip_config "${tmp}/bareos-dir-show-verbose-full1.conf" >"${tmp}/bareos-dir-show-verbose-full1-stripped.conf"
 diff_files "${tmp}/bareos-dir-full-stripped.conf" "${tmp}/bareos-dir-show-verbose-full1-stripped.conf"
 
@@ -194,16 +194,16 @@ diff_files "${tmp}/bareos-dir-show-full1.conf" "$tmp/bareos-dir-show-full2.conf"
 diff_files "${tmp}/bareos-dir-show-verbose-full1.conf" "$tmp/bareos-dir-show-verbose-full2.conf"
 
 # export all resources of a type
-compare_export_config "${conf}/bareos-dir-19.2.7-xc.conf" "etc/compare/Console.conf" "console"
+compare_export_config "${BAREOS_CONFIG_DIR}/bareos-dir-19.2.7-xc.conf" "etc/compare/Console.conf" "console"
 # export single resource
-compare_export_config "${conf}/bareos-dir-19.2.7-xc.conf" "etc/compare/Console-admin.conf" "console" "admin"
+compare_export_config "${BAREOS_CONFIG_DIR}/bareos-dir-19.2.7-xc.conf" "etc/compare/Console-admin.conf" "console" "admin"
 # resource type with spaces instead of seperate resource name
-bareos_dir_failing "${conf}/bareos-dir-19.2.7-xc.conf" "console admin"
+bareos_dir_failing "${BAREOS_CONFIG_DIR}/bareos-dir-19.2.7-xc.conf" "console admin"
 # try export non-existing resource
-bareos_dir_failing "${conf}/bareos-dir-19.2.7-xc.conf" "console" "DOESNOTEXIST"
+bareos_dir_failing "${BAREOS_CONFIG_DIR}/bareos-dir-19.2.7-xc.conf" "console" "DOESNOTEXIST"
 # try export non-existing resource type
-bareos_dir_failing "${conf}/bareos-dir-19.2.7-xc.conf" "DOESNOTEXIST"
+bareos_dir_failing "${BAREOS_CONFIG_DIR}/bareos-dir-19.2.7-xc.conf" "DOESNOTEXIST"
 # export unused (empty) resource type
-bareos_dir_failing "${conf}/bareos-dir-19.2.7-xc.conf" "counter"
+bareos_dir_failing "${BAREOS_CONFIG_DIR}/bareos-dir-19.2.7-xc.conf" "counter"
 
 end_test

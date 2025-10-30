@@ -20,11 +20,9 @@ Vendor:     The Bareos Team
 %define backend_dir       %{_libdir}/%{name}/backends
 %define plugin_dir        %{_libdir}/%{name}/plugins
 %define script_dir        /usr/lib/%{name}/scripts
-%define working_dir       /var/lib/%{name}
+%define working_dir       %{_sharedstatedir}/%{name}
 %define log_dir           /var/log/%{name}
 %define bsr_dir           %{_sharedstatedir}/%{name}
-# TODO: use /run ?
-%define _subsysdir        /var/lock
 
 #
 # Generic daemon user and group
@@ -248,7 +246,7 @@ cmake  .. \
   -Dworkingdir=%{working_dir} \
   -Dplugindir=%{plugin_dir} \
   -Dlogdir=%{log_dir} \
-  -Dsubsysdir=%{_subsysdir} \
+  -Dlogdir=/var/log/bareos \
   -Dscsi-crypto=yes \
   -Dndmp=yes \
 %if 0%{?build_qt_monitor}

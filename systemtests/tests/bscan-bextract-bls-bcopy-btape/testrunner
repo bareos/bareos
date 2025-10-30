@@ -14,9 +14,9 @@ export TestName
 
 JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
 
 # Fill ${BackupDirectory} with data.
 setup_data
@@ -48,7 +48,7 @@ run_bconsole "$tmp/bconcmds"
 expect_device_listing()
 {
   log_no_device="${tmp}/no-device-$1.out"
-  "$2" -c "${conf}" &>"$log_no_device" || :
+  "$2" -c "${BAREOS_CONFIG_DIR}" &>"$log_no_device" || :
   if ! grep -q "\"FileStorage\"" "$log_no_device" || ! grep -q "\"FileStorage2\"" "$log_no_device"; then
     echo "Expected listing of available devices if no device is specified but not found in output, instead got:"
     cat $log_no_device
@@ -57,7 +57,7 @@ expect_device_listing()
   fi
 
   log_invalid_device="${tmp}/invalid-device-$1.out"
-  "$2" -c "${conf}" InvalidDevice "${@:3}" &>"$log_invalid_device" || :
+  "$2" -c "${BAREOS_CONFIG_DIR}" InvalidDevice "${@:3}" &>"$log_invalid_device" || :
   if ! grep -q "\"FileStorage\"" "$log_invalid_device" || ! grep -q "\"FileStorage2\"" "$log_invalid_device"; then
     echo "Expected listing of available devices if invalid device is specified but not found in output, instead got:"
     cat $log_invalid_device

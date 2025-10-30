@@ -34,7 +34,7 @@ export TestName
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -44,13 +44,13 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @#
 
-run job=$regularjob_name Level=Full yes
-run job=$regularjob_name Level=Full yes
+run job=${regularjob_name} Level=Full yes
+run job=${regularjob_name} Level=Full yes
 wait
 update volume=TestVolume002 volstatus=Used
 
-run job=$regularjob_name Level=Full yes
-run job=$regularjob_name Level=Full yes
+run job=${regularjob_name} Level=Full yes
+run job=${regularjob_name} Level=Full yes
 wait
 update volume=TestVolume003 volstatus=Used
 
@@ -63,7 +63,7 @@ prune volume all yes
 wait
 
 @$out ${log_home}/backup-post.out
-run job=$regularjob_name Level=Full yes
+run job=${regularjob_name} Level=Full yes
 wait
 
 quit

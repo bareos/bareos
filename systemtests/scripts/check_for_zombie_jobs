@@ -8,7 +8,7 @@
 . ./environment
 
 # shellcheck source=./functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 # check_for_zombie_jobs storage=STORAGE [client=localhost-fd]
 
@@ -20,7 +20,7 @@ fi
 
 wait_for_jobs_to_terminate "${client}" 20
 
-"${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<END_OF_DATA >/dev/null 2>&1
+"${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<END_OF_DATA >/dev/null 2>&1
 @output "${tmp}"/dir.out
 status dir
 @output "${tmp}"/fd.out
