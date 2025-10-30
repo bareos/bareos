@@ -1269,7 +1269,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         except Exception as global_error:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
-                "an unexpected error occured during cluster connection"
+                "an unexpected error occurred during cluster connection"
                 f" and configuration retrieval: {global_error}\n",
             )
             return bareosfd.bRC_Error

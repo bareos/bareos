@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -254,7 +254,7 @@ bool ReadNextBlockFromDevice(DeviceControlRecord* dcr,
           DisplayTapeErrorStatus(jcr, dcr->dev);
           if (forge_on || jcr->sd_impl->ignore_label_errors) {
             dcr->dev->fsr(1); /* try skipping bad record */
-            Pmsg0(000, T_("Did fsr in attemp to skip bad record.\n"));
+            Pmsg0(000, T_("Did fsr in attempt to skip bad record.\n"));
             continue;
           }
           *status = false;

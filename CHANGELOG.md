@@ -68,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RPM: fix restarting bareos-fd on upgrades from bareos <= 24 [PR #2395]
 - dird: fix mark crash [PR #2401]
 - Fix droplet build [PR #2412]
+- Fix some spelling issues [PR #2403]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -249,6 +250,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2395]: https://github.com/bareos/bareos/pull/2395
 [PR #2399]: https://github.com/bareos/bareos/pull/2399
 [PR #2401]: https://github.com/bareos/bareos/pull/2401
+[PR #2403]: https://github.com/bareos/bareos/pull/2403
 [PR #2404]: https://github.com/bareos/bareos/pull/2404
 [PR #2412]: https://github.com/bareos/bareos/pull/2412
 [unreleased]: https://github.com/bareos/bareos/tree/master

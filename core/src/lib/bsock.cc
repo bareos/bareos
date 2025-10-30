@@ -87,7 +87,7 @@ BareosSocket::BareosSocket()
 
 BareosSocket::BareosSocket(const BareosSocket& other)
 {
-  Dmsg0(100, "Copy Contructor BareosSocket\n");
+  Dmsg0(100, "Copy Constructor BareosSocket\n");
 
   fd_ = other.fd_;
   read_seqno = other.read_seqno;
