@@ -1,4 +1,5 @@
 aarch64/bareos
+aarch64/bareos-barri-cli
 aarch64/bareos-bconsole
 aarch64/bareos-client
 aarch64/bareos-common
@@ -32,6 +33,7 @@ aarch64/bareos-storage-tape
 aarch64/bareos-tools
 aarch64/bareos-traymonitor
 aarch64/bareos-webui
+debug/aarch64/bareos-barri-cli-debuginfo
 debug/aarch64/bareos-bconsole-debuginfo
 debug/aarch64/bareos-common-debuginfo
 debug/aarch64/bareos-database-common-debuginfo

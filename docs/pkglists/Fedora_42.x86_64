@@ -1,3 +1,4 @@
+debug/x86_64/bareos-barri-cli-debuginfo
 debug/x86_64/bareos-bconsole-debuginfo
 debug/x86_64/bareos-common-debuginfo
 debug/x86_64/bareos-database-common-debuginfo
@@ -27,6 +28,7 @@ src/bareos
 src/bareos-vmware-vix-disklib
 src/python-bareos
 x86_64/bareos
+x86_64/bareos-barri-cli
 x86_64/bareos-bconsole
 x86_64/bareos-client
 x86_64/bareos-common
