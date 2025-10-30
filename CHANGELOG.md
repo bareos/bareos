@@ -72,6 +72,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix droplet build [PR #2412]
 - Fix some spelling issues [PR #2403]
 - debian: remove dbc_debug to avoid username/password leakage [PR #2417]
+- uniformized variables [PR #2391]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -248,6 +249,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2381]: https://github.com/bareos/bareos/pull/2381
 [PR #2385]: https://github.com/bareos/bareos/pull/2385
 [PR #2386]: https://github.com/bareos/bareos/pull/2386
+[PR #2391]: https://github.com/bareos/bareos/pull/2391
 [PR #2392]: https://github.com/bareos/bareos/pull/2392
 [PR #2394]: https://github.com/bareos/bareos/pull/2394
 [PR #2395]: https://github.com/bareos/bareos/pull/2395
