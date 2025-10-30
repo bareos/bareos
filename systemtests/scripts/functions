@@ -567,7 +567,7 @@ start_bareos()
   start_fd
 
   # check daemons
-  DAEMON_STATUS_OUT="$("${BAREOS_SCRIPTS_DIR}/bareos" status)"
+  DAEMON_STATUS_OUT="$("bin/bareos" status)"
   DAEMON_STATUS=$?
   print_debug "$DAEMON_STATUS_OUT"
 
@@ -1089,7 +1089,7 @@ end_test()
   # Stop the Bareos daemons only
   # if a single test is defined.
   if [[ "$0" == *testrunner ]]; then
-    "${BAREOS_SCRIPTS_DIR}/bareos" stop
+    "bin/bareos" stop
   fi
 
   if [ "$estat" != "0" ]; then

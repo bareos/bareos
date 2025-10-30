@@ -24,7 +24,6 @@ bareos_configure_file(
   bareos-config-lib.sh.in
   bareos-config.in
   bareos-glusterfind-wrapper.in
-  bareos.in
   btraceback.in
   disk-changer.in
   logrotate.in
@@ -38,21 +37,6 @@ install(
               WORLD_READ WORLD_EXECUTE
   DESTINATION "${sbindir}"
 )
-if(NOT client-only)
-  install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-                WORLD_READ WORLD_EXECUTE
-    DESTINATION "${sbindir}"
-  )
-
-  install(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-                WORLD_READ WORLD_EXECUTE
-    DESTINATION "${scriptdir}"
-  )
-endif()
 install(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/bareos-config-lib.sh btraceback.gdb
   PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
