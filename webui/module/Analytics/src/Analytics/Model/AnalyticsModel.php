@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,7 @@ class AnalyticsModel
         if (isset($bsock)) {
             $cmd = 'list jobtotals';
             $result = $bsock->send_command($cmd, 2);
-            $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobtotals = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             $children = array("children" => $jobtotals['result']['jobs']);
             return $children;
         } else {
@@ -45,7 +45,7 @@ class AnalyticsModel
         if (isset($bsock)) {
             $cmd = 'list jobtotals';
             $result = $bsock->send_command($cmd, 2);
-            $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobtotals = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             $result = $jobtotals['result']['jobtotals'];
             return $result;
         } else {
@@ -78,27 +78,27 @@ class AnalyticsModel
 
         $cmd = 'show clients';
         $result = $bsock->send_command($cmd, 2);
-        $clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+        $clients = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
         $clients_cache = $clients['result']['clients'];
 
         $cmd = 'show jobs';
         $result = $bsock->send_command($cmd, 2);
-        $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+        $jobs = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
         $jobs_cache = $jobs['result']['jobs'];
 
         $cmd = 'show jobdefs';
         $result = $bsock->send_command($cmd, 2);
-        $jobdefs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+        $jobdefs = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
         $jobdefs_cache = $jobdefs['result']['jobdefs'];
 
         $cmd = 'show fileset';
         $result = $bsock->send_command($cmd, 2);
-        $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+        $filesets = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
         $filesets_cache = $filesets['result']['filesets'];
 
         $cmd = 'show schedules';
         $result = $bsock->send_command($cmd, 2);
-        $schedules = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+        $schedules = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
         $schedules_cache = $schedules['result']['schedules'];
 
         $config_graph = new \stdClass();

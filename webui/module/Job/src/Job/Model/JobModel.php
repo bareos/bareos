@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -58,10 +58,10 @@ class JobModel
             while (true) {
                 $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
                 if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-                    $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $error = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     return $error['result']['error'];
                 } else {
-                    $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $jobs = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     if (empty($jobs['result'])) {
                         return false; // No matching records found
                     }
@@ -116,10 +116,10 @@ class JobModel
             while (true) {
                 $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
                 if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-                    $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $error = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     return $error['result']['error'];
                 } else {
-                    $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $jobs = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     if (empty($result)) {
                         return false;
                     }
@@ -141,7 +141,7 @@ class JobModel
         if (isset($bsock, $period)) {
             $cmd = 'llist jobs jobtype=B days=' . $period;
             $result = $bsock->send_command($cmd, 2);
-            $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobs = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             if (empty($jobs['result'])) {
                 return false;
             } else {
@@ -157,7 +157,7 @@ class JobModel
         if (isset($bsock, $client, $period)) {
             $cmd = 'llist jobs client="' . $client . '" days=' . $period;
             $result = $bsock->send_command($cmd, 2);
-            $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobs = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             if (empty($jobs['result'])) {
                 return false;
             } else {
@@ -173,7 +173,7 @@ class JobModel
         if (isset($bsock, $jobname, $period)) {
             $cmd = 'llist jobs jobname="' . $jobname . '" days=' . $period;
             $result = $bsock->send_command($cmd, 2);
-            $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobs = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             if (empty($jobs['result'])) {
                 return false;
             } else {
@@ -197,7 +197,7 @@ class JobModel
         if (isset($bsock, $id)) {
             $cmd = 'llist jobid=' . $id . '';
             $result = $bsock->send_command($cmd, 2);
-            $job = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $job = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             if (empty($job['result'])) {
                 return array(); // No matching records found
             } else {
@@ -227,10 +227,10 @@ class JobModel
             while (true) {
                 $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2);
                 if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-                    $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $error = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     return $error['result']['error'];
                 } else {
-                    $log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $log = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     if (empty($log['result'])) {
                         return array(); // No matching records found
                     }
@@ -264,10 +264,10 @@ class JobModel
         $result = $bsock->send_command($cmd, 2);
         if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
             //return false;
-            $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $error = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $error['result']['error'];
         } else {
-            $jobmedia = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobmedia = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $jobmedia['result']['volumes'];
         }
     }
@@ -289,7 +289,7 @@ class JobModel
                 $cmd = '.jobs type="' . $type . '"';
             }
             $result = $bsock->send_command($cmd, 2);
-            $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobs = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $jobs['result']['jobs'];
         } else {
             throw new \Exception('Missing argument.');
@@ -308,7 +308,7 @@ class JobModel
         if (isset($bsock)) {
             $cmd = 'llist jobs last current enabled';
             $result = $bsock->send_command($cmd, 2);
-            $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobs = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $jobs['result']['jobs'];
         } else {
             throw new \Exception('Missing argument.');
@@ -327,7 +327,7 @@ class JobModel
         if (isset($bsock)) {
             $cmd = 'list jobtotals';
             $result = $bsock->send_command($cmd, 2);
-            $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobtotals = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return array(0 => $jobtotals['result']['jobtotals']);
         } else {
             throw new \Exception('Missing argument.');
@@ -355,7 +355,7 @@ class JobModel
                 // GET THE JOB STATS
                 $cmd = 'list jobstatistics jobid=' . $job['jobid'];
                 $result = $bsock->send_command($cmd, 2);
-                $tmp = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                $tmp = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
 
                 // JOBID, JOBNAME AND CLIENT
                 $jobstats[$i]['jobid'] = $job['jobid'];
@@ -397,7 +397,7 @@ class JobModel
                     $cmd = 'list jobs jobname=' . $job['name'] . ' client=' . $job['client'] . ' jobstatus=T joblevel=' . $level . ' last';
 
                     $result = $bsock->send_command($cmd, 2);
-                    $tmp = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $tmp = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     $jobstats[$i]['lastbackupsize'] = $tmp['result']['jobs'][0]['jobbytes'];
                     if ($jobstats[$i]['lastbackupsize'] > 0) {
                         if ($jobstats[$i]['jobbytes'] > 0 && $tmp['result']['jobs'][0]['jobbytes'] > 0) {
@@ -439,7 +439,7 @@ class JobModel
         if (isset($bsock)) {
             $cmd = '.jobs type=R';
             $result = $bsock->send_command($cmd, 2);
-            $restorejobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $restorejobs = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $restorejobs['result']['jobs'];
         } else {
             throw new \Exception('Missing argument.');
@@ -478,7 +478,7 @@ class JobModel
         if (isset($bsock, $name)) {
             $cmd = '.defaults job="' . $name . '"';
             $result = $bsock->send_command($cmd, 2);
-            $jobdefaults = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobdefaults = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $jobdefaults['result']['defaults'];
         } else {
             throw new \Exception('Missing argument.');

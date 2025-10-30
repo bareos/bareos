@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,7 +39,7 @@ class FilesetModel
         if (isset($bsock)) {
             $cmd = 'list filesets';
             $result = $bsock->send_command($cmd, 2);
-            $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $filesets = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $filesets['result']['filesets'];
         } else {
             throw new \Exception('Missing argument.');
@@ -59,7 +59,7 @@ class FilesetModel
         if (isset($bsock, $id)) {
             $cmd = 'llist fileset filesetid=' . $id . '';
             $result = $bsock->send_command($cmd, 2);
-            $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $fileset = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $fileset['result']['filesets'];
         } else {
             throw new \Exception('Missing argument.');
@@ -78,7 +78,7 @@ class FilesetModel
         if (isset($bsock)) {
             $cmd = '.filesets';
             $result = $bsock->send_command($cmd, 2);
-            $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $filesets = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $filesets['result']['filesets'];
         } else {
             throw new \Exception('Missing argument.');

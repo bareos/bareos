@@ -1,0 +1,54 @@
+{
+    "name": "laminas/laminas-math",
+    "description": " ",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "math"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-math/",
+        "issues": "https://github.com/laminas/laminas-math/issues",
+        "source": "https://github.com/laminas/laminas-math",
+        "rss": "https://github.com/laminas/laminas-math/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.7-dev",
+            "dev-develop": "2.8-dev"
+        }
+    },
+    "require": {
+        "php": "^5.5 || ^7.0",
+        "laminas/laminas-zendframework-bridge": "^1.0"
+    },
+    "require-dev": {
+        "fabpot/php-cs-fixer": "1.7.*",
+        "ircmaxell/random-lib": "~1.1",
+        "phpunit/phpunit": "~4.0"
+    },
+    "suggest": {
+        "ext-bcmath": "If using the bcmath functionality",
+        "ext-gmp": "If using the gmp functionality",
+        "ircmaxell/random-lib": "Fallback random byte generator for Laminas\\Math\\Rand if Mcrypt extensions is unavailable"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\Math\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\Math\\": "test/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-math": "self.version"
+    }
+}

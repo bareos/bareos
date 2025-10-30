@@ -5,7 +5,7 @@
  *
  * @link      http://github.com/zendframework/ZendSkeletonApplication for the canonical source repository
  * @copyright Copyright (c) 2005-2013 Zend Technologies USA Inc. (http://www.zend.com)
- * @copyright Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+ * @copyright Copyright (C) 2016-2025 Bareos GmbH & Co. KG
  * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
@@ -13,7 +13,7 @@ return array(
     'router' => array(
         'routes' => array(
             'home' => array(
-                'type' => 'Zend\Mvc\Router\Http\Literal',
+                'type' => 'Laminas\Mvc\Router\Http\Literal',
                 'options' => array(
                     'route'    => '/',
                     'defaults' => array(
@@ -55,14 +55,14 @@ return array(
     ),
     'service_manager' => array(
         'abstract_factories' => array(
-            'Zend\Cache\Service\StorageCacheAbstractServiceFactory',
-            'Zend\Log\LoggerAbstractServiceFactory',
+            'Laminas\Cache\Service\StorageCacheAbstractServiceFactory',
+            'Laminas\Log\LoggerAbstractServiceFactory',
         ),
         'services' => array(),
         'shared' => array(),
         'factories' => array(
-            'translator' => 'Zend\I18n\Translator\TranslatorServiceFactory',
-            'navigation' => 'Zend\Navigation\Service\DefaultNavigationFactory',
+            'translator' => 'Laminas\I18n\Translator\TranslatorServiceFactory',
+            'navigation' => 'Laminas\Navigation\Service\DefaultNavigationFactory',
             'director' => 'Bareos\BSock\BareosBSockServiceFactory',
         ),
         'aliases' => array(),

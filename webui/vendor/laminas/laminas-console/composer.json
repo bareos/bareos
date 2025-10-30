@@ -1,0 +1,56 @@
+{
+    "name": "laminas/laminas-console",
+    "description": " ",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "console"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-console/",
+        "issues": "https://github.com/laminas/laminas-console/issues",
+        "source": "https://github.com/laminas/laminas-console",
+        "rss": "https://github.com/laminas/laminas-console/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.6-dev",
+            "dev-develop": "2.7-dev"
+        }
+    },
+    "require": {
+        "php": "^5.5 || ^7.0",
+        "laminas/laminas-stdlib": "^2.7 || ^3.0",
+        "laminas/laminas-zendframework-bridge": "^1.0"
+    },
+    "require-dev": {
+        "fabpot/php-cs-fixer": "1.7.*",
+        "laminas/laminas-filter": "^2.6",
+        "laminas/laminas-json": "^2.6",
+        "laminas/laminas-validator": "^2.5",
+        "phpunit/phpunit": "^4.0"
+    },
+    "suggest": {
+        "laminas/laminas-filter": "To support DefaultRouteMatcher usage",
+        "laminas/laminas-validator": "To support DefaultRouteMatcher usage"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\Console\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\Console\\": "test/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-console": "self.version"
+    }
+}

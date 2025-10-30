@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,8 +25,8 @@
 
 namespace Job\Form;
 
-use Zend\Form\Form;
-use Zend\Form\Element;
+use Laminas\Form\Form;
+use Laminas\Form\Element;
 
 class RunJobForm extends Form
 {
@@ -260,7 +260,7 @@ class RunJobForm extends Form
         // Priority
         $this->add(array(
             'name' => 'priority',
-            'type' => 'Zend\Form\Element\Text',
+            'type' => 'Laminas\Form\Element\Text',
             'options' => array(
                 'label' => _('Priority'),
             ),
@@ -275,7 +275,7 @@ class RunJobForm extends Form
         if (isset($jobdefaults['type'])) {
             $this->add(array(
                 'name' => 'type',
-                'type' => 'Zend\Form\Element\Text',
+                'type' => 'Laminas\Form\Element\Text',
                 'options' => array(
                     'label' => _('Type'),
                     'empty_option' => '',
@@ -290,7 +290,7 @@ class RunJobForm extends Form
         } else {
             $this->add(array(
                 'name' => 'type',
-                'type' => 'Zend\Form\Element\Text',
+                'type' => 'Laminas\Form\Element\Text',
                 'options' => array(
                     'label' => _('Type'),
                     'empty_option' => '',
@@ -343,7 +343,7 @@ class RunJobForm extends Form
       // Backup Format
       $this->add(array(
          'name' => 'backupformat',
-         'type' => 'Zend\Form\Element\Text',
+         'type' => 'Laminas\Form\Element\Text',
          'options' => array(
             'label' => _('Backup Format'),
          ),
@@ -358,7 +358,7 @@ class RunJobForm extends Form
         // When
         $this->add(array(
             'name' => 'when',
-            'type' => 'Zend\Form\Element\Text',
+            'type' => 'Laminas\Form\Element\Text',
             'options' => array(
                 'label' => _('When'),
             ),

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,10 +25,10 @@
 
 namespace Application;
 
-use Zend\Mvc\ModuleRouteListener;
-use Zend\Mvc\MvcEvent;
-use Zend\Session\SessionManager;
-use Zend\Session\Container;
+use Laminas\Mvc\ModuleRouteListener;
+use Laminas\Mvc\MvcEvent;
+use Laminas\Session\SessionManager;
+use Laminas\Session\Container;
 use Bareos\BSock\BareosBsock;
 
 class Module
@@ -54,7 +54,7 @@ class Module
             include __DIR__ . '/config/module.commands.php'
         );
         foreach ($configFiles as $file) {
-            $config = \Zend\Stdlib\ArrayUtils::merge($config, $file);
+            $config = \Laminas\Stdlib\ArrayUtils::merge($config, $file);
         }
         return $config;
     }
@@ -62,10 +62,10 @@ class Module
     public function getAutoloaderConfig()
     {
         return array(
-            'Zend\Loader\ClassMapAutoloader' => array(
+            'Laminas\Loader\ClassMapAutoloader' => array(
                 'application' => __DIR__ . '/autoload_classmap.php',
             ),
-            'Zend\Loader\StandardAutoloader' => array(
+            'Laminas\Loader\StandardAutoloader' => array(
                 'namespaces' => array(
                     __NAMESPACE__ => __DIR__ . '/src/' . __NAMESPACE__,
                     'Bareos' => __DIR__ . '/../../vendor/Bareos/library/Bareos',
@@ -76,7 +76,7 @@ class Module
 
     public function initSession($e)
     {
-        $session = $e->getApplication()->getServiceManager()->get('Zend\Session\SessionManager');
+        $session = $e->getApplication()->getServiceManager()->get('Laminas\Session\SessionManager');
 
         if ($session->isValid()) {
             // do nothing
@@ -111,10 +111,10 @@ class Module
                 $chain = $session->getValidatorChain();
                 foreach ($sessionConfig['validators'] as $validator) {
                     switch ($validator) {
-                        case 'Zend\Session\Validator\HttpUserAgent':
+                        case 'Laminas\Session\Validator\HttpUserAgent':
                             $validator = new $validator($container->httpUserAgent);
                             break;
-                        case 'Zend\Session\Validator\RemoteAddr':
+                        case 'Laminas\Session\Validator\RemoteAddr':
                             $validator = new $validator($container->remoteAddr);
                             break;
                         default:
@@ -130,7 +130,7 @@ class Module
     {
         return array(
             'factories' => array(
-                'Zend\Session\SessionManager' => function ($sm) {
+                'Laminas\Session\SessionManager' => function ($sm) {
                     $config = $sm->get('config');
 
                     if (isset($config['session'])) {
@@ -139,7 +139,7 @@ class Module
                         $sessionConfig = null;
 
                         if (isset($session['config'])) {
-                            $class = isset($session['config']['class']) ? $session['config']['class'] : 'Zend\Session\Config\SessionConfig';
+                            $class = isset($session['config']['class']) ? $session['config']['class'] : 'Laminas\Session\Config\SessionConfig';
                             $options = isset($session['config']['options']) ? $session['config']['options'] : array();
                             $sessionConfig = new $class();
                             $sessionConfig->setOptions($options);

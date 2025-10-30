@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,8 +25,8 @@
 
 namespace Schedule\Model;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
+use Laminas\ServiceManager\ServiceLocatorAwareInterface;
+use Laminas\ServiceManager\ServiceLocatorInterface;
 
 class ScheduleModel
 {
@@ -42,7 +42,7 @@ class ScheduleModel
         if (isset($bsock)) {
             $cmd = '.schedule';
             $result = $bsock->send_command($cmd, 2);
-            $schedules = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $schedules = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $schedules['result']['schedules'];
         } else {
             throw new \Exception('Missing argument.');

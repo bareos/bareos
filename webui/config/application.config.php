@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -45,7 +45,7 @@ $modules = array(
 
 // Use the $env value to determine which module to load
 if ($env == 'development') {
-    //$modules[] = 'ZendDeveloperTools';  // you may comment only this line out if ZendDeveloperTools are not installed e.g.
+    //$modules[] = 'Laminas\DeveloperTools';  // you may comment only this line out if Laminas\DeveloperTools are not installed e.g.
     ini_set('error_reporting', E_ALL);
     ini_set("display_errors", 1);
     error_reporting(E_ALL);
@@ -115,6 +115,6 @@ return array(
     // )
 
     // Initial configuration with which to seed the ServiceManager.
-    // Should be compatible with Zend\ServiceManager\Config.
+    // Should be compatible with Laminas\ServiceManager\Config.
     // 'service_manager' => array(),
 );

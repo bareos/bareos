@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,9 +25,9 @@
 
 namespace Restore\Controller;
 
-use Zend\Mvc\Controller\AbstractActionController;
-use Zend\View\Model\ViewModel;
-use Zend\Json\Json;
+use Laminas\Mvc\Controller\AbstractActionController;
+use Laminas\View\Model\ViewModel;
+use Laminas\Json\Json;
 use Restore\Model\Restore;
 use Restore\Form\RestoreForm;
 use Exception;
@@ -435,7 +435,7 @@ class RestoreController extends AbstractActionController
                     $items .= ',"text":"' . $this->escapeNameString($dir["name"]) . '"';
                     $items .= ',"icon":"glyphicon glyphicon-folder-close"';
                     $items .= ',"state":""';
-                    $items .= ',"data":' . \Zend\Json\Json::encode($dir, \Zend\Json\Json::TYPE_OBJECT);
+                    $items .= ',"data":' . \Laminas\Json\Json::encode($dir, \Laminas\Json\Json::TYPE_OBJECT);
                     $items .= ',"children":true';
                     $items .= '}';
                     if ($dnum > 0) {
@@ -455,7 +455,7 @@ class RestoreController extends AbstractActionController
                 $items .= ',"text":"' . $this->escapeNameString($file["name"]) . '"';
                 $items .= ',"icon":"glyphicon glyphicon-file"';
                 $items .= ',"state":""';
-                $items .= ',"data":' . \Zend\Json\Json::encode($file, \Zend\Json\Json::TYPE_OBJECT);
+                $items .= ',"data":' . \Laminas\Json\Json::encode($file, \Laminas\Json\Json::TYPE_OBJECT);
                 $items .= '}';
                 --$fnum;
                 if ($fnum > 0) {

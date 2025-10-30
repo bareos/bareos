@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,7 +39,7 @@ class StorageModel
         if (isset($bsock)) {
             $cmd = 'list storages';
             $result = $bsock->send_command($cmd, 2);
-            $storages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $storages = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $storages['result']['storages'];
         } else {
             throw new \Exception('Missing argument.');
@@ -59,7 +59,7 @@ class StorageModel
         if (isset($bsock, $storage)) {
             $cmd = 'status storage="' . $storage . '" slots';
             $result = $bsock->send_command($cmd, 2);
-            $slots = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $slots = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $slots['result']['contents'];
         } else {
             throw new \Exception('Missing argument.');
@@ -255,7 +255,7 @@ class StorageModel
         if (isset($bsock, $storage)) {
             $cmd = 'status storage="' . $storage . '" slots';
             $slots = $bsock->send_command($cmd, 2);
-            $result = \Zend\Json\Json::decode($slots, \Zend\Json\Json::TYPE_ARRAY);
+            $result = \Laminas\Json\Json::decode($slots, \Laminas\Json\Json::TYPE_ARRAY);
             return $result['result']['contents'];
         } else {
             throw new \Exception('Missing argument.');

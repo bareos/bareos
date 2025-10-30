@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -122,7 +122,7 @@ class ClientModel
                 $cmd .= ' limit=' . $limit;
             }
             $result = $bsock->send_command($cmd, 2);
-            $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $backups = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
 
             if (!isset($limit)) {
                 $filesets_pluginjob = array();
@@ -130,7 +130,7 @@ class ClientModel
                     if (!array_key_exists($backup['fileset'], $filesets_pluginjob)) {
                         $cmd = 'show fileset="' . $backup['fileset'] . '"';
                         $result = $bsock->send_command($cmd, 2);
-                        $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                        $fileset = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                         $filesets_pluginjob[$backup['fileset']] = false;
                         if (!empty($fileset['result']['filesets'][$backup['fileset']]['include'][0]['plugin'])) {
                             $filesets_pluginjob[$backup['fileset']] = true;
@@ -170,7 +170,7 @@ class ClientModel
                 $cmd .= ' limit=' . $limit;
             }
             $result = $bsock->send_command($cmd, 2);
-            $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $backups = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $backups['result']['jobs'];
         } else {
             throw new \Exception('Missing argument.');

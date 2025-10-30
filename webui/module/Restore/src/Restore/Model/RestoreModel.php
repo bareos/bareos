@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -50,11 +50,11 @@ class RestoreModel
                     $cmd_1 = '.bvfs_lsdirs jobid=' . $jobid . ' pathid=' . abs($pathid) . ' limit=' . $limit . ' offset=' . $offset;
                 }
                 $result = $bsock->send_command($cmd_1, 2);
-                $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                $directories = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                 if (empty($directories['result'])) {
                     $cmd_2 = '.bvfs_lsdirs jobid=' . $jobid . ' path=@ limit=' . $limit;
                     $result = $bsock->send_command($cmd_2, 2);
-                    $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $directories = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     if (empty($directories['result'])) {
                         return $retval;
                     }
@@ -116,14 +116,14 @@ class RestoreModel
                     $cmd_1 = '.bvfs_lsfiles jobid=' . $jobid . ' pathid=' . abs($pathid) . ' limit=' . $limit . ' offset=' . $offset;
                 }
                 $result = $bsock->send_command($cmd_1, 2);
-                $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                $files = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                 if (empty($files['result'])) {
                     return $retval;
                 }
                 if (empty($files['result']['files'])) {
                     $cmd_2 = '.bvfs_lsfiles jobid=' . $jobid . ' path=@ limit=' . $limit . ' offset=' . $offset;
                     $result = $bsock->send_command($cmd_2, 2);
-                    $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+                    $files = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
                     if (empty($files['result']['files'])) {
                         return $retval;
                     } else {
@@ -154,7 +154,7 @@ class RestoreModel
         if (isset($bsock)) {
             $cmd = '.bvfs_versions jobid=0 client=' . $clientname . ' pathid=' . $pathid . ' fname="' . addslashes($filename) . '"';
             $result = $bsock->send_command($cmd, 2);
-            $versions = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $versions = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             return $versions['result']['versions'];
         } else {
             throw new \Exception('Missing argument.');
@@ -210,7 +210,7 @@ class RestoreModel
                 $cmd = '.bvfs_get_jobids jobid=' . $jobid;
             }
             $result = $bsock->send_command($cmd, 2);
-            $jobids = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            $jobids = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             $result = "";
             if (isset($jobids['result']['jobids'])) {
                 $i = count($jobids['result']['jobids']);

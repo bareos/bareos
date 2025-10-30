@@ -1,0 +1,63 @@
+{
+    "name": "laminas/laminas-modulemanager",
+    "description": " ",
+    "license": "BSD-3-Clause",
+    "keywords": [
+        "laminas",
+        "modulemanager"
+    ],
+    "homepage": "https://laminas.dev",
+    "support": {
+        "docs": "https://docs.laminas.dev/laminas-modulemanager/",
+        "issues": "https://github.com/laminas/laminas-modulemanager/issues",
+        "source": "https://github.com/laminas/laminas-modulemanager",
+        "rss": "https://github.com/laminas/laminas-modulemanager/releases.atom",
+        "chat": "https://laminas.dev/chat",
+        "forum": "https://discourse.laminas.dev"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.6-dev",
+            "dev-develop": "2.7-dev"
+        }
+    },
+    "require": {
+        "php": ">=5.5",
+        "laminas/laminas-eventmanager": "~2.5",
+        "laminas/laminas-stdlib": "~2.7",
+        "laminas/laminas-zendframework-bridge": "^1.0"
+    },
+    "require-dev": {
+        "fabpot/php-cs-fixer": "1.7.*",
+        "laminas/laminas-config": "~2.5",
+        "laminas/laminas-console": "~2.5",
+        "laminas/laminas-di": "~2.5",
+        "laminas/laminas-loader": "~2.5",
+        "laminas/laminas-mvc": "~2.5",
+        "laminas/laminas-servicemanager": "~2.5",
+        "phpunit/phpunit": "~4.0"
+    },
+    "suggest": {
+        "laminas/laminas-config": "Laminas\\Config component",
+        "laminas/laminas-console": "Laminas\\Console component",
+        "laminas/laminas-loader": "Laminas\\Loader component",
+        "laminas/laminas-mvc": "Laminas\\Mvc component",
+        "laminas/laminas-servicemanager": "Laminas\\ServiceManager component"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laminas\\ModuleManager\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LaminasTest\\ModuleManager\\": "test/"
+        }
+    },
+    "replace": {
+        "zendframework/zend-modulemanager": "self.version"
+    }
+}

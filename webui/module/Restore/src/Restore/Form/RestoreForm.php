@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2024 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,8 +25,8 @@
 
 namespace Restore\Form;
 
-use Zend\Form\Form;
-use Zend\Form\Element;
+use Laminas\Form\Form;
+use Laminas\Form\Element;
 
 class RestoreForm extends Form
 {
@@ -302,7 +302,7 @@ class RestoreForm extends Form
                 $this->add(
                     array(
                         'name' => 'pluginoptions',
-                        'type' => 'Zend\Form\Element\Hidden',
+                        'type' => 'Laminas\Form\Element\Hidden',
                         'attributes' => array(
                             'value' => '',
                             'id' => 'pluginoptions',
@@ -341,7 +341,7 @@ class RestoreForm extends Form
                 $this->add(
                     array(
                         'name' => 'pluginoptions',
-                        'type' => 'Zend\Form\Element\Hidden',
+                        'type' => 'Laminas\Form\Element\Hidden',
                         'attributes' => array(
                             'value' => '',
                             'id' => 'pluginoptions',
@@ -386,7 +386,7 @@ class RestoreForm extends Form
         $this->add(
             array(
                 'name' => 'jobids_hidden',
-                'type' => 'Zend\Form\Element\Hidden',
+                'type' => 'Laminas\Form\Element\Hidden',
                 'attributes' => array(
                     'value' => $this->getJobIds(),
                     'id' => 'jobids_hidden'
@@ -414,7 +414,7 @@ class RestoreForm extends Form
         $this->add(
             array(
                 'name' => 'checked_files',
-                'type' => 'Zend\Form\Element\Hidden',
+                'type' => 'Laminas\Form\Element\Hidden',
                 'attributes' => array(
                     'value' => '',
                     'id' => 'checked_files'
@@ -426,7 +426,7 @@ class RestoreForm extends Form
         $this->add(
             array(
                 'name' => 'checked_directories',
-                'type' => 'Zend\Form\Element\Hidden',
+                'type' => 'Laminas\Form\Element\Hidden',
                 'attributes' => array(
                     'value' => '',
                     'id' => 'checked_directories'
