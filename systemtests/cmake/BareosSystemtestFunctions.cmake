@@ -55,7 +55,7 @@ macro(create_systemtests_directory)
   configurefilestosystemtest(
     "systemtests" "scripts" "bareos-ctl-funcs" @ONLY ""
   )
-  configurefilestosystemtest("systemtests" "scripts" "bareos-ctl-*.in" @ONLY "")
+  configurefilestosystemtest("systemtests" "scripts" "bareos-ctl-*" @ONLY "")
   configurefilestosystemtest("core" "scripts" "btraceback.gdb" @ONLY "")
 
   configurefilestosystemtest("core/src/cats" "scripts/ddl" "*" @ONLY "ddl")
