@@ -15,6 +15,7 @@ File Daemon plugins are configured by the :strong:`Plugin` directive of a :ref:`
 .. include:: Plugins/FileDaemonPlugins/ApacheLibcloudPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/BpipePlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/GlusterFSPlugin.rst.inc
+.. include:: Plugins/FileDaemonPlugins/GrpcPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/LDAPPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/MariaDBmariabackupPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/MSSqlPlugin.rst.inc
@@ -22,5 +23,5 @@ File Daemon plugins are configured by the :strong:`Plugin` directive of a :ref:`
 .. include:: Plugins/FileDaemonPlugins/PerconaXtraBackupPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/PostgreSQLPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/PythonFdPlugin.rst.inc
+.. include:: Plugins/FileDaemonPlugins/QumuloFdPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/VMwarePlugin.rst.inc
-.. include:: Plugins/FileDaemonPlugins/GrpcPlugin.rst.inc
