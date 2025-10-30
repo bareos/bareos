@@ -24,5 +24,6 @@ start_test
 
 pushd "${BAREOS_UNITTESTS_BINARY_DIR}" >/dev/null
 "${CATALOG_TEST_PROGRAM}" || exit_failure
+popd 
 
 end_test
