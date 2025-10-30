@@ -186,7 +186,7 @@ class OutputHandleGenerator {
 
 static inline LARGE_INTEGER AsLargeInteger(std::uint64_t x)
 {
-  return LARGE_INTEGER{.QuadPart = x};
+  return LARGE_INTEGER{.QuadPart = static_cast<LONGLONG>(x)};
 }
 
 class RawFileGenerator : public OutputHandleGenerator {
