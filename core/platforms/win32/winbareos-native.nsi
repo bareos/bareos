@@ -18,6 +18,10 @@
 ;   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 ;   02110-1301, USA.
 
+# enforce RELEASE_VARIANT definition
+!ifndef RELEASE_VARIANT
+!error "RELEASE_VARIANT is not defined, cannot build"
+!endif
 
 Unicode false
 
