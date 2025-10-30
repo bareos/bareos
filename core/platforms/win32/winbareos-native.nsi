@@ -702,11 +702,15 @@ SectionIn 1 2 3
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
   !cd "${CMAKE_BINARY_DIR}\plugins"
+
+!if ${RELEASE_VARIANT} == "subscription"
   File "barri-fd.dll"
   # Write barri-cli.exe to normal install dir
   SetOutPath "$INSTDIR"
   !cd "${CMAKE_BINARY_DIR}\bin"
   File "barri-cli.exe"
+!endif
+
 SectionEnd
 
 
@@ -1634,7 +1638,13 @@ done:
   SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
   SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED}   # traymon
   SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} #  fd plugins
-  SectionSetFlags ${SEC_FDPLUGIN_BARRI} ${SF_SELECTED} #  fd plugin barri
+
+!if ${RELEASE_VARIANT} == "subscription"
+  SectionSetFlags ${SEC_FDPLUGIN_BARRI} ${SF_SELECTED} #  fd plugin barri preselected
+!else
+  SectionSetFlags ${SEC_FDPLUGIN_BARRI} ${SF_RO} #  fd plugin barri disabled and not selectable
+!endif
+
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
   SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
