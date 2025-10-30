@@ -58,8 +58,8 @@ endef
 ifeq ($(DIST_ID_REL),Debian11)
 # debian 11 sadly ships with the last version of fmt that does not contain
 # some needed functions that barri needs
-echo "disabling BARRI because of Debian 11"
-CONFIGURE_COMMON       += -DENABLE_BARRI=no
+	echo "disabling BARRI because of Debian 11"
+	CONFIGURE_COMMON       += -DENABLE_BARRI=no
 endif
 
 ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
