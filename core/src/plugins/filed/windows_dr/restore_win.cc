@@ -201,16 +201,17 @@ class RawFileGenerator : public OutputHandleGenerator {
   HANDLE Create(disk_info info, disk_geometry) override
   {
     // todo: use path here
-    auto disk_path = libbareos::format(L"{}\\disk-{}.raw", dir, ++disk_idx_);
+    auto wdisk_path = libbareos::format(L"{}\\disk-{}.raw", dir, ++disk_idx_);
+    auto disk_path = FromUtf16(wdisk_path);
 
     // some ioctls need GENERIC_READ to work ...
-    HANDLE output = CreateFileW(disk_path.c_str(), GENERIC_READ | GENERIC_WRITE,
-                                FILE_SHARE_WRITE, NULL, CREATE_NEW,
-                                FILE_ATTRIBUTE_NORMAL, NULL);
+    HANDLE output = CreateFileW(wdisk_path.c_str(),
+                                GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE,
+                                NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (output == INVALID_HANDLE_VALUE) {
-      throw std::runtime_error{libbareos::format(
-          "could not open {}: Err={}", FromUtf16(disk_path), GetLastError())};
+      throw std::runtime_error{libbareos::format("could not open {}: Err={}",
+                                                 disk_path, GetLastError())};
     }
 
     DWORD bytes_written;
@@ -220,7 +221,7 @@ class RawFileGenerator : public OutputHandleGenerator {
       if (!SetFilePointerEx(output, AsLargeInteger(info.disk_size), NULL,
                             FILE_BEGIN)
           || !SetEndOfFile(output)) {
-        log->Info("could enlarge {} to required size", disk_path);
+        log->Info("could not enlarge {} to required size", disk_path);
       }
 
       if (!SetFilePointerEx(output, {}, NULL, FILE_BEGIN)) {
