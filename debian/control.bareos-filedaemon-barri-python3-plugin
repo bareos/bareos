@@ -1,0 +1,12 @@
+Package:        bareos-filedaemon-barri-python3-plugin
+Architecture:   any
+Section:        python
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Depends:        bareos-filedaemon (= ${binary:Version}), bareos-filedaemon-python-plugins-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
+Build-Depends:  libprotobuf-dev
+Recommends:     python3-dateutil
+Description: Backup Archiving Recovery Open Sourced - file daemon Windows disaster recovery Python plugin
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides the Bareos Recovery Imager (Barri) plugin for the Bareos File daemon

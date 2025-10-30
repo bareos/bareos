@@ -1,0 +1,9 @@
+Package:        bareos-barri-cli
+Architecture:   any
+Section:        python
+Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
+Description: Backup Archiving Recovery Open Sourced - Bareos Recovery Imager (Barri) command line tool
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package provides the Bareos Recovery Imager (Barri) command line tool (barri-cli)

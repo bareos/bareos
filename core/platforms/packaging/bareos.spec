@@ -498,6 +498,10 @@ Suggests:   bareos-filedaemon-python3-plugin = %{version}
 Summary:    Bareos Recovery Imager (Barri) plugin for Bareos File daemon
 Group:      Productivity/Archiving/Backup
 Requires:   bareos-filedaemon = %{version}
+
+%package    barri-cli
+Summary:    Bareos Recovery Imager (Barri) command line program
+Group:      Productivity/Archiving/Backup
 %endif
 
 %package    storage-python3-plugin
@@ -610,7 +614,12 @@ This package contains the Mariabackup python plugin for the file daemon
 
 This package contains the Bareos Recovery Imager (barri) plugin for the file daemon
 
+%description barri-cli
+%{dscr}
+
+This package contains the Bareos Recovery Imager (barri) command line tool
 %endif
+
 
 %description storage-python3-plugin
 %{dscr}
@@ -1510,6 +1519,9 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-barri-plugin
 %defattr(-, root, root)
 %{plugin_dir}/barri-fd.so
+
+%files barri-cli
+%defattr(-, root, root)
 %{_bindir}/barri-cli
 %endif
 
