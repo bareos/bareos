@@ -5,7 +5,6 @@ debug/x86_64/bareos-database-common-debuginfo
 debug/x86_64/bareos-database-tools-debuginfo
 debug/x86_64/bareos-debuginfo
 debug/x86_64/bareos-debugsource
-debug/x86_64/bareos-filedaemon-barri-plugin-debuginfo
 debug/x86_64/bareos-director-debuginfo
 debug/x86_64/bareos-director-python3-plugin-debuginfo
 debug/x86_64/bareos-filedaemon-barri-plugin-debuginfo
