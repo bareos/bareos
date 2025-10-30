@@ -132,6 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - correct backend init command in PyPI instructions (fixes #2380) [PR #2381]
 - debian: Do not make dbconfig sql files executable [PR #2404]
 - systemtests: speed up testing [PR #2376]
+- webui: migrate from ZF2 to Laminas [PR #2385]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -240,6 +241,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2373]: https://github.com/bareos/bareos/pull/2373
 [PR #2376]: https://github.com/bareos/bareos/pull/2376
 [PR #2381]: https://github.com/bareos/bareos/pull/2381
+[PR #2385]: https://github.com/bareos/bareos/pull/2385
 [PR #2386]: https://github.com/bareos/bareos/pull/2386
 [PR #2392]: https://github.com/bareos/bareos/pull/2392
 [PR #2394]: https://github.com/bareos/bareos/pull/2394
