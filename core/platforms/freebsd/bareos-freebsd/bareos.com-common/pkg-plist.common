@@ -47,6 +47,5 @@ lib/bareos/plugins/autoxflate-sd.so
 bin/bsmtp
 sbin/bsmtp
 sbin/btraceback
-sbin/bareos
 share/man/man1/bsmtp.1.gz
 share/man/man8/btraceback.8.gz
