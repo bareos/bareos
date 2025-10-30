@@ -120,7 +120,7 @@ bareos-director                                    Bareos Director daemon
 bareos-director-python-plugins-common              Common Python plugins for Bareos Director daemon
 bareos-director-python3-plugin                     Python3 plugin for Bareos Director daemon
 bareos-filedaemon                                  Bareos File daemon (backup and restore client)
-bareos-filedaemon-glusterfs-plugin                 GlusterFS plugin for Bareos File daemon
+bareos-filedaemon-glusterfs-plugin                 (*) GlusterFS plugin for Bareos File daemon
 bareos-filedaemon-ldap-python-plugin               LDAP Python plugin for Bareos File daemon
 bareos-filedaemon-libcloud-python-plugin           Apache libcloud CEPH plugin for Bareos File daemon
 bareos-filedaemon-mariabackup-python-plugin        Mariabackup python plugin for File daemon
@@ -131,7 +131,7 @@ bareos-filedaemon-python3-plugin                   Python 3 plugin for Bareos Fi
 bareos-storage                                     Bareos Storage daemon
 bareos-storage-droplet                             Object Storage support (through libdroplet) for the Bareos Storage daemon
 bareos-storage-fifo                                FIFO support for the Bareos Storage backend
-bareos-storage-glusterfs                           GlusterFS support for the Bareos Storage daemon
+bareos-storage-glusterfs                           (*) GlusterFS support for the Bareos Storage daemon
 bareos-storage-python-plugins-common               Common Python plugins for Bareos Storage daemon
 bareos-storage-python3-plugin                      Python3 plugin for Bareos Storage daemon
 bareos-storage-tape                                Tape support for the Bareos Storage daemon
@@ -146,6 +146,8 @@ python3-bareos                                     Backup Archiving REcovery Ope
 ================================================== =========================================================================
 
 
+.. deprecated:: 25.0.0 `(*)`
+
 Not all packages (especially optional backends and plugins) are available on all platforms.
 
 Additionally, packages containing debug information are available. These are named differently depending on the distribution (**bareos-debuginfo** or **bareos-dbg** or ...).
@@ -159,6 +161,8 @@ Not all packages are required to run Bareos.
 -  On a client, only the package **bareos-filedaemon** is required. If you run it on a workstation, the packages **bareos-traymonitor** gives the user information about running backups.
 
 -  On a Backup Administration system you need to install at least **bareos-bconsole** to have an interactive console to the |dir|.
+
+
 
 
 .. _section-BareosBinaryReleasePolicy:
@@ -253,7 +257,7 @@ However, the file paths in the packages differ, due to the varying requirements 
    :header-rows: 1
    :stub-columns: 1
 
-   * - 
+   * -
      - :os:`Linux`
      - :os:`FreeBSD`
      - :os:`macOS`

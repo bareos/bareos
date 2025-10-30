@@ -7,3 +7,4 @@ Description: Backup Archiving Recovery Open Sourced - storage daemon GlusterFS b
  data across a network of computers of different kinds.
  .
  This package provides the GlusterFS backend for the storage daemon.
+ (deprecated since 25.0.0)

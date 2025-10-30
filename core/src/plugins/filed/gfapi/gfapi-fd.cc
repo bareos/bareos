@@ -57,7 +57,8 @@ static const int debuglevel = 150;
 #define PLUGIN_AUTHOR "Marco van Wieringen"
 #define PLUGIN_DATE "February 2016"
 #define PLUGIN_VERSION "2"
-#define PLUGIN_DESCRIPTION "Bareos GlusterFS GFAPI File Daemon Plugin"
+#define PLUGIN_DESCRIPTION \
+  "Bareos GlusterFS GFAPI File Daemon Plugin (deprecated since 25.0.0)"
 #define PLUGIN_USAGE                                               \
   "gfapi:volume=gluster[+transport]\\://[server[:port]]/volname[/" \
   "dir][?socket=...]:snapdir=<snapdir>:gffilelist=<file>"
@@ -154,6 +155,8 @@ struct plugin_ctx {
   glfs_fd_t* gdir;        /* Gluster directory handle */
   glfs_fd_t* gfd;         /* Gluster file handle */
   FILE* file_list_handle; /* File handle to file with files to backup */
+
+  bool printed_deprecation_message;
 };
 
 // This defines the arguments that the plugin parser understands.
@@ -746,6 +749,13 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 {
   int status;
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
+
+  if (!p_ctx->printed_deprecation_message) {
+    Jmsg(ctx, M_WARNING,
+         "This plugin is deprecated and may be removed in a future version "
+         "update.\n");
+    p_ctx->printed_deprecation_message = true;
+  }
 
   // Save the current flags used to save the next file.
   CopyBits(FO_MAX, sp->flags, p_ctx->flags);
@@ -1603,7 +1613,19 @@ static bRC end_restore_job(PluginContext* ctx, void*)
  * Bareos is notifying us that a plugin name string was found,
  * and passing us the plugin command, so we can prepare for a restore.
  */
-static bRC startRestoreFile(PluginContext*, const char*) { return bRC_OK; }
+static bRC startRestoreFile(PluginContext* ctx, const char*)
+{
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
+  if (!p_ctx->printed_deprecation_message) {
+    Jmsg(ctx, M_WARNING,
+         "This plugin is deprecated and may be removed in a future version "
+         "update.\n");
+    p_ctx->printed_deprecation_message = true;
+  }
+
+  return bRC_OK;
+}
+
 
 /**
  * Bareos is notifying us that the plugin data has terminated,

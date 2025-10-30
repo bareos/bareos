@@ -13,7 +13,7 @@ fifo
 
 .. _SetupFifo:
 
- A FIFO is a special kind of file that connects two programs via kernel memory. If a FIFO device is specified for a backup operation, you must have a program that reads what Bareos writes into the FIFO. When the Storage daemon starts the job, it will wait for :config:option:`sd/device/MaximumOpenWait`\  seconds for the read program to start reading, and then time it out and terminate the job. As a consequence, it is best to start the read
+   A FIFO is a special kind of file that connects two programs via kernel memory. If a FIFO device is specified for a backup operation, you must have a program that reads what Bareos writes into the FIFO. When the Storage daemon starts the job, it will wait for :config:option:`sd/device/MaximumOpenWait`\  seconds for the read program to start reading, and then time it out and terminate the job. As a consequence, it is best to start the read
    program at the beginning of the job perhaps with the :config:option:`dir/job/RunBeforeJob`\  directive. For this kind of device, you always want to specify :config:option:`sd/device/AlwaysOpen`\  = no, because you want the Storage daemon to open it only when a job starts. Since a FIFO is a one way device, Bareos will not attempt to read a label of a FIFO device, but will simply write on it. To create a FIFO Volume in the catalog, use the add command
    rather than the label command to avoid attempting to write a label.
 
@@ -30,14 +30,15 @@ fifo
 
 GlusterFS Storage
 
+.. deprecated:: 25.0.0
 
 .. _GlusterArchiveType:
 
- don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\  (this behavior have changed with :sinceVersion:`15.2.0: Device Options`).
+   don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\  (this behavior have changed with :sinceVersion:`15.2.0: Device Options`).
 
 Ceph Object Store
 
 
 .. _CephArchiveType:
 
- don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\ . (this behavior have changed with :sinceVersion:`15.2.0: Device Options`).
+   don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\ . (this behavior have changed with :sinceVersion:`15.2.0: Device Options`).
