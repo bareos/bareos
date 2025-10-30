@@ -77,7 +77,7 @@ fi
 
 # We want to test with wal compression enabled
 if ((${PG_VERSION} < 15)); then
-  echo "PG_VERSION is ${PG_VERSION} (<15), so we set 'wal_compression=on' "
+  echo "PG_VERSION is ${PG_VERSION} (<15), so we set 'wal_compression=on'"
   CMP="on"
 else
   # postgres 15+
@@ -87,8 +87,7 @@ fi
 ${PSQL} postgres -c "alter system set wal_compression='${CMP}';"
 ${PSQL} postgres -c "select pg_reload_conf();"
 # check compression is enabled
-ret=$(${PSQL} postgres -tA --csv -c "select name,setting,unit from pg_settings where name='wal_compression';" | awk -F "," '{print $2}')
-if [ ${ret} = 'off' ];then
+if [ "$(${PSQL} postgres -tA -c "select setting from pg_settings where name='wal_compression';")" != "${CMP}" ];then
   echo "compression failed to be set"
   exit 2
 fi
