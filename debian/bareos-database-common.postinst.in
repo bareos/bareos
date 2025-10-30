@@ -20,53 +20,52 @@ set -e
 . /usr/share/debconf/confmodule
 
 if [ -r @scriptdir@/bareos-config-lib.sh ]; then
-    . @scriptdir@/bareos-config-lib.sh
-    if [ -f /usr/share/dbconfig-common/dpkg/postinst ]; then
-        . /usr/share/dbconfig-common/dpkg/postinst
-        # action
-        if [ $# -gt 0 ]; then
-            param1="$1"
-            shift
-        fi
-        # when action is "configure": most-recently-configured-version
-        if [ $# -gt 0 ]; then
-            param2="$1"
-            shift
-        fi
-        if [ "$param2" ]; then
-            case "$param1" in
-                configure|reconfigure)
-                    param2=$(get_database_version_by_release "$param2")
-                    ;;
-                *)
-                    ;;
-            esac
-        fi
-
-        # The Bareos catalog should be created with following settings:
-        # Encoding: SQL_ASCII
-        # Collate:  C
-        # Ctype: C
-        # While all recent versions of dbconfig support the parameter Encoding,
-        # Collate and Ctype are only supported in dbconfig >= 2.0.21.
-        # On older versions, these setting is ignored.
-        dbc_pgsql_createdb_encoding="SQL_ASCII"
-        dbc_pgsql_createdb_collate="C"
-        dbc_pgsql_createdb_ctype="C"
-
-        # While substitution on install is supported
-        # by all recent versions of dbconfig
-        # substitution on update requires dbconfig >= 2.0.9.
-        # As this has not been available on all platforms,
-        # we use our own substitution mechanism.
-        #dbc_sql_substitutions="yes"
-
-        # run dbconfig
-        dbc_go bareos-database-common $param1 $param2 $@
-
-        # apply the dbconfig settings, ignore errors
-        @scriptdir@/bareos-config apply_dbconfig_settings || true
+  . @scriptdir@/bareos-config-lib.sh
+  if [ -f /usr/share/dbconfig-common/dpkg/postinst ]; then
+    . /usr/share/dbconfig-common/dpkg/postinst
+    # action
+    if [ $# -gt 0 ]; then
+      param1="$1"
+      shift
     fi
+    # when action is "configure": most-recently-configured-version
+    if [ $# -gt 0 ]; then
+      param2="$1"
+      shift
+    fi
+    if [ "$param2" ]; then
+      case "$param1" in
+        configure | reconfigure)
+          param2=$(get_database_version_by_release "$param2")
+          ;;
+        *) ;;
+      esac
+    fi
+
+    # The Bareos catalog should be created with following settings:
+    # Encoding: SQL_ASCII
+    # Collate:  C
+    # Ctype: C
+    # While all recent versions of dbconfig support the parameter Encoding,
+    # Collate and Ctype are only supported in dbconfig >= 2.0.21.
+    # On older versions, these setting is ignored.
+    dbc_pgsql_createdb_encoding="SQL_ASCII"
+    dbc_pgsql_createdb_collate="C"
+    dbc_pgsql_createdb_ctype="C"
+
+    # While substitution on install is supported
+    # by all recent versions of dbconfig
+    # substitution on update requires dbconfig >= 2.0.9.
+    # As this has not been available on all platforms,
+    # we use our own substitution mechanism.
+    #dbc_sql_substitutions="yes"
+
+    # run dbconfig
+    dbc_go bareos-database-common $param1 $param2 $@
+
+    # apply the dbconfig settings, ignore errors
+    @scriptdir@/bareos-config apply_dbconfig_settings || true
+  fi
 fi
 
 #DEBHELPER#
