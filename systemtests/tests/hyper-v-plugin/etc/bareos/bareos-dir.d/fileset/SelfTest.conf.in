@@ -7,6 +7,6 @@ FileSet {
       Signature = xxh128
       HardLinks = Yes
     }
-    Plugin = "hyper-v:"
+    Plugin = "hyper-v:vmname=@hyper-v_vmname@"
   }
 }
