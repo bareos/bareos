@@ -133,6 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - debian: Do not make dbconfig sql files executable [PR #2404]
 - systemtests: speed up testing [PR #2376]
 - webui: migrate from ZF2 to Laminas [PR #2385]
+- don't alter configuration on ULC package updates [PR #2399]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -246,6 +247,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2392]: https://github.com/bareos/bareos/pull/2392
 [PR #2394]: https://github.com/bareos/bareos/pull/2394
 [PR #2395]: https://github.com/bareos/bareos/pull/2395
+[PR #2399]: https://github.com/bareos/bareos/pull/2399
 [PR #2401]: https://github.com/bareos/bareos/pull/2401
 [PR #2404]: https://github.com/bareos/bareos/pull/2404
 [PR #2412]: https://github.com/bareos/bareos/pull/2412
