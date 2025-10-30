@@ -18,9 +18,9 @@
 ;   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 ;   02110-1301, USA.
 
-# enforce RELEASE_VARIANT definition
-!ifndef RELEASE_VARIANT
-!error "RELEASE_VARIANT is not defined, cannot build"
+# enforce ENABLE_SUBSCRIPTION_FEATURES definition
+!ifndef ENABLE_SUBSCRIPTION_FEATURES
+!error "ENABLE_SUBSCRIPTION_FEATURES is not defined, cannot build"
 !endif
 
 Unicode false
@@ -707,7 +707,7 @@ SectionIn 1 2 3
   SetOverwrite ifnewer
   !cd "${CMAKE_BINARY_DIR}\plugins"
 
-!if ${RELEASE_VARIANT} == "subscription"
+!if ${ENABLE_SUBSCRIPTION_FEATURES} == "1"
   File "barri-fd.dll"
   # Write barri-cli.exe to normal install dir
   SetOutPath "$INSTDIR"
@@ -1643,7 +1643,7 @@ done:
   SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED}   # traymon
   SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} #  fd plugins
 
-!if ${RELEASE_VARIANT} == "subscription"
+!if ${ENABLE_SUBSCRIPTION_FEATURES} == "1"
   SectionSetFlags ${SEC_FDPLUGIN_BARRI} ${SF_SELECTED} #  fd plugin barri preselected
 !else
   SectionSetFlags ${SEC_FDPLUGIN_BARRI} ${SF_RO} #  fd plugin barri disabled and not selectable
