@@ -1,7 +1,7 @@
 #
 # spec file for bareos univeral client
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2024 Bareos GmbH & Co KG
+#               2013-2025 Bareos GmbH & Co KG
 #
 
 Name:       bareos
@@ -14,14 +14,17 @@ URL:        https://www.bareos.org/
 Vendor:     The Bareos Team
 #Packager:  {_packager}
 
-%define library_dir    %{_libdir}/%{name}
-%define backend_dir    %{_libdir}/%{name}/backends
-%define plugin_dir     %{_libdir}/%{name}/plugins
-%define script_dir     /usr/lib/%{name}/scripts
-%define working_dir    /var/lib/%{name}
-%define bsr_dir        /var/lib/%{name}
+%define confdir           %{_sysconfdir}/bareos
+%define configtemplatedir /usr/lib/%{name}/defaultconfigs
+%define library_dir       %{_libdir}/%{name}
+%define backend_dir       %{_libdir}/%{name}/backends
+%define plugin_dir        %{_libdir}/%{name}/plugins
+%define script_dir        /usr/lib/%{name}/scripts
+%define working_dir       /var/lib/%{name}
+%define log_dir           /var/log/%{name}
+%define bsr_dir           %{_sharedstatedir}/%{name}
 # TODO: use /run ?
-%define _subsysdir     /var/lock
+%define _subsysdir        /var/lock
 
 #
 # Generic daemon user and group
@@ -38,6 +41,7 @@ Vendor:     The Bareos Team
 %define client_only 1
 %define have_git 1
 %define systemd_support 1
+
 # cmake build directory
 %define CMAKE_BUILDDIR       cmake-build
 
@@ -128,8 +132,6 @@ BuildRequires: lsb-release
 # dependency tricks for vixdisklib
 %global __requires_exclude ^(.*libvixDiskLib.*|.*CXXABI_1.3.9.*)$
 
-%define replace_python_shebang sed -i '1s|^#!.*|#!%{__python3} %{py3_shbang_opts}|'
-
 Summary:    Backup Archiving REcovery Open Sourced - metapackage
 Requires:   %{name}-director = %{version}
 Requires:   %{name}-storage = %{version}
@@ -151,17 +153,16 @@ Bareos source code has been released under the AGPL version 3 license.
 %{dscr}
 
 
-%if 0%{?opensuse_version} || 0%{?sle_version}
+%if 0%{?suse_version}
 %debug_package
 %endif
 
 # Notice : Don't try to change the order of package declaration
 # You will have side effect with PreReq
 
-%package    universal-client
-Summary:    Bareos File daemon (backup and restore client)
-Group:      Productivity/Archiving/Backup
-Provides:   %{name}-fd
+%package       universal-client
+Summary:       Bareos File daemon (backup and restore client)
+Group:         Productivity/Archiving/Backup
 Requires(pre): /usr/sbin/useradd
 Requires(pre): /usr/sbin/groupadd
 Requires(pre): coreutils
@@ -170,9 +171,8 @@ Requires(pre): gawk
 Requires(pre): grep
 Requires(pre): openssl
 Requires(pre): sed
-Requires(pre): /usr/sbin/useradd
-Requires(pre): /usr/sbin/groupadd
-Provides:   %{name}-libs
+Provides:      %{name}-libs
+Provides:      %{name}-fd
 
 %description universal-client
 %{dscr}
@@ -222,8 +222,6 @@ CXX=g++-9 ; export CXX
   %endif
 %endif
 
-
-
 CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ;
 CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
 
@@ -241,14 +239,15 @@ cmake  .. \
   -Dlibdir=%{library_dir} \
   -Dsbindir=%{_sbindir} \
   -Dsysconfdir=%{_sysconfdir} \
-  -Dconfdir=%{_sysconfdir}/bareos \
+  -Dconfdir=%{confdir} \
   -Dmandir=%{_mandir} \
   -Darchivedir=/var/lib/%{name}/storage \
   -Dbackenddir=%{backend_dir} \
+  -Dconfigtemplatedir=%{configtemplatedir} \
   -Dscriptdir=%{script_dir} \
   -Dworkingdir=%{working_dir} \
   -Dplugindir=%{plugin_dir} \
-  -Dlogdir=/var/log/bareos \
+  -Dlogdir=%{log_dir} \
   -Dsubsysdir=%{_subsysdir} \
   -Dscsi-crypto=yes \
   -Dndmp=yes \
@@ -301,12 +300,12 @@ make DESTDIR=%{buildroot} install/fast
 popd
 
 
-
 install -d -m 755 %{buildroot}/usr/share/applications
 install -d -m 755 %{buildroot}/usr/share/pixmaps
 install -d -m 755 %{buildroot}%{backend_dir}
 install -d -m 755 %{buildroot}%{working_dir}
 install -d -m 755 %{buildroot}%{plugin_dir}
+install -d -m 750 %{buildroot}%{confdir}
 
 # remove links to libraries
 find %{buildroot}/%{library_dir} -type l -name "libbareos*.so" -maxdepth 1 -exec rm {} \;
@@ -330,18 +329,6 @@ ln -sf service %{buildroot}%{_sbindir}/rcbareos-sd
 %files universal-client
 # fd package (bareos-fd, plugins)
 %defattr(-, root, root)
-%attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-fd.d/
-%attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-fd.d/client
-%attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-fd.d/director
-%attr(0750, %{file_daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-fd.d/messages
-%attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-fd.d/client/myself.conf
-%attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-dir.conf
-%attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf
-%attr(0640, %{file_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf
-%if 0%{?build_qt_monitor}
-%attr(0755, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/tray-monitor.d/client
-%attr(0644, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf
-%endif
 %if 0%{?suse_version}
 %if !0%{?systemd_support}
 %{_sysconfdir}/init.d/bareos-fd
@@ -363,31 +350,44 @@ ln -sf service %{buildroot}%{_sbindir}/rcbareos-sd
 %if 0%{?systemd_support}
 %{_unitdir}/bareos-fd.service
 %endif
+%dir %{configtemplatedir}/bareos-fd.d/
+%dir %{configtemplatedir}/bareos-fd.d/client
+%dir %{configtemplatedir}/bareos-fd.d/director
+%dir %{configtemplatedir}/bareos-fd.d/messages
+%{configtemplatedir}/bareos-fd.d/client/myself.conf
+%{configtemplatedir}/bareos-fd.d/director/bareos-dir.conf
+%{configtemplatedir}/bareos-fd.d/director/bareos-mon.conf
+%{configtemplatedir}/bareos-fd.d/messages/Standard.conf
+%if 0%{?build_qt_monitor}
+%dir %{configtemplatedir}/tray-monitor.d/client
+%{configtemplatedir}/tray-monitor.d/client/FileDaemon-local.conf
+%endif
+
 
 # common shared libraries (without db)
 %defattr(-, root, root)
-%attr(0755, root, %{daemon_group})           %dir %{_sysconfdir}/%{name}
+%attr(2755, root, %{daemon_group})           %dir %{_sysconfdir}/%{name}
 %if !0%{?client_only}
 # these directories belong to bareos-common,
 # as other packages may contain configurations for the director.
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/catalog
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/client
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/console
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/counter
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/director
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/fileset
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/job
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/jobdefs
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/messages
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/pool
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/profile
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/schedule
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/storage
-%attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/bareos-dir.d/user
+%dir %{configtemplatedir}/bareos-dir.d
+%dir %{configtemplatedir}/bareos-dir.d/catalog
+%dir %{configtemplatedir}/bareos-dir.d/client
+%dir %{configtemplatedir}/bareos-dir.d/console
+%dir %{configtemplatedir}/bareos-dir.d/counter
+%dir %{configtemplatedir}/bareos-dir.d/director
+%dir %{configtemplatedir}/bareos-dir.d/fileset
+%dir %{configtemplatedir}/bareos-dir.d/job
+%dir %{configtemplatedir}/bareos-dir.d/jobdefs
+%dir %{configtemplatedir}/bareos-dir.d/messages
+%dir %{configtemplatedir}/bareos-dir.d/pool
+%dir %{configtemplatedir}/bareos-dir.d/profile
+%dir %{configtemplatedir}/bareos-dir.d/schedule
+%dir %{configtemplatedir}/bareos-dir.d/storage
+%dir %{configtemplatedir}/bareos-dir.d/user
 # tray monitor configurate is installed by the target daemons
 %if 0%{?build_qt_monitor}
-%attr(0755, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/%{name}/tray-monitor.d
+%dir %{configtemplatedir}/tray-monitor.d
 %endif
 %endif
 %dir %{backend_dir}
@@ -422,8 +422,6 @@ ln -sf service %{buildroot}%{_sbindir}/rcbareos-sd
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/%{name}
 %license AGPL-3.0.txt LICENSE.txt
 %doc core/README.*
-#TODO: cmake does not create build directory
-#doc build/
 
 
 #
@@ -465,13 +463,6 @@ if test "$FIRST_ARG" = "0" ; then \
 fi \
 %nil
 
-%define restart_on_update() \
-test -n "$FIRST_ARG" || FIRST_ARG=$1 \
-if test "$FIRST_ARG" -ge 1 ; then \
-  /bin/systemctl try-restart %1.service >/dev/null 2>&1 || true \
-fi \
-%nil
-
 %else
 # non suse, init.d
 
@@ -487,16 +478,28 @@ if test "$FIRST_ARG" = "0" ; then \
 fi \
 %nil
 
-%define restart_on_update() \
-test -n "$FIRST_ARG" || FIRST_ARG=$1 \
-if test "$FIRST_ARG" -ge 1 ; then \
-  /sbin/service %1 condrestart >/dev/null 2>&1 || true \
+%endif
+
+%endif
+
+%define logging_start() \
+timestamp() { \
+  date "+%%F %%R" \
+} \
+COMPONENT=%1 \
+SECTION=%2 \
+LOGFILE="%{log_dir}/%{name}-${COMPONENT}-install.log" \
+mkdir -p "%{log_dir}" \
+exec >>"$LOGFILE" 2>&1 \
+echo "[$(timestamp)] %{name}-${COMPONENT} %{version} %%${SECTION}: start" \
+if [ "${BAREOS_INSTALL_DEBUG}" ]; then \
+  set -x \
 fi \
 %nil
 
-%endif
-
-%endif
+%define logging_end() \
+echo "[$(timestamp)] %{name}-${COMPONENT} %{version} %%${SECTION}: done" \
+%nil
 
 %define create_group() \
 getent group %1 > /dev/null || groupadd -r %1 \
@@ -507,77 +510,132 @@ getent group %1 > /dev/null || groupadd -r %1 \
 getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} -g %{daemon_group} --shell /bin/false %1 \
 %nil
 
+# NOTE: rpm macro with parameter. Rest of line is ignored (taken as parameter).
+# usage:
+# if %%rpm_version_lt <version1> <version2>
+# then
+#   <do something>
+# fi
+%define rpm_version_lt() \
+[ "%1" ] && [ "%2" ] && [ "$(printf "%1\\n%2\\n" | sort --version-sort | head -n 1)" = "%1" ] \
+%nil
+
+# usage:
+# %%if_package_version_lt <packagename> <version>
+#   <do something>
+# fi
+%define if_package_version_lt() \
+OLDVER=$(rpm -q %1 --qf "%%{version}"); \
+if %rpm_version_lt $OLDVER %2 \
+then \
+%nil
+
 # With the introduction of config subdirectories (bareos-16.2)
 # some config files have been renamed (or even splitted into multiple files).
 # However, bareos is still able to work with the old config files,
 # but rpm renames them to *.rpmsave.
 # To keep the bareos working after updating to bareos-16.2,
-# we implement a workaroung:
-#   * post: if the old config exists, make a copy of it.
+# we implement a workaround:
+#   * pre (or post): if the old config exists, make a copy of it.
 #   * (rpm exchanges files on disk)
 #   * posttrans:
 #       if the old config file don't exists but we have created a backup before,
 #       restore the old config file.
 #       Remove our backup, if it exists.
-# This update helper should be removed with bareos-17.
 
-%define post_backup_file() \
-if [ -f  %1 ]; then \
-      cp -a %1 %1.rpmupdate.%{version}.keep; \
+%define pre_backup_file() \
+FILE=%* \
+if [ -f "${FILE}" ]; then \
+  cp -a "${FILE}" "${FILE}.rpmupdate.%{version}.keep"; \
 fi; \
 %nil
 
 %define posttrans_restore_file() \
-if [ ! -e %1 -a -e %1.rpmupdate.%{version}.keep ]; then \
-   mv %1.rpmupdate.%{version}.keep %1; \
+FILE=%* \
+if [ ! -e "${FILE}" -a -e "${FILE}.rpmupdate.%{version}.keep" ]; then \
+  mv "${FILE}.rpmupdate.%{version}.keep" "${FILE}"; \
 fi; \
-if [ -e %1.rpmupdate.%{version}.keep ]; then \
-   rm %1.rpmupdate.%{version}.keep; \
+if [ -e "${FILE}.rpmupdate.%{version}.keep" ]; then \
+  rm "${FILE}.rpmupdate.%{version}.keep"; \
 fi; \
 %nil
 
-%define post_scsicrypto() \
-if [ -f "%{_sysconfdir}/%{name}/.enable-cap_sys_rawio" ]; then \
-   %{script_dir}/bareos-config set_scsicrypto_capabilities; \
-fi\
-%nil
+%pre universal-client
+%logging_start universal-client pre
+if [ $1 -gt 1 ]; then
+  # upgrade
+  OLDVER=$(rpm -q %{name}-universal-client --qf "%%{version}")
+  if %rpm_version_lt $OLDVER 16.2.0
+  then
+    %pre_backup_file /etc/%{name}/bareos-fd.conf
+  elif %rpm_version_lt $OLDVER 25.0.0
+  then
+    # The postun of the old package will try to restart the service.
+    # However, it will fail as the required config files
+    # will only be restored in posttrans.
+    # Therefore we create this marker and restart the service in posttrans.
+    if /bin/systemctl --quiet is-active bareos-fd.service; then
+      mkdir -p "%{_localstatedir}/lib/rpm-state/bareos/restart/"
+      touch "%{_localstatedir}/lib/rpm-state/bareos/restart/bareos-fd.service"
+    fi
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/client/myself.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-dir.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf"
+    %pre_backup_file "%{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf"
+  fi
+fi
+%create_group %{daemon_group}
+%create_user  %{storage_daemon_user}
+%logging_end
+exit 0
 
 %post universal-client
-%post_backup_file /etc/%{name}/bareos-fd.conf
-%{script_dir}/bareos-config initialize_local_hostname
-%{script_dir}/bareos-config initialize_passwords
+%logging_start universal-client post
+%{script_dir}/bareos-config deploy_config "bareos-fd"
 %if 0%{?suse_version} >= 1210
 %service_add_post bareos-fd.service
 /bin/systemctl enable bareos-fd.service >/dev/null 2>&1 || true
 %else
 %add_service_start bareos-fd
 %endif
-/sbin/ldconfig
-
-
-%posttrans universal-client
-%posttrans_restore_file /etc/%{name}/bareos-fd.conf
-
-%pre universal-client
-%create_group %{daemon_group}
-%create_user  %{storage_daemon_user}
-exit 0
-
+%logging_end
 
 %preun universal-client
+%logging_start universal-client preun
 %if 0%{?suse_version} >= 1210
 %service_del_preun bareos-fd.service
 %else
 %stop_on_removal bareos-fd
 %endif
+%logging_end
 
 %postun universal-client
+%logging_start universal-client postun
 %if 0%{?suse_version} >= 1210
 %service_del_postun bareos-fd.service
 %else
-%restart_on_update bareos-fd
+/bin/systemctl try-restart bareos-fd.service >/dev/null 2>&1 || true
 %endif
 %insserv_cleanup
-/sbin/ldconfig
+%logging_end
+
+%posttrans universal-client
+%logging_start universal-client posttrans
+# update from bareos < 16.2
+%posttrans_restore_file /etc/%{name}/bareos-fd.conf
+# update from bareos < 25
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/client/myself.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-dir.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/director/bareos-mon.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bareos-fd.d/messages/Standard.conf"
+%posttrans_restore_file "%{_sysconfdir}/%{name}/tray-monitor.d/client/FileDaemon-local.conf"
+if [ -e "%{_localstatedir}/lib/rpm-state/bareos/restart/bareos-fd.service" ]; then
+  if ! /bin/systemctl --quiet is-active bareos-fd.service; then
+    /bin/systemctl start bareos-fd.service >/dev/null 2>&1 || true
+  fi
+  rm "%{_localstatedir}/lib/rpm-state/bareos/restart/bareos-fd.service"
+fi
+%logging_end
 
 %changelog
