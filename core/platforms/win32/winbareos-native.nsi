@@ -18,6 +18,10 @@
 ;   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 ;   02110-1301, USA.
 
+# enforce ENABLE_SUBSCRIPTION_FEATURES definition
+!ifndef ENABLE_SUBSCRIPTION_FEATURES
+!error "ENABLE_SUBSCRIPTION_FEATURES is not defined, cannot build"
+!endif
 
 Unicode false
 
@@ -702,7 +706,11 @@ SectionIn 1 2 3
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
   !cd "${CMAKE_BINARY_DIR}\plugins"
+
+!if ${ENABLE_SUBSCRIPTION_FEATURES} == "1"
   File "hyper-v-fd.dll"
+!endif
+
 SectionEnd
 
 
@@ -1630,7 +1638,11 @@ done:
   SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
   SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED}   # traymon
   SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} #  fd plugins
+!if ${ENABLE_SUBSCRIPTION_FEATURES} == "1"
   SectionSetFlags ${SEC_FDPLUGIN_HYPERV} ${SF_SELECTED} #  fd plugin hyper-v
+!else
+  SectionSetFlags ${SEC_FDPLUGIN_HYPERV} ${SF_RO} #  fd plugin hyper-v disabled and not selectable
+!endif
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
   SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
