@@ -23,10 +23,17 @@ set -e
 set -o pipefail
 set -u
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
+
+if [ -f "${tmp}/vm_id" ]; then
+  source "${tmp}/vm_id"
+
+  # delete all vms except the one that was backed up
+  vm_id=$(ps_exec "\$ErrorActionPreference= 'silentlycontinue'; Get-VM | Where-Object { \$_.Name -eq \"${vm_name}\" -a \$_.VMId -ne \"${vm_id}\" } | Remove-VM")
+fi
 
 "${rscripts}"/cleanup

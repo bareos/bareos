@@ -24,10 +24,10 @@ set -o pipefail
 set -x
 set -u
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${rscripts}"/functions
 
 "${rscripts}"/cleanup
@@ -39,9 +39,20 @@ bin/bareos status
 # make sure, director is up and running.
 print_debug "$(bin/bconsole <<<"status dir")"
 
-output=$(ps_exec "\$ErrorActionPreference= 'silentlycontinue'; \$vm = \$(Get-VM -Name ${vm_name}); Write-Host -NoNewLine \$vm.Length")
+vm_id=$(ps_exec "\$ErrorActionPreference= 'silentlycontinue'; \$vm = \$(Get-VM -Name ${vm_name}); if ($vm.Length -eq 1) { Write-Host -NoNewLine \$vm.VMId }")
 
-if ! [[ "${output}" -eq "1" ]]; then
-  echo "There are ${output} VMs named '${vm_name}'. There should be 1."
+if [[ -z "${vm_id}" ]]; then
+  echo "'${vm_name}' is not a valid backup target. There should be exactly one vm called that."
   exit 1
 fi
+
+other_count=$(ps_exec "\$ErrorActionPreference= 'silentlycontinue'; \$other_vms=\$(Get-VM | Where-Object { \$_.Name -ne \"${vm_name}\"}); Write-Host -NoNewLine \$other_vms.Length")
+
+if [[ "${other_count}" -ne 0 ]]; then
+  echo "this test currently deletes all non backed up vms.  So please delete them yourself first"
+  exit 1
+fi
+
+cat <<EOF >"${tmp}/vm_id"
+vm_id=\"${vm_id}\"
+EOF
