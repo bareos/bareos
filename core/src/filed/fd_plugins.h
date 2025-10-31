@@ -101,7 +101,12 @@ struct save_pkt {
   struct stat statp{};                /* System stat() packet for file */
   int32_t type{};                     /* FT_xx for this file */
   char flags[FOPTS_BYTES]{};          /* Bareos internal flags */
-  bool no_read{};        /* During the save, the file should not be saved */
+  bool no_read{}; /* During the save, the file should not be saved */
+
+  // backup data from windows clients (even plugin data) is assumed to be
+  // a valid windows backup data stream by default.
+  // If a plugin or the core does _not_ create a valid windows backup data
+  // stream, then it should set "portable" to true.
   bool portable{};       /* Set if data format is portable */
   bool accurate_found{}; /* Found in accurate list (valid after CheckChanges())
                           */

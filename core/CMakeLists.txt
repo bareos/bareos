@@ -42,6 +42,7 @@ include(BareosHelper)
 # switch on CXX 20 Support
 #
 set(CMAKE_CXX_STANDARD 20)
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # enable PIC/PIE by default
 include(CheckPIESupported)

@@ -18,6 +18,10 @@
 ;   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 ;   02110-1301, USA.
 
+# enforce ENABLE_SUBSCRIPTION_FEATURES definition
+!ifndef ENABLE_SUBSCRIPTION_FEATURES
+!error "ENABLE_SUBSCRIPTION_FEATURES is not defined, cannot build"
+!endif
 
 Unicode false
 
@@ -452,10 +456,14 @@ skipmsgbox:
     ${EndIf}
 !macroend
 
+!if ${ENABLE_SUBSCRIPTION_FEATURES} == "1"
+!define SUBSCRIPTION_FEATURES_TEXT "subscription"
+!else
+!define SUBSCRIPTION_FEATURES_TEXT "community"
+!endif
 
-
-Name "${PRODUCT_NAME} ${PRODUCT_VERSION} (${PRODUCT_PLATFORM})"
-OutFile "${PRODUCT_NAME}-${PRODUCT_VERSION}-${PRODUCT_PLATFORM}-${CMAKE_CONFIG_TYPE}-unsigned.exe"
+Name "${PRODUCT_NAME} ${PRODUCT_VERSION} (${PRODUCT_PLATFORM}) ${SUBSCRIPTION_FEATURES_TEXT}"
+OutFile "${PRODUCT_NAME}-${PRODUCT_VERSION}-${PRODUCT_PLATFORM}-${CMAKE_CONFIG_TYPE}-${SUBSCRIPTION_FEATURES_TEXT}-unsigned.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
@@ -688,6 +696,7 @@ SectionIn 1 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
+
   !cd "${CMAKE_BINARY_DIR}\plugins"
   File "bpipe-fd.dll"
   File "mssqlvdi-fd.dll"
@@ -695,6 +704,22 @@ SectionIn 1 2 3
   # File "python3-fd.dll"
 SectionEnd
 
+Section /o "Windows Disaster Recovery (Barri) File Daemon Plugin and Tools" SEC_FDPLUGIN_BARRI
+SectionIn 1 2 3
+  SetShellVarContext all
+  SetOutPath "$INSTDIR\Plugins"
+  SetOverwrite ifnewer
+  !cd "${CMAKE_BINARY_DIR}\plugins"
+
+!if ${ENABLE_SUBSCRIPTION_FEATURES} == "1"
+  File "barri-fd.dll"
+  # Write barri-cli.exe to normal install dir
+  SetOutPath "$INSTDIR"
+  !cd "${CMAKE_BINARY_DIR}\bin"
+  File "barri-cli.exe"
+!endif
+
+SectionEnd
 
 
 Section "Open Firewall for File Daemon" SEC_FIREWALL_FD
@@ -1165,6 +1190,7 @@ SectionEnd
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FD} "Installs the Bareos File Daemon and required Files"
   !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_FD} "Programs belonging to the Bareos File Daemon (client)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FDPLUGINS} "Installs the Bareos File Daemon Plugins"
+  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FDPLUGIN_BARRI} "Installs the Windows Disaster Recovery Bareos File Daemon Plugin and Tools"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_FIREWALL_FD} "Opens the needed ports for the File Daemon in the windows firewall"
 
   ; SD
@@ -1620,6 +1646,13 @@ done:
   SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
   SectionSetFlags ${SEC_TRAYMON} ${SF_SELECTED}   # traymon
   SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} #  fd plugins
+
+!if ${ENABLE_SUBSCRIPTION_FEATURES} == "1"
+  SectionSetFlags ${SEC_FDPLUGIN_BARRI} ${SF_SELECTED} #  fd plugin barri preselected
+!else
+  SectionSetFlags ${SEC_FDPLUGIN_BARRI} ${SF_RO} #  fd plugin barri disabled and not selectable
+!endif
+
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
   SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
@@ -2098,6 +2131,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bextract.exe"
   Delete "$INSTDIR\bscan.exe"
   Delete "$INSTDIR\bconsole.exe"
+  Delete "$INSTDIR\barri-cli.exe"
   Delete "$INSTDIR\bareos-config-deploy.bat"
 
   Delete "$INSTDIR\*bareos.dll"

@@ -13,8 +13,9 @@ DIRECTOR_DAEMON_USER = $(DAEMON_USER)
 STORAGE_DAEMON_USER = $(DAEMON_USER)
 FILE_DAEMON_USER = root
 STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
-BAREOS_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | sed 's/Version: //g')
+BAREOS_VERSION := $(shell dpkg-parsechangelog --show-field Version)
 DIST_ID_REL := $(shell lsb_release --id --release --short | tr -d '\n')
+WORK_DIR := $(shell pwd)
 
 define CONFIGURE_COMMON
   -Dsbindir=/usr/sbin \
@@ -48,10 +49,18 @@ define CONFIGURE_COMMON
   -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Drpath=no \
-  -DVERSION_STRING=$(BAREOS_VERSION)
+  -DVERSION_STRING=$(BAREOS_VERSION) \
+  -DCPM_indicators_SOURCE=$(WORK_DIR)/../deps/indicators
 endef
 
 
+ifeq ($(DIST_ID_REL),Debian11)
+# debian 11 sadly ships with the last version of fmt that does not contain
+# some needed functions that barri needs
+CONFIGURE_COMMON       += -DENABLE_BARRI=no
+else
+CONFIGURE_COMMON       += -DENABLE_BARRI=yes
+endif
 
 ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
 CONFIGURE_COMMON       += -Dacl=no -Dxattr=no -Dscsi-crypto=no -Dndmp=no

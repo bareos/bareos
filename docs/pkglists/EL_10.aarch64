@@ -1,4 +1,5 @@
 aarch64/bareos
+aarch64/bareos-barri-cli
 aarch64/bareos-bconsole
 aarch64/bareos-client
 aarch64/bareos-common
@@ -12,6 +13,7 @@ aarch64/bareos-director
 aarch64/bareos-director-python-plugins-common
 aarch64/bareos-director-python3-plugin
 aarch64/bareos-filedaemon
+aarch64/bareos-filedaemon-barri-plugin
 aarch64/bareos-filedaemon-grpc-python3-plugin
 aarch64/bareos-filedaemon-ldap-python-plugin
 aarch64/bareos-filedaemon-libcloud-python-plugin
@@ -31,6 +33,7 @@ aarch64/bareos-storage-tape
 aarch64/bareos-tools
 aarch64/bareos-traymonitor
 aarch64/bareos-webui
+debug/aarch64/bareos-barri-cli-debuginfo
 debug/aarch64/bareos-bconsole-debuginfo
 debug/aarch64/bareos-common-debuginfo
 debug/aarch64/bareos-database-common-debuginfo
@@ -39,6 +42,7 @@ debug/aarch64/bareos-debuginfo
 debug/aarch64/bareos-debugsource
 debug/aarch64/bareos-director-debuginfo
 debug/aarch64/bareos-director-python3-plugin-debuginfo
+debug/aarch64/bareos-filedaemon-barri-plugin-debuginfo
 debug/aarch64/bareos-filedaemon-debuginfo
 debug/aarch64/bareos-filedaemon-grpc-python3-plugin-debuginfo
 debug/aarch64/bareos-filedaemon-python3-plugin-debuginfo

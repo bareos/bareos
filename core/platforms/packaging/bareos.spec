@@ -47,6 +47,7 @@ Vendor:     The Bareos Team
 %define contrib 1
 %define webui 1
 %define enable_grpc 1
+%define enable_barri 1
 
 # cmake build directory
 %define CMAKE_BUILDDIR       cmake-build
@@ -491,6 +492,16 @@ Requires:   bareos-filedaemon = %{version}
 Requires:   bareos-filedaemon-python-plugin = %{version}
 Suggests:   bareos-filedaemon-python3-plugin = %{version}
 
+%if 0%{?enable_barri}
+%package    filedaemon-barri-plugin
+Summary:    Bareos Recovery Imager (Barri) plugin for Bareos File daemon
+Group:      Productivity/Archiving/Backup
+Requires:   bareos-filedaemon = %{version}
+
+%package    barri-cli
+Summary:    Bareos Recovery Imager (Barri) command line program
+Group:      Productivity/Archiving/Backup
+%endif
 
 %package    storage-python3-plugin
 Summary:    Python plugin for Bareos Storage daemon
@@ -595,6 +606,18 @@ This package contains the Percona python plugin for the file daemon
 %{dscr}
 
 This package contains the Mariabackup python plugin for the file daemon
+
+%if 0%{?enable_barri}
+%description filedaemon-barri-plugin
+%{dscr}
+
+This package contains the Bareos Recovery Imager (barri) plugin for the file daemon
+
+%description barri-cli
+%{dscr}
+
+This package contains the Bareos Recovery Imager (barri) command line tool
+%endif
 
 
 %description storage-python3-plugin
@@ -1484,6 +1507,16 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-mariabackup-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-mariabackup.py*
+
+%if 0%{?enable_barri}
+%files filedaemon-barri-plugin
+%defattr(-, root, root)
+%{plugin_dir}/barri-fd.so
+
+%files barri-cli
+%defattr(-, root, root)
+%{_bindir}/barri-cli
+%endif
 
 
 %files director-python3-plugin

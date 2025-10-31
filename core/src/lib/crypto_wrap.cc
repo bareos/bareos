@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -120,18 +120,18 @@ std::optional<std::string> AesUnwrap(const uint8_t* kek,
   EVP_CIPHER_CTX_set_flags(ctx.get(), EVP_CIPHER_CTX_FLAG_WRAP_ALLOW);
 
   if (EVP_DecryptInit_ex(ctx.get(), EVP_aes_128_wrap(), NULL, kek, iv) != 1) {
-    return OpenSSLErrors("EVP_EncryptInit_ex()");
+    return OpenSSLErrors("EVP_DecryptInit_ex()");
   }
 
   int total_len = 0;
   int len;
   if (EVP_DecryptUpdate(ctx.get(), plain, &len, cipher, (n + 1) * 8) != 1) {
-    return OpenSSLErrors("EVP_EncryptUpdate()");
+    return OpenSSLErrors("EVP_DecryptUpdate()");
   }
   total_len += len;
 
   if (EVP_DecryptFinal_ex(ctx.get(), plain + len, &len) != 1) {
-    return OpenSSLErrors("EVP_EncryptFinal()");
+    return OpenSSLErrors("EVP_DecryptFinal()");
   }
   total_len += len;
 
