@@ -73,6 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix some spelling issues [PR #2403]
 - debian: remove dbc_debug to avoid username/password leakage [PR #2417]
 - uniformized variables [PR #2391]
+- plugin: postgresql do testing with wal compress on [PR #2408]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -257,6 +258,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [PR #2401]: https://github.com/bareos/bareos/pull/2401
 [PR #2403]: https://github.com/bareos/bareos/pull/2403
 [PR #2404]: https://github.com/bareos/bareos/pull/2404
+[PR #2408]: https://github.com/bareos/bareos/pull/2408
 [PR #2412]: https://github.com/bareos/bareos/pull/2412
 [PR #2416]: https://github.com/bareos/bareos/pull/2416
 [PR #2417]: https://github.com/bareos/bareos/pull/2417
