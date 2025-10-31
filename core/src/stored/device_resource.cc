@@ -164,8 +164,16 @@ bool DeviceResource::PrintConfig(OutputFormatterResource& send,
   if (multiplied_device_resource) { return true; }
   // This should only be the case for devices that where multiplied, i.e. count
   // > 1 to avoid naming collision with its implicit autochanger.
-  ASSERT((count > 1) == (resource_name_[0] == '$'));
   bool dollar_prefixed = (resource_name_[0] == '$');
+
+  // this is generally true, except for the small time slice _after_ the config
+  // has been parsed, but _before_ the device multiplication happened.
+  // Sadly this function does get called inbetween: When the debug level
+  // is high enough we dump the config right after parsing ...
+  // As far as i know, we do not have a way to check if we are in this case
+  // even if we access "private" variables of the configurationparser
+
+  // ASSERT((count > 1) == dollar_prefixed);
   if (dollar_prefixed) { ++resource_name_; }
   bool res = BareosResource::PrintConfig(send, *my_config, hide_sensitive_data,
                                          verbose);
