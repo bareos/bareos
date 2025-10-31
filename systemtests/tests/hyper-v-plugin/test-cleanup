@@ -27,7 +27,7 @@ set -u
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 if [ -f "${tmp}/vm_id" ]; then
   source "${tmp}/vm_id"
@@ -36,4 +36,4 @@ if [ -f "${tmp}/vm_id" ]; then
   vm_id=$(ps_exec "\$ErrorActionPreference= 'silentlycontinue'; Get-VM | Where-Object { \$_.Name -eq \"${vm_name}\" -a \$_.VMId -ne \"${vm_id}\" } | Remove-VM")
 fi
 
-"${rscripts}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/cleanup

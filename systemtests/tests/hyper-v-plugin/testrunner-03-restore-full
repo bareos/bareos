@@ -34,7 +34,7 @@ export TestName
 . ./environment
 
 #shellcheck source=../../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 start_test
 
@@ -69,7 +69,5 @@ if ! [[ "${output}" -eq "2" ]]; then
   echo "There are ${output} VMs named '${vm_name}'. There should be 2."
   exit 1
 fi
-
-
 
 end_test
