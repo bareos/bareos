@@ -75,6 +75,20 @@ if(HAVE_WIN32)
     DESTINATION ${plugindir}
     COMPONENT filedaemon
   )
+
+  bareos_add_plugin(hyper-v-fd)
+  target_sources(hyper-v-fd PRIVATE ../../win32/plugins/filed/hyper-v.cc)
+  target_link_libraries(hyper-v-fd PRIVATE ${THREADS_THREADS} bareos)
+  target_link_libraries(
+    hyper-v-fd PRIVATE wbemuuid.lib virtdisk.lib Shell32.lib
+  )
+  target_link_libraries(hyper-v-fd PRIVATE Jansson::Jansson)
+
+  install(
+    TARGETS hyper-v-fd
+    DESTINATION ${plugindir}
+    COMPONENT filedaemon
+  )
 endif()
 
 if(NOT HAVE_WIN32)
@@ -101,5 +115,6 @@ if(HAVE_GFAPI AND ENABLE_GFAPI_FD)
 endif()
 
 add_subdirectory(grpc)
+add_subdirectory(hyper-v-backup)
 
 include(DebugEdit)
