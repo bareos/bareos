@@ -26,10 +26,10 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
-#shellcheck source=../scripts/functions
+#shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 #shellcheck source=functions
 . functions
@@ -51,7 +51,7 @@ ${command}
 .
 .
 END_OF_DATA
-  if ! bin/bareos status >${NULL_DEV}; then
+  if ! bin/bareos status >/dev/null; then
     echo "loop detected that bareos died" 1>&2
     break
   fi
@@ -59,7 +59,7 @@ END_OF_DATA
   command_count=$((command_count + 1))
 done | bin/bconsole
 
-if ! bin/bareos status >"${NULL_DEV}"; then
+if ! bin/bareos status >/dev/null; then
   # we managed to create a crash, lets try to find out
   # where it went wrong
 
