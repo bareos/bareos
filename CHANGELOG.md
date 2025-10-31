@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- plugin: postgresql do testing with wal compress on [PR #2420]
+
 ## [24.0.7] - 2025-10-30
 
 ### Documentation
@@ -547,4 +550,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2397]: https://github.com/bareos/bareos/pull/2397
 [PR #2402]: https://github.com/bareos/bareos/pull/2402
 [PR #2414]: https://github.com/bareos/bareos/pull/2414
+[PR #2420]: https://github.com/bareos/bareos/pull/2420
 [unreleased]: https://github.com/bareos/bareos/tree/master
