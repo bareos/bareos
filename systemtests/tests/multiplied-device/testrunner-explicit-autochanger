@@ -24,6 +24,9 @@ JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
+RestoreDirectory="${tmp}/explicit"
+mkdir -p "${RestoreDirectory}"
+
 start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -59,7 +62,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @# now do a restore
 @#
 @$out $tmp/log2.out
-restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+restore client=bareos-fd fileset=SelfTest where=${RestoreDirectory} select all done
 yes
 wait
 messages
@@ -109,7 +112,7 @@ mv ./etc/bareos/bareos-dir.d/storage/fakestorage1.conf_backup ./etc/bareos/bareo
 mv ./etc/bareos/bareos-dir.d/storage/fakestorage2.conf_backup ./etc/bareos/bareos-dir.d/storage/fakestorage2.conf
 
 check_two_logs
-check_restore_diff ${BackupDirectory}
+check_restore_diff "${BackupDirectory}" "${RestoreDirectory}"
 
 #make sure all the setdevice commands were successful
 expect_grep "3000 OK setdevice=MultiFileStorage0001 autoselect=1" \

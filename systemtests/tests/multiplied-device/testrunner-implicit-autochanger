@@ -43,6 +43,9 @@ JobName=backup-to-pool4
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
+RestoreDirectory="${tmp}/implicit"
+mkdir -p "${RestoreDirectory}"
+
 start_test
 
 Vol=("Pool4-0001" "Pool4-0002" "Pool4-0003")
@@ -68,7 +71,7 @@ messages
 @# now do a restore
 @#
 @$out $tmp/restore-log.out
-restore client=bareos-fd fileset=SelfTest where=$tmp/bareos-restores select all done
+restore client=bareos-fd fileset=SelfTest where=${RestoreDirectory} select all done
 yes
 wait
 messages
@@ -106,7 +109,7 @@ expect_not_grep "Using Device \"ImplicitAutochangerDevice\" (storage) to write."
 
 check_log "${tmp}/backup-log.out"
 check_log "${tmp}/restore-log.out"
-check_restore_diff ${BackupDirectory}
+check_restore_diff "${BackupDirectory}" "${RestoreDirectory}"
 
 #make sure all volumes are purged
 expect_grep "There are no more Jobs associated with Volume \"${Vol[0]}\". Marking it purged." \
