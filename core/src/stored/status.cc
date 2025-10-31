@@ -234,6 +234,7 @@ static void ListDevices(JobControlRecord* jcr,
     if (devicenames && !NeedToListDevice(devicenames, device_resource)) {
       continue;
     }
+    if (device_resource->count > 1) { continue; }
 
     dev = device_resource->dev;
     if (dev && dev->IsOpen()) {

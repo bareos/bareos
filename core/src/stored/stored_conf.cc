@@ -50,6 +50,8 @@
 #include "include/auth_types.h"
 #include "include/jcr.h"
 
+#include <algorithm>
+
 namespace storagedaemon {
 
 static void FreeResource(BareosResource* sres, int type);
@@ -207,7 +209,7 @@ static const ResourceItem dev_items[] = {
   { "AutoInflate", CFG_TYPE_IODIRECTION, ITEM(res_dev, autoinflate), {config::IntroducedIn{13, 4, 0}}},
   { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_dev, collectstats), {config::DefaultValue{"true"}}},
   { "EofOnErrorIsEot", CFG_TYPE_BOOL, ITEM(res_dev, eof_on_error_is_eot), {config::IntroducedIn{18, 2, 4}, config::Description{"If Yes, Bareos will treat any read error at an end-of-file mark as end-of-tape. You should only set this option if your tape-drive fails to detect end-of-tape while reading."}}},
-  { "Count", CFG_TYPE_PINT32, ITEM(res_dev, count), {config::DefaultValue{"1"}, config::Description{"If Count is set to (1 < Count < 10000), this resource will be multiplied Count times. The names of multiplied resources will have a serial number (0001, 0002, ...) attached. If set to 1 only this single resource will be used and its name will not be altered."}}},
+  { "Count", CFG_TYPE_PINT32, ITEM(res_dev, count), {config::DefaultValue{"1"}, config::Description{"If Count is set to (1 < Count < 10000), duplicated devices will be created post-fixed with serial numbers 0000 up to Count. The 0000 device is automatically assigned 'Autoselect=No'. Additionally, an autochanger resource is created with the name of the device the Count directive is specified for. The duplicated devices will be assigned to this autochanger unless they are used in another autochanger already."}}},
   {}
 };
 
@@ -430,38 +432,69 @@ static void ParseConfigCb(lexer* lc,
   }
 }
 
-static void MultiplyDevice(DeviceResource& multiplied_device_resource)
+static void MultiplyDevice(DeviceResource& original,
+                           ConfigurationParser& config)
 {
-  /* append 0001 to the name of the existing resource */
-  multiplied_device_resource.CreateAndAssignSerialNumber(1);
-
-  multiplied_device_resource.multiplied_device_resource
-      = std::addressof(multiplied_device_resource);
-
-  uint32_t count = multiplied_device_resource.count - 1;
-
-  /* create the copied devices */
-  for (uint32_t i = 0; i < count; i++) {
-    DeviceResource* copied_device_resource
-        = new DeviceResource(multiplied_device_resource);
-
-    /* append 0002, 0003, ... */
-    copied_device_resource->CreateAndAssignSerialNumber(i + 2);
-
-    copied_device_resource->multiplied_device_resource
-        = std::addressof(multiplied_device_resource);
-    copied_device_resource->count = 0;
-
-    my_config->AppendToResourcesChain(copied_device_resource,
-                                      copied_device_resource->rcode_);
-
-    if (copied_device_resource->changer_res) {
-      if (copied_device_resource->changer_res->device_resources) {
-        copied_device_resource->changer_res->device_resources->append(
-            copied_device_resource);
-      }
+  // create autochanger
+  if (!original.changer_res) {
+    original.changer_res = AutochangerResource::CreateImplicitAutochanger(
+                               std::string(original.resource_name_))
+                               .release();
+    original.changer_command = strdup("");
+    if (!config.GetResWithName(R_AUTOCHANGER,
+                               original.changer_res->resource_name_)) {
+      config.AppendToResourcesChain(original.changer_res, R_AUTOCHANGER);
+    } else {
+      Emsg0(M_INFO, 0,
+            "Device resource \"%s\" will not implicitly create an autochanger "
+            "resource \"%s\" since an autochanger resource with that name "
+            "already exists.\n",
+            original.resource_name_, original.changer_res->resource_name_);
     }
+  } else {
+    auto& devices = *original.changer_res->device_resources;
+    auto it = std::find(devices.begin(), devices.end(), &original);
+    if (it != devices.end()) { devices.remove(it - devices.begin()); }
+    Emsg0(M_INFO, 0,
+          "Device resource \"%s\" will not implicitly create autochanger "
+          "\"%s\" resource since it is already used by autochanger "
+          "resource \"%s\".\n",
+          original.resource_name_, original.resource_name_,
+          original.changer_res->resource_name_);
   }
+
+  // create devices
+  for (uint32_t i = 0; i <= original.count; i++) {
+    std::string serial_number = std::string("0000") + std::to_string(i);
+    std::string device_name = original.resource_name_
+                              + serial_number.substr(serial_number.size() - 4);
+    DeviceResource* device = dynamic_cast<DeviceResource*>(
+        config.GetResWithName(R_DEVICE, device_name.c_str()));
+    if (!device) {
+      device = original.CreateCopy(device_name).release();
+      if (i == 0) { device->autoselect = false; }
+      config.AppendToResourcesChain(device, R_DEVICE);
+    } else {
+      Emsg0(M_INFO, 0,
+            "Device resource \"%s\" will not implicitly create device \"%s\" "
+            "resource since there already exists a device resource with that "
+            "name.\n",
+            original.resource_name_, device_name.c_str());
+    }
+
+    auto& devices = *original.changer_res->device_resources;
+    auto it = std::find(devices.begin(), devices.end(), device);
+    if (it == devices.end()) { devices.append(device); }
+  }
+  // The original device name is prefixed with "$" in order to prevent a naming
+  // collision with the implicitly created autochanger. If both the original
+  // device and the implicit autochanger have the same name, both will be used
+  // if specified in a Director -> Storage resource. However, we only want the
+  // implicit autochanger to be used so we give the device a different name.
+  char* prefixed_resource_name
+      = strdup(("$" + std::string{original.resource_name_}).c_str());
+  free(original.resource_name_);
+  original.resource_name_ = prefixed_resource_name;
 }
 
 static void MultiplyConfiguredDevices(ConfigurationParser& config)
@@ -469,7 +502,14 @@ static void MultiplyConfiguredDevices(ConfigurationParser& config)
   BareosResource* p = nullptr;
   while ((p = config.GetNextRes(R_DEVICE, p))) {
     DeviceResource& d = dynamic_cast<DeviceResource&>(*p);
-    if (d.count > 1) { MultiplyDevice(d); }
+    if (d.count > 1 && d.count < 10000) {
+      MultiplyDevice(d, config);
+    } else if (d.count >= 10000) {
+      Emsg0(M_CONFIG_ERROR, 0,
+            "Count directive in device \"%s\" is %u, but must be in range 1 < "
+            "Count < 10000.\n",
+            d.resource_name_, d.count);
+    }
   }
 }
 

@@ -164,7 +164,7 @@ endif()
 
 if(CMAKE_CXX_FLAGS MATCHES "-fsanitize=address"
    AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
-   AND CMAKE_CXX_COMPILER_VERSION MATCHES "^12"
+   AND CMAKE_CXX_COMPILER_VERSION MATCHES "^1[234]"
 )
   # work around compiler/stdlib bug see
   # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562#c17

@@ -1,0 +1,199 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+#
+# This systemtest validates that devices, multiplied using the 'Count' directive,
+# work and can be used as any other device.
+# To validate the devices behaviour, we perform the following actions:
+#  - backups
+#  - restores
+#  - purges
+#  - truncates
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-to-pool1
+#shellcheck source=../../environment.in
+. ./environment
+
+JobName=backup-bareos-fd
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+RestoreDirectory="${tmp}/explicit"
+mkdir -p "${RestoreDirectory}"
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+
+setdevice storage=File device=MultiFileStorage0001 autoselect=yes
+setdevice storage=File device=MultiFileStorage0002 autoselect=yes
+setdevice storage=File device=MultiFileStorage0003 autoselect=yes
+
+label volume=Pool1-Vol pool=Pool1 storage=File device=MultiFileStorage0001
+label volume=Pool2-Vol pool=Pool2 storage=File device=MultiFileStorage0002
+label volume=Pool3-Vol pool=Pool3 storage=File device=MultiFileStorage0003
+
+run job=backup-to-pool1 level=Full yes
+run job=backup-to-pool2 level=Full yes
+run job=backup-to-pool3 level=Full yes
+@sleep 1
+run job=backup-to-pool1 level=Full yes
+run job=backup-to-pool2 level=Full yes
+run job=backup-to-pool3 level=Full yes
+status storage=File
+wait
+messages
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+restore client=bareos-fd fileset=SelfTest where=${RestoreDirectory} select all done
+yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@#
+@# now purge and truncate
+@#
+@$out $tmp/log3.out
+purge volume=Pool1-Vol yes
+truncate volstatus=Purged drive=0 yes
+purge volume=Pool2-Vol yes
+truncate volstatus=Purged drive=1 yes
+purge volume=Pool3-Vol yes
+truncate volstatus=Purged drive=2 yes
+messages
+quit
+END_OF_DATA
+
+run_bconsole "$tmp/bconcmds"
+
+check_for_zombie_jobs storage=File
+
+# rename the storages instead of deleting them
+mv ./etc/bareos/bareos-dir.d/storage/fakestorage1.conf ./etc/bareos/bareos-dir.d/storage/fakestorage1.conf_backup
+mv ./etc/bareos/bareos-dir.d/storage/fakestorage2.conf ./etc/bareos/bareos-dir.d/storage/fakestorage2.conf_backup
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/log4.out
+label volume=fakevolume storage=fakestorage1 pool=Full
+reload
+delete storage=File
+delete storage=fakestorage1
+messages
+delete storage=fakestorage2
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+# rename files to be able to run the test again later
+mv ./etc/bareos/bareos-dir.d/storage/fakestorage1.conf_backup ./etc/bareos/bareos-dir.d/storage/fakestorage1.conf
+mv ./etc/bareos/bareos-dir.d/storage/fakestorage2.conf_backup ./etc/bareos/bareos-dir.d/storage/fakestorage2.conf
+
+check_two_logs
+check_restore_diff "${BackupDirectory}" "${RestoreDirectory}"
+
+#make sure all the setdevice commands were successful
+expect_grep "3000 OK setdevice=MultiFileStorage0001 autoselect=1" \
+  "${tmp}"/log1.out \
+  "The setdevice command failed for MultiFileStorage0001."
+expect_grep "3000 OK setdevice=MultiFileStorage0002 autoselect=1" \
+  "${tmp}"/log1.out \
+  "The setdevice command failed for MultiFileStorage0002."
+expect_grep "3000 OK setdevice=MultiFileStorage0003 autoselect=1" \
+  "${tmp}"/log1.out \
+  "The setdevice command failed for MultiFileStorage0003."
+
+#make sure all MultiFileStorage devices are used
+expect_grep "Using Device \"MultiFileStorage0001\"" \
+  "${tmp}"/log1.out \
+  "\"MultiFileStorage0001\" not in use."
+expect_grep "Using Device \"MultiFileStorage0002\"" \
+  "${tmp}"/log1.out \
+  "\"MultiFileStorage0002\" not in use."
+expect_grep "Using Device \"MultiFileStorage0003\"" \
+  "${tmp}"/log1.out \
+  "\"MultiFileStorage0003\" not in use."
+
+#make sure all volumes are purged
+expect_grep "There are no more Jobs associated with Volume \"Pool1-Vol\". Marking it purged." \
+  "${tmp}"/log3.out \
+  "The Purge command failed for Volume \"Pool1-Vol\"."
+expect_grep "There are no more Jobs associated with Volume \"Pool2-Vol\". Marking it purged." \
+  "${tmp}"/log3.out \
+  "The Purge command failed for Volume \"Pool2-Vol\"."
+expect_grep "There are no more Jobs associated with Volume \"Pool3-Vol\". Marking it purged." \
+  "${tmp}"/log3.out \
+  "The Purge command failed for Volume \"Pool3-Vol\"."
+
+#make sure all volumes are correctly truncated with the correct drive
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Pool1-Vol\" Device=\"MultiFileStorage0000\" (storage)" \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for Volume \"Pool1-Vol\"."
+expect_grep "The volume 'Pool1-Vol' has been truncated." \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for Volume \"Pool1-Vol\"."
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Pool2-Vol\" Device=\"MultiFileStorage0001\" (storage)" \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for Volume \"Pool2-Vol\"."
+expect_grep "The volume 'Pool2-Vol' has been truncated." \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for Volume \"Pool2-Vol\"."
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"Pool3-Vol\" Device=\"MultiFileStorage0002\" (storage)" \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for Volume \"Pool3-Vol\"."
+expect_grep "The volume 'Pool3-Vol' has been truncated." \
+  "${tmp}"/log3.out \
+  "The Truncate command failed for Volume \"Pool3-Vol\"."
+
+# make sure the devices really have been truncated
+for i in 1 2 3; do
+  size=$(wc -c <"storage/Pool${i}-Vol")
+  if [ "$size" -ge 300 ]; then
+    echo "file storage/Pool$i-Vol" was not truncated
+    estat=3
+  fi
+done
+
+# check if the relabel went correctly
+expect_grep "3000 OK label. VolFiles=0 VolBytes=... Volume=\"fakevolume\" Device=\"FileStorage\" (storage)" \
+  "${tmp}"/log4.out \
+  "The fakevolume relabel failed."
+
+# make sure exact number of orphaned storages is found
+expect_grep "Found 2 orphaned Storage records" \
+  "${tmp}"/log4.out \
+  "The delete command failed to find the exact number of orphaned fakestorages."
+
+# make sure storage 'File' cannot be deleted
+expect_grep "The given storage 'File' either does not exist at all, or still exists in the configuration." \
+  "${tmp}"/log4.out \
+  "The delete command failed for an existing storage."
+
+# make sure extra storages fakestorage1 cannot be deleted
+expect_grep "Orphaned storage 'fakestorage1' is being used by volume 'fakevolume'" \
+  "${tmp}"/log4.out \
+  "The delete command failed to detect fakestorages related to other medias."
+
+end_test
