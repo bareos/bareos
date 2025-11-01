@@ -56,6 +56,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       system:py3plug-fd-basic:config
       system:py3plug-fd-basic:forcebackup
       system:py3plug-fd-basic:jobmsg
+      system:py3plug-fd-proxmox
       system:restore:archive-full-restore
       system:restore:full-restore
       system:restore:restore-fileregex
