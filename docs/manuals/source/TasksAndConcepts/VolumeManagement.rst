@@ -531,7 +531,10 @@ Example: use four storage devices pointing to the same directory
 Example: use a virtual disk autochanger
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In default installation you will find examples files that might help you to setup a virtual file autochanger.
+Note that if you want to run multiple jobs at once for the same disk storage device,
+you can simply use the :config:option:`sd/device/Count` directive and do not need to manually configure an autochanger yourself.
+
+If you still want to manually configure a virtual autochanger, you will find examples files that might help you with your setup.
 Compared to the previous example, you will not be forced to declare each device in the dir storage definition,
 only the autochanger name will be declared, and with the use of :config:option:`sd/device/Count`\  auto-numbering
 device you can adjust the number of needed drives.

@@ -41,7 +41,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
     , mount_point(nullptr)
     , mount_command(nullptr)
     , unmount_command(nullptr)
-    , temporarily_swapped_numbered_name(nullptr) /* should not copy */
 {
   if (other.media_type) { media_type = strdup(other.media_type); }
   if (other.archive_device_string) {
@@ -98,8 +97,6 @@ DeviceResource::DeviceResource(const DeviceResource& other)
   }
   count = other.count;
   multiplied_device_resource = other.multiplied_device_resource;
-  multiplied_device_resource_base_name
-      = other.multiplied_device_resource_base_name;
   dev = other.dev;
   changer_res = other.changer_res;
 }
@@ -152,11 +149,8 @@ DeviceResource& DeviceResource::operator=(const DeviceResource& rhs)
   unmount_command = rhs.unmount_command;
   count = rhs.count;
   multiplied_device_resource = rhs.multiplied_device_resource;
-  multiplied_device_resource_base_name
-      = rhs.multiplied_device_resource_base_name;
   dev = rhs.dev;
   changer_res = rhs.changer_res;
-  temporarily_swapped_numbered_name = rhs.temporarily_swapped_numbered_name;
 
   return *this;
 }
@@ -167,55 +161,35 @@ bool DeviceResource::PrintConfig(OutputFormatterResource& send,
                                  bool hide_sensitive_data,
                                  bool verbose)
 {
-  if (multiplied_device_resource) {
-    if (multiplied_device_resource == this) {
-      MultipliedDeviceRestoreBaseName();
-      BareosResource::PrintConfig(send, *my_config, hide_sensitive_data,
-                                  verbose);
-      MultipliedDeviceRestoreNumberedName();
-    } else {
-      /* do not print the multiplied devices */
-      return false;
-    }
-  } else {
-    BareosResource::PrintConfig(send, *my_config, hide_sensitive_data, verbose);
-  }
-  return true;
+  if (multiplied_device_resource) { return true; }
+  // This should only be the case for devices that where multiplied, i.e. count
+  // > 1 to avoid naming collision with its implicit autochanger.
+  bool dollar_prefixed = (resource_name_[0] == '$');
+
+  // this is generally true, except for the small time slice _after_ the config
+  // has been parsed, but _before_ the device multiplication happened.
+  // Sadly this function does get called inbetween: When the debug level
+  // is high enough we dump the config right after parsing ...
+  // As far as i know, we do not have a way to check if we are in this case
+  // even if we access "private" variables of the configurationparser
+
+  // ASSERT((count > 1) == dollar_prefixed);
+  if (dollar_prefixed) { ++resource_name_; }
+  bool res = BareosResource::PrintConfig(send, *my_config, hide_sensitive_data,
+                                         verbose);
+  if (dollar_prefixed) { --resource_name_; }
+  return res;
 }
 
-
-void DeviceResource::MultipliedDeviceRestoreBaseName()
+std::unique_ptr<DeviceResource> DeviceResource::CreateCopy(
+    const std::string& copy_name)
 {
-  temporarily_swapped_numbered_name = resource_name_;
-  resource_name_
-      = const_cast<char*>(multiplied_device_resource_base_name.c_str());
-}
-
-void DeviceResource::MultipliedDeviceRestoreNumberedName()
-{
-  /* call MultipliedDeviceRestoreBaseName() before */
-  ASSERT(temporarily_swapped_numbered_name);
-
-  resource_name_ = temporarily_swapped_numbered_name;
-  temporarily_swapped_numbered_name = nullptr;
-}
-
-void DeviceResource::CreateAndAssignSerialNumber(uint16_t number)
-{
-  if (multiplied_device_resource_base_name.empty()) {
-    /* save the original name which is
-     * the base name for multiplied devices */
-    multiplied_device_resource_base_name = resource_name_;
-  }
-
-  std::string tmp_name = multiplied_device_resource_base_name;
-
-  char b[4 + 1];
-  ::sprintf(b, "%04d", number < 10000 ? number : 9999);
-  tmp_name += b;
-
-  free(resource_name_);
-  resource_name_ = strdup(tmp_name.c_str());
+  auto device = std::make_unique<DeviceResource>(*this);
+  if (device->resource_name_) { free(device->resource_name_); }
+  device->resource_name_ = strdup(copy_name.c_str());
+  device->multiplied_device_resource = this;
+  device->count = 0;
+  return device;
 }
 
 static void WarnOnSetMaxBlockSize(const DeviceResource& resource)

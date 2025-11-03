@@ -1,6 +1,8 @@
+#!/bin/bash
+
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,12 +19,20 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+set -e
+set -o pipefail
+set -u
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-  set(global_fileset_options "XAttr Support = No")
-else()
-  set(global_fileset_options "")
-endif()
+#shellcheck source=../../environment.in
+. ./environment
 
-create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
+
+# Fill ${BackupDirectory} with data.
+setup_data
+
+bin/bareos start
+bin/bareos status

@@ -285,35 +285,40 @@ Multiplied Device
 The Multiplied Device feature can be used when multiple identical devices are needed.
 In this case the :config:option:`sd/device/Count` can be added to the regarding Device resource.
 
-When the configuration is loaded the |bareosSD| will then automatically multiply this device
-:config:option:`sd/device/Count` times. The number of multiplied devices includes the original Device.
+Note that this option only has an effect if the assigned value is greater than 1.
 
-A number "0001" will be appended to name of the initial Device. All other multiplied Devices have
-increasing numbers "0002", "0003", accordingly. In the example below the name of the multiplied
-devices will be "MultiFileStorage0001", "MultiFileStorage0002", and so on.
+When the configuration is loaded, the |bareosSD| will automatically multiply this device :config:option:`sd/device/Count` + 1 times adding suffixes to the names starting from "0000". 
+
+The multiplied device with the suffix "0000" serves a special purpose, it is implicitly assigned :config:option:`sd/device/AutoSelect` to "no".
+All other multiplied devices are an exact copy of the original device.
+
+Additionally, specifying :config:option:`sd/device/Count` also implicitly creates an autochanger with the same name as the original device with all devices listed in that autochanger.
+This only happens if the original device is not already associated to another autochanger.
 
 .. code-block:: bareosconfig
    :caption: bareos-sd.d/device/multiplied_device.conf
 
    Device {
-     #Multiply this device Count times
-     Count = 3
+     Count = 3 # create devices MultiFileStorage0000, ..., MultiFileStorage0003
 
      Name = MultiFileStorage
+     Description = "File device. Will be multiplied 4 times"
      Media Type = File
      Archive Device = /home/testuser/multiplied-device-test/storage
-     LabelMedia = yes                   # lets Bareos label unlabeled media
+     LabelMedia = yes
      Random Access = yes
-     AutomaticMount = yes               # when device opened, read it
+     AutomaticMount = yes
      RemovableMedia = no
      AlwaysOpen = no
-     Description = "File device. Will be multiplied 3 times"
    }
 
 In the |bareosDir| any of the Multiplied Devices can be referred to using their numbered names.
 
 However, in the autochanger resource of the |bareosSD| the original name of the initial
 Multiplied Device Resource can be used.
+
+You do not have to explicitly create an autochanger resource in order to use the multiplied devices.
+However, if you decide to do so, for additional customizations, this could be done as follows.
 
 .. code-block:: bareosconfig
    :caption: bareos-sd.d/autochanger/autochanger.conf
@@ -329,6 +334,27 @@ Multiplied Device Resource can be used.
    }
 
 When the configuration is exported, again only the name of the initial Multiplied Device Resource will be printed.
+
+The Multiplied Device feature can be used when multiple identical devices are needed, e.g.
+when you want to run multiple jobs at once to the same storage :config:option:`sd/device/ArchiveDevice` location.
+
+Since the :config:option:`sd/device/Count` directive creates an implicit autochanger of the same name as the device,
+you don't have to touch your storage configuration in the director.
+
+.. code-block:: bareosconfig
+   :caption: bareos-dir.d/storage/File.conf
+   
+   Storage {
+      Name = File
+      Address = @hostname@
+      Password = "@sd_password@"
+      Device = MultiFileStorage
+      Media Type = File
+      Maximum Concurrent Jobs = 10
+   }
+
+Just make sure that :config:option:`dir/storage/MaximumConcurrentJobs` is specified, otherwise jobs will still not run in parallel.
+We advise to set it to the same value as the :config:option:`sd/device/Count` used.
 
 .. _MessagesResource1:
 
