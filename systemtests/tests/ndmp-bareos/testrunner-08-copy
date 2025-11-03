@@ -57,7 +57,7 @@ check_log "${log_home}/copy.out"
 # then restore a full copy
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-full.out
-restore jobid=20 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump all done yes
+restore jobid=20 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select all done yes
 wait
 messages
 END_OF_DATA
@@ -70,7 +70,7 @@ cleanup_remote
 # afterwards restore an incremental copy
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-incr.out
-restore jobid=38 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump all done yes
+restore jobid=38 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select all done yes
 wait
 messages
 END_OF_DATA
