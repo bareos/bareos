@@ -246,15 +246,13 @@ fi
 # (defined in bareos-sd.d/director resource)
 
 # Test volume content listing
-# export confdir for mtx-changer so mtx-changer find it.
-export confdir=$(pwd)/etc/bareos
 # load the tape into the drive
 slot=$(mtx -f $changer status | awk -F ":" "/VolumeTag=${volume}/ {gsub(\"Storage Element\",\"\",\$1);gsub(\" \",\"\",\$1); print \$1}")
 /usr/sbin/mtx -f "${changer}" load ${slot} 0 || :
 /usr/bin/mt -f "${ltodrive}" rewind || :
 bls_lj_log=$tmp/bls-label_job_output.log
-tape_device=$(awk -F '=' '/^ .*Name.*=.*tapedrive-0.*/ {gsub(" ","",$2);gsub("\"","",$2);print $2}' etc/bareos/bareos-sd.d/device/tape_devices.conf)
-sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -L -j -V ${volume} ${tape_device} >"${bls_lj_log}"
+bareos_tape_device=$(awk -F '=' '/^ .*Name.*=.*tapedrive.*-0.*/ {gsub(" ","",$2);gsub("\"","",$2);print $2}' etc/bareos/bareos-sd.d/device/tape_devices.conf)
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -L -j -V ${volume} ${bareos_tape_device} >"${bls_lj_log}"
 
 expect_grep "Crypto cache read 1 entries" \
   "$bls_lj_log" \
@@ -265,8 +263,8 @@ expect_grep "JobId             : 1" \
   "BLS jobid not found."
 
 bls_log=$tmp/bls-full_output.log
-sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${tape_device} >"${bls_log}"
-expect_grep "bls JobId 0: Ready to read from volume \"${volume}\" on device \"${tape_device}\"" \
+sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${bareos_tape_device} >"${bls_log}"
+expect_grep "bls JobId 0: Ready to read from volume \"${volume}\" on device \"${bareos_tape_device}\"" \
   "${bls_log}" \
   "BLS failed to read volume."
 
@@ -275,7 +273,7 @@ rm -rf "${restore_directory}"
 mkdir -p "${restore_directory}" || :
 bextract_log="${tmp}/bextract-output.log"
 # Test volume extraction
-sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${tape_device} "${restore_directory}" >"${bextract_log}"
+sbin/bextract-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -V ${volume} ${bareos_tape_device} "${restore_directory}" >"${bextract_log}"
 expect_grep "Crypto cache read 1 entries" \
   "${bextract_log}" \
   "bextract: no crypto cache entry found."
