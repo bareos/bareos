@@ -31,12 +31,12 @@ set -u
 "${BAREOS_SCRIPTS_DIR}"/cleanup
 "${BAREOS_SCRIPTS_DIR}"/setup
 
-if ! ./invalidate_tapes.sh ${1:-}; then
+if ! "${BAREOS_SCRIPTS_DIR}"/invalidate_tapes.sh ${1:-}; then
   echo "Could not invalidate tapes"
   exit 1
 fi
 
-if ! ./create_autochanger_configs.sh ${1:-}; then
+if ! "${BAREOS_SCRIPTS_DIR}"/create_autochanger_configs.sh ${1:-}; then
   echo "Could not create autochanger configs"
   exit 1
 fi

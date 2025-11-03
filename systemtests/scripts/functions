@@ -50,7 +50,7 @@ last_jobid_or_zero()
   # return the last jobid if it exists, or 0, so that
   # result + 1 is the next jobid
   set +o pipefail
-  "${BAREOS_BCONSOLE_BINARY}" -c "${conf}" <<< ".api 2
+  "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<< ".api 2
 .sql query=\"SELECT CASE WHEN is_called THEN last_value ELSE 0 END FROM job_jobid_seq;\"
 " | awk '/"case":/ {gsub("\"","",$2);print $2}'
   set -o pipefail
@@ -595,7 +595,7 @@ run_bconsole()
   local error_code=0
   local timeout=${BCONSOLE_TIMEOUT:-180s}
   if [ -f "$bconsole_file" ]; then
-    check_config bconsole ${BAREOS_BCONSOLE_BINARY} -c ${BAREOS_CONFIG_DIR} || exit $?
+    check_config bconsole "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" || exit $?
     # 'cmd || ec=$?' is used to prevent "set -e" from killing the script
     # before we had the chance to kill the daemons (in case of timeout)
     if test "$debug" -eq 1; then
