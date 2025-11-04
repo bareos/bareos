@@ -32,11 +32,11 @@ import time
 from datetime import datetime
 
 from BareosFdWrapper import *  # noqa # pylint: disable=import-error,wildcard-import
-import bareosfd # pylint: disable=import-error
-import BareosFdPluginBaseclass # pylint: disable=import-error
+import bareosfd  # pylint: disable=import-error
+import BareosFdPluginBaseclass  # pylint: disable=import-error
 
 
-@BareosPlugin # pylint: disable=undefined-variable
+@BareosPlugin  # pylint: disable=undefined-variable
 class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     """Plugin main class"""
 
@@ -184,76 +184,72 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         return bareosfd.bRC_OK
 
-    def plugin_io(self, IOP):
-
-        bareosfd.DebugMessage(
-            200,
-            (
-                f"plugin_io() called with function {IOP.func}"
-                f" IOP.count={IOP.count}, IOP.fname is set to {IOP.fname}\n"
-            ),
-        )
-
-        if IOP.func == bareosfd.IO_OPEN:
-            bareosfd.DebugMessage(100, f"IO_OPEN: {IOP.fname}\n")
-            if self.options.get("restoretodisk") == "yes":
-                IOP.status = bareosfd.iostat_do_in_core
-                self.file = open(IOP.fname, "wb")
-                IOP.filedes = self.file.fileno()
-                bareosfd.JobMessage(bareosfd.M_INFO, f"restoring to file {IOP.fname}\n")
-                return bareosfd.bRC_OK
-            # return super(BareosFdProxmox, self).plugin_io(IOP)
-
-            # TODO: Check if restore or backup to determine
-            if self.vzdump_process.stdin:
-                IOP.filedes = self.vzdump_process.stdin.fileno()
-            else:
-                IOP.filedes = self.vzdump_process.stdout.fileno()
-            IOP.status = bareosfd.iostat_do_in_core
-
+    def plugin_io_open(self, iop):
+        """Open file for backup or restore"""
+        bareosfd.DebugMessage(100, f"IO_OPEN: {iop.fname}\n")
+        if self.options.get("restoretodisk") == "yes":
+            iop.status = bareosfd.iostat_do_in_core
+            self.file = open(iop.fname, "wb")
+            iop.filedes = self.file.fileno()
+            bareosfd.JobMessage(bareosfd.M_INFO, f"restoring to file {iop.fname}\n")
             return bareosfd.bRC_OK
 
-        if IOP.func == bareosfd.IO_CLOSE:
-            bareosfd.DebugMessage(100, f"IO_CLOSE: {IOP.fname}\n")
+        # TODO: Check if restore or backup to determine
+        if self.vzdump_process.stdin:
+            iop.filedes = self.vzdump_process.stdin.fileno()
+        else:
+            iop.filedes = self.vzdump_process.stdout.fileno()
+        iop.status = bareosfd.iostat_do_in_core
 
-            if self.options.get("restoretodisk") == "yes":
-                self.file.close()
-                return bareosfd.bRC_OK
+        return bareosfd.bRC_OK
 
-            for line in self.current_logfile.readlines():
-                bareosfd.JobMessage(bareosfd.M_INFO, line)
+    def plugin_io_close(self, iop):
+        """Close file for backup or restore"""
+        bareosfd.DebugMessage(100, f"IO_CLOSE: {iop.fname}\n")
 
-            if self.vzdump_process.returncode:
-                bareosfd.DebugMessage(
-                    100,
-                    f"plugin_io() vzdump returncode: {self.vzdump_process.returncode}\n",
-                )
-                return bareosfd.bRC_ERR
-
+        if self.options.get("restoretodisk") == "yes":
+            self.file.close()
             return bareosfd.bRC_OK
 
-        if IOP.func == bareosfd.IO_SEEK:
-            bareosfd.DebugMessage(100, f"IO_SEEK: {IOP.fname}\n")
-            return bareosfd.bRC_OK
+        for line in self.current_logfile.readlines():
+            bareosfd.JobMessage(bareosfd.M_INFO, line)
 
-        if IOP.func == bareosfd.IO_READ:
-            bareosfd.DebugMessage(100, f"IO_READ: {IOP.fname}\n")
-            return bareosfd.bRC_OK
+        if self.vzdump_process.returncode:
+            bareosfd.DebugMessage(
+                100,
+                f"plugin_io() vzdump returncode: {self.vzdump_process.returncode}\n",
+            )
+            return bareosfd.bRC_ERR
 
-        if IOP.func == bareosfd.IO_WRITE:
-            bareosfd.DebugMessage(100, f"IO_WRITE: {IOP.fname}\n")
-            try:
-                self.vzdump_process.stdin.write(IOP.buf)
-                IOP.status = IOP.count
-                IOP.io_errno = 0
+        return bareosfd.bRC_OK
 
-            except IOError as e:
-                bareosfd.DebugMessage(100, f"plugin_io[IO_WRITE]: IOError: {e}\n")
-                IOP.status = 0
-                IOP.io_errno = e.errno
-                return bareosfd.bRC_Error
+    def plugin_io_seek(self, iop):
+        """Seek in file"""
+        # TODO: this should probably fail!
+        bareosfd.DebugMessage(100, f"IO_SEEK: {iop.fname}\n")
+        return bareosfd.bRC_OK
 
-            return bareosfd.bRC_OK
+    def plugin_io_read(self, iop):
+        """Read a block of data for backup"""
+        # TODO: this should probably fail!
+        bareosfd.DebugMessage(100, f"IO_READ: {iop.fname}\n")
+        return bareosfd.bRC_OK
+
+    def plugin_io_write(self, iop):
+        """Write a block of data to restore"""
+        bareosfd.DebugMessage(100, f"IO_WRITE: {iop.fname}\n")
+        try:
+            self.vzdump_process.stdin.write(iop.buf)
+            iop.status = iop.count
+            iop.io_errno = 0
+
+        except IOError as e:
+            bareosfd.DebugMessage(100, f"plugin_io[IO_WRITE]: IOError: {e}\n")
+            iop.status = 0
+            iop.io_errno = e.errno
+            return bareosfd.bRC_Error
+
+        return bareosfd.bRC_OK
 
     def end_backup_file(self):
         """Called after all data was read"""
