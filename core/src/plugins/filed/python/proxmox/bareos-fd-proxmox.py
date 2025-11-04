@@ -18,9 +18,12 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
-from BareosFdWrapper import *  # noqa
-import bareosfd
-import BareosFdPluginBaseclass
+
+# pylint: disable=invalid-name
+# pylint: enable=invalid-name
+
+"""A Bareos plugin for Proxmox VE"""
+
 import subprocess
 import shlex
 import tempfile
@@ -28,19 +31,22 @@ import os
 import time
 from datetime import datetime
 
+from BareosFdWrapper import *  # noqa # pylint: disable=import-error,wildcard-import
+import bareosfd # pylint: disable=import-error
+import BareosFdPluginBaseclass # pylint: disable=import-error
 
-@BareosPlugin
+
+@BareosPlugin # pylint: disable=undefined-variable
 class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
+    """Plugin main class"""
 
     def __init__(self, plugindef):
         bareosfd.DebugMessage(
-            100,
-            "Constructor called in module %s with plugindef=%s\n"
-            % (__name__, plugindef),
+            100, f"Constructor called in module {__name__} with plugindef={plugindef}\n"
         )
         self.mandatory_options_guestid = ["guestid"]
 
-        super(BareosFdProxmox, self).__init__(plugindef)
+        super().__init__(plugindef)
         self.events = []
         self.events.append(bareosfd.bEventStartBackupJob)
         self.events.append(bareosfd.bEventStartRestoreJob)
@@ -52,11 +58,10 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         Parses the plugin arguments
         """
         bareosfd.DebugMessage(
-            100,
-            "parse_plugin_definition() was called in module %s\n" % (__name__),
+            100, f"parse_plugin_definition() was called in module {__name__}\n"
         )
-        super(BareosFdProxmox, self).parse_plugin_definition(plugindef)
-        bareosfd.DebugMessage(100, "self.options are: = %s\n" % (self.options))
+        super().parse_plugin_definition(plugindef)
+        bareosfd.DebugMessage(100, f"self.options are: = {self.options}\n")
         # Full ("F") or Restore (" ")
         if chr(self.level) not in "F ":
             bareosfd.JobMessage(
@@ -80,7 +85,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         vzdump_process = subprocess.Popen(
             vzdump_params,
             bufsize=-1,
-            stdin=open("/dev/null"),
+            stdin=open("/dev/null", "rb"),
             stdout=subprocess.PIPE,
             stderr=self.stderr_log_file,
             # stderr=subprocess.PIPE,
@@ -94,7 +99,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         started = False
         while not started:
             time.sleep(1)
-            with open("vzdump.log") as logfile:
+            with open("vzdump.log", encoding="utf-8") as logfile:
                 for line in logfile.readlines():
                     if "sending archive to stdout" in line:
                         bareosfd.JobMessage(bareosfd.M_INFO, line)
@@ -102,41 +107,42 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     # INFO: VM Name: winrecover
                     # INFO: CT Name: container1
                     elif "Name:" in line:
-                        vmorct = line.split()[1]
+                        if line.split()[1] == "VM":
+                            self.guesttype = "qemu"
+                        else:
+                            self.guesttype = "lxc"
                         self.vmname = " ".join(line.split()[3:])
-        if vmorct == "VM":
-            self.guesttype = "qemu"
-        else:
-            self.guesttype = "lxc"
 
-        #                                    vzdump-qemu-112-2025_09_12-00_00_00.vma
-        now = datetime.now()
-        datestring = now.strftime("%Y_%m_%d-%H_%M_%S")
-        self.file_to_backup = f"/var/lib/vz/dump/vzdump-{self.guesttype}-{self.options['guestid']}-{datestring}.vma"
+        ts = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
+        filename = "-".join(
+            (
+                "/var/lib/vz/dump/vzdump",
+                self.guesttype,
+                self.options["guestid"],
+                f"{ts}.vma",
+            )
+        )
 
         bareosfd.JobMessage(
             bareosfd.M_INFO,
-            f'Backing up {self.guesttype} guest "{self.vmname}" to virtual file {self.file_to_backup}\n',
+            f'Backing up {self.guesttype} guest "{self.vmname}" to virtual file {filename}\n',
         )
 
         # create a regular stat packet
         statp = bareosfd.StatPacket()
         savepkt.statp = statp
         savepkt.type = bareosfd.FT_REG
-        savepkt.fname = self.file_to_backup
+        savepkt.fname = filename
 
-        self.current_logfile = open("vzdump.log")
+        self.current_logfile = open("vzdump.log", encoding="utf-8")
         for line in self.current_logfile.readlines():
             bareosfd.JobMessage(bareosfd.M_INFO, line)
 
         return bareosfd.bRC_OK
 
     def create_file(self, restorepkt):
-        """ """
-        bareosfd.DebugMessage(
-            100,
-            "create_file() called with %s\n" % (restorepkt),
-        )
+        """Create file during restore"""
+        bareosfd.DebugMessage(100, f"create_file() called with {restorepkt}\n")
 
         if self.options.get("restoretodisk") == "yes":
             restorepkt.create_status = bareosfd.CF_CORE
@@ -170,7 +176,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {vzdump_params}\n")
         os.rename(self.stderr_log_file.name, "restore.log")
 
-        self.current_logfile = open("restore.log")
+        self.current_logfile = open("restore.log", encoding="utf-8")
         for line in self.current_logfile.readlines():
             bareosfd.JobMessage(bareosfd.M_INFO, line)
 
@@ -180,26 +186,21 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def plugin_io(self, IOP):
 
-        self.FNAME = IOP.fname
         bareosfd.DebugMessage(
             200,
             (
-                "plugin_io() called with function %s"
-                " IOP.count=%s, self.FNAME is set to %s\n"
-            )
-            % (IOP.func, IOP.count, self.FNAME),
+                f"plugin_io() called with function {IOP.func}"
+                f" IOP.count={IOP.count}, IOP.fname is set to {IOP.fname}\n"
+            ),
         )
 
         if IOP.func == bareosfd.IO_OPEN:
-            self.FNAME = IOP.fname
-            bareosfd.DebugMessage(100, "IO_OPEN: %s\n" % (self.FNAME))
+            bareosfd.DebugMessage(100, f"IO_OPEN: {IOP.fname}\n")
             if self.options.get("restoretodisk") == "yes":
                 IOP.status = bareosfd.iostat_do_in_core
-                self.file = open(self.FNAME, "wb")
+                self.file = open(IOP.fname, "wb")
                 IOP.filedes = self.file.fileno()
-                bareosfd.JobMessage(
-                    bareosfd.M_INFO, f"restoring to file {self.FNAME}\n"
-                )
+                bareosfd.JobMessage(bareosfd.M_INFO, f"restoring to file {IOP.fname}\n")
                 return bareosfd.bRC_OK
             # return super(BareosFdProxmox, self).plugin_io(IOP)
 
@@ -212,9 +213,8 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
             return bareosfd.bRC_OK
 
-        elif IOP.func == bareosfd.IO_CLOSE:
-            self.FNAME = IOP.fname
-            bareosfd.DebugMessage(100, "IO_CLOSE: %s\n" % (self.FNAME))
+        if IOP.func == bareosfd.IO_CLOSE:
+            bareosfd.DebugMessage(100, f"IO_CLOSE: {IOP.fname}\n")
 
             if self.options.get("restoretodisk") == "yes":
                 self.file.close()
@@ -223,35 +223,32 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             for line in self.current_logfile.readlines():
                 bareosfd.JobMessage(bareosfd.M_INFO, line)
 
-            # check for process return code
             if self.vzdump_process.returncode:
                 bareosfd.DebugMessage(
                     100,
-                    "plugin_io() bareos_vadp_dumper returncode: %s\n"
-                    % (bareos_vadp_dumper_returncode),
+                    f"plugin_io() vzdump returncode: {self.vzdump_process.returncode}\n",
                 )
                 return bareosfd.bRC_ERR
 
             return bareosfd.bRC_OK
 
-        elif IOP.func == bareosfd.IO_SEEK:
-            bareosfd.DebugMessage(100, "IO_SEEK: %s\n" % (self.FNAME))
+        if IOP.func == bareosfd.IO_SEEK:
+            bareosfd.DebugMessage(100, f"IO_SEEK: {IOP.fname}\n")
             return bareosfd.bRC_OK
 
-        elif IOP.func == bareosfd.IO_READ:
-            bareosfd.DebugMessage(100, "IO_READ: %s\n" % (self.FNAME))
+        if IOP.func == bareosfd.IO_READ:
+            bareosfd.DebugMessage(100, f"IO_READ: {IOP.fname}\n")
             return bareosfd.bRC_OK
 
-        elif IOP.func == bareosfd.IO_WRITE:
-            bareosfd.DebugMessage(100, "IO_WRITE: %s\n" % (self.FNAME))
+        if IOP.func == bareosfd.IO_WRITE:
+            bareosfd.DebugMessage(100, f"IO_WRITE: {IOP.fname}\n")
             try:
                 self.vzdump_process.stdin.write(IOP.buf)
                 IOP.status = IOP.count
                 IOP.io_errno = 0
 
             except IOError as e:
-                bareosfd.DebugMessage(100, "plugin_io[IO_WRITE]: IOError: %s\n" % (e))
-                # self.vadp.end_dumper()
+                bareosfd.DebugMessage(100, f"plugin_io[IO_WRITE]: IOError: {e}\n")
                 IOP.status = 0
                 IOP.io_errno = e.errno
                 return bareosfd.bRC_Error
@@ -259,19 +256,17 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bareosfd.bRC_OK
 
     def end_backup_file(self):
-
+        """Called after all data was read"""
         bareosfd.DebugMessage(100, "end_backup_file() called\n")
 
         # print rest of vzdump log
         for line in self.current_logfile.readlines():
             bareosfd.JobMessage(bareosfd.M_INFO, line)
 
-        # check for return code
         if self.vzdump_process.returncode:
             bareosfd.DebugMessage(
                 100,
-                "end_backup_file() bareos_vadp_dumper returncode: %s\n"
-                % (bareos_vadp_dumper_returncode),
+                f"plugin_io() vzdump returncode: {self.vzdump_process.returncode}\n",
             )
             return bareosfd.bRC_ERR
 
