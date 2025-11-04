@@ -2645,10 +2645,24 @@ static std::wstring make_temp_dir(uint64_t jobid)
   auto written_len = GetTempPathW(path.size(), path.data());
   path.resize(written_len);
 
-  if (path.back() != L'\\') { path += L'\\'; }
 
   path += L"Bareos-";
   path += std::to_wstring(jobid);
+
+  if (path.back() == L'\\') { path.pop_back(); }
+
+  size_t try_count = 0;
+  while (PathFileExistsW(path.c_str())) {
+    path += L'A';
+
+    try_count += 1;
+    if (try_count >= 20) {
+      path.resize(written_len);
+      throw std::runtime_error{
+          std::format("could not try to create temporary directory in '{}'",
+                      utf16_to_utf8(path))};
+    }
+  }
 
   if (!CreateDirectoryW(path.c_str(), 0)) {
     throw werror("create a temporary directory");
@@ -2668,18 +2682,18 @@ static bool start_restore_job(PluginContext* ctx)
 
   auto& srvc = p_ctx->virt_service;
 
-  std::optional system_mgmt
-      = WMI::VirtualSystemManagementService::find_instance(srvc);
-  if (!system_mgmt) { return false; }
-
-  std::wstring dir = make_temp_dir(p_ctx->jobid);
-
-  JINFO(ctx, L"using '{}' as temporary hyper-v import directory", dir);
-
-  auto& restore_ctx = p_ctx->current_state.emplace<plugin_ctx::restore>(
-      std::move(system_mgmt.value()), std::move(dir));
-
   try {
+    std::optional system_mgmt
+        = WMI::VirtualSystemManagementService::find_instance(srvc);
+    if (!system_mgmt) { return false; }
+
+    std::wstring dir = make_temp_dir(p_ctx->jobid);
+
+    JINFO(ctx, L"using '{}' as temporary hyper-v import directory", dir);
+
+    auto& restore_ctx = p_ctx->current_state.emplace<plugin_ctx::restore>(
+        std::move(system_mgmt.value()), std::move(dir));
+
     auto query = WMI::String::copy(
         L"SELECT * FROM Msvm_VirtualSystemManagementServiceSettingData");
     auto obj = srvc.query_single(query);
@@ -4175,6 +4189,9 @@ static bRC pluginBackupIO(PluginContext* ctx,
 
         io->hndl = h;
         io->status = IoStatus::do_io_in_core;
+
+        JINFO(ctx, "doing io in core for {}", utf16_to_utf8(current_file));
+
         return bRC_OK;
       }
 
@@ -4749,6 +4766,61 @@ static bRC startRestoreFile(PluginContext*, const char*) { return bRC_OK; }
  */
 static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
 
+static void make_path_safe(std::wstring& str)
+{
+  // not allowed are
+  // <,>,:,",both slashes,|,?,*
+
+  std::wstring safe_str;
+  safe_str.reserve(str.size());
+
+  for (auto c : str) {
+    switch (c) {
+      case L'-': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'1');
+      } break;
+      case L'>': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'2');
+      } break;
+      case L':': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'3');
+      } break;
+      case L'/': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'4');
+      } break;
+      case L'\\': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'5');
+      } break;
+      case L'|': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'6');
+      } break;
+      case L'?': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'7');
+      } break;
+      case L'*': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'8');
+      } break;
+      case L'<': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'9');
+      } break;
+      default: {
+        safe_str.push_back(c);
+      }
+    }
+  }
+
+  str.assign(std::move(safe_str));
+}
+
 static void ensure_paths(std::wstring_view path)
 {
   std::wstring cpy{path};
@@ -4798,7 +4870,7 @@ static std::optional<std::wstring> original_disk_directory(
 }
 
 // creates the file at path and all directories above it
-static HANDLE create_file(std::wstring_view path)
+static HANDLE create_file(std::wstring& path)
 {
   create_dirs(path);
 
@@ -4807,8 +4879,8 @@ static HANDLE create_file(std::wstring_view path)
   auto dwaccess = GENERIC_WRITE | FILE_ALL_ACCESS | WRITE_OWNER | WRITE_DAC
                   | ACCESS_SYSTEM_SECURITY;
   auto dwflags = FILE_FLAG_BACKUP_SEMANTICS;
-  return CreateFileW(std::wstring{path}.c_str(), dwaccess, FILE_SHARE_WRITE,
-                     NULL, CREATE_NEW, dwflags, NULL);
+  return CreateFileW(path.c_str(), dwaccess, FILE_SHARE_WRITE, NULL, CREATE_NEW,
+                     dwflags, NULL);
 }
 
 static bool is_volume_file(std::string_view path)
@@ -4830,6 +4902,15 @@ static bool is_definition_file(std::string_view path)
   static constexpr std::string_view definition_file_ending = ".vmcx";
 
   return path.ends_with(definition_file_ending);
+}
+
+template <typename String> void append_slash_if_necessary(String& str)
+{
+  using Char = typename String::value_type;
+  if (str.size() == 0
+      || (str.back() != Char{'/'} && str.back() != Char{'\\'})) {
+    str += Char{'/'};
+  }
 }
 
 /**
@@ -4934,9 +5015,14 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
   if (!disk_file) {
     // we need to include the vm name to support restoring multiple vms at once
-    std::wstring tmp_path
-        = std::format(L"{}\\{}\\{}", restore_ctx->tmp_dir,
-                      utf8_to_utf16(vm_name), utf8_to_utf16(actual_path));
+
+    std::wstring name_part = utf8_to_utf16(vm_name);
+    make_path_safe(name_part);
+
+    std::wstring path_part = utf8_to_utf16(actual_path);
+
+    std::wstring tmp_path = std::format(L"{}\\{}\\{}", restore_ctx->tmp_dir,
+                                        name_part, path_part);
 
     std::replace(std::begin(tmp_path), std::end(tmp_path), L'/', L'\\');
 
@@ -5073,7 +5159,8 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
         }
       }
 
-      auto first_path = std::format(L"{}\\{}", *directory, wdisk_name);
+      append_slash_if_necessary(*directory);
+      auto first_path = std::format(L"{}{}", *directory, wdisk_name);
       auto created_path = first_path;
       bool warn_on_path_change = false;
 
@@ -5084,7 +5171,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
         // instead create a differently named file
 
         warn_on_path_change = true;
-        created_path = std::format(L"{}\\bareos-{}-{}-{}", *directory,
+        created_path = std::format(L"{}bareos-{}-{}-{}", *directory,
                                    p_ctx->jobid, i, wdisk_name);
       }
 
