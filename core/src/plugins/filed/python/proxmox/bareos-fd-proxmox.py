@@ -25,7 +25,6 @@
 """A Bareos plugin for Proxmox VE"""
 
 import subprocess
-import shlex
 import tempfile
 import os
 import time
@@ -76,9 +75,10 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.stderr_log_file = tempfile.NamedTemporaryFile(
             dir=log_path, delete=False, mode="r+b"
         )
-        vzdump_params = shlex.split(f"vzdump {self.options['guestid']} --stdout")
-        vzdump_process = subprocess.Popen(
-            vzdump_params,
+        vzdump_cmd = ("vzdump", self.options["guestid"], "--stdout")
+        bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(vzdump_cmd)}\n")
+        self.io_process = subprocess.Popen(
+            vzdump_cmd,
             bufsize=-1,
             stdin=open("/dev/null", "rb"),
             stdout=subprocess.PIPE,
@@ -86,10 +86,8 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # stderr=subprocess.PIPE,
             close_fds=True,
         )
-        self.vzdump_process = vzdump_process
         os.rename(self.stderr_log_file.name, "vzdump.log")
 
-        bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {vzdump_params}\n")
         # wait for vzdump to start backup ('sending archive to stdout ....')
         started = False
         while not started:
@@ -144,31 +142,35 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bareosfd.bRC_OK
 
         if "vzdump-lxc" in restorepkt.ofname:
-            self.recoverycommand = (
-                f"pct restore {self.options['guestid']} - --rootfs / --force yes"
+            recovery_cmd = (
+                "pct",
+                "restore",
+                self.options["guestid"],
+                "-",
+                "--rootfs",
+                "/",
+                "--force",
+                "yes",
             )
 
+        elif "vzdump-qemu" in restorepkt.ofname:
+            recovery_cmd = ("qmrestore", "-", self.options["guestid"], "--force", "yes")
         else:
-            if "vzdump-qemu" in restorepkt.ofname:
-                self.recoverycommand = (
-                    f"qmrestore - {self.options['guestid']} --force yes"
-                )
+            return bareosfd.bRC_ERR
 
         log_path = "."
         self.stderr_log_file = tempfile.NamedTemporaryFile(
             dir=log_path, delete=False, mode="r+b"
         )
-        vzdump_params = shlex.split(self.recoverycommand)
-        vzdump_process = subprocess.Popen(
-            vzdump_params,
+        bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(recovery_cmd)}\n")
+        self.io_process = subprocess.Popen(
+            recovery_cmd,
             bufsize=-1,
             stdin=subprocess.PIPE,
             stdout=self.stderr_log_file,
             stderr=self.stderr_log_file,
             close_fds=True,
         )
-        self.vzdump_process = vzdump_process
-        bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {vzdump_params}\n")
         os.rename(self.stderr_log_file.name, "restore.log")
 
         self.current_logfile = open("restore.log", encoding="utf-8")
@@ -190,10 +192,10 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bareosfd.bRC_OK
 
         # TODO: Check if restore or backup to determine
-        if self.vzdump_process.stdin:
-            iop.filedes = self.vzdump_process.stdin.fileno()
+        if self.io_process.stdin:
+            iop.filedes = self.io_process.stdin.fileno()
         else:
-            iop.filedes = self.vzdump_process.stdout.fileno()
+            iop.filedes = self.io_process.stdout.fileno()
         iop.status = bareosfd.iostat_do_in_core
 
         return bareosfd.bRC_OK
@@ -209,10 +211,10 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         for line in self.current_logfile.readlines():
             bareosfd.JobMessage(bareosfd.M_INFO, line)
 
-        if self.vzdump_process.returncode:
+        if self.io_process.returncode:
             bareosfd.DebugMessage(
                 100,
-                f"plugin_io() vzdump returncode: {self.vzdump_process.returncode}\n",
+                f"plugin_io() vzdump returncode: {self.io_process.returncode}\n",
             )
             return bareosfd.bRC_ERR
 
@@ -234,7 +236,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """Write a block of data to restore"""
         bareosfd.DebugMessage(100, f"IO_WRITE: {iop.fname}\n")
         try:
-            self.vzdump_process.stdin.write(iop.buf)
+            self.io_process.stdin.write(iop.buf)
             iop.status = iop.count
             iop.io_errno = 0
 
@@ -254,10 +256,10 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         for line in self.current_logfile.readlines():
             bareosfd.JobMessage(bareosfd.M_INFO, line)
 
-        if self.vzdump_process.returncode:
+        if self.io_process.returncode:
             bareosfd.DebugMessage(
                 100,
-                f"plugin_io() vzdump returncode: {self.vzdump_process.returncode}\n",
+                f"plugin_io() vzdump returncode: {self.io_process.returncode}\n",
             )
             return bareosfd.bRC_ERR
 
