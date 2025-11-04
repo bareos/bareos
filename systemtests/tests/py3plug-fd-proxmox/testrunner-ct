@@ -19,8 +19,6 @@ export PATH="${current_test_directory}/sbin:${current_test_directory}/bin:$PATH"
 JobName=backup-proxmox-ct
 #shellcheck source=../scripts/functions
 . "${rscripts}"/functions
-"${rscripts}"/cleanup
-"${rscripts}"/setup
 
 TEMPLATE=local:vztmpl/fedora-42-default_20250428_amd64.tar.xz
 BACKGUESTID=999020
@@ -49,7 +47,7 @@ messages
 
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole "$@"
 
 pct stop "${BACKGUESTID}"
 pct destroy "${BACKGUESTID}"
@@ -117,5 +115,4 @@ check_log "${tmp}/log1.out"
 check_log "${tmp}/log2.out"
 check_log "${tmp}/log3.out"
 
-stop_bareos
 end_test
