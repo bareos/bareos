@@ -47,11 +47,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.mandatory_options_guestid = ["guestid"]
 
         super().__init__(plugindef)
-        self.events = []
-        self.events.append(bareosfd.bEventStartBackupJob)
-        self.events.append(bareosfd.bEventStartRestoreJob)
-        self.events.append(bareosfd.bEventEndRestoreJob)
-        bareosfd.RegisterEvents(self.events)
 
     def parse_plugin_definition(self, plugindef):
         """
