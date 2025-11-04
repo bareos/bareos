@@ -77,7 +77,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         log_path="."
         self.stderr_log_file = tempfile.NamedTemporaryFile(dir=log_path, delete=False, mode='r+b')
-        vzdump_params = shlex.split(f"/usr/bin/vzdump {self.options['guestid']} --stdout")
+        vzdump_params = shlex.split(f"vzdump {self.options['guestid']} --stdout")
         vzdump_process = subprocess.Popen(
                     vzdump_params,
                     bufsize=-1,
@@ -146,11 +146,11 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
 
         if "vzdump-lxc" in restorepkt.ofname:
-            self.recoverycommand = f"/usr/sbin/pct restore {self.options['guestid']} - --rootfs / --force yes"
+            self.recoverycommand = f"pct restore {self.options['guestid']} - --rootfs / --force yes"
 
         else:
             if "vzdump-qemu" in restorepkt.ofname:
-                self.recoverycommand = f"/usr/sbin/qmrestore - {self.options['guestid']} --force yes"
+                self.recoverycommand = f"qmrestore - {self.options['guestid']} --force yes"
 
         log_path="."
         self.stderr_log_file = tempfile.NamedTemporaryFile(dir=log_path, delete=False, mode='r+b')
