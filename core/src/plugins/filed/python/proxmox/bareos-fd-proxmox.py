@@ -25,9 +25,6 @@
 """A Bareos plugin for Proxmox VE"""
 
 import subprocess
-import tempfile
-import os
-import time
 from os import read, close, pipe, O_NONBLOCK
 from fcntl import fcntl, F_SETPIPE_SZ, F_GETFL, F_SETFL
 from select import poll, POLLIN
@@ -120,6 +117,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         super().__init__(plugindef)
 
+        self.log_pipe = LogPipe()
     def parse_plugin_definition(self, plugindef):
         """
         Parses the plugin arguments
@@ -144,38 +142,35 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         bareosfd.DebugMessage(100, __name__ + ":start_backup_file() called\n")
 
-        log_path = "."
-        self.stderr_log_file = tempfile.NamedTemporaryFile(
-            dir=log_path, delete=False, mode="r+b"
-        )
         vzdump_cmd = ("vzdump", self.options["guestid"], "--stdout")
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(vzdump_cmd)}\n")
-        self.io_process = subprocess.Popen(
+        self.io_process = subprocess.Popen(  # pylint: disable=consider-using-with
             vzdump_cmd,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
-            stderr=self.stderr_log_file,
-            # stderr=subprocess.PIPE,
+            stderr=self.log_pipe,
         )
-        os.rename(self.stderr_log_file.name, "vzdump.log")
 
-        # wait for vzdump to start backup ('sending archive to stdout ....')
-        started = False
-        while not started:
-            time.sleep(1)
-            with open("vzdump.log", encoding="utf-8") as logfile:
-                for line in logfile.readlines():
-                    if "sending archive to stdout" in line:
-                        bareosfd.JobMessage(bareosfd.M_INFO, line)
-                        started = True
-                    # INFO: VM Name: winrecover
-                    # INFO: CT Name: container1
-                    elif "Name:" in line:
-                        if line.split()[1] == "VM":
-                            guesttype = "qemu"
-                        else:
-                            guesttype = "lxc"
-                        vmname = " ".join(line.split()[3:])
+        guesttype = None
+        vmname = None
+        try:
+            for line in self.log_pipe.readlines(init_timeout=10000, read_timeout=500):
+                bareosfd.JobMessage(bareosfd.M_INFO, line)
+                # INFO: VM Name: winrecover
+                # INFO: CT Name: container1
+                if "Name:" in line:
+                    if line.split()[1] == "VM":
+                        guesttype = "qemu"
+                    else:
+                        guesttype = "lxc"
+                    vmname = " ".join(line.split()[3:])
+                elif "sending archive to stdout" in line:
+                    write_started = True
+        except TimeoutError:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL, "Malformed log data received from vzdump.\n"
+            )
+            return bareosfd.bRC_Error
 
         ts = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
         filename = "-".join(
@@ -197,10 +192,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         savepkt.statp = statp
         savepkt.type = bareosfd.FT_REG
         savepkt.fname = filename
-
-        self.current_logfile = open("vzdump.log", encoding="utf-8")
-        for line in self.current_logfile.readlines():
-            bareosfd.JobMessage(bareosfd.M_INFO, line)
 
         return bareosfd.bRC_OK
 
@@ -229,22 +220,15 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         else:
             return bareosfd.bRC_ERR
 
-        log_path = "."
-        self.stderr_log_file = tempfile.NamedTemporaryFile(
-            dir=log_path, delete=False, mode="r+b"
-        )
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(recovery_cmd)}\n")
-        self.io_process = subprocess.Popen(
+        self.io_process = subprocess.Popen(  # pylint: disable=consider-using-with
             recovery_cmd,
             stdin=subprocess.PIPE,
-            stdout=self.stderr_log_file,
-            stderr=self.stderr_log_file,
+            stdout=self.log_pipe,
+            stderr=self.log_pipe,
         )
-        os.rename(self.stderr_log_file.name, "restore.log")
 
-        self.current_logfile = open("restore.log", encoding="utf-8")
-        for line in self.current_logfile.readlines():
-            bareosfd.JobMessage(bareosfd.M_INFO, line)
+        self._despool_log(init_timeout=10000)
 
         restorepkt.create_status = bareosfd.CF_EXTRACT
 
@@ -275,8 +259,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.file.close()
             return bareosfd.bRC_OK
 
-        for line in self.current_logfile.readlines():
-            bareosfd.JobMessage(bareosfd.M_INFO, line)
+        self._despool_log(init_timeout=2000)
 
         if self.io_process.returncode:
             bareosfd.DebugMessage(
@@ -317,9 +300,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def end_backup_file(self):
         """Called after all data was read"""
 
-        # print rest of vzdump log
-        for line in self.current_logfile.readlines():
-            bareosfd.JobMessage(bareosfd.M_INFO, line)
+        self._despool_log(init_timeout=0)
 
         if self.io_process.returncode:
             bareosfd.DebugMessage(
@@ -330,3 +311,15 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         bareosfd.DebugMessage(100, "end_backup_file(): returning bRC_OK\n")
         return bareosfd.bRC_OK
+
+    def _despool_log(self, *, init_timeout=0, read_timeout=100):
+        """fetches all log lines from the LogPipe (if any) and emits JobMessages."""
+        for line in self.log_pipe.readlines(
+            init_timeout=init_timeout, read_timeout=read_timeout, soft_fail=True
+        ):
+            if line.startswith("ERROR:"):
+                bareosfd.JobMessage(bareosfd.M_ERROR, line)
+            elif line.startswith("WARNING:"):
+                bareosfd.JobMessage(bareosfd.M_WARNING, line)
+            else:
+                bareosfd.JobMessage(bareosfd.M_INFO, line)
