@@ -179,7 +179,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def plugin_io_open(self, iop):
         """Open file for backup or restore"""
-        bareosfd.DebugMessage(100, f"IO_OPEN: {iop.fname}\n")
         if self.options.get("restoretodisk") == "yes":
             iop.status = bareosfd.iostat_do_in_core
             self.file = open(iop.fname, "wb")
@@ -198,7 +197,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def plugin_io_close(self, iop):
         """Close file for backup or restore"""
-        bareosfd.DebugMessage(100, f"IO_CLOSE: {iop.fname}\n")
 
         if self.options.get("restoretodisk") == "yes":
             self.file.close()
@@ -218,19 +216,18 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def plugin_io_seek(self, iop):
         """Seek in file"""
+        del iop
         # TODO: this should probably fail!
-        bareosfd.DebugMessage(100, f"IO_SEEK: {iop.fname}\n")
         return bareosfd.bRC_OK
 
     def plugin_io_read(self, iop):
         """Read a block of data for backup"""
+        del iop
         # TODO: this should probably fail!
-        bareosfd.DebugMessage(100, f"IO_READ: {iop.fname}\n")
         return bareosfd.bRC_OK
 
     def plugin_io_write(self, iop):
         """Write a block of data to restore"""
-        bareosfd.DebugMessage(100, f"IO_WRITE: {iop.fname}\n")
         try:
             self.io_process.stdin.write(iop.buf)
             iop.status = iop.count
@@ -246,7 +243,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def end_backup_file(self):
         """Called after all data was read"""
-        bareosfd.DebugMessage(100, "end_backup_file() called\n")
 
         # print rest of vzdump log
         for line in self.current_logfile.readlines():
