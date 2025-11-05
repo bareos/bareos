@@ -99,16 +99,16 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     # INFO: CT Name: container1
                     elif "Name:" in line:
                         if line.split()[1] == "VM":
-                            self.guesttype = "qemu"
+                            guesttype = "qemu"
                         else:
-                            self.guesttype = "lxc"
-                        self.vmname = " ".join(line.split()[3:])
+                            guesttype = "lxc"
+                        vmname = " ".join(line.split()[3:])
 
         ts = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
         filename = "-".join(
             (
                 "/var/lib/vz/dump/vzdump",
-                self.guesttype,
+                guesttype,
                 self.options["guestid"],
                 f"{ts}.vma",
             )
@@ -116,7 +116,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         bareosfd.JobMessage(
             bareosfd.M_INFO,
-            f'Backing up {self.guesttype} guest "{self.vmname}" to virtual file {filename}\n',
+            f'Backing up {guesttype} guest "{vmname}" to virtual file {filename}\n',
         )
 
         # create a regular stat packet
