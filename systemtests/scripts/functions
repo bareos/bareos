@@ -52,7 +52,7 @@ last_jobid_or_zero()
   set +o pipefail
   "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<< ".api 2
 .sql query=\"SELECT CASE WHEN is_called THEN last_value ELSE 0 END FROM job_jobid_seq;\"
-" | awk '/"case":/ {gsub("\"","",$2);print $2}'
+" | ${AWK} '/"case":/ {gsub("\"","",$2);print $2}'
   set -o pipefail
 }
 
@@ -407,7 +407,7 @@ check_files_written()
 {
   LOG=$1
   NB=$2
-  FILES="$(awk '/FD Files Written:/ { last=$4 } END { print last }' "$LOG")"
+  FILES="$("${AWK}" '/FD Files Written:/ { last=$4 } END { print last }' "$LOG")"
 
   if [ "$NB" != "$FILES" ]; then
     print_debug "ERROR: Expect $NB files, get $FILES"
@@ -418,7 +418,7 @@ check_files_written()
 check_sd_files_written()
 {
   LOG=$1
-  FILES="$(awk '/SD Files Written:/ { last=$4 } END { print last }' "$LOG")"
+  FILES="$("${AWK}" '/SD Files Written:/ { last=$4 } END { print last }' "$LOG")"
 
   if [[ "$FILES" -lt 1 || -z "$FILES" ]]; then
     print_debug "ERROR: Expected number of SD files written > 0, got \"$FILES\"."
@@ -505,13 +505,13 @@ get_mig_info()
   # Prev Backup JobId
   JOBID=$1
   LOG=$2
-  RET="$(awk -F: "BEGIN { jobid=$JOBID } "'/Prev Backup JobId/ { cjid=$2 } /New Backup JobId/  { if (cjid == jobid) { print $2 } }' "$LOG")"
+  RET="$("${AWK}" -F: "BEGIN { jobid=$JOBID } "'/Prev Backup JobId/ { cjid=$2 } /New Backup JobId/  { if (cjid == jobid) { print $2 } }' "$LOG")"
 }
 
 get_duration()
 {
   LOG=$1
-  RET="$(awk 'BEGIN {t["secs"]=1;t["sec"]=1;t["min"]=60;t["mins"]=60}; /Elapsed time:/ { last=$3*t[$4] } END { print last }' "$LOG")"
+  RET="$("${AWK}" 'BEGIN {t["secs"]=1;t["sec"]=1;t["min"]=60;t["mins"]=60}; /Elapsed time:/ { last=$3*t[$4] } END { print last }' "$LOG")"
 }
 
 check_duration_gt()
