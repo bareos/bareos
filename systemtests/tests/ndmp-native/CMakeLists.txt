@@ -97,6 +97,12 @@ if(ndmp_data_agent_address)
         create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
         # add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME}) Testing
         # needs exclusive access to an autochanger from the ndmp host by iscsi
+        set_tests_properties(
+          system:ndmp-native:03-restore-single-file PROPERTIES DISABLED TRUE
+        )
+        set_tests_properties(
+          system:ndmp-native:07-restore-incremental PROPERTIES DISABLED TRUE
+        )
       else()
         create_systemtest(
           ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
