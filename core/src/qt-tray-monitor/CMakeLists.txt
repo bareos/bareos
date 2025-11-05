@@ -28,7 +28,15 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 COMPONENTS Core Widgets)
+if(HAVE_WIN32)
+  find_package(
+    Qt6 QUIET
+    COMPONENTS Core Widgets
+    REQUIRED
+  )
+else()
+  find_package(Qt6 QUIET COMPONENTS Core Widgets)
+endif()
 if(Qt6Widgets_FOUND)
   message(STATUS "Found QT6Widgets")
 else()
@@ -93,6 +101,14 @@ if(TARGET Qt6::Widgets)
 endif()
 
 bareos_configure_file(FILES bareos-tray-monitor.desktop.in)
+
+if(HAVE_WIN32)
+  add_custom_command(
+    TARGET bareos-tray-monitor
+    POST_BUILD
+    COMMAND Qt6::windeployqt ARGS $<TARGET_FILE:bareos-tray-monitor>
+  )
+endif()
 
 install(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
 
