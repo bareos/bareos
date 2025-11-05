@@ -79,12 +79,10 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(vzdump_cmd)}\n")
         self.io_process = subprocess.Popen(
             vzdump_cmd,
-            bufsize=-1,
-            stdin=open("/dev/null", "rb"),
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=self.stderr_log_file,
             # stderr=subprocess.PIPE,
-            close_fds=True,
         )
         os.rename(self.stderr_log_file.name, "vzdump.log")
 
@@ -165,11 +163,9 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(recovery_cmd)}\n")
         self.io_process = subprocess.Popen(
             recovery_cmd,
-            bufsize=-1,
             stdin=subprocess.PIPE,
             stdout=self.stderr_log_file,
             stderr=self.stderr_log_file,
-            close_fds=True,
         )
         os.rename(self.stderr_log_file.name, "restore.log")
 
