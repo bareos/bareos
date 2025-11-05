@@ -28,11 +28,84 @@ import subprocess
 import tempfile
 import os
 import time
+from os import read, close, pipe, O_NONBLOCK
+from fcntl import fcntl, F_SETPIPE_SZ, F_GETFL, F_SETFL
+from select import poll, POLLIN
 from datetime import datetime
 
 from BareosFdWrapper import *  # noqa # pylint: disable=import-error,wildcard-import
 import bareosfd  # pylint: disable=import-error
 import BareosFdPluginBaseclass  # pylint: disable=import-error
+
+
+class LogPipe:
+    """special Pipe object to capture log output from subprocess.Popen()"""
+
+    def __init__(self):
+        self._read_fd, self._write_fd = pipe()
+        # make the reading end, but not the writing end non-blocking and create
+        # a poll-object for it
+        fcntl(self._read_fd, F_SETFL, fcntl(self._read_fd, F_GETFL) | O_NONBLOCK)
+        self._read_poller = poll()
+        self._read_poller.register(self._read_fd)
+
+        # Increase pipe buffer size to maximum value.
+        # While the core does I/O we won't be called. Therefore we want a large
+        # buffer so io_process will not block on a full pipe while logging.
+        # This will, of course, affect both ends of the pipe.
+        # TODO make this as large as possible
+        fcntl(self._write_fd, F_SETPIPE_SZ, 1024)
+
+    def __del__(self):
+        close(self._write_fd)
+        close(self._read_fd)
+
+    def fileno(self):
+        """Popen() will call this to retrieve a file descriptor."""
+        return self._write_fd
+
+    def readlines(
+        self, *, init_timeout=60000, read_timeout=100, block_size=1024, soft_fail=False
+    ):
+        """Generator emulating normal readlines() behaviour."""
+        try:
+            data = self.read(block_size, timeout=init_timeout)
+        except TimeoutError as e:
+            if soft_fail:
+                return
+            raise TimeoutError("timeout waiting for start of data") from e
+        while True:
+            newline_pos = data.find(b"\n")
+            if newline_pos == -1:
+                # data does not contain a newline, so we need more input
+                try:
+                    # fetch more data
+                    data += self.read(block_size, timeout=read_timeout)
+                except TimeoutError as e:
+                    if len(data) == 0:
+                        # timeout on end of line: no more data
+                        return
+                    raise TimeoutError("timeout waiting for end of line") from e
+            else:
+                # pick first line from data, leave the rest
+                yield data[: newline_pos + 1].decode("utf-8", errors="replace")
+                data = data[newline_pos + 1 :]
+
+    def read(self, length, *, timeout=100):
+        """read() like call with timeout in milliseconds."""
+        res = self._read_poller.poll(timeout)
+        if len(res) == 0:
+            raise TimeoutError
+
+        # there must be exactly one result and that must have our read_fd as fd
+        assert len(res) == 1
+        fd, event = res[0]
+        assert fd == self._read_fd
+
+        if event & POLLIN:
+            return read(self._read_fd, length)
+        # some other event happened, probably an error
+        raise IOError(f"Unexpected bitmask on poll(): {event}")
 
 
 @BareosPlugin  # pylint: disable=undefined-variable
