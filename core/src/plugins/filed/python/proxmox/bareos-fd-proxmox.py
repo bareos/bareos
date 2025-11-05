@@ -26,6 +26,7 @@
 
 import subprocess
 from os import read, close, pipe, O_NONBLOCK
+from os.path import basename
 from fcntl import fcntl, F_SETPIPE_SZ, F_GETFL, F_SETFL
 from select import poll, POLLIN
 
@@ -153,6 +154,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             stderr=self.log_pipe,
         )
 
+        guest_id = self.options["guestid"]
         guest_type = None
         guest_name = None
         backup_ts = None
@@ -190,13 +192,15 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             )
             return bareosfd.bRC_Error
 
-        filename = "-".join(
-            (
-                "/var/lib/vz/dump/vzdump",
-                guest_type,
-                self.options["guestid"],
-                f"{backup_ts}.vma",
+        if not guest_type or not guest_name or not write_started or not backup_ts:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "Not all required information could be retrieved from log.\n",
             )
+            return bareosfd.bRC_Error
+
+        filename = (
+            f"PROXMOX/{guest_name}/vzdump-{guest_type}-{guest_id}-{backup_ts}.vma"
         )
 
         bareosfd.JobMessage(
@@ -205,8 +209,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         )
 
         # create a regular stat packet
-        statp = bareosfd.StatPacket()
-        savepkt.statp = statp
+        savepkt.statp = bareosfd.StatPacket()
         savepkt.type = bareosfd.FT_REG
         savepkt.fname = filename
 
@@ -258,10 +261,14 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def plugin_io_open(self, iop):
         """Open file for backup or restore"""
         if self.options.get("restoretodisk") == "yes":
-            iop.status = bareosfd.iostat_do_in_core
-            self.file = open(iop.fname, "wb")  # pylint: disable=consider-using-with
+            restore_path = self.options.get("restore_path", "/var/lib/vz/dump")
+            filename = f"{restore_path}/{basename(iop.fname)}"
+
+            self.file = open(filename, "wb")  # pylint: disable=consider-using-with
             iop.filedes = self.file.fileno()
-            bareosfd.JobMessage(bareosfd.M_INFO, f"restoring to file {iop.fname}\n")
+            iop.status = bareosfd.iostat_do_in_core
+
+            bareosfd.JobMessage(bareosfd.M_INFO, f"restoring to file {filename}\n")
             return bareosfd.bRC_OK
 
         # TODO: Check if restore or backup to determine
