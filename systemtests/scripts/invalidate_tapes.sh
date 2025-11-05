@@ -51,11 +51,11 @@ invalidate_slots_on_autochanger() {
 
   # remove tapes from all drives
   while read -r line; do
-    changer_status=$(echo "$line" |
-      sed -e 's/Data Transfer Element \([0-9]\):Full (Storage Element \([0-9]*\).*/\1:\2/')
-    if [ -n "$changer_status" ]; then
-      dte=$(echo "${changer_status}" | awk -F: '{print $1}')
-      se=$(echo "${changer_status}" | awk -F: '{print $2}')
+    changer_status=$(echo "${line}" \
+      | sed -e 's/Data Transfer Element \([0-9]\):Full (Storage Element \([0-9]*\).*/\1:\2/')
+    if [ -n "${changer_status}" ]; then
+      dte=$(echo "${changer_status}" | "${AWK}" -F: '{print $1}')
+      se=$(echo "${changer_status}" | "${AWK}" -F: '{print $2}')
       mtx -f "${changer_device}" unload "${se}" "${dte}"
     fi
   done <<<"$(mtx -f "${changer_device}" status | grep "Full (Storage")"
