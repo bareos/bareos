@@ -117,7 +117,10 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         super().__init__(plugindef)
 
+        self.file = None
+        self.io_process = None
         self.log_pipe = LogPipe()
+
     def parse_plugin_definition(self, plugindef):
         """
         Parses the plugin arguments
@@ -130,7 +133,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # Full ("F") or Restore (" ")
         if chr(self.level) not in "F ":
             bareosfd.JobMessage(
-                bareosfd.M_ERROR, "Only Full Backups are currently supported\n"
+                bareosfd.M_FATAL, "Only Full Backups are currently supported\n"
             )
             return bareosfd.bRC_Error
 
@@ -140,7 +143,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         Defines the file to backup and creates the savepkt.
         """
-        bareosfd.DebugMessage(100, __name__ + ":start_backup_file() called\n")
+        bareosfd.DebugMessage(100, f"{__name__}:start_backup_file() called\n")
 
         vzdump_cmd = ("vzdump", self.options["guestid"], "--stdout")
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(vzdump_cmd)}\n")
@@ -218,7 +221,11 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         elif "vzdump-qemu" in restorepkt.ofname:
             recovery_cmd = ("qmrestore", "-", self.options["guestid"], "--force", "yes")
         else:
-            return bareosfd.bRC_ERR
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL,
+                "no 'vzdump-lxc' or 'vzdump-qemu' in filename, only 'restoretodisk=yes' possible",
+            )
+            return bareosfd.bRC_Error
 
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(recovery_cmd)}\n")
         self.io_process = subprocess.Popen(  # pylint: disable=consider-using-with
@@ -238,7 +245,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """Open file for backup or restore"""
         if self.options.get("restoretodisk") == "yes":
             iop.status = bareosfd.iostat_do_in_core
-            self.file = open(iop.fname, "wb")
+            self.file = open(iop.fname, "wb")  # pylint: disable=consider-using-with
             iop.filedes = self.file.fileno()
             bareosfd.JobMessage(bareosfd.M_INFO, f"restoring to file {iop.fname}\n")
             return bareosfd.bRC_OK
@@ -254,6 +261,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def plugin_io_close(self, iop):
         """Close file for backup or restore"""
+        del iop
 
         if self.options.get("restoretodisk") == "yes":
             self.file.close()
@@ -262,11 +270,10 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self._despool_log(init_timeout=2000)
 
         if self.io_process.returncode:
-            bareosfd.DebugMessage(
-                100,
-                f"plugin_io() vzdump returncode: {self.io_process.returncode}\n",
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL, f"program returned {self.io_process.returncode}"
             )
-            return bareosfd.bRC_ERR
+            return bareosfd.bRC_Error
 
         return bareosfd.bRC_OK
 
@@ -303,11 +310,10 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self._despool_log(init_timeout=0)
 
         if self.io_process.returncode:
-            bareosfd.DebugMessage(
-                100,
-                f"plugin_io() vzdump returncode: {self.io_process.returncode}\n",
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL, f"program returned {self.io_process.returncode}"
             )
-            return bareosfd.bRC_ERR
+            return bareosfd.bRC_Error
 
         bareosfd.DebugMessage(100, "end_backup_file(): returning bRC_OK\n")
         return bareosfd.bRC_OK
