@@ -28,7 +28,6 @@ import subprocess
 from os import read, close, pipe, O_NONBLOCK
 from fcntl import fcntl, F_SETPIPE_SZ, F_GETFL, F_SETFL
 from select import poll, POLLIN
-from datetime import datetime
 
 from BareosFdWrapper import *  # noqa # pylint: disable=import-error,wildcard-import
 import bareosfd  # pylint: disable=import-error
@@ -154,40 +153,55 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             stderr=self.log_pipe,
         )
 
-        guesttype = None
-        vmname = None
+        guest_type = None
+        guest_name = None
+        backup_ts = None
+        write_started = False
+
         try:
             for line in self.log_pipe.readlines(init_timeout=10000, read_timeout=500):
                 bareosfd.JobMessage(bareosfd.M_INFO, line)
-                # INFO: VM Name: winrecover
-                # INFO: CT Name: container1
-                if "Name:" in line:
-                    if line.split()[1] == "VM":
-                        guesttype = "qemu"
+                if line.startswith("INFO: Starting Backup of VM"):
+                    if line.endswith("(lxc)\n"):
+                        guest_type = "lxc"
+                    elif line.endswith("(qemu)\n"):
+                        guest_type = "qemu"
                     else:
-                        guesttype = "lxc"
-                    vmname = " ".join(line.split()[3:])
+                        bareosfd.JobMessage(bareosfd.M_FATAL, "Unsupported guest type.")
+                        return bareosfd.bRC_Error
+                    bareosfd.DebugMessage(100, f"guest type: '{guest_type}'\n")
+                elif (
+                    guest_type == "lxc"
+                    and line.startswith("INFO: CT Name:")
+                    or guest_type == "qemu"
+                    and line.startswith("INFO: VM Name:")
+                ):
+                    guest_name = line[15:-1]
+                    bareosfd.DebugMessage(100, f"guest name: '{guest_name}'\n")
+                elif line.startswith("INFO: Backup started at "):
+                    backup_ts = line[24:-1].translate(str.maketrans("- :", "_-_"))
+                    bareosfd.DebugMessage(100, f"backup ts: '{backup_ts}'\n")
                 elif "sending archive to stdout" in line:
                     write_started = True
+                    bareosfd.DebugMessage(100, "start marker found\n")
         except TimeoutError:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL, "Malformed log data received from vzdump.\n"
             )
             return bareosfd.bRC_Error
 
-        ts = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
         filename = "-".join(
             (
                 "/var/lib/vz/dump/vzdump",
-                guesttype,
+                guest_type,
                 self.options["guestid"],
-                f"{ts}.vma",
+                f"{backup_ts}.vma",
             )
         )
 
         bareosfd.JobMessage(
             bareosfd.M_INFO,
-            f'Backing up {guesttype} guest "{vmname}" to virtual file {filename}\n',
+            f'Backing up {guest_type} guest "{guest_name}" to virtual file {filename}\n',
         )
 
         # create a regular stat packet
