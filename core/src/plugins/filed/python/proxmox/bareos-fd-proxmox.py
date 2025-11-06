@@ -303,31 +303,16 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return bareosfd.bRC_OK
 
     def plugin_io_seek(self, iop):
-        """Seek in file"""
-        del iop
-        # TODO: this should probably fail!
-        return bareosfd.bRC_OK
+        """Seek in file, handled by core"""
+        raise NotImplementedError
 
     def plugin_io_read(self, iop):
-        """Read a block of data for backup"""
-        del iop
-        # TODO: this should probably fail!
-        return bareosfd.bRC_OK
+        """Read a block of data for backup, handled by core"""
+        raise NotImplementedError
 
     def plugin_io_write(self, iop):
-        """Write a block of data to restore"""
-        try:
-            self.io_process.stdin.write(iop.buf)
-            iop.status = iop.count
-            iop.io_errno = 0
-
-        except IOError as e:
-            bareosfd.DebugMessage(100, f"plugin_io[IO_WRITE]: IOError: {e}\n")
-            iop.status = 0
-            iop.io_errno = e.errno
-            return bareosfd.bRC_Error
-
-        return bareosfd.bRC_OK
+        """Write a block of data to restore, handled by core"""
+        raise NotImplementedError
 
     def end_backup_file(self):
         """Called after all data was read"""
@@ -342,6 +327,24 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         bareosfd.DebugMessage(100, "end_backup_file(): returning bRC_OK\n")
         return bareosfd.bRC_OK
+
+    def get_acl(self, acl):
+        """Returns no ACL."""
+        del acl
+        return bareosfd.bRC_OK
+
+    def set_acl(self, acl):
+        """Set ACL provided by core. Not supported in this plugin."""
+        raise NotImplementedError
+
+    def get_xattr(self, xattr):
+        """Returns no extended attributes."""
+        del xattr
+        return bareosfd.bRC_OK
+
+    def set_xattr(self, xattr):
+        """Set extended attributes provided by core. Not supported in this plugin."""
+        raise NotImplementedError
 
     def _despool_log(self, *, init_timeout=0, read_timeout=100):
         """fetches all log lines from the LogPipe (if any) and emits JobMessages."""
