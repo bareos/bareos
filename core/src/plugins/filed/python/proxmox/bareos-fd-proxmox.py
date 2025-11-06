@@ -50,8 +50,9 @@ class LogPipe:
         # While the core does I/O we won't be called. Therefore we want a large
         # buffer so io_process will not block on a full pipe while logging.
         # This will, of course, affect both ends of the pipe.
-        # TODO make this as large as possible
-        fcntl(self._write_fd, F_SETPIPE_SZ, 1024)
+        with open("/proc/sys/fs/pipe-max-size", "r", encoding="ascii") as file:
+            max_size = int(file.read().rstrip())
+            fcntl(self._write_fd, F_SETPIPE_SZ, max_size)
 
     def __del__(self):
         close(self._write_fd)
