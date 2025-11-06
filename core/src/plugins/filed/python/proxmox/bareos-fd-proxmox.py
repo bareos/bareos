@@ -260,23 +260,27 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def plugin_io_open(self, iop):
         """Open file for backup or restore"""
-        if self.options.get("restoretodisk") == "yes":
+        iop.status = bareosfd.iostat_do_in_core
+
+        if chr(self.level) == "F":
+            # backup from io_process' stdout
+            iop.filedes = self.io_process.stdout.fileno()
+        elif (
+            chr(self.level) == " " and self.options.get("restoretodisk", "no") == "yes"
+        ):
+            # restore to a file
             restore_path = self.options.get("restore_path", "/var/lib/vz/dump")
             filename = f"{restore_path}/{basename(iop.fname)}"
 
             self.file = open(filename, "wb")  # pylint: disable=consider-using-with
             iop.filedes = self.file.fileno()
-            iop.status = bareosfd.iostat_do_in_core
 
             bareosfd.JobMessage(bareosfd.M_INFO, f"restoring to file {filename}\n")
-            return bareosfd.bRC_OK
-
-        # TODO: Check if restore or backup to determine
-        if self.io_process.stdin:
+        elif chr(self.level) == " ":
+            # restore to io_process' stdin
             iop.filedes = self.io_process.stdin.fileno()
         else:
-            iop.filedes = self.io_process.stdout.fileno()
-        iop.status = bareosfd.iostat_do_in_core
+            return bareosfd.bRC_Error
 
         return bareosfd.bRC_OK
 
