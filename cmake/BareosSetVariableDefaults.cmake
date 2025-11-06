@@ -598,5 +598,11 @@ set(DUMP_VARS
     CACHE STRING "Dump all variables that matches this regex."
 )
 
-option(ENABLE_PROXMOX_PLUGIN "ENABLE_PROXMOX_PLUGIN" OFF)
-mark_as_advanced(ENABLE_PROXMOX_PLUGIN)
+include(CMakeDependentOption)
+cmake_dependent_option(
+  ENABLE_PROXMOX_PLUGIN
+  "ENABLE_PROXMOX_PLUGIN"
+  ON
+  "ENABLE_PYTHON;BAREOS_PLATFORM STREQUAL debian;DISTRIB_VERSION_ID GREATER_EQUAL 12"
+  OFF
+)
