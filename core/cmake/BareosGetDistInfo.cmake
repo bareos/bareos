@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -45,20 +45,6 @@ set(BAREOS_PLATFORM ${PLATFORM})
 
 # cmake_host_system_information() was added in 3.22
 if(CMAKE_VERSION VERSION_GREATER 3.22)
-
   cmake_host_system_information(RESULT DIST_ID QUERY DISTRIB_ID)
-  message(STATUS "${DIST_ID}")
-
   cmake_host_system_information(RESULT DIST_VERSION_ID QUERY DISTRIB_VERSION_ID)
-  message(STATUS "${DIST_VERSION_ID}")
-
-  # debian 12 and 13 are the base for proxmox-ve currently
-  if(DIST_ID STREQUAL "debian" AND DIST_VERSION_ID GREATER_EQUAL "12")
-    message(STATUS "${DIST_ID} - ${DIST_VERSION_ID}: setting ENABLE_PROXMOX_PLUGIN")
-    set(ENABLE_PROXMOX_PLUGIN ON)
-  endif()
-
 endif()
-
-
-
