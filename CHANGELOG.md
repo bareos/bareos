@@ -93,6 +93,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - debian: remove dbc_debug to avoid username/password leakage [PR #2417]
 - uniformized variables [PR #2391]
 - plugin: postgresql do testing with wal compress on [PR #2408]
+- cmake: fix traymonitor startup on windows [PR #2423]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -283,4 +284,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2412]: https://github.com/bareos/bareos/pull/2412
 [PR #2416]: https://github.com/bareos/bareos/pull/2416
 [PR #2417]: https://github.com/bareos/bareos/pull/2417
+[PR #2423]: https://github.com/bareos/bareos/pull/2423
 [unreleased]: https://github.com/bareos/bareos/tree/master
