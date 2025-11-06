@@ -60,7 +60,7 @@ EOF
   print_debug "${output}"
   echo "'${output}'" >&2
 
-  ${AWK} '/"case":/ {gsub("\"","",$2);print $2}' <"${output}"
+  ${AWK} '/"case":/ {gsub("\"","",$2);print $2}' <<<"${output}"
   set -o pipefail
 }
 
