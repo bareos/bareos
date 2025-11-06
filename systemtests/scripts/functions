@@ -53,7 +53,7 @@ last_jobid_or_zero()
   output=$(
     "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<EOF
 .api 2
-.sql query=\"SELECT CASE WHEN is_called THEN last_value ELSE 0 END FROM job_jobid_seq;
+.sql query="SELECT CASE WHEN is_called THEN last_value ELSE 0 END FROM job_jobid_seq;"
 EOF
   )
 
