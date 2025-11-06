@@ -28,15 +28,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-if(HAVE_WIN32)
-  find_package(
-    Qt6 QUIET
-    COMPONENTS Core Widgets
-    REQUIRED
-  )
-else()
-  find_package(Qt6 QUIET COMPONENTS Core Widgets)
-endif()
+find_package(Qt6 QUIET COMPONENTS Core Widgets)
 if(Qt6Widgets_FOUND)
   message(STATUS "Found QT6Widgets")
 else()
@@ -102,7 +94,10 @@ endif()
 
 bareos_configure_file(FILES bareos-tray-monitor.desktop.in)
 
-if(HAVE_WIN32)
+if(HAVE_WIN32 AND TARGET Qt6::Widgets)
+  # cross build is still on qt5, but native is on qt6, so we just check the qt
+  # version to distinguish between those builds This is not needed on the cross
+  # build
   add_custom_command(
     TARGET bareos-tray-monitor
     POST_BUILD
