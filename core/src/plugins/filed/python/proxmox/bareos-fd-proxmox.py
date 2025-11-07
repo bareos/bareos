@@ -193,7 +193,14 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             )
             return bareosfd.bRC_Error
 
-        if not guest_type or not guest_name or not write_started or not backup_ts:
+        if not guest_name:
+            guest_name = f"VM {guest_id}"
+            bareosfd.JobMessage(
+                bareosfd.M_INFO,
+                f"VM Name not set, using \"{guest_name}\"\n"
+            )
+
+        if not guest_type or not write_started or not backup_ts:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
                 "Not all required information could be retrieved from log.\n",
