@@ -1726,6 +1726,50 @@ struct VirtualSystemSnapshotSettingData {
   bool ignore_non_snapshottable_disks;
 };
 
+class VirtualSystemReferencePointService : ClassObject {
+ public:
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemReferencePointService"};
+
+  void destroy_reference_point(const Service& srvc, ReferencePoint ref) const
+  {
+    auto m_destroy_ref_point
+        = clz.load_method_by_name(L"DestroyReferencePoint");
+    auto params = m_destroy_ref_point.create_parameters();
+
+    params[L"AffectedReferencePoint"] = ref;
+
+    auto result = srvc.exec_method(*this, m_destroy_ref_point, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  };
+
+  static std::optional<VirtualSystemReferencePointService> find_instance(
+      const Service& srvc)
+  {
+    auto clz = srvc.load_class_by_name(class_name);
+
+    auto query = String::copy(std::format(L"SELECT * FROM {}", class_name));
+    auto obj = srvc.query_single(query);
+    if (!obj) { return std::nullopt; }
+
+    TRC(L"Instance of {} = {}", class_name, obj->to_string().as_view());
+
+    return VirtualSystemReferencePointService{std::move(obj).value(),
+                                              std::move(clz)};
+  }
+
+ private:
+  VirtualSystemReferencePointService(ClassObject self, Class clz_)
+      : ClassObject{std::move(self)}, clz{std::move(clz_)}
+  {
+  }
+
+  Class clz;
+};
+
 class VirtualSystemSnapshotService : ClassObject {
  public:
   static constexpr std::wstring_view class_name{
@@ -1770,6 +1814,10 @@ class VirtualSystemSnapshotService : ClassObject {
     params[L"AffectedSnapshot"] = snapshot;
 
     auto result = srvc.exec_method(*this, m_destroy_snapshot, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
   };
 
   ReferencePoint convert_to_reference_point(const Service& srvc,
@@ -2214,6 +2262,7 @@ struct plugin_ctx {
   struct backup {
     WMI::VirtualSystemManagementService system_srvc;
     WMI::VirtualSystemSnapshotService snapshot_srvc;
+    WMI::VirtualSystemReferencePointService refpoint_srvc;
 
     struct prepared_backup {
       WMI::ComputerSystem current_vm;
@@ -2625,10 +2674,14 @@ static bool start_backup_job(PluginContext* ctx)
   if (!system_mgmt) { return false; }
   std::optional system_snap
       = WMI::VirtualSystemSnapshotService::find_instance(srvc);
-  if (!system_mgmt) { return false; }
+  if (!system_snap) { return false; }
+  std::optional system_ref
+      = WMI::VirtualSystemReferencePointService::find_instance(srvc);
+  if (!system_ref) { return false; }
 
   p_ctx->current_state.emplace<plugin_ctx::backup>(
-      std::move(system_mgmt.value()), std::move(system_snap.value()));
+      std::move(system_mgmt.value()), std::move(system_snap.value()),
+      std::move(system_ref.value()));
 
   return true;
 }
