@@ -25,6 +25,10 @@ The Plugin can do full backup and can has two options for restoring:
 
    The Proxmox Plugin currently only supports Full backups.
 
+.. limitation:: Proxmox Plugin: Backup of Containers
+
+   The Proxmox Plugin currently only backup of privileged containers on |proxmox ve| 8.x
+
 
 Requirements
 ^^^^^^^^^^^^
@@ -35,8 +39,48 @@ that is running the guests that need to be backed up.
 Installation
 ^^^^^^^^^^^^
 
-Install the package **bareos-filedaemon-proxmox-plugin** (using :command:`apt`)
-on one of the |proxmox ve| cluster members.
+Start by adding the matching repository according to the following table to one of
+the |proxmox ve| cluster members.
+
+================== ========================
+Proxmox VE Version Bareos Repository to use
+================== ========================
+8.x                Debian_12
+9.x                Debian_13
+================== ========================
+
+Then install the package **bareos-filedaemon-proxmox-plugin** (using :command:`apt`)
+on one of the |proxmox ve| cluster members. This will automatically also
+install the |fd| and other required packages:
+
+.. code-block:: sh
+   :caption: Install the proxmox plugin on one |proxmox ve| cluster member
+
+   root@proxmox90:~# apt install bareos-filedaemon-proxmox-python-plugin
+   Installing:                      
+     bareos-filedaemon-proxmox-python-plugin
+   
+   Installing dependencies:
+     bareos-common      bareos-filedaemon-python-plugins-common  gawk      libmpfr6       libsigsegv2
+     bareos-filedaemon  bareos-filedaemon-python3-plugin         libfmt10  libpython3.13  python3-dateutil
+   
+   Suggested packages:
+     gawk-doc
+   
+   Summary:
+     Upgrading: 0, Installing: 11, Removing: 0, Not Upgrading: 0
+     Download size: 1,381 kB / 5,184 kB
+     Space needed: 17.4 MB / 3,892 MB available
+   
+   Continue? [Y/n] y
+   Get:1 https://download.bareos.com/bareos/release/25/Debian_13  bareos-common 25.0.0-65 [988 kB]
+   Get:2 https://download.bareos.com/bareos/release/25/Debian_13  bareos-filedaemon 25.0.0-65 [257 kB]
+   Get:3 https://download.bareos.com/bareos/release/25/Debian_13  bareos-filedaemon-python-plugins-common 25.0.0-65 [39.2 kB]
+   Get:4 https://download.bareos.com/bareos/release/25/Debian_13  bareos-filedaemon-python3-plugin 25.0.0-65 [62.4 kB]
+   Get:5 https://download.bareos.com/bareos/release/25/Debian_13  bareos-filedaemon-proxmox-python-plugin 25.0.0-65 [34.5 kB]
+   Fetched 1,381 kB in 1s (1,188 kB/s)  
+   [...]
+
 
 Configuration
 ^^^^^^^^^^^^^
@@ -48,12 +92,14 @@ Make sure to add or enable the following settings in your |fd| configuration:
 
    Client {
      ...
-     Plugin Directory = /usr/lib/bareos/plugins
-     Plugin Names = python3
+     Plugin Directory = "/usr/lib/bareos/plugins"
+     Plugin Names = "python3"
      ...
    }
 
-Note: Depending on the platform, the Plugin Directory may also be :file:`/usr/lib64/bareos/plugins`
+Restart the |fd| after the changes with :command:`systemctl restart bareos-fd`.
+
+The next step is to connect the client to the director. TODO: reference how to do it.
 
 To define the backup of a VM in Bareos, a job definition and a fileset resource
 must be added to the Bareos director configuration. In |proxmox ve|, guests have
