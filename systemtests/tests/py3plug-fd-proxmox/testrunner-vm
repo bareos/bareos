@@ -18,7 +18,7 @@ export PATH="${current_test_directory}/sbin:${current_test_directory}/bin:$PATH"
 
 JobName=backup-proxmox-vm
 #shellcheck source=../scripts/functions
-. "${rscripts}"/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 BACKGUESTID=999010
 RESTGUESTID=999011
