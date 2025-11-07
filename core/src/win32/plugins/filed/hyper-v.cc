@@ -21,6 +21,7 @@
 
 #include "include/bareos.h"
 #include "include/filetypes.h"
+#include "include/job_status.h"
 #include "fd_plugins.h"
 #include "plugins/include/common.h"
 #include <jansson.h>
@@ -1973,6 +1974,7 @@ static WMI::String extract_disk_path(const WMI::ClassObject& vhd_setting)
 }
 
 struct analyzed_ref_point {
+  WMI::ReferencePoint source;
   struct disk {
     GUID virt_disk_id;
     WMI::String rct_id;
@@ -2037,7 +2039,7 @@ GUID get_id_of_disk(PluginContext* ctx, const wchar_t* path)
 
 analyzed_ref_point analyze_ref_point(PluginContext* ctx,
                                      const WMI::Service& srvc,
-                                     const WMI::ReferencePoint& refpoint)
+                                     WMI::ReferencePoint refpoint)
 {
   auto rct_ids = refpoint.get_array<WMI::cim_type::string>(
       L"ResilientChangeTrackingIdentifiers");
@@ -2057,7 +2059,7 @@ analyzed_ref_point analyze_ref_point(PluginContext* ctx,
         rct_ids.size(), disk_ids.size()));
   }
 
-  analyzed_ref_point analyzed;
+  analyzed_ref_point analyzed{std::move(refpoint)};
 
   for (size_t i = 0; i < rct_ids.size(); ++i) {
     constexpr auto fixup_instance_id
@@ -2268,6 +2270,7 @@ struct plugin_ctx {
       WMI::ComputerSystem current_vm;
       std::wstring vm_name;
       std::optional<analyzed_ref_point> refpoint;
+      std::optional<WMI::ReferencePoint> created_ref_point;
       std::wstring tmp_dir;
       WMI::Snapshot vm_snapshot;
       uint32_t delta_seq;
@@ -2347,7 +2350,21 @@ struct plugin_ctx {
   config cfg;
 
   bool is_full() const { return job_level == JobLevel::Full; }
+  bool is_diff() const { return job_level == JobLevel::Differential; }
 };
+
+static bool is_canceled(PluginContext* ctx)
+{
+  int job_status = 0;
+  if (bRC_Error
+      == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarJobStatus,
+                                               &job_status)) {
+    return true;
+  } else {
+    return job_status == JS_Canceled || job_status == JS_ErrorTerminated
+           || job_status == JS_FatalError;
+  }
+}
 
 
 extern "C" {
@@ -2566,72 +2583,151 @@ static bRC newPlugin(PluginContext* ctx)
   }
 }
 
+static bRC destroy_all_other_reference_points(
+    PluginContext* ctx,
+    const WMI::VirtualSystemReferencePointService& ref_point_srvc,
+    const WMI::ComputerSystem& system,
+    const WMI::ReferencePoint& ref_point)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  auto& srvc = p_ctx->virt_service;
+
+  auto ref_points = srvc.get_related_of_class(
+      system.path().as_view(), WMI::ReferencePoint::class_name,
+      L"Msvm_ReferencePointOfVirtualSystem");
+
+  auto reference_path = ref_point.path();
+
+  for (auto& rp : ref_points) {
+    WMI::ReferencePoint other_rp{std::move(rp)};
+
+    auto other_path = other_rp.path();
+    if (other_path.as_view() != reference_path.as_view()) {
+      JINFO(ctx, L"Deleting unnecessary reference point {}",
+            other_path.as_view());
+      ref_point_srvc.destroy_reference_point(srvc, std::move(other_rp));
+    }
+  }
+
+  return bRC_OK;
+}
+
 static bRC free_current_state(PluginContext* ctx)
 {
   auto* p_ctx = plugin_ctx::get(ctx);
   if (!p_ctx) { return bRC_Error; }
 
-  std::visit(
-      [&](auto&& val) {
-        using T = std::decay_t<decltype(val)>;
+  bRC result = bRC_OK;
+  try {
+    std::visit(
+        [&](auto&& val) {
+          using T = std::decay_t<decltype(val)>;
 
-        if constexpr (std::is_same_v<T, plugin_ctx::restore>) {
-          // maybe this should only happen if the restore was successful?
-          for (auto& path : val.temporary_files) {
-            if (!DeleteFileW(path.c_str())) {
-              JWARN(ctx, L"could not delete file '{}': {}", path,
-                    format_win32_error());
+          if constexpr (std::is_same_v<T, plugin_ctx::restore>) {
+            // maybe this should only happen if the restore was successful?
+            for (auto& path : val.temporary_files) {
+              if (!DeleteFileW(path.c_str())) {
+                JWARN(ctx, L"could not delete file '{}': {}", path,
+                      format_win32_error());
+              }
             }
-          }
 
-          if (!val.tmp_dir.empty() && PathFileExistsW(val.tmp_dir.c_str())) {
-            std::error_code ec = {};
-            auto num_removed
-                = std::filesystem::remove_all(val.tmp_dir.c_str(), ec);
-            DBGC(ctx, L"remove({}) deleted {} files", val.tmp_dir, num_removed);
-            if (num_removed == static_cast<std::uintmax_t>(-1)) {
-              JWARN(ctx, L"could not delete directory '{}': {}", val.tmp_dir,
-                    format_win32_error(ec.value()));
+            if (!val.tmp_dir.empty() && PathFileExistsW(val.tmp_dir.c_str())) {
+              std::error_code ec = {};
+              auto num_removed
+                  = std::filesystem::remove_all(val.tmp_dir.c_str(), ec);
+              DBGC(ctx, L"remove({}) deleted {} files", val.tmp_dir,
+                   num_removed);
+              if (num_removed == static_cast<std::uintmax_t>(-1)) {
+                JWARN(ctx, L"could not delete directory '{}': {}", val.tmp_dir,
+                      format_win32_error(ec.value()));
+              }
             }
-          }
-        } else if constexpr (std::is_same_v<T, plugin_ctx::backup>) {
-          auto* prepared
-              = std::get_if<plugin_ctx::backup::prepared_backup>(&val.state);
-          if (!prepared) { return; }
+          } else if constexpr (std::is_same_v<T, plugin_ctx::backup>) {
+            auto* prepared
+                = std::get_if<plugin_ctx::backup::prepared_backup>(&val.state);
+            if (!prepared) { return; }
 
-          if (prepared->vm_snapshot.ptr.p) {
-            val.snapshot_srvc.destroy_snapshot(
-                p_ctx->virt_service, std::move(prepared->vm_snapshot));
-          }
-
-          if (prepared->disk_to_backup) {
-            CloseHandle(prepared->disk_to_backup.value());
-            prepared->disk_to_backup.reset();
-          }
-
-          if (!prepared->tmp_dir.empty()
-              && PathFileExistsW(prepared->tmp_dir.c_str())) {
-            std::error_code ec = {};
-            auto num_removed
-                = std::filesystem::remove_all(prepared->tmp_dir.c_str(), ec);
-            DBGC(ctx, L"remove({}) deleted {} files", prepared->tmp_dir,
-                 num_removed);
-            if (num_removed == static_cast<std::uintmax_t>(-1)) {
-              JWARN(ctx, L"could not delete directory '{}': {}",
-                    prepared->tmp_dir, format_win32_error(ec.value()));
+            if (prepared->vm_snapshot.ptr.p) {
+              val.snapshot_srvc.destroy_snapshot(
+                  p_ctx->virt_service, std::move(prepared->vm_snapshot));
             }
-          }
 
-        } else if constexpr (std::is_same_v<T, std::monostate>) {
-          // nothing to do here
-        } else {
-          static_assert(!std::is_same_v<T, T>, "type not handled");
-        }
-      },
-      p_ctx->current_state);
+            if (prepared->disk_to_backup) {
+              CloseHandle(prepared->disk_to_backup.value());
+              prepared->disk_to_backup.reset();
+            }
+
+            if (!prepared->tmp_dir.empty()
+                && PathFileExistsW(prepared->tmp_dir.c_str())) {
+              std::error_code ec = {};
+              auto num_removed
+                  = std::filesystem::remove_all(prepared->tmp_dir.c_str(), ec);
+              DBGC(ctx, L"remove({}) deleted {} files", prepared->tmp_dir,
+                   num_removed);
+              if (num_removed == static_cast<std::uintmax_t>(-1)) {
+                JWARN(ctx, L"could not delete directory '{}': {}",
+                      prepared->tmp_dir, format_win32_error(ec.value()));
+              }
+            }
+
+            if (prepared->created_ref_point) {
+              if (is_canceled(ctx)) {
+                DBGC(ctx, L"deleting ref point {} as the job is canceled",
+                     prepared->created_ref_point->path().as_view());
+                val.refpoint_srvc.destroy_reference_point(
+                    p_ctx->virt_service,
+                    std::move(prepared->created_ref_point.value()));
+              } else {
+                if (p_ctx->is_full()) {
+                  DBGC(ctx,
+                       L"deleting all other ref points except {} as the full "
+                       L"job is done",
+                       prepared->created_ref_point->path().as_view());
+                  destroy_all_other_reference_points(
+                      ctx, val.refpoint_srvc, prepared->current_vm,
+                      prepared->created_ref_point.value());
+                } else if (p_ctx->is_diff()) {
+                  // intentionally left blank
+                } else {
+                  if (prepared->delta_seq > 1 && prepared->refpoint) {
+                    // the previous reference point is _not_ a full,
+                    // so we can delte
+                    DBGC(ctx,
+                         L"delta_seq {} > 1 => delete previous non-full ref "
+                         L"point",
+                         prepared->delta_seq);
+
+                    JINFO(ctx, L"Deleting unnecessary reference point {}",
+                          prepared->refpoint->source.path().as_view());
+
+                    val.refpoint_srvc.destroy_reference_point(
+                        p_ctx->virt_service,
+                        std::move(prepared->refpoint->source));
+                  }
+                  // destroy only the previous one
+                }
+              }
+            }
+          } else if constexpr (std::is_same_v<T, std::monostate>) {
+            // nothing to do here
+          } else {
+            static_assert(!std::is_same_v<T, T>, "type not handled");
+          }
+        },
+        p_ctx->current_state);
+  } catch (const std::exception& ex) {
+    JERR(ctx, "could not cleanup state at end of job: {}", ex.what());
+    result = bRC_Error;
+  } catch (...) {
+    JERR(ctx, "could not cleanup state at end of job");
+    result = bRC_Error;
+  }
 
   p_ctx->current_state.emplace<std::monostate>();
-  return bRC_OK;
+  return result;
 }
 
 
@@ -3311,11 +3407,13 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
   JINFO(ctx, L"retrieving information from snapshot ...");
 
   std::optional<analyzed_ref_point> analyzed;
-  if (refpoint) { analyzed = analyze_ref_point(ctx, srvc, refpoint.value()); }
+  if (refpoint) {
+    analyzed = analyze_ref_point(ctx, srvc, std::move(refpoint.value()));
+  }
 
   auto& prepared = bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
-      std::move(vm.value()), utf8_to_utf16(vm_name), std::move(analyzed), dir,
-      std::move(snapshot), delta_seq);
+      std::move(vm.value()), utf8_to_utf16(vm_name), std::move(analyzed),
+      std::nullopt, dir, std::move(snapshot), delta_seq);
 
   prepared.files_to_backup = get_files_in_dir(dir);
   prepared.disks_to_backup
@@ -3376,8 +3474,13 @@ static void prepare_restore_object(PluginContext* ctx)
   prepared.restore_objects.emplace_back(
       get_info(ctx, prepared.current_vm, prepared.backed_up_disks));
 
+  JINFO(ctx, L"converted snapshot into reference point '{}'",
+        refpoint.path().as_view());
+
   add_ref_point(ctx, prepared.current_vm, prepared.restore_objects,
                 prepared.delta_seq, refpoint);
+
+  prepared.created_ref_point.emplace(std::move(refpoint));
 }
 
 // maybe we should add the cluster name here somehow ?
