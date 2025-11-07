@@ -304,7 +304,6 @@ if(NOT client-only
   add_subdirectory(src/droplet)
 endif()
 
-include(BareosGenerateDebianInfo)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(MSVC)
     add_definitions(
@@ -816,6 +815,8 @@ else()
   # use the user's environment setting
   set(CTEST_PARALLEL_LEVEL "")
 endif()
+
+include(BareosGenerateDebianInfo)
 
 configure_file(
   "CTestScript.cmake.in" "${CMAKE_BINARY_DIR}/CTestScript.cmake" @ONLY

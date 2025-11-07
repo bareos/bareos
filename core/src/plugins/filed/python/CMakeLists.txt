@@ -143,6 +143,15 @@ set(PYFILES
     libcloud/BareosFdPluginLibcloud.py
 )
 
+include(CMakeDependentOption)
+cmake_dependent_option(
+  ENABLE_PROXMOX_PLUGIN
+  "Enable the filedaemon plugin for Proxmox VE"
+  ON
+  "ENABLE_PYTHON;BAREOS_PLATFORM STREQUAL debian;DIST_VERSION_ID GREATER_EQUAL 12"
+  OFF
+)
+
 if(ENABLE_PROXMOX_PLUGIN)
   list(APPEND PYFILES proxmox/bareos-fd-proxmox.py)
 endif()

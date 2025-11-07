@@ -597,13 +597,3 @@ set(DUMP_VARS
     ""
     CACHE STRING "Dump all variables that matches this regex."
 )
-
-include(CMakeDependentOption)
-cmake_dependent_option(
-  ENABLE_PROXMOX_PLUGIN
-  "ENABLE_PROXMOX_PLUGIN"
-  ON
-  "ENABLE_PYTHON;BAREOS_PLATFORM STREQUAL debian;DIST_VERSION_ID GREATER_EQUAL 12"
-  OFF
-)
-message ("DIST_VERSION_ID=${DIST_VERSION_ID}")
