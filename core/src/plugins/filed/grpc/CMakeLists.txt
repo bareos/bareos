@@ -43,8 +43,6 @@ if(ENABLE_GRPC)
 
       set(proto_src "${PROTO_OUTPUT_DIR}/${stem}.pb.cc")
       set(proto_hdr "${PROTO_OUTPUT_DIR}/${stem}.pb.h")
-      set(grpc_src "${PROTO_OUTPUT_DIR}/${stem}.grpc.pb.cc")
-      set(grpc_hdr "${PROTO_OUTPUT_DIR}/${stem}.grpc.pb.h")
 
       if(Protobuf_VERSION VERSION_LESS 3.15.0)
         set(_PROTOBUF_PROTOC_EXTRA_PARAMS
@@ -54,26 +52,20 @@ if(ENABLE_GRPC)
         set(_PROTOBUF_PROTOC_EXTRA_PARAMS "")
       endif()
       add_custom_command(
-        OUTPUT "${proto_src}" "${proto_hdr}" "${grpc_src}" "${grpc_hdr}"
+        OUTPUT "${proto_src}" "${proto_hdr}"
         COMMAND
-          $<TARGET_FILE:protobuf::protoc> ARGS --grpc_out "${PROTO_OUTPUT_DIR}"
-          --cpp_out "${PROTO_OUTPUT_DIR}" -I "${path}" --python_out
-          "${PROTO_OUTPUT_DIR}"
-          --plugin=protoc-gen-grpc="${gRPC_CPP_PROTO_PLUGIN}"
-          ${_PROTOBUF_PROTOC_EXTRA_PARAMS} "${absolute}"
+          $<TARGET_FILE:protobuf::protoc> ARGS --cpp_out "${PROTO_OUTPUT_DIR}"
+          -I "${path}" ${_PROTOBUF_PROTOC_EXTRA_PARAMS} "${absolute}"
         DEPENDS "${absolute}" protobuf::protoc
         COMMENT "Compiling proto file ${absolute}"
       )
 
       list(APPEND protosrcs "${proto_src}")
       list(APPEND protohdrs "${proto_hdr}")
-      list(APPEND grpcsrcs "${grpc_src}")
-      list(APPEND grpchdrs "${grpc_hdr}")
     endforeach()
 
     message(DEBUG "Generated proto files:")
     message(DEBUG " proto: ${protosrcs} / ${protohdrs}")
-    message(DEBUG " grpc: ${grpcsrcs} / ${grpchdrs}")
 
     target_sources(${target} PRIVATE ${protosrcs})
     target_include_directories(${target} PUBLIC ${PROTO_OUTPUT_DIR})
