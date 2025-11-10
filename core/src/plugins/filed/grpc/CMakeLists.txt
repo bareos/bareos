@@ -55,7 +55,8 @@ if(ENABLE_GRPC)
         OUTPUT "${proto_src}" "${proto_hdr}"
         COMMAND
           $<TARGET_FILE:protobuf::protoc> ARGS --cpp_out "${PROTO_OUTPUT_DIR}"
-          -I "${path}" ${_PROTOBUF_PROTOC_EXTRA_PARAMS} "${absolute}"
+          -I "${path}" --python_out "${PROTO_OUTPUT_DIR}"
+          ${_PROTOBUF_PROTOC_EXTRA_PARAMS} "${absolute}"
         DEPENDS "${absolute}" protobuf::protoc
         COMMENT "Compiling proto file ${absolute}"
       )
