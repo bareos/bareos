@@ -57,7 +57,8 @@ if(ENABLE_GRPC)
         OUTPUT "${proto_src}" "${proto_hdr}" "${grpc_src}" "${grpc_hdr}"
         COMMAND
           $<TARGET_FILE:protobuf::protoc> ARGS --grpc_out "${PROTO_OUTPUT_DIR}"
-          --cpp_out "${PROTO_OUTPUT_DIR}" -I "${path}"
+          --cpp_out "${PROTO_OUTPUT_DIR}" -I "${path}" --python_out
+          "${PROTO_OUTPUT_DIR}"
           --plugin=protoc-gen-grpc="${gRPC_CPP_PROTO_PLUGIN}"
           ${_PROTOBUF_PROTOC_EXTRA_PARAMS} "${absolute}"
         DEPENDS "${absolute}" protobuf::protoc
