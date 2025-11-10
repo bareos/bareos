@@ -45,6 +45,5 @@ set(BAREOS_PLATFORM ${PLATFORM})
 
 # cmake_host_system_information() was added in 3.22
 if(CMAKE_VERSION VERSION_GREATER 3.22)
-  cmake_host_system_information(RESULT DIST_ID QUERY DISTRIB_ID)
   cmake_host_system_information(RESULT DIST_VERSION_ID QUERY DISTRIB_VERSION_ID)
 endif()

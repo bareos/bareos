@@ -19,6 +19,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+# silence module-name warning
 # pylint: disable=invalid-name
 # pylint: enable=invalid-name
 
@@ -40,8 +41,8 @@ class LogPipe:
 
     def __init__(self):
         self._read_fd, self._write_fd = pipe()
-        # make the reading end, but not the writing end non-blocking and create
-        # a poll-object for it
+
+        # make reading end non-blocking so we can poll() with timeout
         fcntl(self._read_fd, F_SETFL, fcntl(self._read_fd, F_GETFL) | O_NONBLOCK)
         self._read_poller = poll()
         self._read_poller.register(self._read_fd)
@@ -146,7 +147,9 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         bareosfd.DebugMessage(100, f"{__name__}:start_backup_file() called\n")
 
-        vzdump_cmd = ("vzdump", self.options["guestid"], "--stdout")
+        guest_id = self.options["guestid"]
+
+        vzdump_cmd = ("vzdump", guest_id, "--stdout")
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(vzdump_cmd)}\n")
         self.io_process = subprocess.Popen(  # pylint: disable=consider-using-with
             vzdump_cmd,
@@ -155,7 +158,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             stderr=self.log_pipe,
         )
 
-        guest_id = self.options["guestid"]
         guest_type = None
         guest_name = None
         backup_ts = None
@@ -173,11 +175,8 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         bareosfd.JobMessage(bareosfd.M_FATAL, "Unsupported guest type.")
                         return bareosfd.bRC_Error
                     bareosfd.DebugMessage(100, f"guest type: '{guest_type}'\n")
-                elif (
-                    guest_type == "lxc"
-                    and line.startswith("INFO: CT Name:")
-                    or guest_type == "qemu"
-                    and line.startswith("INFO: VM Name:")
+                elif (guest_type == "lxc" and line.startswith("INFO: CT Name:")) or (
+                    guest_type == "qemu" and line.startswith("INFO: VM Name:")
                 ):
                     guest_name = line[15:-1]
                     bareosfd.DebugMessage(100, f"guest name: '{guest_name}'\n")
@@ -187,17 +186,17 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 elif "sending archive to stdout" in line:
                     write_started = True
                     bareosfd.DebugMessage(100, "start marker found\n")
-        except TimeoutError:
-            bareosfd.JobMessage(
-                bareosfd.M_FATAL, "Malformed log data received from vzdump.\n"
-            )
+        except TimeoutError as e:
+            bareosfd.JobMessage(bareosfd.M_FATAL, f"vzdump log output stalled: {e}\n")
             return bareosfd.bRC_Error
 
         if not guest_name:
-            guest_name = f"VM {guest_id}"
+            if guest_type == "qemu":
+                guest_name = f"VM {guest_id}"
+            elif guest_type == "lxc":
+                guest_name = f"CT {guest_id}"
             bareosfd.JobMessage(
-                bareosfd.M_INFO,
-                f"VM Name not set, using \"{guest_name}\"\n"
+                bareosfd.M_INFO, f'Guest name not set, defaulting to "{guest_name}"\n'
             )
 
         if not guest_type or not write_started or not backup_ts:
@@ -288,7 +287,8 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # restore to io_process' stdin
             iop.filedes = self.io_process.stdin.fileno()
         else:
-            return bareosfd.bRC_Error
+            # other levels already catched at job start
+            assert False
 
         return bareosfd.bRC_OK
 
