@@ -229,8 +229,9 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """Create file during restore"""
         bareosfd.DebugMessage(100, f"create_file() called with {restorepkt}\n")
 
+        restorepkt.create_status = bareosfd.CF_EXTRACT
+
         if self.options.get("restoretodisk") == "yes":
-            restorepkt.create_status = bareosfd.CF_CORE
             return bareosfd.bRC_OK
 
         if "vzdump-lxc" in restorepkt.ofname:
@@ -263,8 +264,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         )
 
         self._despool_log(init_timeout=10000)
-
-        restorepkt.create_status = bareosfd.CF_EXTRACT
 
         return bareosfd.bRC_OK
 
