@@ -190,6 +190,9 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             bareosfd.JobMessage(bareosfd.M_FATAL, f"vzdump log output stalled: {e}\n")
             return bareosfd.bRC_Error
 
+        if not self._check_io_process():
+            return bareosfd.bRC_Error
+
         if not guest_name:
             if guest_type == "qemu":
                 guest_name = f"VM {guest_id}"
@@ -298,16 +301,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         if self.options.get("restoretodisk") == "yes":
             self.file.close()
-            return bareosfd.bRC_OK
-
-        self._despool_log(init_timeout=2000)
-
-        if self.io_process.returncode:
-            bareosfd.JobMessage(
-                bareosfd.M_FATAL, f"program returned {self.io_process.returncode}"
-            )
-            return bareosfd.bRC_Error
-
         return bareosfd.bRC_OK
 
     def plugin_io_seek(self, iop):
@@ -327,13 +320,24 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         self._despool_log(init_timeout=0)
 
-        if self.io_process.returncode:
-            bareosfd.JobMessage(
-                bareosfd.M_FATAL, f"program returned {self.io_process.returncode}"
-            )
+        if not self._wait_for_io_process():
             return bareosfd.bRC_Error
-
         bareosfd.DebugMessage(100, "end_backup_file(): returning bRC_OK\n")
+        return bareosfd.bRC_OK
+
+    def end_restore_file(self):
+        """Called after all data was written"""
+        if self.options.get("restoretodisk") == "yes":
+            return bareosfd.bRC_OK
+
+        # tell the process we're done writing
+        self.io_process.stdin.close()
+
+        self._despool_log(init_timeout=0)
+
+        if not self._wait_for_io_process():
+            return bareosfd.bRC_Error
+        bareosfd.DebugMessage(100, "end_restore_file(): returning bRC_OK\n")
         return bareosfd.bRC_OK
 
     def get_acl(self, acl):
@@ -365,3 +369,24 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 bareosfd.JobMessage(bareosfd.M_WARNING, line)
             else:
                 bareosfd.JobMessage(bareosfd.M_INFO, line)
+
+    def _check_io_process(self):
+        ret = self.io_process.poll()
+        if ret is None or ret == 0:
+            return True  # still running
+
+        bareosfd.JobMessage(
+            bareosfd.M_FATAL,
+            f"'{' '.join(self.io_process.args)}' exited with code {ret}\n",
+        )
+        return False
+
+    def _wait_for_io_process(self, timeout=10):
+        bareosfd.JobMessage(bareosfd.M_INFO, "waiting for command to finish\n")
+        while self.io_process.returncode is None:
+            self._despool_log()
+            try:
+                self.io_process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                pass
+        return self._check_io_process()
