@@ -602,9 +602,9 @@ run_bconsole()
     # 'cmd || ec=$?' is used to prevent "set -e" from killing the script
     # before we had the chance to kill the daemons (in case of timeout)
     if test "$debug" -eq 1; then
-      timeout "${timeout}" "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <"$bconsole_file" || error_code=$?
+      "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <"$bconsole_file" || error_code=$?
     else
-      timeout "${timeout}" "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <"$bconsole_file" 2>&1 >/dev/null || error_code=$?
+      "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <"$bconsole_file" 2>&1 >/dev/null || error_code=$?
     fi
   fi
   if ((error_code == 124)); then
