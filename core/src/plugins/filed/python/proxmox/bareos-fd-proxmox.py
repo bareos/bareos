@@ -107,6 +107,76 @@ class LogPipe:
         raise IOError(f"Unexpected bitmask on poll(): {event}")
 
 
+class UnknownOptionException(Exception):
+    """Raised when using an unknown option."""
+
+
+class BareosFdProxmoxOptions:
+    """Holds plugin options."""
+
+    def __init__(self):
+        self._options = {
+            "force": self.make_opt(bool, False),
+            "guestid": self.make_opt(int),
+            "restorepath": self.make_opt(str, "/var/lib/vz/dump"),
+            "restoretodisk": self.make_opt(bool, False),
+        }
+
+    @staticmethod
+    def make_opt(type_, default=None):
+        """Create a new option"""
+        return {"type": type_, "value": default, "value_set": False}
+
+    def check(self):
+        """Check if options are complete."""
+        success = True
+        for name, option in self._options.items():
+            bareosfd.DebugMessage(13, f"Option '{name}': {option}'\n")
+            if not option["value_set"] and option["value"] is None:
+                success = False
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL, f"Mandatory option {name} not defined.\n"
+                )
+        return success
+
+    def __contains__(self, key):
+        try:
+            return self._options[key]["value_set"]
+        except KeyError as e:
+            raise UnknownOptionException(key) from e
+
+    def __setitem__(self, key, value):
+        try:
+            opt = self._options[key]
+            if opt["type"] == str:
+                opt["value"] = value
+            elif opt["type"] == int:
+                opt["value"] = int(value)
+            elif opt["type"] == bool:
+                tmp = value.strip().lower()
+                if tmp in ("yes", "on", "true", "1"):
+                    opt["value"] = True
+                elif tmp in ("no", "off", "false", "0"):
+                    opt["value"] = False
+                else:
+                    raise ValueError
+            opt["value_set"] = True
+        except KeyError as e:
+            raise UnknownOptionException(key) from e
+
+    def __getitem__(self, key):
+        try:
+            return self._options[key]["value"]
+        except KeyError as e:
+            raise UnknownOptionException(key) from e
+
+    def __getattr__(self, key):
+        try:
+            return self._options[key]["value"]
+        except KeyError as e:
+            raise UnknownOptionException(key) from e
+
+
 @BareosPlugin  # pylint: disable=undefined-variable
 class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     """Plugin main class"""
@@ -115,13 +185,18 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(
             100, f"Constructor called in module {__name__} with plugindef={plugindef}\n"
         )
-        self.mandatory_options_guestid = ["guestid"]
 
+        self.options = BareosFdProxmoxOptions()
         super().__init__(plugindef)
 
         self.file = None
         self.io_process = None
         self.log_pipe = LogPipe()
+
+    def check_options(self, mandatory_options=None):
+        """Check plugin options for completeness."""
+        del mandatory_options
+        return self.options.check()
 
     def parse_plugin_definition(self, plugindef):
         """
@@ -130,7 +205,15 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(
             100, f"parse_plugin_definition() was called in module {__name__}\n"
         )
-        super().parse_plugin_definition(plugindef)
+        try:
+            if not super().parse_plugin_definition(plugindef):
+                return bareosfd.bRC_Error
+        except UnknownOptionException as e:
+            bareosfd.JobMessage(
+                bareosfd.M_FATAL, f"Unknown option '{e}' passed to plugin\n"
+            )
+            return bareosfd.bRC_Error
+
         bareosfd.DebugMessage(100, f"self.options are: = {self.options}\n")
         # Full ("F") or Restore (" ")
         if chr(self.level) not in "F ":
@@ -147,9 +230,9 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """
         bareosfd.DebugMessage(100, f"{__name__}:start_backup_file() called\n")
 
-        guest_id = self.options["guestid"]
+        guest_id = self.options.guestid
 
-        vzdump_cmd = ("vzdump", guest_id, "--stdout")
+        vzdump_cmd = ("vzdump", f"{guest_id}", "--stdout")
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(vzdump_cmd)}\n")
         self.io_process = subprocess.Popen(  # pylint: disable=consider-using-with
             vzdump_cmd,
@@ -231,29 +314,29 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         restorepkt.create_status = bareosfd.CF_EXTRACT
 
-        if self.options.get("restoretodisk") == "yes":
+        if self.options.restoretodisk:
             return bareosfd.bRC_OK
 
         if "vzdump-lxc" in restorepkt.ofname:
-            recovery_cmd = (
+            recovery_cmd = [
                 "pct",
                 "restore",
-                self.options["guestid"],
+                f"{self.options.guestid}",
                 "-",
                 "--rootfs",
                 "/",
-                "--force",
-                "yes",
-            )
-
+            ]
         elif "vzdump-qemu" in restorepkt.ofname:
-            recovery_cmd = ("qmrestore", "-", self.options["guestid"], "--force", "yes")
+            recovery_cmd = ["qmrestore", "-", f"{self.options.guestid}"]
         else:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
                 "no 'vzdump-lxc' or 'vzdump-qemu' in filename, only 'restoretodisk=yes' possible",
             )
             return bareosfd.bRC_Error
+
+        if self.options.force:
+            recovery_cmd.extend(["--force", "yes"])
 
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(recovery_cmd)}\n")
         self.io_process = subprocess.Popen(  # pylint: disable=consider-using-with
@@ -274,12 +357,9 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if chr(self.level) == "F":
             # backup from io_process' stdout
             iop.filedes = self.io_process.stdout.fileno()
-        elif (
-            chr(self.level) == " " and self.options.get("restoretodisk", "no") == "yes"
-        ):
+        elif chr(self.level) == " " and self.options.restoretodisk:
             # restore to a file
-            restore_path = self.options.get("restore_path", "/var/lib/vz/dump")
-            filename = f"{restore_path}/{basename(iop.fname)}"
+            filename = f"{self.options.restorepath}/{basename(iop.fname)}"
 
             self.file = open(filename, "wb")  # pylint: disable=consider-using-with
             iop.filedes = self.file.fileno()
@@ -298,7 +378,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """Close file for backup or restore"""
         del iop
 
-        if self.options.get("restoretodisk") == "yes":
+        if self.options.restoretodisk:
             self.file.close()
         return bareosfd.bRC_OK
 
@@ -326,7 +406,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def end_restore_file(self):
         """Called after all data was written"""
-        if self.options.get("restoretodisk") == "yes":
+        if self.options.restoretodisk:
             return bareosfd.bRC_OK
 
         # tell the process we're done writing
