@@ -250,23 +250,29 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             for line in self.log_pipe.readlines(init_timeout=10000, read_timeout=500):
                 bareosfd.JobMessage(bareosfd.M_INFO, line)
                 if line.startswith("INFO: Starting Backup of VM"):
+                    # """INFO: Starting Backup of VM 999010 (qemu)"""
                     if line.endswith("(lxc)\n"):
                         guest_type = "lxc"
+                        guest_name = f"CT {guest_id}"
                     elif line.endswith("(qemu)\n"):
                         guest_type = "qemu"
+                        guest_name = f"VM {guest_id}"
                     else:
                         bareosfd.JobMessage(bareosfd.M_FATAL, "Unsupported guest type.")
                         return bareosfd.bRC_Error
                     bareosfd.DebugMessage(100, f"guest type: '{guest_type}'\n")
+                elif line.startswith("INFO: Backup started at "):
+                    # """INFO: Backup started at 2025-11-04 16:38:07"""
+                    backup_ts = line[24:-1].translate(str.maketrans("- :", "_-_"))
+                    bareosfd.DebugMessage(100, f"backup ts: '{backup_ts}'\n")
                 elif (guest_type == "lxc" and line.startswith("INFO: CT Name:")) or (
                     guest_type == "qemu" and line.startswith("INFO: VM Name:")
                 ):
+                    # """INFO: VM Name: plugtestvm"""
                     guest_name = line[15:-1]
                     bareosfd.DebugMessage(100, f"guest name: '{guest_name}'\n")
-                elif line.startswith("INFO: Backup started at "):
-                    backup_ts = line[24:-1].translate(str.maketrans("- :", "_-_"))
-                    bareosfd.DebugMessage(100, f"backup ts: '{backup_ts}'\n")
                 elif "sending archive to stdout" in line:
+                    # """INFO: sending archive to stdout"
                     write_started = True
                     bareosfd.DebugMessage(100, "start marker found\n")
         except TimeoutError as e:
@@ -275,15 +281,6 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         if not self._check_io_process():
             return bareosfd.bRC_Error
-
-        if not guest_name:
-            if guest_type == "qemu":
-                guest_name = f"VM {guest_id}"
-            elif guest_type == "lxc":
-                guest_name = f"CT {guest_id}"
-            bareosfd.JobMessage(
-                bareosfd.M_INFO, f'Guest name not set, defaulting to "{guest_name}"\n'
-            )
 
         if not guest_type or not write_started or not backup_ts:
             bareosfd.JobMessage(
