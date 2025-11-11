@@ -185,7 +185,7 @@ struct InMemoryProtoQueue {
   control_block* ctrl;
   std::span<uint8_t> data;
 
-  std::span<uint8_t> allocate(std::size_type size)
+  std::span<uint8_t> allocate(size_type size)
   {
     if (size > data.size()) {
       // ??
