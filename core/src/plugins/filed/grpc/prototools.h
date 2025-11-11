@@ -27,69 +27,192 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <pthread.h>
 #include <span>
+#include <fcntl.h>
+#include <poll.h>
+
+static bool WaitOnReadable(int fd)
+{
+  struct pollfd pfd = {};
+  pfd.fd = fd;
+  pfd.events = POLLIN;
+
+  switch (poll(&pfd, 1, -1)) {
+    case -1: /* ERROR */
+      [[fallthrough]];
+    case 0: /* TIMEOUT */ {
+      // timeout cannot happen
+      return false;
+    }
+  }
+
+  if ((pfd.revents & POLLIN) != POLLIN) { return false; }
+
+  return true;
+}
 
 namespace prototools {
 struct ProtoInputStream {
-  google::protobuf::io::FileInputStream stream;
+  int fd;
+  std::vector<uint8_t> buffer{};
+  std::size_t current_offset{0};
+  std::size_t data_in_buffer{0};
 
-  ProtoInputStream(int in_fd) : stream{in_fd} {}
+  ProtoInputStream(int in_fd) : fd{in_fd}
+  {
+    int flags = fcntl(fd, F_GETFL);
+    assert(flags >= 0);
+    flags |= O_NONBLOCK;
+
+
+    assert(fcntl(fd, F_SETFL, flags) >= 0);
+  }
 
   ProtoInputStream(const ProtoInputStream&) = delete;
   ProtoInputStream& operator=(const ProtoInputStream&) = delete;
   ProtoInputStream(ProtoInputStream&&) = delete;
   ProtoInputStream& operator=(ProtoInputStream&&) = delete;
 
+  const uint8_t* do_read(uint32_t min_size)
+  {
+    auto old_data = data_in_buffer - current_offset;
+
+    if (old_data == 0) { current_offset = data_in_buffer = 0; }
+
+    if (old_data > min_size) {
+      auto* head = buffer.data() + current_offset;
+      current_offset += min_size;
+      return head;
+    }
+
+    if (data_in_buffer + min_size > buffer.size()) {
+      if (old_data + min_size > buffer.size()) {
+        std::vector<uint8_t> bigger((old_data + min_size) * 2);
+
+        memcpy(bigger.data(), buffer.data() + current_offset, old_data);
+        buffer = std::move(bigger);
+      } else {
+        if (old_data > 0) {
+          memmove(buffer.data(), buffer.data() + current_offset, old_data);
+        }
+      }
+
+      current_offset = 0;
+      data_in_buffer = old_data;
+    }
+
+    assert(data_in_buffer + min_size <= buffer.size());
+
+    uint32_t bytes_read = 0;
+
+    uint8_t* head = buffer.data() + data_in_buffer;
+    uint32_t max_size = buffer.size() - data_in_buffer;
+
+    uint32_t read_goal = min_size - old_data;
+
+    while (bytes_read < read_goal) {
+      auto new_bytes = read(fd, head + bytes_read, max_size - bytes_read);
+      if (new_bytes < 0) {
+        auto err = errno;
+        switch (err) {
+#if EAGAIN != EWOULDBLOCK
+          case EWOULDBLOCK:
+            [[fallthrough]];
+#endif
+          case EAGAIN: {
+            if (!WaitOnReadable(fd)) { return nullptr; }
+
+            continue;
+          }
+        }
+        return nullptr;
+      } else if (new_bytes == 0) {
+        return nullptr;
+      }
+
+      bytes_read += new_bytes;
+    }
+
+    auto* res = buffer.data() + current_offset;
+    current_offset += min_size;
+    data_in_buffer += bytes_read;
+
+    return res;
+  }
+
   template <typename Message> bool Read(Message& msg)
   {
-    google::protobuf::io::CodedInputStream coded{&stream};
-    uint64_t RequestSize = 0;
-    if (!coded.ReadVarint64(&RequestSize)) { return false; }
+    uint32_t RequestSize = 0;
 
-    // make sure we do not read too much data; protobuf parsing always
-    // consumes as much data as possible; there are no "end message" markers
-    auto limit = coded.PushLimit(RequestSize);
-    if (!msg.ParseFromCodedStream(&coded)) {
-      coded.PopLimit(limit);
-      return false;
-      // JobLog(ctx, M_ERROR, FMT_STRING("could not parse request"));
-      // TODO: we should somehow abort here, since we cannot recover from this
-    }
-    coded.PopLimit(limit);
+    auto* ptr = do_read(sizeof(RequestSize));
+    if (!ptr) { return false; }
 
-    return true;
+    memcpy(&RequestSize, ptr, sizeof(RequestSize));
+
+    ptr = do_read(RequestSize);
+    if (!ptr) { return false; }
+
+    return msg.ParseFromArray(ptr, RequestSize);
   }
 };
 
 struct ProtoOutputStream {
-  google::protobuf::io::FileOutputStream stream;
+  int fd;
 
-  ProtoOutputStream(int out_fd) : stream{out_fd} {}
+  std::vector<uint8_t> buffer;
+
+  ProtoOutputStream(int out_fd) : fd{out_fd} {}
 
   ProtoOutputStream(const ProtoOutputStream&) = delete;
   ProtoOutputStream& operator=(const ProtoOutputStream&) = delete;
   ProtoOutputStream(ProtoOutputStream&&) = delete;
   ProtoOutputStream& operator=(ProtoOutputStream&&) = delete;
 
+  bool do_write(uint32_t size)
+  {
+    uint32_t bytes_written = 0;
+
+    while (bytes_written < size) {
+      auto new_bytes
+          = write(fd, buffer.data() + bytes_written, size - bytes_written);
+      if (new_bytes <= 0) { return false; }
+
+      bytes_written += new_bytes;
+    }
+
+    return true;
+  }
+
   template <typename Message> bool WriteBuffered(Message& msg)
   {
-    google::protobuf::io::CodedOutputStream coded{&stream};
-    uint64_t size = msg.ByteSizeLong();
-    coded.WriteVarint64(size);
-    int pre = coded.ByteCount();
-    msg.SerializeWithCachedSizes(&coded);
-    if (coded.HadError()) { return false; }
-    int post = coded.ByteCount();
-    if (post - pre != static_cast<std::int64_t>(size)) { return false; }
+    uint32_t size = msg.ByteSizeLong();
+
+    uint32_t write_size = size + sizeof(size);
+
+    if (buffer.size() < write_size) { buffer.resize(write_size * 2); }
+
+    uint8_t* current = buffer.data();
+    memcpy(current, &size, sizeof(size));
+    current += sizeof(size);
+
+    uint8_t* end = msg.SerializeWithCachedSizesToArray(current);
+
+    if (end - current != size) { assert(0); }
+
+    current = end;
+
+    assert(current - buffer.data() == write_size);
+
+    if (!do_write(write_size)) { return false; }
+
     return true;
   }
   template <typename Message> inline bool Write(Message& msg)
   {
-    WriteBuffered(msg);
+    return WriteBuffered(msg);
 
     // this api is only used to send single messages
     // so we need to flush after every write as it never makes sense
     // to "pool" multiple requests.
-    return stream.Flush();
   }
 };
 
