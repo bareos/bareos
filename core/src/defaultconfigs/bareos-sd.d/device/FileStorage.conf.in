@@ -8,4 +8,5 @@ Device {
   Removable Media = no
   Always Open = no
   Description = "File device. A connecting Director must have the same Name and MediaType."
+  Count = 10 #  Number of devices that should be created
 }
