@@ -25,6 +25,11 @@
 #include "CLI/Config.hpp"
 #include "CLI/Formatter.hpp"
 
+#include "CLI/Version.hpp"
+#if CLI11_VERSION_MAJOR >= 2 && CLI11_VERSION_MINOR >= 6
+#include "CLI/ExtraValidators.hpp"
+#endif
+
 void ParseBareosApp(CLI::App& app, int argc, char** argv);
 void InitCLIApp(CLI::App& app, std::string description, int fsfyear = 0);
 void AddDebugOptions(CLI::App& app);
