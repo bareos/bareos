@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -17,23 +17,20 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import os
 import bareosfd
-
-debuglevel = 100
 
 
 def jobmessage(message_type, message):
-    message = "BareosFdPluginLibcloud [%s]: %s\n" % (os.getpid(), message)
-    try:
-        bareosfd.JobMessage(message_type, message)
-    except:
-        bareosfd.JobMessage(message_type, message.encode("utf-8"))
+    """
+    Wrapper function for job messages.
+    """
+    message = f"BareosFdPluginLibcloud: {message}\n"
+    bareosfd.JobMessage(message_type, message)
 
 
 def debugmessage(level, message):
-    message = "BareosFdPluginLibcloud [%s]: %s\n" % (os.getpid(), message)
-    try:
-        bareosfd.DebugMessage(level, message)
-    except UnicodeError:
-        bareosfd.DebugMessage(level, message.encode("utf-8"))
+    """
+    Wrapper function for debug messages.
+    """
+    message = f"BareosFdPluginLibcloud: {message}\n"
+    bareosfd.DebugMessage(level, message)
