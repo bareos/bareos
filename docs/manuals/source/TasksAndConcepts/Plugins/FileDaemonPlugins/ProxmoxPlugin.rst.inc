@@ -147,7 +147,12 @@ Make sure to add or enable the following settings in your |fd| configuration:
 
 Restart the |fd| after the changes with :command:`systemctl restart bareos-fd`.
 
-The next step is to connect the client to the director :ref:`section-AddAClient`
+After connectng the client to the director as described in :ref:`section-AddAClient`,
+we go on with configuring jobs and filesets.
+
+
+Configure jobs and filesets
+'''''''''''''''''''''''''''
 
 To define the backup of a VM in Bareos, a job definition and a fileset resource
 must be added to the Bareos director configuration. In |proxmox ve|, guests have
@@ -169,10 +174,20 @@ guest type is neither required nor possible to configure.
      Client = "proxmox90-fd"
      FileSet = "ProxmoxTestVM"
      JobDefs = "DefaultJob"
+     Level = Full
    }
+
+   Job {
+     Name = "proxmox90-ct"
+     Client = "proxmox90-fd"
+     FileSet = "ProxmoxTestCT"
+     JobDefs = "DefaultJob"
+     Level = Full
+   }
+
    FileSet {
      Name = "ProxmoxTestVM"
-     Description = "Test the Plugin functionality of the Proxmox Plugin."
+     Description = "Backup a Proxmox Virtual Machine"
      Include {
        options {
          signature = "xxh128"
@@ -188,7 +203,7 @@ guest type is neither required nor possible to configure.
 
    FileSet {
      Name = "ProxmoxTestCT"
-     Description = "Test the Plugin functionality of the Proxmox Plugin."
+     Description = "Backup a Proxmox Container"
      Include {
        options {
          signature = "xxh128"
@@ -206,6 +221,8 @@ guest type is neither required nor possible to configure.
 
 Backup of a KVM guest
 ^^^^^^^^^^^^^^^^^^^^^
+
+To run a backup of a KVM guest, simply start the corresponding job ``proxmox90-vm``:
 
 .. code-block:: bconsole
    :caption: Example backup of a KVM guest with the proxmox plugin
@@ -307,6 +324,8 @@ Backup of a KVM guest
 
 Backup of a Container guest
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To backup a container guest, also start the corresponding job ``proxmox90-ct``:
 
 .. code-block:: bconsole
    :caption: Example backup of a Container guest with the proxmox plugin
@@ -411,11 +430,11 @@ Restoring a guest to its original guest ID is the easiest way to restore a |prox
 
 This is only possible if the guest ID does not exist on the |proxmox ve|.
 If the ID exists, the restore will fail with the message ``unable to restore VM
-100 - VM 100 already exists on node 'proxmox90'``.
+100 - VM 100 already exists on node 'proxmox90'`` or similar.
 
 
-To restore, select the jobid of the full backup and mark the file that is stored in the backup for restoration and restore
-the job to the proxmox filedaemon:
+To restore, select the jobid of the full backup, mark all files for
+restoration and restore the job to the |proxmox| filedaemon:
 
 .. code-block:: bconsole
    :caption: Example restore of a KVM guest to its original guest ID
@@ -667,18 +686,18 @@ from the backup.
 
 
 guestid (mandatory on backup)
-   The ID of the VM to be backed up. On restore it is possible to override this
-   option in order to recreate the VM with a different ID.
+   The ID of the guest to be backed up. On restore it is possible to override this
+   option in order to recreate the guest with a different ID.
 
    example: ``python:guestid=999``
 
 force (optional)
-   This allows to overwrite existing Guests with the same ID during restore.
+   This allows to overwrite existing guests with the same ID during restore.
 
    example: ``python:force=yes``
 
 restoretodisk (optional)
-   Restore to local ``.vma`` vzdump file instead of restoring a guest. Default is *no*.
+   Restore to local ``.vma`` vzdump file instead of restoring a guest directly. Default is *no*.
 
    example: ``python:restoretodisk=yes``
 
