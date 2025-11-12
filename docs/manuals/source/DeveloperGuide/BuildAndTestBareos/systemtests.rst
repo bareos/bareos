@@ -226,7 +226,7 @@ and a :command:`bconsole` session can be used to retrieve information:
    *
 
 Add a systemtest
-~~~~~~~~~~~~~~~~
+----------------
 
 If possible extend a systemtest already containing multiple scripts
 by adding another :file:`testrunner-*` script to the test directory.
@@ -344,3 +344,104 @@ Directory Structure (Build)
       |-- storage
       |-- tmp
       `-- working
+
+Testrunner dependencies and settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The individual testrunner scripts may require each other or rely on being
+executed in a specific order.
+There are a few defaults in place that work well for most cases.
+While all settings can be done in :file:`CMakeLists.txt`, we have mechanisms
+for the most common cases of custom settings needed.
+
+By default testrunners in a single systemtest directory will be executed
+sequentially in no specific order.
+Before running the first testrunner :file:`test-setup` will run and after
+running the last testrunner :file:`test-cleanup` will run.
+
+To have your testrunners ordered alphabetically, you can use the function
+`add_alphabetic_requirements()` in your :file:`CMakeLists.txt`. This will
+ensure that all testrunners run in alphabetic order and will make every
+testrunner require its predecessor to have run successfully.
+For example, if you have :file:`testrunner-01-backup` and
+:file:`testrunner-02-restore`, running the test :file:`testunner-02-restore`
+will implicitly run :file:`testrunner-01-backup` first.
+
+For even more control over this, you can add several kinds of **#CTEST** stanzas
+to your testrunner that CMake will parse and use to configure your test.
+Each of these must be on a single line at the start of that line.
+
+require=<othertest>
+   Require that :file:`testrunner-<othertest>` from the same directory has
+   completed successfully before this test starts.
+   To implement the above example, you would add ``#CTEST require=backup`` near
+   the top of :file:`testrunner-02-restore`.
+
+after=<othertest>
+   When this testrunner and :file:`testrunner-<othertest>` will both be run,
+   this testrunner will run after :file:`testrunner-<othertest>`.
+
+cleanup=<othertest>
+   This testrunner is a cleanup for the fixture setup by
+   :file:`testrunner-<othertest>`.
+   This is mostly useful to set up and tear down services.
+
+timeout=<seconds>
+   Sets a custom test timeout for this testrunner.
+
+nosetup
+   This testrunner may run before :file:`test-setup` or after
+   :file:`test-cleanup`.
+   You would set this, when your testrunner does not require the Bareos daemons
+   to be set up.
+   If all testrunners in a directory specify this, neither :file:`test-setup`
+   nor :file:`test-cleanup` will be run.
+
+nolock
+   This testrunner may be run in parallel with any of the other testrunners.
+
+
+Testrunner dependencies example
+'''''''''''''''''''''''''''''''
+
+If we have a service plumbus, that is independent of Bareos, but we need to set it up for a backup-test, this would work as follows.
+
+.. code-block:: shell
+   :caption: testunner-setup-plumbus
+
+   #!/usr/bin/env bash
+   #CTEST nosetup
+   #CTEST nolock
+   mkdir -p ./plumbus-data
+   plumbusctl start --datadir ./plumbus-data
+
+.. code-block:: shell
+   :caption: testunner-cleanup-plumbus
+
+   #!/usr/bin/env bash
+   #CTEST nosetup
+   #CTEST nolock
+   #CTEST cleanup=setup-plumbus
+   plumbusctl stop --datadir ./plumbus-data
+   rm -rf ./plumbus-data
+
+.. code-block:: shell
+   :caption: testrunner-backup-plumbus
+
+   #!/usr/bin/env bash
+   #CTEST requires=setup-plumbus
+   # do a Bareos backup with the plumbus plugin
+
+When we tell CTest to run :file:`testrunner-backup-plumbus`, it will do the
+following:
+
+#. Run :file:`test-setup`, because we did not explicitly disable that.
+#. Run :file:`testrunner-setup-plumbus`, because our testrunner requires it.
+   This may run at the same time as :file:`test-setup`, because we specified it
+   does neither want setup nor does it need locking.
+#. Run :file:`testrunner-backup-plumbus`, because that is what we asked for.
+#. Run :file:`test-cleanup`, because all tests that required setup have been
+   run.
+#. Run :file:`testrunner-cleanup-plumbus` for the same reason.
+   Again this may run at the same time as :file:`test-cleanup`, because we
+   disabled setup and locking.
