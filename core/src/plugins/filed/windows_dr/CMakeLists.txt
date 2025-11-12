@@ -51,6 +51,7 @@ target_compile_definitions(
 )
 
 add_library(parser OBJECT)
+add_library(Bareos::BarriParser ALIAS parser)
 target_sources(parser PRIVATE parser.cc)
 target_include_directories(parser PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(parser PUBLIC format)
