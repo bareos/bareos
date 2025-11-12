@@ -107,6 +107,13 @@ struct save_pkt {
   // a valid windows backup data stream by default.
   // If a plugin or the core does _not_ create a valid windows backup data
   // stream, then it should set "portable" to true.
+
+  // pre-25.0.0 plugin data was always assumed to be nonportable,
+  // so non-windows clients could not even try to restore that data from
+  // windows clients.
+  // now plugin data is always assumed to be portable,
+  // so this has no meaning anymore for the plugin (previously it was)
+  // also not used at all and just set to true.
   bool portable{};       /* Set if data format is portable */
   bool accurate_found{}; /* Found in accurate list (valid after CheckChanges())
                           */
