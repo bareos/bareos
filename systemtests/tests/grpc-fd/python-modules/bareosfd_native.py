@@ -190,21 +190,28 @@ class RestoreObject:
         self.JobId = 0
 
 
+from time import time
+import stat
+
+
 class StatPacket:
-    # uint32_t dev
-    # uint64_t ino;
-    # uint16_t mode;
-    # int16_t nlink;
-    # uint32_t uid;
-    # uint32_t gid;
-    # uint32_t rdev;
-    # uint64_t size;
-    # time_t atime;
-    # time_t mtime;
-    # time_t ctime;
-    # uint32_t blksize;
-    # uint64_t blocks;
-    pass
+    """bareos stat packet"""
+
+    def __init__(self):
+        now = int(time())
+        self.dev = 0
+        self.ino = 0
+        self.mode = 0o700 | stat.S_IFREG
+        self.nlink = 0
+        self.uid = 0
+        self.gid = 0
+        self.rdev = 0
+        self.size = -1
+        self.atime = now
+        self.mtime = now
+        self.ctime = now
+        self.blksize = 4096
+        self.blocks = 1
 
 
 class SavePacket:
