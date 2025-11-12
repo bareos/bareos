@@ -105,6 +105,15 @@ if(xxHash_ADDED)
   endif()
 endif()
 
+if(ENABLE_BARRI)
+  CPMAddPackage(
+    NAME indicators
+    VERSION "5.0"
+    GITHUB_REPOSITORY "sebsura/indicators"
+    GIT_TAG "7853f903907d831604574fa7c24c0e3d98e4aa4b"
+  )
+endif()
+
 # Dump package information from CPM into a YAML file
 file(WRITE "${CMAKE_BINARY_DIR}/cpm-packages.yaml"
      "# List of packages provided by CPM\n" "---\n"
