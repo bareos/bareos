@@ -38,6 +38,11 @@ JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
+if ! [ -f "${tmp}/hyper-v.conf" ]; then
+  echo "setup was not done correctly, skipping this test"
+  exit 77
+fi
+
 #shellcheck source=vm.info.template
 source "${tmp}/${vm_data_file}"
 

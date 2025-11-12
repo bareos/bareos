@@ -21,7 +21,6 @@
 
 set -e
 set -o pipefail
-set -x
 set -u
 
 #shellcheck source=../../environment.in
