@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -27,6 +27,11 @@ if(DEBUGEDIT_REWRITE
    AND DEBUGEDIT_PROG
    AND NOT HAVE_WIN32
 )
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/cmake/fix-debug-path.sh.in"
+    "${CMAKE_BINARY_DIR}/cmake/fix-debug-path.sh" @ONLY
+  )
+
   get_directory_property(directory_targets BUILDSYSTEM_TARGETS)
   foreach(target ${directory_targets})
     get_target_property(target_type ${target} TYPE)
@@ -37,8 +42,8 @@ if(DEBUGEDIT_REWRITE
       add_custom_command(
         TARGET ${target}
         POST_BUILD
-        COMMAND ${DEBUGEDIT_PROG} -b /usr/src/bareos -d ${CMAKE_SOURCE_DIR}
-                $<TARGET_FILE:${target}>
+        COMMAND "${CMAKE_BINARY_DIR}/cmake/fix-debug-path.sh"
+                "$<TARGET_FILE:${target}>" "${CMAKE_SOURCE_DIR}"
       )
     endif()
   endforeach()
