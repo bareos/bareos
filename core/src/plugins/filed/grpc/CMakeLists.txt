@@ -137,4 +137,6 @@ if(ENABLE_GRPC)
   bareos_add_test(
     protobuf_socket_test LINK_LIBRARIES GTest::gtest_main grpc-proto
   )
+
+  bareos_configure_file(FILES "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py")
 endif()
