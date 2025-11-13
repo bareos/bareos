@@ -508,17 +508,17 @@
         },
         {
             "name": "laminas/laminas-form",
-            "version": "2.6.0",
-            "version_normalized": "2.6.0.0",
+            "version": "dev-bareos-2.6.0-patched",
+            "version_normalized": "dev-bareos-2.6.0-patched",
             "source": {
                 "type": "git",
-                "url": "https://github.com/laminas/laminas-form.git",
-                "reference": "c85c3c5a25d1a44f56d24312b05299a023a7bcc6"
+                "url": "https://github.com/bareos/laminas-form.git",
+                "reference": "4b0d9e63839e1f7d2ea2e3dfe8d210d6e0502ea6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laminas/laminas-form/zipball/c85c3c5a25d1a44f56d24312b05299a023a7bcc6",
-                "reference": "c85c3c5a25d1a44f56d24312b05299a023a7bcc6",
+                "url": "https://api.github.com/repos/bareos/laminas-form/zipball/4b0d9e63839e1f7d2ea2e3dfe8d210d6e0502ea6",
+                "reference": "4b0d9e63839e1f7d2ea2e3dfe8d210d6e0502ea6",
                 "shasum": ""
             },
             "require": {
@@ -561,7 +561,8 @@
                 "laminas/laminas-validator": "Laminas\\Validator component",
                 "laminas/laminas-view": "Laminas\\View component"
             },
-            "time": "2019-12-31T17:00:31+00:00",
+            "time": "2025-11-13T12:32:32+00:00",
+            "default-branch": true,
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -575,38 +576,43 @@
                     "Laminas\\Form\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "LaminasTest\\Form\\": "test/"
+                }
+            },
             "license": [
                 "BSD-3-Clause"
             ],
+            "description": " ",
             "homepage": "https://laminas.dev",
             "keywords": [
                 "form",
                 "laminas"
             ],
             "support": {
-                "chat": "https://laminas.dev/chat",
                 "docs": "https://docs.laminas.dev/laminas-form/",
-                "forum": "https://discourse.laminas.dev",
                 "issues": "https://github.com/laminas/laminas-form/issues",
+                "source": "https://github.com/laminas/laminas-form",
                 "rss": "https://github.com/laminas/laminas-form/releases.atom",
-                "source": "https://github.com/laminas/laminas-form"
+                "chat": "https://laminas.dev/chat",
+                "forum": "https://discourse.laminas.dev"
             },
             "install-path": "../laminas/laminas-form"
         },
         {
             "name": "laminas/laminas-http",
-            "version": "2.8.4",
-            "version_normalized": "2.8.4.0",
+            "version": "dev-bareos-2.8.4-patched",
+            "version_normalized": "dev-bareos-2.8.4-patched",
             "source": {
                 "type": "git",
-                "url": "https://github.com/laminas/laminas-http.git",
-                "reference": "c38959d605f225baf7f94e04c62f5f432d4ea5b2"
+                "url": "https://github.com/bareos/laminas-http.git",
+                "reference": "3aabdeecba18c1b156a2015cbeb7d2ebeee743bf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laminas/laminas-http/zipball/c38959d605f225baf7f94e04c62f5f432d4ea5b2",
-                "reference": "c38959d605f225baf7f94e04c62f5f432d4ea5b2",
+                "url": "https://api.github.com/repos/bareos/laminas-http/zipball/3aabdeecba18c1b156a2015cbeb7d2ebeee743bf",
+                "reference": "3aabdeecba18c1b156a2015cbeb7d2ebeee743bf",
                 "shasum": ""
             },
             "require": {
@@ -628,7 +634,8 @@
             "suggest": {
                 "paragonie/certainty": "For automated management of cacert.pem"
             },
-            "time": "2019-12-31T17:06:04+00:00",
+            "time": "2025-11-12T21:54:25+00:00",
+            "default-branch": true,
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -642,24 +649,46 @@
                     "Laminas\\Http\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "LaminasTest\\Http\\": "test/"
+                }
+            },
+            "scripts": {
+                "check": [
+                    "@cs-check",
+                    "@test"
+                ],
+                "cs-check": [
+                    "phpcs"
+                ],
+                "cs-fix": [
+                    "phpcbf"
+                ],
+                "test": [
+                    "phpunit --colors=always"
+                ],
+                "test-coverage": [
+                    "phpunit --colors=always --coverage-clover clover.xml"
+                ]
+            },
             "license": [
                 "BSD-3-Clause"
             ],
             "description": "Provides an easy interface for performing Hyper-Text Transfer Protocol (HTTP) requests",
             "homepage": "https://laminas.dev",
             "keywords": [
+                "HTTP client",
                 "http",
-                "http client",
                 "laminas"
             ],
             "support": {
-                "chat": "https://laminas.dev/chat",
                 "docs": "https://docs.laminas.dev/laminas-http/",
-                "forum": "https://discourse.laminas.dev",
                 "issues": "https://github.com/laminas/laminas-http/issues",
+                "source": "https://github.com/laminas/laminas-http",
                 "rss": "https://github.com/laminas/laminas-http/releases.atom",
-                "source": "https://github.com/laminas/laminas-http"
+                "chat": "https://laminas.dev/chat",
+                "forum": "https://discourse.laminas.dev"
             },
             "install-path": "../laminas/laminas-http"
         },
@@ -2214,13 +2243,13 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/zendframework/zend-version.git",
-                "reference": "9635dd35e0e0d7b759c47c62a86ab3f558e58d4b"
+                "reference": "e30c55dc394eaf396f0347887af0a7bef471fe08"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packages.zendframework.com/composer/zendframework-zend-version-2.5.1-45d110.zip",
-                "reference": "9635dd35e0e0d7b759c47c62a86ab3f558e58d4b",
-                "shasum": "085974c0d82f9b03a32765371a7170d551a4e5b4"
+                "url": "https://api.github.com/repos/zendframework/zend-version/zipball/e30c55dc394eaf396f0347887af0a7bef471fe08",
+                "reference": "e30c55dc394eaf396f0347887af0a7bef471fe08",
+                "shasum": ""
             },
             "require": {
                 "php": ">=5.3.23",
@@ -2249,20 +2278,20 @@
                     "Zend\\Version\\": "src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "ZendTest\\Version\\": "test/"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "BSD-3-Clause"
             ],
-            "description": " ",
             "homepage": "https://github.com/zendframework/zend-version",
             "keywords": [
                 "version",
                 "zf2"
             ],
+            "support": {
+                "issues": "https://github.com/zendframework/zend-version/issues",
+                "source": "https://github.com/zendframework/zend-version/tree/release-2.5.1"
+            },
+            "abandoned": "ocramius/package-versions",
             "install-path": "../zendframework/zend-version"
         }
     ],
