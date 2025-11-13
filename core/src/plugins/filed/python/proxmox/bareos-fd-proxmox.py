@@ -151,7 +151,12 @@ class BareosFdProxmoxOptions:
             if opt["type"] == str:
                 opt["value"] = value
             elif opt["type"] == int:
-                opt["value"] = int(value)
+                try:
+                    opt["value"] = int(value, base=10)
+                except ValueError as e:
+                    raise ValueError(
+                        f"invalid value '{value}' for integer option '{key}'"
+                    ) from e
             elif opt["type"] == bool:
                 tmp = value.strip().lower()
                 if tmp in ("yes", "on", "true", "1"):
@@ -159,7 +164,9 @@ class BareosFdProxmoxOptions:
                 elif tmp in ("no", "off", "false", "0"):
                     opt["value"] = False
                 else:
-                    raise ValueError
+                    raise ValueError(
+                        f"invalid value '{value}' for boolean option '{key}'"
+                    )
             opt["value_set"] = True
         except KeyError as e:
             raise UnknownOptionException(key) from e
