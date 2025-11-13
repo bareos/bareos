@@ -131,7 +131,7 @@ class BareosFdProxmoxOptions:
         """Check if options are complete."""
         success = True
         for name, option in self._options.items():
-            bareosfd.DebugMessage(13, f"Option '{name}': {option}'\n")
+            bareosfd.DebugMessage(250, f"Option '{name}': {option}'\n")
             if not option["value_set"] and option["value"] is None:
                 success = False
                 bareosfd.JobMessage(
@@ -217,6 +217,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         bareosfd.DebugMessage(100, f"self.options are: = {self.options}\n")
         # Full ("F") or Restore (" ")
         if chr(self.level) not in "F ":
+            bareosfd.DebugMessage(10, f"unsupported level: {self.level}\n")
             bareosfd.JobMessage(
                 bareosfd.M_FATAL, "Only Full Backups are currently supported\n"
             )
@@ -278,6 +279,11 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         except TimeoutError as e:
             bareosfd.JobMessage(bareosfd.M_FATAL, f"vzdump log output stalled: {e}\n")
             return bareosfd.bRC_Error
+
+        bareosfd.DebugMessage(
+            100,
+            f"guest_type={guest_type}, write_started={write_started}, backup_ts={backup_ts}\n",
+        )
 
         if not self._check_io_process():
             return bareosfd.bRC_Error
