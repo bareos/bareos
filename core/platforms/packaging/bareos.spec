@@ -709,7 +709,7 @@ This package contains the webui (Bareos Web User Interface).
 %package     contrib-tools
 Summary:     Additional tools, not part of the Bareos project
 Group:       Productivity/Archiving/Backup
-Requires:    python-bareos
+Requires:    python3-bareos
 Requires:    bareos-filedaemon
 
 %description contrib-tools
@@ -734,7 +734,7 @@ This package provides additional File Daemon Python plugins, not part of the Bar
 Summary:     Additional Director Python plugins, not part of the Bareos project
 Group:       Productivity/Archiving/Backup
 Requires:    bareos-director-python-plugin
-Suggests:   bareos-director-python3-plugin = %{version}
+Suggests:    bareos-director-python3-plugin = %{version}
 
 %description contrib-director-python-plugins
 %{dscr}
