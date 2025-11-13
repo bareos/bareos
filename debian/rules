@@ -13,8 +13,9 @@ DIRECTOR_DAEMON_USER = $(DAEMON_USER)
 STORAGE_DAEMON_USER = $(DAEMON_USER)
 FILE_DAEMON_USER = root
 STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
-BAREOS_VERSION := $(shell dpkg-parsechangelog | egrep '^Version:' | sed 's/Version: //g')
+BAREOS_VERSION := $(shell dpkg-parsechangelog --show-field Version)
 DIST_ID_REL := $(shell lsb_release --id --release --short | tr -d '\n')
+WORK_DIR := $(shell pwd)
 
 define CONFIGURE_COMMON
   -Dsbindir=/usr/sbin \
@@ -48,10 +49,19 @@ define CONFIGURE_COMMON
   -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Drpath=no \
-  -DVERSION_STRING=$(BAREOS_VERSION)
+  -DVERSION_STRING=$(BAREOS_VERSION) \
+  -DCPM_indicators_SOURCE=/tmp/indicators
 endef
 
 
+ifneq (,$(filter $(DIST_ID_REL), Debian11 Ubuntu20.04))
+# debian 11 sadly ships with the last version of fmt that does not contain
+# some needed functions that barri needs
+# and ubuntu 20.04 does not have access to <span>
+CONFIGURE_COMMON       += -DENABLE_BARRI=no
+else
+CONFIGURE_COMMON       += -DENABLE_BARRI=yes
+endif
 
 ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
 CONFIGURE_COMMON       += -Dacl=no -Dxattr=no -Dscsi-crypto=no -Dndmp=no
@@ -63,10 +73,8 @@ endif
 
 # no gprc for universal client, Ubuntu20.04 and Debian11
 ifneq (build-universal-client,$(filter build-universal-client,$(DEB_BUILD_OPTIONS)))
-	ifneq ($(DIST_ID_REL),Ubuntu20.04)
-		ifneq ($(DIST_ID_REL),Debian11)
-	CONFIGURE_COMMON       += -DENABLE_GRPC=yes
-		endif
+	ifeq (,$(filter $(DIST_ID_REL),Debian11 Ubuntu20.04))
+		CONFIGURE_COMMON       += -DENABLE_GRPC=yes
 	endif
 endif
 

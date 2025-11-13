@@ -1,3 +1,4 @@
+debug/x86_64/bareos-barri-cli-debuginfo
 debug/x86_64/bareos-bconsole-debuginfo
 debug/x86_64/bareos-common-debuginfo
 debug/x86_64/bareos-database-common-debuginfo
@@ -6,6 +7,7 @@ debug/x86_64/bareos-debuginfo
 debug/x86_64/bareos-debugsource
 debug/x86_64/bareos-director-debuginfo
 debug/x86_64/bareos-director-python3-plugin-debuginfo
+debug/x86_64/bareos-filedaemon-barri-plugin-debuginfo
 debug/x86_64/bareos-filedaemon-debuginfo
 debug/x86_64/bareos-filedaemon-glusterfs-plugin-debuginfo
 debug/x86_64/bareos-filedaemon-grpc-python3-plugin-debuginfo
@@ -26,6 +28,7 @@ src/bareos
 src/bareos-vmware-vix-disklib
 src/python-bareos
 x86_64/bareos
+x86_64/bareos-barri-cli
 x86_64/bareos-bconsole
 x86_64/bareos-client
 x86_64/bareos-common
@@ -39,6 +42,7 @@ x86_64/bareos-director
 x86_64/bareos-director-python-plugins-common
 x86_64/bareos-director-python3-plugin
 x86_64/bareos-filedaemon
+x86_64/bareos-filedaemon-barri-plugin
 x86_64/bareos-filedaemon-glusterfs-plugin
 x86_64/bareos-filedaemon-grpc-python3-plugin
 x86_64/bareos-filedaemon-ldap-python-plugin
