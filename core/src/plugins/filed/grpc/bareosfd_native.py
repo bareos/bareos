@@ -426,17 +426,3 @@ def ClearSeenBitmap(all: bool, fname: str = None):
 
 
 #### BAREOSFD BAREOS FUNCS END
-
-
-# import bareos_bp2
-#
-#
-# def readmsg():
-#    pass
-#
-# def writemsg():
-#    pass
-
-
-def setup():
-    pass
