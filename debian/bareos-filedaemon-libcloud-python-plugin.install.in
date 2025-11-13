@@ -1,5 +1,4 @@
 @plugindir@/bareos-fd-libcloud.py*
-@plugindir@/BareosFdPluginLibcloud.py*
 @plugindir@/BareosLibcloudApi.py
 @plugindir@/bareos_libcloud_api
 @plugindir@/bareos_libcloud_api/*

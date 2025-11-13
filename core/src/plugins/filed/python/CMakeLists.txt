@@ -140,7 +140,6 @@ set(PYFILES
     vmware/bareos-fd-vmware.py
     libcloud/BareosLibcloudApi.py
     libcloud/bareos-fd-libcloud.py
-    libcloud/BareosFdPluginLibcloud.py
 )
 
 install(

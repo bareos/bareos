@@ -1468,7 +1468,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files filedaemon-libcloud-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-libcloud.py*
-%{plugin_dir}/BareosFdPluginLibcloud.py*
 %{plugin_dir}/BareosLibcloudApi.py*
 %dir %{plugin_dir}/bareos_libcloud_api
 %{plugin_dir}/bareos_libcloud_api/*
