@@ -162,6 +162,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - webui: migrate from ZF2 to Laminas [PR #2385]
 - don't alter configuration on ULC package updates [PR #2399]
 - stored: implicitly create autochanger from device with count > 1 [PR #2198]
+- plugins: introduce hyper-v backup [PR #2284]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -244,6 +245,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2278]: https://github.com/bareos/bareos/pull/2278
 [PR #2279]: https://github.com/bareos/bareos/pull/2279
 [PR #2283]: https://github.com/bareos/bareos/pull/2283
+[PR #2284]: https://github.com/bareos/bareos/pull/2284
 [PR #2286]: https://github.com/bareos/bareos/pull/2286
 [PR #2287]: https://github.com/bareos/bareos/pull/2287
 [PR #2290]: https://github.com/bareos/bareos/pull/2290
