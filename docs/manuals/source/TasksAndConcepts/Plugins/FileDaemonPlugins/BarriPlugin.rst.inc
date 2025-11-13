@@ -247,8 +247,8 @@ As the joblog tells us, two files have been backed up. With the command ``list f
 
    *<input>list files jobid=1</input>
     [...]
-    @barri@/windr-fd.barri
-    @barri@/windr-fd.log
+    @BARRI/windr-fd.barri
+    @BARRI/windr-fd.log
 
 The plugin backed up two files:
 
@@ -411,7 +411,7 @@ In our case this results in:
      [...] bareos-sd JobId 5: Ready to read from volume "Full-0001" on device "FileStorage" (/var/lib/bareos/storage).
      [...] bareos-sd JobId 5: Forward spacing Volume "Full-0001" to file:block 0:223.
      [...] localhost-live-fd JobId 5: Version: 25.0.0~pre1077.b73cecf21 (01 October 2025) Fedora 42
-     [...] localhost-live-fd JobId 5: restore started (file = /tmp/bareos-restores/@barri@/windr-fd.barri)
+     [...] localhost-live-fd JobId 5: restore started (file = /tmp/bareos-restores/@BARRI/windr-fd.barri)
      [...] localhost-live-fd JobId 5: Restoring 1 Disks
      [...] localhost-live-fd JobId 5: Restoring disk 0
      [...] localhost-live-fd JobId 5: disk 0 is neither a block device, nor a regular file.  Continuing without size check
@@ -538,7 +538,7 @@ and send the restore to the filedaemon of the bareos server:
     Termination:            Restore OK
 
 
-The file will be restored into the file :file:`<where>/@barri@/winddr-fd.barri`.
+The file will be restored into the file :file:`<where>/@BARRI/winddr-fd.barri`.
 
 
 
@@ -566,7 +566,7 @@ The recovery process is as follows:
 .. code-block:: sh
    :caption: recover from a live linux with :command:`barri-cli`
 
-   root@livesystem: <input>./barri-cli restore --files /dev/nvme0n1 < @barri@/windr-fd.barri</input>
+   root@livesystem: <input>./barri-cli restore --files /dev/nvme0n1 < @BARRI/windr-fd.barri</input>
    barri - bareos recovery imager
    Version 25.0.0~pre1093.c2d6db38b (06 October 2025)
    Copyright (C) 2025-2025 Bareos GmbH & Co. KG
@@ -785,7 +785,7 @@ Applied to our example this leads to:
 
 .. code-block:: sh
 
-   C:\barri\barri-cli.exe --to-disks 0 < @barri@\windr-fd.barri
+   C:\barri\barri-cli.exe --to-disks 0 < @BARRI\windr-fd.barri
 
    barri - bareos recovery imager
    Version 25.0.0~pre1152.a0abe56e3 (09 October 2025)

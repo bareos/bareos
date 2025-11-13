@@ -507,8 +507,8 @@ bRC newPlugin(PluginContext* ctx)
 
   std::string_view hostname{client_name.value()};
   pctx->dump_file_name
-      = libbareos::format("@barri@/{}{}", hostname, dump_ending);
-  pctx->log_file_name = libbareos::format("@barri@/{}{}", hostname, log_ending);
+      = libbareos::format("@BARRI/{}{}", hostname, dump_ending);
+  pctx->log_file_name = libbareos::format("@BARRI/{}{}", hostname, log_ending);
 
   pctx->timestamp = now;
 
