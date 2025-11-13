@@ -290,7 +290,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bareosfd.bRC_Error
 
         filename = (
-            f"PROXMOX/{guest_name}/vzdump-{guest_type}-{guest_id}-{backup_ts}.vma"
+            f"@PROXMOX/{guest_name}/vzdump-{guest_type}-{guest_id}-{backup_ts}.vma"
         )
 
         bareosfd.JobMessage(
