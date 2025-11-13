@@ -1001,13 +1001,15 @@ SectionIn 1 2
   File "pthreadVCE3.dll"
   File "zlib1.dll"
 
-  #
+  # qt stuff, some of them may be empty
   SetOutPath "$INSTDIR\platforms"
-!if ${CMAKE_CONFIG_TYPE} == "Debug"
-  File C:\vcpkg\installed\x64-windows\debug\Qt6\plugins\platforms\qwindowsd.dll
-!else
-  File C:\vcpkg\installed\x64-windows\Qt6\plugins\platforms\qwindows.dll
-!endif
+  File /nonfatal /r ${CMAKE_BINARY_DIR}\bin\platforms\*
+  SetOutPath "$INSTDIR\styles"
+  File /nonfatal /r ${CMAKE_BINARY_DIR}\bin\styles\*
+  SetOutPath "$INSTDIR\imageformats"
+  File /nonfatal /r ${CMAKE_BINARY_DIR}\bin\imageformats\*
+  SetOutPath "$INSTDIR\translations"
+  File /nonfatal /r ${CMAKE_BINARY_DIR}\bin\translations\*
   #
 #
   # install configuration as templates
@@ -1590,9 +1592,9 @@ done:
   File "msys-iconv-2.dll"
 
   # for password generation
-  File "C:\vcpkg\installed\x64-windows\tools\openssl\openssl.exe"
-  File "C:\vcpkg\installed\x64-windows\bin\libcrypto-3-x64.dll"
-  File "C:\vcpkg\installed\x64-windows\bin\libssl-3-x64.dll"
+  File "C:\vcpkg_installed\x64-windows\tools\openssl\openssl.exe"
+  File "${CMAKE_BINARY_DIR}\bin\libcrypto-3-x64.dll"
+  File "${CMAKE_BINARY_DIR}\bin\libssl-3-x64.dll"
 
 
   File ${CMAKE_BINARY_DIR}\core\src\console\bconsole.conf
@@ -2129,6 +2131,9 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libintl-8.dll"
 
   RMDir /r "$INSTDIR\platforms"
+  RMDir /r "$INSTDIR\styles"
+  RMDir /r "$INSTDIR\imageformats"
+  RMDir /r "$INSTDIR\translations"
 
   Delete "$INSTDIR\*lzo2*.dll"
   Delete "$INSTDIR\libbareosfastlz.dll"
