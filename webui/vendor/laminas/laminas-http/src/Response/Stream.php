@@ -287,7 +287,7 @@ class Stream extends Response
         if (is_resource($this->stream)) {
             $this->stream = null; //Could be listened by others
         }
-        if ($this->cleanup) {
+        if ($this->cleanup && is_string($this->streamName) && file_exists($this->streamName)) {
             ErrorHandler::start(E_WARNING);
             unlink($this->streamName);
             ErrorHandler::stop();
