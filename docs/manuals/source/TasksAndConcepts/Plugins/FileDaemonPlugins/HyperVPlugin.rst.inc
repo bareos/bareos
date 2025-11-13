@@ -76,7 +76,7 @@ The next step is to configure a fileset for each VM to be backed up. In our case
 
 .. limitation:: Unique VM Name is required
 
-   The name of the Virtual Machine needs to be unique. If multilple VMs with the same name exist, the backup will be cancelled.
+   The name of the Virtual Machine needs to be unique. If multiple VMs with the same name exist, the backup will be cancelled.
    
 
 
@@ -446,6 +446,11 @@ The restore job's termination will be **Restore OK -- with warnings**
     Job triggered by:       User
     Termination:            Restore OK -- with warnings
 
+.. warning::
+
+   The restored vm needs a new full backup before continuing with a new incremental backup.
+   Otherwise the next job will finish in Error:
+   ``Fatal error: Cannot continue with hyper-v-alma10.  No full backup was found.``
 
 
 
