@@ -715,7 +715,6 @@ SectionIn 1 2 3
 !if ${ENABLE_SUBSCRIPTION_FEATURES} == "1"
   File "hyper-v-fd.dll"
 !endif
-
 SectionEnd
 
 Section /o "Windows Disaster Recovery (Barri) File Daemon Plugin and Tools" SEC_FDPLUGIN_BARRI
@@ -732,6 +731,7 @@ SectionIn 1 2 3
   !cd "${CMAKE_BINARY_DIR}\bin"
   File "barri-cli.exe"
 !endif
+SectionEnd
 
 
 Section "Open Firewall for File Daemon" SEC_FIREWALL_FD
