@@ -3500,7 +3500,7 @@ std::string create_vm_path(std::wstring_view vm_name,
     }
   }();
 
-  std::wstring new_path = std::format(L"@hyper-v@/{}/{}/{}", vm_name, sub_dir,
+  std::wstring new_path = std::format(L"@HYPER-V/{}/{}/{}", vm_name, sub_dir,
                                       path.substr(cutoff_point));
 
   std::replace(std::begin(new_path), std::end(new_path), L'\\', L'/');
@@ -5121,7 +5121,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
   // <prefix>/<vm name>/path
   // we need to check that the path given conforms to this and extract
   // the vm name/path.
-  constexpr std::string_view prefix = "@hyper-v@/";
+  constexpr std::string_view prefix = "@HYPER-V/";
 
   if (!actual_name.starts_with(prefix)) {
     JERR(ctx, "File {} was not created by this plugin (missing prefix {})",

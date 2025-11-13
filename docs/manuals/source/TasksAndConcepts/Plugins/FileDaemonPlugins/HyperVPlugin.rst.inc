@@ -379,15 +379,15 @@ The next step is to restore the Virtual Machine. Therefore run the restore comma
    [...] hyperv-fd JobId 124: using 'C:\WINDOWS\TEMP\Bareos-124' as temporary hyper-v import directory
    [...] hyperv-fd JobId 124: Version: 25.0.0~pre965.f8bad1c5a (23 October 2025) Microsoft Windows Server 2012 Standard Edition (build 9200), 64-bit
    [...] bareos-sd JobId 124: Forward spacing Volume "Full-0008" to file:block 0:223.
-   [...] hyperv-fd JobId 124: restoring disk  {AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx ('@hyper-v@/Alma10/disks/{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx') to 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx'
-   [...] hyperv-fd JobId 124: restoring disk  {E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx ('@hyper-v@/Alma10/disks/{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx') to 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx'
+   [...] hyperv-fd JobId 124: restoring disk  {AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx ('@HYPER-V/Alma10/disks/{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx') to 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx'
+   [...] hyperv-fd JobId 124: restoring disk  {E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx ('@HYPER-V/Alma10/disks/{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx') to 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx'
    [...] bareos-sd JobId 124: End of Volume at file 0 on device "File0001" (/var/lib/bareos/storage), Volume "Full-0008"
    [...] bareos-sd JobId 124: Ready to read from volume "Incremental-0010" on device "File0001" (/var/lib/bareos/storage).
    [...] bareos-sd JobId 124: Forward spacing Volume "Incremental-0010" to file:block 0:237.
    [...] bareos-sd JobId 124: Releasing device "File0001" (/var/lib/bareos/storage).
-   [...] hyperv-fd JobId 124: restoring metadata file '@hyper-v@/Alma10/config/7802CE25-83F1-48E0-9637-941262284282.VMRS' as 'C:\WINDOWS\TEMP\Bareos-124\Alma10\config\7802CE25-83F1-48E0-9637-941262284282.VMRS'
-   [...] hyperv-fd JobId 124: restoring metadata file '@hyper-v@/Alma10/config/7802CE25-83F1-48E0-9637-941262284282.vmgs' as 'C:\WINDOWS\TEMP\Bareos-124\Alma10\config\7802CE25-83F1-48E0-9637-941262284282.vmgs'
-   [...] hyperv-fd JobId 124: restoring metadata file '@hyper-v@/Alma10/config/7802CE25-83F1-48E0-9637-941262284282.vmcx' as 'C:\WINDOWS\TEMP\Bareos-124\Alma10\config\7802CE25-83F1-48E0-9637-941262284282.vmcx'
+   [...] hyperv-fd JobId 124: restoring metadata file '@HYPER-V/Alma10/config/7802CE25-83F1-48E0-9637-941262284282.VMRS' as 'C:\WINDOWS\TEMP\Bareos-124\Alma10\config\7802CE25-83F1-48E0-9637-941262284282.VMRS'
+   [...] hyperv-fd JobId 124: restoring metadata file '@HYPER-V/Alma10/config/7802CE25-83F1-48E0-9637-941262284282.vmgs' as 'C:\WINDOWS\TEMP\Bareos-124\Alma10\config\7802CE25-83F1-48E0-9637-941262284282.vmgs'
+   [...] hyperv-fd JobId 124: restoring metadata file '@HYPER-V/Alma10/config/7802CE25-83F1-48E0-9637-941262284282.vmcx' as 'C:\WINDOWS\TEMP\Bareos-124\Alma10\config\7802CE25-83F1-48E0-9637-941262284282.vmcx'
    [...] hyperv-fd JobId 124: restoring incremental image of '{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx' (level 1) to 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx'
    [...] hyperv-fd JobId 124: restoring incremental image of '{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx' (level 1) to 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx'
    [...] hyperv-fd JobId 124: creating a new vm from the restored configuration file 'C:\WINDOWS\TEMP\Bareos-124\Alma10\config\7802CE25-83F1-48E0-9637-941262284282.vmcx'
@@ -432,11 +432,11 @@ The restore job's termination will be **Restore OK -- with warnings**
 
    [...] hyperv-fd JobId 125: Warning: 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx' already exists,⤶
                                  using 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\bareos-125-0-{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx' for restore instead
-   [...] hyperv-fd JobId 125: restoring disk  {AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx ('@hyper-v@/Alma10/disks/{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx') to⤶
+   [...] hyperv-fd JobId 125: restoring disk  {AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx ('@HYPER-V/Alma10/disks/{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx') to⤶
                                                 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\bareos-125-0-{AEE72202-4637-4C3C-8A3A-03806C36F641}.vhdx'
    [...] hyperv-fd JobId 125: Warning: 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx' already exists,⤶
                                 using 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\bareos-125-0-{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx' for restore instead
-   [...] hyperv-fd JobId 125: restoring disk  {E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx ('@hyper-v@/Alma10/disks/{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx') to⤶
+   [...] hyperv-fd JobId 125: restoring disk  {E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx ('@HYPER-V/Alma10/disks/{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx') to⤶
                                                 'C:\ProgramData\Microsoft\Windows\Virtual Hard Disks\\bareos-125-0-{E4289419-1C8F-4D6E-A195-1BC59C6443EA}.vhdx'
    [...] bareos-dir JobId 125: Bareos bareos-dir 25.0.0~pre1093.c2d6db38b (06Oct25):
    [...]
