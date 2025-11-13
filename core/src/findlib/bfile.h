@@ -71,19 +71,18 @@ enum
 /* Basic Win32 low level I/O file packet */
 /* clang-format off */
 struct BareosFilePacket {
-  bool use_backup_api = false;      /**< set if using BackupRead/Write */
-  bool encrypted = false;           /**< set if using ReadEncryptedFileRaw/WriteEncryptedFileRaw */
-  int mode = BF_CLOSED;             /**< set if file is open */
-  HANDLE fh = INVALID_HANDLE_VALUE; /**< Win32 file handle */
-  int filedes = 0;                  /**< filedes if doing Unix style */
-  LPVOID lplugin_private_context = nullptr;       /**< BackupRead/Write context */
-  PVOID pvContext = nullptr;        /**< Encryption context */
-  POOLMEM* errmsg = nullptr;        /**< error message buffer */
-  DWORD rw_bytes = 0;               /**< Bytes read or written */
-  DWORD lerror = 0;                 /**< Last error code */
-  int BErrNo = 0;                   /**< errno */
-  boffset_t offset = 0;             /**< Delta offset */
-  JobControlRecord* jcr = nullptr;  /**< jcr for editing job codes */
+  bool use_backup_api = false;              /**< set if using BackupRead/Write */
+  bool encrypted = false;                   /**< set if using ReadEncryptedFileRaw/WriteEncryptedFileRaw */
+  int mode = BF_CLOSED;                     /**< set if file is open */
+  HANDLE fh = INVALID_HANDLE_VALUE;         /**< Win32 file handle */
+  LPVOID lplugin_private_context = nullptr; /**< BackupRead/Write context */
+  PVOID pvContext = nullptr;                /**< Encryption context */
+  POOLMEM* errmsg = nullptr;                /**< error message buffer */
+  DWORD rw_bytes = 0;                       /**< Bytes read or written */
+  DWORD lerror = 0;                         /**< Last error code */
+  int BErrNo = 0;                           /**< errno */
+  boffset_t offset = 0;                     /**< Delta offset */
+  JobControlRecord* jcr = nullptr;          /**< jcr for editing job codes */
   PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32Decomplugin_private_context{}; /**< context for decomposition
                                                                    of win32 backup streams */
   int use_backup_decomp = 0; /**< set if using BackupRead Stream Decomposition */
@@ -144,6 +143,15 @@ ssize_t bread(BareosFilePacket* bfd, void* buf, size_t count);
 ssize_t bwrite(BareosFilePacket* bfd, void* buf, size_t count);
 boffset_t blseek(BareosFilePacket* bfd, boffset_t offset, int whence);
 const char* stream_to_ascii(int stream);
+
+static inline int Bgetfd(BareosFilePacket* bfd)
+{
+#if HAVE_WIN32
+  return reinterpret_cast<int>(bfd->fh);
+#else
+  return bfd->filedes;
+#endif
+}
 
 bool processWin32BackupAPIBlock(BareosFilePacket* bfd,
                                 void* pBuffer,

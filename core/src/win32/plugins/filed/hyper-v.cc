@@ -1,0 +1,5403 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation, which is
+   listed in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+*/
+
+#include "include/bareos.h"
+#include "include/filetypes.h"
+#include "include/job_status.h"
+#include "fd_plugins.h"
+#include "plugins/include/common.h"
+#include <jansson.h>
+
+#include <format>
+#include <source_location>
+#include <stdexcept>
+#include <string_view>
+#include <variant>
+#include <exception>
+#include <algorithm>
+#include <span>
+
+#include <shlobj_core.h>
+#include <comdef.h>
+#include <Wbemidl.h>
+#include <atlsafe.h>
+#include <initguid.h>  // ask virtdisk.h to include guid definitions
+#include <virtdisk.h>
+
+#include <filesystem>
+
+// polyfill for C++23
+template <class Enum>
+constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
+{
+  return static_cast<std::underlying_type_t<Enum>>(e);
+}
+
+
+static const int debuglevel = 150;
+
+#define PLUGIN_LICENSE "Bareos AGPLv3"
+#define PLUGIN_AUTHOR "Sebastian Sura"
+#define PLUGIN_DATE "April 2025"
+#define PLUGIN_VERSION "1.0.1"
+#define PLUGIN_DESCRIPTION "Bareos Hyper-V Windows File Daemon Plugin"
+#define PLUGIN_USAGE                               \
+  "\n  hyper-v:config_file=<path>:vmname=<name>\n" \
+  ""
+
+using filedaemon::bEvent;
+using filedaemon::CoreFunctions;
+using filedaemon::io_pkt;
+using filedaemon::PluginApiDefinition;
+using filedaemon::PluginFunctions;
+using filedaemon::pVariable;
+using filedaemon::restore_pkt;
+using filedaemon::save_pkt;
+
+struct json_deleter {
+  void operator()(json_t* ptr) const
+  {
+    if (ptr) { json_decref(ptr); }
+  }
+};
+using json_ptr = std::unique_ptr<json_t, json_deleter>;
+
+std::string format_win32_error_2(DWORD error = GetLastError())
+{
+  char* buffer = nullptr;
+  // take note: buffer is allocated via LocalAlloc ~> use LocalFree to dealloc
+  auto format_success = FormatMessageA(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS
+          | FORMAT_MESSAGE_FROM_SYSTEM,
+      NULL, error, 0, reinterpret_cast<char*>(&buffer), 0, 0);
+
+  auto result = [&] {
+    if (format_success == 0) {
+      return std::format("non formatable error {:X} (reason = {:X})", error,
+                         GetLastError());
+    } else {
+      return std::format("{} ({:X})", buffer, error);
+    }
+  }();
+
+  LocalFree(buffer);
+
+  return result;
+}
+
+std::wstring format_win32_error(DWORD error = GetLastError())
+{
+  wchar_t* buffer = nullptr;
+  // take note: buffer is allocated via LocalAlloc ~> use LocalFree to dealloc
+  auto format_success = FormatMessageW(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS
+          | FORMAT_MESSAGE_FROM_SYSTEM,
+      NULL, error, 0, reinterpret_cast<wchar_t*>(&buffer), 0, 0);
+
+  auto result = [&] {
+    if (format_success == 0) {
+      return std::format(L"non formatable error {:X} (reason = {:X})", error,
+                         GetLastError());
+    } else {
+      return std::format(L"{} ({:X})", buffer, error);
+    }
+  }();
+
+  LocalFree(buffer);
+
+  return result;
+}
+
+struct werror : std::exception {
+  werror(std::string_view where, DWORD err_num = GetLastError())
+  {
+    err_msg = std::format("caught error {} while trying to {}",
+                          format_win32_error_2(err_num), where);
+  }
+
+  const char* what() const noexcept override { return err_msg.c_str(); }
+
+  std::string err_msg;
+};
+
+std::wstring utf8_to_utf16(std::string_view v)
+{
+  std::wstring result;
+  if (v.size() == 0) { return result; }
+
+  ASSERT(v.size() < static_cast<std::size_t>(std::numeric_limits<int>::max()));
+
+  int in_length = static_cast<int>(v.size());
+  int out_length = ::MultiByteToWideChar(
+      CP_UTF8,               // Source string is in UTF-8
+      MB_ERR_INVALID_CHARS,  // Conversion flags
+      v.data(),              // Source UTF-8 string pointer
+      in_length,             // Length of the source UTF-8 string, in chars
+      nullptr,               // Unused - no conversion done in this step
+      0                      // Request size of destination buffer, in wchar_ts
+  );
+
+
+  if (out_length <= 0) {
+    auto err = GetLastError();
+    throw std::runtime_error(
+        std::format("could not convert '{}' to utf16. Err={} ({})", v,
+                    format_win32_error_2(err), err));
+  }
+
+  result.resize(out_length);
+
+
+  int conversion
+      = ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, v.data(),
+                              in_length, result.data(), out_length);
+
+  if (conversion != out_length) {
+    // throw error, because something went wrong
+    throw std::runtime_error(
+        std::format("could not convert '{}' to utf16. Err=One call returned "
+                    "{}, but the next returned {}",
+                    v, out_length, conversion));
+  }
+
+  return result;
+}
+
+std::string utf16_to_utf8(std::wstring_view v)
+{
+  std::string result;
+  if (v.size() == 0) { return result; }
+
+  ASSERT(v.size() < static_cast<std::size_t>(std::numeric_limits<int>::max()));
+
+  int in_length = static_cast<int>(v.size());
+  int out_length = ::WideCharToMultiByte(
+      CP_UTF8,               // Convert to UTF-8
+      WC_ERR_INVALID_CHARS,  // Conversion flags
+      v.data(),              // Source UTF-16 string pointer
+      in_length,             // Length of the source UTF-16 string, in wchar_ts
+      nullptr,               // Unused - no conversion done in this step
+      0,                     // Request size of destination buffer, in bytes
+      nullptr, nullptr);
+
+  if (out_length <= 0) {
+    auto err = GetLastError();
+    throw std::runtime_error(
+        std::format("could not convert input to utf8. Err={} ({})",
+                    format_win32_error_2(err), err));
+  }
+
+  result.resize(out_length);
+
+  int conversion = ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS,
+                                         v.data(), in_length, result.data(),
+                                         out_length, nullptr, nullptr);
+
+  if (conversion != out_length) {
+    // throw error, because something went wrong
+    throw std::runtime_error(
+        std::format("could not convert input to utf8. Err=One call returned "
+                    "{}, but the next returned {}",
+                    out_length, conversion));
+  }
+
+  return result;
+}
+
+
+// Forward referenced functions
+static bRC newPlugin(PluginContext* ctx);
+static bRC freePlugin(PluginContext* ctx);
+static bRC getPluginValue(PluginContext* ctx, pVariable var, void* value);
+static bRC setPluginValue(PluginContext* ctx, pVariable var, void* value);
+static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value);
+static bRC start_backup_file(PluginContext* ctx, save_pkt* sp);
+static bRC end_backup_file(PluginContext* ctx);
+static bRC pluginIO(PluginContext* ctx, io_pkt* io);
+static bRC startRestoreFile(PluginContext* ctx, const char* cmd);
+static bRC endRestoreFile(PluginContext* ctx);
+static bRC create_file(PluginContext* ctx, restore_pkt* rp);
+static bRC setFileAttributes(PluginContext* ctx, restore_pkt* rp);
+static bRC checkFile(PluginContext* ctx, char* fname);
+
+static bRC parse_plugin_definition(PluginContext* ctx, void* value);
+static bRC end_restore_job(PluginContext* ctx);
+static void CloseVdiDeviceset(struct plugin_ctx* p_ctx);
+static bool adoReportError(PluginContext* ctx);
+
+// Pointers to Bareos functions
+static CoreFunctions* bareos_core_functions = NULL;
+static PluginApiDefinition* bareos_plugin_interface_version = NULL;
+
+// Plugin Information block
+static PluginInformation pluginInfo
+    = {sizeof(pluginInfo), FD_PLUGIN_INTERFACE_VERSION,
+       FD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+       PLUGIN_AUTHOR,      PLUGIN_DATE,
+       PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+       PLUGIN_USAGE};
+
+// Plugin entry points for Bareos
+static PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), FD_PLUGIN_INTERFACE_VERSION,
+
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent, start_backup_file,
+       end_backup_file, startRestoreFile, endRestoreFile, pluginIO, create_file,
+       setFileAttributes, checkFile, nullptr, nullptr, nullptr, nullptr};
+
+
+struct DbgLogger {
+  DbgLogger(PluginContext* ctx = nullptr,
+            std::source_location sloc = std::source_location::current())
+      : loc{sloc}, ctx{ctx}
+  {
+  }
+
+  template <class... Args>
+  void Log(int level, std::wformat_string<Args...> fmt, Args&&... args)
+  {
+    if (bareos_core_functions) {
+      bareos_core_functions->DebugMessage(
+          ctx, loc.function_name(), loc.line(), level, "%ls\n",
+          std::format(fmt, std::forward<Args>(args)...).c_str());
+    }
+  }
+
+  template <class... Args>
+  void Log(int level, std::format_string<Args...> fmt, Args&&... args)
+  {
+    if (bareos_core_functions) {
+      bareos_core_functions->DebugMessage(
+          ctx, loc.function_name(), loc.line(), level, "%s\n",
+          std::format(fmt, std::forward<Args>(args)...).c_str());
+    }
+  }
+
+  std::source_location loc;
+  PluginContext* ctx;
+};
+
+struct JobLogger {
+  JobLogger(PluginContext* ctx,
+            std::source_location sloc = std::source_location::current())
+      : loc{sloc}, ctx{ctx}
+  {
+  }
+
+  template <class... Args>
+  void Log(int type, std::wformat_string<Args...> fmt, Args&&... args)
+  {
+    if (bareos_core_functions) {
+      auto formatted = std::format(fmt, std::forward<Args>(args)...);
+      bareos_core_functions->DebugMessage(ctx, loc.function_name(), loc.line(),
+                                          200, "%ls\n", formatted.c_str());
+      bareos_core_functions->JobMessage(ctx, loc.function_name(), loc.line(),
+                                        type, 0, "%ls\n", formatted.c_str());
+    }
+  }
+  template <class... Args>
+  void Log(int type, std::format_string<Args...> fmt, Args&&... args)
+  {
+    if (bareos_core_functions) {
+      auto formatted = std::format(fmt, std::forward<Args>(args)...);
+      bareos_core_functions->DebugMessage(ctx, loc.function_name(), loc.line(),
+                                          200, "%s\n", formatted.c_str());
+      bareos_core_functions->JobMessage(ctx, loc.function_name(), loc.line(),
+                                        type, 0, "%s\n", formatted.c_str());
+    }
+  }
+
+  std::source_location loc;
+  PluginContext* ctx;
+};
+
+#define DBG(...)                       \
+  do {                                 \
+    DbgLogger{}.Log(100, __VA_ARGS__); \
+  } while (0)
+#define TRC(...)                       \
+  do {                                 \
+    DbgLogger{}.Log(200, __VA_ARGS__); \
+  } while (0)
+#define DBGC(ctx, ...)                      \
+  do {                                      \
+    DbgLogger{(ctx)}.Log(100, __VA_ARGS__); \
+  } while (0)
+#define TRCC(ctx, ...)                      \
+  do {                                      \
+    DbgLogger{(ctx)}.Log(200, __VA_ARGS__); \
+  } while (0)
+#define JINFO(ctx, ...)                        \
+  do {                                         \
+    JobLogger{(ctx)}.Log(M_INFO, __VA_ARGS__); \
+  } while (0)
+#define JWARN(ctx, ...)                           \
+  do {                                            \
+    JobLogger{(ctx)}.Log(M_WARNING, __VA_ARGS__); \
+  } while (0)
+#define JERR(ctx, ...)                          \
+  do {                                          \
+    JobLogger{(ctx)}.Log(M_ERROR, __VA_ARGS__); \
+  } while (0)
+#define JFATAL(ctx, ...)                        \
+  do {                                          \
+    JobLogger{(ctx)}.Log(M_FATAL, __VA_ARGS__); \
+  } while (0)
+
+const void* fmt_as_ptr(auto x) { return static_cast<const void*>(x); }
+
+// Generic COM error reporting function.
+static void comReportError(PluginContext* ctx, HRESULT hrErr)
+{
+  IErrorInfo* pErrorInfo;
+  BSTR pSource = NULL;
+  BSTR pDescription = NULL;
+  HRESULT hr;
+  char *source, *description;
+
+  // See if there is anything to report.
+  hr = GetErrorInfo(0, &pErrorInfo);
+  if (hr == S_FALSE) { return; }
+
+  // Get the description of the COM error.
+  hr = pErrorInfo->GetDescription(&pDescription);
+  if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "GetDescription failed\n");
+    pErrorInfo->Release();
+    return;
+  }
+
+  // Get the source of the COM error.
+  hr = pErrorInfo->GetSource(&pSource);
+  if (!SUCCEEDED(hr)) {
+    Dmsg(ctx, debuglevel, "GetSource failed\n");
+    SysFreeString(pDescription);
+    pErrorInfo->Release();
+    return;
+  }
+
+  // Convert windows BSTR to normal strings.
+  source = BSTR_2_str(pSource);
+  description = BSTR_2_str(pDescription);
+  if (source && description) {
+    Jmsg(ctx, M_FATAL, "%s(0x%X): %s\n", source, hrErr, description);
+    Dmsg(ctx, debuglevel, "%s(0x%X): %s\n", source, hrErr, description);
+  } else {
+    Dmsg(ctx, debuglevel, "could not print error\n");
+  }
+
+  if (source) { free(source); }
+
+  if (description) { free(description); }
+
+  /* Generic cleanup (free the description and source as those are returned in
+   * dynamically allocated memory by the COM routines.) */
+  SysFreeString(pSource);
+  SysFreeString(pDescription);
+
+  pErrorInfo->Release();
+}
+
+
+class win_error : public std::exception {
+ public:
+  win_error(HRESULT res) noexcept : hres{res} {}
+
+  const char* what() const noexcept override { return "windows error"; }
+  std::wstring err_str() const { return format_win32_error(hres); }
+  HRESULT err_num() const { return hres; }
+
+ private:
+  HRESULT hres;
+};
+
+#define COM_CALL(...)                                         \
+  do {                                                        \
+    TRC(L"Calling {} ...", L## #__VA_ARGS__);                 \
+    if (HRESULT com_hres = (__VA_ARGS__); FAILED(com_hres)) { \
+      TRC(L"... failed ({:X})", com_hres);                    \
+      throw win_error{com_hres};                              \
+    }                                                         \
+    TRC(L"... succeeded");                                    \
+  } while (0)
+
+
+namespace WMI {
+#define WMI_CALL(...) COM_CALL(__VA_ARGS__)
+
+std::wstring format_error(HRESULT error)
+{
+  constexpr HRESULT WMI_ERROR_MASK = 0x80041000;
+  static HMODULE mod = LoadLibraryW(L"wmiutils.dll");
+
+  if (!mod) { return L"Could not load error module"; }
+
+  bool is_wmi_error
+      = error >= WMI_ERROR_MASK && error <= WMI_ERROR_MASK + 0xFFF;
+  auto flags = FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_FROM_SYSTEM
+               | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_MAX_WIDTH_MASK
+               | (is_wmi_error ? FORMAT_MESSAGE_FROM_HMODULE : 0);
+
+  auto actual_mod = is_wmi_error ? mod : 0;
+
+  wchar_t* output = nullptr;
+  auto byte_count = FormatMessageW(flags, actual_mod, error, 0, (LPWSTR)&output,
+                                   0, nullptr);
+
+  if (byte_count < 0) { return L"Unformatable error"; }
+
+  std::wstring s{std::wstring_view{output, byte_count}};
+
+  LocalFree(output);
+
+  return s;
+}
+
+class String {
+ public:
+  static String copy(std::wstring_view str)
+  {
+    if (str.size() > std::numeric_limits<UINT>::max()) {
+      throw std::runtime_error("Cannot copy string that is too big");
+    }
+    return String{SysAllocStringLen(str.data(), static_cast<UINT>(str.size()))};
+  }
+
+  static String wrap(BSTR str) { return String{str}; }
+
+  const BSTR get() const { return value; }
+
+  std::size_t size() const
+  {
+    if (!value) { return 0; }
+    return SysStringLen(value);
+  }
+
+  std::wstring_view as_view() const
+  {
+    if (!value) { return {}; }
+    return std::wstring_view{value, SysStringLen(value)};
+  }
+
+  String(const String&) = delete;
+  String& operator=(const String&) = delete;
+  String(String&& other) { *this = std::move(other); };
+  String& operator=(String&& other)
+  {
+    std::swap(value, other.value);
+    return *this;
+  }
+
+  ~String()
+  {
+    if (value) { SysFreeString(value); }
+  }
+
+ private:
+  String(BSTR val) : value{val} {}
+
+  BSTR value = nullptr;
+};
+
+struct variant_type {
+  // see here: https://learn.microsoft.com/en-us/windows/win32/wmisdk/numbers
+
+  struct ui1 {
+    static constexpr VARENUM type = VT_UI1;
+    using c_type = uint8_t;
+
+    static c_type from(VARIANT* var)
+    {
+      if (auto actual_type = V_VT(var); actual_type != type) {
+        throw std::runtime_error(std::format("expected variant {}, but got {}",
+                                             (int)type, (int)actual_type));
+      }
+
+      return V_UI1(var);
+    }
+
+    static std::vector<c_type> from_array(SAFEARRAY* arr,
+                                          LONG lower_bound,
+                                          LONG upper_bound)
+    {
+      auto size = upper_bound - lower_bound + 1;
+      std::vector<c_type> result;
+      result.reserve(size);
+
+      for (LONG idx = lower_bound; idx <= upper_bound; ++idx) {
+        uint8_t element;
+        auto get_res = SafeArrayGetElement(arr, &idx, (void*)&element);
+        if (FAILED(get_res)) {
+          throw std::runtime_error(
+              std::format("could not access safe array at pos {} when trying "
+                          "to get {}->{} ({:X})",
+                          idx, lower_bound, upper_bound, get_res));
+        }
+
+        result.push_back(element);
+      }
+
+      return result;
+    }
+
+    static VARIANT into(const c_type& var)
+    {
+      VARIANT result;
+      V_VT(&result) = VT_UI1;
+      V_UI1(&result) = var;
+      return result;
+    }
+  };
+
+  struct i4 {
+    static constexpr VARENUM type = VT_I4;
+    using c_type = int32_t;
+
+    static c_type from(VARIANT* var)
+    {
+      if (auto actual_type = V_VT(var); actual_type != type) {
+        throw std::runtime_error(std::format("expected variant {}, but got {}",
+                                             (int)type, (int)actual_type));
+      }
+
+      return V_I4(var);
+    }
+
+    static std::vector<c_type> from_array(SAFEARRAY* arr,
+                                          LONG lower_bound,
+                                          LONG upper_bound)
+    {
+      auto size = upper_bound - lower_bound + 1;
+      std::vector<c_type> result;
+      result.reserve(size);
+
+      for (LONG idx = lower_bound; idx <= upper_bound; ++idx) {
+        int32_t element;
+        auto get_res = SafeArrayGetElement(arr, &idx, (void*)&element);
+        if (FAILED(get_res)) {
+          throw std::runtime_error(
+              std::format("could not access safe array at pos {} when trying "
+                          "to get {}->{} ({:X})",
+                          idx, lower_bound, upper_bound, get_res));
+        }
+
+        result.push_back(element);
+      }
+
+      return result;
+    }
+
+    static VARIANT into(const c_type& var)
+    {
+      VARIANT result;
+      V_VT(&result) = VT_I4;
+      V_I4(&result) = var;
+      return result;
+    }
+  };
+
+  struct bstr {
+    static constexpr VARENUM type = VT_BSTR;
+    using c_type = String;
+
+    static c_type from(VARIANT* var)
+    {
+      if (auto actual_type = V_VT(var); actual_type != type) {
+        throw std::runtime_error(std::format("expected variant {}, but got {}",
+                                             (int)type, (int)actual_type));
+      }
+
+      return String::wrap(V_BSTR(var));
+    }
+
+    static std::vector<c_type> from_array(SAFEARRAY* arr,
+                                          LONG lower_bound,
+                                          LONG upper_bound)
+    {
+      auto size = upper_bound - lower_bound + 1;
+      std::vector<c_type> result;
+      result.reserve(size);
+
+      for (LONG idx = lower_bound; idx <= upper_bound; ++idx) {
+        BSTR element;
+        auto get_res = SafeArrayGetElement(arr, &idx, (void*)&element);
+        if (FAILED(get_res)) {
+          throw std::runtime_error(
+              std::format("could not access safe array at pos {} when trying "
+                          "to get {}->{} ({:X})",
+                          idx, lower_bound, upper_bound, get_res));
+        }
+
+        result.emplace_back(String::copy(element));
+      }
+
+      return result;
+    }
+
+    static VARIANT into(const c_type& var)
+    {
+      VARIANT result;
+      V_VT(&result) = VT_BSTR;
+      V_BSTR(&result) = var.get();
+      return result;
+    }
+
+    static VARIANT into_array(std::span<const c_type> vals)
+    {
+      CComSafeArray<BSTR> array(vals.size());
+      for (size_t i = 0; i < vals.size(); ++i) {
+        array.SetAt(i, vals[i].get(), TRUE);
+      }
+
+      VARIANT var = {};
+      V_VT(&var) = type | VT_ARRAY;
+      V_ARRAY(&var) = array.Detach();
+
+      return var;
+    }
+  };
+
+  struct boolean {
+    static constexpr VARENUM type = VT_BOOL;
+    using c_type = bool;
+
+    static c_type from(VARIANT* var)
+    {
+      if (auto actual_type = V_VT(var); actual_type != type) {
+        throw std::runtime_error(std::format("expected variant {}, but got {}",
+                                             (int)actual_type, (int)type));
+      }
+
+      return V_BOOL(var) == VARIANT_TRUE;
+    }
+
+    static std::vector<c_type> from_array(SAFEARRAY* arr,
+                                          LONG lower_bound,
+                                          LONG upper_bound)
+    {
+      auto size = upper_bound - lower_bound + 1;
+      std::vector<c_type> result;
+      result.reserve(size);
+
+      for (LONG idx = lower_bound; idx <= upper_bound; ++idx) {
+        BOOL element;
+        auto get_res = SafeArrayGetElement(arr, &idx, (void*)&element);
+        if (FAILED(get_res)) {
+          throw std::runtime_error(
+              std::format("could not access safe array at pos {} when trying "
+                          "to get {}->{} ({:X})",
+                          idx, lower_bound, upper_bound, get_res));
+        }
+
+        result.push_back(element == VARIANT_TRUE);
+      }
+
+      return result;
+    }
+
+    static VARIANT into(const c_type& var)
+    {
+      VARIANT result;
+      V_VT(&result) = VT_BOOL;
+      V_BOOL(&result) = var ? VARIANT_TRUE : VARIANT_FALSE;
+      return result;
+    }
+  };
+};
+
+struct cim_type {
+#define DEFINE_CIM_TYPE(name, vtype, ctype)        \
+  struct name {                                    \
+    using v_type = variant_type::##vtype;          \
+    static constexpr CIMTYPE c_type = CIM_##ctype; \
+  }
+
+  // these are mostly found by experimentation
+  DEFINE_CIM_TYPE(uint8, ui1, UINT8);
+  DEFINE_CIM_TYPE(uint16, i4, UINT16);
+  DEFINE_CIM_TYPE(uint32, i4, UINT32);
+  DEFINE_CIM_TYPE(reference, bstr, REFERENCE);
+  DEFINE_CIM_TYPE(string, bstr, STRING);
+  DEFINE_CIM_TYPE(boolean, boolean, BOOLEAN);
+
+#undef DEFINE_CIM_TYPE
+};
+
+struct BaseObject {
+  CComPtr<IWbemClassObject> ptr;
+
+  BaseObject() = default;
+
+  BaseObject(CComPtr<IWbemClassObject> ptr_) : ptr{ptr_} {}
+  BaseObject(IWbemClassObject* ptr_) : ptr{ptr_} {}
+  BaseObject(const BaseObject&) = delete;
+  BaseObject& operator=(const BaseObject&) = delete;
+
+  BaseObject(BaseObject&& other) : BaseObject() { *this = std::move(other); }
+  BaseObject& operator=(BaseObject&& other)
+  {
+    ptr = other.ptr.Detach();
+    return *this;
+  }
+
+  IWbemClassObject* get() const { return ptr.p; }
+
+  String to_string() const
+  {
+    BSTR repr = nullptr;
+    WMI_CALL(ptr->GetObjectText(0, &repr));
+
+    return String::wrap(repr);
+  }
+
+  template <typename CimType>
+  CimType::v_type::c_type get(const wchar_t* name) const
+  {
+    VARIANT param;
+    CIMTYPE type;
+
+    DBG(L"{}->get({})", fmt_as_ptr(ptr.p), name);
+    WMI_CALL(ptr->Get(name, 0, &param, &type, 0));
+
+    if (type != CimType::c_type) {
+      throw std::runtime_error(std::format("expected cimtype {}, but got {}",
+                                           (int)CimType::c_type, (int)type));
+    }
+
+    return CimType::v_type::from(&param);
+  }
+
+  template <typename CimType>
+  std::vector<typename CimType::v_type::c_type> get_array(
+      const wchar_t* name) const
+  {
+    VARIANT param;
+    CIMTYPE type;
+
+    DBG(L"{}->get({})", fmt_as_ptr(ptr.p), name);
+    WMI_CALL(ptr->Get(name, 0, &param, &type, 0));
+
+    if (type != (CimType::c_type | CIM_FLAG_ARRAY)) {
+      VariantClear(&param);
+      throw std::runtime_error(std::format(
+          "when accessing {}->get(??): expected cimtype {} | {}, but got {}",
+          fmt_as_ptr(ptr.p), (int)CimType::c_type, (int)CIM_FLAG_ARRAY,
+          (int)type));
+    }
+
+    if (V_VT(&param) != (CimType::v_type::type | VT_ARRAY)) {
+      VariantClear(&param);
+      throw std::runtime_error(std::format(
+          "when accessing {}->get(??): expected vtype {} | {}, but got {}",
+          fmt_as_ptr(ptr.p), (int)CimType::v_type::type, (int)VT_ARRAY,
+          (int)V_VT(&param)));
+    }
+
+    SAFEARRAY* arr = V_ARRAY(&param);
+
+    if (auto dim = SafeArrayGetDim(arr); dim != 1) {
+      VariantClear(&param);
+      throw std::runtime_error(std::format(
+          "when accessing {}->get(??): expected dim 1, but got dim {}",
+          fmt_as_ptr(ptr.p), dim));
+    }
+
+    LONG lbound, ubound;
+    auto lbound_res = SafeArrayGetLBound(arr, 1, &lbound);
+    if (FAILED(lbound_res)) {
+      VariantClear(&param);
+      throw std::runtime_error(std::format(
+          "when accessing {}->get(??): could not get lower bound ({})",
+          fmt_as_ptr(ptr.p), lbound_res));
+    }
+    auto ubound_res = SafeArrayGetUBound(arr, 1, &ubound);
+    if (FAILED(ubound_res)) {
+      VariantClear(&param);
+      throw std::runtime_error(std::format(
+          "when accessing {}->get(??): could not get upper bound ({})",
+          fmt_as_ptr(ptr.p), ubound_res));
+    }
+
+    auto result = CimType::v_type::from_array(arr, lbound, ubound);
+    VariantClear(&param);
+    return result;
+  }
+
+  template <typename CimType>
+  void put(const wchar_t* name, const CimType::v_type::c_type& value)
+  {
+    VARIANT param = CimType::v_type::into(value);
+    CIMTYPE type = CimType::c_type;
+
+    DBG(L"{}->put({}):", fmt_as_ptr(ptr.p), name);
+    WMI_CALL(ptr->Put(name, 0, &param, type));
+  }
+
+  template <typename CimType>
+  void put_array(const wchar_t* name,
+                 std::span<const typename CimType::v_type::c_type> arr) const
+  {
+    VARIANT param = CimType::v_type::into_array(arr);
+
+    CIMTYPE type = CimType::c_type | CIM_FLAG_ARRAY;
+
+    DBG(L"{}->put_array({}):", fmt_as_ptr(ptr.p), name);
+    try {
+      WMI_CALL(ptr->Put(name, 0, &param, type));
+    } catch (...) {
+      VariantClear(&param);
+      throw;
+    }
+
+    VariantClear(&param);
+  }
+};
+
+struct ClassObject : BaseObject {
+  String path() const { return BaseObject::get<cim_type::string>(L"__PATH"); }
+};
+
+struct CallResult : BaseObject {
+  std::optional<String> job_name;
+};
+
+struct ParameterPack : BaseObject {
+  struct Proxy {
+    ParameterPack& pack;
+    const wchar_t* name;
+
+    template <typename T> void operator=(T&& value)
+    {
+      pack.put(name, std::forward<T>(value));
+    }
+  };
+
+  Proxy operator[](const wchar_t* name) { return Proxy{*this, name}; }
+
+  void put(const wchar_t* name, int32_t value)
+  {
+    VARIANT param;
+
+    V_VT(&param) = VT_I4;
+    V_I4(&param) = value;
+
+    DBG(L"{}->put({}, {}):", fmt_as_ptr(ptr.p), name, value);
+    WMI_CALL(ptr->Put(name, 0, &param, 0));
+  }
+  void put(const wchar_t* name, const String& value)
+  {
+    VARIANT param;
+
+    V_VT(&param) = VT_BSTR;
+    V_BSTR(&param) = value.get();
+
+    DBG(L"{}->put({}, {}):", fmt_as_ptr(ptr.p), name, value.as_view());
+    WMI_CALL(ptr->Put(name, 0, &param, 0));
+  }
+  void put(const wchar_t* name, const ClassObject& obj)
+  {
+    auto path = obj.path();
+    put(name, path);
+  }
+};
+
+struct Method {
+  String name;
+  CComPtr<IWbemClassObject> parameter_def;
+
+  ParameterPack create_parameters() const
+  {
+    CComPtr<IWbemClassObject> params;
+
+    WMI_CALL(parameter_def->SpawnInstance(0, &params));
+
+    return ParameterPack{params};
+  };
+};
+
+struct Class {
+  String name;
+  CComPtr<IWbemClassObject> ptr{};
+
+  Method load_method_by_name(std::wstring_view method_name) const
+  {
+    TRC(L"Loading method {}::{} ...", name.as_view(), method_name);
+
+    Method mthd{String::copy(method_name)};
+    WMI_CALL(ptr->GetMethod(mthd.name.get(), 0, &mthd.parameter_def, NULL));
+
+    TRC(L"... succeeded ({}).", method_name);
+
+    return mthd;
+  }
+
+  ClassObject create_instance() const
+  {
+    CComPtr<IWbemClassObject> instance;
+
+    TRC(L"{}->SpawnInstance()", name.as_view());
+    WMI_CALL(ptr->SpawnInstance(0, &instance));
+
+    return ClassObject{instance};
+  }
+};
+
+String format_as_xml(const BaseObject& obj)
+{
+  CComPtr<IWbemContext> context{};
+  COM_CALL(
+      context.CoCreateInstance(CLSID_WbemContext, NULL, CLSCTX_INPROC_SERVER));
+
+  CComPtr<IWbemObjectTextSrc> text_source{};
+  COM_CALL(text_source.CoCreateInstance(CLSID_WbemObjectTextSrc, NULL,
+                                        CLSCTX_INPROC_SERVER));
+  BSTR text = nullptr;
+
+  COM_CALL(text_source->GetText(0, obj.ptr, WMI_OBJ_TEXT_WMI_DTD_2_0, context,
+                                &text));
+
+  return String::wrap(text);
+}
+
+struct ComputerSystem : ClassObject {
+  static constexpr std::wstring_view class_name{L"CIM_ComputerSystem"};
+};
+
+struct Job : ClassObject {
+  enum State : std::int32_t
+  {
+    New = 2,
+    Starting = 3,
+    Running = 4,
+    Suspended = 5,
+    ShuttingDown = 6,
+    Completed = 7,
+    Terminated = 8,
+    Killed = 9,
+    Exception = 10,
+    Service = 11,
+    QueryPending = 12,
+
+    /* for some reason this does not appear in the documentation, but it is
+     * part of the sample code given by microsoft
+     * see: https://learn.microsoft.com/en-us/windows/win32/hyperv_v2/
+     *        common-utilities-for-the-virtualization-samples-v2 */
+    CompletedWithWarnings = 32768,
+  };
+
+  static bool is_completed(State s)
+  {
+    return (s == State::Completed) || (s == State::CompletedWithWarnings)
+           || (s == State::Terminated) || (s == State::Exception)
+           || (s == State::Killed);
+  }
+  static bool is_successful(State s)
+  {
+    return (s == State::Completed) || (s == State::CompletedWithWarnings);
+  }
+
+  State state() const
+  {
+    return static_cast<State>(get<cim_type::uint16>(L"JobState"));
+  }
+};
+
+
+enum CIMReturnValue : std::int32_t
+{
+  OK = 0,
+  JobStarted = 4096,
+  Failed = 32768,
+  AccessDenied = 32769,
+  NotSupported = 32770,
+  StatusIsUnknown = 32771,
+  Timeout = 32772,
+  InvalidParameter = 32773,
+  SystemIsInUsed = 32774,
+  InvalidStateForThisOperation = 32775,
+  IncorrectDataType = 32776,
+  SystemIsNotAvailable = 32777,
+  OutOfMemory = 32778,
+};
+
+enum ResourceType : std::int32_t
+{
+  LogicalDisk = 31,
+};
+
+static const wchar_t* cim_return_value_name(std::int32_t ret)
+{
+  switch (ret) {
+    case OK: {
+      return L"OK";
+    } break;
+    case JobStarted: {
+      return L"JobStarted";
+    } break;
+    case Failed: {
+      return L"Failed";
+    } break;
+    case AccessDenied: {
+      return L"AccessDenied";
+    } break;
+    case NotSupported: {
+      return L"NotSupported";
+    } break;
+    case StatusIsUnknown: {
+      return L"StatusIsUnknown";
+    } break;
+    case Timeout: {
+      return L"Timeout";
+    } break;
+    case InvalidParameter: {
+      return L"InvalidParameter";
+    } break;
+    case SystemIsInUsed: {
+      return L"SystemIsInUsed";
+    } break;
+    case InvalidStateForThisOperation: {
+      return L"InvalidStateForThisOperation";
+    } break;
+    case IncorrectDataType: {
+      return L"IncorrectDataType";
+    } break;
+    case SystemIsNotAvailable: {
+      return L"SystemIsNotAvailable";
+    } break;
+    case OutOfMemory: {
+      return L"OutOfMemory";
+    } break;
+  }
+
+  return L"Unknown";
+}
+
+struct cim_error : public std::exception {
+  int32_t error;
+
+  const char* what() const noexcept override { return "cim error"; }
+  const wchar_t* known_name() const noexcept
+  {
+    return cim_return_value_name(error);
+  }
+
+  cim_error(int32_t err) : error{err} {}
+};
+
+struct Service {
+  Service(CComPtr<IWbemServices> ptr, PluginContext* ctx)
+      : plugin_ctx{ctx}, com_ptr{std::move(ptr)}
+  {
+  }
+
+  std::wstring format_job_err(const Job& job) const
+  {
+    // error description + GetErrorEx
+    // uint16   ErrorCode;
+    // string   ErrorDescription;
+    // string   ErrorSummaryDescription;
+
+    auto code = job.get<cim_type::uint16>(L"ErrorCode");
+    auto desc = job.get<cim_type::string>(L"ErrorDescription");
+    auto sum_desc = job.get<cim_type::string>(L"ErrorSummaryDescription");
+
+
+    auto clz = load_class_by_name(L"Msvm_ConcreteJob");
+    auto m_geterr = clz.load_method_by_name(L"GetErrorEx");
+
+    auto result = exec_method(job, m_geterr);
+
+    auto err_msg = std::format(L"JobError({}): {} ({})", code, desc.as_view(),
+                               sum_desc.as_view());
+    if (result) {
+      auto errors = result->get_array<cim_type::string>(L"Errors");
+
+      for (auto& err : errors) {
+        err_msg += L"error xml: ---\n\n";
+        err_msg += err.as_view();
+        err_msg += L"\n---\n";
+      }
+    }
+
+    return err_msg;
+  }
+
+  Class load_class_by_name(std::wstring_view class_name) const
+  {
+    TRCC(plugin_ctx, L"Loading class {} ...", class_name);
+
+    Class clz{String::copy(class_name)};
+
+    WMI_CALL(com_ptr->GetObject(clz.name.get(), 0, NULL, &clz.ptr, NULL));
+
+    TRCC(plugin_ctx, L"... succeeded ({})", class_name);
+
+    return std::move(clz);
+  }
+
+  ClassObject get_object_by_path(const String& path) const
+  {
+    CComPtr<IWbemClassObject> obj;
+    WMI_CALL(com_ptr->GetObject(path.get(), 0, NULL, &obj, NULL));
+
+    return ClassObject{std::move(obj)};
+  }
+
+  Job get_job_by_name(const String& job_name) const
+  {
+    CComPtr<IWbemClassObject> job;
+    WMI_CALL(com_ptr->GetObject(job_name.get(), 0, NULL, &job, NULL));
+
+    return Job{std::move(job)};
+  }
+
+  std::optional<CallResult> exec_method(const ClassObject& obj,
+                                        const Method& mthd) const
+  {
+    auto path = obj.path();
+
+    IWbemClassObject* out_params = nullptr;
+
+    TRCC(plugin_ctx, L"calling {}.{}() ...", path.as_view(),
+         mthd.name.as_view());
+
+    WMI_CALL(com_ptr->ExecMethod(path.get(), mthd.name.get(), 0, NULL, NULL,
+                                 &out_params, NULL));
+
+    CallResult result{out_params};
+
+    TRCC(plugin_ctx, L"... returning {}", result.to_string().as_view());
+
+    auto result_value = result.get<cim_type::uint32>(L"ReturnValue");
+
+    if (result_value == CIMReturnValue::OK) { return std::move(result); }
+
+    if (result_value == CIMReturnValue::JobStarted) {
+      auto job_name = result.get<cim_type::reference>(L"Job");
+
+      TRCC(plugin_ctx, L"Got job name = {}", job_name.as_view());
+
+      for (;;) {
+        auto job = get_job_by_name(job_name);
+        TRCC(plugin_ctx, L"Job = {}", job.to_string().as_view());
+
+        auto state = job.state();
+
+        if (Job::is_completed(state)) {
+          if (Job::is_successful(state)) {
+            result.job_name.emplace(std::move(job_name));
+            return std::move(result);
+          } else {
+            // maybe this should be an exception after all
+            // write some error message here
+            JERR(plugin_ctx,
+                 L"Job {} did not complete successfully: Err={} ({:X})",
+                 job_name.as_view(), format_job_err(job), int32_t{state});
+            return std::nullopt;
+          }
+        } else {
+          TRCC(plugin_ctx, L"Job {} is still running.  Sleeping...",
+               job_name.as_view());
+          std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+      }
+
+      // we need to somehow get the type of the return value.
+      // this way we could do some things automatically.
+
+      // Maybe one can use IWbemClassObject::GetPropertyQualifierSet for this ?
+    }
+
+    throw cim_error(result_value);
+  }
+
+  std::optional<CallResult> exec_method(const ClassObject& obj,
+                                        const Method& mthd,
+                                        const ParameterPack& params) const
+  {
+    auto path = obj.path();
+
+    IWbemClassObject* out_params = nullptr;
+
+    TRCC(plugin_ctx, L"calling {}.{}({}) ...", path.as_view(),
+         mthd.name.as_view(), params.to_string().as_view());
+
+    WMI_CALL(com_ptr->ExecMethod(path.get(), mthd.name.get(), 0, NULL,
+                                 params.get(), &out_params, NULL));
+
+    CallResult result{out_params};
+
+    TRCC(plugin_ctx, L"... returning {}", result.to_string().as_view());
+
+    auto result_value = result.get<cim_type::uint32>(L"ReturnValue");
+
+    if (result_value == CIMReturnValue::OK) { return std::move(result); }
+
+    if (result_value == CIMReturnValue::JobStarted) {
+      auto job_name = result.get<cim_type::reference>(L"Job");
+
+      TRCC(plugin_ctx, L"Got job name = {}", job_name.as_view());
+
+      for (;;) {
+        auto job = get_job_by_name(job_name);
+        TRCC(plugin_ctx, L"Job = {}", job.to_string().as_view());
+
+        auto state = job.state();
+
+        if (Job::is_completed(state)) {
+          if (Job::is_successful(state)) {
+            result.job_name.emplace(std::move(job_name));
+            return std::move(result);
+          } else {
+            // maybe this should be an exception after all
+            // write some error message here
+
+            JERR(plugin_ctx, L"Job {} did not complete successfully: {} ({:X})",
+                 job_name.as_view(), format_job_err(job), int32_t{state});
+            return std::nullopt;
+          }
+        } else {
+          TRCC(plugin_ctx, L"Job {} is still running.  Sleeping...",
+               job_name.as_view());
+          std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+      }
+
+      // we need to somehow get the type of the return value.
+      // this way we could do some things automatically.
+
+      // Maybe one can use IWbemClassObject::GetPropertyQualifierSet for this ?
+    }
+
+    throw cim_error(result_value);
+  }
+
+  template <typename T>
+  T get_result(const CallResult& res, const wchar_t* name) const
+  {
+    if (res.job_name) {
+      auto related
+          = get_related_of_class(res.job_name->as_view(), T::class_name);
+      DBGC(plugin_ctx, L"found {} related entities of class {}", related.size(),
+           T::class_name);
+      ASSERT(related.size() == 1);
+      return T{std::move(related[0])};
+    } else {
+      auto path = res.get<cim_type::reference>(name);
+      return T{get_object_by_path(path)};
+    }
+  }
+
+  // returns std::nullopt if there is not exactly one match
+  std::optional<ClassObject> query_single(const String& query,
+                                          std::size_t* actual_count
+                                          = nullptr) const
+  {
+    DBGC(plugin_ctx, L"executing query {}", query.as_view());
+
+    CComPtr<IEnumWbemClassObject> iter{};
+    WMI_CALL(com_ptr->ExecQuery(
+        bstr_t("WQL"), query.get(),
+        WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &iter));
+
+
+    CComPtr<IWbemClassObject> target{};
+    std::size_t total_count = 0;
+    for (;;) {
+      CComPtr<IWbemClassObject> found{};
+      ULONG found_count = 0;
+      WMI_CALL(iter->Next(WBEM_INFINITE, 1, &found, &found_count));
+      // found_count is either 0 or 1
+      DBGC(plugin_ctx, L"found {} elements matching query", found_count);
+      if (found_count == 0) { break; }
+
+      if (total_count == 0) { target = std::move(found); }
+
+      total_count += found_count;
+    }
+
+    if (actual_count) { *actual_count = total_count; }
+
+    if (total_count > 1) {
+      TRCC(plugin_ctx,
+           L"{} instances found for query {}, not sure which to choose",
+           total_count, query.as_view());
+      return std::nullopt;
+    } else if (total_count == 0) {
+      TRCC(plugin_ctx, L"No instance found for query {}", query.as_view());
+      return std::nullopt;
+    } else {
+      TRCC(plugin_ctx, L"found instance for query {} at {}", query.as_view(),
+           fmt_as_ptr(target.p));
+      return ClassObject{target};
+    }
+  }
+
+  std::vector<ClassObject> query_all(const String& query) const
+  {
+    DBGC(plugin_ctx, L"executing query {}", query.as_view());
+
+    CComPtr<IEnumWbemClassObject> iter{};
+    WMI_CALL(com_ptr->ExecQuery(
+        bstr_t("WQL"), query.get(),
+        WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &iter));
+
+    std::vector<ClassObject> result;
+    for (;;) {
+      ClassObject next;
+      ULONG returned_count = 0;
+      WMI_CALL(iter->Next(WBEM_INFINITE, 1, &next.ptr, &returned_count));
+
+      if (returned_count == 0) { break; }
+
+      result.emplace_back(std::move(next));
+    }
+
+    return result;
+  }
+
+  std::vector<ClassObject> get_related_of_class(std::wstring_view associate,
+                                                std::wstring_view result_class,
+                                                std::wstring_view assoc_class
+                                                = {}) const
+  {
+    std::wstring query = [&] {
+      if (assoc_class.empty()) {
+        return std::format(L"associators of {{{}}} where ResultClass = {}",
+                           associate, result_class);
+      } else {
+        return std::format(
+            L"associators of {{{}}} where ResultClass = {} AssocClass = {}",
+            associate, result_class, assoc_class);
+      }
+    }();
+
+    auto squery = String::copy(query);
+
+    return query_all(squery);
+  }
+
+  std::optional<ComputerSystem> get_vm_by_name(std::wstring_view vm_name,
+                                               std::size_t* actual_count
+                                               = nullptr) const
+  {
+    auto query = std::format(
+        L"SELECT * FROM Msvm_ComputerSystem WHERE ElementName=\"{}\"", vm_name);
+    auto cpy = String::copy(query);
+
+    std::optional system = query_single(cpy, actual_count);
+    if (!system) { return std::nullopt; }
+    return ComputerSystem{std::move(system).value()};
+  }
+
+
+ private:
+  PluginContext* plugin_ctx{nullptr};
+  CComPtr<IWbemServices> com_ptr{};
+};
+
+enum class CaptureLiveState : std::uint8_t
+{
+  CrashConsistent = 0,
+  Saved = 1,
+  AppConsistent = 2,
+};
+
+enum class CopySnapshotConfiguration : std::uint8_t
+{
+  ExportAllSnapshots = 0,
+  ExportNoSnapShots = 1,
+  ExportOneSnapshot = 2,
+  ExportOneSnapshotForBackup = 3,
+};
+
+enum class BackupIntent : std::uint8_t
+{
+  PreserveChain = 0,  // i.e. we want to store full/diff separately
+  Merge = 1,          // i.e. we want to consolidate full/diff
+};
+
+struct VirtualSystemExportSettingData {
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemExportSettingData"};
+
+  String as_xml(const Service& srvc) const
+  {
+    auto clz = srvc.load_class_by_name(class_name);
+    auto inst = clz.create_instance();
+    // this is not really correct, but I do not want to move the put() code
+    // to a base class
+
+    if (description) {
+      inst.put<cim_type::string>(L"Description", description.value());
+    }
+    if (snapshot_virtual_system_path) {
+      inst.put<cim_type::string>(L"SnapshotVirtualSystem",
+                                 snapshot_virtual_system_path.value());
+    }
+
+    // TODO: excluded virtual hard disk paths
+
+    if (differential_backup_base_path) {
+      inst.put<cim_type::string>(L"DifferentialBackupBase",
+                                 differential_backup_base_path.value());
+    }
+    inst.put<cim_type::boolean>(L"DisableDifferentialOfIgnoredStorage",
+                                disable_differential_of_ignored_storage);
+    inst.put<cim_type::boolean>(L"ExportForLiveMigration",
+                                export_for_live_migration);
+    inst.put<cim_type::uint8>(L"BackupIntent",
+                              static_cast<std::uint8_t>(backup_intent));
+    inst.put<cim_type::boolean>(L"CreateVmExportSubdirectory",
+                                create_vm_export_subdirectory);
+    inst.put<cim_type::boolean>(L"CopyVmStorage", copy_vm_storage);
+    inst.put<cim_type::boolean>(L"CopyVmRuntimeInformation",
+                                copy_vm_runtime_information);
+    inst.put<cim_type::uint8>(L"CopySnapshotConfiguration",
+                              to_underlying(copy_snapshot_configuration));
+    inst.put<cim_type::uint8>(L"CaptureLiveState",
+                              to_underlying(capture_live_state));
+
+    TRC(L"ExportSettings = {}", inst.to_string().as_view());
+
+    return format_as_xml(inst);
+  }
+
+  std::optional<String> description{};
+  std::optional<String> snapshot_virtual_system_path;
+  std::vector<String> excluded_virtual_hard_disk_paths;
+  std::optional<String> differential_backup_base_path;
+  BackupIntent backup_intent = {};
+  CopySnapshotConfiguration copy_snapshot_configuration = {};
+  CaptureLiveState capture_live_state = {};
+  bool copy_vm_runtime_information = {};
+  bool copy_vm_storage = {};
+  bool create_vm_export_subdirectory = {};
+  bool export_for_live_migration = {};
+  bool disable_differential_of_ignored_storage = {};
+};
+
+struct PlannedSystem : ComputerSystem {
+  static constexpr std::wstring_view class_name{L"Msvm_PlannedComputerSystem"};
+};
+
+class VirtualSystemManagementService : ClassObject {
+ public:
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemManagementService"};
+
+  static std::optional<VirtualSystemManagementService> find_instance(
+      const Service& srvc)
+  {
+    auto clz = srvc.load_class_by_name(class_name);
+
+    auto query
+        = String::copy(L"SELECT * FROM Msvm_VirtualSystemManagementService");
+    auto obj = srvc.query_single(query);
+    if (!obj) { return std::nullopt; }
+
+    TRC(L"Instance of {} = {}", class_name, obj->to_string().as_view());
+
+    return VirtualSystemManagementService{std::move(obj).value(),
+                                          std::move(clz)};
+  }
+
+  void modify_system_settings(const Service& srvc, String new_settings) const
+  {
+    auto m_modify = clz.load_method_by_name(L"ModifySystemSettings");
+    auto params = m_modify.create_parameters();
+
+    params[L"SystemSettings"] = std::move(new_settings);
+
+    auto result = srvc.exec_method(*this, m_modify, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  }
+
+
+  void modify_resource_settings(const Service& srvc,
+                                std::span<const String> resource_settings) const
+  {
+    auto m_modify = clz.load_method_by_name(L"ModifyResourceSettings");
+    auto params = m_modify.create_parameters();
+
+    params.put_array<cim_type::string>(L"ResourceSettings", resource_settings);
+
+    auto result = srvc.exec_method(*this, m_modify, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  }
+
+  void rename(const Service& srvc,
+              ClassObject& obj,
+              const String& new_name) const
+  {
+    obj.put<cim_type::string>(L"ElementName", new_name);
+    auto xml = format_as_xml(obj);
+    modify_system_settings(srvc, std::move(xml));
+  }
+
+  void export_system_definition(
+      const Service& srvc,
+      const ComputerSystem& vm,
+      std::wstring_view directory,
+      const VirtualSystemExportSettingData& settings) const
+  {
+    DBG(L"Exporting {} to {}", vm.path().as_view(), directory);
+
+    auto settings_xml = settings.as_xml(srvc);
+
+    auto m_export = clz.load_method_by_name(L"ExportSystemDefinition");
+    auto params = m_export.create_parameters();
+
+    params[L"ExportDirectory"] = String::copy(directory);
+    params[L"ExportSettingData"] = settings_xml;
+    params[L"ComputerSystem"] = vm;
+
+    auto result = srvc.exec_method(*this, m_export, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  }
+
+  PlannedSystem import_system_definition(const Service& srvc,
+                                         const String& path_to_def,
+                                         bool generate_new_id) const
+  {
+    DBG(L"Importing {}", path_to_def.as_view());
+
+    auto m_import = clz.load_method_by_name(L"ImportSystemDefinition");
+    auto params = m_import.create_parameters();
+
+    params[L"SystemDefinitionFile"] = path_to_def;
+    params[L"GenerateNewSystemIdentifier"] = generate_new_id;
+
+    auto result = srvc.exec_method(*this, m_import, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+
+    auto system
+        = srvc.get_result<PlannedSystem>(result.value(), L"ImportedSystem");
+
+    DBG(L"imported system = {}", system.to_string().as_view());
+
+    return system;
+  }
+
+  void validate_planned_system(const Service& srvc,
+                               const PlannedSystem& sys) const
+  {
+    DBG(L"Validating {}", sys.path().as_view());
+
+    auto m_validate = clz.load_method_by_name(L"ValidatePlannedSystem");
+    auto params = m_validate.create_parameters();
+
+    params[L"PlannedSystem"] = sys;
+
+    auto result = srvc.exec_method(*this, m_validate, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  }
+
+  ComputerSystem realize_planned_system(const Service& srvc,
+                                        PlannedSystem system) const
+  {
+    DBG(L"Realizing {}", system.path().as_view());
+
+    auto m_realize = clz.load_method_by_name(L"RealizePlannedSystem");
+    auto params = m_realize.create_parameters();
+
+    params[L"PlannedSystem"] = system;
+
+    auto result = srvc.exec_method(*this, m_realize, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+
+    auto new_system
+        = srvc.get_result<ComputerSystem>(result.value(), L"ResultingSystem");
+
+    return new_system;
+  }
+
+  // NOTE: technically you can destroy any system with this function,
+  //  but i do not see a situation currently where we would want to destroy
+  //  a live system, so we restrict ourselves to just planned systems for now.
+  void destroy_system(const Service& srvc, PlannedSystem system) const
+  {
+    DBG(L"Destroying {}", system.path().as_view());
+
+    auto m_destroy = clz.load_method_by_name(L"DestroySystem");
+    auto params = m_destroy.create_parameters();
+
+    params[L"AffectedSystem"] = system;
+
+    if (!srvc.exec_method(*this, m_destroy, params)) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  }
+
+ private:
+  VirtualSystemManagementService(ClassObject self, Class clz_)
+      : ClassObject{std::move(self)}, clz{std::move(clz_)}
+  {
+  }
+
+  Class clz;
+};
+
+struct ReferencePoint : ClassObject {
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemReferencePoint"};
+};
+
+class VirtualSystemSnapshotService;
+
+struct Snapshot : ClassObject {
+  static constexpr std::wstring_view class_name{
+      L"CIM_VirtualSystemSettingData"};
+};
+
+struct VirtualSystemSnapshotSettingData {
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemSnapshotSettingData"};
+
+  enum class ConsistencyLevel : std::int32_t
+  {
+    Unknown = 0,
+    ApplicationConsistent = 1,
+    CrashConsistent = 2,
+  };
+
+  enum class GuestBackupType : std::int32_t
+  {
+    Undefined = 0,
+    Full = 1,
+    Copy = 2,
+  };
+
+  String as_xml(const Service& srvc) const
+  {
+    auto clz = srvc.load_class_by_name(class_name);
+    auto inst = clz.create_instance();
+    // this is not really correct, but I do not want to move the put() code
+    // to a base class
+    auto as_pack = ParameterPack{std::move(inst)};
+
+    as_pack[L"ConsistencyLevel"] = to_underlying(consistency_level);
+    as_pack[L"GuestBackupType"] = to_underlying(guest_backup_type);
+    as_pack[L"IgnoreNonSnapshottableDisks"] = ignore_non_snapshottable_disks;
+
+    return WMI::format_as_xml(as_pack);
+  }
+
+  ConsistencyLevel consistency_level;
+  GuestBackupType guest_backup_type;
+  bool ignore_non_snapshottable_disks;
+};
+
+class VirtualSystemReferencePointService : ClassObject {
+ public:
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemReferencePointService"};
+
+  void destroy_reference_point(const Service& srvc, ReferencePoint ref) const
+  {
+    auto m_destroy_ref_point
+        = clz.load_method_by_name(L"DestroyReferencePoint");
+    auto params = m_destroy_ref_point.create_parameters();
+
+    params[L"AffectedReferencePoint"] = ref;
+
+    auto result = srvc.exec_method(*this, m_destroy_ref_point, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  };
+
+  static std::optional<VirtualSystemReferencePointService> find_instance(
+      const Service& srvc)
+  {
+    auto clz = srvc.load_class_by_name(class_name);
+
+    auto query = String::copy(std::format(L"SELECT * FROM {}", class_name));
+    auto obj = srvc.query_single(query);
+    if (!obj) { return std::nullopt; }
+
+    TRC(L"Instance of {} = {}", class_name, obj->to_string().as_view());
+
+    return VirtualSystemReferencePointService{std::move(obj).value(),
+                                              std::move(clz)};
+  }
+
+ private:
+  VirtualSystemReferencePointService(ClassObject self, Class clz_)
+      : ClassObject{std::move(self)}, clz{std::move(clz_)}
+  {
+  }
+
+  Class clz;
+};
+
+class VirtualSystemSnapshotService : ClassObject {
+ public:
+  static constexpr std::wstring_view class_name{
+      L"Msvm_VirtualSystemSnapshotService"};
+
+  enum class SnapshotType : std::int32_t
+  {
+    FullSnapshot = 2,
+    DiskSnapshot = 3,
+    RecoverySnapshot = 32768,
+  };
+
+  Snapshot create_snapshot(const Service& srvc,
+                           const ComputerSystem& sys,
+                           const VirtualSystemSnapshotSettingData& settings,
+                           SnapshotType type) const
+  {
+    auto m_create_snapshot = clz.load_method_by_name(L"CreateSnapshot");
+    auto params = m_create_snapshot.create_parameters();
+
+    params[L"AffectedSystem"] = sys;
+    params[L"SnapshotSettings"] = settings.as_xml(srvc);
+    params[L"SnapshotType"] = to_underlying(type);
+
+    auto result = srvc.exec_method(*this, m_create_snapshot, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+
+    auto snapshot
+        = srvc.get_result<Snapshot>(result.value(), L"ResultingSnapshot");
+
+    return snapshot;
+  };
+
+  void destroy_snapshot(const Service& srvc, Snapshot snapshot) const
+  {
+    auto m_destroy_snapshot = clz.load_method_by_name(L"DestroySnapshot");
+    auto params = m_destroy_snapshot.create_parameters();
+
+    params[L"AffectedSnapshot"] = snapshot;
+
+    auto result = srvc.exec_method(*this, m_destroy_snapshot, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+  };
+
+  ReferencePoint convert_to_reference_point(const Service& srvc,
+                                            Snapshot snapshot) const
+  {
+    auto m_convert_snapshot
+        = clz.load_method_by_name(L"ConvertToReferencePoint");
+    auto params = m_convert_snapshot.create_parameters();
+
+    params[L"AffectedSnapshot"] = snapshot;
+
+    auto result = srvc.exec_method(*this, m_convert_snapshot, params);
+
+    if (!result) {
+      throw std::runtime_error("exec_method returned std::nullopt");
+    }
+
+    auto refpoint = srvc.get_result<ReferencePoint>(result.value(),
+                                                    L"ResultingReferencePoint");
+
+    return refpoint;
+  }
+
+  static std::optional<VirtualSystemSnapshotService> find_instance(
+      const Service& srvc)
+  {
+    auto clz = srvc.load_class_by_name(class_name);
+
+    auto query
+        = String::copy(L"SELECT * FROM Msvm_VirtualSystemSnapshotService");
+    auto obj = srvc.query_single(query);
+    if (!obj) { return std::nullopt; }
+
+    TRC(L"Instance of {} = {}", class_name, obj->to_string().as_view());
+
+    return VirtualSystemSnapshotService{std::move(obj).value(), std::move(clz)};
+  }
+
+ private:
+  VirtualSystemSnapshotService(ClassObject self, Class clz_)
+      : ClassObject{std::move(self)}, clz{std::move(clz_)}
+  {
+  }
+
+  Class clz;
+};
+};  // namespace WMI
+
+struct com_context {
+  static com_context init_for_thread()
+  {
+    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (FAILED(hr)) { throw win_error{hr}; }
+
+    return com_context{};
+  }
+
+  com_context(const com_context&) = delete;
+  com_context& operator=(const com_context&) = delete;
+  com_context(com_context&& other) : active{other.active}
+  {
+    other.active = false;
+  }
+  com_context& operator=(com_context&& other)
+  {
+    active = other.active;
+    other.active = false;
+  }
+
+  ~com_context()
+  {
+    if (active) { CoUninitialize(); }
+  }
+
+ private:
+  com_context() = default;
+
+  bool active = true;
+};
+
+struct restore_object {
+  enum class Type
+  {
+    Unknown = 0,
+    ReferencePoint = 1,
+    VmInfo = 2,
+    DiskName = 3,
+  };
+
+  const char* name() const { return name_of(type); }
+  static constexpr const char* name_of(Type type)
+  {
+    switch (type) {
+      case Type::ReferencePoint: {
+        return "ref_point";
+      } break;
+      case Type::VmInfo: {
+        return "vm_info";
+      } break;
+      case Type::DiskName: {
+        return "disk_name";
+      } break;
+      default: {
+        // TODO: this should throw ...
+        return "unknown";
+      } break;
+    }
+  }
+
+  static Type name_to_type(std::string_view type_name)
+  {
+    if (type_name == name_of(Type::ReferencePoint)) {
+      return Type::ReferencePoint;
+    }
+    if (type_name == name_of(Type::VmInfo)) { return Type::VmInfo; }
+
+    if (type_name == name_of(Type::DiskName)) { return Type::DiskName; }
+
+    return Type::Unknown;
+  }
+
+  Type type;
+  int index;
+  std::string content;
+};
+
+struct disk_info {
+  std::wstring path;
+};
+
+enum class JobLevel
+{
+  Full,
+  Differential,
+  Incremental,
+  None,  // this is used by eg restore
+};
+
+static WMI::String extract_disk_path(const WMI::ClassObject& vhd_setting)
+{
+  auto paths = vhd_setting.get_array<WMI::cim_type::string>(L"HostResource");
+  if (paths.size() != 1) {
+    // todo: we should include the format of vhd_setting here
+    //   I.e. this should be a different type!
+    throw std::runtime_error(
+        std::format("bad HostResource: expected exactly one string, but got {}",
+                    paths.size()));
+  }
+
+  DBG(L"found harddisk path {}", paths[0].as_view());
+
+  return std::move(paths[0]);
+}
+
+struct analyzed_ref_point {
+  WMI::ReferencePoint source;
+  struct disk {
+    GUID virt_disk_id;
+    WMI::String rct_id;
+  };
+  std::vector<disk> contained_disks;
+};
+
+static std::wstring format_guid(const GUID& guid)
+{
+  wchar_t guid_storage[sizeof("{6B29FC40-CA47-1067-B31D-00DD010662DA}")];
+  if (StringFromGUID2(guid, guid_storage, std::size(guid_storage)) == 0) {
+    throw std::runtime_error("could not format guid");
+  }
+
+  return std::wstring{guid_storage};
+}
+
+
+GUID get_id_of_disk(PluginContext* ctx, const wchar_t* path)
+{
+  HANDLE disk_handle = INVALID_HANDLE_VALUE;
+
+  VIRTUAL_STORAGE_TYPE vst = {
+      .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+      .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+  };
+
+  OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+  params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+  params.Version2.ReadOnly = TRUE;
+  params.Version2.GetInfoOnly = TRUE;
+
+  auto res
+      = OpenVirtualDisk(&vst, path, VIRTUAL_DISK_ACCESS_NONE,
+                        OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
+
+  if (res != ERROR_SUCCESS) {
+    JERR(ctx, L"could not open disk {}: Err={} ({:X})", path,
+         format_win32_error(res), res);
+    CloseHandle(disk_handle);
+    throw std::runtime_error("internal error");
+  }
+  GET_VIRTUAL_DISK_INFO id = {
+      .Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_DISK_ID,
+  };
+  ULONG VirtualDiskInfoSize = sizeof(id);
+  ULONG SizeOut = 0;
+  auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                            &id, &SizeOut);
+  if (disk_res != ERROR_SUCCESS) {
+    JERR(ctx, L"could not retrieve info for disk {}", path);
+    CloseHandle(disk_handle);
+    throw std::runtime_error("internal error");
+  }
+
+  GUID identifier = id.VirtualDiskId;
+
+  DBGC(ctx, L"disk virt id {} => {}", path, format_guid(identifier));
+  CloseHandle(disk_handle);
+  return identifier;
+}
+
+analyzed_ref_point analyze_ref_point(PluginContext* ctx,
+                                     const WMI::Service& srvc,
+                                     WMI::ReferencePoint refpoint)
+{
+  auto rct_ids = refpoint.get_array<WMI::cim_type::string>(
+      L"ResilientChangeTrackingIdentifiers");
+  auto disk_ids
+      = refpoint.get_array<WMI::cim_type::string>(L"VirtualDiskIdentifiers");
+
+  for (auto& rct : rct_ids) { TRCC(ctx, L" - rct = {}", rct.as_view()); }
+
+  for (auto& disk : disk_ids) { TRCC(ctx, L" - disk = {}", disk.as_view()); }
+
+
+  if (rct_ids.size() != disk_ids.size()) {
+    DBGC(ctx, L"Not every disk has rct information: rct_ids {} != disk_ids {} ",
+         rct_ids.size(), disk_ids.size());
+    throw std::runtime_error(std::format(
+        "Not every disk has rct information: rct_ids {} != disk_ids {}",
+        rct_ids.size(), disk_ids.size()));
+  }
+
+  analyzed_ref_point analyzed{std::move(refpoint)};
+
+  for (size_t i = 0; i < rct_ids.size(); ++i) {
+    constexpr auto fixup_instance_id
+        = [](std::wstring_view input) -> std::wstring {
+      std::wstring result;
+      result.reserve(input.size() + 5);  // guess that there are 5 slashes
+
+      for (auto c : input) {
+        if (c == L'\\') { result += L'\\'; }
+        result += c;
+      }
+
+      return result;
+    };
+
+    auto fixed_id = fixup_instance_id(disk_ids[i].as_view());
+
+    TRCC(ctx, L"id {} => {}", disk_ids[i].as_view(), fixed_id);
+
+    auto query = std::format(
+        L"select * from Msvm_StorageAllocationSettingData where "
+        L"InstanceID='{}'",
+        fixed_id);
+    auto found_disk_setting = srvc.query_single(WMI::String::copy(query));
+    if (!found_disk_setting) {
+      DBGC(ctx, L"disk {} from reference point does not exist anymore",
+           disk_ids[i].as_view());
+      continue;
+    }
+
+    auto path = extract_disk_path(found_disk_setting.value());
+
+    auto id = get_id_of_disk(ctx, path.get());
+
+    analyzed.contained_disks.emplace_back(id, std::move(rct_ids[i]));
+  }
+
+  return analyzed;
+}
+
+struct range {
+  std::size_t start;
+  std::size_t end;
+  bool started;
+
+  std::size_t size() const { return end - start; }
+  bool empty() const { return start == end; }
+};
+
+struct backed_up_disk {
+  std::string path;
+  std::string backed_up_name;
+};
+
+struct ref_point {
+  std::string vm_id;
+  std::string ref_path;
+  uint32_t delta_seq;
+
+  json_ptr as_json() const
+  {
+    json_ptr content{json_object()};
+    {
+      json_object_set_new(content.get(), "vm_id", json_string(vm_id.c_str()));
+      json_object_set_new(content.get(), "ref_path",
+                          json_string(ref_path.c_str()));
+      json_object_set_new(content.get(), "delta_seq", json_integer(delta_seq));
+    }
+    return content;
+  }
+
+  static std::optional<ref_point> from_json(json_t* as_json)
+  {
+    if (!json_is_object(as_json)) { return std::nullopt; }
+    json_t* vm_id = json_object_get(as_json, "vm_id");
+    if (!vm_id || !json_is_string(vm_id)) { return std::nullopt; }
+    json_t* ref_path = json_object_get(as_json, "ref_path");
+    if (!ref_path || !json_is_string(ref_path)) { return std::nullopt; }
+    json_t* delta_seq = json_object_get(as_json, "delta_seq");
+    if (!delta_seq || !json_is_integer(delta_seq)) { return std::nullopt; }
+
+    return ref_point{json_string_value(vm_id), json_string_value(ref_path),
+                     static_cast<uint32_t>(json_integer_value(delta_seq))};
+  }
+};
+
+struct vm_info {
+  std::string external_name;  // name shown to the user
+  std::string internal_name;  // guid identifiying the vm
+
+  std::vector<backed_up_disk> disks;
+
+  json_ptr as_json() const
+  {
+    json_ptr content{json_object()};
+    {
+      json_object_set_new(content.get(), "internal",
+                          json_string(internal_name.c_str()));
+      json_object_set_new(content.get(), "external",
+                          json_string(external_name.c_str()));
+
+      json_ptr arr{json_array()};
+
+      for (auto& disk : disks) {
+        json_ptr jdisk{json_object()};
+        json_object_set_new(jdisk.get(), "current",
+                            json_string(disk.path.c_str()));
+        json_object_set_new(jdisk.get(), "saved",
+                            json_string(disk.backed_up_name.c_str()));
+        json_array_append_new(arr.get(), jdisk.release());
+      };
+
+      json_object_set_new(content.get(), "disks", arr.release());
+    }
+    return content;
+  }
+
+  static std::optional<vm_info> from_json(json_t* as_json)
+  {
+    if (!json_is_object(as_json)) { return std::nullopt; }
+    json_t* internal = json_object_get(as_json, "internal");
+    if (!internal || !json_is_string(internal)) { return std::nullopt; }
+    json_t* external = json_object_get(as_json, "external");
+    if (!external || !json_is_string(external)) { return std::nullopt; }
+    json_t* disks = json_object_get(as_json, "disks");
+    if (!disks || !json_is_array(disks)) { return std::nullopt; }
+
+    std::vector<backed_up_disk> backed_up_disks;
+    backed_up_disks.reserve(json_array_size(disks));
+
+    for (size_t i = 0; i < json_array_size(disks); ++i) {
+      json_t* jdisk = json_array_get(disks, i);
+
+      if (!jdisk || !json_is_object(jdisk)) { return std::nullopt; }
+
+      json_t* current = json_object_get(jdisk, "current");
+      if (!current || !json_is_string(current)) { return std::nullopt; }
+      json_t* saved = json_object_get(jdisk, "saved");
+      if (!saved || !json_is_string(saved)) { return std::nullopt; }
+
+      backed_up_disks.emplace_back(json_string_value(current),
+                                   json_string_value(saved));
+    }
+
+
+    return vm_info{json_string_value(external), json_string_value(internal),
+                   std::move(backed_up_disks)};
+  }
+};
+
+struct disk_name {
+  std::wstring directory;
+  std::wstring name;
+
+  json_ptr as_json() const
+  {
+    json_ptr content{json_object()};
+    {
+      json_object_set_new(content.get(), "directory",
+                          json_string(utf16_to_utf8(directory).c_str()));
+      json_object_set_new(content.get(), "name",
+                          json_string(utf16_to_utf8(name).c_str()));
+    }
+    return content;
+  }
+
+  static std::optional<disk_name> from_json(json_t* as_json)
+  {
+    if (!json_is_object(as_json)) { return std::nullopt; }
+    json_t* directory = json_object_get(as_json, "directory");
+    if (!directory || !json_is_string(directory)) { return std::nullopt; }
+    json_t* name = json_object_get(as_json, "name");
+    if (!name || !json_is_string(name)) { return std::nullopt; }
+
+    return disk_name{utf8_to_utf16(json_string_value(directory)),
+                     utf8_to_utf16(json_string_value(name))};
+  }
+};
+
+std::optional<std::string_view> get_saved_disk_path(const vm_info& info,
+                                                    std::string_view disk_path)
+{
+  for (auto& disk : info.disks) {
+    if (disk.path == disk_path) { return disk.backed_up_name; }
+  }
+
+  return std::nullopt;
+}
+
+// Plugin private context
+struct plugin_ctx {
+  static plugin_ctx* get(PluginContext* ctx)
+  {
+    auto p_ctx = static_cast<plugin_ctx*>(ctx->plugin_private_context);
+    TRCC(ctx, L"p_ctx = {}", fmt_as_ptr(p_ctx));
+    return p_ctx;
+  }
+
+  com_context ctx;
+  WMI::Service virt_service;
+
+  struct backup {
+    WMI::VirtualSystemManagementService system_srvc;
+    WMI::VirtualSystemSnapshotService snapshot_srvc;
+    WMI::VirtualSystemReferencePointService refpoint_srvc;
+
+    struct prepared_backup {
+      WMI::ComputerSystem current_vm;
+      std::wstring vm_name;
+      std::optional<analyzed_ref_point> refpoint;
+      std::optional<WMI::ReferencePoint> created_ref_point;
+      std::wstring tmp_dir;
+      WMI::Snapshot vm_snapshot;
+      uint32_t delta_seq;
+
+      std::vector<std::wstring> files_to_backup{};
+      std::vector<WMI::String> disks_to_backup{};
+      std::vector<restore_object> restore_objects{};
+
+      std::vector<backed_up_disk> backed_up_disks{};
+
+      bool error = false;
+
+      std::optional<HANDLE> disk_to_backup;
+      const wchar_t* rct_id;
+
+      std::optional<restore_object> current_object{};
+
+      std::vector<range> ranges_to_read;
+      range leftover;  // this range has yet to be checked for changes
+
+      bool finished() const
+      {
+        return !vm_snapshot.ptr && files_to_backup.empty()
+               && disks_to_backup.empty() && restore_objects.empty();
+      }
+
+      ~prepared_backup()
+      {
+        if (disk_to_backup) { CloseHandle(disk_to_backup.value()); }
+      }
+    };
+
+    std::variant<std::monostate, prepared_backup> state;
+  };
+
+  struct restore {
+    WMI::VirtualSystemManagementService system_srvc;
+
+    std::wstring tmp_dir{};
+
+    std::optional<HANDLE> hndl{};
+
+    std::vector<WMI::String> restored_definition_files{};
+    std::vector<std::wstring> temporary_files{};
+
+    std::wstring default_disk_loc{};
+    std::optional<HANDLE> disk_handle{};
+    std::optional<range> current_range{};
+    std::size_t current_offset{};
+
+    std::unordered_map<std::string, disk_info> disk_map{};
+  };
+
+  int jobid;
+  std::string job_name;
+  std::string fd_name;
+  std::string client_name;
+  time_t since_time;
+  JobLevel job_level;
+
+  std::vector<ref_point> received_reference_points;
+  std::vector<vm_info> received_vms;
+  std::vector<disk_name> received_disks;
+
+  std::variant<std::monostate, backup, restore> current_state{};
+
+  std::wstring directory;
+
+  std::string current_path;
+
+  WMI::VirtualSystemSnapshotSettingData snapshot_settings;
+
+  struct config {
+    std::string vm_name;
+  };
+
+  config cfg;
+
+  bool is_full() const { return job_level == JobLevel::Full; }
+  bool is_diff() const { return job_level == JobLevel::Differential; }
+};
+
+static bool is_canceled(PluginContext* ctx)
+{
+  int job_status = 0;
+  if (bRC_Error
+      == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarJobStatus,
+                                               &job_status)) {
+    return true;
+  } else {
+    return job_status == JS_Canceled || job_status == JS_ErrorTerminated
+           || job_status == JS_FatalError;
+  }
+}
+
+
+extern "C" {
+/**
+ * loadPlugin() and unloadPlugin() are entry points that are exported, so Bareos
+ * can directly call these two entry points they are common to all Bareos
+ * plugins.
+ *
+ * External entry point called by Bareos to "load" the plugin
+ */
+BAREOS_EXPORT bRC
+loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+           CoreFunctions* lbareos_core_functions,
+           PluginInformation** plugin_information,
+           PluginFunctions** plugin_functions)
+{
+  bareos_core_functions
+      = lbareos_core_functions; /* set Bareos funct pointers */
+  bareos_plugin_interface_version = lbareos_plugin_interface_version;
+  *plugin_information = &pluginInfo; /* return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* return pointer to our functions */
+
+  TRC(L"loading hyper-v succeeded");
+
+  return bRC_OK;
+}
+
+// External entry point to unload the plugin
+BAREOS_EXPORT bRC unloadPlugin()
+{
+  TRC(L"unloading hyper-v succeeded");
+  return bRC_OK;
+}
+}
+
+static bool set_job_info(PluginContext* ctx, plugin_ctx* p_ctx)
+{
+  {
+    int jobid = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarJobId,
+                                                 &jobid)) {
+      JFATAL(ctx, "could not get jobid");
+      return false;
+    } else {
+      TRCC(ctx, "got jobid {}", jobid);
+    }
+    p_ctx->jobid = jobid;
+  }
+
+  {
+    char* fd_name = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarFDName,
+                                                 &fd_name)) {
+      JFATAL(ctx, "could not get fd name");
+      return false;
+    } else {
+      TRCC(ctx, "got filedaemon name {}", fd_name);
+    }
+    p_ctx->fd_name = fd_name;
+  }
+
+  {
+    char* client = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarClient,
+                                                 &client)) {
+      JFATAL(ctx, "could not get client name");
+      return false;
+    } else {
+      TRCC(ctx, "got client name {}", client);
+    }
+    p_ctx->client_name = client;
+  }
+
+  {
+    time_t since_time = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarSinceTime,
+                                                 &since_time)) {
+      JFATAL(ctx, "could not get since time");
+      return false;
+    } else {
+      TRCC(ctx, "got since time {}", since_time);
+    }
+    p_ctx->since_time = since_time;
+  }
+
+  {
+    int level = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarLevel,
+                                                 &level)) {
+      JFATAL(ctx, "could not get jobid");
+      return false;
+    } else {
+      TRCC(ctx, "got level {}", level);
+    }
+
+    switch (level) {
+      case L_FULL: {
+        p_ctx->job_level = JobLevel::Full;
+      } break;
+      case L_DIFFERENTIAL: {
+        p_ctx->job_level = JobLevel::Differential;
+      } break;
+      case L_INCREMENTAL: {
+        p_ctx->job_level = JobLevel::Incremental;
+      } break;
+      case L_NONE: {
+        p_ctx->job_level = JobLevel::None;
+      } break;
+      default: {
+        JFATAL(ctx, "unknown job level {}", level);
+        return false;
+      } break;
+    }
+  }
+
+  {
+    char* job_name = {};
+    if (bRC_Error
+        == bareos_core_functions->getBareosValue(ctx, filedaemon::bVarJobName,
+                                                 &job_name)) {
+      JFATAL(ctx, "could not get job name");
+      return false;
+    } else {
+      TRCC(ctx, "got job_name {}", job_name);
+    }
+    p_ctx->job_name = job_name;
+  }
+
+  return true;
+}
+
+/**
+ * The following entry points are accessed through the function pointers we
+ * supplied to Bareos. Each plugin type (dir, fd, sd) has its own set of entry
+ * points that the plugin must define.
+ *
+ * Create a new instance of the plugin i.e. allocate our private storage
+ */
+static bRC newPlugin(PluginContext* ctx)
+{
+  // Initialize COM for this thread.
+  try {
+    auto com = com_context::init_for_thread();
+
+    if (!InitializeComSecurity()) { return bRC_Error; }
+
+    CComPtr<IWbemLocator> wmi_locator{};
+
+    COM_CALL(wmi_locator.CoCreateInstance(CLSID_WbemLocator, 0,
+                                          CLSCTX_INPROC_SERVER));
+
+    DBGC(ctx, L"Locator = {}", fmt_as_ptr(wmi_locator.p));
+
+    CComPtr<IWbemServices> virt_service{};
+    COM_CALL(wmi_locator->ConnectServer(
+        _bstr_t(L"ROOT\\VIRTUALIZATION\\V2"),  // Object path of WMI namespace
+        NULL,                                  // User name. NULL = current user
+        NULL,                                  // User password. NULL = current
+        0,                                     // Locale. NULL indicates current
+        NULL,                                  // Security flags.
+        0,             // Authority (for example, Kerberos)
+        0,             // Context object
+        &virt_service  // pointer to IWbemServices proxy
+        ));
+
+    DBGC(ctx, L"VirtService = {}", fmt_as_ptr(wmi_locator.p));
+
+    JINFO(ctx, L"Successfully connected to 'ROOT\\VIRTUALIZATION\\V2'");
+
+    COM_CALL(CoSetProxyBlanket(
+        virt_service,
+        RPC_C_AUTHN_WINNT,            // RPC_C_AUTHN_xxx
+        RPC_C_AUTHZ_NONE,             // RPC_C_AUTHZ_xxx
+        NULL,                         // Server principal name
+        RPC_C_AUTHN_LEVEL_CALL,       // RPC_C_AUTHN_LEVEL_xxx
+        RPC_C_IMP_LEVEL_IMPERSONATE,  // RPC_C_IMP_LEVEL_xxx
+        NULL,                         // client identity
+        EOAC_NONE                     // proxy capabilities
+        ));
+
+    WMI::Service srvc{std::move(virt_service), ctx};
+
+    plugin_ctx* p_ctx = new plugin_ctx{std::move(com), std::move(srvc)};
+
+    /* set our context pointer */
+    ctx->plugin_private_context = static_cast<void*>(p_ctx);
+
+    using filedaemon::bEventBackupCommand;
+    using filedaemon::bEventEndRestoreJob;
+    using filedaemon::bEventJobEnd;
+    using filedaemon::bEventLevel;
+    using filedaemon::bEventNewPluginOptions;
+    using filedaemon::bEventPluginCommand;
+    using filedaemon::bEventRestoreCommand;
+    using filedaemon::bEventRestoreObject;
+    using filedaemon::bEventStartBackupJob;
+    using filedaemon::bEventStartRestoreJob;
+
+    // Only register the events we are really interested in.
+    bareos_core_functions->registerBareosEvents(
+        ctx, 11, bEventLevel, bEventRestoreCommand, bEventBackupCommand,
+        bEventPluginCommand, bEventEndRestoreJob, bEventNewPluginOptions,
+        bEventStartBackupJob, bEventStartRestoreJob, bEventEndRestoreJob,
+        bEventRestoreObject, bEventJobEnd);
+
+    return bRC_OK;
+  } catch (const win_error& err) {
+    DBGC(ctx, L"could not initialize com.  Err={} ({:X})", err.err_str(),
+         err.err_num());
+    return bRC_Error;
+  }
+}
+
+static bRC destroy_all_other_reference_points(
+    PluginContext* ctx,
+    const WMI::VirtualSystemReferencePointService& ref_point_srvc,
+    const WMI::ComputerSystem& system,
+    const WMI::ReferencePoint& ref_point)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  auto& srvc = p_ctx->virt_service;
+
+  auto ref_points = srvc.get_related_of_class(
+      system.path().as_view(), WMI::ReferencePoint::class_name,
+      L"Msvm_ReferencePointOfVirtualSystem");
+
+  auto reference_path = ref_point.path();
+
+  for (auto& rp : ref_points) {
+    WMI::ReferencePoint other_rp{std::move(rp)};
+
+    auto other_path = other_rp.path();
+    if (other_path.as_view() != reference_path.as_view()) {
+      JINFO(ctx, L"Deleting unnecessary reference point {}",
+            other_path.as_view());
+      ref_point_srvc.destroy_reference_point(srvc, std::move(other_rp));
+    }
+  }
+
+  return bRC_OK;
+}
+
+static bRC free_current_state(PluginContext* ctx)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  bRC result = bRC_OK;
+  try {
+    std::visit(
+        [&](auto&& val) {
+          using T = std::decay_t<decltype(val)>;
+
+          if constexpr (std::is_same_v<T, plugin_ctx::restore>) {
+            // maybe this should only happen if the restore was successful?
+            for (auto& path : val.temporary_files) {
+              if (!DeleteFileW(path.c_str())) {
+                JWARN(ctx, L"could not delete file '{}': {}", path,
+                      format_win32_error());
+              }
+            }
+
+            if (!val.tmp_dir.empty() && PathFileExistsW(val.tmp_dir.c_str())) {
+              std::error_code ec = {};
+              auto num_removed
+                  = std::filesystem::remove_all(val.tmp_dir.c_str(), ec);
+              DBGC(ctx, L"remove({}) deleted {} files", val.tmp_dir,
+                   num_removed);
+              if (num_removed == static_cast<std::uintmax_t>(-1)) {
+                JWARN(ctx, L"could not delete directory '{}': {}", val.tmp_dir,
+                      format_win32_error(ec.value()));
+              }
+            }
+          } else if constexpr (std::is_same_v<T, plugin_ctx::backup>) {
+            auto* prepared
+                = std::get_if<plugin_ctx::backup::prepared_backup>(&val.state);
+            if (!prepared) { return; }
+
+            if (prepared->vm_snapshot.ptr.p) {
+              val.snapshot_srvc.destroy_snapshot(
+                  p_ctx->virt_service, std::move(prepared->vm_snapshot));
+            }
+
+            if (prepared->disk_to_backup) {
+              CloseHandle(prepared->disk_to_backup.value());
+              prepared->disk_to_backup.reset();
+            }
+
+            if (!prepared->tmp_dir.empty()
+                && PathFileExistsW(prepared->tmp_dir.c_str())) {
+              std::error_code ec = {};
+              auto num_removed
+                  = std::filesystem::remove_all(prepared->tmp_dir.c_str(), ec);
+              DBGC(ctx, L"remove({}) deleted {} files", prepared->tmp_dir,
+                   num_removed);
+              if (num_removed == static_cast<std::uintmax_t>(-1)) {
+                JWARN(ctx, L"could not delete directory '{}': {}",
+                      prepared->tmp_dir, format_win32_error(ec.value()));
+              }
+            }
+
+            if (prepared->created_ref_point) {
+              if (is_canceled(ctx)) {
+                DBGC(ctx, L"deleting ref point {} as the job is canceled",
+                     prepared->created_ref_point->path().as_view());
+                val.refpoint_srvc.destroy_reference_point(
+                    p_ctx->virt_service,
+                    std::move(prepared->created_ref_point.value()));
+              } else {
+                if (p_ctx->is_full()) {
+                  DBGC(ctx,
+                       L"deleting all other ref points except {} as the full "
+                       L"job is done",
+                       prepared->created_ref_point->path().as_view());
+                  destroy_all_other_reference_points(
+                      ctx, val.refpoint_srvc, prepared->current_vm,
+                      prepared->created_ref_point.value());
+                } else if (p_ctx->is_diff()) {
+                  // intentionally left blank
+                } else {
+                  if (prepared->delta_seq > 1 && prepared->refpoint) {
+                    // the previous reference point is _not_ a full,
+                    // so we can delte
+                    DBGC(ctx,
+                         L"delta_seq {} > 1 => delete previous non-full ref "
+                         L"point",
+                         prepared->delta_seq);
+
+                    JINFO(ctx, L"Deleting unnecessary reference point {}",
+                          prepared->refpoint->source.path().as_view());
+
+                    val.refpoint_srvc.destroy_reference_point(
+                        p_ctx->virt_service,
+                        std::move(prepared->refpoint->source));
+                  }
+                  // destroy only the previous one
+                }
+              }
+            }
+          } else if constexpr (std::is_same_v<T, std::monostate>) {
+            // nothing to do here
+          } else {
+            static_assert(!std::is_same_v<T, T>, "type not handled");
+          }
+        },
+        p_ctx->current_state);
+  } catch (const std::exception& ex) {
+    JERR(ctx, "could not cleanup state at end of job: {}", ex.what());
+    result = bRC_Error;
+  } catch (...) {
+    JERR(ctx, "could not cleanup state at end of job");
+    result = bRC_Error;
+  }
+
+  p_ctx->current_state.emplace<std::monostate>();
+  return result;
+}
+
+
+// Free a plugin instance, i.e. release our private storage
+static bRC freePlugin(PluginContext* ctx)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  auto res = free_current_state(ctx);
+
+  delete p_ctx;
+
+  return res;
+}
+
+// Return some plugin value (none defined)
+static bRC getPluginValue(PluginContext*, pVariable, void*)
+{
+  return bRC_Error;
+}
+
+// Set a plugin value (none defined)
+static bRC setPluginValue(PluginContext*, pVariable, void*)
+{
+  return bRC_Error;
+}
+
+static bool start_backup_job(PluginContext* ctx)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return false; }
+
+  auto& srvc = p_ctx->virt_service;
+
+  if (!set_job_info(ctx, p_ctx)) { return false; }
+
+  std::optional system_mgmt
+      = WMI::VirtualSystemManagementService::find_instance(srvc);
+  if (!system_mgmt) { return false; }
+  std::optional system_snap
+      = WMI::VirtualSystemSnapshotService::find_instance(srvc);
+  if (!system_snap) { return false; }
+  std::optional system_ref
+      = WMI::VirtualSystemReferencePointService::find_instance(srvc);
+  if (!system_ref) { return false; }
+
+  p_ctx->current_state.emplace<plugin_ctx::backup>(
+      std::move(system_mgmt.value()), std::move(system_snap.value()),
+      std::move(system_ref.value()));
+
+  return true;
+}
+
+static std::wstring make_temp_dir(uint64_t jobid)
+{
+  auto path_len = GetTempPathW(0, nullptr);
+
+  if (path_len == 0) { throw werror("retrieve the users temp path"); }
+
+  std::wstring path;
+  path.resize(path_len);
+
+  auto written_len = GetTempPathW(path.size(), path.data());
+  path.resize(written_len);
+
+
+  path += L"Bareos-";
+  path += std::to_wstring(jobid);
+
+  if (path.back() == L'\\') { path.pop_back(); }
+
+  size_t try_count = 0;
+  while (PathFileExistsW(path.c_str())) {
+    path += L'A';
+
+    try_count += 1;
+    if (try_count >= 20) {
+      path.resize(written_len);
+      throw std::runtime_error{
+          std::format("could not try to create temporary directory in '{}'",
+                      utf16_to_utf8(path))};
+    }
+  }
+
+  if (!CreateDirectoryW(path.c_str(), 0)) {
+    throw werror("create a temporary directory");
+  }
+
+  DBG(L"temp path = {}", path);
+
+  return path;
+}
+
+static bool start_restore_job(PluginContext* ctx)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return false; }
+
+  if (!set_job_info(ctx, p_ctx)) { return false; }
+
+  auto& srvc = p_ctx->virt_service;
+
+  try {
+    std::optional system_mgmt
+        = WMI::VirtualSystemManagementService::find_instance(srvc);
+    if (!system_mgmt) { return false; }
+
+    std::wstring dir = make_temp_dir(p_ctx->jobid);
+
+    JINFO(ctx, L"using '{}' as temporary hyper-v import directory", dir);
+
+    auto& restore_ctx = p_ctx->current_state.emplace<plugin_ctx::restore>(
+        std::move(system_mgmt.value()), std::move(dir));
+
+    auto query = WMI::String::copy(
+        L"SELECT * FROM Msvm_VirtualSystemManagementServiceSettingData");
+    auto obj = srvc.query_single(query);
+    if (obj) {
+      auto default_loc
+          = obj->get<WMI::cim_type::string>(L"DefaultVirtualHardDiskPath");
+      restore_ctx.default_disk_loc = std::wstring{default_loc.as_view()};
+      DBGC(ctx, L"default disk loc = {}", restore_ctx.default_disk_loc);
+      if (!PathFileExistsW(restore_ctx.default_disk_loc.c_str())) {
+        JWARN(ctx, L"default hyper-v disk location '{}' does not exist",
+              restore_ctx.default_disk_loc);
+        restore_ctx.default_disk_loc = {};
+      }
+    }
+  } catch (const std::exception& e) {
+    JWARN(ctx, "could not determine default hyper-v disk location ({})",
+          e.what());
+  } catch (...) {
+    JWARN(ctx, "could not determine default hyper-v disk location");
+  }
+
+
+  return true;
+}
+
+const char* event_name(uint32_t event_type)
+{
+  switch (event_type) {
+    case filedaemon::bEventJobStart: {
+      return "JobStart";
+    } break;
+    case filedaemon::bEventJobEnd: {
+      return "JobEnd";
+    } break;
+    case filedaemon::bEventStartBackupJob: {
+      return "StartBackupJob";
+    } break;
+    case filedaemon::bEventEndBackupJob: {
+      return "EndBackupJob";
+    } break;
+    case filedaemon::bEventStartRestoreJob: {
+      return "StartRestoreJob";
+    } break;
+    case filedaemon::bEventEndRestoreJob: {
+      return "EndRestoreJob";
+    } break;
+    case filedaemon::bEventStartVerifyJob: {
+      return "StartVerifyJob";
+    } break;
+    case filedaemon::bEventEndVerifyJob: {
+      return "EndVerifyJob";
+    } break;
+    case filedaemon::bEventBackupCommand: {
+      return "BackupCommand";
+    } break;
+    case filedaemon::bEventRestoreCommand: {
+      return "RestoreCommand";
+    } break;
+    case filedaemon::bEventEstimateCommand: {
+      return "EstimateCommand";
+    } break;
+    case filedaemon::bEventLevel: {
+      return "Level";
+    } break;
+    case filedaemon::bEventSince: {
+      return "Since";
+    } break;
+    case filedaemon::bEventCancelCommand: {
+      return "CancelCommand";
+    } break;
+    case filedaemon::bEventRestoreObject: {
+      return "RestoreObject";
+    } break;
+    case filedaemon::bEventEndFileSet: {
+      return "EndFileSet";
+    } break;
+    case filedaemon::bEventPluginCommand: {
+      return "PluginCommand";
+    } break;
+    case filedaemon::bEventOptionPlugin: {
+      return "OptionPlugin";
+    } break;
+    case filedaemon::bEventHandleBackupFile: {
+      return "HandleBackupFile";
+    } break;
+    case filedaemon::bEventNewPluginOptions: {
+      return "NewPluginOptions";
+    } break;
+    case filedaemon::bEventVssInitializeForBackup: {
+      return "VssInitializeForBackup";
+    } break;
+    case filedaemon::bEventVssInitializeForRestore: {
+      return "VssInitializeForRestore";
+    } break;
+    case filedaemon::bEventVssSetBackupState: {
+      return "VssSetBackupState";
+    } break;
+    case filedaemon::bEventVssPrepareForBackup: {
+      return "VssPrepareForBackup";
+    } break;
+    case filedaemon::bEventVssBackupAddComponents: {
+      return "VssBackupAddComponents";
+    } break;
+    case filedaemon::bEventVssPrepareSnapshot: {
+      return "VssPrepareSnapshot";
+    } break;
+    case filedaemon::bEventVssCreateSnapshots: {
+      return "VssCreateSnapshots";
+    } break;
+    case filedaemon::bEventVssRestoreLoadComponentMetadata: {
+      return "VssRestoreLoadComponentMetadata";
+    } break;
+    case filedaemon::bEventVssRestoreSetComponentsSelected: {
+      return "VssRestoreSetComponentsSelected";
+    } break;
+    case filedaemon::bEventVssCloseRestore: {
+      return "VssCloseRestore";
+    } break;
+    case filedaemon::bEventVssBackupComplete: {
+      return "VssBackupComplete";
+    } break;
+  }
+
+  return "unknown";
+}
+
+static bool handle_restore_object(PluginContext* ctx,
+                                  plugin_ctx* p_ctx,
+                                  const filedaemon::restore_object_pkt* rop)
+{
+  switch (restore_object::name_to_type(rop->object_name)) {
+    case restore_object::Type::ReferencePoint: {
+      json_error_t json_err;
+
+      json_ptr as_json{json_loadb(rop->object, rop->object_len, 0, &json_err)};
+      if (!as_json) {
+        JFATAL(
+            ctx,
+            "could not parse json from restore object {}: json='{}' err={}",
+            rop->object_name,
+            std::string_view{rop->object, static_cast<size_t>(rop->object_len)},
+            json_err.text);
+        return false;
+      }
+      auto refpoint = ref_point::from_json(as_json.get());
+      if (!refpoint) {
+        JFATAL(ctx,
+               "restore object {} contains bad json: json='{}' err=json is not "
+               "a valid refpoint object",
+               rop->object_name,
+               std::string_view{rop->object,
+                                static_cast<size_t>(rop->object_len)});
+        return false;
+      }
+
+      DBGC(ctx, "received refpoint {{ vm_id = {}, ref_path = {} }}",
+           refpoint->vm_id, refpoint->ref_path);
+
+      p_ctx->received_reference_points.emplace_back(
+          std::move(refpoint.value()));
+
+      return true;
+    } break;
+    case restore_object::Type::VmInfo: {
+      json_error_t json_err;
+
+      json_ptr as_json{json_loadb(rop->object, rop->object_len, 0, &json_err)};
+      if (!as_json) {
+        JFATAL(
+            ctx,
+            "could not parse json from restore object {}: json='{}' err={}",
+            rop->object_name,
+            std::string_view{rop->object, static_cast<size_t>(rop->object_len)},
+            json_err.text);
+        return false;
+      }
+      auto vminfo = vm_info::from_json(as_json.get());
+      if (!vminfo) {
+        JFATAL(ctx,
+               "restore object {} contains bad json: json='{}' err=json is not "
+               "a valid vminfo object",
+               rop->object_name,
+               std::string_view{rop->object,
+                                static_cast<size_t>(rop->object_len)});
+        return false;
+      }
+
+      DBGC(ctx, "received vminfo {{ internal_name = {}, external_name = {} }}",
+           vminfo->internal_name, vminfo->external_name);
+
+      p_ctx->received_vms.emplace_back(std::move(vminfo.value()));
+
+      return true;
+    } break;
+    case restore_object::Type::DiskName: {
+      json_error_t json_err;
+
+      json_ptr as_json{json_loadb(rop->object, rop->object_len, 0, &json_err)};
+      if (!as_json) {
+        JFATAL(
+            ctx,
+            "could not parse json from restore object {}: json='{}' err={}",
+            rop->object_name,
+            std::string_view{rop->object, static_cast<size_t>(rop->object_len)},
+            json_err.text);
+        return false;
+      }
+      auto name = disk_name::from_json(as_json.get());
+      if (!name) {
+        JFATAL(ctx,
+               "restore object {} contains bad json: json='{}' err=json is not "
+               "a valid diskname object",
+               rop->object_name,
+               std::string_view{rop->object,
+                                static_cast<size_t>(rop->object_len)});
+        return false;
+      }
+
+      DBGC(ctx, L"received diskname {{ directory = {}, name = {} }}",
+           name->directory, name->name);
+
+      p_ctx->received_disks.emplace_back(std::move(name.value()));
+
+      return true;
+    }
+    default: {
+      JFATAL(ctx, "unknown restore object with name '{}'", rop->object_name);
+      return false;
+    } break;
+  }
+}
+
+// Handle an event that was generated in Bareos
+static bRC handlePluginEvent(PluginContext* ctx, bEvent* event, void* value)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  DBGC(ctx, "received event {} ({}); value = {}", event_name(event->eventType),
+       event->eventType, value);
+
+  using filedaemon::bEventBackupCommand;
+  using filedaemon::bEventEndRestoreJob;
+  using filedaemon::bEventJobEnd;
+  using filedaemon::bEventLevel;
+  using filedaemon::bEventNewPluginOptions;
+  using filedaemon::bEventPluginCommand;
+  using filedaemon::bEventRestoreCommand;
+  using filedaemon::bEventRestoreObject;
+  using filedaemon::bEventStartBackupJob;
+  using filedaemon::bEventStartRestoreJob;
+
+  switch (event->eventType) {
+    case bEventJobEnd: {
+      return free_current_state(ctx);
+    } break;
+    case bEventLevel: {
+      return bRC_Error;
+    } break;
+    case bEventRestoreCommand: {
+      return parse_plugin_definition(ctx, value);
+    } break;
+    case bEventBackupCommand: {
+      return parse_plugin_definition(ctx, value);
+    } break;
+    case bEventPluginCommand: {
+      return parse_plugin_definition(ctx, value);
+    } break;
+    case bEventEndRestoreJob: {
+      return end_restore_job(ctx);
+    } break;
+    case bEventNewPluginOptions: {
+      return parse_plugin_definition(ctx, value);
+    } break;
+    case bEventStartBackupJob: {
+      DBGC(ctx, "start backup job");
+      if (!start_backup_job(ctx)) { return bRC_Error; }
+      return bRC_OK;
+    } break;
+    case bEventStartRestoreJob: {
+      DBGC(ctx, "start restore job");
+      if (!start_restore_job(ctx)) { return bRC_Error; }
+      return bRC_OK;
+    } break;
+    case bEventRestoreObject: {
+      if (value == nullptr) {
+        DBGC(ctx, "received end of restore objects");
+        return bRC_OK;
+      }
+      DBGC(ctx, "receive restore object at {}", value);
+      auto* rop
+          = reinterpret_cast<const filedaemon::restore_object_pkt*>(value);
+      if (!handle_restore_object(ctx, p_ctx, rop)) { return bRC_Error; }
+      return bRC_OK;
+    } break;
+    default: {
+      DBGC(ctx, L"unknown event type {}", event->eventType);
+      return bRC_Error;
+    } break;
+  }
+}
+
+static void set_disk_path(const WMI::ClassObject& vhd_setting,
+                          std::wstring_view path)
+{
+  WMI::String args[] = {WMI::String::copy(path)};
+  vhd_setting.put_array<WMI::cim_type::string>(L"HostResource", args);
+  DBG(L"updated harddisk path to {}", path);
+}
+
+static std::vector<WMI::String> get_disk_paths_of_snapshot(
+    const WMI::Service& srvc,
+    const WMI::Snapshot& snap)
+{
+  auto settings = srvc.get_related_of_class(
+      snap.path().as_view(), L"Msvm_StorageAllocationSettingData",
+      L"Msvm_VirtualSystemSettingDataComponent");
+
+  std::vector<WMI::String> paths;
+  paths.reserve(settings.size());
+
+  for (auto& setting : settings) {
+    if (setting.get<WMI::cim_type::uint16>(L"ResourceType")
+        != WMI::ResourceType::LogicalDisk) {
+      DBG(L"Skipping {} because it has a bad resource type",
+          setting.path().as_view());
+      continue;
+    }
+    if (setting.get<WMI::cim_type::string>(L"ResourceSubType").as_view()
+        != std::wstring_view{L"Microsoft:Hyper-V:Virtual Hard Disk"}) {
+      DBG(L"Skipping {} because it has a bad resource sub type",
+          setting.path().as_view());
+      continue;
+    }
+
+    TRC(L"found setting {}", setting.to_string().as_view());
+
+    paths.emplace_back(extract_disk_path(setting));
+  }
+
+  return paths;
+}
+
+static std::vector<std::wstring> get_files_in_dir(std::wstring_view dir)
+{
+  std::vector<std::wstring> files;
+  std::vector<std::wstring> directories;
+
+  directories.emplace_back(dir);
+
+  while (directories.size() > 0) {
+    std::wstring current_dir = std::move(directories.back());
+    directories.pop_back();
+
+    TRC(L"entering directory '{}' ...", current_dir);
+
+    std::wstring search_path = current_dir + L"\\*";
+
+    WIN32_FIND_DATAW data;
+    HANDLE finder = FindFirstFileW(search_path.c_str(), &data);
+
+    if (finder == INVALID_HANDLE_VALUE) {
+      throw std::runtime_error(
+          std::format("could not enter generated directory {}",
+                      utf16_to_utf8(current_dir)));
+    }
+
+    do {
+      std::wstring_view entry = data.cFileName;
+      TRC(L"found '{}' ...", entry);
+
+      if (entry == L"." || entry == L"..") { continue; }
+
+      std::wstring full_path{current_dir};
+      full_path += L"\\";
+      full_path += entry;
+
+      if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+        directories.emplace_back(std::move(full_path));
+      } else {
+        files.emplace_back(std::move(full_path));
+      }
+    } while (FindNextFileW(finder, &data));
+
+    FindClose(finder);
+  }
+
+  return files;
+}
+
+static restore_object get_info(PluginContext*,
+                               const WMI::ComputerSystem& system,
+                               const std::vector<backed_up_disk>& disks)
+{
+  vm_info info;
+  info.external_name = utf16_to_utf8(
+      system.get<WMI::cim_type::string>(L"ElementName").as_view());
+  info.internal_name
+      = utf16_to_utf8(system.get<WMI::cim_type::string>(L"Name").as_view());
+  info.disks = disks;
+
+  restore_object obj;
+  obj.type = restore_object::Type::VmInfo;
+  obj.index = 0;
+  char* formatted = json_dumps(info.as_json().get(), JSON_COMPACT);
+
+  obj.content = formatted;
+  free(formatted);
+
+  return std::move(obj);
+}
+
+static std::optional<WMI::ComputerSystem> get_system_by_name(
+    PluginContext* ctx,
+    const plugin_ctx* p_ctx,
+    const WMI::Service& srvc,
+    std::string_view vm_name)
+{
+  std::size_t found_count = 0;
+
+  auto wname = utf8_to_utf16(vm_name);
+  auto vm = srvc.get_vm_by_name(wname, &found_count);
+  if (!vm) {
+    // TODO: this could also mean that there are no vms with that name ...
+    //  if there is no such vm, we should just create an error, so that the
+    //  other found vms can still get backed up.
+    //  Maybe this should always just be an error ?
+    if (found_count > 1) {
+      JFATAL(ctx, "there are mulitple vms named {}.  Cannot continue.",
+             vm_name);
+    } else if (found_count == 0) {
+      JFATAL(ctx, "there are no vms named {}.  Cannot continue.", vm_name);
+    } else {
+      JFATAL(ctx, "internal error occured while searching for vm {}", vm_name);
+    }
+    return std::nullopt;
+  }
+
+  if (!p_ctx->is_full()) {
+    // we can only backup this vm incrementally, if we backed it up before.
+    // In that case it should have a corresponding vm_info entry.
+
+    std::string vm_internal_name
+        = utf16_to_utf8(vm->get<WMI::cim_type::string>(L"Name").as_view());
+
+    bool found = false;
+    for (auto& vm_info : p_ctx->received_vms) {
+      if (vm_info.internal_name == vm_internal_name) { found = true; }
+    }
+
+    if (!found) {
+      JFATAL(ctx, "Cannot continue with {}.  No full backup was found.",
+             vm_name);
+      return std::nullopt;
+    }
+  }
+  return std::move(vm);
+}
+
+WMI::ReferencePoint ref_point_of_system(PluginContext* ctx,
+                                        uint32_t* delta_seq,
+                                        const plugin_ctx* p_ctx,
+                                        const WMI::Service& srvc,
+                                        std::string_view vm_name,
+                                        const WMI::ComputerSystem& system)
+{
+  std::string path;
+
+  std::string vm_id
+      = utf16_to_utf8(system.get<WMI::cim_type::string>(L"Name").as_view());
+
+  for (auto& refp : p_ctx->received_reference_points) {
+    if (refp.vm_id == vm_id) {
+      path = refp.ref_path;
+      *delta_seq = refp.delta_seq;
+      break;
+    }
+  }
+
+  if (path.empty()) {
+    throw std::runtime_error(std::format(
+        "no reference point found for vm {} (id = {})", vm_name, vm_id));
+  }
+
+  auto found = srvc.get_object_by_path(WMI::String::copy(utf8_to_utf16(path)));
+
+  DBGC(ctx, L"found reference point = {}", found.to_string().as_view());
+
+  return WMI::ReferencePoint{std::move(found)};
+}
+
+static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
+{
+  JINFO(ctx, "preparing backup of VM '{}'", vm_name);
+
+  auto* p_ctx = plugin_ctx::get(ctx);
+
+  auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
+
+  const auto& srvc = p_ctx->virt_service;
+  const auto& system_srvc = bstate.system_srvc;
+  const auto& snapshot_srvc = bstate.snapshot_srvc;
+
+  auto vm = get_system_by_name(ctx, p_ctx, srvc, vm_name);
+
+  if (!vm) { return false; }
+
+  // do this first, so we do not create a snapshot for nothing
+  std::wstring dir = make_temp_dir(p_ctx->jobid);
+
+  JINFO(ctx, "creating snapshot of VM '{}' ...", vm_name);
+
+  auto snapshot = snapshot_srvc.create_snapshot(
+      srvc, vm.value(), p_ctx->snapshot_settings,
+      WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
+
+  auto snapshot_name = std::format(L"Bareos JobId {}", p_ctx->jobid);
+  system_srvc.rename(srvc, snapshot, WMI::String::copy(snapshot_name));
+
+  JINFO(ctx, L"created snapshot with name '{}'", snapshot_name);
+
+  JINFO(ctx, "exporting system definition for VM '{}' to {}", vm_name,
+        utf16_to_utf8(dir));
+
+  std::optional<WMI::ReferencePoint> refpoint = std::nullopt;
+  uint32_t delta_seq = 0;
+  if (p_ctx->is_full()) {
+    WMI::VirtualSystemExportSettingData export_settings = {
+        .snapshot_virtual_system_path = snapshot.path(),
+        .backup_intent = WMI::BackupIntent::Merge,
+        .copy_snapshot_configuration
+        = WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+        .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
+        .copy_vm_runtime_information = true,
+        .copy_vm_storage = false,
+        .create_vm_export_subdirectory = false,
+    };
+
+    system_srvc.export_system_definition(srvc, vm.value(), dir,
+                                         export_settings);
+  } else {
+    refpoint = ref_point_of_system(ctx, &delta_seq, p_ctx, srvc, vm_name,
+                                   vm.value());
+    delta_seq += 1;
+
+    WMI::VirtualSystemExportSettingData export_settings = {
+        .snapshot_virtual_system_path = snapshot.path(),
+        .differential_backup_base_path = refpoint->path(),
+        .backup_intent = WMI::BackupIntent::Merge,
+        .copy_snapshot_configuration
+        = WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
+        .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
+        .copy_vm_runtime_information = true,
+        .copy_vm_storage = false,
+        .create_vm_export_subdirectory = false,
+    };
+
+    system_srvc.export_system_definition(srvc, vm.value(), dir,
+                                         export_settings);
+  }
+
+  JINFO(ctx, L"retrieving information from snapshot ...");
+
+  std::optional<analyzed_ref_point> analyzed;
+  if (refpoint) {
+    analyzed = analyze_ref_point(ctx, srvc, std::move(refpoint.value()));
+  }
+
+  auto& prepared = bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
+      std::move(vm.value()), utf8_to_utf16(vm_name), std::move(analyzed),
+      std::nullopt, dir, std::move(snapshot), delta_seq);
+
+  prepared.files_to_backup = get_files_in_dir(dir);
+  prepared.disks_to_backup
+      = get_disk_paths_of_snapshot(srvc, prepared.vm_snapshot);
+
+  JINFO(ctx, L"finished preparing backup");
+
+  return true;
+}
+
+static void add_ref_point(PluginContext* ctx,
+                          const WMI::ComputerSystem& system,
+                          std::vector<restore_object>& restore_objects,
+                          uint32_t delta_seq,
+                          const WMI::ReferencePoint& refpoint)
+{
+  using namespace WMI;
+
+  TRCC(ctx, L"refpoint = {}", refpoint.to_string().as_view());
+  TRCC(ctx, L"system = {}", system.to_string().as_view());
+
+  ref_point ref_point;
+  ref_point.vm_id
+      = utf16_to_utf8(system.get<cim_type::string>(L"Name").as_view());
+  ref_point.ref_path = utf16_to_utf8(refpoint.path().as_view());
+  ref_point.delta_seq = delta_seq;
+
+
+  auto& obj = restore_objects.emplace_back();
+
+  char* content = json_dumps(ref_point.as_json().get(), JSON_COMPACT);
+
+  obj.content = content;
+  obj.type = restore_object::Type::ReferencePoint;
+  obj.index = 0;
+
+  free(content);
+}
+
+static void prepare_restore_object(PluginContext* ctx)
+{
+  TRCC(ctx, L"prepare restore object");
+  auto* p_ctx = plugin_ctx::get(ctx);
+  auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
+  auto& prepared = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
+
+  const auto& srvc = p_ctx->virt_service;
+  const auto& system_srvc = bstate.system_srvc;
+  const auto& snapshot_srvc = bstate.snapshot_srvc;
+
+  TRCC(ctx, "pre pointer = {}", fmt_as_ptr(prepared.vm_snapshot.ptr.p));
+  auto refpoint = snapshot_srvc.convert_to_reference_point(
+      srvc, std::move(prepared.vm_snapshot));
+  DBGC(ctx, L"refpoint = {}", refpoint.path().as_view());
+  TRCC(ctx, "post pointer = {}", fmt_as_ptr(prepared.vm_snapshot.ptr.p));
+
+
+  prepared.restore_objects.emplace_back(
+      get_info(ctx, prepared.current_vm, prepared.backed_up_disks));
+
+  JINFO(ctx, L"converted snapshot into reference point '{}'",
+        refpoint.path().as_view());
+
+  add_ref_point(ctx, prepared.current_vm, prepared.restore_objects,
+                prepared.delta_seq, refpoint);
+
+  prepared.created_ref_point.emplace(std::move(refpoint));
+}
+
+// maybe we should add the cluster name here somehow ?
+std::string create_vm_path(std::wstring_view vm_name,
+                           std::wstring_view sub_dir,
+                           std::wstring_view path)
+{
+  auto last_slash = path.find_last_of(L"\\/");
+  auto cutoff_point = [&] {
+    if (last_slash == path.npos) {
+      // if there somehow is no slash in the path, then we just take
+      // everything.
+      return decltype(last_slash){0};
+    } else {
+      // skip the slash
+      return last_slash + 1;
+    }
+  }();
+
+  std::wstring new_path = std::format(L"@hyper-v@/{}/{}/{}", vm_name, sub_dir,
+                                      path.substr(cutoff_point));
+
+  std::replace(std::begin(new_path), std::end(new_path), L'\\', L'/');
+  return utf16_to_utf8(new_path);
+}
+
+static void LogAllParents(PluginContext* ctx,
+                          HANDLE disk_handle,
+                          std::wstring_view path)
+{
+  {
+    GET_VIRTUAL_DISK_INFO id = {
+        .Version = GET_VIRTUAL_DISK_INFO_IDENTIFIER,
+    };
+    ULONG VirtualDiskInfoSize = sizeof(id);
+    ULONG SizeOut = 0;
+    auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                              &id, &SizeOut);
+    if (disk_res != ERROR_SUCCESS) {
+      JERR(ctx, L"could not retrieve info for disk {}", path);
+    } else {
+      GUID identifier = id.Identifier;
+
+      DBGC(ctx, L"disk id {} => {}", path, format_guid(identifier));
+    }
+  }
+
+  {
+    GET_VIRTUAL_DISK_INFO id = {
+        .Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_DISK_ID,
+    };
+    ULONG VirtualDiskInfoSize = sizeof(id);
+    ULONG SizeOut = 0;
+    auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                              &id, &SizeOut);
+    if (disk_res != ERROR_SUCCESS) {
+      JERR(ctx, L"could not retrieve info for disk {}", path);
+      return;
+    }
+
+    GUID identifier = id.VirtualDiskId;
+
+    DBGC(ctx, L"disk virt id {} => {}", path, format_guid(identifier));
+  }
+
+  std::vector<char> buffer;
+  buffer.resize(1024);
+
+  auto* disk_info = reinterpret_cast<GET_VIRTUAL_DISK_INFO*>(buffer.data());
+  disk_info->Version = GET_VIRTUAL_DISK_INFO_PARENT_LOCATION;
+
+  ULONG VirtualDiskInfoSize = std::size(buffer);
+  ULONG SizeOut = 0;
+  auto disk_res = GetVirtualDiskInformation(disk_handle, &VirtualDiskInfoSize,
+                                            disk_info, &SizeOut);
+  if (disk_res != ERROR_SUCCESS) {
+    JERR(ctx, L"could not retrieve parent for disk {}", path);
+    return;
+  }
+
+  DBGC(ctx, L"Parent = {{ Resolved = {}, Path = {} }}",
+       disk_info->ParentLocation.ParentResolved,
+       disk_info->ParentLocation.ParentLocationBuffer);
+
+  if (disk_info->ParentLocation.ParentResolved) {
+    HANDLE parent_handle = INVALID_HANDLE_VALUE;
+
+    VIRTUAL_STORAGE_TYPE vst = {
+        .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+        .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+    };
+
+    OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+    params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+    params.Version2.ReadOnly = TRUE;
+    params.Version2.GetInfoOnly = TRUE;
+
+    auto res
+        = OpenVirtualDisk(&vst, disk_info->ParentLocation.ParentLocationBuffer,
+                          VIRTUAL_DISK_ACCESS_NONE, OPEN_VIRTUAL_DISK_FLAG_NONE,
+                          &params, &parent_handle);
+
+    if (res != ERROR_SUCCESS) {
+      JERR(ctx, L"could not open disk {}: Err={} ({:X})", path,
+           format_win32_error(res), res);
+      CloseHandle(parent_handle);
+      return;
+    }
+
+    LogAllParents(ctx, parent_handle,
+                  disk_info->ParentLocation.ParentLocationBuffer);
+
+    CloseHandle(parent_handle);
+  }
+}
+
+static std::wstring make_disk_path(VIRTUAL_STORAGE_TYPE vst, GUID disk_guid)
+{
+  std::wstring_view file_ending = [vst] {
+    switch (vst.DeviceId) {
+      case VIRTUAL_STORAGE_TYPE_DEVICE_ISO: {
+        return L"iso";
+      } break;
+      case VIRTUAL_STORAGE_TYPE_DEVICE_VHD: {
+        return L"vhd";
+      } break;
+      case VIRTUAL_STORAGE_TYPE_DEVICE_VHDX: {
+        return L"vhdx";
+      } break;
+      default: {
+        throw std::runtime_error(
+            std::format("unkown device type {}", vst.DeviceId));
+      } break;
+    }
+  }();
+  std::wstring name = format_guid(disk_guid);
+  return std::format(L"{}.{}", name, file_ending);
+}
+
+// queries the disk for changes, and returns the end of the segment
+// that was queried
+static std::size_t insert_changes(HANDLE disk_handle,
+                                  const wchar_t* rct_id,
+                                  std::size_t start,
+                                  std::size_t end,
+                                  std::vector<range>& ranges)
+{
+  QUERY_CHANGES_VIRTUAL_DISK_RANGE vdisk_ranges[50];
+  ULONG range_count = std::size(vdisk_ranges);
+  ULONG64 size = static_cast<ULONG64>(end - start);
+  ULONG64 bytes_processed = 0;
+  auto query_res = QueryChangesVirtualDisk(
+      disk_handle, rct_id, start, size, QUERY_CHANGES_VIRTUAL_DISK_FLAG_NONE,
+      vdisk_ranges, &range_count, &bytes_processed);
+
+  if (query_res != ERROR_SUCCESS) {
+    throw werror("querying disks for changes", query_res);
+  }
+
+  TRC(L"got {} ranges", range_count);
+
+  for (ULONG i = 0; i < range_count; ++i) {
+    ranges.push_back(
+        range{.start = vdisk_ranges[i].ByteOffset,
+              .end = vdisk_ranges[i].ByteOffset + vdisk_ranges[i].ByteLength});
+
+    TRC(L"range {}: {} - {}", i, ranges.back().start, ranges.back().end);
+  }
+
+  return start + bytes_processed;
+}
+
+static std::wstring directory_path(const wchar_t* path)
+{
+  auto buflen = GetFullPathNameW(path, 0, nullptr, nullptr);
+
+  if (buflen == 0) {
+    throw std::runtime_error{
+        std::format("could not create full path out of {} (Err={})",
+                    utf16_to_utf8(path), format_win32_error_2())};
+  }
+
+  std::wstring res;
+  res.resize(buflen);
+
+  wchar_t* file_part = nullptr;
+  auto bytes_written
+      = GetFullPathNameW(path, res.size(), res.data(), &file_part);
+
+  if (bytes_written == 0) {
+    throw std::runtime_error{
+        std::format("could not create full path out of {} (Err={})",
+                    utf16_to_utf8(path), format_win32_error_2())};
+  }
+
+  // buflen includes NUL, but bytes_written does not (on success)
+  if (bytes_written >= buflen) {
+    throw std::runtime_error{
+        std::format("could not create full path out of {} (internal error)",
+                    utf16_to_utf8(path))};
+  }
+
+  // file_part may be a nullptr, if path was just a directory somehow
+  auto dir_size = file_part ? file_part - res.data() : bytes_written;
+
+  res.resize(dir_size);
+
+  return res;
+}
+
+// Start the backup of a specific file
+static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
+{
+  TRCC(ctx, L"start backup file");
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  try {
+    if (std::get_if<std::monostate>(&p_ctx->current_state)) {
+      DBGC(ctx, L"Backup is not started.  Doing so now...");
+      if (!start_backup_job(ctx)) { return bRC_Error; }
+    }
+
+    auto& bstate = std::get<plugin_ctx::backup>(p_ctx->current_state);
+    if (!std::get_if<plugin_ctx::backup::prepared_backup>(&bstate.state)) {
+      DBGC(ctx, L"Backup is not prepared.  Doing so now...");
+
+      auto& vm_name = p_ctx->cfg.vm_name;
+      if (vm_name.empty()) {
+        JERR(ctx, "No 'vmname' given");
+        return bRC_Error;
+      }
+
+      if (!prepare_backup(ctx, vm_name)) { return bRC_Error; }
+    }
+
+    auto& prepared
+        = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
+
+    if (prepared.files_to_backup.size() > 0) {
+      auto& path = prepared.files_to_backup.back();
+
+      JINFO(ctx, L"Starting backup of metadata {}", path);
+
+      DBGC(ctx, L"transforming {} ...", path);
+      p_ctx->current_path = create_vm_path(prepared.vm_name, L"config", path);
+      DBGC(ctx, "into {}!", p_ctx->current_path);
+      auto now = time(NULL);
+      sp->fname = p_ctx->current_path.data();
+      sp->type = FT_REG;
+      ClearAllBits(FO_MAX, sp->flags);
+
+      // todo: fix these
+      sp->statp.st_mode = 0700 | S_IFREG;
+      sp->statp.st_ctime = now;
+      sp->statp.st_mtime = now;
+      sp->statp.st_atime = now;
+      sp->statp.st_size = -1;
+      sp->statp.st_blksize = 4096;
+      sp->statp.st_blocks = 1;
+
+      return bRC_OK;
+    }
+
+    DBGC(ctx, L"All files were backed up");
+
+    if (prepared.disks_to_backup.size() > 0) {
+      auto& path = prepared.disks_to_backup.back();
+
+      JINFO(ctx, L"Starting backup of disk '{}'", path.as_view());
+
+      VIRTUAL_STORAGE_TYPE vst = {
+          .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_UNKNOWN,
+          .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_UNKNOWN,
+      };
+
+      GUID disk_id = {};
+
+      {
+        HANDLE disk_handle = INVALID_HANDLE_VALUE;
+
+        OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+        params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+        params.Version2.ReadOnly = TRUE;
+
+        auto res = OpenVirtualDisk(&vst, path.get(), VIRTUAL_DISK_ACCESS_NONE,
+                                   OPEN_VIRTUAL_DISK_FLAG_NONE, &params,
+                                   &disk_handle);
+
+        if (res != ERROR_SUCCESS) {
+          JERR(ctx, L"could not open disk {}: Err={} ({:X})", path.as_view(),
+               format_win32_error(res), res);
+          return bRC_Error;
+        }
+
+        if (prepared.disk_to_backup) {
+          CloseHandle(prepared.disk_to_backup.value());
+        }
+        prepared.disk_to_backup = disk_handle;
+
+        {
+          GET_VIRTUAL_DISK_INFO id = {
+              .Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_DISK_ID,
+          };
+          ULONG VirtualDiskInfoSize = sizeof(id);
+          ULONG SizeOut = 0;
+          auto disk_res = GetVirtualDiskInformation(
+              disk_handle, &VirtualDiskInfoSize, &id, &SizeOut);
+          if (disk_res != ERROR_SUCCESS) {
+            CloseHandle(disk_handle);
+            DBGC(ctx, L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
+                 path.as_view(), WMI::format_error(disk_res),
+                 (uint64_t)disk_res);
+            JERR(ctx, L"could not retrieve info for disk {}", path.as_view());
+            return bRC_Error;
+          }
+
+          disk_id = id.VirtualDiskId;
+
+          DBGC(ctx, L"disk virt id = {}", format_guid(disk_id));
+
+          prepared.rct_id = nullptr;
+          if (prepared.refpoint) {
+            for (auto& disk : prepared.refpoint->contained_disks) {
+              if (IsEqualGUID(disk.virt_disk_id, disk_id)) {
+                prepared.rct_id = disk.rct_id.get();
+                break;
+              }
+            }
+            if (prepared.rct_id == nullptr) {
+              // no disk found
+              JFATAL(
+                  ctx,
+                  L"cannot backup {} as it was not part of the last backup.  "
+                  L"Please run a new full.",
+                  path.as_view());
+              prepared.disks_to_backup.pop_back();
+              return bRC_Skip;
+            } else {
+              DBGC(ctx, L"using rct id {} for disk {}", prepared.rct_id,
+                   path.as_view());
+            }
+          }
+        }
+
+        {
+          GET_VIRTUAL_DISK_INFO disk_info
+              = {.Version = GET_VIRTUAL_DISK_INFO_VIRTUAL_STORAGE_TYPE};
+          ULONG VirtualDiskInfoSize = sizeof(disk_info);
+          ULONG SizeOut = 0;
+          auto disk_res = GetVirtualDiskInformation(
+              disk_handle, &VirtualDiskInfoSize, &disk_info, &SizeOut);
+          if (disk_res != ERROR_SUCCESS) {
+            CloseHandle(disk_handle);
+            DBGC(ctx, L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
+                 path.as_view(), WMI::format_error(disk_res),
+                 (uint64_t)disk_res);
+            JERR(ctx, L"could not retrieve storage type for disk {}",
+                 path.as_view());
+            return bRC_Error;
+          }
+
+          vst = disk_info.VirtualStorageType;
+        }
+
+        {
+          GET_VIRTUAL_DISK_INFO disk_info = {
+              .Version = GET_VIRTUAL_DISK_INFO_SIZE,
+          };
+          ULONG VirtualDiskInfoSize = sizeof(disk_info);
+          ULONG SizeOut = 0;
+          auto disk_res = GetVirtualDiskInformation(
+              disk_handle, &VirtualDiskInfoSize, &disk_info, &SizeOut);
+          if (disk_res != ERROR_SUCCESS) {
+            CloseHandle(disk_handle);
+            DBGC(ctx, L"GetVirtualDiskInfo({}) failed.  Err={} ({:X})",
+                 path.as_view(), WMI::format_error(disk_res),
+                 (uint64_t)disk_res);
+            JERR(ctx, L"could not retrieve info for disk {}", path.as_view());
+            return bRC_Error;
+          }
+
+          DBGC(
+              ctx,
+              L"Size = {{ VirtualSize = {}, PhysicalSize = {}, BlockSize = {}, "
+              L"SectorSize = {} }}",
+              disk_info.Size.VirtualSize, disk_info.Size.PhysicalSize,
+              disk_info.Size.BlockSize, disk_info.Size.SectorSize);
+          sp->statp.st_size = disk_info.Size.VirtualSize;
+          sp->statp.st_blksize = disk_info.Size.BlockSize;
+          sp->statp.st_blocks = disk_info.Size.SectorSize;
+
+          prepared.ranges_to_read.clear();
+          if (prepared.rct_id) {
+            auto last_byte = insert_changes(disk_handle, prepared.rct_id, 0,
+                                            disk_info.Size.VirtualSize,
+                                            prepared.ranges_to_read);
+            prepared.leftover
+                = range{.start = last_byte, .end = disk_info.Size.VirtualSize};
+          } else {
+            prepared.ranges_to_read.push_back(
+                {.start = 0, .end = disk_info.Size.VirtualSize});
+            prepared.leftover = range{.start = disk_info.Size.VirtualSize,
+                                      .end = disk_info.Size.VirtualSize};
+          }
+        }
+      }
+
+      auto disk_path = make_disk_path(vst, disk_id);
+      DBGC(ctx, L"transforming {} ...", disk_path);
+      p_ctx->current_path
+          = create_vm_path(prepared.vm_name, L"disks", disk_path);
+      DBGC(ctx, "into {}!", p_ctx->current_path);
+      TRCC(ctx, "delta seq = {}", prepared.delta_seq);
+
+      prepared.backed_up_disks.emplace_back(utf16_to_utf8(path.as_view()),
+                                            utf16_to_utf8(disk_path));
+
+      JINFO(ctx, L"Backing up disk '{}' as '{}'", path.as_view(), disk_path);
+      {
+        disk_name name;
+        name.directory = directory_path(path.get());
+        name.name = disk_path;
+
+        auto& obj = prepared.restore_objects.emplace_back();
+        obj.content = json_dumps(name.as_json().get(), JSON_COMPACT);
+        obj.type = restore_object::Type::DiskName;
+        obj.index = 0;
+      }
+
+
+      auto now = time(NULL);
+      sp->fname = p_ctx->current_path.data();
+      sp->type = FT_REG;
+      ClearAllBits(FO_MAX, sp->flags);
+      // bareos is a bit weird,  if we tell it that we use delta seqs
+      // it overwrites delta_seq by delta_seq + 1 (???), so we
+      // need to decrement it here first, so that bareos makes it correct again
+      // by incrementing it.
+      if (prepared.delta_seq) {
+        sp->delta_seq = prepared.delta_seq - 1;
+        SetBit(FO_DELTA, sp->flags);
+      } else {
+        sp->delta_seq = 0;
+      }
+
+      // TODO: maybe in the future we can use bareos sparse file support
+      //   instead of implementing this ourselves
+      // SetBit(FO_SPARSE, sp->flags);
+
+      // TODO: fix these
+      sp->statp.st_mode = 0700 | S_IFREG;
+      sp->statp.st_ctime = now;
+      sp->statp.st_mtime = now;
+      sp->statp.st_atime = now;
+
+      return bRC_OK;
+    }
+
+    DBGC(ctx, L"All disks were backed up");
+
+    if (prepared.vm_snapshot.ptr.p) {
+      // the snapshot still exists, so we need to create a reference point now
+      // and send it via a restore object
+
+      prepare_restore_object(ctx);
+    }
+
+    if (prepared.restore_objects.size() > 0) {
+      prepared.current_object = std::move(prepared.restore_objects.back());
+      prepared.restore_objects.pop_back();
+
+      TRCC(ctx, "restore object {} => {}", prepared.current_object->name(),
+           prepared.current_object->content);
+
+      sp->type = FT_RESTORE_FIRST;
+      sp->object = prepared.current_object->content.data();
+      sp->object_len = prepared.current_object->content.size();
+
+      sp->object_name = const_cast<char*>(prepared.current_object->name());
+      sp->index = prepared.current_object->index;
+
+      return bRC_OK;
+    }
+
+    DBGC(ctx, L"reference point was already created");
+
+    return bRC_Stop;
+
+  } catch (const win_error& err) {
+    DBGC(ctx, L"caught win error.  Err={} ({:X})", err.err_str(),
+         err.err_num());
+    comReportError(ctx, err.err_num());
+    return bRC_Error;
+  } catch (const WMI::cim_error& err) {
+    DBGC(ctx, L"caught cim error.  Err={}/{} ({})", err.known_name(),
+         WMI::format_error(err.error), static_cast<uint32_t>(err.error));
+    return bRC_Error;
+  } catch (const std::exception& ex) {
+    JFATAL(ctx, "caught exception: {}.  aborting job ...", ex.what());
+    return bRC_Error;
+  } catch (...) {
+    JFATAL(ctx, "detected an internal error.  aborting job ...");
+    return bRC_Error;
+  }
+}
+
+// Done with backup of this file
+static bRC end_backup_file(PluginContext* ctx)
+{
+  TRCC(ctx, "end backup file");
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  auto* bstate = std::get_if<plugin_ctx::backup>(&p_ctx->current_state);
+  if (!bstate) {
+    DBGC(ctx, "no backup was started, so there is nothing to do here");
+    return bRC_OK;
+  }
+  if (auto* prepared
+      = std::get_if<plugin_ctx::backup::prepared_backup>(&bstate->state)) {
+    if (prepared->error) {
+      // TODO: it would be better if some destructor took care of deleting
+      //  the snapshot
+      if (prepared->vm_snapshot.ptr.p) {
+        bstate->snapshot_srvc.destroy_snapshot(
+            p_ctx->virt_service, std::move(prepared->vm_snapshot));
+      }
+      TRCC(ctx, "prepared->error");
+      bstate->state.emplace<std::monostate>();
+      JERR(ctx, "encountered error during backup");
+      return bRC_Error;
+    }
+
+    if (!prepared->finished()) {
+      if (prepared->files_to_backup.size() > 0) {
+        DBGC(ctx, L"finishing up {}", prepared->files_to_backup.back());
+        prepared->files_to_backup.pop_back();
+      } else if (prepared->disks_to_backup.size() > 0) {
+        DBGC(ctx, L"finishing up {}",
+             prepared->disks_to_backup.back().as_view());
+        prepared->disks_to_backup.pop_back();
+      }
+      TRCC(ctx, "more work");
+      return bRC_More;
+    } else {
+      TRCC(ctx, "prepared files done");
+    }
+  }
+  /* We would return bRC_More if we wanted start_backup_file to be called again
+   * to backup another file */
+
+  TRCC(ctx, "no more files left");
+  return bRC_OK;
+}
+
+std::size_t read_file_contents(PluginContext* ctx,
+                               HANDLE handle,
+                               char* buf,
+                               std::size_t bufsize)
+{
+  std::size_t bytes_read = 0;
+  while (bytes_read < bufsize) {
+    constexpr std::size_t max_bytes_per_call
+        = std::numeric_limits<DWORD>::max();
+    DWORD bytes_to_read = static_cast<DWORD>(
+        std::min(bufsize - bytes_read, max_bytes_per_call));
+    DWORD bytes_actually_read = 0;
+    if (!ReadFile(handle, buf + bytes_read, bytes_to_read, &bytes_actually_read,
+                  nullptr)) {
+      DBGC(ctx, "could not read from {}, bytes read = {}, bytes to read = {}",
+           fmt_as_ptr(handle), bytes_read, bytes_to_read);
+      return 0;
+    }
+
+    if (bytes_actually_read == 0) {
+      DBGC(ctx,
+           "read 0 bytes from {}, when trying to read {}; already read = {}",
+           fmt_as_ptr(handle), bytes_to_read, bytes_read);
+      break;
+    }
+
+    bytes_read += bytes_actually_read;
+  }
+  return bytes_read;
+}
+
+enum class ValueType
+{
+  String,
+  Path,
+};
+
+static std::string read_value(std::string_view& in,
+                              ValueType type = ValueType::String)
+{
+  std::string s;
+
+  while (in.size() > 0) {
+    auto c = in.front();
+    in.remove_prefix(1);
+
+    // in paths we ignore ":" if its in the second place
+    // i.e. config=C://test:name=k
+    // will get split into 'config' '=' 'C://test' ':' 'name' '=' 'k'
+    // even though there is a ':' here ~~~^
+    if (c == ':' && (type != ValueType::Path || s.size() != 1)) { break; }
+    s += c;
+  }
+
+  return s;
+}
+
+/**
+ * Parse the plugin definition passed in.
+ *
+ * The definition is in this form:
+ *
+ * hyper-v:...
+ */
+static bRC parse_plugin_definition(PluginContext* ctx, void* value)
+{
+  DBGC(ctx, "parse_plugin_definition");
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) {
+    Jmsg(ctx, M_FATAL, "plugin private context not set\n");
+    return bRC_Error;
+  }
+
+  std::string_view input = static_cast<const char*>(value);
+
+  DBGC(ctx, "start parsing {}", input);
+  constexpr std::string_view plugin_name = "hyper-v";
+
+  if (input.size() < plugin_name.size()) {
+    Jmsg(ctx, M_ERROR, "bad plugin definition (its too small): %.*s\n",
+         static_cast<int>(input.size()), input.data());
+    return bRC_Error;
+  }
+
+  if (input.substr(0, plugin_name.size()) != plugin_name) {
+    Jmsg(ctx, M_ERROR, "bad plugin definition (wrong plugin name): %.*s\n",
+         static_cast<int>(input.size()), input.data());
+    return bRC_Error;
+  }
+
+  auto rest = input.substr(plugin_name.size());
+  DBGC(ctx, "continuing with {}", rest);
+
+  if (rest.size() == 0 || rest[0] != ':') {
+    Jmsg(ctx, M_ERROR, "bad plugin definition (expected ':' at %llu): %.*s\n",
+         static_cast<long long unsigned>(input.size() - rest.size()),
+         static_cast<int>(input.size()), input.data());
+    return bRC_Error;
+  }
+
+  rest = rest.substr(1);
+  std::optional<std::string> path;
+  std::optional<std::string> name;
+
+  while (rest.size() > 0) {
+    // make sure that we make progress while parsing
+    auto starting_size = rest.size();
+
+    constexpr std::string_view config_file = "config_file";
+    constexpr std::string_view vmname = "vmname";
+
+    DBGC(ctx, "continuing with {}", rest);
+
+    if (rest.starts_with(config_file)) {
+      DBGC(ctx, "found config-file directive");
+      rest = rest.substr(config_file.size());
+      DBGC(ctx, "continuing with {}", rest);
+
+      if (rest.size() == 0 || rest[0] != '=') {
+        Jmsg(ctx, M_ERROR,
+             "bad plugin definition (expected '=' at %llu): %.*s\n",
+             static_cast<long long unsigned>(input.size() - rest.size()),
+             static_cast<int>(input.size()), input.data());
+        return bRC_Error;
+      }
+
+      rest = rest.substr(1);
+      DBGC(ctx, "continuing with {}", rest);
+
+      std::string path_value = read_value(rest, ValueType::Path);
+
+      if (path_value.size() == 0) {
+        Jmsg(ctx, M_ERROR,
+             "bad plugin definition (expected config path at %llu): %.*s\n",
+             static_cast<long long unsigned>(input.size() - rest.size()),
+             static_cast<int>(input.size()), input.data());
+        return bRC_Error;
+      }
+
+      path.emplace(std::move(path_value));
+      DBGC(ctx, "found config path = {}", *path);
+    } else if (rest.starts_with(vmname)) {
+      DBGC(ctx, "found vmname directive");
+      rest = rest.substr(vmname.size());
+      DBGC(ctx, "continuing with {}", rest);
+
+      if (rest.size() == 0 || rest[0] != '=') {
+        Jmsg(ctx, M_ERROR,
+             "bad plugin definition (expected '=' at %llu): %.*s\n",
+             static_cast<long long unsigned>(input.size() - rest.size()),
+             static_cast<int>(input.size()), input.data());
+        return bRC_Error;
+      }
+
+      rest = rest.substr(1);
+      DBGC(ctx, "continuing with {}", rest);
+
+      std::string name_value = read_value(rest);
+
+      if (name_value.size() == 0) {
+        Jmsg(ctx, M_ERROR,
+             "bad plugin definition (expected config path at %llu): %.*s\n",
+             static_cast<long long unsigned>(input.size() - rest.size()),
+             static_cast<int>(input.size()), input.data());
+        return bRC_Error;
+      }
+
+      name.emplace(std::move(name_value));
+      DBGC(ctx, "found vm name = {}", *name);
+    } else {
+      Jmsg(
+          ctx, M_ERROR,
+          "bad plugin definition (unknown directive after ':' at %llu): %.*s\n",
+          static_cast<long long unsigned>(input.size() - rest.size()),
+          static_cast<int>(input.size()), input.data());
+      return bRC_Error;
+    }
+
+    if (rest.size() == starting_size) {
+      Jmsg(ctx, M_ERROR,
+           "internal error while trying to parse the plugin definition "
+           "occured: %.*s\n",
+           static_cast<int>(rest.size()), rest.data());
+      return bRC_Error;
+    }
+  }
+
+  auto& cfg = p_ctx->cfg;
+
+  // first load the config from the configuration file
+
+  if (path) {
+    std::wstring wpath = utf8_to_utf16(*path);
+    DBGC(ctx, L"found config path = L\"{}\"", wpath);
+
+    HANDLE config_handle
+        = CreateFileW(wpath.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL,
+                      OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    DBGC(ctx, "opened {} at {}", *path, fmt_as_ptr(config_handle));
+    if (config_handle == INVALID_HANDLE_VALUE) {
+      Jmsg(ctx, M_ERROR, "could not open config file %s: Err=%ls\n",
+           path->c_str(), format_win32_error().c_str());
+      return bRC_Error;
+    }
+
+    LARGE_INTEGER file_size_li = {};
+
+    if (!GetFileSizeEx(config_handle, &file_size_li)) {
+      Jmsg(ctx, M_ERROR,
+           "could not determine size of config file %s: Err=%ls\n",
+           path->c_str(), format_win32_error().c_str());
+      CloseHandle(config_handle);
+      return bRC_Error;
+    }
+
+    std::size_t file_size = static_cast<std::size_t>(file_size_li.QuadPart);
+
+    auto file_content = std::make_unique<char[]>(file_size);
+
+    auto bytes_read
+        = read_file_contents(ctx, config_handle, file_content.get(), file_size);
+    if (bytes_read == 0) {
+      Jmsg(ctx, M_ERROR, "could not read file %s: Err=%ls\n", path->c_str(),
+           format_win32_error().c_str());
+      CloseHandle(config_handle);
+      return bRC_Error;
+    } else if (bytes_read != file_size) {
+      Jmsg(ctx, M_ERROR,
+           "could read complete file %s: only %llu out of expected %llu bytes "
+           "were read\n",
+           path->c_str(), static_cast<long long unsigned>(bytes_read),
+           static_cast<long long unsigned>(file_size));
+      CloseHandle(config_handle);
+      return bRC_Error;
+    }
+
+    CloseHandle(config_handle);
+    DBGC(ctx, "sucessfully loaded config file {} into memory at {}", *path,
+         fmt_as_ptr(file_content.get()));
+
+    std::string_view config_content{file_content.get(), file_size};
+
+    TRCC(ctx, "content = {}", config_content);
+
+    json_error_t jerr = {};
+    json_ptr json{json_loadb(config_content.data(), config_content.size(),
+                             JSON_REJECT_DUPLICATES | JSON_DISABLE_EOF_CHECK,
+                             &jerr)};
+
+    if (!json) {
+      JFATAL(ctx, "failed to parse config file {} as json: {} (at {}:{})",
+             *path, jerr.text, jerr.line, jerr.column);
+      return bRC_Error;
+    }
+
+    if (json_t* val = json_object_get(json.get(), "vmname")) {
+      const char* vmname = json_string_value(val);
+      if (!val) {
+        JFATAL(ctx, "'vmname' is not a string in config file");
+        return bRC_Error;
+      }
+      cfg.vm_name = vmname;
+    }
+  }
+
+  // then update it with values from the plugin line
+  if (name) {
+    TRCC(ctx, "overwriting previous vmname with name from plugin line");
+    cfg.vm_name = std::move(*name);
+  }
+
+  // finally make sure that the config is ok!
+  if (cfg.vm_name.empty()) {
+    JFATAL(ctx, "'vmname' not given or is empty.  Cannot continue.");
+    return bRC_Error;
+  }
+
+  return bRC_OK;
+}
+
+static bRC pluginBackupIO(PluginContext* ctx,
+                          plugin_ctx* p_ctx,
+                          plugin_ctx::backup& bstate,
+                          io_pkt* io)
+{
+  TRCC(ctx, "backup plugin io ({})", io->func);
+  auto& prepared = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
+
+  switch (io->func) {
+    case filedaemon::IO_OPEN: {
+      if (prepared.files_to_backup.size() > 0) {
+        // we are backing up a normal file
+        auto& current_file = prepared.files_to_backup.back();
+
+        HANDLE h = [&] {
+          if (io->flags & O_WRONLY) {
+            return CreateFileW(current_file.c_str(), GENERIC_WRITE,
+                               FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
+                               FILE_ATTRIBUTE_NORMAL, NULL);
+          } else {
+            return CreateFileW(current_file.c_str(), GENERIC_READ,
+                               FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                               FILE_ATTRIBUTE_NORMAL, NULL);
+          }
+        }();
+
+        io->hndl = h;
+        io->status = IoStatus::do_io_in_core;
+
+        JINFO(ctx, "doing io in core for {}", utf16_to_utf8(current_file));
+
+        return bRC_OK;
+      }
+
+      if (prepared.disks_to_backup.size() > 0) {
+        // we are backing up a disk
+        if (!prepared.disk_to_backup) {
+          JERR(ctx,
+               L"can not open disk {} because it was not properly prepared",
+               prepared.disks_to_backup.back().as_view());
+          return bRC_Error;
+        }
+
+        ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+            = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+        auto attach_res
+            = AttachVirtualDisk(prepared.disk_to_backup.value(), NULL,
+                                ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST
+                                    | ATTACH_VIRTUAL_DISK_FLAG_READ_ONLY,
+                                0, &attach_params, 0);
+        if (FAILED(attach_res)) {
+          JERR(ctx, L"could not attach disk {} for reading",
+               prepared.disks_to_backup.back().as_view());
+          DBGC(ctx, L"AttachVirtualDisk() failed.  Err={} ({:X})",
+               WMI::format_error(attach_res), (uint64_t)attach_res);
+          return bRC_Error;
+        }
+
+        io->status = 0;
+        return bRC_OK;
+      }
+      return bRC_Error;
+    } break;
+    case filedaemon::IO_READ: {
+      // we only get here when backing up a disk
+      if (!prepared.disk_to_backup) {
+        DBGC(ctx, L"bad read!");
+        return bRC_Error;
+      }
+
+      while (prepared.ranges_to_read.empty()) {
+        if (prepared.leftover.empty()) {
+          TRCC(ctx, "disk is done");
+          io->status = 0;
+          return bRC_OK;
+        } else {
+          auto last_byte
+              = insert_changes(prepared.disk_to_backup.value(), prepared.rct_id,
+                               prepared.leftover.start, prepared.leftover.end,
+                               prepared.ranges_to_read);
+          prepared.leftover.start = last_byte;
+        }
+      }
+
+      auto& current_range = prepared.ranges_to_read.front();
+
+      DBGC(ctx, L"current_range = {{ Start = {}, End = {}, Started = {} }}",
+           current_range.start, current_range.end, current_range.started);
+
+      char* buffer = io->buf;
+      int32_t cnt = io->count;
+
+      DBGC(ctx, L"buffer = {}, cnt = {}", fmt_as_ptr(buffer), cnt);
+
+      if (!current_range.started) {
+        // we need to add the range information into the backup stream
+        if (cnt < 2 * sizeof(std::size_t)) {
+          JERR(ctx, "cannot handle buffer that is this small");
+          return bRC_Error;
+        }
+
+        memcpy(buffer, &current_range.start, sizeof(current_range.start));
+        buffer += sizeof(current_range.start);
+        memcpy(buffer, &current_range.end, sizeof(current_range.end));
+        buffer += sizeof(current_range.end);
+
+        cnt -= sizeof(current_range.end) + sizeof(current_range.start);
+        current_range.started = true;
+
+        io->status = io->count - cnt;
+
+        return bRC_OK;
+      }
+
+      DBGC(ctx, L"buffer = {}, cnt = {}", fmt_as_ptr(buffer), cnt);
+
+      OVERLAPPED overlapped = {};
+
+      std::size_t current_offset = current_range.start;
+      TRCC(ctx, L"current_offset = {}", current_offset);
+
+      overlapped.Offset = DWORD{current_offset & 0xFFFFFFFF};
+      overlapped.OffsetHigh = DWORD{(current_offset >> 32) & 0xFFFFFFFF};
+
+      TRCC(ctx, L"overlapped = {{ Low = {}, High = {} }}", overlapped.Offset,
+           overlapped.OffsetHigh);
+
+      size_t possible_end = current_offset + cnt;
+      TRCC(ctx, L"possible_end = {}", possible_end);
+      if (possible_end > current_range.end) {
+        possible_end = current_range.end;
+        TRCC(ctx, L"possible_end (updated) = {}", possible_end);
+      }
+
+      auto diff = possible_end - current_offset;
+      TRCC(ctx, L"diff = {}", diff);
+
+      if (diff == 0) {
+        // TODO: this cannot happen, so remove it
+        TRCC(ctx, "disk is done");
+        io->status = 0;
+        return bRC_OK;
+      }
+
+      TRCC(ctx, L"disk to backup = {}",
+           fmt_as_ptr(prepared.disk_to_backup.value()));
+
+      DWORD bytes_read = 0;
+      if (!ReadFile(prepared.disk_to_backup.value(), buffer, diff, &bytes_read,
+                    &overlapped)) {
+        DWORD error = GetLastError();
+
+        if (error == ERROR_IO_PENDING) {
+          TRCC(ctx, L"result is pending");
+          if (GetOverlappedResult(prepared.disk_to_backup.value(), &overlapped,
+                                  &bytes_read, TRUE)) {
+            goto read_ok;
+          }
+
+          error = GetLastError();
+        }
+
+        JERR(ctx, L"encountered error while trying to read disk {}: {}",
+             prepared.disks_to_backup.back().as_view(),
+             format_win32_error(error));
+        return bRC_Error;
+      }
+    read_ok:
+
+      TRCC(ctx, L"read {} bytes from offset {}", bytes_read,
+           current_range.start);
+      io->status = bytes_read;
+
+      current_range.start += bytes_read;
+      if (current_range.empty()) {
+        prepared.ranges_to_read.erase(prepared.ranges_to_read.begin());
+      }
+      return bRC_OK;
+
+    } break;
+    case filedaemon::IO_WRITE: {
+      return bRC_Error;
+    } break;
+    case filedaemon::IO_CLOSE: {
+      if (prepared.files_to_backup.size() > 0) {
+        auto& current_file = prepared.files_to_backup.back();
+
+        auto res = CloseHandle(io->hndl);
+
+        io->hndl = INVALID_HANDLE_VALUE;
+        if (FAILED(res)) {
+          io->status = -1;
+        } else {
+          io->status = 0;
+        }
+
+        // we do not need these files anymore, so we just delete them
+        DeleteFileW(current_file.c_str());
+
+        return bRC_OK;
+      }
+      if (prepared.disks_to_backup.size() > 0) {
+        // we are backing up a disk
+        if (prepared.disk_to_backup) {
+          DetachVirtualDisk(prepared.disk_to_backup.value(),
+                            DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
+          CloseHandle(prepared.disk_to_backup.value());
+          prepared.disk_to_backup.reset();
+        }
+      }
+      return bRC_Error;
+    } break;
+    default: {
+      JERR(ctx, "unknown plugin io command {}", io->func);
+      return bRC_Error;
+    } break;
+  }
+}
+
+static bool WriteFile_All(HANDLE handle,
+                          std::size_t offset,
+                          std::span<const char> to_write)
+{
+  if (to_write.size() > std::numeric_limits<DWORD>::max()) {
+    DBG(L"WriteFile_All() failed.  Cannot write more than {} bytes at once",
+        std::numeric_limits<DWORD>::max());
+    return false;
+  }
+  DWORD bytes_to_write = static_cast<DWORD>(to_write.size());
+  DWORD bytes_written = 0;
+
+  const char* current = to_write.data();
+
+  while (bytes_to_write > 0) {
+    OVERLAPPED overlapped = {};
+    overlapped.Offset = DWORD{offset & 0xFF'FF'FF'FF};
+    overlapped.OffsetHigh = DWORD{(offset >> 32) & 0xFF'FF'FF'FF};
+
+    DWORD bytes_written_this_call = 0;
+    if (!WriteFile(handle, current, bytes_to_write, &bytes_written_this_call,
+                   &overlapped)) {
+      auto write_res = GetLastError();
+
+      if (write_res == ERROR_IO_PENDING) {
+        TRC(L"WriteFile({}, {}, {}) -> async", fmt_as_ptr(handle),
+            offset + bytes_written, to_write.size() - bytes_written);
+
+        if (GetOverlappedResult(handle, &overlapped, &bytes_written_this_call,
+                                TRUE)) {
+          goto write_ok;
+        } else {
+          write_res = GetLastError();
+        }
+      }
+
+      DBG(L"WriteFile({}, {}) failed.  Err={} ({:X})",
+          current - to_write.data(), bytes_to_write,
+          format_win32_error(write_res), (uint32_t)write_res);
+      return false;
+    }
+
+  write_ok:
+
+    bytes_to_write -= bytes_written_this_call;
+    current += bytes_written_this_call;
+  }
+
+  return true;
+}
+
+static bRC pluginRestoreIO(PluginContext* ctx,
+                           plugin_ctx* p_ctx,
+                           plugin_ctx::restore& restore_ctx,
+                           io_pkt* io)
+{
+  TRCC(ctx, "restore plugin io ({})", io->func);
+
+  switch (io->func) {
+    case filedaemon::IO_OPEN: {
+      if (restore_ctx.hndl) {
+        DBGC(ctx, "preparing file handle {}", restore_ctx.hndl.value());
+        io->hndl = restore_ctx.hndl.value();
+        io->status = IoStatus::do_io_in_core;
+        restore_ctx.hndl.reset();
+        return bRC_OK;
+      } else if (restore_ctx.disk_handle) {
+        DBGC(ctx, "preparing disk handle {}", restore_ctx.disk_handle.value());
+
+        ATTACH_VIRTUAL_DISK_PARAMETERS attach_params
+            = {.Version = ATTACH_VIRTUAL_DISK_VERSION_1, .Version1 = {}};
+        auto attach_res = AttachVirtualDisk(
+            restore_ctx.disk_handle.value(), NULL,
+            ATTACH_VIRTUAL_DISK_FLAG_NO_LOCAL_HOST, 0, &attach_params, 0);
+        if (FAILED(attach_res)) {
+          DBGC(ctx, L"bad attach ");
+          JERR(ctx, "could not attach disk {} ({}) for writing", io->fname,
+               restore_ctx.disk_handle.value());
+          io->status = IoStatus::error;
+          return bRC_Error;
+        }
+
+        DBGC(ctx, L"good attach");
+
+        io->hndl = INVALID_HANDLE_VALUE;
+        io->status = IoStatus::success;
+        return bRC_OK;
+      } else {
+        JERR(ctx, "could not open file {}, as no file was prepared", io->fname);
+        io->status = -1;
+        return bRC_Error;
+      }
+    } break;
+    case filedaemon::IO_READ: {
+      DBGC(ctx, L"bad read!");
+      return bRC_Error;
+    } break;
+    case filedaemon::IO_WRITE: {
+      if (!restore_ctx.disk_handle) {
+        JERR(ctx, "can not write to disk {} as it was not prepared", io->fname);
+        io->status = IoStatus::error;
+        return bRC_Error;
+      }
+
+      if (io->count < 0) {
+        JERR(ctx, "can not write {} bytes to disk {}", io->count, io->fname);
+        io->status = IoStatus::error;
+        return bRC_Error;
+      }
+
+      char* buffer = io->buf;
+      int32_t cnt = io->count;
+
+      while (cnt > 0) {
+        if (!restore_ctx.current_range) {
+          // we need to read a range
+          if (cnt < 2 * sizeof(std::size_t)) {
+            JERR(ctx,
+                 "expected range information, but got small buffer ({} bytes) "
+                 "for file {}",
+                 cnt, io->fname);
+            io->status = IoStatus::error;
+            return bRC_Error;
+          }
+
+          range& r = restore_ctx.current_range.emplace();
+
+          memcpy(&r.start, buffer, sizeof(r.start));
+          buffer += sizeof(r.start);
+          memcpy(&r.end, buffer, sizeof(r.end));
+          buffer += sizeof(r.end);
+
+          cnt -= sizeof(r.start) + sizeof(r.end);
+        }
+
+        auto bytes_written = cnt;
+        if (bytes_written > restore_ctx.current_range->size()) {
+          bytes_written = restore_ctx.current_range->size();
+        }
+
+        if (!WriteFile_All(restore_ctx.disk_handle.value(),
+                           restore_ctx.current_range->start,
+                           {buffer, static_cast<size_t>(bytes_written)})) {
+          io->status = IoStatus::error;
+          return bRC_Error;
+        }
+
+        restore_ctx.current_range->start += bytes_written;
+        if (restore_ctx.current_range->empty()) {
+          restore_ctx.current_range.reset();
+        }
+        restore_ctx.current_offset += bytes_written;
+        buffer += bytes_written;
+        cnt -= bytes_written;
+      }
+
+      io->status = io->count;
+      return bRC_OK;
+    } break;
+    case filedaemon::IO_CLOSE: {
+      if (restore_ctx.disk_handle) {
+        auto hndl = restore_ctx.disk_handle.value();
+        DBGC(ctx, "closing disk handle {}", hndl);
+
+        DetachVirtualDisk(hndl, DETACH_VIRTUAL_DISK_FLAG_NONE, 0);
+        CloseHandle(hndl);
+        restore_ctx.disk_handle.reset();
+      } else {
+        DBGC(ctx, "closing file handle {}", io->hndl);
+        CloseHandle(io->hndl);
+      }
+      io->hndl = INVALID_HANDLE_VALUE;
+    } break;
+    default: {
+      JERR(ctx, "unknown plugin io command {}", io->func);
+      return bRC_Error;
+    } break;
+  }
+  return bRC_Error;
+}
+
+static bRC pluginIO(PluginContext* ctx, io_pkt* io)
+{
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  TRCC(ctx, "plugin io ({})", io->func);
+
+  return std::visit(
+      [&](auto&& val) {
+        using T = std::decay_t<decltype(val)>;
+
+        if constexpr (std::is_same_v<T, plugin_ctx::restore>) {
+          return pluginRestoreIO(ctx, p_ctx, val, io);
+        } else if constexpr (std::is_same_v<T, plugin_ctx::backup>) {
+          return pluginBackupIO(ctx, p_ctx, val, io);
+        } else if constexpr (std::is_same_v<T, std::monostate>) {
+          JERR(ctx, "instructed to do plugin io, but plugin is not setup");
+          return bRC_Error;
+        } else {
+          static_assert(!std::is_same_v<T, T>, "type not handled");
+        }
+      },
+      p_ctx->current_state);
+}
+
+static bRC end_restore_job(PluginContext* ctx)
+{
+  TRCC(ctx, "end restore job");
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  auto* restore_ctx = std::get_if<plugin_ctx::restore>(&p_ctx->current_state);
+  if (!restore_ctx) {
+    JERR(ctx, "instructed to end restore job while not in restore mode");
+    return bRC_Error;
+  }
+
+  const auto& srvc = p_ctx->virt_service;
+  const auto& system_srvc = restore_ctx->system_srvc;
+
+  for (auto& definition_file : restore_ctx->restored_definition_files) {
+    bool generate_new_id = true;
+
+    JINFO(ctx, L"creating a new vm from the restored configuration file '{}'",
+          definition_file.as_view());
+
+    try {
+      auto planned_system = system_srvc.import_system_definition(
+          srvc, definition_file, generate_new_id);
+
+      // TODO: this is not great,  it would be better if this was somehow
+      //  build into the type.
+      struct SystemDestroyer {
+        const WMI::Service& srvc;
+        const WMI::VirtualSystemManagementService& system_srvc;
+        WMI::PlannedSystem* system;
+
+        void release() { system = nullptr; }
+
+        ~SystemDestroyer()
+        {
+          if (system) { system_srvc.destroy_system(srvc, std::move(*system)); }
+        }
+      };
+
+      SystemDestroyer destroyer{srvc, system_srvc, &planned_system};
+
+      auto& backed_up_vm = [&]() -> const vm_info& {
+        auto external_name = utf16_to_utf8(
+            planned_system.get<WMI::cim_type::string>(L"ElementName")
+                .as_view());
+        vm_info* info = nullptr;
+        for (auto& vm : p_ctx->received_vms) {
+          if (vm.external_name == external_name) {
+            info = &vm;
+            // we want the _last_ vm_info, so we continue here
+          }
+        }
+
+        if (!info) {
+          throw std::runtime_error(std::format("unknown vm {}", external_name));
+        }
+
+        return *info;
+      }();
+
+      auto settings = srvc.get_related_of_class(
+          planned_system.path().as_view(), L"Msvm_VirtualSystemSettingData",
+          L"Msvm_SettingsDefineState");
+
+      DBGC(ctx, "found {} settings", settings.size());
+
+      JINFO(ctx, L"updating the configuration of the created vm");
+
+
+      for (auto& setting : settings) {
+        TRCC(ctx, L"setting = {}", setting.to_string().as_view());
+
+        auto disk_settings = srvc.get_related_of_class(
+            setting.path().as_view(), L"Msvm_StorageAllocationSettingData",
+            L"Msvm_VirtualSystemSettingDataComponent");
+
+
+        DBGC(ctx, "found {} disk settings", disk_settings.size());
+
+        for (auto& disk_setting : disk_settings) {
+          TRCC(ctx, L"disk setting = {}", disk_setting.to_string().as_view());
+
+          if (disk_setting.get<WMI::cim_type::uint16>(L"ResourceType")
+              != WMI::ResourceType::LogicalDisk) {
+            DBGC(ctx, L"Skipping {} because it has a bad resource type",
+                 disk_setting.path().as_view());
+            continue;
+          }
+          if (disk_setting.get<WMI::cim_type::string>(L"ResourceSubType")
+                  .as_view()
+              != std::wstring_view{L"Microsoft:Hyper-V:Virtual Hard Disk"}) {
+            DBGC(ctx, L"Skipping {} because it has a bad resource sub type",
+                 disk_setting.path().as_view());
+            continue;
+          }
+
+          // we need to rewire the paths in the vm config, so that they point
+          // to the paths where we restored the volumes in.
+
+          auto path_during_backup = extract_disk_path(disk_setting);
+
+          TRCC(ctx, L"disk path = {}", path_during_backup.as_view());
+
+          std::optional new_path = get_saved_disk_path(
+              backed_up_vm, utf16_to_utf8(path_during_backup.as_view()));
+
+          if (!new_path) {
+            // if we did not restore the volume, then just ignore it
+            DBGC(ctx, L"{} was not restored, so we leave it as is",
+                 path_during_backup.as_view());
+            continue;
+          }
+
+          DBGC(ctx, "saved path = {}", new_path.value());
+
+          auto found
+              = restore_ctx->disk_map.find(std::string(new_path.value()));
+          if (found == restore_ctx->disk_map.end()) {
+            // if we did not restore the volume, then just ignore it
+            DBGC(ctx, "{} was not found in map, so we leave it as is",
+                 new_path.value());
+            continue;
+          }
+
+          TRCC(ctx, L"pre update xml = {}",
+               format_as_xml(disk_setting).as_view());
+
+
+          auto& found_path = found->second.path;
+
+          JINFO(ctx, L" - changing disk path '{}' to restored disk '{}'",
+                path_during_backup.as_view(), found_path);
+          set_disk_path(disk_setting, found_path);
+
+          TRCC(ctx, L"updated disk setting = {}",
+               disk_setting.to_string().as_view());
+
+          auto xml = format_as_xml(disk_setting);
+
+          std::vector<WMI::String> xmls;
+          xmls.emplace_back(std::move(xml));
+
+          system_srvc.modify_resource_settings(srvc, xmls);
+        }
+      }
+
+      JINFO(ctx, L"validating created vm");
+      system_srvc.validate_planned_system(srvc, planned_system);
+
+      // todo: disconnect/delete ethernet (in case the original vm still uses
+      // it)
+      //   maybe change some path root settings
+
+      destroyer.release();
+
+      JINFO(ctx, L"realizing created vm");
+      system_srvc.realize_planned_system(srvc, std::move(planned_system));
+    } catch (const std::exception& ex) {
+      JERR(ctx, "plugin was not able to restore the vm (Err={})", ex.what());
+      return bRC_Error;
+    } catch (...) {
+      return bRC_Error;
+    }
+  }
+  return bRC_OK;
+}
+
+/**
+ * Bareos is notifying us that a plugin name string was found,
+ * and passing us the plugin command, so we can prepare for a restore.
+ */
+static bRC startRestoreFile(PluginContext*, const char*) { return bRC_OK; }
+
+/**
+ * Bareos is notifying us that the plugin data has terminated,
+ * so the restore for this particular file is done.
+ */
+static bRC endRestoreFile(PluginContext*) { return bRC_OK; }
+
+static void make_path_safe(std::wstring& str)
+{
+  // not allowed are
+  // <,>,:,",both slashes,|,?,*
+
+  std::wstring safe_str;
+  safe_str.reserve(str.size());
+
+  for (auto c : str) {
+    switch (c) {
+      case L'-': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'1');
+      } break;
+      case L'>': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'2');
+      } break;
+      case L':': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'3');
+      } break;
+      case L'/': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'4');
+      } break;
+      case L'\\': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'5');
+      } break;
+      case L'|': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'6');
+      } break;
+      case L'?': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'7');
+      } break;
+      case L'*': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'8');
+      } break;
+      case L'<': {
+        safe_str.push_back(L'-');
+        safe_str.push_back(L'9');
+      } break;
+      default: {
+        safe_str.push_back(c);
+      }
+    }
+  }
+
+  str.assign(std::move(safe_str));
+}
+
+static void ensure_paths(std::wstring_view path)
+{
+  std::wstring cpy{path};
+  std::replace(std::begin(cpy), std::end(cpy), '/', '\\');
+
+  DBG(L"Trying to create directories {}", cpy);
+
+  auto err = SHCreateDirectoryExW(NULL, cpy.c_str(), NULL);
+  switch (err) {
+    case ERROR_SUCCESS: {
+      DBG(L"path '{}' already exists", path);
+    } break;
+    case ERROR_FILE_EXISTS:
+      [[fallthrough]];
+    case ERROR_ALREADY_EXISTS: {
+      DBG(L"path '{}' already exists", path);
+    } break;
+    default: {
+      throw werror("trying to create paths", err);
+    }
+  }
+}
+
+static void create_dirs(std::wstring_view path)
+{
+  TRC(L"creating dirs in path {}", path);
+  auto last_slash = path.find_last_of(L"\\/");
+  if (last_slash != path.npos) { ensure_paths(path.substr(0, last_slash)); }
+}
+
+static std::optional<std::wstring> original_disk_directory(
+    PluginContext* ctx,
+    plugin_ctx* p_ctx,
+    std::wstring_view wdisk_name)
+{
+  std::wstring found;
+
+  for (auto& received_disk : p_ctx->received_disks) {
+    if (wdisk_name == received_disk.name) {
+      DBGC(ctx, L"disk {} => original directory {}", wdisk_name,
+           received_disk.directory);
+      return received_disk.directory;
+    }
+  }
+
+  return std::nullopt;
+}
+
+// creates the file at path and all directories above it
+static HANDLE create_file(std::wstring& path)
+{
+  create_dirs(path);
+
+  TRC(L"creating file '{}' ...", path);
+
+  auto dwaccess = GENERIC_WRITE | FILE_ALL_ACCESS | WRITE_OWNER | WRITE_DAC
+                  | ACCESS_SYSTEM_SECURITY;
+  auto dwflags = FILE_FLAG_BACKUP_SEMANTICS;
+  return CreateFileW(path.c_str(), dwaccess, FILE_SHARE_WRITE, NULL, CREATE_NEW,
+                     dwflags, NULL);
+}
+
+static bool is_volume_file(std::string_view path)
+{
+  static constexpr std::string_view disks_path_start = "disks/";
+
+  return path.starts_with(disks_path_start);
+}
+
+static bool is_config_file(std::string_view path)
+{
+  static constexpr std::string_view configs_path_start = "config/";
+
+  return path.starts_with(configs_path_start);
+}
+
+static bool is_definition_file(std::string_view path)
+{
+  static constexpr std::string_view definition_file_ending = ".vmcx";
+
+  return path.ends_with(definition_file_ending);
+}
+
+template <typename String> void append_slash_if_necessary(String& str)
+{
+  using Char = typename String::value_type;
+  if (str.size() == 0
+      || (str.back() != Char{'/'} && str.back() != Char{'\\'})) {
+    str += Char{'/'};
+  }
+}
+
+/**
+ * This is called during restore to create the file (if necessary) We must
+ * return in rp->create_status:
+ *
+ *  CF_ERROR    -- error
+ *  CF_SKIP     -- skip processing this file
+ *  CF_EXTRACT  -- extract the file (i.e.call i/o routines)
+ *  CF_CREATED  -- created, but no content to extract (typically directories)
+ *  CF_CORE     -- let bareos core create the file
+ */
+static bRC create_file(PluginContext* ctx, restore_pkt* rp)
+{
+  TRCC(ctx, "create file '{}' (deltaseq = {})", rp->ofname, rp->delta_seq);
+  auto* p_ctx = plugin_ctx::get(ctx);
+  if (!p_ctx) { return bRC_Error; }
+
+  auto* restore_ctx = std::get_if<plugin_ctx::restore>(&p_ctx->current_state);
+  if (!restore_ctx) {
+    JERR(ctx, "instructed to create file '{}' while not in restore mode",
+         rp->ofname);
+    return bRC_Error;
+  }
+
+  if (restore_ctx->hndl || restore_ctx->disk_handle) {
+    JERR(ctx,
+         "instructed to create file '{}' while another file is still being "
+         "worked on",
+         rp->ofname);
+
+    return bRC_Error;
+  }
+
+  auto actual_name = [&] {
+    std::string_view output = rp->ofname;
+    if (rp->where) {
+      std::string_view where = rp->where;
+      if (output.starts_with(where)) { output.remove_prefix(where.size()); }
+    }
+    // when the name is combined with e.g. where,
+    // then a slash may be inserted
+    if (output.starts_with('/')) { output.remove_prefix(1); }
+    return output;
+  }();
+
+  TRCC(ctx, "actual name = {}", actual_name);
+
+  auto wactual_name = utf8_to_utf16(actual_name);
+
+  // paths that we create have the following structure:
+  // <prefix>/<vm name>/path
+  // we need to check that the path given conforms to this and extract
+  // the vm name/path.
+  constexpr std::string_view prefix = "@hyper-v@/";
+
+  if (!actual_name.starts_with(prefix)) {
+    JERR(ctx, "File {} was not created by this plugin (missing prefix {})",
+         actual_name, prefix);
+    return bRC_Error;
+  }
+
+  std::string_view without_prefix = actual_name.substr(prefix.size());
+
+  TRCC(ctx, "without prefix = {}", without_prefix);
+
+  auto pos = without_prefix.find_first_of("/");
+  if (pos == without_prefix.npos) {
+    JERR(ctx, "File {} was not created by this plugin (missing vm name)",
+         actual_name);
+    return bRC_Error;
+  }
+  if (pos == without_prefix.size()) {
+    JERR(ctx, "File {} was not created by this plugin (missing path)",
+         actual_name);
+    return bRC_Error;
+  }
+
+  std::string_view vm_name = without_prefix.substr(0, pos);
+  std::string_view actual_path = without_prefix.substr(pos + 1);
+
+  TRCC(ctx, "vm_name = {}, path = {}", vm_name, actual_path);
+
+  bool config_file = is_config_file(actual_path);
+  bool disk_file = is_volume_file(actual_path);
+
+  if (config_file && disk_file) {
+    JFATAL(ctx,
+           "File {} is both a config file and a disk file; this should not be "
+           "possible",
+           actual_name);
+    return bRC_Error;
+  }
+
+  if (!config_file && !disk_file) {
+    JFATAL(ctx,
+           "File {} is neither a config file nor a disk file; this should not "
+           "be possible",
+           actual_name);
+    return bRC_Error;
+  }
+
+  if (!disk_file) {
+    // we need to include the vm name to support restoring multiple vms at once
+
+    std::wstring name_part = utf8_to_utf16(vm_name);
+    make_path_safe(name_part);
+
+    std::wstring path_part = utf8_to_utf16(actual_path);
+
+    std::wstring tmp_path = std::format(L"{}\\{}\\{}", restore_ctx->tmp_dir,
+                                        name_part, path_part);
+
+    std::replace(std::begin(tmp_path), std::end(tmp_path), L'/', L'\\');
+
+    TRCC(ctx, L"tmp_path = {}", tmp_path);
+
+    HANDLE h = create_file(tmp_path);
+    if (h == INVALID_HANDLE_VALUE) {
+      JERR(ctx, L"could not create file {}: Err={}", tmp_path,
+           format_win32_error(GetLastError()));
+      return bRC_Error;
+    }
+
+    if (is_definition_file(actual_path)) {
+      DBGC(ctx, L"found definitions file at {}", tmp_path);
+      restore_ctx->restored_definition_files.emplace_back(
+          WMI::String::copy(tmp_path));
+    }
+
+    restore_ctx->hndl = h;
+
+    JINFO(ctx, L"restoring metadata file '{}' as '{}'", wactual_name, tmp_path);
+    DBGC(ctx, L"created file '{}'", tmp_path);
+    restore_ctx->temporary_files.emplace_back(std::move(tmp_path));
+    rp->create_status = CF_EXTRACT;
+    return bRC_OK;
+  }
+
+  const VIRTUAL_STORAGE_TYPE vst_vhd = {
+      .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHD,
+      .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
+  };
+
+  const VIRTUAL_STORAGE_TYPE vst_vhdx = {
+      .DeviceId = VIRTUAL_STORAGE_TYPE_DEVICE_VHDX,
+      .VendorId = VIRTUAL_STORAGE_TYPE_VENDOR_MICROSOFT,
+  };
+
+  VIRTUAL_STORAGE_TYPE vst = [&] {
+    if (actual_path.back() == 'x') {
+      DBGC(ctx, "{} -> vhdx", actual_path);
+      return vst_vhdx;
+    } else {
+      DBGC(ctx, "{} -> vhd", actual_path);
+      return vst_vhd;
+    }
+  }();
+
+  try {
+    auto last_slash = actual_path.find_last_of("\\/");
+    // we know that there is at least one slash, because
+    // it contains disks/
+    ASSERT(last_slash != actual_path.npos);
+    if (last_slash == actual_path.size()) {
+      JERR(ctx, "bad disk name {} (trailing slash)", actual_name);
+      rp->create_status = CF_ERROR;
+      return bRC_Error;
+    }
+
+    auto disk_handle = INVALID_HANDLE_VALUE;
+
+    if (rp->delta_seq > 0) {
+      std::string disk_name{
+          actual_path.substr(last_slash + 1, actual_path.npos)};
+
+      auto found = restore_ctx->disk_map.find(disk_name);
+
+      if (found == restore_ctx->disk_map.end()) {
+        JERR(ctx,
+             "Somehow we are trying to restore an incremental image of {}, "
+             "but the full was not restored first",
+             disk_name);
+        return bRC_Error;
+      }
+
+      disk_info& info = found->second;
+
+      auto wdisk_name = utf8_to_utf16(disk_name);
+
+      DBGC(ctx, L"found in disk map {} => {}", wdisk_name, info.path);
+
+      JINFO(ctx, L"restoring incremental image of '{}' (level {}) to '{}'",
+            wdisk_name, rp->delta_seq, info.path);
+
+      OPEN_VIRTUAL_DISK_PARAMETERS params = {};
+      params.Version = OPEN_VIRTUAL_DISK_VERSION_2;
+      params.Version2.ReadOnly = FALSE;
+      params.Version2.GetInfoOnly = FALSE;
+
+      auto result
+          = OpenVirtualDisk(&vst, info.path.c_str(), VIRTUAL_DISK_ACCESS_NONE,
+                            OPEN_VIRTUAL_DISK_FLAG_NONE, &params, &disk_handle);
+
+
+      if (result != ERROR_SUCCESS) {
+        JERR(ctx, L"could not open hard disk at {} for writing.  Err={} ({:X})",
+             info.path, format_win32_error(result), result);
+        return bRC_Error;
+      }
+
+      TRCC(ctx, L"open hard disk {} at {}", info.path, fmt_as_ptr(disk_handle));
+    } else {
+      std::string disk_name{
+          actual_path.substr(last_slash + 1, actual_path.npos)};
+
+      auto wdisk_name = utf8_to_utf16(disk_name);
+      auto directory = original_disk_directory(ctx, p_ctx, wdisk_name);
+
+      if (!directory) {
+        if (!restore_ctx->default_disk_loc.empty()) {
+          JERR(ctx,
+               L"Could not determine the original directory of the disk {}; "
+               L"trying default location '{}' instead",
+               wdisk_name, restore_ctx->default_disk_loc);
+          directory = restore_ctx->default_disk_loc;
+        } else {
+          JFATAL(ctx,
+                 L"Could not determine the original directory of the disk {}",
+                 wdisk_name);
+          return bRC_Error;
+        }
+      } else if (!PathFileExistsW(directory->c_str())) {
+        if (!restore_ctx->default_disk_loc.empty()) {
+          JWARN(ctx,
+                L"Original directory '{}' of the disk {} does not exist "
+                L"anymore; trying default location '{}' instead",
+                *directory, wdisk_name, restore_ctx->default_disk_loc);
+          directory = restore_ctx->default_disk_loc;
+        } else {
+          JWARN(
+              ctx,
+              L"Original directory '{}' of the disk {} does not exist anymore.",
+              *directory, wdisk_name);
+          return bRC_Error;
+        }
+      }
+
+      append_slash_if_necessary(*directory);
+      auto first_path = std::format(L"{}{}", *directory, wdisk_name);
+      auto created_path = first_path;
+      bool warn_on_path_change = false;
+
+      for (size_t i = 0; i < 5; ++i) {
+        if (!PathFileExistsW(created_path.c_str())) { break; }
+
+        // if the old path (still) exists, then we do not want to overwrite it
+        // instead create a differently named file
+
+        warn_on_path_change = true;
+        created_path = std::format(L"{}bareos-{}-{}-{}", *directory,
+                                   p_ctx->jobid, i, wdisk_name);
+      }
+
+      if (PathFileExistsW(created_path.c_str())) {
+        JFATAL(
+            ctx,
+            L"could not create a suitable file for the disk {} in directory {}",
+            wdisk_name, *directory);
+        return bRC_Error;
+      }
+
+      if (warn_on_path_change) {
+        JWARN(ctx, L"'{}' already exists, using '{}' for restore instead",
+              first_path, created_path);
+      }
+
+      DBGC(ctx, L"disk map {} => {}", wdisk_name, created_path);
+      restore_ctx->disk_map[disk_name] = disk_info{created_path};
+
+      auto virtual_size = rp->statp.st_size;
+      auto block_size = rp->statp.st_blksize;
+      auto sector_size = rp->statp.st_blocks;
+
+      CREATE_VIRTUAL_DISK_PARAMETERS params;
+      params.Version = CREATE_VIRTUAL_DISK_VERSION_1;
+      params.Version1 = {
+          .UniqueId = 0,  // let the system try to create a unique id
+          .MaximumSize = virtual_size,
+          .BlockSizeInBytes = block_size,
+          .SectorSizeInBytes = static_cast<ULONG>(sector_size),
+          .ParentPath = NULL,
+          .SourcePath = NULL,
+      };
+
+      auto result = CreateVirtualDisk(
+          &vst, created_path.c_str(), VIRTUAL_DISK_ACCESS_ALL, NULL,
+          CREATE_VIRTUAL_DISK_FLAG_NONE, 0, &params, NULL, &disk_handle);
+
+      if (result != ERROR_SUCCESS) {
+        JERR(ctx, L"could not create initial hard disk at {}.  Err={} ({:X})",
+             created_path, format_win32_error(result), result);
+        return bRC_Error;
+      }
+
+      TRCC(ctx, L"created hard disk {} at {}", created_path.c_str(),
+           fmt_as_ptr(disk_handle));
+
+      JINFO(ctx, L"restoring disk  {} ('{}') to '{}'", wdisk_name, wactual_name,
+            created_path);
+    }
+
+    restore_ctx->disk_handle = disk_handle;
+    restore_ctx->current_offset = 0;
+    rp->create_status = CF_EXTRACT;
+
+    return bRC_OK;
+  } catch (const std::exception& ex) {
+    JERR(ctx, "could not restore file '{}'. Err={}", rp->ofname, ex.what());
+    return bRC_Error;
+  } catch (...) {
+    JERR(ctx, "could not restore file '{}'", rp->ofname);
+    return bRC_Error;
+  }
+}
+
+/**
+ * We will get here if the File is a directory after everything is written in
+ * the directory.
+ */
+static bRC setFileAttributes(PluginContext*, restore_pkt*) { return bRC_OK; }
+
+// When using Incremental dump, all previous dumps are necessary
+static bRC checkFile(PluginContext*, char*) { return bRC_OK; }

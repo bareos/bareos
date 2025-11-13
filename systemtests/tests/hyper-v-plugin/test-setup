@@ -1,0 +1,93 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+#  first we check that we can actually do stuff
+if ! which powershell; then
+  echo "powershell was not found"
+  exit 77
+fi
+
+cat <<EOF >"${tmp}/ps_commands"
+if (-Not (Get-Module -ListAvailable -Name "Hyper-V")) {
+   Write-Host "hyper-v unavailable"
+}
+EOF
+
+errors=$(ps_exec "${tmp}/ps_commands")
+
+if [ -n "${errors}" ]; then
+  echo "hyper-v powershell module was not found"
+  exit 77
+fi
+
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
+
+bin/bareos start
+bin/bareos status
+
+# make sure, director is up and running.
+print_debug "$(bin/bconsole <<<"status dir")"
+
+# create the disk for the vm
+
+test_vm_name="bareos-test-vm-$(date -Ins)"
+text="this is a test"
+disk_path="disk.vhdx"
+file_name="test.txt"
+
+# create a virtual disk with a single ntfs partition, then create a vm that uses
+# that disk
+
+cat <<EOF >"${tmp}/ps_commands"
+^ErrorActionPreference= 'Stop';
+^vhd = New-VHD -Path "${tmp}/${disk_path}" -SizeBytes 1GB;
+^disk = Mount-VHD ^vhd.Path -PassThru | Initialize-Disk -PartitionStyle MBR -PassThru;
+^disk | New-Partition -UseMaximumSize | Format-Volume -FileSystem NTFS -Force | Out-Null;
+Dismount-VHD ^vhd.Path;
+^vm = New-VM "${test_vm_name}" -MemoryStartupBytes 512MB -VHDPath ^vhd.Path;
+^template = Get-Content vm.info.template -Raw;
+^content = ^template.Replace('{name}', 'vm').Replace('{vm_id}', ^vm.VMId).Replace('{vm_name}', ^vm.VMName).Replace('{vm_disk}', ^vhd.Path);
+^content | Out-File -Encoding Ascii -NoNewLine -FilePath "${tmp}/${vm_data_file}";
+EOF
+
+# delete via Remove-VM $vm -Force
+
+ps_exec "${tmp}/ps_commands"
+
+# now we need to create the config file for our backup
+
+#shellcheck source=vm.info.template
+source "${tmp}/${vm_data_file}"
+
+cat <<EOF >"${tmp}/hyper-v.conf"
+{ "vmname" : "${vm_name}" }
+EOF

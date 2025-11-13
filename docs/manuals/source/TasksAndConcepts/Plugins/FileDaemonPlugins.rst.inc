@@ -16,6 +16,7 @@ File Daemon plugins are configured by the :strong:`Plugin` directive of a :ref:`
 .. include:: Plugins/FileDaemonPlugins/BpipePlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/GlusterFSPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/GrpcPlugin.rst.inc
+.. include:: Plugins/FileDaemonPlugins/HyperVPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/LDAPPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/MariaDBmariabackupPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/MSSqlPlugin.rst.inc

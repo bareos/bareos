@@ -1,0 +1,173 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+#
+# Run a hyper-v full backup and restore it
+#
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+if ! [ -f "${tmp}/hyper-v.conf" ]; then
+  echo "setup was not done correctly, skipping this test"
+  exit 77
+fi
+
+#shellcheck source=vm.info.template
+source "${tmp}/${vm_data_file}"
+
+start_test
+
+data_dir="${tmp}/data"
+
+if ! [ -d "${data_dir}" ]; then
+  "${data_dir} (from the first testrunner) is missing.  Cannot continue ..."
+  exit 1
+fi
+
+cat <<EOF >"${data_dir}/${incr_backup_file}"
+this was created before the incr backup
+EOF
+
+cat <<EOF >"${runner_tmp}/ps_commands"
+^vm = Get-VM -Id "${vm_id}";
+^disk = Mount-VHD ^vm.HardDrives.Path -PassThru | Get-Disk;
+^vol = ^disk | Get-Partition | Get-Volume;
+Copy-Item -Path $(cygpath -w "${data_dir}/${incr_backup_file}") -Destination ^vol.Path;
+Dismount-VHD ^vm.HardDrives.Path;
+EOF
+
+ps_exec "${runner_tmp}/ps_commands"
+
+cat <<END_OF_DATA >"${runner_tmp}/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${runner_tmp}/setup.out
+setdebug level=400 trace=1 client
+run job=$JobName level=Incremental yes
+status director
+status client
+status storage=File
+wait
+@$out ${runner_tmp}/backup.out
+messages
+@$out ${runner_tmp}/jobs.out
+list jobs
+@$out ${runner_tmp}/restore.out
+restore client=bareos-fd fileset=SelfTest select all done yes
+wait
+setdebug level=400 trace=0 client
+messages
+END_OF_DATA
+
+run_bconsole "${runner_tmp}/bconcmds"
+check_for_zombie_jobs storage=File
+
+check_log "${runner_tmp}/backup.out"
+check_log "${runner_tmp}/restore.out"
+
+restore_dir="${runner_tmp}/restores"
+mkdir -p "${restore_dir}"
+
+# get the restored vm and its disk
+cat <<EOF >"${runner_tmp}/ps_commands2"
+^vm = Get-VM -Name "${vm_name}" | Where-Object { ^_.VMId -ne "${vm_id}" };
+^path = ^vm.HardDrives.Path;
+if (^path.getType().FullName -ne "System.String") { exit 1; };
+^template = Get-Content vm.info.template -Raw;
+^content = ^template.Replace('{name}', 'restored').Replace('{vm_id}', ^vm.VMId).Replace('{vm_name}', ^vm.VMName).Replace('{vm_disk}', ^path);
+^content | Out-File -Encoding Ascii -NoNewLine -FilePath "${runner_tmp}/restored.info";
+EOF
+
+ps_exec "${runner_tmp}/ps_commands2"
+
+if ! [ -f "${runner_tmp}/restored.info" ]; then
+  echo "could not determine where the disk was restored too"
+  exit 1
+fi
+
+source "${runner_tmp}/restored.info"
+
+echo "restored to ${restored_disk}"
+
+# the restored path will contain {} and backward slashes, and may contain
+# other special characters, so we need to escape them for grep
+# Sadly we cannot simply escape them by using backslash, as you cannot escape
+# backslash in basic regular expressions, so
+# \\{ is equivilanent to [\]\{ instead of [\][{]
+# For this reason we "escape" characters by enclosing them in [] as these rob
+# all of them of their magic combination property without changing the meaning
+# of the actual string
+# Its possible that the combination \[ will also mess something up
+# FIXME: think about whether we also need to escape [,] and if so how
+escaped_disk=$(sed 's/\([<>+?*(){}\\|]\)/[\1]/g' <<<"${restored_disk}")
+
+expect_grep "restoring disk.*${escaped_disk}" \
+  "${runner_tmp}/restore.out" \
+  "disk was not restored"
+
+expect_grep "changing disk path.*${escaped_disk}" \
+  "${runner_tmp}/restore.out" \
+  "disk was not changed; something went wrong"
+
+# sadly a lot of powershell functions dont work with volume guid paths
+# so we need to use .net directly
+
+cat <<EOF >"${runner_tmp}/ps_commands"
+^disk = Mount-VHD "${restored_disk}" -PassThru | Get-Disk;
+^vol = ^disk | Get-Partition | Get-Volume;
+[System.IO.Directory]::EnumerateFileSystemEntries(^vol.Path) | ForEach-Object {
+   ^name = [System.IO.Path]::GetFileName(^_);
+   ^target = Join-Path $(cygpath -w "${restore_dir}") ^name;
+   [System.IO.File]::Copy(^_, ^target, ^true);
+};
+Dismount-VHD "${restored_disk}";
+EOF
+
+ps_exec "${runner_tmp}/ps_commands"
+
+check_recursive_diff_of_dirs "${data_dir}" "${restore_dir}"
+
+expect_grep "Backup Level:[[:space:]]*Incremental" \
+  "${runner_tmp}/backup.out" \
+  "Did not create a full backup"
+
+cat <<EOF >"${runner_tmp}/ps_commands"
+Get-VM -Id "${restored_id}" | Remove-VM -Force
+EOF
+
+ps_exec "${runner_tmp}/ps_commands"
+
+rm "$(cygpath "${restored_disk}")"
+
+end_test
