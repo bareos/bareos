@@ -1,0 +1,3 @@
+{name}_id="{vm_id}"
+{name}_name="{vm_name}"
+{name}_disk="{vm_disk}"
