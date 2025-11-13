@@ -19,9 +19,44 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-#### BAREOSFD module
+#### BAREOSFD TYPES
 
 from enum import IntEnum, StrEnum, global_enum
+from dataclasses import dataclass
+
+
+@global_enum
+class bRCs(IntEnum):
+    bRC_OK = 0
+    bRC_Stop = 1
+    bRC_Error = 2
+    bRC_More = 3
+    bRC_Term = 4
+    bRC_Seen = 5
+    bRC_Core = 6
+    bRC_Skip = 7
+    bRC_Cancel = 8
+
+
+@global_enum
+class bJobMessageType(IntEnum):
+    M_ABORT = 1
+    M_DEBUG = 2
+    M_FATAL = 3
+    M_ERROR = 4
+    M_WARNING = 5
+    M_INFO = 6
+    M_SAVED = 7
+    M_NOTSAVED = 8
+    M_SKIPPED = 9
+    M_MOUNT = 10
+    M_ERROR_TERM = 11
+    M_TERM = 12
+    M_RESTORED = 13
+    M_SECURITY = 14
+    M_ALERT = 15
+    M_VOLMGMT = 16
+
 
 @global_enum
 class bVariable(IntEnum):
@@ -173,84 +208,46 @@ class bJobTypes(StrEnum):
     JT_CONSOLIDATE = "O"
 
 
+@dataclass(slots=True)
 class RestoreObject:
     """bareos restore object"""
 
-    __slots__ = (
-        "object_name",
-        "object",
-        "plugin_name",
-        "object_type",
-        "object_len",
-        "object_full_len",
-        "object_index",
-        "object_compression",
-        "stream",
-        "JobId",
-    )
-
-    object_name: str
-    object: bytes
-    plugin_name: str
-    object_type: bFileType
-    object_len: int
-    object_full_len: int
-    object_index: int
-    object_compression: int
-    stream: int
-    JobId: int
-
-    def __init__(self):
-        self.object_name = None
-        self.object = None
-        self.plugin_name = None
-        self.object_type = 0
-        self.object_len = 0
-        self.object_full_len = 0
-        self.object_index = 0
-        self.object_compression = 0
-        self.stream = 0
-        self.JobId = 0
-
-    def __repr__(self):
-        return (
-            "RestoreObject("
-            f"object_name = {self.object_name}, "
-            f"object = {self.object}, "
-            f"plugin_name = {self.plugin_name}, "
-            f"object_type = {self.object_type}, "
-            f"object_len = {self.object_len}, "
-            f"object_full_len = {self.object_full_len}, "
-            f"object_index = {self.object_index}, "
-            f"object_compression = {self.object_compression}, "
-            f"stream = {self.stream}, "
-            f"JobId = {self.JobId}"
-            ")"
-        )
+    object_name: str = None
+    object: bytes = None
+    plugin_name: str = None
+    object_type: bFileType = 0
+    object_len: int = 0
+    object_full_len: int = 0
+    object_index: int = 0
+    object_compression: int = 0
+    stream: int = 0
+    JobId: int = 0
 
 
 from time import time
 import stat
 
 
+@dataclass(slots=True)
 class StatPacket:
     """bareos stat packet"""
 
-    __slots__ = (
-        "dev",
-        "ino",
-        "mode",
-        "nlink",
-        "uid",
-        "gid",
-        "rdev",
-        "size",
-        "atime",
-        "mtime",
-        "ctime",
-        "blksize",
-        "blocks",
-    )
+    dev: int = 0
+    ino: int = 0
+    mode: int = 0o700 | stat.S_IFREG
+    nlink: int = 0
+    uid: int = 0
+    gid: int = 0
+    rdev: int = 0
+    size: int = -1
+
+    # maybe there is a way to initialise these with "now()" somehow ?
+    atime: int = 0
+    mtime: int = 0
+    ctime: int = 0
+
+    blksize: int = 4096
+    blocks: int = 1
 
     def __init__(self):
         now = int(time())
@@ -268,149 +265,167 @@ class StatPacket:
         self.blksize = 4096
         self.blocks = 1
 
-    def __repr__(self):
-        return (
-            "StatPacket("
-            f"dev = {self.dev}, "
-            f"ino = {self.ino}, "
-            f"mode = {self.mode}, "
-            f"nlink = {self.nlink}, "
-            f"uid = {self.uid}, "
-            f"gid = {self.gid}, "
-            f"rdev = {self.rdev}, "
-            f"size = {self.size}, "
-            f"atime = {self.atime}, "
-            f"mtime = {self.mtime}, "
-            f"ctime = {self.ctime}, "
-            f"blksize = {self.blksize}, "
-            f"blocks = {self.blocks}"
-            ")"
-        )
 
-
+@dataclass(slots=True)
 class SavePacket:
     """bareos save packet"""
 
-    __slots__ = (
-        "fname",
-        "link",
-        "statp",
-        "type",
-        "flags",
-        "no_read",
-        "portable",
-        "accurate_found",
-        "cmd",
-        "save_time",
-        "delta_seq",
-        "object_name",
-        "object",
-        "object_len",
-        "object_index",
-    )
+    fname: str = None
+    link: str = None
+    statp: int = 0
+    type: int = 0
+    flags: int = 0
+    no_read: bool = False
+    portable: bool = False
+    accurate_found: bool = False
+    cmd: str = None
+    save_time: int = 0
+    delta_seq: int = 0
+    object_name: str = None
+    object: bytes = None
+    object_len: int = 0
+    object_index: int = 0
 
-    fname: str
-    link: str
-    statp: int
-    type: int
-    flags: int
-    no_read: bool
-    portable: bool
-    accurate_found: bool
-    cmd: int
-    save_time: int
-    delta_seq: int
-    object_name: str
-    object: bytes
-    object_len: int
-    object_index: int
 
-    def __init__(self):
-        self.fname = None
-        self.link = None
-        self.statp = 0
-        self.type = 0
-        self.flags = 0
-        self.no_read = False
-        self.portable = False
-        self.accurate_found = False
-        self.cmd = 0
-        self.save_time = 0
-        self.delta_seq = 0
-        self.object_name = None
-        self.object = None
-        self.object_len = 0
-        self.object_index = 0
-
-    def __repr__(self):
-        return ("SavePacket("
-                f"fname={self.fname}, "
-                f"link={self.link}, "
-                f"type={self.type}, "
-                f"flags = {self.flags}, "
-                f"no_read = {self.no_read}, "
-                f"portable = {self.portable}, "
-                f"accurate_found = {self.accurate_found}, "
-                f"cmd = {self.cmd}, "
-                f"save_time = {self.save_time}, "
-                f"delta_seq = {self.delta_seq}, "
-                f"object_name = {self.object_name}, "
-                f"object = {self.object}, "
-                f"object_len = {self.object_len}, "
-                f"object_index = {self.object_index}"
-                ")"
-                )
-
+@dataclass(slots=True)
 class RestorePacket:
-    # int32_t stream; /* Attribute stream id */
-    # int32_t data_stream;          /* Id of data stream to follow */
-    # int32_t type;                 /* File type FT */
-    # int32_t file_index;           /* File index */
-    # int32_t LinkFI;               /* File index to data if hard link */
-    # uint32_t uid;                 /* Userid */
-    # PyObject* statp;              /* Decoded stat packet */
-    # const char* attrEx;           /* Extended attributes if any */
-    # const char* ofname;           /* Output filename */
-    # const char* olname;           /* Output link name */
-    # const char* where;            /* Where */
-    # const char* RegexWhere;       /* Regex where */
-    # int replace;                  /* Replace flag */
-    # int create_status;            /* Status from createFile() */
-    # int filedes;                  /* filedescriptor for read/write in core */
-    pass
+    """bareos restore packet"""
+
+    stream: int = 0  # Attribute stream id
+    data_stream: int = 0  # Id of data stream to follow
+    type: int = 0  # File type FT
+    file_index: int = 0  # File index
+    LinkFI: int = 0  # File index to data if hard link
+    uid: int = 0  # Userid
+    statp: StatPacket = None  # Decoded stat packet
+    attrEx: str = None  # Extended attributes if any
+    ofname: str = None  # Output filename
+    olname: str = None  # Output link name
+    where: str = None  # Where
+    RegexWhere: str = None  # Regex where
+    replace: int = 0  # Replace flag
+    create_status: int = 0  # Status from createFile()
+    filedes: int = 0  # filedescriptor for read/write in core
 
 
+@dataclass(slots=True)
 class IoPacket:
-    # uint16_t func; /* Function code */
-    # int32_t count;               /* Read/Write count */
-    # int32_t flags;               /* Open flags */
-    # int32_t mode;                /* Permissions for created files */
-    # PyObject* buf;               /* Read/Write buffer */
-    # const char* fname;           /* Open filename */
-    # int32_t status;              /* Return status */
-    # int32_t io_errno;            /* Errno code */
-    # int32_t lerror;              /* Win32 error code */
-    # int32_t whence;              /* Lseek argument */
-    # int64_t offset;              /* Lseek argument */
-    # bool win32;                  /* Win32 GetLastError returned */
-    # int filedes;                 /* filedescriptor for read/write in core */
-    pass
+    """bareos io packet"""
+
+    func: bIOPS = None  # Function code
+    count: int = 0  # Read/Write count
+    flags: int = 0  # Open flags
+    mode: int = 0  # Permissions for created files
+    buf: bytes = None  # Read/Write buffer
+    fname: str = None  # Open filename
+    status: int = 0  # Return status
+    io_errno: int = 0  # Errno code
+    lerror: int = 0  # Win32 error code
+    whence: int = 0  # Lseek argument
+    offset: int = 0  # Lseek argument
+    win32: bool = False  # Win32 GetLastError returned
+    filedes: int = -1  # filedescriptor for read/write in core
 
 
+@dataclass(slots=True)
 class AclPacket:
-    # const char* fname; /* Filename */
-    # PyObject* content;               /* ACL content */
-    pass
+    """bareos acl packet"""
+
+    fname: str = None  # Filename
+    content: str = None  # ACL content
 
 
+@dataclass(slots=True)
 class XattrPacket:
-    # const char* fname; /* Filename */
-    # PyObject* name;                  /* XATTR name */
-    # PyObject* value;                 /* XATTR value */
+    """bareos xattr packet"""
+
+    fname: str = None  # Filename
+    name: str = None  # XATTR name
+    value: str = None  # XATTR value
+
+
+#### BAREOSFD TYPES END
+
+#### BAREOSFD BAREOS FUNCS
+
+
+def GetValue(var: bVariable):
     pass
 
 
-#### BAREOSFD MODULE END
+def SetValue(var: bVariable, val):
+    pass
+
+
+def DebugMessage(level: int, string: str):
+    pass
+
+
+def JobMessage(type: bJobMessageType, string: str):
+    pass
+
+
+def RegisterEvents(events: list[bEventType]):
+    pass
+
+
+def UnRegisterEvents(events: list[bEventType]):
+    pass
+
+
+def GetInstanceCount():
+    pass
+
+
+def AddExclude():
+    pass
+
+
+def AddInclude():
+    pass
+
+
+def AddOptions():
+    pass
+
+
+def AddRegex():
+    pass
+
+
+def AddWild():
+    pass
+
+
+def NewOptions():
+    pass
+
+
+def NewInclude():
+    pass
+
+
+def NewPreInclude():
+    pass
+
+
+def CheckChanges(save_pkt: SavePacket):
+    pass
+
+
+def AcceptFile(save_pkt: SavePacket):
+    pass
+
+
+def SetSeenBitmap(all: bool, fname: str = None):
+    pass
+
+
+def ClearSeenBitmap(all: bool, fname: str = None):
+    pass
+
+
+#### BAREOSFD BAREOS FUNCS END
 
 
 # import bareos_bp2
@@ -418,3 +433,10 @@ class XattrPacket:
 #
 # def readmsg():
 #    pass
+#
+# def writemsg():
+#    pass
+
+
+def setup():
+    pass
