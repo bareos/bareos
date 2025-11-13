@@ -4,4 +4,5 @@ Storage {
   Password = "@sd_password@"
   Device = FileStorage
   Media Type = File
+  Maximum Concurrent Jobs = 10 # should be high enough to allow the use all configure devices
 }
