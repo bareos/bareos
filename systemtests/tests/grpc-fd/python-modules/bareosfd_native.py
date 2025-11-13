@@ -23,7 +23,6 @@
 
 from enum import IntEnum, StrEnum, global_enum
 
-
 @global_enum
 class bVariable(IntEnum):
     bVarJobId = 1
@@ -159,7 +158,7 @@ class bLevels(StrEnum):
 
 
 @global_enum
-class bJobTypes(Enum):
+class bJobTypes(StrEnum):
     JT_BACKUP = "B"
     JT_MIGRATED_JOB = "M"
     JT_VERIFY = "V"
@@ -177,10 +176,34 @@ class bJobTypes(Enum):
 class RestoreObject:
     """bareos restore object"""
 
+    __slots__ = (
+        "object_name",
+        "object",
+        "plugin_name",
+        "object_type",
+        "object_len",
+        "object_full_len",
+        "object_index",
+        "object_compression",
+        "stream",
+        "JobId",
+    )
+
+    object_name: str
+    object: bytes
+    plugin_name: str
+    object_type: bFileType
+    object_len: int
+    object_full_len: int
+    object_index: int
+    object_compression: int
+    stream: int
+    JobId: int
+
     def __init__(self):
-        self.object_name = ""
-        self.object = bytes()
-        self.plugin_name = ""
+        self.object_name = None
+        self.object = None
+        self.plugin_name = None
         self.object_type = 0
         self.object_len = 0
         self.object_full_len = 0
@@ -189,6 +212,22 @@ class RestoreObject:
         self.stream = 0
         self.JobId = 0
 
+    def __repr__(self):
+        return (
+            "RestoreObject("
+            f"object_name = {self.object_name}, "
+            f"object = {self.object}, "
+            f"plugin_name = {self.plugin_name}, "
+            f"object_type = {self.object_type}, "
+            f"object_len = {self.object_len}, "
+            f"object_full_len = {self.object_full_len}, "
+            f"object_index = {self.object_index}, "
+            f"object_compression = {self.object_compression}, "
+            f"stream = {self.stream}, "
+            f"JobId = {self.JobId}"
+            ")"
+        )
+
 
 from time import time
 import stat
@@ -196,6 +235,22 @@ import stat
 
 class StatPacket:
     """bareos stat packet"""
+
+    __slots__ = (
+        "dev",
+        "ino",
+        "mode",
+        "nlink",
+        "uid",
+        "gid",
+        "rdev",
+        "size",
+        "atime",
+        "mtime",
+        "ctime",
+        "blksize",
+        "blocks",
+    )
 
     def __init__(self):
         now = int(time())
@@ -213,25 +268,98 @@ class StatPacket:
         self.blksize = 4096
         self.blocks = 1
 
+    def __repr__(self):
+        return (
+            "StatPacket("
+            f"dev = {self.dev}, "
+            f"ino = {self.ino}, "
+            f"mode = {self.mode}, "
+            f"nlink = {self.nlink}, "
+            f"uid = {self.uid}, "
+            f"gid = {self.gid}, "
+            f"rdev = {self.rdev}, "
+            f"size = {self.size}, "
+            f"atime = {self.atime}, "
+            f"mtime = {self.mtime}, "
+            f"ctime = {self.ctime}, "
+            f"blksize = {self.blksize}, "
+            f"blocks = {self.blocks}"
+            ")"
+        )
+
 
 class SavePacket:
-    # PyObject* fname;
-    # PyObject* link;                /* Link name if any */
-    # PyObject* statp;               /* System stat() packet for file */
-    # int32_t type;                  /* FT_xx for this file */
-    # PyObject* flags;               /* Bareos internal flags */
-    # bool no_read;        /* During the save, the file should not be saved */
-    # bool portable;       /* set if data format is portable */
-    # bool accurate_found; /* Found in accurate list (valid after CheckChanges()) */
-    # char* cmd;           /* Command */
-    # time_t save_time;    /* Start of incremental time */
-    # uint32_t delta_seq;  /* Delta sequence number */
-    # PyObject* object_name; /* Object name to create */
-    # PyObject* object;      /* Restore object data to save */
-    # int32_t object_len;    /* Restore object length */
-    # int32_t object_index;  /* Restore object index */
-    pass
+    """bareos save packet"""
 
+    __slots__ = (
+        "fname",
+        "link",
+        "statp",
+        "type",
+        "flags",
+        "no_read",
+        "portable",
+        "accurate_found",
+        "cmd",
+        "save_time",
+        "delta_seq",
+        "object_name",
+        "object",
+        "object_len",
+        "object_index",
+    )
+
+    fname: str
+    link: str
+    statp: int
+    type: int
+    flags: int
+    no_read: bool
+    portable: bool
+    accurate_found: bool
+    cmd: int
+    save_time: int
+    delta_seq: int
+    object_name: str
+    object: bytes
+    object_len: int
+    object_index: int
+
+    def __init__(self):
+        self.fname = None
+        self.link = None
+        self.statp = 0
+        self.type = 0
+        self.flags = 0
+        self.no_read = False
+        self.portable = False
+        self.accurate_found = False
+        self.cmd = 0
+        self.save_time = 0
+        self.delta_seq = 0
+        self.object_name = None
+        self.object = None
+        self.object_len = 0
+        self.object_index = 0
+
+    def __repr__(self):
+        return ("SavePacket("
+                f"fname={self.fname}, "
+                f"link={self.link}, "
+                f"type={self.type}, "
+                f"flags = {self.flags}, "
+                f"no_read = {self.no_read}, "
+                f"portable = {self.portable}, "
+                f"accurate_found = {self.accurate_found}, "
+                f"cmd = {self.cmd}, "
+                f"save_time = {self.save_time}, "
+                f"delta_seq = {self.delta_seq}, "
+                f"object_name = {self.object_name}, "
+                f"object = {self.object}, "
+                f"object_len = {self.object_len}, "
+                f"object_index = {self.object_index}"
+                ")"
+                )
 
 class RestorePacket:
     # int32_t stream; /* Attribute stream id */
