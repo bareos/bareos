@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - plugin: postgresql do testing with wal compress on [PR #2420]
+- cmake: fix traymonitor startup on windows [PR #2424]
 
 ## [24.0.7] - 2025-10-30
 
@@ -551,4 +552,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2402]: https://github.com/bareos/bareos/pull/2402
 [PR #2414]: https://github.com/bareos/bareos/pull/2414
 [PR #2420]: https://github.com/bareos/bareos/pull/2420
+[PR #2424]: https://github.com/bareos/bareos/pull/2424
 [unreleased]: https://github.com/bareos/bareos/tree/master
