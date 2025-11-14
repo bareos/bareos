@@ -123,6 +123,25 @@ struct flush_fd {
   const char* read_start() const noexcept { return buffer.data(); }
 
   size_t read_size() const noexcept { return buffer.size() - buffer_free; }
+
+  void print_msg(PluginContext* ctx, const char* msg) const noexcept
+  {
+    // TODO: fix this, outputting to a jobmessage is _not_
+    //       thread safe
+    //       We should instead buffer them and have the "main" thread
+    //       regularly flush them.  Sadly plugins do not have access
+    //       to Qmsg
+
+    switch (output) {
+      case flush_fd::OUTPUT_DEBUG: {
+        DebugLog(ctx, 100, msg);
+      } break;
+      case flush_fd::OUTPUT_JOB_ERROR: {
+        // JobLog(ctx, M_ERROR, msg);
+        DebugLog(ctx, 100, msg);
+      } break;
+    }
+  }
 };
 
 void do_std_io(std::atomic<bool>* quit,
@@ -142,7 +161,7 @@ void do_std_io(std::atomic<bool>* quit,
 
   std::array fds = {
       flush_fd{out.get(), "stdout", flush_fd::OUTPUT_DEBUG},
-      flush_fd{err.get(), "stderr", flush_fd::OUTPUT_JOB_ERROR},
+      flush_fd{err.get(), "stderr", flush_fd::OUTPUT_DEBUG},
   };
 
   size_t fd_count = fds.size();
@@ -217,15 +236,8 @@ void do_std_io(std::atomic<bool>* quit,
             std::string_view line{print_start,
                                   static_cast<size_t>(line_end - print_start)};
 
-            switch (fds[i].output) {
-              case flush_fd::OUTPUT_DEBUG: {
-                DebugLog(ctx, 100, FMT_STRING("{}: {}"), fds[i].name, line);
-              } break;
-              case flush_fd::OUTPUT_JOB_ERROR: {
-                JobLog(ctx, M_ERROR, FMT_STRING("{}: {}"), fds[i].name, line);
-
-              } break;
-            }
+            fds[i].print_msg(
+                ctx, fmt::format(FMT_STRING("{}: {}"), fds[i].name, line));
             // if we found a newline then we print it as debug message
 
             // skip the newline itself
@@ -243,18 +255,9 @@ void do_std_io(std::atomic<bool>* quit,
 
             std::string_view content{fds[i].read_start(), fds[i].read_size()};
 
-            switch (fds[i].output) {
-              case flush_fd::OUTPUT_DEBUG: {
-                DebugLog(ctx, 100, FMT_STRING("{} (full): {}"), fds[i].name,
-                         content);
-              } break;
-              case flush_fd::OUTPUT_JOB_ERROR: {
-                JobLog(ctx, M_ERROR, FMT_STRING("{} (full): {}"), fds[i].name,
-                       content);
 
-              } break;
-            }
-
+            fds[i].print_msg(ctx, fmt::format(FMT_STRING("{} (full): {}"),
+                                              fds[i].name, content));
             fds[i].reset_buffer();
           }
         }
@@ -279,15 +282,8 @@ void do_std_io(std::atomic<bool>* quit,
   for (auto& buf : fds) {
     if (buf.read_size() > 0) {
       auto content = std::string_view{buf.read_start(), buf.read_size()};
-      switch (buf.output) {
-        case flush_fd::OUTPUT_DEBUG: {
-          DebugLog(ctx, 100, FMT_STRING("{} (dump): {}"), buf.name, content);
-        } break;
-        case flush_fd::OUTPUT_JOB_ERROR: {
-          JobLog(ctx, M_ERROR, FMT_STRING("{} (dump): {}"), buf.name, content);
-
-        } break;
-      }
+      buf.print_msg(
+          ctx, fmt::format(FMT_STRING("{} (dump): {}"), buf.name, content));
     }
   }
 }
