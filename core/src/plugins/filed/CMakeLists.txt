@@ -116,4 +116,8 @@ endif()
 
 add_subdirectory(grpc)
 
+if(ENABLE_BARRI)
+  add_subdirectory(windows_dr)
+endif()
+
 include(DebugEdit)

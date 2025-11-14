@@ -131,6 +131,7 @@ target_sources(
           qualified_resource_name_type_converter.cc
 )
 
+# this is done to ensure every other object can be cached
 add_library(version-obj OBJECT version.cc)
 target_compile_definitions(
   version-obj

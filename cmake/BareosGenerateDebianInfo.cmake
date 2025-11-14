@@ -102,6 +102,13 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-contrib-tools")
   endif()
 
+  if(ENABLE_BARRI)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS
+         "bareos-filedaemon-barri-python3-plugin"
+    )
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-barri-cli")
+  endif()
+
 endif()
 
 include(BareosConfigureFile)

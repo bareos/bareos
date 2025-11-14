@@ -165,6 +165,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - plugins: introduce hyper-v backup [PR #2284]
 - defaultconfig: introduce automatic diskchanger [PR #2427]
 - plugin: change prefix @hyper-v@ -> @HYPER-V [PR #2431]
+- plugins: introduce windows disaster recovery  imager (barri) [PR #2285]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -248,6 +249,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2279]: https://github.com/bareos/bareos/pull/2279
 [PR #2283]: https://github.com/bareos/bareos/pull/2283
 [PR #2284]: https://github.com/bareos/bareos/pull/2284
+[PR #2285]: https://github.com/bareos/bareos/pull/2285
 [PR #2286]: https://github.com/bareos/bareos/pull/2286
 [PR #2287]: https://github.com/bareos/bareos/pull/2287
 [PR #2290]: https://github.com/bareos/bareos/pull/2290

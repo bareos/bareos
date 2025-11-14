@@ -169,6 +169,13 @@ option(ENABLE_WEBUI "Build with WEBUI" ON)
 option(docs-only "Build only the documentation" OFF)
 option(docs-build-json "Update the configuration schema JSON files" OFF)
 
+set(ENABLE_BARRI_INIT ON)
+if(client-only OR "${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
+  set(ENABLE_BARRI_INIT OFF)
+endif()
+
+option(ENABLE_BARRI "enable building of barri" "${ENABLE_BARRI_INIT}")
+
 if(docs-build-json)
   # check for wrong combinations of build flags
   if(docs-only)

@@ -617,22 +617,33 @@ bool IsNameValid(const char* name)
 }
 
 // Add commas to a string, which is presumably a number.
-char* add_commas(char* val, char* buf)
+char* add_commas(const char* val, char* buf)
 {
-  int len, nc;
-  char *p, *q;
-  int i;
+  auto in_length = strlen(val);
+  // we add a comma every three characters, so we have breakpoints at 4, 7, ...
+  auto num_commas = in_length ? (in_length - 1) / 3 : 0;
 
-  if (val != buf) { strcpy(buf, val); }
-  len = strlen(buf);
-  if (len < 1) { len = 1; }
-  nc = (len - 1) / 3;
-  p = buf + len;
-  q = p + nc;
-  *q-- = *p--;
-  for (; nc; nc--) {
-    for (i = 0; i < 3; i++) { *q-- = *p--; }
-    *q-- = ',';
+  if (num_commas == 0) {
+    memmove(buf, val, in_length + 1);
+    return buf;
+  }
+
+  auto out_length = in_length + num_commas;
+  buf[out_length] = '\0';
+
+  // we need to compute where to insert the first comma
+  auto comma_offset = (3 - (in_length % 3)) % 3;
+
+  // we need to copy in reverse, in case val and buf overlap
+  for (int i = in_length - 1; i >= 0; --i) {
+    // we need to move the output by how many commas exist before that
+    // position!
+    auto prev_commas = (i + comma_offset) / 3;
+    buf[i + prev_commas] = val[i];
+  }
+
+  for (size_t i = 0; i < num_commas; ++i) {
+    buf[i * 4 + 3 - comma_offset] = ',';
   }
 
   return buf;
