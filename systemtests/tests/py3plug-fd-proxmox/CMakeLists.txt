@@ -23,7 +23,12 @@ find_program(VZDUMP vzdump)
 find_program(PCT pct)
 find_program(QMRESTORE qmrestore)
 
-if (VZDUMP AND PCT AND QMRESTORE AND TARGET python3-fd AND enable_proxmox_plugin)
+if(VZDUMP
+   AND PCT
+   AND QMRESTORE
+   AND TARGET python3-fd
+   AND ENABLE_PROXMOX_PLUGIN
+)
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
   create_systemtest(
