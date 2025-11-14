@@ -237,7 +237,8 @@ void do_std_io(std::atomic<bool>* quit,
                                   static_cast<size_t>(line_end - print_start)};
 
             fds[i].print_msg(
-                ctx, fmt::format(FMT_STRING("{}: {}"), fds[i].name, line));
+                ctx,
+                fmt::format(FMT_STRING("{}: {}"), fds[i].name, line).c_str());
             // if we found a newline then we print it as debug message
 
             // skip the newline itself
@@ -257,7 +258,8 @@ void do_std_io(std::atomic<bool>* quit,
 
 
             fds[i].print_msg(ctx, fmt::format(FMT_STRING("{} (full): {}"),
-                                              fds[i].name, content));
+                                              fds[i].name, content)
+                                      .c_str());
             fds[i].reset_buffer();
           }
         }
@@ -283,7 +285,8 @@ void do_std_io(std::atomic<bool>* quit,
     if (buf.read_size() > 0) {
       auto content = std::string_view{buf.read_start(), buf.read_size()};
       buf.print_msg(
-          ctx, fmt::format(FMT_STRING("{} (dump): {}"), buf.name, content));
+          ctx,
+          fmt::format(FMT_STRING("{} (dump): {}"), buf.name, content).c_str());
     }
   }
 }

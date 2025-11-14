@@ -145,6 +145,7 @@ if(ENABLE_GRPC)
 
   bareos_configure_file(
     FILES "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"
-    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_native.py" COPY
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_types.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_type_conv.py" COPY
   )
 endif()
