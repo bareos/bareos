@@ -65,6 +65,6 @@ FileSet {
       Acl Support = No
       Xattr Support = No
     }
-    Plugin = "grpc:bareosfd.py"
+    Plugin = "grpc:bareosfd_grpc.py"
   }
 }
