@@ -19,6 +19,6 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
-if(TARGET python3-fd)
+if(TARGET python3-fd AND enable_proxmox_plugin)
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 endif()
