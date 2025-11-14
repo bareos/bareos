@@ -125,6 +125,11 @@ void DebugLog(PluginContext* ctx,
                          formatted.c_str());
 }
 
+static inline void JobLog(PluginContext* ctx, Type type, const char* msg)
+{
+  internal::JobMessage(ctx, type.file, type.line, type.type, msg);
+}
+
 template <typename... Args>
 constexpr void JobLog(PluginContext* ctx,
                       Type type,
