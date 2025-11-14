@@ -164,6 +164,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - stored: implicitly create autochanger from device with count > 1 [PR #2198]
 - plugins: introduce hyper-v backup [PR #2284]
 - defaultconfig: introduce automatic diskchanger [PR #2427]
+- plugin: change prefix @hyper-v@ -> @HYPER-V [PR #2431]
 
 [Issue #1965]: https://bugs.bareos.org/view.php?id=1965
 [PR #1697]: https://github.com/bareos/bareos/pull/1697
@@ -291,4 +292,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2418]: https://github.com/bareos/bareos/pull/2418
 [PR #2423]: https://github.com/bareos/bareos/pull/2423
 [PR #2427]: https://github.com/bareos/bareos/pull/2427
+[PR #2431]: https://github.com/bareos/bareos/pull/2431
 [unreleased]: https://github.com/bareos/bareos/tree/master
