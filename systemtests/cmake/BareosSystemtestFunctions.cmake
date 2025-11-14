@@ -615,6 +615,7 @@ macro(prepare_test_python)
         CONCAT
           pythonpath
           "${CMAKE_SOURCE_DIR}/python-bareos:"
+          "${CMAKE_BINARY_DIR}/core/src/plugins/filed/grpc/proto:"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/ldap:"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/libcloud:"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/filed/python/percona-xtrabackup:"
