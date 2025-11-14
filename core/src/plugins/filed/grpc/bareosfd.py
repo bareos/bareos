@@ -40,6 +40,9 @@ def log(msg):
     print(msg, file=sys.stderr)
 
 
+log("test")
+
+
 def readnbyte(sock, n):
     buff = bytearray(n)
     pos = 0
@@ -368,22 +371,22 @@ def handle_request(req: plugin_pb2.PluginRequest):
             module = __import__(module_name, globals(), locals(), [], 0)
 
             log(f"got module {module}")
-            loader = module["load_bareos_plugin"]
+            loader = module.__dict__["load_bareos_plugin"]
             log(f"got loader {loader}")
         case _:
             raise ValueError
 
-    log(f"hello ???")
     log(f"responding with {resp}")
     return resp
 
 
-try:
-    while True:
-        req = con.read_plugin()
-        resp = handle_request(req)
-        con.write_plugin(resp)
+def run():
+    try:
+        while True:
+            req = con.read_plugin()
+            resp = handle_request(req)
+            con.write_plugin(resp)
 
-except:
-    error = traceback.format_exc()
-    log(f"error = {error}")
+    except:
+        error = traceback.format_exc()
+        log(f"error = {error}")
