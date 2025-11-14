@@ -511,69 +511,106 @@ restoration and restore the job to the |proxmox| filedaemon:
 
 The guest has been recovered and can be now be started via commandline or |proxmox ve| GUI.
 
-While the above example shows the restore of a KVM guest, the procedure is
-exactly the same to recover a Container guest:
+While the above example shows the restore of a KVM guest, the procedure to
+recover a container guest is slightly different.
+When recovering a container backup, the target storage and size need to be
+passed via the plugin paramter ``pctstorage`` to the plugin in the format
 
+``pctstorage=<storagename>\:<size-in-GiB>``
+
+.. note ::
+   This requirement will probably be removed in the next version of the plugin.
+   It is planned to record the original storage and size during the backup and
+   restore to the same recorded values with the option to alter the values
+   during restore.
+
+In the following example, we use ``local-lvm`` as storage and ``8`` as size
+which results in the following plugin options:
+
+.. code-block:: bareosconfig
+   :caption: pctstorage setting for container restores
+
+   python:pctstorage=local-lvm\:8
 
 .. code-block:: bconsole
-   :caption: Example restore of a Container guest to its original guest ID
+   :caption: Example restore of a container guest to its original guest ID
 
-   *<input>restore jobid=2  all done</input>
-   You have selected the following JobId: 2
+   python:pctstorage=local-lvm\:8
 
-   Building directory tree for JobId(s) 2 ...
+   *<input>restore jobid=2 all done</input>
+   Automatically selected Catalog: MyCatalog
    [...]
    1 file selected to be restored.
-
-   Defined Clients:
-   5: proxmox90-fd
-   <input>5</input>
+   [...]
+   6: proxmox90-fd
+   [...]
+   Select the Client (1-7): 6
+   Using Catalog "MyCatalog"
    Run Restore job
-   JobName:         RestoreFiles
-   Bootstrap:       /var/lib/bareos/bareos-dir.restore.4.bsr
+   Priority:        10
    [...]
    Plugin Options:  *None*
+   OK to run? (yes/mod/no): mod
+   Parameters to modify:
+   14: Plugin Options
+   Select parameter to modify (1-14): <input>14</input>
+   Please enter Plugin Options string: <input>python:pctstorage=local-lvm\:8</input>
+   Run Restore job
+   JobName:         RestoreFiles
+   Priority:        10
+   Plugin Options:  python:pctstorage=local-lvm\:8
+   [...]
    OK to run? (yes/mod/no): <input>yes</input>
-   Job queued. JobId=6
-   *messages
-   [...] bareos-dir JobId 6: Version: 25.0.0~pre1327.fd0f53dc3 (31 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
-   [...] bareos-dir JobId 6: Start Restore Job RestoreFiles.2025-11-12_12.57.41_10
-   [...] bareos-dir JobId 6: Connected Storage daemon at barri-server.bareos:9103, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
-   [...] bareos-dir JobId 6:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
-   [...] bareos-dir JobId 6: Using Device "File0001" to read.
-   [...] bareos-dir JobId 6: Connected Client: proxmox90-fd at proxmox90:9102, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
-   [...] bareos-dir JobId 6:  Handshake: Immediate TLS
-   [...] bareos-dir JobId 6:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
-   [...] bareos-sd JobId 6: Connected File Daemon at proxmox90:9102, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
-   [...] bareos-sd JobId 6: Version: 25.0.0~pre1327.fd0f53dc3 (31 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
-   [...] bareos-sd JobId 6: Ready to read from volume "Full-0002" on device "File0001" (/var/lib/bareos/storage).
-   [...] proxmox90-fd JobId 6: Version: 25.0.0~pre1059.097ef5ba3 (12 November 2025) Debian GNU/Linux 13 (trixie)
-   [...] proxmox90-fd JobId 6: python3-fd-mod: Executing pct restore 101 - --rootfs /
-   [...] bareos-sd JobId 6: Forward spacing Volume "Full-0002" to file:block 0:223.
-   [...] proxmox90-fd JobId 6: python3-fd-mod: extracting archive from STDIN
-   [...] bareos-sd JobId 6: End of Volume at file 0 on device "File0001" (/var/lib/bareos/storage), Volume "Full-0002"
-   [...] bareos-sd JobId 6: End of all volumes.
-   [...] bareos-sd JobId 6: Releasing device "File0001" (/var/lib/bareos/storage).
-   [...] proxmox90-fd JobId 6: python3-fd-mod: waiting for command to finish
-   [...] bareos-dir JobId 6: Bareos bareos-dir 25.0.0~pre1327.fd0f53dc3 (31Oct25):
+   Job queued. JobId=4
+   [...] bareos-dir JobId 4: Version: 25.0.0~pre1327.fd0f53dc3 (31 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
+   [...] bareos-dir JobId 4: Start Restore Job RestoreFiles.2025-11-14_18.12.11_08
+   [...] bareos-dir JobId 4: Connected Storage daemon at barri-server.bareos:9103, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] bareos-dir JobId 4:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] bareos-dir JobId 4: Using Device "File0001" to read.
+   [...] bareos-dir JobId 4: Connected Client: proxmox90-fd at proxmox90:9102, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] bareos-dir JobId 4:  Handshake: Immediate TLS 
+   [...] bareos-dir JobId 4:  Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] bareos-sd JobId 4: Connected File Daemon at proxmox90:9102, encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   [...] bareos-sd JobId 4: Version: 25.0.0~pre1327.fd0f53dc3 (31 October 2025) AlmaLinux Kitten release 10 (Lion Cub)
+   [...] bareos-sd JobId 4: Ready to read from volume "Full-0002" on device "File0001" (/var/lib/bareos/storage).
+   [...] proxmox90-fd JobId 4: Version: 25.0.0~pre1092.5574206a7 (14 November 2025) Debian GNU/Linux 13 (trixie)
+   [...] bareos-sd JobId 4: Forward spacing Volume "Full-0002" to file:block 0:223.
+   [...] proxmox90-fd JobId 4: python3-fd-mod: Executing pct restore 101 - --rootfs local-lvm:8
+   [...] proxmox90-fd JobId 4: python3-fd-mod:   WARNING: You have not turned on protection against thin pools running out of space.
+   [...] proxmox90-fd JobId 4: python3-fd-mod:   WARNING: Set activation/thin_pool_autoextend_threshold below 100 to trigger automatic extension of thin pools before they get full.
+   [...] proxmox90-fd JobId 4: python3-fd-mod:   Logical volume "vm-101-disk-0" created.
+   [...] proxmox90-fd JobId 4: python3-fd-mod:   WARNING: Sum of all thin volume sizes (18.00 GiB) exceeds the size of thin pool pve/data and the amount of free space in volume group (<6.13 GiB).
+   [...] proxmox90-fd JobId 4: python3-fd-mod:   Logical volume pve/vm-101-disk-0 changed.
+   [...] bareos-sd JobId 4: End of Volume at file 0 on device "File0001" (/var/lib/bareos/storage), Volume "Full-0002"
+   [...] bareos-sd JobId 4: End of all volumes.
+   [...] bareos-sd JobId 4: Releasing device "File0001" (/var/lib/bareos/storage).
+   [...] proxmox90-fd JobId 4: python3-fd-mod: Creating filesystem with 2097152 4k blocks and 524288 inodes
+   [...] proxmox90-fd JobId 4: python3-fd-mod: Filesystem UUID: 6ab7d7e1-0886-40f5-8d66-8fdddeaae664
+   [...] proxmox90-fd JobId 4: python3-fd-mod: Superblock backups stored on blocks: 
+   [...] proxmox90-fd JobId 4: python3-fd-mod:      32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+   [...] proxmox90-fd JobId 4: python3-fd-mod: extracting archive from STDIN
+   [...] proxmox90-fd JobId 4: python3-fd-mod: Total bytes read: 386048000 (369MiB, 243MiB/s)
+   [...] proxmox90-fd JobId 4: python3-fd-mod: merging backed-up and given configuration..
+   [...] proxmox90-fd JobId 4: python3-fd-mod: waiting for command to finish
+   [...] bareos-dir JobId 4: Bareos bareos-dir 25.0.0~pre1327.fd0f53dc3 (31Oct25):
      Build OS:               AlmaLinux Kitten release 10 (Lion Cub)
-     JobId:                  6
-     Job:                    RestoreFiles.2025-11-12_12.57.41_10
-     Restore Client:         "proxmox90-fd" 25.0.0~pre1059.097ef5ba3 (12Nov25) Debian GNU/Linux 13 (trixie),debian
-     Start time:             12-Nov-2025 12:57:43
-     End time:               12-Nov-2025 12:57:49
-     Elapsed time:           6 secs
+     JobId:                  4
+     Job:                    RestoreFiles.2025-11-14_18.12.11_08
+     Restore Client:         "proxmox90-fd" 25.0.0~pre1092.5574206a7 (14Nov25) Debian GNU/Linux 13 (trixie),debian
+     Start time:             14-Nov-2025 18:12:13
+     End time:               14-Nov-2025 18:12:21
+     Elapsed time:           8 secs
      Files Expected:         1
      Files Restored:         1
-     Bytes Restored:         386,027,520
-     Rate:                   64337,9 KB/s
+     Bytes Restored:         386,048,000
+     Rate:                   48256,0 KB/s
      FD Errors:              0
      FD termination status:  OK
      SD termination status:  OK
      Bareos binary info:     Bareos pre-release (UNSUPPORTED): Get professional support from https://www.bareos.com
      Job triggered by:       User
      Termination:            Restore OK
-
+   
 
 Overwriting an existing guest with the same ID
 ''''''''''''''''''''''''''''''''''''''''''''''
@@ -709,3 +746,18 @@ restorepath (optional)
    Path where the local ``.vma`` vzdump file will be restored. Default is :file:`/var/lib/vzdump`.
 
    example: ``python:restorepath=/var/lib/vzdump/bareos-restores``
+
+pctstorage (required during restore of container guests)
+   Storage and storage size in GiB where the container image will be restored in the format
+
+   ``pctstorage=<storage-name>\:<size-in-GiB``
+   
+   Please not that the colon needs to be escaped with a backslash.
+
+   example: ``python:pctstorage=local-lvm\:8``
+
+
+.. warning::
+
+   As the colon (**:**) needs to be escaped with a backslash (**\\**) when passing it as plugin parameter during container restore.
+   This is required because the colon is the delimiter between plugin parameters.
