@@ -15,7 +15,7 @@ It is available since Bareos :sinceVersion:`25.0.0: Proxmox Plugin`.
 Status
 ^^^^^^
 
-The Plugin can do full backup and can has two options for restoring:
+The Plugin can do full backups and offers two options for restoring them:
 
 * It can restore the backup into a new proxmox guest (Virtual Machine / Container).
 * It can restore the backup into a local vzdump dump file to be recovered later via the proxmox GUI.
@@ -146,7 +146,7 @@ Make sure to add or enable the following settings in your |fd| configuration:
    }
 
 Restart the |fd| after the changes with :command:`systemctl restart bareos-fd`.
-
+:qk
 After connectng the client to the director as described in :ref:`section-AddAClient`,
 we go on with configuring jobs and filesets.
 
@@ -156,8 +156,8 @@ Configure jobs and filesets
 
 To define the backup of a VM in Bareos, a job definition and a fileset resource
 must be added to the Bareos director configuration. In |proxmox ve|, guests have
-an unique ID (i.e. a number between *100* - *999999999*) that uniquely identifies
-each guest.
+an unique ID (i.e. a number between **100** - **999999999**) that uniquely identifies
+each guest. The guest ID is visible in the |proxmox ve| GUI next to the name as can be seen in figure :ref:`proxmox_gui` .
 
 The following example shows how to configure the backup of the *KVM* guest with
 the ID **100** and a *Container* guest with the ID **101**:
@@ -664,9 +664,13 @@ perform such a restore using :command:`bconsole`:
 After the backup as been recovered into the default vzdump directory, the backup shows up in the |proxmox| GUI and
 can be recovered just like any other proxmox local backup:
 
-.. image:: /include/images/proxmox-gui-shows-recovered-backup.*
-   :width: 90.0%
+.. _proxmox_gui:
 
+.. figure:: /include/images/proxmox-gui-shows-recovered-backup.*
+   :width: 90.0%
+   :alt: |proxmox ve| GUI showing the recovered backup
+
+   |proxmox ve| GUI showing the recovered backup
 
 Restore using Bareos WebUI
 ''''''''''''''''''''''''''
@@ -704,4 +708,4 @@ restoretodisk (optional)
 restorepath (optional)
    Path where the local ``.vma`` vzdump file will be restored. Default is :file:`/var/lib/vzdump`.
 
-   example: ``python:restoretodisk=yes``
+   example: ``python:restorepath=/var/lib/vzdump/bareos-restores``
