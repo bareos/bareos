@@ -29,6 +29,11 @@ if(ENABLE_GRPC)
 
   set(PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/proto")
   make_directory(${PROTO_OUTPUT_DIR})
+
+  # this is needed to make the output directory into a python module so that we
+  # can load the files inside of it
+  file(TOUCH "${PROTO_OUTPUT_DIR}/__init__.py")
+
   # Proto file
   function(target_add_proto_sources target)
     set(protosrcs)
@@ -138,5 +143,8 @@ if(ENABLE_GRPC)
     protobuf_socket_test LINK_LIBRARIES GTest::gtest_main grpc-proto
   )
 
-  bareos_configure_file(FILES "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py")
+  bareos_configure_file(
+    FILES "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_native.py" COPY
+  )
 endif()
