@@ -631,7 +631,7 @@ macro(prepare_test_python)
           "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_subdir_prefix}modules:"
           "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_subdir_prefix}modules:"
           "${CMAKE_SOURCE_DIR}/systemtests/python-modules:"
-          "${CMAKE_CURRENT_SOURCE_DIR}/tests/${TEST_NAME}/python-modules"
+          "${CMAKE_CURRENT_SOURCE_DIR}/python-modules"
       )
     endif()
   endif()
