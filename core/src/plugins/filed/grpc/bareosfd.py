@@ -24,9 +24,49 @@
 
 import bareosfd_native
 
-import proto
+from proto import plugin_pb2
+from proto import bareos_pb2
 import socket
 import time
+import traceback
+import sys
+
+f = open("/tmp/log.out", "w")
+
+
+def log(msg):
+    print(msg, file=f)
+    print(msg, file=sys.stderr)
+
+
+def readnbyte(sock, n):
+    buff = bytearray(n)
+    pos = 0
+    while pos < n:
+        cr = sock.recv_into(memoryview(buff)[pos:])
+        if cr == 0:
+            raise EOFError
+        pos += cr
+    return buff
+
+
+def readmsg(sock, msg):
+    size_bytes = readnbyte(sock, 4)
+    size = int.from_bytes(size_bytes, "little")
+    log(f"size = {size}")
+
+    obj_bytes = readnbyte(sock, size)
+    msg.ParseFromString(obj_bytes)
+    log(f"request = {msg}")
+
+
+def writemsg(sock, msg):
+    obj_bytes = msg.SerializeToString()
+    size = len(obj_bytes)
+    log(f"send: size = {size}")
+    size_bytes = size.to_bytes(4, "little")
+    con.plugin.sendall(size_bytes)
+    con.plugin.sendall(obj_bytes)
 
 
 class BareosConnection:
@@ -35,23 +75,88 @@ class BareosConnection:
         self.core = socket.socket(fileno=4)
         self.io = socket.socket(fileno=5)
 
-    def readmsg(fd: int, msg):
-        size = read_size(fd)
-        s = read_string(size)
-        msg.SerializeFromString(s)
-        return msg
+    def read_plugin(self):
+        req = plugin_pb2.PluginRequest()
+        readmsg(self.plugin, req)
 
-    def writemsg(fd: int):
-        pass
+        return req
+
+    def write_plugin(self, resp: plugin_pb2.PluginResponse):
+        writemsg(self.plugin, resp)
 
 
-with open("/tmp/log.out", "w") as f:
-    try:
-        con = BareosConnection()
-        print(f"plugin = {con.plugin}, core = {con.core}, io = {con.io}", file=f)
+def handle_plugin_event(
+    req: plugin_pb2.handlePluginEventRequest, resp: plugin_pb2.handlePluginEventResponse
+):
+    del req
+    resp.res = plugin_pb2.RC_OK
 
-    except Exception as e:
-        print(e, file=f)
+
+def handle_request(req: plugin_pb2.PluginRequest):
+    log(f"handling {req}")
+
+    resp = plugin_pb2.PluginResponse()
+
+    match req.WhichOneof("request"):
+        case "handle_plugin":
+            resp.handle_plugin.SetInParent()
+            handle_plugin_event(req.handle_plugin, resp.handle_plugin)
+        # case 'start_backup': pass
+        # case 'end_backup_file': pass
+        # case 'start_restore_file': pass
+        # case 'end_restore_file': pass
+        # case 'file_open': pass
+        # case 'file_seek': pass
+        # case 'file_write': pass
+        # case 'file_close': pass
+        # case 'create_file': pass
+        # case 'set_file_attributes': pass
+        # case 'check_file': pass
+        # case 'get_acl': pass
+        # case 'set_acl': pass
+        # case 'get_xattr': pass
+        # case 'set_xattr': pass
+        case "setup":
+            resp.setup.SetInParent()
+        # case 'file_read': pass
+        case _:
+            raise ValueError
+
+    log(f"responding with {resp}")
+    return resp
+
+
+try:
+    con = BareosConnection()
+    log(f"plugin = {con.plugin}, core = {con.core}, io = {con.io}")
+
+    while True:
+        req = con.read_plugin()
+        resp = handle_request(req)
+        con.write_plugin(resp)
+
+    # req = plugin_pb2.PluginRequest()
+
+    # size_bytes = readnbyte(con.plugin, 4)
+    # size = int.from_bytes(size_bytes, 'little')
+    # print(f"size = {size}", file=f)
+
+    # obj_bytes = readnbyte(con.plugin, size)
+    # req.ParseFromString(obj_bytes)
+    # print(f"request = {req}", file=f)
+
+    # resp = plugin_pb2.PluginResponse()
+    # resp.setup.SetInParent()
+
+    # obj_bytes = resp.SerializeToString()
+    # size = len(obj_bytes)
+    # size_bytes = size.to_bytes(4, 'little')
+    # con.plugin.sendall(size_bytes)
+    # con.plugin.sendall(obj_bytes)
+
+except:
+    error = traceback.format_exc()
+    log(f"error = {error}")
 
 #
 # def setup():
