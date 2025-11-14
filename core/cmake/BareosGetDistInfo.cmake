@@ -42,3 +42,23 @@ else() # NOT Windows
   set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
 endif()
 set(BAREOS_PLATFORM ${PLATFORM})
+
+# cmake_host_system_information() was added in 3.22
+if(CMAKE_VERSION VERSION_GREATER 3.22)
+
+  cmake_host_system_information(RESULT DIST_ID QUERY DISTRIB_ID)
+  message(STATUS "${DIST_ID}")
+
+  cmake_host_system_information(RESULT DIST_VERSION_ID QUERY DISTRIB_VERSION_ID)
+  message(STATUS "${DIST_VERSION_ID}")
+
+  # debian 12 and 13 are the base for proxmox-ve currently
+  if(DIST_ID STREQUAL "debian" AND DIST_VERSION_ID GREATER_EQUAL "12")
+    message(STATUS "${DIST_ID} - ${DIST_VERSION_ID}: setting enable_proxmox_plugin")
+    set(enable_proxmox_plugin ON)
+  endif()
+
+endif()
+
+
+

@@ -597,3 +597,6 @@ set(DUMP_VARS
     ""
     CACHE STRING "Dump all variables that matches this regex."
 )
+
+option(enable_proxmox_plugin "enable_proxmox_plugin" OFF)
+mark_as_advanced(enable_proxmox_plugin)
