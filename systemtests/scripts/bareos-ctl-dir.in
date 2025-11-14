@@ -34,6 +34,9 @@ case "$1" in
       check_database dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
       check_config dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
       "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
+    else
+      echo "${BAREOS_DIRECTOR_BINARY} not executable. Did you forget to build?" >&2
+      exit 1
     fi
     ;;
 
@@ -52,8 +55,13 @@ case "$1" in
     ;;
 
   status)
-    [ -x "${BAREOS_DIRECTOR_BINARY}" ] && status "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
-    exit $?
+    if [ -x "${BAREOS_DIRECTOR_BINARY}" ]; then
+      status "${BAREOS_DIRECTOR_BINARY}" "${BAREOS_DIRECTOR_PORT}"
+      exit $?
+    else
+      echo "${BAREOS_DIRECTOR_BINARY} not executable. Did you forget to build?" >&2
+      exit 1
+    fi
     ;;
 
   *)

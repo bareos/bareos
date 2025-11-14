@@ -84,6 +84,9 @@ rst_epilog = """
 .. |github| replace:: GitHub
 .. |hyperv| replace:: Hyper-V
 
+.. |proxmox| replace:: Proxmox
+.. |proxmox ve| replace:: Proxmox Virtual Environment
+
 """
 
 

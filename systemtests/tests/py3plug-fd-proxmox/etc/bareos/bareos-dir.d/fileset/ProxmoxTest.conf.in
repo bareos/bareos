@@ -1,0 +1,26 @@
+FileSet {
+  Name = "ProxmoxTestVM"
+  Description = "Test the Plugin functionality of the Proxmox Plugin."
+  Include {
+    Options {
+      Signature = XXH128
+    }
+   Plugin = "python"
+        ":module_path=@python_plugin_module_src_test_dir@"
+        ":module_name=bareos-fd-proxmox"
+        ":guestid=999010"
+  }
+}
+FileSet {
+  Name = "ProxmoxTestCT"
+  Description = "Test the Plugin functionality of the Proxmox Plugin."
+  Include {
+    Options {
+      Signature = XXH128
+    }
+   Plugin = "python"
+        ":module_path=@python_plugin_module_src_test_dir@"
+        ":module_name=bareos-fd-proxmox"
+        ":guestid=999020"
+  }
+}
