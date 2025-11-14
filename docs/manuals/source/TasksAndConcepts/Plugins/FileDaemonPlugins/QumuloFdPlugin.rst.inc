@@ -16,7 +16,7 @@ You can learn more about features and usage by consulting `Yuzuy Qumulo Backup <
 dedicated page.
 
 Supported features
-''''''''''''''''''
+^^^^^^^^^^^^^^^^^^
 
 - full backups
 - incremental backups
@@ -27,7 +27,7 @@ Supported features
 - Virtual Full can be realized with this plugin
 
 Supported versions
-''''''''''''''''''
+^^^^^^^^^^^^^^^^^^
 
 - Bareos :sinceVersion:`22.0.0: Qumulo Plugin`
 - Qumulo >= `4.0.0`
