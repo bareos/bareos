@@ -120,6 +120,7 @@ class BareosFdProxmoxOptions:
             "guestid": self.make_opt(int),
             "restorepath": self.make_opt(str, "/var/lib/vz/dump"),
             "restoretodisk": self.make_opt(bool, False),
+            "pctstorage": self.make_opt(str, ""),
         }
 
     @staticmethod
@@ -328,13 +329,19 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return bareosfd.bRC_OK
 
         if "vzdump-lxc" in restorepkt.ofname:
+            if ":" not in self.options.pctstorage:
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Container restore needs option 'pctstorage' with '<storage>:<size-in-GiB>'\n",
+                )
+                return bareosfd.bRC_Error
             recovery_cmd = [
                 "pct",
                 "restore",
                 f"{self.options.guestid}",
                 "-",
                 "--rootfs",
-                "local-lvm:8",
+                self.options.pctstorage,
             ]
         elif "vzdump-qemu" in restorepkt.ofname:
             recovery_cmd = ["qmrestore", "-", f"{self.options.guestid}"]
