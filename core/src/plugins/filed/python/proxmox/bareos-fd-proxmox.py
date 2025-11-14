@@ -334,7 +334,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 f"{self.options.guestid}",
                 "-",
                 "--rootfs",
-                "/",
+                "local-lvm:8",
             ]
         elif "vzdump-qemu" in restorepkt.ofname:
             recovery_cmd = ["qmrestore", "-", f"{self.options.guestid}"]
