@@ -143,6 +143,14 @@ set(PYFILES
     libcloud/BareosFdPluginLibcloud.py
 )
 
+include(CMakeDependentOption)
+cmake_dependent_option(
+  ENABLE_DIRECTOR_PYTHON_PLUGIN_TESTS
+  "Enable the director python plugin test"
+  OFF
+  "ENABLE_PYTHON;DIST_ID STREQUAL fedora;DIST_VERSION_ID EQUAL 43"
+  ON
+)
 install(
   FILES ${PYFILES}
   DESTINATION ${plugindir}

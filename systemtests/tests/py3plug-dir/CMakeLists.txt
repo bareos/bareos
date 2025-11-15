@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,10 +18,10 @@
 #   02110-1301, USA.
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
-if(TARGET python3-dir)
+if(TARGET python3-dir AND ENABLE_DIRECTOR_PYTHON_PLUGIN_TESTS)
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
   create_systemtest(
-    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "no python3-dir"
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "no python3-dir or not ENABLE_DIRECTOR_PYTHON_PLUGIN_TESTS"
   )
 endif()
