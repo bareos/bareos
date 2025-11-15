@@ -34,7 +34,6 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
 
 else()
   find_package(Python3 COMPONENTS Interpreter Development Development.Module)
-
   set(Python3_VERSION_MAJOR
       ${Python3_VERSION_MAJOR}
       PARENT_SCOPE
@@ -42,6 +41,11 @@ else()
 
   set(Python3_VERSION_MINOR
       ${Python3_VERSION_MINOR}
+      PARENT_SCOPE
+  )
+
+  set(Python3_VERSION
+      ${Python3_VERSION}
       PARENT_SCOPE
   )
 

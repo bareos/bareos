@@ -65,11 +65,20 @@ class SubcommandFormatter : public CLI::Formatter {
     return Formatter::make_help(app, name, mode);
   }
 
+#if CLI11_VERSION_MAJOR >= 2 && CLI11_VERSION_MINOR >= 5
+  std::string make_expanded(const CLI::App* sub,
+                            CLI::AppFormatMode AppFormatMode) const override
+  {
+    CLI::Formatter formatter{};
+    return formatter.make_expanded(sub, AppFormatMode);
+  }
+#else
   std::string make_expanded(const CLI::App* sub) const override
   {
     CLI::Formatter formatter{};
     return formatter.make_expanded(sub);
   }
+#endif
 
   std::string make_description(const CLI::App* app) const override
   {
