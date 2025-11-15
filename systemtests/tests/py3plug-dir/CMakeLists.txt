@@ -22,6 +22,7 @@ if(TARGET python3-dir AND NOT Python3_VERSION VERSION_EQUAL 3.14.0)
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 else()
   create_systemtest(
-    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT "no python3-dir or not ENABLE_DIRECTOR_PYTHON_PLUGIN_TESTS"
+    ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT
+    "no python3-dir or not ENABLE_DIRECTOR_PYTHON_PLUGIN_TESTS"
   )
 endif()
