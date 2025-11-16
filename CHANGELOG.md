@@ -9,6 +9,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 - stored: fix race condition [PR #2363]
 - Fix droplet build [PR #2415]
 
+### Documentation
+- Add historic data to CHANGELOG.md [PR #2436]
+
 ## [23.1.4] - 2025-07-23
 
 ### Fixed
@@ -1741,4 +1744,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2323]: https://github.com/bareos/bareos/pull/2323
 [PR #2363]: https://github.com/bareos/bareos/pull/2363
 [PR #2415]: https://github.com/bareos/bareos/pull/2415
+[PR #2436]: https://github.com/bareos/bareos/pull/2436
 [unreleased]: https://github.com/bareos/bareos/tree/master
