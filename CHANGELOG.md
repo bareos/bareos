@@ -104,6 +104,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - Update dir-director-MaximumConcurrentJobs.rst.inc with a warning about MaximumConcurrentJobs modification on running Directors [PR #2394]
 - doc: don't alter configuration on package updates [PR #2392]
 - docs: introduce 3rd party plugin (Yuzuy Qumulo) [PR #2418]
+- Add historic data to CHANGELOG.md [PR #2434]
 
 ### Added
 - added build-dep to libutfcpp-dev in debian-like environments [PR #2056]
@@ -2066,4 +2067,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2423]: https://github.com/bareos/bareos/pull/2423
 [PR #2427]: https://github.com/bareos/bareos/pull/2427
 [PR #2431]: https://github.com/bareos/bareos/pull/2431
+[PR #2434]: https://github.com/bareos/bareos/pull/2434
 [unreleased]: https://github.com/bareos/bareos/tree/master
