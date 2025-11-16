@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -392,6 +392,7 @@ scv_banner_main_ref = "bareos-23"
 
 plantuml_output_format = "svg_img"
 
+m2r_anonymous_references = True
 
 #
 # code-block highlighting
