@@ -38,14 +38,14 @@ enum ObjectType {
   FilledConfig = 3;
 };
 
-message plugin_object {
+message PluginObject {
   bytes name = 1;
   bytes data = 2;
   int64 index = 3;
   ObjectType type = 4;
 };
 
-message plugin_file {
+message PluginFile {
   bytes file = 1;
   bytes link = 9; // only used when type == LNK
   bytes stats = 2;
@@ -62,7 +62,7 @@ message plugin_file {
   bool sparse_backup = 8;
 };
 
-message plugin_file_error {
+message PluginFileError {
   bytes file = 1;
   FileErrorType error = 2;
 };

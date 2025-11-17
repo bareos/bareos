@@ -54,7 +54,7 @@ message CancelCommand {
 };
 
 message RestoreObjectPacket {
-  bareos.common.plugin_object sent = 1; // this was created by the plugin
+  bareos.common.PluginObject sent = 1; // this was created by the plugin
 
   string used_cmd_string = 2;
   int64 jobid = 3;
