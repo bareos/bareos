@@ -25,6 +25,43 @@ from enum import IntEnum, StrEnum, global_enum
 from dataclasses import dataclass
 
 
+class bFileOption(IntEnum):
+    FO_PORTABLE_DATA = 0  # Data is portable
+    FO_MD5 = 1  # Do MD5 checksum
+    FO_COMPRESS = 2  # Do compression
+    FO_NO_RECURSION = 3  # No recursion in directories
+    FO_MULTIFS = 4  # Multiple file systems
+    FO_SPARSE = 5  # Do sparse file checking
+    FO_IF_NEWER = 6  # Replace if newer
+    FO_NOREPLACE = 7  # Never replace
+    FO_READFIFO = 8  # Read data from fifo
+    FO_SHA1 = 9  # Do SHA1 checksum
+    FO_PORTABLE = 10  # Use portable data format -- no BackupWrite
+    FO_MTIMEONLY = 11  # Use mtime rather than mtime & ctime
+    FO_KEEPATIME = 12  # Reset access time
+    FO_EXCLUDE = 13  # Exclude file
+    FO_ACL = 14  # Backup ACLs
+    FO_NO_HARDLINK = 15  # Don't handle hard links
+    FO_IGNORECASE = 16  # Ignore file name case
+    FO_HFSPLUS = 17  # Resource forks and Finder Info
+    FO_WIN32DECOMP = 18  # Use BackupRead decomposition
+    FO_SHA256 = 19  # Do SHA256 checksum
+    FO_SHA512 = 20  # Do SHA512 checksum
+    FO_ENCRYPT = 21  # Encrypt data stream
+    FO_NOATIME = 22  # Use O_NOATIME to prevent atime change
+    FO_ENHANCEDWILD = 23  # Enhanced wild card processing
+    FO_CHKCHANGES = 24  # Check if file have been modified during backup
+    FO_STRIPPATH = 25  # Check for stripping path
+    FO_HONOR_NODUMP = 26  # Honor NODUMP flag
+    FO_XATTR = 27  # Backup Extended Attributes
+    FO_DELTA = 28  # Delta data -- i.e. all copies returned on restore
+    FO_PLUGIN = 29  # Plugin data stream -- return to plugin on restore
+    FO_OFFSETS = 30  # Keep I/O file offsets
+    FO_NO_AUTOEXCL = 31  # Don't use autoexclude methods
+    FO_FORCE_ENCRYPT = 32  # Force encryption
+    FO_XXH128 = 33  # Do xxHash128 checksum
+
+
 @global_enum
 class bRCs(IntEnum):
     bRC_OK = 0
@@ -232,38 +269,38 @@ import stat
 class StatPacket:
     """bareos stat packet"""
 
-    dev: int = 0
-    ino: int = 0
-    mode: int = 0o700 | stat.S_IFREG
-    nlink: int = 0
-    uid: int = 0
-    gid: int = 0
-    rdev: int = 0
-    size: int = -1
+    st_dev: int = 0
+    st_ino: int = 0
+    st_mode: int = 0o700 | stat.S_IFREG
+    st_nlink: int = 0
+    st_uid: int = 0
+    st_gid: int = 0
+    st_rdev: int = 0
+    st_size: int = -1
 
     # maybe there is a way to initialise these with "now()" somehow ?
-    atime: int = 0
-    mtime: int = 0
-    ctime: int = 0
+    st_atime: int = 0
+    st_mtime: int = 0
+    st_ctime: int = 0
 
-    blksize: int = 4096
-    blocks: int = 1
+    st_blksize: int = 4096
+    st_blocks: int = 1
 
     def __init__(self):
         now = int(time())
-        self.dev = 0
-        self.ino = 0
-        self.mode = 0o700 | stat.S_IFREG
-        self.nlink = 0
-        self.uid = 0
-        self.gid = 0
-        self.rdev = 0
-        self.size = -1
-        self.atime = now
-        self.mtime = now
-        self.ctime = now
-        self.blksize = 4096
-        self.blocks = 1
+        self.st_dev = 0
+        self.st_ino = 0
+        self.st_mode = 0o700 | stat.S_IFREG
+        self.st_nlink = 0
+        self.st_uid = 0
+        self.st_gid = 0
+        self.st_rdev = 0
+        self.st_size = -1
+        self.st_atime = now
+        self.st_mtime = now
+        self.st_ctime = now
+        self.st_blksize = 4096
+        self.st_blocks = 1
 
 
 @dataclass(slots=True)
@@ -272,9 +309,9 @@ class SavePacket:
 
     fname: str = None
     link: str = None
-    statp: int = 0
+    statp: StatPacket = None
     type: int = 0
-    flags: int = 0
+    flags: bytearray = None
     no_read: bool = False
     portable: bool = False
     accurate_found: bool = False
