@@ -92,6 +92,7 @@ add_subdirectory(py3plug-fd-local-fileset-basic)
 add_subdirectory(py3plug-fd-local-fileset-restoreobject)
 add_subdirectory(py3plug-fd-mariabackup)
 add_subdirectory(py3plug-fd-percona-xtrabackup)
+add_subdirectory(py3plug-fd-proxmox)
 add_subdirectory(py3plug-fd-postgresql)
 add_subdirectory(py3plug-fd-vmware)
 

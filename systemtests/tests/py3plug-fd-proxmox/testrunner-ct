@@ -1,0 +1,113 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# This systemtest tests the vmware plugin functionality
+# of the Bareos FD by using the supplied module
+#   BareosFdPluginProxmox.py
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-proxmox-ct
+#shellcheck source=../../environment.in
+. ./environment
+
+export PATH="${current_test_directory}/sbin:${current_test_directory}/bin:$PATH"
+
+JobName=backup-proxmox-ct
+#shellcheck source=../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+TEMPLATE=local:vztmpl/fedora-42-default_20250428_amd64.tar.xz
+BACKGUESTID=999020
+RESTGUESTID=999021
+GUESTNAME=plugtestct
+
+pct stop "${BACKGUESTID}" || :
+pct destroy "${BACKGUESTID}" || :
+pct create "${BACKGUESTID}" "${TEMPLATE}" --hostname ${GUESTNAME}
+pct start "${BACKGUESTID}"
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out $tmp/log1.out
+setdebug level=100 storage=File
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName level=Full yes
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA
+
+run_bconsole "$@"
+
+pct stop "${BACKGUESTID}"
+pct destroy "${BACKGUESTID}"
+
+# make sure BACKGUESTID was destroyed
+# pct list | grep -v "${BACKGUESTID}"
+
+cat <<END_OF_DATA2 >$tmp/bconcmds
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+wait
+setdebug client=bareos-fd level=1000 trace=1
+restore client=bareos-fd fileset=ProxmoxTestCT where=/ select all done pluginoptions=python:guestid=${RESTGUESTID}
+yes
+wait
+messages
+END_OF_DATA2
+
+
+run_bconsole "$@"
+
+pct start "${RESTGUESTID}"
+
+# make sure RESTGUESTID was recovered
+pct list | grep "${RESTGUESTID}"
+
+# cleanup
+pct stop "${RESTGUESTID}"
+pct destroy "${RESTGUESTID}"
+
+
+cat <<END_OF_DATA3 >$tmp/bconcmds
+@#
+@# now do a restore to file
+@#
+@$out $tmp/log3.out
+wait
+setdebug client=bareos-fd level=1000 trace=1
+restore client=bareos-fd fileset=ProxmoxTestCT where=/ select all done  pluginoptions=python:guestid=${RESTGUESTID}:restoretodisk=yes
+yes
+wait
+messages
+END_OF_DATA3
+
+
+run_bconsole "$@"
+
+check_for_zombie_jobs storage=File
+
+RESTOREFILE=$(grep -o "/var/lib/vz/dump.*vma" "${tmp}/log1.out")
+
+head "$RESTOREFILE"  > "${tmp}/diskhead"
+
+expect_grep "name: ${GUESTNAME}" \
+ "${tmp}/diskhead" \
+ "did not find expected vm name in vma dump file"
+
+check_log "${tmp}/log1.out"
+check_log "${tmp}/log2.out"
+check_log "${tmp}/log3.out"
+
+end_test

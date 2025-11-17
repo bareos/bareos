@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -42,3 +42,8 @@ else() # NOT Windows
   set(Host "${CMAKE_SYSTEM} ${LSB_RELEASE_DESCRIPTION}")
 endif()
 set(BAREOS_PLATFORM ${PLATFORM})
+
+# cmake_host_system_information() was added in 3.22
+if(CMAKE_VERSION VERSION_GREATER 3.22)
+  cmake_host_system_information(RESULT DIST_VERSION_ID QUERY DISTRIB_VERSION_ID)
+endif()

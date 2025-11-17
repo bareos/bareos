@@ -37,6 +37,9 @@ case "$1" in
       else
         ${BAREOS_STORAGEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
       fi
+    else
+      echo "${BAREOS_STORAGEDAEMON_BINARY} not executable. Did you forget to build?" >&2
+      exit 1
     fi
     ;;
 
@@ -45,6 +48,9 @@ case "$1" in
       printf "Stopping the Bareos Storage daemon: "
       shift # shift away the stop
       killproc ${BAREOS_STORAGEDAEMON_BINARY} ${BAREOS_SD_PORT} "${@}"
+    else
+      echo "${BAREOS_STORAGEDAEMON_BINARY} not executable. Did you forget to build?" >&2
+      exit 1
     fi
     ;;
 
