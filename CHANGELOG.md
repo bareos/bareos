@@ -168,6 +168,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - plugin: change prefix @hyper-v@ -> @HYPER-V [PR #2431]
 - plugins: introduce windows disaster recovery  imager (barri) [PR #2285]
 - webui: use patched laminas packages [PR #2439]
+- plugins: add proxmox backup [PR #2372]
 
 ## [24.0.0] - 2024-12-16
 
@@ -2047,6 +2048,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2358]: https://github.com/bareos/bareos/pull/2358
 [PR #2359]: https://github.com/bareos/bareos/pull/2359
 [PR #2370]: https://github.com/bareos/bareos/pull/2370
+[PR #2372]: https://github.com/bareos/bareos/pull/2372
 [PR #2373]: https://github.com/bareos/bareos/pull/2373
 [PR #2376]: https://github.com/bareos/bareos/pull/2376
 [PR #2381]: https://github.com/bareos/bareos/pull/2381
