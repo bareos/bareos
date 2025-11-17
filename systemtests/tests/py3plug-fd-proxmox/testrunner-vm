@@ -11,7 +11,7 @@ TestName="$(basename "$(pwd)")"
 export TestName
 
 JobName=backup-proxmox-vm
-#shellcheck source=../environment.in
+#shellcheck source=../../environment.in
 . ./environment
 
 export PATH="${current_test_directory}/sbin:${current_test_directory}/bin:$PATH"
@@ -43,7 +43,6 @@ status client
 status storage=File
 wait
 messages
-
 END_OF_DATA
 
 run_bconsole "$@"
@@ -65,8 +64,6 @@ restore client=bareos-fd fileset=ProxmoxTestVM where=/ select all done  pluginop
 yes
 wait
 messages
-quit
-
 END_OF_DATA2
 
 
@@ -93,8 +90,6 @@ restore client=bareos-fd fileset=ProxmoxTestVM where=/ select all done  pluginop
 yes
 wait
 messages
-quit
-
 END_OF_DATA3
 
 
