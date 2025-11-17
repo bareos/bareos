@@ -1340,12 +1340,14 @@ class PluginClient {
           if (file.stats().size() != sizeof(pkt->statp)) {
             DebugLog(50, FMT_STRING("stats has the wrong size {} != {}"),
                      file.stats().size(), sizeof(pkt->statp));
+            JobLog(core, M_FATAL, "fatal internal error occured");
             return bRC_Error;
           }
           std::optional ft = BareosCore::from_grpc(file.ft());
           if (!ft) {
             DebugLog(50, FMT_STRING("could not convert filetype {} ({})"),
                      bco::FileType_Name(file.ft()), int(file.ft()));
+            JobLog(core, M_FATAL, "fatal internal error occured");
             return bRC_Error;
           }
           if (pkt->fname) {
