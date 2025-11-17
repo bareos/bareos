@@ -9,8 +9,12 @@
     "homepage": "http://www.bareos.org/",
     "repositories": [
         {
-            "type": "composer",
-            "url": "https://packages.zendframework.com/"
+            "type": "vcs",
+            "url": "https://github.com/bareos/laminas-http"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/bareos/laminas-form"
         }
     ],
     "require": {
@@ -29,13 +33,13 @@
         "laminas/laminas-session": "2.7.*",
         "laminas/laminas-validator": "2.10.*",
         "laminas/laminas-inputfilter": "2.6.*",
-        "laminas/laminas-form": "2.6.*",
+        "laminas/laminas-form": "dev-bareos-2.6.0-patched as 2.6.0",
         "laminas/laminas-loader": "2.6.*",
         "laminas/laminas-modulemanager": "2.6.*",
         "laminas/laminas-cache": "2.6.*",
         "laminas/laminas-log": "2.6.*",
         "laminas/laminas-console": "2.6.*",
-        "laminas/laminas-http": "2.8.*",
+        "laminas/laminas-http": "dev-bareos-2.8.4-patched as 2.8.4",
         "laminas/laminas-escaper": "2.6.*",
         "laminas/laminas-uri": "2.6.*",
         "laminas/laminas-navigation": "2.6.*",

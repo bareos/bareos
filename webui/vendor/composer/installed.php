@@ -3,7 +3,7 @@
         'name' => 'bareos/bareos-webui',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '3f1ace99bd46fbd867deb7d15306b6484508b084',
+        'reference' => '004ae43f26b55b4003e0e0957828d494b9b9b7f6',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'bareos/bareos-webui' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '3f1ace99bd46fbd867deb7d15306b6484508b084',
+            'reference' => '004ae43f26b55b4003e0e0957828d494b9b9b7f6',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -92,21 +92,25 @@
             'dev_requirement' => false,
         ),
         'laminas/laminas-form' => array(
-            'pretty_version' => '2.6.0',
-            'version' => '2.6.0.0',
-            'reference' => 'c85c3c5a25d1a44f56d24312b05299a023a7bcc6',
+            'pretty_version' => 'dev-bareos-2.6.0-patched',
+            'version' => 'dev-bareos-2.6.0-patched',
+            'reference' => '4b0d9e63839e1f7d2ea2e3dfe8d210d6e0502ea6',
             'type' => 'library',
             'install_path' => __DIR__ . '/../laminas/laminas-form',
-            'aliases' => array(),
+            'aliases' => array(
+                0 => '9999999-dev',
+            ),
             'dev_requirement' => false,
         ),
         'laminas/laminas-http' => array(
-            'pretty_version' => '2.8.4',
-            'version' => '2.8.4.0',
-            'reference' => 'c38959d605f225baf7f94e04c62f5f432d4ea5b2',
+            'pretty_version' => 'dev-bareos-2.8.4-patched',
+            'version' => 'dev-bareos-2.8.4-patched',
+            'reference' => '3aabdeecba18c1b156a2015cbeb7d2ebeee743bf',
             'type' => 'library',
             'install_path' => __DIR__ . '/../laminas/laminas-http',
-            'aliases' => array(),
+            'aliases' => array(
+                0 => '9999999-dev',
+            ),
             'dev_requirement' => false,
         ),
         'laminas/laminas-hydrator' => array(
@@ -337,13 +341,15 @@
         'zendframework/zend-form' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '2.6.0',
+                0 => '9999999-dev',
+                1 => 'dev-bareos-2.6.0-patched',
             ),
         ),
         'zendframework/zend-http' => array(
             'dev_requirement' => false,
             'replaced' => array(
-                0 => '2.8.4',
+                0 => '9999999-dev',
+                1 => 'dev-bareos-2.8.4-patched',
             ),
         ),
         'zendframework/zend-hydrator' => array(
@@ -445,7 +451,7 @@
         'zendframework/zend-version' => array(
             'pretty_version' => '2.5.1',
             'version' => '2.5.1.0',
-            'reference' => '9635dd35e0e0d7b759c47c62a86ab3f558e58d4b',
+            'reference' => 'e30c55dc394eaf396f0347887af0a7bef471fe08',
             'type' => 'library',
             'install_path' => __DIR__ . '/../zendframework/zend-version',
             'aliases' => array(),
