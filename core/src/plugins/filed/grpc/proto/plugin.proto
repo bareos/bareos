@@ -104,9 +104,9 @@ message startBackupFileRequest {
 message startBackupFileResponse {
   StartBackupFileResult result = 1;
   oneof payload {
-    bareos.common.plugin_object object = 2;
-    bareos.common.plugin_file file = 3;
-    bareos.common.plugin_file_error error = 4;
+    bareos.common.PluginObject object = 2;
+    bareos.common.PluginFile file = 3;
+    bareos.common.PluginFileError error = 4;
   };
 };
 
