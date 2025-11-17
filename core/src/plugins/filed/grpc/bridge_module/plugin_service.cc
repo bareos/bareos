@@ -29,6 +29,7 @@
 #include "include/filetypes.h"
 #include "plugin.pb.h"
 #include "bridge_module.h"
+#include "../util.h"
 
 #include <sys/sendfile.h>
 
@@ -620,7 +621,6 @@ auto PluginService::handlePluginEvent(
 
   return Status::OK;
 }
-
 auto PluginService::startBackupFile(const bp::startBackupFileRequest* request,
                                     bp::startBackupFileResponse* response)
     -> Status
@@ -681,7 +681,9 @@ auto PluginService::startBackupFile(const bp::startBackupFileRequest* request,
           file->set_offset_backup(BitIsSet(FO_OFFSETS, sp.flags));
           file->set_sparse_backup(BitIsSet(FO_SPARSE, sp.flags));
           file->set_ft(arg);
-          file->set_stats(&sp.statp, sizeof(sp.statp));
+
+          stat_native_to_grpc(file->mutable_stats(), &sp.statp);
+
           file->set_file(sp.fname);
 
           if (arg == bco::SoftLink) { file->set_link(sp.link); }

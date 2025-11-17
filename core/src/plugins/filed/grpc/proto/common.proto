@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package bareos.common;
 
+import "google/protobuf/timestamp.proto";
+
 enum FileType {
   FILE_TYPE_UNSPECIFIED = 0;
   RegularFile = 1;
@@ -38,6 +40,24 @@ enum ObjectType {
   FilledConfig = 3;
 };
 
+message OsStat {
+  uint64 dev = 1;
+  uint64 ino = 2;
+  uint64 mode = 3;
+  uint64 nlink = 4;
+  uint64 uid = 5;
+  uint64 gid = 6;
+  uint64 rdev = 7;
+  uint64 size = 8;
+
+  google.protobuf.Timestamp atime = 9;
+  google.protobuf.Timestamp mtime = 10;
+  google.protobuf.Timestamp ctime = 11;
+
+  uint64 blksize = 12;
+  uint64 blocks = 13;
+}
+
 message PluginObject {
   bytes name = 1;
   bytes data = 2;
@@ -48,7 +68,7 @@ message PluginObject {
 message PluginFile {
   bytes file = 1;
   bytes link = 9; // only used when type == LNK
-  bytes stats = 2;
+  OsStat stats = 2;
   FileType ft = 3;
   optional int64 delta_seq = 4;
 

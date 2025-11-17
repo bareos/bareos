@@ -26,6 +26,7 @@
 #include "include/baconfig.h"
 #include "filed/fd_plugins.h"
 #include "prototools.h"
+#include "util.h"
 
 #include "plugins/filed/grpc/grpc_impl.h"
 #include <fcntl.h>
@@ -1337,12 +1338,6 @@ class PluginClient {
 
           DebugLog(100, FMT_STRING("received a file"));
 
-          if (file.stats().size() != sizeof(pkt->statp)) {
-            DebugLog(50, FMT_STRING("stats has the wrong size {} != {}"),
-                     file.stats().size(), sizeof(pkt->statp));
-            JobLog(core, M_FATAL, "fatal internal error occured");
-            return bRC_Error;
-          }
           std::optional ft = BareosCore::from_grpc(file.ft());
           if (!ft) {
             DebugLog(50, FMT_STRING("could not convert filetype {} ({})"),
@@ -1405,7 +1400,7 @@ class PluginClient {
               return bRC_Error;
             } break;
           }
-          memcpy(&pkt->statp, file.stats().data(), file.stats().size());
+          stat_grpc_to_native(&pkt->statp, file.stats());
           pkt->type = *ft;
           pkt->no_read = file.no_read();
           pkt->portable = file.portable();
