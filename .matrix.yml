@@ -92,7 +92,7 @@ OS:
       ARCH:
         - amd64
   MacOS:
-    "10.13.6":
+    "15":
       TYPE: macos
       ARCH:
         - x64
