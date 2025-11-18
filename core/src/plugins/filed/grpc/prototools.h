@@ -29,6 +29,8 @@
 #include <span>
 #include <fcntl.h>
 #include <poll.h>
+#include <sys/socket.h>
+#include <atomic>
 
 static bool WaitOnReadable(int fd)
 {
@@ -36,12 +38,12 @@ static bool WaitOnReadable(int fd)
   pfd.fd = fd;
   pfd.events = POLLIN;
 
-  switch (poll(&pfd, 1, -1)) {
+  switch (poll(&pfd, 1, 500)) {
     case -1: /* ERROR */
-      [[fallthrough]];
+      return false;
     case 0: /* TIMEOUT */ {
       // timeout cannot happen
-      return false;
+      return true;
     }
   }
 
@@ -54,17 +56,29 @@ namespace prototools {
 struct ProtoInputStream {
   int fd;
   std::vector<uint8_t> buffer{};
+  // this points to the end of the read memory,
+  // everything afterwards ([current_offset, size())) is unread
   std::size_t current_offset{0};
+  // this is how much data there is in total in the buffer, both read and unread
   std::size_t data_in_buffer{0};
+
+  //                              |       empty       |
+  // --------------------------------------------------
+  // |                   buffer                       |
+  // --------------------------------------------------
+  // |     data_in_buffer         |
+  // |    read     |    unread    |
+  //               ^
+  //        current_offset
 
   ProtoInputStream(int in_fd) : fd{in_fd}
   {
-    int flags = fcntl(fd, F_GETFL);
-    assert(flags >= 0);
-    flags |= O_NONBLOCK;
+    // int flags = fcntl(fd, F_GETFL);
+    // assert(flags >= 0);
+    // flags |= O_NONBLOCK;
 
 
-    assert(fcntl(fd, F_SETFL, flags) >= 0);
+    // assert(fcntl(fd, F_SETFL, flags) >= 0);
   }
 
   ProtoInputStream(const ProtoInputStream&) = delete;
@@ -84,33 +98,44 @@ struct ProtoInputStream {
       return head;
     }
 
-    if (data_in_buffer + min_size > buffer.size()) {
-      if (old_data + min_size > buffer.size()) {
-        std::vector<uint8_t> bigger((old_data + min_size) * 2);
+    uint32_t read_goal = min_size - old_data;
 
-        memcpy(bigger.data(), buffer.data() + current_offset, old_data);
+    if (data_in_buffer + read_goal > buffer.size()) {
+      // the data is too big to append in place, so we need to adjust our buffer
+
+      if (min_size > buffer.size()) {
+        // the message itself is too big to fit, so we need to resize the buffer
+        std::vector<uint8_t> bigger(min_size * 2);
+
+        if (old_data > 0) {
+          // its ub to copy from/into a nullptr even with size = 0 ...
+          memcpy(bigger.data(), buffer.data() + current_offset, old_data);
+        }
         buffer = std::move(bigger);
       } else {
+        // the message can fit into our buffer, we just have to make sure
+        // to move the unread data to the front
         if (old_data > 0) {
           memmove(buffer.data(), buffer.data() + current_offset, old_data);
         }
       }
 
+      // in any case, we deleted all read data from the front, and moved
+      // the unread data to the front
       current_offset = 0;
       data_in_buffer = old_data;
     }
 
-    assert(data_in_buffer + min_size <= buffer.size());
+    assert(min_size <= buffer.size());
 
     uint32_t bytes_read = 0;
 
     uint8_t* head = buffer.data() + data_in_buffer;
     uint32_t max_size = buffer.size() - data_in_buffer;
 
-    uint32_t read_goal = min_size - old_data;
-
     while (bytes_read < read_goal) {
-      auto new_bytes = read(fd, head + bytes_read, max_size - bytes_read);
+      auto new_bytes
+          = recv(fd, head + bytes_read, max_size - bytes_read, MSG_DONTWAIT);
       if (new_bytes < 0) {
         auto err = errno;
         switch (err) {
@@ -149,7 +174,10 @@ struct ProtoInputStream {
     memcpy(&RequestSize, ptr, sizeof(RequestSize));
 
     ptr = do_read(RequestSize);
-    if (!ptr) { return false; }
+    if (!ptr) {
+      assert(0);
+      return false;
+    }
 
     return msg.ParseFromArray(ptr, RequestSize);
   }
@@ -222,6 +250,9 @@ struct ProtoBidiStream {
 
   std::size_t read_count{}, write_count{};
 
+  std::atomic<std::size_t> concurrent_reads;
+  std::atomic<std::size_t> concurrent_writes;
+
   // for a bidirectional file descriptor; think socket
   ProtoBidiStream(int bidi_fd) : ProtoBidiStream(bidi_fd, bidi_fd) {}
 
@@ -235,13 +266,29 @@ struct ProtoBidiStream {
   template <typename Message> bool Read(Message& msg)
   {
     read_count += 1;
-    return input.Read(msg);
+
+    auto before = concurrent_reads++;
+    assert(before == 0);
+
+    bool ok = input.Read(msg);
+
+    concurrent_reads -= 1;
+
+    return ok;
   }
 
   template <typename Message> bool Write(Message& msg)
   {
     write_count += 1;
-    return output.Write(msg);
+
+    auto before = concurrent_writes++;
+    assert(before == 0);
+
+    bool ok = output.Write(msg);
+
+    concurrent_writes -= 1;
+
+    return ok;
   }
 
   template <typename Message> bool WriteBuffered(Message& msg)
