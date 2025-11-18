@@ -1,3 +1,4 @@
+%s
 SELECT
   *, configured - used as remaining
 FROM (SELECT
