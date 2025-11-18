@@ -11,6 +11,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - python: fix traceback generation [PR #2306]
 
+### Documentation
+- Add historic data to CHANGELOG.md [PR #2437]
+
 ## [22.1.7] - 2025-04-14
 
 ### Fixed
@@ -1394,4 +1397,5 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 [PR #2197]: https://github.com/bareos/bareos/pull/2197
 [PR #2294]: https://github.com/bareos/bareos/pull/2294
 [PR #2306]: https://github.com/bareos/bareos/pull/2306
+[PR #2437]: https://github.com/bareos/bareos/pull/2437
 [unreleased]: https://github.com/bareos/bareos/tree/master
