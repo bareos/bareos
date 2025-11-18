@@ -31,6 +31,7 @@ include(BareosLocalBuildDefinitions OPTIONAL
 )
 
 include(BareosConfigureFile)
+include(BareosInstallConfigFiles)
 
 bareos_configure_file(
   FILES
@@ -54,27 +55,25 @@ install(
 )
 
 install(
-  FILES "${CMAKE_CURRENT_BINARY_DIR}/media_vault.ini.example"
-  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ
-  DESTINATION "${confdir}"
+  CODE "
+  bareos_install_single_config_file(\"${CMAKE_CURRENT_BINARY_DIR}/media_vault.ini.example\" \"${configtemplatedir}\" \"\")
+"
 )
 
 install(
-  FILES console_media_vault.conf.example
-  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
-              WORLD_READ WORLD_EXECUTE
-  DESTINATION "${confdir}/bareos-dir.d/console"
+  CODE "
+  bareos_install_single_config_file(\"${CMAKE_CURRENT_SOURCE_DIR}/console_media_vault.conf.example\" \"${configtemplatedir}\" \"bareos-dir.d/console\")
+"
 )
 
 install(
-  FILES profile_media_vault.conf.example
-  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ
-  DESTINATION "${confdir}/bareos-dir.d/profile"
+  CODE "
+  bareos_install_single_config_file(\"${CMAKE_CURRENT_BINARY_DIR}/job_admin-media_vault.conf.example\" \"${configtemplatedir}\" \"bareos-dir.d/job\")
+"
 )
 
 install(
-  FILES "${CMAKE_CURRENT_BINARY_DIR}/job_admin-media_vault.conf.example"
-  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ
-  DESTINATION "${confdir}/bareos-dir.d/job"
+  CODE "
+  bareos_install_single_config_file(\"${CMAKE_CURRENT_SOURCE_DIR}/profile_media_vault.conf.example\" \"${configtemplatedir}\" \"bareos-dir.d/profile\")
+"
 )
-
