@@ -94,6 +94,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - uniformized variables [PR #2391]
 - plugin: postgresql do testing with wal compress on [PR #2408]
 - cmake: fix traymonitor startup on windows [PR #2423]
+- packaging: bareos-contrib-tool depend on python3-bareos [PR #2432]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -2070,6 +2071,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2423]: https://github.com/bareos/bareos/pull/2423
 [PR #2427]: https://github.com/bareos/bareos/pull/2427
 [PR #2431]: https://github.com/bareos/bareos/pull/2431
+[PR #2432]: https://github.com/bareos/bareos/pull/2432
 [PR #2434]: https://github.com/bareos/bareos/pull/2434
 [PR #2439]: https://github.com/bareos/bareos/pull/2439
 [unreleased]: https://github.com/bareos/bareos/tree/master
