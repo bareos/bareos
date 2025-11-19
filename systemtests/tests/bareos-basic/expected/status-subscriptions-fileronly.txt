@@ -1,0 +1,8 @@
+status subscriptions
+
+Backup unit totals:
+       used: 1
+ configured: 10
+  remaining: 9
+
+
