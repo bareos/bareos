@@ -55,9 +55,7 @@ if(ENABLE_GRPC)
     endforeach()
 
     if(Protobuf_VERSION VERSION_LESS 3.15.0)
-      set(_PROTOBUF_PROTOC_EXTRA_PARAMS
-        "--experimental_allow_proto3_optional"
-      )
+      set(_PROTOBUF_PROTOC_EXTRA_PARAMS "--experimental_allow_proto3_optional")
     else()
       set(_PROTOBUF_PROTOC_EXTRA_PARAMS "")
     endif()
@@ -65,10 +63,9 @@ if(ENABLE_GRPC)
     add_custom_command(
       OUTPUT ${protosrcs} ${protohdrs}
       COMMAND
-      $<TARGET_FILE:protobuf::protoc> ARGS --cpp_out=lite:"${PROTO_OUTPUT_DIR}"
-      -I "${Protobuf_INCLUDE_DIRS}"
-      -I "${path}" --python_out "${PROTO_OUTPUT_DIR}"
-      ${_PROTOBUF_PROTOC_EXTRA_PARAMS} ${abs_files}
+        $<TARGET_FILE:protobuf::protoc> ARGS --cpp_out "${PROTO_OUTPUT_DIR}" -I
+        "${path}" --python_out "${PROTO_OUTPUT_DIR}"
+        ${_PROTOBUF_PROTOC_EXTRA_PARAMS} ${abs_files}
       DEPENDS ${abs_files} protobuf::protoc
       COMMENT "Compiling proto files"
     )
