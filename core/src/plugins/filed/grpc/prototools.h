@@ -22,9 +22,6 @@
 #ifndef BAREOS_PLUGINS_FILED_GRPC_PROTOTOOLS_H_
 #define BAREOS_PLUGINS_FILED_GRPC_PROTOTOOLS_H_
 
-#include <google/protobuf/message.h>
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <pthread.h>
 #include <span>
 #include <fcntl.h>
