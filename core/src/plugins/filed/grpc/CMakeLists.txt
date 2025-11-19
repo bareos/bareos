@@ -38,8 +38,8 @@ if(ENABLE_GRPC)
   function(target_add_proto_sources target)
     set(protosrcs)
     set(protohdrs)
-    set(grpcsrcs)
-    set(grpchdrs)
+
+    set(abs_files)
 
     foreach(file ${ARGN})
       get_filename_component(absolute "${file}" ABSOLUTE)
@@ -49,26 +49,29 @@ if(ENABLE_GRPC)
       set(proto_src "${PROTO_OUTPUT_DIR}/${stem}.pb.cc")
       set(proto_hdr "${PROTO_OUTPUT_DIR}/${stem}.pb.h")
 
-      if(Protobuf_VERSION VERSION_LESS 3.15.0)
-        set(_PROTOBUF_PROTOC_EXTRA_PARAMS
-            "--experimental_allow_proto3_optional"
-        )
-      else()
-        set(_PROTOBUF_PROTOC_EXTRA_PARAMS "")
-      endif()
-      add_custom_command(
-        OUTPUT "${proto_src}" "${proto_hdr}"
-        COMMAND
-          $<TARGET_FILE:protobuf::protoc> ARGS --cpp_out "${PROTO_OUTPUT_DIR}"
-          -I "${path}" --python_out "${PROTO_OUTPUT_DIR}"
-          ${_PROTOBUF_PROTOC_EXTRA_PARAMS} "${absolute}"
-        DEPENDS "${absolute}" protobuf::protoc
-        COMMENT "Compiling proto file ${absolute}"
-      )
-
       list(APPEND protosrcs "${proto_src}")
       list(APPEND protohdrs "${proto_hdr}")
+      list(APPEND abs_files "${absolute}")
     endforeach()
+
+    if(Protobuf_VERSION VERSION_LESS 3.15.0)
+      set(_PROTOBUF_PROTOC_EXTRA_PARAMS
+        "--experimental_allow_proto3_optional"
+      )
+    else()
+      set(_PROTOBUF_PROTOC_EXTRA_PARAMS "")
+    endif()
+
+    add_custom_command(
+      OUTPUT ${protosrcs} ${protohdrs}
+      COMMAND
+      $<TARGET_FILE:protobuf::protoc> ARGS --cpp_out=lite:"${PROTO_OUTPUT_DIR}"
+      -I "${Protobuf_INCLUDE_DIRS}"
+      -I "${path}" --python_out "${PROTO_OUTPUT_DIR}"
+      ${_PROTOBUF_PROTOC_EXTRA_PARAMS} ${abs_files}
+      DEPENDS ${abs_files} protobuf::protoc
+      COMMENT "Compiling proto files"
+    )
 
     message(DEBUG "Generated proto files:")
     message(DEBUG " proto: ${protosrcs} / ${protohdrs}")
