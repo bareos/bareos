@@ -17,10 +17,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
+import threading
 import libcloud.storage.types
 import libcloud.storage.providers
 import libcloud.common.types
-import threading
 
 options = {
     "secret": "minioadmin",
@@ -37,24 +37,23 @@ def get_driver(driver_options):
     Get and return a libcloud storage driver based on the provided options.
     Note that exception handling is the responsibility of the caller.
     """
-    # copy options to avoid modifying the original
-    driver_opt = driver_options.copy()
 
-    provider_opt = driver_opt.get("provider", "S3")
+    driver_opt = {}
 
-    # remove unknown options
+    provider_opt = driver_options.get("provider", "S3")
+
+    # only use valid options for driver
     for opt in (
-        "buckets_exclude",
-        "accurate",
-        "nb_worker",
-        "prefetch_size",
-        "queue_size",
-        "provider",
-        "buckets_include",
-        "debug",
+        "secret",
+        "key",
+        "host",
+        "port",
+        "secure",
+        "timeout",
     ):
-        if opt in driver_opt:
-            del driver_opt[opt]
+        value = driver_options.get(opt)
+        if value is not None:
+            driver_opt[opt] = value
 
     # driver = None
     # Using thread local variable here because as libcloud docs recommend,
@@ -64,10 +63,6 @@ def get_driver(driver_options):
     # thread gets stuck on that call.
     tl = threading.local()
     tl.driver = None
-
-    # FIXME: remove again or make it configurable
-    driver_opt["timeout"] = 30
-
     tl.provider = getattr(libcloud.storage.types.Provider, provider_opt)
     tl.driver = libcloud.storage.providers.get_driver(tl.provider)(**driver_opt)
 
