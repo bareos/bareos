@@ -43,14 +43,14 @@ import socket
 import traceback
 import sys
 import inspect
-from importlib import import_module
 
 f = open("/tmp/log.out", "w")
 
 
 def log(msg):
     print(msg, file=f)
-    print(msg, file=sys.stderr)
+    # print(msg, file=sys.stderr)
+    pass
 
 
 def readnbyte(sock, n):
@@ -67,11 +67,11 @@ def readnbyte(sock, n):
 def readmsg(sock, msg):
     size_bytes = readnbyte(sock, 4)
     size = int.from_bytes(size_bytes, "little")
-    log(f"size = {size}")
+    # log(f"size = {size}")
 
     obj_bytes = readnbyte(sock, size)
     msg.ParseFromString(obj_bytes)
-    log(f"request = {msg}")
+    # log(f"request = {msg}")
 
 
 def writemsg(sock, msg):
@@ -116,16 +116,14 @@ class BareosConnection:
         writemsg(self.core, req)
 
 
-con = None
-
 ### BAREOS PLUGIN API
 
-level = None
-since = None
-plugin_loaded = False
-module_name = None
-module_path = None
-quit = False
+level: int = None
+since: int = None
+plugin_loaded: bool = False
+module_path: str = None
+quit: bool = False
+con: BareosConnection = None
 
 
 def bareos_event(event: events_pb2.Event):
@@ -188,7 +186,7 @@ def bareos_event(event: events_pb2.Event):
         # case "since":
 
         case unexpected:
-            log(f"unexpected event conversion for type '{unexpected}'")
+            # log(f"unexpected event conversion for type '{unexpected}'")
             raise ValueError
 
 
@@ -198,7 +196,7 @@ def parse_options(options: str) -> str:
     if options == "*all*":
         return None
 
-    log(f"parsing '{options}'")
+    # log(f"parsing '{options}'")
 
     # TODO: if the plugin wasnt loaded yet, we need to keep a copy
     #       of options around and append it to the next option
@@ -207,11 +205,11 @@ def parse_options(options: str) -> str:
     plugin_options = []
 
     rest = options
-    log(f"looking at '{rest}'")
+    # log(f"looking at '{rest}'")
     while rest != "":
         [kv, _, rest] = rest.partition(":")
 
-        log(f"untangle '{kv}'")
+        # log(f"untangle '{kv}'")
 
         [key, sep, value] = kv.partition("=")
 
@@ -222,10 +220,10 @@ def parse_options(options: str) -> str:
             raise ValueError
 
         match key:
-            case "module_name":
-                global module_name
-                module_name = value
-                pass
+            # case "module_name":
+            #    global module_name
+            #    module_name = value
+            #    pass
             case "module_path":
                 global module_path
                 module_path = value
@@ -235,7 +233,7 @@ def parse_options(options: str) -> str:
 
     inner_options = ":".join(plugin_options)
 
-    log(f"passing to plugin: '{inner_options}'")
+    # log(f"passing to plugin: '{inner_options}'")
 
     return inner_options
 
@@ -249,19 +247,21 @@ def handle_plugin_options(options: str) -> bRCs:
         return bRC_Skip
 
     if not plugin_loaded:
-        global module_name
+        # global module_name
 
-        # module = import_module(module_name)
-        log(f"paths = {sys.path}")
+        # # module = import_module(module_name)
+        # log(f"paths = {sys.path}")
 
-        module = __import__(module_name, globals(), locals(), [], 0)
+        # module = __import__(module_name, globals(), locals(), [], 0)
 
-        log(f"got module {module}")
+        # log(f"got module {module}")
 
-        loader = module.__dict__["load_bareos_plugin"]
-        log(f"got loader {loader}")
+        # loader = module.__dict__["load_bareos_plugin"]
+        # log(f"got loader {loader}")
 
-        loader(plugin_options)
+        # loader(plugin_options)
+
+        BareosFdWrapper.load_bareos_plugin(plugin_options)
         plugin_loaded = True
 
     return BareosFdWrapper.parse_plugin_definition(plugin_options)
@@ -304,14 +304,14 @@ def handle_plugin_event(
 
                 global module_name
 
-                log(f"paths = {sys.path}")
+                # log(f"paths = {sys.path}")
 
                 module = __import__(module_name, globals(), locals(), [], 0)
 
-                log(f"got module {module}")
+                # log(f"got module {module}")
 
                 loader = module.__dict__["load_bareos_plugin"]
-                log(f"got loader {loader}")
+                # log(f"got loader {loader}")
 
                 result = loader(plugin_options)
                 if result != bRC_OK:
@@ -402,7 +402,7 @@ def start_backup(
             resp.file.stats.blocks = pkt.statp.st_blocks
 
             if type == common_pb2.SoftLink:
-                resp.file.link = pkt.link
+                resp.file.link = pkt.link.encode()
         case common_pb2.FileErrorType:
             resp.error.file = pkt.fname
             resp.error.error = type
@@ -443,10 +443,10 @@ def file_open(req: plugin_pb2.fileOpenRequest, resp: plugin_pb2.fileOpenResponse
         raise ValueError
 
     if iop.status == iostat_do_in_core:
-        log(f"do io in core")
+        # log(f"do io in core")
         resp.io_in_core = True
     else:
-        log(f"do io in plugin")
+        # log(f"do io in plugin")
         resp.io_in_core = False
 
 
@@ -484,10 +484,10 @@ def file_read(req: plugin_pb2.fileReadRequest, resp: plugin_pb2.fileReadResponse
         raise ValueError
 
     if len(iop.buf) > req.num_bytes:
-        log(f"got too many bytes {iop.status} > {req.num_bytes}")
+        # log(f"got too many bytes {iop.status} > {req.num_bytes}")
         raise ValueError
 
-    log(f"read {iop.status} {len(iop.buf)}/{req.num_bytes} bytes")
+    # log(f"read {iop.status} {len(iop.buf)}/{req.num_bytes} bytes")
 
     # TODO: maybe we can avoid the copy somehow ? ...
     resp.data = bytes(iop.buf[: iop.status])
@@ -582,7 +582,6 @@ def GetValue(var: bVariable):
             req.GetInt.var = bareos_pb2.BV_Accurate
         case bVariable.bVarPrefixLinks:
             req.GetInt.var = bareos_pb2.BV_PrefixLinks
-
         case bVariable.bVarFileSeen:
             req.GetInt.var = bareos_pb2.BV_FileSeen
         case bVariable.bVarCheckChanges:
@@ -601,7 +600,7 @@ def GetValue(var: bVariable):
         case "GetFlag":
             return resp.GetFlag.value
         case unexpected:
-            log(f"received unexpected type {unexpected}")
+            # log(f"received unexpected type {unexpected}")
             raise ValueError
 
 
@@ -618,9 +617,9 @@ class SourceLocation:
 
 def DebugMessage(level: int, string: str, caller: SourceLocation = None):
     if caller is None:
-        frame_info = inspect.getframeinfo(inspect.stack()[1][0])
+        frame = sys._getframe(1)
         caller = SourceLocation(
-            frame_info.lineno, frame_info.filename, frame_info.function
+            frame.f_lineno, frame.f_code.co_filename, frame.f_code.co_name
         )
     req = bareos_pb2.CoreRequest()
     dbg_req = req.DebugMessage
@@ -630,17 +629,19 @@ def DebugMessage(level: int, string: str, caller: SourceLocation = None):
     dbg_req.file = caller.file.encode()
     dbg_req.function = caller.function.encode()
 
-    log(f"writing debug message {req}")
+    # log(f"writing debug message {req}")
     con.write_core(req)
+
+    # print(string)
 
     return bRC_OK
 
 
 def JobMessage(type: bJobMessageType, string: str, caller: SourceLocation = None):
     if caller is None:
-        frame_info = inspect.getframeinfo(inspect.stack()[1][0])
+        frame = sys._getframe(1)
         caller = SourceLocation(
-            frame_info.lineno, frame_info.filename, frame_info.function
+            frame.f_lineno, frame.f_code.co_filename, frame.f_code.co_name
         )
 
     req = bareos_pb2.CoreRequest()
@@ -651,7 +652,7 @@ def JobMessage(type: bJobMessageType, string: str, caller: SourceLocation = None
     job_req.file = caller.file.encode()
     job_req.function = caller.function.encode()
 
-    log(f"writing job message {req}")
+    # # log(f"writing job message {req}")
     con.write_core(req)
 
     pass
@@ -733,7 +734,7 @@ def ClearSeenBitmap(all: bool, fname: str = None):
 
 
 def handle_request(req: plugin_pb2.PluginRequest):
-    log(f"handling {req}")
+    # log(f"handling {req}")
 
     resp = plugin_pb2.PluginResponse()
 
@@ -798,15 +799,24 @@ def handle_request(req: plugin_pb2.PluginRequest):
     return resp
 
 
+log(f"name = '{__name__}'")
+
+
 def run():
     log("##############################################")
     log("########## starting bareosfd plugin ##########")
     log("##############################################")
     try:
+        from google.protobuf.internal import api_implementation
+
+        impl = api_implementation.Type()
+        log(f"proto impl = {impl}")
+
         global con
         con = BareosConnection()
-        log(f"plugin = {con.plugin}, core = {con.core}, io = {con.io}")
+        # log(f"plugin = {con.plugin}, core = {con.core}, io = {con.io}")
         while not quit:
+
             req = con.read_plugin()
             resp = handle_request(req)
             con.write_plugin(resp)
