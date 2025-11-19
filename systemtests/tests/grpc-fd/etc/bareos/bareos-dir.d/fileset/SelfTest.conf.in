@@ -65,9 +65,8 @@ FileSet {
       Acl Support = No
       Xattr Support = No
     }
-    Plugin = "grpc:bareosfd_grpc.py"
+    Plugin = "grpc:bareos-fd-local-fileset-acl-xattr.py"
     ":module_path=@python_plugin_module_src_test_dir@"
-    ":module_name=bareos-fd-local-fileset-acl-xattr"
     ":filename=@tmpdir@/file-list"
   }
 }
