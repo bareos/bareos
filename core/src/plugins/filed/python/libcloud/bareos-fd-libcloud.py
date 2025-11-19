@@ -216,6 +216,7 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass):
         self.default_options["job_message_after_each_number_of_objects"] = "100"
         self.default_options["prefetch_inmemory_size"] = "10240"
         self.default_options["global_timeout"] = "600"
+        self.default_options["libcloud_timeout"] = "60"
         self.last_run = datetime.datetime.fromtimestamp(self.since)
         self.last_run = self.last_run.replace(tzinfo=None)
 
@@ -379,6 +380,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass):
                     self.effective_options["prefetch_size"] = int(SafeEval.size(value))
                 elif option == "temporary_download_directory":
                     self.effective_options["temporary_download_directory"] = value
+                elif option == "libcloud_timeout":
+                    self.effective_options["timeout"] = int(value)
                 else:
                     self.effective_options[option] = value
             except ValueError:
