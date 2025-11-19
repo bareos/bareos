@@ -22,7 +22,6 @@
 #include "plugin_service.h"
 #include <fcntl.h>
 #include <poll.h>
-#include <grpc/compression.h>
 #include "bareos.pb.h"
 #include "common.pb.h"
 #include "filed/fd_plugins.h"
