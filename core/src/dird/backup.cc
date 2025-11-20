@@ -1040,14 +1040,17 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
          Mmsg(statistics, T_(
               "  FD Files Written:       %s\n"
               "  SD Files Written:       %s\n"
+              "  FD Bytes Read:          %s (%sB)\n"
               "  FD Bytes Written:       %s (%sB)\n"
               "  SD Bytes Written:       %s (%sB)\n"),
               edit_uint64_with_commas(jcr->dir_impl->jr.JobFiles, ec1),
               edit_uint64_with_commas(jcr->dir_impl->SDJobFiles, ec2),
-              edit_uint64_with_commas(jcr->dir_impl->jr.JobBytes, ec3),
-              edit_uint64_with_suffix(jcr->dir_impl->jr.JobBytes, ec4),
-              edit_uint64_with_commas(jcr->dir_impl->SDJobBytes, ec5),
-              edit_uint64_with_suffix(jcr->dir_impl->SDJobBytes, ec6));
+              edit_uint64_with_commas(jcr->dir_impl->jr.ReadBytes, ec3),
+              edit_uint64_with_suffix(jcr->dir_impl->jr.ReadBytes, ec4),
+              edit_uint64_with_commas(jcr->dir_impl->jr.JobBytes, ec5),
+              edit_uint64_with_suffix(jcr->dir_impl->jr.JobBytes, ec6),
+              edit_uint64_with_commas(jcr->dir_impl->SDJobBytes, ec7),
+              edit_uint64_with_suffix(jcr->dir_impl->SDJobBytes, ec8));
       }
       break;
    }

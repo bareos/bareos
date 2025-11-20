@@ -171,6 +171,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - webui: use patched laminas packages [PR #2439]
 - plugins: add proxmox backup [PR #2372]
 - Introduce build of Fedora 43 [PR #2407]
+- jobreport: show FD Bytes Read [PR #2443]
 
 ## [24.0.0] - 2024-12-16
 
@@ -2076,4 +2077,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2432]: https://github.com/bareos/bareos/pull/2432
 [PR #2434]: https://github.com/bareos/bareos/pull/2434
 [PR #2439]: https://github.com/bareos/bareos/pull/2439
+[PR #2443]: https://github.com/bareos/bareos/pull/2443
 [unreleased]: https://github.com/bareos/bareos/tree/master
