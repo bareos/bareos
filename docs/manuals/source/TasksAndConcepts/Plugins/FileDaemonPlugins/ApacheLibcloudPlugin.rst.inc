@@ -17,7 +17,7 @@ The status of the Libcloud plugin is **experimental**. It can automatically recu
 on a S3 storage. However, **restore of objects cannot be done directly back to the storage**. A restore will write these objects
 *as files on a filesystem*.
 
-Since :sinceVersion:`25.0.5: Apache Libcloud Plugin` the plugin was changed to
+Since :sinceVersion:`25.0.0: Apache Libcloud Plugin` the plugin was changed to
 use the Python *threading* module instead of *multiprocessing* to make it work
 with current Python versions. Unfortunately libcloud is not fully thread safe,
 this can cause unresponsive worker threads on bad network connections when
@@ -27,6 +27,9 @@ disabled, this can cause the plugin to hang indefinetely and would require
 restarting the bareos-filedaemon. So the default and recommended setting for
 is option is now disabled.
 
+It is recommended to use the grpc plugin mode, especially when running multiple
+jobs with the Libcloud plugin in parallel.
+
 .. _LibcloudPlugin-requirements:
 
 Requirements of Libcloud Plugin
@@ -35,7 +38,7 @@ Requirements of Libcloud Plugin
 To use the Apache Libcloud plugin, the **apache-libcloud** module for Python 3
 must be installed.
 
-The plugin needs several options to run properly, the plugin options in the fileset resource and an additional configuration file. Both is described below.
+The plugin needs several options to run properly, plugin options can be set as explained in :ref:`section-python-fd Plugin`.
 
 .. _LibcloudPlugin-installation:
 
@@ -62,7 +65,7 @@ Configuration of Libcloud Plugin
        }
        Plugin = "python"
                 ":module_name=bareos-fd-libcloud"
-                ":config_file=/etc/bareos/libcloud_config.ini"
+                ":defaults_file=/etc/bareos/libcloud_config.ini"
                 ":buckets_include=user_data"
                 ":buckets_exclude=tmp"
      }
@@ -170,8 +173,12 @@ Optional Plugin Options:
 These options in the config file are optional:
 
 fail_on_download_error
-   When this option is enabled, any error during a file download will fail the backup job.
-   By default a warning will be issued and the next file will be backed up.
+   When this option is enabled, any error during a file download will fail the
+   backup job. This is the default and recommended as explained above.
+   When disabling this setting by **fail_on_download_error = no**, a warning
+   will be issued on each failure and the next file will be backed up. As
+   mentioned above, this can lead to unresponsive worker threads on bad
+   network connections, so it's not recommended to set this to disabled.
 
 job_message_after_each_number_of_objects
    When running a backup, put a jobmessage after each count of "job_message_after_number_of_objects"
@@ -192,7 +199,3 @@ global_timeout
 
 libcloud_timeout
    Timeout value for single libcloud calls in seconds, default value is 60.
-
-
-
-
