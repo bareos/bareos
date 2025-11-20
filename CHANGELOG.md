@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - Add historic data to CHANGELOG.md [PR #2435]
 
+### Changed
+- backport bugfixes from 2407 [PR #2446]
+
 ## [24.0.7] - 2025-10-30
 
 ### Documentation
@@ -1983,4 +1986,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2424]: https://github.com/bareos/bareos/pull/2424
 [PR #2433]: https://github.com/bareos/bareos/pull/2433
 [PR #2435]: https://github.com/bareos/bareos/pull/2435
+[PR #2446]: https://github.com/bareos/bareos/pull/2446
 [unreleased]: https://github.com/bareos/bareos/tree/master
