@@ -48,6 +48,8 @@
 #include "lib/plugins.h"
 #include "lib/edit.h"
 
+#include <algorithm>
+
 namespace {
 uint32_t PyVersion()
 {
