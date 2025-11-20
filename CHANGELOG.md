@@ -170,6 +170,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - plugins: introduce windows disaster recovery  imager (barri) [PR #2285]
 - webui: use patched laminas packages [PR #2439]
 - plugins: add proxmox backup [PR #2372]
+- Introduce build of Fedora 43 [PR #2407]
 
 ## [24.0.0] - 2024-12-16
 
@@ -2063,6 +2064,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2401]: https://github.com/bareos/bareos/pull/2401
 [PR #2403]: https://github.com/bareos/bareos/pull/2403
 [PR #2404]: https://github.com/bareos/bareos/pull/2404
+[PR #2407]: https://github.com/bareos/bareos/pull/2407
 [PR #2408]: https://github.com/bareos/bareos/pull/2408
 [PR #2412]: https://github.com/bareos/bareos/pull/2412
 [PR #2416]: https://github.com/bareos/bareos/pull/2416
