@@ -387,6 +387,8 @@ Requires(pre): shadow-utils
 Requires:   %{_sbindir}/getcap
 Requires:   %{_sbindir}/setcap
 Provides:   %{name}-libs
+Provides:   user(%{daemon_user})
+Provides:   group(%{daemon_group})
 
 %package    database-common
 Summary:    Generic abstraction libs and files to connect to a database
