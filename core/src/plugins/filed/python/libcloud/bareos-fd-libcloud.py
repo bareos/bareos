@@ -96,14 +96,14 @@ class StringCodec:
 class FilenameConverter:
     """
     Utility class for converting filenames between backup and bucket formats.
-    In the Bareos Catalog filenames are stored with the prefix 'PYLIBCLOUD:/',
+    In the Bareos Catalog filenames are stored with the prefix '@PYLIBCLOUD:/',
     for restores this prefix must be removed.
 
     Example bucket format: 'testbucket/testfolder/testfile.txt'
-    Example backup format: 'PYLIBCLOUD:/testbucket/testfolder/testfile.txt'
+    Example backup format: '@PYLIBCLOUD:/testbucket/testfolder/testfile.txt'
     """
 
-    __pathprefix = "PYLIBCLOUD:/"
+    __pathprefix = "@PYLIBCLOUD:/"
 
     @staticmethod
     def bucket_to_backup(filename):
@@ -229,9 +229,11 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass):
         self.active = True
         self.api = None
         self.config = None
-        self.job_message_after_each_number_of_objects = None
+        self.job_message_after_each_number_of_objects = int(
+            self.default_options["job_message_after_each_number_of_objects"]
+        )
         # global timeout in seconds
-        self.global_timeout = 600
+        self.global_timeout = int(self.default_options["global_timeout"])
         self.io_in_core = True
         self.file_count = defaultdict(int)
         self.mandatory_options = [
@@ -793,8 +795,8 @@ class BareosFdPluginLibcloud(BareosFdPluginBaseclass):
                         bareosfd.M_INFO,
                         f"Number of backed-up objects: {self.backed_up_objects_count}",
                     )
-            debugmessage(110, "end_backup_file() returing bareosfd.bRC_More")
+            debugmessage(110, "end_backup_file() returning bareosfd.bRC_More")
             return bareosfd.bRC_More
 
-        debugmessage(110, "end_backup_file() returing bareosfd.bRC_OK")
+        debugmessage(110, "end_backup_file() returning bareosfd.bRC_OK")
         return bareosfd.bRC_OK
