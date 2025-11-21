@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+# Copyright (C) 2020-2025 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -17,9 +17,10 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 
-import ctypes
-import libcloud
-from multiprocessing.sharedctypes import RawArray
+import threading
+import libcloud.storage.types
+import libcloud.storage.providers
+import libcloud.common.types
 
 options = {
     "secret": "minioadmin",
@@ -31,63 +32,55 @@ options = {
 }
 
 
-def get_driver(options):
-    driver_opt = dict(options)
+def get_driver(driver_options):
+    """
+    Get and return a libcloud storage driver based on the provided options.
+    Note that exception handling is the responsibility of the caller.
+    """
 
-    try:
-        provider_opt = driver_opt.get("provider")
-    except KeyError:
-        provider_opt = "S3"
+    driver_opt = {}
 
-    # remove unknown options
+    provider_opt = driver_options.get("provider", "S3")
+
+    # only use valid options for driver
     for opt in (
-        "buckets_exclude",
-        "accurate",
-        "nb_worker",
-        "prefetch_size",
-        "queue_size",
-        "provider",
-        "buckets_include",
-        "debug",
+        "secret",
+        "key",
+        "host",
+        "port",
+        "secure",
+        "timeout",
     ):
-        if opt in options:
-            del driver_opt[opt]
+        value = driver_options.get(opt)
+        if value is not None:
+            driver_opt[opt] = value
 
-    driver = None
+    # driver = None
+    # Using thread local variable here because as libcloud docs recommend,
+    # unfortunately this doesn't help, when libcloud calls throw exceptions
+    # threads start to become unresponsive, because the next libcloud call
+    # does not time out and throw and exception as expected, instead the
+    # thread gets stuck on that call.
+    tl = threading.local()
+    tl.driver = None
+    tl.provider = getattr(libcloud.storage.types.Provider, provider_opt)
+    tl.driver = libcloud.storage.providers.get_driver(tl.provider)(**driver_opt)
 
-    provider = getattr(libcloud.storage.types.Provider, provider_opt)
-    driver = libcloud.storage.providers.get_driver(provider)(**driver_opt)
-
-    try:
-        driver.get_container("bareos-libcloud-invalidname-bareos-libcloud")
-        return driver  # success if bucket accidentally matches
-
-    # success
-    except libcloud.storage.types.ContainerDoesNotExistError:
-        return driver
-
-    # error
-    except libcloud.common.types.InvalidCredsError:
-        print("Wrong credentials")
-        pass
-
-    # error
-    except:
-        print("Error connecting driver")
-        pass
-
-    print(
-        "Could not connect to libcloud driver: %s:%s"
-        % (driver_opt["host"], driver_opt["port"])
-    )
-
-    return None
+    # This could seem useless, but it is not. Some drivers (like S3)
+    # do not actually connect until the first operation is performed.
+    # This will raise an exception if the connection cannot be made.
+    tl.driver.iterate_containers()
+    return tl.driver
 
 
 if __name__ == "__main__":
-    driver = get_driver(options)
-
-    if driver == None:
+    try:
+        storage_driver = get_driver(options)
+    except libcloud.common.types.InvalidCredsError:
+        print("Invalid credentials")
+        exit(1)
+    except Exception as e:
+        print(f"Failed to get driver: {e} ({type(e).__name__})")
         exit(1)
 
     print("Success")
