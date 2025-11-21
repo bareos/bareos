@@ -95,6 +95,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - plugin: postgresql do testing with wal compress on [PR #2408]
 - cmake: fix traymonitor startup on windows [PR #2423]
 - packaging: bareos-contrib-tool depend on python3-bareos [PR #2432]
+- packaging: make contrib-tools use defaultsconfig [PR #2445]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -2082,4 +2083,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2442]: https://github.com/bareos/bareos/pull/2442
 [PR #2443]: https://github.com/bareos/bareos/pull/2443
 [PR #2444]: https://github.com/bareos/bareos/pull/2444
+[PR #2445]: https://github.com/bareos/bareos/pull/2445
 [unreleased]: https://github.com/bareos/bareos/tree/master

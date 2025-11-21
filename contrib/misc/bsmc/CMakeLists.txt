@@ -19,15 +19,21 @@
 
 message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
+set(CMAKE_MODULE_PATH
+    ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/../../SOURCES
+    ${PROJECT_SOURCE_DIR}/../SOURCES ${PROJECT_SOURCE_DIR}/cmake
+)
+
+include(BareosInstallConfigFiles)
+
 install(
   FILES bin/bsmc
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
               WORLD_READ WORLD_EXECUTE
   DESTINATION "${bindir}"
 )
-
 install(
-  FILES etc/bareos/bsmc.conf
-  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ
-  DESTINATION "${confdir}"
+  CODE "
+  bareos_install_single_config_file(\"${CMAKE_CURRENT_SOURCE_DIR}/etc/bareos/bsmc.conf\" \"${configtemplatedir}\" \"\")
+"
 )

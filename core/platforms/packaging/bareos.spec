@@ -970,6 +970,7 @@ install -d -m 755 %{buildroot}/usr/share/pixmaps
 install -d -m 755 %{buildroot}%{backend_dir}
 install -d -m 755 %{buildroot}%{working_dir}
 install -d -m 755 %{buildroot}%{plugin_dir}
+install -d -m 755 %{buildroot}%{configtemplatedir}
 install -d -m 750 %{buildroot}%{confdir}/bareos-dir-export/client
 
 #Cleaning
@@ -1335,7 +1336,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files common
 # common shared libraries (without db)
 %defattr(-, root, root)
-%attr(2755, root, %{daemon_group})           %dir %{_sysconfdir}/%{name}
+%attr(2755, root, %{daemon_group}) %dir %{_sysconfdir}/%{name}
+%attr(2755, root, %{daemon_group}) %dir %{configtemplatedir}
 %if !0%{?client_only}
 # these directories belong to bareos-common,
 # as other packages may contain configurations for the director.
@@ -1560,12 +1562,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_bindir}/chunk_check.py
 %{_bindir}/bareos-triggerjob.py
 %{_bindir}/bsmc
-%attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bsmc.conf
+%{configtemplatedir}/bsmc.conf
 %{script_dir}/reschedule_job_as_full.sh
-%attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/media_vault.ini.example
-%attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/console/console_media_vault.conf.example
-%attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/profile/profile_media_vault.conf.example
-%attr(0640, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/job/job_admin-media_vault.conf.example
+%{configtemplatedir}/media_vault.ini.example
+%{configtemplatedir}/bareos-dir.d/console/console_media_vault.conf.example
+%{configtemplatedir}/bareos-dir.d/profile/profile_media_vault.conf.example
+%{configtemplatedir}/bareos-dir.d/job/job_admin-media_vault.conf.example
 %{script_dir}/media_vault.sh
 %{script_dir}/media_vault.py
 
@@ -2149,5 +2151,22 @@ a2enmod fcgid &> /dev/null || true
 
 %endif
 #endif webui
+
+%pre contrib-tools
+%logging_start contrib-tools pre
+if [ $1 -gt 1 ]; then
+  # upgrade
+  %if_package_version_lt %{name}-contrib-tools 25.0.0
+    %pre_backup_file "%{_sysconfdir}/%{name}/bsmc.conf"
+  fi
+fi
+%logging_end
+exit 0
+
+%posttrans contrib-tools
+%logging_start contrib-tools posttrans
+# update from bareos < 25
+%posttrans_restore_file "%{_sysconfdir}/%{name}/bsmc.conf"
+%logging_end
 
 %changelog
