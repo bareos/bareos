@@ -1,3 +1,4 @@
+%s
 SELECT * FROM (
   SELECT *
   FROM backup_unit_overview

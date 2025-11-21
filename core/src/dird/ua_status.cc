@@ -482,7 +482,9 @@ std::string get_subscription_status_checksum_source_text(UaContext* ua,
   OutputFormatter output_text
       = OutputFormatter(pm_append, &subscriptions, nullptr, nullptr);
   ua->db->FillQuery(
-      query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_1,
+      query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_2,
+      ua->db->get_predefined_query(
+          BareosDb::SQL_QUERY::subscription_with_clause_0),
       me->subscriptions);
   ua->db->ListSqlQuery(ua->jcr, query.c_str(), &output_text, VERT_LIST, false);
   std::string checksum_source
@@ -540,16 +542,23 @@ static bool DoSubscriptionStatus(UaContext* ua)
                              "%s\n");
     ua->send->ObjectKeyValue("report-time", "Report time: ", now, "%s\n");
     ua->SendMsg(T_("\nDetailed backup unit report:\n"));
-    ua->db->ListSqlQuery(
-        ua->jcr,
-        BareosDb::SQL_QUERY::subscription_select_backup_unit_overview_0,
-        ua->send, HORZ_LIST, "unit-detail", true);
+
+    PoolMem query(PM_MESSAGE);
+    ua->db->FillQuery(
+        query, BareosDb::SQL_QUERY::subscription_select_backup_unit_overview_1,
+        ua->db->get_predefined_query(
+            BareosDb::SQL_QUERY::subscription_with_clause_0));
+
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
+                         "unit-detail", true);
   }
   if (kw_all || kw_detail || !kw_unknown) {
     ua->SendMsg(T_("\nBackup unit totals:\n"));
     PoolMem query(PM_MESSAGE);
     ua->db->FillQuery(
-        query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_1,
+        query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_2,
+        ua->db->get_predefined_query(
+            BareosDb::SQL_QUERY::subscription_with_clause_0),
         me->subscriptions);
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, VERT_LIST,
                          "total-units-required", true,
@@ -566,19 +575,26 @@ static bool DoSubscriptionStatus(UaContext* ua)
     ua->SendMsg(
         T_("\nClients/Filesets that cannot be categorized for backup units "
            "yet:\n"));
-    ua->db->ListSqlQuery(
-        ua->jcr,
-        BareosDb::SQL_QUERY::subscription_select_unclassified_client_fileset_0,
-        ua->send, HORZ_LIST, "filesets-not-catogorized", true);
+    PoolMem query(PM_MESSAGE);
+    ua->db->FillQuery(
+        query,
+        BareosDb::SQL_QUERY::subscription_select_unclassified_client_fileset_1,
+        ua->db->get_predefined_query(
+            BareosDb::SQL_QUERY::subscription_with_clause_0));
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
+                         "filesets-not-catogorized", true);
 
     ua->SendMsg(
         T_("\nAmount of data that cannot be categorized for backup units "
            "yet:\n"));
-    ua->db->ListSqlQuery(
-        ua->jcr,
-        BareosDb::SQL_QUERY::subscription_select_unclassified_amount_data_0,
-        ua->send, VERT_LIST, "data-not-categorized", true,
-        BareosDb::CollapseMode::Collapse);
+    ua->db->FillQuery(
+        query,
+        BareosDb::SQL_QUERY::subscription_select_unclassified_amount_data_1,
+        ua->db->get_predefined_query(
+            BareosDb::SQL_QUERY::subscription_with_clause_0));
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, VERT_LIST,
+                         "data-not-categorized", true,
+                         BareosDb::CollapseMode::Collapse);
   }
   ua->SendMsg(
       T_("\nEstimate only. Contact Bareos for actual quote"

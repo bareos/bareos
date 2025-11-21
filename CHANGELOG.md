@@ -173,6 +173,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - Introduce build of Fedora 43 [PR #2407]
 - jobreport: show FD Bytes Read [PR #2443]
 - macos: use macos-15 runner [PR #2442]
+- Improve status subscription [PR #2444]
 
 ## [24.0.0] - 2024-12-16
 
@@ -2080,4 +2081,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2439]: https://github.com/bareos/bareos/pull/2439
 [PR #2442]: https://github.com/bareos/bareos/pull/2442
 [PR #2443]: https://github.com/bareos/bareos/pull/2443
+[PR #2444]: https://github.com/bareos/bareos/pull/2444
 [unreleased]: https://github.com/bareos/bareos/tree/master

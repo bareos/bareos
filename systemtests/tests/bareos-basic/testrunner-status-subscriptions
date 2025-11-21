@@ -3,8 +3,7 @@ set -e
 set -o pipefail
 set -u
 #
-# Run a simple backup
-#   then restore it.
+# Test the output of the status subscription command
 #
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -22,6 +21,9 @@ rm -f "$tmp"/status-subscription*.txt
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out ${NULL_DEV}
+sqlquery
+DELETE from job WHERE jobid!=1;
+
 use
 @$out $tmp/status-subscriptions.txt
 status subscriptions
@@ -29,10 +31,7 @@ status subscriptions
 status subscriptions detail
 @$out $tmp/status-subscriptions-unknown.txt
 status subscriptions unknown
-
-quit
 END_OF_DATA
-
 run_bconsole
 
 # remove lines starting with @ so output is comparable
@@ -43,6 +42,65 @@ for f in status-subscriptions status-subscriptions-detail status-subscriptions-u
     echo "Output $f does not match expectation!" >&2
     estat=1
   fi
+done
+
+declare -A PLUGINDEFS
+
+PLUGINDEFS["db"]="python3:module_name=bareos-fd-ldap\
+        python3:module_name=bareos-fd-mariabackup\
+        python3:module_name=bareos-fd-percona\
+        python3:module_name=bareos-fd-postgres\
+        mssqlvdi:instance=default:database=myDatabase:username=bareos:password=bareos"
+
+PLUGINDEFS["filer"]="python3:module_name=bareos-fd-libcloud \
+        python3:module_name=bareos-fd-qumulo\
+        meta=\"BUTYPE=DUMP\""
+
+PLUGINDEFS["vm"]="barri:dingens \
+        hyper-v:vmname=testvm \
+        python3:module_name=bareos-fd-ovirt \
+        python3:module_name=bareos-fd-proxmox \
+        python3:module_name=bareos-fd-vmware"
+
+for PLUGINTYPE in "${!PLUGINDEFS[@]}"; do
+
+  for PLUGINSTRING in ${PLUGINDEFS[${PLUGINTYPE}]}; do
+
+    rm -f "$tmp"/status-subscription*.txt
+
+    cat <<END_OF_DATA2 >$tmp/bconcmds
+@$out ${NULL_DEV}
+use
+
+sqlquery 
+update fileset set filesettext = '{ { plugin=${PLUGINSTRING} } }' where filesetid=1;
+select * from  fileset where filesetid=1;
+
+@$out $tmp/status-subscriptions-${PLUGINTYPE}only.txt
+status subscriptions
+@$out $tmp/status-subscriptions-detail-${PLUGINTYPE}only.txt
+status subscriptions detail
+@$out $tmp/status-subscriptions-unknown-${PLUGINTYPE}only.txt
+status subscriptions unknown
+quit
+
+END_OF_DATA2
+    run_bconsole
+
+    echo "Checking if \"$PLUGINSTRING\" counts as $PLUGINTYPE unit"
+
+    # remove lines starting with @ so output is comparable
+    sed -i'.bak' -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" "$tmp"/status-subscription*.txt
+    #
+    for f in status-subscriptions-${PLUGINTYPE}only status-subscriptions-detail-${PLUGINTYPE}only status-subscriptions-unknown-${PLUGINTYPE}only; do
+      if ! diff --ignore-all-space --unified expected/$f.txt "$tmp/$f.txt"; then
+        echo "Output $f does not match expectation!" >&2
+        estat=1
+      fi
+    done
+
+  done
+
 done
 
 end_test
