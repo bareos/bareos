@@ -375,6 +375,8 @@ Requires(pre): glibc-common
 Requires(pre): shadow-utils
 %endif
 Provides:   %{name}-libs
+Provides:   user(%{daemon_user})
+Provides:   group(%{daemon_group})
 
 %package    database-common
 Summary:    Generic abstraction libs and files to connect to a database

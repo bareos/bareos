@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -66,6 +66,44 @@ if(ENABLE_SANITIZERS)
         "Cannot (yet) compile with sanitizers on ${CMAKE_C_COMPILER_ID}"
     )
   endif()
+endif()
+
+option(ENABLE_THREAD_SANITIZERS "Build with TSan enabled" OFF)
+if(ENABLE_THREAD_SANITIZERS)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -fsanitize=thread -fno-sanitize-recover"
+    )
+    set(CMAKE_C_FLAGS
+        "${CMAKE_C_FLAGS} -fsanitize=thread -fno-sanitize-recover"
+    )
+
+    add_compile_definitions(BAREOS_THREAD_SANITIZER=1)
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -fsanitize=thread -fno-sanitize-recover"
+    )
+    set(CMAKE_C_FLAGS
+        "${CMAKE_C_FLAGS} -fsanitize=thread -fno-sanitize-recover"
+    )
+    add_compile_definitions(BAREOS_THREAD_SANITIZER=1)
+  elseif(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=thread")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=thread")
+    add_compile_definitions(BAREOS_THREAD_SANITIZER=1)
+  else()
+    message(
+      FATAL_ERROR
+        "Cannot (yet) compile with sanitizers on ${CMAKE_C_COMPILER_ID}"
+    )
+  endif()
+endif()
+
+if(ENABLE_THREAD_SANITIZERS AND ENABLE_SANITIZERS)
+  message(
+    WARNING
+      "enabling both thread sanitizer and address sanitizer is not supported"
+  )
 endif()
 
 option(ENABLE_STATIC_RUNTIME_LIBS "Link C and C++ runtime libraries statically"
