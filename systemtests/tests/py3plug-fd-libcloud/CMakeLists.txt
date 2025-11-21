@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,7 +23,7 @@ if(TARGET python3-fd)
      AND MINIO
      AND PYMODULE_3_LIBCLOUD_FOUND
      AND (${Python3_VERSION_MAJOR} EQUAL 3)
-     AND (${Python3_VERSION_MINOR} LESS 10)
+     AND (${Python3_VERSION_MINOR} LESS 8)
   )
     create_systemtest(${SYSTEMTEST_PREFIX} "py3plug-fd-libcloud")
   else()
