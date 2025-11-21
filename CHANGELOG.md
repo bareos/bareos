@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - backport bugfixes from 2407 [PR #2446]
 - macos: use macos-15 runner [PR #2448]
 - build: add Fedora 42 [PR #2425]
+- Improve status subscription [PR #2451]
 
 ## [24.0.7] - 2025-10-30
 
@@ -1991,4 +1992,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2435]: https://github.com/bareos/bareos/pull/2435
 [PR #2446]: https://github.com/bareos/bareos/pull/2446
 [PR #2448]: https://github.com/bareos/bareos/pull/2448
+[PR #2451]: https://github.com/bareos/bareos/pull/2451
 [unreleased]: https://github.com/bareos/bareos/tree/master

@@ -1,0 +1,16 @@
+status subscriptions detail
+
+Detailed backup unit report:
++-----------+------------------+----------+----------+-------------+--------------+
+| client    | fileset          | db_units | vm_units | filer_units | normal_units |
++-----------+------------------+----------+----------+-------------+--------------+
+| bareos-fd | <all file-based> |          |          |           1 |              |
+| TOTAL     |                  |          |          |           1 |              |
++-----------+------------------+----------+----------+-------------+--------------+
+
+Backup unit totals:
+       used: 1
+ configured: 10
+  remaining: 9
+
+
