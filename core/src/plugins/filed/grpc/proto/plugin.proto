@@ -15,8 +15,7 @@ message SetupResponse {};
 message PluginRequest {
   oneof request {
     handlePluginEventRequest handle_plugin = 10;
-    startBackupFileRequest start_backup = 11;
-    endBackupFileRequest end_backup_file = 12;
+    StartBackupFileRequest start_backup = 11;
     startRestoreFileRequest start_restore_file = 13;
     endRestoreFileRequest end_restore_file = 14;
     fileOpenRequest file_open = 15;
@@ -31,15 +30,13 @@ message PluginRequest {
     getXattrRequest get_xattr = 24;
     setXattrRequest set_xattr = 25;
     SetupRequest setup = 26;
-    fileReadRequest file_read = 27;
   };
 };
 
 message PluginResponse {
   oneof response {
     handlePluginEventResponse handle_plugin = 10;
-    startBackupFileResponse start_backup = 11;
-    endBackupFileResponse end_backup_file = 12;
+    StartBackupFileResponse start_backup = 11;
     startRestoreFileResponse start_restore_file = 13;
     endRestoreFileResponse end_restore_file = 14;
     fileOpenResponse file_open = 15;
@@ -54,7 +51,6 @@ message PluginResponse {
     getXattrResponse get_xattr = 24;
     setXattrResponse set_xattr = 25;
     SetupResponse setup = 26;
-    fileReadResponse file_read = 27;
   };
 };
 
@@ -90,18 +86,19 @@ enum StartBackupFileResult {
   SBF_Skip = 3;
 };
 
-message startBackupFileRequest {
+message StartBackupFileRequest {
   // no idea what these do
   bool portable = 1;
   bool no_read = 2;
   // ---
 
+  uint64 max_record_size = 3;
 
-  bytes flags = 3;
-  bytes cmd = 4;
+  bytes flags = 4;
+  bytes cmd = 5;
 };
 
-message startBackupFileResponse {
+message StartBackupFileResponse {
   StartBackupFileResult result = 1;
   oneof payload {
     bareos.common.PluginObject object = 2;
@@ -110,16 +107,11 @@ message startBackupFileResponse {
   };
 };
 
-enum EndBackupFileResult {
-  END_BACKUP_FILE_RESULT_UNSPECIFIED = 0;
-  EBF_Done = 1;
-  EBF_More = 2;
-};
-
-message endBackupFileRequest {};
-
-message endBackupFileResponse {
-  EndBackupFileResult result = 1;
+message FileRecord {
+  oneof payload {
+    bytes data = 1;
+    string error = 2;
+  }
 };
 
 // ---- Restore ----
@@ -152,9 +144,6 @@ message fileSeekRequest {
   int64 offset = 2;
 };
 
-message fileReadRequest {
-  uint64 num_bytes = 1;
-};
 message fileWriteRequest {
   uint64 bytes_written = 1;
 };
@@ -166,11 +155,6 @@ message fileOpenResponse {
   bool io_in_core = 1;
 };
 message fileSeekResponse {
-};
-message fileReadResponse {
-  // the read request may be split into multiple chunks.
-  // the total size shall not exceed the requested size
-  bytes data = 1;
 };
 message fileWriteResponse {
   int64 bytes_written = 1;

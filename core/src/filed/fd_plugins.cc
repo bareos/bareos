@@ -843,6 +843,7 @@ int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
                 "Plugin returned bRC_Skip, continue with next file\n");
           continue;
         case bRC_Error:
+          Dmsg0(200, "start_backup_file failed\n");
           Jmsg1(jcr, M_FATAL, 0,
                 T_("Command plugin \"%s\": startBackupFile failed.\n"),
                 cmd.c_str());

@@ -26,7 +26,6 @@ from bareosfd_type_conv import (
     event_type_remote,
     brc_type_remote,
     sbf_remote,
-    ebf_remote,
     jmsg_type_remote,
     ft_remote,
 )
@@ -38,6 +37,7 @@ from proto import events_pb2
 from proto import common_pb2
 
 from os import SEEK_END, SEEK_CUR, SEEK_SET
+import os
 
 import socket
 import traceback
@@ -64,6 +64,11 @@ def readnbyte(sock, n):
     return buff
 
 
+in_count: int = 0
+out_count: int = 0
+d_count: int = 0
+
+
 def readmsg(sock, msg):
     size_bytes = readnbyte(sock, 4)
     size = int.from_bytes(size_bytes, "little")
@@ -71,6 +76,9 @@ def readmsg(sock, msg):
 
     obj_bytes = readnbyte(sock, size)
     msg.ParseFromString(obj_bytes)
+
+    global in_count
+    in_count += 1
     # log(f"request = {msg}")
 
 
@@ -82,6 +90,9 @@ def writemsg(sock, msg):
     # log(f"bytes = {len(size_bytes)}, obj = {len(obj_bytes)}")
     sock.sendall(size_bytes)
     sock.sendall(obj_bytes)
+
+    global out_count
+    out_count += 1
 
 
 def bit_is_set(flags: bytearray, index: int) -> bool:
@@ -352,9 +363,20 @@ def handle_plugin_event(
     resp.res = brc_type_remote(result)
 
 
-def start_backup(
-    req: plugin_pb2.startBackupFileRequest, resp: plugin_pb2.startBackupFileResponse
-):
+last_file_done: bool = False
+
+
+def start_backup(req: plugin_pb2.StartBackupFileRequest):
+    global last_file_done
+
+    outer_resp = plugin_pb2.PluginResponse()
+    resp = outer_resp.start_backup
+
+    if last_file_done:
+        resp.result = plugin_pb2.SBF_Stop
+        con.write_plugin(resp)
+        return
+
     pkt = SavePacket()
     pkt.cmd = req.cmd  # maybe needs to be a str instead
     pkt.no_read = req.no_read
@@ -364,6 +386,7 @@ def start_backup(
     resp.result = sbf_remote(result)
 
     if result != bRC_OK:
+        con.write_plugin(outer_resp)
         return
 
     (category, type) = ft_remote(pkt.type)
@@ -374,6 +397,8 @@ def start_backup(
             resp.object.name = pkt.name
             resp.object.data = pkt.object
             resp.type = type
+
+            con.write_plugin(outer_resp)
         case common_pb2.FileType:
             resp.file.no_read = pkt.no_read
             resp.file.portable = pkt.portable
@@ -403,18 +428,64 @@ def start_backup(
 
             if type == common_pb2.SoftLink:
                 resp.file.link = pkt.link.encode()
+
+            con.write_plugin(outer_resp)
+
+            if pkt.no_read:
+                return
+
+            fo_req = plugin_pb2.fileOpenRequest()
+            fo_req.file = pkt.fname.encode()
+            fo_req.flags = os.O_RDONLY
+            fo_req.mode = 0
+            fo_resp = plugin_pb2.fileOpenResponse()
+            fo_res = file_open(fo_req, fo_resp)
+
+            # if fo_res != bRC_OK:
+            #     err = plugin_pb2.FileRecord()
+            #     err.error = "could not open file"
+            #     con.write_plugin(err)
+            #     return
+
+            while True:
+                data = file_read(req.max_record_size)
+                if data is None:
+                    fr = plugin_pb2.FileRecord()
+                    fr.data = bytes()
+                    con.write_plugin(fr)
+                    break
+                else:
+                    fr = plugin_pb2.FileRecord()
+                    fr.data = data
+                    con.write_plugin(fr)
+
+            iop = IoPacket()
+
+            iop.func = bIOPS.IO_CLOSE
+            result = BareosFdWrapper.plugin_io(iop)
+
+            if result != bRC_OK:
+                raise ValueError
+
+            int_result = BareosFdWrapper.end_backup_file()
+            # log(f"got ebf result = {int_result}")
+            if int_result != bRC_More:
+                last_file_done = True
+
         case common_pb2.FileErrorType:
             resp.error.file = pkt.fname
             resp.error.error = type
+
+            con.write_plugin(outer_resp)
         case _:
             raise ValueError
 
 
-def end_backup_file(
-    req: plugin_pb2.endBackupFileRequest, resp: plugin_pb2.endBackupFileResponse
-):
-    result = BareosFdWrapper.end_backup_file()
-    resp.result = ebf_remote(result)
+# def end_backup_file(
+#     req: plugin_pb2.endBackupFileRequest, resp: plugin_pb2.endBackupFileResponse
+# ):
+#     result = BareosFdWrapper.end_backup_file()
+#     resp.result = ebf_remote(result)
 
 
 def start_restore_file(
@@ -473,24 +544,27 @@ def file_seek(req: plugin_pb2.fileSeekRequest, resp: plugin_pb2.fileSeekResponse
     resp.SetInParent()
 
 
-def file_read(req: plugin_pb2.fileReadRequest, resp: plugin_pb2.fileReadResponse):
+def file_read(num_bytes: int):
     iop = IoPacket()
 
     iop.func = bIOPS.IO_READ
-    iop.count = req.num_bytes
+    iop.count = num_bytes
 
     result = BareosFdWrapper.plugin_io(iop)
     if result != bRC_OK:
         raise ValueError
 
-    if len(iop.buf) > req.num_bytes:
-        # log(f"got too many bytes {iop.status} > {req.num_bytes}")
+    if len(iop.buf) > num_bytes:
+        log(f"got too many bytes {iop.status} > {num_bytes}")
         raise ValueError
 
-    # log(f"read {iop.status} {len(iop.buf)}/{req.num_bytes} bytes")
+    # log(f"read {iop.status} {len(iop.buf)}/{num_bytes} bytes")
+
+    if iop.status == 0:
+        return None
 
     # TODO: maybe we can avoid the copy somehow ? ...
-    resp.data = bytes(iop.buf[: iop.status])
+    return bytes(iop.buf[: iop.status])
 
 
 def file_write(req: plugin_pb2.fileWriteRequest, resp: plugin_pb2.fileWriteResponse):
@@ -600,7 +674,7 @@ def GetValue(var: bVariable):
         case "GetFlag":
             return resp.GetFlag.value
         case unexpected:
-            # log(f"received unexpected type {unexpected}")
+            log(f"received unexpected type {unexpected}")
             raise ValueError
 
 
@@ -634,6 +708,9 @@ def DebugMessage(level: int, string: str, caller: SourceLocation = None):
 
     # print(string)
 
+    global d_count
+    d_count += 1
+
     return bRC_OK
 
 
@@ -652,7 +729,7 @@ def JobMessage(type: bJobMessageType, string: str, caller: SourceLocation = None
     job_req.file = caller.file.encode()
     job_req.function = caller.function.encode()
 
-    # # log(f"writing job message {req}")
+    # log(f"writing job message {req}")
     con.write_core(req)
 
     pass
@@ -736,47 +813,61 @@ def ClearSeenBitmap(all: bool, fname: str = None):
 def handle_request(req: plugin_pb2.PluginRequest):
     # log(f"handling {req}")
 
-    resp = plugin_pb2.PluginResponse()
+    resp = None
 
     match req.WhichOneof("request"):
         case "handle_plugin":
             # resp.handle_plugin.SetInParent()
             DebugMessage(100, f"got handle_plugin")
+            resp = plugin_pb2.PluginResponse()
             handle_plugin_event(req.handle_plugin, resp.handle_plugin)
         case "start_backup":
             DebugMessage(100, f"got start_backup")
-            start_backup(req.start_backup, resp.start_backup)
-        case "end_backup_file":
-            end_backup_file(req.end_backup_file, resp.end_backup_file)
+            start_backup(req.start_backup)
+        # case "end_backup_file":
+        #     resp = plugin_pb2.PluginResponse()
+        #     end_backup_file(req.end_backup_file, resp.end_backup_file)
         case "start_restore_file":
+            resp = plugin_pb2.PluginResponse()
             start_restore_file(req.start_restore_file, resp.start_restore_file)
         case "end_restore_file":
+            resp = plugin_pb2.PluginResponse()
             end_restore_file(req.end_restore_file, resp.end_restore_file)
         case "file_open":
+            resp = plugin_pb2.PluginResponse()
             file_open(req.file_open, resp.file_open)
         case "file_seek":
+            resp = plugin_pb2.PluginResponse()
             file_seek(req.file_seek, resp.file_seek)
-        case "file_read":
-            file_read(req.file_read, resp.file_read)
         case "file_write":
+            resp = plugin_pb2.PluginResponse()
             file_write(req.file_write, resp.file_write)
         case "file_close":
+            resp = plugin_pb2.PluginResponse()
             file_close(req.file_close, resp.file_close)
         case "create_file":
+            resp = plugin_pb2.PluginResponse()
             create_file(req.create_file, resp.create_file)
         case "set_file_attributes":
+            resp = plugin_pb2.PluginResponse()
             set_file_attributes(req.set_file_attributes, resp.set_file_attributes)
         case "check_file":
+            resp = plugin_pb2.PluginResponse()
             check_file(req.check_file, resp.check_file)
         case "get_acl":
+            resp = plugin_pb2.PluginResponse()
             get_acl(req.get_acl, resp.get_acl)
         case "set_acl":
+            resp = plugin_pb2.PluginResponse()
             set_acl(req.set_acl, resp.set_acl)
         case "get_xattr":
+            resp = plugin_pb2.PluginResponse()
             get_xattr(req.get_xattr, resp.get_xattr)
         case "set_xattr":
+            resp = plugin_pb2.PluginResponse()
             set_xattr(req.set_xattr, resp.set_xattr)
         case "setup":
+            resp = plugin_pb2.PluginResponse()
             RegisterEvents(
                 [
                     bEventLevel,
@@ -796,7 +887,8 @@ def handle_request(req: plugin_pb2.PluginRequest):
             raise ValueError
 
     # log(f"responding with {resp}")
-    return resp
+    if resp is not None:
+        con.write_plugin(resp)
 
 
 log(f"name = '{__name__}'")
@@ -814,12 +906,13 @@ def run():
 
         global con
         con = BareosConnection()
-        # log(f"plugin = {con.plugin}, core = {con.core}, io = {con.io}")
+        log(f"plugin = {con.plugin}, core = {con.core}, io = {con.io}")
         while not quit:
 
             req = con.read_plugin()
-            resp = handle_request(req)
-            con.write_plugin(resp)
+            handle_request(req)
+
+        log(f"in_count = {in_count}, out_count = {out_count}, d_count = {d_count}")
 
     except:
         error = traceback.format_exc()
