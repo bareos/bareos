@@ -620,8 +620,8 @@ auto PluginService::handlePluginEvent(
 
   return Status::OK;
 }
-auto PluginService::startBackupFile(const bp::startBackupFileRequest* request,
-                                    bp::startBackupFileResponse* response)
+auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
+                                    bp::StartBackupFileResponse* response)
     -> Status
 {
   filedaemon::save_pkt sp;

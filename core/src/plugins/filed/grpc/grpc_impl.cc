@@ -1300,7 +1300,12 @@ class PluginClient {
     return handlePluginEvent(type, &req);
   }
 
-  std::optional<int32_t> cached_flags{};
+
+  struct cached_start_backup_file {
+    bool io_in_core;
+  };
+
+  std::optional<cached_start_backup_file> start_backup_file{};
 
   bRC startBackupFile(filedaemon::save_pkt* pkt)
   {
@@ -1309,6 +1314,8 @@ class PluginClient {
       auto* inner_req = req.mutable_start_backup();
       inner_req->set_no_read(pkt->no_read);
       inner_req->set_portable(pkt->portable);
+      inner_req->set_max_record_size(256 << 10);
+
       auto inner = strip_prefix(pkt->cmd);
 
       auto& cached = cached_start_backup.emplace();
@@ -1323,13 +1330,20 @@ class PluginClient {
       if (!stream->Write(req)) { return bRC_Error; }
     }
 
-
     bp::PluginResponse outer_resp;
 
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
+    if (!stream->Read(outer_resp)) {
+      DebugLog(100, "read failed\n");
+      return bRC_Error;
+    }
 
-    if (!outer_resp.has_start_backup()) { return bRC_Error; }
+    if (!outer_resp.has_start_backup()) {
+      DebugLog(100, "bad message type\n");
+      return bRC_Error;
+    }
     auto& resp = outer_resp.start_backup();
+
+    start_backup_file.emplace().io_in_core = false;
 
     switch (resp.result()) {
       case bareos::plugin::SBF_OK: {
@@ -1437,7 +1451,6 @@ class PluginClient {
           cached_file.emplace(pkt->fname);
 
           if (!pkt->no_read) {
-            predict(FILE_OPEN);
           } else if (expect_acl || expect_xattr) {
             // predict(expect_acl ? GET_ACL : GET_XATTR);
           }
@@ -1517,34 +1530,8 @@ class PluginClient {
 
   bRC endBackupFile()
   {
-    cached_file.reset();
-
-    if (!check_prediction(END_BACKUP_FILE)) {
-      bp::PluginRequest outer_req;
-      auto& req = *outer_req.mutable_end_backup_file();
-      (void)req;
-
-      if (!stream->Write(outer_req)) { return bRC_Error; }
-    }
-
-
-    bp::PluginResponse outer_resp{};
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_end_backup_file()) { return bRC_Error; }
-
-    auto& resp = outer_resp.end_backup_file();
-    switch (resp.result()) {
-      case bareos::plugin::EBF_Done: {
-        cached_start_backup.reset();
-        return bRC_OK;
-      }
-      case bareos::plugin::EBF_More: {
-        predict(START_BACKUP_FILE);
-        return bRC_More;
-      }
-      default:
-        return bRC_Error;
-    }
+    start_backup_file.reset();
+    return bRC_More;
   }
 
   bRC startRestoreFile(std::string_view cmd)
@@ -1586,40 +1573,16 @@ class PluginClient {
     return bRC_OK;
   }
 
-
   bRC FileOpen(std::string_view name,
                int32_t flags,
                int32_t mode,
                bool* io_in_core)
   {
-    if (!check_prediction(FILE_OPEN)) {
-      cached_flags = flags;
-
-      bp::PluginRequest outer_req;
-      auto& req = *outer_req.mutable_file_open();
-      req.set_mode(mode);
-      req.set_flags(flags);
-      req.set_file(name.data(), name.size());
-
-      if (!stream->Write(outer_req)) { return bRC_Error; }
-    } else {
-      assert(name == *cached_file);
-    }
-    bp::PluginResponse outer_resp;
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_file_open()) { return bRC_Error; }
-
-    auto& resp = outer_resp.file_open();
-    DebugLog(100, FMT_STRING("FileOpen {{io_in_core = {}}}"),
-             resp.io_in_core());
-
-    *io_in_core = resp.io_in_core();
-
-    if (!resp.io_in_core()) {
-      // predict(FILE_READ);  // TODO: or FILE_WRITE
-    } else {
-      // predict(FILE_CLOSE);
-    }
+    if (!start_backup_file) { return bRC_Error; }
+    (void)name;
+    (void)flags;
+    (void)mode;
+    *io_in_core = start_backup_file->io_in_core;
     return bRC_OK;
   }
 
@@ -1661,29 +1624,23 @@ class PluginClient {
 
   bRC FileRead(char* buf, size_t size, int32_t* bytes_read)
   {
-    if (!check_prediction(FILE_READ)) {
-      cached_size = size;
-      bp::PluginRequest outer_req;
-      auto& req = *outer_req.mutable_file_read();
-      req.set_num_bytes(size);
-      if (!stream->Write(outer_req)) { return bRC_Error; }
+    bp::FileRecord rec;
+    if (!stream->Read(rec)) {
+      DebugLog(100, "could not read filerecord");
+      return bRC_Error;
     }
-    bp::PluginResponse outer_resp;
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_file_read()) { return bRC_Error; }
 
-    auto& resp = outer_resp.file_read();
-
-    auto& data = resp.data();
-    if (data.size() > size) { return bRC_Error; }
+    auto& data = rec.data();
+    if (data.size() > size) {
+      DebugLog(100, "too much data received");
+      return bRC_Error;
+    }
 
     *bytes_read = static_cast<typeof(*bytes_read)>(data.size());
-    if (data.size() > 0) {
-      memcpy(buf, data.data(), data.size());
-      predict(FILE_READ);
-    } else {
-      predict(FILE_CLOSE);
-    }
+
+    DebugLog(200, "read {} bytes", *bytes_read);
+
+    if (data.size() > 0) { memcpy(buf, data.data(), data.size()); }
     return bRC_OK;
   }
 
@@ -1708,27 +1665,7 @@ class PluginClient {
     return bRC_OK;
   }
 
-  bRC FileClose()
-  {
-    if (!check_prediction(FILE_CLOSE)) {}
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_file_close();
-    (void)req;
-
-    if (!stream->Write(outer_req)) { return bRC_Error; }
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_file_close()) { return bRC_Error; }
-
-    auto& resp = outer_resp.file_close();
-    (void)resp;
-
-    if (expect_xattr || expect_acl) {
-      // predict(expect_acl ? GET_ACL : GET_XATTR);
-    }
-
-    return bRC_OK;
-  }
+  bRC FileClose() { return bRC_OK; }
 
   std::optional<bareos::common::ReplaceType> grpc_replace_type(int replace)
   {
@@ -2069,9 +2006,7 @@ class PluginClient {
     START_BACKUP_FILE,
     END_BACKUP_FILE,
     FILE_OPEN,
-    FILE_READ,
     FILE_WRITE,
-    FILE_CLOSE,
     GET_ACL,
     GET_XATTR,
   };
@@ -2087,12 +2022,8 @@ class PluginClient {
         return "end-backup-file";
       case FILE_OPEN:
         return "file-open";
-      case FILE_READ:
-        return "file-read";
       case FILE_WRITE:
         return "file-write";
-      case FILE_CLOSE:
-        return "file-close";
       case GET_XATTR:
         return "get-xattr";
       case GET_ACL:
@@ -2121,6 +2052,8 @@ class PluginClient {
     switch (Step) {
       case HANDLE_EVENT: {
       } break;
+      case FILE_OPEN: {
+      } break;
       case START_BACKUP_FILE: {
         if (!cached_start_backup) { return; }
 
@@ -2129,6 +2062,7 @@ class PluginClient {
         inner_req->set_no_read(cached_start_backup->no_read);
         inner_req->set_portable(cached_start_backup->portable);
         inner_req->set_cmd(cached_start_backup->command);
+        inner_req->set_max_record_size(256 << 10);
         inner_req->set_flags(cached_start_backup->flags,
                              sizeof(cached_start_backup->flags));
 
@@ -2137,39 +2071,15 @@ class PluginClient {
         }
       } break;
       case END_BACKUP_FILE: {
-        bp::PluginRequest predicted_outer_req;
-        auto& predicted_req = *predicted_outer_req.mutable_end_backup_file();
-        (void)predicted_req;
+        // bp::PluginRequest predicted_outer_req;
+        // auto& predicted_req = *predicted_outer_req.mutable_end_backup_file();
+        // (void)predicted_req;
 
-        if (!stream->Write(predicted_outer_req)) {
-          // return bRC_Error;
-        }
-      } break;
-      case FILE_OPEN: {
-        if (!cached_flags) { return; }
-        if (!cached_file) { return; }
-        bp::PluginRequest predicted_outer_req;
-        auto& predicted_req = *predicted_outer_req.mutable_file_open();
-        predicted_req.set_mode(0);
-        predicted_req.set_flags(*cached_flags);
-        predicted_req.set_file(*cached_file);
-
-        if (!stream->Write(predicted_outer_req)) {
-          // return bRC_Error;
-        }
-      } break;
-      case FILE_READ: {
-        if (!cached_size) { return; }
-        bp::PluginRequest outer_predicted_req;
-        auto& predicted_req = *outer_predicted_req.mutable_file_read();
-        predicted_req.set_num_bytes(*cached_size);
-        if (!stream->Write(outer_predicted_req)) {
-          // return bRC_Error;
-        }
+        // if (!stream->Write(predicted_outer_req)) {
+        //   // return bRC_Error;
+        // }
       } break;
       case FILE_WRITE: {
-      } break;
-      case FILE_CLOSE: {
       } break;
       case GET_ACL: {
         if (!cached_file) { return; }
@@ -2922,7 +2832,7 @@ bRC grpc_connection::pluginIO(filedaemon::io_pkt* pkt, int iosock)
 
   switch (pkt->func) {
     case filedaemon::IO_OPEN: {
-      bool io_in_core;
+      bool io_in_core = false;
       auto res
           = client->FileOpen(pkt->fname, pkt->flags, pkt->mode, &io_in_core);
       if (res != bRC_OK) {
