@@ -53,15 +53,19 @@ WITH latest_full_size_categorized AS (
     END::bigint AS unknown_mb,
     CASE
       WHEN f.filesettext ILIKE '%{%{%meta%=%' THEN NULL
+      WHEN f.filesettext ILIKE '%{%{%Plugin%=%barri' THEN NULL
+      WHEN f.filesettext ILIKE '%{%{%Plugin%=%barri:%' THEN NULL
+      WHEN f.filesettext ILIKE '%{%{%Plugin%=%hyper-v:%' THEN NULL
       WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN NULL
+      WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN NULL
+      WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-libcloud%' THEN NULL
       WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-mariabackup%' THEN NULL
+      WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ovirt%' THEN NULL
       WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN NULL
       WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-postgres%' THEN NULL
-      WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN NULL
-      WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-vmware%' THEN NULL
-      WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ovirt%' THEN NULL
-      WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-libcloud%' THEN NULL
+      WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-proxmox%' THEN NULL
       WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-qumulo%' THEN NULL
+      WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-vmware%' THEN NULL
       WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL
       WHEN f.filesettext ILIKE '%{%{%File%=%Plugin%=%' OR f.filesettext ILIKE '%{%{%Plugin%=%File%=%' THEN
         CASE WHEN LENGTH(f.filesettext) < 10 THEN '<empty>' ELSE f.filesettext END
