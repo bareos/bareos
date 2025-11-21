@@ -14,6 +14,7 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ### Changed
 - macos: use macos-15 runner [PR #2449]
+- backport bugfixes from 2407 [PR #2447]
 
 ## [23.1.4] - 2025-07-23
 
@@ -1748,5 +1749,6 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2363]: https://github.com/bareos/bareos/pull/2363
 [PR #2415]: https://github.com/bareos/bareos/pull/2415
 [PR #2436]: https://github.com/bareos/bareos/pull/2436
+[PR #2447]: https://github.com/bareos/bareos/pull/2447
 [PR #2449]: https://github.com/bareos/bareos/pull/2449
 [unreleased]: https://github.com/bareos/bareos/tree/master
