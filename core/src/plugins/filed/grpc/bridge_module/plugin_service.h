@@ -102,10 +102,10 @@ class PluginService {
 
   Status handlePluginEvent(const bp::handlePluginEventRequest* request,
                            bp::handlePluginEventResponse* response);
-  Status startBackupFile(const bp::startBackupFileRequest* request,
-                         bp::startBackupFileResponse* response);
-  Status endBackupFile(const bp::endBackupFileRequest* request,
-                       bp::endBackupFileResponse* response);
+  Status startBackupFile(const bp::StartBackupFileRequest* request,
+                         bp::StartBackupFileResponse* response);
+  // Status endBackupFile(const bp::endBackupFileRequest* request,
+  //                      bp::endBackupFileResponse* response);
   Status startRestoreFile(const bp::startRestoreFileRequest* request,
                           bp::startRestoreFileResponse* response);
   Status endRestoreFile(const bp::endRestoreFileRequest* request,

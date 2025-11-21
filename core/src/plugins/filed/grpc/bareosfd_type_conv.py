@@ -202,22 +202,6 @@ assert sbf_remote(bareosfd_types.bRC_OK) == plugin_pb2.SBF_OK
 assert sbf_remote(bareosfd_types.bRC_Stop) == plugin_pb2.SBF_Stop
 assert sbf_remote(bareosfd_types.bRC_Skip) == plugin_pb2.SBF_Skip
 
-### EndBackupFile
-
-
-def ebf_remote(brc: bareosfd_types.bRCs):
-    match brc:
-        case bareosfd_types.bRC_OK:
-            return plugin_pb2.EBF_Done
-        case bareosfd_types.bRC_More:
-            return plugin_pb2.EBF_More
-        case _:
-            raise ValueError
-
-
-assert ebf_remote(bareosfd_types.bRC_OK) == plugin_pb2.EBF_Done
-assert ebf_remote(bareosfd_types.bRC_More) == plugin_pb2.EBF_More
-
 ### FileType
 
 
