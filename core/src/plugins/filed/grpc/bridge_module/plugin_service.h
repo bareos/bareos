@@ -77,7 +77,8 @@ class PluginService {
     if (io >= 0) { close(io); }
   }
 
-  bool HandleRequest(const bp::PluginRequest& req, bp::PluginResponse& resp);
+  bool HandleRequest(const bp::PluginRequest& req,
+                     prototools::ProtoOutputStream& writer);
 
  private:
   const char* non_blocking_write(int fd, int32_t byte_count, char* buffer);
@@ -103,7 +104,7 @@ class PluginService {
   Status handlePluginEvent(const bp::handlePluginEventRequest* request,
                            bp::handlePluginEventResponse* response);
   Status startBackupFile(const bp::StartBackupFileRequest* request,
-                         bp::StartBackupFileResponse* response);
+                         prototools::ProtoOutputStream& writer);
   // Status endBackupFile(const bp::endBackupFileRequest* request,
   //                      bp::endBackupFileResponse* response);
   Status startRestoreFile(const bp::startRestoreFileRequest* request,
@@ -114,8 +115,8 @@ class PluginService {
                   bp::fileOpenResponse* response);
   Status FileSeek(const bp::fileSeekRequest* request,
                   bp::fileSeekResponse* response);
-  Status FileRead(const bp::fileReadRequest* request,
-                  bp::fileReadResponse* response);
+  // Status FileRead(const bp::fileReadRequest* request,
+  //                 bp::fileReadResponse* response);
   Status FileWrite(const bp::fileWriteRequest* request,
                    bp::fileWriteResponse* response);
   Status FileClose(const bp::fileCloseRequest* request,
@@ -138,6 +139,7 @@ class PluginService {
   int io{};
 
   bool* shutdown;
+  bool last_file_done{false};
 
   std::vector<char> vec;
 
