@@ -5,5 +5,5 @@ Client {
   Port = @fd_port@
 
   Plugin Directory = "@FD_PLUGINS_DIR_TO_TEST@"
-  Plugin Names = "grpc"
+  Plugin Names = "grpc", "python3"
 }
