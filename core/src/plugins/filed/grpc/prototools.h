@@ -250,6 +250,48 @@ struct ProtoOutputStream {
   ProtoOutputStream(ProtoOutputStream&&) = delete;
   ProtoOutputStream& operator=(ProtoOutputStream&&) = delete;
 
+  bool do_write(uint32_t size, int fd_to_send)
+  {
+    struct msghdr msg = {};
+    char buf[CMSG_SPACE(sizeof(fd_to_send))] = {};
+
+    iovec io;
+
+    msg.msg_iov = &io;
+    msg.msg_iovlen = 1;
+    msg.msg_control = buf;
+    msg.msg_controllen = sizeof(buf);
+
+    struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
+    cmsg->cmsg_level = SOL_SOCKET;
+    cmsg->cmsg_type = SCM_RIGHTS;
+    cmsg->cmsg_len = CMSG_LEN(sizeof(fd_to_send));
+
+    memcpy(CMSG_DATA(cmsg), &fd_to_send, sizeof(fd_to_send));
+
+    msg.msg_controllen = CMSG_SPACE(sizeof(fd_to_send));
+
+    uint32_t bytes_written = 0;
+
+    while (bytes_written < size) {
+      io.iov_base = buffer.data() + bytes_written;
+      io.iov_len = size - bytes_written;
+
+      auto new_bytes = sendmsg(fd, &msg, 0);
+      if (new_bytes <= 0) { return false; }
+
+      if (new_bytes > 0) {
+        // the control data was sent, so we can remove it now
+        msg.msg_control = nullptr;
+        msg.msg_controllen = 0;
+      }
+
+      bytes_written += new_bytes;
+    }
+
+    return true;
+  }
+
   bool do_write(uint32_t size)
   {
     uint32_t bytes_written = 0;
@@ -261,6 +303,31 @@ struct ProtoOutputStream {
 
       bytes_written += new_bytes;
     }
+
+    return true;
+  }
+
+  template <typename Message> bool WriteBuffered(Message& msg, int fd_to_send)
+  {
+    uint32_t size = msg.ByteSizeLong();
+
+    uint32_t write_size = size + sizeof(size);
+
+    if (buffer.size() < write_size) { buffer.resize(write_size * 2); }
+
+    uint8_t* current = buffer.data();
+    memcpy(current, &size, sizeof(size));
+    current += sizeof(size);
+
+    uint8_t* end = msg.SerializeWithCachedSizesToArray(current);
+
+    if (end - current != size) { assert(0); }
+
+    current = end;
+
+    assert(current - buffer.data() == write_size);
+
+    if (!do_write(write_size, fd_to_send)) { return false; }
 
     return true;
   }
@@ -288,6 +355,11 @@ struct ProtoOutputStream {
     if (!do_write(write_size)) { return false; }
 
     return true;
+  }
+
+  template <typename Message> inline bool Write(Message& msg, int fd_to_send)
+  {
+    return WriteBuffered(msg, fd_to_send);
   }
   template <typename Message> inline bool Write(Message& msg)
   {
