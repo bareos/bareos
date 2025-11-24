@@ -421,9 +421,8 @@ def start_backup(req: plugin_pb2.StartBackupFileRequest):
             if type == common_pb2.SoftLink:
                 resp.file.link = pkt.link.encode()
 
-            con.write_plugin(outer_resp)
-
             if pkt.no_read:
+                con.write_plugin(outer_resp)
                 return
 
             fo_req = plugin_pb2.fileOpenRequest()
@@ -438,6 +437,9 @@ def start_backup(req: plugin_pb2.StartBackupFileRequest):
             #     err.error = "could not open file"
             #     con.write_plugin(err)
             #     return
+
+            resp.io_in_core = fo_resp.io_in_core
+            con.write_plugin(outer_resp)
 
             while True:
                 data = file_read(req.max_record_size)
