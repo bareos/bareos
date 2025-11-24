@@ -25,7 +25,7 @@ Previously we have a page somewhere in the internal wiki, which is obviously not
 
 ## Decision Outcome
 
-Chosen option: "[option 4]", because this fulfill the objective of documentation and normalization.
+Chosen option: "[option 1]", because this fulfill the objective of documentation and normalization.
 
 ### Positive Consequences
 
@@ -60,3 +60,31 @@ Chosen option: "[option 4]", because this fulfill the objective of documentation
 * Bad, because we will have to repeat the information on several pages
 * Bad, will force to create yet-another-page to have all the information grouped in one comparison table
 
+
+## (Re-)Starting Daemons
+
+Distributions and packages can be configured in different ways.
+
+Intention:
+
+  * after installation, the components likely needs configuration, therefore they are not started.
+  * on upgrade, they are configured. However, maybe backup jobs are running. Therefore don't restart the Dir and the SD. The FD is restarted. This should prevent, that a system is regulary updated, but the old daemon keeps on running forever. 
+
+This table should give an overview about the different settings:
+
+**Bareos >= 21**
+
+|               | on install | on boot (enable)                      | on update                                 | tested on    | changed?   |
+| ---- | ---- | ---- | ---- | ----- | ---- |
+| RPM (RH)      |  -         | dir,sd,fd (systemctl enable)          | fd (postuninstall, systemctl try-restart) | CentOS 7     |  -         |
+| RPM (SUSE)    |  -         | dir,sd,fd (systemctl preset + enable) | fd (postuninstall, systemctl try-restart) | SLE_12_SP5   |  -         |
+| DEB           |  -         | dir,sd,fd (deb-systemd-helper)        | fd (deb-systemd-invoke try-restart)       | Ubuntu 20.04 | [1019](https://github.com/bareos/bareos/pull/1019|PR #1019), [1029](https://github.com/bareos/bareos/pull/1029|PR #1029) |
+| PKG (FreeBSD) |  -         | -                                     | -                                         | FreeBSD 14   |  -         |
+
+
+**Bareos <= 20**
+|            | on install                       | on boot (enable)                      | on update                                 | tested on    | changed? |
+| ---- | ---- | ---- | ---- | ----- | ---- |
+| RPM (RH)   |  -                               | dir,sd,fd (systemctl enable)          | fd (postuninstall, systemctl try-restart) | CentOS 7     |  -       |
+| RPM (SUSE) |  -                               | dir,sd,fd (systemctl preset + enable) | fd (postuninstall, systemctl try-restart) | SLE_12_SP5   |  -       |
+| DEB        | fd (invoke-rc.d bareos-fd start) | dir,sd,fd (dh_systemd_enable)         |   .                                       | Debian 9     |  -       |
