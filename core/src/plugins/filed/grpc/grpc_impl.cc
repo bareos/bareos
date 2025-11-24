@@ -1318,12 +1318,6 @@ class PluginClient {
 
       auto inner = strip_prefix(pkt->cmd);
 
-      auto& cached = cached_start_backup.emplace();
-      cached.command.assign(inner);
-      cached.no_read = pkt->no_read;
-      cached.portable = pkt->portable;
-      memcpy(cached.flags, pkt->flags, sizeof(pkt->flags));
-
       inner_req->set_cmd(inner.data(), inner.size());
       inner_req->set_flags(pkt->flags, sizeof(pkt->flags));
 
@@ -1348,6 +1342,9 @@ class PluginClient {
       if (!found_fd) {
         JobLog(core, M_ERROR,
                "plugin indicated io_in_core = yes, but sent no fd");
+        DebugLog(150, "doing io in plugin");
+      } else {
+        DebugLog(150, "doing io in core");
       }
 
       cached.io_in_core_fd = found_fd;
@@ -1356,6 +1353,8 @@ class PluginClient {
         JobLog(core, M_ERROR,
                "plugin indicated io_in_core = no, but sent an fd anyways");
       }
+
+      DebugLog(150, "doing io in plugin");
     }
 
     switch (resp.result()) {
@@ -1595,6 +1594,11 @@ class PluginClient {
     (void)name;
     (void)flags;
     (void)mode;
+    if (start_backup_file->io_in_core_fd) {
+      DebugLog(100, "io_in_core with fd {}", *start_backup_file->io_in_core_fd);
+    } else {
+      DebugLog(100, "io_in_plugin");
+    }
     *io_in_core_fd = start_backup_file->io_in_core_fd;
     return bRC_OK;
   }
@@ -2052,36 +2056,17 @@ class PluginClient {
   bool expect_xattr{};
   bool expect_acl{};
 
-  struct start_backup {
-    std::string command;
-    bool no_read;
-    bool portable;
-    char flags[FOPTS_BYTES];
-  };
-  std::optional<start_backup> cached_start_backup{std::nullopt};
-
   void predict(step Step)
   {
+    return;
+
+
     switch (Step) {
       case HANDLE_EVENT: {
       } break;
       case FILE_OPEN: {
       } break;
       case START_BACKUP_FILE: {
-        if (!cached_start_backup) { return; }
-
-        bp::PluginRequest req;
-        auto* inner_req = req.mutable_start_backup();
-        inner_req->set_no_read(cached_start_backup->no_read);
-        inner_req->set_portable(cached_start_backup->portable);
-        inner_req->set_cmd(cached_start_backup->command);
-        inner_req->set_max_record_size(256 << 10);
-        inner_req->set_flags(cached_start_backup->flags,
-                             sizeof(cached_start_backup->flags));
-
-        if (!stream->Write(req)) {
-          // return bRC_Error;
-        }
       } break;
       case END_BACKUP_FILE: {
         // bp::PluginRequest predicted_outer_req;
@@ -2853,6 +2838,7 @@ bRC grpc_connection::pluginIO(filedaemon::io_pkt* pkt, int iosock)
         return res;
       }
       if (io_in_core_fd) {
+        DebugLog(100, FMT_STRING("using io_in_core (fd = {})"), *io_in_core_fd);
         pkt->filedes = *io_in_core_fd;
         pkt->status = IoStatus::do_io_in_core;
         do_io_in_core = true;
