@@ -1609,14 +1609,10 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
 
     {
       bp::PluginRequest req;
-      bp::PluginResponse resp;
       while (!done && server.Read(req)) {
-        resp.clear_response();
-        if (!service.HandleRequest(req, resp)) {
+        if (!service.HandleRequest(req, server.output)) {
           // TODO: some error here
-        }
-        if (!server.Write(resp)) {
-          // TODO: some other error here
+          assert(0);
         }
       }
     }

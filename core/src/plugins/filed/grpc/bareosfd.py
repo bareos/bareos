@@ -43,8 +43,11 @@ import socket
 import traceback
 import sys
 import inspect
+import io
 
 f = open("/tmp/log.out", "w")
+dmsg_file = open("/tmp/dmsg.out", "wb")
+dmsg_buf = io.BufferedWriter(dmsg_file, 128 * 1024)
 
 
 def log(msg):
@@ -64,11 +67,6 @@ def readnbyte(sock, n):
     return buff
 
 
-in_count: int = 0
-out_count: int = 0
-d_count: int = 0
-
-
 def readmsg(sock, msg):
     size_bytes = readnbyte(sock, 4)
     size = int.from_bytes(size_bytes, "little")
@@ -77,8 +75,6 @@ def readmsg(sock, msg):
     obj_bytes = readnbyte(sock, size)
     msg.ParseFromString(obj_bytes)
 
-    global in_count
-    in_count += 1
     # log(f"request = {msg}")
 
 
@@ -90,9 +86,6 @@ def writemsg(sock, msg):
     # log(f"bytes = {len(size_bytes)}, obj = {len(obj_bytes)}")
     sock.sendall(size_bytes)
     sock.sendall(obj_bytes)
-
-    global out_count
-    out_count += 1
 
 
 def bit_is_set(flags: bytearray, index: int) -> bool:
@@ -704,12 +697,12 @@ def DebugMessage(level: int, string: str, caller: SourceLocation = None):
     dbg_req.function = caller.function.encode()
 
     # log(f"writing debug message {req}")
-    con.write_core(req)
+    # con.write_core(req)
+
+    ser = req.SerializeToString()
+    dmsg_buf.write(ser)
 
     # print(string)
-
-    global d_count
-    d_count += 1
 
     return bRC_OK
 
@@ -908,12 +901,11 @@ def run():
         con = BareosConnection()
         log(f"plugin = {con.plugin}, core = {con.core}, io = {con.io}")
         while not quit:
-
             req = con.read_plugin()
             handle_request(req)
 
-        log(f"in_count = {in_count}, out_count = {out_count}, d_count = {d_count}")
-
+        f.close()
+        dmsg_file.close()
     except:
         error = traceback.format_exc()
         log(f"error = {error}")

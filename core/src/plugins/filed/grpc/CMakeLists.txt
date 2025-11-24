@@ -121,14 +121,25 @@ if(ENABLE_GRPC)
   # fmt::fmt grpc-proto) install( TARGETS grpc-test-module DESTINATION
   # ${plugindir}/grpc COMPONENT filedaemon )
 
-  # add_executable( bareos-grpc-fd-plugin-bridge bridge_module/bridge_module.cc
-  # bridge_module/plugin_service.cc ) target_link_libraries( # we need to link
-  # to python3, because otherwise we will not be able to load # python-fd.so
-  # bareos-grpc-fd-plugin-bridge fmt::fmt grpc-proto Python3::Module
-  # ${CMAKE_DL_LIBS} grpc-util ) set_target_properties(
-  # bareos-grpc-fd-plugin-bridge PROPERTIES CXX_VISIBILITY_PRESET hidden
-  # VISIBILITY_INLINES_HIDDEN ON ) install( TARGETS bareos-grpc-fd-plugin-bridge
-  # DESTINATION ${plugindir}/grpc COMPONENT filedaemon )
+  add_executable(
+    bareos-grpc-fd-plugin-bridge bridge_module/bridge_module.cc
+                                 bridge_module/plugin_service.cc
+  )
+  target_link_libraries(
+    # we need to link to python3, because otherwise we will not be able to load
+    # # python-fd.so
+    bareos-grpc-fd-plugin-bridge fmt::fmt grpc-proto Python3::Module
+    ${CMAKE_DL_LIBS} grpc-util
+  )
+  set_target_properties(
+    bareos-grpc-fd-plugin-bridge PROPERTIES CXX_VISIBILITY_PRESET hidden
+                                            VISIBILITY_INLINES_HIDDEN ON
+  )
+  install(
+    TARGETS bareos-grpc-fd-plugin-bridge
+    DESTINATION ${plugindir}/grpc
+    COMPONENT filedaemon
+  )
 
   include(DebugEdit)
 

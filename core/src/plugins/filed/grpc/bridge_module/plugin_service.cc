@@ -406,7 +406,6 @@ static const char* event_case_to_str(bp::events::Event::EventCase ec)
 }
 
 auto PluginService::handlePluginEvent(
-
     const bp::handlePluginEventRequest* request,
     bp::handlePluginEventResponse* response) -> Status
 {
@@ -621,11 +620,20 @@ auto PluginService::handlePluginEvent(
   return Status::OK;
 }
 auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
-                                    bp::StartBackupFileResponse* response)
+                                    prototools::ProtoOutputStream& writer)
     -> Status
 {
-  filedaemon::save_pkt sp;
+  bp::PluginResponse outer_resp;
+  auto* response = outer_resp.mutable_start_backup();
 
+  if (last_file_done) {
+    response->set_result(bp::SBF_Stop);
+
+    writer.Write(outer_resp);
+    return Status::OK;
+  }
+
+  filedaemon::save_pkt sp;
 
   if (sizeof(sp.flags) != request->flags().size()) {
     return Status(StatusCode::INVALID_ARGUMENT, "flags size is not matching");
@@ -639,27 +647,29 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
   auto res = funcs.startBackupFile(ctx, &sp);
 
   switch (res) {
-    case bRC_OK: {
-      response->set_result(bp::SBF_OK);
-    } break;
     case bRC_Skip: {
       response->set_result(bp::SBF_Skip);
+      writer.Write(outer_resp);
       return Status::OK;
     } break;
     case bRC_Stop: {
       response->set_result(bp::SBF_Stop);
+      writer.Write(outer_resp);
       return Status::OK;
     } break;
     default: {
       return Status(StatusCode::INTERNAL, "bad return value");
     }
+    case bRC_OK: {
+      response->set_result(bp::SBF_OK);
+    } break;
   }
 
   DebugLog(100, FMT_STRING("received save packet of type {}"), sp.type);
 
   auto type = to_grpc(sp.type);
 
-  return std::visit(
+  auto save_res = std::visit(
       [&](auto&& arg) {
         using T = std::decay_t<decltype(arg)>;
 
@@ -687,6 +697,61 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
 
           if (arg == bco::SoftLink) { file->set_link(sp.link); }
 
+          writer.Write(outer_resp);
+
+          if (!sp.no_read) {
+            auto fo_req = bp::fileOpenRequest{};
+            auto fo_resp = bp::fileOpenResponse{};
+
+            fo_req.set_file(sp.fname);
+            fo_req.set_flags(O_RDONLY);
+            fo_req.set_mode(0);
+
+            auto fo_res = FileOpen(&fo_req, &fo_resp);
+
+            if (!fo_res.ok()) {
+              auto error = bp::FileRecord{};
+              error.set_error("could not open file");
+              writer.Write(error);
+              return fo_res;
+            }
+
+
+            for (;;) {
+              auto fr = bp::FileRecord{};
+
+              filedaemon::io_pkt pkt;
+              pkt.func = filedaemon::IO_READ;
+              pkt.count = request->max_record_size();
+              std::string* data = fr.mutable_data();
+              data->resize(request->max_record_size());
+              pkt.buf = data->data();
+
+              auto read_res = funcs.pluginIO(ctx, &pkt);
+
+              if (read_res != bRC_OK || pkt.status < 0) {
+                auto error = bp::FileRecord{};
+                error.set_error("could not read file");
+                writer.Write(error);
+                return Status(StatusCode::INTERNAL, "bad response");
+              }
+
+              data->resize(pkt.status);
+
+              writer.Write(fr);
+
+              if (pkt.status == 0) { break; }
+            }
+
+
+            auto fc_req = bp::fileCloseRequest{};
+            auto fc_resp = bp::fileCloseResponse{};
+
+            auto fc_res = FileClose(&fc_req, &fc_resp);
+
+            assert(fc_res.ok());
+          }
+
         } else if constexpr (std::is_same_v<T, bco::FileErrorType>) {
           auto* error = response->mutable_error();
 
@@ -710,6 +775,8 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
           obj->set_name(sp.object_name);
           obj->set_data(sp.object, sp.object_len);
           obj->set_type(arg);
+
+          writer.Write(outer_resp);
         } else if constexpr (std::is_same_v<T, UnhandledType>) {
           switch (arg) {
             case UnhandledType::Unknown: {
@@ -736,6 +803,7 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
 
           response->set_result(bp::SBF_Skip);
 
+          writer.Write(outer_resp);
         } else {
           static_assert(!std::is_same_v<T, T>, "unhandled type");
         }
@@ -743,26 +811,33 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
         return Status::OK;
       },
       type);
-}
-auto PluginService::endBackupFile(const bp::endBackupFileRequest* request,
-                                  bp::endBackupFileResponse* response) -> Status
-{
-  auto res = funcs.endBackupFile(ctx);
 
-  switch (res) {
-    case bRC_OK: {
-      response->set_result(bp::EBF_Done);
-    } break;
-    case bRC_More: {
-      response->set_result(bp::EBF_More);
-    } break;
-    default: {
-      return Status(StatusCode::INTERNAL, "bad return value");
-    } break;
-  }
+  auto ebf_res = funcs.endBackupFile(ctx);
 
-  return Status::OK;
+  if (ebf_res != bRC_More) { last_file_done = true; }
+
+  return save_res;
 }
+// auto PluginService::endBackupFile(const bp::endBackupFileRequest* request,
+//                                   bp::endBackupFileResponse* response) ->
+//                                   Status
+// {
+//   auto res = funcs.endBackupFile(ctx);
+
+//   switch (res) {
+//     case bRC_OK: {
+//       response->set_result(bp::EBF_Done);
+//     } break;
+//     case bRC_More: {
+//       response->set_result(bp::EBF_More);
+//     } break;
+//     default: {
+//       return Status(StatusCode::INTERNAL, "bad return value");
+//     } break;
+//   }
+
+//   return Status::OK;
+// }
 auto PluginService::startRestoreFile(const bp::startRestoreFileRequest* request,
                                      bp::startRestoreFileResponse*) -> Status
 {
@@ -930,24 +1005,24 @@ const char* PluginService::non_blocking_write(int fd,
   return nullptr;
 }
 
-auto PluginService::FileRead(const bp::fileReadRequest* request,
-                             bp::fileReadResponse* response) -> Status
-{
-  filedaemon::io_pkt pkt;
-  pkt.func = filedaemon::IO_READ;
-  pkt.count = request->num_bytes();
-  pkt.buf = buffer(request->num_bytes());
+// auto PluginService::FileRead(const bp::fileReadRequest* request,
+//                              bp::fileReadResponse* response) -> Status
+// {
+//   filedaemon::io_pkt pkt;
+//   pkt.func = filedaemon::IO_READ;
+//   pkt.count = request->num_bytes();
+//   pkt.buf = buffer(request->num_bytes());
 
-  auto res = funcs.pluginIO(ctx, &pkt);
+//   auto res = funcs.pluginIO(ctx, &pkt);
 
-  if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
+//   if (res != bRC_OK) { return Status(StatusCode::INTERNAL, "bad response"); }
 
-  auto* data = response->mutable_data();
-  data->resize(pkt.status);
-  memcpy(data->data(), pkt.buf, data->size());
+//   auto* data = response->mutable_data();
+//   data->resize(pkt.status);
+//   memcpy(data->data(), pkt.buf, data->size());
 
-  return Status::OK;
-}
+//   return Status::OK;
+// }
 
 auto PluginService::FileWrite(const bp::fileWriteRequest* request,
                               bp::fileWriteResponse* response) -> Status
@@ -1325,8 +1400,10 @@ auto PluginService::setXattr(const bp::setXattrRequest* request,
 // }
 
 bool PluginService::HandleRequest(const bp::PluginRequest& outer_req,
-                                  bp::PluginResponse& outer_resp)
+                                  prototools::ProtoOutputStream& writer)
 {
+  bp::PluginResponse outer_resp{};
+
   switch (outer_req.request_case()) {
     case bareos::plugin::PluginRequest::kSetup: {
       auto status = this->Setup(&outer_req.setup(), outer_resp.mutable_setup());
@@ -1344,21 +1421,20 @@ bool PluginService::HandleRequest(const bp::PluginRequest& outer_req,
 
     } break;
     case bareos::plugin::PluginRequest::kStartBackup: {
-      auto status = this->startBackupFile(&outer_req.start_backup(),
-                                          outer_resp.mutable_start_backup());
+      auto status = this->startBackupFile(&outer_req.start_backup(), writer);
 
       if (!status.ok()) { return false; }
 
-
+      return true;
     } break;
-    case bareos::plugin::PluginRequest::kEndBackupFile: {
-      auto status = this->endBackupFile(&outer_req.end_backup_file(),
-                                        outer_resp.mutable_end_backup_file());
+    // case bareos::plugin::PluginRequest::kEndBackupFile: {
+    //   auto status = this->endBackupFile(&outer_req.end_backup_file(),
+    //                                     outer_resp.mutable_end_backup_file());
 
-      if (!status.ok()) { return false; }
+    //   if (!status.ok()) { return false; }
 
 
-    } break;
+    // } break;
     case bareos::plugin::PluginRequest::kStartRestoreFile: {
       auto status
           = this->startRestoreFile(&outer_req.start_restore_file(),
@@ -1392,12 +1468,12 @@ bool PluginService::HandleRequest(const bp::PluginRequest& outer_req,
 
 
     } break;
-    case bareos::plugin::PluginRequest::kFileRead: {
-      auto status = this->FileRead(&outer_req.file_read(),
-                                   outer_resp.mutable_file_read());
+    // case bareos::plugin::PluginRequest::kFileRead: {
+    //   auto status = this->FileRead(&outer_req.file_read(),
+    //                                outer_resp.mutable_file_read());
 
-      if (!status.ok()) { return false; }
-    } break;
+    //   if (!status.ok()) { return false; }
+    // } break;
     case bareos::plugin::PluginRequest::kFileWrite: {
       auto status = this->FileWrite(&outer_req.file_write(),
                                     outer_resp.mutable_file_write());
@@ -1475,7 +1551,8 @@ bool PluginService::HandleRequest(const bp::PluginRequest& outer_req,
       return false;
     } break;
   }
-  return true;
+
+  return writer.Write(outer_resp);
 }
 
 #pragma GCC diagnostic pop
