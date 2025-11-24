@@ -28,6 +28,11 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <atomic>
+#include <optional>
+#include <vector>
+#include <queue>
+#include <cstring>
+#include <cassert>
 
 static bool WaitOnReadable(int fd)
 {
@@ -67,6 +72,10 @@ struct ProtoInputStream {
   // |    read     |    unread    |
   //               ^
   //        current_offset
+
+  using file_descriptor = int;
+  std::queue<file_descriptor> received_fds;
+
 
   ProtoInputStream(int in_fd) : fd{in_fd}
   {
@@ -130,9 +139,25 @@ struct ProtoInputStream {
     uint8_t* head = buffer.data() + data_in_buffer;
     uint32_t max_size = buffer.size() - data_in_buffer;
 
+    char cbuf[CMSG_SPACE(sizeof(file_descriptor))] = {};
+
+    iovec io = {};
+    struct msghdr msg = {};
+    msg.msg_iov = &io;
+    msg.msg_iovlen = 1;
+
+    msg.msg_control = cbuf;
+    msg.msg_controllen = sizeof(cbuf);
+
     while (bytes_read < read_goal) {
-      auto new_bytes
-          = recv(fd, head + bytes_read, max_size - bytes_read, MSG_DONTWAIT);
+      io.iov_base = head + bytes_read;
+      io.iov_len = max_size - bytes_read;
+
+      // this needs to get reset every time, as recvmsg writes into it
+      // the actual received len
+      msg.msg_controllen = sizeof(cbuf);
+
+      auto new_bytes = recvmsg(fd, &msg, MSG_DONTWAIT);
       if (new_bytes < 0) {
         auto err = errno;
         switch (err) {
@@ -152,6 +177,25 @@ struct ProtoInputStream {
       }
 
       bytes_read += new_bytes;
+
+      if ((msg.msg_flags & MSG_CTRUNC) == MSG_CTRUNC) {
+        // something went wrong
+        assert(0);
+      }
+
+      for (auto* control = CMSG_FIRSTHDR(&msg); control;
+           control = CMSG_NXTHDR(&msg, control)) {
+        // we received a control message!
+        if (control->cmsg_len != CMSG_LEN(sizeof(file_descriptor))) {
+          // this shouldnt happen
+          assert(0);
+        }
+
+        auto* data = CMSG_DATA(control);
+
+        auto& received_fd = received_fds.emplace();
+        memcpy(&received_fd, data, control->cmsg_len);
+      }
     }
 
     auto* res = buffer.data() + current_offset;
@@ -159,6 +203,15 @@ struct ProtoInputStream {
     data_in_buffer += bytes_read;
 
     return res;
+  }
+
+  std::optional<int> PopFD()
+  {
+    if (received_fds.empty()) { return std::nullopt; }
+
+    file_descriptor next = received_fds.front();
+    received_fds.pop();
+    return next;
   }
 
   template <typename Message> bool Read(Message& msg)
@@ -293,6 +346,8 @@ struct ProtoBidiStream {
     write_count += 1;
     return output.WriteBuffered(msg);
   }
+
+  std::optional<int> PopFD() { return input.PopFD(); }
 };
 
 struct Lock {
