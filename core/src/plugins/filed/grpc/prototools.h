@@ -191,10 +191,15 @@ struct ProtoInputStream {
           assert(0);
         }
 
+        if (control->cmsg_level != SOL_SOCKET
+            || control->cmsg_type != SCM_RIGHTS) {
+          assert(0);
+        }
+
         auto* data = CMSG_DATA(control);
 
         auto& received_fd = received_fds.emplace();
-        memcpy(&received_fd, data, control->cmsg_len);
+        memcpy(&received_fd, data, sizeof(file_descriptor));
       }
     }
 

@@ -190,6 +190,22 @@ class BareosFdPluginLocalFilesetAclXattr(BareosFdPluginLocalFilesBaseclass):  # 
         )
         return bareosfd.bRC_OK
 
+    def plugin_io_open(self, IOP):
+        res = super().plugin_io_open(IOP)
+
+        if res == bareosfd.bRC_OK and self.fileType == "FT_REG":
+            if "do_io_in_core" in self.options:
+                # do io in core
+                bareosfd.DebugMessage(100, "using io in core\n")
+                IOP.filedes = self.file.fileno()
+                IOP.status = bareosfd.iostat_do_in_core
+            else:
+                #  do io in plugin
+                bareosfd.DebugMessage(100, "using io in plugin\n")
+                IOP.status = bareosfd.iostat_do_in_plugin
+
+        return res
+
 
 if __name__ == "__main__":
     bareosfd.run()

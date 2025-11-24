@@ -86,6 +86,26 @@ def writemsg(sock, msg):
     sock.sendall(obj_bytes)
 
 
+def writemsg_with_fd(sock, msg, fd):
+    obj_bytes = msg.SerializeToString()
+    size = len(obj_bytes)
+    # log(f"sending {msg} (size = {size}) to {sock}")
+    size_bytes = size.to_bytes(4, "little")
+    # log(f"bytes = {len(size_bytes)}, obj = {len(obj_bytes)}")
+
+    size_list = [size_bytes]
+    bytes_send = socket.send_fds(sock, size_list, [fd])
+
+    # log(f"sending fd {fd} to core")
+    while bytes_send == 0:
+        bytes_send = socket.send_fds(sock, size_list, [fd])
+
+    if bytes_send < len(size_bytes):
+        sock.sendall(size_bytes[bytes_send:])
+
+    sock.sendall(obj_bytes)
+
+
 def bit_is_set(flags: bytearray, index: int) -> bool:
     array_index = index // 8
     byte_index = index & 0b111
@@ -106,8 +126,13 @@ class BareosConnection:
 
         return req
 
-    def write_plugin(self, resp: plugin_pb2.PluginResponse):
-        writemsg(self.plugin, resp)
+    def write_plugin(
+        self, resp: plugin_pb2.PluginResponse, fd_to_sent: int | None = None
+    ):
+        if fd_to_sent is None:
+            writemsg(self.plugin, resp)
+        else:
+            writemsg_with_fd(self.plugin, resp, fd_to_sent)
 
     def read_core(self):
         resp = bareos_pb2.CoreResponse()
@@ -126,7 +151,7 @@ plugin_loaded: bool = False
 module_path: str = None
 quit: bool = False
 con: BareosConnection = None
-debug_level: int = 100
+debug_level: int = 2
 
 
 def bareos_event(event: events_pb2.Event):
@@ -355,18 +380,41 @@ def handle_plugin_event(
     resp.res = brc_type_remote(result)
 
 
+io_in_core_fd: int | None = None
 last_file_done: bool = False
 
 
 def start_backup(req: plugin_pb2.StartBackupFileRequest):
     global last_file_done
+    global io_in_core_fd
+
+    if io_in_core_fd is not None:
+        # log(f"closing leftover fd {io_in_core_fd}")
+        iop = IoPacket()
+
+        iop.func = bIOPS.IO_CLOSE
+        iop.filedes = io_in_core_fd
+        result = BareosFdWrapper.plugin_io(iop)
+
+        if result != bRC_OK:
+            raise ValueError
+
+        int_result = BareosFdWrapper.end_backup_file()
+        # log(f"got ebf result = {int_result}")
+        if int_result != bRC_More:
+            # log(f"after closing, we are done!")
+            last_file_done = True
+        else:
+            # log(f"after closing, we continue!")
+            pass
 
     outer_resp = plugin_pb2.PluginResponse()
     resp = outer_resp.start_backup
 
     if last_file_done:
+        # log(f"we are done!")
         resp.result = plugin_pb2.SBF_Stop
-        con.write_plugin(resp)
+        con.write_plugin(outer_resp)
         return
 
     pkt = SavePacket()
@@ -430,7 +478,8 @@ def start_backup(req: plugin_pb2.StartBackupFileRequest):
             fo_req.flags = os.O_RDONLY
             fo_req.mode = 0
             fo_resp = plugin_pb2.fileOpenResponse()
-            fo_res = file_open(fo_req, fo_resp)
+
+            io_in_core_fd = file_open2(fo_req)
 
             # if fo_res != bRC_OK:
             #     err = plugin_pb2.FileRecord()
@@ -438,8 +487,13 @@ def start_backup(req: plugin_pb2.StartBackupFileRequest):
             #     con.write_plugin(err)
             #     return
 
-            resp.io_in_core = fo_resp.io_in_core
-            con.write_plugin(outer_resp)
+            # log(f"file_open2 returned {io_in_core_fd}")
+            if io_in_core_fd is not None:
+                resp.io_in_core = True
+                con.write_plugin(outer_resp, io_in_core_fd)
+                return
+            else:
+                con.write_plugin(outer_resp)
 
             while True:
                 data = file_read(req.max_record_size)
@@ -492,6 +546,29 @@ def end_restore_file(
     req: plugin_pb2.endRestoreFileRequest, resp: plugin_pb2.endRestoreFileResponse
 ):
     raise ValueError
+
+
+def file_open2(req: plugin_pb2.fileOpenRequest):
+    iop = IoPacket()
+
+    iop.func = bIOPS.IO_OPEN
+    iop.fname = req.file.decode()
+    iop.flags = req.flags
+    iop.mode = req.mode
+
+    result = BareosFdWrapper.plugin_io(iop)
+
+    if result != bRC_OK:
+        raise ValueError
+
+    # log(f"plugin_io returned {iop.status}")
+
+    if iop.status == iostat_do_in_core:
+        # log(f"do io in core")
+        return iop.filedes
+    else:
+        # log(f"do io in plugin")
+        return None
 
 
 def file_open(req: plugin_pb2.fileOpenRequest, resp: plugin_pb2.fileOpenResponse):
@@ -709,6 +786,8 @@ def DebugMessage(level: int, string: str, caller: SourceLocation = None):
 
 
 def JobMessage(type: bJobMessageType, string: str, caller: SourceLocation = None):
+    return
+
     if caller is None:
         frame = sys._getframe(1)
         caller = SourceLocation(

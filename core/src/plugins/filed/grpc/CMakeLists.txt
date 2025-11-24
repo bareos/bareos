@@ -148,8 +148,11 @@ if(ENABLE_GRPC)
   )
 
   bareos_configure_file(
-    FILES "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"
+    FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_types.py"
-    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_type_conv.py" COPY
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_type_conv.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareos-fd-local-fileset-acl-xattr.py"
+    COPY
   )
 endif()
