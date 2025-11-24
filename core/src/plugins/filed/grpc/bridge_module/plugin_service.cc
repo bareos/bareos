@@ -626,6 +626,20 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
   bp::PluginResponse outer_resp;
   auto* response = outer_resp.mutable_start_backup();
 
+  if (last_io_in_core_fd) {
+    auto fc_req = bp::fileCloseRequest{};
+    auto fc_resp = bp::fileCloseResponse{};
+
+    auto fc_res = FileClose(&fc_req, &fc_resp);
+
+    auto ebf_res = funcs.endBackupFile(ctx);
+
+    if (ebf_res != bRC_More) { last_file_done = true; }
+
+    (void)ebf_res;
+    (void)fc_res;
+  }
+
   if (last_file_done) {
     response->set_result(bp::SBF_Stop);
 
@@ -697,61 +711,73 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
 
           if (arg == bco::SoftLink) { file->set_link(sp.link); }
 
-          writer.Write(outer_resp);
+          if (sp.no_read) {
+            writer.Write(outer_resp);
+            return Status::OK;
+          }
+          auto fo_req = bp::fileOpenRequest{};
 
-          if (!sp.no_read) {
-            auto fo_req = bp::fileOpenRequest{};
-            auto fo_resp = bp::fileOpenResponse{};
+          fo_req.set_file(sp.fname);
+          fo_req.set_flags(O_RDONLY);
+          fo_req.set_mode(0);
 
-            fo_req.set_file(sp.fname);
-            fo_req.set_flags(O_RDONLY);
-            fo_req.set_mode(0);
+          auto fo_res = FileOpen2(&fo_req);
 
-            auto fo_res = FileOpen(&fo_req, &fo_resp);
+          // if (!fo_res.ok()) {
+          //   // auto error = bp::FileRecord{};
+          //   // error.set_error("could not open file");
+          //   // writer.Write(error);
+          //   // return fo_res;
+          //   assert(0);
+          // }
 
-            if (!fo_res.ok()) {
-              auto error = bp::FileRecord{};
-              error.set_error("could not open file");
-              writer.Write(error);
-              return fo_res;
-            }
+          if (fo_res) {
+            response->set_io_in_core(true);
 
+            writer.Write(outer_resp, *fo_res);
 
-            for (;;) {
-              auto fr = bp::FileRecord{};
+            last_io_in_core_fd = *fo_res;
 
-              filedaemon::io_pkt pkt;
-              pkt.func = filedaemon::IO_READ;
-              pkt.count = request->max_record_size();
-              std::string* data = fr.mutable_data();
-              data->resize(request->max_record_size());
-              pkt.buf = data->data();
-
-              auto read_res = funcs.pluginIO(ctx, &pkt);
-
-              if (read_res != bRC_OK || pkt.status < 0) {
-                auto error = bp::FileRecord{};
-                error.set_error("could not read file");
-                writer.Write(error);
-                return Status(StatusCode::INTERNAL, "bad response");
-              }
-
-              data->resize(pkt.status);
-
-              writer.Write(fr);
-
-              if (pkt.status == 0) { break; }
-            }
-
-
-            auto fc_req = bp::fileCloseRequest{};
-            auto fc_resp = bp::fileCloseResponse{};
-
-            auto fc_res = FileClose(&fc_req, &fc_resp);
-
-            assert(fc_res.ok());
+            return Status::OK;
           }
 
+          response->set_io_in_core(false);
+
+          writer.Write(outer_resp);
+
+          for (;;) {
+            auto fr = bp::FileRecord{};
+
+            filedaemon::io_pkt pkt;
+            pkt.func = filedaemon::IO_READ;
+            pkt.count = request->max_record_size();
+            std::string* data = fr.mutable_data();
+            data->resize(request->max_record_size());
+            pkt.buf = data->data();
+
+            auto read_res = funcs.pluginIO(ctx, &pkt);
+
+            if (read_res != bRC_OK || pkt.status < 0) {
+              auto error = bp::FileRecord{};
+              error.set_error("could not read file");
+              writer.Write(error);
+              return Status(StatusCode::INTERNAL, "bad response");
+            }
+
+            data->resize(pkt.status);
+
+            writer.Write(fr);
+
+            if (pkt.status == 0) { break; }
+          }
+
+
+          auto fc_req = bp::fileCloseRequest{};
+          auto fc_resp = bp::fileCloseResponse{};
+
+          auto fc_res = FileClose(&fc_req, &fc_resp);
+
+          assert(fc_res.ok());
         } else if constexpr (std::is_same_v<T, bco::FileErrorType>) {
           auto* error = response->mutable_error();
 
@@ -860,6 +886,28 @@ auto PluginService::endRestoreFile(const bp::endRestoreFileRequest* request,
 
   return Status::OK;
 }
+auto PluginService::FileOpen2(const bp::fileOpenRequest* request)
+    -> std::optional<file_descriptor>
+{
+  filedaemon::io_pkt pkt;
+  pkt.func = filedaemon::IO_OPEN;
+  pkt.fname = const_cast<char*>(request->file().c_str());
+  pkt.mode = request->mode();
+  pkt.flags = request->flags();
+  auto res = funcs.pluginIO(ctx, &pkt);
+
+  if (res != bRC_OK) {
+    // TODO: think about this ...
+    assert(0);
+  }
+
+  if (pkt.status == IoStatus::do_io_in_core) {
+    return pkt.filedes;
+  } else {
+    return std::nullopt;
+  }
+}
+
 auto PluginService::FileOpen(const bp::fileOpenRequest* request,
                              bp::fileOpenResponse* resp) -> Status
 {

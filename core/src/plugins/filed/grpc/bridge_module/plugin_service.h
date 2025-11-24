@@ -99,6 +99,10 @@ class PluginService {
     bool ok() const { return true; }
   };
 
+  using file_descriptor = int;
+
+  std::optional<file_descriptor> last_io_in_core_fd;
+
   Status Setup(const bp::SetupRequest*, bp::SetupResponse*);
 
   Status handlePluginEvent(const bp::handlePluginEventRequest* request,
@@ -111,6 +115,7 @@ class PluginService {
                           bp::startRestoreFileResponse* response);
   Status endRestoreFile(const bp::endRestoreFileRequest* request,
                         bp::endRestoreFileResponse* response);
+  std::optional<file_descriptor> FileOpen2(const bp::fileOpenRequest* request);
   Status FileOpen(const bp::fileOpenRequest* request,
                   bp::fileOpenResponse* response);
   Status FileSeek(const bp::fileSeekRequest* request,
