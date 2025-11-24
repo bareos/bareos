@@ -12,4 +12,5 @@ JobDefs {
   Full Backup Pool = Full                  # write Full Backups into "Full" Pool
   Differential Backup Pool = Differential  # write Diff Backups into "Differential" Pool
   Incremental Backup Pool = Incremental    # write Incr Backups into "Incremental" Pool
+  Accurate = yes
 }

@@ -41,6 +41,9 @@ JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
+# shortcut for s3cmd
+S3="${S3CMD} --no-check-certificate --config ${S3CFG}"
+
 start_test
 
 cat <<END_OF_DATA >${tmp}/bconcmds
@@ -61,6 +64,34 @@ END_OF_DATA
 echo "Full backup stage"
 run_bconsole
 expect_grep "Backup OK" "${tmp}/log1.out" "Full Backup not found!"
+if [ ${estat} -ne 0 ]; then
+  exit ${estat}
+fi
+
+# for incremental, add a file and delete a file
+echo "incrementaldata" >${tmp}/data/testfile-inc.txt
+${S3} put ${tmp}/data/testfile-inc.txt s3://${bucket_name}/data/testfile-inc.txt
+${S3} rm s3://${bucket_name}/data/object-size-downloads-to-temporary-file
+rm -f ${tmp}/data/object-size-downloads-to-temporary-file
+
+cat <<END_OF_DATA >${tmp}/bconcmds
+@$out ${NULL_DEV}
+messages
+@$out ${tmp}/log2.out
+setdebug level=100 trace=1 timestamp=1 storage=File
+setdebug level=200 trace=1 timestamp=1 client=bareos-fd
+run job=${JobName} yes
+wait
+setdebug level=0 client=bareos-fd
+status director
+status client
+status storage=File
+messages
+END_OF_DATA
+
+echo "Incremental backup stage"
+run_bconsole
+expect_grep "Backup OK" "${tmp}/log2.out" "Full Backup not found!"
 if [ ${estat} -ne 0 ]; then
   exit ${estat}
 fi

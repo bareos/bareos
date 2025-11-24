@@ -17,14 +17,29 @@ The status of the Libcloud plugin is **experimental**. It can automatically recu
 on a S3 storage. However, **restore of objects cannot be done directly back to the storage**. A restore will write these objects
 *as files on a filesystem*.
 
+Since :sinceVersion:`25.0.0: Apache Libcloud Plugin` the plugin was changed to
+use the Python *threading* module instead of *multiprocessing* to make it work
+with current Python versions. Unfortunately libcloud is not fully thread safe,
+this can cause unresponsive worker threads on bad network connections when
+libcloud calls run into timeouts. The plugin code tries to handle that in a
+reasonable way, but especially when the option **fail_on_download_error** is
+disabled, this can cause the plugin to hang indefinetely and would require
+restarting the bareos-filedaemon. So the default and recommended setting for
+is option is now disabled.
+
+.. warning::
+   It is recommended to use the grpc plugin mode, especially when running
+   multiple jobs with the Libcloud plugin in parallel.
+
 .. _LibcloudPlugin-requirements:
 
 Requirements of Libcloud Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To use the Apache Libcloud backend you need to have the Libcloud module available for Python 2.
+To use the Apache Libcloud plugin, the **apache-libcloud** module for Python 3
+must be installed.
 
-The plugin needs several options to run properly, the plugin options in the fileset resource and an additional configuration file. Both is described below.
+The plugin needs several options to run properly, plugin options can be set as explained in :ref:`section-python-fd Plugin`.
 
 .. _LibcloudPlugin-installation:
 
@@ -51,7 +66,7 @@ Configuration of Libcloud Plugin
        }
        Plugin = "python"
                 ":module_name=bareos-fd-libcloud"
-                ":config_file=/etc/bareos/libcloud_config.ini"
+                ":defaults_file=/etc/bareos/libcloud_config.ini"
                 ":buckets_include=user_data"
                 ":buckets_exclude=tmp"
      }
@@ -128,10 +143,10 @@ provider
    The provider string, 'S3' being the default if not specified
 
 username
-   The username to use for backups
+   The username to use for backups, in S3 terminology this is the access key
 
 password
-   The password for the backup user
+   The password for the backup user, in S3 terminology this is the secret key
 
 nb_worker
    The number of worker processes who can preload data from objects simultaneously
@@ -142,8 +157,12 @@ queue_size
    between the processes
 
 prefetch_size
-   The maximum object size in bytes that should be preloaded from the workers; objects
-   larger than this size are loaded by the plugin process itself
+   The maximum object size in bytes that should be preloaded from the workers;
+   objects larger than this size are loaded by the plugin process itself. Note
+   that disk space consumption can be up to *queue_size* times the value of
+   this option. Files up the size of this options setting are downloaded in
+   parallel by the worker threads, which can significantly reduce the job run
+   time. Larger files will be sequential streaming downloads.
 
 temporary_download_directory
    The local path where the worker processes put their temporarily downloaded files to;
@@ -152,12 +171,32 @@ temporary_download_directory
 
 Optional Plugin Options:
 
-This option in the config file is optional:
+These options in the config file are optional:
 
 fail_on_download_error
-   When this option is enabled, any error during a file download will fail the backup job.
-   By default a warning will be issued and the next file will be backed up.
+   When this option is enabled, any error during a file download will fail the
+   backup job. This is the default and recommended as explained above.
+   When disabling this setting by **fail_on_download_error = no**, a warning
+   will be issued on each failure and the next file will be backed up. As
+   mentioned above, this can lead to unresponsive worker threads on bad
+   network connections, so it's not recommended to set this to disabled.
 
 job_message_after_each_number_of_objects
    When running a backup, put a jobmessage after each count of "job_message_after_number_of_objects"
    to the joblog or no message if parameter equals 0; default is 100.
+
+prefetch_inmemory_size
+   The maximum object size in bytes that should be preloaded from the workers
+   into memory; objects larger than this size are loaded by the plugin process itself.
+   The default value is 10240 (10KB). The value should be smaller than
+   the value of the *prefetch_size* option.
+
+global_timeout
+   Global timeout in seconds, as mentioned in the *Status of Libcloud Plugin*
+   section above, it could happen on bad network connections that libcloud
+   calls cause hanging worker threads. With this timeout setting the plugin
+   tries to terminate the job with error when it can detect this state. Default
+   value is 600 seconds.
+
+libcloud_timeout
+   Timeout value for single libcloud calls in seconds, default value is 60.

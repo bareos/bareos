@@ -175,6 +175,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - jobreport: show FD Bytes Read [PR #2443]
 - macos: use macos-15 runner [PR #2442]
 - Improve status subscription [PR #2444]
+- Refactor libcloud plugin to work with current Python versions [PR #2428]
 
 ## [24.0.0] - 2024-12-16
 
@@ -2076,6 +2077,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2418]: https://github.com/bareos/bareos/pull/2418
 [PR #2423]: https://github.com/bareos/bareos/pull/2423
 [PR #2427]: https://github.com/bareos/bareos/pull/2427
+[PR #2428]: https://github.com/bareos/bareos/pull/2428
 [PR #2431]: https://github.com/bareos/bareos/pull/2431
 [PR #2432]: https://github.com/bareos/bareos/pull/2432
 [PR #2434]: https://github.com/bareos/bareos/pull/2434
