@@ -70,3 +70,36 @@ FileSet {
     ":filename=@tmpdir@/file-list"
   }
 }
+
+
+FileSet {
+  Name = "PythonNative_do_io_in_core"
+  Description = "fileset just to backup some files for selftest"
+  Enable VSS = No
+  Include {
+    Options {
+      Acl Support = No
+      Xattr Support = No
+    }
+    Plugin = "grpc:bareos-fd-local-fileset-acl-xattr.py"
+    ":module_path=@python_plugin_module_src_test_dir@"
+    ":filename=@tmpdir@/file-list"
+    ":do_io_in_core=True"
+  }
+}
+
+FileSet {
+  Name = "PythonCore_do_io_in_core"
+  Description = "fileset just to backup some files for selftest"
+  Enable VSS = No
+  Include {
+    Options {
+      Acl Support = No
+      Xattr Support = No
+    }
+    Plugin = "python3"
+    ":module_name=bareos-fd-local-fileset-acl-xattr"
+    ":filename=@tmpdir@/file-list"
+    ":do_io_in_core=True"
+  }
+}
