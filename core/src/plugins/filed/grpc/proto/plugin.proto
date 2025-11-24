@@ -100,10 +100,11 @@ message StartBackupFileRequest {
 
 message StartBackupFileResponse {
   StartBackupFileResult result = 1;
+  bool io_in_core = 2;
   oneof payload {
-    bareos.common.PluginObject object = 2;
-    bareos.common.PluginFile file = 3;
-    bareos.common.PluginFileError error = 4;
+    bareos.common.PluginObject object = 10;
+    bareos.common.PluginFile file = 11;
+    bareos.common.PluginFileError error = 12;
   };
 };
 

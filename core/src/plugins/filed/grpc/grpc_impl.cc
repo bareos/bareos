@@ -1302,7 +1302,7 @@ class PluginClient {
 
 
   struct cached_start_backup_file {
-    bool io_in_core;
+    std::optional<int> io_in_core_fd{};
   };
 
   std::optional<cached_start_backup_file> start_backup_file{};
@@ -1342,8 +1342,21 @@ class PluginClient {
       return bRC_Error;
     }
     auto& resp = outer_resp.start_backup();
+    auto& cached = start_backup_file.emplace();
+    auto found_fd = stream->PopFD();
+    if (resp.io_in_core()) {
+      if (!found_fd) {
+        JobLog(core, M_ERROR,
+               "plugin indicated io_in_core = yes, but sent no fd");
+      }
 
-    start_backup_file.emplace().io_in_core = false;
+      cached.io_in_core_fd = found_fd;
+    } else {
+      if (found_fd) {
+        JobLog(core, M_ERROR,
+               "plugin indicated io_in_core = no, but sent an fd anyways");
+      }
+    }
 
     switch (resp.result()) {
       case bareos::plugin::SBF_OK: {
@@ -1576,13 +1589,13 @@ class PluginClient {
   bRC FileOpen(std::string_view name,
                int32_t flags,
                int32_t mode,
-               bool* io_in_core)
+               std::optional<int>* io_in_core_fd)
   {
     if (!start_backup_file) { return bRC_Error; }
     (void)name;
     (void)flags;
     (void)mode;
-    *io_in_core = start_backup_file->io_in_core;
+    *io_in_core_fd = start_backup_file->io_in_core_fd;
     return bRC_OK;
   }
 
@@ -2832,28 +2845,15 @@ bRC grpc_connection::pluginIO(filedaemon::io_pkt* pkt, int iosock)
 
   switch (pkt->func) {
     case filedaemon::IO_OPEN: {
-      bool io_in_core = false;
+      std::optional<int> io_in_core_fd{};
       auto res
-          = client->FileOpen(pkt->fname, pkt->flags, pkt->mode, &io_in_core);
+          = client->FileOpen(pkt->fname, pkt->flags, pkt->mode, &io_in_core_fd);
       if (res != bRC_OK) {
         pkt->io_errno = EIO;
         return res;
       }
-      if (io_in_core) {
-        DebugLog(members->pctx, 100, FMT_STRING("using io_in_core"));
-        std::optional fd = receive_fd(iosock, -1);
-
-        if (!fd) {
-          JobLog(members->pctx, M_FATAL,
-                 FMT_STRING("plugin wanted to do io_in_core, but did not send "
-                            "an fd: Err={}"),
-                 strerror(errno));
-
-          pkt->io_errno = EIO;
-
-          return bRC_Error;
-        }
-        pkt->filedes = *fd;
+      if (io_in_core_fd) {
+        pkt->filedes = *io_in_core_fd;
         pkt->status = IoStatus::do_io_in_core;
         do_io_in_core = true;
       } else {
