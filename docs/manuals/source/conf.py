@@ -389,8 +389,8 @@ scv_whitelist_branches = (
 scv_whitelist_tags = (re.compile(r"^not-exisiting-tag$"),)
 scv_show_banner = True
 scv_priority = "branches"
-scv_root_ref = "bareos-24"
-scv_banner_main_ref = "bareos-24"
+scv_root_ref = "bareos-25"
+scv_banner_main_ref = "bareos-25"
 
 
 plantuml_output_format = "svg_img"
