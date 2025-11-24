@@ -1150,7 +1150,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
 // Bmicrosleep(15, 0);                /* for debugging SIGHUP */
 
    Jmsg(jcr, msg_type, 0, T_("%s %s %s (%s):\n"
-        "  Build OS:               %s\n"
+        "  OS Information:         %s\n"
         "  JobId:                  %d\n"
         "  Job:                    %s\n"
         "%s"
