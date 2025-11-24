@@ -27,8 +27,9 @@ disabled, this can cause the plugin to hang indefinetely and would require
 restarting the bareos-filedaemon. So the default and recommended setting for
 is option is now disabled.
 
-It is recommended to use the grpc plugin mode, especially when running multiple
-jobs with the Libcloud plugin in parallel.
+.. warning::
+   It is recommended to use the grpc plugin mode, especially when running
+   multiple jobs with the Libcloud plugin in parallel.
 
 .. _LibcloudPlugin-requirements:
 
