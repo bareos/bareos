@@ -46,8 +46,6 @@ import inspect
 import io
 
 f = open("/tmp/log.out", "w")
-dmsg_file = open("/tmp/dmsg.out", "wb")
-dmsg_buf = io.BufferedWriter(dmsg_file, 128 * 1024)
 
 
 def log(msg):
@@ -128,6 +126,7 @@ plugin_loaded: bool = False
 module_path: str = None
 quit: bool = False
 con: BareosConnection = None
+debug_level: int = 100
 
 
 def bareos_event(event: events_pb2.Event):
@@ -683,6 +682,9 @@ class SourceLocation:
 
 
 def DebugMessage(level: int, string: str, caller: SourceLocation = None):
+    if debug_level < level:
+        return
+
     if caller is None:
         frame = sys._getframe(1)
         caller = SourceLocation(
@@ -696,11 +698,8 @@ def DebugMessage(level: int, string: str, caller: SourceLocation = None):
     dbg_req.file = caller.file.encode()
     dbg_req.function = caller.function.encode()
 
-    # log(f"writing debug message {req}")
-    # con.write_core(req)
-
-    ser = req.SerializeToString()
-    dmsg_buf.write(ser)
+    log(f"writing debug message {req}")
+    con.write_core(req)
 
     # print(string)
 
@@ -905,7 +904,6 @@ def run():
             handle_request(req)
 
         f.close()
-        dmsg_file.close()
     except:
         error = traceback.format_exc()
         log(f"error = {error}")
