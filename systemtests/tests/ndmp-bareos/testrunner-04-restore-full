@@ -55,9 +55,9 @@ check_log "${log_home}/restore.out"
 
 # printf is used to suppress error return due to null byte
 # bash: line 1: warning: command substitution: ignored null byte in input
-${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/full\") | grep ${NDMP_FILESYSTEM}"
-${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile\"" | diff - sbin/bareos_dir-ndmp-bareos
-${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile2\"" | diff - sbin/bareos_sd-ndmp-bareos
+${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/full\") | grep ${NDMP_FILESYSTEM}"
+${SSH} "cat \"${NDMP_TEST_PATH}/testfile\"" | diff - sbin/bareos_dir-ndmp-bareos
+${SSH} "cat \"${NDMP_TEST_PATH}/testfile2\"" | diff - sbin/bareos_sd-ndmp-bareos
 
 #uncomment when fixed
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
