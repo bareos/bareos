@@ -89,8 +89,19 @@ struct ndm_env_entry* ndma_store_env_list(struct ndm_env_table* envtab,
   entry = NDMOS_API_MALLOC(sizeof(struct ndm_env_entry));
   if (!entry) return NULL;
 
+  if (!pv->name) {
+    NDMOS_API_FREE(entry);
+    return NULL;
+  }
+
   entry->pval.name = NDMOS_API_STRDUP(pv->name);
   if (!entry->pval.name) {
+    NDMOS_API_FREE(entry);
+    return NULL;
+  }
+
+  if (!pv->value) {
+    NDMOS_API_FREE(entry->pval.name);
     NDMOS_API_FREE(entry);
     return NULL;
   }
