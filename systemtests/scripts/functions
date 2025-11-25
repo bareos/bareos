@@ -670,6 +670,11 @@ run_query()
   PGOPTIONS="--client-min-messages=warning" psql -d "${db_name}" -q -c "$@"
 }
 
+run_query_with_options()
+{
+  PGOPTIONS="--client-min-messages=warning" psql -d "${db_name}" -q "$@"
+}
+
 run_headless_dbcheck()
 {
   print_debug "checking with ${BAREOS_DBCHECK_BINARY}"
