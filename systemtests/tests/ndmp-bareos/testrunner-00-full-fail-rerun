@@ -62,9 +62,6 @@ END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-# Avoid to failed the test here.
-# check_log "${log_home}/full.out"
-
 # Create data so rescheduled job will work
 make_remote_data_full
 
@@ -82,6 +79,7 @@ make_remote_data_full
     #
     #Backup Job omniosdump.2025-08-18_14.06.34_05 waiting for Client connection.
     #JobId=1 Level=Full Type=Backup Name=omniosdump Status=Waiting on FD
+
 echo "status storage=ndmpfile" >"${tmp}/bconcmds"
 status_storage=$(run_bconsole "${tmp}/bconcmds")
 if grep 'Status=Waiting on FD' <<< "${status_storage}"; then

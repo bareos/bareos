@@ -41,7 +41,7 @@ start_test
 # remove files
 cleanup_remote
 
-restore_path="${NDMP_MOUNTPOINT}/data/${TestName}/bareos-restores-${NDMP_FILESYSTEM}"
+restore_path="${NDMP_MOUNTPOINT}/data/${NDMP_FILESYSTEM}/${TestName}/bareos-restores-${NDMP_FILESYSTEM}"
 
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
