@@ -64,13 +64,17 @@ To allow the splitting of the development (i.e. continue working on master, but 
 
 Before running :file:`devtools/prepare-release.sh` you should create the new release-branch and switch to it using ``git checkout -b bareos-X.Y``.
 When you now run :file:`prepare-release.sh` it will only generate a new WIP-tag for your branch and nothing for the master branch.
-Also the release of the major version itself will not be visible on the master branch.
+Also, the release of the major version itself will not be visible on the master branch.
 
 To make the release visible on the master branch, you can just forward the branch pointer to the parent of the new WIP-tag.
 You can do so using ``git checkout master`` followed by ``git reset --soft <wip-tag>~`` (notice the ~).
 
-In :sinceVersion:`20.0.0: CHANGELOG.md` release notes are only per major-release.
-All sections referencing a previous release should be removed from :file:`CHANGELOG.md` before continuing work on the master branch.
+In :sinceVersion:`25.0.0: CHANGELOG.md` release notes will retain the complete history of the branch.
+All sections referencing a previous release should be kept in :file:`CHANGELOG.md`.
+To make this work correctly, the release-branch must be in sync with the master
+branch when first releasing a new major version.
+That first release must then be added to the master branch, too.
+This must be done manually.
 
 In :file:`docs/manuals/source/conf.py` on the master branch the setting for ``scv_root_ref`` and ``scv_banner_main_ref`` should point to the latest (i.e. your newly created) release-branch, so users will see the latest released documentation by default.
 You may also need to change ``scv_whitelist_branches`` so the release-branch will be picked up when building the documentation.

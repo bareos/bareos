@@ -7,35 +7,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking changes
 - Bareos 25 disables SSL on the PostgreSQL connection, as we have observed strange issues with SSL enabled.[Issue #1965]
-- Bareos 25 and later will not modify or extend existing configuration directories on package updates [PR #2338]  
-  Note: on FreeBSD unmodified configuration changes from Bareos <= 24 will get removed and
-  replaced by the new default configuration of the current package.
+- Bareos 25 and later will not modify or extend existing configuration directories on package updates [PR #2338]
+  Note: on FreeBSD unmodified configuration changes from Bareos <= 24 will get removed and   replaced by the new default configuration of the current package.
 - Glusterfs FD plugin and SD backend is deprecated and will get removed in 26.
-### Storage -> Device `Count` behavior changes
+
+#### Automatic Disk Changer configuration with Storage -> Device `Count`
+Setting up a virtual disk changer to backup as many parallel jobs into the same disk directory is now as easy as never before:
 
 If the `Count` directive is specified with a value > 1,
 duplicated devices will be created starting from serial-number 0000 up to `Count`.
-The 0000 device is automatically assigned 'Autoselect=No'. 
+The 0000 device is automatically assigned `Autoselect=No`. 
 Additionally, an autochanger resource is created with the name of the device the `Count` directive is specified for.
 The duplicated devices will be assigned to this autochanger unless they are used in another autochanger already.
 
-See explanations and example in documentation https://docs.bareos.org/TasksAndConcepts/VolumeManagement.html#concurrent-disk-jobs
+##### Working Example
+For a working example refer to the default configuration being deployed with Bareos 25 in the [Director Configuration](https://github.com/bareos/bareos/blob/bareos-25/core/src/defaultconfigs/bareos-sd.d/device/FileStorage.conf.in#L11) and in the [Storage configuration](https://github.com/bareos/bareos/blob/bareos-25/core/src/defaultconfigs/bareos-dir.d/storage/File.conf.in#L7)
 
-### Configuring a disk Autochanger
-If you want to run multiple jobs in parallel to the same disk storage,
-you can now simply specify the `count` directive in the (Storage -> Device) configuration
-to the number you've specified in `MaximumConcurrentJobs` (Director -> Storage).
+##### Migration of a manually configured disk changer to the new automatic functionality
 
-If you want to migrate from your manually configured disk autochanger to simply using the `count` directive:
+If you want to migrate from your manually configured disk autochanger to simply using the `Count` directive:
 1. remove the disk autochanger resource
-2. have a storage device with a specified `count` directive (with value >1)
+2. have a storage device with a specified `Count` directive (with value >1)
 3. wherever you used the disk autochanger name before, use the name of the device from step 2.
 
-### Removed
+
+### Added
+- plugins: introduce windows disaster recovery  imager (barri) [PR #2285]
+- plugins: add proxmox backup [PR #2372]
+- plugins: introduce hyper-v backup [PR #2284]
+- webui: add summary subscription report [PR #2340]
+- set environment vars in bpipe fd plugin [PR #2205]
+- add media_vault tool to contrib [PR #2357]
+- build: add support for el10 [PR #2106]
+- build: add Fedora 42 [PR #2263]
+- build: add Debian 13 [PR #2290]
+- Introduce build of Fedora 43 [PR #2407]
+
+### Changed
+- Sync EvpDigest between OpenSSL <1.1 and 1.1+ [PR #2086]
+- winbareos-native.nsi: do not package python3 plugins [PR #2076]
+- logrotate: add mtx-changer debug log config [PR #2039]
+- cmake: add cmake check whether tirpc is installed [PR #2109]
+- bconsole: require only one password in the configuration [PR #2116]
+- openssl: unify ssl error logging [PR #2078]
+- Inherit RunScript elements between JobDef resources [PR #2097]
+- stored: list all devices if device is invalid/missing [PR #2122]
+- Refactor some Xattr and Acl internals [PR #1893]
+- systemtests: fail if daemons have config warnings [PR #2144]
+- contrib: check_chunk.py improve README.md instructions [PR #2147]
+- VMware Plugin: Fix CBT query handling [PR #2152]
+- webui: use TemporaryDir as userdatadir in Selenium test [PR #2194]
+- ndmp: remove ndmp backup level limit [PR #2188]
+- reduce test-matrix [PR #2192]
+- bareos-fd: add option for grpc fallback [PR #2104]
+- Make tests optional [PR #2180]
+- windows: single-config/single-output directory [PR #2211]
+- webui: use WEB_UI path in apache bareos-webui.conf file [PR #2201]
+- config: update directives and error out on bconsole config warnings [PR #2217]
+- config: add virtual file changer example + documentation [PR #2090]
+- various cmake improvements [PR #2176]
+- packaging: use GCC 14 for RHEL 8/9 [PR #2275]
+- setgid on configdirs [PR #2270]
+- Replace Bsnprintf() implementation and add format attributes [PR #1697]
+- cmake: disable lto when linking gtests [PR #2286]
+- VMware Plugin: Fix for virtual USB devices [PR #2213]
+- bareos-check-sources: add shell_format plugin [PR #2267]
+- Build FreeBSD for major versions 14 / 13 (instead of minor releases) [PR #2117]
+- matrix: test the Debian ULC packages for OpenSSL 1.1 on Debian 11 instead of Debian 10 [PR #2321]
+- ndmp-bareos: Introduce incremental loop, restore 2nd file explicitly [PR #2269]
+- systemtest: always incremental add one job with one removed file [PR #2329]
+- systemtest: speed up always-incremental with sleep 0.25 [PR #2358]
+- storage: improve tapealert plugin [PR #2370]
+- systemtests: speed up testing [PR #2376]
+- regex library: from legacy implementation to pcre2 [PR #2376]
+- webui: migrate from ZF2 to Laminas [PR #2385]
+- don't alter configuration on ULC package updates [PR #2399]
+- stored: implicitly create autochanger from device with count > 1 [PR #2198]
+- defaultconfig: introduce automatic diskchanger [PR #2427]
+- webui: use patched laminas packages [PR #2439]
+- jobreport: show FD Bytes Read [PR #2443]
+- macos: use macos-15 runner [PR #2442]
+- Improve status subscription [PR #2444]
+- Refactor libcloud plugin to work with current Python versions [PR #2428]
+- stored: add new volume status 'Unlabeled' [PR #2207]
+- postgresql: require non-ssl connection [PR #2272]
+
+### Deprecated
 - config: deprecate file daemon as alias for client in FD config [PR #2187]
 - glusterfs: deprecate plugin and backend [PR #2416]
 
 ### Fixed
+- plugins: Fix typo in postgresql plugin [PR #2066]
+- python-bareos: Add missing dh-python build dep [PR #2130]
+- debian: Add missing build dependencies [PR #2128]
+- added build-dep to libutfcpp-dev in debian-like environments [PR #2056]
+- increase accepted warnings for windows [PR #2191]
+- stored: fix sd volume limit [PR #2264]
+- python: fix traceback generation [PR #2303]
+- cats: fix missing locks [PR #2331]
+- correct backend init command in PyPI instructions (fixes #2380) [PR #2381]
+- debian: Do not make dbconfig sql files executable [PR #2404]
+- plugin: change prefix @hyper-v@ -> @HYPER-V [PR #2431]
 - cats: fix version.map.in [PR #2064]
 - webui: fix for PHP < 7.3 [PR #2067]
 - cmake: fix MARIADB_MYSQL_INSTALL_DB_SCRIPT usage [PR #2040]
@@ -66,19 +138,15 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - mtx-changer: make mandatory test mt-st versus cpio-mt [PR #2256]
 - packaging: set all `*.conf.examples` as %config(noreplace) [PR #2268]
 - disable bareosfd-python3-module-test on FreeBSD [PR #2278]
-- postgresql: require non-ssl connection [PR #2272]
 - fix problems with msvc 19.44 [PR #2287]
 - plugins: fix error_string construction [PR #2273]
 - dplcompat: fix unsupported size-suffixes on chunksize [PR #2240]
 - gRPC: add fixes to enable building on SUSE [PR #2250]
 - fix admin job issues [PR #2283]
 - truncate: fix return status bug [PR #2300]
-- stored: add new volume status 'Unlabeled' [PR #2207]
-- doc: add views & functions to developer catalog service chapter [PR #2328]
 - systemtests: add config-default test [PR #2332]
 - VMware Plugin: Adapt to pyVmomi 9 [PR #2341]
 - VMWare Plugin: Fix VirtualSerialPort, NVRAM timeouts configurable [PR #2344]
-- doc: storage backend add note about static build [PR #2350]
 - fix next-pool overrides by job [PR #2279]
 - stored: fix race condition [PR #2359]
 - dird: fix nextvol crash [PR #2335]
@@ -96,6 +164,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - cmake: fix traymonitor startup on windows [PR #2423]
 - packaging: bareos-contrib-tool depend on python3-bareos [PR #2432]
 - packaging: make contrib-tools use defaultsconfig [PR #2445]
+- debugedit: fix messing with mtime [PR #2429]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -107,6 +176,8 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - doc: don't alter configuration on package updates [PR #2392]
 - docs: introduce 3rd party plugin (Yuzuy Qumulo) [PR #2418]
 - Add historic data to CHANGELOG.md [PR #2434]
+- doc: storage backend add note about static build [PR #2350]
+- doc: add views & functions to developer catalog service chapter [PR #2328]
 
 ### Added
 - added build-dep to libutfcpp-dev in debian-like environments [PR #2056]
@@ -176,7 +247,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - macos: use macos-15 runner [PR #2442]
 - Improve status subscription [PR #2444]
 - Refactor libcloud plugin to work with current Python versions [PR #2428]
-- debugedit: fix messing with mtime [PR #2429]
 
 ## [24.0.0] - 2024-12-16
 
