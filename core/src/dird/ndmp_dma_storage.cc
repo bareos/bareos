@@ -983,6 +983,7 @@ bool NdmpSendLabelRequest(UaContext* ua,
   }
 
   retval = true;
+  mr->VolBytes = 1; // set VolBytes !=0 to allow the update from 'Unlabeled' to 'Append'
 
   CleanupNdmpSession(ndmp_sess);
 
