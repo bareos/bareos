@@ -1609,14 +1609,20 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
              FMT_STRING("... successfully.\nwaiting for server to finish ..."));
     SetReady(true);
 
+    google::protobuf::Arena arena;
 
     {
-      bp::PluginRequest req;
-      while (!done && server.Read(req)) {
-        if (!service.HandleRequest(req, server.output)) {
+      while (!done) {
+        auto* req = google::protobuf::Arena::Create<bp::PluginRequest>(&arena);
+        auto* resp
+            = google::protobuf::Arena::Create<bp::PluginResponse>(&arena);
+        if (!server.Read(*req)) { break; }
+        if (!service.HandleRequest(*req, *resp, server.output)) {
           // TODO: some error here
           assert(0);
         }
+
+        arena.Reset();
       }
     }
 
