@@ -49,19 +49,17 @@ last_jobid_or_zero()
 {
   # return the last jobid if it exists, or 0, so that
   # result + 1 is the next jobid
-  set +o pipefail
+
   output=$(
     "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<EOF
 .api 2
-.sql query=\"SELECT CASE WHEN is_called THEN last_value ELSE 0 END FROM job_jobid_seq;
+.sql query="SELECT CASE WHEN is_called THEN last_value ELSE 0 END FROM job_jobid_seq;"
 EOF
   )
 
   print_debug "${output}"
-  echo "'${output}'" >&2
 
-  ${AWK} '/"case":/ {gsub("\"","",$2);print $2}' <"${output}"
-  set -o pipefail
+  ${AWK} '/"case":/ {gsub("[\"\\r]","",$2); print $2}' <<<"${output}"
 }
 
 wait_for_jobs_to_terminate()
