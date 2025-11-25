@@ -10,6 +10,6 @@ Fileset {
         meta = "BUTYPE=DUMP"
 
     }
-    File = /export/home/regress/ndmp-bareos/@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
+    File = /export/home/regress/@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@/ndmp-bareos
   }
 }
