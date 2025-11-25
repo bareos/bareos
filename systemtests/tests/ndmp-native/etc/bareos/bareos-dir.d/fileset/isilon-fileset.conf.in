@@ -10,6 +10,6 @@ Fileset {
         meta = "BUTYPE=DUMP"
 
     }
-    File = /ifs/home/regress/ndmp-native/@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
+    File = /ifs/home/regress/@IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@/ndmp-native
   }
 }

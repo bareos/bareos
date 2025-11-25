@@ -80,30 +80,30 @@ check_jobid_failed()
 
 cleanup_remote()
 {
-  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/home/regress/${TestName}"
-  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/data/${TestName}"
+  ${SSH} rm -Rf "${NDMP_TEST_PATH}"
+  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/data/${NDMP_FILESYSTEM}/${TestName}"
 }
 
 make_remote_data_full()
 {
-  ${SSH} mkdir -p "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}"
-  ${SSH} dd if=/dev/zero of="${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/full" bs=1M count=20
-  ${SSH} "echo \"${NDMP_FILESYSTEM}\" >> \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/full\""
-  ${SSH} "cat - > \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile\"" < $(readlink sbin/bareos_dir-*)
+  ${SSH} mkdir -p "${NDMP_TEST_PATH}"
+  ${SSH} dd if=/dev/zero of="${NDMP_TEST_PATH}/full" bs=1M count=20
+  ${SSH} "echo \"${NDMP_FILESYSTEM}\" >> \"${NDMP_TEST_PATH}/full\""
+  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile\"" < $(readlink sbin/bareos_dir-*)
   # we need an additional file, so the restore doesn't pick the last file of the volume and data stream
-  ${SSH} "cat - > \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile2\"" < $(readlink sbin/bareos_sd-*)
+  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile2\"" < $(readlink sbin/bareos_sd-*)
 }
 
 make_remote_data_incremental()
 {
-  ${SSH} dd if=/dev/zero of="${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/incremental" bs=1M count=2
+  ${SSH} dd if=/dev/zero of="${NDMP_TEST_PATH}/incremental" bs=1M count=2
 }
 
 make_remote_subdata_incremental()
 {
-  ${SSH} mkdir -p "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/subdir"
-  ${SSH} cp -a "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile" "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/subdir/subtestfile1"
-  ${SSH} cp -a "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile2" "${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/subdir/subtestfile2"
+  ${SSH} mkdir -p "${NDMP_TEST_PATH}/subdir"
+  ${SSH} cp -a "${NDMP_TEST_PATH}/testfile" "${NDMP_TEST_PATH}/subdir/subtestfile1"
+  ${SSH} cp -a "${NDMP_TEST_PATH}/testfile2" "${NDMP_TEST_PATH}/subdir/subtestfile2"
 }
 
 SSH="ssh root@${NDMP_DATA_AGENT_ADDRESS} -o StrictHostKeyChecking=no"
