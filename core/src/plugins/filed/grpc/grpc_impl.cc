@@ -376,17 +376,19 @@ class BareosCore {
                               BareosCore* core)
   {
     DebugLog(ctx, 100, "starting answering requests");
-    for (;;) {
-      bc::CoreRequest req;
+    google::protobuf::Arena arena;
 
-      if (!stream->Read(req)) {
+    for (;;) {
+      auto* req = google::protobuf::Arena::Create<bc::CoreRequest>(&arena);
+
+      if (!stream->Read(*req)) {
         DebugLog(ctx, 100, "error during reading => stop listening");
         break;
       }
-      bc::CoreResponse resp;
-      switch (core->HandleRequest(&req, &resp)) {
+      auto* resp = google::protobuf::Arena::Create<bc::CoreResponse>(&arena);
+      switch (core->HandleRequest(req, resp)) {
         case CallResult::Response: {
-          stream->Write(resp);
+          stream->Write(*resp);
         } break;
         case CallResult::NoResponse: {
           // nothing to do
@@ -396,6 +398,8 @@ class BareosCore {
           assert(0);
         } break;
       }
+
+      arena.Reset();
     }
 
     // TODO: the socket should get killed here
@@ -1203,23 +1207,40 @@ class PluginClient {
                std::unique_ptr<prototools::ProtoBidiStream> s)
       : stream{std::move(s)}, core{ctx}
   {
+    arena = std::make_unique<google::protobuf::Arena>();
+  }
+
+  std::unique_ptr<google::protobuf::Arena> arena;
+
+  std::pair<bp::PluginRequest*, bp::PluginResponse*> allocate_pair()
+  {
+    arena->Reset();
+    return {
+        google::protobuf::Arena::Create<bp::PluginRequest>(arena.get()),
+        google::protobuf::Arena::Create<bp::PluginResponse>(arena.get()),
+    };
+  }
+
+  bp::FileRecord* allocate_rec()
+  {
+    arena->Reset();
+    return google::protobuf::Arena::Create<bp::FileRecord>(arena.get());
   }
 
   bRC Setup()
   {
     if (!check_no_prediction()) {}
-    bp::PluginRequest req;
-    bp::PluginResponse resp;
+    auto [req, resp] = allocate_pair();
 
-    (void)req.mutable_setup();
+    (void)req->mutable_setup();
 
-    bool write_ok = stream->Write(req);
+    bool write_ok = stream->Write(*req);
     if (!write_ok) { return bRC_Error; }
 
-    bool read_ok = stream->Read(resp);
+    bool read_ok = stream->Read(*resp);
     if (!read_ok) { return bRC_Error; }
 
-    if (!resp.has_setup()) { return bRC_Error; }
+    if (!resp->has_setup()) { return bRC_Error; }
 
     return bRC_OK;
   }
@@ -1229,14 +1250,12 @@ class PluginClient {
   {
     if (!check_no_prediction()) {}
 
-    bp::PluginResponse resp;
-
-    bp::PluginRequest actual_req;
-    *actual_req.mutable_handle_plugin() = std::move(*req);
-    bool write_ok = stream->Write(actual_req);
+    auto [actual_req, resp] = allocate_pair();
+    *actual_req->mutable_handle_plugin() = std::move(*req);
+    bool write_ok = stream->Write(*actual_req);
     if (!write_ok) { return bRC_Error; }
 
-    bool read_ok = stream->Read(resp);
+    bool read_ok = stream->Read(*resp);
     if (!read_ok) { return bRC_Error; }
 
     // Status status = stub_->handlePluginEvent(*req, &resp);
@@ -1248,9 +1267,9 @@ class PluginClient {
     //   return bRC_Error;
     // }
 
-    if (!resp.has_handle_plugin()) { return bRC_Error; }
+    if (!resp->has_handle_plugin()) { return bRC_Error; }
 
-    auto res = resp.handle_plugin().res();
+    auto res = resp->handle_plugin().res();
 
     DebugLog(100, FMT_STRING("plugin handled event {} with res = {} ({})"),
              int(type), bp::ReturnCode_Name(res), int(res));
@@ -1309,9 +1328,9 @@ class PluginClient {
 
   bRC startBackupFile(filedaemon::save_pkt* pkt)
   {
+    auto [req, outer_resp] = allocate_pair();
     if (!check_prediction(START_BACKUP_FILE)) {
-      bp::PluginRequest req;
-      auto* inner_req = req.mutable_start_backup();
+      auto* inner_req = req->mutable_start_backup();
       inner_req->set_no_read(pkt->no_read);
       inner_req->set_portable(pkt->portable);
       inner_req->set_max_record_size(256 << 10);
@@ -1321,21 +1340,19 @@ class PluginClient {
       inner_req->set_cmd(inner.data(), inner.size());
       inner_req->set_flags(pkt->flags, sizeof(pkt->flags));
 
-      if (!stream->Write(req)) { return bRC_Error; }
+      if (!stream->Write(*req)) { return bRC_Error; }
     }
 
-    bp::PluginResponse outer_resp;
-
-    if (!stream->Read(outer_resp)) {
+    if (!stream->Read(*outer_resp)) {
       DebugLog(100, "read failed\n");
       return bRC_Error;
     }
 
-    if (!outer_resp.has_start_backup()) {
+    if (!outer_resp->has_start_backup()) {
       DebugLog(100, "bad message type\n");
       return bRC_Error;
     }
-    auto& resp = outer_resp.start_backup();
+    auto& resp = outer_resp->start_backup();
     auto& cached = start_backup_file.emplace();
     auto found_fd = stream->PopFD();
     if (resp.io_in_core()) {
@@ -1550,18 +1567,17 @@ class PluginClient {
   {
     if (!check_no_prediction()) {}
 
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_start_restore_file();
+    auto [outer_req, outer_resp] = allocate_pair();
+    auto& req = *outer_req->mutable_start_restore_file();
 
     auto inner = strip_prefix(cmd);
     req.set_command(inner.data(), inner.size());
 
-    if (!stream->Write(outer_req)) { return bRC_Error; }
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_start_restore_file()) { return bRC_Error; }
+    if (!stream->Write(*outer_req)) { return bRC_Error; }
+    if (!stream->Read(*outer_resp)) { return bRC_Error; }
+    if (!outer_resp->has_start_restore_file()) { return bRC_Error; }
 
-    auto& resp = outer_resp.start_restore_file();
+    auto& resp = outer_resp->start_restore_file();
     (void)resp;
 
     return bRC_OK;
@@ -1570,16 +1586,15 @@ class PluginClient {
   bRC endRestoreFile()
   {
     if (!check_no_prediction()) {}
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_end_restore_file();
+    auto [outer_req, outer_resp] = allocate_pair();
+    auto& req = *outer_req->mutable_end_restore_file();
     (void)req;
 
-    if (!stream->Write(outer_req)) { return bRC_Error; }
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_end_restore_file()) { return bRC_Error; }
+    if (!stream->Write(*outer_req)) { return bRC_Error; }
+    if (!stream->Read(*outer_resp)) { return bRC_Error; }
+    if (!outer_resp->has_end_restore_file()) { return bRC_Error; }
 
-    auto& resp = outer_resp.end_restore_file();
+    auto& resp = outer_resp->end_restore_file();
     (void)resp;
 
     return bRC_OK;
@@ -1606,9 +1621,8 @@ class PluginClient {
   bRC FileSeek(int whence, int64_t offset)
   {
     if (!check_no_prediction()) {}
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_file_seek();
+    auto [outer_req, outer_resp] = allocate_pair();
+    auto& req = *outer_req->mutable_file_seek();
 
     bp::SeekStart start;
     switch (whence) {
@@ -1629,11 +1643,11 @@ class PluginClient {
     req.set_whence(start);
     req.set_offset(offset);
 
-    if (!stream->Write(outer_req)) { return bRC_Error; }
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_file_seek()) { return bRC_Error; }
+    if (!stream->Write(*outer_req)) { return bRC_Error; }
+    if (!stream->Read(*outer_resp)) { return bRC_Error; }
+    if (!outer_resp->has_file_seek()) { return bRC_Error; }
 
-    auto& resp = outer_resp.file_seek();
+    auto& resp = outer_resp->file_seek();
     (void)resp;
 
     return bRC_OK;
@@ -1641,13 +1655,13 @@ class PluginClient {
 
   bRC FileRead(char* buf, size_t size, int32_t* bytes_read)
   {
-    bp::FileRecord rec;
-    if (!stream->Read(rec)) {
+    auto* rec = allocate_rec();
+    if (!stream->Read(*rec)) {
       DebugLog(100, "could not read filerecord");
       return bRC_Error;
     }
 
-    auto& data = rec.data();
+    auto& data = rec->data();
     if (data.size() > size) {
       DebugLog(100, "too much data received");
       return bRC_Error;
@@ -1664,16 +1678,17 @@ class PluginClient {
   bRC FileWrite(size_t size, size_t* num_bytes_written)
   {
     if (!check_prediction(FILE_WRITE)) {}
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_file_write();
+
+    auto [outer_req, outer_resp] = allocate_pair();
+
+    auto& req = *outer_req->mutable_file_write();
     req.set_bytes_written(size);
 
-    if (!stream->Write(outer_req)) { return bRC_Error; }
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_file_write()) { return bRC_Error; }
+    if (!stream->Write(*outer_req)) { return bRC_Error; }
+    if (!stream->Read(*outer_resp)) { return bRC_Error; }
+    if (!outer_resp->has_file_write()) { return bRC_Error; }
 
-    auto& resp = outer_resp.file_write();
+    auto& resp = outer_resp->file_write();
 
     *num_bytes_written = resp.bytes_written();
 
