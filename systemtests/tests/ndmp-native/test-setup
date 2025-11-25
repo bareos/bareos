@@ -73,6 +73,7 @@ END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
 # see https://github.com/bareos/internal/issues/445
+# fixed by PR#2456
 # Once volumestatus = "unlabeled" is fixed we can move on by automation
 # in the meantime update manually the volumes to Append.
 

@@ -51,7 +51,7 @@ echo "############# running NDMP ${NDMP_TEST} backup incrementals limit set to $
 make_remote_data_incremental
 
 for ID in $(seq 1 ${limit}); do
-  ${SSH} "echo \"${NDMP_FILESYSTEM}-${ID}\" >> \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/incremental\""
+  ${SSH} "echo \"${NDMP_FILESYSTEM}-${ID}\" >> \"${NDMP_TEST_PATH}/incremental\""
 
   if [ ${ID} -eq ${limit} ]; then
     echo "##### subdata created for last incremental ####"

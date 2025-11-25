@@ -45,7 +45,7 @@ cleanup_remote
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-mark.out
 restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select yes
-mark ${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile
+mark ${NDMP_TEST_PATH}/testfile
 done
 wait
 END_OF_DATA
@@ -54,14 +54,14 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore-mark.out"
 
-${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile\"" | diff - sbin/bareos_dir-ndmp-native
+${SSH} "cat \"${NDMP_TEST_PATH}/testfile\"" | diff - sbin/bareos_dir-ndmp-native
 
 echo "################ restore single file with file #####################"
 cleanup_remote
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-file.out
-restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile2" select yes
+restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_TEST_PATH}/testfile2" select yes
 wait
 END_OF_DATA
 
@@ -69,7 +69,7 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore-file.out"
 
-${SSH} "cat \"${NDMP_MOUNTPOINT}/home/regress/${TestName}/${NDMP_FILESYSTEM}/testfile2\"" | diff - sbin/bareos_sd-ndmp-native
+${SSH} "cat \"${NDMP_TEST_PATH}/testfile2\"" | diff - sbin/bareos_sd-ndmp-native
 
 
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
