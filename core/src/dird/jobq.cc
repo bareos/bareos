@@ -607,7 +607,8 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
 
     // set the backup format again for rescheduled ndmp native jobs
     if (jcr->dir_impl->backup_format) { free(jcr->dir_impl->backup_format); }
-    jcr->dir_impl->backup_format = strdup(jcr->dir_impl->res.job->backup_format);
+    jcr->dir_impl->backup_format
+        = strdup(jcr->dir_impl->res.job->backup_format);
 
     jcr->setJobStatus(-1);
     jcr->dir_impl->SDJobStatus = 0;
