@@ -636,6 +636,7 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
 
     if (ebf_res != bRC_More) { last_file_done = true; }
 
+    last_io_in_core_fd.reset();
     (void)ebf_res;
     (void)fc_res;
   }
@@ -682,6 +683,8 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
   DebugLog(100, FMT_STRING("received save packet of type {}"), sp.type);
 
   auto type = to_grpc(sp.type);
+
+  bool skip_ebf = false;
 
   auto save_res = std::visit(
       [&](auto&& arg) {
@@ -738,6 +741,8 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
 
             last_io_in_core_fd = *fo_res;
 
+            skip_ebf = true;
+
             return Status::OK;
           }
 
@@ -745,13 +750,13 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
 
           writer.Write(outer_resp);
 
-          for (;;) {
-            auto fr = bp::FileRecord{};
+          auto fr = bp::FileRecord{};
+          std::string* data = fr.mutable_data();
 
-            filedaemon::io_pkt pkt;
+          for (;;) {
+            filedaemon::io_pkt pkt{};
             pkt.func = filedaemon::IO_READ;
             pkt.count = request->max_record_size();
-            std::string* data = fr.mutable_data();
             data->resize(request->max_record_size());
             pkt.buf = data->data();
 
@@ -838,9 +843,11 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
       },
       type);
 
-  auto ebf_res = funcs.endBackupFile(ctx);
+  if (!skip_ebf) {
+    auto ebf_res = funcs.endBackupFile(ctx);
 
-  if (ebf_res != bRC_More) { last_file_done = true; }
+    if (ebf_res != bRC_More) { last_file_done = true; }
+  }
 
   return save_res;
 }
@@ -1448,10 +1455,9 @@ auto PluginService::setXattr(const bp::setXattrRequest* request,
 // }
 
 bool PluginService::HandleRequest(const bp::PluginRequest& outer_req,
+                                  bp::PluginResponse& outer_resp,
                                   prototools::ProtoOutputStream& writer)
 {
-  bp::PluginResponse outer_resp{};
-
   switch (outer_req.request_case()) {
     case bareos::plugin::PluginRequest::kSetup: {
       auto status = this->Setup(&outer_req.setup(), outer_resp.mutable_setup());
