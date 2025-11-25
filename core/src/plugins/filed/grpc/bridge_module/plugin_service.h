@@ -78,6 +78,7 @@ class PluginService {
   }
 
   bool HandleRequest(const bp::PluginRequest& req,
+                     bp::PluginResponse& resp,
                      prototools::ProtoOutputStream& writer);
 
  private:
