@@ -604,6 +604,11 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
          T_("Rescheduled Job %s at %s to re-run in %d seconds (%s).\n"),
          jcr->Job, dt, (int)jcr->dir_impl->res.job->RescheduleInterval, dt2);
     DirdFreeJcrPointers(jcr); /* partial cleanup old stuff */
+
+    // set the backup format again for rescheduled ndmp native jobs
+    if (jcr->dir_impl->backup_format) { free(jcr->dir_impl->backup_format); }
+    jcr->dir_impl->backup_format = strdup(jcr->dir_impl->res.job->backup_format);
+
     jcr->setJobStatus(-1);
     jcr->dir_impl->SDJobStatus = 0;
     jcr->JobErrors = 0;
