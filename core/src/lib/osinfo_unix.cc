@@ -29,6 +29,7 @@
 
 #include <cctype>
 
+#include <sys/utsname.h>
 namespace {
 constexpr std::string_view unquote(std::string_view value)
 {
@@ -194,6 +195,19 @@ struct os_release {
     } else if (auto loc3 = std::ifstream("/etc/initrd-release")) {
       parse_file(loc3);
     } else {
+      utsname name;
+      if (uname(&name) == 0) {
+        // example:
+        // Linux 6.8.0-1036-aws (#38~22.04.1-Ubuntu SMP Fri Aug 22 15:44:33 UTC
+        // 2025)
+        std::string pretty_name;
+        pretty_name += name.sysname;
+        pretty_name += " ";
+        pretty_name += name.release;
+        pretty_name += " (";
+        pretty_name += name.version;
+        pretty_name += ")";
+        os_version.emplace(std::move(pretty_name));
       }
     }
   }
@@ -206,7 +220,8 @@ const char* GetOsInfoString()
   // output priority
   // 1) pretty_name
   // 2) name + version (both have to be there)
-  // 3) DISTVER
+  // 3) uname
+  // 4) DISTVER
 
   static os_release info{};
 
