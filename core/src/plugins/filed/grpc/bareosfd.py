@@ -82,8 +82,9 @@ def writemsg(sock, msg):
     # log(f"sending {msg} (size = {size}) to {sock}")
     size_bytes = size.to_bytes(4, "little")
     # log(f"bytes = {len(size_bytes)}, obj = {len(obj_bytes)}")
-    sock.sendall(size_bytes)
-    sock.sendall(obj_bytes)
+    send_bytes = size_bytes + obj_bytes
+    sock.sendall(send_bytes)
+    # sock.sendall(obj_bytes)
 
 
 def writemsg_with_fd(sock, msg, fd):
@@ -93,17 +94,18 @@ def writemsg_with_fd(sock, msg, fd):
     size_bytes = size.to_bytes(4, "little")
     # log(f"bytes = {len(size_bytes)}, obj = {len(obj_bytes)}")
 
-    size_list = [size_bytes]
-    bytes_send = socket.send_fds(sock, size_list, [fd])
+    send_bytes = size_bytes + obj_bytes
+    send_list = [send_bytes]
+    bytes_send = socket.send_fds(sock, send_list, [fd])
 
     # log(f"sending fd {fd} to core")
     while bytes_send == 0:
-        bytes_send = socket.send_fds(sock, size_list, [fd])
+        bytes_send = socket.send_fds(sock, send_list, [fd])
 
-    if bytes_send < len(size_bytes):
-        sock.sendall(size_bytes[bytes_send:])
+    if bytes_send < len(send_bytes):
+        sock.sendall(send_bytes[bytes_send:])
 
-    sock.sendall(obj_bytes)
+    # sock.sendall(obj_bytes)
 
 
 def bit_is_set(flags: bytearray, index: int) -> bool:
