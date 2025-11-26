@@ -165,6 +165,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - packaging: bareos-contrib-tool depend on python3-bareos [PR #2432]
 - packaging: make contrib-tools use defaultsconfig [PR #2445]
 - debugedit: fix messing with mtime [PR #2429]
+- ndmp native: fix problem with new 'unlabeled' media status [PR #2456]
 
 ### Documentation
 - docs: fix grpc-fd plugin call [PR #2068]
@@ -2158,4 +2159,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2443]: https://github.com/bareos/bareos/pull/2443
 [PR #2444]: https://github.com/bareos/bareos/pull/2444
 [PR #2445]: https://github.com/bareos/bareos/pull/2445
+[PR #2456]: https://github.com/bareos/bareos/pull/2456
 [unreleased]: https://github.com/bareos/bareos/tree/master
