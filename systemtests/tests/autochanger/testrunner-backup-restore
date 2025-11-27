@@ -1,4 +1,26 @@
 #!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+# This testrunner performs a backup and a restore for each pool / volume
+
 set -e
 set -o pipefail
 set -u
@@ -26,10 +48,9 @@ on_error()
 trap 'on_error' ERR
 
 # remove jobs from previous runs
-cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out $tmp/log-purge.out
-purge jobs yes
-2
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/log-purge.out
+purge jobs client=bareos-fd yes
 wait
 messages
 quit
@@ -38,7 +59,7 @@ END_OF_DATA
 run_bconsole
 
 echo "Set debug on the Tape-Storage daemon"
-tracefile="$(echo "setdebug level=200 trace=1 storage=Tape-0" | bin/bconsole | grep "^3000" | awk -F"tracefile=" '{print $2}')"
+tracefile="$(bin/bconsole <<< "setdebug level=200 trace=1 storage=Tape-0" | awk -F"tracefile=" '/^3000/ {print $2}')"
 : >"${tracefile}" # clear tracefile
 
 echo "Label barcodes"
@@ -51,12 +72,12 @@ for i in $(seq ${NUMBER_OF_POOLS}); do
 done
 
 # create the test backup jobs
-rm -f bconsole_backup_jobs
+rm -f ${tmp}/bconsole_backup_jobs
 
 spooling="spooldata=yes"
 for i in $(seq ${NUMBER_OF_TEST_ROUNDS}); do
   for j in $(seq ${NUMBER_OF_POOLS}); do
-    cat <<EOF >>bconsole_backup_jobs
+    cat <<EOF >>${tmp}/bconsole_backup_jobs
 run job=backup-bareos-fd level=Full storage=Tape-0 pool=Full-$((j - 1)) ${spooling} yes
 status dir
 EOF
@@ -66,40 +87,41 @@ EOF
   done
 done
 
-echo "wait" >>bconsole_backup_jobs
-echo "messages" >>bconsole_backup_jobs
+echo "wait" >>${tmp}/bconsole_backup_jobs
+echo "messages" >>${tmp}/bconsole_backup_jobs
 
 # start all the jobs
-bin/bconsole <bconsole_backup_jobs
+bin/bconsole <${tmp}/bconsole_backup_jobs
 
 # prepare the restore
+list_of_jobids=$(bin/bconsole <<< ".api 2
+list jobs job=backup-bareos-fd jobstatus=T,W
+" | awk -F ":" '/^.*"jobid":/ {gsub("\"","",$2);gsub(" ","",$2);gsub(",","",$2);print $2}'
+  )
 
-list_of_jobids=$(echo "list jobs" \
-  | bin/bconsole \
-  | grep "backup-bareos-fd" \
-  | sed 's/| *\([0-9]\{1,\}\).*$/\1/')
-
-if [ "${list_of_jobids}" -eq 0 ]; then
+if [ -z "${list_of_jobids}" ]; then
   echo "no jobs found for restore"
   export estat=1
   exit 1
 fi
+# Write list of jobids for next use
+echo "${list_of_jobids}" > ${tmp}/list_of_jobids
 
-rm -f bconsole_restore_jobs
+rm -f "${tmp}/bconsole_restore_jobs"
 poolnumber=$((NUMBER_OF_POOLS))
 for j in ${list_of_jobids}; do
   pool="Full-$((poolnumber - 1))"
-  cat <<EOF >>bconsole_restore_jobs
+  cat << EOF >> "${tmp}/bconsole_restore_jobs"
 restore jobid=${j} pool="${pool}" where=${tmp}/bareos_restores_${j} select all done yes
 EOF
   poolnumber=$((poolnumber - 1))
 done
 
-echo "wait" >>bconsole_restore_jobs
-echo "messages" >>bconsole_restore_jobs
+echo "wait" >> "${tmp}/bconsole_restore_jobs"
+echo "messages" >> "${tmp}/bconsole_restore_jobs"
 
 # start all the restore jobs
-bin/bconsole <bconsole_restore_jobs
+bin/bconsole < "${tmp}/bconsole_restore_jobs"
 
 # does not compare fifo files
 for j in ${list_of_jobids}; do
