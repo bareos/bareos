@@ -17,10 +17,6 @@ message Backup {
 
 
 message BeginObject {
-  bytes name = 1;
-
-  bareos.common.FileType file_type = 2;
-
   oneof object_type {
     bareos.common.PluginObject object = 10;
     bareos.common.PluginFile file = 11;

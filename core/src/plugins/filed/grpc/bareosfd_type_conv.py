@@ -205,7 +205,9 @@ assert sbf_remote(bareosfd_types.bRC_Skip) == plugin_pb2.SBF_Skip
 ### FileType
 
 
-def ft_remote(ft: bareosfd_types.bFileType):
+def ft_remote(
+    ft: bareosfd_types.bFileType,
+) -> (type, common_pb2.ObjectType | common_pb2.FileType | common_pb2.FileErrorType):
     # sadly protobuf uses simple ints for enums, so we need to
     # distinguish them with a tuple
     match ft:
