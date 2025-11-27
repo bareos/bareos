@@ -1184,6 +1184,41 @@ class Backup:
                 case common_pb2.ObjectType:
                     pass
                 case common_pb2.FileType:
+
+                    resp = backup_pb2.Backup()
+                    obj = resp.begin_object
+
+                    obj.file.no_read = pkt.no_read
+                    obj.file.portable = pkt.portable
+                    if bit_is_set(pkt.flags, bFileOption.FO_DELTA):
+                        obj.file.delta_seq = pkt.delta_seq
+                    obj.file.offset_backup = bit_is_set(pkt.flags, bFileOption.FO_OFFSETS)
+                    obj.file.sparse_backup = bit_is_set(pkt.flags, bFileOption.FO_SPARSE)
+
+                    obj.file.file = pkt.fname.encode()
+                    obj.file.ft = file_type
+
+                    obj.file.stats.dev = pkt.statp.st_dev
+                    obj.file.stats.ino = pkt.statp.st_ino
+                    obj.file.stats.mode = pkt.statp.st_mode
+                    obj.file.stats.nlink = pkt.statp.st_nlink
+                    obj.file.stats.uid = pkt.statp.st_uid
+                    obj.file.stats.gid = pkt.statp.st_gid
+                    obj.file.stats.rdev = pkt.statp.st_rdev
+                    obj.file.stats.size = pkt.statp.st_size
+
+                    obj.file.stats.atime.FromSeconds(pkt.statp.st_atime)
+                    obj.file.stats.mtime.FromSeconds(pkt.statp.st_mtime)
+                    obj.file.stats.ctime.FromSeconds(pkt.statp.st_ctime)
+
+                    obj.file.stats.blksize = pkt.statp.st_blksize
+                    obj.file.stats.blocks = pkt.statp.st_blocks
+
+                    if type == common_pb2.SoftLink:
+                        obj.file.link = pkt.link.encode()
+
+                    con.send_data(resp)
+
                     self.backup_file_content(pkt.fname)
 
                     if self.enable_acl:
@@ -1197,6 +1232,10 @@ class Backup:
 
 
             self.backup_end()
+
+        done = backup_pb2.Backup()
+        done.done.SetInParent()
+        con.send_data(done)
 
 def handle_events():
     while not quit:
