@@ -94,3 +94,16 @@ enum ReplaceType {
   ReplaceNever = 3;
   ReplaceAlways = 4;
 };
+
+message FileData {
+  bytes data = 1;
+};
+
+message Acl {
+  bytes acl_data = 1;
+};
+
+message Xattr {
+  bytes name = 1;
+  bytes content = 2;
+};
