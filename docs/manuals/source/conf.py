@@ -344,6 +344,8 @@ linkcheck_ignore = [
     r"https://github\.com/bareos/bareos/pull/\d+",
     "https://www.glusterfs.org",  # failing too often
     "https://www.sphinx-doc.org/en/1.7/intro.html#",
+    "https://www.snia.org/ndmp",  # cloudfare protected
+    "https://www.dell.com/support/*",  # client protected
 ]
 # linkcheck_auth = [
 #  ('https://foo\.yourcompany\.com/.+', ('johndoe', 'secret')),

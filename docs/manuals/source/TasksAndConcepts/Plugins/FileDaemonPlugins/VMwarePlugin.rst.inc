@@ -270,7 +270,7 @@ For ease of use (but less secure) when the :command:`vcthumbprint` is not given,
 
 Also since :sinceVersion:`17.2.4: VMware Plugin: transport=nbdssl` another optional plugin option has been added that can be used for trying to force a given transport method. Normally, when no transport method is given, VDDK will negotiate available transport methods and select the best one. For a description of transport methods, see
 
-https://knowledge.broadcom.com/external/article?legacyId=2075984
+https://techdocs.broadcom.com/us/en/vmware-cis/vsphere/vsphere-sdks-tools/9-0/virtual-disk-development-kit-programming-guide/virtual-disk-interfaces/virtual-disk-transport-methods.html
 
 When the plugin runs in a VMware virtual machine which has access to datastore where the virtual disks to be backed up reside, VDDK will use the hotadd transport method. On a physical server without SAN access, it will use the NBD transport method, hotadd transport is not available in this case.
 

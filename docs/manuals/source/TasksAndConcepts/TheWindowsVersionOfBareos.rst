@@ -28,9 +28,8 @@ Normally, you will install the Windows version of Bareos from the binaries.
 The Windows version of Bareos **winbareos** binary packages are provided
 in the :file:`windows` directory of the Bareos release directory.
 The current Bareos Community Repository is at https://download.bareos.org/current/windows/
-while the Bareos Subscription Repository of Bareos release 22 is at
-https://download.bareos.com/bareos/release/22/windows/.
-Additionally, there are `OPSI <https://opsi.org>`_ packages available in the :file:`windows/opsi/` directory (https://download.bareos.org/current/windows/opsi/ resp. https://download.bareos.com/bareos/release/22/windows/opsi/).
+while the Bareos Subscription Repository of Bareos release 25 is at
+https://download.bareos.com/bareos/release/25/windows/.
 
 This install is standard Windows .exe that runs an install wizard using the NSIS Free Software installer, so if you have already installed Windows software, it should be very familiar to you. Providing you do not already have Bareos installed, the installer installs the binaries and dlls in :file:`C:\\Program Files\\Bareos` and the configuration files in :file:`C:\\ProgramData\\Bareos` (for Windows XP and older:
 :file:`C:\\Documents and Settings\\All Users\\Application Data\\Bareos`).

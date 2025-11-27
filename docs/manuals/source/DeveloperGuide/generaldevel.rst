@@ -233,7 +233,7 @@ The configuration file will be automatically found and used by clang-format:
   clang-format -i ./core/src/dird/dird_conf.cc
 
 The Bareos project has bundled its automatic sourcecode formatting into one tool: ``bareos-check-sources``.
-https://github.com/bareos/bareos/blob/master/devtools/pip-tools/README.md describes how to use it. In short:
+https://github.com/bareos/bareos/blob/master/devtools/README.md describes how to use it. In short:
 
 .. code-block:: shell-session
 
