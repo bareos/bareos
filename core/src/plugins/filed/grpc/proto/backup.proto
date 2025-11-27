@@ -7,10 +7,10 @@ import "common.proto";
 message Backup {
   oneof request {
     BeginObject begin_object = 1;
-    bareos.common.FileData data = 2;
+    bareos.common.FileData file_data = 2;
     bareos.common.Acl acl = 3;
     bareos.common.Xattr xattr = 4;
-    FileError error = 5;
+    FileError file_error = 5;
     Done done = 6;
   };
 };
