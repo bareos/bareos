@@ -79,8 +79,8 @@ static void ListStatusHeader(StatusPacket* sp)
   PoolMem msg(PM_MESSAGE);
   char b1[32];
 
-  len = Mmsg(msg, T_("%s Version: %s (%s) %s %s\n"), my_name,
-             kBareosVersionStrings.Full, kBareosVersionStrings.Date, VSS,
+  len = Mmsg(msg, "%s Version: %s (%s)" VSS " %s\n", my_name,
+             kBareosVersionStrings.Full, kBareosVersionStrings.Date,
              kBareosVersionStrings.GetOsInfo());
   sp->send(msg, len);
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);

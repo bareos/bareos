@@ -523,7 +523,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
     case PT_NDMP_NATIVE:
       Jmsg(jcr, msg_type, 0,
            T_("%s %s %s (%s):\n"
-              "  Build OS:               %s\n"
+              "  OS Information:         %s\n"
               "  JobId:                  %d\n"
               "  Job:                    %s\n"
               "  Restore Client:         \"%s\" %s\n"
@@ -568,7 +568,7 @@ void GenerateRestoreSummary(JobControlRecord* jcr,
 
       Jmsg(jcr, msg_type, 0,
            T_("%s %s %s (%s):\n"
-              "  Build OS:               %s\n"
+              "  OS Information:         %s\n"
               "  JobId:                  %d\n"
               "  Job:                    %s\n"
               "  Restore Client:         \"%s\" %s\n"

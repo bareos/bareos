@@ -1546,7 +1546,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
 
     Jmsg(jcr, msg_type, 0,
          T_("%s %s %s (%s):\n"
-            "  Build OS:               %s\n"
+            "  OS Information:         %s\n"
             "  Prev Backup JobId:      %s\n"
             "  Prev Backup Job:        %s\n"
             "  New Backup JobId:       %s\n"
@@ -1619,7 +1619,7 @@ static inline void GenerateMigrateSummary(JobControlRecord* jcr,
     // Copy/Migrate selection only Job.
     Jmsg(jcr, msg_type, 0,
          T_("%s %s %s (%s):\n"
-            "  Build OS:               %s\n"
+            "  OS Information:         %s\n"
             "  Current JobId:          %s\n"
             "  Current Job:            %s\n"
             "  Catalog:                \"%s\" (From %s)\n"
