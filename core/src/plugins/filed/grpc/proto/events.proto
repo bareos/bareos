@@ -161,6 +161,6 @@ message Event {
     VssCloseRestore vss_close_restore = 28;
     VssBackupComplete vss_backup_complete = 29;
 
-    SetDebugLevel set_debug_level = 30;
+    SetDebugLevel set_debug_level = 33;
   };
 };
