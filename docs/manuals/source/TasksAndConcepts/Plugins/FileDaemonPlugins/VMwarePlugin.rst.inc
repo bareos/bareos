@@ -669,6 +669,9 @@ vcpass (mandatory on backup)
 
 dc (mandatory on backup)
    Datacenter name. This can be optionally passed on restore to recreate the VM in a different datacenter.
+   If the datacenter is not located in the root folder, it is required to
+   specify the full path including the datacenter name starting with the slash
+   character, for example :file:`dc=/My DC Folder/mydc1`.
 
 folder (mandatory on backup)
    The VM folder in which the VM to be backed up resides. This must be given like a UNIX path with ``/`` as separator. On restore if defined will recreate the VM in a different folder. The given folder must exist before starting the restore.
