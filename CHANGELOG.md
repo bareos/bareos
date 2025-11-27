@@ -91,6 +91,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - Refactor libcloud plugin to work with current Python versions [PR #2428]
 - stored: add new volume status 'Unlabeled' [PR #2207]
 - postgresql: require non-ssl connection [PR #2272]
+- detect OS during runtime [PR #2452]
 
 ### Deprecated
 - config: deprecate file daemon as alias for client in FD config [PR #2187]
@@ -2159,5 +2160,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2443]: https://github.com/bareos/bareos/pull/2443
 [PR #2444]: https://github.com/bareos/bareos/pull/2444
 [PR #2445]: https://github.com/bareos/bareos/pull/2445
+[PR #2452]: https://github.com/bareos/bareos/pull/2452
 [PR #2456]: https://github.com/bareos/bareos/pull/2456
 [unreleased]: https://github.com/bareos/bareos/tree/master
