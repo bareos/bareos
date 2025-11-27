@@ -713,18 +713,20 @@ if the **Volume Retention** period has expired. When a Volume is marked as **Pur
 no Catalog records reference that Volume and the Volume can be recycled.
 
 Until recycling actually occurs, the Volume data remains intact. If no Volumes can be found for
-recycling for any of the reasons stated above, Bareos will request operator intervention (i.e. it will ask you to label a new volume).
+recycling for any of the reasons stated above, Bareos will request operator intervention
+(i.e. it will ask you to label a new volume).
 
-A key point mentioned above, that can be a source of frustration, is that Bareos will only recycle purged
-Volumes if there is no other appendable Volume available. Otherwise, it will always write to an appendable
-Volume before recycling even if there are Volume marked as Purged. This preserves your data as long as possible.
-So, if you wish to "force" Bareos to use a purged Volume, you must first ensure that no other Volume in the Pool is marked Append. If necessary, you can
-manually set a volume to Full or Used. The reason for this is that Bareos wants to preserve the data
-on your old tapes (even though purged from the catalog) as long as absolutely possible before overwriting it.
-There are also a number of directives such as **Volume Use Duration** that will automatically mark a volume as **Used** and thus no longer appendable.
-
-A key point mentioned above, that can be a source of frustration, is that Bareos will only recycle purged Volumes if there is no other unlabeled or appendable Volume available. Otherwise, it will always write to an unlabeled or appendable Volume before recycling even if there are Volume marked as Purged. This preserves your data as long as possible. So, if you wish to "force" Bareos to use a purged Volume, you must first ensure that no other Volume in the Pool is marked as "Unlabeled" or "Append". If necessary, you can
-manually set a volume to Full. The reason for this is that Bareos wants to preserve the data on your old tapes (even though purged from the catalog) as long as absolutely possible before overwriting it. There are also a number of directives such as **Volume Use Duration** that will automatically mark a volume as **Used** and thus no longer appendable.
+A key point mentioned above, that can be a source of frustration, is that Bareos
+will only recycle purged Volumes if there is no other unlabeled or appendable
+Volume available. Otherwise, it will always write to an unlabeled or appendable
+Volume before recycling even if there are Volume marked as Purged. This preserves
+your data as long as possible. So, if you wish to "force" Bareos to use a purged
+Volume, you must first ensure that no other Volume in the Pool is marked as
+"Unlabeled" or "Append". If necessary, you can manually set a volume to Full.
+The reason for this is that Bareos wants to preserve the data on your old tape
+(even though purged from the catalog) as long as absolutely possible before
+overwriting it. There are also a number of directives such as **Volume Use Duration**
+that will automatically mark a volume as **Used** and thus no longer appendable.
 
 .. _AutoPruning:
 
