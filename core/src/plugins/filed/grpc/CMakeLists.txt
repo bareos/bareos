@@ -155,4 +155,5 @@ if(ENABLE_GRPC)
     "${CMAKE_CURRENT_SOURCE_DIR}/bareos-fd-local-fileset-acl-xattr.py"
     COPY
   )
+  bareos_configure_file(FILES "${CMAKE_CURRENT_SOURCE_DIR}/xattr-upb.sh.in")
 endif()
