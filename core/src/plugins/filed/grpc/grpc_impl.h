@@ -107,11 +107,9 @@ struct OSFile {
 
 struct grpc_connection_members;
 
-namespace bareos {
-namespace plugin {
-struct handlePluginEventRequest;
-}
-}  // namespace bareos
+namespace bareos::plugin {
+struct HandlePluginEventRequest;
+}  // namespace bareos::plugin
 
 
 class grpc_connection {
@@ -120,7 +118,7 @@ class grpc_connection {
 
   bRC handlePluginEvent(filedaemon::bEventType type, void* data);
   bRC handlePluginEvent(filedaemon::bEventType type,
-                        bareos::plugin::handlePluginEventRequest* req);
+                        bareos::plugin::HandlePluginEventRequest* req);
 
   bRC startBackupFile(filedaemon::save_pkt* pkt);
   bRC endBackupFile();
@@ -212,10 +210,10 @@ struct grpc_child {
 std::optional<grpc_child> make_connection(PluginContext* ctx,
                                           std::string_view program_path);
 
-bareos::plugin::handlePluginEventRequest* to_grpc(filedaemon::bEventType type,
+bareos::plugin::HandlePluginEventRequest* to_grpc(filedaemon::bEventType type,
                                                   void* data);
 
-void delete_request(bareos::plugin::handlePluginEventRequest* req);
+void delete_request(bareos::plugin::HandlePluginEventRequest* req);
 
 extern char* get_name_storage(PluginContext* ctx, std::size_t minsize);
 extern char* get_object_storage(PluginContext* ctx, std::size_t minsize);

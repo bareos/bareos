@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package bareos.restore;
+
+message Restore {
+  oneof request {
+    BeginFile begin_file = 1;
+    FileAttributes file_attributes = 2;
+    FileData file_data = 3;
+    Acl acl = 4;
+    Xattr xattr = 5;
+    Done done = 6;
+  };
+};
+
+
+message BeginFile {
+};
+
+message FileAttributes {
+};
+
+message FileData {
+};
+
+message Acl {
+};
+
+message Xattr {
+};
+
+message Done {
+};

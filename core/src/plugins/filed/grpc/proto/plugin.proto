@@ -3,60 +3,53 @@ syntax = "proto3";
 package bareos.plugin;
 
 import "events.proto";
-import "common.proto";
 
-service Plugin {
-  rpc StartSession (stream PluginRequest) returns (stream PluginResponse);
-}
+message BeginBackupRequest {
+  bytes cmd = 1;
+  uint64 max_record_size = 2;
+
+  bool backup_acl = 3;
+  bool backup_xattr = 4;
+};
+
+message BeginBackupResponse {
+};
+
+message BeginRestoreRequest {
+};
+
+message BeginRestoreResponse {
+};
+
+message SetDebugLevel {
+  int64 debug_level = 1;
+};
 
 message SetupRequest {};
 message SetupResponse {};
 
 message PluginRequest {
   oneof request {
-    handlePluginEventRequest handle_plugin = 10;
-    StartBackupFileRequest start_backup = 11;
-    startRestoreFileRequest start_restore_file = 13;
-    endRestoreFileRequest end_restore_file = 14;
-    fileOpenRequest file_open = 15;
-    fileSeekRequest file_seek = 16;
-    fileWriteRequest file_write = 17;
-    fileCloseRequest file_close = 18;
-    createFileRequest create_file = 19;
-    setFileAttributesRequest set_file_attributes = 20;
-    checkFileRequest check_file = 21;
-    getAclRequest get_acl = 22;
-    setAclRequest set_acl = 23;
-    getXattrRequest get_xattr = 24;
-    setXattrRequest set_xattr = 25;
-    SetupRequest setup = 26;
+    SetupRequest setup = 1;
+    BeginBackupRequest begin_backup = 2;
+    BeginRestoreRequest begin_restore = 3;
+    SetDebugLevel set_debug_level = 4;
+    HandlePluginEventRequest handle_plugin_event = 5;
   };
 };
 
 message PluginResponse {
   oneof response {
-    handlePluginEventResponse handle_plugin = 10;
-    StartBackupFileResponse start_backup = 11;
-    startRestoreFileResponse start_restore_file = 13;
-    endRestoreFileResponse end_restore_file = 14;
-    fileOpenResponse file_open = 15;
-    fileSeekResponse file_seek = 16;
-    fileWriteResponse file_write = 17;
-    fileCloseResponse file_close = 18;
-    createFileResponse create_file = 19;
-    setFileAttributesResponse set_file_attributes = 20;
-    checkFileResponse check_file = 21;
-    getAclResponse get_acl = 22;
-    setAclResponse set_acl = 23;
-    getXattrResponse get_xattr = 24;
-    setXattrResponse set_xattr = 25;
-    SetupResponse setup = 26;
+    SetupResponse setup = 1;
+    BeginBackupResponse begin_backup = 2;
+    BeginRestoreResponse begin_restore = 3;
+    HandlePluginEventResponse handle_plugin_event = 5;
   };
 };
 
 // ---- Handle Plugin Events ----
 
-message handlePluginEventRequest {
+message HandlePluginEventRequest {
   bareos.plugin.events.Event to_handle = 1;
 };
 
@@ -73,188 +66,6 @@ enum ReturnCode {
   RC_Cancel = 9; /* Job cancelled */
 };
 
-message handlePluginEventResponse {
+message HandlePluginEventResponse {
   ReturnCode res = 1;
-};
-
-// ---- Backup ----
-
-enum StartBackupFileResult {
-  START_BACKUP_FILE_RESULT_UNSPECIFIED = 0;
-  SBF_OK = 1;
-  SBF_Stop = 2;
-  SBF_Skip = 3;
-};
-
-message StartBackupFileRequest {
-  // no idea what these do
-  bool portable = 1;
-  bool no_read = 2;
-  // ---
-
-  uint64 max_record_size = 3;
-
-  bytes flags = 4;
-  bytes cmd = 5;
-};
-
-message StartBackupFileResponse {
-  StartBackupFileResult result = 1;
-  bool io_in_core = 2;
-  oneof payload {
-    bareos.common.PluginObject object = 10;
-    bareos.common.PluginFile file = 11;
-    bareos.common.PluginFileError error = 12;
-  };
-};
-
-message FileRecord {
-  oneof payload {
-    bytes data = 1;
-    string error = 2;
-  }
-};
-
-// ---- Restore ----
-
-message startRestoreFileRequest {
-  bytes command = 1;
-};
-message startRestoreFileResponse {};
-
-message endRestoreFileRequest {};
-message endRestoreFileResponse {};
-
-// ---- Plugin IO ----
-
-message fileOpenRequest {
-  bytes file = 1;
-  int32 flags = 2;
-  int32 mode = 3;
-};
-
-enum SeekStart {
-  SEEK_START_UNSPECIFIED = 0;
-  SS_StartOfFile = 1;
-  SS_CurrentPos  = 2;
-  SS_EndOfFile   = 3;
-};
-
-message fileSeekRequest {
-  SeekStart whence = 1;
-  int64 offset = 2;
-};
-
-message fileWriteRequest {
-  uint64 bytes_written = 1;
-};
-message fileCloseRequest {
-};
-message fileOpenResponse {
-  // if this is set to true, then we expect the plugin to send a file descriptor
-  // to the io socket
-  bool io_in_core = 1;
-};
-message fileSeekResponse {
-};
-message fileWriteResponse {
-  int64 bytes_written = 1;
-};
-message fileCloseResponse {
-};
-
-// ---- Create File ----
-
-message createFileRequest {
-  bytes output_name = 1;
-  bytes soft_link_to = 2; // only if ft == SoftLink
-  bareos.common.FileType ft = 3;
-  bytes stats = 6;
-  optional int64 delta_seq = 4;
-  bareos.common.ReplaceType replace = 5;
-  optional bytes where = 7; // needed by the vmware plugin
-};
-
-enum CreateFileStatus {
-  CREATE_FILE_STATUS_UNSPECIFIED = 0;
-  CF_Created = 1; // file created, but no data to extract
-  CF_Extract = 2; // file created, data to extract
-  CF_Skip    = 3; // ignore this file
-  CF_Core    = 4; // let the core handle the file creation
-  CF_Error   = 5; // error during file creation
-};
-
-message createFileResponse {
-  CreateFileStatus status = 1;
-};
-
-// ---- Set File Attributes ----
-
-message setFileAttributesRequest {
-  // TODO: optional link name??
-  bytes file = 1;
-  bytes stats = 2;
-  bytes extended_attributes = 3;
-  bytes where = 4; // sadly some plugins actually want this ...
-};
-
-message setFileAttributesResponse {
-  bool set_attributes_in_core = 1;
-};
-
-
-// ---- Check File ----
-
-message checkFileRequest {
-  bytes file = 1;
-};
-
-message checkFileResponse {
-  bool seen = 1;
-};
-
-
-// ----  ACL ----
-
-message Acl {
-  bytes data = 1;
-};
-
-message setAclRequest {
-  bytes file = 1;
-  Acl content = 2;
-};
-
-message setAclResponse {
-};
-
-message getAclRequest {
-  bytes file = 1;
-};
-
-message getAclResponse {
-  Acl content = 1;
-};
-
-// ----  XATTR ----
-
-message Xattribute {
-  bytes key = 1;
-  bytes value = 2;
-};
-
-message setXattrRequest {
-  bytes file = 1;
-  Xattribute attribute = 2;
-};
-
-message setXattrResponse {
-};
-
-message getXattrRequest {
-  bytes file = 1;
-}
-
-message getXattrResponse {
-  repeated Xattribute attributes = 1;
 };

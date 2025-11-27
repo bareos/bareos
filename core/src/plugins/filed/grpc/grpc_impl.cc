@@ -23,6 +23,9 @@
 #include "events.pb.h"
 #include "plugin.pb.h"
 #include "bareos.pb.h"
+#include "backup.pb.h"
+#include "restore.pb.h"
+
 #include "include/baconfig.h"
 #include "filed/fd_plugins.h"
 #include "prototools.h"
@@ -44,11 +47,13 @@
 
 namespace {
 namespace bp = bareos::plugin;
+namespace bb = bareos::backup;
+namespace br = bareos::restore;
 
 namespace bc = bareos::core;
 namespace bco = bareos::common;
 
-std::string_view strip_prefix(std::string_view v)
+[[maybe_unused]] std::string_view strip_prefix(std::string_view v)
 {
   auto pos = v.find_first_of(":");
   if (pos == v.npos) { return v; }
@@ -1050,7 +1055,7 @@ class BareosCore {
 
 bool make_event_request(filedaemon::bEventType type,
                         void* data,
-                        bp::handlePluginEventRequest& req)
+                        bp::HandlePluginEventRequest& req)
 {
   auto* event = req.mutable_to_handle();
 
@@ -1221,15 +1226,14 @@ class PluginClient {
     };
   }
 
-  bp::FileRecord* allocate_rec()
+  bco::FileData* allocate_rec()
   {
     arena->Reset();
-    return google::protobuf::Arena::Create<bp::FileRecord>(arena.get());
+    return google::protobuf::Arena::Create<bco::FileData>(arena.get());
   }
 
   bRC Setup()
   {
-    if (!check_no_prediction()) {}
     auto [req, resp] = allocate_pair();
 
     (void)req->mutable_setup();
@@ -1246,12 +1250,10 @@ class PluginClient {
   }
 
   bRC handlePluginEvent(filedaemon::bEventType type,
-                        bp::handlePluginEventRequest* req)
+                        bp::HandlePluginEventRequest* req)
   {
-    if (!check_no_prediction()) {}
-
     auto [actual_req, resp] = allocate_pair();
-    *actual_req->mutable_handle_plugin() = std::move(*req);
+    *actual_req->mutable_handle_plugin_event() = std::move(*req);
     bool write_ok = stream->Write(*actual_req);
     if (!write_ok) { return bRC_Error; }
 
@@ -1267,9 +1269,9 @@ class PluginClient {
     //   return bRC_Error;
     // }
 
-    if (!resp->has_handle_plugin()) { return bRC_Error; }
+    if (!resp->has_handle_plugin_event()) { return bRC_Error; }
 
-    auto res = resp->handle_plugin().res();
+    auto res = resp->handle_plugin_event().res();
 
     DebugLog(100, FMT_STRING("plugin handled event {} with res = {} ({})"),
              int(type), bp::ReturnCode_Name(res), int(res));
@@ -1301,9 +1303,7 @@ class PluginClient {
 
   bRC handlePluginEvent(filedaemon::bEventType type, void* data)
   {
-    if (!check_no_prediction()) {}
-
-    bp::handlePluginEventRequest req;
+    bp::HandlePluginEventRequest req;
 
     switch (type) {
       case filedaemon::bEventHandleBackupFile: {
@@ -1328,373 +1328,206 @@ class PluginClient {
 
   bRC startBackupFile(filedaemon::save_pkt* pkt)
   {
-    auto [req, outer_resp] = allocate_pair();
-    if (!check_prediction(START_BACKUP_FILE)) {
-      auto* inner_req = req->mutable_start_backup();
-      inner_req->set_no_read(pkt->no_read);
-      inner_req->set_portable(pkt->portable);
-      inner_req->set_max_record_size(256 << 10);
+    // if (Done) { return bRC_Stop; }
+    // if (Error) { return bRC_Error; }
 
-      auto inner = strip_prefix(pkt->cmd);
+    bb::BeginObject* begin_obj = nullptr;
 
-      inner_req->set_cmd(inner.data(), inner.size());
-      inner_req->set_flags(pkt->flags, sizeof(pkt->flags));
+    if (begin_obj->has_file()) {
+      auto& file = begin_obj->file();
 
-      if (!stream->Write(*req)) { return bRC_Error; }
-    }
+      DebugLog(100, FMT_STRING("received a file"));
 
-    if (!stream->Read(*outer_resp)) {
-      DebugLog(100, "read failed\n");
-      return bRC_Error;
-    }
-
-    if (!outer_resp->has_start_backup()) {
-      DebugLog(100, "bad message type\n");
-      return bRC_Error;
-    }
-    auto& resp = outer_resp->start_backup();
-    auto& cached = start_backup_file.emplace();
-    auto found_fd = stream->PopFD();
-    if (resp.io_in_core()) {
-      if (!found_fd) {
-        JobLog(core, M_ERROR,
-               "plugin indicated io_in_core = yes, but sent no fd");
-        DebugLog(150, "doing io in plugin");
-      } else {
-        DebugLog(150, "doing io in core");
-      }
-
-      cached.io_in_core_fd = found_fd;
-    } else {
-      if (found_fd) {
-        JobLog(core, M_ERROR,
-               "plugin indicated io_in_core = no, but sent an fd anyways");
-      }
-
-      DebugLog(150, "doing io in plugin");
-    }
-
-    switch (resp.result()) {
-      case bareos::plugin::SBF_OK: {
-        if (resp.has_file()) {
-          auto& file = resp.file();
-
-          DebugLog(100, FMT_STRING("received a file"));
-
-          std::optional ft = BareosCore::from_grpc(file.ft());
-          if (!ft) {
-            DebugLog(50, FMT_STRING("could not convert filetype {} ({})"),
-                     bco::FileType_Name(file.ft()), int(file.ft()));
-            JobLog(core, M_FATAL, "fatal internal error occured");
-            return bRC_Error;
-          }
-          if (pkt->fname) {
-            free(pkt->fname);
-            pkt->fname = nullptr;
-          }
-          if (pkt->link) {
-            free(pkt->link);
-            pkt->link = nullptr;
-          }
-
-          switch (file.ft()) {
-            case bco::SpecialFile:
-              [[fallthrough]];
-            case bco::BlockDevice:
-              [[fallthrough]];
-            case bco::Fifo:
-              [[fallthrough]];
-            case bco::ReparsePoint:
-              [[fallthrough]];
-            case bco::Junction:
-              [[fallthrough]];
-            case bco::Deleted:
-              [[fallthrough]];
-            case bco::HardlinkCopy:
-              [[fallthrough]];
-            case bco::UnchangedFile:
-              [[fallthrough]];
-            case bco::RegularFile: {
-              pkt->fname = strdup(file.file().c_str());
-              pkt->link = nullptr;
-            } break;
-            case bco::UnchangedDirectory:
-              [[fallthrough]];
-            case bco::Directory: {
-              std::string name = file.file();
-              while (name.size() > 1 && name.back() == '/') { name.pop_back(); }
-
-              // for directories:
-              // pkt->fname _should not_ end in a '/'
-              // pkt->link _should_ end in a '/'
-              pkt->fname = strdup(name.c_str());
-
-              if (name.back() != '/') { name += '/'; }
-
-              pkt->link = strdup(name.c_str());
-            } break;
-            case bco::SoftLink: {
-              pkt->fname = strdup(file.file().c_str());
-              pkt->link = strdup(file.link().c_str());
-            } break;
-            default: {
-              DebugLog(50, FMT_STRING("bad filetype {} ({})"),
-                       bco::FileType_Name(file.ft()), int(file.ft()));
-              return bRC_Error;
-            } break;
-          }
-          stat_grpc_to_native(&pkt->statp, file.stats());
-          pkt->type = *ft;
-          pkt->no_read = file.no_read();
-          pkt->portable = file.portable();
-
-          if (file.has_delta_seq() && file.delta_seq() != 0) {
-            SetBit(FO_DELTA, pkt->flags);
-            pkt->delta_seq = file.delta_seq();
-          } else {
-            ClearBit(FO_DELTA, pkt->flags);
-            pkt->delta_seq = 0;
-          }
-          if (file.offset_backup()) {
-            SetBit(FO_OFFSETS, pkt->flags);
-          } else {
-            ClearBit(FO_OFFSETS, pkt->flags);
-          }
-          if (file.sparse_backup()) {
-            SetBit(FO_SPARSE, pkt->flags);
-          } else {
-            ClearBit(FO_SPARSE, pkt->flags);
-          }
-          // THIS is unused, so we always clear it to be sure
-          ClearBit(FO_PORTABLE_DATA, pkt->flags);
-
-          if (pkt->type == FT_LNK) {
-            expect_acl = false;
-            expect_xattr = true;
-          } else {
-            expect_acl = true;
-            expect_xattr = true;
-          }
-
-
-          cached_file.emplace(pkt->fname);
-
-          if (!pkt->no_read) {
-          } else if (expect_acl || expect_xattr) {
-            // predict(expect_acl ? GET_ACL : GET_XATTR);
-          }
-        } else if (resp.has_object()) {
-          DebugLog(100, FMT_STRING("received an object"));
-          auto& object = resp.object();
-          pkt->type = FT_RESTORE_FIRST;
-          if (pkt->object) {
-            free(pkt->object);
-            pkt->object = nullptr;
-          }
-          if (pkt->object_name) {
-            free(pkt->object_name);
-            pkt->object_name = nullptr;
-          }
-
-          pkt->object = get_object_storage(core, object.data().size());
-          memcpy(pkt->object, object.data().c_str(), object.data().size());
-          pkt->object_len = object.data().size();
-
-          const auto& name = object.name();
-          pkt->object_name = get_name_storage(core, name.size() + 1);
-          memcpy(pkt->object_name, name.c_str(), name.size() + 1);
-          pkt->index = object.index();
-
-          // predict(END_BACKUP_FILE);
-        } else if (resp.has_error()) {
-          auto& err = resp.error();
-
-          switch (err.error()) {
-            case bco::InvalidFileSystem: {
-              pkt->type = FT_INVALIDFS;
-            } break;
-            case bco::InvalidDriveType: {
-              pkt->type = FT_INVALIDDT;
-            } break;
-            case bco::CouldNotOpenDirectory: {
-              pkt->type = FT_NOOPEN;
-            } break;
-            case bco::CouldNotChangeFilesystem: {
-              pkt->type = FT_NOFSCHG;
-            } break;
-            case bco::RecursionDisabled: {
-              pkt->type = FT_NORECURSE;
-            } break;
-            case bco::CouldNotStat: {
-              pkt->type = FT_NOSTAT;
-            } break;
-            case bco::CouldNotFollowLink: {
-              pkt->type = FT_NOFOLLOW;
-            } break;
-            case bco::CouldNotAccessFile: {
-              pkt->type = FT_NOACCESS;
-            } break;
-            default: {
-              DebugLog(50, FMT_STRING("bad type {} ({})"),
-                       bco::FileErrorType_Name(err.error()), int(err.error()));
-              return bRC_Error;
-            }
-          }
-
-          pkt->fname = strdup(err.file().c_str());
-        } else {
-          DebugLog(100, FMT_STRING("received nothing"));
-          return bRC_Error;
-        }
-        return bRC_OK;
-      }
-      case bareos::plugin::SBF_Stop:
-        return bRC_Stop;
-      case bareos::plugin::SBF_Skip:
-        return bRC_Skip;
-      default:
+      std::optional ft = BareosCore::from_grpc(file.ft());
+      if (!ft) {
+        DebugLog(50, FMT_STRING("could not convert filetype {} ({})"),
+                 bco::FileType_Name(file.ft()), int(file.ft()));
+        JobLog(core, M_FATAL, "fatal internal error occured");
         return bRC_Error;
+      }
+      if (pkt->fname) {
+        free(pkt->fname);
+        pkt->fname = nullptr;
+      }
+      if (pkt->link) {
+        free(pkt->link);
+        pkt->link = nullptr;
+      }
+
+      switch (file.ft()) {
+        case bco::SpecialFile:
+          [[fallthrough]];
+        case bco::BlockDevice:
+          [[fallthrough]];
+        case bco::Fifo:
+          [[fallthrough]];
+        case bco::ReparsePoint:
+          [[fallthrough]];
+        case bco::Junction:
+          [[fallthrough]];
+        case bco::Deleted:
+          [[fallthrough]];
+        case bco::HardlinkCopy:
+          [[fallthrough]];
+        case bco::UnchangedFile:
+          [[fallthrough]];
+        case bco::RegularFile: {
+          pkt->fname = strdup(file.file().c_str());
+          pkt->link = nullptr;
+        } break;
+        case bco::UnchangedDirectory:
+          [[fallthrough]];
+        case bco::Directory: {
+          std::string name = file.file();
+          while (name.size() > 1 && name.back() == '/') { name.pop_back(); }
+
+          // for directories:
+          // pkt->fname _should not_ end in a '/'
+          // pkt->link _should_ end in a '/'
+          pkt->fname = strdup(name.c_str());
+
+          if (name.back() != '/') { name += '/'; }
+
+          pkt->link = strdup(name.c_str());
+        } break;
+        case bco::SoftLink: {
+          pkt->fname = strdup(file.file().c_str());
+          pkt->link = strdup(file.link().c_str());
+        } break;
+        default: {
+          DebugLog(50, FMT_STRING("bad filetype {} ({})"),
+                   bco::FileType_Name(file.ft()), int(file.ft()));
+          return bRC_Error;
+        } break;
+      }
+      stat_grpc_to_native(&pkt->statp, file.stats());
+      pkt->type = *ft;
+      pkt->no_read = file.no_read();
+      pkt->portable = file.portable();
+
+      if (file.has_delta_seq() && file.delta_seq() != 0) {
+        SetBit(FO_DELTA, pkt->flags);
+        pkt->delta_seq = file.delta_seq();
+      } else {
+        ClearBit(FO_DELTA, pkt->flags);
+        pkt->delta_seq = 0;
+      }
+      if (file.offset_backup()) {
+        SetBit(FO_OFFSETS, pkt->flags);
+      } else {
+        ClearBit(FO_OFFSETS, pkt->flags);
+      }
+      if (file.sparse_backup()) {
+        SetBit(FO_SPARSE, pkt->flags);
+      } else {
+        ClearBit(FO_SPARSE, pkt->flags);
+      }
+      // THIS is unused, so we always clear it to be sure
+      ClearBit(FO_PORTABLE_DATA, pkt->flags);
+    } else if (begin_obj->has_object()) {
+      DebugLog(100, FMT_STRING("received an object"));
+      auto& object = begin_obj->object();
+      pkt->type = FT_RESTORE_FIRST;
+      if (pkt->object) {
+        free(pkt->object);
+        pkt->object = nullptr;
+      }
+      if (pkt->object_name) {
+        free(pkt->object_name);
+        pkt->object_name = nullptr;
+      }
+
+      pkt->object = get_object_storage(core, object.data().size());
+      memcpy(pkt->object, object.data().c_str(), object.data().size());
+      pkt->object_len = object.data().size();
+
+      const auto& name = object.name();
+      pkt->object_name = get_name_storage(core, name.size() + 1);
+      memcpy(pkt->object_name, name.c_str(), name.size() + 1);
+      pkt->index = object.index();
+#if 0
+    } else if (begin_obj->has_error()) {
+      auto& err = begin_obj->error();
+
+      switch (err.error()) {
+      case bco::InvalidFileSystem: {
+        pkt->type = FT_INVALIDFS;
+      } break;
+      case bco::InvalidDriveType: {
+        pkt->type = FT_INVALIDDT;
+      } break;
+      case bco::CouldNotOpenDirectory: {
+        pkt->type = FT_NOOPEN;
+      } break;
+      case bco::CouldNotChangeFilesystem: {
+        pkt->type = FT_NOFSCHG;
+      } break;
+      case bco::RecursionDisabled: {
+        pkt->type = FT_NORECURSE;
+      } break;
+      case bco::CouldNotStat: {
+        pkt->type = FT_NOSTAT;
+      } break;
+      case bco::CouldNotFollowLink: {
+        pkt->type = FT_NOFOLLOW;
+      } break;
+      case bco::CouldNotAccessFile: {
+        pkt->type = FT_NOACCESS;
+      } break;
+      default: {
+        DebugLog(50, FMT_STRING("bad type {} ({})"),
+                 bco::FileErrorType_Name(err.error()), int(err.error()));
+        return bRC_Error;
+      }
+      }
+
+      pkt->fname = strdup(err.file().c_str());
+#endif
+    } else {
+      DebugLog(100, FMT_STRING("received nothing"));
+      return bRC_Error;
     }
+
+    return bRC_OK;
   }
 
-  bRC endBackupFile()
-  {
-    start_backup_file.reset();
-    return bRC_More;
-  }
+  bRC endBackupFile() { return bRC_Error; }
+
+  template <typename... Types> void ignore(Types&&...) {}
 
   bRC startRestoreFile(std::string_view cmd)
   {
-    if (!check_no_prediction()) {}
-
-    auto [outer_req, outer_resp] = allocate_pair();
-    auto& req = *outer_req->mutable_start_restore_file();
-
-    auto inner = strip_prefix(cmd);
-    req.set_command(inner.data(), inner.size());
-
-    if (!stream->Write(*outer_req)) { return bRC_Error; }
-    if (!stream->Read(*outer_resp)) { return bRC_Error; }
-    if (!outer_resp->has_start_restore_file()) { return bRC_Error; }
-
-    auto& resp = outer_resp->start_restore_file();
-    (void)resp;
-
-    return bRC_OK;
+    ignore(cmd);
+    return bRC_Error;
   }
 
-  bRC endRestoreFile()
-  {
-    if (!check_no_prediction()) {}
-    auto [outer_req, outer_resp] = allocate_pair();
-    auto& req = *outer_req->mutable_end_restore_file();
-    (void)req;
-
-    if (!stream->Write(*outer_req)) { return bRC_Error; }
-    if (!stream->Read(*outer_resp)) { return bRC_Error; }
-    if (!outer_resp->has_end_restore_file()) { return bRC_Error; }
-
-    auto& resp = outer_resp->end_restore_file();
-    (void)resp;
-
-    return bRC_OK;
-  }
+  bRC endRestoreFile() { return bRC_Error; }
 
   bRC FileOpen(std::string_view name,
                int32_t flags,
                int32_t mode,
                std::optional<int>* io_in_core_fd)
   {
-    if (!start_backup_file) { return bRC_Error; }
-    (void)name;
-    (void)flags;
-    (void)mode;
-    if (start_backup_file->io_in_core_fd) {
-      DebugLog(100, "io_in_core with fd {}", *start_backup_file->io_in_core_fd);
-    } else {
-      DebugLog(100, "io_in_plugin");
-    }
-    *io_in_core_fd = start_backup_file->io_in_core_fd;
-    return bRC_OK;
+    ignore(name, flags, mode, io_in_core_fd);
+    return bRC_Error;
   }
 
   bRC FileSeek(int whence, int64_t offset)
   {
-    if (!check_no_prediction()) {}
-    auto [outer_req, outer_resp] = allocate_pair();
-    auto& req = *outer_req->mutable_file_seek();
-
-    bp::SeekStart start;
-    switch (whence) {
-      case SEEK_SET: {
-        start = bp::SS_StartOfFile;
-      } break;
-      case SEEK_CUR: {
-        start = bp::SS_CurrentPos;
-      } break;
-      case SEEK_END: {
-        start = bp::SS_EndOfFile;
-      } break;
-      default: {
-        return bRC_Error;
-      }
-    }
-
-    req.set_whence(start);
-    req.set_offset(offset);
-
-    if (!stream->Write(*outer_req)) { return bRC_Error; }
-    if (!stream->Read(*outer_resp)) { return bRC_Error; }
-    if (!outer_resp->has_file_seek()) { return bRC_Error; }
-
-    auto& resp = outer_resp->file_seek();
-    (void)resp;
-
-    return bRC_OK;
+    ignore(whence, offset);
+    return bRC_Error;
   }
 
   bRC FileRead(char* buf, size_t size, int32_t* bytes_read)
   {
-    auto* rec = allocate_rec();
-    if (!stream->Read(*rec)) {
-      DebugLog(100, "could not read filerecord");
-      return bRC_Error;
-    }
-
-    auto& data = rec->data();
-    if (data.size() > size) {
-      DebugLog(100, "too much data received");
-      return bRC_Error;
-    }
-
-    *bytes_read = static_cast<typeof(*bytes_read)>(data.size());
-
-    DebugLog(200, "read {} bytes", *bytes_read);
-
-    if (data.size() > 0) { memcpy(buf, data.data(), data.size()); }
-    return bRC_OK;
+    ignore(buf, size, bytes_read);
+    return bRC_Error;
   }
 
   bRC FileWrite(size_t size, size_t* num_bytes_written)
   {
-    if (!check_prediction(FILE_WRITE)) {}
-
-    auto [outer_req, outer_resp] = allocate_pair();
-
-    auto& req = *outer_req->mutable_file_write();
-    req.set_bytes_written(size);
-
-    if (!stream->Write(*outer_req)) { return bRC_Error; }
-    if (!stream->Read(*outer_resp)) { return bRC_Error; }
-    if (!outer_resp->has_file_write()) { return bRC_Error; }
-
-    auto& resp = outer_resp->file_write();
-
-    *num_bytes_written = resp.bytes_written();
-
-    // ASSERT(num_bytes_written <= size);
-
-    return bRC_OK;
+    ignore(size, num_bytes_written);
+    return bRC_Error;
   }
 
   bRC FileClose() { return bRC_OK; }
@@ -1765,60 +1598,8 @@ class PluginClient {
 
   bRC createFile(filedaemon::restore_pkt* pkt)
   {
-    if (!check_no_prediction()) {}
-
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_create_file();
-
-    auto replace_type = grpc_replace_type(pkt->replace);
-    auto file_type = grpc_file_type(pkt->type);
-
-    if (!replace_type) {
-      DebugLog(50, FMT_STRING("got a bad replace value {}"), pkt->replace);
-      return bRC_Error;
-    }
-
-    if (!file_type) {
-      DebugLog(50, FMT_STRING("got a bad file type {}"), pkt->type);
-      return bRC_Error;
-    }
-
-    req.set_ft(file_type.value());
-    req.set_stats((char*)&pkt->statp, sizeof(pkt->statp));
-    req.set_output_name(pkt->ofname);
-    req.set_soft_link_to(pkt->olname);
-    req.set_replace(*replace_type);
-    req.set_delta_seq(pkt->delta_seq);
-    if (pkt->where) { req.set_where(pkt->where); }
-
-    if (!stream->Write(outer_req)) { return bRC_Error; }
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_create_file()) { return bRC_Error; }
-
-    auto& resp = outer_resp.create_file();
-
-    switch (resp.status()) {
-      case bareos::plugin::CF_Created: {
-        pkt->create_status = CF_CREATED;
-      } break;
-      case bareos::plugin::CF_Extract: {
-        pkt->create_status = CF_EXTRACT;
-      } break;
-      case bareos::plugin::CF_Skip: {
-        pkt->create_status = CF_SKIP;
-      } break;
-      case bareos::plugin::CF_Core: {
-        pkt->create_status = CF_CORE;
-      } break;
-      case bareos::plugin::CF_Error: {
-        pkt->create_status = CF_ERROR;
-      } break;
-      default:
-        return bRC_Term;
-    }
-
-    return bRC_OK;
+    ignore(pkt);
+    return bRC_Error;
   }
   bRC setFileAttributes(std::string_view name,
                         const struct stat& statp,
@@ -1826,119 +1607,33 @@ class PluginClient {
                         std::string_view where,
                         bool* do_in_core)
   {
-    if (!check_no_prediction()) {}
-
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_set_file_attributes();
-
-    req.set_file(name.data(), name.size());
-    req.set_stats((char*)&statp, sizeof(statp));
-    req.set_extended_attributes(extended_attributes.data(),
-                                extended_attributes.size());
-    req.set_where(where.data(), where.size());
-
-    if (!stream->Write(outer_req)) { return bRC_Error; }
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_set_file_attributes()) { return bRC_Error; }
-
-    auto& resp = outer_resp.set_file_attributes();
-
-    *do_in_core = resp.set_attributes_in_core();
-
-    return bRC_OK;
+    ignore(name, statp, extended_attributes, where, do_in_core);
+    return bRC_Error;
   }
   bRC checkFile(std::string_view name)
   {
-    if (!check_no_prediction()) {}
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_check_file();
-
-    req.set_file(name.data(), name.size());
-
-    if (!stream->Write(outer_req)) { return bRC_Error; }
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_check_file()) { return bRC_Error; }
-
-    auto& resp = outer_resp.check_file();
-
-    if (resp.seen()) { return bRC_Seen; }
-
-    return bRC_OK;
+    ignore(name);
+    return bRC_Error;
   }
 
   bRC setAcl(std::string_view file, std::string_view content)
   {
-    if (!check_no_prediction()) {}
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_set_acl();
-
-    req.set_file(file.data(), file.size());
-    req.mutable_content()->set_data(content.data(), content.size());
-
-    if (!stream->Write(outer_req)) { return bRC_Error; }
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_set_acl()) { return bRC_Error; }
-
-    auto& resp = outer_resp.set_acl();
-    (void)resp;
-
-    return bRC_OK;
+    ignore(file, content);
+    return bRC_Error;
   }
 
   bRC getAcl(std::string_view file, char** buffer, size_t* size)
   {
-    if (!check_prediction(GET_ACL)) {
-      bp::PluginRequest outer_req;
-      auto& req = *outer_req.mutable_get_acl();
-      req.set_file(file.data(), file.size());
-      if (!stream->Write(outer_req)) { return bRC_Error; }
-    } else {
-      assert(*cached_file == file);
-    }
-
-    bp::PluginResponse outer_resp;
-
-
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_get_acl()) { return bRC_Error; }
-
-    auto& resp = outer_resp.get_acl();
-
-    auto& data = resp.content().data();
-    *buffer = reinterpret_cast<char*>(malloc(data.size() + 1));
-    *size = data.size();
-
-    memcpy(*buffer, data.data(), data.size() + 1);
-
-    // predict(GET_XATTR);  // only sometimes
-    return bRC_OK;
+    ignore(file, buffer, size);
+    return bRC_Error;
   }
 
   bRC setXattr(std::string_view file,
                std::string_view key,
                std::string_view value)
   {
-    if (!check_no_prediction()) {}
-    bp::PluginRequest outer_req;
-    bp::PluginResponse outer_resp;
-    auto& req = *outer_req.mutable_set_xattr();
-
-    req.set_file(file.data(), file.size());
-    auto* xattr = req.mutable_attribute();
-    xattr->set_key(key.data(), key.size());
-    xattr->set_value(value.data(), value.size());
-
-    if (!stream->Write(outer_req)) { return bRC_Error; }
-    if (!stream->Read(outer_resp)) { return bRC_Error; }
-    if (!outer_resp.has_set_xattr()) { return bRC_Error; }
-
-    auto& resp = outer_resp.set_xattr();
-    (void)resp;
-
-    return bRC_OK;
+    ignore(file, key, value);
+    return bRC_Error;
   }
 
   bRC getXattr(std::string_view file,
@@ -1947,61 +1642,8 @@ class PluginClient {
                char** value_buf,
                size_t* value_size)
   {
-    // The idea here is that we grab all xattributes at once
-    // and then trickle them out for each call
-
-    if (current_xattr_index == std::numeric_limits<size_t>::max()) {
-      // we need to grab them now
-      if (!check_prediction(GET_XATTR)) {
-        bp::PluginRequest outer_req;
-        auto& req = *outer_req.mutable_get_xattr();
-        req.set_file(file.data(), file.size());
-        if (!stream->Write(outer_req)) { return bRC_Error; }
-      } else {
-        assert(*cached_file == file);
-      }
-
-      bp::PluginResponse outer_resp;
-      if (!stream->Read(outer_resp)) { return bRC_Error; }
-      if (!outer_resp.has_get_xattr()) { return bRC_Error; }
-
-      auto& resp = outer_resp.get_xattr();
-
-      xattribute_cache.assign(
-          std::make_move_iterator(std::begin(resp.attributes())),
-          std::make_move_iterator(std::end(resp.attributes())));
-
-      current_xattr_index = 0;
-    } else {
-      check_no_prediction();
-    }
-
-    if (current_xattr_index == xattribute_cache.size()) {
-      current_xattr_index = -1;  // reset
-      return bRC_Error;
-    }
-
-    auto& current = xattribute_cache[current_xattr_index++];
-
-    auto& key = current.key();
-    auto& val = current.value();
-
-    *name_size = key.size();
-    *name_buf = reinterpret_cast<char*>(malloc(key.size() + 1));
-    memcpy(*name_buf, key.data(), key.size() + 1);
-
-    *value_size = val.size();
-    *value_buf = reinterpret_cast<char*>(malloc(val.size() + 1));
-    memcpy(*value_buf, val.data(), val.size() + 1);
-
-    if (current_xattr_index == xattribute_cache.size()) {
-      predict(END_BACKUP_FILE);
-
-      current_xattr_index = -1;  // reset
-      return bRC_OK;
-    } else {
-      return bRC_More;
-    }
+    ignore(file, name_buf, name_size, value_buf, value_size);
+    return bRC_Error;
   }
 
   PluginClient(const PluginClient&) = delete;
@@ -2021,136 +1663,12 @@ class PluginClient {
   std::unique_ptr<prototools::ProtoBidiStream> stream{};
   PluginContext* core{nullptr};
 
-  size_t current_xattr_index{std::numeric_limits<size_t>::max()};
-  std::vector<bp::Xattribute> xattribute_cache{};
-
   template <typename... Args>
   void DebugLog(Severity severity,
                 fmt::format_string<Args...> fmt,
                 Args&&... args)
   {
     ::DebugLog(core, severity, std::move(fmt), std::forward<Args>(args)...);
-  }
-
-  enum step
-  {
-    HANDLE_EVENT,
-    START_BACKUP_FILE,
-    END_BACKUP_FILE,
-    FILE_OPEN,
-    FILE_WRITE,
-    GET_ACL,
-    GET_XATTR,
-  };
-
-  const char* step_name(step Step)
-  {
-    switch (Step) {
-      case HANDLE_EVENT:
-        return "handle-event";
-      case START_BACKUP_FILE:
-        return "start-backup-file";
-      case END_BACKUP_FILE:
-        return "end-backup-file";
-      case FILE_OPEN:
-        return "file-open";
-      case FILE_WRITE:
-        return "file-write";
-      case GET_XATTR:
-        return "get-xattr";
-      case GET_ACL:
-        return "get-acl";
-    }
-
-    return "<unknown>";
-  }
-
-  std::optional<step> predicted_step{std::nullopt};
-  std::optional<size_t> cached_size{std::nullopt};
-  std::optional<std::string> cached_file{std::nullopt};
-  bool expect_xattr{};
-  bool expect_acl{};
-
-  void predict(step Step)
-  {
-    return;
-
-
-    switch (Step) {
-      case HANDLE_EVENT: {
-      } break;
-      case FILE_OPEN: {
-      } break;
-      case START_BACKUP_FILE: {
-      } break;
-      case END_BACKUP_FILE: {
-        // bp::PluginRequest predicted_outer_req;
-        // auto& predicted_req = *predicted_outer_req.mutable_end_backup_file();
-        // (void)predicted_req;
-
-        // if (!stream->Write(predicted_outer_req)) {
-        //   // return bRC_Error;
-        // }
-      } break;
-      case FILE_WRITE: {
-      } break;
-      case GET_ACL: {
-        if (!cached_file) { return; }
-        bp::PluginRequest outer_req;
-        auto& req = *outer_req.mutable_get_acl();
-        req.set_file(*cached_file);
-
-        if (!stream->Write(outer_req)) {
-          // return bRC_Error;
-        }
-      } break;
-      case GET_XATTR: {
-        if (!cached_file) { return; }
-        if (current_xattr_index != std::numeric_limits<size_t>::max()) {
-          return;
-        }
-        bp::PluginRequest outer_req;
-        auto& req = *outer_req.mutable_get_xattr();
-        req.set_file(*cached_file);
-        if (!stream->Write(outer_req)) {
-          // return bRC_Error;
-        }
-      } break;
-    }
-
-    predicted_step = Step;
-  }
-
-  void clear_prediction() { predicted_step.reset(); }
-
-  bool check_no_prediction()
-  {
-    if (predicted_step) {
-      JobLog(core, M_ERROR, "predicted {} but got unpredicted",
-             step_name(*predicted_step));
-
-      predicted_step.reset();
-      return false;
-    }
-    return true;
-  }
-
-  bool check_prediction(step Step)
-  {
-    // if we didnt predict anything, then everything is good
-    if (!predicted_step) { return false; }
-
-    bool prediction_ok = predicted_step && *predicted_step == Step;
-
-    if (!prediction_ok) {
-      JobLog(core, M_ERROR, "predicted {} but got {}",
-             predicted_step ? step_name(*predicted_step) : "<none>",
-             step_name(Step));
-    }
-
-    predicted_step.reset();
-
-    return prediction_ok;
   }
 };
 }  // namespace
@@ -2666,10 +2184,9 @@ grpc_connection::grpc_connection(
 }
 
 
-bareos::plugin::handlePluginEventRequest* to_grpc(filedaemon::bEventType type,
-                                                  void* data)
+bp::HandlePluginEventRequest* to_grpc(filedaemon::bEventType type, void* data)
 {
-  auto req = new bp::handlePluginEventRequest;
+  auto req = new bp::HandlePluginEventRequest;
 
   if (make_event_request(type, data, *req)) {
     return req;
@@ -2679,13 +2196,10 @@ bareos::plugin::handlePluginEventRequest* to_grpc(filedaemon::bEventType type,
   }
 }
 
-void delete_request(bareos::plugin::handlePluginEventRequest* req)
-{
-  delete req;
-}
+void delete_request(bp::HandlePluginEventRequest* req) { delete req; }
 
 bRC grpc_connection::handlePluginEvent(filedaemon::bEventType type,
-                                       bp::handlePluginEventRequest* req)
+                                       bp::HandlePluginEventRequest* req)
 {
   PluginClient* client = &members->client;
   return client->handlePluginEvent(type, req);

@@ -80,7 +80,7 @@ if(ENABLE_GRPC)
   add_library(grpc-proto OBJECT)
   target_add_proto_sources(
     grpc-proto "proto/plugin.proto" "proto/events.proto" "proto/bareos.proto"
-    "proto/common.proto"
+    "proto/common.proto" "proto/backup.proto" "proto/restore.proto"
   )
   set_target_properties(
     grpc-proto PROPERTIES CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN
@@ -116,44 +116,51 @@ if(ENABLE_GRPC)
     COMPONENT filedaemon
   )
 
-  # add_executable( grpc-test-module test_module/test_module.cc
-  # test_module/plugin_service.cc ) target_link_libraries(grpc-test-module
-  # fmt::fmt grpc-proto) install( TARGETS grpc-test-module DESTINATION
-  # ${plugindir}/grpc COMPONENT filedaemon )
+  if(0)
+    add_executable(
+      grpc-test-module test_module/test_module.cc test_module/plugin_service.cc
+    )
+    target_link_libraries(grpc-test-module fmt::fmt grpc-proto)
+    install(
+      TARGETS grpc-test-module
+      DESTINATION ${plugindir}/grpc
+      COMPONENT filedaemon
+    )
 
-  add_executable(
-    bareos-grpc-fd-plugin-bridge bridge_module/bridge_module.cc
-                                 bridge_module/plugin_service.cc
-  )
-  target_link_libraries(
-    # we need to link to python3, because otherwise we will not be able to load
-    # # python-fd.so
-    bareos-grpc-fd-plugin-bridge fmt::fmt grpc-proto Python3::Module
-    ${CMAKE_DL_LIBS} grpc-util
-  )
-  set_target_properties(
-    bareos-grpc-fd-plugin-bridge PROPERTIES CXX_VISIBILITY_PRESET hidden
-                                            VISIBILITY_INLINES_HIDDEN ON
-  )
-  install(
-    TARGETS bareos-grpc-fd-plugin-bridge
-    DESTINATION ${plugindir}/grpc
-    COMPONENT filedaemon
-  )
+    add_executable(
+      bareos-grpc-fd-plugin-bridge bridge_module/bridge_module.cc
+                                   bridge_module/plugin_service.cc
+    )
+    target_link_libraries(
+      # we need to link to python3, because otherwise we will not be able to
+      # load # python-fd.so
+      bareos-grpc-fd-plugin-bridge fmt::fmt grpc-proto Python3::Module
+      ${CMAKE_DL_LIBS} grpc-util
+    )
+    set_target_properties(
+      bareos-grpc-fd-plugin-bridge PROPERTIES CXX_VISIBILITY_PRESET hidden
+                                              VISIBILITY_INLINES_HIDDEN ON
+    )
+    install(
+      TARGETS bareos-grpc-fd-plugin-bridge
+      DESTINATION ${plugindir}/grpc
+      COMPONENT filedaemon
+    )
+
+    bareos_add_test(
+      protobuf_socket_test LINK_LIBRARIES GTest::gtest_main grpc-proto
+    )
+
+    bareos_configure_file(
+      FILES
+      "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"
+      "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_types.py"
+      "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_type_conv.py"
+      "${CMAKE_CURRENT_SOURCE_DIR}/bareos-fd-local-fileset-acl-xattr.py"
+      COPY
+    )
+    bareos_configure_file(FILES "${CMAKE_CURRENT_SOURCE_DIR}/xattr-upb.sh.in")
+  endif()
 
   include(DebugEdit)
-
-  bareos_add_test(
-    protobuf_socket_test LINK_LIBRARIES GTest::gtest_main grpc-proto
-  )
-
-  bareos_configure_file(
-    FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"
-    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_types.py"
-    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_type_conv.py"
-    "${CMAKE_CURRENT_SOURCE_DIR}/bareos-fd-local-fileset-acl-xattr.py"
-    COPY
-  )
-  bareos_configure_file(FILES "${CMAKE_CURRENT_SOURCE_DIR}/xattr-upb.sh.in")
 endif()

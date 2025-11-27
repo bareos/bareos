@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package bareos.backup;
+
+import "common.proto";
+
+message Backup {
+  oneof request {
+    BeginObject begin_object = 1;
+    bareos.common.FileData data = 2;
+    bareos.common.Acl acl = 3;
+    bareos.common.Xattr xattr = 4;
+    FileError error = 5;
+    Done done = 6;
+  };
+};
+
+
+message BeginObject {
+  bytes name = 1;
+
+  bareos.common.FileType file_type = 2;
+
+  oneof object_type {
+    bareos.common.PluginObject object = 10;
+    bareos.common.PluginFile file = 11;
+  };
+};
+
+message FileError {
+  bareos.common.FileErrorType file_error_type = 1;
+  bytes message = 2;
+};
+
+message Done {
+};

@@ -171,13 +171,13 @@ struct plugin_ctx {
 
 
   struct request_deleter {
-    void operator()(bareos::plugin::handlePluginEventRequest* req) const
+    void operator()(bareos::plugin::HandlePluginEventRequest* req) const
     {
       delete_request(req);
     }
   };
 
-  using req_ptr = std::unique_ptr<bareos::plugin::handlePluginEventRequest,
+  using req_ptr = std::unique_ptr<bareos::plugin::HandlePluginEventRequest,
                                   request_deleter>;
 
   static inline req_ptr make_event_request(filedaemon::bEvent* e, void* data)
@@ -191,7 +191,7 @@ struct plugin_ctx {
     req_ptr request;
 
     filedaemon::bEventType type() const { return event_type; }
-    bareos::plugin::handlePluginEventRequest* req() const
+    bareos::plugin::HandlePluginEventRequest* req() const
     {
       return request.get();
     }
