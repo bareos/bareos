@@ -368,17 +368,23 @@ class IoPacket:
 class AclPacket:
     """bareos acl packet"""
 
-    fname: str = None  # Filename
-    content: str = None  # ACL content
+    # fname is unused, the core sets it itself
+    # if plugins break because of it, then we should readd
+    # this field and also ignore it ...
+    # fname: str = None  # Filename
+    content: bytearray = None  # ACL content
 
 
 @dataclass(slots=True)
 class XattrPacket:
     """bareos xattr packet"""
 
-    fname: str = None  # Filename
-    name: str = None  # XATTR name
-    value: str = None  # XATTR value
+    # fname is unused, the core sets it itself
+    # if plugins break because of it, then we should readd
+    # this field and also ignore it ...
+    # fname: str = None  # Filename
+    name: bytearray = None  # XATTR name
+    value: bytearray = None  # XATTR value
 
 
 #### BAREOSFD TYPES END
