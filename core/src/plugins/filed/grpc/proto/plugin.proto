@@ -7,9 +7,13 @@ import "events.proto";
 message BeginBackupRequest {
   bytes cmd = 1;
   uint64 max_record_size = 2;
+  bytes flags = 3;
 
-  bool backup_acl = 3;
-  bool backup_xattr = 4;
+  bool backup_acl = 10;
+  bool backup_xattr = 11;
+  bool portable = 12;
+  bool no_atime = 13;
+
 };
 
 message BeginBackupResponse {
@@ -21,8 +25,16 @@ message BeginRestoreRequest {
 message BeginRestoreResponse {
 };
 
-message SetDebugLevel {
-  int64 debug_level = 1;
+message BeginEstimateRequest {
+};
+
+message BeginEstimateResponse {
+};
+
+message BeginVerifyRequest {
+};
+
+message BeginVerifyResponse {
 };
 
 message SetupRequest {};
@@ -31,19 +43,24 @@ message SetupResponse {};
 message PluginRequest {
   oneof request {
     SetupRequest setup = 1;
-    BeginBackupRequest begin_backup = 2;
-    BeginRestoreRequest begin_restore = 3;
-    SetDebugLevel set_debug_level = 4;
-    HandlePluginEventRequest handle_plugin_event = 5;
+    HandlePluginEventRequest handle_plugin_event = 2;
+
+    BeginBackupRequest begin_backup = 10;
+    BeginRestoreRequest begin_restore = 11;
+    BeginEstimateRequest begin_estimate = 12;
+    BeginVerifyRequest begin_verify = 13;
   };
 };
 
 message PluginResponse {
   oneof response {
     SetupResponse setup = 1;
-    BeginBackupResponse begin_backup = 2;
-    BeginRestoreResponse begin_restore = 3;
-    HandlePluginEventResponse handle_plugin_event = 5;
+    HandlePluginEventResponse handle_plugin_event = 2;
+
+    BeginBackupResponse begin_backup = 10;
+    BeginRestoreResponse begin_restore = 11;
+    BeginEstimateResponse begin_estimate = 12;
+    BeginVerifyResponse begin_verify = 13;
   };
 };
 
