@@ -37,8 +37,10 @@ if ! [ -d "${DATA_PATH}" ]; then
 fi
 
 FILESETS=("PythonNative" "PythonNative_do_io_in_core"
+  "PythonNative-upb" "PythonNative_do_io_in_core-upb"
   "PythonCore" "PythonCore_do_io_in_core"
-  "PythonTest" "PythonTest_do_io_in_core")
+  #"PythonTest" "PythonTest_do_io_in_core"
+)
 
 ./test-setup
 echo "${DATA_PATH}" >"${tmp}/file-list"
@@ -48,8 +50,8 @@ for fileset in "${FILESETS[@]}"; do
   (for _ in $(seq "${COUNT}"); do
     echo "run job=backup-bareos-fd fileset=${fileset} storage=Null level=Full yes"
   done) >>"${tmp}/benchcmds.out"
+  echo "wait" >>"${tmp}/benchcmds.out"
 done
-echo "wait" >>"${tmp}/benchcmds.out"
 bin/bconsole <"${tmp}/benchcmds.out"
 
 cat <<EOF | run_query_with_options "-t" "-A" | jq 'map( { (.fileset|tostring) : (. | del(.fileset)) } ) | add' >"${tmp}/bench-query.json"
