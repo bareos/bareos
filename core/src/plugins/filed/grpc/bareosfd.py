@@ -490,24 +490,41 @@ def start_backup(req: plugin_pb2.StartBackupFileRequest):
             #     return
 
             # log(f"file_open2 returned {io_in_core_fd}")
+            con.write_plugin(outer_resp)
             if io_in_core_fd is not None:
-                resp.io_in_core = True
-                con.write_plugin(outer_resp, io_in_core_fd)
-                return
-            else:
-                con.write_plugin(outer_resp)
+                # resp.io_in_core = True
+                # con.write_plugin(outer_resp, io_in_core_fd)
+                # return
 
-            while True:
-                data = file_read(req.max_record_size)
-                if data is None:
-                    fr = plugin_pb2.FileRecord()
-                    fr.data = bytes()
-                    con.write_plugin(fr)
-                    break
-                else:
-                    fr = plugin_pb2.FileRecord()
-                    fr.data = data
-                    con.write_plugin(fr)
+                read_file = io.FileIO(io_in_core_fd, closefd=False)
+                # read_file = os.fdopen(io_in_core_fd, "r", closefd=False)
+
+                array = bytearray(req.max_record_size)
+                while True:
+                    size = read_file.readinto(array)
+                    if size is None or size == 0:
+                        fr = plugin_pb2.FileRecord()
+                        fr.data = bytes()
+                        con.write_plugin(fr)
+                        break
+                    else:
+                        fr = plugin_pb2.FileRecord()
+                        fr.data = bytes(array[:size])
+                        con.write_plugin(fr)
+
+                io_in_core_fd = None
+            else:
+                while True:
+                    data = file_read(req.max_record_size)
+                    if data is None:
+                        fr = plugin_pb2.FileRecord()
+                        fr.data = bytes()
+                        con.write_plugin(fr)
+                        break
+                    else:
+                        fr = plugin_pb2.FileRecord()
+                        fr.data = data
+                        con.write_plugin(fr)
 
             iop = IoPacket()
 
