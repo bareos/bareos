@@ -297,44 +297,6 @@ void do_std_io(std::atomic<bool>* quit,
   }
 }
 
-// struct SocketStream final : public google::protobuf::io::ZeroCopyInputStream
-// {
-//   int fd;
-//   std::vector<char> buffer;
-//   std::size_t offset = 0;
-//   std::size_t total_offset = 0;
-
-//   SocketStream(int socket_fd, std::size_t buffer_size)
-//     : fd{socket_fd}
-//     , buffer(buffer_size)
-//   {
-//   }
-
-
-//   bool Next(const void **data, int* size) override {
-//     offset = 0;
-//     total_offset += offset;
-
-//     *data = buffer.data();
-//     *size = offset;
-//     return true;
-//   }
-//   void BackUp(int count) override {
-//     offset -= count;
-//   }
-//   bool Skip(int count) override {
-
-//     std::size_t left_in_buffer = buffer.size() - offset;
-
-
-//     (void) count;
-//     return false;
-//   }
-//   int64_t ByteCount() const override {
-//     return total_offset;
-//   }
-// };
-
 enum StatusCode
 {
   ALL_OK,

@@ -122,6 +122,10 @@ message VssCloseRestore {
 message VssBackupComplete {
 };
 
+message SetDebugLevel {
+  int64 debug_level = 1;
+};
+
 message Event {
   oneof event {
     JobStart job_start = 1;
@@ -156,5 +160,7 @@ message Event {
     VssRestoreSetComponentsSelected vss_restore_set_components_selected = 27;
     VssCloseRestore vss_close_restore = 28;
     VssBackupComplete vss_backup_complete = 29;
+
+    SetDebugLevel set_debug_level = 30;
   };
 };
