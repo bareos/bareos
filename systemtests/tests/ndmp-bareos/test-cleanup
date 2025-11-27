@@ -32,6 +32,6 @@ export TestName
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
-cleanup_isilon
+cleanup_remote
 
 "${BAREOS_SCRIPTS_DIR}"/cleanup
