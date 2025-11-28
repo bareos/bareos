@@ -33,6 +33,7 @@
 
 #include "plugins/filed/grpc/grpc_impl.h"
 #include <fcntl.h>
+#include <future>
 #include <thread>
 #include <sys/poll.h>
 #include <sys/wait.h>
@@ -310,6 +311,259 @@ struct Status {
   Status() {};
 
   static Status OK;
+};
+
+namespace {
+constexpr std::string_view backup_step_str(bb::Backup::StepCase step)
+{
+  switch (step) {
+    case bareos::backup::Backup::kBeginObject:
+      return "begin-object";
+    case bareos::backup::Backup::kFileData:
+      return "file-data";
+    case bareos::backup::Backup::kAcl:
+      return "acl";
+    case bareos::backup::Backup::kXattr:
+      return "xattr";
+    case bareos::backup::Backup::kFileError:
+      return "file-error";
+    case bareos::backup::Backup::kDone:
+      return "done";
+    case bareos::backup::Backup::STEP_NOT_SET:
+      return "unset";
+  }
+
+  return "internal-error";
+}
+};  // namespace
+
+
+struct BackupStateMachine {
+ public:
+  BackupStateMachine(PluginContext* ctx, prototools::ProtoBidiStream* stream_)
+      : stream{stream_}, core{ctx}
+  {
+    arena = std::make_unique<google::protobuf::Arena>();
+  }
+
+  bool done() const { return is_done; }
+
+  const bb::BeginObject* start_backup_file()
+  {
+    DebugLog(150, "start_backup_file()");
+
+    bb::Backup* data = pop();
+    if (data == nullptr) { return nullptr; }
+
+
+    if (data->has_begin_object()) { return &data->begin_object(); }
+
+    return nullptr;
+  }
+
+  bool end_backup_file()
+  {
+    DebugLog(150, "end_backup_file()");
+    for (;;) {
+      bb::Backup* data = pop();
+
+      if (!data) { return false; }
+
+      if (data->has_done()) {
+        is_done = true;
+        return true;
+      }
+
+      if (data->has_begin_object()) {
+        push(data);
+        return true;
+      }
+    }
+  }
+
+  bool file_open()
+  {
+    DebugLog(150, "file_open()");
+    bb::Backup* data = pop();
+
+    if (data == nullptr) { return false; }
+
+    // here we only care to check if there was an error opening the file
+
+    if (data->has_file_error()
+        && data->file_error().on_action()
+               == bco::FileAction::FILE_ACTION_OPEN) {
+      DebugLog(50, "could not open file: Err={}", data->file_error().message());
+      return false;
+    }
+
+    // we didnt care about this event, so push it back
+    push(data);
+    return true;
+  }
+
+  std::optional<std::size_t> file_read(std::span<char> buffer)
+  {
+    DebugLog(150, "file_read()");
+    bb::Backup* data = pop();
+
+    if (data == nullptr) { return std::nullopt; }
+
+    if (data->has_file_error()
+        && data->file_error().on_action()
+               == bco::FileAction::FILE_ACTION_READ) {
+      DebugLog(50, "could not read file: Err={}", data->file_error().message());
+      return std::nullopt;
+    }
+
+    if (data->has_file_data()) {
+      const auto& fdata = data->file_data().data();
+      if (buffer.size() < fdata.size()) {
+        JobLog(
+            core, M_FATAL,
+            "Communication error: received {} bytes, but expected at most {}",
+            fdata.size(), buffer.size());
+
+        return std::nullopt;
+      }
+
+      std::memcpy(buffer.data(), fdata.data(), fdata.size());
+
+      return fdata.size();
+    }
+
+    // we got something we didnt care about, so the file is done
+    // just return 0 bytes, to tell the daemon that we are done
+
+    DebugLog(100,
+             "expected file_data but got something else.  Returning 0 bytes");
+
+    push(data);
+
+    return 0;
+  }
+
+  bool file_close()
+  {
+    DebugLog(150, "file_close()");
+    bb::Backup* data = pop();
+    if (data == nullptr) { return false; }
+
+    if (data->has_file_error()
+        && data->file_error().on_action()
+               == bco::FileAction::FILE_ACTION_CLOSE) {
+      DebugLog(50, "could not close file: Err={}",
+               data->file_error().message());
+      return false;
+    }
+
+    push(data);
+
+    return true;
+  }
+
+  bool get_acl(filedaemon::acl_pkt* acl)
+  {
+    DebugLog(150, "get_acl()");
+    bb::Backup* data = pop();
+    if (data == nullptr) { return false; }
+
+    if (data->has_file_error()
+        && data->file_error().on_action() == bco::FileAction::FILE_ACTION_ACL) {
+      DebugLog(50, "could get acls from file: Err={}",
+               data->file_error().message());
+      return false;
+    }
+
+    if (data->has_acl()) {
+      const auto& adata = data->acl().acl_data();
+
+      acl->content = reinterpret_cast<char*>(malloc(adata.size() + 1));
+      std::memcpy(acl->content, adata.data(), adata.size() + 1);
+      acl->content_length = adata.size();
+
+      return true;
+    }
+
+    push(data);
+    acl->content = nullptr;
+    acl->content_length = 0;
+    return true;
+  }
+
+  bool get_xattr(filedaemon::xattr_pkt* xattr)
+  {
+    DebugLog(150, "get_xattr()");
+    bb::Backup* data = pop();
+    if (data == nullptr) { return false; }
+
+    if (data->has_file_error()
+        && data->file_error().on_action()
+               == bco::FileAction::FILE_ACTION_XATTR) {
+      DebugLog(50, "could get acls from file: Err={}",
+               data->file_error().message());
+      return false;
+    }
+
+    if (data->has_xattr()) {
+      const auto& x = data->xattr();
+      const auto& xvalue = x.content();
+      const auto& xname = x.name();
+
+      xattr->value = reinterpret_cast<char*>(malloc(xvalue.size() + 1));
+      std::memcpy(xattr->value, xvalue.data(), xvalue.size() + 1);
+      xattr->value_length = xvalue.size();
+
+      xattr->name = reinterpret_cast<char*>(malloc(xname.size() + 1));
+      std::memcpy(xattr->name, xname.data(), xname.size() + 1);
+      xattr->name_length = xname.size();
+
+      return true;
+    }
+
+    push(data);
+    xattr->value = nullptr;
+    xattr->value_length = 0;
+
+    xattr->name = nullptr;
+    xattr->name_length = 0;
+    return true;
+  }
+
+ private:
+  bb::Backup* pop()
+  {
+    if (last_read) {
+      auto* ptr = std::exchange(last_read, nullptr);
+      return ptr;
+    }
+
+    arena->Reset();
+    auto* data = google::protobuf::Arena::Create<bb::Backup>(arena.get());
+
+    if (!stream->Read(*data)) {
+      JobLog(core, M_FATAL, "internal communication error");
+      return nullptr;
+    }
+
+    DebugLog(200, "received object of type {}",
+             backup_step_str(data->step_case()));
+
+    return data;
+  }
+
+  void push(bb::Backup* read)
+  {
+    ASSERT(last_read == nullptr);
+    last_read = read;
+  }
+
+ private:
+  prototools::ProtoBidiStream* stream{nullptr};
+  PluginContext* core;
+  std::unique_ptr<google::protobuf::Arena> arena{};
+  bb::Backup* last_read{};
+  bool is_done{false};
 };
 
 class BareosCore {
@@ -1167,44 +1421,40 @@ bool make_event_request(filedaemon::bEventType type,
   return true;
 }
 
-
 class PluginClient {
  public:
-  PluginClient(PluginContext* ctx,
-               std::unique_ptr<prototools::ProtoBidiStream> s)
-      : stream{std::move(s)}, core{ctx}
+  PluginClient(
+      PluginContext* ctx,
+      std::unique_ptr<prototools::ProtoBidiStream> core_event_stream,
+      std::unique_ptr<prototools::ProtoBidiStream> data_transfer_stream)
+      : data_transfer{std::move(data_transfer_stream)}
+      , core_events{std::move(core_event_stream)}
+      , core{ctx}
   {
     arena = std::make_unique<google::protobuf::Arena>();
   }
 
   std::unique_ptr<google::protobuf::Arena> arena;
 
-  std::pair<bp::PluginRequest*, bp::PluginResponse*> allocate_pair()
+  std::optional<bp::PluginResponse> submit_event(const bp::PluginRequest& req)
   {
-    arena->Reset();
-    return {
-        google::protobuf::Arena::Create<bp::PluginRequest>(arena.get()),
-        google::protobuf::Arena::Create<bp::PluginResponse>(arena.get()),
-    };
-  }
-
-  bco::FileData* allocate_rec()
-  {
-    arena->Reset();
-    return google::protobuf::Arena::Create<bco::FileData>(arena.get());
+    bp::PluginResponse resp;
+    DebugLog(200, "submitting event");
+    if (!core_events->Write(req)) { return std::nullopt; }
+    DebugLog(200, "waiting for response event");
+    if (!core_events->Read(resp)) { return std::nullopt; }
+    DebugLog(200, "got a response event");
+    return resp;
   }
 
   bRC Setup()
   {
-    auto [req, resp] = allocate_pair();
+    bp::PluginRequest req;
 
-    (void)req->mutable_setup();
+    (void)req.mutable_setup();
 
-    bool write_ok = stream->Write(*req);
-    if (!write_ok) { return bRC_Error; }
-
-    bool read_ok = stream->Read(*resp);
-    if (!read_ok) { return bRC_Error; }
+    auto resp = submit_event(req);
+    if (!resp) { return bRC_Error; }
 
     if (!resp->has_setup()) { return bRC_Error; }
 
@@ -1214,29 +1464,40 @@ class PluginClient {
   bRC handlePluginEvent(filedaemon::bEventType type,
                         bp::HandlePluginEventRequest* req)
   {
-    auto [actual_req, resp] = allocate_pair();
-    *actual_req->mutable_handle_plugin_event() = std::move(*req);
-    bool write_ok = stream->Write(*actual_req);
-    if (!write_ok) { return bRC_Error; }
+    bp::PluginRequest actual_req;
+    *actual_req.mutable_handle_plugin_event() = std::move(*req);
+    auto* creq = &actual_req.handle_plugin_event();
 
-    bool read_ok = stream->Read(*resp);
-    if (!read_ok) { return bRC_Error; }
+    auto resp = submit_event(actual_req);
 
-    // Status status = stub_->handlePluginEvent(*req, &resp);
-
-    // if (!status.ok()) {
-    //   DebugLog(50, FMT_STRING("rpc did not succeed for event {} ({}):
-    //   Err={}"),
-    //            int(type), int(status.error_code()), status.error_message());
-    //   return bRC_Error;
-    // }
-
-    if (!resp->has_handle_plugin_event()) { return bRC_Error; }
+    if (!resp || !resp->has_handle_plugin_event()) { return bRC_Error; }
 
     auto res = resp->handle_plugin_event().res();
 
     DebugLog(100, FMT_STRING("plugin handled event {} with res = {} ({})"),
              int(type), bp::ReturnCode_Name(res), int(res));
+
+
+    if (creq->to_handle().has_backup_command() && res == bp::RC_OK) {
+      auto& backup_command = creq->to_handle().backup_command();
+
+      bp::PluginRequest sb_req;
+      auto* begin_backup = sb_req.mutable_begin_backup();
+      begin_backup->mutable_cmd()->assign(backup_command.data());
+      begin_backup->set_backup_acl(false);
+      begin_backup->set_backup_xattr(false);
+      begin_backup->set_portable(true);
+      begin_backup->set_no_atime(true);
+      begin_backup->set_max_record_size(256 << 10);
+
+      auto sb_resp = submit_event(sb_req);
+      if (!sb_resp || !sb_resp->has_begin_backup()) {
+        DebugLog(100, "expected begin-backup reponse, but got something else");
+        return bRC_Error;
+      }
+
+      state_machine.emplace<BackupStateMachine>(core, data_transfer.get());
+    }
 
     switch (res) {
       case bareos::plugin::RC_OK:
@@ -1290,10 +1551,18 @@ class PluginClient {
 
   bRC startBackupFile(filedaemon::save_pkt* pkt)
   {
-    // if (Done) { return bRC_Stop; }
-    // if (Error) { return bRC_Error; }
+    auto* bsm = std::get_if<BackupStateMachine>(&state_machine);
 
-    bb::BeginObject* begin_obj = nullptr;
+    if (!bsm) {
+      JobLog(core, M_FATAL,
+             "cannot begin backing up file, if the backup was not formally "
+             "started yet");
+      return bRC_Error;
+    }
+
+    const bb::BeginObject* begin_obj = bsm->start_backup_file();
+
+    if (!begin_obj) { return bRC_Error; }
 
     if (begin_obj->has_file()) {
       auto& file = begin_obj->file();
@@ -1453,7 +1722,22 @@ class PluginClient {
     return bRC_OK;
   }
 
-  bRC endBackupFile() { return bRC_Error; }
+  bRC endBackupFile()
+  {
+    if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
+      if (!bsm->end_backup_file()) { return bRC_Error; }
+
+      if (bsm->done()) {
+        state_machine.emplace<std::monostate>();
+        return bRC_OK;
+      }
+
+      return bRC_More;
+    }
+
+    JobLog(core, M_FATAL, "this operation is only supported during backup");
+    return bRC_Error;
+  }
 
   template <typename... Types> void ignore(Types&&...) {}
 
@@ -1471,6 +1755,16 @@ class PluginClient {
                std::optional<int>* io_in_core_fd)
   {
     ignore(name, flags, mode, io_in_core_fd);
+
+    if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
+      if (!bsm->file_open()) { return bRC_Error; }
+
+      *io_in_core_fd = std::nullopt;
+      return bRC_OK;
+    }
+    // else if (auto *rsm = ...) {}
+
+    JobLog(core, M_FATAL, "cannot open file in this state");
     return bRC_Error;
   }
 
@@ -1482,7 +1776,21 @@ class PluginClient {
 
   bRC FileRead(char* buf, size_t size, int32_t* bytes_read)
   {
-    ignore(buf, size, bytes_read);
+    if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
+      std::optional bytes = bsm->file_read(std::span(buf, size));
+      if (!bytes) { return bRC_Error; }
+
+      // there has to be a better way than this ...
+      ASSERT(*bytes <= static_cast<std::size_t>(
+                 std::numeric_limits<
+                     std::remove_reference_t<decltype(*bytes_read)>>::max()));
+
+      *bytes_read = *bytes;
+
+      return bRC_OK;
+    }
+
+    JobLog(core, M_FATAL, "this operation is only supported during backup");
     return bRC_Error;
   }
 
@@ -1492,7 +1800,18 @@ class PluginClient {
     return bRC_Error;
   }
 
-  bRC FileClose() { return bRC_OK; }
+  bRC FileClose()
+  {
+    if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
+      if (!bsm->file_close()) { return bRC_Error; }
+
+      return bRC_OK;
+    }
+    // else if (auto *rsm = ...) {}
+
+    JobLog(core, M_FATAL, "cannot close file in this state");
+    return bRC_Error;
+  }
 
   std::optional<bareos::common::ReplaceType> grpc_replace_type(int replace)
   {
@@ -1584,9 +1903,16 @@ class PluginClient {
     return bRC_Error;
   }
 
-  bRC getAcl(std::string_view file, char** buffer, size_t* size)
+  bRC getAcl(std::string_view file, filedaemon::acl_pkt* pkt)
   {
-    ignore(file, buffer, size);
+    ignore(file);
+    if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
+      if (!bsm->get_acl(pkt)) { return bRC_Error; }
+
+      return bRC_OK;
+    }
+
+    JobLog(core, M_FATAL, "this operation is only supported during backup");
     return bRC_Error;
   }
 
@@ -1598,13 +1924,25 @@ class PluginClient {
     return bRC_Error;
   }
 
-  bRC getXattr(std::string_view file,
-               char** name_buf,
-               size_t* name_size,
-               char** value_buf,
-               size_t* value_size)
+  bRC getXattr(std::string_view file, filedaemon::xattr_pkt* pkt)
   {
-    ignore(file, name_buf, name_size, value_buf, value_size);
+    ignore(file);
+    if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
+      if (!bsm->get_xattr(pkt)) { return bRC_Error; }
+
+      // we always say that we return more data, so that we dont have to check
+      // here if the next chunk is also an xattr packet.
+      // if there is no additional xattr packet, then we are allowed to just
+      // return an "empty" xattr packet + bRC_OK to tell bareos that there
+      // are actually no more xattr packets.
+      if (pkt->name_length == 0) {
+        return bRC_OK;
+      } else {
+        return bRC_More;
+      }
+    }
+
+    JobLog(core, M_FATAL, "this operation is only supported during backup");
     return bRC_Error;
   }
 
@@ -1615,14 +1953,20 @@ class PluginClient {
 
   ~PluginClient()
   {
-    if (stream) {
+    if (data_transfer) {
       DebugLog(100, "client = {{ writes = {}, reads = {}}}",
-               stream->write_count, stream->read_count);
+               data_transfer->write_count, data_transfer->read_count);
+    }
+
+    if (core_events) {
+      DebugLog(100, "client = {{ writes = {}, reads = {}}}",
+               core_events->write_count, core_events->read_count);
     }
   }
 
  private:
-  std::unique_ptr<prototools::ProtoBidiStream> stream{};
+  std::unique_ptr<prototools::ProtoBidiStream> data_transfer{};
+  std::unique_ptr<prototools::ProtoBidiStream> core_events{};
   PluginContext* core{nullptr};
 
   template <typename... Args>
@@ -1632,6 +1976,8 @@ class PluginClient {
   {
     ::DebugLog(core, severity, std::move(fmt), std::forward<Args>(args)...);
   }
+
+  std::variant<std::monostate, BackupStateMachine> state_machine;
 };
 }  // namespace
 
@@ -1646,20 +1992,24 @@ struct grpc_connection_members {
   // 4) destroy the server socket.
 
   PluginContext* pctx{nullptr};
-  Socket server_sock{};
+  Socket plugin_requests{};
+  Socket core_events{};
+  Socket data_transfer{};
+
   std::unique_ptr<BareosCore> server{};
-  Socket client_sock{};
   PluginClient client;
 
   grpc_connection_members(PluginContext* ctx,
+                          Socket plugin_requests_,
+                          Socket core_events_,
+                          Socket data_transfer_,
                           PluginClient client_,
-                          std::unique_ptr<BareosCore> server_,
-                          Socket client_sock_,
-                          Socket server_sock_)
+                          std::unique_ptr<BareosCore> server_)
       : pctx{ctx}
-      , server_sock{std::move(server_sock_)}
+      , plugin_requests{std::move(plugin_requests_)}
+      , core_events{std::move(core_events_)}
+      , data_transfer{std::move(data_transfer_)}
       , server{std::move(server_)}
-      , client_sock{std::move(client_sock_)}
       , client{std::move(client_)}
   {
   }
@@ -1668,8 +2018,9 @@ struct grpc_connection_members {
 
   ~grpc_connection_members()
   {
-    client_sock.close();
-    server_sock.close();
+    data_transfer.close();
+    core_events.close();
+    plugin_requests.close();
   }
 };
 
@@ -1920,15 +2271,17 @@ struct grpc_connection_builder {
 
   std::optional<grpc_connection> make_connection_from(grpc_connections& io)
   {
-    auto server_stream
+    auto plugin_requests
         = std::make_unique<prototools::ProtoBidiStream>(io.grpc_parent.get());
-    auto core = std::make_unique<BareosCore>(ctx, std::move(server_stream));
-    auto client_stream
+    auto core = std::make_unique<BareosCore>(ctx, std::move(plugin_requests));
+    auto core_events
         = std::make_unique<prototools::ProtoBidiStream>(io.grpc_child.get());
-    PluginClient client{ctx, std::move(client_stream)};
+    auto data_transfer
+        = std::make_unique<prototools::ProtoBidiStream>(io.grpc_io.get());
+    PluginClient client{ctx, std::move(core_events), std::move(data_transfer)};
     auto members = std::make_unique<grpc_connection_members>(
-        ctx, std::move(client), std::move(core), std::move(io.grpc_parent),
-        std::move(io.grpc_child));
+        ctx, std::move(io.grpc_child), std::move(io.grpc_parent),
+        std::move(io.grpc_io), std::move(client), std::move(core));
     grpc_connection con{std::move(members)};
     return con;
   }
@@ -1972,13 +2325,6 @@ struct grpc_connection_builder {
 
     auto& parent_io = total_io->first;
     auto& child_io = total_io->second;
-
-    // if (!SetNonBlocking(parent_io.grpc_parent)
-    //     || !SetNonBlocking(parent_io.grpc_child)
-    //     || !SetNonBlocking(child_io.grpc_parent)
-    //     || !SetNonBlocking(child_io.grpc_child)) {
-    //   return std::nullopt;
-    // }
 
     DebugLog(100, FMT_STRING("Created pipes Out: {} <> {}, Err: {} <> {}"),
              parent_io.std_out.get(), child_io.std_out.get(),
@@ -2458,9 +2804,7 @@ bRC grpc_connection::checkFile(const char* fname)
 bRC grpc_connection::getAcl(filedaemon::acl_pkt* pkt)
 {
   PluginClient* client = &members->client;
-  size_t size = 0;
-  bRC result = client->getAcl(pkt->fname, &pkt->content, &size);
-  pkt->content_length = size;
+  bRC result = client->getAcl(pkt->fname, pkt);
   return result;
 }
 bRC grpc_connection::setAcl(filedaemon::acl_pkt* pkt)
@@ -2472,13 +2816,8 @@ bRC grpc_connection::setAcl(filedaemon::acl_pkt* pkt)
 bRC grpc_connection::getXattr(filedaemon::xattr_pkt* pkt)
 {
   PluginClient* client = &members->client;
-  size_t name_len = 0, value_len = 0;
 
-  bRC result = client->getXattr(pkt->fname, &pkt->name, &name_len, &pkt->value,
-                                &value_len);
-
-  pkt->name_length = name_len;
-  pkt->value_length = value_len;
+  bRC result = client->getXattr(pkt->fname, pkt);
 
   return result;
 }

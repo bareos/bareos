@@ -151,16 +151,16 @@ if(ENABLE_GRPC)
       protobuf_socket_test LINK_LIBRARIES GTest::gtest_main grpc-proto
     )
 
-    bareos_configure_file(
-      FILES
-      "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"
-      "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_types.py"
-      "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_type_conv.py"
-      "${CMAKE_CURRENT_SOURCE_DIR}/bareos-fd-local-fileset-acl-xattr.py"
-      COPY
-    )
-    bareos_configure_file(FILES "${CMAKE_CURRENT_SOURCE_DIR}/xattr-upb.sh.in")
   endif()
+  bareos_configure_file(
+    FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_types.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_type_conv.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareos-fd-local-fileset-acl-xattr.py"
+    COPY
+  )
+  bareos_configure_file(FILES "${CMAKE_CURRENT_SOURCE_DIR}/xattr-upb.sh.in")
 
   include(DebugEdit)
 endif()
