@@ -368,7 +368,6 @@ function formatEnabledDisabledStatus(value) {
 }
 
 function formatUname(value, basePath) {
-   let osImage = null;
    let os2Image = new Map(
 	   [
 	   [ "suse.png", ["suse", "sle"]],
@@ -385,19 +384,13 @@ function formatUname(value, basePath) {
 	   ]);
 
    for (let entry of os2Image) {
-      if(osImage !== null) {break;}
       for (let substring of entry.values()) {
          if(value.toLowerCase().search(substring) > -1) {
-            osImage = entry[0];
+            return '<img src="' + basePath + '/img/icons/os/' + entry[0] + '" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
          }
       }
    }
-
-   if(osImage !== null) {
-      return '<img src="' + basePath + '/img/icons/os/' + osImage + '" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
-   } else {
-      return '';
-   }
+   return '';
 }
 
 function formatUpdateStatus(value, row, index) {
