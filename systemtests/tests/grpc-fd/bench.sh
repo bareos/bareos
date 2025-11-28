@@ -39,6 +39,7 @@ fi
 FILESETS=("PythonNative" "PythonNative_do_io_in_core"
   "PythonNative-upb" "PythonNative_do_io_in_core-upb"
   "PythonCore" "PythonCore_do_io_in_core"
+  "Core"
   #"PythonTest" "PythonTest_do_io_in_core"
 )
 

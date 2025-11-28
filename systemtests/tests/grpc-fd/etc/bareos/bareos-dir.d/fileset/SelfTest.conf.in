@@ -150,3 +150,18 @@ FileSet {
     ":do_io_in_core=True"
   }
 }
+
+
+FileSet {
+  Name = "Core"
+  Description = "fileset just to backup some files for selftest"
+  Enable VSS = No
+  Include {
+    Options {
+      Acl Support = No
+      Xattr Support = No
+    }
+
+    File=<@tmpdir@/file-list
+  }
+}
