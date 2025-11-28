@@ -55,6 +55,7 @@ f = open("/tmp/log.out", "w")
 
 def log(msg):
     print(msg, file=f)
+    f.flush()
     # print(msg, file=sys.stderr)
     pass
 
@@ -89,7 +90,6 @@ def writemsg(sock, msg):
     # log(f"bytes = {len(size_bytes)}, obj = {len(obj_bytes)}")
     send_bytes = size_bytes + obj_bytes
     sock.sendall(send_bytes)
-    # sock.sendall(obj_bytes)
 
 
 def writemsg_with_fd(sock, msg, fd):
@@ -123,13 +123,13 @@ def bit_is_set(flags: bytearray, index: int) -> bool:
 
 class BareosConnection:
     def __init__(self):
-        self.plugin_requests = socket.socket(fileno=3)
-        self.core_events = socket.socket(fileno=4)
+        self.core_events = socket.socket(fileno=3)
+        self.plugin_requests = socket.socket(fileno=4)
         self.data_transfer = socket.socket(fileno=5)
 
     def read_event(self):
         req = plugin_pb2.PluginRequest()
-        readmsg(self.core_events)
+        readmsg(self.core_events, req)
         return req
 
     def answer_event(
@@ -140,13 +140,12 @@ class BareosConnection:
         else:
             writemsg_with_fd(self.core_events, resp, fd_to_sent)
 
-    def submit_request(self,
-                       req: bareos_pb2.CoreRequest):
+    def submit_request(self, req: bareos_pb2.CoreRequest):
         writemsg(self.plugin_requests, req)
 
     def get_response(self) -> bareos_pb2.CoreResponse:
         resp = bareos_pb2.CoreResponse()
-        readmsg(self.core, resp)
+        readmsg(self.plugin_requests, resp)
         return resp
 
     def get_data(self) -> restore_pb2.Restore:
@@ -311,7 +310,7 @@ def handle_plugin_options(options: str) -> bRCs:
 
 
 def handle_plugin_event(
-    req: plugin_pb2.handlePluginEventRequest, resp: plugin_pb2.handlePluginEventResponse
+    req: plugin_pb2.HandlePluginEventRequest, resp: plugin_pb2.HandlePluginEventResponse
 ):
     result = bRC_Error
     event = req.to_handle
@@ -390,182 +389,182 @@ def handle_plugin_event(
 
         case "set_debug_level":
             global debug_level
-            log(f"setting debug level from {debug_level} to {event.set_debug_level.debug_level}")
+            # log(f"setting debug level from {debug_level} to {event.set_debug_level.debug_level}")
             debug_level = event.set_debug_level.debug_level
             result = bRC_OK
 
         case _:
             if plugin_loaded:
                 bevent = bareos_event(event)
-                BareosFdWrapper.handle_plugin_event(bevent)
+                result = BareosFdWrapper.handle_plugin_event(bevent)
 
     resp.res = brc_type_remote(result)
 
 
-io_in_core_fd: int | None = None
-last_file_done: bool = False
+# io_in_core_fd: int | None = None
+# last_file_done: bool = False
 
 
-def start_backup(req: plugin_pb2.StartBackupFileRequest):
-    global last_file_done
-    global io_in_core_fd
-
-    if io_in_core_fd is not None:
-        # log(f"closing leftover fd {io_in_core_fd}")
-        iop = IoPacket()
-
-        iop.func = bIOPS.IO_CLOSE
-        iop.filedes = io_in_core_fd
-        result = BareosFdWrapper.plugin_io(iop)
-
-        if result != bRC_OK:
-            raise ValueError
-
-        int_result = BareosFdWrapper.end_backup_file()
-        # log(f"got ebf result = {int_result}")
-        if int_result != bRC_More:
-            # log(f"after closing, we are done!")
-            last_file_done = True
-        else:
-            # log(f"after closing, we continue!")
-            pass
-
-    outer_resp = plugin_pb2.PluginResponse()
-    resp = outer_resp.start_backup
-
-    if last_file_done:
-        # log(f"we are done!")
-        resp.result = plugin_pb2.SBF_Stop
-        con.write_plugin(outer_resp)
-        return
-
-    pkt = SavePacket()
-    pkt.cmd = req.cmd  # maybe needs to be a str instead
-    pkt.no_read = req.no_read
-    pkt.portable = req.portable
-    pkt.flags = bytearray(req.flags)
-    result = BareosFdWrapper.start_backup_file(pkt)
-    resp.result = sbf_remote(result)
-
-    if result != bRC_OK:
-        con.write_plugin(outer_resp)
-        return
-
-    (category, type) = ft_remote(pkt.type)
-
-    match category:
-        case common_pb2.ObjectType:
-            resp.object.index = pkt.index
-            resp.object.name = pkt.name
-            resp.object.data = pkt.object
-            resp.type = type
-
-            con.write_plugin(outer_resp)
-        case common_pb2.FileType:
-            resp.file.no_read = pkt.no_read
-            resp.file.portable = pkt.portable
-            if bit_is_set(pkt.flags, bFileOption.FO_DELTA):
-                resp.file.delta_seq = pkt.delta_seq
-            resp.file.offset_backup = bit_is_set(pkt.flags, bFileOption.FO_OFFSETS)
-            resp.file.sparse_backup = bit_is_set(pkt.flags, bFileOption.FO_SPARSE)
-
-            resp.file.file = pkt.fname.encode()
-            resp.file.ft = type
-
-            resp.file.stats.dev = pkt.statp.st_dev
-            resp.file.stats.ino = pkt.statp.st_ino
-            resp.file.stats.mode = pkt.statp.st_mode
-            resp.file.stats.nlink = pkt.statp.st_nlink
-            resp.file.stats.uid = pkt.statp.st_uid
-            resp.file.stats.gid = pkt.statp.st_gid
-            resp.file.stats.rdev = pkt.statp.st_rdev
-            resp.file.stats.size = pkt.statp.st_size
-
-            resp.file.stats.atime.FromSeconds(pkt.statp.st_atime)
-            resp.file.stats.mtime.FromSeconds(pkt.statp.st_mtime)
-            resp.file.stats.ctime.FromSeconds(pkt.statp.st_ctime)
-
-            resp.file.stats.blksize = pkt.statp.st_blksize
-            resp.file.stats.blocks = pkt.statp.st_blocks
-
-            if type == common_pb2.SoftLink:
-                resp.file.link = pkt.link.encode()
-
-            if pkt.no_read:
-                con.write_plugin(outer_resp)
-                return
-
-            fo_req = plugin_pb2.fileOpenRequest()
-            fo_req.file = pkt.fname.encode()
-            fo_req.flags = os.O_RDONLY
-            fo_req.mode = 0
-            fo_resp = plugin_pb2.fileOpenResponse()
-
-            io_in_core_fd = file_open2(fo_req)
-
-            # if fo_res != bRC_OK:
-            #     err = plugin_pb2.FileRecord()
-            #     err.error = "could not open file"
-            #     con.write_plugin(err)
-            #     return
-
-            # log(f"file_open2 returned {io_in_core_fd}")
-            con.write_plugin(outer_resp)
-            if io_in_core_fd is not None:
-                # resp.io_in_core = True
-                # con.write_plugin(outer_resp, io_in_core_fd)
-                # return
-
-                read_file = io.FileIO(io_in_core_fd, closefd=False)
-                # read_file = os.fdopen(io_in_core_fd, "r", closefd=False)
-
-                array = bytearray(req.max_record_size)
-                while True:
-                    size = read_file.readinto(array)
-                    if size is None or size == 0:
-                        fr = plugin_pb2.FileRecord()
-                        fr.data = bytes()
-                        con.write_plugin(fr)
-                        break
-                    else:
-                        fr = plugin_pb2.FileRecord()
-                        fr.data = bytes(array[:size])
-                        con.write_plugin(fr)
-
-                io_in_core_fd = None
-            else:
-                while True:
-                    data = file_read(req.max_record_size)
-                    if data is None:
-                        fr = plugin_pb2.FileRecord()
-                        fr.data = bytes()
-                        con.write_plugin(fr)
-                        break
-                    else:
-                        fr = plugin_pb2.FileRecord()
-                        fr.data = data
-                        con.write_plugin(fr)
-
-            iop = IoPacket()
-
-            iop.func = bIOPS.IO_CLOSE
-            result = BareosFdWrapper.plugin_io(iop)
-
-            if result != bRC_OK:
-                raise ValueError
-
-            int_result = BareosFdWrapper.end_backup_file()
-            # log(f"got ebf result = {int_result}")
-            if int_result != bRC_More:
-                last_file_done = True
-
-        case common_pb2.FileErrorType:
-            resp.error.file = pkt.fname
-            resp.error.error = type
-
-            con.write_plugin(outer_resp)
-        case _:
-            raise ValueError
+# def start_backup(req: plugin_pb2.StartBackupFileRequest):
+#    global last_file_done
+#    global io_in_core_fd
+#
+#    if io_in_core_fd is not None:
+#        # log(f"closing leftover fd {io_in_core_fd}")
+#        iop = IoPacket()
+#
+#        iop.func = bIOPS.IO_CLOSE
+#        iop.filedes = io_in_core_fd
+#        result = BareosFdWrapper.plugin_io(iop)
+#
+#        if result != bRC_OK:
+#            raise ValueError
+#
+#        int_result = BareosFdWrapper.end_backup_file()
+#        # log(f"got ebf result = {int_result}")
+#        if int_result != bRC_More:
+#            # log(f"after closing, we are done!")
+#            last_file_done = True
+#        else:
+#            # log(f"after closing, we continue!")
+#            pass
+#
+#    outer_resp = plugin_pb2.PluginResponse()
+#    resp = outer_resp.start_backup
+#
+#    if last_file_done:
+#        # log(f"we are done!")
+#        resp.result = plugin_pb2.SBF_Stop
+#        con.write_plugin(outer_resp)
+#        return
+#
+#    pkt = SavePacket()
+#    pkt.cmd = req.cmd  # maybe needs to be a str instead
+#    pkt.no_read = req.no_read
+#    pkt.portable = req.portable
+#    pkt.flags = bytearray(req.flags)
+#    result = BareosFdWrapper.start_backup_file(pkt)
+#    resp.result = sbf_remote(result)
+#
+#    if result != bRC_OK:
+#        con.write_plugin(outer_resp)
+#        return
+#
+#    (category, type) = ft_remote(pkt.type)
+#
+#    match category:
+#        case common_pb2.ObjectType:
+#            resp.object.index = pkt.index
+#            resp.object.name = pkt.name
+#            resp.object.data = pkt.object
+#            resp.type = type
+#
+#            con.write_plugin(outer_resp)
+#        case common_pb2.FileType:
+#            resp.file.no_read = pkt.no_read
+#            resp.file.portable = pkt.portable
+#            if bit_is_set(pkt.flags, bFileOption.FO_DELTA):
+#                resp.file.delta_seq = pkt.delta_seq
+#            resp.file.offset_backup = bit_is_set(pkt.flags, bFileOption.FO_OFFSETS)
+#            resp.file.sparse_backup = bit_is_set(pkt.flags, bFileOption.FO_SPARSE)
+#
+#            resp.file.file = pkt.fname.encode()
+#            resp.file.ft = type
+#
+#            resp.file.stats.dev = pkt.statp.st_dev
+#            resp.file.stats.ino = pkt.statp.st_ino
+#            resp.file.stats.mode = pkt.statp.st_mode
+#            resp.file.stats.nlink = pkt.statp.st_nlink
+#            resp.file.stats.uid = pkt.statp.st_uid
+#            resp.file.stats.gid = pkt.statp.st_gid
+#            resp.file.stats.rdev = pkt.statp.st_rdev
+#            resp.file.stats.size = pkt.statp.st_size
+#
+#            resp.file.stats.atime.FromSeconds(pkt.statp.st_atime)
+#            resp.file.stats.mtime.FromSeconds(pkt.statp.st_mtime)
+#            resp.file.stats.ctime.FromSeconds(pkt.statp.st_ctime)
+#
+#            resp.file.stats.blksize = pkt.statp.st_blksize
+#            resp.file.stats.blocks = pkt.statp.st_blocks
+#
+#            if type == common_pb2.SoftLink:
+#                resp.file.link = pkt.link.encode()
+#
+#            if pkt.no_read:
+#                con.write_plugin(outer_resp)
+#                return
+#
+#            fo_req = plugin_pb2.fileOpenRequest()
+#            fo_req.file = pkt.fname.encode()
+#            fo_req.flags = os.O_RDONLY
+#            fo_req.mode = 0
+#            fo_resp = plugin_pb2.fileOpenResponse()
+#
+#            io_in_core_fd = file_open2(fo_req)
+#
+#            # if fo_res != bRC_OK:
+#            #     err = plugin_pb2.FileRecord()
+#            #     err.error = "could not open file"
+#            #     con.write_plugin(err)
+#            #     return
+#
+#            # log(f"file_open2 returned {io_in_core_fd}")
+#            con.write_plugin(outer_resp)
+#            if io_in_core_fd is not None:
+#                # resp.io_in_core = True
+#                # con.write_plugin(outer_resp, io_in_core_fd)
+#                # return
+#
+#                read_file = io.FileIO(io_in_core_fd, closefd=False)
+#                # read_file = os.fdopen(io_in_core_fd, "r", closefd=False)
+#
+#                array = bytearray(req.max_record_size)
+#                while True:
+#                    size = read_file.readinto(array)
+#                    if size is None or size == 0:
+#                        fr = plugin_pb2.FileRecord()
+#                        fr.data = bytes()
+#                        con.write_plugin(fr)
+#                        break
+#                    else:
+#                        fr = plugin_pb2.FileRecord()
+#                        fr.data = bytes(array[:size])
+#                        con.write_plugin(fr)
+#
+#                io_in_core_fd = None
+#            else:
+#                while True:
+#                    data = file_read(req.max_record_size)
+#                    if data is None:
+#                        fr = plugin_pb2.FileRecord()
+#                        fr.data = bytes()
+#                        con.write_plugin(fr)
+#                        break
+#                    else:
+#                        fr = plugin_pb2.FileRecord()
+#                        fr.data = data
+#                        con.write_plugin(fr)
+#
+#            iop = IoPacket()
+#
+#            iop.func = bIOPS.IO_CLOSE
+#            result = BareosFdWrapper.plugin_io(iop)
+#
+#            if result != bRC_OK:
+#                raise ValueError
+#
+#            int_result = BareosFdWrapper.end_backup_file()
+#            # log(f"got ebf result = {int_result}")
+#            if int_result != bRC_More:
+#                last_file_done = True
+#
+#        case common_pb2.FileErrorType:
+#            resp.error.file = pkt.fname
+#            resp.error.error = type
+#
+#            con.write_plugin(outer_resp)
+#        case _:
+#            raise ValueError
 
 
 # def end_backup_file(
@@ -575,150 +574,150 @@ def start_backup(req: plugin_pb2.StartBackupFileRequest):
 #     resp.result = ebf_remote(result)
 
 
-def start_restore_file(
-    req: plugin_pb2.startRestoreFileRequest, resp: plugin_pb2.startRestoreFileResponse
-):
-    raise ValueError
-
-
-def end_restore_file(
-    req: plugin_pb2.endRestoreFileRequest, resp: plugin_pb2.endRestoreFileResponse
-):
-    raise ValueError
-
-
-def file_open2(req: plugin_pb2.fileOpenRequest):
-    iop = IoPacket()
-
-    iop.func = bIOPS.IO_OPEN
-    iop.fname = req.file.decode()
-    iop.flags = req.flags
-    iop.mode = req.mode
-
-    result = BareosFdWrapper.plugin_io(iop)
-
-    if result != bRC_OK:
-        raise ValueError
-
-    # log(f"plugin_io returned {iop.status}")
-
-    if iop.status == iostat_do_in_core:
-        # log(f"do io in core")
-        return iop.filedes
-    else:
-        # log(f"do io in plugin")
-        return None
-
-
-def file_open(req: plugin_pb2.fileOpenRequest, resp: plugin_pb2.fileOpenResponse):
-    iop = IoPacket()
-
-    iop.func = bIOPS.IO_OPEN
-    iop.fname = req.file.decode()
-    iop.flags = req.flags
-    iop.mode = req.mode
-
-    result = BareosFdWrapper.plugin_io(iop)
-
-    if result != bRC_OK:
-        raise ValueError
-
-    if iop.status == iostat_do_in_core:
-        # log(f"do io in core")
-        resp.io_in_core = True
-    else:
-        # log(f"do io in plugin")
-        resp.io_in_core = False
-
-
-def file_seek(req: plugin_pb2.fileSeekRequest, resp: plugin_pb2.fileSeekResponse):
-    iop = IoPacket()
-
-    iop.func = bIOPS.IO_SEEK
-    match req.whence:
-        case plugin_pb2.SS_StartOfFile:
-            iop.whence = SEEK_SET
-        case plugin_pb2.SS_CurrentPos:
-            iop.whence = SEEK_CUR
-        case plugin_pb2.SS_EndOfFile:
-            iop.whence = SEEK_END
-        case _:
-            raise ValueError
-
-    iop.offset = req.offset
-
-    result = BareosFdWrapper.plugin_io(iop)
-    if result != bRC_OK:
-        raise ValueError
-
-    resp.SetInParent()
-
-
-def file_read(num_bytes: int):
-    iop = IoPacket()
-
-    iop.func = bIOPS.IO_READ
-    iop.count = num_bytes
-
-    result = BareosFdWrapper.plugin_io(iop)
-    if result != bRC_OK:
-        raise ValueError
-
-    if len(iop.buf) > num_bytes:
-        log(f"got too many bytes {iop.status} > {num_bytes}")
-        raise ValueError
-
-    # log(f"read {iop.status} {len(iop.buf)}/{num_bytes} bytes")
-
-    if iop.status == 0:
-        return None
-
-    # TODO: maybe we can avoid the copy somehow ? ...
-    return bytes(iop.buf[: iop.status])
-
-def file_write(req: plugin_pb2.fileWriteRequest, resp: plugin_pb2.fileWriteResponse):
-    raise ValueError
-
-def file_close(req: plugin_pb2.fileCloseRequest, resp: plugin_pb2.fileCloseResponse):
-    iop = IoPacket()
-
-    iop.func = bIOPS.IO_CLOSE
-    result = BareosFdWrapper.plugin_io(iop)
-
-    if result != bRC_OK:
-        raise ValueError
-
-    resp.SetInParent()
-
-
-def create_file(req: plugin_pb2.createFileRequest, resp: plugin_pb2.createFileResponse):
-    raise ValueError
-
-
-def set_file_attributes(
-    req: plugin_pb2.setFileAttributesRequest, resp: plugin_pb2.setFileAttributesResponse
-):
-    raise ValueError
-
-
-def check_file(req: plugin_pb2.checkFileRequest, resp: plugin_pb2.checkFileResponse):
-    raise ValueError
-
-
-def set_acl(req: plugin_pb2.setAclRequest, resp: plugin_pb2.setAclResponse):
-    raise ValueError
-
-
-def get_acl(req: plugin_pb2.getAclRequest, resp: plugin_pb2.getAclResponse):
-    raise ValueError
-
-
-def set_xattr(req: plugin_pb2.setXattrRequest, resp: plugin_pb2.setXattrResponse):
-    raise ValueError
-
-
-def get_xattr(req: plugin_pb2.getXattrRequest, resp: plugin_pb2.getXattrResponse):
-    raise ValueError
+# def start_restore_file(
+#     req: plugin_pb2.startRestoreFileRequest, resp: plugin_pb2.startRestoreFileResponse
+# ):
+#     raise ValueError
+#
+#
+# def end_restore_file(
+#     req: plugin_pb2.endRestoreFileRequest, resp: plugin_pb2.endRestoreFileResponse
+# ):
+#     raise ValueError
+#
+#
+# def file_open2(req: plugin_pb2.fileOpenRequest):
+#     iop = IoPacket()
+#
+#     iop.func = bIOPS.IO_OPEN
+#     iop.fname = req.file.decode()
+#     iop.flags = req.flags
+#     iop.mode = req.mode
+#
+#     result = BareosFdWrapper.plugin_io(iop)
+#
+#     if result != bRC_OK:
+#         raise ValueError
+#
+#     # log(f"plugin_io returned {iop.status}")
+#
+#     if iop.status == iostat_do_in_core:
+#         # log(f"do io in core")
+#         return iop.filedes
+#     else:
+#         # log(f"do io in plugin")
+#         return None
+#
+#
+# def file_open(req: plugin_pb2.fileOpenRequest, resp: plugin_pb2.fileOpenResponse):
+#     iop = IoPacket()
+#
+#     iop.func = bIOPS.IO_OPEN
+#     iop.fname = req.file.decode()
+#     iop.flags = req.flags
+#     iop.mode = req.mode
+#
+#     result = BareosFdWrapper.plugin_io(iop)
+#
+#     if result != bRC_OK:
+#         raise ValueError
+#
+#     if iop.status == iostat_do_in_core:
+#         # log(f"do io in core")
+#         resp.io_in_core = True
+#     else:
+#         # log(f"do io in plugin")
+#         resp.io_in_core = False
+#
+#
+# def file_seek(req: plugin_pb2.fileSeekRequest, resp: plugin_pb2.fileSeekResponse):
+#     iop = IoPacket()
+#
+#     iop.func = bIOPS.IO_SEEK
+#     match req.whence:
+#         case plugin_pb2.SS_StartOfFile:
+#             iop.whence = SEEK_SET
+#         case plugin_pb2.SS_CurrentPos:
+#             iop.whence = SEEK_CUR
+#         case plugin_pb2.SS_EndOfFile:
+#             iop.whence = SEEK_END
+#         case _:
+#             raise ValueError
+#
+#     iop.offset = req.offset
+#
+#     result = BareosFdWrapper.plugin_io(iop)
+#     if result != bRC_OK:
+#         raise ValueError
+#
+#     resp.SetInParent()
+#
+#
+# def file_read(num_bytes: int):
+#     iop = IoPacket()
+#
+#     iop.func = bIOPS.IO_READ
+#     iop.count = num_bytes
+#
+#     result = BareosFdWrapper.plugin_io(iop)
+#     if result != bRC_OK:
+#         raise ValueError
+#
+#     if len(iop.buf) > num_bytes:
+#         log(f"got too many bytes {iop.status} > {num_bytes}")
+#         raise ValueError
+#
+#     # log(f"read {iop.status} {len(iop.buf)}/{num_bytes} bytes")
+#
+#     if iop.status == 0:
+#         return None
+#
+#     # TODO: maybe we can avoid the copy somehow ? ...
+#     return bytes(iop.buf[: iop.status])
+#
+# def file_write(req: plugin_pb2.fileWriteRequest, resp: plugin_pb2.fileWriteResponse):
+#     raise ValueError
+#
+# def file_close(req: plugin_pb2.fileCloseRequest, resp: plugin_pb2.fileCloseResponse):
+#     iop = IoPacket()
+#
+#     iop.func = bIOPS.IO_CLOSE
+#     result = BareosFdWrapper.plugin_io(iop)
+#
+#     if result != bRC_OK:
+#         raise ValueError
+#
+#     resp.SetInParent()
+#
+#
+# def create_file(req: plugin_pb2.createFileRequest, resp: plugin_pb2.createFileResponse):
+#     raise ValueError
+#
+#
+# def set_file_attributes(
+#     req: plugin_pb2.setFileAttributesRequest, resp: plugin_pb2.setFileAttributesResponse
+# ):
+#     raise ValueError
+#
+#
+# def check_file(req: plugin_pb2.checkFileRequest, resp: plugin_pb2.checkFileResponse):
+#     raise ValueError
+#
+#
+# def set_acl(req: plugin_pb2.setAclRequest, resp: plugin_pb2.setAclResponse):
+#     raise ValueError
+#
+#
+# def get_acl(req: plugin_pb2.getAclRequest, resp: plugin_pb2.getAclResponse):
+#     raise ValueError
+#
+#
+# def set_xattr(req: plugin_pb2.setXattrRequest, resp: plugin_pb2.setXattrResponse):
+#     raise ValueError
+#
+#
+# def get_xattr(req: plugin_pb2.getXattrRequest, resp: plugin_pb2.getXattrResponse):
+#     raise ValueError
 
 
 ### BAREOS CORE API
@@ -771,8 +770,8 @@ def GetValue(var: bVariable):
         case _:
             raise ValueError
 
-    con.write_core(req)
-    resp = con.read_core()
+    con.submit_request(req)
+    resp = con.get_response()
 
     match resp.WhichOneof("response"):
         case "GetString":
@@ -814,8 +813,8 @@ def DebugMessage(level: int, string: str, caller: SourceLocation = None):
     dbg_req.file = caller.file.encode()
     dbg_req.function = caller.function.encode()
 
-    log(f"writing debug message {req}")
-    con.write_core(req)
+    # log(f"writing debug message {req}")
+    con.submit_request(req)
 
     # print(string)
 
@@ -840,7 +839,7 @@ def JobMessage(type: bJobMessageType, string: str, caller: SourceLocation = None
     job_req.function = caller.function.encode()
 
     # log(f"writing job message {req}")
-    con.write_core(req)
+    con.submit_request(req)
 
     pass
 
@@ -850,8 +849,8 @@ def RegisterEvents(events: list[bEventType]):
     reg_req = req.Register
     for e in events:
         reg_req.event_types.append(event_type_remote(e))
-    con.write_core(req)
-    resp = con.read_core()
+    con.submit_request(req)
+    resp = con.get_response()
     return bRC_OK
 
 
@@ -860,8 +859,8 @@ def UnRegisterEvents(events: list[bEventType]):
     reg_req = req.Unregister
     for e in events:
         reg_req.event_types.append(event_type_remote(e))
-    con.write_core(req)
-    resp = con.read_core()
+    con.submit_request(req)
+    resp = con.get_response()
     return bRC_OK
 
 
@@ -986,6 +985,7 @@ def handle_request(req: plugin_pb2.PluginRequest):
 
 log(f"name = '{__name__}'")
 
+
 def handle_setup(con: BareosConnection):
     event = con.read_event()
     event_type = event.WhichOneof("request")
@@ -1005,21 +1005,26 @@ def handle_setup(con: BareosConnection):
                     bEventJobEnd,
                 ]
             )
-            resp = plugin_bp2.PluginResponse()
+            resp = plugin_pb2.PluginResponse()
             resp.setup.SetInParent()
             con.answer_event(resp)
         case _:
-            JobMessage(bJobMessageType.M_FATAL,
-                       f"job did not start with setup but with {event_type}")
-            exit(187) # random looking number
+            JobMessage(
+                bJobMessageType.M_FATAL,
+                f"job did not start with setup but with {event_type}",
+            )
+            exit(187)  # random looking number
+
 
 class Restore:
     def run(self):
         pass
 
+
 class Verify:
     def run(self):
         pass
+
 
 class Estimate:
     def run(self):
@@ -1033,7 +1038,6 @@ class Backup:
     enable_acl: bool
     enable_xattr: bool
     no_atime: bool
-    flags: bytearray
     buffer_size: int
 
     def backup_fopen(self, path):
@@ -1044,22 +1048,26 @@ class Backup:
         if hasattr(os, "O_BINARY"):
             iop.flags |= os.O_BINARY
 
-        if no_atime:
-            iop.flags |= os.NO_ATIME
+        if self.no_atime:
+            iop.flags |= os.O_NOATIME
 
         iop.mode = 0
 
-        result = BareosFDWrapper.plugin_io(iop)
+        result = BareosFdWrapper.plugin_io(iop)
 
         if result != bRC_OK:
+            error = backup.Backup()
+            error.file_error.on_action = common_pb2.FILE_ACTION_OPEN
+            error.file_error.message = b"????"
+            con.write_data(error)
+
             # FIXME
             raise ValueError
 
-        if iop.status = iostat_do_io_in_core:
+        if iop.status == iostat_do_in_core:
             return iop.filedes
         else:
             return None
-
 
     def backup_fclose(self):
         iop = IoPacket()
@@ -1068,9 +1076,12 @@ class Backup:
         result = BareosFdWrapper.plugin_io(iop)
 
         if result != bRC_OK:
+            error = backup.Backup()
+            error.file_error.on_action = common_pb2.FILE_ACTION_CLOSE
+            error.file_error.message = b"????"
+            con.write_data(error)
             # FIXME
             raise ValueError
-
 
     def backup_fread(self, num_bytes: int):
         iop = IoPacket()
@@ -1081,27 +1092,35 @@ class Backup:
         result = BareosFdWrapper.plugin_io(iop)
 
         if result != bRC_OK:
+            error = backup.Backup()
+            error.file_error.on_action = common_pb2.FILE_ACTION_READ
+            error.file_error.message = b"????"
+            con.write_data(error)
             # FIXME
             raise ValueError
 
         if iop.status == 0:
+            # log(f"received 0 bytes")
             return None
 
-        return bytes(iop.buf[:iop.status])
+        # log(f"received {iop.status} bytes")
+        return bytes(iop.buf[: iop.status])
 
     def backup_file_content(self, path: str):
+        # log(f"backing up {path}")
         filedes = self.backup_fopen(path)
 
         if filedes is None:
             resp = backup_pb2.Backup()
             data = resp.file_data
             while True:
-                data.data = self.backup_fread(self.buffer_size)
-                if data.data is None:
+                data_to_send = self.backup_fread(self.buffer_size)
+                if data_to_send is None:
                     data.data = bytes()
                     con.send_data(resp)
                     break
                 else:
+                    data.data = data_to_send
                     con.send_data(resp)
         else:
             read_file = io.FileIO(filedes, closefd=False)
@@ -1132,9 +1151,9 @@ class Backup:
         resp = backup_pb2.Backup()
         acl = resp.acl
         if ap.content is None:
-            acl.content = bytes()
+            acl.acl_data = bytes()
         else:
-            acl.content = bytes(ap.content)
+            acl.acl_data = bytes(ap.content)
 
         con.send_data(resp)
 
@@ -1153,7 +1172,7 @@ class Backup:
                 raise ValueError
 
             xattr.name = bytes(xp.name)
-            xattr.value = bytes(xp.value)
+            xattr.content = bytes(xp.value)
             con.send_data(resp)
 
             if result != bRC_More:
@@ -1164,12 +1183,15 @@ class Backup:
             pkt = SavePacket()
             pkt.cmd = self.cmd
             pkt.portable = self.portable
-            pkt.flags = self.flags
+
+            # nobody seems to use it, so we do not set it up correctly
+            # if necessary, we can provide it via the core
+            pkt.flags = bytearray(len(bFileOption))
 
             result = BareosFdWrapper.start_backup_file(pkt)
 
             if result == bRC_Skip:
-                continue;
+                continue
 
             if result == bRC_Stop:
                 break
@@ -1182,18 +1204,23 @@ class Backup:
 
             match category:
                 case common_pb2.ObjectType:
-                    pass
+                    raise ValueError
                 case common_pb2.FileType:
 
                     resp = backup_pb2.Backup()
                     obj = resp.begin_object
 
                     obj.file.no_read = pkt.no_read
+                    # log(f"no_read({pkt.fname}) -> {pkt.no_read}")
                     obj.file.portable = pkt.portable
                     if bit_is_set(pkt.flags, bFileOption.FO_DELTA):
                         obj.file.delta_seq = pkt.delta_seq
-                    obj.file.offset_backup = bit_is_set(pkt.flags, bFileOption.FO_OFFSETS)
-                    obj.file.sparse_backup = bit_is_set(pkt.flags, bFileOption.FO_SPARSE)
+                    obj.file.offset_backup = bit_is_set(
+                        pkt.flags, bFileOption.FO_OFFSETS
+                    )
+                    obj.file.sparse_backup = bit_is_set(
+                        pkt.flags, bFileOption.FO_SPARSE
+                    )
 
                     obj.file.file = pkt.fname.encode()
                     obj.file.ft = file_type
@@ -1228,14 +1255,16 @@ class Backup:
                         self.backup_xattr()
 
                 case common_pb2.FileErrorType:
-                    pass
+                    raise ValueError
 
-
-            self.backup_end()
+            result = BareosFdWrapper.end_backup_file()
+            if result != bRC_More:
+                break
 
         done = backup_pb2.Backup()
         done.done.SetInParent()
         con.send_data(done)
+
 
 def handle_events():
     while not quit:
@@ -1243,40 +1272,41 @@ def handle_events():
         event_type = event.WhichOneof("request")
         match event_type:
             case "setup":
-                JobMessage(bJobMessageType.M_FATAL,
-                           "job sent a second setup message")
-                exit(189) # random looking number
+                JobMessage(bJobMessageType.M_FATAL, "job sent a second setup message")
+                exit(189)  # random looking number
             case "begin_backup":
-                resp = plugin_bp2.PluginResponse()
+                resp = plugin_pb2.PluginResponse()
                 resp.begin_backup.SetInParent()
                 con.answer_event(resp)
                 bb = event.begin_backup
-                return Backup(cmd=bb.cmd,
-                              portable=bb.portable,
-                              enable_acl=bb.enable_acl,
-                              enable_xattr=bb.enable_xattr,
-                              no_atime=bb.no_atime,
-                              flags=bytearray(bb.flags),
-                              buffer_size=bb.max_record_size)
+                return Backup(
+                    cmd=bb.cmd,
+                    portable=bb.portable,
+                    enable_acl=bb.backup_acl,
+                    enable_xattr=bb.backup_xattr,
+                    no_atime=bb.no_atime,
+                    buffer_size=bb.max_record_size,
+                )
             case "begin_restore":
-                resp = plugin_bp2.PluginResponse()
+                resp = plugin_pb2.PluginResponse()
                 resp.begin_restore.SetInParent()
                 con.answer_event(resp)
                 return Restore()
             case "begin_estimate":
-                resp = plugin_bp2.PluginResponse()
+                resp = plugin_pb2.PluginResponse()
                 resp.begin_estimate.SetInParent()
                 con.answer_event(resp)
                 return Estimate()
             case "begin_verify":
-                resp = plugin_bp2.PluginResponse()
+                resp = plugin_pb2.PluginResponse()
                 resp.begin_verify.SetInParent()
                 con.answer_event(resp)
                 return Verify()
             case "handle_plugin_event":
-                resp = plugin_bp2.PluginResponse()
-                handle_plugin_event(req, resp.handle_plugin_event)
+                resp = plugin_pb2.PluginResponse()
+                handle_plugin_event(event.handle_plugin_event, resp.handle_plugin_event)
                 con.answer_event(resp)
+
 
 def run():
     log("##############################################")
@@ -1290,7 +1320,9 @@ def run():
 
         global con
         con = BareosConnection()
-        log(f"plugin = {con.plugin}, core = {con.core}, io = {con.io}")
+        log(
+            f"plugin_requests = {con.plugin_requests}, core_events = {con.core_events}, data_transfer = {con.data_transfer}"
+        )
 
         handle_setup(con)
 

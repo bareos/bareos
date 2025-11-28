@@ -13,7 +13,6 @@ message BeginBackupRequest {
   bool backup_xattr = 11;
   bool portable = 12;
   bool no_atime = 13;
-
 };
 
 message BeginBackupResponse {

@@ -187,27 +187,30 @@ assert brc_type_remote(bareosfd_types.bRC_Cancel) == plugin_pb2.RC_Cancel
 
 
 def sbf_remote(brc: bareosfd_types.bRCs):
-    match brc:
-        case bareosfd_types.bRC_OK:
-            return plugin_pb2.SBF_OK
-        case bareosfd_types.bRC_Stop:
-            return plugin_pb2.SBF_Stop
-        case bareosfd_types.bRC_Skip:
-            return plugin_pb2.SBF_Skip
-        case _:
-            raise ValueError
+    raise ValueError
 
 
-assert sbf_remote(bareosfd_types.bRC_OK) == plugin_pb2.SBF_OK
-assert sbf_remote(bareosfd_types.bRC_Stop) == plugin_pb2.SBF_Stop
-assert sbf_remote(bareosfd_types.bRC_Skip) == plugin_pb2.SBF_Skip
+#    match brc:
+#        case bareosfd_types.bRC_OK:
+#            return plugin_pb2.SBF_OK
+#        case bareosfd_types.bRC_Stop:
+#            return plugin_pb2.SBF_Stop
+#        case bareosfd_types.bRC_Skip:
+#            return plugin_pb2.SBF_Skip
+#        case _:
+#            raise ValueError
+
+
+# assert sbf_remote(bareosfd_types.bRC_OK) == plugin_pb2.SBF_OK
+# assert sbf_remote(bareosfd_types.bRC_Stop) == plugin_pb2.SBF_Stop
+# assert sbf_remote(bareosfd_types.bRC_Skip) == plugin_pb2.SBF_Skip
 
 ### FileType
 
 
 def ft_remote(
     ft: bareosfd_types.bFileType,
-) -> (type, common_pb2.ObjectType | common_pb2.FileType | common_pb2.FileErrorType):
+) -> (type, int):
     # sadly protobuf uses simple ints for enums, so we need to
     # distinguish them with a tuple
     match ft:

@@ -95,6 +95,21 @@ enum ReplaceType {
   ReplaceAlways = 4;
 };
 
+enum FileAction {
+  FILE_ACTION_UNSPECIFIED = 0;
+  FILE_ACTION_OPEN = 1;
+  FILE_ACTION_READ = 2;
+  FILE_ACTION_WRITE = 3;
+  FILE_ACTION_CLOSE = 4;
+  FILE_ACTION_ACL = 5;
+  FILE_ACTION_XATTR = 6;
+};
+
+message FileError {
+  FileAction on_action = 1;
+  bytes message = 2;
+};
+
 message FileData {
   bytes data = 1;
 };
