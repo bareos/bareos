@@ -449,7 +449,7 @@ bRC pluginIO(PluginContext* ctx, filedaemon::io_pkt* pkt)
 {
   auto* plugin = get(ctx);
   if (!plugin || !plugin->child) { return bRC_Error; }
-  return plugin->child->con.pluginIO(pkt, plugin->child->io.get());
+  return plugin->child->con.pluginIO(pkt);
 }
 bRC createFile(PluginContext* ctx, filedaemon::restore_pkt* pkt)
 {
