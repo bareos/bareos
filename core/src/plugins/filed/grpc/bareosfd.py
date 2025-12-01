@@ -25,7 +25,7 @@ from bareosfd_types import *
 from bareosfd_type_conv import (
     event_type_remote,
     brc_type_remote,
-    sbf_remote,
+    srf_remote,
     jmsg_type_remote,
     ft_remote,
 )
@@ -49,6 +49,8 @@ import sys
 import inspect
 import io
 import threading
+
+from ctypes import set_errno, get_errno
 
 f = open("/tmp/log.out", "w")
 
@@ -148,10 +150,13 @@ class BareosConnection:
         readmsg(self.plugin_requests, resp)
         return resp
 
-    def get_data(self) -> restore_pb2.Restore:
-        data = restore_pb2.Restore()
+    def get_data(self) -> restore_pb2.RestoreRequest:
+        data = restore_pb2.RestoreRequest()
         readmsg(self.data_transfer, data)
         return data
+
+    def send_file_resp(self, data: restore_pb2.RestoreResponse):
+        writemsg(self.data_transfer, data)
 
     def send_data(self, data: backup_pb2.Backup):
         writemsg(self.data_transfer, data)
@@ -1016,9 +1021,222 @@ def handle_setup(con: BareosConnection):
             exit(187)  # random looking number
 
 
+@dataclass(slots=True)
 class Restore:
-    def run(self):
+    cmd: str
+    last_msg: restore_pb2.RestoreRequest | None = None
+    last_type: str | None = None
+
+    current_file: restore_pb2.BeginFileRequest | None = None
+    current_offset: int = 0
+    data_done: bool = False
+
+    def pull():
+        self.last_msg = con.get_data()
+        self.last_type = self.last_msg.WhichOneof("request")
+
+    def have(msg_type):
+        if self.last_type == None:
+            self.pull()
+        return self.last_type == msg_type
+
+    def push(msg):
+        assert self.last_msg is None
+        self.last_msg = msg
+        self.last_type = msg.WhichOneof("request")
+
+    def peek(self):
+        if self.last_msg == None:
+            self.pull()
+
+        return self.last_msg
+
+    def pop(self):
+        if self.last_msg == None:
+            self.pull()
+
+        self.msg = last_msg
+        self.last_msg = None
+        self.last_type = None
+        return msg
+
+    def start_restore_file(self):
+        if not self.have("begin_file"):
+            raise ValueError
+
+        assert self.current_file is None
+
+        self.current_file = self.pop()
+
+        set_errno(0)
+        res = BareosFdWrapper.start_restore_file(cmd)
+
+        answer = restore_pb2.RestoreResponse()
+        bf = answer.begin_file
+
+        match res:
+            case bRCs.bRC_Error:
+                bf.system_error = get_errno()
+                self.current_file = None
+            case bRCs.bRC_Skip:
+                bf.success = srf_remote(res)
+                self.current_file = None
+            case bRCs.bRC_OK:
+                bf.success = srf_remote(res)
+            case bRCs.bRC_Core:
+                bf.success = srf_remote(res)
+            case unexpected:
+                log(f"unexpected return value '{unexpected}'")
+                raise ValueError
+
+        con.send_file_resp(answer)
+
+        if res == bRC_Core:
+            creation_done = pop()
+            if creation_done.WhichOneof("request") != "core_creation_done":
+                JobMessage(
+                    bJobMessageType.M_FATAL,
+                    "plugin requested the core to do the file creation, but core did not do so",
+                )
+            else:
+                DebugMessage(200, "core created file, we can continue with restore")
+
+    def end_restore_file(self):
+        res = BareosFdWrapper.end_restore_file()
+        if res == bRC_Error:
+            path = self.current_file.output_name
+            JobMessage(bJobMessageType.M_ERROR, f"could not end restore of file {path}")
+
+        self.current_file = None
+        self.current_offset = 0
+        self.data_done = False
+
+    def file_open(self):
+        path = self.current_file.output_name
+        iop = IoPacket()
+        iop.func = bIOPS.IO_OPEN
+        iop.fname = path
+        iop.flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+        if hasattr(os, "O_BINARY"):
+            iop.flags |= os.O_BINARY
+
+        iop.mode = stat.S_IRUSR | stat.S_IWUSR
+
+        # handle io_in_core as well here
+        result = BareosFdWrapper.plugin_io(iop)
+
+        if result != bRC_OK:
+            JobMessage(bJobMessageType.M_ERROR, f"could not open {path}")
+            self.current_file = None
+
+    def file_write(self):
+        if not self.have("file_data"):
+            self.data_done = True
+            return
+
+        msg = self.pop()
+
+        if self.current_file is None:
+            return
+
+        bf = msg.begin_file
+
+        if bf.offset != self.current_offset:
+            iop = IoPacket()
+            iop.func = bIOPS.IO_SEEK
+            iop.whence = SEEK_SET
+            iop.offset = bf.offset
+
+            if BareosFDWrapper.plugin_io(iop) == bRC_Error:
+                path = self.current_file.output_name
+                JobMessage(
+                    bJobMessageType.M_ERROR, f"could not seek to {bf.offset} in {path}"
+                )
+                self.file_close()
+                self.current_file = None
+                return
+
+            self.current_offset = bf.offset
+
+        if self.current_file is None:
+            return
+
+        iop = IoPacket()
+        iop.func = bIOPS.IO_WRITE
+        iop.count = len(msg.data)
+        iop.buf = msg.data
+
+        if BareosFDWrapper.plugin_io(iop) == bRC_Error:
+            path = self.current_file.output_name
+            JobMessage(
+                bJobMessageType.M_ERROR,
+                f"could not write '{len(msg.data)}' bytes at offset '{current_offset}' in file '{path}'",
+            )
+            self.file_close()
+            self.current_file = None
+            return
+
+    def file_close(self):
+        if self.current_file is None:
+            return
+
+        iop = IoPacket()
+        iop.func = bIOPS.IO_CLOSE
+        result = BareosFdWrapper.plugin_io(iop)
+
+        if result == bRC_Error:
+            path = self.current_file.output_name
+            JobMessage(bJobMessageType.M_ERROR, f"could close file '{path}'")
+            self.current_file = None
+            return
+
+    def set_file_attributes(self):
         pass
+
+    def set_acl(self):
+        if not self.have("acl"):
+            return
+
+        acl = self.pop()
+
+        if self.current_file is None:
+            return
+
+        pkt = AclPacket()
+        pkt.content = bytearray(acl.acl_data)
+        BareosFdWrapper.set_acl(pkt)
+
+    def set_xattr(self):
+        if not self.have("xattr"):
+            return
+
+        xattr = self.pop()
+
+        if self.current_file is None:
+            return
+
+        pkt = XattrPacket()
+        pkt.name = bytearray(xattr.name)
+        pkt.value = bytearray(acl.content)
+        BareosFdWrapper.set_xattr(pkt)
+
+    def run(self):
+        while True:
+            if self.have("done"):
+                break
+
+            self.start_restore_file()
+            self.file_open()
+            while not self.data_done:
+                self.file_write()
+            self.file_close()
+
+            self.set_file_attributes()
+
+            self.set_acl()
+            self.set_xattr()
+
+            self.end_restore_file()
 
 
 class Verify:
@@ -1291,7 +1509,8 @@ def handle_events():
                 resp = plugin_pb2.PluginResponse()
                 resp.begin_restore.SetInParent()
                 con.answer_event(resp)
-                return Restore()
+                br = event.begin_restore
+                return Restore(cmd=br.cmd)
             case "begin_estimate":
                 resp = plugin_pb2.PluginResponse()
                 resp.begin_estimate.SetInParent()

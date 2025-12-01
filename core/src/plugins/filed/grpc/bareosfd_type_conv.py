@@ -23,6 +23,7 @@
 from proto import bareos_pb2
 from proto import plugin_pb2
 from proto import common_pb2
+from proto import restore_pb2
 import bareosfd_types
 
 ### EventType
@@ -182,6 +183,25 @@ assert brc_type_remote(bareosfd_types.bRC_Seen) == plugin_pb2.RC_Seen
 assert brc_type_remote(bareosfd_types.bRC_Core) == plugin_pb2.RC_Core
 assert brc_type_remote(bareosfd_types.bRC_Skip) == plugin_pb2.RC_Skip
 assert brc_type_remote(bareosfd_types.bRC_Cancel) == plugin_pb2.RC_Cancel
+
+### StartRestoreFile
+
+
+def srf_remote(brc: bareosfd_types.bRCs) -> int:
+    match brc:
+        case bareosfd_types.bRC_Skip:
+            return restore_pb2.RESTORE_SKIP
+        case bareosfd_types.bRC_Core:
+            return restore_pb2.RESTORE_CORE
+        case bareosfd_types.bRC_OK:
+            return restore_pb2.RESTORE_PLUGIN
+        case _:
+            raise ValueError
+
+
+assert srf_remote(bareosfd_types.bRC_OK) == restore_pb2.RESTORE_PLUGIN
+assert srf_remote(bareosfd_types.bRC_Core) == restore_pb2.RESTORE_CORE
+assert srf_remote(bareosfd_types.bRC_Skip) == restore_pb2.RESTORE_SKIP
 
 ### StartBackupFile
 

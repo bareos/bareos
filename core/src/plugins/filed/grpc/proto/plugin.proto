@@ -19,6 +19,7 @@ message BeginBackupResponse {
 };
 
 message BeginRestoreRequest {
+  bytes cmd = 1;
 };
 
 message BeginRestoreResponse {
