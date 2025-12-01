@@ -151,6 +151,70 @@ struct flush_fd {
   }
 };
 
+std::optional<bco::ReplaceType> grpc_replace_type(int replace)
+{
+  switch (replace) {
+    case REPLACE_IFOLDER: {
+      return bco::REPLACE_IF_OLDER;
+    }
+    case REPLACE_IFNEWER: {
+      return bco::REPLACE_IF_NEWER;
+    }
+    case REPLACE_ALWAYS: {
+      return bco::REPLACE_ALWAYS;
+    }
+    case REPLACE_NEVER: {
+      return bco::REPLACE_NEVER;
+    }
+  }
+
+  return std::nullopt;
+}
+
+std::optional<bco::FileType> grpc_file_type(int ft)
+{
+  switch (ft) {
+    case FT_LNKSAVED: {
+      return bco::HardlinkCopy;
+    } break;
+    case FT_REGE: {
+      return bco::RegularFile;
+    } break;
+    case FT_REG: {
+      return bco::RegularFile;
+    } break;
+    case FT_LNK: {
+      return bco::SoftLink;
+    } break;
+    case FT_DIREND: {
+      return bco::Directory;
+    } break;
+    case FT_SPEC: {
+      return bco::SpecialFile;
+    } break;
+    case FT_RAW: {
+      return bco::BlockDevice;
+    } break;
+    case FT_REPARSE: {
+      return bco::ReparsePoint;
+    } break;
+    case FT_JUNCTION: {
+      return bco::Junction;
+    } break;
+    case FT_FIFO: {
+      return bco::Fifo;
+    } break;
+    case FT_DELETED: {
+      return bco::Deleted;
+    } break;
+    case FT_ISARCH: {
+      return bco::RegularFile;
+    } break;
+  }
+
+  return std::nullopt;
+}
+
 void do_std_io(std::atomic<bool>* quit,
                PluginContext* ctx,
                OSFile out,
@@ -566,6 +630,209 @@ struct BackupStateMachine {
   bool is_done{false};
 };
 
+struct RestoreStateMachine {
+ public:
+  RestoreStateMachine(PluginContext* ctx, prototools::ProtoBidiStream* stream_)
+      : stream{stream_}, core{ctx}
+  {
+    arena = std::make_unique<google::protobuf::Arena>();
+  }
+
+  std::optional<br::RestoreStatus> start_restore_file(
+      const filedaemon::restore_pkt* pkt)
+  {
+    DebugLog(150, "start_restore_file(name = '{}')", pkt->ofname);
+
+    current_fname.clear();
+    current_offset = 0;
+
+    auto* outer_req = make_request();
+    {
+      auto* req = outer_req->mutable_begin_file();
+
+      req->set_output_name(pkt->ofname ? pkt->ofname : "");
+      req->set_soft_link_to(pkt->olname ? pkt->olname : "");
+      {
+        if (std::optional ftype = grpc_file_type(pkt->type)) {
+          req->set_file_type(*ftype);
+        } else {
+          DebugLog(core, M_FATAL,
+                   "could not convert file type {} into a protobuf file type",
+                   pkt->type);
+          return std::nullopt;
+        }
+      }
+      req->set_delta_seq(pkt->delta_seq);
+      {
+        if (std::optional rtype = grpc_replace_type(pkt->replace)) {
+          req->set_replace(*rtype);
+        } else {
+          DebugLog(
+              core, M_FATAL,
+              "could not convert replace type {} into a protobuf replace type",
+              pkt->replace);
+          return std::nullopt;
+        }
+      }
+      req->set_where(pkt->where ? pkt->where : "");
+      stat_native_to_grpc(req->mutable_stats(), &pkt->statp);
+    }
+    if (!stream->Write(*outer_req)) {
+      JobLog(core, M_FATAL, "could not write request to plugin");
+      return std::nullopt;
+    }
+
+    arena->Reset();
+    auto* resp
+        = google::protobuf::Arena::Create<br::RestoreResponse>(arena.get());
+
+    if (!stream->Read(*resp)) {
+      JobLog(core, M_FATAL, "could not read response from plugin");
+      return std::nullopt;
+    }
+
+    if (!resp->has_begin_file()) {
+      JobLog(core, M_FATAL, "communication mismatch: expected begin_file");
+      return std::nullopt;
+    }
+
+    current_fname.assign(pkt->ofname);
+
+    auto& bf = resp->begin_file();
+
+    switch (bf.result_case()) {
+      case bareos::restore::BeginFileResponse::kSuccess: {
+        return bf.success();
+      } break;
+      case bareos::restore::BeginFileResponse::kSystemError: {
+        errno = bf.system_error();
+        return std::nullopt;
+      } break;
+      case bareos::restore::BeginFileResponse::RESULT_NOT_SET:
+        [[fallthrough]];
+      default: {
+        JobLog(core, M_FATAL,
+               "internal communication error: no response for begin_file()");
+        return std::nullopt;
+      } break;
+    }
+  }
+
+  bool set_acl(std::string_view file, std::span<char const> content)
+  {
+    DebugLog(150, "set_acl()");
+    if (current_fname != file) {
+      JobLog(core, M_FATAL,
+             "cannot set acl for file '{}' while restoring file '{}'", file,
+             current_fname);
+      return false;
+    }
+
+    auto* outer_req = make_request();
+    {
+      auto* req = outer_req->mutable_acl();
+      req->set_acl_data(content.data(), content.size());
+    }
+
+    if (!stream->Write(*outer_req)) {
+      JobLog(core, M_FATAL, "could not write request to plugin");
+      return false;
+    }
+
+    return true;
+  }
+
+  bool set_xattr(std::string_view file,
+                 std::string_view key,
+                 std::span<const char> value)
+  {
+    DebugLog(150, "set_xattr(name = {})", key);
+
+    if (current_fname != file) {
+      JobLog(core, M_FATAL,
+             "cannot set xattr for file '{}' while restoring file '{}'", file,
+             current_fname);
+      return false;
+    }
+
+    auto* outer_req = make_request();
+    {
+      auto* req = outer_req->mutable_xattr();
+
+      req->set_name(key.data(), key.size());
+      req->set_content(value.data(), value.size());
+    }
+    if (!stream->Write(*outer_req)) {
+      JobLog(core, M_FATAL, "could not write request to plugin");
+      return false;
+    }
+
+    return true;
+  }
+
+  bool file_write(std::span<const char> data)
+  {
+    DebugLog(150, "file_write(size = {})", data.size());
+    auto* outer_req = make_request();
+    auto* req = outer_req->mutable_file_data();
+
+    req->set_data(data.data(), data.size());
+    req->set_offset(current_offset);
+
+    current_offset += data.size();
+
+    if (!stream->Write(*outer_req)) {
+      JobLog(core, M_FATAL, "could not write request to plugin");
+      return false;
+    }
+
+    return true;
+  }
+
+  void file_seek(size_t offset)
+  {
+    DebugLog(150, "file_seek({})", offset);
+    current_offset = offset;
+  }
+
+  bool finish()
+  {
+    DebugLog(150, "finish()");
+
+    auto* outer_req = make_request();
+    {
+      auto* req = outer_req->mutable_done();
+      (void)req;
+    }
+
+    if (!stream->Write(*outer_req)) {
+      JobLog(core, M_FATAL, "could not write request to plugin");
+      return false;
+    }
+
+    return true;
+  }
+
+ private:
+  br::RestoreRequest* make_request() noexcept
+  {
+    arena->Reset();
+    auto* outer_req
+        = google::protobuf::Arena::Create<br::RestoreRequest>(arena.get());
+
+    return outer_req;
+  }
+
+
+ private:
+  prototools::ProtoBidiStream* stream{nullptr};
+  std::unique_ptr<google::protobuf::Arena> arena{};
+  PluginContext* core{nullptr};
+
+  std::string current_fname{};
+  std::size_t current_offset = 0;
+};
+
 class BareosCore {
  public:
   BareosCore(PluginContext* ctx,
@@ -625,6 +892,7 @@ class BareosCore {
 
     // TODO: the socket should get killed here
   }
+
 
   static std::optional<filedaemon::bEventType> from_grpc(bc::EventType type)
   {
@@ -1420,7 +1688,6 @@ bool make_event_request(filedaemon::bEventType type,
   }
   return true;
 }
-
 class PluginClient {
  public:
   PluginClient(
@@ -1743,11 +2010,16 @@ class PluginClient {
 
   bRC startRestoreFile(std::string_view cmd)
   {
+    // intentionally left empty
     ignore(cmd);
-    return bRC_Error;
+    return bRC_OK;
   }
 
-  bRC endRestoreFile() { return bRC_Error; }
+  bRC endRestoreFile()
+  {
+    // intentionally left empty
+    return bRC_OK;
+  }
 
   bRC FileOpen(std::string_view name,
                int32_t flags,
@@ -1761,8 +2033,11 @@ class PluginClient {
 
       *io_in_core_fd = std::nullopt;
       return bRC_OK;
+    } else if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
+      *io_in_core_fd = std::nullopt;
+      (void)rsm;
+      return bRC_OK;
     }
-    // else if (auto *rsm = ...) {}
 
     JobLog(core, M_FATAL, "cannot open file in this state");
     return bRC_Error;
@@ -1770,7 +2045,18 @@ class PluginClient {
 
   bRC FileSeek(int whence, int64_t offset)
   {
-    ignore(whence, offset);
+    if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
+      if (whence != SEEK_SET) {
+        JobLog(core, M_FATAL, "seek mode '{}' not supported", whence);
+        return bRC_Error;
+      }
+
+      rsm->file_seek(offset);
+
+      return bRC_OK;
+    }
+
+    JobLog(core, M_FATAL, "this operation is only supported during restore");
     return bRC_Error;
   }
 
@@ -1794,9 +2080,15 @@ class PluginClient {
     return bRC_Error;
   }
 
-  bRC FileWrite(size_t size, size_t* num_bytes_written)
+  bRC FileWrite(std::span<const char> data)
   {
-    ignore(size, num_bytes_written);
+    if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
+      if (!rsm->file_write(data)) { return bRC_Error; }
+
+      return bRC_OK;
+    }
+
+    JobLog(core, M_FATAL, "this operation is only supported during restore");
     return bRC_Error;
   }
 
@@ -1806,82 +2098,27 @@ class PluginClient {
       if (!bsm->file_close()) { return bRC_Error; }
 
       return bRC_OK;
+    } else if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
+      (void)rsm;
+      return bRC_OK;
     }
-    // else if (auto *rsm = ...) {}
 
     JobLog(core, M_FATAL, "cannot close file in this state");
     return bRC_Error;
   }
 
-  std::optional<bareos::common::ReplaceType> grpc_replace_type(int replace)
-  {
-    switch (replace) {
-      case REPLACE_IFOLDER: {
-        return bareos::common::ReplaceIfOlder;
-      }
-      case REPLACE_IFNEWER: {
-        return bareos::common::ReplaceIfNewer;
-      }
-      case REPLACE_ALWAYS: {
-        return bareos::common::ReplaceAlways;
-      }
-      case REPLACE_NEVER: {
-        return bareos::common::ReplaceNever;
-      }
-    }
-
-    return std::nullopt;
-  }
-
-  std::optional<bareos::common::FileType> grpc_file_type(int ft)
-  {
-    switch (ft) {
-      case FT_LNKSAVED: {
-        return bco::HardlinkCopy;
-      } break;
-      case FT_REGE: {
-        return bco::RegularFile;
-      } break;
-      case FT_REG: {
-        return bco::RegularFile;
-      } break;
-      case FT_LNK: {
-        return bco::SoftLink;
-      } break;
-      case FT_DIREND: {
-        return bco::Directory;
-      } break;
-      case FT_SPEC: {
-        return bco::SpecialFile;
-      } break;
-      case FT_RAW: {
-        return bco::BlockDevice;
-      } break;
-      case FT_REPARSE: {
-        return bco::ReparsePoint;
-      } break;
-      case FT_JUNCTION: {
-        return bco::Junction;
-      } break;
-      case FT_FIFO: {
-        return bco::Fifo;
-      } break;
-      case FT_DELETED: {
-        return bco::Deleted;
-      } break;
-      case FT_ISARCH: {
-        return bco::RegularFile;
-      } break;
-    }
-
-    return std::nullopt;
-  }
-
   bRC createFile(filedaemon::restore_pkt* pkt)
   {
-    ignore(pkt);
+    if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
+      if (!rsm->start_restore_file(pkt)) { return bRC_Error; }
+
+      return bRC_OK;
+    }
+
+    JobLog(core, M_FATAL, "this operation is only supported during restore");
     return bRC_Error;
   }
+
   bRC setFileAttributes(std::string_view name,
                         const struct stat& statp,
                         std::string_view extended_attributes,
@@ -1889,7 +2126,7 @@ class PluginClient {
                         bool* do_in_core)
   {
     ignore(name, statp, extended_attributes, where, do_in_core);
-    return bRC_Error;
+    return bRC_OK;
   }
   bRC checkFile(std::string_view name)
   {
@@ -1899,7 +2136,12 @@ class PluginClient {
 
   bRC setAcl(std::string_view file, std::string_view content)
   {
-    ignore(file, content);
+    if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
+      if (!rsm->set_acl(file, content)) { return bRC_Error; }
+      return bRC_OK;
+    }
+
+    JobLog(core, M_FATAL, "this operation is only supported during restore");
     return bRC_Error;
   }
 
@@ -1920,7 +2162,12 @@ class PluginClient {
                std::string_view key,
                std::string_view value)
   {
-    ignore(file, key, value);
+    if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
+      if (!rsm->set_xattr(file, key, value)) { return bRC_Error; }
+      return bRC_OK;
+    }
+
+    JobLog(core, M_FATAL, "this operation is only supported during restore");
     return bRC_Error;
   }
 
@@ -1977,7 +2224,8 @@ class PluginClient {
     ::DebugLog(core, severity, std::move(fmt), std::forward<Args>(args)...);
   }
 
-  std::variant<std::monostate, BackupStateMachine> state_machine;
+  std::variant<std::monostate, BackupStateMachine, RestoreStateMachine>
+      state_machine;
 };
 }  // namespace
 
@@ -2661,7 +2909,7 @@ bool send_fd(int unix_socket, int fd)
   return false;
 }
 
-bRC grpc_connection::pluginIO(filedaemon::io_pkt* pkt, int iosock)
+bRC grpc_connection::pluginIO(filedaemon::io_pkt* pkt)
 {
   PluginClient* client = &members->client;
 
@@ -2692,64 +2940,17 @@ bRC grpc_connection::pluginIO(filedaemon::io_pkt* pkt, int iosock)
     case filedaemon::IO_WRITE: {
       DebugLog(100, FMT_STRING("writing {} bytes into socket"), pkt->count);
 
-
-      struct aiocb control = {};
-      control.aio_fildes = iosock;
-      control.aio_buf = pkt->buf;
-      control.aio_nbytes = pkt->count;
-
-      if (aio_write(&control) < 0) {
-        JobLog(nullptr, M_FATAL,
-               FMT_STRING("could not request async io: Err={}"),
-               strerror(errno));
+      if (pkt->count < 0) {
+        JobLog(members->pctx, M_FATAL, "internal error: size is negative ({})",
+               pkt->count);
+        return bRC_Error;
       }
 
-      size_t bytes_written = 0;
-      auto res = client->FileWrite(pkt->count, &bytes_written);
-      if (res == bRC_Error) {
-        aio_cancel(control.aio_fildes, &control);
-        return res;
-      }
-      pkt->status = bytes_written;
-      DebugLog(100, FMT_STRING("{} bytes were read from socket"), pkt->status);
+      auto res = client->FileWrite(
+          std::span{pkt->buf, static_cast<std::size_t>(pkt->count)});
+      if (res == bRC_Error) { return res; }
 
-      struct aiocb* arr[] = {&control};
-
-      for (;;) {
-        auto aio_res = aio_error(&control);
-        if (aio_res == EINPROGRESS) {
-          if (aio_suspend(arr, 1, NULL) < 0) {
-            JobLog(nullptr, M_FATAL,
-                   FMT_STRING("could not wait for async io: Err={}"),
-                   strerror(errno));
-          }
-        } else {
-          if (aio_res < 0) {
-            JobLog(nullptr, M_FATAL, FMT_STRING("async io call error: {}"),
-                   -aio_res);
-            pkt->status = -1;
-            return bRC_Error;
-          } else if (aio_res > 0) {
-            JobLog(nullptr, M_FATAL, FMT_STRING("async io error: Err={}"),
-                   strerror(aio_res));
-
-            errno = aio_res;
-            pkt->status = -1;
-            return bRC_Error;
-          }
-          break;
-        }
-      }
-
-      int num_bytes = aio_return(&control);
-
-      if (num_bytes != (int)bytes_written) {
-        JobLog(
-            nullptr, M_FATAL,
-            FMT_STRING(
-                "could not write file data (written = {}, wanted = {}) Err={}"),
-            num_bytes, pkt->count, strerror(errno));
-      }
+      pkt->status = pkt->count;
 
       return res;
     } break;

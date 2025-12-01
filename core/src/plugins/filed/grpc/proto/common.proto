@@ -89,10 +89,10 @@ message PluginFileError {
 
 enum ReplaceType {
   REPLACE_TYPE_UNSPECIFIED = 0;
-  ReplaceIfNewer = 1;
-  ReplaceIfOlder = 2;
-  ReplaceNever = 3;
-  ReplaceAlways = 4;
+  REPLACE_IF_NEWER = 1;
+  REPLACE_IF_OLDER = 2;
+  REPLACE_NEVER = 3;
+  REPLACE_ALWAYS = 4;
 };
 
 enum FileAction {

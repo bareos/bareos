@@ -125,7 +125,7 @@ class grpc_connection {
   bRC startRestoreFile(std::string_view cmd);
   bRC endRestoreFile();
 
-  bRC pluginIO(filedaemon::io_pkt* pkt, int io_socket);
+  bRC pluginIO(filedaemon::io_pkt* pkt);
 
   bRC createFile(filedaemon::restore_pkt* pkt);
   bRC setFileAttributes(filedaemon::restore_pkt* pkt);
