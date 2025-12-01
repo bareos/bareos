@@ -1764,6 +1764,20 @@ class PluginClient {
       }
 
       state_machine.emplace<BackupStateMachine>(core, data_transfer.get());
+    } else if (creq->to_handle().has_restore_command() && res == bp::RC_OK) {
+      auto& restore_command = creq->to_handle().restore_command();
+
+      bp::PluginRequest sb_req;
+      auto* begin_backup = sb_req.mutable_begin_restore();
+      begin_backup->mutable_cmd()->assign(restore_command.data());
+
+      auto sb_resp = submit_event(sb_req);
+      if (!sb_resp || !sb_resp->has_begin_backup()) {
+        DebugLog(100, "expected begin-backup reponse, but got something else");
+        return bRC_Error;
+      }
+
+      state_machine.emplace<RestoreStateMachine>(core, data_transfer.get());
     }
 
     switch (res) {
