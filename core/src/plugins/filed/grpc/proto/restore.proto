@@ -2,31 +2,51 @@ syntax = "proto3";
 
 package bareos.restore;
 
-message Restore {
+import "common.proto";
+
+message RestoreRequest {
   oneof request {
-    BeginFile begin_file = 1;
-    FileAttributes file_attributes = 2;
-    FileData file_data = 3;
-    Acl acl = 4;
-    Xattr xattr = 5;
-    Done done = 6;
+    BeginFileRequest begin_file = 1;
+    FileData file_data = 2;
+    bareos.common.Acl acl = 3;
+    bareos.common.Xattr xattr = 4;
+    Done done = 5;
   };
 };
 
-
-message BeginFile {
+message RestoreResponse {
+  oneof respponse {
+    BeginFileResponse begin_file = 1;
+  };
 };
 
-message FileAttributes {
+message BeginFileRequest {
+  bytes output_name = 1;
+  bytes soft_link_to = 2; // only if ft == SoftLink
+  bareos.common.FileType file_type = 3;
+  int64 delta_seq = 4;
+  bareos.common.ReplaceType replace = 5;
+  optional bytes where = 7; // needed by the vmware plugin
+  bareos.common.OsStat stats = 8;
+};
+
+enum RestoreStatus {
+  RESTORE_UNSPECIFIED = 0;
+  RESTORE_SKIP = 1; // skip this file
+  RESTORE_CORE = 2; // restore this file via the core
+  RESTORE_PLUGIN = 3; // restore this file via the plugin
+};
+
+message BeginFileResponse {
+  oneof result {
+    RestoreStatus success = 1;
+    int64 system_error = 2;
+  };
 };
 
 message FileData {
-};
-
-message Acl {
-};
-
-message Xattr {
+  bytes data = 1;
+  uint64 offset = 2;
 };
 
 message Done {
