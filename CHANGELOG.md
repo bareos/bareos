@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [25.0.0] - 2025-12-01
 
 ### Breaking changes
 - Bareos 25 disables SSL on the PostgreSQL connection, as we have observed strange issues with SSL enabled.[Issue #1965]
@@ -1244,6 +1244,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [22.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F22.0.0
 [23.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F23.0.0
 [24.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.0
+[25.0.0]: https://github.com/bareos/bareos/releases/tag/Release%2F25.0.0
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -2162,4 +2163,3 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2445]: https://github.com/bareos/bareos/pull/2445
 [PR #2452]: https://github.com/bareos/bareos/pull/2452
 [PR #2456]: https://github.com/bareos/bareos/pull/2456
-[unreleased]: https://github.com/bareos/bareos/tree/master
