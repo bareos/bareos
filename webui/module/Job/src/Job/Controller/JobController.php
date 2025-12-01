@@ -76,7 +76,7 @@ class JobController extends AbstractActionController
             );
         }
 
-        $period = $this->params()->fromQuery('period') ? $this->params()->fromQuery('period') : '7';
+        $period = $this->params()->fromQuery('period') ? $this->params()->fromQuery('period') : ($_SESSION['bareos']['jobview_period'] ? $_SESSION['bareos']['jobview_period'] : 7);
         $status = $this->params()->fromQuery('status') ? $this->params()->fromQuery('status') : 'all';
         $jobname = $this->params()->fromQuery('jobname') ? $this->params()->fromQuery('jobname') : 'all';
 

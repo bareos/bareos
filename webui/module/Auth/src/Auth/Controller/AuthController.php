@@ -127,6 +127,7 @@ class AuthController extends AbstractActionController
         $session->offsetSet('merge_jobs', $configuration['configuration']['restore']['merge_jobs']);
         $session->offsetSet('merge_filesets', $configuration['configuration']['restore']['merge_filesets']);
         $session->offsetSet('configuration_resource_graph', $configuration['configuration']['experimental']['configuration_resource_graph']);
+        $session->offsetSet('jobview_period', $configuration['configuration']['jobview']['period']);
 
         if (isset($configuration['configuration']['autochanger']['labelpooltype'])) {
             $session->offsetSet('ac_labelpooltype', $configuration['configuration']['autochanger']['labelpooltype']);
