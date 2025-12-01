@@ -467,10 +467,13 @@ int msg_(const char* file, int line, POOLMEM*& pool_buf, const char* fmt, ...)
  * Replace codes needed in both file routines and non-file routines
  * Job replace codes -- in "replace"
  */
-#define REPLACE_ALWAYS 'a'
-#define REPLACE_IFNEWER 'w'
-#define REPLACE_NEVER 'n'
-#define REPLACE_IFOLDER 'o'
+enum : char
+{
+  REPLACE_ALWAYS = 'a',
+  REPLACE_IFNEWER = 'w',
+  REPLACE_NEVER = 'n',
+  REPLACE_IFOLDER = 'o',
+};
 
 /** This probably should be done on a machine by machine basis, but it works */
 /** This is critical for the memory allocation routines to properly align memory
