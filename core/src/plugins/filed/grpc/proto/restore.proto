@@ -7,12 +7,16 @@ import "common.proto";
 message RestoreRequest {
   oneof request {
     BeginFileRequest begin_file = 1;
-    CoreCreationidone core_creation_done = 2;
+    CoreCreationDone core_creation_done = 2;
     FileData file_data = 3;
     bareos.common.Acl acl = 4;
     bareos.common.Xattr xattr = 5;
     Done done = 6;
   };
+};
+
+message CoreCreationDone {
+  bool success = 1;
 };
 
 message RestoreResponse {
@@ -31,16 +35,18 @@ message BeginFileRequest {
   bareos.common.OsStat stats = 8;
 };
 
-enum RestoreStatus {
-  RESTORE_UNSPECIFIED = 0;
-  RESTORE_SKIP = 1; // skip this file
-  RESTORE_CORE = 2; // restore this file via the core
-  RESTORE_PLUGIN = 3; // restore this file via the plugin
+enum CreationStatus {
+  CREATION_UNSPECIFIED = 0;
+  CREATION_SKIP = 1; // skip this file
+  // CREATION_ERROR = 2; // file was created, but should not be restored
+  CREATION_PLUGIN = 3; // restore this file via the plugin
+  CREATION_NODATA = 4; // file was created, but should not be restored
+  CREATION_CORE = 5; // restore this file via the core
 };
 
 message BeginFileResponse {
   oneof result {
-    RestoreStatus success = 1;
+    CreationStatus success = 1;
     int64 system_error = 2;
   };
 };

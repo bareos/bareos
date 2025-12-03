@@ -40,6 +40,8 @@ JobName=backup-bareos-fd
 #shellcheck source=functions
 . functions
 
+FILESET=PythonNative
+
 start_test
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
@@ -47,7 +49,7 @@ cat <<END_OF_DATA >"$tmp/bconcmds"
 messages
 @$out ${runner_tmp}/create-backup.out
 setdebug level=200 client trace=1
-run job=$JobName level=Full yes
+run job=$JobName level=Full fileset=${FILESET} yes
 status director
 status client
 status storage=File
@@ -81,7 +83,7 @@ messages
 @$out ${runner_tmp}/jobs.out
 list jobs
 @$out ${runner_tmp}/restore-full.out
-restore client=bareos-fd fileset=SelfTest where=${res_dir} select all done yes
+restore client=bareos-fd fileset=${FILESET} where=${res_dir} select all done yes
 wait
 messages
 quit
