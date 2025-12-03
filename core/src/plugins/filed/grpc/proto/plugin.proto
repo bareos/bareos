@@ -37,7 +37,9 @@ message BeginVerifyRequest {
 message BeginVerifyResponse {
 };
 
-message SetupRequest {};
+message SetupRequest {
+  int64 initial_debug_level = 1;
+};
 message SetupResponse {};
 
 message PluginRequest {

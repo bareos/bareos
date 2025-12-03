@@ -53,6 +53,7 @@ import sys
 import inspect
 import io
 import threading
+import queue
 
 from ctypes import set_errno, get_errno
 
@@ -131,7 +132,7 @@ class BareosConnection:
         self.plugin_requests = socket.socket(fileno=4)
         self.data_transfer = socket.socket(fileno=5)
 
-    def read_event(self):
+    def read_event(self) -> plugin_pb2.PluginRequest:
         req = plugin_pb2.PluginRequest()
         readmsg(self.core_events, req)
         return req
@@ -683,6 +684,7 @@ def handle_setup(con: BareosConnection):
     event_type = event.WhichOneof("request")
     match event_type:
         case "setup":
+            debug_level = event.setup.initial_debug_level
             RegisterEvents(
                 [
                     bEventLevel,
@@ -1285,44 +1287,103 @@ class Backup:
 def handle_events():
     while not quit:
         event = con.read_event()
+
+
+@dataclass(slots=True)
+class CoreEventHandler:
+    con: BareosConnection
+    unhandled_events: queue.Queue = queue.Queue()
+    quit: bool = False
+
+    def run(self):
+        try:
+            while not self.quit:
+                event = self.con.read_event()
+                if not self.handle_event(event):
+                    self.unhandled_events.put(event)
+        except:
+            log(f"CoreEventHandler: emergency done")
+            self.unhandled_events.shutdown()
+            log(f"CoreEventHandler: emergency done (shutdown)")
+
+        log(f"CoreEventHandler: done")
+        self.unhandled_events.shutdown()
+        log(f"CoreEventHandler: done (shutdown)")
+
+    def next_event(self) -> plugin_pb2.PluginRequest:
+        return self.unhandled_events.get()
+
+    def event_handled(self):
+        self.unhandled_events.task_done()
+
+    def handle_event(self, event: plugin_pb2.PluginRequest) -> bool:
         event_type = event.WhichOneof("request")
         match event_type:
             case "setup":
                 JobMessage(bJobMessageType.M_FATAL, "job sent a second setup message")
-                exit(189)  # random looking number
-            case "begin_backup":
-                resp = plugin_pb2.PluginResponse()
-                resp.begin_backup.SetInParent()
-                con.answer_event(resp)
-                bb = event.begin_backup
-                return Backup(
-                    cmd=bb.cmd,
-                    portable=bb.portable,
-                    enable_acl=bb.backup_acl,
-                    enable_xattr=bb.backup_xattr,
-                    no_atime=bb.no_atime,
-                    buffer_size=bb.max_record_size,
-                )
-            case "begin_restore":
-                resp = plugin_pb2.PluginResponse()
-                resp.begin_restore.SetInParent()
-                con.answer_event(resp)
-                br = event.begin_restore
-                return Restore(cmd=br.cmd)
-            case "begin_estimate":
-                resp = plugin_pb2.PluginResponse()
-                resp.begin_estimate.SetInParent()
-                con.answer_event(resp)
-                return Estimate()
-            case "begin_verify":
-                resp = plugin_pb2.PluginResponse()
-                resp.begin_verify.SetInParent()
-                con.answer_event(resp)
-                return Verify()
+                self.quit = True
+                return True
             case "handle_plugin_event":
-                resp = plugin_pb2.PluginResponse()
-                handle_plugin_event(event.handle_plugin_event, resp.handle_plugin_event)
-                con.answer_event(resp)
+                pevent = event.handle_plugin_event.to_handle
+                pevent_type = pevent.WhichOneof("event")
+                match pevent_type:
+                    case "set_debug_level":
+                        global debug_level
+                        debug_level = pevent.set_debug_level.debug_level
+                        return True
+                    # we should probably still receive stuff like JobEnd
+                    # and so on
+                    # case "cancel_command":
+                    #     self.quit = True
+                    #     return False
+                    case _:
+                        return False
+
+        return False
+
+
+def handle_core_events(handler: CoreEventHandler):
+    handler.run()
+
+
+def handle_event(event: plugin_pb2.PluginRequest):
+    event_type = event.WhichOneof("request")
+    match event_type:
+        case "begin_backup":
+            resp = plugin_pb2.PluginResponse()
+            resp.begin_backup.SetInParent()
+            con.answer_event(resp)
+            bb = event.begin_backup
+            Backup(
+                cmd=bb.cmd,
+                portable=bb.portable,
+                enable_acl=bb.backup_acl,
+                enable_xattr=bb.backup_xattr,
+                no_atime=bb.no_atime,
+                buffer_size=bb.max_record_size,
+            ).run()
+        case "begin_restore":
+            resp = plugin_pb2.PluginResponse()
+            resp.begin_restore.SetInParent()
+            con.answer_event(resp)
+            br = event.begin_restore
+            Restore(cmd=br.cmd).run()
+        case "begin_estimate":
+            resp = plugin_pb2.PluginResponse()
+            resp.begin_estimate.SetInParent()
+            con.answer_event(resp)
+            Estimate().run()
+        case "begin_verify":
+            resp = plugin_pb2.PluginResponse()
+            resp.begin_verify.SetInParent()
+            con.answer_event(resp)
+            Verify().run()
+        case "handle_plugin_event":
+            resp = plugin_pb2.PluginResponse()
+            handle_plugin_event(event.handle_plugin_event, resp.handle_plugin_event)
+            con.answer_event(resp)
+        case _:
+            raise ValueError
 
 
 def run():
@@ -1343,12 +1404,19 @@ def run():
 
         handle_setup(con)
 
-        while True:
-            job_handler = handle_events()
-            if quit:
-                break
-            job_handler.run()
+        handler = CoreEventHandler(con)
+        handler_thread = threading.Thread(target=handle_core_events, args=(handler,))
+        handler_thread.start()
 
+        while True:
+            try:
+                event = handler.next_event()
+                handle_event(event)
+                handler.event_handled()
+            except queue.ShutDown:
+                break
+
+        handler_thread.join()
         f.close()
     except:
         error = traceback.format_exc()
