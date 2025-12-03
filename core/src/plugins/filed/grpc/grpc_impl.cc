@@ -638,8 +638,7 @@ struct RestoreStateMachine {
     arena = std::make_unique<google::protobuf::Arena>();
   }
 
-  std::optional<br::RestoreStatus> start_restore_file(
-      const filedaemon::restore_pkt* pkt)
+  bool start_restore_file(filedaemon::restore_pkt* pkt)
   {
     DebugLog(150, "start_restore_file(name = '{}')", pkt->ofname);
 
@@ -659,7 +658,7 @@ struct RestoreStateMachine {
           DebugLog(core, M_FATAL,
                    "could not convert file type {} into a protobuf file type",
                    pkt->type);
-          return std::nullopt;
+          return false;
         }
       }
       req->set_delta_seq(pkt->delta_seq);
@@ -671,7 +670,7 @@ struct RestoreStateMachine {
               core, M_FATAL,
               "could not convert replace type {} into a protobuf replace type",
               pkt->replace);
-          return std::nullopt;
+          return false;
         }
       }
       req->set_where(pkt->where ? pkt->where : "");
@@ -679,7 +678,7 @@ struct RestoreStateMachine {
     }
     if (!stream->Write(*outer_req)) {
       JobLog(core, M_FATAL, "could not write request to plugin");
-      return std::nullopt;
+      return false;
     }
 
     arena->Reset();
@@ -688,12 +687,12 @@ struct RestoreStateMachine {
 
     if (!stream->Read(*resp)) {
       JobLog(core, M_FATAL, "could not read response from plugin");
-      return std::nullopt;
+      return false;
     }
 
     if (!resp->has_begin_file()) {
       JobLog(core, M_FATAL, "communication mismatch: expected begin_file");
-      return std::nullopt;
+      return false;
     }
 
     current_fname.assign(pkt->ofname);
@@ -702,20 +701,38 @@ struct RestoreStateMachine {
 
     switch (bf.result_case()) {
       case bareos::restore::BeginFileResponse::kSuccess: {
-        return bf.success();
+        pkt->create_status = bf.success();
       } break;
       case bareos::restore::BeginFileResponse::kSystemError: {
         errno = bf.system_error();
-        return std::nullopt;
+        pkt->create_status = CF_ERROR;
+        return true;
       } break;
       case bareos::restore::BeginFileResponse::RESULT_NOT_SET:
         [[fallthrough]];
       default: {
         JobLog(core, M_FATAL,
                "internal communication error: no response for begin_file()");
-        return std::nullopt;
+        return false;
       } break;
     }
+
+
+    return true;
+  }
+
+  bool end_restore_file()
+  {
+    auto* outer_req = make_request();
+    {
+      auto* req = outer_req->mutable_done();
+      (void)(req);
+    }
+    if (!stream->Write(*outer_req)) {
+      JobLog(core, M_FATAL, "could not write request to plugin");
+      return false;
+    }
+    return true;
   }
 
   bool set_acl(std::string_view file, std::span<char const> content)
@@ -893,6 +910,25 @@ class BareosCore {
     // TODO: the socket should get killed here
   }
 
+
+  static std::optional<decltype(CF_SKIP)> from_grpc(br::CreationStatus type)
+  {
+    switch (type) {
+      case bareos::restore::CREATION_UNSPECIFIED:
+        return std::nullopt;
+      case bareos::restore::CREATION_SKIP:
+        return CF_SKIP;
+      case bareos::restore::CREATION_CORE:
+        return CF_CORE;
+      case bareos::restore::CREATION_PLUGIN:
+        return CF_EXTRACT;
+      case bareos::restore::CREATION_NODATA:
+        return CF_CREATED;
+      case bareos::restore::CreationStatus_INT_MIN_SENTINEL_DO_NOT_USE_:
+      case bareos::restore::CreationStatus_INT_MAX_SENTINEL_DO_NOT_USE_:
+        break;
+    }
+  }
 
   static std::optional<filedaemon::bEventType> from_grpc(bc::EventType type)
   {
@@ -1746,6 +1782,7 @@ class PluginClient {
 
 
     if (creq->to_handle().has_backup_command() && res == bp::RC_OK) {
+      DebugLog(200, "sending begin-backup");
       auto& backup_command = creq->to_handle().backup_command();
 
       bp::PluginRequest sb_req;
@@ -1765,17 +1802,20 @@ class PluginClient {
 
       state_machine.emplace<BackupStateMachine>(core, data_transfer.get());
     } else if (creq->to_handle().has_restore_command() && res == bp::RC_OK) {
+      DebugLog(200, "sending begin-restore");
       auto& restore_command = creq->to_handle().restore_command();
 
-      bp::PluginRequest sb_req;
-      auto* begin_backup = sb_req.mutable_begin_restore();
-      begin_backup->mutable_cmd()->assign(restore_command.data());
+      bp::PluginRequest sr_req;
+      auto* begin_restore = sr_req.mutable_begin_restore();
+      begin_restore->mutable_cmd()->assign(restore_command.data());
 
-      auto sb_resp = submit_event(sb_req);
-      if (!sb_resp || !sb_resp->has_begin_backup()) {
-        DebugLog(100, "expected begin-backup reponse, but got something else");
+      auto sr_resp = submit_event(sr_req);
+      if (!sr_resp || !sr_resp->has_begin_restore()) {
+        DebugLog(100, "expected begin-restore reponse, but got something else");
         return bRC_Error;
       }
+
+      DebugLog(200, "res == {}", static_cast<int>(res));
 
       state_machine.emplace<RestoreStateMachine>(core, data_transfer.get());
     }
@@ -2032,7 +2072,15 @@ class PluginClient {
   bRC endRestoreFile()
   {
     // intentionally left empty
-    return bRC_OK;
+
+    if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
+      rsm->end_restore_file();
+
+      return bRC_OK;
+    }
+
+    JobLog(core, M_FATAL, "this operation is only supported during restore");
+    return bRC_Error;
   }
 
   bRC FileOpen(std::string_view name,
