@@ -25,6 +25,7 @@ from proto import plugin_pb2
 from proto import common_pb2
 from proto import restore_pb2
 import bareosfd_types
+import os
 
 ### EventType
 
@@ -186,22 +187,14 @@ assert brc_type_remote(bareosfd_types.bRC_Cancel) == plugin_pb2.RC_Cancel
 
 ### StartRestoreFile
 
-
-def srf_remote(brc: bareosfd_types.bRCs) -> int:
-    match brc:
-        case bareosfd_types.bRC_Skip:
-            return restore_pb2.RESTORE_SKIP
-        case bareosfd_types.bRC_Core:
-            return restore_pb2.RESTORE_CORE
-        case bareosfd_types.bRC_OK:
-            return restore_pb2.RESTORE_PLUGIN
-        case _:
-            raise ValueError
-
-
-assert srf_remote(bareosfd_types.bRC_OK) == restore_pb2.RESTORE_PLUGIN
-assert srf_remote(bareosfd_types.bRC_Core) == restore_pb2.RESTORE_CORE
-assert srf_remote(bareosfd_types.bRC_Skip) == restore_pb2.RESTORE_SKIP
+# def cf_remote(cf: bareosfd_types.bCFs) -> int:
+#     return int(cf)
+#
+# assert cf_remote(bareosfd_types.CF_SKIP) == restore_pb2.CREATION_SKIP
+# assert cf_remote(bareosfd_types.CF_CORE) == restore_pb2.CREATION_CORE
+# assert cf_remote(bareosfd_types.CF_EXTRACT) == restore_pb2.CREATION_PLUGIN
+# assert cf_remote(bareosfd_types.CF_CREATED) == restore_pb2.CREATION_NODATA
+# assert cf_remote(bareosfd_types.CF_ERROR) == restore_pb2.CREATION_ERROR
 
 ### StartBackupFile
 
@@ -287,5 +280,92 @@ def ft_remote(
         case bareosfd_types.FT_INVALIDDT:
             return (common_pb2.FileErrorType, common_pb2.InvalidDriveType)
 
+        case _:
+            raise ValueError
+
+
+def ft_from_remote(ft: int) -> bareosfd_types.bFileType:
+    # sadly protobuf uses simple ints for enums, so we need to
+    # distinguish them with a tuple
+    match ft:
+        ### file types
+        case common_pb2.HardlinkCopy:
+            return bareosfd_types.FT_LNKSAVED
+        case common_pb2.RegularFile:
+            return bareosfd_types.FT_REGE
+        case common_pb2.RegularFile:
+            return bareosfd_types.FT_REG
+        case common_pb2.SoftLink:
+            return bareosfd_types.FT_LNK
+        case common_pb2.Directory:
+            return bareosfd_types.FT_DIREND
+        case common_pb2.SpecialFile:
+            return bareosfd_types.FT_SPEC
+        case common_pb2.BlockDevice:
+            return bareosfd_types.FT_RAW
+        case common_pb2.ReparsePoint:
+            return bareosfd_types.FT_REPARSE
+        case common_pb2.Junction:
+            return bareosfd_types.FT_JUNCTION
+        case common_pb2.Fifo:
+            return bareosfd_types.FT_FIFO
+        case common_pb2.Deleted:
+            return bareosfd_types.FT_DELETED
+        case common_pb2.RegularFile:
+            return bareosfd_types.FT_ISARCH
+        case _:
+            raise ValueError
+
+
+### STAT
+
+
+def stat_init_to_remote(res: common_pb2.OsStat, stat: bareosfd_types.StatPacket):
+    res.dev = stat.st_dev
+    res.ino = stat.st_ino
+    res.mode = stat.st_mode
+    res.nlink = stat.st_nlink
+    res.uid = stat.st_uid
+    res.gid = stat.st_gid
+    res.rdev = stat.st_rdev
+    res.size = stat.st_size
+    res.atime.FromSeconds(stat.st_atime)
+    res.mtime.FromSeconds(stat.st_mtime)
+    res.ctime.FromSeconds(stat.st_ctime)
+    res.blksize = stat.st_blksize
+    res.blocks = stat.st_blocks
+
+
+def stat_from_remote(stat: common_pb2.OsStat) -> bareosfd_types.StatPacket:
+    res = bareosfd_types.StatPacket()
+    res.st_dev = stat.dev
+    res.st_ino = stat.ino
+    res.st_mode = stat.mode
+    res.st_nlink = stat.nlink
+    res.st_uid = stat.uid
+    res.st_gid = stat.gid
+    res.st_rdev = stat.rdev
+    res.st_size = stat.size
+    res.st_atime = stat.atime.ToSeconds()
+    res.st_mtime = stat.mtime.ToSeconds()
+    res.st_ctime = stat.ctime.ToSeconds()
+    res.st_blksize = stat.blksize
+    res.st_blocks = stat.blocks
+    return res
+
+
+### REPLACE
+
+
+def replace_from_remote(rep: int) -> bareosfd_types.bReplace:
+    match rep:
+        case common_pb2.REPLACE_NEVER:
+            return bareosfd_types.bReplace.REPLACE_NEVER
+        case common_pb2.REPLACE_IF_OLDER:
+            return bareosfd_types.bReplace.REPLACE_IFOLDER
+        case common_pb2.REPLACE_IF_NEWER:
+            return bareosfd_types.bReplace.REPLACE_IFNEWER
+        case common_pb2.REPLACE_ALWAYS:
+            return bareosfd_types.bReplace.REPLACE_ALWAYS
         case _:
             raise ValueError

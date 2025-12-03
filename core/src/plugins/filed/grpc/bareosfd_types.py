@@ -206,6 +206,13 @@ class bIOPS(IntEnum):
     IO_SEEK = 5
 
 
+class bReplace(StrEnum):
+    REPLACE_ALWAYS = "a"
+    REPLACE_IFNEWER = "w"
+    REPLACE_NEVER = "n"
+    REPLACE_IFOLDER = "o"
+
+
 @global_enum
 class bIOPstatus(IntEnum):
     iostat_error = -1
@@ -328,6 +335,7 @@ class SavePacket:
 class RestorePacket:
     """bareos restore packet"""
 
+    # missing field: delta seq
     stream: int = 0  # Attribute stream id
     data_stream: int = 0  # Id of data stream to follow
     type: int = 0  # File type FT
