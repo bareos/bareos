@@ -1754,7 +1754,8 @@ class PluginClient {
   {
     bp::PluginRequest req;
 
-    (void)req.mutable_setup();
+    last_known_debug_level = debug_level;
+    req.mutable_setup()->set_initial_debug_level(debug_level);
 
     auto resp = submit_event(req);
     if (!resp) { return bRC_Error; }
@@ -1767,6 +1768,7 @@ class PluginClient {
   bRC handlePluginEvent(filedaemon::bEventType type,
                         bp::HandlePluginEventRequest* req)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     bp::PluginRequest actual_req;
     *actual_req.mutable_handle_plugin_event() = std::move(*req);
     auto* creq = &actual_req.handle_plugin_event();
@@ -1847,6 +1849,7 @@ class PluginClient {
 
   bRC handlePluginEvent(filedaemon::bEventType type, void* data)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     bp::HandlePluginEventRequest req;
 
     switch (type) {
@@ -1872,6 +1875,7 @@ class PluginClient {
 
   bRC startBackupFile(filedaemon::save_pkt* pkt)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     auto* bsm = std::get_if<BackupStateMachine>(&state_machine);
 
     if (!bsm) {
@@ -2045,6 +2049,7 @@ class PluginClient {
 
   bRC endBackupFile()
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
       if (!bsm->end_backup_file()) { return bRC_Error; }
 
@@ -2064,6 +2069,7 @@ class PluginClient {
 
   bRC startRestoreFile(std::string_view cmd)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     // intentionally left empty
     ignore(cmd);
     return bRC_OK;
@@ -2071,6 +2077,7 @@ class PluginClient {
 
   bRC endRestoreFile()
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     // intentionally left empty
 
     if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
@@ -2088,6 +2095,7 @@ class PluginClient {
                int32_t mode,
                std::optional<int>* io_in_core_fd)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     ignore(name, flags, mode, io_in_core_fd);
 
     if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
@@ -2107,6 +2115,7 @@ class PluginClient {
 
   bRC FileSeek(int whence, int64_t offset)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
       if (whence != SEEK_SET) {
         JobLog(core, M_FATAL, "seek mode '{}' not supported", whence);
@@ -2124,6 +2133,7 @@ class PluginClient {
 
   bRC FileRead(char* buf, size_t size, int32_t* bytes_read)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
       std::optional bytes = bsm->file_read(std::span(buf, size));
       if (!bytes) { return bRC_Error; }
@@ -2144,6 +2154,7 @@ class PluginClient {
 
   bRC FileWrite(std::span<const char> data)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
       if (!rsm->file_write(data)) { return bRC_Error; }
 
@@ -2156,6 +2167,7 @@ class PluginClient {
 
   bRC FileClose()
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
       if (!bsm->file_close()) { return bRC_Error; }
 
@@ -2171,6 +2183,7 @@ class PluginClient {
 
   bRC createFile(filedaemon::restore_pkt* pkt)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
       if (!rsm->start_restore_file(pkt)) { return bRC_Error; }
 
@@ -2187,17 +2200,20 @@ class PluginClient {
                         std::string_view where,
                         bool* do_in_core)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     ignore(name, statp, extended_attributes, where, do_in_core);
     return bRC_OK;
   }
   bRC checkFile(std::string_view name)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     ignore(name);
     return bRC_Error;
   }
 
   bRC setAcl(std::string_view file, std::string_view content)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
       if (!rsm->set_acl(file, content)) { return bRC_Error; }
       return bRC_OK;
@@ -2209,6 +2225,7 @@ class PluginClient {
 
   bRC getAcl(std::string_view file, filedaemon::acl_pkt* pkt)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     ignore(file);
     if (auto* bsm = std::get_if<BackupStateMachine>(&state_machine)) {
       if (!bsm->get_acl(pkt)) { return bRC_Error; }
@@ -2224,6 +2241,7 @@ class PluginClient {
                std::string_view key,
                std::string_view value)
   {
+    if (!SetDebugLevel()) { return bRC_Error; }
     if (auto* rsm = std::get_if<RestoreStateMachine>(&state_machine)) {
       if (!rsm->set_xattr(file, key, value)) { return bRC_Error; }
       return bRC_OK;
@@ -2274,10 +2292,6 @@ class PluginClient {
   }
 
  private:
-  std::unique_ptr<prototools::ProtoBidiStream> data_transfer{};
-  std::unique_ptr<prototools::ProtoBidiStream> core_events{};
-  PluginContext* core{nullptr};
-
   template <typename... Args>
   void DebugLog(Severity severity,
                 fmt::format_string<Args...> fmt,
@@ -2285,6 +2299,31 @@ class PluginClient {
   {
     ::DebugLog(core, severity, std::move(fmt), std::forward<Args>(args)...);
   }
+
+  bool SetDebugLevel()
+  {
+    if (debug_level == last_known_debug_level) { return true; }
+
+    last_known_debug_level = debug_level;
+
+    bp::PluginRequest req;
+    req.mutable_handle_plugin_event()
+        ->mutable_to_handle()
+        ->mutable_set_debug_level()
+        ->set_debug_level(debug_level);
+    if (!core_events->Write(req)) {
+      JobLog(core, M_FATAL, "communication error when setting debug level");
+      return false;
+    }
+
+    return true;
+  }
+
+ private:
+  std::unique_ptr<prototools::ProtoBidiStream> data_transfer{};
+  std::unique_ptr<prototools::ProtoBidiStream> core_events{};
+  PluginContext* core{nullptr};
+  int last_known_debug_level = 0;
 
   std::variant<std::monostate, BackupStateMachine, RestoreStateMachine>
       state_machine;
