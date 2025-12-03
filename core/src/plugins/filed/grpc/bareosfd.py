@@ -171,7 +171,6 @@ level: int = None
 since: int = None
 plugin_loaded: bool = False
 module_path: str = None
-quit: bool = False
 con: BareosConnection = None
 debug_level: int = 1000
 
@@ -390,8 +389,6 @@ def handle_plugin_event(
             if plugin_loaded:
                 bevent = bareos_event(event)
                 BareosFdWrapper.handle_plugin_event(bevent)
-            global quit
-            quit = True
             result = bRC_OK
 
         case "set_debug_level":
@@ -1284,11 +1281,6 @@ class Backup:
         con.send_data(done)
 
 
-def handle_events():
-    while not quit:
-        event = con.read_event()
-
-
 @dataclass(slots=True)
 class CoreEventHandler:
     con: BareosConnection
@@ -1331,6 +1323,9 @@ class CoreEventHandler:
                         global debug_level
                         debug_level = pevent.set_debug_level.debug_level
                         return True
+                    case "job_end":
+                        self.quit = True
+                        return False
                     # we should probably still receive stuff like JobEnd
                     # and so on
                     # case "cancel_command":
