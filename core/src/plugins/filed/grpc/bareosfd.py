@@ -1218,7 +1218,23 @@ class Backup:
 
             match category:
                 case common_pb2.ObjectType:
-                    raise ValueError
+                    resp = backup_pb2.Backup()
+                    bo = resp.begin_object
+
+                    if pkt.object_len == 0:
+                        JobMessage(
+                            bJobMessageType.M_FATAL, "can not create object of size 0"
+                        )
+                        raise ValueError
+
+                    obj = bo.object
+                    obj.name = pkt.object_name.encode()
+                    obj.data = bytes(pkt.object[: pkt.object_len])
+                    obj.index = pkt.object_index
+                    obj.type = file_type
+
+                    con.send_data(resp)
+
                 case common_pb2.FileType:
 
                     resp = backup_pb2.Backup()
