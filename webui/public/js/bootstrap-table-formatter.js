@@ -3,7 +3,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2020-2023 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2020-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -368,50 +368,29 @@ function formatEnabledDisabledStatus(value) {
 }
 
 function formatUname(value, basePath) {
-   let osImage = null;
+   let os2Image = new Map(
+	   [
+	   [ "suse.png", ["suse", "sle"]],
+	   [ "debian.png", ["debian"]],
+	   [ "fedora.png", ["fedora"]],
+	   [ "centos.png", ["centos"]],
+	   [ "redhat.png", ["redhat"]],
+	   [ "ubuntu.png", ["ubuntu"]],
+	   [ "univention.png", ["univention"]],
+	   [ "windows.png", ["win"]],
+	   [ "macos.png", ["macos","darwin"]],
+	   [ "sunsolaris.png", ["solaris"]],
+	   [ "freebsd.png", ["freebsd"]],
+	   ]);
 
-   if(value.toLowerCase().search("suse") > -1) {
-      osImage = "suse.png";
+   for (let entry of os2Image) {
+      for (let substring of entry.values()) {
+         if(value.toLowerCase().search(substring) > -1) {
+            return '<img src="' + basePath + '/img/icons/os/' + entry[0] + '" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
+         }
+      }
    }
-   else if(value.toLowerCase().search("sle") > -1) {
-      osImage = "suse.png";
-   }
-   else if(value.toLowerCase().search("debian") > -1) {
-      osImage = "debian.png";
-   }
-   else if(value.toLowerCase().search("fedora") > -1) {
-      osImage = "fedora.png";
-   }
-   else if(value.toLowerCase().search("centos") > -1) {
-      osImage = "centos.png";
-   }
-   else if(value.toLowerCase().search("redhat") > -1) {
-      osImage = "redhat.png";
-   }
-   else if(value.toLowerCase().search("ubuntu") > -1) {
-      osImage = "ubuntu.png";
-   }
-   else if(value.toLowerCase().search("univention") > -1) {
-      osImage = "univention.png";
-   }
-   else if(value.toLowerCase().search("win") > -1) {
-      osImage = "windows.png";
-   }
-   else if(value.toLowerCase().search("macos") > -1) {
-      osImage = "macos.png";
-   }
-   else if(value.toLowerCase().search("solaris") > -1) {
-      osImage = "sunsolaris.png";
-   }
-   else if(value.toLowerCase().search("freebsd") > -1) {
-      osImage = "freebsd.png";
-   }
-
-   if(osImage !== null) {
-      return '<img src="' + basePath + '/img/icons/os/' + osImage + '" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
-   } else {
-      return '';
-   }
+   return '';
 }
 
 function formatUpdateStatus(value, row, index) {

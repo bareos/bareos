@@ -74,3 +74,11 @@
 ; Configuration resource graph
 ; Default:
 ;configuration_resource_graph=false
+
+;------------------------------------------------------------------------------
+; JOBVIEW SETTINGS
+;------------------------------------------------------------------------------
+[jobview]
+; period in days that is preselected for the job list.
+; Default:
+;period=7
