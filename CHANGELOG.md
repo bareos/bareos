@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [24.0.8] - 2025-12-04
 
 ### Fixed
 - plugin: postgresql do testing with wal compress on [PR #2420]
@@ -1141,6 +1141,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [24.0.5]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.5
 [24.0.6]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.6
 [24.0.7]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.7
+[24.0.8]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.8
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -1993,4 +1994,3 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2446]: https://github.com/bareos/bareos/pull/2446
 [PR #2448]: https://github.com/bareos/bareos/pull/2448
 [PR #2451]: https://github.com/bareos/bareos/pull/2451
-[unreleased]: https://github.com/bareos/bareos/tree/master
