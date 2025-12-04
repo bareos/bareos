@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
 ## [25.0.1] - 2025-12-04
 
 ### Changed
@@ -2176,3 +2178,4 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2471]: https://github.com/bareos/bareos/pull/2471
 [PR #2472]: https://github.com/bareos/bareos/pull/2472
 [PR #2474]: https://github.com/bareos/bareos/pull/2474
+[unreleased]: https://github.com/bareos/bareos/tree/master
