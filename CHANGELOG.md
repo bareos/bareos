@@ -92,6 +92,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 - stored: add new volume status 'Unlabeled' [PR #2207]
 - postgresql: require non-ssl connection [PR #2272]
 - detect OS during runtime [PR #2452]
+- webui: make default job list period configurable [PR #2458]
 
 ### Deprecated
 - config: deprecate file daemon as alias for client in FD config [PR #2187]
@@ -2162,4 +2163,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2445]: https://github.com/bareos/bareos/pull/2445
 [PR #2452]: https://github.com/bareos/bareos/pull/2452
 [PR #2456]: https://github.com/bareos/bareos/pull/2456
+[PR #2458]: https://github.com/bareos/bareos/pull/2458
 [unreleased]: https://github.com/bareos/bareos/tree/master
