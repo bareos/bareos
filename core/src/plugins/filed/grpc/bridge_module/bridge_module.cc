@@ -48,16 +48,14 @@
 
 #include <fcntl.h>
 
-struct core_connection {
-  prototools::ProtoBidiStream* client_writer;
+struct global_values {
+  int debug_level = 1000;
+  prototools::ProtoBidiStream* client_writer{};
 };
 
-core_connection global_core_connection;
+global_values globals{};
 
-static inline auto request_writer()
-{
-  return global_core_connection.client_writer;
-}
+static inline auto request_writer() { return globals.client_writer; }
 
 bool Register(std::basic_string_view<bc::EventType> types)
 {
@@ -96,132 +94,133 @@ bool Unregister(std::basic_string_view<bc::EventType> types)
   return true;
 }
 
-struct plugin_thread {
-  plugin_thread() : plugin_thread(channel::CreateBufferedChannel<callback>(10))
-  {
-  }
+// struct plugin_thread {
+//   plugin_thread() :
+//   plugin_thread(channel::CreateBufferedChannel<callback>(10))
+//   {
+//   }
 
-  using callback = std::packaged_task<bRC(PluginContext*)>;
+//   using callback = std::packaged_task<bRC(PluginContext*)>;
 
-  template <typename F> bRC submit(F f)
-  {
-    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
-    callback task(std::move(f));
-    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
+//   template <typename F> bRC submit(F f)
+//   {
+//     fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
+//     callback task(std::move(f));
+//     fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
 
-    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
-    auto fut = task.get_future();
+//     fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
+//     auto fut = task.get_future();
 
-    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
-    if (!enqueue_task(std::move(task))) { return bRC_Error; }
+//     fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
+//     if (!enqueue_task(std::move(task))) { return bRC_Error; }
 
-    fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
-    return fut.get();
-  }
+//     fprintf(stderr, "%s:%d\n", __FILE__, __LINE__);
+//     return fut.get();
+//   }
 
-  void join()
-  {
-    if (t.joinable()) {
-      in.close();
-      t.join();
-    }
-  }
+//   void join()
+//   {
+//     if (t.joinable()) {
+//       in.close();
+//       t.join();
+//     }
+//   }
 
-  ~plugin_thread() { join(); }
+//   ~plugin_thread() { join(); }
 
-  PluginContext* ctx() { return &pctx; }
+//   PluginContext* ctx() { return &pctx; }
 
-  struct cached_event {
-    filedaemon::bEvent event{};
+//   struct cached_event {
+//     filedaemon::bEvent event{};
 
-    intptr_t ptr_value;
-    std::vector<char> data;
+//     intptr_t ptr_value;
+//     std::vector<char> data;
 
-    filedaemon::bEvent* type() { return &event; }
-    void* value()
-    {
-      if (data.empty()) {
-        return reinterpret_cast<void*>(ptr_value);
-      } else {
-        return reinterpret_cast<void*>(data.data());
-      }
-    }
-  };
+//     filedaemon::bEvent* type() { return &event; }
+//     void* value()
+//     {
+//       if (data.empty()) {
+//         return reinterpret_cast<void*>(ptr_value);
+//       } else {
+//         return reinterpret_cast<void*>(data.data());
+//       }
+//     }
+//   };
 
-  std::vector<cached_event> cached_events{};
+//   std::vector<cached_event> cached_events{};
 
-  std::vector<cached_event> clear_cached_events()
-  {
-    std::vector<cached_event> result{};
-    std::swap(result, cached_events);
-    return result;
-  }
+//   std::vector<cached_event> clear_cached_events()
+//   {
+//     std::vector<cached_event> result{};
+//     std::swap(result, cached_events);
+//     return result;
+//   }
 
-  bool cache_event(filedaemon::bEvent* event, void* value, std::size_t size)
-  {
-    auto& cached = cached_events.emplace_back();
-    cached.event = *event;
-    if (size != 0) {
-      DebugLog(100, FMT_STRING("caching data of size {} (event = {})"), size,
-               event->eventType);
-      cached.data.assign(static_cast<const char*>(value),
-                         static_cast<const char*>(value) + size);
-    } else {
-      // size is 0 here, so no actual data was stored, i.e. we only care
-      // about the value of the pointer
-      cached.ptr_value = reinterpret_cast<intptr_t>(value);
-    }
-    return true;
-  }
+//   bool cache_event(filedaemon::bEvent* event, void* value, std::size_t size)
+//   {
+//     auto& cached = cached_events.emplace_back();
+//     cached.event = *event;
+//     if (size != 0) {
+//       DebugLog(100, FMT_STRING("caching data of size {} (event = {})"), size,
+//                event->eventType);
+//       cached.data.assign(static_cast<const char*>(value),
+//                          static_cast<const char*>(value) + size);
+//     } else {
+//       // size is 0 here, so no actual data was stored, i.e. we only care
+//       // about the value of the pointer
+//       cached.ptr_value = reinterpret_cast<intptr_t>(value);
+//     }
+//     return true;
+//   }
 
-  void allow_events(std::uint64_t mask) { registered_events |= mask; }
+//   void allow_events(std::uint64_t mask) { registered_events |= mask; }
 
-  void disallow_events(std::uint64_t mask) { registered_events &= ~mask; }
+//   void disallow_events(std::uint64_t mask) { registered_events &= ~mask; }
 
-  bool is_event_allowed(filedaemon::bEvent* type)
-  {
-    return ((1 << type->eventType) & registered_events) != 0;
-  }
+//   bool is_event_allowed(filedaemon::bEvent* type)
+//   {
+//     return ((1 << type->eventType) & registered_events) != 0;
+//   }
 
-  std::uint64_t allowed_events() { return registered_events; }
+//   std::uint64_t allowed_events() { return registered_events; }
 
- private:
-  plugin_thread(channel::channel_pair<callback> p)
-      : in{std::move(p.first)}, out{std::move(p.second)}
-  {
-    pctx.core_private_context = this;
-    // only start the thread once the plugin context is setup
-    t = std::thread{+[](plugin_thread* pt) { pt->run(); }, this};
-  }
+//  private:
+//   plugin_thread(channel::channel_pair<callback> p)
+//       : in{std::move(p.first)}, out{std::move(p.second)}
+//   {
+//     pctx.core_private_context = this;
+//     // only start the thread once the plugin context is setup
+//     t = std::thread{+[](plugin_thread* pt) { pt->run(); }, this};
+//   }
 
-  bool enqueue_task(callback&& c) { return in.emplace(std::move(c)); }
+//   bool enqueue_task(callback&& c) { return in.emplace(std::move(c)); }
 
-  void run()
-  {
-    if (!WaitForReady()) {
-      fprintf(stderr, "WaitForReady failed.\n");
-      return;
-    }
-    // DebugLog(100, FMT_STRING("plugin thread starting (ctx={})..."),
-    //          (void*)&pctx);
-    for (;;) {
-      std::optional cb = out.get();
+//   void run()
+//   {
+//     if (!WaitForReady()) {
+//       fprintf(stderr, "WaitForReady failed.\n");
+//       return;
+//     }
+//     // DebugLog(100, FMT_STRING("plugin thread starting (ctx={})..."),
+//     //          (void*)&pctx);
+//     for (;;) {
+//       std::optional cb = out.get();
 
-      if (!cb) { break; }
+//       if (!cb) { break; }
 
-      (*cb)(&pctx);
-    }
-    // DebugLog(100, FMT_STRING("plugin thread stopping (ctx={})..."),
-    //          (void*)&pctx);
-  }
+//       (*cb)(&pctx);
+//     }
+//     // DebugLog(100, FMT_STRING("plugin thread stopping (ctx={})..."),
+//     //          (void*)&pctx);
+//   }
 
-  PluginContext pctx{};
-  channel::input<callback> in;
-  channel::output<callback> out;
-  std::thread t;
+//   PluginContext pctx{};
+//   channel::input<callback> in;
+//   channel::output<callback> out;
+//   std::thread t;
 
-  std::uint64_t registered_events = 0;
-};
+//   std::uint64_t registered_events = 0;
+// };
 
 
 // TODO: implement these
@@ -368,8 +367,10 @@ void DebugMessage(int level,
                   const char* file,
                   const char* fun)
 {
-  // TODO: this should get fixed ...
-  return;
+  if (level > globals.debug_level) {
+    // TODO: this should get fixed ...
+    return;
+  }
 
   bc::CoreRequest outer_req;
   auto& req = *outer_req.mutable_debugmessage();
@@ -625,8 +626,8 @@ bRC Wrapper_registerBareosEvents(PluginContext* ctx, int nr_events, ...)
   va_end(args);
   if (!Register({events.data(), events.size()})) { return bRC_Error; }
 
-  auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
-  thrd->allow_events(event_mask);
+  auto* thrd = reinterpret_cast<PluginThread*>(ctx->core_private_context);
+  allow_events(thrd, event_mask);
   return bRC_OK;
 }
 bRC Wrapper_unregisterBareosEvents(PluginContext* ctx, int nr_events, ...)
@@ -650,8 +651,8 @@ bRC Wrapper_unregisterBareosEvents(PluginContext* ctx, int nr_events, ...)
   va_end(args);
   if (!Unregister({events.data(), events.size()})) { return bRC_Error; }
 
-  auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
-  thrd->disallow_events(event_mask);
+  auto* thrd = reinterpret_cast<PluginThread*>(ctx->core_private_context);
+  disallow_events(thrd, event_mask);
 
   return bRC_OK;
 }
@@ -1087,348 +1088,350 @@ template <typename F> bRC plugin_run(PluginContext* ctx, F&& f)
 
 std::optional<std::string_view> inferior_setup(PluginContext* ctx,
                                                std::string_view cmd);
-namespace filedaemon {
-bRC Wrapper_newPlugin(PluginContext* outer_ctx)
-{
-  return plugin_run(outer_ctx, [](PluginContext*) {
-    // we do not do anything here
-    auto events = std::array{
-        bc::EventType::Event_JobStart,
-        bc::EventType::Event_JobEnd,
-        bc::EventType::Event_PluginCommand,
-        bc::EventType::Event_BackupCommand,
-        bc::EventType::Event_StartBackupJob,
-        bc::EventType::Event_StartRestoreJob,
-        bc::EventType::Event_RestoreCommand,
-    };
+// namespace filedaemon {
+// bRC Wrapper_newPlugin(PluginContext* outer_ctx)
+// {
+//   return plugin_run(outer_ctx, [](PluginContext*) {
+//     // we do not do anything here
+//     auto events = std::array{
+//         bc::EventType::Event_JobStart,
+//         bc::EventType::Event_JobEnd,
+//         bc::EventType::Event_PluginCommand,
+//         bc::EventType::Event_BackupCommand,
+//         bc::EventType::Event_StartBackupJob,
+//         bc::EventType::Event_StartRestoreJob,
+//         bc::EventType::Event_RestoreCommand,
+//     };
 
-    if (!Register({events.data(), events.size()})) {
-      JobLog(bc::JMSG_ERROR, "could not register my events");
-      return bRC_Term;
-    }
-    return bRC_OK;
-  });
-}
-bRC Wrapper_freePlugin(PluginContext* outer_ctx)
-{
-  return plugin_run(outer_ctx, [](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    return plugin_funs->freePlugin(ctx);
-  });
-}
-bRC Wrapper_getPluginValue(PluginContext* outer_ctx, pVariable var, void* value)
-{
-  return plugin_run(outer_ctx, [var, value](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    return plugin_funs->getPluginValue(ctx, var, value);
-  });
-}
-bRC Wrapper_setPluginValue(PluginContext* outer_ctx, pVariable var, void* value)
-{
-  return plugin_run(outer_ctx, [var, value](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    return plugin_funs->setPluginValue(ctx, var, value);
-  });
-}
-static const char* event_type_to_str(int type)
-{
-  switch (type) {
-    case bEventJobStart:
-      return "JobStart";
-    case bEventJobEnd:
-      return "JobEnd";
-    case bEventStartBackupJob:
-      return "StartBackupJob";
-    case bEventEndBackupJob:
-      return "EndBackupJob";
-    case bEventStartRestoreJob:
-      return "StartRestoreJob";
-    case bEventEndRestoreJob:
-      return "EndRestoreJob";
-    case bEventStartVerifyJob:
-      return "StartVerifyJob";
-    case bEventEndVerifyJob:
-      return "EndVerifyJob";
-    case bEventBackupCommand:
-      return "BackupCommand";
-    case bEventRestoreCommand:
-      return "RestoreCommand";
-    case bEventEstimateCommand:
-      return "EstimateCommand";
-    case bEventLevel:
-      return "Level";
-    case bEventSince:
-      return "Since";
-    case bEventCancelCommand:
-      return "CancelCommand";
-    case bEventRestoreObject:
-      return "RestoreObject";
-    case bEventEndFileSet:
-      return "EndFileSet";
-    case bEventPluginCommand:
-      return "PluginCommand";
-    case bEventOptionPlugin:
-      return "OptionPlugin";
-    case bEventHandleBackupFile:
-      return "HandleBackupFile";
-    case bEventNewPluginOptions:
-      return "NewPluginOptions";
-    case bEventVssInitializeForBackup:
-      return "VssInitializeForBackup";
-    case bEventVssInitializeForRestore:
-      return "VssInitializeForRestore";
-    case bEventVssSetBackupState:
-      return "VssSetBackupState";
-    case bEventVssPrepareForBackup:
-      return "VssPrepareForBackup";
-    case bEventVssBackupAddComponents:
-      return "VssBackupAddComponents";
-    case bEventVssPrepareSnapshot:
-      return "VssPrepareSnapshot";
-    case bEventVssCreateSnapshots:
-      return "VssCreateSnapshots";
-    case bEventVssRestoreLoadComponentMetadata:
-      return "VssRestoreLoadComponentMetadata";
-    case bEventVssRestoreSetComponentsSelected:
-      return "VssRestoreSetComponentsSelected";
-    case bEventVssCloseRestore:
-      return "VssCloseRestore";
-    case bEventVssBackupComplete:
-      return "VssBackupComplete";
-    default: {
-      return "<unknown type>";
-    }
-  }
-}
+//     if (!Register({events.data(), events.size()})) {
+//       JobLog(bc::JMSG_ERROR, "could not register my events");
+//       return bRC_Term;
+//     }
+//     return bRC_OK;
+//   });
+// }
+// bRC Wrapper_freePlugin(PluginContext* outer_ctx)
+// {
+//   return plugin_run(outer_ctx, [](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     return plugin_funs->freePlugin(ctx);
+//   });
+// }
+// bRC Wrapper_getPluginValue(PluginContext* outer_ctx, pVariable var, void*
+// value)
+// {
+//   return plugin_run(outer_ctx, [var, value](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     return plugin_funs->getPluginValue(ctx, var, value);
+//   });
+// }
+// bRC Wrapper_setPluginValue(PluginContext* outer_ctx, pVariable var, void*
+// value)
+// {
+//   return plugin_run(outer_ctx, [var, value](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     return plugin_funs->setPluginValue(ctx, var, value);
+//   });
+// }
+// static const char* event_type_to_str(int type)
+// {
+//   switch (type) {
+//     case bEventJobStart:
+//       return "JobStart";
+//     case bEventJobEnd:
+//       return "JobEnd";
+//     case bEventStartBackupJob:
+//       return "StartBackupJob";
+//     case bEventEndBackupJob:
+//       return "EndBackupJob";
+//     case bEventStartRestoreJob:
+//       return "StartRestoreJob";
+//     case bEventEndRestoreJob:
+//       return "EndRestoreJob";
+//     case bEventStartVerifyJob:
+//       return "StartVerifyJob";
+//     case bEventEndVerifyJob:
+//       return "EndVerifyJob";
+//     case bEventBackupCommand:
+//       return "BackupCommand";
+//     case bEventRestoreCommand:
+//       return "RestoreCommand";
+//     case bEventEstimateCommand:
+//       return "EstimateCommand";
+//     case bEventLevel:
+//       return "Level";
+//     case bEventSince:
+//       return "Since";
+//     case bEventCancelCommand:
+//       return "CancelCommand";
+//     case bEventRestoreObject:
+//       return "RestoreObject";
+//     case bEventEndFileSet:
+//       return "EndFileSet";
+//     case bEventPluginCommand:
+//       return "PluginCommand";
+//     case bEventOptionPlugin:
+//       return "OptionPlugin";
+//     case bEventHandleBackupFile:
+//       return "HandleBackupFile";
+//     case bEventNewPluginOptions:
+//       return "NewPluginOptions";
+//     case bEventVssInitializeForBackup:
+//       return "VssInitializeForBackup";
+//     case bEventVssInitializeForRestore:
+//       return "VssInitializeForRestore";
+//     case bEventVssSetBackupState:
+//       return "VssSetBackupState";
+//     case bEventVssPrepareForBackup:
+//       return "VssPrepareForBackup";
+//     case bEventVssBackupAddComponents:
+//       return "VssBackupAddComponents";
+//     case bEventVssPrepareSnapshot:
+//       return "VssPrepareSnapshot";
+//     case bEventVssCreateSnapshots:
+//       return "VssCreateSnapshots";
+//     case bEventVssRestoreLoadComponentMetadata:
+//       return "VssRestoreLoadComponentMetadata";
+//     case bEventVssRestoreSetComponentsSelected:
+//       return "VssRestoreSetComponentsSelected";
+//     case bEventVssCloseRestore:
+//       return "VssCloseRestore";
+//     case bEventVssBackupComplete:
+//       return "VssBackupComplete";
+//     default: {
+//       return "<unknown type>";
+//     }
+//   }
+// }
 
-bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx,
-                              bEvent* event,
-                              void* value,
-                              std::size_t size)
-{
-  return plugin_run(outer_ctx, [event, value, size](PluginContext* ctx) {
-    DebugLog(100, FMT_STRING("handling event of type \"{}\" ({})"),
-             event_type_to_str(event->eventType), event->eventType);
-
-
-    switch (event->eventType) {
-      case bEventRestoreObject: {
-        auto* rop = reinterpret_cast<restore_object_pkt*>(value);
-        std::string_view cmd{rop->plugin_name};
-        DebugLog(100, FMT_STRING("got cmd string \"{}\""), cmd);
-        std::optional pstring = inferior_setup(ctx, cmd);
-        if (!pstring) { return bRC_Error; }
-
-        DebugLog(100, FMT_STRING("using cmd string \"{}\" for the plugin"),
-                 pstring.value());
-
-        auto* old = rop->plugin_name;
-        rop->plugin_name = const_cast<char*>(pstring->data());
-        auto res = plugin_funs->handlePluginEvent(ctx, event, (void*)rop);
-        rop->plugin_name = old;
-        return res;
-      } break;
-      case bEventPluginCommand:
-        [[fallthrough]];
-      case bEventEstimateCommand:
-        [[fallthrough]];
-      case bEventBackupCommand:
-        [[fallthrough]];
-      case bEventRestoreCommand:
-        [[fallthrough]];
-      case bEventNewPluginOptions: {
-        std::string cmd{(char*)value};
-        DebugLog(100, FMT_STRING("got cmd string \"{}\""), cmd);
-        std::optional pstring = inferior_setup(ctx, cmd);
-        if (!pstring) { return bRC_Error; }
-
-        DebugLog(100, FMT_STRING("using cmd string \"{}\" for the plugin"),
-                 pstring.value());
-
-        auto* thrd
-            = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
-        auto cached = thrd->clear_cached_events();
-
-        DebugLog(100, FMT_STRING("inserting {} cached events ({:x})"),
-                 cached.size(), thrd->allowed_events());
-
-        bool cached_err = false;
-        for (auto& cached_event : cached) {
-          if (!thrd->is_event_allowed(cached_event.type())) {
-            DebugLog(100, FMT_STRING("skipping cached {}-event ({})"),
-                     cached_event.type()->eventType, cached_event.value());
-            continue;
-          }
+// bRC Wrapper_handlePluginEvent(PluginContext* outer_ctx,
+//                               bEvent* event,
+//                               void* value,
+//                               std::size_t size)
+// {
+//   return plugin_run(outer_ctx, [event, value, size](PluginContext* ctx) {
+//     DebugLog(100, FMT_STRING("handling event of type \"{}\" ({})"),
+//              event_type_to_str(event->eventType), event->eventType);
 
 
-          DebugLog(100, FMT_STRING("inserting cached {}-event ({})"),
-                   cached_event.type()->eventType, cached_event.value());
-          if (plugin_funs->handlePluginEvent(ctx, cached_event.type(),
-                                             cached_event.value())
-              == bRC_Error) {
-            DebugLog(100, FMT_STRING(" ... lead to failure"));
-            cached_err = true;
-          }
-        }
+//     switch (event->eventType) {
+//       case bEventRestoreObject: {
+//         auto* rop = reinterpret_cast<restore_object_pkt*>(value);
+//         std::string_view cmd{rop->plugin_name};
+//         DebugLog(100, FMT_STRING("got cmd string \"{}\""), cmd);
+//         std::optional pstring = inferior_setup(ctx, cmd);
+//         if (!pstring) { return bRC_Error; }
 
-        DebugLog(100, FMT_STRING("plugin funs = {}"), (void*)plugin_funs);
-        DebugLog(100, FMT_STRING("handle plugin events = {}"),
-                 (void*)plugin_funs->handlePluginEvent);
-        auto result = plugin_funs->handlePluginEvent(ctx, event,
-                                                     (void*)pstring->data());
-        if (cached_err) { return bRC_Error; }
+//         DebugLog(100, FMT_STRING("using cmd string \"{}\" for the plugin"),
+//                  pstring.value());
 
-        return result;
+//         auto* old = rop->plugin_name;
+//         rop->plugin_name = const_cast<char*>(pstring->data());
+//         auto res = plugin_funs->handlePluginEvent(ctx, event, (void*)rop);
+//         rop->plugin_name = old;
+//         return res;
+//       } break;
+//       case bEventPluginCommand:
+//         [[fallthrough]];
+//       case bEventEstimateCommand:
+//         [[fallthrough]];
+//       case bEventBackupCommand:
+//         [[fallthrough]];
+//       case bEventRestoreCommand:
+//         [[fallthrough]];
+//       case bEventNewPluginOptions: {
+//         std::string cmd{(char*)value};
+//         DebugLog(100, FMT_STRING("got cmd string \"{}\""), cmd);
+//         std::optional pstring = inferior_setup(ctx, cmd);
+//         if (!pstring) { return bRC_Error; }
 
-      } break;
-    }
+//         DebugLog(100, FMT_STRING("using cmd string \"{}\" for the plugin"),
+//                  pstring.value());
 
-    auto* thrd = reinterpret_cast<plugin_thread*>(ctx->core_private_context);
-    if (!plugin_funs) {
-      DebugLog(100,
-               FMT_STRING("inferior not setup yet, so we cache event {} ({})"),
-               event->eventType, (void*)thrd);
+//         auto* thrd
+//             = reinterpret_cast<Inferior*>(ctx->core_private_context);
+//         auto cached = thrd->clear_cached_events();
 
-      if (!thrd->cache_event(event, value, size)) {
-        DebugLog(100, FMT_STRING("could not cache event {}"), event->eventType);
-        return bRC_Error;
-      }
-      DebugLog(100, FMT_STRING("cached {} ({})"), event->eventType,
-               (void*)thrd);
+//         DebugLog(100, FMT_STRING("inserting {} cached events ({:x})"),
+//                  cached.size(), thrd->allowed_events());
 
-      return bRC_OK;
-    }
+//         bool cached_err = false;
+//         for (auto& cached_event : cached) {
+//           if (!thrd->is_event_allowed(cached_event.type())) {
+//             DebugLog(100, FMT_STRING("skipping cached {}-event ({})"),
+//                      cached_event.type()->eventType, cached_event.value());
+//             continue;
+//           }
 
-    if (!thrd->is_event_allowed(event)) {
-      DebugLog(100, FMT_STRING("skipping cached {}-event ({})"),
-               event->eventType, value);
-      return bRC_OK;
-    }
-    return plugin_funs->handlePluginEvent(ctx, event, value);
-  });
-}
-bRC Wrapper_startBackupFile(PluginContext* outer_ctx, save_pkt* sp)
-{
-  return plugin_run(outer_ctx, [sp](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    return plugin_funs->startBackupFile(ctx, sp);
-  });
-}
-bRC Wrapper_endBackupFile(PluginContext* outer_ctx)
-{
-  return plugin_run(outer_ctx, [](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    return plugin_funs->endBackupFile(ctx);
-    return bRC_Error;
-  });
-}
-bRC Wrapper_startRestoreFile(PluginContext* outer_ctx, const char* cmd)
-{
-  return plugin_run(outer_ctx, [cmd](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    return plugin_funs->startRestoreFile(ctx, cmd);
-  });
-}
-bRC Wrapper_endRestoreFile(PluginContext* outer_ctx)
-{
-  return plugin_run(outer_ctx, [](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    return plugin_funs->endRestoreFile(ctx);
-  });
-}
-bRC Wrapper_pluginIO(PluginContext* outer_ctx, io_pkt* io)
-{
-  return plugin_run(outer_ctx, [io](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    return plugin_funs->pluginIO(ctx, io);
-  });
-}
-bRC Wrapper_createFile(PluginContext* outer_ctx, restore_pkt* rp)
-{
-  return plugin_run(outer_ctx, [rp](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    return plugin_funs->createFile(ctx, rp);
-  });
-}
-bRC Wrapper_setFileAttributes(PluginContext* outer_ctx, restore_pkt* rp)
-{
-  return plugin_run(outer_ctx, [rp](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    return plugin_funs->setFileAttributes(ctx, rp);
-  });
-}
-bRC Wrapper_checkFile(PluginContext* outer_ctx, char* fname)
-{
-  return plugin_run(outer_ctx, [fname](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    // this is not really correct, but there is no right answer here
-    if (!plugin_funs->checkFile) { return bRC_Error; }
-    return plugin_funs->checkFile(ctx, fname);
-  });
-}
-bRC Wrapper_getAcl(PluginContext* outer_ctx, acl_pkt* ap)
-{
-  return plugin_run(outer_ctx, [ap](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    // this is not really correct, but there is no right answer here
-    if (!plugin_funs->getAcl) {
-      ap->content_length = 0;
-      return bRC_OK;
-    }
-    return plugin_funs->getAcl(ctx, ap);
-  });
-}
-bRC Wrapper_setAcl(PluginContext* outer_ctx, acl_pkt* ap)
-{
-  return plugin_run(outer_ctx, [ap](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    // this is not really correct, but there is no right answer here
-    if (!plugin_funs->setAcl) { return bRC_Error; }
-    return plugin_funs->setAcl(ctx, ap);
-  });
-}
-bRC Wrapper_getXattr(PluginContext* outer_ctx, xattr_pkt* xp)
-{
-  return plugin_run(outer_ctx, [xp](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    // this is not really correct, but there is no right answer here
-    if (!plugin_funs->getXattr) {
-      xp->name_length = 0;
-      return bRC_OK;
-    }
-    return plugin_funs->getXattr(ctx, xp);
-  });
-}
-bRC Wrapper_setXattr(PluginContext* outer_ctx, xattr_pkt* xp)
-{
-  return plugin_run(outer_ctx, [xp](PluginContext* ctx) {
-    if (!plugin_funs) { return bRC_Error; }
-    // this is not really correct, but there is no right answer here
-    if (!plugin_funs->setXattr) { return bRC_Error; }
-    return plugin_funs->setXattr(ctx, xp);
-  });
-}
-}  // namespace filedaemon
 
-static const PluginFunctions funcs = {
-    .newPlugin = filedaemon::Wrapper_newPlugin,
-    .freePlugin = filedaemon::Wrapper_freePlugin,
-    .getPluginValue = filedaemon::Wrapper_getPluginValue,
-    .setPluginValue = filedaemon::Wrapper_setPluginValue,
-    .handlePluginEvent = filedaemon::Wrapper_handlePluginEvent,
-    .startBackupFile = filedaemon::Wrapper_startBackupFile,
-    .endBackupFile = filedaemon::Wrapper_endBackupFile,
-    .startRestoreFile = filedaemon::Wrapper_startRestoreFile,
-    .endRestoreFile = filedaemon::Wrapper_endRestoreFile,
-    .pluginIO = filedaemon::Wrapper_pluginIO,
-    .createFile = filedaemon::Wrapper_createFile,
-    .setFileAttributes = filedaemon::Wrapper_setFileAttributes,
-    .checkFile = filedaemon::Wrapper_checkFile,
-    .getAcl = filedaemon::Wrapper_getAcl,
-    .setAcl = filedaemon::Wrapper_setAcl,
-    .getXattr = filedaemon::Wrapper_getXattr,
-    .setXattr = filedaemon::Wrapper_setXattr,
-};
+//           DebugLog(100, FMT_STRING("inserting cached {}-event ({})"),
+//                    cached_event.type()->eventType, cached_event.value());
+//           if (plugin_funs->handlePluginEvent(ctx, cached_event.type(),
+//                                              cached_event.value())
+//               == bRC_Error) {
+//             DebugLog(100, FMT_STRING(" ... lead to failure"));
+//             cached_err = true;
+//           }
+//         }
+
+//         DebugLog(100, FMT_STRING("plugin funs = {}"), (void*)plugin_funs);
+//         DebugLog(100, FMT_STRING("handle plugin events = {}"),
+//                  (void*)plugin_funs->handlePluginEvent);
+//         auto result = plugin_funs->handlePluginEvent(ctx, event,
+//                                                      (void*)pstring->data());
+//         if (cached_err) { return bRC_Error; }
+
+//         return result;
+
+//       } break;
+//     }
+
+//     auto* thrd = reinterpret_cast<Inferior*>(ctx->core_private_context);
+//     if (!plugin_funs) {
+//       DebugLog(100,
+//                FMT_STRING("inferior not setup yet, so we cache event {}
+//                ({})"), event->eventType, (void*)thrd);
+
+//       if (!thrd->cache_event(event, value, size)) {
+//         DebugLog(100, FMT_STRING("could not cache event {}"),
+//         event->eventType); return bRC_Error;
+//       }
+//       DebugLog(100, FMT_STRING("cached {} ({})"), event->eventType,
+//                (void*)thrd);
+
+//       return bRC_OK;
+//     }
+
+//     if (!thrd->is_event_allowed(event)) {
+//       DebugLog(100, FMT_STRING("skipping cached {}-event ({})"),
+//                event->eventType, value);
+//       return bRC_OK;
+//     }
+//     return plugin_funs->handlePluginEvent(ctx, event, value);
+//   });
+// }
+// bRC Wrapper_startBackupFile(PluginContext* outer_ctx, save_pkt* sp)
+// {
+//   return plugin_run(outer_ctx, [sp](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     return plugin_funs->startBackupFile(ctx, sp);
+//   });
+// }
+// bRC Wrapper_endBackupFile(PluginContext* outer_ctx)
+// {
+//   return plugin_run(outer_ctx, [](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     return plugin_funs->endBackupFile(ctx);
+//     return bRC_Error;
+//   });
+// }
+// bRC Wrapper_startRestoreFile(PluginContext* outer_ctx, const char* cmd)
+// {
+//   return plugin_run(outer_ctx, [cmd](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     return plugin_funs->startRestoreFile(ctx, cmd);
+//   });
+// }
+// bRC Wrapper_endRestoreFile(PluginContext* outer_ctx)
+// {
+//   return plugin_run(outer_ctx, [](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     return plugin_funs->endRestoreFile(ctx);
+//   });
+// }
+// bRC Wrapper_pluginIO(PluginContext* outer_ctx, io_pkt* io)
+// {
+//   return plugin_run(outer_ctx, [io](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     return plugin_funs->pluginIO(ctx, io);
+//   });
+// }
+// bRC Wrapper_createFile(PluginContext* outer_ctx, restore_pkt* rp)
+// {
+//   return plugin_run(outer_ctx, [rp](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     return plugin_funs->createFile(ctx, rp);
+//   });
+// }
+// bRC Wrapper_setFileAttributes(PluginContext* outer_ctx, restore_pkt* rp)
+// {
+//   return plugin_run(outer_ctx, [rp](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     return plugin_funs->setFileAttributes(ctx, rp);
+//   });
+// }
+// bRC Wrapper_checkFile(PluginContext* outer_ctx, char* fname)
+// {
+//   return plugin_run(outer_ctx, [fname](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     // this is not really correct, but there is no right answer here
+//     if (!plugin_funs->checkFile) { return bRC_Error; }
+//     return plugin_funs->checkFile(ctx, fname);
+//   });
+// }
+// bRC Wrapper_getAcl(PluginContext* outer_ctx, acl_pkt* ap)
+// {
+//   return plugin_run(outer_ctx, [ap](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     // this is not really correct, but there is no right answer here
+//     if (!plugin_funs->getAcl) {
+//       ap->content_length = 0;
+//       return bRC_OK;
+//     }
+//     return plugin_funs->getAcl(ctx, ap);
+//   });
+// }
+// bRC Wrapper_setAcl(PluginContext* outer_ctx, acl_pkt* ap)
+// {
+//   return plugin_run(outer_ctx, [ap](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     // this is not really correct, but there is no right answer here
+//     if (!plugin_funs->setAcl) { return bRC_Error; }
+//     return plugin_funs->setAcl(ctx, ap);
+//   });
+// }
+// bRC Wrapper_getXattr(PluginContext* outer_ctx, xattr_pkt* xp)
+// {
+//   return plugin_run(outer_ctx, [xp](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     // this is not really correct, but there is no right answer here
+//     if (!plugin_funs->getXattr) {
+//       xp->name_length = 0;
+//       return bRC_OK;
+//     }
+//     return plugin_funs->getXattr(ctx, xp);
+//   });
+// }
+// bRC Wrapper_setXattr(PluginContext* outer_ctx, xattr_pkt* xp)
+// {
+//   return plugin_run(outer_ctx, [xp](PluginContext* ctx) {
+//     if (!plugin_funs) { return bRC_Error; }
+//     // this is not really correct, but there is no right answer here
+//     if (!plugin_funs->setXattr) { return bRC_Error; }
+//     return plugin_funs->setXattr(ctx, xp);
+//   });
+// }
+// }  // namespace filedaemon
+
+// static const PluginFunctions funcs = {
+//     .newPlugin = filedaemon::Wrapper_newPlugin,
+//     .freePlugin = filedaemon::Wrapper_freePlugin,
+//     .getPluginValue = filedaemon::Wrapper_getPluginValue,
+//     .setPluginValue = filedaemon::Wrapper_setPluginValue,
+//     .handlePluginEvent = filedaemon::Wrapper_handlePluginEvent,
+//     .startBackupFile = filedaemon::Wrapper_startBackupFile,
+//     .endBackupFile = filedaemon::Wrapper_endBackupFile,
+//     .startRestoreFile = filedaemon::Wrapper_startRestoreFile,
+//     .endRestoreFile = filedaemon::Wrapper_endRestoreFile,
+//     .pluginIO = filedaemon::Wrapper_pluginIO,
+//     .createFile = filedaemon::Wrapper_createFile,
+//     .setFileAttributes = filedaemon::Wrapper_setFileAttributes,
+//     .checkFile = filedaemon::Wrapper_checkFile,
+//     .getAcl = filedaemon::Wrapper_getAcl,
+//     .setAcl = filedaemon::Wrapper_setAcl,
+//     .getXattr = filedaemon::Wrapper_getXattr,
+//     .setXattr = filedaemon::Wrapper_setXattr,
+// };
 
 static std::string join(const std::vector<std::string>& x)
 {
@@ -1588,23 +1591,51 @@ void SetReady(bool result)
   ready_cond.notify_all();
 }
 
+bool handle_setup(prototools::ProtoBidiStream* core_events)
+{
+  bp::PluginRequest req;
+  if (!core_events->Read(req)) {
+    DebugLog(50, FMT_STRING("could not read next message"));
+    return false;
+  }
+
+  if (!req.has_setup()) {
+    DebugLog(50, FMT_STRING("bad communication: expected setup message"));
+    return false;
+  }
+
+  globals.debug_level = req.setup().initial_debug_level();
+
+  bp::PluginResponse resp;
+  (void)resp.mutable_setup();
+
+  if (!core_events->Write(resp)) {
+    DebugLog(50, FMT_STRING("could not send setup response"));
+    return false;
+  }
+
+  return setup();
+}
+
 void HandleConnection(int server_sock, int client_sock, int io_sock)
 {
-  prototools::ProtoBidiStream server{server_sock};
-  prototools::ProtoBidiStream client{client_sock};
-  global_core_connection.client_writer = &client;
+  prototools::ProtoBidiStream core_events{server_sock};
+  prototools::ProtoBidiStream plugin_requests{client_sock};
+  prototools::ProtoBidiStream data_transfer{io_sock};
+  globals.client_writer = &plugin_requests;
 
-  plugin_thread plugin{};
+  // plugin_thread plugin{};
 
   DebugLog(100, FMT_STRING("setting up ..."));
 
   bool done = false;
-  PluginService service{plugin.ctx(), io_sock, funcs, &done};
-
-  if (!setup()) {
+  // PluginService service{plugin.ctx(), funcs, &done};
+  if (!handle_setup(&core_events)) {
     DebugLog(50, FMT_STRING("setup failed"));
     SetReady(false);
   } else {
+    Inferior inferior{&core_funs, &data_transfer, plugin_path};
+
     DebugLog(100,
              FMT_STRING("... successfully.\nwaiting for server to finish ..."));
     SetReady(true);
@@ -1614,14 +1645,33 @@ void HandleConnection(int server_sock, int client_sock, int io_sock)
     {
       while (!done) {
         auto* req = google::protobuf::Arena::Create<bp::PluginRequest>(&arena);
-        auto* resp
-            = google::protobuf::Arena::Create<bp::PluginResponse>(&arena);
-        if (!server.Read(*req)) { break; }
-        if (!service.HandleRequest(*req, *resp, server.output)) {
-          // TODO: some error here
-          assert(0);
+        if (!core_events.Read(*req)) { break; }
+
+        bool pass_event_to_inferior = true;
+
+        if (req->has_setup()) {
+          JobLog(bc::JMSG_FATAL, FMT_STRING("core send second setup event"));
+          done = true;
+          pass_event_to_inferior = false;
+        } else if (req->has_handle_plugin_event()) {
+          auto& plugin_event = req->handle_plugin_event().to_handle();
+
+          if (plugin_event.has_set_debug_level()) {
+            globals.debug_level = plugin_event.set_debug_level().debug_level();
+            pass_event_to_inferior = false;
+          } else if (plugin_event.has_job_end()) {
+            done = true;
+          }
         }
 
+        if (pass_event_to_inferior) {
+          auto* resp
+              = google::protobuf::Arena::Create<bp::PluginResponse>(&arena);
+
+          if (!inferior.handle_core_event(req, resp)) { ASSERT(0); }
+
+          if (!core_events.Write(*resp)) { ASSERT(0); }
+        }
         arena.Reset();
       }
     }
