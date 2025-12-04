@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- dirconfig: add subscription setting with comment [PR #2472]
+
 ## [25.0.0] - 2025-12-01
 
 ### Breaking changes
@@ -2165,4 +2168,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2445]: https://github.com/bareos/bareos/pull/2445
 [PR #2452]: https://github.com/bareos/bareos/pull/2452
 [PR #2456]: https://github.com/bareos/bareos/pull/2456
+[PR #2472]: https://github.com/bareos/bareos/pull/2472
 [unreleased]: https://github.com/bareos/bareos/tree/master
