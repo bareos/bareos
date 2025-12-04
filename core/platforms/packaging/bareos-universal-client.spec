@@ -480,6 +480,9 @@ fi \
 
 %endif
 
+# check if LOGFILE is writable,
+# to prevent failures on immutable systems (eg. Fedora Silverblue).
+# In that case, output to stdout.
 %define logging_start() \
 timestamp() { \
   date "+%%F %%R" \
@@ -487,8 +490,10 @@ timestamp() { \
 COMPONENT=%1 \
 SECTION=%2 \
 LOGFILE="%{log_dir}/%{name}-${COMPONENT}-install.log" \
-mkdir -p "%{log_dir}" \
-exec >>"$LOGFILE" 2>&1 \
+mkdir -p "%{log_dir}" || true \
+if touch "${LOGFILE}"; then \
+  exec >>"${LOGFILE}" 2>&1 \
+fi \
 echo "[$(timestamp)] %{name}-${COMPONENT} %{version} %%${SECTION}: start" \
 if [ "${BAREOS_INSTALL_DEBUG}" ]; then \
   set -x \
