@@ -345,40 +345,20 @@ def handle_plugin_event(
             result = bRC_OK
         case "restore_object":
             rop = event.rop
+
             if not plugin_loaded:
-                plugin_options = parse_options(rop.used_cmd_string)
-                if plugin_options is None:
-                    raise ValueError
+                result = handle_plugin_options(rop.used_cmd_string)
+            else:
+                result = bRC_OK
 
-                global module_name
-
-                log(f"paths = {sys.path}")
-
-                module = __import__(module_name, globals(), locals(), [], 0)
-
-                log(f"got module {module}")
-
-                loader = module.__dict__["load_bareos_plugin"]
-                log(f"got loader {loader}")
-
-                result = loader(plugin_options)
-                if result != bRC_OK:
-                    raise ValueError
-                    # break
-                plugin_loaded = True
-
-                result = BareosFdWrapper.parse_plugin_definition(plugin_options)
-                if result != bRC_OK:
-                    raise ValueError
-                    # break
-
-            pyrop = RestoreObject()
-            pyrop.plugin_name = rop.used_cmd_string
-            pyrop.object_len = len(rop.sent.data)
-            pyrop.object = rop.sent.data
-            pyrop.object_index = rop.sent.index
-            pyrop.JobId = rop.jobid
-            result = BareosFdWrapper.restore_object_data()
+            if result == bRC_OK:
+                pyrop = RestoreObject()
+                pyrop.plugin_name = rop.used_cmd_string
+                pyrop.object_len = len(rop.sent.data)
+                pyrop.object = rop.sent.data
+                pyrop.object_index = rop.sent.index
+                pyrop.JobId = rop.jobid
+                result = BareosFdWrapper.restore_object_data()
 
         case "handle_backup_file":
             # this is currently unsupported
