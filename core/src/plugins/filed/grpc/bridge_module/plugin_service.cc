@@ -1872,7 +1872,26 @@ struct PluginThread {
       bool read_file = false;
       bool is_file = false;
 
+      // TODO: these continues should still call end_backup_file()
       if (auto* object_type = std::get_if<bco::ObjectType>(&type)) {
+        if (!pkt.object_name) {
+          JobLog(bc::JMSG_ERROR,
+                 "plugin did not set an object name in start_backup_file; "
+                 "skipping");
+
+          continue;
+        }
+        if (*object_type == bco::OBJECT_TYPE_UNSPECIFIED) {
+          JobLog(bc::JMSG_FATAL, "internal error occured; aborting");
+
+          break;
+        }
+
+        auto* obj = bo->mutable_object();
+        obj->set_index(pkt.index);
+        obj->set_name(pkt.object_name);
+        obj->set_data(pkt.object, pkt.object_len);
+        obj->set_type(*object_type);
       } else if (auto* file_type = std::get_if<bco::FileType>(&type)) {
         if (!pkt.fname) {
           JobLog(bc::JMSG_ERROR,
@@ -1890,7 +1909,6 @@ struct PluginThread {
 
         current_file_name.assign(pkt.fname);
 
-
         if (!pkt.no_read) { read_file = true; }
         file->set_no_read(pkt.no_read);
         file->set_portable(pkt.portable);
@@ -1906,72 +1924,6 @@ struct PluginThread {
         file->set_file(pkt.fname);
 
         if (*file_type == bco::SoftLink) { file->set_link(pkt.link); }
-
-        // auto fo_req = bp::fileOpenRequest{};
-
-        // fo_req.set_file(sp.fname);
-        // fo_req.set_flags(O_RDONLY);
-        // fo_req.set_mode(0);
-
-        // auto fo_res = FileOpen2(&fo_req);
-
-        // // if (!fo_res.ok()) {
-        // //   // auto error = bp::FileRecord{};
-        // //   // error.set_error("could not open file");
-        // //   // writer.Write(error);
-        // //   // return fo_res;
-        // //   assert(0);
-        // // }
-
-        // if (fo_res) {
-        //   response->set_io_in_core(true);
-
-        //   writer.Write(outer_resp, *fo_res);
-
-        //   last_io_in_core_fd = *fo_res;
-
-        //   skip_ebf = true;
-
-        //   return Status::OK;
-        // }
-
-        // response->set_io_in_core(false);
-
-        // writer.Write(outer_resp);
-
-        // auto fr = bp::FileRecord{};
-        // std::string* data = fr.mutable_data();
-
-        // for (;;) {
-        //   filedaemon::io_pkt pkt{};
-        //   pkt.func = filedaemon::IO_READ;
-        //   pkt.count = request->max_record_size();
-        //   data->resize(request->max_record_size());
-        //   pkt.buf = data->data();
-
-        //   auto read_res = funcs.pluginIO(ctx, &pkt);
-
-        //   if (read_res != bRC_OK || pkt.status < 0) {
-        //     auto error = bp::FileRecord{};
-        //     error.set_error("could not read file");
-        //     writer.Write(error);
-        //     return Status(StatusCode::INTERNAL, "bad response");
-        //   }
-
-        //   data->resize(pkt.status);
-
-        //   writer.Write(fr);
-
-        //   if (pkt.status == 0) { break; }
-        // }
-
-
-        // auto fc_req = bp::fileCloseRequest{};
-        // auto fc_resp = bp::fileCloseResponse{};
-
-        // auto fc_res = FileClose(&fc_req, &fc_resp);
-
-        // assert(fc_res.ok());
       } else if (auto* error_type = std::get_if<bco::FileErrorType>(&type)) {
       } else {
         JobLog(bc::JMSG_FATAL, "received unhandled type {} from the plugin",
