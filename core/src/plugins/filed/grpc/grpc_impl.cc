@@ -144,7 +144,7 @@ struct flush_fd {
         DebugLog(ctx, 100, msg);
       } break;
       case flush_fd::OUTPUT_JOB_ERROR: {
-        // JobLog(ctx, M_ERROR, msg);
+        JobLog(ctx, M_ERROR, msg);
         DebugLog(ctx, 100, msg);
       } break;
     }
