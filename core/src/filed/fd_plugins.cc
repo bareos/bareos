@@ -2438,7 +2438,7 @@ static bRC bareosJobMsg(PluginContext* ctx,
   va_start(arg_ptr, fmt);
   buffer.Bvsprintf(fmt, arg_ptr);
   va_end(arg_ptr);
-  Jmsg(jcr, type, mtime, "%s", buffer.c_str());
+  Qmsg(jcr, type, mtime, "%s", buffer.c_str());
 
   return bRC_OK;
 }
