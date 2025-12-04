@@ -6,6 +6,11 @@ Director {                            # define myself
   Messages = Daemon
   Auditing = yes
 
+  # Set to the number of purchased subscription units
+  #
+  # Subscriptions = 100
+
+
   # Enable the Heartbeat if you experience connection losses
   # (eg. because of your router or firewall configuration).
   # Additionally the Heartbeat can be enabled in bareos-sd and bareos-fd.
