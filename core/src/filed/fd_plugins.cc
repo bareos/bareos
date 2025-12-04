@@ -766,14 +766,6 @@ bail_out:
  */
 int PluginSave(JobControlRecord* jcr, FindFilesPacket* ff_pkt, bool)
 {
-  // we always consider plugin data to be "portable"
-  // so we need to set the portable option to true for this
-  // but since the backup may also contain other data we need to make sure
-  // to restore the correct flag afterwards
-
-  bool was_portable = BitIsSet(FO_PORTABLE, ff_pkt->flags);
-  SetBit(FO_PORTABLE, ff_pkt->flags);
-
   int ret = 1;  // everything ok
   bEvent event;
   PoolMem fname(PM_FNAME);
@@ -996,8 +988,6 @@ bail_out:
 
 fun_end:
   jcr->cmd_plugin = false;
-
-  if (!was_portable) { ClearBit(FO_PORTABLE, ff_pkt->flags); }
 
   return ret;
 }
