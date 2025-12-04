@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - dirconfig: add subscription setting with comment [PR #2472]
 - webui: make default job list period configurable [PR #2471]
+
+### Fixed
 - hyper-v: fix restores with portable data [PR #2474]
 
 ## [25.0.0] - 2025-12-01
