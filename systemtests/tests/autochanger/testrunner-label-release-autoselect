@@ -155,25 +155,7 @@ fi
 
 check_for_zombie_jobs storage=Tape-0
 
-#release all drives
-# Total of drives ${#tapedevices[@]}
-d=0
-cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/log-label-release-autoselect-no.out
-END_OF_DATA
-
-while [ ${d} -lt ${#tapedevices[@]} ]; do
-  cat <<END_OF_DATA >>"${tmp}/bconcmds"
-release storage=Tape-0 drive=${d}
-END_OF_DATA
-  d=$((d + 1))
-done
-cat <<END_OF_DATA >>"${tmp}/bconcmds"
-wait
-messages
-END_OF_DATA
-
-run_bconsole
+release_all_devices
 
 end_test
 exit 0
