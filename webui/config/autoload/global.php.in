@@ -93,6 +93,9 @@ function read_configuration_ini($configuration_ini)
         ),
         'experimental' => array(
             'configuration_resource_graph' => false
+        ),
+        'jobview' => array(
+            'period' => 7
         )
     );
 
@@ -134,8 +137,10 @@ function read_configuration_ini($configuration_ini)
         if (isset($configuration['experimental']['configuration_resource_graph'])) {
             $result['experimental']['configuration_resource_graph'] = $configuration['experimental']['configuration_resource_graph'];
         }
+        if (isset($configuration['jobview']['period'])) {
+            $result['jobview']['period'] = $configuration['jobview']['period'];
+        }
     }
-
     return $result;
 }
 
