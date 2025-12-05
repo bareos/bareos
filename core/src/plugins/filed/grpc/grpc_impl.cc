@@ -1790,8 +1790,8 @@ class PluginClient {
       bp::PluginRequest sb_req;
       auto* begin_backup = sb_req.mutable_begin_backup();
       begin_backup->mutable_cmd()->assign(backup_command.data());
-      begin_backup->set_backup_acl(false);
-      begin_backup->set_backup_xattr(false);
+      begin_backup->set_backup_acl(true);
+      begin_backup->set_backup_xattr(true);
       begin_backup->set_portable(true);
       begin_backup->set_no_atime(true);
       begin_backup->set_max_record_size(256 << 10);
@@ -2001,44 +2001,42 @@ class PluginClient {
       pkt->object_name = get_name_storage(core, name.size() + 1);
       memcpy(pkt->object_name, name.c_str(), name.size() + 1);
       pkt->index = object.index();
-#if 0
     } else if (begin_obj->has_error()) {
       auto& err = begin_obj->error();
 
       switch (err.error()) {
-      case bco::InvalidFileSystem: {
-        pkt->type = FT_INVALIDFS;
-      } break;
-      case bco::InvalidDriveType: {
-        pkt->type = FT_INVALIDDT;
-      } break;
-      case bco::CouldNotOpenDirectory: {
-        pkt->type = FT_NOOPEN;
-      } break;
-      case bco::CouldNotChangeFilesystem: {
-        pkt->type = FT_NOFSCHG;
-      } break;
-      case bco::RecursionDisabled: {
-        pkt->type = FT_NORECURSE;
-      } break;
-      case bco::CouldNotStat: {
-        pkt->type = FT_NOSTAT;
-      } break;
-      case bco::CouldNotFollowLink: {
-        pkt->type = FT_NOFOLLOW;
-      } break;
-      case bco::CouldNotAccessFile: {
-        pkt->type = FT_NOACCESS;
-      } break;
-      default: {
-        DebugLog(50, FMT_STRING("bad type {} ({})"),
-                 bco::FileErrorType_Name(err.error()), int(err.error()));
-        return bRC_Error;
-      }
+        case bco::InvalidFileSystem: {
+          pkt->type = FT_INVALIDFS;
+        } break;
+        case bco::InvalidDriveType: {
+          pkt->type = FT_INVALIDDT;
+        } break;
+        case bco::CouldNotOpenDirectory: {
+          pkt->type = FT_NOOPEN;
+        } break;
+        case bco::CouldNotChangeFilesystem: {
+          pkt->type = FT_NOFSCHG;
+        } break;
+        case bco::RecursionDisabled: {
+          pkt->type = FT_NORECURSE;
+        } break;
+        case bco::CouldNotStat: {
+          pkt->type = FT_NOSTAT;
+        } break;
+        case bco::CouldNotFollowLink: {
+          pkt->type = FT_NOFOLLOW;
+        } break;
+        case bco::CouldNotAccessFile: {
+          pkt->type = FT_NOACCESS;
+        } break;
+        default: {
+          DebugLog(50, FMT_STRING("bad type {} ({})"),
+                   bco::FileErrorType_Name(err.error()), int(err.error()));
+          return bRC_Error;
+        }
       }
 
       pkt->fname = strdup(err.file().c_str());
-#endif
     } else {
       DebugLog(100, FMT_STRING("received nothing"));
       return bRC_Error;
