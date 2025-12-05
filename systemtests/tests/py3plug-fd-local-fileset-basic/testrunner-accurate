@@ -24,6 +24,7 @@ start_test
 cat <<END_OF_DATA >"${tmp}"/bconcmds
 @$out ${NULL_DEV}
 messages
+setdebug level=800 client trace=1
 @$out ${runner_tmp}/full.out
 run job=$JobName level=Full yes
 status director

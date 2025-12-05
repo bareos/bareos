@@ -23,6 +23,7 @@
 #define BAREOS_PLUGINS_FILED_GRPC_PROTOTOOLS_H_
 
 #include <pthread.h>
+#include <mutex>
 #include <span>
 #include <fcntl.h>
 #include <poll.h>
@@ -229,10 +230,7 @@ struct ProtoInputStream {
     memcpy(&RequestSize, ptr, sizeof(RequestSize));
 
     ptr = do_read(RequestSize);
-    if (!ptr) {
-      assert(0);
-      return false;
-    }
+    if (!ptr) { return false; }
 
     return msg.ParseFromArray(ptr, RequestSize);
   }
@@ -375,10 +373,11 @@ struct ProtoBidiStream {
   ProtoInputStream input;
   ProtoOutputStream output;
 
+  std::mutex mutex;
+
   std::size_t read_count{}, write_count{};
 
-  std::atomic<std::size_t> concurrent_reads;
-  std::atomic<std::size_t> concurrent_writes;
+  std::atomic<std::size_t> concurrent_accessors;
 
   // for a bidirectional file descriptor; think socket
   ProtoBidiStream(int bidi_fd) : ProtoBidiStream(bidi_fd, bidi_fd) {}
@@ -390,16 +389,18 @@ struct ProtoBidiStream {
   ProtoBidiStream(ProtoBidiStream&&) = delete;
   ProtoBidiStream& operator=(ProtoBidiStream&&) = delete;
 
+  std::unique_lock<std::mutex> lock() { return std::unique_lock{mutex}; }
+
   template <typename Message> bool Read(Message& msg)
   {
     read_count += 1;
 
-    auto before = concurrent_reads++;
+    auto before = concurrent_accessors++;
     assert(before == 0);
 
     bool ok = input.Read(msg);
 
-    concurrent_reads -= 1;
+    concurrent_accessors -= 1;
 
     return ok;
   }
@@ -408,12 +409,12 @@ struct ProtoBidiStream {
   {
     write_count += 1;
 
-    auto before = concurrent_writes++;
+    auto before = concurrent_accessors++;
     assert(before == 0);
 
     bool ok = output.Write(msg);
 
-    concurrent_writes -= 1;
+    concurrent_accessors -= 1;
 
     return ok;
   }

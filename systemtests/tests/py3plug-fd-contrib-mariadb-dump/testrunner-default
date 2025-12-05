@@ -35,8 +35,8 @@ ${MARIADB_CLIENT} "${test_db_name}" <<<"insert into test (data) VALUES ('test en
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out ${NULL_DEV}
 messages
+setdebug level=400 trace=1 timestamp=1 client=bareos-fd
 @$out ${tmp}/log1.out
-setdebug level=200 trace=1 timestamp=1 client=bareos-fd
 run job=${JobName} yes
 wait
 setdebug level=0 client=bareos-fd
@@ -61,6 +61,7 @@ fi
 # mariadb-dump do only full dumps.
 ${MARIADB_CLIENT} "${test_db_name}" <<<"insert into test (data) VALUES ('test entry 2')"
 cat <<END_OF_DATA2 >"$tmp/bconcmds"
+setdebug level=400 trace=1 timestamp=1 client=bareos-fd
 @$out $tmp/log2.out
 run job=$JobName yes
 wait

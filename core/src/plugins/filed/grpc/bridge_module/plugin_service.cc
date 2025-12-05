@@ -546,7 +546,7 @@ auto PluginService::startBackupFile(const bp::StartBackupFileRequest* request,
     return Status::OK;
   }
 
-  filedaemon::save_pkt sp;
+  filedaemon::save_pkt sp = {};
 
   if (sizeof(sp.flags) != request->flags().size()) {
     return Status(StatusCode::INVALID_ARGUMENT, "flags size is not matching");
@@ -794,7 +794,7 @@ auto PluginService::endRestoreFile(const bp::endRestoreFileRequest* request,
 auto PluginService::FileOpen2(const bp::fileOpenRequest* request)
     -> std::optional<file_descriptor>
 {
-  filedaemon::io_pkt pkt;
+  filedaemon::io_pkt pkt{};
   pkt.func = filedaemon::IO_OPEN;
   pkt.fname = const_cast<char*>(request->file().c_str());
   pkt.mode = request->mode();
@@ -816,7 +816,7 @@ auto PluginService::FileOpen2(const bp::fileOpenRequest* request)
 auto PluginService::FileOpen(const bp::fileOpenRequest* request,
                              bp::fileOpenResponse* resp) -> Status
 {
-  filedaemon::io_pkt pkt;
+  filedaemon::io_pkt pkt{};
   pkt.func = filedaemon::IO_OPEN;
   pkt.fname = const_cast<char*>(request->file().c_str());
   pkt.mode = request->mode();
@@ -839,7 +839,7 @@ auto PluginService::FileOpen(const bp::fileOpenRequest* request,
 auto PluginService::FileSeek(const bp::fileSeekRequest* request,
                              bp::fileSeekResponse*) -> Status
 {
-  filedaemon::io_pkt pkt;
+  filedaemon::io_pkt pkt{};
   pkt.func = filedaemon::IO_SEEK;
   pkt.offset = request->offset();
 
@@ -980,7 +980,7 @@ const char* PluginService::non_blocking_write(int fd,
 auto PluginService::FileWrite(const bp::fileWriteRequest* request,
                               bp::fileWriteResponse* response) -> Status
 {
-  filedaemon::io_pkt pkt;
+  filedaemon::io_pkt pkt{};
   pkt.func = filedaemon::IO_WRITE;
   pkt.count = request->bytes_written();
   pkt.buf = buffer(request->bytes_written());
@@ -1000,7 +1000,7 @@ auto PluginService::FileWrite(const bp::fileWriteRequest* request,
 auto PluginService::FileClose(const bp::fileCloseRequest* request,
                               bp::fileCloseResponse*) -> Status
 {
-  filedaemon::io_pkt pkt;
+  filedaemon::io_pkt pkt{};
   pkt.func = filedaemon::IO_CLOSE;
 
   auto res = funcs.pluginIO(ctx, &pkt);
@@ -1758,12 +1758,14 @@ struct RestoreStateMachine {
         if (file.do_extract) {
           if (!file_open(&file)) { goto end_file; }
 
+          set_file_attributes(&file);
+
           while (!file.data_done) { file_write(&file); }
 
           file_close(&file);
+        } else {
+          set_file_attributes(&file);
         }
-
-        set_file_attributes(&file);
 
         set_acls(&file);
 
@@ -2416,7 +2418,7 @@ struct PluginThread {
 
           // file_open
           {
-            filedaemon::io_pkt io;
+            filedaemon::io_pkt io{};
             io.func = filedaemon::IO_OPEN;
             io.mode = 0;
             io.flags = O_RDONLY | O_BINARY;
@@ -2478,7 +2480,7 @@ struct PluginThread {
               DebugLog(150, "saving data via plugin");
               for (;;) {
                 buffer->resize(task.max_record_size);
-                filedaemon::io_pkt io;
+                filedaemon::io_pkt io{};
                 io.func = filedaemon::IO_READ;
                 io.count = buffer->size();
                 io.buf = buffer->data();
@@ -2505,7 +2507,7 @@ struct PluginThread {
 
           // file_close
           {
-            filedaemon::io_pkt io;
+            filedaemon::io_pkt io{};
             io.func = filedaemon::IO_CLOSE;
             auto fc_res = plugin_funs->pluginIO(&ctx, &io);
 
@@ -2523,7 +2525,7 @@ struct PluginThread {
           DebugLog(150, "saving acls");
 
 
-          filedaemon::acl_pkt acl_pkt;
+          filedaemon::acl_pkt acl_pkt{};
           acl_pkt.fname = current_file_name.c_str();
           auto ares = plugin_funs->getAcl(&ctx, &acl_pkt);
 
@@ -2551,7 +2553,7 @@ struct PluginThread {
         if (task.backup_xattr) {
           DebugLog(150, "saving xattrs");
 
-          filedaemon::xattr_pkt xattr_pkt;
+          filedaemon::xattr_pkt xattr_pkt{};
           for (;;) {
             xattr_pkt.fname = current_file_name.c_str();
             auto ares = plugin_funs->getXattr(&ctx, &xattr_pkt);
@@ -2642,6 +2644,8 @@ struct PluginThread {
 
           task.result.set_value(res);
           return;
+        } else {
+          task.result.set_value(bRC_OK);
         }
       } break;
       case filedaemon::bEventPluginCommand:
@@ -3003,7 +3007,7 @@ bool PluginThread::start_restore(const bp::BeginRestoreRequest& req)
 
 std::optional<bRC> PluginThread::handle_event(const bpe::Event& event)
 {
-  filedaemon::restore_object_pkt restore_object;
+  filedaemon::restore_object_pkt restore_object{};
 
   auto fut = [&]() -> std::optional<std::future<bRC>> {
     std::unique_lock _{task_mutex};

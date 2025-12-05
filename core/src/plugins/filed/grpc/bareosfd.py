@@ -1007,11 +1007,15 @@ class Restore:
 
             if self.extract:
                 self.file_open()
+                # why is this done like this and not when
+                # we are done with the file ?
+                # Because bareos does it this way ...
+                self.set_file_attributes()
                 while not self.data_done:
                     self.file_write()
                 self.file_close()
-
-            self.set_file_attributes()
+            else:
+                self.set_file_attributes()
 
             self.set_acl()
             self.set_xattr()
