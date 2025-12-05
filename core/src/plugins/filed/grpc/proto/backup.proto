@@ -19,6 +19,7 @@ message BeginObject {
   oneof object_type {
     bareos.common.PluginObject object = 10;
     bareos.common.PluginFile file = 11;
+    bareos.common.PluginFileError error = 12;
   };
 };
 

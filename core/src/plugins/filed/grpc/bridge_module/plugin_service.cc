@@ -25,6 +25,7 @@
 #include "bareos.pb.h"
 #include "common.pb.h"
 #include "backup.pb.h"
+#include "restore.pb.h"
 #include "filed/fd_plugins.h"
 #include "include/filetypes.h"
 #include "plugin.pb.h"
@@ -35,6 +36,7 @@
 #include <sys/sendfile.h>
 
 #include <filesystem>
+#include <format>
 #include <thread>
 #include <variant>
 
@@ -1508,10 +1510,71 @@ bool PluginService::HandleRequest(const bp::PluginRequest& outer_req,
 #endif
 
 namespace {
+
+constexpr struct {
+  int write_mode = S_IRUSR | S_IWUSR;
+  int write_flags = O_WRONLY | O_CREAT | O_TRUNC | O_BINARY;
+} constants;
+
+std::optional<int> from_grpc(bco::ObjectType ot)
+{
+  switch (ot) {
+    case bareos::common::OBJECT_TYPE_UNSPECIFIED:
+      return std::nullopt;
+    case bareos::common::Blob:
+      return FT_RESTORE_FIRST;
+    case bareos::common::Config:
+      return FT_PLUGIN_CONFIG;
+    case bareos::common::FilledConfig:
+      return FT_PLUGIN_CONFIG_FILLED;
+    case bareos::common::ObjectType_INT_MIN_SENTINEL_DO_NOT_USE_:
+      return std::nullopt;
+    case bareos::common::ObjectType_INT_MAX_SENTINEL_DO_NOT_USE_:
+      return std::nullopt;
+  }
+
+  return std::nullopt;
+}
+
+std::optional<int> from_grpc(bco::FileType ft)
+{
+  switch (ft) {
+    case bco::RegularFile:
+      return FT_REG;
+    case bco::Directory:
+      return FT_DIREND;
+    case bco::SoftLink:
+      return FT_LNK;
+    case bco::SpecialFile:
+      return FT_SPEC;
+    case bco::BlockDevice:
+      return FT_RAW;
+    case bco::Fifo:
+      return FT_FIFO;
+    case bco::ReparsePoint:
+      return FT_REPARSE;
+    case bco::Junction:
+      return FT_JUNCTION;
+    case bco::Deleted:
+      return FT_DELETED;
+    case bco::HardlinkCopy:
+      return FT_LNKSAVED;
+
+    case bareos::common::FILE_TYPE_UNSPECIFIED:
+    case bareos::common::UnchangedFile:
+    case bareos::common::UnchangedDirectory:
+    case bareos::common::RestoreObject:
+    case bareos::common::FileType_INT_MIN_SENTINEL_DO_NOT_USE_:
+    case bareos::common::FileType_INT_MAX_SENTINEL_DO_NOT_USE_:
+      return std::nullopt;
+  }
+  return std::nullopt;
+}
+
 bool is_event_allowed(std::uint64_t allowed_event_types,
                       filedaemon::bEvent* event)
 {
-  return (event->eventType & allowed_event_types) != 0;
+  return (event->eventType & (1 << allowed_event_types)) != 0;
 }
 
 std::string join(const std::vector<std::string>& x)
@@ -1663,30 +1726,426 @@ bp::ReturnCode to_grpc(bRC res)
       return bp::RC_Error;
   }
 }
-
-std::optional<int> from_grpc(bco::ObjectType ot)
-{
-  switch (ot) {
-    case bareos::common::OBJECT_TYPE_UNSPECIFIED:
-      return std::nullopt;
-    case bareos::common::Blob:
-      return FT_RESTORE_FIRST;
-    case bareos::common::Config:
-      return FT_PLUGIN_CONFIG;
-    case bareos::common::FilledConfig:
-      return FT_PLUGIN_CONFIG_FILLED;
-    case bareos::common::ObjectType_INT_MIN_SENTINEL_DO_NOT_USE_:
-      return std::nullopt;
-    case bareos::common::ObjectType_INT_MAX_SENTINEL_DO_NOT_USE_:
-      return std::nullopt;
-  }
-
-  // ASSERT(0);
-  assert(0);
-}
 }  // namespace
 
 namespace bb = bareos::backup;
+namespace br = bareos::restore;
+
+struct RestoreStateMachine {
+  RestoreStateMachine(prototools::ProtoBidiStream* stream_,
+                      std::string restore_cmd_,
+                      filedaemon::PluginFunctions* funs_,
+                      PluginContext* ctx_)
+      : stream{stream_}
+      , restore_cmd{std::move(restore_cmd_)}
+      , funs{funs_}
+      , ctx{ctx_}
+  {
+  }
+
+  bool run()
+  {
+    for (;;) {
+      if (have_msg(br::RestoreRequest::RequestCase::kDone)) {
+        // we are done
+        (void)pop_msg();
+        break;
+      }
+
+      auto file = start_restore_file();
+
+      if (!file.skip) {
+        if (file.do_extract) {
+          if (!file_open(&file)) { goto end_file; }
+
+          while (!file.data_done) { file_write(&file); }
+
+          file_close(&file);
+        }
+
+        set_file_attributes(&file);
+
+        set_acls(&file);
+
+        set_xattrs(&file);
+      }
+
+    end_file:
+      end_restore_file(&file);
+    }
+
+    return true;
+  }
+
+ private:
+  using ReqCase = br::RestoreRequest::RequestCase;
+
+  struct FileInProgress {
+    br::BeginFileRequest data;
+    std::size_t offset;
+    bool do_extract;
+    bool data_done;
+    bool skip;
+  };
+
+  struct RestoreError : std::runtime_error {
+    template <typename... Args>
+    RestoreError(Args&&... args)
+        : std::runtime_error(std::forward<Args>(args)...)
+    {
+    }
+  };
+
+ private:
+  void init_restore_pkt(filedaemon::restore_pkt* pkt,
+                        const br::BeginFileRequest& req)
+  {
+    pkt->pkt_size = sizeof(*pkt);
+    pkt->pkt_end = sizeof(*pkt);
+    switch (req.replace()) {
+      case bareos::common::REPLACE_IF_NEWER: {
+        pkt->replace = REPLACE_IFNEWER;
+      } break;
+      case bareos::common::REPLACE_IF_OLDER: {
+        pkt->replace = REPLACE_IFOLDER;
+      } break;
+      case bareos::common::REPLACE_NEVER: {
+        pkt->replace = REPLACE_NEVER;
+      } break;
+      case bareos::common::REPLACE_ALWAYS: {
+        pkt->replace = REPLACE_ALWAYS;
+      } break;
+      default: {
+        throw RestoreError(
+            std::format("core sent bad replace value {}", int(req.replace())));
+      } break;
+    }
+
+    pkt->where = req.where().c_str();
+    pkt->olname = req.soft_link_to().c_str();
+    pkt->ofname = req.output_name().c_str();
+    if (auto ft = from_grpc(req.file_type())) {
+      pkt->type = *ft;
+    } else {
+      throw RestoreError(
+          std::format("core sent bad file type {}", int(req.file_type())));
+    }
+    stat_grpc_to_native(&pkt->statp, req.stats());
+  }
+
+
+  FileInProgress start_restore_file()
+  {
+    if (!have_msg(ReqCase::kBeginFile)) {
+      throw RestoreError("expected begin file");
+    }
+
+    auto& file = pop_msg()->begin_file();
+    br::RestoreResponse answer[1];
+    auto* response = answer->mutable_begin_file();
+
+    bRC res = funs->startRestoreFile(ctx, restore_cmd.c_str());
+
+    FileInProgress created{};
+    created.data.CopyFrom(file);
+
+    if (res != bRC_OK) {
+      response->set_system_error(errno);
+      if (!answer_with(answer)) {
+        throw RestoreError("could not send BeginFile answer to core");
+      }
+
+      created.skip = true;
+      return created;
+    }
+
+    filedaemon::restore_pkt pkt = {};
+    init_restore_pkt(&pkt, created.data);
+
+    res = funs->createFile(ctx, &pkt);
+    if (res != bRC_OK) {
+      response->set_system_error(errno);
+      if (!answer_with(answer)) {
+        throw RestoreError("could not send BeginFile answer to core");
+      }
+
+      created.skip = true;
+      return created;
+    }
+
+    bool create_in_core = false;
+
+    switch (pkt.create_status) {
+      case CF_ERROR: {
+        response->set_system_error(errno);
+        created.skip = true;
+      } break;
+      case CF_SKIP: {
+        response->set_success(br::CREATION_SKIP);
+        created.skip = true;
+      } break;
+      case CF_CORE: {
+        response->set_success(br::CREATION_CORE);
+        create_in_core = true;
+        created.do_extract = true;
+      } break;
+        // sadly a lot of plugins take advantage of the fact
+        // that bareos doesnt check this value completely,
+        // so 0 (and anything apart from the rest is also CF_EXTRACT)
+      case 0:
+        [[fallthrough]];
+      case CF_EXTRACT: {
+        response->set_success(br::CREATION_PLUGIN);
+        created.do_extract = true;
+      } break;
+      case CF_CREATED: {
+        response->set_success(br::CREATION_NODATA);
+      } break;
+
+        // we want to be strict here and disallow weird statuses;
+        // we only allow 0 as _all_ python plugins use that
+      default: {
+        throw RestoreError(
+            std::format("plugin returned create_status {}", pkt.create_status));
+      } break;
+    }
+
+    if (!answer_with(answer)) {
+      throw RestoreError("could not send BeginFile answer to core");
+    }
+
+    if (create_in_core) {
+      if (!have_msg(ReqCase::kCoreCreationDone)) {
+        throw RestoreError(
+            "core did not respond correctly. Expected core_creation_done!");
+        created.skip = true;
+        return created;
+      }
+
+      auto& creation_done = pop_msg()->core_creation_done();
+      if (creation_done.success()) {
+        DebugLog(150, "core successfully created the file");
+      } else {
+        DebugLog(150, "core did not manage to create the file");
+        created.skip = true;
+      }
+    }
+
+    return created;
+  }
+
+  bool file_open(FileInProgress* file)
+  {
+    filedaemon::io_pkt io = {};
+    io.func = filedaemon::IO_OPEN;
+    io.fname = file->data.output_name().c_str();
+    io.flags = constants.write_flags;
+    io.mode = constants.write_mode;
+
+    bRC res = funs->pluginIO(ctx, &io);
+
+    if (res != bRC_OK) {
+      JobLog(bc::JMSG_ERROR, "could not open {}", file->data.output_name());
+      return false;
+    }
+
+    return true;
+  }
+  bool file_write(FileInProgress* file)
+  {
+    if (!have_msg(ReqCase::kFileData)) {
+      file->data_done = true;
+      return true;
+    }
+
+    auto& fdata = pop_msg()->file_data();
+
+    if (fdata.offset() != file->offset) {
+      filedaemon::io_pkt io = {};
+      io.func = filedaemon::IO_SEEK;
+      io.whence = SEEK_SET;
+      io.offset = fdata.offset();
+
+      bRC res = funs->pluginIO(ctx, &io);
+
+      if (res != bRC_OK) {
+        JobLog(bc::JMSG_ERROR, "could not seek to offset {} in file {}",
+               fdata.offset(), file->data.output_name());
+        return false;
+      }
+    }
+
+    filedaemon::io_pkt io = {};
+    io.func = filedaemon::IO_WRITE;
+    io.count = fdata.data().size();
+    io.buf = const_cast<char*>(fdata.data().data());
+    io.status = 0;
+
+    bRC res = funs->pluginIO(ctx, &io);
+
+    if (res != bRC_OK) {
+      JobLog(bc::JMSG_ERROR, "could not write {} bytes to file {} at offset {}",
+             fdata.data().size(), file->data.output_name(), fdata.offset());
+      return false;
+    }
+
+    if (io.status != io.count) {
+      JobLog(bc::JMSG_ERROR,
+             "short write of  {}/{} bytes to file {} at offset {}", io.count,
+             fdata.data().size(), file->data.output_name(), fdata.offset());
+      return false;
+    }
+
+    return true;
+  }
+
+  bool file_close(FileInProgress* file)
+  {
+    filedaemon::io_pkt io = {};
+    io.func = filedaemon::IO_CLOSE;
+
+    bRC res = funs->pluginIO(ctx, &io);
+
+    if (res != bRC_OK) {
+      JobLog(bc::JMSG_ERROR, "could not close {}", file->data.output_name());
+      return false;
+    }
+
+    return true;
+  }
+  bool set_file_attributes(FileInProgress* file)
+  {
+    filedaemon::restore_pkt pkt = {};
+    init_restore_pkt(&pkt, file->data);
+
+    auto res = funs->setFileAttributes(ctx, &pkt);
+    if (res != bRC_OK) {
+      JobLog(bc::JMSG_ERROR, "could not set attributes on {}",
+             file->data.output_name());
+      return false;
+    }
+
+    if (pkt.create_status == CF_CORE) {
+      JobLog(bc::JMSG_ERROR,
+             "the grpc layer does not support set_file_attributes() in core, "
+             "and neither does the core. Attributes of '{}' are not restored",
+             file->data.output_name());
+      return false;
+    }
+
+    return true;
+  }
+  bool set_acls(FileInProgress* file)
+  {
+    if (!have_msg(ReqCase::kAcl)) { return true; }
+
+    auto& acl = pop_msg()->acl();
+
+    filedaemon::acl_pkt pkt[1] = {};
+    pkt->pkt_size = sizeof(*pkt);
+    pkt->fname = file->data.output_name().c_str();
+    pkt->content_length = acl.acl_data().size();
+    pkt->content = const_cast<char*>(acl.acl_data().c_str());
+    pkt->pkt_end = sizeof(*pkt);
+
+    auto res = funs->setAcl(ctx, pkt);
+
+    if (res != bRC_OK) {
+      JobLog(bc::JMSG_ERROR, "could not set acls on {}",
+             file->data.output_name());
+      return false;
+    }
+
+    return true;
+  }
+  bool set_xattrs(FileInProgress* file)
+  {
+    while (have_msg(ReqCase::kXattr)) {
+      auto& xattr = pop_msg()->xattr();
+
+      filedaemon::xattr_pkt pkt[1] = {};
+      pkt->pkt_size = sizeof(*pkt);
+      pkt->fname = file->data.output_name().c_str();
+      pkt->name_length = xattr.name().size();
+      pkt->name = const_cast<char*>(xattr.name().c_str());
+      pkt->value_length = xattr.content().size();
+      pkt->value = const_cast<char*>(xattr.content().c_str());
+      pkt->pkt_end = sizeof(*pkt);
+
+      auto res = funs->setXattr(ctx, pkt);
+
+      if (res != bRC_OK) {
+        JobLog(bc::JMSG_ERROR, "could not set xattr {} on {}", xattr.name(),
+               file->data.output_name());
+        return false;
+      }
+    }
+
+    return true;
+  }
+  bool end_restore_file(FileInProgress* file)
+  {
+    for (;;) {
+      if (have_msg(ReqCase::kBeginFile) || have_msg(ReqCase::kDone)) {
+        bRC res = funs->endRestoreFile(ctx);
+        if (res != bRC_OK) {
+          JobLog(bc::JMSG_ERROR, "error during end_restore_file() for {}",
+                 file->data.output_name());
+          return false;
+        }
+        return true;
+      }
+
+      // ignore the message
+      (void)pop_msg();
+    }
+    return true;
+  }
+
+  inline bool pull_msg()
+  {
+    if (current_request) { return true; }
+
+    arena.Reset();
+    current_request
+        = google::protobuf::Arena::Create<br::RestoreRequest>(&arena);
+
+    if (!stream->Read(*current_request)) {
+      current_request = nullptr;
+      return false;
+    }
+
+    return true;
+  }
+
+  inline bool have_msg(br::RestoreRequest::RequestCase expected)
+  {
+    if (!pull_msg()) { return false; }
+
+    return current_request->request_case() == expected;
+  }
+
+  inline br::RestoreRequest* pop_msg()
+  {
+    if (!pull_msg()) { return nullptr; }
+
+    return std::exchange(current_request, nullptr);
+  }
+
+  bool answer_with(const br::RestoreResponse* resp)
+  {
+    return stream->Write(*resp);
+  }
+
+ private:
+  google::protobuf::Arena arena{};
+  br::RestoreRequest* current_request{nullptr};
+
+  prototools::ProtoBidiStream* stream;
+  std::string restore_cmd;
+  filedaemon::PluginFunctions* funs;
+  PluginContext* ctx;
+};
 
 struct cached_event {
   filedaemon::bEvent event{};
@@ -1707,7 +2166,7 @@ struct cached_event {
 
 struct PluginThread {
   bool start_backup(const bp::BeginBackupRequest&);
-  bool start_restore(const bp::BeginRestoreRequest&) { return false; }
+  bool start_restore(const bp::BeginRestoreRequest&);
   bool start_verify(const bp::BeginVerifyRequest&) { return false; }
   bool start_estimate(const bp::BeginEstimateRequest&) { return false; }
   std::optional<bRC> handle_event(const bpe::Event&);
@@ -1772,7 +2231,9 @@ struct PluginThread {
     bool no_atime;
   };
 
-  struct restore {};
+  struct restore {
+    std::string command;
+  };
 
   struct handle_event_task {
     filedaemon::bEventType type;
@@ -1925,6 +2386,20 @@ struct PluginThread {
 
         if (*file_type == bco::SoftLink) { file->set_link(pkt.link); }
       } else if (auto* error_type = std::get_if<bco::FileErrorType>(&type)) {
+        if (!pkt.fname) {
+          JobLog(bc::JMSG_ERROR,
+                 "plugin did not set name in start_backup_file; skipping");
+
+          continue;
+        }
+        if (*error_type == bco::FILE_ERROR_TYPE_UNSPECIFIED) {
+          JobLog(bc::JMSG_FATAL, "internal error occured; aborting");
+          break;
+        }
+
+        auto* error = bo->mutable_error();
+        error->set_file(pkt.fname);
+        error->set_error(*error_type);
       } else {
         JobLog(bc::JMSG_FATAL, "received unhandled type {} from the plugin",
                pkt.type);
@@ -1974,6 +2449,10 @@ struct PluginThread {
 
           if (!stop_reading) {
             if (io_in_core_fd) {
+              DebugLog(150, "saving data via fd");
+
+              // make sure the test understands that we do "io in core"-lite
+              DebugLog(150, "bread handled in core");
               for (;;) {
                 buffer->resize(task.max_record_size);
                 ssize_t bytes_read
@@ -1996,6 +2475,7 @@ struct PluginThread {
                 send_backup_data(file_data);
               }
             } else {
+              DebugLog(150, "saving data via plugin");
               for (;;) {
                 buffer->resize(task.max_record_size);
                 filedaemon::io_pkt io;
@@ -2040,6 +2520,9 @@ struct PluginThread {
         }
 
         if (task.backup_acl) {
+          DebugLog(150, "saving acls");
+
+
           filedaemon::acl_pkt acl_pkt;
           acl_pkt.fname = current_file_name.c_str();
           auto ares = plugin_funs->getAcl(&ctx, &acl_pkt);
@@ -2066,6 +2549,8 @@ struct PluginThread {
         }
 
         if (task.backup_xattr) {
+          DebugLog(150, "saving xattrs");
+
           filedaemon::xattr_pkt xattr_pkt;
           for (;;) {
             xattr_pkt.fname = current_file_name.c_str();
@@ -2118,7 +2603,17 @@ struct PluginThread {
     send_backup_data(done);
   }
 
-  void handle_task(restore& task) {}
+  void handle_task(restore& task)
+  {
+    RestoreStateMachine sm{data_transfer, task.command, plugin_funs, &ctx};
+    try {
+      sm.run();
+    } catch (const std::exception& ex) {
+      JobLog(bc::JMSG_FATAL, "restore was aborted: {}", ex.what());
+      // TODO: run until done, always responding with bRC_Error
+      // sm.finish();
+    }
+  }
 
   void handle_task(handle_event_task& task)
   {
@@ -2491,6 +2986,16 @@ bool PluginThread::start_backup(const bp::BeginBackupRequest& req)
              .backup_xattr = req.backup_xattr(),
              .portable = req.portable(),
              .no_atime = req.no_atime()});
+
+  task_added.notify_one();
+  return true;
+}
+
+bool PluginThread::start_restore(const bp::BeginRestoreRequest& req)
+{
+  std::unique_lock _{task_mutex};
+
+  tasks_to_execute.emplace_back(restore{.command = req.cmd()});
 
   task_added.notify_one();
   return true;
