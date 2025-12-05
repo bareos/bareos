@@ -378,6 +378,42 @@ struct Status {
 };
 
 namespace {
+std::optional<int> from_grpc(bco::ObjectType ot)
+{
+  switch (ot) {
+    case bareos::common::OBJECT_TYPE_UNSPECIFIED:
+      return std::nullopt;
+    case bareos::common::Blob:
+      return FT_RESTORE_FIRST;
+    case bareos::common::Config:
+      return FT_PLUGIN_CONFIG;
+    case bareos::common::FilledConfig:
+      return FT_PLUGIN_CONFIG_FILLED;
+    case bareos::common::ObjectType_INT_MIN_SENTINEL_DO_NOT_USE_:
+      return std::nullopt;
+    case bareos::common::ObjectType_INT_MAX_SENTINEL_DO_NOT_USE_:
+      return std::nullopt;
+  }
+
+  return std::nullopt;
+}
+
+std::optional<bco::ObjectType> otype_to_grpc(int32_t type)
+{
+  switch (type) {
+    case FT_RESTORE_FIRST: {
+      return bco::Blob;
+    } break;
+    case FT_PLUGIN_CONFIG: {
+      return bco::Config;
+    } break;
+    case FT_PLUGIN_CONFIG_FILLED: {
+      return bco::FilledConfig;
+    } break;
+  }
+  return std::nullopt;
+}
+
 constexpr std::string_view backup_step_str(bb::Backup::StepCase step)
 {
   switch (step) {
@@ -448,6 +484,7 @@ struct BackupStateMachine {
   bool file_open()
   {
     DebugLog(150, "file_open()");
+
     bb::Backup* data = pop();
 
     if (data == nullptr) { return false; }
@@ -702,6 +739,8 @@ struct RestoreStateMachine {
     switch (bf.result_case()) {
       case bareos::restore::BeginFileResponse::kSuccess: {
         pkt->create_status = bf.success();
+
+        if (pkt->create_status == CF_CORE) { core_creation_pending = true; }
       } break;
       case bareos::restore::BeginFileResponse::kSystemError: {
         errno = bf.system_error();
@@ -721,8 +760,36 @@ struct RestoreStateMachine {
     return true;
   }
 
+  bool fail_core_creation()
+  {
+    core_creation_pending = false;
+    auto* outer_req = make_request();
+    {
+      auto* req = outer_req->mutable_core_creation_done();
+      req->set_success(false);
+    }
+
+    return stream->Write(*outer_req);
+  }
+
+  bool succeed_core_creation()
+  {
+    core_creation_pending = false;
+    auto* outer_req = make_request();
+    {
+      auto* req = outer_req->mutable_core_creation_done();
+      req->set_success(true);
+    }
+
+    return stream->Write(*outer_req);
+  }
+
   bool end_restore_file()
   {
+    if (core_creation_pending) {
+      if (!fail_core_creation()) { return false; }
+    }
+
     auto* outer_req = make_request();
     {
       auto* req = outer_req->mutable_done();
@@ -738,6 +805,10 @@ struct RestoreStateMachine {
   bool set_acl(std::string_view file, std::span<char const> content)
   {
     DebugLog(150, "set_acl()");
+    if (core_creation_pending) {
+      if (!succeed_core_creation()) { return false; }
+    }
+
     if (current_fname != file) {
       JobLog(core, M_FATAL,
              "cannot set acl for file '{}' while restoring file '{}'", file,
@@ -764,6 +835,9 @@ struct RestoreStateMachine {
                  std::span<const char> value)
   {
     DebugLog(150, "set_xattr(name = {})", key);
+    if (core_creation_pending) {
+      if (!succeed_core_creation()) { return false; }
+    }
 
     if (current_fname != file) {
       JobLog(core, M_FATAL,
@@ -789,6 +863,10 @@ struct RestoreStateMachine {
 
   bool file_write(std::span<const char> data)
   {
+    if (core_creation_pending) {
+      if (!succeed_core_creation()) { return false; }
+    }
+
     DebugLog(150, "file_write(size = {})", data.size());
     auto* outer_req = make_request();
     auto* req = outer_req->mutable_file_data();
@@ -845,6 +923,8 @@ struct RestoreStateMachine {
   prototools::ProtoBidiStream* stream{nullptr};
   std::unique_ptr<google::protobuf::Arena> arena{};
   PluginContext* core{nullptr};
+
+  bool core_creation_pending{false};
 
   std::string current_fname{};
   std::size_t current_offset = 0;
@@ -1656,6 +1736,13 @@ bool make_event_request(filedaemon::bEventType type,
         sent->set_index(rop->object_index);
         sent->set_data(rop->object, rop->object_len);
         sent->set_name(rop->object_name);
+        if (auto otype = otype_to_grpc(rop->object_type)) {
+          sent->set_type(*otype);
+        } else {
+          DebugLog(50, "core gave bad object type {}; trying FT_RESTORE_FIRST",
+                   rop->object_type);
+          sent->set_type(bco::Blob);
+        }
       }
     } break;
     case filedaemon::bEventEndFileSet: {
@@ -1742,6 +1829,9 @@ class PluginClient {
   std::optional<bp::PluginResponse> submit_event(const bp::PluginRequest& req)
   {
     bp::PluginResponse resp;
+
+    auto lock = core_events->lock();
+
     DebugLog(200, "submitting event");
     if (!core_events->Write(req)) { return std::nullopt; }
     DebugLog(200, "waiting for response event");
@@ -1984,6 +2074,13 @@ class PluginClient {
       DebugLog(100, FMT_STRING("received an object"));
       auto& object = begin_obj->object();
       pkt->type = FT_RESTORE_FIRST;
+      if (auto otype = from_grpc(object.type())) {
+        pkt->type = *otype;
+      } else {
+        JobLog(core, M_FATAL, "plugin returned unknown object type {}",
+               static_cast<int>(object.type()));
+        return bRC_Error;
+      }
       if (pkt->object) {
         free(pkt->object);
         pkt->object = nullptr;
