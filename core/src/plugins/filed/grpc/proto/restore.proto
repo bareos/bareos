@@ -53,6 +53,11 @@ message BeginFileResponse {
 
 message FileData {
   bytes data = 1;
+
+  // todo: this does not work 100%
+  //   sometimes the core wants to know the current file offset
+  //   and sometimes it wants to go to the end, so we do actually need
+  //   to implement the seeking
   uint64 offset = 2;
 };
 

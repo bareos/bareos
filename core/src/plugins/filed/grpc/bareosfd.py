@@ -33,6 +33,11 @@ from bareosfd_type_conv import (
     stat_from_remote,
     replace_from_remote,
 )
+
+# instead of relying on the bareosfdwrapper
+# we can also import __main__ in run()
+# and execute the functions that way directly
+
 import BareosFdWrapper
 
 from proto import plugin_pb2
@@ -802,7 +807,7 @@ class Restore:
                 bf.success = restore_pb2.CREATION_PLUGIN
                 self.extract = True
             case unexpected:
-                log(f"unexpected return value '{unexpected}'")
+                log(f"unexpected create_status '{unexpected}'")
                 raise ValueError
 
         con.send_file_resp(answer)
@@ -956,7 +961,7 @@ class Restore:
 
         if rp.create_status == bCFs.CF_CORE:
             path = self.current_file.output_name
-            log(f"::::::::::: cannot set in core")
+            log(f"cannot set in core")
             JobMessage(
                 bJobMessageType.M_ERROR,
                 f"the grpc layer does not support set_file_attributes() in core, and neither does the core. Attributes of '{path}' are not restored",
