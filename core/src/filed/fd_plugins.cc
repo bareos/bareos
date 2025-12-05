@@ -2624,49 +2624,55 @@ static bRC bareosCheckChanges(PluginContext* ctx, save_pkt* sp)
 {
   JobControlRecord* jcr;
   FiledPluginContext* bctx;
-  FindFilesPacket* ff_pkt;
   bRC retval = bRC_Error;
+  FindFilesPacket ff_pkt = {};
 
   if (!IsCtxGood(ctx, jcr, bctx)) { goto bail_out; }
 
   if (!sp) { goto bail_out; }
 
-  ff_pkt = jcr->fd_impl->ff;
-  /* Copy fname and link because SaveFile() zaps them.
-   * This avoids zapping the plugin's strings. */
-  ff_pkt->type = sp->type;
   if (!sp->fname) {
     Jmsg0(jcr, M_FATAL, 0,
           T_("Command plugin: no fname in bareosCheckChanges packet.\n"));
     goto bail_out;
   }
 
+  ff_pkt.fname = GetMemory(10);
+  PmStrcpy(ff_pkt.fname, sp->fname);
+
+  /* Copy fname and link because SaveFile() zaps them.
+   * This avoids zapping the plugin's strings. */
+  ff_pkt.type = sp->type;
+  ff_pkt.CheckFct = jcr->fd_impl->ff->CheckFct;
+  memcpy(ff_pkt.AccurateOpts, jcr->fd_impl->ff->AccurateOpts,
+         sizeof(ff_pkt.AccurateOpts));
+  memcpy(ff_pkt.BaseJobOpts, jcr->fd_impl->ff->BaseJobOpts,
+         sizeof(ff_pkt.BaseJobOpts));
+
   {
-    const auto orig_save_time{ff_pkt->save_time};
-    const auto orig_incremental{ff_pkt->incremental};
-
-    ff_pkt->fname = sp->fname;
-    ff_pkt->link_or_dir = sp->link;
-    if (sp->save_time) {
-      ff_pkt->save_time = sp->save_time;
-      ff_pkt->incremental = true;
+    if (sp->link) {
+      ff_pkt.link_or_dir = GetMemory(10);
+      PmStrcpy(ff_pkt.link_or_dir, sp->link);
     }
-    memcpy(&ff_pkt->statp, &sp->statp, sizeof(ff_pkt->statp));
+    if (sp->save_time) {
+      ff_pkt.save_time = sp->save_time;
+      ff_pkt.incremental = true;
+    }
+    memcpy(&ff_pkt.statp, &sp->statp, sizeof(ff_pkt.statp));
 
-    if (!bctx->check_changes || CheckChanges(jcr, ff_pkt)) {
+    if (!bctx->check_changes || CheckChanges(jcr, &ff_pkt)) {
       retval = bRC_OK;
     } else {
       retval = bRC_Seen;
     }
-
-    ff_pkt->save_time = orig_save_time;
-    ff_pkt->incremental = orig_incremental;
   }
   // CheckChanges() can update delta sequence number, return it to the plugin
-  sp->delta_seq = ff_pkt->delta_seq;
-  sp->accurate_found = ff_pkt->accurate_found;
+  sp->delta_seq = ff_pkt.delta_seq;
+  sp->accurate_found = ff_pkt.accurate_found;
 
 bail_out:
+  if (ff_pkt.fname) { FreePoolMemory(ff_pkt.fname); }
+  if (ff_pkt.link_or_dir) { FreePoolMemory(ff_pkt.link_or_dir); }
   Dmsg1(100, "checkChanges=%i\n", retval);
   return retval;
 }
