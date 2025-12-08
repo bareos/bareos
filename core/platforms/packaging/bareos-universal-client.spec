@@ -510,7 +510,7 @@ getent group %1 > /dev/null || groupadd -r %1 \
 
 # shell: use /bin/false, because nologin has different paths on different distributions
 %define create_user() \
-getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} -g %{daemon_group} --shell /bin/false %1 \
+getent passwd %1 > /dev/null || useradd -r --comment "%1" --home-dir %{working_dir} -g %{daemon_group} --shell /bin/false %1 \
 %nil
 
 # NOTE: rpm macro with parameter. Rest of line is ignored (taken as parameter).
