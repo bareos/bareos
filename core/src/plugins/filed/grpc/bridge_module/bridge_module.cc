@@ -134,8 +134,6 @@ std::optional<bool> checkChanges(bco::FileType ft,
   auto& req = *outer_req.mutable_checkchanges();
   req.set_type(ft);
   req.set_file(name.data(), name.size());
-  // if (link_name) { req.set_link_target(link_name->data(), link_name->size());
-  // }
   req.mutable_since_time()->set_seconds(timestamp);
   req.set_stats(&statp, sizeof(statp));
 
@@ -861,7 +859,19 @@ bRC Wrapper_checkChanges(PluginContext*, save_pkt* sp)
            sp->type);
     return bRC_Error;
   }
-  std::optional res = checkChanges(*ft, sp->fname, sp->save_time, sp->statp);
+
+  const char* name = sp->fname;
+
+  if (S_ISDIR(sp->statp.st_mode)) {
+    if (!sp->link) {
+      DebugLog(100, "directory '{}' has no link field set", sp->fname);
+      return bRC_Error;
+    }
+
+    name = sp->link;
+  }
+
+  std::optional res = checkChanges(*ft, name, sp->save_time, sp->statp);
   if (!res) { return bRC_Error; }
   // TODO: check changes can also change the delte seq
   sp->accurate_found = *res;
