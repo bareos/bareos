@@ -53,6 +53,9 @@ bool BareosAccurateFilelistHtable::AddFile(char* fname,
                                            int chksum_length,
                                            int32_t delta_seq)
 {
+  std::unique_lock _{mutex};
+
+
   CurFile* item;
   int total_length;
   bool retval = true;
@@ -119,6 +122,8 @@ bool BareosAccurateFilelistHtable::EndLoad()
 
 accurate_payload* BareosAccurateFilelistHtable::lookup_payload(char* fname)
 {
+  std::unique_lock _{mutex};
+
   CurFile* temp;
 
   temp = (CurFile*)file_list_->lookup(fname);
@@ -132,6 +137,8 @@ bool BareosAccurateFilelistHtable::UpdatePayload(char*, accurate_payload*)
 
 bool BareosAccurateFilelistHtable::SendBaseFileList()
 {
+  std::unique_lock _{mutex};
+
   CurFile* elt;
   FindFilesPacket* ff_pkt;
   int32_t LinkFIc;
