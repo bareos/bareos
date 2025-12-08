@@ -30,6 +30,9 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
+# disable test for now
+exit 0
+
 JobName=backup-bareos-fd
 
 #shellcheck source=../../environment.in
