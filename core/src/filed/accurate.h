@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,7 @@
  * also cost some bytes.
  */
 
+#include <mutex>
 #include <vector>
 #include <algorithm>
 #include "include/config.h"
@@ -64,6 +65,7 @@ class BareosAccurateFilelist {
   std::vector<bool> seen_bitmap_;
   JobControlRecord* jcr_ = nullptr;
   std::size_t initial_capacity_;
+  std::mutex mutex;
 
  public:
   BareosAccurateFilelist(JobControlRecord* jcr, std::size_t initial_capacity)
@@ -90,6 +92,7 @@ class BareosAccurateFilelist {
   virtual bool SendDeletedList() = 0;
   void MarkFileAsSeen(accurate_payload* payload)
   {
+    std::unique_lock _{mutex};
     /* Something went really wrong if we are supposed to mark a file as seen
      * that we have not even registered.  The best course of action is to
      * crash in that situation. */
@@ -99,6 +102,7 @@ class BareosAccurateFilelist {
 
   void UnmarkFileAsSeen(accurate_payload* payload)
   {
+    std::unique_lock _{mutex};
     /* Something went really wrong if we are supposed to mark a file as seen
      * that we have not even registered.  The best course of action is to
      * crash in that situation. */
@@ -108,11 +112,13 @@ class BareosAccurateFilelist {
 
   void MarkAllFilesAsSeen()
   {
+    std::unique_lock _{mutex};
     std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 1);
   }
 
   void UnmarkAllFilesAsSeen()
   {
+    std::unique_lock _{mutex};
     std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 0);
   }
 };
@@ -155,6 +161,9 @@ class BareosAccurateFilelistHtable : public BareosAccurateFilelist {
   bool UpdatePayload(char* fname, accurate_payload* payload) override;
   bool SendBaseFileList() override;
   bool SendDeletedList() override;
+
+ private:
+  std::mutex htable_mutex;
 };
 
 #ifdef HAVE_LMDB
