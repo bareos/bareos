@@ -36,7 +36,7 @@
 #include <sys/sendfile.h>
 
 #include <filesystem>
-#include <format>
+#include <fmt/format.h>
 #include <thread>
 #include <variant>
 
@@ -358,7 +358,7 @@ struct RestoreStateMachine {
       } break;
       default: {
         throw RestoreError(
-            std::format("core sent bad replace value {}", int(req.replace())));
+            fmt::format("core sent bad replace value {}", int(req.replace())));
       } break;
     }
 
@@ -369,7 +369,7 @@ struct RestoreStateMachine {
       pkt->type = *ft;
     } else {
       throw RestoreError(
-          std::format("core sent bad file type {}", int(req.file_type())));
+          fmt::format("core sent bad file type {}", int(req.file_type())));
     }
     stat_grpc_to_native(&pkt->statp, req.stats());
   }
@@ -447,7 +447,7 @@ struct RestoreStateMachine {
         // we only allow 0 as _all_ python plugins use that
       default: {
         throw RestoreError(
-            std::format("plugin returned create_status {}", pkt.create_status));
+            fmt::format("plugin returned create_status {}", pkt.create_status));
       } break;
     }
 
