@@ -97,12 +97,13 @@ if(ENABLE_GRPC)
   include(GenerateExportHeader)
   generate_export_header(grpc-fd)
 
+  target_include_directories(
+    grpc-fd PRIVATE $<TARGET_PROPERTY:grpc-fd,BINARY_DIR>
+  )
   target_sources(
     grpc-fd
     PRIVATE grpc.cc grpc_impl.cc bareos_api.cc
-    PUBLIC FILE_SET generated_headers TYPE HEADERS BASE_DIRS
-           $<TARGET_PROPERTY:grpc-fd,BINARY_DIR> FILES
-           ${CMAKE_CURRENT_BINARY_DIR}/grpc-fd_export.h
+    PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/grpc-fd_export.h
   )
   target_link_libraries(grpc-fd Bareos::Lib fmt::fmt grpc-proto grpc-util)
   set_target_properties(
