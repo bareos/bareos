@@ -264,104 +264,104 @@ Bareos source code has been released under the AGPL version 3 license.
 # Notice : Don't try to change the order of package declaration
 # You will have side effect with PreReq
 
-%package    bconsole
-Summary:    Bareos administration console (CLI)
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common = %{version}
+%package       bconsole
+Summary:       Bareos administration console (CLI)
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
 
-%package    client
-Summary:    Bareos client Meta-All-In-One package
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-bconsole = %{version}
-Requires:   %{name}-filedaemon = %{version}
-Recommends: %{name}-traymonitor = %{version}
+%package       client
+Summary:       Bareos client Meta-All-In-One package
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-bconsole = %{version}
+Requires:      %{name}-filedaemon = %{version}
+Recommends:    %{name}-traymonitor = %{version}
 
-%package    director
-Summary:    Bareos Director daemon
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common = %{version}
-Requires:   %{name}-database-common = %{version}
-Requires:   %{name}-database-tools
+%package       director
+Summary:       Bareos Director daemon
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
+Requires:      %{name}-database-common = %{version}
+Requires:      %{name}-database-tools
 %if 0%{?suse_version}
 Requires(pre): shadow
 %else
 Requires(pre): shadow-utils
 %endif
-Recommends: logrotate
-Provides:   %{name}-dir
+Recommends:    logrotate
+Provides:      %{name}-dir
 
-%package    storage
-Summary:    Bareos Storage daemon
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common = %{version}
-Provides:   %{name}-sd
+%package       storage
+Summary:       Bareos Storage daemon
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
+Provides:      %{name}-sd
 %if 0%{?suse_version}
 Requires(pre): shadow
 %else
 Requires(pre): shadow-utils
 %endif
-Recommends: bareos-tools
-Recommends: logrotate
+Recommends:    bareos-tools
+Recommends:    logrotate
 
-%package    storage-dedupable
-Summary:    Dedupable storage format for the Bareos Storage daemon
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common  = %{version}
-Requires:   %{name}-storage = %{version}
+%package       storage-dedupable
+Summary:       Dedupable storage format for the Bareos Storage daemon
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common  = %{version}
+Requires:      %{name}-storage = %{version}
 
 %if 0%{?droplet}
-%package    storage-droplet
-Summary:    Object Storage support (through libdroplet) for the Bareos Storage daemon
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common  = %{version}
-Requires:   %{name}-storage = %{version}
+%package       storage-droplet
+Summary:       Object Storage support (through libdroplet) for the Bareos Storage daemon
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common  = %{version}
+Requires:      %{name}-storage = %{version}
 %endif
 
-%package    storage-dplcompat
-Summary:    Object Storage support for the Bareos Storage daemon
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common  = %{version}
-Requires:   %{name}-storage = %{version}
+%package       storage-dplcompat
+Summary:       Object Storage support for the Bareos Storage daemon
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common  = %{version}
+Requires:      %{name}-storage = %{version}
 
 %if 0%{?glusterfs}
-%package    storage-glusterfs
-Summary:    GlusterFS support for the Bareos Storage daemon (deprecated)
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common  = %{version}
-Requires:   %{name}-storage = %{version}
-Requires:   glusterfs
+%package       storage-glusterfs
+Summary:       GlusterFS support for the Bareos Storage daemon (deprecated)
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common  = %{version}
+Requires:      %{name}-storage = %{version}
+Requires:      glusterfs
 %endif
 
-%package    storage-tape
-Summary:    Tape support for the Bareos Storage daemon
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common  = %{version}
-Requires:   %{name}-storage = %{version}
-Requires:   mtx
+%package       storage-tape
+Summary:       Tape support for the Bareos Storage daemon
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common  = %{version}
+Requires:      %{name}-storage = %{version}
+Requires:      mtx
 %if !0%{?suse_version}
-Requires:   mt-st
+Requires:      mt-st
 %endif
 
-%package    storage-fifo
-Summary:    FIFO support for the Bareos Storage backend
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common  = %{version}
-Requires:   %{name}-storage = %{version}
+%package       storage-fifo
+Summary:       FIFO support for the Bareos Storage backend
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common  = %{version}
+Requires:      %{name}-storage = %{version}
 
-%package    filedaemon
-Summary:    Bareos File daemon (backup and restore client)
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common = %{version}
-Provides:   %{name}-fd
+%package       filedaemon
+Summary:       Bareos File daemon (backup and restore client)
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
+Provides:      %{name}-fd
 %if 0%{?suse_version}
 Requires(pre): shadow
 %else
 Requires(pre): shadow-utils
 %endif
 
-%package    common
-Summary:    Common files, required by multiple Bareos packages
-Group:      Productivity/Archiving/Backup
+%package       common
+Summary:       Common files, required by multiple Bareos packages
+Group:         Productivity/Archiving/Backup
 Requires(pre): coreutils
 Requires(pre): findutils
 Requires(pre): gawk
@@ -374,149 +374,149 @@ Requires(pre): shadow
 Requires(pre): glibc-common
 Requires(pre): shadow-utils
 %endif
-Requires:   %{_sbindir}/getcap
-Requires:   %{_sbindir}/setcap
-Provides:   %{name}-libs
-Provides:   user(%{daemon_user})
-Provides:   group(%{daemon_group})
+Requires:      %{_sbindir}/getcap
+Requires:      %{_sbindir}/setcap
+Provides:      %{name}-libs
+Provides:      user(%{daemon_user})
+Provides:      group(%{daemon_group})
 
-%package    database-common
-Summary:    Generic abstraction libs and files to connect to a database
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common = %{version}
-Requires:   %{name}-database-backend = %{version}
-Requires:   openssl
-Provides:   %{name}-sql
+%package       database-common
+Summary:       Generic abstraction libs and files to connect to a database
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
+Requires:      %{name}-database-backend = %{version}
+Requires:      openssl
+Provides:      %{name}-sql
 
-%package    database-postgresql
-Summary:    Libs & tools for postgresql catalog
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-database-common = %{version}
-Provides:   %{name}-catalog-postgresql
-Provides:   %{name}-database-backend
+%package       database-postgresql
+Summary:       Libs & tools for postgresql catalog
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-database-common = %{version}
+Provides:      %{name}-catalog-postgresql
+Provides:      %{name}-database-backend
 
-%package    database-tools
-Summary:    Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common = %{version}
-Requires:   %{name}-database-common = %{version}
-Provides:   %{name}-dbtools
+%package       database-tools
+Summary:       Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
+Requires:      %{name}-database-common = %{version}
+Provides:      %{name}-dbtools
 
-%package    tools
-Summary:    Bareos CLI tools (bcopy, bextract, bls, bregex, bwild, bdedupestimate)
-Group:      Productivity/Archiving/Backup
-Requires:   %{name}-common = %{version}
+%package       tools
+Summary:       Bareos CLI tools (bcopy, bextract, bls, bregex, bwild, bdedupestimate)
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-common = %{version}
 
 %if 0%{build_qt_monitor}
-%package    traymonitor
-Summary:    Bareos Tray Monitor (QT)
-Group:      Productivity/Archiving/Backup
+%package       traymonitor
+Summary:       Bareos Tray Monitor (QT)
+Group:         Productivity/Archiving/Backup
 # Added to by pass the 09 checker rules (conflict with bareos-tray-monitor.conf)
 # This is mostly wrong cause the two binaries can use it!
-Conflicts:  %{name}-tray-monitor-gtk
-Provides:   %{name}-tray-monitor-qt
+Conflicts:     %{name}-tray-monitor-gtk
+Provides:      %{name}-tray-monitor-qt
 %endif
 
 %if 0%{?python_plugins}
-%package    director-python3-plugin
-Summary:    Python plugin for Bareos Director daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-director = %{version}
-Requires:   bareos-director-python-plugins-common = %{version}
-Provides:   bareos-director-python-plugin
-Obsoletes:  bareos-director-python-plugin <= %{version}
+%package       director-python3-plugin
+Summary:       Python plugin for Bareos Director daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-director = %{version}
+Requires:      bareos-director-python-plugins-common = %{version}
+Provides:      bareos-director-python-plugin
+Obsoletes:     bareos-director-python-plugin <= %{version}
 
-%package    director-python-plugins-common
-Summary:    Python plugin for Bareos Director daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-director = %{version}
+%package       director-python-plugins-common
+Summary:       Python plugin for Bareos Director daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-director = %{version}
 
 %if 0%{?enable_grpc}
-%package    filedaemon-grpc-python3-plugin
-Summary:    Python plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-Requires:   bareos-filedaemon-python-plugins-common = %{version}
-Provides:   bareos-filedaemon-grpc-python-plugin
-Obsoletes:  bareos-filedaemon-grpc-python-plugin <= %{version}
-Provides:   bareos-filedaemon-python-plugin
-Obsoletes:  bareos-filedaemon-python-plugin <= %{version}
+%package       filedaemon-grpc-python3-plugin
+Summary:       Python plugin for Bareos File daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
+Requires:      bareos-filedaemon-python-plugins-common = %{version}
+Provides:      bareos-filedaemon-grpc-python-plugin
+Obsoletes:     bareos-filedaemon-grpc-python-plugin <= %{version}
+Provides:      bareos-filedaemon-python-plugin
+Obsoletes:     bareos-filedaemon-python-plugin <= %{version}
 %endif
 
-%package    filedaemon-python3-plugin
-Summary:    Python plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-Requires:   bareos-filedaemon-python-plugins-common = %{version}
-Provides:   bareos-filedaemon-python-plugin
-Obsoletes:  bareos-filedaemon-python-plugin <= %{version}
+%package       filedaemon-python3-plugin
+Summary:       Python plugin for Bareos File daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
+Requires:      bareos-filedaemon-python-plugins-common = %{version}
+Provides:      bareos-filedaemon-python-plugin
+Obsoletes:     bareos-filedaemon-python-plugin <= %{version}
 
-%package    filedaemon-python-plugins-common
-Summary:    Python plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-
-
-%package    filedaemon-ldap-python-plugin
-Summary:    LDAP Python plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-Requires:   bareos-filedaemon-python-plugin = %{version}
-Suggests:   bareos-filedaemon-python3-plugin = %{version}
-Requires:   python3-ldap
+%package       filedaemon-python-plugins-common
+Summary:       Python plugin for Bareos File daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
 
 
-%package    filedaemon-libcloud-python-plugin
-Summary:    Libcloud Python plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-Requires:   bareos-filedaemon-python-plugin = %{version}
-Suggests:   bareos-filedaemon-python3-plugin = %{version}
+%package       filedaemon-ldap-python-plugin
+Summary:       LDAP Python plugin for Bareos File daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
+Requires:      bareos-filedaemon-python-plugin = %{version}
+Suggests:      bareos-filedaemon-python3-plugin = %{version}
+Requires:      python3-ldap
 
-%package    filedaemon-postgresql-python-plugin
-Summary:    PostgreSQL Python plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-Requires:   bareos-filedaemon-python-plugin = %{version}
-Suggests:   bareos-filedaemon-python3-plugin = %{version}
 
-%package    filedaemon-percona-xtrabackup-python-plugin
-Summary:    Percona xtrabackup Python plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-Requires:   bareos-filedaemon-python-plugin = %{version}
-Suggests:   bareos-filedaemon-python3-plugin = %{version}
+%package       filedaemon-libcloud-python-plugin
+Summary:       Libcloud Python plugin for Bareos File daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
+Requires:      bareos-filedaemon-python-plugin = %{version}
+Suggests:      bareos-filedaemon-python3-plugin = %{version}
 
-%package    filedaemon-mariabackup-python-plugin
-Summary:    Mariabackup Python plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-Requires:   bareos-filedaemon-python-plugin = %{version}
-Suggests:   bareos-filedaemon-python3-plugin = %{version}
+%package       filedaemon-postgresql-python-plugin
+Summary:       PostgreSQL Python plugin for Bareos File daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
+Requires:      bareos-filedaemon-python-plugin = %{version}
+Suggests:      bareos-filedaemon-python3-plugin = %{version}
+
+%package       filedaemon-percona-xtrabackup-python-plugin
+Summary:       Percona xtrabackup Python plugin for Bareos File daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
+Requires:      bareos-filedaemon-python-plugin = %{version}
+Suggests:      bareos-filedaemon-python3-plugin = %{version}
+
+%package       filedaemon-mariabackup-python-plugin
+Summary:       Mariabackup Python plugin for Bareos File daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
+Requires:      bareos-filedaemon-python-plugin = %{version}
+Suggests:      bareos-filedaemon-python3-plugin = %{version}
 
 %if 0%{?enable_barri}
-%package    filedaemon-barri-plugin
-Summary:    Bareos Recovery Imager (Barri) plugin for Bareos File daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
+%package       filedaemon-barri-plugin
+Summary:       Bareos Recovery Imager (Barri) plugin for Bareos File daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
 
-%package    barri-cli
-Summary:    Bareos Recovery Imager (Barri) command line program
-Group:      Productivity/Archiving/Backup
+%package       barri-cli
+Summary:       Bareos Recovery Imager (Barri) command line program
+Group:         Productivity/Archiving/Backup
 %endif
 
-%package    storage-python3-plugin
-Summary:    Python plugin for Bareos Storage daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-storage = %{version}
-Requires:   bareos-storage-python-plugins-common = %{version}
-Provides:   bareos-storage-python-plugin
-Obsoletes:  bareos-storage-python-plugin <= %{version}
+%package       storage-python3-plugin
+Summary:       Python plugin for Bareos Storage daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-storage = %{version}
+Requires:      bareos-storage-python-plugins-common = %{version}
+Provides:      bareos-storage-python-plugin
+Obsoletes:     bareos-storage-python-plugin <= %{version}
 
-%package    storage-python-plugins-common
-Summary:    Python plugin for Bareos Storage daemon
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-storage = %{version}
+%package       storage-python-plugins-common
+Summary:       Python plugin for Bareos Storage daemon
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-storage = %{version}
 
 # vmware switch is set via --define="vmware 1" in build script when
 # vix disklib is detected
@@ -634,11 +634,11 @@ This package contains the common files for the python storage plugins.
 %endif
 
 %if 0%{?glusterfs}
-%package    filedaemon-glusterfs-plugin
-Summary:    GlusterFS plugin for Bareos File daemon (deprecated)
-Group:      Productivity/Archiving/Backup
-Requires:   bareos-filedaemon = %{version}
-Requires:   glusterfs
+%package       filedaemon-glusterfs-plugin
+Summary:       GlusterFS plugin for Bareos File daemon (deprecated)
+Group:         Productivity/Archiving/Backup
+Requires:      bareos-filedaemon = %{version}
+Requires:      glusterfs
 
 %description filedaemon-glusterfs-plugin
 %{dscr}
