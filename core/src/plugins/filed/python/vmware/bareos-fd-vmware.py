@@ -1591,6 +1591,10 @@ class BareosVADPWrapper(object):
             if not self.get_vm_details_dc_folder_vmname(
                 vm_not_found_error_level=bareosfd.M_INFO
             ):
+                if self.dc is None:
+                    # The given DC wasn't found
+                    return bareosfd.bRC_Error
+
                 debug_message = (
                     "No VM with Folder/Name %s/%s found in DC %s, recreating it now\n"
                     % (
@@ -1972,10 +1976,19 @@ class BareosVADPWrapper(object):
                 return False
             self.vmfs_vm_path_changed = True
 
-        for child in self.si.content.rootFolder.childEntity:
-            if child.name == self.options["dc"]:
-                datacenter = child
-                break
+        found_dc = self.si.content.searchIndex.FindByInventoryPath(self.options["dc"])
+        if found_dc is not None:
+            bareosfd.DebugMessage(
+                100,
+                "Found DC %s\n" % (StringCodec.encode(self.options["dc"]),),
+            )
+            if not isinstance(found_dc, vim.Datacenter):
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL,
+                    "Found Object %s but type is not vim.Datacenter but %s!\n"
+                    % (StringCodec.encode(self.options["dc"], type(found_dc).__name__)),
+                )
+                return False
         else:
             bareosfd.JobMessage(
                 bareosfd.M_FATAL,
@@ -3585,7 +3598,7 @@ class BareosVADPWrapper(object):
         cookie = self._get_cookie_from_si()
         request_params = {}
         request_params["dsName"] = datastore_name
-        request_params["dcPath"] = self.dc.name
+        request_params["dcPath"] = self.options["dc"]
         file_url = "https://%s:443/folder/%s" % (self.options["vcserver"], file_path)
         request_headers = {"Content-Type": "application/octet-stream"}
 
@@ -3627,7 +3640,7 @@ class BareosVADPWrapper(object):
         cookie = self._get_cookie_from_si()
         request_params = {}
         request_params["dsName"] = datastore_name
-        request_params["dcPath"] = self.dc.name
+        request_params["dcPath"] = self.options["dc"]
         file_url = "https://%s:443/folder/%s" % (self.options["vcserver"], file_path)
         request_headers = {"Content-Type": "application/octet-stream"}
 
