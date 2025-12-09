@@ -15,11 +15,11 @@ Vendor:     The Bareos Team
 #Packager:  {_packager}
 
 %define confdir           %{_sysconfdir}/bareos
-%define configtemplatedir /usr/lib/%{name}/defaultconfigs
+%define configtemplatedir %{_prefix}/lib/%{name}/defaultconfigs
 %define library_dir       %{_libdir}/%{name}
 %define backend_dir       %{_libdir}/%{name}/backends
 %define plugin_dir        %{_libdir}/%{name}/plugins
-%define script_dir        /usr/lib/%{name}/scripts
+%define script_dir        %{_prefix}/lib/%{name}/scripts
 %define working_dir       %{_sharedstatedir}/%{name}
 %define log_dir           /var/log/%{name}
 %define bsr_dir           %{_sharedstatedir}/%{name}
@@ -171,6 +171,10 @@ Requires(pre): openssl
 Requires(pre): sed
 Provides:      %{name}-libs
 Provides:      %{name}-fd
+Provides:      user(%{daemon_user})
+Provides:      group(%{daemon_group})
+
+
 
 %description universal-client
 %{dscr}
@@ -226,12 +230,12 @@ CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
 # use our own cmake call instead of cmake macro as it is different on different platforms/versions
 cmake  .. \
   -DCMAKE_VERBOSE_MAKEFILE=ON \
-  -DCMAKE_INSTALL_PREFIX:PATH=/usr \
-  -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib \
-  -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
-  -DLIB_INSTALL_DIR:PATH=/usr/lib \
-  -DSYSCONF_INSTALL_DIR:PATH=/etc \
-  -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
+  -DCMAKE_INSTALL_PREFIX:PATH=%{_prefix} \
+  -DCMAKE_INSTALL_LIBDIR:PATH=%{_prefix}/lib \
+  -DINCLUDE_INSTALL_DIR:PATH=%{_includedir} \
+  -DLIB_INSTALL_DIR:PATH=%{_prefix}/lib \
+  -DSYSCONF_INSTALL_DIR:PATH=%{_sysconfdir} \
+  -DSHARE_INSTALL_PREFIX:PATH=%{_datadir} \
   -DBUILD_SHARED_LIBS:BOOL=ON \
   -Dprefix=%{_prefix}\
   -Dlibdir=%{library_dir} \
@@ -239,14 +243,13 @@ cmake  .. \
   -Dsysconfdir=%{_sysconfdir} \
   -Dconfdir=%{confdir} \
   -Dmandir=%{_mandir} \
-  -Darchivedir=/var/lib/%{name}/storage \
+  -Darchivedir=%{_sharedstatedir}/%{name}/storage \
   -Dbackenddir=%{backend_dir} \
   -Dconfigtemplatedir=%{configtemplatedir} \
   -Dscriptdir=%{script_dir} \
   -Dworkingdir=%{working_dir} \
   -Dplugindir=%{plugin_dir} \
   -Dlogdir=%{log_dir} \
-  -Dlogdir=/var/log/bareos \
   -Dscsi-crypto=yes \
   -Dndmp=yes \
 %if 0%{?build_qt_monitor}
@@ -364,7 +367,8 @@ ln -sf service %{buildroot}%{_sbindir}/rcbareos-sd
 
 # common shared libraries (without db)
 %defattr(-, root, root)
-%attr(2755, root, %{daemon_group})           %dir %{_sysconfdir}/%{name}
+%attr(2755, root, %{daemon_group}) %dir %{_sysconfdir}/%{name}
+%attr(2755, root, %{daemon_group}) %dir %{configtemplatedir}
 %if !0%{?client_only}
 # these directories belong to bareos-common,
 # as other packages may contain configurations for the director.
