@@ -1,4 +1,5 @@
 #!/bin/bash
+#CTEST requires=01-full+incr
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
