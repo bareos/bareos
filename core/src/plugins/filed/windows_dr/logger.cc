@@ -412,9 +412,9 @@ void format(std::string& buffer,
   std::string prefix;
 
   if (max > 0) {
-    prefix = std::format("{:3}%", static_cast<size_t>(100 * pct_done));
+    prefix = libbareos::format("{:3}%", static_cast<size_t>(100 * pct_done));
   } else {
-    prefix = std::format("---%");
+    prefix = libbareos::format("---%");
   }
   size_t non_bar_size = prefix.size() + actual_suffix.size();
 
