@@ -1,4 +1,6 @@
 #!/bin/bash
+#CTEST requires=replication-offsite
+
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2023-2025 Bareos GmbH & Co. KG

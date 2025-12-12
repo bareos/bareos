@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -25,39 +25,3 @@ create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 
 # We copy from one device to the next on each daemon and also create copies
 # between them.
-
-set_tests_properties(
-  system:autoxflate:create-backup
-  PROPERTIES FIXTURES_SETUP "system:autoxflate:create-backup-fixture"
-             FIXTURES_REQUIRED "system:autoxflate-fixture"
-)
-
-set_tests_properties(
-  system:autoxflate:replication-local
-  PROPERTIES FIXTURES_SETUP "system:autoxflate:replication-local-fixture"
-             FIXTURES_REQUIRED
-             "system:autoxflate:create-backup-fixture;system:autoxflate-fixture"
-)
-
-set_tests_properties(
-  system:autoxflate:copy-to-offsite
-  PROPERTIES
-    FIXTURES_SETUP "system:autoxflate:copy-to-offsite-fixture"
-    FIXTURES_REQUIRED
-    "system:autoxflate:replication-local-fixture;system:autoxflate-fixture"
-)
-
-set_tests_properties(
-  system:autoxflate:replication-offsite
-  PROPERTIES
-    FIXTURES_SETUP "system:autoxflate:replication-offsite-fixture"
-    FIXTURES_REQUIRED
-    "system:autoxflate:copy-to-offsite-fixture;system:autoxflate-fixture"
-)
-
-set_tests_properties(
-  system:autoxflate:copy-to-local
-  PROPERTIES
-    FIXTURES_REQUIRED
-    "system:autoxflate:replication-offsite-fixture;system:autoxflate-fixture"
-)
