@@ -100,4 +100,8 @@ else()
   )
 endif()
 
+add_executable(logger_test)
+target_sources(logger_test PRIVATE logger_test.cc)
+target_link_libraries(logger_test PRIVATE progress-bar-logger format)
+
 include(DebugEdit)
