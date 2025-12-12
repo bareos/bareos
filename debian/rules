@@ -49,8 +49,7 @@ define CONFIGURE_COMMON
   -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Drpath=no \
-  -DVERSION_STRING=$(BAREOS_VERSION) \
-  -DCPM_indicators_SOURCE=/tmp/indicators
+  -DVERSION_STRING=$(BAREOS_VERSION)
 endef
 
 
