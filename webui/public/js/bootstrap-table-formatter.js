@@ -368,23 +368,22 @@ function formatEnabledDisabledStatus(value) {
 }
 
 function formatUname(value, basePath) {
-   let os2Image = new Map(
-	   [
-	   [ "suse.png", ["suse", "sle"]],
-	   [ "debian.png", ["debian"]],
-	   [ "fedora.png", ["fedora"]],
-	   [ "centos.png", ["centos"]],
-	   [ "redhat.png", ["redhat"]],
-	   [ "ubuntu.png", ["ubuntu"]],
-	   [ "univention.png", ["univention"]],
-	   [ "windows.png", ["win"]],
-	   [ "macos.png", ["macos","darwin"]],
-	   [ "sunsolaris.png", ["solaris"]],
-	   [ "freebsd.png", ["freebsd"]],
-	   ]);
+   let os2Image = [
+      [ "suse.png", ["suse", "sle"]],
+      [ "debian.png", ["debian"]],
+      [ "fedora.png", ["fedora"]],
+      [ "centos.png", ["centos"]],
+      [ "redhat.png", ["redhat"]],
+      [ "ubuntu.png", ["ubuntu"]],
+      [ "univention.png", ["univention"]],
+      [ "macos.png", ["macos","darwin"]],
+      [ "windows.png", ["win"]],
+      [ "sunsolaris.png", ["solaris"]],
+      [ "freebsd.png", ["freebsd"]],
+   ];
 
    for (let entry of os2Image) {
-      for (let substring of entry.values()) {
+      for (let substring of entry[1]) {
          if(value.toLowerCase().search(substring) > -1) {
             return '<img src="' + basePath + '/img/icons/os/' + entry[0] + '" id="icon-os" title="' + value + '" data-toggle="tooltip" data-placement="top">';
          }
