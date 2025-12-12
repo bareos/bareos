@@ -24,10 +24,7 @@
 #include <system_error>
 #include <thread>
 
-void wait()
-{
-  (void)fgetc(stdin);
-}
+void wait() { (void)fgetc(stdin); }
 
 int main()
 {
@@ -43,7 +40,8 @@ int main()
     size_t progress = 10;
     logger->Progressed(progress);
     current += progress;
-    //    logger->Output(GenericLogger::Message{std::to_string(current), false});
+    //    logger->Output(GenericLogger::Message{std::to_string(current),
+    //    false});
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 
