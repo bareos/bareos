@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -103,15 +103,6 @@ if(xxHash_ADDED)
   if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "^(x86_64|amd64|AMD64)$")
     set(XXHASH_ENABLE_DISPATCH 1)
   endif()
-endif()
-
-if(ENABLE_BARRI)
-  CPMAddPackage(
-    NAME indicators
-    VERSION "5.0"
-    GITHUB_REPOSITORY "sebsura/indicators"
-    GIT_TAG "7853f903907d831604574fa7c24c0e3d98e4aa4b"
-  )
 endif()
 
 # Dump package information from CPM into a YAML file
