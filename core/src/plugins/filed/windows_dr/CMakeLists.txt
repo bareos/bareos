@@ -28,7 +28,7 @@ else()
 endif()
 
 add_library(progress-bar-logger OBJECT logger.cc)
-target_link_libraries(progress-bar-logger PRIVATE indicators::indicators format)
+target_link_libraries(progress-bar-logger PRIVATE format)
 
 bareos_add_plugin(barri-fd)
 target_link_libraries(

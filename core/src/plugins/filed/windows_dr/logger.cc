@@ -22,10 +22,8 @@
 #include "logger.h"
 #include <cstdint>
 #include <chrono>
-#include "indicators/setting.hpp"
-#include <indicators/progress_bar.hpp>
-#include <indicators/cursor_control.hpp>
 #include <optional>
+#include <iostream>
 
 #include "format.h"
 
@@ -263,6 +261,10 @@ void terminal_flush(terminal_handle handle) { FlushFileBuffers(handle); }
 #else
 using terminal_handle = int;
 
+#  include <asm/termbits.h>
+#  include <sys/ioctl.h>
+#  include <unistd.h>
+
 bool check_if_terminal_handle(terminal_handle handle) { return isatty(handle); }
 std::size_t terminal_width(terminal_handle handle)
 {
@@ -390,9 +392,8 @@ void format(std::string& buffer,
 
   auto output = [&](std::string_view view) {
     if (buffer.size() + view.size() > total_size) {
-      std::cerr << libbareos::format("{} + {} > {}\n", buffer.size(),
-                                     view.size(), total_size);
-      assert(0);
+      throw std::runtime_error{libbareos::format(
+          "{} + {} > {}\n", buffer.size(), view.size(), total_size)};
     }
     buffer.append(view.data(), view.size());
   };
@@ -454,7 +455,11 @@ void format(std::string& buffer,
 };  // namespace progressbar
 
 struct logger : public GenericLogger {
-  using Destination = typename indicators::TerminalHandle;
+  enum Destination
+  {
+    StdOut,
+    StdErr,
+  };
   static constexpr Destination Current = Destination::StdErr;
 
   static terminal::terminal_handle handle()
