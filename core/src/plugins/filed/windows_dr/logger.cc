@@ -204,275 +204,254 @@ struct counter {
 
 namespace terminal {
 #ifdef HAVE_WIN32
-  using terminal_handle = HANDLE;
+using terminal_handle = HANDLE;
 
-  bool check_if_terminal_handle(terminal_handle hndl)
-  {
-    return hndl != INVALID_HANDLE_VALUE && hndl != NULL
-      && GetFileType(hndl) == FILE_TYPE_CHAR;
-  }
+bool check_if_terminal_handle(terminal_handle hndl)
+{
+  return hndl != INVALID_HANDLE_VALUE && hndl != NULL
+         && GetFileType(hndl) == FILE_TYPE_CHAR;
+}
 
-  std::size_t terminal_width(terminal_handle handle)
-  {
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    GetConsoleScreenBufferInfo(handle, &csbi);
-    return csbi.srWindow.Right - csbi.srWindow.Left + 1;
-  }
+std::size_t terminal_width(terminal_handle handle)
+{
+  CONSOLE_SCREEN_BUFFER_INFO csbi;
+  GetConsoleScreenBufferInfo(handle, &csbi);
+  return csbi.srWindow.Right - csbi.srWindow.Left + 1;
+}
 
-  bool terminal_write(terminal_handle handle, std::span<const char> bytes)
-  {
-    size_t bytes_written = 0;
+bool terminal_write(terminal_handle handle, std::span<const char> bytes)
+{
+  size_t bytes_written = 0;
 
-    while (bytes_written < bytes.size()) {
-      DWORD new_bytes_written = 0;
-      DWORD bytes_to_write = std::min(bytes.size() - bytes_written, std::numeric_limits<DWORD>::max());
+  while (bytes_written < bytes.size()) {
+    DWORD new_bytes_written = 0;
+    DWORD bytes_to_write
+        = std::min(bytes.size() - bytes_written,
+                   static_cast<size_t>(std::numeric_limits<DWORD>::max()));
 
-      if (!WriteFile(handle, bytes.data() + bytes_written,
-                     bytes_to_write, &new_bytes_written, NULL)) {
-        return false;
-      }
-
-
-      bytes_written += new_bytes_written;
+    if (!WriteFile(handle, bytes.data() + bytes_written, bytes_to_write,
+                   &new_bytes_written, NULL)) {
+      return false;
     }
 
-    return true;
+
+    bytes_written += new_bytes_written;
   }
 
-  void terminal_hide_cursor(terminal_handle handle)
-  {
-    CONSOLE_CURSOR_INFO cursorInfo;
+  return true;
+}
 
-    GetConsoleCursorInfo(handle, &cursorInfo);
-    cursorInfo.bVisible = true;
-    SetConsoleCursorInfo(handle, &cursorInfo);
-  }
+void terminal_hide_cursor(terminal_handle handle)
+{
+  CONSOLE_CURSOR_INFO cursorInfo;
 
-  void terminal_show_cursor(terminal_handle handle)
-  {
-    CONSOLE_CURSOR_INFO cursorInfo;
+  GetConsoleCursorInfo(handle, &cursorInfo);
+  cursorInfo.bVisible = true;
+  SetConsoleCursorInfo(handle, &cursorInfo);
+}
 
-    GetConsoleCursorInfo(handle, &cursorInfo);
-    cursorInfo.bVisible = true;
-    SetConsoleCursorInfo(handle, &cursorInfo);
-  }
+void terminal_show_cursor(terminal_handle handle)
+{
+  CONSOLE_CURSOR_INFO cursorInfo;
 
-  void terminal_flush(terminal_handle handle)
-  {
-    FlushFileBuffers(handle);
-  }
+  GetConsoleCursorInfo(handle, &cursorInfo);
+  cursorInfo.bVisible = true;
+  SetConsoleCursorInfo(handle, &cursorInfo);
+}
+
+void terminal_flush(terminal_handle handle) { FlushFileBuffers(handle); }
 #else
-  using terminal_handle = int;
+using terminal_handle = int;
 
-  bool check_if_terminal_handle(terminal_handle handle)
-  {
-    return isatty(handle);
+bool check_if_terminal_handle(terminal_handle handle) { return isatty(handle); }
+std::size_t terminal_width(terminal_handle handle)
+{
+  struct winsize size{};
+  int ret = ioctl(handle, TIOCGWINSZ, &size);
+  if (ret < 0) {
+    throw std::runtime_error{libbareos::format(
+        "could not determine terminal size: {}", strerror(errno))};
   }
-  std::size_t terminal_width(terminal_handle handle)
-  {
-    struct winsize size{};
-    int ret = ioctl(handle, TIOCGWINSZ, &size);
-    if (ret < 0) {
-      throw std::runtime_error{libbareos::format("could not determine terminal size: {}",
-                                                 strerror(errno))};
+  // if the terminal reports a size of 0, just treat it as 80 instead
+  return size.ws_col ? size.ws_col : 80;
+}
+
+bool terminal_write(terminal_handle handle, std::span<const char> bytes)
+{
+  size_t bytes_written = 0;
+
+  size_t zero_write_count = 0;
+
+  while (bytes_written < bytes.size()) {
+    ssize_t new_bytes_written = write(handle, bytes.data() + bytes_written,
+                                      bytes.size() - bytes_written);
+
+    if (new_bytes_written < 0) { return false; }
+
+    if (new_bytes_written == 0) {
+      zero_write_count += 1;
+
+      if (zero_write_count > 5) { return false; }
     }
-    // if the terminal reports a size of 0, just treat it as 80 instead
-    return size.ws_col ? size.ws_col : 80;
+
+    bytes_written += new_bytes_written;
   }
+  return true;
+}
 
-  bool terminal_write(terminal_handle handle, std::span<const char> bytes)
-  {
-    size_t bytes_written = 0;
+void terminal_hide_cursor(terminal_handle handle)
+{
+  terminal_write(handle, "\033[?25l");
+}
 
-    size_t zero_write_count = 0;
+void terminal_show_cursor(terminal_handle handle)
+{
+  terminal_write(handle, "\033[?25h");
+}
 
-    while (bytes_written < bytes.size()) {
-      ssize_t new_bytes_written = write(handle, bytes.data() + bytes_written,
-                                        bytes.size() - bytes_written);
-
-      if (new_bytes_written < 0) {
-        return false;
-      }
-
-      if (new_bytes_written == 0) {
-        zero_write_count += 1;
-
-        if (zero_write_count > 5) { return false; }
-      }
-
-      bytes_written += new_bytes_written;
-    }
-    return true;
-  }
-
-  void terminal_hide_cursor(terminal_handle handle)
-  {
-    terminal_write(handle, "\033[?25l");
-  }
-
-  void terminal_show_cursor(terminal_handle handle)
-  {
-    terminal_write(handle, "\033[?25h");
-  }
-
-  void terminal_flush(terminal_handle handle)
-  {
-    static_cast<void>(fdatasync(handle));
-  }
+void terminal_flush(terminal_handle handle)
+{
+  static_cast<void>(fdatasync(handle));
+}
 #endif
 
 struct terminal {
-
-  void flush()
-  {
-    terminal_flush(m_handle);
-  }
+  void flush() { terminal_flush(m_handle); }
 
   bool write(std::span<const char> bytes)
   {
     return terminal_write(m_handle, bytes);
   }
 
-  size_t width()
-  {
-    return terminal_width(m_handle);
-  }
+  size_t width() { return terminal_width(m_handle); }
 
-  void hide_cursor()
-  {
-    terminal_hide_cursor(m_handle);
-  }
+  void hide_cursor() { terminal_hide_cursor(m_handle); }
 
-  void show_cursor()
-  {
-    terminal_show_cursor(m_handle);
-  }
+  void show_cursor() { terminal_show_cursor(m_handle); }
 
   static std::optional<terminal> wrap(terminal_handle hndl)
   {
-    if (!check_if_terminal_handle(hndl)) {
-      return std::nullopt;
-    }
+    if (!check_if_terminal_handle(hndl)) { return std::nullopt; }
 
     return terminal{hndl};
   }
 
 
-
-private:
-  terminal(terminal_handle handle)
-    : m_handle{std::move(handle)}
-  {
-  }
+ private:
+  terminal(terminal_handle handle) : m_handle{std::move(handle)} {}
 
   terminal_handle m_handle{};
 };
-};
-
+};  // namespace terminal
 
 
 namespace progressbar {
 
-  std::string format_time(std::chrono::nanoseconds elapsed,
-                          std::size_t done, std::size_t total)
-  {
+std::string format_time(std::chrono::nanoseconds elapsed,
+                        std::size_t done,
+                        std::size_t total)
+{
+  auto format_h_m_s = [](std::chrono::nanoseconds dur) {
+    auto seconds = duration_cast<std::chrono::seconds>(dur);
+    auto minutes = duration_cast<std::chrono::minutes>(dur - seconds);
+    auto hours = duration_cast<std::chrono::hours>(dur - minutes - seconds);
 
-    auto format_h_m_s = [](std::chrono::nanoseconds dur) {
-      auto seconds = duration_cast<std::chrono::seconds>(dur);
-      auto minutes = duration_cast<std::chrono::minutes>(dur - seconds);
-      auto hours = duration_cast<std::chrono::hours>(dur - minutes - seconds);
+    return libbareos::format("{:02}:{:02}:{:02}", hours.count(),
+                             minutes.count(), seconds.count());
+  };
 
-      return libbareos::format("{:02}:{:02}:{:02}",
-                               hours.count(), minutes.count(), seconds.count());
-    };
-
-    if (done != 0) {
+  if (done != 0) {
     // elapsed time = elapsed ~ done
     // estimated total time = total/done * elapsed ~ total/done * done = total
     // estimated leftover time = estimated total time - elapsed time
     //                         = (total/done - 1) * elapsed time
     //                         = [(total - done) * elapsed time] / done
 
-      auto leftover = ((total - done) * elapsed) / done;
+    auto leftover = ((total - done) * elapsed) / done;
 
-      return libbareos::format("[{}/{}]",
-                               format_h_m_s(elapsed),
-                               format_h_m_s(leftover));
-    } else {
-      return libbareos::format("[{}/--:--:--]", format_h_m_s(elapsed));
-    }
+    return libbareos::format("[{}/{}]", format_h_m_s(elapsed),
+                             format_h_m_s(leftover));
+  } else {
+    return libbareos::format("[{}/--:--:--]", format_h_m_s(elapsed));
   }
+}
 
-  void format(std::string& buffer,
-              std::chrono::nanoseconds nanos,
-              std::size_t current, std::size_t max,
-              std::string_view prefix, std::string_view suffix) noexcept {
-    // we assume here that prefix/suffix is simple ascii text taking up
-    // one glyph per character
+void format(std::string& buffer,
+            std::chrono::nanoseconds nanos,
+            std::size_t current,
+            std::size_t max,
+            std::string_view suffix) noexcept
+{
+  // we assume here that prefix/suffix is simple ascii text taking up
+  // one glyph per character
 
-    size_t total_size = buffer.size();
-    buffer.clear();
+  size_t total_size = buffer.size();
+  buffer.clear();
 
-    auto output = [&] (std::string_view view) {
-      if (buffer.size() + view.size() > total_size) {
-        std::cerr << libbareos::format("{} + {} > {}\n",
-                                       buffer.size(),
-                                       view.size(),
-                                       total_size);
-        assert(0);
-      }
-      buffer.append(view.data(), view.size());
-    };
-
-    auto actual_suffix = format_time(nanos, current, max);
-
-    actual_suffix.append(" ");
-    actual_suffix.append(suffix);
-
-    size_t non_bar_size = prefix.size() + actual_suffix.size();
-
-    if (total_size < non_bar_size) {
-      output(prefix);
-      output(" ");
-      output(actual_suffix);
-      return;
+  auto output = [&](std::string_view view) {
+    if (buffer.size() + view.size() > total_size) {
+      std::cerr << libbareos::format("{} + {} > {}\n", buffer.size(),
+                                     view.size(), total_size);
+      assert(0);
     }
+    buffer.append(view.data(), view.size());
+  };
 
-    size_t bar_size = total_size - non_bar_size;
+  auto actual_suffix = format_time(nanos, current, max);
 
-    using namespace std::literals::string_view_literals;
+  actual_suffix.append(" ");
+  actual_suffix.append(suffix);
 
-    auto decorator_size = " [] "sv.size();
-    if (bar_size < decorator_size) {
-      output(prefix);
-      output(" ");
-      output(actual_suffix);
-      return;
-    }
+  using namespace std::literals::string_view_literals;
 
-    size_t step_count = bar_size - decorator_size;
+  auto pct_done = max == 0
+                      ? 0.0
+                      : static_cast<double>(current) / static_cast<double>(max);
 
-    auto pct_done = max == 0 ? 0.0 : static_cast<double>(current) / static_cast<double>(max);
-    std::size_t finished_steps = pct_done * step_count;
+  std::string prefix;
 
+  if (max > 0) {
+    prefix = libbareos::format("{:3}%", static_cast<size_t>(100 * pct_done));
+  } else {
+    prefix = libbareos::format("---%");
+  }
+  size_t non_bar_size = prefix.size() + actual_suffix.size();
+
+  if (total_size < non_bar_size) {
     output(prefix);
-    output(" [");
-    size_t current_step = 0;
-    for (; current_step < finished_steps; ++current_step) {
-      output("=");
-    }
-    if (current_step != step_count) {
-      output(">");
-      current_step += 1;
-    }
-    for (; current_step < step_count; ++current_step) {
-      output(" ");
-    }
-
-    output("] ");
+    output(" ");
     output(actual_suffix);
+    return;
   }
-};
+
+  size_t bar_size = total_size - non_bar_size;
+
+  auto decorator_size = " [] "sv.size();
+  if (bar_size < decorator_size) {
+    output(prefix);
+    output(" ");
+    output(actual_suffix);
+    return;
+  }
+
+  size_t step_count = bar_size - decorator_size;
+
+  std::size_t finished_steps = pct_done * step_count;
+
+  output(prefix);
+  output(" [");
+  size_t current_step = 0;
+  for (; current_step < finished_steps; ++current_step) { output("="); }
+  if (current_step != step_count) {
+    output(">");
+    current_step += 1;
+  }
+  for (; current_step < step_count; ++current_step) { output(" "); }
+
+  output("] ");
+  output(actual_suffix);
+}
+};  // namespace progressbar
 
 struct logger : public GenericLogger {
   using Destination = typename indicators::TerminalHandle;
@@ -533,11 +512,8 @@ struct logger : public GenericLogger {
     std::size_t current{0};
     terminal::terminal term;
 
-    progress_bar(std::size_t goal_,
-                 terminal::terminal t)
-        : goal{goal_}
-        , pct{goal_ / 100}
-        , term{std::move(t)}
+    progress_bar(std::size_t goal_, terminal::terminal t)
+        : goal{goal_}, pct{goal_ / 100}, term{std::move(t)}
     {
       start_time = last_update = std::chrono::steady_clock::now();
       t.hide_cursor();
@@ -588,7 +564,6 @@ struct logger : public GenericLogger {
       }
     }
 
-    std::string prefix;
     std::string suffix;
     std::string buffer;
 
@@ -596,7 +571,7 @@ struct logger : public GenericLogger {
     {
       buffer.resize(term.width());
       auto time_elapsed = last_update - start_time;
-      progressbar::format(buffer, time_elapsed, current, goal, prefix, suffix);
+      progressbar::format(buffer, time_elapsed, current, goal, suffix);
       term.write(buffer);
       term.flush();
     }
@@ -605,9 +580,7 @@ struct logger : public GenericLogger {
     {
       buffer.resize(buffer.size() + 2);
       buffer[0] = '\r';
-      for (size_t i = 1; i < buffer.size() - 1; ++i) {
-        buffer[i] = ' ';
-      }
+      for (size_t i = 1; i < buffer.size() - 1; ++i) { buffer[i] = ' '; }
       buffer[buffer.size() - 1] = '\r';
       term.write(buffer);
     }
