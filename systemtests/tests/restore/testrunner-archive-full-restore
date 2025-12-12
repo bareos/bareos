@@ -1,4 +1,5 @@
 #!/bin/bash
+#CTEST requires=create-backup
 set -e
 set -o pipefail
 set -u
