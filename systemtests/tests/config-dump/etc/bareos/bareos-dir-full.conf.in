@@ -1303,8 +1303,8 @@ Schedule {
 Schedule {
   Name = "WeeklyCycle"
   # Description =
-  Run = Full 1st Sat at 21:00
-  Run = Differential 2nd-5th Sat at 21:00
+  Run = Full first Sat at 21:00
+  Run = Differential second-fifth Sat at 21:00
   Run = Incremental Mon-Fri at 21:00
   # Enabled = Yes
 }

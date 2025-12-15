@@ -380,27 +380,13 @@ static bool show_scheduled_preview(UaContext*,
 {
   int date_len;
   char dt[MAX_TIME_LENGTH];
-  time_t runtime;
   RunResource* run;
   PoolMem temp(PM_NAME);
 
   for (run = sched->run; run; run = run->next) {
-    bool run_now;
     int cnt = 0;
-
-    run_now = run->date_time_mask.TriggersOnDayAndHour(time_to_check);
-
-    if (run_now) {
-      // Find time (time_t) job is to be run
-      struct tm tm;
-      Blocaltime(&time_to_check, &tm); /* Reset tm structure */
-      tm.tm_min = run->minute;         /* Set run minute */
-      tm.tm_sec = 0;                   /* Zero secs */
-
-      /* Convert the time into a user parsable string.
-       * As we use locale specific strings for weekday and month we
-       * need to keep track of the longest data string used. */
-      runtime = mktime(&tm);
+    for (auto runtime : run->schedule.GetMatchingTimes(
+             time_to_check, time_to_check + kSecondsPerHour)) {
       bstrftime_wd(dt, sizeof(dt), runtime);
       date_len = strlen(dt);
       if (date_len > *max_date_len) {
