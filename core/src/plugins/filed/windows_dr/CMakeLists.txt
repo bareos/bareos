@@ -28,7 +28,7 @@ else()
 endif()
 
 add_library(progress-bar-logger OBJECT logger.cc)
-target_link_libraries(progress-bar-logger PRIVATE indicators::indicators format)
+target_link_libraries(progress-bar-logger PRIVATE format)
 
 bareos_add_plugin(barri-fd)
 target_link_libraries(
@@ -99,5 +99,9 @@ else()
     COMPONENT filedaemon
   )
 endif()
+
+add_executable(logger_test)
+target_sources(logger_test PRIVATE logger_test.cc)
+target_link_libraries(logger_test PRIVATE progress-bar-logger format)
 
 include(DebugEdit)
