@@ -26,8 +26,8 @@ Key Concepts and Resource Records
    single: Volume; Management; Key Concepts and Resource Records
 
 Getting Bareos to write to disk rather than tape in the simplest case is rather easy.
-In the Storage daemon’s configuration file, you simply define an :config:option:`sd/device/ArchiveDevice`\
-to be a directory.
+In the Storage daemon’s configuration file, you simply define an
+:config:option:`sd/device/ArchiveDevice`\ to be a directory.
 
 The default directory to store backups on disk is :file:`/var/lib/bareos/storage`:
 
@@ -82,6 +82,7 @@ In addition, if you want to use concurrent jobs that write to several different 
 time, you will need to understand a number of other details. An example of such a configuration is
 given at the end of this chapter under :ref:`ConcurrentDiskJobs`.
 
+
 Pool Options to Limit the Volume Usage
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -90,7 +91,8 @@ Pool Options to Limit the Volume Usage
 
 Some of the options you have, all of which are specified in the Pool record, are:
 
--  :config:option:`dir/pool/MaximumVolumeJobs`\ : write only the specified number of jobs on each Volume.
+-  :config:option:`dir/pool/MaximumVolumeJobs`\ : write only the specified number of jobs on
+   each Volume.
 
 -  :config:option:`dir/pool/MaximumVolumeBytes`\ : limit the maximum size of each Volume.
 
@@ -98,20 +100,23 @@ Some of the options you have, all of which are specified in the Pool record, are
    If you ever have a partial hard disk failure, you are more likely to be able to recover more data
    if they are in smaller Volumes.
 
--  :config:option:`dir/pool/VolumeUseDuration`\ : restrict the time between first and last data written to Volume.
+-  :config:option:`dir/pool/VolumeUseDuration`\ : restrict the time between first and last data
+   written to Volume.
 
 Note that although you probably would not want to limit the number of bytes on a tape as you would
 on a disk Volume, the other options can be very useful in limiting the time Bareos will use a
 particular Volume (be it tape or disk). For example, the above directives can allow you to ensure
 that you rotate through a set of daily Volumes if you wish.
 
-As mentioned above, each of those directives is specified in the Pool or Pools that you use for your Volumes.
-In the case of :config:option:`dir/pool/MaximumVolumeJobs`\ , :config:option:`dir/pool/MaximumVolumeBytes`\
-and :config:option:`dir/pool/VolumeUseDuration`\ , you can actually specify the desired value on a
-Volume by Volume basis. The value specified in the Pool record becomes the default when labeling new
-Volumes. Once a Volume has been created, it gets its own copy of the Pool defaults, and subsequently
-changing the Pool will have no effect on existing Volumes. You can either manually change the Volume
-values, or refresh them from the Pool defaults using the :bcommand:`update volume` command in the Console.
+As mentioned above, each of those directives is specified in the Pool or Pools that you use for
+your Volumes. In the case of :config:option:`dir/pool/MaximumVolumeJobs`\ ,
+:config:option:`dir/pool/MaximumVolumeBytes`\ and :config:option:`dir/pool/VolumeUseDuration`\ ,
+you can actually specify the desired value on a Volume by Volume basis. The value specified in the
+Pool record becomes the default when labeling new Volumes. Once a Volume has been created, it gets
+its own copy of the Pool defaults, and subsequently changing the Pool will have no effect on
+existing Volumes. You can either manually change the Volume values, or refresh them from the Pool
+defaults using the :bcommand:`update volume` command in the Console.
+
 As an example of the use of one of the above, suppose your Pool resource contains:
 
 .. code-block:: bareosconfig
@@ -125,9 +130,10 @@ As an example of the use of one of the above, suppose your Pool resource contain
 
 then if you run a backup once a day (every 24 hours), Bareos will use a new Volume for each backup,
 because each Volume it writes can only be used for 23 hours after the first write. Note, setting the
-use duration to 23 hours is not a very good solution for tapes unless you have someone on-site during
-the weekends, because Bareos will want a new Volume and no one will be present to mount it, so no weekend
-backups will be done until Monday morning.
+use duration to 23 hours is not a very good solution for tapes unless you have someone on-site
+during the weekends, because Bareos will want a new Volume and no one will be present to mount it,
+so no weekend backups will be done until Monday morning.
+
 
 .. _AutomaticLabeling:
 
@@ -138,21 +144,23 @@ Automatic Volume Labeling
    single: Label; Automatic Volume Labeling
    single: Volume; Labeling; Automatic
 
-Use of the above records brings up another problem – that of labeling your Volumes. For automated disk
-backup, you can either manually label each of your Volumes, or you can have Bareos automatically label
-new Volumes when they are needed.
+Use of the above records brings up another problem – that of labeling your Volumes. For automated
+disk backup, you can either manually label each of your Volumes, or you can have Bareos
+automatically label new Volumes when they are needed.
 
-Please note that automatic Volume labeling can also be used with tapes, but it is not nearly so practical
-since the tapes must be pre-mounted. This requires some user interaction. Automatic labeling from templates
-does NOT work with autochangers since Bareos will not access unknown slots. There are several methods of
-labeling all volumes in an autochanger magazine.
+Please note that automatic Volume labeling can also be used with tapes, but it is not nearly so
+practical since the tapes must be pre-mounted. This requires some user interaction. Automatic
+labeling from templates does **NOT** work with autochangers since Bareos will not access unknown
+slots. There are several methods of labeling all volumes in an autochanger magazine.
 For more information on this, please see the :ref:`AutochangersChapter` chapter.
 
-Automatic Volume labeling is enabled by making a change to both the :config:option:`Dir/Pool`\  resource
-and to the :config:option:`Sd/Device`\  resource shown above. In the case of the Pool resource, you
-must provide Bareos with a label format that it will use to create new names. In the simplest form,
-the label format is simply the Volume name, to which Bareos will append a four digit number. This number
-starts at 0001 and is incremented for each Volume the catalog contains.
+Automatic Volume labeling is enabled by making a change to both the
+:config:option:`Dir/Pool`\  resource and to the :config:option:`Sd/Device`\  resource shown above.
+In the case of the Pool resource, you must provide Bareos with a label format that it will use to
+create new names. In the simplest form, the label format is simply the Volume name, to which Bareos
+will append a four digit number. This number starts at 0001 and is incremented for each Volume the
+catalog contains.
+
 Thus if you modify your Pool resource to be:
 
 .. code-block:: bareosconfig
@@ -165,14 +173,15 @@ Thus if you modify your Pool resource to be:
      Label Format = "Vol"
    }
 
-Bareos will create Volume names Vol0001, Vol0002, and so on when new Volumes are needed. Much more complex
-and elaborate labels can be created using variable expansion defined in the :ref:`Variable Expansion <VarsChapter>`
-chapter of this manual.
+Bareos will create Volume names **Vol0001**, **Vol0002**, and so on when new Volumes are needed.
+Much more complex and elaborate labels can be created using variable expansion defined in the
+:ref:`Variable Expansion <VarsChapter>` chapter of this manual.
 
-The second change that is necessary to make automatic labeling work is to give the Storage daemon permission
-to automatically label Volumes.
+The second change that is necessary to make automatic labeling work is to give the
+Storage Device permission to automatically label Volumes.
 
-Do so by adding :config:option:`sd/device/LabelMedia = yes`\ to the :config:option:`Sd/Device`\  resource as follows:
+Do so by adding :config:option:`sd/device/LabelMedia = yes`\ to the
+:config:option:`Sd/Device`\  resource as follows:
 
 .. code-block:: bareosconfig
    :caption: Label Media = yes
@@ -191,6 +200,7 @@ Do so by adding :config:option:`sd/device/LabelMedia = yes`\ to the :config:opti
 
 See :config:option:`dir/pool/LabelFormat`\  for details about the labeling format.
 
+
 Restricting the Number of Volumes and Recycling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -207,36 +217,46 @@ The tools Bareos gives you to help automatically manage these problems are the f
 
 -  :config:option:`dir/pool/VolumeRetention`\
 
--  :config:option:`dir/pool/AutoPrune = yes`\  : permit the application of the :config:option:`dir/pool/VolumeRetention`\  period.
+-  :config:option:`dir/pool/AutoPrune = yes`\  : permit the application of the
+   :config:option:`dir/pool/VolumeRetention`\  period.
 
--  :config:option:`dir/pool/Recycle = yes`\  : permit automatic recycling of Volumes whose Volume retention period has expired.
+-  :config:option:`dir/pool/Recycle = yes`\  : permit automatic recycling of Volumes whose Volume
+   retention period has expired.
 
--  :config:option:`dir/pool/RecycleOldestVolume = yes`\  : prune the oldest volume in the Pool, and if all files were pruned, recycle this volume and use it.
+-  :config:option:`dir/pool/RecycleOldestVolume = yes`\  : prune the oldest volume in the Pool, and
+   if all files were pruned, recycle this volume and use it.
 
--  :config:option:`dir/pool/RecycleCurrentVolume = yes`\  : prune the currently mounted volume in the Pool, and if all files were pruned, recycle this volume and use it.
+-  :config:option:`dir/pool/RecycleCurrentVolume = yes`\  : prune the currently mounted volume in
+   the Pool, and if all files were pruned, recycle this volume and use it.
 
--  | :config:option:`dir/pool/PurgeOldestVolume = yes`\  : permits a forced recycling of the oldest Volume when a new one is needed.
-   |
+-  | :config:option:`dir/pool/PurgeOldestVolume = yes`\  : permits a forced recycling of the oldest
+   | Volume when a new one is needed.
 
 .. warning::
 
    This record ignores retention periods! We highly
-        recommend  not to use this record, but instead use :config:option:`dir/pool/RecycleOldestVolume`\ .
+   recommend  not to use this record, but instead use :config:option:`dir/pool/RecycleOldestVolume`\ .
 
 -  :config:option:`dir/pool/MaximumVolumes`\ : limit the number of Volumes that can be created.
 
-The first three records (:config:option:`dir/client/FileRetention`\ , :config:option:`dir/client/JobRetention`\  and :config:option:`dir/client/AutoPrune`\ )
-determine the amount of time that Job and File records will remain in your Catalog and they are discussed
+The first three records (:config:option:`dir/client/FileRetention`\ ,
+:config:option:`dir/client/JobRetention`\  and :config:option:`dir/client/AutoPrune`\ ) determine
+the amount of time that Job and File records will remain in your Catalog and they are discussed
 in detail in the :ref:`Automatic Volume Recycling <RecyclingChapter>` chapter.
 
-:config:option:`dir/pool/VolumeRetention`\ , :config:option:`dir/pool/AutoPrune`\  and :config:option:`dir/pool/Recycle`\  determine
-how long Bareos will keep your Volumes before reusing them and they are also discussed in detail in
+:config:option:`dir/pool/VolumeRetention`\ , :config:option:`dir/pool/AutoPrune`\  and
+:config:option:`dir/pool/Recycle`\  determine how long Bareos will keep your Volumes before
+reusing them and they are also discussed in detail in
 the :ref:`Automatic Volume Recycling <RecyclingChapter>` chapter.
 
-The :config:option:`dir/pool/MaximumVolumes`\  record can also be used in conjunction with the :config:option:`dir/pool/VolumeRetention`\  period
-to limit the total number of archive Volumes that Bareos will create. By setting an appropriate :config:option:`dir/pool/VolumeRetention`\  period,
-a Volume will be purged just before it is needed and thus Bareos can cycle through a fixed set of Volumes.
-Cycling through a fixed set of Volumes can also be done by setting :config:option:`dir/pool/PurgeOldestVolume = yes`\  or
+The :config:option:`dir/pool/MaximumVolumes`\  record can also be used in conjunction with the
+:config:option:`dir/pool/VolumeRetention`\  period to limit the total number of archive Volumes
+that Bareos will create. By setting an appropriate :config:option:`dir/pool/VolumeRetention`\
+period,
+a Volume will be purged just before it is needed and thus Bareos can cycle through a fixed set of
+Volumes.
+Cycling through a fixed set of Volumes can also be done by setting
+:config:option:`dir/pool/PurgeOldestVolume = yes`\  or
 :config:option:`dir/pool/RecycleCurrentVolume = yes`\  .
 In this case, when Bareos needs a new Volume, it will prune the specified volume.
 
@@ -248,32 +268,36 @@ Concurrent Disk Jobs
 .. index::
    single: Concurrent Disk Jobs
 
-Above, we discussed how you could have a single device named :config:option:`Sd/Device = FileStorage`\
-that writes to volumes in :file:`/var/lib/bareos/storage/`. You can, in fact, run multiple concurrent
-jobs using the Storage definition given with this example, and all the jobs will simultaneously write
-into the Volume that is being written.
+Above, we discussed how you could have a single device named
+:config:option:`Sd/Device = FileStorage`\ that writes to volumes in :file:`/var/lib/bareos/storage/`.
+You can, in fact, run multiple concurrent jobs using the Storage definition given with this example,
+and all the jobs will simultaneously write into the Volume that is being written.
 
 Now suppose you want to use multiple Pools, which means multiple Volumes, or suppose you want each
-client to have its own Volume and perhaps its own directory such as :file:`/var/lib/bareos/storage/client1`
-and :file:`/var/lib/bareos/storage/client2` ... . With the single Storage and Device definition above,
-neither of these two is possible. Why? Because Bareos disk storage follows the same rules as tape
-devices. Only one Volume can be mounted on any Device at any time. If you want to simultaneously write
-multiple Volumes, you will need multiple Device resources in your |sd| configuration and thus multiple
-Storage resources in your |dir| configuration.
+client to have its own Volume and perhaps its own directory such as
+:file:`/var/lib/bareos/storage/client1`\  and :file:`/var/lib/bareos/storage/client2`\  ... .
+With the single Storage and Device definition above, neither of these two is possible. Why? Because
+Bareos disk storage follows the same rules as tape devices. Only one Volume can be mounted on any
+Device at any time. If you want to simultaneously write multiple Volumes, you will need multiple
+Device resources in your |sd| configuration and thus multiple Storage resources in your
+|dir| configuration.
 
-Okay, so now you should understand that you need multiple Device definitions in the case of different
-directories or different Pools, but you also need to know that the catalog data that Bareos keeps
-contains only the **Media Type** and not the specific storage device. This permits a tape for example to
-be re-read on any compatible tape drive. The compatibility being determined by the **Media Type**
-(:config:option:`dir/storage/MediaType`\ and :config:option:`sd/device/MediaType`\ ).
+Okay, so now you should understand that you need multiple Device definitions in the case of
+different directories or different Pools, but you also need to know that the catalog data that
+Bareos keeps contains only the **Media Type** and not the specific storage device. This permits a
+tape for example to be re-read on any compatible tape drive. The compatibility being determined by
+the **Media Type** (:config:option:`dir/storage/MediaType`\ and :config:option:`sd/device/MediaType`\ ).
 The same applies to disk storage. Since a volume that is written by a Device in say directory
 :file:`/var/lib/bareos/storage/backups`\ cannot be read by a Device with an
 :config:option:`sd/device/ArchiveDevice`\  = :file:`/var/lib/bareos/storage/client1`, you will
-not be able to restore all your files if you give both those devices :config:option:`sd/device/MediaType = File`\.
-During the restore, Bareos will simply choose the first available device, which may not be the correct one.
-If this is confusing, just remember that the |dir| has only the **Media Type** and the **Volume Name**.
+not be able to restore all your files if you give both those devices
+:config:option:`sd/device/MediaType = File`\.
+During the restore, Bareos will simply choose the first available device, which may not be the
+correct one. If this is confusing, just remember that the |dir| has only the **Media Type** and the
+**Volume Name**.
 It does not know the :config:option:`sd/device/ArchiveDevice`\  (or the full path) that is specified
-in the |sd|. Thus you must explicitly tie your Volumes to the correct Device by using the **Media Type**.
+in the |sd|. Thus you must explicitly tie your Volumes to the correct Device
+by using the **Media Type**.
 
 Example for two clients, separate devices and recycling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -285,8 +309,8 @@ The example consists of a two clients that are backed up to a set of 12 Volumes 
 different directories on the Storage machine. Each Volume is used (written) only once, and there are
 four Full saves done every hour (so the whole thing cycles around after three hours).
 
-What is key here is that each physical device on the |sd| has a different **Media Type**. This allows the
-Director to choose the correct device for restores.
+What is key here is that each physical device on the |sd| has a different **Media Type**. This
+allows the |dir| to choose the correct device for restores.
 
 The |dir| configuration is as follows:
 
@@ -457,18 +481,23 @@ Using Multiple Storage Devices
    single: Storage Device; Multiple
 
 Bareos treats disk volumes similar to tape volumes as much as it can. This means that you can only
-have a single Volume mounted at one time on a disk as defined in your :config:option:`Sd/Device`\  resource.
+have a single Volume mounted at one time on a disk as defined in your
+:config:option:`Sd/Device`\  resource.
 
-If you use Bareos without :ref:`section-DataSpooling`, multiple concurrent backup jobs can be written
-to a Volume using interleaving. However, interleaving has disadvantages, see :ref:`section-Interleaving`.
+If you use Bareos without :ref:`section-DataSpooling`, multiple concurrent backup jobs can be
+written to a Volume using interleaving. However, interleaving has disadvantages,
+see :ref:`section-Interleaving`.
 
-Also the :config:option:`Sd/Device`\  will be in use. If there are other jobs, requesting other Volumes, these jobs have to wait.
+Also the :config:option:`Sd/Device`\  will be in use. If there are other jobs, requesting other
+Volumes, these jobs have to wait.
 
 On a tape (or autochanger), this is a physical limitation of the hardware. However, when using disk
 storage, this is only a limitation of the software.
 
-To enable Bareos to run concurrent jobs (on disk storage), define as many :config:option:`Sd/Device`\  as concurrent jobs should run.
-All these :config:option:`Sd/Device`\ s can use the same :config:option:`sd/device/ArchiveDevice`\  directory.
+To enable Bareos to run concurrent jobs (on disk storage), define as many
+:config:option:`Sd/Device`\  as concurrent jobs should run.
+All these :config:option:`Sd/Device`\ s can use the same
+:config:option:`sd/device/ArchiveDevice`\  directory.
 
 Set :config:option:`sd/device/MaximumConcurrentJobs = 1`\ for all these devices.
 
@@ -688,15 +717,16 @@ Automatic Volume Recycling
    single: Recycle; Automatic Volume
    single: Volume; Recycle; Automatic
 
-By default, once Bareos starts writing a Volume, it can append to the volume, but it will not overwrite
-the existing data thus destroying it. However when Bareos recycles a Volume, the Volume becomes available
-for being reused and Bareos can at some later time overwrite the previous contents of that Volume. Thus
-all previous data will be lost. If the Volume is a tape, the tape will be rewritten from the beginning.
+By default, once Bareos starts writing a Volume, it can append to the volume, but it will not
+overwrite the existing data thus destroying it. However when Bareos recycles a Volume, the Volume
+becomes available for being reused and Bareos can at some later time overwrite the previous contents
+of that Volume. Thus all previous data will be lost. If the Volume is a tape, the tape will be
+rewritten from the beginning.
 If the Volume is a disk file, the file will be truncated before being rewritten.
 
 You may not want Bareos to automatically recycle (reuse) tapes. This would require a large number of
-tapes though, and in such a case, it is possible to manually recycle tapes. For more on manual recycling,
-see the :ref:`manualrecycling` chapter.
+tapes though, and in such a case, it is possible to manually recycle tapes. For more on manual
+recycling, see the :ref:`manualrecycling` chapter.
 
 Most people prefer to have a Pool of tapes that are used for daily backups and recycled once a week,
 another Pool of tapes that are used for Full backups once a week and recycled monthly, and finally a
@@ -722,8 +752,8 @@ resource definition. These four records are:
    :config:option:`dir/pool/RecyclePool`\
 
 The above three directives are all you need assuming that you fill each of your Volumes then wait
-the Volume Retention period before reusing them. If you want Bareos to stop using a Volume and recycle
-it before it is full, you can use one or more additional directives such as:
+the Volume Retention period before reusing them. If you want Bareos to stop using a Volume and
+recycle it before it is full, you can use one or more additional directives such as:
 
 -
 
@@ -737,11 +767,12 @@ it before it is full, you can use one or more additional directives such as:
 
    :config:option:`dir/pool/MaximumVolumeBytes`\
 
-Please see below and the :ref:`Basic Volume Management <DiskChapter>` chapter of this manual for complete examples.
+Please see below and the :ref:`Basic Volume Management <DiskChapter>` chapter of this manual
+for complete examples.
 
-Automatic recycling of Volumes is performed by Bareos only when it wants a new Volume and no appendable
-Volumes are available in the Pool. It will then search the Pool for any Volumes with the ``Recycle`` flag
-set and the Volume Status is ``Purged``.
+Automatic recycling of Volumes is performed by Bareos only when it wants a new Volume and no
+appendable Volumes are available in the Pool. It will then search the Pool for any Volumes with
+the ``Recycle`` flag set and the Volume Status is ``Purged``.
 At that point, it will choose the oldest purged volume and recycle it.
 
 If there are no volumes with status ``Purged``, then the recycling occurs in two steps:
@@ -768,7 +799,8 @@ Volume, you must first ensure that no other Volume in the Pool is marked as
 ``Unlabeled`` or ``Append``. If necessary, you can manually set a volume to ``Used``.
 The reason for this is that Bareos wants to preserve the data on your old medium
 (even though purged from the catalog) as long as absolutely possible before
-overwriting it. There are also a number of directives such as :config:option:`dir/pool/VolumeUseDuration`\
+overwriting it.
+There are also a number of directives such as :config:option:`dir/pool/VolumeUseDuration`\
 that will automatically mark a volume as ``Used`` and thus no longer appendable.
 
 .. _AutoPruning:
@@ -819,27 +851,29 @@ for a particular Job.
 They take the most space in the catalog (probably 90-95% of the total). When the File records are
 pruned, the Job records can remain, and you can still examine what Jobs ran, but not the details of
 the Files backed up.
-In addition, without the File records, you cannot use the Console restore command to restore the files.
+In addition, without the File records, you cannot use the Console restore command to restore
+the files.
 
 When a Job record is pruned, the Volume (Media record) for that Job can still remain in the database,
 and if you do a :bcommand:`list volumes`, you will see the volume information, but the Job records
 (and its File records) will no longer be available.
 
-In each case, pruning removes information about where older files are, but it also prevents the catalog
-from growing to be too large. You choose the retention periods in function of how many files you are
-backing up and the time periods you want to keep those records online, and the size of the database.
+In each case, pruning removes information about where older files are, but it also prevents the
+catalog from growing to be too large. You choose the retention periods in function of how many files
+you are backing up and the time periods you want to keep those records online, and the size of the
+database.
 It is possible to re-insert the records (with 98% of the original data) by using :command:`bscan` to
 scan in a whole Volume or any part of the volume that you want.
 
-By setting :config:option:`dir/pool/AutoPrune = yes`\  you will permit the |dir| to automatically prune
-all Volumes in the Pool when a Job needs another Volume. Volume pruning means removing records from
-the catalog. It does not shrink the size of the Volume or affect the Volume data until the Volume gets
-overwritten. When a Job requests another volume and there are no Volumes with Volume status ``Unlabeled``
-or ``Append`` available, Bareos will begin volume pruning. This means that all Jobs that are older than
-the :config:option:`dir/pool/VolumeRetention`\ period will be pruned from every Volume that has Volume
-status ``Full`` or ``Used`` and has :config:option:`dir/pool/Recycle = yes`\ .
-Pruning consists of deleting the corresponding **Job**, **File**, and **JobMedia** records from the
-catalog database.
+By setting :config:option:`dir/pool/AutoPrune = yes`\  you will permit the |dir| to automatically
+prune all Volumes in the Pool when a Job needs another Volume. Volume pruning means removing records
+from the catalog. It does not shrink the size of the Volume or affect the Volume data until the
+Volume gets overwritten. When a Job requests another volume and there are no Volumes with Volume
+status ``Unlabeled`` or ``Append`` available, Bareos will begin volume pruning. This means that all
+Jobs that are older than the :config:option:`dir/pool/VolumeRetention`\ period will be pruned from
+every Volume that has Volume status ``Full`` or ``Used`` and has
+:config:option:`dir/pool/Recycle = yes`\ . Pruning consists of deleting the corresponding **Job**,
+**File**, and **JobMedia** records from the catalog database.
 No change to the physical data on the Volume occurs during the pruning process. When all files are
 pruned from a Volume (i.e. no records in the catalog), the Volume will be marked as ``Purged``
 implying that no Jobs remain on the volume.
@@ -948,8 +982,8 @@ periods or used the defaults for all these items.
 
 #. Try recycling any purged Volumes.
 
-#. Prune volumes applying Volume retention period (Volumes with Volume status ``Full``, ``Used``,
-   or ``Append`` are pruned). Note, even if all the File and Job records are pruned from a Volume,
+#. Prune volumes applying Volume retention period (Volumes with Volume status ``Full`` or ``Used``
+   are pruned). Note, even if all the File and Job records are pruned from a Volume,
    the Volume will not be marked ``Purged`` until the Volume retention period expires.
 
 #. Search the Pool for a Volume with Volume status ``Purged``.
@@ -967,12 +1001,12 @@ periods or used the defaults for all these items.
 
 #. Prune the oldest Volume if :config:option:`dir/pool/RecycleOldestVolume = yes`\  (the Volume
    with the oldest ``LastWritten`` date and ``VolStatus`` equal to ``Full``, ``Recycle``,
-   ``Purged``, ``Used``, or ``Append`` is chosen). This record ensures that all retention periods
+   ``Purged`` or ``Used`` is chosen). This record ensures that all retention periods
    are properly respected.
 
 #. Purge the oldest Volume if :config:option:`dir/pool/PurgeOldestVolume = yes`\ (the Volume with
    the oldest **LastWritten** date and **VolStatus** equal to ``Full``, ``Recycle``, ``Purged``,
-   ``Used``, or ``Append`` is chosen).
+   or ``Used`` is chosen).
 
    .. warning::
 
