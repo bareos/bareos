@@ -44,12 +44,12 @@ if(TARGET droplet
   )
 
   set_tests_properties(
-    system:droplet-s3:start-minio PROPERTIES FIXTURES_SETUP
+    system:droplet-s3:minio-setup PROPERTIES FIXTURES_SETUP
                                              system:droplet-s3:minio-fixture
   )
   set_tests_properties(
-    system:droplet-s3:stop-minio PROPERTIES FIXTURES_CLEANUP
-                                            system:droplet-s3:minio-fixture
+    system:droplet-s3:minio-cleanup PROPERTIES FIXTURES_CLEANUP
+                                               system:droplet-s3:minio-fixture
   )
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)

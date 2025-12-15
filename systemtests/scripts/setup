@@ -19,7 +19,7 @@ print_debug "granting privileges database \"${db_name}\""
 
 if lsof="$(command -v lsof)"; then
   for port in $BASEPORT $BAREOS_DIRECTOR_PORT $BAREOS_STORAGE_PORT \
-    $BAREOS_STORAGE2_PORT $BAREOS_FD_PORT $MINIO_PORT; do
+    $BAREOS_STORAGE2_PORT $BAREOS_FD_PORT; do
     if pid=$("${lsof}" -ti "tcp:$port"); then
       print_debug "Killing process listening on $port with PID $pid"
       kill -9 "$pid"

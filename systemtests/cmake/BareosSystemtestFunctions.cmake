@@ -31,8 +31,10 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "scripts" "webui.sh" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "setup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "start_bareos.sh" @ONLY "")
-  configurefilestosystemtest("systemtests" "scripts" "start_minio.sh" @ONLY "")
-  configurefilestosystemtest("systemtests" "scripts" "stop_minio.sh" @ONLY "")
+  configurefilestosystemtest("systemtests" "scripts" "minio-setup.sh" @ONLY "")
+  configurefilestosystemtest(
+    "systemtests" "scripts" "minio-cleanup.sh" @ONLY ""
+  )
   configurefilestosystemtest(
     "systemtests" "scripts" "create_sparse_file.sh" @ONLY ""
   )
