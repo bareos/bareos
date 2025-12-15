@@ -1,4 +1,4 @@
-# Documented the daemons state after installation
+# Document the daemons state after installation
 
 * Status: proposed
 * Deciders: [list everyone involved in the decision]
@@ -67,8 +67,8 @@ Distributions and packages can be configured in different ways.
 
 Intention:
 
-  * after installation, the components likely needs configuration, therefore they are not started.
-  * on upgrade, they are configured. However, maybe backup jobs are running. Therefore don't restart the Dir and the SD. The FD is restarted. This should prevent, that a system is regulary updated, but the old daemon keeps on running forever. 
+  * after installation, the components likely need configuration, therefore they are not started.
+  * on upgrade, they should already be configured. However, backup jobs may be running. Therefore we don't restart the Director or the Storage. The Filedaemon is restarted however. This should prevent situations where a system is regularly updated, but the outdated daemons keep on running forever. 
 
 This table should give an overview about the different settings:
 
