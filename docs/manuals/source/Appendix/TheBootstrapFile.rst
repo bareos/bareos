@@ -140,7 +140,7 @@ will match records on Volume Test-01 AND (Client records for My machine OR Backu
 
 As previously mentioned above, there may be multiple Volume records in the same bootstrap file. Each new Volume definition begins a new set of filter conditions that apply to that Volume and will be ORed with any other Volume definitions.
 
-As an example, suppose we query for the current set of tapes to restore all files on Client Rufus using the query command in the console program:
+As an example, suppose we query for the current set of tapes to restore all files on Client bareos-fd using the query command in the console program:
 
 
 
@@ -158,7 +158,7 @@ As an example, suppose we query for the current set of tapes to restore all file
         7: List Volumes used by selected JobId:
         8: List Volumes to Restore All Files:
    Choose a query (1-8): 8
-   Enter Client Name: Rufus
+   Enter Client Name: bareos-fd
    +-------+------------------+------------+-----------+----------+------------+
    | JobId | StartTime        | VolumeName | StartFile | VolSesId | VolSesTime |
    +-------+------------------+------------+-----------+----------+------------+
