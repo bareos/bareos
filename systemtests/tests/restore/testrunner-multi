@@ -1,5 +1,4 @@
 #!/bin/bash
-#CTEST requires=create-backup
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
@@ -24,6 +23,8 @@
 # Check whether multiple file=/dir= are handled
 # correctly during restore.
 #
+
+#CTEST requires=create-backup
 
 set -e
 set -o pipefail

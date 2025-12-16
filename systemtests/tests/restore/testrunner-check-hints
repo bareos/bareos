@@ -1,5 +1,4 @@
 #!/bin/bash
-#CTEST requires=create-backup
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
@@ -25,6 +24,8 @@
 # backups, but none of the right type exist.
 # (i.e. an archive exists, but a non-archive is wanted.)
 #
+
+#CTEST requires=create-backup
 
 set -e
 set -o pipefail
