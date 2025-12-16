@@ -1,6 +1,8 @@
+#!/bin/bash
+
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,18 +19,6 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
-if(AUTOCHANGER_TEST_ENABLED)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-  # Make sure these tests run sequentially.
-  set_tests_properties(
-    ${SYSTEMTEST_PREFIX}autochanger:setup
-    ${SYSTEMTEST_PREFIX}autochanger:backup-restore
-    ${SYSTEMTEST_PREFIX}autochanger:label-release-autoselect
-    ${SYSTEMTEST_PREFIX}autochanger:restore-non-present-volume
-    ${SYSTEMTEST_PREFIX}autochanger:cleanup
-    PROPERTIES RESOURCE_LOCK autochanger_resource
-  )
-else()
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
-endif()
+runner_name="$(basename "$0")"
+export log_home="${tmp}/${runner_name}"
+mkdir -p "${log_home}"
