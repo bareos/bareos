@@ -1,5 +1,4 @@
 #!/bin/bash
-#CTEST requires=create-backup
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
@@ -23,6 +22,8 @@
 #
 # restore some single files
 #
+
+#CTEST requires=create-backup
 
 set -e
 set -o pipefail

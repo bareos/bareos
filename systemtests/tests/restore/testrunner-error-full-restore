@@ -1,5 +1,4 @@
 #!/bin/bash
-#CTEST requires=create-backup
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
@@ -25,6 +24,8 @@
 # termination text is displayed.
 # The error is provoked by temporarily renaming the volume.
 #
+
+#CTEST requires=create-backup
 
 set -e
 set -o pipefail
