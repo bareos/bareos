@@ -1,4 +1,5 @@
 #!/bin/bash
+#CTEST requires=create-backups
 
 TestName="$(basename "$(pwd)")"
 export TestName
