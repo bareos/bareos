@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,6 +18,9 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+
+# TODO: this is independent and should work with CTEST: nolock, but the SD
+#       seems to crash when setting it.
 
 set -e
 set -o pipefail
@@ -36,23 +39,28 @@ export TestName
 #shellcheck source=functions
 . functions
 
+# cleanup log
+: >"${runner_tmp}/log1.out"
+
 start_test
 
-cat <<END_OF_DATA >"$tmp/bconcmds"
-@$out ${runner_tmp}/log.out
+run_bconsole - <<END_OF_DATA
+@$out ${runner_tmp}/log1.out
 status storage=Dedup
-label volume=TestVol pool=Incremental
-purge volume=TestVol
-truncate volstatus=Purged volume=TestVol
-update volstatus=Full volume=TestVol
+label volume=PurgeTruncateVol pool=Incremental
+purge volume=PurgeTruncateVol
+truncate volstatus=Purged volume=PurgeTruncateVol
+update volstatus=Full volume=PurgeTruncateVol
 status storage=Dedup
 quit
 END_OF_DATA
 
-run_bconsole
+expect_grep "3000 OK label" \
+  "${runner_tmp}/log1.out" \
+  "Volume labeling failed."
 
 expect_not_grep "Error" \
-  "${runner_tmp}/log.out" \
+  "${runner_tmp}/log1.out" \
   "Something went wrong."
 
 end_test
