@@ -1,4 +1,6 @@
 #!/bin/bash
+#CTEST nolock
+#CTEST nosetup
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #

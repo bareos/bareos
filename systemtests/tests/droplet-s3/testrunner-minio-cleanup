@@ -1,4 +1,7 @@
 #!/bin/bash
+#CTEST nolock
+#CTEST nosetup
+#CTEST cleanup=minio-setup
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #

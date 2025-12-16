@@ -1,4 +1,6 @@
 #!/bin/bash
+#CTEST requires=minio-setup
+#CTEST requires=backup
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
