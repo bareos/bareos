@@ -358,7 +358,7 @@ setup_sd_user()
     #
     # User doesn't exist so create a new storage_daemon_user with additional groups
     #
-    useradd -r --comment "bareos" --home "${BAREOS_WORKING_DIR}" -g "${STORAGE_DAEMON_GROUP}" -G "${ADD_GROUPS}" --shell /bin/false "${STORAGE_DAEMON_USER}" || warn "failed to create user ${STORAGE_DAEMON_USER}"
+    useradd -r --comment "bareos" --home-dir "${BAREOS_WORKING_DIR}" -g "${STORAGE_DAEMON_GROUP}" -G "${ADD_GROUPS}" --shell /bin/false "${STORAGE_DAEMON_USER}" || warn "failed to create user ${STORAGE_DAEMON_USER}"
   fi
 }
 
