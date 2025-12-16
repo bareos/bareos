@@ -1,4 +1,5 @@
 #!/bin/bash
+#CTEST requires=start
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
