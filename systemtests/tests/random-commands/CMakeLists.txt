@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,16 +19,3 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-
-set_tests_properties(
-  system:random-commands:start
-  PROPERTIES FIXTURES_SETUP "system:random-commands:start-fixture"
-             FIXTURES_REQUIRED "system:random-commands-fixture"
-)
-
-set_tests_properties(
-  system:random-commands:update
-  PROPERTIES
-    FIXTURES_REQUIRED
-    "system:random-commands:start-fixture;system:random-commands-fixture"
-)
