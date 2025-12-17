@@ -1419,3 +1419,73 @@ of the :bcommand:`purge` command.
    The :bcommand:`delete` command can be dangerous. Once it is done, to recover the File records,
    you must either restore your database as it was before the :bcommand:`delete` command or use
    the :ref:`bscan` utility program to scan the Volume and recreate the database entries.
+
+
+.. _addingvolumestopool:
+
+Adding Volumes to a Pool
+------------------------
+
+.. index::
+   single: Console; Adding a Volume to a Pool
+
+.. TODO: has been moved from BareosConsole to here
+
+If you have used the :bcommand:`label` command to label a Volume, it will be automatically added to
+the Pool, and you will not need to add any media to the pool.
+
+Alternatively, you may choose to add a number of Volumes to the pool without labeling them. At a
+later time when the Volume is requested by Bareos you will need to label it.
+
+Before adding a volume, you must know the following information:
+
+#. The name of the Pool (normally "Default")
+
+#. The Media Type as specified in the Storage Resource in the Director’s configuration file (e.g. "File")
+
+#. The number and names of the Volumes you wish to create.
+
+For example, to add media to a Pool, you would issue the following commands to the console program:
+
+
+
+.. code-block:: bconsole
+
+   *<input>add</input>
+   Enter name of Pool to add Volumes to: Default
+   Enter the Media Type: File
+   Enter number of Media volumes to create. Max=1000: 10
+   Enter base volume name: Save
+   Enter the starting number: 1
+   10 Volumes created in pool Default
+   *
+
+
+
+To see what you have added, enter:
+
+
+
+.. code-block:: bconsole
+
+   *<input>list media pool=Default</input>
+   +-------+----------+---------+-----------+-------+------------------+
+   | MedId | VolumeNa | MediaTyp| VolStat   | Bytes | LastWritten      |
+   +-------+----------+---------+-----------+-------+------------------+
+   |    11 | Save0001 | File    | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    12 | Save0002 | File    | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    13 | Save0003 | File    | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    14 | Save0004 | File    | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    15 | Save0005 | File    | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    16 | Save0006 | File    | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    17 | Save0007 | File    | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    18 | Save0008 | File    | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    19 | Save0009 | File    | Unlabeled |     0 | 0000-00-00 00:00 |
+   |    20 | Save0010 | File    | Unlabeled |     0 | 0000-00-00 00:00 |
+   +-------+----------+---------+-----------+-------+------------------+
+   *
+
+Notice that the console program automatically appended a number to the base Volume name that you
+specify (Save in this case). If you don’t want it to append a number, you can simply answer 0 (zero)
+to the question "Enter number of Media volumes to create. Max=1000:", and in this case, it will
+create a single Volume with the exact name you specify.
