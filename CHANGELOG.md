@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and since Bareos version 20 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [23.1.5] - 2025-12-17
 
 ### Fixed
 - stored: fix race condition [PR #2363]
@@ -1022,6 +1022,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [23.1.2]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.2
 [23.1.3]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.3
 [23.1.4]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.4
+[23.1.5]: https://github.com/bareos/bareos/releases/tag/Release%2F23.1.5
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -1751,4 +1752,3 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2436]: https://github.com/bareos/bareos/pull/2436
 [PR #2447]: https://github.com/bareos/bareos/pull/2447
 [PR #2449]: https://github.com/bareos/bareos/pull/2449
-[unreleased]: https://github.com/bareos/bareos/tree/master
