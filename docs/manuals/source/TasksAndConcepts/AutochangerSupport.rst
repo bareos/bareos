@@ -338,9 +338,15 @@ One strategy is to label in advance each of the tapes. Do so by starting Bareos,
 
 ::
 
-   ./bconsole
-   Connecting to Director rufus:8101
-   1000 OK: rufus-dir Version: 1.26 (4 October 2002)
+   bconsole
+   Connecting to Director bareos-dir:9101
+   Encryption: TLS_CHACHA20_POLY1305_SHA256 TLSv1.3
+   1000 OK: bareos-dir Version: 25.0.1 (04 December 2025)
+   Bareos subscription release.
+   Support available on https://www.bareos.com/support/
+   You are connected using the default console
+
+   Enter a period (.) to cancel a command.
    *label
 
 
@@ -420,9 +426,9 @@ To "see" how you have labeled your Volumes, simply enter the list volumes comman
    +-------+----------+--------+---------+-------+--------+----------+-------+------+
    | MedId | VolName  | MedTyp | VolStat | Bites | LstWrt | VolReten | Recyc | Slot |
    +-------+----------+--------+---------+-------+--------+----------+-------+------+
-   | 1     | TestVol1 | DDS-4  | Append  | 0     | 0      | 30672000 | 0     | 1    |
-   | 2     | TestVol2 | DDS-4  | Append  | 0     | 0      | 30672000 | 0     | 2    |
-   | 3     | TestVol3 | DDS-4  | Append  | 0     | 0      | 30672000 | 0     | 3    |
+   | 1     | TestVol1 | LTO-9  | Append  | 0     | 0      | 30672000 | 0     | 1    |
+   | 2     | TestVol2 | LTO-9  | Append  | 0     | 0      | 30672000 | 0     | 2    |
+   | 3     | TestVol3 | LTO-9  | Append  | 0     | 0      | 30672000 | 0     | 3    |
    | ...                                                                            |
    +-------+----------+--------+---------+-------+--------+----------+-------+------+
 

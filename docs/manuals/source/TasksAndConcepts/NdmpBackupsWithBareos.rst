@@ -529,7 +529,9 @@ UPDATE
 Example NDMP Fileset to backup a subset of a NDMP filesystem
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
-The following fileset is intended to backup all files and directories matching :file:`/ifs/home/users/a*`. It has been tested against Isilon OneFS 7.2.0.1. See `Isilon OneFS Administration Guide <https://www.dell.com/support/manuals/en-us/isilon-onefs/ifs_pub_administration_guide_gui/introduction-to-this-guide>`_, section quote{NDMP environment variables} for details about the supported NDMP environment variables. Excludes are not used in this example.
+The following fileset is intended to backup all files and directories matching :file:`/ifs/home/users/a*`.
+It has been tested against Isilon OneFS 7.2.0.1.
+See `Isilon OneFS Administration Guide <https://www.dell.com/support/manuals/en-us/isilon-onefs/ifs-pub-91000-administration-guide-gui/ndmp-backup-and-recovery>`_, section quote{NDMP environment variables} for details about the supported NDMP environment variables. Excludes are not used in this example.
 
 .. code-block:: bareosconfig
    :caption: NDMP Fileset Isilon Include/Exclude
