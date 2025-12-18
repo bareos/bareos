@@ -594,19 +594,35 @@ traceback()
 
 run_bconsole()
 {
-  bconsole_file="${1:-${tmp}/bconcmds}"
+  local bconsole_file="${1:-${tmp}/bconcmds}"
   local error_code=0
-  local timeout=${BCONSOLE_TIMEOUT:-180s}
-  if [ -f "$bconsole_file" ]; then
-    check_config bconsole ${BAREOS_BCONSOLE_BINARY} -c ${BAREOS_CONFIG_DIR} || exit $?
-    # 'cmd || ec=$?' is used to prevent "set -e" from killing the script
-    # before we had the chance to kill the daemons (in case of timeout)
-    if test "$debug" -eq 1; then
-      timeout "${timeout}" "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <"$bconsole_file" || error_code=$?
+  local timeout="${BCONSOLE_TIMEOUT:-180s}"
+  local bconsole_cmdline=("${BAREOS_BCONSOLE_BINARY}" --config "${BAREOS_CONFIG_DIR}")
+
+  check_config bconsole "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" || exit $?
+
+  # 'cmd || ec=$?' is used to prevent "set -e" from killing the script
+  # before we had the chance to kill the daemons (in case of timeout)
+  if [ "${bconsole_file}" = - ]; then
+    # commands from stdin
+    if [ "$debug" -eq 1 ]; then
+      timeout "${timeout}" "${bconsole_cmdline[@]}" || error_code=$?
     else
-      timeout "${timeout}" "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <"$bconsole_file" 2>&1 >/dev/null || error_code=$?
+      timeout "${timeout}" "${bconsole_cmdline[@]}" 2>&1 >/dev/null || error_code=$?
+    fi
+  else
+    # commands from file
+    if ! [ -f "${bconsole_file}" ]; then
+      echo "bconsole scriplet file ${bconsole_file} not found." >&2
+      return 1
+    fi
+    if [ "$debug" -eq 1 ]; then
+      timeout "${timeout}" "${bconsole_cmdline[@]}" <"${bconsole_file}" || error_code=$?
+    else
+      timeout "${timeout}" "${bconsole_cmdline[@]}" <"${bconsole_file}" 2>&1 >/dev/null || error_code=$?
     fi
   fi
+
   if ((error_code == 124)); then
     echo "+----------------------------------------+" >&2
     echo "| bconsole timed out, getting tracebacks |" >&2

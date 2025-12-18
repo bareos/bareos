@@ -23,6 +23,7 @@
 # Restore files and filter them with FileRegex
 #
 
+#CTEST requires=create-backup
 set -e
 set -o pipefail
 set -u

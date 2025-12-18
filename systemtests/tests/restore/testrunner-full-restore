@@ -23,6 +23,8 @@
 # Do a full restore from an archive job.
 #
 
+#CTEST requires=create-backup
+
 set -e
 set -o pipefail
 set -u
