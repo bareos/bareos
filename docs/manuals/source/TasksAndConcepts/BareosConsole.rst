@@ -1780,10 +1780,15 @@ status subscriptions
 
    .. limitation:: status subscription provides only an approximation
 
-     The backup units determined by :bcommand:`status subscription` are an approximation that covers
-     the basics. If you back up the same files with different filesets, this data would be accounted
-     twice. When you back up a VM using a plugin and with a filedaemon installed inside of the VM,
-     that will also be accounted twice.
+      The backup units determined by :bcommand:`status subscription` are an approximation that
+      covers the basics. If you back up the same files with different filesets, this data would be
+      accounted twice. When you back up a VM using a plugin and with a filedaemon installed inside
+      of the VM, that will also be accounted twice.
+
+   .. note:: status subscriptions report can also be obtained also with webui
+
+      see :ref:`WebuiSubscription` for more information about how to regenerate and
+      download the report.
 
 status configuration
    Using the console command :bcommand:`status configuration` will show a list of deprecated
