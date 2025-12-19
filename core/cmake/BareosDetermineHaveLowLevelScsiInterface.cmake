@@ -19,7 +19,11 @@
 
 # determine value of HAVE_LOWLEVEL_SCSI_INTERFACE
 
-if(NOT HAVE_WIN32 AND NOT HAVE_DARWIN_OS AND ${scsi-crypto})
+if(scsi-crypto)
+  if(HAVE_WIN32 OR HAVE_DARWIN_OS)
+    message(FATAL_ERROR "scsi-crypto is not supported on Windows or MacOS")
+  endif()
+
   include(CheckIncludeFiles)
   add_library(bareos-low-level-scsi INTERFACE)
   if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
