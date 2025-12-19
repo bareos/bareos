@@ -98,8 +98,7 @@ bareos_known_compiler_flags(
         -Wsuggest-override
         -Wunused-but-set-variable
         -Wunused-parameter
-        -fdebug-prefix-map
-        -fmacro-prefix-map
+        -ffile-prefix-map
 )
 bareos_known_compiler_flags(
   ID GNU
@@ -138,8 +137,7 @@ bareos_known_compiler_flags(
         -Wsuggest-override
         -Wunused-but-set-variable
         -Wunused-parameter
-        -fdebug-prefix-map
-        -fmacro-prefix-map
+        -ffile-prefix-map
 )
 
 bareos_known_compiler_flags(
@@ -162,8 +160,7 @@ bareos_known_compiler_flags(
         -Wshadow
         -Wsuggest-override
         -Wunused-parameter
-        -fdebug-prefix-map
-        -fmacro-prefix-map
+        -ffile-prefix-map
 )
 
 bareos_known_compiler_flags(

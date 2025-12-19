@@ -23,28 +23,15 @@ include(CheckCXXCompilerFlag)
 set(BAREOS_PREFIX_MAP "${CMAKE_SOURCE_DIR}=/usr/src/bareos")
 
 check_c_compiler_flag(
-  -fdebug-prefix-map=${BAREOS_PREFIX_MAP} C_SUPPORTS_fdebug_prefix_map
+  -ffile-prefix-map=${BAREOS_PREFIX_MAP} C_SUPPORTS_ffile_prefix_map
 )
 check_cxx_compiler_flag(
-  -fdebug-prefix-map=${BAREOS_PREFIX_MAP} CXX_SUPPORTS_fdebug_prefix_map
+  -ffile-prefix-map=${BAREOS_PREFIX_MAP} CXX_SUPPORTS_ffile_prefix_map
 )
-if(C_SUPPORTS_fdebug_prefix_map AND CXX_SUPPORTS_fdebug_prefix_map)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fdebug-prefix-map=${BAREOS_PREFIX_MAP}")
+if(C_SUPPORTS_ffile_prefix_map AND CXX_SUPPORTS_ffile_prefix_map)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffile-prefix-map=${BAREOS_PREFIX_MAP}")
   set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fdebug-prefix-map=${BAREOS_PREFIX_MAP}"
+      "${CMAKE_CXX_FLAGS} -ffile-prefix-map=${BAREOS_PREFIX_MAP}"
   )
   set(CCACHE_MAY_HASHDIR ON)
-endif()
-
-check_c_compiler_flag(
-  -fmacro-prefix-map=${BAREOS_PREFIX_MAP} C_SUPPORTS_fmacro_prefix_map
-)
-check_cxx_compiler_flag(
-  -fmacro-prefix-map=${BAREOS_PREFIX_MAP} CXX_SUPPORTS_fmacro_prefix_map
-)
-if(C_SUPPORTS_fmacro_prefix_map AND CXX_SUPPORTS_fmacro_prefix_map)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fmacro-prefix-map=${BAREOS_PREFIX_MAP}")
-  set(CMAKE_CXX_FLAGS
-      "${CMAKE_CXX_FLAGS} -fmacro-prefix-map=${BAREOS_PREFIX_MAP}"
-  )
 endif()
