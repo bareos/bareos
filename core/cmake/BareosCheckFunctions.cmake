@@ -21,6 +21,7 @@ if(NOT MSVC)
   try_compile(
     HAVE_CORE_SYSTEM_INTERFACES ${CMAKE_BINARY_DIR}/compile_tests
     ${PROJECT_SOURCE_DIR}/src/compile_tests/core_system_interfaces.c
+    OUTPUT_VARIABLE build_output
   )
   if(HAVE_CORE_SYSTEM_INTERFACES)
     set(HAVE_GETPAGESIZE 1)
@@ -29,7 +30,7 @@ if(NOT MSVC)
   else()
     message(
       SEND_ERROR
-        "core/src/compile_tests/core_system_interfaces.c failed to build"
+        "core/src/compile_tests/core_system_interfaces.c failed to build: ${build_output}"
     )
     message(
       FATAL_ERROR
