@@ -45,7 +45,7 @@
 #endif
 
 
-#ifdef HAVE_ARPA_NAMESER_H
+#if __has_include(<arpa/nameser.h>)
 #  include <arpa/nameser.h>
 #endif
 
@@ -149,14 +149,10 @@ void IPADDR::SetAddr6(struct in6_addr* ip6)
 const char* IPADDR::GetAddress(char* outputbuf, int outlen)
 {
   outputbuf[0] = '\0';
-#ifdef HAVE_INET_NTOP
   inet_ntop(addr.sa_family,
             addr.sa_family == AF_INET ? (void*)&(addr_in.sin_addr)
                                       : (void*)&(addr_in6.sin6_addr),
             outputbuf, outlen);
-#else
-  bstrncpy(outputbuf, inet_ntoa(addr_in.sin_addr), outlen);
-#endif
   return outputbuf;
 }
 
@@ -543,16 +539,12 @@ void FreeAddresses(dlist<IPADDR>* addrs)
 char* SockaddrToAscii(const struct sockaddr_storage* sa, char* buf, int len)
 {
   auto* addr = reinterpret_cast<const sockaddr*>(sa);
-#ifdef HAVE_INET_NTOP
   /* MA Bug 5 the problem was that i mixed up sockaddr and in_addr */
   inet_ntop(addr->sa_family,
             addr->sa_family == AF_INET
                 ? (void*)&(((struct sockaddr_in*)sa)->sin_addr)
                 : (void*)&(((struct sockaddr_in6*)sa)->sin6_addr),
             buf, len);
-#else
-  bstrncpy(buf, inet_ntoa(((struct sockaddr_in*)sa)->sin_addr), len);
-#endif
   return buf;
 }
 

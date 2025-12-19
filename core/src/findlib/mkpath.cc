@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,13 +44,8 @@
 
 #define debuglevel 50
 
-// For old systems that don't have lchown() use chown()
-#ifndef HAVE_LCHOWN
-#  define lchown chown
-#endif
-
-// For old systems that don't have lchmod() use chmod()
-#ifndef HAVE_LCHMOD
+// For old systems that don't have lchmod() or where it is a stub use chmod()
+#if !defined(HAVE_LCHMOD) || defined(__stub_lchmod) || defined(__stub___lchmod)
 #  define lchmod chmod
 #endif
 

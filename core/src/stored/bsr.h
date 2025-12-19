@@ -28,7 +28,11 @@
 #ifndef BAREOS_STORED_BSR_H_
 #define BAREOS_STORED_BSR_H_
 
-#include "lib/bregex.h"
+#if __has_include(<regex.h>)
+#  include <regex.h>
+#else
+#  include "lib/bregex.h"
+#endif
 #include "lib/attr.h"
 
 namespace storagedaemon {
