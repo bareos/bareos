@@ -1,0 +1,79 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+# Run a verify job
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+run_log="${tmp}/run.out"
+JobName=verifyjob
+
+# Check if parsed options are identical to those configured
+options_out="${tmp}/verify_options_parsed.out"
+rm -f "${options_out}"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${options_out}
+show fileset=SelfTest
+quit
+END_OF_DATA
+
+run_bconsole
+
+# duplicated flag are now filtered by parsing code.
+# To emulate this and as we used fixed configuration string we just
+# remove the leftover duplicated characters with bash string cut.
+accurate_options_parsed=$(awk '/Accurate.*=/ {gsub("\"","",$3); print $3}' "${options_out}")
+accurate_options_conf=$(awk '/Accurate.*=/ {gsub("\"","",$3); print $3}' "etc/bareos/bareos-dir.d/fileset/SelfTest.conf")
+if [ "${accurate_options_parsed}" != "${accurate_options_conf::-12}" ]; then
+  estat=93
+  echo "Accurate options doesn't match: \"${accurate_options_parsed}\" parsed versus \"${accurate_options_conf}\" configured"
+fi
+
+verify_options_parsed=$(awk '/Verify.*=/ {gsub("\"","",$3); print $3}' "${options_out}")
+verify_options_conf=$(awk '/Verify.*=/ {gsub("\"","",$3); print $3}' "etc/bareos/bareos-dir.d/fileset/SelfTest.conf")
+
+if [ "${verify_options_parsed}" != "${verify_options_conf::-11}" ]; then
+  estat=92
+  echo "Verify options doesn't match: \"${verify_options_parsed}\" parsed versus \"${verify_options_conf}\" configured"
+fi
+
+rm -f "${run_log}"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${run_log}
+setdebug level=200 trace=1 timestamp=1 all
+run job=${JobName} level=InitCatalog yes
+wait
+messages
+run job=${JobName} yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Verify OK" \
+  "${run_log}" \
+  "No verify OK found in log"
+
+expect_not_grep "ERROR in" \
+  "${run_log}" \
+  "ERROR in found in log"
+
+end_test
