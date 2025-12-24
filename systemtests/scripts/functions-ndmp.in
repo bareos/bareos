@@ -20,6 +20,9 @@
 
 # Common functions for NDMP Testing
 
+# Rexport the testing path with defined testname
+export NDMP_TEST_PATH=${NDMP_TEST_PATH}/${TestName}
+
 # Determine the SED to be used
 os_type=$(uname -s)
 if [ "$os_type" = "Darwin" ] || [ "$os_type" = "FreeBSD" ]; then
@@ -81,14 +84,14 @@ check_jobid_failed()
 cleanup_remote()
 {
   ${SSH} rm -Rf "${NDMP_TEST_PATH}"
-  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/data/${NDMP_FILESYSTEM}/${TestName}"
+  ${SSH} rm -Rf "${NDMP_MOUNTPOINT}/data/${NDMP_TEST_PATH}"
 }
 
 make_remote_data_full()
 {
   ${SSH} mkdir -p "${NDMP_TEST_PATH}"
   ${SSH} dd if=/dev/zero of="${NDMP_TEST_PATH}/full" bs=1M count=20
-  ${SSH} "echo \"${NDMP_FILESYSTEM}\" >> \"${NDMP_TEST_PATH}/full\""
+  ${SSH} "echo \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}\" >> \"${NDMP_TEST_PATH}/full\""
   ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile\"" < $(readlink sbin/bareos_dir-*)
   # we need an additional file, so the restore doesn't pick the last file of the volume and data stream
   ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile2\"" < $(readlink sbin/bareos_sd-*)
