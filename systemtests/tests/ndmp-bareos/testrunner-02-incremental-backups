@@ -50,7 +50,7 @@ echo "############# running NDMP ${NDMP_TEST} backup incrementals limit set to $
 make_remote_data_incremental
 
 for ID in $(seq 1 ${limit}); do
-  ${SSH} "echo \"${NDMP_FILESYSTEM}-${ID}\" >> \"${NDMP_TEST_PATH}/incremental\""
+  ${SSH} "echo \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-${ID}\" >> \"${NDMP_TEST_PATH}/incremental\""
 
   cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/incr-${ID}.out
