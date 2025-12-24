@@ -57,7 +57,7 @@ check_log "${log_home}/restore-mark.out"
 
 # we deterministically use one jobid and look that we found the corresponding incremental
 # here the restore use the first incremental
-${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1) | grep \"${NDMP_FILESYSTEM}-1\""
+${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1) | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-1\""
 
 
 echo "################ restore incremental by file #####################"
@@ -70,7 +70,7 @@ END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore-file.out"
-${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1) | grep \"${NDMP_FILESYSTEM}-9\""
+${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1) | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-9\""
 
 #uncomment once fixed
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
