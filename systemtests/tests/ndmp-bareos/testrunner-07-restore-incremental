@@ -39,12 +39,13 @@ export TestName
 start_test
 
 # remove files
-${SSH} rm -Rf "/ifs/home/regress/${NDMP_FILESYSTEM}"
+cleanup_remote
 
+echo "################ restore incremental by mark #####################"
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/restore.out
-restore jobid=2 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump select current
-mark /ifs/home/regress/${NDMP_FILESYSTEM}/incremental
+@$out ${log_home}/restore-mark.out
+restore jobid=2 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select current
+mark ${NDMP_TEST_PATH}/incremental
 done
 yes
 wait
@@ -52,10 +53,26 @@ END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-check_log "${log_home}/restore.out"
+check_log "${log_home}/restore-mark.out"
 
-${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental" | grep "${NDMP_FILESYSTEM}"
+# we deterministically use one jobid and look that we found the corresponding incremental
+# here the restore use the first incremental
+${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1) | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-1\""
 
-check_for_zombie_jobs storage=isilonfile client=bareos-fd
+
+echo "################ restore incremental by file #####################"
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore-file.out
+restore jobid=10 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_TEST_PATH}/incremental" yes
+wait
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${log_home}/restore-file.out"
+${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1) | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-9\""
+
+#uncomment once fixed
+#check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test

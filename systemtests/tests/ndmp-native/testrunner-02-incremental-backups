@@ -35,6 +35,7 @@ export TestName
 
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
+
 start_test
 
 # Incremental Part
@@ -52,9 +53,16 @@ make_remote_data_incremental
 for ID in $(seq 1 ${limit}); do
   ${SSH} "echo \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-${ID}\" >> \"${NDMP_TEST_PATH}/incremental\""
 
+  if [ ${ID} -eq ${limit} ]; then
+    echo "##### subdata created for last incremental ####"
+    # We want to be sure to test backup and restore of subdir/testfile*
+    # So we also add this data in last incremental
+    make_remote_subdata_incremental
+  fi
+
   cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/incr-${ID}.out
-run job=NDMPBackupDump fileset=${NDMP_CLIENT}-fileset level=Incremental yes
+run job=ndmp-native fileset=${NDMP_CLIENT}-fileset level=Incremental yes
 wait
 END_OF_DATA
 
@@ -62,7 +70,6 @@ END_OF_DATA
 
   check_log "${log_home}/incr-${ID}.out"
 done
-
 #
 # Job cancelling doesn't work that well and lead to all sort of issues
 # it might be a good idea to test this
