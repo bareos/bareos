@@ -370,10 +370,12 @@ static bRC newPlugin(PluginContext* plugin_ctx)
   PyEval_AcquireThread(mainThreadState);
 
   /* set bareos_core_functions inside of barosdir module */
-  auto* ts = Py_NewInterpreter();
-
   Bareosdir_set_plugin_context(plugin_ctx);
+  
+  auto* ts = Py_NewInterpreter();
   plugin_priv_ctx->interp = ts->interp;
+  // register ts
+  tl_threadstates.push_back(ts);
   PyEval_ReleaseThread(ts);
 
   /* Always register some events the python plugin itself can register
