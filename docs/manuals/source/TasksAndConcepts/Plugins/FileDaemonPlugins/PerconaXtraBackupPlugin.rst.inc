@@ -38,7 +38,7 @@ For authentication the :file:`.mycnf` file of the user running the |fd| is used.
 Installation of percona XtraBackup Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-percona_XtraBackup-python-plugin**.
+Make sure you have met the prerequisites, after that install the package **bareos-filedaemon-percona-xtrabackup-python-plugin**.
 
 Configuration of percona XtraBackup Plugin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
