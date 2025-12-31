@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 #
-# make sure we can restore a single file
+# make sure we can restore an incremental backup with file
 #
 
 TestName="$(basename "$(pwd)")"
@@ -38,39 +38,27 @@ export TestName
 
 start_test
 
-echo "################ restore single file with mark #####################"
+# remove files
 cleanup_remote
 
-cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/restore-mark.out
-restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select yes
-mark ${NDMP_TEST_PATH}/testfile
-done
-wait
-END_OF_DATA
-
-run_bconsole "${tmp}/bconcmds"
-
-check_log "${log_home}/restore-mark.out"
-
-${SSH} "cat \"${NDMP_TEST_PATH}/testfile\"" | diff - sbin/bareos_dir-ndmp-bareos
-
-echo "################ restore single file with file #####################"
-cleanup_remote
-
+echo "################ restore incremental by file #####################"
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-file.out
-restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_TEST_PATH}/testfile2" select yes
+restore jobid=10 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_TEST_PATH}/incremental" yes
 wait
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore-file.out"
+# check which incremental has been restored, here we expected to have the last increment job done.
+if ! ${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1 | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-9\""
+then
+  echo "Not last incremental expected has been restored"
+  estat=1
+fi
 
-${SSH} "cat \"${NDMP_TEST_PATH}/testfile2\"" | diff - sbin/bareos_sd-ndmp-bareos
-
-#uncomment when ok
+#uncomment once fixed
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test
