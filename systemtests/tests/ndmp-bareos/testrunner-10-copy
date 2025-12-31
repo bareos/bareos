@@ -53,24 +53,40 @@ END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 check_log "${log_home}/copy.out"
 
+
 # restore copy force correct fileset to be used and not the one in jobdefs.
-# then restore a full copy
+# restore a full copy of jobid 1
+copy_full_jobid=$(bin/bconsole <<< ".api 2
+.sql query=\"select jobid from job where type='C' and level='F' and priorjobid=1 order by starttime limit 1;\"
+" | awk '/"jobid":/ {gsub("\"","",$2);gsub(",","",$2); print $2}'
+)
+echo "restore first copy full ${copy_full_jobid}"
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-full.out
-restore jobid=20 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select all done yes
+restore client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump jobid=${copy_full_jobid}
+mark *
+done
+yes
 wait
 messages
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 check_log "${log_home}/restore-full.out"
-${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/full\" | head -n 1) | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}\""
+${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/full\" | xargs | head -n 1 | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}\""
 
 cleanup_remote
-# afterwards restore an incremental copy
+# afterwards restore last incremental copy
+copy_inc_jobid=$(bin/bconsole <<< ".api 2
+.sql query=\"select jobid from job where type='C' and level='I' order by starttime desc limit 1;\"
+" | awk '/"jobid":/ {gsub("\"","",$2);gsub(",","",$2); print $2}'
+)
+
+echo "restore last copy incremental ${copy_inc_jobid}"
+
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-incr.out
-restore jobid=38 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select all done yes
+restore jobid=${copy_inc_jobid} client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select all done yes
 wait
 messages
 END_OF_DATA
@@ -80,7 +96,7 @@ check_log "${log_home}/restore-incr.out"
 
 # we deterministically use one jobid and look that we found the corresponding incremental
 # here the restore use the copy of 9th incremental
-${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1) | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-9\""
+${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | xargs | tail -n 1 | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-9\""
 
 #uncomment when fixed
 #check_for_zombie_jobs storage=isilonfile client=bareos-fd
