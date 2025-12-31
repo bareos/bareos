@@ -60,10 +60,12 @@ if(ndmp_data_agent_address)
         system:ndmp-bareos:00-full-fail-rerun PROPERTIES DISABLED TRUE
       )
       set_tests_properties(
-        system:ndmp-bareos:03-restore-single-file PROPERTIES DISABLED TRUE
+        system:ndmp-bareos:04-restore-single-file-with-file PROPERTIES DISABLED
+                                                                       TRUE
       )
       set_tests_properties(
-        system:ndmp-bareos:07-restore-incremental PROPERTIES DISABLED TRUE
+        system:ndmp-bareos:09-restore-incremental-last-with-file
+        PROPERTIES DISABLED TRUE
       )
     else()
       create_systemtest(
