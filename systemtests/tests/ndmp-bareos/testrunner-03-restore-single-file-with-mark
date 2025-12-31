@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 #
-# make sure we can copy ndmp jobs, and also restore them afterwards
+# make sure we can restore a single file with mark
 #
 
 TestName="$(basename "$(pwd)")"
@@ -38,19 +38,24 @@ export TestName
 
 start_test
 
-# TODO
-# bscan between source and copy should produce the same result,
-# but it is not always the case.
-# https://github.com/bareos/internal/issues/349
-run_bscan_db --list-records --verbose --volumes ndmp-0001 \
-    --update-volume-info FileStorage
-mv "${tmp}/bscan.out" "${tmp}/bscan_FileStorage.out"
+echo "################ restore single file with mark #####################"
+cleanup_remote
 
-run_bscan_db --list-records --verbose --volumes ndmpcopy-0002 \
-    --update-volume-info CopyStorage
-mv "${tmp}/bscan.out" "${tmp}/bscan_CopyStorage.out"
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore-mark.out
+restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select yes
+mark ${NDMP_TEST_PATH}/testfile
+done
+wait
+END_OF_DATA
 
-diff -u  "${tmp}/bscan_FileStorage.out" "${tmp}/bscan_CopyStorage.out" > "${tmp}/diff.out"
-dstat=$?
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${log_home}/restore-mark.out"
+
+${SSH} "cat \"${NDMP_TEST_PATH}/testfile\"" | diff - sbin/bareos_dir-ndmp-bareos
+
+#uncomment when ok
+#check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test
