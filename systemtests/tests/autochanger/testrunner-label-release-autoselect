@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -82,10 +82,10 @@ bin/bconsole < ${tmp}/bconsole_backup_jobs_spooling
 DevicesFromConfig=$(sed -n -e 's/^.*Device=//p' ${current_test_directory}/etc/bareos/bareos-sd.d/autochanger/autochanger.conf)
 tapedevices=($DevicesFromConfig)
 
-rm -f ${log_home}/log-label-release-autoselect-no.out
+rm -f ${runner_tmp}/log-label-release-autoselect-no.out
 # set devices to `autoselect = no` and wait for jobs to finish
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/log-label-release-autoselect-no.out
+@$out ${runner_tmp}/log-label-release-autoselect-no.out
 setdevice storage=Tape-0  device=${tapedevices[0]} autoselect=no
 wait
 messages
@@ -101,7 +101,7 @@ run_bconsole
 
 # Redo the backup to check if drive 0 is still being used
 rm -f ${tmp}/bconsole_backup_jobs
-echo "@$out ${log_home}/log-second-backups.out" >> ${tmp}/bconsole_backup_jobs
+echo "@$out ${runner_tmp}/log-second-backups.out" >> ${tmp}/bconsole_backup_jobs
 
 spooling="spooldata=yes"
 for i in $(seq ${NUMBER_OF_TEST_ROUNDS}); do
@@ -124,7 +124,7 @@ bin/bconsole < ${tmp}/bconsole_backup_jobs
 
 #testing for releasing when device is on autoselect=no
 cat <<END_OF_DATA > "${tmp}/bconcmds"
-@$out ${log_home}/log-label-release-autoselect-no.out
+@$out ${runner_tmp}/log-label-release-autoselect-no.out
 setdevice storage=Tape-0  device=${tapedevices[0]} autoselect=no
 release storage=Tape-0 drive=0
 messages
@@ -134,22 +134,22 @@ END_OF_DATA
 run_bconsole
 
 #check the that the labeling went through
-if ! grep "Slot 8 successfully created." "${log_home}"/log-label-release-autoselect-no.out \
-  && grep "3999 Device \"autochanger-0\" not found or could not be opened." "${log_home}"/log-label-release-autoselect-no.out; then
-  echo "Labeling of a device with autoselect=no was not successful. Check ${log_home}/log-label-release-autoselect-no.out" >&2
+if ! grep "Slot 8 successfully created." "${runner_tmp}"/log-label-release-autoselect-no.out \
+  && grep "3999 Device \"autochanger-0\" not found or could not be opened." "${runner_tmp}"/log-label-release-autoselect-no.out; then
+  echo "Labeling of a device with autoselect=no was not successful. Check ${runner_tmp}/log-label-release-autoselect-no.out" >&2
   estat=1
 fi
 
 #check that release went through
-if ! grep "3921 Device \"\"${tapedevices[0]}\" (.*)\" already released." "${log_home}"/log-label-release-autoselect-no.out \
-  && grep "3999 Device \"autochanger-0\" not found or could not be opened." "${log_home}"/log-label-release-autoselect-no.out; then
-  echo "Releasing a device with autoselct=no was not successful. Check ${log_home}/log-label-release-autoselect-no.out" >&2
+if ! grep "3921 Device \"\"${tapedevices[0]}\" (.*)\" already released." "${runner_tmp}"/log-label-release-autoselect-no.out \
+  && grep "3999 Device \"autochanger-0\" not found or could not be opened." "${runner_tmp}"/log-label-release-autoselect-no.out; then
+  echo "Releasing a device with autoselct=no was not successful. Check ${runner_tmp}/log-label-release-autoselect-no.out" >&2
   estat=1
 fi
 
 #check that the tapedrive works normally again after the manipulations
-if ! grep "Using .* \"${tapedevices[0]}" "${log_home}"/log-second-backups.out; then
-  echo "A device that was on autoselect=no and then back to autoselect=yes was not used. Check ${log_home}/log-second-backups.out" >&2
+if ! grep "Using .* \"${tapedevices[0]}" "${runner_tmp}"/log-second-backups.out; then
+  echo "A device that was on autoselect=no and then back to autoselect=yes was not used. Check ${runner_tmp}/log-second-backups.out" >&2
   estat=1
 fi
 
