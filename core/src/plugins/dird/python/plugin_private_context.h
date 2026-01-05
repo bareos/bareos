@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,18 +21,26 @@
 
 #ifndef BAREOS_PLUGINS_DIRD_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
 #define BAREOS_PLUGINS_DIRD_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
+
+#include <cstdint>
+#include <unordered_map>
+
 // Plugin private context
 struct plugin_private_context {
-  int64_t instance;                 // Instance number of plugin
-  bool python_loaded;               // Plugin has python module loaded?
-  bool python_default_path_is_set;  // Python plugin default search path is set?
-  bool python_path_is_set;          // Python plugin search path is set?
-  char* module_path;                // Plugin Module Path
-  char* module_name;                // Plugin Module Name
+  int64_t instance{};                 // Instance number of plugin
+  bool python_loaded{};               // Plugin has python module loaded?
+  bool python_default_path_is_set{};  // Python plugin default search path is
+                                      // set?
+  bool python_path_is_set{};          // Python plugin search path is set?
+  char* module_path{};                // Plugin Module Path
+  char* module_name{};                // Plugin Module Name
   PyInterpreterState*
-      interp;         // Python interpreter for this instance of the plugin
-  PyObject* pModule;  // Python Module entry point
-  PyObject* pyModuleFunctionsDict;  // Python Dictionary
+      interp{};         // Python interpreter for this instance of the plugin
+  PyObject* pModule{};  // Python Module entry point
+  PyObject* pyModuleFunctionsDict{};  // Python Dictionary
+
+  std::shared_mutex thread_state_mutex;
+  std::unordered_map<std::thread::id, PyThreadState*> created_thread_states;
 };
 
 #endif  // BAREOS_PLUGINS_DIRD_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
