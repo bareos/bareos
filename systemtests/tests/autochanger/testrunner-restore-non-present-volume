@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,7 +19,15 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-# This testrunner performs a restore after eject the volume containing the jobid
+# This testrunner performs a restore after the volume containing
+# the jobid is ejected
+# We are looking to test if those message doesn't pop-up:
+#   Error: stored/block.cc:1004 Read error on fd=8
+#   Warning: stored/acquire.cc:317 Read acquire:
+# But only those messages:
+#   No slot defined in catalog (slot=0)
+#   Cartridge change or "update slots" may be required.
+#   Please mount read Volume "XXXX" for:
 
 set -e
 set -o pipefail
@@ -148,7 +156,7 @@ bin/bconsole <<< "list joblog jobid=${last_jobid}" > "${log_home}/jobid-${last_j
 # What we want to found in the log
 expect_grep "No slot defined in catalog (slot=0)" \
 	"${log_home}/jobid-${last_jobid}.log" \
-	"no no slot defined found in log"
+	"no 'no slot defined' found in log"
 
 expect_grep "Cartridge change or \"update slots\" may be required." \
 	"${log_home}/jobid-${last_jobid}.log" \
@@ -156,18 +164,18 @@ expect_grep "Cartridge change or \"update slots\" may be required." \
 
 expect_grep "Please mount read Volume \"${volume_to_eject}\" for:" \
 	"${log_home}/jobid-${last_jobid}.log" \
-	"no please mount volume message found in log"
+	"no 'please mount volume' message found in log"
 
 if [ ${estat} -ne 0 ]; then
   exit ${estat}
 fi
 
 # What we absolutely not want to see in the log
-expect_not_grep "Error: stored/block.cc:1004 Read error on fd=8" \
+expect_not_grep "Error: stored/block.cc:i.* Read error on fd" \
 	"${log_home}/jobid-${last_jobid}.log" \
 	"stored/block.cc errors found in log"
 
-expect_not_grep "Warning: stored/acquire.cc:317 Read acquire:" \
+expect_not_grep "Warning: stored/acquire.cc:.* Read acquire:" \
 	"${log_home}/jobid-${last_jobid}.log" \
 	"stored/acquire.cc errors found in log"
 
