@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -49,7 +49,7 @@ trap 'on_error' ERR
 
 # remove jobs from previous runs
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/log-purge.out
+@$out ${runner_tmp}/log-purge.out
 purge jobs client=bareos-fd yes
 wait
 messages
