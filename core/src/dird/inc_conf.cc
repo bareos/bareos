@@ -46,8 +46,8 @@
 
 namespace directordaemon {
 
-static inline constexpr const char *PERMITTED_VERIFY_OPTIONS = "ipnugsamcd51";
-static inline constexpr const char *PERMITTED_ACCURATE_OPTIONS = "ipnugsamcd51A";
+static constexpr char const* PERMITTED_VERIFY_OPTIONS = "ipnugsamcd51";
+static constexpr char const* PERMITTED_ACCURATE_OPTIONS = "ipnugsamcd51A";
 
 typedef struct {
   bool configured;
@@ -368,7 +368,7 @@ void bstrdedupcat(char* out, const char* in, int outlen)
 {
   if (outlen < 1) { return; }
   size_t current_len = strlen(out);
-  size_t max_len = outlen - 1; // keep space for null terminator
+  size_t max_len = outlen - 1;  // keep space for null terminator
 
   char* start = out + current_len;
   while (current_len < max_len) {
