@@ -46,8 +46,8 @@
 
 namespace directordaemon {
 
-#define PERMITTED_VERIFY_OPTIONS (const char*)"ipnugsamcd51"
-#define PERMITTED_ACCURATE_OPTIONS (const char*)"ipnugsamcd51A"
+static inline constexpr const char *PERMITTED_VERIFY_OPTIONS = "ipnugsamcd51";
+static inline constexpr const char *PERMITTED_ACCURATE_OPTIONS = "ipnugsamcd51A";
 
 typedef struct {
   bool configured;
@@ -364,6 +364,26 @@ static inline void IsInPermittedSet(lexer* lc,
   }
 }
 
+void bstrdedupcat(char* out, const char* in, int outlen)
+{
+  if (outlen < 1) { return; }
+  size_t current_len = strlen(out);
+  size_t max_len = outlen - 1; // keep space for null terminator
+
+  char* start = out + current_len;
+  while (current_len < max_len) {
+    char c = *in++;
+    if (!c) { break; }
+
+    char* found = strchr(start, c);
+    if (found) { continue; }
+
+    out[current_len++] = c;
+  }
+
+  out[current_len] = '\0';
+}
+
 /**
  * Scan for right hand side of Include options (keyword=option) is
  * converted into one or two characters. Verifyopts=xxxx is Vxxxx:
@@ -384,13 +404,13 @@ static void ScanIncludeOptions(lexer* lc, int keyword, char* opts, int optlen)
   if (keyword == INC_KW_VERIFY) {               /* special case */
     IsInPermittedSet(lc, T_("verify"), PERMITTED_VERIFY_OPTIONS);
     bstrncat(opts, "V", optlen); /* indicate Verify */
-    bstrncat(opts, lc->str, optlen);
+    bstrdedupcat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_ACCURATE) { /* special case */
     IsInPermittedSet(lc, T_("accurate"), PERMITTED_ACCURATE_OPTIONS);
     bstrncat(opts, "C", optlen); /* indicate Accurate */
-    bstrncat(opts, lc->str, optlen);
+    bstrdedupcat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_STRIPPATH) { /* special case */
