@@ -92,7 +92,7 @@ plugin_private_context* get_private_context(PluginContext* ctx)
 }
 }  // namespace
 
-extern PyObject* gmfd_1234(PluginContext* ctx)
+extern PyObject* get_module_function_dict(PluginContext* ctx)
 {
   auto* private_ctx = get_private_context(ctx);
   return private_ctx->pyModuleFunctionsDict;
@@ -334,7 +334,8 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   import_bareosdir();
 
   /* set bareos_core_functions inside of barosdir module */
-  Bareosdir_set_bareos_core_functions(lbareos_core_functions, &gmfd_1234);
+  Bareosdir_set_bareos_core_functions(lbareos_core_functions,
+                                      &get_module_function_dict);
 
   bareos_core_functions
       = lbareos_core_functions; /* Set Bareos funct pointers */
