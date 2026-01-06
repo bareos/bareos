@@ -414,6 +414,29 @@ static bRC freePlugin(PluginContext* plugin_ctx)
 
   if (plugin_priv_ctx->pModule) { Py_DECREF(plugin_priv_ctx->pModule); }
 
+  if (PyVersion() < VERSION_HEX(3, 14, 0)) {
+    // the documentation states that Py_EndInterpreters() exits with
+    // _all_ thread states destroyed, but what it doesnt tell you is that
+    // it just kills your program if there are any other thread states
+    // still alive ...
+    // Thankfully this was fixed in 3.14, but for now we still have to clean
+    // up manually.
+    for (PyThreadState* to_delete
+         = PyInterpreterState_ThreadHead(plugin_priv_ctx->interp);
+         to_delete; to_delete = PyThreadState_Next(to_delete)) {
+      if (ts == to_delete) {
+        // do not delete this one yet
+        continue;
+      }
+
+      PyThreadState_Swap(to_delete);
+      PyThreadState_Clear(to_delete);
+      PyThreadState_Swap(ts);
+      // cannot use DeleteCurrent() as that releases the gil
+      PyThreadState_Delete(to_delete);
+    }
+  }
+
   Py_EndInterpreter(ts);
   if (PyVersion() < VERSION_HEX(3, 12, 0)) {
     PyThreadState_Swap(mainThreadState);
