@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -268,6 +268,7 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
           if (j < (int)sizeof(fo->AccurateOpts) - 1) { j++; }
         }
         fo->AccurateOpts[j] = 0;
+        p -= 1; /* fix double increment */
         break;
       case 'c':
         SetBit(FO_CHKCHANGES, fo->flags);
@@ -395,6 +396,7 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
         fo->StripPath = atoi(strip);
         SetBit(FO_STRIPPATH, fo->flags);
         Dmsg2(100, "strip=%s StripPath=%d\n", strip, fo->StripPath);
+        p -= 1; /* fix double increment */
         break;
       case 'p': /* Use portable data format */
         SetBit(FO_PORTABLE, fo->flags);
@@ -443,6 +445,8 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
           if (j < (int)sizeof(fo->VerifyOpts) - 1) { j++; }
         }
         fo->VerifyOpts[j] = 0;
+
+        p -= 1; /* fix double increment */
         break;
       case 'W':
         SetBit(FO_ENHANCEDWILD, fo->flags);
@@ -497,6 +501,8 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
         if (!ParseSizeMatch(size, fo->size_match)) {
           Emsg1(M_ERROR, 0, T_("Unparseable size option: %s\n"), size);
         }
+
+        p -= 1; /* fix double increment */
         break;
       default:
         Emsg1(M_ERROR, 0, T_("Unknown include/exclude option: %c\n"), *p);
