@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -644,7 +644,15 @@ static void StoreOption(
   // Now scan for the value
   ScanIncludeOptions(lc, keyword, inc_opts, sizeof(inc_opts));
   if (pass == 1) {
-    bstrncat(res_incexe->current_opts->opts, inc_opts, MAX_FOPTS);
+    bstrncat(res_incexe->current_opts->opts, inc_opts,
+             std::size(res_incexe->current_opts->opts));
+
+    if (strlen(res_incexe->current_opts->opts) + 1
+        >= std::size(res_incexe->current_opts->opts)) {
+      scan_err0(lc, T_("Too many fileset options specified; cannot parse this "
+                       "correctly\n"));
+    }
+
     Dmsg2(900, "new pass=%d incexe opts=%s\n", pass,
           res_incexe->current_opts->opts);
   }
