@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -68,7 +68,9 @@ static PyMethodDef Methods[]
        {NULL, NULL, 0, NULL}};
 
 
-static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions);
+static bRC set_bareos_core_functions(
+    CoreFunctions* new_bareos_core_functions,
+    get_module_function_dict_type* get_module_function_dict_ptr);
 static bRC set_plugin_context(PluginContext* new_plugin_context);
 static void PyErrorHandler(PluginContext* plugin_ctx, int msgtype);
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,9 @@
 namespace directordaemon {
 static const int debuglevel = 150;
 
-static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions);
+static bRC set_bareos_core_functions(
+    CoreFunctions* new_bareos_core_functions,
+    get_module_function_dict_type* get_module_function_dict_ptr);
 static bRC set_plugin_context(PluginContext* new_plugin_context);
 
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
@@ -68,6 +70,7 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
 
 /* Pointers to Bareos functions */
 static CoreFunctions* bareos_core_functions = NULL;
+static get_module_function_dict_type* get_module_function_dict = NULL;
 
 
 #define NOPLUGINSETGETVALUE 1
@@ -76,9 +79,12 @@ static CoreFunctions* bareos_core_functions = NULL;
 
 
 /* set the bareos_core_functions pointer to the given value */
-static bRC set_bareos_core_functions(CoreFunctions* new_bareos_core_functions)
+static bRC set_bareos_core_functions(
+    CoreFunctions* new_bareos_core_functions,
+    get_module_function_dict_type* get_module_function_dict_ptr)
 {
   bareos_core_functions = new_bareos_core_functions;
+  get_module_function_dict = get_module_function_dict_ptr;
   return bRC_OK;
 }
 
@@ -99,14 +105,12 @@ static bRC set_plugin_context(PluginContext* new_plugin_context)
 static bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx
-      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  PyObject* moduleDict = get_module_function_dict(plugin_ctx);
   PyObject* pFunc;
 
   // Lookup the parse_plugin_definition() function in the python module.
   pFunc = PyDict_GetItemString(
-      plugin_priv_ctx->pyModuleFunctionsDict,
-      "parse_plugin_definition"); /* Borrowed reference */
+      moduleDict, "parse_plugin_definition"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pPluginDefinition, *pRetVal;
 
@@ -147,12 +151,11 @@ static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
                                void*)
 {
   bRC retval = bRC_Error;
-  struct plugin_private_context* plugin_priv_ctx
-      = (struct plugin_private_context*)plugin_ctx->plugin_private_context;
+  PyObject* moduleDict = get_module_function_dict(plugin_ctx);
   PyObject* pFunc;
 
   // Lookup the handle_plugin_event() function in the python module.
-  pFunc = PyDict_GetItemString(plugin_priv_ctx->pyModuleFunctionsDict,
+  pFunc = PyDict_GetItemString(moduleDict,
                                "handle_plugin_event"); /* Borrowed reference */
   if (pFunc && PyCallable_Check(pFunc)) {
     PyObject *pEventType, *pRetVal;

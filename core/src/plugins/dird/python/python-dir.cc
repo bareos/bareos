@@ -50,6 +50,12 @@
 
 #include <algorithm>
 
+#include <thread>
+#include <cstdint>
+#include <unordered_map>
+
+#include "plugin_private_context.h"
+
 namespace {
 uint32_t PyVersion()
 {
@@ -61,7 +67,36 @@ uint32_t PyVersion()
   return Py_Version;
 #endif
 }
+
+// Plugin private context
+struct plugin_private_context {
+  int64_t instance{};                 // Instance number of plugin
+  bool python_loaded{};               // Plugin has python module loaded?
+  bool python_default_path_is_set{};  // Python plugin default search path is
+                                      // set?
+  bool python_path_is_set{};          // Python plugin search path is set?
+  char* module_path{};                // Plugin Module Path
+  char* module_name{};                // Plugin Module Name
+  PyInterpreterState*
+      interp{};         // Python interpreter for this instance of the plugin
+  PyObject* pModule{};  // Python Module entry point
+  PyObject* pyModuleFunctionsDict{};  // Python Dictionary
+
+  std::shared_mutex thread_state_mutex;
+  std::unordered_map<std::thread::id, PyThreadState*> created_thread_states;
+};
+
+plugin_private_context* get_private_context(PluginContext* ctx)
+{
+  return static_cast<plugin_private_context*>(ctx->plugin_private_context);
+}
 }  // namespace
+
+extern PyObject* gmfd_1234(PluginContext* ctx)
+{
+  auto* private_ctx = get_private_context(ctx);
+  return private_ctx->pyModuleFunctionsDict;
+}
 
 namespace directordaemon {
 
@@ -120,9 +155,6 @@ static PluginFunctions pluginFuncs
        newPlugin,  /* new plugin instance */
        freePlugin, /* free plugin instance */
        getPluginValue, setPluginValue, handlePluginEvent};
-
-#include "plugin_private_context.h"
-
 
 /* List of interpreters accessed by this thread.
  * We use a vector instead of a set here since we expect that each thread
@@ -206,11 +238,6 @@ class locked_threadstate {
  private:
   PyThreadState* ts{nullptr};
 };
-
-plugin_private_context* get_private_context(PluginContext* ctx)
-{
-  return static_cast<plugin_private_context*>(ctx->plugin_private_context);
-}
 
 /* Acquire the gil for this thread.  If this thread does not have a thread
  * state for interp, a new one is created.  This newly created thread state
@@ -307,7 +334,7 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   import_bareosdir();
 
   /* set bareos_core_functions inside of barosdir module */
-  Bareosdir_set_bareos_core_functions(lbareos_core_functions);
+  Bareosdir_set_bareos_core_functions(lbareos_core_functions, &gmfd_1234);
 
   bareos_core_functions
       = lbareos_core_functions; /* Set Bareos funct pointers */
