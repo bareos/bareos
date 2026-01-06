@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-Copyright (C) 2023-2023 Bareos GmbH & Co. KG
+Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
 This program is Free Software; you can redistribute it and/or
 modify it under the terms of version three of the GNU Affero General Public
@@ -120,7 +120,7 @@ static void SendFilesetOptions(JobControlRecord* jcr,
 
     // Strip out compression option Zn if disallowed for this Storage
     if (store && !store->AllowCompress) {
-      char newopts[MAX_FOPTS];
+      char newopts[sizeof(file_option->opts)];
       bool done = false; /* print warning only if compression enabled in FS */
       int l = 0;
 
