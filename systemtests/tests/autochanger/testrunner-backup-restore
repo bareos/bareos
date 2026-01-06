@@ -48,7 +48,7 @@ on_error()
 trap 'on_error' ERR
 
 # remove jobs from previous runs
-cat <<END_OF_DATA >"${tmp}/bconcmds"
+cat <<END_OF_DATA >"${runner_tmp}/bconcmds"
 @$out ${runner_tmp}/log-purge.out
 purge jobs client=bareos-fd yes
 wait
@@ -58,9 +58,13 @@ END_OF_DATA
 
 run_bconsole
 
-echo "Set debug on the Tape-Storage daemon"
-tracefile="$(bin/bconsole <<< "setdebug level=200 trace=1 storage=Tape-0" | awk -F"tracefile=" '/^3000/ {print $2}')"
+echo "Set debug on the Tape-Storage daemon and dir"
+tracefile="$(bin/bconsole <<< "setdebug level=250 trace=1 storage=Tape-0" | awk -F"tracefile=" '/^3000/ {print $2}')"
 : >"${tracefile}" # clear tracefile
+
+tracefile="$(bin/bconsole <<< "setdebug level=250 trace=1 dir" | awk -F"tracefilename=" '/tracefilename=/ {print $2}')"
+: >"${tracefile}" # clear tracefile
+
 
 echo "Label barcodes"
 for i in $(seq ${NUMBER_OF_POOLS}); do
@@ -72,12 +76,12 @@ for i in $(seq ${NUMBER_OF_POOLS}); do
 done
 
 # create the test backup jobs
-rm -f ${tmp}/bconsole_backup_jobs
+rm -f ${runner_tmp}/bconsole_backup_jobs
 
 spooling="spooldata=yes"
 for i in $(seq ${NUMBER_OF_TEST_ROUNDS}); do
   for j in $(seq ${NUMBER_OF_POOLS}); do
-    cat <<EOF >>${tmp}/bconsole_backup_jobs
+    cat <<EOF >>${runner_tmp}/bconsole_backup_jobs
 run job=backup-bareos-fd level=Full storage=Tape-0 pool=Full-$((j - 1)) ${spooling} yes
 status dir
 EOF
@@ -87,11 +91,11 @@ EOF
   done
 done
 
-echo "wait" >>${tmp}/bconsole_backup_jobs
-echo "messages" >>${tmp}/bconsole_backup_jobs
+echo "wait" >>${runner_tmp}/bconsole_backup_jobs
+echo "messages" >>${runner_tmp}/bconsole_backup_jobs
 
 # start all the jobs
-bin/bconsole <${tmp}/bconsole_backup_jobs
+bin/bconsole <${runner_tmp}/bconsole_backup_jobs
 
 # prepare the restore
 list_of_jobids=$(bin/bconsole <<< ".api 2
@@ -105,28 +109,28 @@ if [ -z "${list_of_jobids}" ]; then
   exit 1
 fi
 # Write list of jobids for next use
-echo "${list_of_jobids}" > ${tmp}/list_of_jobids
+echo "${list_of_jobids}" > ${runner_tmp}/list_of_jobids
 
-rm -f "${tmp}/bconsole_restore_jobs"
+rm -f "${runner_tmp}/bconsole_restore_jobs"
 poolnumber=$((NUMBER_OF_POOLS))
 for j in ${list_of_jobids}; do
   pool="Full-$((poolnumber - 1))"
-  cat << EOF >> "${tmp}/bconsole_restore_jobs"
-restore jobid=${j} pool="${pool}" where=${tmp}/bareos_restores_${j} select all done yes
+  cat << EOF >> "${runner_tmp}/bconsole_restore_jobs"
+restore jobid=${j} pool="${pool}" where=${runner_tmp}/bareos_restores_${j} select all done yes
 EOF
   poolnumber=$((poolnumber - 1))
 done
 
-echo "wait" >> "${tmp}/bconsole_restore_jobs"
-echo "messages" >> "${tmp}/bconsole_restore_jobs"
+echo "wait" >> "${runner_tmp}/bconsole_restore_jobs"
+echo "messages" >> "${runner_tmp}/bconsole_restore_jobs"
 
 # start all the restore jobs
-bin/bconsole < "${tmp}/bconsole_restore_jobs"
+bin/bconsole < "${runner_tmp}/bconsole_restore_jobs"
 
 # does not compare fifo files
 for j in ${list_of_jobids}; do
-  src="${tmp}/data"
-  dst="${tmp}/bareos_restores_${j}/${tmp}/data"
+  src="${runner_tmp}/data"
+  dst="${runner_tmp}/bareos_restores_${j}/${runner_tmp}/data"
   diff --exclude="fifo*" --brief --recursive --no-dereference \
     "$src" "$dst"
 done
