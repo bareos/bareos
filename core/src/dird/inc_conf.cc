@@ -43,11 +43,13 @@
 #include "lib/edit.h"
 
 #include <cassert>
+#include <array>
+#include <string_view>
 
 namespace directordaemon {
 
-#define PERMITTED_VERIFY_OPTIONS (const char*)"ipnugsamcd51"
-#define PERMITTED_ACCURATE_OPTIONS (const char*)"ipnugsamcd51A"
+static constexpr char const* PERMITTED_VERIFY_OPTIONS = "ipnugsamcd51";
+static constexpr char const* PERMITTED_ACCURATE_OPTIONS = "ipnugsamcd51A";
 
 typedef struct {
   bool configured;
@@ -364,6 +366,72 @@ static inline void IsInPermittedSet(lexer* lc,
   }
 }
 
+constexpr void bstrdedupcat(char* out, const char* in, int out_capacity)
+{
+  if (out_capacity <= 1) { return; }
+  std::string_view full_buffer{out, static_cast<size_t>(out_capacity)};
+
+  auto current_len = full_buffer.find('\0');
+  if (current_len == full_buffer.npos) {
+    // no null terminator => do nothing
+    // as we cannot safely append any chars
+    return;
+  }
+
+  size_t max_len = out_capacity - 1;  // keep space for null terminator
+
+  while (current_len < max_len) {
+    std::string_view existing_chars = full_buffer.substr(0, current_len);
+
+    char c = *in++;
+    if (!c) { break; }
+
+    if (existing_chars.find(c) != existing_chars.npos) { continue; }
+
+    out[current_len++] = c;
+  }
+
+  out[current_len] = '\0';
+}
+
+template <size_t N, size_t M>
+consteval bool test_bstrdedupcat(const char (&input)[N],
+                                 const char (&to_append)[M],
+                                 std::string_view result)
+{
+  if (input[N - 1] != '\0') { return false; }
+  if (to_append[M - 1] != '\0') { return false; }
+
+
+  std::array<char, N + M> buffer{};
+
+  for (size_t i = 0; i < N; ++i) { buffer[i] = input[i]; }
+
+  bstrdedupcat(buffer.data(), to_append, buffer.size());
+
+  std::string_view full_buffer{buffer.data(), buffer.size()};
+
+  auto nul_pos = full_buffer.find('\0');
+  if (nul_pos == full_buffer.npos) {
+    // missing null terminator
+    return false;
+  }
+
+  auto str_len = nul_pos;
+
+  auto as_str = std::string_view{buffer.data(), str_len};
+
+  return as_str == result;
+}
+
+static_assert(test_bstrdedupcat("", "xyz", "xyz"));
+static_assert(test_bstrdedupcat("xyz", "", "xyz"));
+static_assert(test_bstrdedupcat("a", "b", "ab"));
+static_assert(test_bstrdedupcat("a", "ab", "ab"));
+static_assert(test_bstrdedupcat("ad", "ab", "adb"));
+static_assert(test_bstrdedupcat("aaaabbb", "ab", "aaaabbb"));
+static_assert(test_bstrdedupcat("ba", "dab", "bad"));
+
 /**
  * Scan for right hand side of Include options (keyword=option) is
  * converted into one or two characters. Verifyopts=xxxx is Vxxxx:
@@ -384,13 +452,13 @@ static void ScanIncludeOptions(lexer* lc, int keyword, char* opts, int optlen)
   if (keyword == INC_KW_VERIFY) {               /* special case */
     IsInPermittedSet(lc, T_("verify"), PERMITTED_VERIFY_OPTIONS);
     bstrncat(opts, "V", optlen); /* indicate Verify */
-    bstrncat(opts, lc->str, optlen);
+    bstrdedupcat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_ACCURATE) { /* special case */
     IsInPermittedSet(lc, T_("accurate"), PERMITTED_ACCURATE_OPTIONS);
     bstrncat(opts, "C", optlen); /* indicate Accurate */
-    bstrncat(opts, lc->str, optlen);
+    bstrdedupcat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_STRIPPATH) { /* special case */
