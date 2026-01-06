@@ -1,7 +1,7 @@
 # Document the daemons state after installation
 
-* Status: proposed
-* Deciders: [list everyone involved in the decision]
+* Status: accepted
+* Deciders: [Bruno Friedmann], [Andreas Rogge], [Sebastian Sura]
 * Date: 2025-11-25
 
 Technical Story: From time to time we need to remember what is the expected state of daemons after install
@@ -80,6 +80,7 @@ This table should give an overview about the different settings:
 | RPM (SUSE)    |  -         | dir,sd,fd (systemctl preset + enable) | fd (postuninstall, systemctl try-restart) | SLE_12_SP5   |  -         |
 | DEB           |  -         | dir,sd,fd (deb-systemd-helper)        | fd (deb-systemd-invoke try-restart)       | Ubuntu 20.04 | [1019](https://github.com/bareos/bareos/pull/1019|PR #1019), [1029](https://github.com/bareos/bareos/pull/1029|PR #1029) |
 | PKG (FreeBSD) |  -         | -                                     | -                                         | FreeBSD 14   |  -         |
+| MSI (Windows) |  dir,sd,fd | dir,sd,fd                             | dir,sd,fd                                 | Windows 10   |  -         |
 
 
 **Bareos <= 20**
