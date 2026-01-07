@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -98,10 +98,12 @@ if(ndmp_data_agent_address)
         # add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME}) Testing
         # needs exclusive access to an autochanger from the ndmp host by iscsi
         set_tests_properties(
-          system:ndmp-native:03-restore-single-file PROPERTIES DISABLED TRUE
+          system:ndmp-native:04-restore-single-file-with-file
+          PROPERTIES DISABLED TRUE
         )
         set_tests_properties(
-          system:ndmp-native:07-restore-incremental PROPERTIES DISABLED TRUE
+          system:ndmp-native:09-restore-incremental-with-file
+          PROPERTIES DISABLED TRUE
         )
       else()
         create_systemtest(
