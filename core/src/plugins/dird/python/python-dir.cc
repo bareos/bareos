@@ -49,8 +49,7 @@
 #include "lib/edit.h"
 
 #include <algorithm>
-
-#include <latch>
+#include <future>
 #include <thread>
 #include <cstdint>
 #include <string_view>
@@ -168,7 +167,7 @@ static PyThreadState* mainThreadState{nullptr};
 #include "plugins/include/python_plugins_common.inc"
 #include "plugins/include/python_plugin_modules_common.inc"
 
-void run_python_thread(PluginContext* plugin_ctx, std::latch* ready_latch)
+void run_python_thread(PluginContext* plugin_ctx, std::promise<void>* ready)
 {
   /* For each plugin instance we instantiate a new Python interpreter. */
   PyEval_AcquireThread(mainThreadState);
@@ -180,7 +179,7 @@ void run_python_thread(PluginContext* plugin_ctx, std::latch* ready_latch)
 
   Bareosdir_set_plugin_context(plugin_ctx);
 
-  ready_latch->count_down();
+  ready->set_value();
 
   auto* priv_ctx = get_private_context(plugin_ctx);
 
@@ -233,18 +232,21 @@ void plugin_submit(plugin_private_context* ctx, python_execution_request req)
 
 template <typename F> void plugin_run(plugin_private_context* ctx, F&& fun)
 {
-  using data = std::pair<F*, std::latch>;
-  data d{&fun, 1};
+  using data = std::pair<F*, std::promise<void>>;
+  data d;
+  d.first = &fun;
+
+  auto executed = d.second.get_future();
 
   plugin_submit(ctx, {+[](void* ptr) {
                         data* data_ptr = static_cast<data*>(ptr);
 
                         (*data_ptr->first)();
-                        data_ptr->second.count_down();
+                        data_ptr->second.set_value();
                       },
                       &d});
 
-  d.second.wait();
+  executed.wait();
 }
 
 /* Common functions used in all python plugins.  */
@@ -365,11 +367,12 @@ static bRC newPlugin(PluginContext* plugin_ctx)
       = (void*)plugin_priv_ctx; /* set our context pointer */
 
 
-  std::latch ready_latch{1};
+  std::promise<void> ready{};
+  auto thread_ready = ready.get_future();
   plugin_priv_ctx->python_thread
-      = std::thread{run_python_thread, plugin_ctx, &ready_latch};
+      = std::thread{run_python_thread, plugin_ctx, &ready};
 
-  ready_latch.wait();
+  thread_ready.wait();
 
   /* Always register some events the python plugin itself can register
      any other events it is interested in.  */
