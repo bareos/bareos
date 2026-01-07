@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,8 +24,8 @@ set -o pipefail
 set -u
 
 #
-# make sure we can restore an incremental backup
-#
+# make sure we can restore a specific incremental backup
+# by passing file= on restore cmd line
 
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -40,24 +40,6 @@ start_test
 
 # remove files
 cleanup_remote
-
-echo "################ restore incremental by mark #####################"
-cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/restore-mark.out
-restore jobid=2 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select current
-mark ${NDMP_TEST_PATH}/incremental
-done
-yes
-wait
-END_OF_DATA
-
-run_bconsole "${tmp}/bconcmds"
-
-check_log "${log_home}/restore-mark.out"
-
-# we deterministically use one jobid and look that we found the corresponding incremental
-# here the restore use the first incremental
-${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1) | grep \"${NDMP_FILESYSTEM}-1\""
 
 # beware of https://github.com/bareos/internal/issues/447
 echo "################ restore incremental by file #####################"
