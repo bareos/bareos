@@ -35,16 +35,11 @@
 #endif
 #include "include/version_hex.h"
 
-#define PLUGIN_DAEMON "dir"
-
-#define PLUGIN_NAME "python3"
 #define PLUGIN_DIR PY3MODDIR
-#define LOGPREFIX PLUGIN_NAME "-" PLUGIN_DAEMON ": "
 
 #include "dird/dird.h"
 
 #include "python-dir.h"
-#include "module/bareosdir.h"
 #include "lib/plugins.h"
 #include "lib/edit.h"
 
@@ -53,8 +48,6 @@
 #include <thread>
 #include <cstdint>
 #include <string_view>
-
-#include "plugin_private_context.h"
 
 #include "module.h"
 
@@ -69,7 +62,7 @@ uint32_t PyVersion()
   return Py_Version;
 #endif
 }
-using python_execution_request = std::pair<void (*)(void*), void*>;
+using python_execution_request = std::pair<void (*)(PyObject*, void*), void*>;
 static inline constexpr python_execution_request REQUEST_THREAD_STOP
     = {nullptr, nullptr};
 
@@ -82,8 +75,8 @@ struct plugin_private_context {
   bool python_path_is_set{};          // Python plugin search path is set?
   char* module_path{};                // Plugin Module Path
   char* module_name{};                // Plugin Module Name
-  PyObject* pModule{};                // Python Module entry point
-  PyObject* pyModuleFunctionsDict{};  // Python Dictionary
+
+  PyObject* plugin_module;
 
   std::mutex execute_mut;
   std::condition_variable request_empty;
@@ -99,12 +92,6 @@ plugin_private_context* get_private_context(PluginContext* ctx)
 }
 }  // namespace
 
-extern PyObject* get_module_function_dict(PluginContext* ctx)
-{
-  auto* private_ctx = get_private_context(ctx);
-  return private_ctx->pyModuleFunctionsDict;
-}
-
 namespace directordaemon {
 
 static const int debuglevel = 150;
@@ -115,7 +102,7 @@ static const int debuglevel = 150;
 #define PLUGIN_VERSION "4"
 #define PLUGIN_DESCRIPTION "Python Director Daemon Plugin"
 #define PLUGIN_USAGE                                                           \
-  PLUGIN_NAME                                                                  \
+  "python3"                                                                    \
   ":module_name=<python-module-to-load>:module_path=<path-to-python-modules>:" \
   "instance=<instance_id>:...\n"                                               \
   "\n"                                                                         \
@@ -167,7 +154,6 @@ static PyThreadState* mainThreadState{nullptr};
 
 /* functions common to all plugins */
 #include "plugins/include/python_plugins_common.inc"
-#include "plugins/include/python_plugin_modules_common.inc"
 
 void run_python_thread(PluginContext* plugin_ctx, std::promise<void>* ready)
 {
@@ -178,10 +164,15 @@ void run_python_thread(PluginContext* plugin_ctx, std::promise<void>* ready)
 
   PyObject* module = make_module(plugin_ctx, bareos_core_functions);
 
+  // we created the module now, but it is not registered yet,
+  // so any `import <module>` will fail.
+
+  PyObject* module_dict = PyImport_GetModuleDict();
+  PyDict_SetItemString(module_dict, "bareosdir", module);
+
   ready->set_value();
 
   auto* priv_ctx = get_private_context(plugin_ctx);
-  priv_ctx->pModule = module;
 
   for (;;) {
     std::unique_lock lock{priv_ctx->execute_mut};
@@ -199,10 +190,8 @@ void run_python_thread(PluginContext* plugin_ctx, std::promise<void>* ready)
     if (req == REQUEST_THREAD_STOP) { break; }
     ASSERT(req.first != nullptr);
 
-    (*req.first)(req.second);
+    (*req.first)(module, req.second);
   }
-
-  if (priv_ctx->pModule) { Py_DECREF(priv_ctx->pModule); }
 
   Py_EndInterpreter(ts);
 
@@ -238,49 +227,25 @@ template <typename F> void plugin_run(plugin_private_context* ctx, F&& fun)
 
   auto executed = d.second.get_future();
 
-  plugin_submit(ctx, {+[](void* ptr) {
-                        data* data_ptr = static_cast<data*>(ptr);
+  if constexpr (std::is_invocable_v<F, PyObject*>) {
+    plugin_submit(ctx, {+[](PyObject* module, void* ptr) {
+                          data* data_ptr = static_cast<data*>(ptr);
 
-                        (*data_ptr->first)();
-                        data_ptr->second.set_value();
-                      },
-                      &d});
+                          (*data_ptr->first)(module);
+                          data_ptr->second.set_value();
+                        },
+                        &d});
+  } else {
+    plugin_submit(ctx, {+[](PyObject*, void* ptr) {
+                          data* data_ptr = static_cast<data*>(ptr);
+
+                          (*data_ptr->first)();
+                          data_ptr->second.set_value();
+                        },
+                        &d});
+  }
 
   executed.wait();
-}
-
-/* Common functions used in all python plugins.  */
-static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
-{
-  auto* plugin_priv_ctx = get_private_context(bareos_plugin_ctx);
-  bRC retval = bRC_Error;
-
-  if (!plugin_priv_ctx) { goto bail_out; }
-
-  plugin_run(plugin_priv_ctx, [&] {
-    retval = Bareosdir_PyGetPluginValue(bareos_plugin_ctx, var, value);
-  });
-
-bail_out:
-  return retval;
-}
-
-static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
-{
-  auto* plugin_priv_ctx = get_private_context(bareos_plugin_ctx);
-  bRC retval = bRC_Error;
-
-  if (!plugin_priv_ctx) { return bRC_Error; }
-
-  plugin_run(plugin_priv_ctx, [&] {
-    retval = Bareosdir_PySetPluginValue(bareos_plugin_ctx, var, value);
-  });
-
-  return retval;
 }
 
 
@@ -309,23 +274,6 @@ loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
   PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
   PyList_Append(sysPath, pluginPath);
   Py_DECREF(pluginPath);
-
-  /* import the bareosdir module */
-  PyObject* bareosdirModule = PyImport_ImportModule("bareosdir");
-  if (!bareosdirModule) {
-    printf("loading of bareosdir extension module failed\n");
-    if (PyErr_Occurred()) { PyErrorHandler(); }
-  }
-
-  /* import the CAPI from the bareosdir python module
-   * afterwards, Bareosdir_* macros are initialized to
-   * point to the corresponding functions in the bareosdir python
-   * module */
-  import_bareosdir();
-
-  /* set bareos_core_functions inside of barosdir module */
-  Bareosdir_set_bareos_core_functions(lbareos_core_functions,
-                                      &get_module_function_dict);
 
   bareos_core_functions
       = lbareos_core_functions; /* Set Bareos funct pointers */
@@ -402,6 +350,225 @@ static bRC freePlugin(PluginContext* plugin_ctx)
   return bRC_OK;
 }
 
+/**
+ * Any plugin options which are passed in are dispatched here to a Python
+ * method and it can parse the plugin options. This function is also called
+ * after PyLoadModule() has loaded the Python module and made sure things are
+ * operational.
+ */
+bRC PyParsePluginDefinition(PluginContext* ctx,
+                            PyObject* plugin,
+                            const char* value)
+{
+  bRC retval = bRC_Error;
+  PyObject* moduleDict = PyModule_GetDict(plugin);
+  PyObject* pFunc;
+
+  // Lookup the parse_plugin_definition() function in the python module.
+  pFunc = PyDict_GetItemString(
+      moduleDict, "parse_plugin_definition"); /* Borrowed reference */
+  if (pFunc && PyCallable_Check(pFunc)) {
+    PyObject *pPluginDefinition, *pRetVal;
+
+    pPluginDefinition = PyUnicode_FromString((char*)value);
+    if (!pPluginDefinition) { goto bail_out; }
+
+    pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
+    Py_DECREF(pPluginDefinition);
+
+    if (!pRetVal) {
+      goto bail_out;
+    } else {
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
+      Py_DECREF(pRetVal);
+    }
+
+    return retval;
+  } else {
+    Dmsg(ctx, debuglevel,
+         "Failed to find function named "
+         "parse_plugin_definition()\n");
+    return bRC_Error;
+  }
+
+bail_out:
+  if (PyErr_Occurred()) { PyErrorHandler(ctx, M_FATAL); }
+
+  return retval;
+}
+
+bRC PyHandlePluginEvent(PluginContext* ctx,
+                        PyObject* plugin,
+                        bDirEvent* event,
+                        void*)
+{
+  bRC retval = bRC_Error;
+  PyObject* moduleDict = PyModule_GetDict(plugin);
+  PyObject* pFunc;
+
+  // Lookup the handle_plugin_event() function in the python module.
+  pFunc = PyDict_GetItemString(moduleDict,
+                               "handle_plugin_event"); /* Borrowed reference
+                                                        */
+  if (pFunc && PyCallable_Check(pFunc)) {
+    PyObject *pEventType, *pRetVal;
+
+    pEventType = PyLong_FromLong(event->eventType);
+
+    pRetVal = PyObject_CallFunctionObjArgs(pFunc, pEventType, NULL);
+    Py_DECREF(pEventType);
+
+    if (!pRetVal) {
+      goto bail_out;
+    } else {
+      retval = ConvertPythonRetvalTobRCRetval(pRetVal);
+      Py_DECREF(pRetVal);
+    }
+  } else {
+    Dmsg(ctx, debuglevel,
+         "Failed to find function named handle_plugin_event()\n");
+  }
+
+  return retval;
+
+bail_out:
+  if (PyErr_Occurred()) {
+    // NOTYETPORTED
+    PyErrorHandler(ctx, M_FATAL);
+  }
+
+  return retval;
+}
+
+bRC PyGetPluginValue(PluginContext*,
+                     PyObject*,
+                     directordaemon::pVariable,
+                     void*)
+{
+  return bRC_OK;
+}
+bRC PySetPluginValue(PluginContext*,
+                     PyObject*,
+                     directordaemon::pVariable,
+                     void*)
+{
+  return bRC_OK;
+}
+
+
+static bRC PyLoadModule(PluginContext* plugin_ctx, const char* options)
+{
+  auto* priv_ctx = get_private_context(plugin_ctx);
+  ASSERT(priv_ctx);
+
+  bRC retval = bRC_Error;
+
+  /* See if we already setup the python search path.  */
+  if (!priv_ctx->python_default_path_is_set) {
+    PyObject* sysPath = PySys_GetObject((char*)"path");
+    PyObject* mPath = PyUnicode_FromString(PYTHON_MODULE_PATH);
+    PyList_Insert(sysPath, 0, mPath);
+    Py_DECREF(mPath);
+    priv_ctx->python_default_path_is_set = true;
+  }
+  if (!priv_ctx->python_path_is_set) {
+    /* Extend the Python search path with the given module_path.  */
+    if (priv_ctx->module_path) {
+      PyObject* sysPath = PySys_GetObject((char*)"path");
+      PyObject* mPath = PyUnicode_FromString(priv_ctx->module_path);
+      PyList_Insert(sysPath, 0, mPath);
+      Py_DECREF(mPath);
+      priv_ctx->python_path_is_set = true;
+    }
+  }
+
+  /* Try to load the Python module by name. */
+  if (priv_ctx->module_name) {
+    Dmsg(plugin_ctx, debuglevel, "Trying to load module with name %s\n",
+         priv_ctx->module_name);
+    priv_ctx->plugin_module = PyImport_ImportModule(priv_ctx->module_name);
+    if (!priv_ctx->plugin_module) {
+      Dmsg(plugin_ctx, debuglevel, "Failed to load module with name %s\n",
+           priv_ctx->module_name);
+      goto bail_out;
+    }
+
+    Dmsg(plugin_ctx, debuglevel, "Successfully loaded module with name %s\n",
+         priv_ctx->module_name);
+
+    PyObject* module_dict = PyModule_GetDict(priv_ctx->plugin_module);
+    /* Lookup the load_bareos_plugin() function in the python module.  */
+    PyObject* pFunc = PyDict_GetItemString(
+        module_dict, "load_bareos_plugin"); /* Borrowed reference */
+    if (pFunc && PyCallable_Check(pFunc)) {
+      PyObject *pPluginDefinition, *pRetVal;
+
+      pPluginDefinition = PyUnicode_FromString(options);
+      if (!pPluginDefinition) { goto bail_out; }
+
+      pRetVal = PyObject_CallFunctionObjArgs(pFunc, pPluginDefinition, NULL);
+      Py_DECREF(pPluginDefinition);
+
+      if (!pRetVal) {
+        goto bail_out;
+      } else {
+        retval = ConvertPythonRetvalTobRCRetval(pRetVal);
+        Py_DECREF(pRetVal);
+      }
+    } else {
+      Dmsg(plugin_ctx, debuglevel,
+           "Failed to find function named load_bareos_plugin()\n");
+      goto bail_out;
+    }
+
+    // Keep track we successfully loaded.
+    priv_ctx->python_loaded = true;
+  }
+
+  return retval;
+
+bail_out:
+  if (PyErr_Occurred()) { PyErrorHandler(plugin_ctx, M_FATAL); }
+
+  return retval;
+}
+
+/* Common functions used in all python plugins.  */
+static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
+                          pVariable var,
+                          void* value)
+{
+  auto* plugin_priv_ctx = get_private_context(bareos_plugin_ctx);
+  bRC retval = bRC_Error;
+
+  if (!plugin_priv_ctx) { goto bail_out; }
+
+  plugin_run(plugin_priv_ctx, [&] {
+    retval = PyGetPluginValue(bareos_plugin_ctx, plugin_priv_ctx->plugin_module,
+                              var, value);
+  });
+
+bail_out:
+  return retval;
+}
+
+static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
+                          pVariable var,
+                          void* value)
+{
+  auto* plugin_priv_ctx = get_private_context(bareos_plugin_ctx);
+  bRC retval = bRC_Error;
+
+  if (!plugin_priv_ctx) { return bRC_Error; }
+
+  plugin_run(plugin_priv_ctx, [&] {
+    retval = PySetPluginValue(bareos_plugin_ctx, plugin_priv_ctx->plugin_module,
+                              var, value);
+  });
+
+  return retval;
+}
+
 
 static bRC handlePluginEvent(PluginContext* plugin_ctx,
                              bDirEvent* event,
@@ -442,8 +609,9 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
 
           /* Only try to call when the loading succeeded. */
           if (retval == bRC_OK) {
-            retval = Bareosdir_PyParsePluginDefinition(plugin_ctx,
-                                                       plugin_options.c_str());
+            retval = PyParsePluginDefinition(plugin_ctx,
+                                             plugin_priv_ctx->plugin_module,
+                                             plugin_options.c_str());
           }
           break;
         default:
@@ -451,7 +619,8 @@ static bRC handlePluginEvent(PluginContext* plugin_ctx,
            * We only try to call Python when we loaded the right module until
            * that time we pretend the call succeeded. */
           if (plugin_priv_ctx->python_loaded) {
-            retval = Bareosdir_PyHandlePluginEvent(plugin_ctx, event, value);
+            retval = PyHandlePluginEvent(
+                plugin_ctx, plugin_priv_ctx->plugin_module, event, value);
           } else {
             retval = bRC_OK;
           }
@@ -491,9 +660,9 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
   bp = strchr(plugin_definition.c_str(), ':');
   if (!bp) {
-    Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "Illegal plugin definition %s\n",
+    Jmsg(plugin_ctx, M_FATAL, "Illegal plugin definition %s\n",
          plugin_definition.c_str());
-    Dmsg(plugin_ctx, debuglevel, LOGPREFIX "Illegal plugin definition %s\n",
+    Dmsg(plugin_ctx, debuglevel, "Illegal plugin definition %s\n",
          plugin_definition.c_str());
     goto bail_out;
   }
@@ -514,10 +683,10 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
     argument = bp;
     argument_value = strchr(bp, '=');
     if (!argument_value) {
-      Jmsg(plugin_ctx, M_FATAL, LOGPREFIX "Illegal argument %s without value\n",
+      Jmsg(plugin_ctx, M_FATAL, "Illegal argument %s without value\n",
            argument);
-      Dmsg(plugin_ctx, debuglevel,
-           LOGPREFIX "Illegal argument %s without value\n", argument);
+      Dmsg(plugin_ctx, debuglevel, "Illegal argument %s without value\n",
+           argument);
       goto bail_out;
     }
     *argument_value++ = '\0';
