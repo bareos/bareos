@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
+- ADR: document daemon status after installation [PR #2453]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2177,6 +2178,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2444]: https://github.com/bareos/bareos/pull/2444
 [PR #2445]: https://github.com/bareos/bareos/pull/2445
 [PR #2452]: https://github.com/bareos/bareos/pull/2452
+[PR #2453]: https://github.com/bareos/bareos/pull/2453
 [PR #2456]: https://github.com/bareos/bareos/pull/2456
 [PR #2458]: https://github.com/bareos/bareos/pull/2458
 [PR #2461]: https://github.com/bareos/bareos/pull/2461
