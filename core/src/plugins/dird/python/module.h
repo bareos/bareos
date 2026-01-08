@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,13 +19,18 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_PLUGINS_DIRD_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
-#define BAREOS_PLUGINS_DIRD_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
+#ifndef BAREOS_PLUGINS_DIRD_PYTHON_MODULE_H_
+#define BAREOS_PLUGINS_DIRD_PYTHON_MODULE_H_
 
-struct PluginContext;
+#if defined(HAVE_WIN32)
+#  include "include/bareos.h"
+#  include <Python.h>
+#else
+#  include <Python.h>
+#  include "include/bareos.h"
+#endif
+#include "dird/dir_plugins.h"
 
-#include <Python.h>
+PyObject* make_module(PluginContext* ctx, directordaemon::CoreFunctions* funs);
 
-using get_module_function_dict_type = PyObject*(PluginContext* ctx);
-
-#endif  // BAREOS_PLUGINS_DIRD_PYTHON_PLUGIN_PRIVATE_CONTEXT_H_
+#endif  // BAREOS_PLUGINS_DIRD_PYTHON_MODULE_H_
