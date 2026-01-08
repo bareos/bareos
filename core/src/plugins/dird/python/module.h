@@ -31,12 +31,6 @@
 #endif
 #include "dird/dir_plugins.h"
 
-struct module_state {
-  PluginContext* ctx;
-  directordaemon::CoreFunctions funs;
-};
-
 PyObject* make_module(PluginContext* ctx, directordaemon::CoreFunctions* funs);
-module_state* get_state(PyObject* module);
 
 #endif  // BAREOS_PLUGINS_DIRD_PYTHON_MODULE_H_
