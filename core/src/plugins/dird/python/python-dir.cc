@@ -98,8 +98,8 @@ static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE "Bareos AGPLv3"
 #define PLUGIN_AUTHOR "Bareos GmbH & Co. KG"
-#define PLUGIN_DATE "May 2020"
-#define PLUGIN_VERSION "4"
+#define PLUGIN_DATE "Jan 2026"
+#define PLUGIN_VERSION "5"
 #define PLUGIN_DESCRIPTION "Python Director Daemon Plugin"
 #define PLUGIN_USAGE                                                           \
   "python3"                                                                    \

@@ -1525,7 +1525,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files director-python3-plugin
 %defattr(-, root, root)
 %{plugin_dir}/python3-dir.so
-%{python3_sitearch}/bareosdir*.so
 
 %files director-python-plugins-common
 %{plugin_dir}/BareosDirPluginBaseclass.py*

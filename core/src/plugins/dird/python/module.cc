@@ -20,17 +20,22 @@
 */
 
 #include "module.h"
-#include <format>
-#include "modsupport.h"
+#include "fmt/format.h"
+#include "lib/source_location.h"
+
+namespace {
+inline constexpr int debuglevel = 100;
+
+struct module_state {
+  PluginContext* ctx;
+  directordaemon::CoreFunctions funs;
+};
 
 module_state* get_state(PyObject* module)
 {
   auto* state = static_cast<module_state*>(PyModule_GetState(module));
   return state;
 }
-
-namespace {
-int debuglevel = 100;
 
 // Convert a return value from bRC enum value into Python Object.
 PyObject* ConvertbRCRetvalToPythonRetval(bRC retval)
@@ -66,7 +71,8 @@ bRC setBareosValue(module_state* state,
 void Jmsg(module_state* state,
           int type,
           std::string msg,
-          std::source_location loc = std::source_location::current())
+          libbareos::source_location loc
+          = libbareos::source_location::current())
 {
   state->funs.JobMessage(state->ctx, loc.file_name(), loc.line(), type, 0,
                          "%s\n", msg.c_str());
@@ -75,15 +81,12 @@ void Jmsg(module_state* state,
 void Dmsg(module_state* state,
           int level,
           std::string msg,
-          std::source_location loc = std::source_location::current())
+          libbareos::source_location loc
+          = libbareos::source_location::current())
 {
   state->funs.DebugMessage(state->ctx, loc.file_name(), loc.line(), level,
                            "%s\n", msg.c_str());
 }
-};  // namespace
-
-namespace directordaemon {
-
 
 /**
  * Callback function which is exposed as a part of the additional methods
@@ -104,6 +107,8 @@ static PyObject* PyBareosGetValue(PyObject* module, PyObject* args)
   if (!PyArg_ParseTuple(args, "i:BareosGetValue", &var)) { return NULL; }
 
   switch (var) {
+    using namespace directordaemon;
+
     case bDirVarJobId:
     case bDirVarLevel:
     case bDirVarType:
@@ -160,7 +165,7 @@ static PyObject* PyBareosGetValue(PyObject* module, PyObject* args)
     }
     default:
       Dmsg(state, debuglevel,
-           std::format("PyBareosGetValue unknown variable requested {}", var));
+           fmt::format("PyBareosGetValue unknown variable requested {}", var));
       break;
   }
 
@@ -191,6 +196,8 @@ static PyObject* PyBareosSetValue(PyObject* module, PyObject* args)
   }
 
   switch (var) {
+    using namespace directordaemon;
+
     case bwDirVarVolumeName: {
       const char* value;
 
@@ -214,7 +221,7 @@ static PyObject* PyBareosSetValue(PyObject* module, PyObject* args)
     }
     default:
       Dmsg(state, debuglevel,
-           std::format("PyBareosSetValue unknown variable requested {}", var));
+           fmt::format("PyBareosSetValue unknown variable requested {}", var));
       break;
   }
 
@@ -266,7 +273,7 @@ static PyObject* PyBareosJobMessage(PyObject* module, PyObject* args)
     return NULL;
   }
 
-  if (jobmsg) { Jmsg(state, type, std::format("{}", jobmsg)); }
+  if (jobmsg) { Jmsg(state, type, fmt::format("{}", jobmsg)); }
 
   Py_RETURN_NONE;
 }
@@ -301,9 +308,10 @@ static PyObject* PyBareosRegisterEvents(PyObject* module, PyObject* args)
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyLong_AsLong(pyEvent);
 
-    if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
+    if (event >= directordaemon::bDirEventJobStart
+        && event <= directordaemon::bDirEventGetScratch) {
       Dmsg(state, debuglevel,
-           std::format("PyBareosRegisterEvents registering event {}", event));
+           fmt::format("PyBareosRegisterEvents registering event {}", event));
       retval = registerBareosEvent(state, event);
 
       if (retval != bRC_OK) { break; }
@@ -346,10 +354,11 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* module, PyObject* args)
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyLong_AsLong(pyEvent);
 
-    if (event >= bDirEventJobStart && event <= bDirEventGetScratch) {
+    if (event >= directordaemon::bDirEventJobStart
+        && event <= directordaemon::bDirEventGetScratch) {
       Dmsg(
           state, debuglevel,
-          std::format("PyBareosUnRegisterEvents: registering event {}", event));
+          fmt::format("PyBareosUnRegisterEvents: registering event {}", event));
       retval = unregisterBareosEvent(state, event);
 
       if (retval != bRC_OK) { break; }
@@ -388,46 +397,20 @@ static PyObject* PyBareosGetInstanceCount(PyObject* module, PyObject* args)
 
   return pRetVal;
 }
-}  // namespace directordaemon
 
-static PyMethodDef module_methods[]
-    = {{"GetValue", directordaemon::PyBareosGetValue, METH_VARARGS,
-        "Get a Plugin value"},
-       {"SetValue", directordaemon::PyBareosSetValue, METH_VARARGS,
-        "Set a Plugin value"},
-       {"DebugMessage", directordaemon::PyBareosDebugMessage, METH_VARARGS,
+PyMethodDef module_methods[]
+    = {{"GetValue", PyBareosGetValue, METH_VARARGS, "Get a Plugin value"},
+       {"SetValue", PyBareosSetValue, METH_VARARGS, "Set a Plugin value"},
+       {"DebugMessage", PyBareosDebugMessage, METH_VARARGS,
         "Print a Debug message"},
-       {"JobMessage", directordaemon::PyBareosJobMessage, METH_VARARGS,
-        "Print a Job message"},
-       {"RegisterEvents", directordaemon::PyBareosRegisterEvents, METH_VARARGS,
+       {"JobMessage", PyBareosJobMessage, METH_VARARGS, "Print a Job message"},
+       {"RegisterEvents", PyBareosRegisterEvents, METH_VARARGS,
         "Register Plugin Events"},
-       {"UnRegisterEvents", directordaemon::PyBareosUnRegisterEvents,
-        METH_VARARGS, "Unregister Plugin Events"},
-       {"GetInstanceCount", directordaemon::PyBareosGetInstanceCount,
-        METH_VARARGS, "Get number of instances of current plugin"},
+       {"UnRegisterEvents", PyBareosUnRegisterEvents, METH_VARARGS,
+        "Unregister Plugin Events"},
+       {"GetInstanceCount", PyBareosGetInstanceCount, METH_VARARGS,
+        "Get number of instances of current plugin"},
        {}};
-
-/* define the given string constant as member of an dict and additionally
- add it directly as constant to the module.
-
- This is both done for string to long and for string to string mappings.
-
- The result is that the module both contains a dict:
- bIOPS = {'IO_CLOSE': 4L, 'IO_OPEN': 1L, 'IO_READ': 2L, 'IO_SEEK': 5L,
-          'IO_WRITE': 3L}
- and the single values directly:
-     IO_CLOSE = 4
-     IO_OPEN = 1
-     IO_READ = 2
-     IO_SEEK = 5
-     IO_WRITE = 3
- */
-
-namespace {
-// PyObject* make_python_object(const char* data)
-// {
-//   return PyBytes_FromString(data);
-// }
 
 PyObject* make_python_object(long data) { return PyLong_FromLong(data); }
 
@@ -440,7 +423,6 @@ bool set_value(PyObject* dict, const char* key, auto value)
 
   return ok;
 }
-};  // namespace
 
 #define set_enum_value(dict, eval) set_value((dict), #eval, eval)
 
@@ -504,7 +486,7 @@ bool include_dict(PyObject* module, const char* dict_name, PyObject* dict)
   return true;
 }
 
-static int setup_dicts(PyObject* module)
+int setup_dicts(PyObject* module)
 {
   if (PyObject* dict = JMsg_Dict()) {
     if (!include_dict(module, "bJobMessageType", dict)) { return -1; }
@@ -521,8 +503,7 @@ static int setup_dicts(PyObject* module)
   if (PyObject* dict = PyDict_New()) {
     using namespace directordaemon;
 
-    if (0 || !set_enum_value(dict, bDirVarJob)
-        || !set_enum_value(dict, bDirVarLevel)
+    if (!set_enum_value(dict, bDirVarJob) || !set_enum_value(dict, bDirVarLevel)
         || !set_enum_value(dict, bDirVarType)
         || !set_enum_value(dict, bDirVarJobId)
         || !set_enum_value(dict, bDirVarClient)
@@ -560,7 +541,7 @@ static int setup_dicts(PyObject* module)
   if (PyObject* dict = PyDict_New()) {
     using namespace directordaemon;
 
-    if (0 || !set_enum_value(dict, bwDirVarJobReport)
+    if (!set_enum_value(dict, bwDirVarJobReport)
         || !set_enum_value(dict, bwDirVarVolumeName)
         || !set_enum_value(dict, bwDirVarPriority)
         || !set_enum_value(dict, bwDirVarJobLevel)) {
@@ -576,7 +557,7 @@ static int setup_dicts(PyObject* module)
   if (PyObject* dict = PyDict_New()) {
     using namespace directordaemon;
 
-    if (0 || !set_enum_value(dict, bDirEventJobStart)
+    if (!set_enum_value(dict, bDirEventJobStart)
         || !set_enum_value(dict, bDirEventJobEnd)
         || !set_enum_value(dict, bDirEventJobInit)
         || !set_enum_value(dict, bDirEventJobRun)
@@ -601,19 +582,21 @@ static int setup_dicts(PyObject* module)
 
 #undef set_enum_value
 
-static PyModuleDef def = {
+PyModuleDef def = {
     .m_base = PyModuleDef_HEAD_INIT,
     .m_name = "bareosdir",
-    .m_doc = "stuff",
+    .m_doc
+    = "This module allows you to interact with the bareos director daemon",
     .m_size = sizeof(module_state),
     .m_methods = module_methods,
     .m_slots = nullptr,
 
-    // maybe needs to be a real fun
+    // we do not store python objects that _we_ need to keep alive
     .m_traverse = nullptr,
     .m_clear = nullptr,
     .m_free = nullptr,
 };
+};  // namespace
 
 PyObject* make_module(PluginContext* ctx, directordaemon::CoreFunctions* funs)
 {

@@ -1,2 +1,1 @@
 @plugindir@/python3-dir.so
-@Python3_SITEARCH@/bareosdir.cpython*.so
