@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -73,13 +73,18 @@ invalidate_slots_on_autochanger() {
   while read -r line && [ "${i}" -le "$LAST_SLOT_NUMBER"  ]; do
     if echo "${line}" | grep "$(printf 'Storage Element %d:Full\n' ${i} )"; then
       set -x
-      mtx -f "${changer_device}" load "${i}" "${USE_TAPE_DEVICE}" && \
-      mt -f "${tape_device}" rewind && \
-      mt -f "${tape_device}" weof && \
-      mtx -f "${changer_device}" unload "${i}" "${USE_TAPE_DEVICE}"
-      set +x
-      echo
-      (( i=i+1 ))
+      if mtx -f "${changer_device}" load "${i}" "${USE_TAPE_DEVICE}" && \
+         mt -f "${tape_device}" rewind && \
+         mt -f "${tape_device}" weof && \
+         mtx -f "${changer_device}" unload "${i}" "${USE_TAPE_DEVICE}"
+      then
+           set +x
+           echo
+           (( i=i+1 ))
+      else
+        echo "error $?"
+        exit 1
+      fi
     fi
   done
 
