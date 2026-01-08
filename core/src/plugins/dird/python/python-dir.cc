@@ -56,6 +56,8 @@
 
 #include "plugin_private_context.h"
 
+#include "module.h"
+
 namespace {
 uint32_t PyVersion()
 {
@@ -172,16 +174,14 @@ void run_python_thread(PluginContext* plugin_ctx, std::promise<void>* ready)
   /* For each plugin instance we instantiate a new Python interpreter. */
   PyEval_AcquireThread(mainThreadState);
 
-  /* set bareos_core_functions inside of barosdir module */
-  Bareosdir_set_plugin_context(plugin_ctx);
-
   PyThreadState* ts = Py_NewInterpreter();
 
-  Bareosdir_set_plugin_context(plugin_ctx);
+  PyObject* module = make_module(plugin_ctx, bareos_core_functions);
 
   ready->set_value();
 
   auto* priv_ctx = get_private_context(plugin_ctx);
+  priv_ctx->pModule = module;
 
   for (;;) {
     std::unique_lock lock{priv_ctx->execute_mut};
