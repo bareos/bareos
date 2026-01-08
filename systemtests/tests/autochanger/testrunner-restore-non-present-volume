@@ -21,13 +21,13 @@
 
 # This testrunner performs a restore after the volume containing
 # the jobid is ejected
-# We are looking to test if those message doesn't pop-up:
-#   Error: stored/block.cc:1004 Read error on fd=8
-#   Warning: stored/acquire.cc:317 Read acquire:
-# But only those messages:
-#   No slot defined in catalog (slot=0)
-#   Cartridge change or "update slots" may be required.
-#   Please mount read Volume "XXXX" for:
+# We are checking that these messages do not pop up:
+# - Error: stored/block.cc:1004 Read error on fd=8
+# - Warning: stored/acquire.cc:317 Read acquire:
+# and that these messages do pop up:
+# - No slot defined in catalog (slot=0)
+# - Cartridge change or "update slots" may be required.
+# - Please mount read Volume "XXXX" for:
 
 set -e
 set -o pipefail
