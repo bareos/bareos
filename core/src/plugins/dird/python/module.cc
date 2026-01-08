@@ -21,31 +21,21 @@
 
 #include "module.h"
 #include <format>
-
-struct module_state {
-  PluginContext* ctx;
-  directordaemon::CoreFunctions funs;
-};
-
-namespace {
-int debuglevel = 100;
-
-// // Convert a return value into a bRC enum value.
-// bRC ConvertPythonRetvalTobRCRetval(PyObject* pRetVal)
-// {
-//   return (bRC)PyLong_AsLong(pRetVal);
-// }
-
-// Convert a return value from bRC enum value into Python Object.
-PyObject* ConvertbRCRetvalToPythonRetval(bRC retval)
-{
-  return (PyObject*)PyLong_FromLong((int)retval);
-}
+#include "modsupport.h"
 
 module_state* get_state(PyObject* module)
 {
   auto* state = static_cast<module_state*>(PyModule_GetState(module));
   return state;
+}
+
+namespace {
+int debuglevel = 100;
+
+// Convert a return value from bRC enum value into Python Object.
+PyObject* ConvertbRCRetvalToPythonRetval(bRC retval)
+{
+  return (PyObject*)PyLong_FromLong((int)retval);
 }
 
 bRC registerBareosEvent(module_state* state, int event)
@@ -93,44 +83,7 @@ void Dmsg(module_state* state,
 };  // namespace
 
 namespace directordaemon {
-// static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
-//                                bDirEvent* event,
-//                                void*)
-// {
-//   bRC retval = bRC_Error;
-//   PyObject* moduleDict = get_module_function_dict(plugin_ctx);
-//   PyObject* pFunc;
 
-//   // Lookup the handle_plugin_event() function in the python module.
-//   pFunc = PyDict_GetItemString(moduleDict,
-//                                "handle_plugin_event"); /* Borrowed reference
-//                                */
-//   if (pFunc && PyCallable_Check(pFunc)) {
-//     PyObject *pEventType, *pRetVal;
-
-//     pEventType = PyLong_FromLong(event->eventType);
-
-//     pRetVal = PyObject_CallFunctionObjArgs(pFunc, pEventType, NULL);
-//     Py_DECREF(pEventType);
-
-//     if (!pRetVal) {
-//       goto bail_out;
-//     } else {
-//       retval = ConvertPythonRetvalTobRCRetval(pRetVal);
-//       Py_DECREF(pRetVal);
-//     }
-//   } else {
-//     Dmsg(plugin_ctx, debuglevel,
-//          LOGPREFIX "Failed to find function named handle_plugin_event()\n");
-//   }
-
-//   return retval;
-
-// bail_out:
-//   if (PyErr_Occurred()) { PyErrorHandler(plugin_ctx, M_FATAL); }
-
-//   return retval;
-// }
 
 /**
  * Callback function which is exposed as a part of the additional methods
@@ -437,41 +390,240 @@ static PyObject* PyBareosGetInstanceCount(PyObject* module, PyObject* args)
 }
 }  // namespace directordaemon
 
+static PyMethodDef module_methods[]
+    = {{"GetValue", directordaemon::PyBareosGetValue, METH_VARARGS,
+        "Get a Plugin value"},
+       {"SetValue", directordaemon::PyBareosSetValue, METH_VARARGS,
+        "Set a Plugin value"},
+       {"DebugMessage", directordaemon::PyBareosDebugMessage, METH_VARARGS,
+        "Print a Debug message"},
+       {"JobMessage", directordaemon::PyBareosJobMessage, METH_VARARGS,
+        "Print a Job message"},
+       {"RegisterEvents", directordaemon::PyBareosRegisterEvents, METH_VARARGS,
+        "Register Plugin Events"},
+       {"UnRegisterEvents", directordaemon::PyBareosUnRegisterEvents,
+        METH_VARARGS, "Unregister Plugin Events"},
+       {"GetInstanceCount", directordaemon::PyBareosGetInstanceCount,
+        METH_VARARGS, "Get number of instances of current plugin"},
+       {}};
+
+/* define the given string constant as member of an dict and additionally
+ add it directly as constant to the module.
+
+ This is both done for string to long and for string to string mappings.
+
+ The result is that the module both contains a dict:
+ bIOPS = {'IO_CLOSE': 4L, 'IO_OPEN': 1L, 'IO_READ': 2L, 'IO_SEEK': 5L,
+          'IO_WRITE': 3L}
+ and the single values directly:
+     IO_CLOSE = 4
+     IO_OPEN = 1
+     IO_READ = 2
+     IO_SEEK = 5
+     IO_WRITE = 3
+ */
+
+namespace {
+// PyObject* make_python_object(const char* data)
+// {
+//   return PyBytes_FromString(data);
+// }
+
+PyObject* make_python_object(long data) { return PyLong_FromLong(data); }
+
+bool set_value(PyObject* dict, const char* key, auto value)
+{
+  bool ok = true;
+  PyObject* val = make_python_object(value);
+  if (PyDict_SetItemString(dict, key, val) < 0) { ok = false; }
+  Py_XDECREF(val);
+
+  return ok;
+}
+};  // namespace
+
+#define set_enum_value(dict, eval) set_value((dict), #eval, eval)
+
+PyObject* JMsg_Dict()
+{
+  PyObject* dict = PyDict_New();
+  if (!dict) { return nullptr; }
+
+  set_enum_value(dict, M_ABORT);
+  set_enum_value(dict, M_DEBUG);
+  set_enum_value(dict, M_FATAL);
+  set_enum_value(dict, M_ERROR);
+  set_enum_value(dict, M_WARNING);
+  set_enum_value(dict, M_INFO);
+  set_enum_value(dict, M_SAVED);
+  set_enum_value(dict, M_NOTSAVED);
+  set_enum_value(dict, M_SKIPPED);
+  set_enum_value(dict, M_MOUNT);
+  set_enum_value(dict, M_ERROR_TERM);
+  set_enum_value(dict, M_TERM);
+  set_enum_value(dict, M_RESTORED);
+  set_enum_value(dict, M_SECURITY);
+  set_enum_value(dict, M_ALERT);
+  set_enum_value(dict, M_VOLMGMT);
+
+  return dict;
+}
+
+PyObject* bRC_Dict()
+{
+  PyObject* dict = PyDict_New();
+  if (!dict) { return nullptr; }
+
+  set_enum_value(dict, bRC_OK);
+  set_enum_value(dict, bRC_Stop);
+  set_enum_value(dict, bRC_Error);
+  set_enum_value(dict, bRC_More);
+  set_enum_value(dict, bRC_Term);
+  set_enum_value(dict, bRC_Seen);
+  set_enum_value(dict, bRC_Core);
+  set_enum_value(dict, bRC_Skip);
+  set_enum_value(dict, bRC_Cancel);
+
+  return dict;
+}
+
+bool include_dict(PyObject* module, const char* dict_name, PyObject* dict)
+{
+  PyObject* module_dict = PyModule_GetDict(module);
+  if (!module_dict) { return false; }
+
+  if (PyDict_Merge(module_dict, dict, 1) < 0) {
+    Py_DECREF(dict);
+    return false;
+  }
+  if (PyModule_AddObject(module, dict_name, dict) < 0) {
+    Py_DECREF(dict);
+    return false;
+  }
+
+  return true;
+}
+
+static int setup_dicts(PyObject* module)
+{
+  if (PyObject* dict = JMsg_Dict()) {
+    if (!include_dict(module, "bJobMessageType", dict)) { return -1; }
+  } else {
+    return -1;
+  }
+
+  if (PyObject* dict = bRC_Dict()) {
+    if (!include_dict(module, "bRCs", dict)) { return -1; }
+  } else {
+    return -1;
+  }
+
+  if (PyObject* dict = PyDict_New()) {
+    using namespace directordaemon;
+
+    if (0 || !set_enum_value(dict, bDirVarJob)
+        || !set_enum_value(dict, bDirVarLevel)
+        || !set_enum_value(dict, bDirVarType)
+        || !set_enum_value(dict, bDirVarJobId)
+        || !set_enum_value(dict, bDirVarClient)
+        || !set_enum_value(dict, bDirVarNumVols)
+        || !set_enum_value(dict, bDirVarPool)
+        || !set_enum_value(dict, bDirVarStorage)
+        || !set_enum_value(dict, bDirVarWriteStorage)
+        || !set_enum_value(dict, bDirVarReadStorage)
+        || !set_enum_value(dict, bDirVarCatalog)
+        || !set_enum_value(dict, bDirVarMediaType)
+        || !set_enum_value(dict, bDirVarJobName)
+        || !set_enum_value(dict, bDirVarJobStatus)
+        || !set_enum_value(dict, bDirVarPriority)
+        || !set_enum_value(dict, bDirVarVolumeName)
+        || !set_enum_value(dict, bDirVarCatalogRes)
+        || !set_enum_value(dict, bDirVarJobErrors)
+        || !set_enum_value(dict, bDirVarJobFiles)
+        || !set_enum_value(dict, bDirVarSDJobFiles)
+        || !set_enum_value(dict, bDirVarSDErrors)
+        || !set_enum_value(dict, bDirVarFDJobStatus)
+        || !set_enum_value(dict, bDirVarSDJobStatus)
+        || !set_enum_value(dict, bDirVarPluginDir)
+        || !set_enum_value(dict, bDirVarLastRate)
+        || !set_enum_value(dict, bDirVarJobBytes)
+        || !set_enum_value(dict, bDirVarReadBytes)) {
+      Py_DECREF(dict);
+      return -1;
+    }
+
+    if (!include_dict(module, "bDirVariable", dict)) { return -1; }
+  } else {
+    return -1;
+  }
+
+  if (PyObject* dict = PyDict_New()) {
+    using namespace directordaemon;
+
+    if (0 || !set_enum_value(dict, bwDirVarJobReport)
+        || !set_enum_value(dict, bwDirVarVolumeName)
+        || !set_enum_value(dict, bwDirVarPriority)
+        || !set_enum_value(dict, bwDirVarJobLevel)) {
+      Py_DECREF(dict);
+      return -1;
+    }
+
+    if (!include_dict(module, "bwDirVariable", dict)) { return -1; }
+  } else {
+    return -1;
+  }
+
+  if (PyObject* dict = PyDict_New()) {
+    using namespace directordaemon;
+
+    if (0 || !set_enum_value(dict, bDirEventJobStart)
+        || !set_enum_value(dict, bDirEventJobEnd)
+        || !set_enum_value(dict, bDirEventJobInit)
+        || !set_enum_value(dict, bDirEventJobRun)
+        || !set_enum_value(dict, bDirEventVolumePurged)
+        || !set_enum_value(dict, bDirEventNewVolume)
+        || !set_enum_value(dict, bDirEventNeedVolume)
+        || !set_enum_value(dict, bDirEventVolumeFull)
+        || !set_enum_value(dict, bDirEventRecyle)
+        || !set_enum_value(dict, bDirEventGetScratch)
+        || !set_enum_value(dict, bDirEventNewPluginOptions)) {
+      Py_DECREF(dict);
+      return -1;
+    }
+
+    if (!include_dict(module, "bDirEventType", dict)) { return -1; }
+  } else {
+    return -1;
+  }
+
+  return 0;
+}
+
+#undef set_enum_value
+
+static PyModuleDef def = {
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "bareosdir",
+    .m_doc = "stuff",
+    .m_size = sizeof(module_state),
+    .m_methods = module_methods,
+    .m_slots = nullptr,
+
+    // maybe needs to be a real fun
+    .m_traverse = nullptr,
+    .m_clear = nullptr,
+    .m_free = nullptr,
+};
+
 PyObject* make_module(PluginContext* ctx, directordaemon::CoreFunctions* funs)
 {
-  PyMethodDef module_methods[]
-      = {{"GetValue", directordaemon::PyBareosGetValue, METH_VARARGS,
-          "Get a Plugin value"},
-         {"SetValue", directordaemon::PyBareosSetValue, METH_VARARGS,
-          "Set a Plugin value"},
-         {"DebugMessage", directordaemon::PyBareosDebugMessage, METH_VARARGS,
-          "Print a Debug message"},
-         {"JobMessage", directordaemon::PyBareosJobMessage, METH_VARARGS,
-          "Print a Job message"},
-         {"RegisterEvents", directordaemon::PyBareosRegisterEvents,
-          METH_VARARGS, "Register Plugin Events"},
-         {"UnRegisterEvents", directordaemon::PyBareosUnRegisterEvents,
-          METH_VARARGS, "Unregister Plugin Events"},
-         {"GetInstanceCount", directordaemon::PyBareosGetInstanceCount,
-          METH_VARARGS, "Get number of instances of current plugin"},
-         {}};
-
-  PyModuleDef def = {
-      .m_base = PyModuleDef_HEAD_INIT,
-      .m_name = "bareosdir",
-      .m_doc = "stuff",
-      .m_size = sizeof(module_state),
-      .m_methods = module_methods,
-      .m_slots = nullptr,
-
-      // maybe needs to be a real fun
-      .m_traverse = nullptr,
-      .m_clear = nullptr,
-      .m_free = nullptr,
-  };
-
   PyObject* mod = PyModule_Create(&def);
   if (!mod) { return nullptr; }
+
+  if (setup_dicts(mod) < 0) {
+    Py_DECREF(mod);
+    return nullptr;
+  }
 
   auto* state = get_state(mod);
   state->ctx = ctx;
