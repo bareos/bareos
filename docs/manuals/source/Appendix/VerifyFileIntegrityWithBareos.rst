@@ -68,11 +68,10 @@ will permit you to easily identify your job when running it from the Console.
 
 You will notice that most records of the Job are quite standard, but that the FileSet resource
 contains :config:option:`dir/fileset/Include/Options/Verify = pins1`\  option in
-addition to the standard :config:option:`dir/fileset/Include/Options/Signature = SHA1`\  option.
-If you don’t want **SHA1** signature comparison, and we cannot imagine why not, you can drop the
-signature=SHA1 and none will be computed nor stored in the catalog. Or alternatively, you can use
-verify=pins5 and signature=MD5, which will use the **MD5** hash algorithm.
-The MD5 hash computes faster than SHA1, but is cryptographically less secure.
+addition to the standard :config:option:`dir/fileset/Include/Options/Signature = XXH128`\  option.
+If you don’t want signature comparison, and we cannot imagine why not, you can drop the
+:config:option:`dir/fileset/Include/Options/Signature = XXH128`\  and none will be computed nor
+stored in the catalog.
 
 The verify=pins1 is ignored during the **InitCatalog** Job, but is used during the subsequent
 Catalog Jobs to specify what attributes of the files should be compared to those found in the
@@ -81,8 +80,14 @@ of these and other options. They can be found in the
 :ref:`FileSet Resource <DirectorResourceFileSet>` section of this manual.
 Briefly, however, the **p** of the **pins1** tells Verify to compare the permissions bits, the **i**
 is to compare inodes, the **n** causes comparison of the number of links, the **s** compares the
-file size, and the **1** compares the SHA1 checksums (this requires the
-:config:option:`dir/fileset/Include/Options/Signature = SHA1`\  option to have been set also).
+
+.. note::
+
+   You can use the other signature algorithms supported by Bareos, as described in
+   :config:option:`dir/fileset/Include/Options/Signature`\ , and use **1** in the
+   :config:option:`dir/fileset/Include/Options/Verify`\  this will activate signature
+   comparison with the selected algorithm.
+
 
 You must also specify the Client and the Catalog resources for your Verify job, but you probably
 already have them created for your client and do not need to recreate them, they are included in
@@ -101,13 +106,6 @@ The example below shows a list of files that I use on my Red Hat system. Since I
 lot of time working on it, it probably is missing a few important files (if you find one, please
 send it to me). On the other hand, as long as I don’t load any new packages, none of these files
 change during normal operation of the system.
-
-.. note::
-
-   You can use the other signature algorithms supported by Bareos, as described in
-   :config:option:`dir/fileset/Include/Options/Signature`\ , and use **1** in the
-   :config:option:`dir/fileset/Include/Options/Verify`\  this will activate signature comparison
-   with the selected algorithm.
 
 
 Running the Verify
