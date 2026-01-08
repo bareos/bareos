@@ -111,14 +111,14 @@ fi
 # Write list of jobids for next use
 echo "${list_of_jobids}" > "${tmp}/list_of_jobids"
 
+# Use restore with jobid  
 rm -f "${runner_tmp}/bconsole_restore_jobs"
-poolnumber=$((NUMBER_OF_POOLS))
+echo "@out ${runner_tmp}/bconsole_restore_jobs.out" >> "${runner_tmp}/bconsole_restore_jobs"
+
 for j in ${list_of_jobids}; do
-  pool="Full-$((poolnumber - 1))"
   cat << EOF >> "${runner_tmp}/bconsole_restore_jobs"
-restore jobid=${j} pool="${pool}" where=${tmp}/bareos_restores_${j} select all done yes
+restore jobid=${j} where=${tmp}/bareos_restores_${j} all done yes
 EOF
-  poolnumber=$((poolnumber - 1))
 done
 
 echo "wait" >> "${runner_tmp}/bconsole_restore_jobs"
