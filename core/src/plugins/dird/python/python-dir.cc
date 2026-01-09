@@ -58,10 +58,6 @@
 #include "module.h"
 
 namespace {
-using python_execution_request = std::pair<void (*)(void*), void*>;
-static inline constexpr python_execution_request REQUEST_THREAD_STOP
-    = {nullptr, nullptr};
-
 // Plugin private context
 struct plugin_private_context {
   int64_t instance{};                 // Instance number of plugin
@@ -74,12 +70,7 @@ struct plugin_private_context {
 
   PyObject* plugin_module;
 
-  std::mutex execute_mut;
-  std::condition_variable request_empty;
-  std::condition_variable execution_requested;
-  std::optional<python_execution_request> to_execute;
-
-  std::thread python_thread;
+  python_thread_ctx python_thread;
 };
 
 plugin_private_context* get_private_context(PluginContext* ctx)
@@ -157,121 +148,13 @@ static inline void PyErrorHandler(PluginContext* ctx)
   Jmsg(ctx, M_FATAL, PYTHON_MODULE_NAME_QUOTED ": %s\n", error_string.c_str());
 }
 
-python_execution_request get_next_request(plugin_private_context* priv_ctx)
-{
-  std::unique_lock lock{priv_ctx->execute_mut};
-  priv_ctx->execution_requested.wait(
-      lock, [&] { return priv_ctx->to_execute.has_value(); });
-
-  ASSERT(priv_ctx->to_execute.has_value());
-
-  python_execution_request req = priv_ctx->to_execute.value();
-  priv_ctx->to_execute.reset();
-
-  priv_ctx->request_empty.notify_one();
-
-  return req;
-}
-
-void wait_for_thread_end(plugin_private_context* priv_ctx)
-{
-  for (;;) {
-    auto req = get_next_request(priv_ctx);
-
-    if (req == REQUEST_THREAD_STOP) { break; }
-  }
-}
-
-void run_python_thread(PluginContext* plugin_ctx,
-                       PyInterpreterState* main_interp,
-                       std::promise<bool>* ready)
-{
-  auto* priv_ctx = get_private_context(plugin_ctx);
-  /* For each plugin instance we instantiate a new Python interpreter. */
-
-  // before creating the subinterpreter, we first need to acquire
-  // the main interpreter gil.  To do this correctly, we need to
-  // create a new threadstate for that interpreter
-  auto* ts_maininterp = PyThreadState_New(main_interp);
-  PyEval_RestoreThread(ts_maininterp);
-
-  bool ok = true;
-
-  PyThreadState* ts = Py_NewInterpreter();
-  if (!ts) {
-    ready->set_value(false);
-    return wait_for_thread_end(priv_ctx);
-  }
-
-  auto delete_python = [&] {
-    Py_EndInterpreter(ts);
-
-    // now we also need to cleanup the maininterp threadstate
-    PyThreadState_Swap(ts_maininterp);
-    PyThreadState_Clear(ts_maininterp);
-
-    // delete the threadstate and release the gil
-    PyThreadState_DeleteCurrent();
-  };
-
-
-  ready->set_value(ok);
-
-  for (;;) {
-    auto req = get_next_request(priv_ctx);
-
-    if (req == REQUEST_THREAD_STOP) { break; }
-
-    if (ok) {
-      ASSERT(req.first != nullptr);
-
-      (*req.first)(req.second);
-    }
-  }
-
-  delete_python();
-}
-
-// wait until there is nothing currently executing
-// returns with execution lock
-void plugin_submit(plugin_private_context* ctx, python_execution_request req)
-{
-  std::unique_lock lock{ctx->execute_mut};
-
-  ctx->request_empty.wait(lock,
-                          [&ctx] { return !ctx->to_execute.has_value(); });
-
-  ASSERT(!ctx->to_execute.has_value());
-
-  ctx->to_execute.emplace(req);
-
-  ctx->execution_requested.notify_one();
-}
-
 template <typename F> void plugin_run(plugin_private_context* ctx, F&& fun)
 {
-  using data = std::pair<F*, std::promise<void>>;
-  data d;
-  d.first = &fun;
-
-  auto executed = d.second.get_future();
-
-  plugin_submit(ctx, {+[](void* ptr) {
-                        data* data_ptr = static_cast<data*>(ptr);
-
-                        (*data_ptr->first)();
-                        data_ptr->second.set_value();
-                      },
-                      &d});
-
-  executed.wait();
+  ctx->python_thread.run(std::forward<F>(fun));
 }
 
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
 /**
  * loadPlugin() and unloadPlugin() are entry points that are
  *  exported, so Bareos can directly call these two entry points
@@ -320,10 +203,7 @@ BAREOS_EXPORT bRC unloadPlugin()
   }
   return bRC_OK;
 }
-
-#ifdef __cplusplus
 }
-#endif
 
 /* Create a new instance of the plugin i.e. allocate our private storage */
 static bRC newPlugin(PluginContext* plugin_ctx)
@@ -336,8 +216,7 @@ static bRC newPlugin(PluginContext* plugin_ctx)
 
   std::promise<bool> ready{};
   auto thread_ready = ready.get_future();
-  plugin_priv_ctx->python_thread = std::thread{run_python_thread, plugin_ctx,
-                                               mainThreadState->interp, &ready};
+  plugin_priv_ctx->python_thread.start(mainThreadState->interp, &ready);
 
   auto start_success = thread_ready.get();
 
@@ -391,8 +270,7 @@ static bRC freePlugin(PluginContext* plugin_ctx)
 
   if (!plugin_priv_ctx) { return bRC_Error; }
 
-  plugin_submit(plugin_priv_ctx, REQUEST_THREAD_STOP);
-  plugin_priv_ctx->python_thread.join();
+  plugin_priv_ctx->python_thread.stop();
 
   if (plugin_priv_ctx->module_path) { free(plugin_priv_ctx->module_path); }
 
@@ -451,10 +329,10 @@ bail_out:
   return retval;
 }
 
-bRC PyHandlePluginEvent(PluginContext* ctx,
-                        PyObject* plugin,
-                        bDirEvent* event,
-                        void*)
+static bRC PyHandlePluginEvent(PluginContext* ctx,
+                               PyObject* plugin,
+                               bDirEvent* event,
+                               void*)
 {
   bRC retval = bRC_Error;
   PyObject* moduleDict = PyModule_GetDict(plugin);
@@ -491,21 +369,21 @@ bail_out:
   return retval;
 }
 
-bRC PyGetPluginValue(PluginContext*,
-                     PyObject*,
-                     directordaemon::pVariable,
-                     void*)
-{
-  return bRC_OK;
-}
-bRC PySetPluginValue(PluginContext*,
-                     PyObject*,
-                     directordaemon::pVariable,
-                     void*)
+static bRC PyGetPluginValue(PluginContext*,
+                            PyObject*,
+                            directordaemon::pVariable,
+                            void*)
 {
   return bRC_OK;
 }
 
+static bRC PySetPluginValue(PluginContext*,
+                            PyObject*,
+                            directordaemon::pVariable,
+                            void*)
+{
+  return bRC_OK;
+}
 
 static bRC PyLoadModule(PluginContext* plugin_ctx, const char* options)
 {
