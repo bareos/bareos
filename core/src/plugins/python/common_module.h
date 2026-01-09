@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_PLUGINS_DIRD_PYTHON_COMMON_MODULE_H_
-#define BAREOS_PLUGINS_DIRD_PYTHON_COMMON_MODULE_H_
+#ifndef BAREOS_PLUGINS_PYTHON_COMMON_MODULE_H_
+#define BAREOS_PLUGINS_PYTHON_COMMON_MODULE_H_
 
 #if defined(HAVE_WIN32)
 #  include "include/bareos.h"
@@ -60,4 +60,4 @@ static inline bool dict_insert_steal(PyObject* dict,
   return ok;
 }
 
-#endif  // BAREOS_PLUGINS_DIRD_PYTHON_COMMON_MODULE_H_
+#endif  // BAREOS_PLUGINS_PYTHON_COMMON_MODULE_H_

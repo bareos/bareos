@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_PLUGINS_DIRD_PYTHON_COMMON_H_
-#define BAREOS_PLUGINS_DIRD_PYTHON_COMMON_H_
+#ifndef BAREOS_PLUGINS_PYTHON_COMMON_H_
+#define BAREOS_PLUGINS_PYTHON_COMMON_H_
 
 #if defined(HAVE_WIN32)
 #  include "include/bareos.h"
@@ -121,4 +121,4 @@ static inline PyObject* ConvertbRCRetvalToPythonRetval(bRC retval)
   return (PyObject*)PyLong_FromLong((int)retval);
 }
 
-#endif  // BAREOS_PLUGINS_DIRD_PYTHON_COMMON_H_
+#endif  // BAREOS_PLUGINS_PYTHON_COMMON_H_
