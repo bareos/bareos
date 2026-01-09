@@ -447,7 +447,6 @@ bRC PyHandlePluginEvent(PluginContext* ctx,
 
 bail_out:
   if (PyErr_Occurred()) {
-    // NOTYETPORTED
     PyErrorHandler(ctx, M_FATAL);
   }
 
