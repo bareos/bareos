@@ -145,10 +145,36 @@ static PyThreadState* mainThreadState{nullptr};
 /* functions common to all plugins */
 #include "plugins/include/python_plugins_common.inc"
 
+python_execution_request get_next_request(plugin_private_context* priv_ctx)
+{
+  std::unique_lock lock{priv_ctx->execute_mut};
+  priv_ctx->execution_requested.wait(
+      lock, [&] { return priv_ctx->to_execute.has_value(); });
+
+  ASSERT(priv_ctx->to_execute.has_value());
+
+  python_execution_request req = priv_ctx->to_execute.value();
+  priv_ctx->to_execute.reset();
+
+  priv_ctx->request_empty.notify_one();
+
+  return req;
+}
+
+void wait_for_thread_end(plugin_private_context* priv_ctx)
+{
+  for (;;) {
+    auto req = get_next_request(priv_ctx);
+
+    if (req == REQUEST_THREAD_STOP) { break; }
+  }
+}
+
 void run_python_thread(PluginContext* plugin_ctx,
                        PyInterpreterState* main_interp,
                        std::promise<bool>* ready)
 {
+  auto* priv_ctx = get_private_context(plugin_ctx);
   /* For each plugin instance we instantiate a new Python interpreter. */
 
   // before creating the subinterpreter, we first need to acquire
@@ -160,35 +186,48 @@ void run_python_thread(PluginContext* plugin_ctx,
   bool ok = true;
 
   PyThreadState* ts = Py_NewInterpreter();
-  if (!ts) { ok = false; }
-  PyObject* module
-      = ts ? make_module(plugin_ctx, bareos_core_functions) : nullptr;
-  if (!module) { ok = false; }
+  if (!ts) {
+    ready->set_value(false);
+    return wait_for_thread_end(priv_ctx);
+  }
+
+  auto delete_python = [&] {
+    Py_EndInterpreter(ts);
+
+    // now we also need to cleanup the maininterp threadstate
+    PyThreadState_Swap(ts_maininterp);
+    PyThreadState_Clear(ts_maininterp);
+
+    // delete the threadstate and release the gil
+    PyThreadState_DeleteCurrent();
+  };
+
+  PyObject* module = make_module(plugin_ctx, bareos_core_functions);
+  if (!module) {
+    ready->set_value(false);
+    delete_python();
+    return wait_for_thread_end(priv_ctx);
+  }
 
   // we created the module now, but it is not registered yet,
   // so any `import <module>` will fail.
 
-  if (ok) {
-    PyObject* module_dict = PyImport_GetModuleDict();
-    PyDict_SetItemString(module_dict, "bareosdir", module);
+  PyObject* module_dict = PyImport_GetModuleDict();
+  if (!module_dict) {
+    ready->set_value(false);
+    delete_python();
+    return wait_for_thread_end(priv_ctx);
+  }
+  if (PyDict_SetItemString(module_dict, "bareosdir", module) < 0) {
+    ready->set_value(false);
+    delete_python();
+    return wait_for_thread_end(priv_ctx);
   }
 
   ready->set_value(ok);
 
-  auto* priv_ctx = get_private_context(plugin_ctx);
-
   for (;;) {
-    std::unique_lock lock{priv_ctx->execute_mut};
-    priv_ctx->execution_requested.wait(
-        lock, [&] { return priv_ctx->to_execute.has_value(); });
-
-    ASSERT(priv_ctx->to_execute.has_value());
-
-    python_execution_request req = priv_ctx->to_execute.value();
-    priv_ctx->to_execute.reset();
-
-    priv_ctx->request_empty.notify_one();
-    lock.unlock();
+    auto req = get_next_request(priv_ctx);
 
     if (req == REQUEST_THREAD_STOP) { break; }
 
@@ -199,17 +238,7 @@ void run_python_thread(PluginContext* plugin_ctx,
     }
   }
 
-  if (ts) {
-    Py_EndInterpreter(ts);
-
-    // now we also need to cleanup the maininterp threadstate
-    PyThreadState_Swap(ts_maininterp);
-  }
-
-  PyThreadState_Clear(ts_maininterp);
-
-  // delete the threadstate and release the gil
-  PyThreadState_DeleteCurrent();
+  delete_python();
 }
 
 // wait until there is nothing currently executing
@@ -446,9 +475,7 @@ bRC PyHandlePluginEvent(PluginContext* ctx,
   return retval;
 
 bail_out:
-  if (PyErr_Occurred()) {
-    PyErrorHandler(ctx, M_FATAL);
-  }
+  if (PyErr_Occurred()) { PyErrorHandler(ctx, M_FATAL); }
 
   return retval;
 }
