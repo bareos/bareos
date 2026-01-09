@@ -205,8 +205,10 @@ BAREOS_EXPORT bRC unloadPlugin()
 }
 }
 
+namespace {
+
 /* Create a new instance of the plugin i.e. allocate our private storage */
-static bRC newPlugin(PluginContext* plugin_ctx)
+bRC newPlugin(PluginContext* plugin_ctx)
 {
   plugin_private_context* plugin_priv_ctx = new plugin_private_context;
   if (!plugin_priv_ctx) { return bRC_Error; }
@@ -264,7 +266,7 @@ static bRC newPlugin(PluginContext* plugin_ctx)
 }
 
 /* Free a plugin instance, i.e. release our private storage */
-static bRC freePlugin(PluginContext* plugin_ctx)
+bRC freePlugin(PluginContext* plugin_ctx)
 {
   auto* plugin_priv_ctx = get_private_context(plugin_ctx);
 
@@ -329,10 +331,10 @@ bail_out:
   return retval;
 }
 
-static bRC PyHandlePluginEvent(PluginContext* ctx,
-                               PyObject* plugin,
-                               bDirEvent* event,
-                               void*)
+bRC PyHandlePluginEvent(PluginContext* ctx,
+                        PyObject* plugin,
+                        bDirEvent* event,
+                        void*)
 {
   bRC retval = bRC_Error;
   PyObject* moduleDict = PyModule_GetDict(plugin);
@@ -369,23 +371,23 @@ bail_out:
   return retval;
 }
 
-static bRC PyGetPluginValue(PluginContext*,
-                            PyObject*,
-                            directordaemon::pVariable,
-                            void*)
+bRC PyGetPluginValue(PluginContext*,
+                     PyObject*,
+                     directordaemon::pVariable,
+                     void*)
 {
   return bRC_OK;
 }
 
-static bRC PySetPluginValue(PluginContext*,
-                            PyObject*,
-                            directordaemon::pVariable,
-                            void*)
+bRC PySetPluginValue(PluginContext*,
+                     PyObject*,
+                     directordaemon::pVariable,
+                     void*)
 {
   return bRC_OK;
 }
 
-static bRC PyLoadModule(PluginContext* plugin_ctx, const char* options)
+bRC PyLoadModule(PluginContext* plugin_ctx, const char* options)
 {
   auto* priv_ctx = get_private_context(plugin_ctx);
   ASSERT(priv_ctx);
@@ -463,9 +465,7 @@ bail_out:
 }
 
 /* Common functions used in all python plugins.  */
-static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
+bRC getPluginValue(PluginContext* bareos_plugin_ctx, pVariable var, void* value)
 {
   auto* plugin_priv_ctx = get_private_context(bareos_plugin_ctx);
   bRC retval = bRC_Error;
@@ -481,9 +481,7 @@ bail_out:
   return retval;
 }
 
-static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
+bRC setPluginValue(PluginContext* bareos_plugin_ctx, pVariable var, void* value)
 {
   auto* plugin_priv_ctx = get_private_context(bareos_plugin_ctx);
   bRC retval = bRC_Error;
@@ -499,9 +497,7 @@ static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
 }
 
 
-static bRC handlePluginEvent(PluginContext* plugin_ctx,
-                             bDirEvent* event,
-                             void* value)
+bRC handlePluginEvent(PluginContext* plugin_ctx, bDirEvent* event, void* value)
 {
   bRC retval = bRC_Error;
   bool event_dispatched = false;
@@ -570,9 +566,9 @@ bail_out:
  *
  * python:module_path=<path>:module_name=<python_module_name>:...
  */
-static bRC parse_plugin_definition(PluginContext* plugin_ctx,
-                                   void* value,
-                                   PoolMem& plugin_options)
+bRC parse_plugin_definition(PluginContext* plugin_ctx,
+                            void* value,
+                            PoolMem& plugin_options)
 {
   plugin_private_context* plugin_priv_ctx
       = (plugin_private_context*)plugin_ctx->plugin_private_context;
@@ -598,5 +594,6 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
 
   return bRC_OK;
 }
+}  // namespace
 
 } /* namespace directordaemon */
