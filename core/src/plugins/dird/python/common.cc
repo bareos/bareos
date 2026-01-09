@@ -265,6 +265,10 @@ class python_thread_ctx_helper {
     // the main interpreter gil.  To do this correctly, we need to
     // create a new threadstate for that interpreter
     auto* ts_maininterp = PyThreadState_New(main_interp);
+    if (!ts_maininterp) {
+      ready->set_value(false);
+      return wait_for_thread_end(ctx);
+    }
     PyEval_RestoreThread(ts_maininterp);
 
     bool ok = true;
@@ -272,6 +276,10 @@ class python_thread_ctx_helper {
     PyThreadState* ts = Py_NewInterpreter();
     if (!ts) {
       ready->set_value(false);
+      PyThreadState_Clear(ts_maininterp);
+
+      // delete the threadstate and release the gil
+      PyThreadState_DeleteCurrent();
       return wait_for_thread_end(ctx);
     }
 
@@ -289,6 +297,9 @@ class python_thread_ctx_helper {
 
     ready->set_value(ok);
 
+    // release the (shared) gil, so that other plugins can also continue
+    PyEval_SaveThread();
+
     for (;;) {
       auto req = ctx->get_next_request();
 
@@ -297,10 +308,13 @@ class python_thread_ctx_helper {
       if (ok) {
         ASSERT(req.first != nullptr);
 
+        PyEval_RestoreThread(ts);
         (*req.first)(req.second);
+        PyEval_SaveThread();
       }
     }
 
+    PyEval_RestoreThread(ts);
     delete_python();
   }
 };
