@@ -20,10 +20,15 @@
 include(BareosPlugins)
 
 if(Python3_FOUND)
+  add_library(python-common common.cc)
+  target_link_libraries(python-common PUBLIC Python3::Python Bareos::Lib)
+
   bareos_add_plugin(python3-dir)
   target_sources(python3-dir PRIVATE python-dir.cc module.cc)
   install(TARGETS python3-dir DESTINATION ${plugindir})
-  target_link_libraries(python3-dir Python3::Python Bareos::Lib fmt::fmt)
+  target_link_libraries(
+    python3-dir Python3::Python Bareos::Lib fmt::fmt python-common
+  )
   target_compile_definitions(
     python3-dir PUBLIC PY3MODDIR=\"${Python3_SITEARCH}\"
   )
