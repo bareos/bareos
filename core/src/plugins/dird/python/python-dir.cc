@@ -214,33 +214,6 @@ void run_python_thread(PluginContext* plugin_ctx,
     PyThreadState_DeleteCurrent();
   };
 
-  {
-    PyObject* module = make_module(plugin_ctx, bareos_core_functions);
-    if (!module) {
-      ready->set_value(false);
-      delete_python();
-      return wait_for_thread_end(priv_ctx);
-    }
-
-    // we created the module now, but it is not registered yet,
-    // so any `import <module>` will fail.
-
-    PyObject* module_dict = PyImport_GetModuleDict();
-    if (!module_dict) {
-      ready->set_value(false);
-      Py_DECREF(module);
-      delete_python();
-      return wait_for_thread_end(priv_ctx);
-    }
-    if (PyDict_SetItemString(module_dict, "bareosdir", module) < 0) {
-      ready->set_value(false);
-      Py_DECREF(module);
-      delete_python();
-      return wait_for_thread_end(priv_ctx);
-    }
-
-    Py_DECREF(module);
-  }
 
   ready->set_value(ok);
 
@@ -372,6 +345,36 @@ static bRC newPlugin(PluginContext* plugin_ctx)
     Jmsg(plugin_ctx, M_FATAL, "could not start the python sub interpreter");
     return bRC_Error;
   }
+
+  // create the bareosdir module
+
+  bool bareosdir_loaded = false;
+  plugin_run(plugin_priv_ctx, [&] {
+    PyObject* module = make_module(plugin_ctx, bareos_core_functions);
+    if (!module) { return; }
+
+    // we created the module now, but it is not registered yet,
+    // so any `import <module>` will fail.
+
+    PyObject* module_dict = PyImport_GetModuleDict();
+    if (!module_dict) {
+      Py_DECREF(module);
+      return;
+    }
+    if (PyDict_SetItemString(module_dict, "bareosdir", module) < 0) {
+      Py_DECREF(module);
+      return;
+    }
+
+    bareosdir_loaded = true;
+    Py_DECREF(module);
+  });
+
+  if (!bareosdir_loaded) {
+    Jmsg(plugin_ctx, M_FATAL, "could not create the bareosdir module");
+    return bRC_Error;
+  }
+
 
   /* Always register some events the python plugin itself can register
      any other events it is interested in.  */
