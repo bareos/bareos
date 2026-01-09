@@ -58,7 +58,7 @@
 #include "module.h"
 
 namespace {
-using python_execution_request = std::pair<void (*)(PyObject*, void*), void*>;
+using python_execution_request = std::pair<void (*)(void*), void*>;
 static inline constexpr python_execution_request REQUEST_THREAD_STOP
     = {nullptr, nullptr};
 
@@ -197,7 +197,6 @@ void run_python_thread(PluginContext* plugin_ctx,
 
   bool ok = true;
 
-  PyObject* module = nullptr;
   PyThreadState* ts = Py_NewInterpreter();
   if (!ts) {
     ready->set_value(false);
@@ -205,7 +204,6 @@ void run_python_thread(PluginContext* plugin_ctx,
   }
 
   auto delete_python = [&] {
-    Py_XDECREF(module);
     Py_EndInterpreter(ts);
 
     // now we also need to cleanup the maininterp threadstate
@@ -216,26 +214,32 @@ void run_python_thread(PluginContext* plugin_ctx,
     PyThreadState_DeleteCurrent();
   };
 
-  module = make_module(plugin_ctx, bareos_core_functions);
-  if (!module) {
-    ready->set_value(false);
-    delete_python();
-    return wait_for_thread_end(priv_ctx);
-  }
+  {
+    PyObject* module = make_module(plugin_ctx, bareos_core_functions);
+    if (!module) {
+      ready->set_value(false);
+      delete_python();
+      return wait_for_thread_end(priv_ctx);
+    }
 
-  // we created the module now, but it is not registered yet,
-  // so any `import <module>` will fail.
+    // we created the module now, but it is not registered yet,
+    // so any `import <module>` will fail.
 
-  PyObject* module_dict = PyImport_GetModuleDict();
-  if (!module_dict) {
-    ready->set_value(false);
-    delete_python();
-    return wait_for_thread_end(priv_ctx);
-  }
-  if (PyDict_SetItemString(module_dict, "bareosdir", module) < 0) {
-    ready->set_value(false);
-    delete_python();
-    return wait_for_thread_end(priv_ctx);
+    PyObject* module_dict = PyImport_GetModuleDict();
+    if (!module_dict) {
+      ready->set_value(false);
+      Py_DECREF(module);
+      delete_python();
+      return wait_for_thread_end(priv_ctx);
+    }
+    if (PyDict_SetItemString(module_dict, "bareosdir", module) < 0) {
+      ready->set_value(false);
+      Py_DECREF(module);
+      delete_python();
+      return wait_for_thread_end(priv_ctx);
+    }
+
+    Py_DECREF(module);
   }
 
   ready->set_value(ok);
@@ -248,7 +252,7 @@ void run_python_thread(PluginContext* plugin_ctx,
     if (ok) {
       ASSERT(req.first != nullptr);
 
-      (*req.first)(module, req.second);
+      (*req.first)(req.second);
     }
   }
 
@@ -279,23 +283,13 @@ template <typename F> void plugin_run(plugin_private_context* ctx, F&& fun)
 
   auto executed = d.second.get_future();
 
-  if constexpr (std::is_invocable_v<F, PyObject*>) {
-    plugin_submit(ctx, {+[](PyObject* module, void* ptr) {
-                          data* data_ptr = static_cast<data*>(ptr);
+  plugin_submit(ctx, {+[](void* ptr) {
+                        data* data_ptr = static_cast<data*>(ptr);
 
-                          (*data_ptr->first)(module);
-                          data_ptr->second.set_value();
-                        },
-                        &d});
-  } else {
-    plugin_submit(ctx, {+[](PyObject*, void* ptr) {
-                          data* data_ptr = static_cast<data*>(ptr);
-
-                          (*data_ptr->first)();
-                          data_ptr->second.set_value();
-                        },
-                        &d});
-  }
+                        (*data_ptr->first)();
+                        data_ptr->second.set_value();
+                      },
+                      &d});
 
   executed.wait();
 }
