@@ -39,7 +39,12 @@
 
 #include "dird/dird.h"
 
-#include "python-dir.h"
+#define PYTHON_MODULE_NAME bareosdir
+#define PYTHON_MODULE_NAME_QUOTED "bareosdir"
+
+/* common code for all python plugins */
+#include "plugins/include/common.h"
+
 #include "lib/plugins.h"
 #include "lib/edit.h"
 
@@ -49,6 +54,7 @@
 #include <cstdint>
 #include <string_view>
 
+#include "common.h"
 #include "module.h"
 
 namespace {
@@ -142,8 +148,14 @@ static PluginFunctions pluginFuncs
 
 static PyThreadState* mainThreadState{nullptr};
 
-/* functions common to all plugins */
-#include "plugins/include/python_plugins_common.inc"
+static inline void PyErrorHandler(PluginContext* ctx)
+{
+  std::string error_string = GetStringFromPyErrorHandler();
+
+  Dmsg(ctx, debuglevel, PYTHON_MODULE_NAME_QUOTED ": %s\n",
+       error_string.c_str());
+  Jmsg(ctx, M_FATAL, PYTHON_MODULE_NAME_QUOTED ": %s\n", error_string.c_str());
+}
 
 python_execution_request get_next_request(plugin_private_context* priv_ctx)
 {
@@ -185,6 +197,7 @@ void run_python_thread(PluginContext* plugin_ctx,
 
   bool ok = true;
 
+  PyObject* module = nullptr;
   PyThreadState* ts = Py_NewInterpreter();
   if (!ts) {
     ready->set_value(false);
@@ -192,6 +205,7 @@ void run_python_thread(PluginContext* plugin_ctx,
   }
 
   auto delete_python = [&] {
+    Py_XDECREF(module);
     Py_EndInterpreter(ts);
 
     // now we also need to cleanup the maininterp threadstate
@@ -202,7 +216,7 @@ void run_python_thread(PluginContext* plugin_ctx,
     PyThreadState_DeleteCurrent();
   };
 
-  PyObject* module = make_module(plugin_ctx, bareos_core_functions);
+  module = make_module(plugin_ctx, bareos_core_functions);
   if (!module) {
     ready->set_value(false);
     delete_python();
@@ -435,7 +449,7 @@ bRC PyParsePluginDefinition(PluginContext* ctx,
   }
 
 bail_out:
-  if (PyErr_Occurred()) { PyErrorHandler(ctx, M_FATAL); }
+  if (PyErr_Occurred()) { PyErrorHandler(ctx); }
 
   return retval;
 }
@@ -475,7 +489,7 @@ bRC PyHandlePluginEvent(PluginContext* ctx,
   return retval;
 
 bail_out:
-  if (PyErr_Occurred()) { PyErrorHandler(ctx, M_FATAL); }
+  if (PyErr_Occurred()) { PyErrorHandler(ctx); }
 
   return retval;
 }
@@ -568,7 +582,7 @@ static bRC PyLoadModule(PluginContext* plugin_ctx, const char* options)
   return retval;
 
 bail_out:
-  if (PyErr_Occurred()) { PyErrorHandler(plugin_ctx, M_FATAL); }
+  if (PyErr_Occurred()) { PyErrorHandler(plugin_ctx); }
 
   return retval;
 }
@@ -685,124 +699,29 @@ static bRC parse_plugin_definition(PluginContext* plugin_ctx,
                                    void* value,
                                    PoolMem& plugin_options)
 {
-  bool found;
-  int i, cnt;
-  PoolMem plugin_definition(PM_FNAME);
-  char *bp, *argument, *argument_value;
   plugin_private_context* plugin_priv_ctx
       = (plugin_private_context*)plugin_ctx->plugin_private_context;
 
   if (!value) { return bRC_Error; }
 
-  /* Parse the plugin definition.
-   * Make a private copy of the whole string. */
-  PmStrcpy(plugin_definition, (char*)value);
+  ::plugin_argument plugin_arguments[]
+      = {{"instance", &plugin_priv_ctx->instance},
+         {"module_path", &plugin_priv_ctx->module_path},
+         {"module_name", &plugin_priv_ctx->module_name}};
 
-  bp = strchr(plugin_definition.c_str(), ':');
-  if (!bp) {
-    Jmsg(plugin_ctx, M_FATAL, "Illegal plugin definition %s\n",
-         plugin_definition.c_str());
-    Dmsg(plugin_ctx, debuglevel, "Illegal plugin definition %s\n",
-         plugin_definition.c_str());
-    goto bail_out;
+
+  auto parser
+      = option_parser::parse(static_cast<const char*>(value), plugin_arguments);
+
+  if (!parser.ok()) {
+    Jmsg(plugin_ctx, M_FATAL, "%s\n", parser.error_string().c_str());
+    Dmsg(plugin_ctx, debuglevel, "%s\n", parser.error_string().c_str());
+    return bRC_Error;
   }
 
-  // Skip the first ':'
-  bp++;
-
-  cnt = 0;
-  while (bp) {
-    if (strlen(bp) == 0) { break; }
-
-    /* Each argument is in the form:
-     *    <argument> = <argument_value>
-     *
-     * So we setup the right pointers here, argument to the beginning
-     * of the argument, argument_value to the beginning of the argument_value.
-     */
-    argument = bp;
-    argument_value = strchr(bp, '=');
-    if (!argument_value) {
-      Jmsg(plugin_ctx, M_FATAL, "Illegal argument %s without value\n",
-           argument);
-      Dmsg(plugin_ctx, debuglevel, "Illegal argument %s without value\n",
-           argument);
-      goto bail_out;
-    }
-    *argument_value++ = '\0';
-
-    // See if there are more arguments and setup for the next run.
-    bp = argument_value;
-    do {
-      bp = strchr(bp, ':');
-      if (bp) {
-        if (*(bp - 1) != '\\') {
-          *bp++ = '\0';
-          break;
-        } else {
-          bp++;
-        }
-      }
-    } while (bp);
-
-    found = false;
-    for (i = 0; plugin_arguments[i].name; i++) {
-      if (Bstrcasecmp(argument, plugin_arguments[i].name)) {
-        int64_t* int_destination = NULL;
-        char** str_destination = NULL;
-        bool* bool_destination = NULL;
-
-        switch (plugin_arguments[i].type) {
-          case argument_instance:
-            int_destination = &plugin_priv_ctx->instance;
-            break;
-          case argument_module_path:
-            str_destination = &plugin_priv_ctx->module_path;
-            break;
-          case argument_module_name:
-            str_destination = &plugin_priv_ctx->module_name;
-            break;
-          default:
-            break;
-        }
-
-        if (int_destination) {
-          *int_destination = parse_integer(argument_value);
-        }
-
-        if (str_destination) { SetString(str_destination, argument_value); }
-
-        if (bool_destination) {
-          *bool_destination = ParseBoolean(argument_value);
-        }
-
-        // When we have a match break the loop.
-        found = true;
-        break;
-      }
-    }
-
-    // If we didn't consume this parameter we add it to the plugin_options list.
-    if (!found) {
-      PoolMem option(PM_FNAME);
-
-      if (cnt) {
-        Mmsg(option, ":%s=%s", argument, argument_value);
-        PmStrcat(plugin_options, option.c_str());
-      } else {
-        Mmsg(option, "%s=%s", argument, argument_value);
-        PmStrcat(plugin_options, option.c_str());
-      }
-      cnt++;
-    }
-  }
-
-  if (cnt > 0) { PmStrcat(plugin_options, ":"); }
+  PmStrcpy(plugin_options, parser.unparsed_options().c_str());
 
   return bRC_OK;
-
-bail_out:
-  return bRC_Error;
 }
 
 } /* namespace directordaemon */
