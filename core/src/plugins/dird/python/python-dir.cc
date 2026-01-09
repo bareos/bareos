@@ -170,7 +170,12 @@ static PyThreadState* mainThreadState{nullptr};
 void run_python_thread(PluginContext* plugin_ctx, std::promise<void>* ready)
 {
   /* For each plugin instance we instantiate a new Python interpreter. */
-  PyEval_AcquireThread(mainThreadState);
+
+  // before creating the subinterpreter, we first need to acquire
+  // the main interpreter gil.  To do this correctly, we need to
+  // create a new threadstate for that interpreter
+  auto* ts_maininterp = PyThreadState_New(mainThreadState->interp);
+  PyEval_RestoreThread(ts_maininterp);
 
 
   PyThreadState* ts = Py_NewInterpreter();
@@ -205,12 +210,12 @@ void run_python_thread(PluginContext* plugin_ctx, std::promise<void>* ready)
 
   Py_EndInterpreter(ts);
 
-  if (PyVersion() < VERSION_HEX(3, 12, 0)) {
-    PyThreadState_Swap(mainThreadState);
-    PyEval_ReleaseThread(mainThreadState);
-  } else {
-    // endinterpreter releases the gil for us since 3.12
-  }
+  // now we also need to cleanup the maininterp threadstate
+  PyThreadState_Swap(ts_maininterp);
+  PyThreadState_Clear(ts_maininterp);
+
+  // delete the threadstate and release the gil
+  PyThreadState_DeleteCurrent();
 }
 
 // wait until there is nothing currently executing
