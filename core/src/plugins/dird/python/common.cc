@@ -20,6 +20,7 @@
 */
 
 #include "common.h"
+#include "common_module.h"
 #include "lib/edit.h"
 
 #include <sstream>
@@ -360,4 +361,88 @@ void python_thread_ctx::start(PyInterpreterState* main_interp,
 {
   python_thread = std::thread{python_thread_ctx_helper::run_thread, this,
                               main_interp, ready};
+}
+
+#define set_enum_value(dict, eval) \
+  dict_insert_steal((dict), #eval, make_python_object(eval))
+
+PyObject* JMsg_Dict()
+{
+  PyObject* dict = PyDict_New();
+  if (!dict) { return nullptr; }
+
+  set_enum_value(dict, M_ABORT);
+  set_enum_value(dict, M_DEBUG);
+  set_enum_value(dict, M_FATAL);
+  set_enum_value(dict, M_ERROR);
+  set_enum_value(dict, M_WARNING);
+  set_enum_value(dict, M_INFO);
+  set_enum_value(dict, M_SAVED);
+  set_enum_value(dict, M_NOTSAVED);
+  set_enum_value(dict, M_SKIPPED);
+  set_enum_value(dict, M_MOUNT);
+  set_enum_value(dict, M_ERROR_TERM);
+  set_enum_value(dict, M_TERM);
+  set_enum_value(dict, M_RESTORED);
+  set_enum_value(dict, M_SECURITY);
+  set_enum_value(dict, M_ALERT);
+  set_enum_value(dict, M_VOLMGMT);
+
+  return dict;
+}
+
+PyObject* bRC_Dict()
+{
+  PyObject* dict = PyDict_New();
+  if (!dict) { return nullptr; }
+
+  set_enum_value(dict, bRC_OK);
+  set_enum_value(dict, bRC_Stop);
+  set_enum_value(dict, bRC_Error);
+  set_enum_value(dict, bRC_More);
+  set_enum_value(dict, bRC_Term);
+  set_enum_value(dict, bRC_Seen);
+  set_enum_value(dict, bRC_Core);
+  set_enum_value(dict, bRC_Skip);
+  set_enum_value(dict, bRC_Cancel);
+
+  return dict;
+}
+
+#undef set_enum_value
+
+static bool include_dict(PyObject* module,
+                         const char* dict_name,
+                         PyObject* dict)
+{
+  PyObject* module_dict = PyModule_GetDict(module);
+  if (!module_dict) { return false; }
+
+  if (PyDict_Merge(module_dict, dict, 1) < 0) {
+    Py_DECREF(dict);
+    return false;
+  }
+  if (PyModule_AddObject(module, dict_name, dict) < 0) {
+    Py_DECREF(dict);
+    return false;
+  }
+
+  return true;
+}
+
+bool include_dicts(PyObject* module, std::span<named_dict> dicts)
+{
+  bool error = false;
+  for (auto dict : dicts) {
+    if (!dict.obj) {
+      error = true;
+      continue;
+    }
+
+    if (!include_dict(module, dict.name, dict.obj)) { error = true; }
+
+    Py_DECREF(dict.obj);
+  }
+
+  return !error;
 }

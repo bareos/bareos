@@ -19,6 +19,8 @@
    02110-1301, USA.
 */
 
+#include "common.h"
+#include "common_module.h"
 #include "module.h"
 #include "fmt/format.h"
 #include "lib/source_location.h"
@@ -35,12 +37,6 @@ module_state* get_state(PyObject* module)
 {
   auto* state = static_cast<module_state*>(PyModule_GetState(module));
   return state;
-}
-
-// Convert a return value from bRC enum value into Python Object.
-PyObject* ConvertbRCRetvalToPythonRetval(bRC retval)
-{
-  return (PyObject*)PyLong_FromLong((int)retval);
 }
 
 bRC registerBareosEvent(module_state* state, int event)
@@ -412,175 +408,106 @@ PyMethodDef module_methods[]
         "Get number of instances of current plugin"},
        {}};
 
-PyObject* make_python_object(long data) { return PyLong_FromLong(data); }
+#define set_enum_value(dict, eval) \
+  dict_insert_steal((dict), #eval, make_python_object(eval))
 
-bool set_value(PyObject* dict, const char* key, auto value)
-{
-  bool ok = true;
-  PyObject* val = make_python_object(value);
-  if (PyDict_SetItemString(dict, key, val) < 0) { ok = false; }
-  Py_XDECREF(val);
-
-  return ok;
-}
-
-#define set_enum_value(dict, eval) set_value((dict), #eval, eval)
-
-PyObject* JMsg_Dict()
+PyObject* Var_Dict()
 {
   PyObject* dict = PyDict_New();
   if (!dict) { return nullptr; }
 
-  set_enum_value(dict, M_ABORT);
-  set_enum_value(dict, M_DEBUG);
-  set_enum_value(dict, M_FATAL);
-  set_enum_value(dict, M_ERROR);
-  set_enum_value(dict, M_WARNING);
-  set_enum_value(dict, M_INFO);
-  set_enum_value(dict, M_SAVED);
-  set_enum_value(dict, M_NOTSAVED);
-  set_enum_value(dict, M_SKIPPED);
-  set_enum_value(dict, M_MOUNT);
-  set_enum_value(dict, M_ERROR_TERM);
-  set_enum_value(dict, M_TERM);
-  set_enum_value(dict, M_RESTORED);
-  set_enum_value(dict, M_SECURITY);
-  set_enum_value(dict, M_ALERT);
-  set_enum_value(dict, M_VOLMGMT);
+  using namespace directordaemon;
+
+  if (!set_enum_value(dict, bDirVarJob) || !set_enum_value(dict, bDirVarLevel)
+      || !set_enum_value(dict, bDirVarType)
+      || !set_enum_value(dict, bDirVarJobId)
+      || !set_enum_value(dict, bDirVarClient)
+      || !set_enum_value(dict, bDirVarNumVols)
+      || !set_enum_value(dict, bDirVarPool)
+      || !set_enum_value(dict, bDirVarStorage)
+      || !set_enum_value(dict, bDirVarWriteStorage)
+      || !set_enum_value(dict, bDirVarReadStorage)
+      || !set_enum_value(dict, bDirVarCatalog)
+      || !set_enum_value(dict, bDirVarMediaType)
+      || !set_enum_value(dict, bDirVarJobName)
+      || !set_enum_value(dict, bDirVarJobStatus)
+      || !set_enum_value(dict, bDirVarPriority)
+      || !set_enum_value(dict, bDirVarVolumeName)
+      || !set_enum_value(dict, bDirVarCatalogRes)
+      || !set_enum_value(dict, bDirVarJobErrors)
+      || !set_enum_value(dict, bDirVarJobFiles)
+      || !set_enum_value(dict, bDirVarSDJobFiles)
+      || !set_enum_value(dict, bDirVarSDErrors)
+      || !set_enum_value(dict, bDirVarFDJobStatus)
+      || !set_enum_value(dict, bDirVarSDJobStatus)
+      || !set_enum_value(dict, bDirVarPluginDir)
+      || !set_enum_value(dict, bDirVarLastRate)
+      || !set_enum_value(dict, bDirVarJobBytes)
+      || !set_enum_value(dict, bDirVarReadBytes)) {
+    Py_DECREF(dict);
+    return nullptr;
+  }
 
   return dict;
 }
 
-PyObject* bRC_Dict()
+PyObject* wVar_Dict()
 {
   PyObject* dict = PyDict_New();
   if (!dict) { return nullptr; }
 
-  set_enum_value(dict, bRC_OK);
-  set_enum_value(dict, bRC_Stop);
-  set_enum_value(dict, bRC_Error);
-  set_enum_value(dict, bRC_More);
-  set_enum_value(dict, bRC_Term);
-  set_enum_value(dict, bRC_Seen);
-  set_enum_value(dict, bRC_Core);
-  set_enum_value(dict, bRC_Skip);
-  set_enum_value(dict, bRC_Cancel);
+  using namespace directordaemon;
+
+  if (!set_enum_value(dict, bwDirVarJobReport)
+      || !set_enum_value(dict, bwDirVarVolumeName)
+      || !set_enum_value(dict, bwDirVarPriority)
+      || !set_enum_value(dict, bwDirVarJobLevel)) {
+    Py_DECREF(dict);
+    return nullptr;
+  }
 
   return dict;
 }
 
-bool include_dict(PyObject* module, const char* dict_name, PyObject* dict)
+PyObject* Event_Dict()
 {
-  PyObject* module_dict = PyModule_GetDict(module);
-  if (!module_dict) { return false; }
+  PyObject* dict = PyDict_New();
+  if (!dict) { return nullptr; }
 
-  if (PyDict_Merge(module_dict, dict, 1) < 0) {
+  using namespace directordaemon;
+
+  if (!set_enum_value(dict, bDirEventJobStart)
+      || !set_enum_value(dict, bDirEventJobEnd)
+      || !set_enum_value(dict, bDirEventJobInit)
+      || !set_enum_value(dict, bDirEventJobRun)
+      || !set_enum_value(dict, bDirEventVolumePurged)
+      || !set_enum_value(dict, bDirEventNewVolume)
+      || !set_enum_value(dict, bDirEventNeedVolume)
+      || !set_enum_value(dict, bDirEventVolumeFull)
+      || !set_enum_value(dict, bDirEventRecyle)
+      || !set_enum_value(dict, bDirEventGetScratch)
+      || !set_enum_value(dict, bDirEventNewPluginOptions)) {
     Py_DECREF(dict);
-    return false;
-  }
-  if (PyModule_AddObject(module, dict_name, dict) < 0) {
-    Py_DECREF(dict);
-    return false;
+    return nullptr;
   }
 
-  return true;
-}
-
-int setup_dicts(PyObject* module)
-{
-  if (PyObject* dict = JMsg_Dict()) {
-    if (!include_dict(module, "bJobMessageType", dict)) { return -1; }
-  } else {
-    return -1;
-  }
-
-  if (PyObject* dict = bRC_Dict()) {
-    if (!include_dict(module, "bRCs", dict)) { return -1; }
-  } else {
-    return -1;
-  }
-
-  if (PyObject* dict = PyDict_New()) {
-    using namespace directordaemon;
-
-    if (!set_enum_value(dict, bDirVarJob) || !set_enum_value(dict, bDirVarLevel)
-        || !set_enum_value(dict, bDirVarType)
-        || !set_enum_value(dict, bDirVarJobId)
-        || !set_enum_value(dict, bDirVarClient)
-        || !set_enum_value(dict, bDirVarNumVols)
-        || !set_enum_value(dict, bDirVarPool)
-        || !set_enum_value(dict, bDirVarStorage)
-        || !set_enum_value(dict, bDirVarWriteStorage)
-        || !set_enum_value(dict, bDirVarReadStorage)
-        || !set_enum_value(dict, bDirVarCatalog)
-        || !set_enum_value(dict, bDirVarMediaType)
-        || !set_enum_value(dict, bDirVarJobName)
-        || !set_enum_value(dict, bDirVarJobStatus)
-        || !set_enum_value(dict, bDirVarPriority)
-        || !set_enum_value(dict, bDirVarVolumeName)
-        || !set_enum_value(dict, bDirVarCatalogRes)
-        || !set_enum_value(dict, bDirVarJobErrors)
-        || !set_enum_value(dict, bDirVarJobFiles)
-        || !set_enum_value(dict, bDirVarSDJobFiles)
-        || !set_enum_value(dict, bDirVarSDErrors)
-        || !set_enum_value(dict, bDirVarFDJobStatus)
-        || !set_enum_value(dict, bDirVarSDJobStatus)
-        || !set_enum_value(dict, bDirVarPluginDir)
-        || !set_enum_value(dict, bDirVarLastRate)
-        || !set_enum_value(dict, bDirVarJobBytes)
-        || !set_enum_value(dict, bDirVarReadBytes)) {
-      Py_DECREF(dict);
-      return -1;
-    }
-
-    if (!include_dict(module, "bDirVariable", dict)) { return -1; }
-  } else {
-    return -1;
-  }
-
-  if (PyObject* dict = PyDict_New()) {
-    using namespace directordaemon;
-
-    if (!set_enum_value(dict, bwDirVarJobReport)
-        || !set_enum_value(dict, bwDirVarVolumeName)
-        || !set_enum_value(dict, bwDirVarPriority)
-        || !set_enum_value(dict, bwDirVarJobLevel)) {
-      Py_DECREF(dict);
-      return -1;
-    }
-
-    if (!include_dict(module, "bwDirVariable", dict)) { return -1; }
-  } else {
-    return -1;
-  }
-
-  if (PyObject* dict = PyDict_New()) {
-    using namespace directordaemon;
-
-    if (!set_enum_value(dict, bDirEventJobStart)
-        || !set_enum_value(dict, bDirEventJobEnd)
-        || !set_enum_value(dict, bDirEventJobInit)
-        || !set_enum_value(dict, bDirEventJobRun)
-        || !set_enum_value(dict, bDirEventVolumePurged)
-        || !set_enum_value(dict, bDirEventNewVolume)
-        || !set_enum_value(dict, bDirEventNeedVolume)
-        || !set_enum_value(dict, bDirEventVolumeFull)
-        || !set_enum_value(dict, bDirEventRecyle)
-        || !set_enum_value(dict, bDirEventGetScratch)
-        || !set_enum_value(dict, bDirEventNewPluginOptions)) {
-      Py_DECREF(dict);
-      return -1;
-    }
-
-    if (!include_dict(module, "bDirEventType", dict)) { return -1; }
-  } else {
-    return -1;
-  }
-
-  return 0;
+  return dict;
 }
 
 #undef set_enum_value
+
+int setup_dicts(PyObject* module)
+{
+  named_dict dicts[] = {
+      {"bJobMessageType", JMsg_Dict()}, {"bRCs", bRC_Dict()},
+      {"bDirVariable", Var_Dict()},     {"bwDirVariable", wVar_Dict()},
+      {"bDirEventType", Event_Dict()},
+  };
+
+  if (!include_dicts(module, dicts)) { return -1; }
+
+  return 0;
+}
 
 PyModuleDef def = {
     .m_base = PyModuleDef_HEAD_INIT,
