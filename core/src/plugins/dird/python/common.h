@@ -37,6 +37,52 @@
 #include <cstdint>
 #include <span>
 
+#include <mutex>
+#include <condition_variable>
+#include <future>
+
+struct python_thread_ctx {
+ public:
+  void start(PyInterpreterState* main_interp, std::promise<bool>* ready);
+
+  void stop();
+
+  template <typename F> void run(F&& fun)
+  {
+    using data = std::pair<F*, std::promise<void>>;
+    data d;
+    d.first = &fun;
+
+    auto executed = d.second.get_future();
+
+    submit({+[](void* ptr) {
+              data* data_ptr = static_cast<data*>(ptr);
+
+              (*data_ptr->first)();
+              data_ptr->second.set_value();
+            },
+            &d});
+
+    executed.wait();
+  }
+
+ private:
+  using execution_request = std::pair<void (*)(void*), void*>;
+
+  friend class python_thread_ctx_helper;
+
+  execution_request get_next_request();
+
+  void submit(execution_request req);
+
+  std::mutex execute_mut{};
+  std::condition_variable request_empty{};
+  std::condition_variable execution_requested{};
+  std::optional<execution_request> to_execute{};
+
+  std::thread python_thread;
+};
+
 struct plugin_argument {
   const char* name;
   std::variant<std::int64_t*, char**> destination;

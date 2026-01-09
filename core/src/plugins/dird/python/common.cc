@@ -239,3 +239,111 @@ option_parser option_parser::parse(
   result.unparsed = leftover.str();
   return result;
 }
+
+class python_thread_ctx_helper {
+ public:
+  static inline constexpr python_thread_ctx::execution_request
+      REQUEST_THREAD_STOP
+      = {};
+
+  static void wait_for_thread_end(python_thread_ctx* ctx)
+  {
+    for (;;) {
+      auto req = ctx->get_next_request();
+
+      if (req == REQUEST_THREAD_STOP) { break; }
+    }
+  }
+
+  static void run_thread(python_thread_ctx* ctx,
+                         PyInterpreterState* main_interp,
+                         std::promise<bool>* ready)
+  {
+    /* For each plugin instance we instantiate a new Python interpreter. */
+
+    // before creating the subinterpreter, we first need to acquire
+    // the main interpreter gil.  To do this correctly, we need to
+    // create a new threadstate for that interpreter
+    auto* ts_maininterp = PyThreadState_New(main_interp);
+    PyEval_RestoreThread(ts_maininterp);
+
+    bool ok = true;
+
+    PyThreadState* ts = Py_NewInterpreter();
+    if (!ts) {
+      ready->set_value(false);
+      return wait_for_thread_end(ctx);
+    }
+
+    auto delete_python = [&] {
+      Py_EndInterpreter(ts);
+
+      // now we also need to cleanup the maininterp threadstate
+      PyThreadState_Swap(ts_maininterp);
+      PyThreadState_Clear(ts_maininterp);
+
+      // delete the threadstate and release the gil
+      PyThreadState_DeleteCurrent();
+    };
+
+
+    ready->set_value(ok);
+
+    for (;;) {
+      auto req = ctx->get_next_request();
+
+      if (req == REQUEST_THREAD_STOP) { break; }
+
+      if (ok) {
+        ASSERT(req.first != nullptr);
+
+        (*req.first)(req.second);
+      }
+    }
+
+    delete_python();
+  }
+};
+
+// wait until there is nothing currently executing
+// returns with execution lock
+void python_thread_ctx::submit(python_thread_ctx::execution_request req)
+{
+  std::unique_lock lock{execute_mut};
+  request_empty.wait(
+      lock, [&to_execute = to_execute] { return !to_execute.has_value(); });
+
+  ASSERT(!to_execute.has_value());
+  to_execute.emplace(req);
+  execution_requested.notify_one();
+}
+
+
+void python_thread_ctx::stop()
+{
+  submit(python_thread_ctx_helper::REQUEST_THREAD_STOP);
+  python_thread.join();
+}
+
+auto python_thread_ctx::get_next_request() -> execution_request
+{
+  std::unique_lock lock{execute_mut};
+  execution_requested.wait(lock, [&] { return to_execute.has_value(); });
+
+  ASSERT(to_execute.has_value());
+
+  execution_request req = to_execute.value();
+  to_execute.reset();
+
+  request_empty.notify_one();
+
+  return req;
+}
+
+
+void python_thread_ctx::start(PyInterpreterState* main_interp,
+                              std::promise<bool>* ready)
+{
+  python_thread = std::thread{python_thread_ctx_helper::run_thread, this,
+                              main_interp, ready};
+}
