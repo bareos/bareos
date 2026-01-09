@@ -57,17 +57,7 @@
 #include "plugin_private_context.h"
 
 namespace {
-uint32_t PyVersion()
-{
-#if PY_VERSION_HEX < VERSION_HEX(3, 11, 0)
-  // bake it in statically
-  return PY_VERSION_HEX;
-#else
-  // determine it at runtime
-  return Py_Version;
-#endif
-}
-using python_execution_request = std::pair<void (*)(void*), void*>;
+using python_execution_request = std::pair<void (*)(void*, void*), void*>;
 static inline constexpr python_execution_request REQUEST_THREAD_STOP
     = {nullptr, nullptr};
 
@@ -167,23 +157,30 @@ static PyThreadState* mainThreadState{nullptr};
 #include "plugins/include/python_plugins_common.inc"
 #include "plugins/include/python_plugin_modules_common.inc"
 
-void run_python_thread(PluginContext* plugin_ctx, std::promise<void>* ready)
+void run_python_thread(PluginContext* plugin_ctx,
+                       PyInterpreterState* main_interp,
+                       std::promise<bool>* ready)
 {
   /* For each plugin instance we instantiate a new Python interpreter. */
 
   // before creating the subinterpreter, we first need to acquire
   // the main interpreter gil.  To do this correctly, we need to
   // create a new threadstate for that interpreter
-  auto* ts_maininterp = PyThreadState_New(mainThreadState->interp);
+  auto* ts_maininterp = PyThreadState_New(main_interp);
   PyEval_RestoreThread(ts_maininterp);
 
+  bool ok = true;
 
   PyThreadState* ts = Py_NewInterpreter();
+  if (!ts) {
+    ok = false;
+  } else {
+    /* set bareos_core_functions inside of barosdir module */
+    Bareosdir_set_plugin_context(plugin_ctx);
+  }
 
-  /* set bareos_core_functions inside of barosdir module */
-  Bareosdir_set_plugin_context(plugin_ctx);
 
-  ready->set_value();
+  ready->set_value(ok);
 
   auto* priv_ctx = get_private_context(plugin_ctx);
 
@@ -201,17 +198,23 @@ void run_python_thread(PluginContext* plugin_ctx, std::promise<void>* ready)
     lock.unlock();
 
     if (req == REQUEST_THREAD_STOP) { break; }
-    ASSERT(req.first != nullptr);
 
-    (*req.first)(req.second);
+    if (ok) {
+      ASSERT(req.first != nullptr);
+
+      (*req.first)(req.second);
+    }
   }
 
-  if (priv_ctx->pModule) { Py_DECREF(priv_ctx->pModule); }
+  if (ts) {
+    if (priv_ctx->pModule) { Py_DECREF(priv_ctx->pModule); }
 
-  Py_EndInterpreter(ts);
+    Py_EndInterpreter(ts);
 
-  // now we also need to cleanup the maininterp threadstate
-  PyThreadState_Swap(ts_maininterp);
+    // now we also need to cleanup the maininterp threadstate
+    PyThreadState_Swap(ts_maininterp);
+  }
+
   PyThreadState_Clear(ts_maininterp);
 
   // delete the threadstate and release the gil
@@ -371,12 +374,17 @@ static bRC newPlugin(PluginContext* plugin_ctx)
       = (void*)plugin_priv_ctx; /* set our context pointer */
 
 
-  std::promise<void> ready{};
+  std::promise<bool> ready{};
   auto thread_ready = ready.get_future();
-  plugin_priv_ctx->python_thread
-      = std::thread{run_python_thread, plugin_ctx, &ready};
+  plugin_priv_ctx->python_thread = std::thread{run_python_thread, plugin_ctx,
+                                               mainThreadState->interp, &ready};
 
-  thread_ready.wait();
+  auto start_success = thread_ready.get();
+
+  if (!start_success) {
+    Jmsg(plugin_ctx, M_FATAL, "could not start the python sub interpreter");
+    return bRC_Error;
+  }
 
   /* Always register some events the python plugin itself can register
      any other events it is interested in.  */
