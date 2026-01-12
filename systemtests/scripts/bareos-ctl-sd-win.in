@@ -20,10 +20,6 @@ export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-}
 BAREOS_SCRIPTS_DIR=${BAREOS_SCRIPTS_DIR:-@scriptdir@}
 
 srv_name=$(basename "${BAREOS_STORAGEDAEMON_BINARY}" .exe)
-srv_sbindir=$(dirname "${BAREOS_STORAGEDAEMON_BINARY}")
-srv_rundir=$(dirname "$srv_sbindir")
-srv_configdir=${BAREOS_CONFIG_DIR}
-srv_libdir="$(dirname "$(readlink "${BAREOS_STORAGEDAEMON_BINARY}")")"
 
 #
 # Source the generic functions.
@@ -32,6 +28,10 @@ srv_libdir="$(dirname "$(readlink "${BAREOS_STORAGEDAEMON_BINARY}")")"
 
 case "$1" in
   start)
+    srv_sbindir=$(dirname "${BAREOS_STORAGEDAEMON_BINARY}")
+    srv_rundir=$(dirname "$srv_sbindir")
+    srv_configdir=${BAREOS_CONFIG_DIR}
+    srv_libdir="$(dirname "$(readlink "${BAREOS_STORAGEDAEMON_BINARY}")")"
     exec 3>&1 4>&2 >/dev/null 2>&1
     nssm install "${srv_name}" $(cygpath -w "${BAREOS_STORAGEDAEMON_BINARY}")
     nssm set "${srv_name}" AppParameters "-d 1000 -v -c $(cygpath -w ${srv_configdir})"
