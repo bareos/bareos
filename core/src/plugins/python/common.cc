@@ -440,8 +440,6 @@ bool include_dicts(PyObject* module, std::span<named_dict> dicts)
     }
 
     if (!include_dict(module, dict.name, dict.obj)) { error = true; }
-
-    Py_DECREF(dict.obj);
   }
 
   return !error;
