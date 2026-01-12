@@ -118,8 +118,7 @@ static PyObject* PyBareosGetValue(PyObject* module, PyObject* args)
       if (getBareosValue(state, (brDirVariable)var, &value) == bRC_OK) {
         pRetVal = PyLong_FromLong(value);
       }
-      break;
-    }
+    } break;
     case bDirVarJobErrors:
     case bDirVarSDErrors:
     case bDirVarJobFiles:
@@ -132,8 +131,7 @@ static PyObject* PyBareosGetValue(PyObject* module, PyObject* args)
       if (getBareosValue(state, (brDirVariable)var, &value) == bRC_OK) {
         pRetVal = PyLong_FromUnsignedLong(value);
       }
-      break;
-    }
+    } break;
     case bDirVarJobName:
     case bDirVarJob:
     case bDirVarClient:
@@ -149,20 +147,18 @@ static PyObject* PyBareosGetValue(PyObject* module, PyObject* args)
       if (getBareosValue(state, (brDirVariable)var, &value) == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
-      break;
-    }
+    } break;
     case bDirVarPluginDir: {
       char* value = NULL;
 
       if (getBareosValue(state, (brDirVariable)var, &value) == bRC_OK) {
         if (value) { pRetVal = PyUnicode_FromString(value); }
       }
-      break;
-    }
-    default:
+    } break;
+    default: {
       Dmsg(state, debuglevel,
            fmt::format("PyBareosGetValue unknown variable requested {}", var));
-      break;
+    } break;
   }
 
   if (!pRetVal) { Py_RETURN_NONE; }
@@ -203,8 +199,7 @@ static PyObject* PyBareosSetValue(PyObject* module, PyObject* args)
                                 static_cast<void*>(const_cast<char*>(value)));
       }
 
-      break;
-    }
+    } break;
     case bwDirVarPriority:
     case bwDirVarJobLevel: {
       int value;
@@ -213,12 +208,11 @@ static PyObject* PyBareosSetValue(PyObject* module, PyObject* args)
       if (value >= 0) {
         retval = setBareosValue(state, (bwDirVariable)var, &value);
       }
-      break;
-    }
-    default:
+    } break;
+    default: {
       Dmsg(state, debuglevel,
            fmt::format("PyBareosSetValue unknown variable requested {}", var));
-      break;
+    } break;
   }
 
 bail_out:
