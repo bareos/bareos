@@ -53,64 +53,20 @@
 #include <algorithm>
 
 namespace storagedaemon {
-
-static const int debuglevel = 150;
-
-#define PLUGIN_LICENSE "Bareos AGPLv3"
-#define PLUGIN_AUTHOR "Bareos GmbH & Co.KG"
-#define PLUGIN_DATE "Jan 2026"
-#define PLUGIN_VERSION "5"
-#define PLUGIN_DESCRIPTION "Python Storage Daemon Plugin"
-#define PLUGIN_USAGE                                                           \
-  PLUGIN_NAME                                                                  \
-  ":module_name=<python-module-to-load>:module_path=<path-to-python-modules>:" \
-  "instance=<instance_id>:...\n"                                               \
-  "\n"                                                                         \
-  "  module_name: The name of the Python module.\n"                            \
-  "  module_path: Python search path for the module.\n"                        \
-  "               The path '" PYTHON_MODULE_PATH                               \
-  "' is always checked for modules.\n"                                         \
-  "  instance:    Default is ’0’.\n"                                           \
-  "               Increment the number, when using more than one plugin.\n"    \
-  "  Additional parameters are plugin specific."
-
-
-/* Forward referenced functions */
-static bRC newPlugin(PluginContext* plugin_ctx);
-static bRC freePlugin(PluginContext* plugin_ctx);
-static bRC getPluginValue(PluginContext* plugin_ctx,
-                          pVariable var,
-                          void* value);
-static bRC setPluginValue(PluginContext* plugin_ctx,
-                          pVariable var,
-                          void* value);
-static bRC handlePluginEvent(PluginContext* plugin_ctx,
-                             bSdEvent* event,
-                             void* value);
-static bRC parse_plugin_definition(PluginContext* plugin_ctx,
-                                   const char* value,
-                                   PoolMem& plugin_options);
-
-/* Pointers to Bareos functions */
-static CoreFunctions* bareos_core_functions = NULL;
-static PluginApiDefinition* bareos_plugin_interface_version = NULL;
-
-static PluginInformation pluginInfo
-    = {sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
-       SD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
-       PLUGIN_AUTHOR,      PLUGIN_DATE,
-       PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
-       PLUGIN_USAGE};
-
-static PluginFunctions pluginFuncs
-    = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
-
-       /* Entry points into plugin */
-       newPlugin,  /* new plugin instance */
-       freePlugin, /* free plugin instance */
-       getPluginValue, setPluginValue, handlePluginEvent};
-
 namespace {
+
+constexpr int debuglevel = 150;
+/* Pointers to Bareos functions */
+CoreFunctions* bareos_core_functions = NULL;
+PluginApiDefinition* bareos_plugin_interface_version = NULL;
+
+/**
+ * We don't actually use this but we need it to tear down the
+ * final python interpreter on unload of the plugin. Each instance of
+ * the plugin get its own interpreter.
+ */
+PyThreadState* mainThreadState{nullptr};
+
 // Plugin private context
 struct plugin_private_context {
   int64_t instance{};                 // Instance number of plugin
@@ -155,9 +111,9 @@ bRC PySetPluginValue(PluginContext*, PyObject*, storagedaemon::pVariable, void*)
  * PyLoadModule() has loaded the Python module and made sure things are
  * operational.
  */
-static bRC PyParsePluginDefinition(PluginContext* plugin_ctx,
-                                   PyObject* plugin,
-                                   void* value)
+bRC PyParsePluginDefinition(PluginContext* plugin_ctx,
+                            PyObject* plugin,
+                            void* value)
 {
   PyObject* moduleDict = PyModule_GetDict(plugin);
 
@@ -196,10 +152,10 @@ bail_out:
   return retval;
 }
 
-static bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
-                               PyObject* plugin,
-                               bSdEvent* event,
-                               void*)
+bRC PyHandlePluginEvent(PluginContext* plugin_ctx,
+                        PyObject* plugin,
+                        bSdEvent* event,
+                        void*)
 {
   PyObject* moduleDict = PyModule_GetDict(plugin);
 
@@ -235,19 +191,9 @@ bail_out:
 
   return retval;
 }
-};  // namespace
-
-/**
- * We don't actually use this but we need it to tear down the
- * final python interpreter on unload of the plugin. Each instance of
- * the plugin get its own interpreter.
- */
-static PyThreadState* mainThreadState{nullptr};
 
 /* Common functions used in all python plugins.  */
-static bRC getPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
+bRC getPluginValue(PluginContext* bareos_plugin_ctx, pVariable var, void* value)
 {
   auto* plugin_priv_ctx = get_private_context(bareos_plugin_ctx);
   bRC retval = bRC_Error;
@@ -263,9 +209,7 @@ bail_out:
   return retval;
 }
 
-static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
-                          pVariable var,
-                          void* value)
+bRC setPluginValue(PluginContext* bareos_plugin_ctx, pVariable var, void* value)
 {
   auto* plugin_priv_ctx = get_private_context(bareos_plugin_ctx);
   bRC retval = bRC_Error;
@@ -280,62 +224,8 @@ static bRC setPluginValue(PluginContext* bareos_plugin_ctx,
   return retval;
 }
 
-extern "C" {
-/**
- * loadPlugin() and unloadPlugin() are entry points that are
- *  exported, so Bareos can directly call these two entry points
- *  they are common to all Bareos plugins.
- *
- * External entry point called by Bareos to "load" the plugin
- */
-BAREOS_EXPORT bRC
-loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
-           CoreFunctions* lbareos_core_functions,
-           PluginInformation** plugin_information,
-           PluginFunctions** plugin_functions)
-{
-  if (Py_IsInitialized()) { return bRC_Error; }
-
-  Py_InitializeEx(0);
-  // add bareos plugin path to python module search path
-  PyObject* sysPath = PySys_GetObject((char*)"path");
-  PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
-  PyList_Append(sysPath, pluginPath);
-  Py_DECREF(pluginPath);
-
-  bareos_core_functions
-      = lbareos_core_functions; /* Set Bareos funct pointers */
-  bareos_plugin_interface_version = lbareos_plugin_interface_version;
-
-  *plugin_information = &pluginInfo; /* Return pointer to our info */
-  *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
-
-#if PY_VERSION_HEX < VERSION_HEX(3, 7, 0)
-  PyEval_InitThreads();
-#endif
-
-  mainThreadState = PyEval_SaveThread();
-  return bRC_OK;
-}
-
-/**
- * Plugin called here when it is unloaded, normally when Bareos is going to
- * exit.
- */
-BAREOS_EXPORT bRC unloadPlugin()
-{
-  /* Terminate Python if it was initialized correctly */
-  if (mainThreadState) {
-    PyEval_RestoreThread(mainThreadState);
-    Py_Finalize();
-    mainThreadState = nullptr;
-  }
-  return bRC_OK;
-}
-}
-
 /* Create a new instance of the plugin i.e. allocate our private storage */
-static bRC newPlugin(PluginContext* plugin_ctx)
+bRC newPlugin(PluginContext* plugin_ctx)
 {
   auto* plugin_priv_ctx = new plugin_private_context;
   if (!plugin_priv_ctx) { return bRC_Error; }
@@ -387,7 +277,7 @@ static bRC newPlugin(PluginContext* plugin_ctx)
 }
 
 /* Free a plugin instance, i.e. release our private storage */
-static bRC freePlugin(PluginContext* plugin_ctx)
+bRC freePlugin(PluginContext* plugin_ctx)
 {
   auto* plugin_priv_ctx = get_private_context(plugin_ctx);
   if (!plugin_priv_ctx) { return bRC_Error; }
@@ -405,7 +295,7 @@ static bRC freePlugin(PluginContext* plugin_ctx)
   return bRC_OK;
 }
 
-static bRC PyLoadModule(PluginContext* plugin_ctx, const char* options)
+bRC PyLoadModule(PluginContext* plugin_ctx, const char* options)
 {
   auto* priv_ctx = get_private_context(plugin_ctx);
   ASSERT(priv_ctx);
@@ -482,9 +372,40 @@ bail_out:
   return retval;
 }
 
-static bRC handlePluginEvent(PluginContext* plugin_ctx,
-                             bSdEvent* event,
-                             void* value)
+/**
+ * Parse the plugin definition passed in.
+ *
+ * The definition is in this form:
+ *
+ * python:module_path=<path>:module_name=<python_module_name>:...
+ */
+bRC parse_plugin_definition(PluginContext* plugin_ctx,
+                            const char* value,
+                            PoolMem& plugin_options)
+{
+  auto* plugin_priv_ctx = get_private_context(plugin_ctx);
+
+  if (!value) { return bRC_Error; }
+
+  ::plugin_argument plugin_arguments[]
+      = {{"instance", &plugin_priv_ctx->instance},
+         {"module_path", &plugin_priv_ctx->module_path},
+         {"module_name", &plugin_priv_ctx->module_name}};
+
+  auto parser = option_parser::parse(value, plugin_arguments);
+
+  if (!parser.ok()) {
+    Jmsg(plugin_ctx, M_FATAL, "%s\n", parser.error_string().c_str());
+    Dmsg(plugin_ctx, debuglevel, "%s\n", parser.error_string().c_str());
+    return bRC_Error;
+  }
+
+  PmStrcpy(plugin_options, parser.unparsed_options().c_str());
+
+  return bRC_OK;
+}
+
+bRC handlePluginEvent(PluginContext* plugin_ctx, bSdEvent* event, void* value)
 {
   bRC retval = bRC_Error;
   bool event_dispatched = false;
@@ -546,37 +467,93 @@ bail_out:
   return retval;
 }
 
+#define PLUGIN_LICENSE "Bareos AGPLv3"
+#define PLUGIN_AUTHOR "Bareos GmbH & Co.KG"
+#define PLUGIN_DATE "Jan 2026"
+#define PLUGIN_VERSION "5"
+#define PLUGIN_DESCRIPTION "Python Storage Daemon Plugin"
+#define PLUGIN_USAGE                                                           \
+  PLUGIN_NAME                                                                  \
+  ":module_name=<python-module-to-load>:module_path=<path-to-python-modules>:" \
+  "instance=<instance_id>:...\n"                                               \
+  "\n"                                                                         \
+  "  module_name: The name of the Python module.\n"                            \
+  "  module_path: Python search path for the module.\n"                        \
+  "               The path '" PYTHON_MODULE_PATH                               \
+  "' is always checked for modules.\n"                                         \
+  "  instance:    Default is ’0’.\n"                                           \
+  "               Increment the number, when using more than one plugin.\n"    \
+  "  Additional parameters are plugin specific."
+
+PluginInformation pluginInfo = {sizeof(pluginInfo), SD_PLUGIN_INTERFACE_VERSION,
+                                SD_PLUGIN_MAGIC,    PLUGIN_LICENSE,
+                                PLUGIN_AUTHOR,      PLUGIN_DATE,
+                                PLUGIN_VERSION,     PLUGIN_DESCRIPTION,
+                                PLUGIN_USAGE};
+
+PluginFunctions pluginFuncs
+    = {sizeof(pluginFuncs), SD_PLUGIN_INTERFACE_VERSION,
+
+       /* Entry points into plugin */
+       newPlugin,  /* new plugin instance */
+       freePlugin, /* free plugin instance */
+       getPluginValue, setPluginValue, handlePluginEvent};
+
+};  // namespace
+
+extern "C" {
 /**
- * Parse the plugin definition passed in.
+ * loadPlugin() and unloadPlugin() are entry points that are
+ *  exported, so Bareos can directly call these two entry points
+ *  they are common to all Bareos plugins.
  *
- * The definition is in this form:
- *
- * python:module_path=<path>:module_name=<python_module_name>:...
+ * External entry point called by Bareos to "load" the plugin
  */
-static bRC parse_plugin_definition(PluginContext* plugin_ctx,
-                                   const char* value,
-                                   PoolMem& plugin_options)
+BAREOS_EXPORT bRC
+loadPlugin(PluginApiDefinition* lbareos_plugin_interface_version,
+           CoreFunctions* lbareos_core_functions,
+           PluginInformation** plugin_information,
+           PluginFunctions** plugin_functions)
 {
-  auto* plugin_priv_ctx = get_private_context(plugin_ctx);
+  if (Py_IsInitialized()) { return bRC_Error; }
 
-  if (!value) { return bRC_Error; }
+  Py_InitializeEx(0);
+  // add bareos plugin path to python module search path
+  PyObject* sysPath = PySys_GetObject((char*)"path");
+  PyObject* pluginPath = PyUnicode_FromString(PLUGIN_DIR);
+  PyList_Append(sysPath, pluginPath);
+  Py_DECREF(pluginPath);
 
-  ::plugin_argument plugin_arguments[]
-      = {{"instance", &plugin_priv_ctx->instance},
-         {"module_path", &plugin_priv_ctx->module_path},
-         {"module_name", &plugin_priv_ctx->module_name}};
+  bareos_core_functions
+      = lbareos_core_functions; /* Set Bareos funct pointers */
+  bareos_plugin_interface_version = lbareos_plugin_interface_version;
 
-  auto parser = option_parser::parse(value, plugin_arguments);
+  *plugin_information = &pluginInfo; /* Return pointer to our info */
+  *plugin_functions = &pluginFuncs;  /* Return pointer to our functions */
 
-  if (!parser.ok()) {
-    Jmsg(plugin_ctx, M_FATAL, "%s\n", parser.error_string().c_str());
-    Dmsg(plugin_ctx, debuglevel, "%s\n", parser.error_string().c_str());
-    return bRC_Error;
-  }
+#if PY_VERSION_HEX < VERSION_HEX(3, 7, 0)
+  PyEval_InitThreads();
+#endif
 
-  PmStrcpy(plugin_options, parser.unparsed_options().c_str());
-
+  mainThreadState = PyEval_SaveThread();
   return bRC_OK;
 }
+
+/**
+ * Plugin called here when it is unloaded, normally when Bareos is going to
+ * exit.
+ */
+BAREOS_EXPORT bRC unloadPlugin()
+{
+  /* Terminate Python if it was initialized correctly */
+  if (mainThreadState) {
+    PyEval_RestoreThread(mainThreadState);
+    Py_Finalize();
+    mainThreadState = nullptr;
+  }
+  return bRC_OK;
+}
+}
+
 
 } /* namespace storagedaemon*/
