@@ -68,9 +68,9 @@ struct plugin_private_context {
   char* module_path{};                // Plugin Module Path
   char* module_name{};                // Plugin Module Name
 
-  PyObject* plugin_module;
+  PyObject* plugin_module{};
 
-  python_thread_ctx python_thread;
+  python_thread_ctx python_thread{};
 };
 
 plugin_private_context* get_private_context(PluginContext* ctx)
@@ -121,7 +121,6 @@ bRC newPlugin(PluginContext* plugin_ctx)
   }
 
   // create the bareosdir module
-
   bool bareosdir_loaded = false;
   plugin_run(plugin_priv_ctx, [&] {
     PyObject* module = make_module(plugin_ctx, bareos_core_functions);
@@ -135,7 +134,8 @@ bRC newPlugin(PluginContext* plugin_ctx)
       Py_DECREF(module);
       return;
     }
-    if (PyDict_SetItemString(module_dict, "bareosdir", module) < 0) {
+    if (PyDict_SetItemString(module_dict, PyModule_GetName(module), module)
+        < 0) {
       Py_DECREF(module);
       return;
     }
