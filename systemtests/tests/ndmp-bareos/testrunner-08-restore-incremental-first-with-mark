@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,7 @@ cleanup_remote
 echo "################ restore incremental by mark #####################"
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore-mark.out
-restore jobid=2 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump select current
+restore jobid=2 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump
 mark ${NDMP_TEST_PATH}/incremental
 done
 yes
