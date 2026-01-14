@@ -19,9 +19,19 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-cleanup_isilon()
-{
-  ${SSH} rm -Rf /ifs/home/regress/${NDMP_FILESYSTEM}
-  ${SSH} rm -Rf /ifs/home/regress/bareos-restores-${NDMP_FILESYSTEM}
-  ${SSH} rm -Rf /ifs/data/bareos-restores-${NDMP_FILESYSTEM}
-}
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+cleanup_remote
+
+"${BAREOS_SCRIPTS_DIR}"/cleanup

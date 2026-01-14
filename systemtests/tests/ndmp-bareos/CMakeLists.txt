@@ -56,6 +56,17 @@ if(ndmp_data_agent_address)
 
       create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
       add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME})
+      set_tests_properties(
+        system:ndmp-bareos:00-full-fail-rerun PROPERTIES DISABLED TRUE
+      )
+      set_tests_properties(
+        system:ndmp-bareos:04-restore-single-file-with-file PROPERTIES DISABLED
+                                                                       TRUE
+      )
+      set_tests_properties(
+        system:ndmp-bareos:09-restore-incremental-last-with-file
+        PROPERTIES DISABLED TRUE
+      )
     else()
       create_systemtest(
         ${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED COMMENT

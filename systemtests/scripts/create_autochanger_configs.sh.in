@@ -50,7 +50,6 @@ for changer_index in {0..9}; do
 Autochanger {
   Name = "autochanger-${changer_index}"
   Changer Device = ${changer_device}
-
   Changer Command = "${BAREOS_SCRIPTS_DIR}/mtx-changer %c %o %S %a %d"
 EOF
   ####
@@ -73,7 +72,9 @@ EOF
   drive_index=0
   tape_devices="TAPE_DEVICES${changer_index}[@]"
   for tape_device in ${!tape_devices}; do
-    bareos_tape_device_name=$(echo "tapedrive-${drive_index}-${tape_device}" | sed 's/\//\./g')
+    # Ex nanmig 
+    bareos_tape_device_name="tapedrive${changer_index}-${drive_index}"
+    # bareos_tape_device_name=$(echo "tapedrive-${drive_index}-${tape_device}" | sed 's/\//\./g')
     echo "  Attaching ${tape_device} to autochanger"
 
     #### add the type device
@@ -87,20 +88,18 @@ EOF
 Device {
     Name = "${bareos_tape_device_name}"
     DeviceType = tape
-
     DriveIndex = ${drive_index}
-
     ArchiveDevice = ${tape_device}
-
     MediaType = LTO
-    Drive Crypto Enabled = Yes
-    Query Crypto Status = Yes
     AutoChanger = yes
     AutomaticMount = yes
     MaximumFileSize = 10GB
     AlwaysOpen = Yes
     Maximum Concurrent Jobs = 1
-}
+	Drive Tape Alert Enabled = yes
+    Drive Crypto Enabled = Yes
+    Query Crypto Status = Yes
+ }
 
 EOF
 

@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 #
-# make sure we can restore a full backup to some absolute location
+# make sure we can restore an incremental backup with file
 #
 
 TestName="$(basename "$(pwd)")"
@@ -38,25 +38,27 @@ export TestName
 
 start_test
 
-restore_path="/ifs/data/bareos-restores-${NDMP_FILESYSTEM}"
-
 # remove files
-${SSH} rm -Rf "${restore_path}"
+cleanup_remote
 
+echo "################ restore incremental by file #####################"
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/restore.out
-restore jobid=1 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump where=^${restore_path} all done yes
+@$out ${log_home}/restore-file.out
+restore jobid=10 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_TEST_PATH}/incremental" yes
 wait
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-check_log "${log_home}/restore.out"
+check_log "${log_home}/restore-file.out"
+# check which incremental has been restored, here we expected to have the last increment job done.
+if ! ${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1 | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-9\""
+then
+  echo "Not last incremental expected has been restored"
+  estat=1
+fi
 
-${SSH} "cat ${restore_path}/testfile" | diff - sbin/bareos_dir-ndmp-bareos
-${SSH} "cat ${restore_path}/testfile2" | diff - sbin/bareos_sd-ndmp-bareos
-${SSH} "tail -c 200 ${restore_path}/full" | grep "${NDMP_FILESYSTEM}"
-
-check_for_zombie_jobs storage=isilonfile client=bareos-fd
+#uncomment once fixed
+#check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test

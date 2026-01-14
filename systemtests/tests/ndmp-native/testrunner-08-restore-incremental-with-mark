@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,10 @@ set -e
 set -o pipefail
 set -u
 
+#
+# make sure we can restore a specific incremental backup
+# using restore + mark
+
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -32,6 +36,33 @@ export TestName
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
+start_test
+
+# remove files
 cleanup_remote
 
-"${BAREOS_SCRIPTS_DIR}"/cleanup
+echo "################ restore incremental by mark #####################"
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore-mark.out
+restore jobid=2 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump
+mark ${NDMP_TEST_PATH}/incremental
+done
+yes
+wait
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${log_home}/restore-mark.out"
+
+# we deterministically use one jobid and look that we found the corresponding incremental
+# here the restore should be the first incremental
+if ! ${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1 | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-1\""
+then
+  echo "Not first Incremental expected has been restored"
+  estat=1
+fi
+
+#check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
+
+end_test

@@ -202,6 +202,12 @@ if(NOT hostname)
   site_name(hostname)
 endif()
 
+# if provided include NDMPConfig file. keep placed before systemtest
+if(ndmp_config)
+  message(INFO "\n\"ndmp_config:\" loaded ${ndmp_config}")
+  include("${ndmp_config}")
+endif()
+
 if(BUILD_BAREOS_BINARIES)
   project(bareos C CXX)
   if(NOT CMAKE_BUILD_TYPE

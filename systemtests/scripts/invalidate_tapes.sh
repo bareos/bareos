@@ -33,24 +33,25 @@ invalidate_slots_on_autochanger()
   tape_device=$2
 
   # check that the changer device is present
-  if ! mtx -f "$changer_device" inquiry >/dev/null; then
-    echo "Could not query $changer_device."
+  if ! mtx -f "${changer_device}" inquiry >/dev/null; then
+    echo "Could not query ${changer_device}."
     exit 1
   fi
 
-  # check that the tape device is present
-  if ! mt -f "$tape_device" status; then
-    echo "Could not query $tape_device."
+  # check that the tape device is present mt (cpio) don't support status without tape in
+  if [ ! -c "${tape_device}" ]; then
+  # if ! mt -f "$tape_device" status; then
+    echo "Could not query ${tape_device}."
     exit 1
   fi
 
   # remove tapes from all drives
   while read -r line; do
-    changer_status=$(echo "$line" \
+    changer_status=$(echo "${line}" \
       | sed -e 's/Data Transfer Element \([0-9]\):Full (Storage Element \([0-9]*\).*/\1:\2/')
-    if [ -n "$changer_status" ]; then
-      dte=$(echo "${changer_status}" | awk -F: '{print $1}')
-      se=$(echo "${changer_status}" | awk -F: '{print $2}')
+    if [ -n "${changer_status}" ]; then
+      dte=$(echo "${changer_status}" | "${AWK}" -F: '{print $1}')
+      se=$(echo "${changer_status}" | "${AWK}" -F: '{print $2}')
       mtx -f "${changer_device}" unload "${se}" "${dte}"
     fi
   done <<<"$(mtx -f "${changer_device}" status | grep "Full (Storage")"
@@ -60,7 +61,7 @@ invalidate_slots_on_autochanger()
   # invalidate tape label
   i="${FIRST_SLOT_NUMBER}"
   mtx -f "${changer_device}" status | {
-    while read -r line && [ "${i}" -le "$LAST_SLOT_NUMBER" ]; do
+    while read -r line && [ "${i}" -le "${LAST_SLOT_NUMBER}" ]; do
       if echo "${line}" | grep "$(printf 'Storage Element %d:Full\n' ${i})"; then
         set -x
         mtx -f "${changer_device}" load "${i}" "${USE_TAPE_DEVICE}" \

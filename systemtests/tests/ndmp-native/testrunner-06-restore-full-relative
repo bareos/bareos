@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,7 +24,7 @@ set -o pipefail
 set -u
 
 #
-# run a full backup job
+# make sure we can restore a full backup to some relative location
 #
 
 TestName="$(basename "$(pwd)")"
@@ -38,19 +38,28 @@ export TestName
 
 start_test
 
+# remove files
+cleanup_remote
+
+restore_path="bareos-restores-${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}"
+
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-setdebug level=250 trace=1 timestamp=1 dir
-@$out ${log_home}/full.out
-run job=NDMPBackupDump fileset=${NDMP_CLIENT}-fileset level=Full yes
+@$out ${log_home}/restore.out
+restore jobid=1 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump where=/${restore_path} all done yes
 wait
-setdebug level=0 trace=0 timestamp=0 dir
 END_OF_DATA
 
 run_bconsole "${tmp}/bconcmds"
 
-check_log "${log_home}/full.out"
+# Beware of https://github.com/bareos/internal/issues/446
+check_log "${log_home}/restore.out"
 
-# When fixed uncomment
+# printf is used to suppress error return due to null byte
+# bash: line 1: warning: command substitution: ignored null byte in input
+${SSH} "printf \"%s\" \$(tail -c 200 \"${NDMP_TEST_PATH}/${restore_path}/full\") | grep ${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}"
+${SSH} "cat \"${NDMP_TEST_PATH}/${restore_path}/testfile\"" | diff - sbin/bareos_dir-ndmp-native
+${SSH} "cat \"${NDMP_TEST_PATH}/${restore_path}/testfile2\"" | diff - sbin/bareos_sd-ndmp-native
+
 #check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test
