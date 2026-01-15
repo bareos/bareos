@@ -157,16 +157,12 @@ Following Bareos Linux packages are available (release 25.0.0):
 **Package Name**                                   **Description**
 ================================================== =========================================================================
 bareos                                             Backup Archiving REcovery Open Sourced - metapackage
-bareos-barri-cli                                   (1) Bareos Recovery Imager (Barri) command line tool
-bareos-bconsole                                    Bareos administration console (CLI)
-bareos-client                                      Bareos client Meta-All-In-One package
-bareos-contrib-director-python-plugins             Additional Director Python plugins, not part of the Bareos project
-bareos-contrib-filedaemon-python-plugins           Additional File Daemon Python plugins, not part of the Bareos project
 bareos-barri-cli                                   Bareos Recovery Imager (Barri) command line tool :sup:`1`
 bareos-bconsole                                    Bareos administration console (CLI)
 bareos-client                                      Bareos client Meta-All-In-One package
 bareos-contrib-director-python-plugins             Additional Director Python plugins, not part of the Bareos project
-@@ -120,18 +171,22 @@ bareos-director                                    Bareos Director daemon
+bareos-contrib-filedaemon-python-plugins           Additional File Daemon Python plugins, not part of the Bareos project
+bareos-director                                    Bareos Director daemon
 bareos-director-python-plugins-common              Common Python plugins for Bareos Director daemon
 bareos-director-python3-plugin                     Python3 plugin for Bareos Director daemon
 bareos-filedaemon                                  Bareos File daemon (backup and restore client)
@@ -178,7 +174,7 @@ bareos-filedaemon-mariabackup-python-plugin        Mariabackup python plugin for
 bareos-filedaemon-mssql-plugin                     Microsoft Windows SQL Server plugin for Bareos File daemon :sup:`3`
 bareos-filedaemon-percona-xtrabackup-python-plugin Perconna xtrabackup python plugin for Bareos File daemon
 bareos-filedaemon-postgresql-python-plugin         PostgreSQL python plugin for Bareos File daemon
-bareos-filedaemon-proxmox-python-plugin            Proxmox VE plugin for Bareos File daemon :sup:`1`:sup`2`
+bareos-filedaemon-proxmox-python-plugin            Proxmox VE plugin for Bareos File daemon :sup:`1` :sup:`2`
 bareos-filedaemon-python-plugins-common            Common Python plugins for Bareos File daemon
 bareos-filedaemon-python3-plugin                   Python 3 plugin for Bareos File daemon
 bareos-storage                                     Bareos Storage daemon
