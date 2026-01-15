@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -493,9 +493,10 @@ void ConfigurationParser::StoreDir(lexer* lc,
     char** p = GetItemVariablePointer<char**>(*item);
     if (*p) { free(*p); }
     if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
+      *p = DoShellExpansion(lc->str);
+    } else {
+      *p = strdup(lc->str);
     }
-    *p = strdup(lc->str);
   }
   ScanToEol(lc);
   item->SetPresent();
@@ -510,9 +511,12 @@ void ConfigurationParser::StoreStdstrdir(lexer* lc,
   LexGetToken(lc, BCT_STRING);
   if (pass == 1) {
     if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
+      auto* expanded = DoShellExpansion(lc->str);
+      SetItemVariable<std::string>(*item, expanded);
+      free(expanded);
+    } else {
+      SetItemVariable<std::string>(*item, lc->str);
     }
-    SetItemVariable<std::string>(*item, lc->str);
   }
   ScanToEol(lc);
   item->SetPresent();
@@ -810,9 +814,6 @@ void ConfigurationParser::StoreAlistDir(lexer* lc,
     Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
           list->size(), item->name);
 
-    if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
-    }
 
     /* See if we need to drop the default value from the alist.
      *
@@ -828,7 +829,12 @@ void ConfigurationParser::StoreAlistDir(lexer* lc,
       }
     }
 
-    list->append(strdup(lc->str));
+    if (lc->str[0] != '|') {
+      auto* expanded = DoShellExpansion(lc->str);
+      list->append(expanded);
+    } else {
+      list->append(strdup(lc->str));
+    }
   }
   ScanToEol(lc);
   item->SetPresent();
