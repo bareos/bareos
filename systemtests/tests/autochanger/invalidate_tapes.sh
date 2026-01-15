@@ -44,9 +44,8 @@ invalidate_slots_on_autochanger() {
 
   # check that the tape device is present
   # work only on mt-st utility
-  if mt --version | head -n 1 | grep cpio; then
-    continue
-  else
+  if ! mt --version | head -n 1 | grep cpio
+  then
     if ! mt -f "$tape_device" status
     then
       echo "Could not query $tape_device."
