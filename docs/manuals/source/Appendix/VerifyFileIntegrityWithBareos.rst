@@ -56,7 +56,7 @@ The Details
    single: Verify; Details
 
 In the discussion that follows, we will make reference to the Verify Configuration Example that is
-included below in the A Verify Configuration Example section.
+included below in the :ref:`A Verify configuration example<verify-configuration-example>`\  section.
 You might want to look it over now to get an idea of what it does.
 
 The main elements consist of adding a schedule, which will normally be run daily, or perhaps more
@@ -342,12 +342,14 @@ Include it), and then re-run the **InitCatalog**.
 The FileSet that is shown below is what I use on my Red Hat system. With a bit more thought, you can
 probably add quite a number of additional files that should be monitored.
 
+
+.. _verify-configuration-example:
+
 A Verify Configuration Example
 ------------------------------
 
 .. index::
    single: Verify; Example
-
 
 
 .. code-block:: bareosconfig
