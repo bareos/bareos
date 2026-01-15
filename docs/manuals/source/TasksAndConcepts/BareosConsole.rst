@@ -11,7 +11,7 @@ Bareos Console
 The Bareos Console (:command:`bconsole`) is a program that allows the user or the System
 Administrator, to interact with the Bareos Director daemon while the daemon is running.
 
-The current Bareos Console comes as a shell interface (TTY style). It permit the administrator or
+The current Bareos Console comes as a shell interface (TTY style). It permits the administrator or
 authorized users to interact with Bareos. You can determine the status of a particular job, examine
 the contents of the Catalog as well as perform certain tape manipulations with the Console program.
 

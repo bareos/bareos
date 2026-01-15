@@ -829,7 +829,7 @@ The directives within an Options resource may be one of the following:
         report file size decreases
 
     1
-        compare the signature (5 is deprecated)
+        compare the signature (independent of the signature algorithm). (The prevously allowed value  `5` is deprecated)
 
     A
         Only for Accurate option, it allows to always backup the file

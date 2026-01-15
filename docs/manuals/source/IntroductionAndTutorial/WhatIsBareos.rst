@@ -162,24 +162,23 @@ bareos-bconsole                                    Bareos administration console
 bareos-client                                      Bareos client Meta-All-In-One package
 bareos-contrib-director-python-plugins             Additional Director Python plugins, not part of the Bareos project
 bareos-contrib-filedaemon-python-plugins           Additional File Daemon Python plugins, not part of the Bareos project
-bareos-contrib-tools                               Some additional tools, not part of the Bareos core project
-bareos-common                                      Common files, required by multiple Bareos packages
-bareos-database-common                             Generic abstraction libs and files to connect to a database
-bareos-database-postgresql                         Libs and tools for postgresql catalog
-bareos-database-tools                              Bareos CLI tools with database dependencies (bareos-dbcheck, bscan)
-bareos-director                                    Bareos Director daemon
+bareos-barri-cli                                   Bareos Recovery Imager (Barri) command line tool :sup:`1`
+bareos-bconsole                                    Bareos administration console (CLI)
+bareos-client                                      Bareos client Meta-All-In-One package
+bareos-contrib-director-python-plugins             Additional Director Python plugins, not part of the Bareos project
+@@ -120,18 +171,22 @@ bareos-director                                    Bareos Director daemon
 bareos-director-python-plugins-common              Common Python plugins for Bareos Director daemon
 bareos-director-python3-plugin                     Python3 plugin for Bareos Director daemon
 bareos-filedaemon                                  Bareos File daemon (backup and restore client)
-bareos-filedaemon-barri-plugin                     (1) BARRI plugin for Bareos File daemon
+bareos-filedaemon-barri-plugin                     BARRI plugin for Bareos File daemon :sup:`1`
 bareos-filedaemon-grpc-python3-plugin              gRPC Python3 plugin for Bareos File daemon
 bareos-filedaemon-ldap-python-plugin               LDAP Python plugin for Bareos File daemon
 bareos-filedaemon-libcloud-python-plugin           Apache libcloud CEPH plugin for Bareos File daemon
 bareos-filedaemon-mariabackup-python-plugin        Mariabackup python plugin for File daemon
-bareos-filedaemon-mssql-plugin                     (3) Microsoft Windows SQL Server plugin for Bareos File daemon
+bareos-filedaemon-mssql-plugin                     Microsoft Windows SQL Server plugin for Bareos File daemon :sup:`3`
 bareos-filedaemon-percona-xtrabackup-python-plugin Perconna xtrabackup python plugin for Bareos File daemon
 bareos-filedaemon-postgresql-python-plugin         PostgreSQL python plugin for Bareos File daemon
-bareos-filedaemon-proxmox-python-plugin            (1)(2) Proxmox VE plugin for Bareos File daemon
+bareos-filedaemon-proxmox-python-plugin            Proxmox VE plugin for Bareos File daemon :sup:`1`:sup`2`
 bareos-filedaemon-python-plugins-common            Common Python plugins for Bareos File daemon
 bareos-filedaemon-python3-plugin                   Python 3 plugin for Bareos File daemon
 bareos-storage                                     Bareos Storage daemon
@@ -202,9 +201,9 @@ python3-bareos                                     Backup Archiving REcovery Ope
 
 
 .. note::
-   - `(1)` Binaries packages are build only for subscriptions.
-   - `(2)` Binaries packages are available only for Debian
-   - `(3)` available only on Windows platforms.
+   - :sup:`1` Binaries packages are build only for subscriptions.
+   - :sup:`2` Binaries packages are available only for Debian
+   - :sup:`3` available only on Windows platforms.
 
 Not all packages (especially optional backends and plugins) are available on all platforms.
 

@@ -73,7 +73,7 @@ If you don’t want signature comparison, and we cannot imagine why not, you can
 :config:option:`dir/fileset/Include/Options/Signature = XXH128`\  and none will be computed nor
 stored in the catalog.
 
-The verify=pins1 is ignored during the **InitCatalog** Job, but is used during the subsequent
+The :config:option:`dir/fileset/Include/Options/Verify = pins1` is ignored during the **InitCatalog** Job, but is used during the subsequent
 Catalog Jobs to specify what attributes of the files should be compared to those found in the
 catalog. **pins1** is a reasonable set to begin with, but you may want to look at the details
 of these and other options. They can be found in the
