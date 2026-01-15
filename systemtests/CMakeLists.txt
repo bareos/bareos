@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -142,6 +142,18 @@ find_program(
 
 get_filename_component(POSTGRES_BIN_PATH ${PG_CTL} DIRECTORY)
 message(STATUS "POSTGRES_BIN_PATH is ${POSTGRES_BIN_PATH}")
+
+if(HAVE_WIN32)
+  execute_process(
+    COMMAND cygpath "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    OUTPUT_VARIABLE CYGWIN_RUNTIME_OUTPUT_DIRECTORY
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  message(
+    STATUS
+      "Cygwin mapped CMAKE_RUNTIME_OUTPUT_DIRECTORY is '${CYGWIN_RUNTIME_OUTPUT_DIRECTORY}'"
+  )
+endif()
 
 find_program(PERL perl)
 

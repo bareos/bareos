@@ -34,7 +34,7 @@ else
   expected_files_2=22
 fi
 
-sbin/${CMAKE_CONFIG_TYPE}/testfind-testfind -c etc/bareos -f SelfTest >"$selftest_log"
+sbin/testfind-testfind -c etc/bareos -f SelfTest >"$selftest_log"
 
 expect_grep "Number of files examined: $expected_files_1" \
   "$selftest_log" \
@@ -43,7 +43,7 @@ expect_grep "Number of files examined: $expected_files_1" \
 unopenable_dir=${tmp}/data/unopenable_dir
 mkdir -m 000 "$unopenable_dir"
 
-sbin/${CMAKE_CONFIG_TYPE}/testfind-testfind -c etc/bareos -f Wildtest >"$wildcard_log"
+sbin/testfind-testfind -c etc/bareos -f Wildtest >"$wildcard_log"
 
 expect_grep "Number of files examined: $expected_files_2" \
   "$wildcard_log" \
