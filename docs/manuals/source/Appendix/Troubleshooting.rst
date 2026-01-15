@@ -383,7 +383,7 @@ Testing Autochanger and Adapting mtx-changer script
    single: Problem; Autochanger
    single: Problem; mtx-changer
 
-In case, Bareos does not work well with the Autochanger, it is preferable to "hand-test" that the
+In case Bareos does not work well with the Autochanger, it is preferable to "hand-test" that the
 changer works. To do so, we suggest you do the following commands:
 
 Make sure Bareos is not running.
