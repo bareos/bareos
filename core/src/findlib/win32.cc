@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -340,8 +340,11 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord* jcr,
                  lpValue = strchr(lpValue, '\0') + 1) {
               char *s, *d;
 
-              ExpandEnvironmentStrings(lpValue, expandedKey.c_str(),
-                                       expandedKey.size());
+              {
+                auto* expanded = DoShellExpansion(lpValue);
+                PmStrcpy(expandedKey, expanded);
+                free(expanded);
+              }
               Dmsg1(100, "        \"%s\"\n", expandedKey.c_str());
 
               /* Never add single character entries. Probably known buggy DRM
