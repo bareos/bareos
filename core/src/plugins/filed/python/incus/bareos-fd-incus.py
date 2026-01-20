@@ -33,12 +33,11 @@ TIME_MULTIPLIERS = {'s': 1, 'min': 60, 'h': 3_600, 'd': 86_400}
 TAR_BOS = {tarfile.AREGTYPE: bareosfd.FT_REG,      tarfile.REGTYPE:  bareosfd.FT_REG,
            tarfile.LNKTYPE:  bareosfd.FT_LNKSAVED, tarfile.SYMTYPE:  bareosfd.FT_LNK,
            tarfile.CHRTYPE:  bareosfd.FT_SPEC,     tarfile.BLKTYPE:  bareosfd.FT_SPEC,
-           tarfile.DIRTYPE:  bareosfd.FT_DIREND,   tarfile.FIFOTYPE: bareosfd.FT_SPEC,
+           tarfile.DIRTYPE:  bareosfd.FT_REG,      tarfile.FIFOTYPE: bareosfd.FT_SPEC,
            tarfile.CONTTYPE: bareosfd.FT_REG,      tarfile.GNUTYPE_SPARSE: bareosfd.FT_REG}
 
 BOS_TAR = {bareosfd.FT_LNKSAVED: tarfile.LNKTYPE, bareosfd.FT_REGE: tarfile.REGTYPE,
-           bareosfd.FT_REG:      tarfile.REGTYPE, bareosfd.FT_LNK:  tarfile.SYMTYPE,
-           bareosfd.FT_DIREND:   tarfile.DIRTYPE}
+           bareosfd.FT_REG:      tarfile.REGTYPE, bareosfd.FT_LNK:  tarfile.SYMTYPE}
 
 STAT_TAR = {stat.S_IFIFO: tarfile.FIFOTYPE, stat.S_IFCHR: tarfile.CHRTYPE,
             stat.S_IFDIR: tarfile.DIRTYPE,  stat.S_IFBLK: tarfile.BLKTYPE,
@@ -52,40 +51,73 @@ TAR_STAT = {tarfile.AREGTYPE: stat.S_IFREG, tarfile.REGTYPE:  stat.S_IFREG,
 
 TARFILE_MODES = {'bzip2': 'bz2', 'gzip': 'gz', 'lzma': 'xz', 'xz': 'xz', 'zstd': 'zst', 'none': ''}
 
+XATTR_PREFIX = 'SCHILY.xattr.'
 
-def populate_tarinfo(tarinfo, pkt):
+
+def populate_tarinfo(tarinfo, pkt, xattrs):
     """Populate a tarinfo from a Bareos packet"""
-    if pkt.type in [bareosfd.FT_LNKSAVED, bareosfd.FT_LNK, bareosfd.FT_DIREND, bareosfd.FT_SPEC]:
+    if pkt.type in [bareosfd.FT_LNKSAVED, bareosfd.FT_LNK, bareosfd.FT_SPEC]:
         tarinfo.size = 0
     else:
         tarinfo.size = pkt.statp.st_size
     tarinfo.mtime = pkt.statp.st_mtime
     tarinfo.mode = pkt.statp.st_mode % 0o10000
-    if pkt.type == bareosfd.FT_SPEC:
+    if pkt.type in [bareosfd.FT_REG, bareosfd.FT_SPEC]:
         tarinfo.type = STAT_TAR[stat.S_IFMT(pkt.statp.st_mode)]
     else:
         tarinfo.type = BOS_TAR[pkt.type]
-    if pkt.type == bareosfd.FT_LNK:
-        # XXX: we need to support hard links to properly handle containers
+    if pkt.type in [bareosfd.FT_LNKSAVED, bareosfd.FT_LNK]:
         tarinfo.linkname = pkt.olname
     tarinfo.uid = pkt.statp.st_uid
     tarinfo.gid = pkt.statp.st_gid
-    # XXX: we need to support extended attributes to properly handle containers
+    tarinfo.pax_headers = {f'{XATTR_PREFIX}{k}': v for k, v in xattrs.items()}
+
+def restore_tarinfo(tarinfo, pkt, data):
+    """Restore a tarinfo from a Bareos packet and an open data file"""
+    n = pkt.statp.st_ino
+    xattrs = {}
+    header_len = 0
+    while n:
+        name_len = int.from_bytes(data.read(1))
+        name = data.read(name_len).decode('utf-8')
+        value_len = int.from_bytes(data.read(2))
+        value = data.read(value_len).decode('utf-8')
+        xattrs[name] = value
+        header_len += name_len + value_len + 3
+        n -= 1
+    populate_tarinfo(tarinfo, pkt, xattrs)
 
 def populate_pkt(pkt, tarinfo):
-    """Populate a Bareos packet from a tarinfo"""
+    """
+    Populate a Bareos packet from a tarinfo. This returns a bytes header containing additional
+    packed data that need to be restored before the actual data.
+    """
     pkt.statp.st_size = tarinfo.size
     pkt.statp.st_atime = tarinfo.mtime
     pkt.statp.st_ctime = tarinfo.mtime
     pkt.statp.st_mtime = tarinfo.mtime
     pkt.type = TAR_BOS[tarinfo.type]
     pkt.statp.st_mode = tarinfo.mode | TAR_STAT[tarinfo.type]
-    if pkt.type == bareosfd.FT_LNK:
+    if pkt.type in [bareosfd.FT_LNKSAVED, bareosfd.FT_LNK]:
         pkt.link = tarinfo.linkname
+    if tarinfo.type == tarfile.DIRTYPE:
+        # This trick is needed to make AccurateLookup happy
+        pkt.link = pkt.fname
     pkt.statp.st_uid = tarinfo.uid
     pkt.statp.st_gid = tarinfo.gid
-    # XXX: we need to support hard links to properly handle containers
-    # XXX: we need to support extended attributes to properly handle containers
+    # To be extra sure, we filter out non-SCHILY xattrs
+    xattrs = sorted([(k.removeprefix(XATTR_PREFIX), v) for k, v in tarinfo.pax_headers.items()
+                                                       if k.startswith(XATTR_PREFIX)])
+    header = bytearray()
+    for name, value in xattrs:
+        name_b = name.encode('utf-8')[:255]
+        header.extend(len(name_b).to_bytes())
+        header.extend(name_b)
+        value_b = value.encode('utf-8')[:65535]
+        header.extend(len(value_b).to_bytes(2))
+        header.extend(value_b)
+    pkt.statp.st_ino = len(xattrs)
+    return header
 
 
 class LogQueue:
@@ -480,6 +512,12 @@ class ChunkEntry:
     digest: bytes = b''
     size: int = 0
 
+@dataclasses.dataclass(frozen=True, slots=True)
+class BackupEntry:
+    """Backup file queue entry"""
+    data: bytes
+    header: bytearray
+
 
 def fail(msg):
     """Fail with the given message"""
@@ -715,10 +753,11 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             for (offset, field) in enumerate(self.options.hijacked_stat_fields):
                 setattr(savepkt.statp, field,
                         ctypes.c_int64(int.from_bytes(entry.digest[8*offset:8*(offset+1)])).value)
+            header = b''
         else:
-            populate_pkt(savepkt, entry.tarinfo)
+            header = populate_pkt(savepkt, entry.tarinfo)
 
-        self.current_record = entry
+        self.current_record = BackupEntry(entry.data, header)
         return bareosfd.bRC_OK
 
     def is_chunk(self, fname):
@@ -768,22 +807,24 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 self.chunk_io_thread = threading.Thread(target=collect, daemon=True)
                 self.chunk_io_thread.start()
             def writer():
-                self.collectors[fname].add(chunk_id, self.data_pipe.read(True))
+                self.collectors[fname].add(chunk_id, self.data_pipe.read(close=True))
             self.current_writer = writer
             return bareosfd.bRC_OK
         tarinfo = tarfile.TarInfo(fname)
-        populate_tarinfo(tarinfo, restorepkt)
         if self.current_image is not None:
             # The collector is currently streaming into our TAR, so we have to buffer the data.
             # pylint: disable=function-redefined
             def writer():
-                self.queue.put(RegularEntry(fname, self.data_pipe.read(True), tarinfo))
+                with open(self.data_pipe.r, 'rb') as r:
+                    restore_tarinfo(tarinfo, restorepkt, r)
+                    self.queue.put(RegularEntry(fname, r.read(), tarinfo))
             self.current_writer = writer
             return bareosfd.bRC_OK
         # Here, we can bypass the DataPipe buffering and directly connect to the read pipe
         # pylint: disable=function-redefined
         def writer():
             with open(self.data_pipe.r, 'rb') as r:
+                restore_tarinfo(tarinfo, restorepkt, r)
                 self.tar.addfile(tarinfo, r)
         self.current_writer = writer
         return bareosfd.bRC_OK
@@ -875,8 +916,11 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 return bareosfd.bRC_OK
             self.data_pipe.open()
             iop.filedes = self.data_pipe.r
-            threading.Thread(target=self.data_pipe.write, args=(self.current_record.data, True),
-                             daemon=True).start()
+            def writer():
+                if self.current_record.header:
+                    self.data_pipe.write(self.current_record.header)
+                self.data_pipe.write(self.current_record.data, True)
+            threading.Thread(target=writer, daemon=True).start()
             return bareosfd.bRC_OK
 
         # In the case of restores, we expose a write pipe to the core that feeds our queue.
