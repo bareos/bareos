@@ -14,3 +14,19 @@ FileSet {
         ":chunk_size=16MiB"
   }
 }
+
+FileSet {
+  Name = "IncusTestCT"
+  Description = "Test the Incus Plugin with a container."
+  Include {
+    Options {
+      Signature = XXH128
+      Accurate = ipnugsamc
+    }
+   Plugin = "python"
+        ":module_path=@python_plugin_module_src_test_dir@"
+        ":module_name=bareos-fd-incus"
+        ":instance=bareos-test-ct"
+        ":compression=lzma"
+  }
+}
