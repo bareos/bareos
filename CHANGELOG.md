@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2475]
 - rpm: don't fail, if install log file isn't writable [PR #2477]
 
+### Documentation
+- docs: large improvement on several chapters [PR #2507]
+
 ## [25.0.1] - 2025-12-04
 
 ### Changed
@@ -2190,4 +2193,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2477]: https://github.com/bareos/bareos/pull/2477
 [PR #2481]: https://github.com/bareos/bareos/pull/2481
 [PR #2502]: https://github.com/bareos/bareos/pull/2502
+[PR #2507]: https://github.com/bareos/bareos/pull/2507
 [unreleased]: https://github.com/bareos/bareos/tree/master
