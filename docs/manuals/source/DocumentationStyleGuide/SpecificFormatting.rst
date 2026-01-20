@@ -205,8 +205,6 @@ Volume Status
 
 If you want to display a volume status, the following formatting should be used:
 
-* Volume Status
-
 * Volume Status is one of the possible values used in code::
 
    /**
