@@ -48,7 +48,7 @@ on_error()
 trap 'on_error' ERR
 
 echo "Set debug on the Tape-Storage daemon"
-tracefile="$(bin/bconsole <<< "setdebug level=200 trace=1 storage=Tape-0" | awk -F"tracefile=" '/^3000/ {print $2}')"
+tracefile="$(bin/bconsole <<<"setdebug level=200 trace=1 storage=Tape-0" | awk -F"tracefile=" '/^3000/ {print $2}')"
 : >"${tracefile}" # clear tracefile
 
 echo "Label barcodes"
@@ -56,7 +56,7 @@ for i in $(seq ${NUMBER_OF_POOLS}); do
   pool=$((i - 1)) #counts from 0
   for j in $(seq ${NUMBER_OF_TAPES_PER_POOL}); do
     slot=$((j + pool * NUMBER_OF_TAPES_PER_POOL)) #counts from 1
-    bin/bconsole <<< "label barcodes slot=${slot} drive=0 pool=Full-${pool} storage=Tape-0 yes" | grep -E "(OK label|already exists)"
+    bin/bconsole <<<"label barcodes slot=${slot} drive=0 pool=Full-${pool} storage=Tape-0 yes" | grep -E "(OK label|already exists)"
   done
 done
 
@@ -66,7 +66,7 @@ rm -f ${tmp}/bconsole_backup_jobs_spooling
 spooling="spooldata=yes"
 for i in $(seq ${NUMBER_OF_TEST_ROUNDS}); do
   for j in $(seq ${NUMBER_OF_POOLS}); do
-    cat << EOF >> "${tmp}/bconsole_backup_jobs_spooling"
+    cat <<EOF >>"${tmp}/bconsole_backup_jobs_spooling"
 run job=backup-bareos-fd level=Full storage=Tape-0 pool=Full-$((j - 1)) ${spooling} yes
 status dir
 EOF
@@ -77,7 +77,7 @@ EOF
 done
 
 # start all the jobs
-bin/bconsole < ${tmp}/bconsole_backup_jobs_spooling
+bin/bconsole <${tmp}/bconsole_backup_jobs_spooling
 
 DevicesFromConfig=$(sed -n -e 's/^.*Device=//p' ${current_test_directory}/etc/bareos/bareos-sd.d/autochanger/autochanger.conf)
 tapedevices=($DevicesFromConfig)
@@ -101,12 +101,12 @@ run_bconsole
 
 # Redo the backup to check if drive 0 is still being used
 rm -f ${tmp}/bconsole_backup_jobs
-echo "@$out ${runner_tmp}/log-second-backups.out" >> ${tmp}/bconsole_backup_jobs
+echo "@$out ${runner_tmp}/log-second-backups.out" >>${tmp}/bconsole_backup_jobs
 
 spooling="spooldata=yes"
 for i in $(seq ${NUMBER_OF_TEST_ROUNDS}); do
   for j in $(seq ${NUMBER_OF_POOLS}); do
-    cat <<EOF >> ${tmp}/bconsole_backup_jobs
+    cat <<EOF >>${tmp}/bconsole_backup_jobs
 run job=backup-bareos-fd level=Full storage=Tape-0 pool=Full-$((j - 1)) ${spooling} yes
 status dir
 EOF
@@ -116,14 +116,14 @@ EOF
   done
 done
 
-echo "wait" >> ${tmp}/bconsole_backup_jobs
-echo "messages" >> ${tmp}/bconsole_backup_jobs
+echo "wait" >>${tmp}/bconsole_backup_jobs
+echo "messages" >>${tmp}/bconsole_backup_jobs
 
 # start all the jobs again
-bin/bconsole < ${tmp}/bconsole_backup_jobs
+bin/bconsole <${tmp}/bconsole_backup_jobs
 
 #testing for releasing when device is on autoselect=no
-cat <<END_OF_DATA > "${tmp}/bconcmds"
+cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${runner_tmp}/log-label-release-autoselect-no.out
 setdevice storage=Tape-0  device=${tapedevices[0]} autoselect=no
 release storage=Tape-0 drive=0
