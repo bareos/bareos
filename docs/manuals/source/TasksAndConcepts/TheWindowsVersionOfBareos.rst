@@ -28,9 +28,8 @@ Normally, you will install the Windows version of Bareos from the binaries.
 The Windows version of Bareos **winbareos** binary packages are provided
 in the :file:`windows` directory of the Bareos release directory.
 The current Bareos Community Repository is at https://download.bareos.org/current/windows/
-while the Bareos Subscription Repository of Bareos release 22 is at
-https://download.bareos.com/bareos/release/22/windows/.
-Additionally, there are `OPSI <https://opsi.org>`_ packages available in the :file:`windows/opsi/` directory (https://download.bareos.org/current/windows/opsi/ resp. https://download.bareos.com/bareos/release/22/windows/opsi/).
+while the Bareos Subscription Repository of Bareos release 25 is at
+https://download.bareos.com/bareos/release/25/windows/.
 
 This install is standard Windows .exe that runs an install wizard using the NSIS Free Software installer, so if you have already installed Windows software, it should be very familiar to you. Providing you do not already have Bareos installed, the installer installs the binaries and dlls in :file:`C:\\Program Files\\Bareos` and the configuration files in :file:`C:\\ProgramData\\Bareos` (for Windows XP and older:
 :file:`C:\\Documents and Settings\\All Users\\Application Data\\Bareos`).
@@ -186,14 +185,14 @@ The VSS aware File daemon has the letters VSS on the signon line that it produce
 
 ::
 
-   Tibs-fd Version: 1.37.32 (22 July 2005) VSS Windows XP MVS NT 5.1.2600
+   bareos-fd Version: 14.2.6 (07 Dec 2015) VSS Windows XP MVS NT 5.1.2600
 
 the VSS is shown in the line above. This only means that the File daemon is capable of doing VSS not that VSS is turned on for a particular backup. There are two ways of telling if VSS is actually turned on during a backup. The first is to look at the status output for a job, e.g.:
 
 ::
 
    Running Jobs:
-   JobId 1 Job NightlySave.2005-07-23_13.25.45 is running.
+   JobId 1 Job NightlySave.2015-07-23_13.25.45 is running.
        VSS Backup Job started: 23-Jul-05 13:25
        Files=70,113 Bytes=3,987,180,650 Bytes/sec=3,244,247
        Files Examined=75,021
@@ -208,15 +207,14 @@ The second way to know that the job was backed up with VSS is to look at the Job
 
 ::
 
-   23-Jul 13:25 rufus-dir: Start Backup JobId 1, Job=NightlySave.2005-07-23_13.25.45
-   23-Jul 13:26 rufus-sd: Labeled new Volume "TestVolume001" on device "DDS-4" (/dev/nst0)
-   23-Jul 13:26 rufus-sd: Spooling data ...
-   23-Jul 13:26 Tibs: Generate VSS snapshots. Driver="VSS WinXP", Drive(s)="C"
-   23-Jul 13:26 Tibs: VSS Writer: "MSDEWriter", State: 1 (VSS_WS_STABLE)
-   23-Jul 13:26 Tibs: VSS Writer: "Microsoft Writer (Bootable State)", State: 1 (VSS_WS_STABLE)
-   23-Jul 13:26 Tibs: VSS Writer: "WMI Writer", State: 1 (VSS_WS_STABLE)
-   23-Jul 13:26 Tibs: VSS Writer: "Microsoft Writer (Service State)", State: 1 (VSS_WS_STABLE)
-
+   23-Jul 13:25 bareos-dir: Start Backup JobId 1, Job=NightlySave.2015-07-23_13.25.45
+   23-Jul 13:26 bareos-sd: Labeled new Volume "TestVolume001" on device "DDS-4" (/dev/nst0)
+   23-Jul 13:26 bareos-sd: Spooling data ...
+   23-Jul 13:26 bareos-fd: Generate VSS snapshots. Driver="VSS WinXP", Drive(s)="C"
+   23-Jul 13:26 bareos-fd: VSS Writer: "MSDEWriter", State: 1 (VSS_WS_STABLE)
+   23-Jul 13:26 bareos-fd: VSS Writer: "Microsoft Writer (Bootable State)", State: 1 (VSS_WS_STABLE)
+   23-Jul 13:26 bareos-fd: VSS Writer: "WMI Writer", State: 1 (VSS_WS_STABLE)
+   23-Jul 13:26 bareos-fd: VSS Writer: "Microsoft Writer (Service State)", State: 1 (VSS_WS_STABLE)
 
 
 In the above Job Report listing, you see that the VSS snapshot was generated for drive C (if other drives are backed up, they will be listed on the ``Drive(s)="C"`` line. You also see the reports from each of the writer program. Here they all report VSS_WS_STABLE, which means that you will get a consistent snapshot of the data handled by that writer.

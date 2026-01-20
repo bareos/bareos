@@ -828,17 +828,14 @@ The directives within an Options resource may be one of the following:
     d
         report file size decreases
 
-    5
-        compare the MD5 signature
-
     1
-        compare the SHA1 signature
+        compare the signature (independent of the signature algorithm). (The prevously allowed value  `5` is deprecated)
 
     A
         Only for Accurate option, it allows to always backup the file
 
-    A useful set of general options on the :strong:`Level=Catalog`  or :strong:`Level=DiskToCatalog`  verify is :strong:`pins5` i.e. compare permission bits,
-    inodes, number  of links, size, and MD5 changes.
+    A useful set of general options on the :strong:`Level=Catalog`  or :strong:`Level=DiskToCatalog`  verify is :strong:`pins1` i.e. compare permission bits,
+    inodes, number  of links, size, and signature changes.
 
 
 .. config:option:: dir/fileset/include/options/OneFs

@@ -188,7 +188,6 @@ Especially it should be used for:
 * System User (e.g. user **root**, has been ``\user{<name>}`` in Latex))
 * System Group (e.g. group **bareos**, has been ``\group{<name>}`` in Latex))
 * Volume Name (has been ``\volume{<name>}`` in Latex)
-* Volume Status (UPPERCASE) (has been ``\volumestatus{<name>}`` in Latex)
 
 Unless a specific rule for this kind of item exists.
 
@@ -199,6 +198,33 @@ Specific rules exist for:
 * :ref:`DocumentationStyleGuide/SpecificFormatting:Operating System`.
 * :ref:`DocumentationStyleGuide/SpecificFormatting:Environment Variable`.
 * :ref:`Configuration Resource Names <DocumentationStyleGuide/BareosSpecificFormatting/BareosConfiguration:Resource Name>`.
+
+
+Volume Status
+-------------
+
+If you want to display a volume status, the following formatting should be used:
+
+* Volume Status is one of the possible values used in code::
+
+   /**
+    * Keywords (RHS) permitted in Volume status type records
+    * token is set to zero for all items as this is not a mapping but a filter table.
+    * name token
+    */
+    struct s_kw VolumeStatus[]
+       = {{"Unlabeled", 0}, {"Append", 0},   {"Full", 0},     {"Used", 0},
+         {"Recycle", 0},   {"Purged", 0},   {"Cleaning", 0}, {"Error", 0},
+         {"Archive", 0},   {"Disabled", 0}, {NULL, 0}};
+
+
+* Volume Status must be enclosed with backticks::
+
+   ``Append``
+
+The output should look like this:
+
+``Append``
 
 
 

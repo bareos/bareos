@@ -3,9 +3,14 @@
 Verify File Integrity with Bareos
 =================================
 
-:index:`\ <single: Security; Using Bareos to Improve Computer>`\  :index:`\ <single: Verify; File Integrity>`\
+.. index::
+   single: Security; Using Bareos to Improve Computer
+   single: Verify; File Integrity
 
-Since Bareos maintains a catalog of files, their attributes, and either SHA1 or MD5 signatures, it can be an ideal tool for improving computer security. This is done by making a snapshot of your system files with a Verify Job and then checking the current state of your system against the snapshot, on a regular basis (e.g. nightly).
+Since Bareos maintains a catalog of files, their attributes, and their signatures, it can be an
+ideal tool for improving computer security. This is done by making a snapshot of your system files
+with a Verify Job and then checking the current state of your system against the snapshot, on a
+regular basis (e.g. nightly).
 
 The first step is to set up a Verify Job and to run it with:
 
@@ -17,7 +22,9 @@ The first step is to set up a Verify Job and to run it with:
 
 
 
-The InitCatalog level tells Bareos simply to get the information on the specified files and to put it into the catalog. That is your database is initialized and no comparison is done. The InitCatalog is normally run one time manually.
+The **InitCatalog** level tells Bareos simply to get the information on the specified files and
+to put it into the catalog. That is your database is initialized and no comparison is done. The
+**InitCatalog** is normally run one time manually.
 
 Thereafter, you will run a Verify Job on a daily (or whatever) basis with:
 
@@ -29,50 +36,101 @@ Thereafter, you will run a Verify Job on a daily (or whatever) basis with:
 
 
 
-The Level = Catalog level tells Bareos to compare the current state of the files on the Client to the last InitCatalog that is stored in the catalog and to report any differences. See the example below for the format of the output.
+The :config:option:`dir/job/Level = Catalog`\  level tells Bareos to compare the current state
+of the files on the Client to the last **InitCatalog** that is stored in the catalog and to report
+any differences. See the example below for the format of the output.
 
-You decide what files you want to form your "snapshot" by specifying them in a FileSet resource, and normally, they will be system files that do not change, or that only certain features change.
+You decide what files you want to form your "snapshot" by specifying them in a FileSet resource,
+and normally, they will be system files that do not change, or that only certain features change.
 
-Then you decide what attributes of each file you want compared by specifying comparison options on the Include statements that you use in the FileSet resource of your Catalog Jobs.
+Then you decide what attributes of each file you want compared by specifying comparison options on
+the :config:option:`dir/fileset/Include/Options/Verify`\  statements that you use
+in the FileSet resource of your Catalog Jobs.
+
+
 
 The Details
 -----------
 
-:index:`\ <single: Verify; Details>`\
+.. index::
+   single: Verify; Details
 
-In the discussion that follows, we will make reference to the Verify Configuration Example that is included below in the A Verify Configuration Example section. You might want to look it over now to get an idea of what it does.
+In the discussion that follows, we will make reference to the Verify Configuration Example that is
+included below in the :ref:`A Verify configuration example<verify-configuration-example>`\  section.
+You might want to look it over now to get an idea of what it does.
 
-The main elements consist of adding a schedule, which will normally be run daily, or perhaps more often. This is provided by the VerifyCycle Schedule, which runs at 5:05 in the morning every day.
+The main elements consist of adding a schedule, which will normally be run daily, or perhaps more
+often. This is provided by the **VerifyCycle** Schedule, which runs at 5:05 in the morning every day.
 
-Then you must define a Job, much as is done below. We recommend that the Job name contain the name of your machine as well as the word Verify or Check. In our example, we named it MatouVerify. This will permit you to easily identify your job when running it from the Console.
+Then you must define a Job, much as is done below. We recommend that the Job name contain the name
+of your machine as well as the word Verify or Check. In our example, we named it ClientVerify. This
+will permit you to easily identify your job when running it from the Console.
 
-You will notice that most records of the Job are quite standard, but that the FileSet resource contains verify=pins1 option in addition to the standard signature=SHA1 option. If you don’t want SHA1 signature comparison, and we cannot imagine why not, you can drop the signature=SHA1 and none will be computed nor stored in the catalog. Or alternatively, you can use verify=pins5 and signature=MD5, which will use the MD5 hash algorithm. The MD5 hash computes faster than SHA1, but is
-cryptographically less secure.
+You will notice that most records of the Job are quite standard, but that the FileSet resource
+contains :config:option:`dir/fileset/Include/Options/Verify = pins1`\  option in
+addition to the standard :config:option:`dir/fileset/Include/Options/Signature = XXH128`\  option.
+If you don’t want signature comparison, and we cannot imagine why not, you can drop the
+:config:option:`dir/fileset/Include/Options/Signature = XXH128`\  and none will be computed nor
+stored in the catalog.
 
-The verify=pins1 is ignored during the InitCatalog Job, but is used during the subsequent Catalog Jobs to specify what attributes of the files should be compared to those found in the catalog. pins1 is a reasonable set to begin with, but you may want to look at the details of these and other options. They can be found in the :ref:`FileSet Resource <DirectorResourceFileSet>` section of this manual. Briefly, however, the p of the pins1 tells Verify to compare the permissions bits, the i is to
-compare inodes, the n causes comparison of the number of links, the s compares the file size, and the 1 compares the SHA1 checksums (this requires the signature=SHA1 option to have been set also).
+The :config:option:`dir/fileset/Include/Options/Verify = pins1` is ignored during the **InitCatalog** Job, but is used during the subsequent
+Catalog Jobs to specify what attributes of the files should be compared to those found in the
+catalog. **pins1** is a reasonable set to begin with, but you may want to look at the details
+of these and other options. They can be found in the
+:ref:`FileSet Resource <DirectorResourceFileSet>` section of this manual.
+Briefly, however, the **p** of the **pins1** tells Verify to compare the permissions bits, the **i**
+is to compare inodes, the **n** causes comparison of the number of links, the **s** compares the
 
-You must also specify the Client and the Catalog resources for your Verify job, but you probably already have them created for your client and do not need to recreate them, they are included in the example below for completeness.
+.. note::
 
-As mentioned above, you will need to have a FileSet resource for the Verify job, which will have the additional verify=pins1 option. You will want to take some care in defining the list of files to be included in your FileSet. Basically, you will want to include all system (or other) files that should not change on your system. If you select files, such as log files or mail files, which are constantly changing, your automatic Verify job will be constantly finding differences. The objective in
-forming the FileSet is to choose all unchanging important system files. Then if any of those files has changed, you will be notified, and you can determine if it changed because you loaded a new package, or because someone has broken into your computer and modified your files. The example below shows a list of files that I use on my Red Hat 7.3 system. Since I didn’t spend a lot of time working on it, it probably is missing a few important files (if you find one, please send it to me). On the
-other hand, as long as I don’t load any new packages, none of these files change during normal operation of the system.
+   You can use the other signature algorithms supported by Bareos, as described in
+   :config:option:`dir/fileset/Include/Options/Signature`\ , and use **1** in the
+   :config:option:`dir/fileset/Include/Options/Verify`\  this will activate signature
+   comparison with the selected algorithm.
+
+
+You must also specify the Client and the Catalog resources for your Verify job, but you probably
+already have them created for your client and do not need to recreate them, they are included in
+the example below for completeness.
+
+As mentioned above, you will need to have a FileSet resource for the Verify job, which will have
+the additional :config:option:`dir/fileset/Include/Options/Verify = pins1`\  option. You will want
+to take some care in defining the list of files to be included in your FileSet. Basically, you will
+want to include all system (or other) files that should not change on your system. If you select
+files, such as log files or mail files, which are constantly changing, your automatic Verify job
+will be constantly finding differences. The objective in forming the FileSet is to choose all
+unchanging important system files. Then if any of those files has changed, you will be notified,
+and you can determine if it changed because you loaded a new package, or because someone has broken
+into your computer and modified your files.
+The example below shows a list of files that I use on my Red Hat system. Since I didn’t spend a
+lot of time working on it, it probably is missing a few important files (if you find one, please
+send it to me). On the other hand, as long as I don’t load any new packages, none of these files
+change during normal operation of the system.
+
 
 Running the Verify
 ------------------
 
-:index:`\ <single: Verify; Running>`\
+.. index::
+   single: Verify; Running
 
-The first thing you will want to do is to run an InitCatalog level Verify Job. This will initialize the catalog to contain the file information that will later be used as a basis for comparisons with the actual file system, thus allowing you to detect any changes (and possible intrusions into your system).
+The first thing you will want to do is to run an **InitCatalog** level Verify Job. This will
+initialize the catalog to contain the file information that will later be used as a basis for
+comparisons with the actual file system, thus allowing you to detect any changes (and possible
+intrusions into your system).
 
-The easiest way to run the InitCatalog is manually with the console program by simply entering run. You will be presented with a list of Jobs that can be run, and you will choose the one that corresponds to your Verify Job, MatouVerify in this example.
+The easiest way to run the **InitCatalog** is manually with the console program by simply entering
+:bcommand:`run`.
+You will be presented with a list of Jobs that can be run, and you will choose the one that
+corresponds to your Verify Job, ClientVerify in this example.
 
 
 
-::
+.. code-block:: bconsole
+   :caption: run job Verify
 
    The defined Job resources are:
-        1: MatouVerify
+        1: ClientVerify
         2: usersrestore
         3: Filetest
         4: usersave
@@ -84,25 +142,28 @@ Next, the console program will show you the basic parameters of the Job and ask 
 
 
 
-::
+.. code-block:: bconsole
+   :caption: modify job Verify
 
    Run Verify job
-   JobName:  MatouVerify
+   JobName:  ClientVerify
    FileSet:  Verify Set
    Level:    Catalog
-   Client:   MatouVerify
-   Storage:  DLTDrive
+   Client:   ClientVerify
+   Storage:  LTOTape
    Verify Job:
-   Verify List: /tmp/regress/working/MatouVerify.bsr
+   Verify List: /tmp/regress/working/ClientVerify.bsr
    OK to run? (yes/mod/no): mod
 
 
 
-Here, you want to respond mod to modify the parameters because the Level is by default set to Catalog and we want to run an InitCatalog Job. After responding mod, the console will ask:
+Here, you want to respond mod to modify the parameters because the Level is by default set to
+**Catalog** and we want to run an **InitCatalog** Job. After responding :bcommand:`mod`,
+the console will ask:
 
 
-
-::
+.. code-block:: bconsole
+   :caption: Change parameter in job Verify
 
    Parameters to modify:
         1: Level
@@ -122,7 +183,8 @@ you should select number 2 to modify the Level, and it will display:
 
 
 
-::
+.. code-block:: bconsole
+   :caption: Use InitCatalog level in job Verify
 
    Levels:
         1: Initialize Catalog
@@ -138,55 +200,64 @@ Choose item 1, and you will see the final display:
 
 
 
-::
+.. code-block:: bconsole
+   :caption: Confirmation screen for Catalog level
 
    Run Verify job
-   JobName:  MatouVerify
+   JobName:  ClientVerify
    FileSet:  Verify Set
-   Level:    Initcatalog
-   Client:   MatouVerify
-   Storage:  DLTDrive
+   Level:    Catalog
+   Client:   ClientVerify
+   Storage:  LTOTape
    Verify Job:
-   Verify List: /tmp/regress/working/MatouVerify.bsr
+   Verify List: /tmp/regress/working/ClientVerify.bsr
    OK to run? (yes/mod/no): yes
 
 
 
 at which point you respond yes, and the Job will begin.
 
-Thereafter the Job will automatically start according to the schedule you have defined. If you wish to immediately verify it, you can simply run a Verify Catalog which will be the default. No differences should be found.
+Thereafter the Job will automatically start according to the schedule you have defined. If you wish
+to immediately verify it, you can simply run a **Verify Catalog** which will be the default.
+No differences should be found.
 
-To use a previous job, you can add ``jobid=xxx`` option in run command line. It will run the Verify job against the specified job.
+To use a previous job, you can add ``jobid=xxx`` option in run command line. It will run the
+Verify job against the specified job.
 
-::
+.. code-block:: bconsole
+   :caption: Example: running Verify job with previous jobid
 
-   *run jobid=1 job=MatouVerify
+   *run jobid=1 job=ClientVerify
    Run Verify job
-   JobName:     MatouVerify
+   JobName:     ClientVerify
    Level:       Catalog
-   Client:      127.0.0.1-fd
+   Client:      bareos-fd
    FileSet:     Full Set
    Pool:        Default (From Job resource)
    Storage:     File (From Job resource)
-   Verify Job:  MatouVerify.2010-09-08_15.33.33_03
-   Verify List: /tmp/regress/working/MatouVerify.bsr
+   Verify Job:  ClientVerify.2010-09-08_15.33.33_03
+   Verify List: /tmp/regress/working/ClientVerify.bsr
    When:        2010-09-08 15:35:32
    Priority:    10
    OK to run? (yes/mod/no):
 
+
 What To Do When Differences Are Found
 -------------------------------------
 
-:index:`\ <single: Verify; Differences>`\
+.. index::
+   single: Verify; Differences
 
-If you have setup your messages correctly, you should be notified if there are any differences and exactly what they are. For example, below is the email received after doing an update of OpenSSH:
+If you have setup your messages correctly, you should be notified if there are any differences and
+exactly what they are. For example, below is the email received after doing an update of OpenSSH:
 
 
 
-::
+.. code-block:: bconsole
+   :caption: Example: job log of verify job with differences
 
-   HeadMan: Start Verify JobId 83 Job=RufusVerify.2002-06-25.21:41:05
-   HeadMan: Verifying against Init JobId 70 run 2002-06-21 18:58:51
+   HeadMan: Start Verify JobId 83 Job=ClientVerify.2022-06-25.21:41:05
+   HeadMan: Verifying against Init JobId 70 run 2022-06-21 18:58:51
    HeadMan: File: /etc/pam.d/sshd
    HeadMan:       st_ino   differ. Cat: 4674b File: 46765
    HeadMan: File: /etc/rc.d/init.d/sshd
@@ -240,48 +311,62 @@ If you have setup your messages correctly, you should be notified if there are a
    HeadMan:       st_ino   differ. Cat: 5e35d File: 5e96a
    HeadMan:       st_size  differ. Cat: 139272 File: 151560
    HeadMan:       SHA1 differs.
-   HeadMan: 25-Jun-2002 21:41
+   HeadMan: 25-Jun-2022 21:41
    JobId:                  83
-   Job:                    RufusVerify.2002-06-25.21:41:05
+   Job:                    ClientVerify.2022-06-25.21:41:05
    FileSet:                Verify Set
    Verify Level:           Catalog
-   Client:                 RufusVerify
-   Start time:             25-Jun-2002 21:41
-   End time:               25-Jun-2002 21:41
+   Client:                 ClientVerify
+   Start time:             25-Jun-2022 21:41
+   End time:               25-Jun-2022 21:41
    Files Examined:         4,258
    Termination:            Verify Differences
 
 
 
-At this point, it was obvious that these files were modified during installation of the RPMs. If you want to be super safe, you should run a Verify Level=Catalog immediately before installing new software to verify that there are no differences, then run a Verify Level=InitCatalog immediately after the installation.
+At this point, it was obvious that these files were modified during installation of the RPMs.
+If you want to be super safe, you should run a Verify
+:config:option:`dir/job/Level=Catalog`\  immediately before installing new software to verify that
+there are no differences, then run a Verify :config:option:`dir/job/Level=InitCatalog`\  immediately
+after the installation.
 
-To keep the above email from being sent every night when the Verify Job runs, we simply re-run the Verify Job setting the level to InitCatalog (as we did above in the very beginning). This will re-establish the current state of the system as your new basis for future comparisons. Take care that you don’t do an InitCatalog after someone has placed a Trojan horse on your system!
+To keep the above email from being sent every night when the Verify Job runs, we simply re-run the
+Verify Job setting the level to **InitCatalog** (as we did above in the very beginning). This will
+re-establish the current state of the system as your new basis for future comparisons. Take care
+that you don’t do an **InitCatalog** after someone has placed a Trojan horse on your system!
 
-If you have included in your FileSet a file that is changed by the normal operation of your system, you will get false matches, and you will need to modify the FileSet to exclude that file (or not to Include it), and then re-run the InitCatalog.
+If you have included in your FileSet a file that is changed by the normal operation of your system,
+you will get false matches, and you will need to modify the FileSet to exclude that file (or not to
+Include it), and then re-run the **InitCatalog**.
 
-The FileSet that is shown below is what I use on my Red Hat 7.3 system. With a bit more thought, you can probably add quite a number of additional files that should be monitored.
+The FileSet that is shown below is what I use on my Red Hat system. With a bit more thought, you can
+probably add quite a number of additional files that should be monitored.
+
+
+.. _verify-configuration-example:
 
 A Verify Configuration Example
 ------------------------------
 
-:index:`\ <single: Verify; Example>`\
+.. index::
+   single: Verify; Example
 
 
-
-::
+.. code-block:: bareosconfig
+   :caption: Verify Configuration Example
 
    Schedule {
      Name = "VerifyCycle"
      Run = Level=Catalog sun-sat at 5:05
    }
    Job {
-     Name = "MatouVerify"
+     Name = "ClientVerify"
      Type = Verify
      Level = Catalog                     # default level
-     Client = MatouVerify
+     Client = ClientVerify
      FileSet = "Verify Set"
      Messages = Standard
-     Storage = DLTDrive
+     Storage = LTOTape
      Pool = Default
      Schedule = "VerifyCycle"
    }
@@ -300,39 +385,33 @@ A Verify Configuration Example
        File = /bin
        File = /sbin
        File = /usr/bin
+       File = /usr/sbin
        File = /lib
+       File = /lib64
+       File = /usr/lib64
        File = /root/.ssh
        File = /home/user/.ssh
-       File = /var/named
        File = /etc/sysconfig
        File = /etc/ssh
        File = /etc/security
        File = /etc/exports
        File = /etc/rc.d/init.d
+       File = /etc/systemd
        File = /etc/sendmail.cf
        File = /etc/sysctl.conf
+       File = /etc/sysctl.d
        File = /etc/services
-       File = /etc/xinetd.d
        File = /etc/hosts.allow
        File = /etc/hosts.deny
        File = /etc/hosts
        File = /etc/modules.conf
-       File = /etc/named.conf
        File = /etc/pam.d
        File = /etc/resolv.conf
      }
      Exclude = { }
    }
    Client {
-     Name = MatouVerify
-     Address = lmatou
-     Catalog = Bareos
-     Password = "a very secure password"
-     File Retention = 80d                # 80 days
-     Job Retention = 1y                  # one year
-     AutoPrune = yes                     # Prune expired Jobs/Files
-   }
-   Catalog {
-     Name = Bareos
-     dbname = verify; user = bareos; password = ""
+     Name = ClientVerify
+     Address = bareos-fd.example.com
+     Password = "PASSWORD"
    }
