@@ -59,12 +59,11 @@ END_OF_DATA
 run_bconsole "${runner_tmp}/bconcmds"
 
 echo "Set debug on the Tape-Storage daemon and dir"
-tracefile="$(bin/bconsole <<< "setdebug level=250 trace=1 storage=Tape-0" | awk -F"tracefile=" '/^3000/ {print $2}')"
+tracefile="$(bin/bconsole <<<"setdebug level=250 trace=1 storage=Tape-0" | awk -F"tracefile=" '/^3000/ {print $2}')"
 : >"${tracefile}" # clear tracefile
 
-tracefile="$(bin/bconsole <<< "setdebug level=250 trace=1 dir" | awk -F"tracefilename=" '/tracefilename=/ {print $2}')"
+tracefile="$(bin/bconsole <<<"setdebug level=250 trace=1 dir" | awk -F"tracefilename=" '/tracefilename=/ {print $2}')"
 : >"${tracefile}" # clear tracefile
-
 
 echo "Label barcodes"
 for i in $(seq ${NUMBER_OF_POOLS}); do
@@ -98,10 +97,11 @@ echo "messages" >>"${runner_tmp}/bconsole_backup_jobs"
 run_bconsole "${runner_tmp}/bconsole_backup_jobs"
 
 # prepare the restore
-list_of_jobids=$(bin/bconsole <<< ".api 2
+list_of_jobids=$(
+  bin/bconsole <<<".api 2
 list jobs job=backup-bareos-fd jobstatus=T,W
 " | awk -F ":" '/^.*"jobid":/ {gsub("\"","",$2);gsub(" ","",$2);gsub(",","",$2);print $2}'
-  )
+)
 
 if [ -z "${list_of_jobids}" ]; then
   echo "no jobs found for restore"
@@ -109,20 +109,20 @@ if [ -z "${list_of_jobids}" ]; then
   exit 1
 fi
 # Write list of jobids for next use
-echo "${list_of_jobids}" > "${tmp}/list_of_jobids"
+echo "${list_of_jobids}" >"${tmp}/list_of_jobids"
 
-# Use restore with jobid  
+# Use restore with jobid
 rm -f "${runner_tmp}/bconsole_restore_jobs"
-echo "@out ${runner_tmp}/bconsole_restore_jobs.out" >> "${runner_tmp}/bconsole_restore_jobs"
+echo "@out ${runner_tmp}/bconsole_restore_jobs.out" >>"${runner_tmp}/bconsole_restore_jobs"
 
 for j in ${list_of_jobids}; do
-  cat << EOF >> "${runner_tmp}/bconsole_restore_jobs"
+  cat <<EOF >>"${runner_tmp}/bconsole_restore_jobs"
 restore jobid=${j} where=${tmp}/bareos_restores_${j} all done yes
 EOF
 done
 
-echo "wait" >> "${runner_tmp}/bconsole_restore_jobs"
-echo "messages" >> "${runner_tmp}/bconsole_restore_jobs"
+echo "wait" >>"${runner_tmp}/bconsole_restore_jobs"
+echo "messages" >>"${runner_tmp}/bconsole_restore_jobs"
 
 # start all the restore jobs
 run_bconsole "${runner_tmp}/bconsole_restore_jobs"

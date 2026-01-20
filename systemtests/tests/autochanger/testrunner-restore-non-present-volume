@@ -62,7 +62,8 @@ release_all_devices
 jobid_to_restore=$(head -n 1 "${tmp}/list_of_jobids")
 
 #determine volume to eject
-volume_to_eject=$(bin/bconsole <<< ".api 2
+volume_to_eject=$(
+  bin/bconsole <<<".api 2
 list volumes jobid=${jobid_to_restore}
 " | awk -F " " '/^.*"volumename":/ {gsub("\"","",$2);gsub(" ","",$2);gsub(",","",$2);print $2}'
 )
@@ -80,22 +81,21 @@ END_OF_DATA
 run_bconsole
 
 # Add check ejected volume has slot=0
-if ! awk -F " " '/^.*"slot":/ {gsub("\"","",$2);gsub(" ","",$2);gsub(",","",$2);print $2}'\
-     "${runner_tmp}/update_volume_to_slot_0.out"; then
-	echo "Volume ${volume_to_eject} has still a slot number (${slot})" >&2
-	exit 1
+if ! awk -F " " '/^.*"slot":/ {gsub("\"","",$2);gsub(" ","",$2);gsub(",","",$2);print $2}' \
+  "${runner_tmp}/update_volume_to_slot_0.out"; then
+  echo "Volume ${volume_to_eject} has still a slot number (${slot})" >&2
+  exit 1
 fi
 
-
-if ! awk -F " " '/^.*"inchanger":/ {gsub("\"","",$2);gsub(" ","",$2);gsub(",","",$2);print $2}'\
-    "${runner_tmp}/update_volume_to_slot_0.out"; then
-	echo "Volume ${volume_to_eject} has still inchanger set (${inchanger})" >&2
-	exit 1
+if ! awk -F " " '/^.*"inchanger":/ {gsub("\"","",$2);gsub(" ","",$2);gsub(",","",$2);print $2}' \
+  "${runner_tmp}/update_volume_to_slot_0.out"; then
+  echo "Volume ${volume_to_eject} has still inchanger set (${inchanger})" >&2
+  exit 1
 fi
 
 echo "Set debug on the Tape-Storage daemon"
-tracefile="$(bin/bconsole <<< "setdebug level=200 trace=1 storage=Tape-0"\
- | awk -F"tracefile=" '/^3000/ {print $2}')"
+tracefile="$(bin/bconsole <<<"setdebug level=200 trace=1 storage=Tape-0" \
+  | awk -F"tracefile=" '/^3000/ {print $2}')"
 : >"${tracefile}" # clear tracefile
 
 echo "Run restore"
@@ -116,26 +116,25 @@ run_bconsole
 # echo "export joblog for last restore"
 last_jobid=$(awk -F"=" '/Job queued. JobId=/ {print $2}' "${runner_tmp}/restore_non_present_volume.out")
 
-
 # To finish the test we have to unvault the ejected volume
 # but not before getting the mount request
 is_mount_requested=0
 max_runs=120
 while [ ${is_mount_requested} -eq 0 ]; do
-	sleep 0.5
-	echo "check mount request message"
-	if [ $(bin/bconsole <<< ".status dir running" | grep -c "is waiting for a mount request") -eq 1 ]; then
-		echo "check mount request found"
-		bin/bconsole <<< "list joblog jobid=${last_jobid}" > "${runner_tmp}/jobid-${last_jobid}.log"
-		drive_to_mount=$(awk '/ 3301 Issuing autochanger/ {gsub("\"","",$11);print "drive="$11}' "${runner_tmp}/jobid-${last_jobid}.log")
-		is_mount_requested=1
-	fi
-	# Safety exit in case somehting unexpected happens
-	max_runs=$((max_runs - 1))
-	if [ ${max_runs} -le 0 ]; then
-		echo "Timeout waiting for mount request" >&2
-		exit 1
-	fi
+  sleep 0.5
+  echo "check mount request message"
+  if [ $(bin/bconsole <<<".status dir running" | grep -c "is waiting for a mount request") -eq 1 ]; then
+    echo "check mount request found"
+    bin/bconsole <<<"list joblog jobid=${last_jobid}" >"${runner_tmp}/jobid-${last_jobid}.log"
+    drive_to_mount=$(awk '/ 3301 Issuing autochanger/ {gsub("\"","",$11);print "drive="$11}' "${runner_tmp}/jobid-${last_jobid}.log")
+    is_mount_requested=1
+  fi
+  # Safety exit in case somehting unexpected happens
+  max_runs=$((max_runs - 1))
+  if [ ${max_runs} -le 0 ]; then
+    echo "Timeout waiting for mount request" >&2
+    exit 1
+  fi
 done
 
 echo "Run update slots and mount volume ${volume_to_eject} into storage=Tape-0 and ${drive_to_mount}"
@@ -151,20 +150,20 @@ END_OF_DATA
 run_bconsole
 
 # Regenerate joblog after job completed
-bin/bconsole <<< "list joblog jobid=${last_jobid}" > "${runner_tmp}/jobid-${last_jobid}.log"
+bin/bconsole <<<"list joblog jobid=${last_jobid}" >"${runner_tmp}/jobid-${last_jobid}.log"
 
 # What we want to found in the log
 expect_grep "No slot defined in catalog (slot=0)" \
-	"${runner_tmp}/jobid-${last_jobid}.log" \
-	"no 'no slot defined' found in log"
+  "${runner_tmp}/jobid-${last_jobid}.log" \
+  "no 'no slot defined' found in log"
 
 expect_grep "Cartridge change or \"update slots\" may be required." \
-	"${runner_tmp}/jobid-${last_jobid}.log" \
-	"no cartridge change message found in log"
+  "${runner_tmp}/jobid-${last_jobid}.log" \
+  "no cartridge change message found in log"
 
 expect_grep "Please mount read Volume \"${volume_to_eject}\" for:" \
-	"${runner_tmp}/jobid-${last_jobid}.log" \
-	"no 'please mount volume' message found in log"
+  "${runner_tmp}/jobid-${last_jobid}.log" \
+  "no 'please mount volume' message found in log"
 
 if [ ${estat} -ne 0 ]; then
   exit ${estat}
@@ -172,12 +171,12 @@ fi
 
 # What we absolutely not want to see in the log
 expect_not_grep "Error: stored/block.cc:i.* Read error on fd" \
-	"${runner_tmp}/jobid-${last_jobid}.log" \
-	"stored/block.cc errors found in log"
+  "${runner_tmp}/jobid-${last_jobid}.log" \
+  "stored/block.cc errors found in log"
 
 expect_not_grep "Warning: stored/acquire.cc:.* Read acquire:" \
-	"${runner_tmp}/jobid-${last_jobid}.log" \
-	"stored/acquire.cc errors found in log"
+  "${runner_tmp}/jobid-${last_jobid}.log" \
+  "stored/acquire.cc errors found in log"
 
 if [ ${estat} -ne 0 ]; then
   exit ${estat}

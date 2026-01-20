@@ -37,23 +37,23 @@ fi
 
 release_all_devices()
 {
-#release all drives
-# Total of drives ${#tapedevices[@]}
-d=0
-cat <<END_OF_DATA >"${runner_tmp}/bconcmd_release_all_devices"
+  #release all drives
+  # Total of drives ${#tapedevices[@]}
+  d=0
+  cat <<END_OF_DATA >"${runner_tmp}/bconcmd_release_all_devices"
 @$out ${runner_tmp}/release_all_devices.out
 END_OF_DATA
 
-for d in $(seq ${#tapedevices[@]}); do
-  echo "release storage=Tape-0 drive=${d}" >> \
+  for d in $(seq ${#tapedevices[@]}); do
+    echo "release storage=Tape-0 drive=${d}" >> \
       "${runner_tmp}/bconcmd_release_all_devices"
-done
+  done
 
-cat <<END_OF_DATA >>"${runner_tmp}/bconcmd_release_all_devices"
+  cat <<END_OF_DATA >>"${runner_tmp}/bconcmd_release_all_devices"
 wait
 messages
 END_OF_DATA
 
-run_bconsole "${runner_tmp}/bconcmd_release_all_devices"
+  run_bconsole "${runner_tmp}/bconcmd_release_all_devices"
 
 }
