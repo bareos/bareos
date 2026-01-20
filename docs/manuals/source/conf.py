@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -344,6 +344,8 @@ linkcheck_ignore = [
     r"https://github\.com/bareos/bareos/pull/\d+",
     "https://www.glusterfs.org",  # failing too often
     "https://www.sphinx-doc.org/en/1.7/intro.html#",
+    "https://www.snia.org/ndmp",  # cloudflare protected
+    "https://www.dell.com/support/*",  # client protected
 ]
 # linkcheck_auth = [
 #  ('https://foo\.yourcompany\.com/.+', ('johndoe', 'secret')),

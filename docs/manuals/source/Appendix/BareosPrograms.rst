@@ -704,19 +704,19 @@ which produced the following output:
    bscan: bscan.c:632 Created Media record for Volume: TestVolume1
    bscan: bscan.c:298 Media type "DDS-4" is OK.
    bscan: bscan.c:307 VOL_LABEL: OK for Volume: TestVolume1
-   bscan: bscan.c:693 Created Client record for Client: Rufus
+   bscan: bscan.c:693 Created Client record for Client: bareos-fd
    bscan: bscan.c:769 Created new JobId=1 record for original JobId=2
    bscan: bscan.c:717 Created FileSet record "Users Files"
    bscan: bscan.c:819 Updated Job termination record for new JobId=1
    bscan: bscan.c:905 Created JobMedia record JobId 1, MediaId 1
    bscan: Got EOF on device /dev/nst0
-   bscan: bscan.c:693 Created Client record for Client: Rufus
+   bscan: bscan.c:693 Created Client record for Client: bareos-fd
    bscan: bscan.c:769 Created new JobId=2 record for original JobId=3
    bscan: bscan.c:708 Fileset "Users Files" already exists.
    bscan: bscan.c:819 Updated Job termination record for new JobId=2
    bscan: bscan.c:905 Created JobMedia record JobId 2, MediaId 1
    bscan: Got EOF on device /dev/nst0
-   bscan: bscan.c:693 Created Client record for Client: Rufus
+   bscan: bscan.c:693 Created Client record for Client: bareos-fd
    bscan: bscan.c:769 Created new JobId=3 record for original JobId=4
    bscan: bscan.c:708 Fileset "Users Files" already exists.
    bscan: bscan.c:819 Updated Job termination record for new JobId=3
@@ -729,7 +729,7 @@ The key points to note are that bscan prints a line when each major record is cr
 
 In the case of a Job record, the new JobId will not normally be the same as the original Jobid. For example, for the first JobId above, the new JobId is 1, but the original JobId is 2. This is nothing to be concerned about as it is the normal nature of databases. bscan will keep everything straight.
 
-Although :command:`bscan` claims that it created a Client record for Client: Rufus three times, it was actually only created the first time. This is normal.
+Although :command:`bscan` claims that it created a Client record for Client: bareos-fd three times, it was actually only created the first time. This is normal.
 
 You will also notice that it read an end of file after each Job (Got EOF on device ...). Finally the last line gives the total statistics for the bscan.
 
