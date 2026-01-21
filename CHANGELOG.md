@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2461]
 - rpm: don't fail, if install log file isn't writable [PR #2473]
 - systemtests: autochanger add testrunner-restore-non-present-volume [PR #2476]
+- core/filed: fix spurious wakeups race condition in filed. [PR #2508]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2193,4 +2194,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2479]: https://github.com/bareos/bareos/pull/2479
 [PR #2483]: https://github.com/bareos/bareos/pull/2483
 [PR #2501]: https://github.com/bareos/bareos/pull/2501
+[PR #2508]: https://github.com/bareos/bareos/pull/2508
 [unreleased]: https://github.com/bareos/bareos/tree/master
