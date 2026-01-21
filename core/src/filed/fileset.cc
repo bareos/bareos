@@ -268,7 +268,13 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
           if (j < (int)sizeof(fo->AccurateOpts) - 1) { j++; }
         }
         fo->AccurateOpts[j] = 0;
-        p -= 1; /* fix double increment */
+        // skip ':' but do not skip '\0'
+        // p currently points at one of them
+        if (*p == '\0') {
+          // we need to undo the increment, so that the for loop does not
+          // advance past the string
+          p -= 1;
+        }
         break;
       case 'c':
         SetBit(FO_CHKCHANGES, fo->flags);
@@ -396,7 +402,13 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
         fo->StripPath = atoi(strip);
         SetBit(FO_STRIPPATH, fo->flags);
         Dmsg2(100, "strip=%s StripPath=%d\n", strip, fo->StripPath);
-        p -= 1; /* fix double increment */
+        // skip ':' but do not skip '\0'
+        // p currently points at one of them
+        if (*p == '\0') {
+          // we need to undo the increment, so that the for loop does not
+          // advance past the string
+          p -= 1;
+        }
         break;
       case 'p': /* Use portable data format */
         SetBit(FO_PORTABLE, fo->flags);
@@ -446,7 +458,13 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
         }
         fo->VerifyOpts[j] = 0;
 
-        p -= 1; /* fix double increment */
+        // skip ':' but do not skip '\0'
+        // p currently points at one of them
+        if (*p == '\0') {
+          // we need to undo the increment, so that the for loop does not
+          // advance past the string
+          p -= 1;
+        }
         break;
       case 'W':
         SetBit(FO_ENHANCEDWILD, fo->flags);
@@ -502,7 +520,13 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
           Emsg1(M_ERROR, 0, T_("Unparseable size option: %s\n"), size);
         }
 
-        p -= 1; /* fix double increment */
+        // skip ':' but do not skip '\0'
+        // p currently points at one of them
+        if (*p == '\0') {
+          // we need to undo the increment, so that the for loop does not
+          // advance past the string
+          p -= 1;
+        }
         break;
       default:
         Emsg1(M_ERROR, 0, T_("Unknown include/exclude option: %c\n"), *p);
