@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -346,30 +346,27 @@ struct terminal {
 };
 };  // namespace terminal
 
-
 namespace progressbar {
+
+std::string format_h_m_s(std::chrono::nanoseconds dur)
+{
+  auto hours = duration_cast<std::chrono::hours>(dur);
+  auto minutes = duration_cast<std::chrono::minutes>(dur - hours);
+  auto seconds = duration_cast<std::chrono::seconds>(dur - hours - minutes);
+
+  return libbareos::format("{:02}:{:02}:{:02}", hours.count(), minutes.count(),
+                           seconds.count());
+}
+
 
 std::string format_time(std::chrono::nanoseconds elapsed,
                         std::size_t done,
                         std::size_t total)
 {
-  auto format_h_m_s = [](std::chrono::nanoseconds dur) {
-    auto seconds = duration_cast<std::chrono::seconds>(dur);
-    auto minutes = duration_cast<std::chrono::minutes>(dur - seconds);
-    auto hours = duration_cast<std::chrono::hours>(dur - minutes - seconds);
-
-    return libbareos::format("{:02}:{:02}:{:02}", hours.count(),
-                             minutes.count(), seconds.count());
-  };
-
   if (done != 0) {
-    // elapsed time = elapsed ~ done
-    // estimated total time = total/done * elapsed ~ total/done * done = total
-    // estimated leftover time = estimated total time - elapsed time
-    //                         = (total/done - 1) * elapsed time
-    //                         = [(total - done) * elapsed time] / done
-
-    auto leftover = ((total - done) * elapsed) / done;
+    double ratio = static_cast<double>(total) / done - 1.0;
+    auto leftover
+        = std::chrono::duration_cast<std::chrono::nanoseconds>(ratio * elapsed);
 
     return libbareos::format("[{}/{}]", format_h_m_s(elapsed),
                              format_h_m_s(leftover));
