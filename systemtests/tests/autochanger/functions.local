@@ -1,0 +1,59 @@
+#!/bin/bash
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -u
+
+. ./environment
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+# Don't fail on setup
+if [ -f ${current_test_directory}/etc/bareos/bareos-sd.d/autochanger/autochanger.conf ]; then
+  DevicesFromConfig=$(sed -n -e 's/^.*Device=//p' ${current_test_directory}/etc/bareos/bareos-sd.d/autochanger/autochanger.conf)
+  tapedevices=($DevicesFromConfig)
+else
+  DevicesFromConfig=""
+  tapedevices=()
+fi
+
+release_all_devices()
+{
+  #release all drives
+  # Total of drives ${#tapedevices[@]}
+  d=0
+  cat <<END_OF_DATA >"${runner_tmp}/bconcmd_release_all_devices"
+@$out ${runner_tmp}/release_all_devices.out
+END_OF_DATA
+
+  for d in $(seq ${#tapedevices[@]}); do
+    echo "release storage=Tape-0 drive=${d}" >> \
+      "${runner_tmp}/bconcmd_release_all_devices"
+  done
+
+  cat <<END_OF_DATA >>"${runner_tmp}/bconcmd_release_all_devices"
+wait
+messages
+END_OF_DATA
+
+  run_bconsole "${runner_tmp}/bconcmd_release_all_devices"
+
+}
