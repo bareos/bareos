@@ -24,6 +24,7 @@
 #include <chrono>
 #include <optional>
 #include <iostream>
+#include <algorithm>
 
 #include "format.h"
 
@@ -526,26 +527,32 @@ struct logger : public GenericLogger {
     progress_bar& operator=(progress_bar const&) = delete;
     progress_bar& operator=(progress_bar&&) = delete;
 
-    std::string speed_to_text(double bytes_per_sec)
+    static std::string format_size(double size)
     {
       static constexpr std::pair<double, std::string_view> breakpoints[] = {
-          {1 << 30, "GiB"},
-          {1 << 20, "MiB"},
-          {1 << 10, "KiB"},
+          {0x1p60, "Ei"}, {0x1p50, "Pi"}, {0x1p40, "Ti"},
+          {0x1p30, "Gi"}, {0x1p20, "Mi"}, {0x1p10, "Ki"},
       };
 
-      std::string_view unit = "B";
-      double speed = bytes_per_sec;
+      auto found
+          = std::find_if(std::begin(breakpoints), std::end(breakpoints),
+                         [&size](auto pair) { return pair.first < size; });
 
-      for (auto& b : breakpoints) {
-        if (bytes_per_sec > b.first) {
-          speed = bytes_per_sec / b.first;
-          unit = b.second;
-          break;
-        }
+      if (found != std::end(breakpoints)) {
+        return libbareos::format("{:.2f}{}B", size / found->first,
+                                 found->second);
+      } else {
+        return libbareos::format("{:.2f}B", size);
       }
+    }
 
-      return libbareos::format("{:.2f} {}/s", speed, unit);
+    static std::string format_speed(double bytes_per_sec)
+    {
+      auto result = format_size(bytes_per_sec);
+
+      result += "/s";
+
+      return result;
     }
 
     void progress(std::size_t amount)
@@ -560,7 +567,8 @@ struct logger : public GenericLogger {
       if (current != goal) {
         if (this_update - last_update < std::chrono::seconds(1)) { return; }
         last_update = this_update;
-        suffix = speed_to_text(throughput.compute_average_per_sec());
+        suffix = format_size(current) + " "
+                 + format_speed(throughput.compute_average_per_sec());
         erase_bar();
         print();
       }
@@ -591,6 +599,21 @@ struct logger : public GenericLogger {
     {
       erase_bar();
       suffix = "Done";
+      auto time_elapsed = last_update - start_time;
+
+      if (time_elapsed.count() == 0) {
+        suffix = format_size(current) + " ---B/s";
+      } else {
+        double seconds = static_cast<double>(time_elapsed.count())
+                         / std::chrono::duration_cast<std::chrono::nanoseconds>(
+                               std::chrono::seconds(1))
+                               .count();
+
+        auto speed = current / seconds;
+        suffix = format_size(current) + " " + format_speed(speed);
+      }
+
+
       print();
       term.write("\n");
     }
