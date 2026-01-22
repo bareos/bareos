@@ -53,7 +53,7 @@ struct arr_end {};
 
 static inline std::pair<std::string, int> format(const str& s)
 {
-  return {s, 0};
+  return {"\"" + s + "\"", 0};
 }
 
 static inline std::pair<std::string, int> format(bool s)
@@ -242,16 +242,50 @@ class ConfigurationParser {
 
  private:
   std::vector<conf_proto> shape;
+  bool insert_into_shape{true};
 
  public:
-  void PushString(std::string_view v) { shape.push_back(proto::str{v}); }
-  void PushB(bool b) { shape.push_back(b); }
-  void PushU(int64_t i) { shape.push_back(i); }
-  void PushI(uint64_t i) { shape.push_back(i); }
-  void PushArray() { shape.push_back(proto::arr_begin{}); }
-  void PopArray() { shape.push_back(proto::arr_end{}); }
-  void PushObject() { shape.push_back(proto::obj_begin{}); }
-  void PopObject() { shape.push_back(proto::obj_end{}); }
+  void EnterPass2() { insert_into_shape = false; }
+  void PushString(std::string_view v)
+  {
+    if (!insert_into_shape) { return; }
+    shape.push_back(proto::str{v});
+  }
+  void PushB(bool b)
+  {
+    if (!insert_into_shape) { return; }
+    shape.push_back(b);
+  }
+  void PushU(int64_t i)
+  {
+    if (!insert_into_shape) { return; }
+    shape.push_back(i);
+  }
+  void PushI(uint64_t i)
+  {
+    if (!insert_into_shape) { return; }
+    shape.push_back(i);
+  }
+  void PushArray()
+  {
+    if (!insert_into_shape) { return; }
+    shape.push_back(proto::arr_begin{});
+  }
+  void PopArray()
+  {
+    if (!insert_into_shape) { return; }
+    shape.push_back(proto::arr_end{});
+  }
+  void PushObject()
+  {
+    if (!insert_into_shape) { return; }
+    shape.push_back(proto::obj_begin{});
+  }
+  void PopObject()
+  {
+    if (!insert_into_shape) { return; }
+    shape.push_back(proto::obj_end{});
+  }
 
 
  public:

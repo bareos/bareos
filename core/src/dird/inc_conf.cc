@@ -741,7 +741,7 @@ static void StoreOptionsRes(ConfigurationParser* p,
     scan_err1(lc, T_("Expecting open brace. Got %s"), lc->str);
     return;
   }
-  p->PushObject();
+  p->PushArray();
 
   if (pass == 1) { SetupCurrentOpts(); }
 
@@ -755,7 +755,10 @@ static void StoreOptionsRes(ConfigurationParser* p,
     bool found = false;
     for (int i = 0; options_items[i].name; i++) {
       if (Bstrcasecmp(options_items[i].name, lc->str)) {
+        p->PushObject();
+        p->PushString("type");
         p->PushString(lc->str);
+        p->PushString("value");
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
           scan_err1(lc, T_("expected an equals, got: %s"), lc->str);
@@ -789,6 +792,7 @@ static void StoreOptionsRes(ConfigurationParser* p,
             break;
         }
         found = true;
+        p->PopObject();
         break;
       }
     }
@@ -797,7 +801,7 @@ static void StoreOptionsRes(ConfigurationParser* p,
       return;
     }
   }
-  p->PopObject();
+  p->PopArray();
 
   if (pass == 1) { ApplyDefaultValuesForUnsetOptions(default_values); }
 }
@@ -971,6 +975,7 @@ static void StoreNewinc(ConfigurationParser* p,
   res_fs->new_include = true;
   int token;
   bool has_options = false;
+  p->PushArray();
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
     if (token != BCT_IDENTIFIER) {
@@ -981,7 +986,10 @@ static void StoreNewinc(ConfigurationParser* p,
     for (int i = 0; newinc_items[i].name; i++) {
       bool options = Bstrcasecmp(lc->str, "options");
       if (Bstrcasecmp(newinc_items[i].name, lc->str)) {
+        p->PushObject();
+        p->PushString("type");
         p->PushString(lc->str);
+        p->PushString("value");
         if (!options) {
           token = LexGetToken(lc, BCT_SKIP_EOL);
           if (token != BCT_EQUALS) {
@@ -1007,6 +1015,8 @@ static void StoreNewinc(ConfigurationParser* p,
             break;
         }
         found = true;
+
+        p->PopObject();
         break;
       }
     }
@@ -1015,6 +1025,7 @@ static void StoreNewinc(ConfigurationParser* p,
       return;
     }
   }
+  p->PopArray();
 
   if (!has_options) {
     if (pass == 1) { StoreDefaultOptions(); }

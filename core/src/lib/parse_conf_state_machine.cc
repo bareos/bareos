@@ -277,6 +277,8 @@ bool ConfigParserStateMachine::InitParserPass()
   parser_pass_number_++;
   ASSERT(parser_pass_number_ < 3);
 
+  if (parser_pass_number_ == 2) { my_config_.EnterPass2(); }
+
   // close files from the pass before
   while (lexical_parser_) { lexical_parser_ = LexCloseFile(lexical_parser_); }
 

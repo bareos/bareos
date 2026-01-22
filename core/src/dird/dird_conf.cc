@@ -85,12 +85,12 @@ extern struct s_kw RunFields[];
  */
 static PoolMem* configure_usage_string = NULL;
 
-extern void StoreInc(ConfigurationParser*,
+extern void StoreInc(ConfigurationParser* p,
                      lexer* lc,
                      const ResourceItem* item,
                      int index,
                      int pass);
-extern void StoreRun(ConfigurationParser*,
+extern void StoreRun(ConfigurationParser* p,
                      lexer* lc,
                      const ResourceItem* item,
                      int index,
@@ -2525,7 +2525,7 @@ static void StoreMigtype(ConfigurationParser* p,
 }
 
 // Store JobType (backup, verify, restore)
-static void StoreJobtype(ConfigurationParser*,
+static void StoreJobtype(ConfigurationParser* p,
                          lexer* lc,
                          const ResourceItem* item,
                          int index,
@@ -2537,6 +2537,7 @@ static void StoreJobtype(ConfigurationParser*,
   for (int i = 0; jobtypes[i].type_name; i++) {
     if (Bstrcasecmp(lc->str, jobtypes[i].type_name)) {
       SetItemVariable<uint32_t>(*item, jobtypes[i].job_type);
+      p->PushU(jobtypes[i].job_type);
       found = true;
       break;
     }
@@ -3045,8 +3046,8 @@ static void StoreRunscript(ConfigurationParser* p,
 
     bool keyword_ok = false;
     for (int i = 0; runscript_items[i].name; i++) {
-      p->PushString(lc->str);
       if (Bstrcasecmp(runscript_items[i].name, lc->str)) {
+        p->PushString(lc->str);
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
           scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
