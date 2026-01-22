@@ -29,7 +29,6 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/dird_globals.h"
 #include "lib/edit.h"
 #include "lib/keyword_table_s.h"
 #include "lib/parse_conf.h"
@@ -182,12 +181,14 @@ void StoreRun(ConfigurationParser* conf,
 
   lc->options.set(lexer::options::NoIdent); /* Want only "strings" */
 
+  conf->PushObject();
   // Scan for Job level "full", "incremental", ...
   for (found = true; found;) {
     found = false;
     token = LexGetToken(lc, BCT_NAME);
     for (i = 0; !found && RunFields[i].name; i++) {
       if (Bstrcasecmp(lc->str, RunFields[i].name)) {
+        conf->PushString(lc->str);
         found = true;
         if (LexGetToken(lc, BCT_ALL) != BCT_EQUALS) {
           scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
@@ -199,10 +200,12 @@ void StoreRun(ConfigurationParser* conf,
             if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
               res_run.spool_data = true;
               res_run.spool_data_set = true;
+              conf->PushB(true);
             } else if (Bstrcasecmp(lc->str, "no")
                        || Bstrcasecmp(lc->str, "false")) {
               res_run.spool_data = false;
               res_run.spool_data_set = true;
+              conf->PushB(false);
             } else {
               scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
               return;
@@ -210,6 +213,7 @@ void StoreRun(ConfigurationParser* conf,
             break;
           case 'L': /* Level */
             token = LexGetToken(lc, BCT_NAME);
+            conf->PushString(lc->str);
             for (j = 0; joblevels[j].level_name; j++) {
               if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
                 res_run.level = joblevels[j].level;
@@ -226,6 +230,7 @@ void StoreRun(ConfigurationParser* conf,
             break;
           case 'p': /* Priority */
             token = LexGetToken(lc, BCT_PINT32);
+            conf->PushU(lc->u.pint32_val);
             if (pass == 2) { res_run.Priority = lc->u.pint32_val; }
             break;
           case 'P': /* Pool */
@@ -234,7 +239,9 @@ void StoreRun(ConfigurationParser* conf,
           case 'i': /* IncPool */
           case 'd': /* DiffPool */
           case 'n': /* NextPool */
+
             token = LexGetToken(lc, BCT_NAME);
+            conf->PushString(lc->str);
             if (pass == 2) {
               res = conf->GetResWithName(R_POOL, lc->str);
               if (res == NULL) {
@@ -266,6 +273,7 @@ void StoreRun(ConfigurationParser* conf,
             break;
           case 'S': /* Storage */
             token = LexGetToken(lc, BCT_NAME);
+            conf->PushString(lc->str);
             if (pass == 2) {
               res = conf->GetResWithName(R_STORAGE, lc->str);
               if (res == NULL) {
@@ -279,6 +287,7 @@ void StoreRun(ConfigurationParser* conf,
             break;
           case 'M': /* Messages */
             token = LexGetToken(lc, BCT_NAME);
+            conf->PushString(lc->str);
             if (pass == 2) {
               res = conf->GetResWithName(R_MSGS, lc->str);
               if (res == NULL) {
@@ -292,6 +301,7 @@ void StoreRun(ConfigurationParser* conf,
             break;
           case 'm': /* Max run sched time */
             token = LexGetToken(lc, BCT_QUOTED_STRING);
+            conf->PushString(lc->str);
             if (!DurationToUtime(lc->str, &utime)) {
               scan_err1(lc, T_("expected a time period, got: %s"), lc->str);
               return;
@@ -305,10 +315,12 @@ void StoreRun(ConfigurationParser* conf,
                 || strcasecmp(lc->str, "true") == 0) {
               res_run.accurate = true;
               res_run.accurate_set = true;
+              conf->PushB(true);
             } else if (strcasecmp(lc->str, "no") == 0
                        || strcasecmp(lc->str, "false") == 0) {
               res_run.accurate = false;
               res_run.accurate_set = true;
+              conf->PushB(false);
             } else {
               scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
             }
@@ -326,6 +338,9 @@ void StoreRun(ConfigurationParser* conf,
     if (!found) {
       for (j = 0; joblevels[j].level_name; j++) {
         if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
+          conf->PushString("Level");
+          conf->PushString(lc->str);
+
           res_run.level = joblevels[j].level;
           res_run.job_type = joblevels[j].job_type;
           found = true;
@@ -340,10 +355,13 @@ void StoreRun(ConfigurationParser* conf,
   state = s_none;
   set_defaults(res_run);
 
+  conf->PushString("times");
+  conf->PushArray();
   for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
     int len;
     bool pm = false;
     bool am = false;
+    conf->PushString(lc->str);
     switch (token) {
       case BCT_NUMBER:
         state = s_mday;
@@ -696,6 +714,7 @@ void StoreRun(ConfigurationParser* conf,
         break;
     }
   }
+  conf->PopArray();
 
   /* Allocate run record, copy new stuff into it,
    * and append it to the list of run records
@@ -717,6 +736,7 @@ void StoreRun(ConfigurationParser* conf,
     }
   }
 
+  conf->PopObject();
   lc->options = options; /* Restore scanner options */
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
