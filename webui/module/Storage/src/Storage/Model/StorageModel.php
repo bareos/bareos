@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -228,13 +228,21 @@ class StorageModel
      * @param $pool
      * @param $drive
      * @param $slots
+     * @param $encrypted
      *
      * @return string
      */
-    public function label(&$bsock = null, $storage = null, $pool = null, $drive = null, $slots = null)
+    public function label(&$bsock = null, $storage = null, $pool = null, $drive = null, $slots = null, $encrypted = null)
     {
         if (isset($bsock, $storage, $pool, $drive)) {
-            $cmd = 'label storage="' . $storage . '" pool="' . $pool . '" drive="' . $drive . '" barcodes yes';
+            $cmd = 'label storage="' . $storage . '" pool="' . $pool . '" drive="' . $drive . '" barcodes';
+            if ($encrypted == 'encrypt') {
+                $cmd .= ' encrypt';
+            }
+            if ($slots != null) {
+                $cmd .= ' slots=' . $slots;
+            }
+            $cmd .= ' yes';
             $result = $bsock->send_command($cmd, 0);
             return $result;
         } else {
