@@ -29,7 +29,6 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "findlib/match.h"
 #include "lib/parse_conf.h"
@@ -803,10 +802,10 @@ static void StoreOptionsRes(ConfigurationParser* p,
   if (pass == 1) { ApplyDefaultValuesForUnsetOptions(default_values); }
 }
 
-static FilesetResource* GetStaticFilesetResource()
+static FilesetResource* GetStaticFilesetResource(ConfigurationParser* p)
 {
   FilesetResource* res_fs = nullptr;
-  const ResourceTable* t = my_config->GetResourceTable("FileSet");
+  const ResourceTable* t = p->GetResourceTable("FileSet");
   ASSERT(t);
   if (t) { res_fs = dynamic_cast<FilesetResource*>(*t->allocated_resource_); }
   assert(res_fs);
@@ -843,7 +842,7 @@ static void StoreFname(ConfigurationParser* p,
         }
         FALLTHROUGH_INTENDED;
       case BCT_QUOTED_STRING: {
-        FilesetResource* res_fs = GetStaticFilesetResource();
+        FilesetResource* res_fs = GetStaticFilesetResource(p);
         if (res_fs->have_MD5) {
           IGNORE_DEPRECATED_ON;
           MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
@@ -898,7 +897,7 @@ static void StorePluginName(ConfigurationParser* p,
         }
         FALLTHROUGH_INTENDED;
       case BCT_QUOTED_STRING: {
-        FilesetResource* res_fs = GetStaticFilesetResource();
+        FilesetResource* res_fs = GetStaticFilesetResource(p);
 
         if (res_fs->have_MD5) {
           IGNORE_DEPRECATED_ON;
@@ -958,7 +957,7 @@ static void StoreNewinc(ConfigurationParser* p,
                         int index,
                         int pass)
 {
-  FilesetResource* res_fs = GetStaticFilesetResource();
+  FilesetResource* res_fs = GetStaticFilesetResource(p);
 
   // Store.. functions below only store in pass = 1
   if (pass == 1) { res_incexe = new IncludeExcludeItem; }
