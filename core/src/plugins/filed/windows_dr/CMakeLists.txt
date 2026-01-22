@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -46,14 +46,14 @@ install(
 add_library(barri-version OBJECT)
 target_sources(barri-version PRIVATE version.cc)
 target_compile_definitions(
-  barri-version PRIVATE BARRI_VERSION="${BAREOS_FULL_VERSION}"
-                        BARRI_DATE="${DATE}" BARRI_YEAR="${BAREOS_YEAR}"
+  barri-version PRIVATE "BARRI_VERSION=${BAREOS_FULL_VERSION}"
+                        "BARRI_DATE=${DATE}" "BARRI_YEAR=${BAREOS_YEAR}"
 )
 
 add_library(parser OBJECT)
 add_library(Bareos::BarriParser ALIAS parser)
 target_sources(parser PRIVATE parser.cc)
-target_include_directories(parser PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(parser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(parser PUBLIC format)
 
 if(HAVE_WIN32)

@@ -543,8 +543,6 @@ The full list of possible command line arguments are:
    your system and contains a list of files to be restored. Bareos will thus read the list from that
    file. Multiple file=xxx specifications may be specified on the command line.
 
--  jobid=nnn – specify a JobId to be restored.
-
 -  pool=pool-name – specify a Pool name to be used for selection of Volumes when specifying options
    5 and 6 (restore current system, and restore current system before given date). This permits you
    to have several Pools, possibly one offsite, and to select the Pool to be used for restoring.
