@@ -213,6 +213,8 @@ void ConfigurationParser::ScanTypes(lexer* lc,
   int msg_type = 0;
   char* str;
 
+  PushArray();
+
   for (;;) {
     LexGetToken(lc, BCT_NAME); /* expect at least one type */
     found = false;
@@ -223,6 +225,17 @@ void ConfigurationParser::ScanTypes(lexer* lc,
       is_not = false;
       str = &lc->str[0];
     }
+
+    PushObject();
+
+    PushString("is");
+    PushB(!is_not);
+
+    PushString("value");
+    PushString(str);
+
+    PopObject();
+
     for (i = 0; msg_types[i].name; i++) {
       if (Bstrcasecmp(str, msg_types[i].name)) {
         msg_type = msg_types[i].token;
@@ -250,6 +263,8 @@ void ConfigurationParser::ScanTypes(lexer* lc,
     LexGetToken(lc, BCT_ALL); /* eat comma */
   }
   Dmsg0(900, "Done ScanTypes()\n");
+
+  PopArray();
 }
 
 // Store Messages Destination information
@@ -309,26 +324,38 @@ void ConfigurationParser::StoreMsgs(lexer* lc,
           p++;
         }
 
+        PushObject();
+
+        PushString("is_old");
+
         /* If there is more then one = its the new format e.g.
          * syslog = facility = filter */
         if (cnt > 1) {
+          PushB(false);
           dest = GetPoolMemory(PM_MESSAGE);
           // Pick up a single facility.
           token = LexGetToken(lc, BCT_NAME); /* Scan destination */
+          PushString("facility");
+          PushString(lc->str);
           PmStrcpy(dest, lc->str);
           dest_len = lc->str_len;
           token = LexGetToken(lc, BCT_SKIP_EOL);
 
+          PushString("types");
           ScanTypes(lc, message_resource,
                     static_cast<MessageDestinationCode>(item->code), dest,
                     std::string(), std::string());
           FreePoolMemory(dest);
           Dmsg0(900, "done with dest codes\n");
         } else {
+          PushB(true);
+          PushString("types");
           ScanTypes(lc, message_resource,
                     static_cast<MessageDestinationCode>(item->code),
                     std::string(), std::string(), std::string());
         }
+
+        PopObject();
         break;
       }
       case MessageDestinationCode::kOperator:
@@ -346,6 +373,10 @@ void ConfigurationParser::StoreMsgs(lexer* lc,
         dest[0] = 0;
         dest_len = 0;
 
+        PushObject();
+
+        PushString("destinations");
+        PushArray();
         // Pick up comma separated list of destinations.
         for (;;) {
           token = LexGetToken(lc, BCT_NAME); /* Scan destination */
@@ -354,6 +385,7 @@ void ConfigurationParser::StoreMsgs(lexer* lc,
             PmStrcat(dest, " "); /* Separate multiple destinations with space */
             dest_len++;
           }
+          PushString(lc->str);
           PmStrcat(dest, lc->str);
           dest_len += lc->str_len;
           Dmsg2(900, "StoreMsgs newdest=%s: dest=%s:\n", lc->str, NPRT(dest));
@@ -365,17 +397,26 @@ void ConfigurationParser::StoreMsgs(lexer* lc,
           }
           break;
         }
+        PopArray();
+        PushString("types");
         Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
         ScanTypes(lc, message_resource,
                   static_cast<MessageDestinationCode>(item->code), dest, cmd,
                   message_resource->timestamp_format_);
         FreePoolMemory(dest);
+        PopObject();
         Dmsg0(900, "done with dest codes\n");
         break;
       case MessageDestinationCode::kFile:
       case MessageDestinationCode::kAppend: {
         // Pick up a single destination.
         token = LexGetToken(lc, BCT_STRING); /* Scan destination */
+
+        PushObject();
+        PushString("destination");
+        PushString(lc->str);
+        PushString("types");
+
         std::string dest_file_path(lc->str);
         dest_len = lc->str_len;
         token = LexGetToken(lc, BCT_SKIP_EOL);
@@ -389,6 +430,7 @@ void ConfigurationParser::StoreMsgs(lexer* lc,
                   dest_file_path, std::string(),
                   message_resource->timestamp_format_);
         Dmsg0(900, "done with dest codes\n");
+        PopObject();
         break;
       }
       default:
@@ -418,6 +460,9 @@ void ConfigurationParser::StoreName(lexer* lc,
     scan_err1(lc, "%s\n", msg.c_str());
     return;
   }
+
+  PushString(lc->str);
+
   // Store the name both in pass 1 and pass 2
   char** p = GetItemVariablePointer<char**>(*item);
 
@@ -442,6 +487,8 @@ void ConfigurationParser::StoreStrname(lexer* lc,
                                        int pass)
 {
   LexGetToken(lc, BCT_NAME);
+
+  PushString(lc->str);
   if (pass == 1) {
     char** p = GetItemVariablePointer<char**>(*item);
     if (*p) { free(*p); }
@@ -459,6 +506,7 @@ void ConfigurationParser::StoreStr(lexer* lc,
                                    int pass)
 {
   LexGetToken(lc, BCT_STRING);
+  PushString(lc->str);
   if (pass == 1) { SetItemVariableFreeMemory<char*>(*item, strdup(lc->str)); }
   ScanToEol(lc);
   item->SetPresent();
@@ -472,6 +520,7 @@ void ConfigurationParser::StoreStdstr(lexer* lc,
                                       int pass)
 {
   LexGetToken(lc, BCT_STRING);
+  PushString(lc->str);
   if (pass == 1) { SetItemVariable<std::string>(*item, lc->str); }
   ScanToEol(lc);
   item->SetPresent();
@@ -489,6 +538,7 @@ void ConfigurationParser::StoreDir(lexer* lc,
                                    int pass)
 {
   LexGetToken(lc, BCT_STRING);
+  PushString(lc->str);
   if (pass == 1) {
     char** p = GetItemVariablePointer<char**>(*item);
     if (*p) { free(*p); }
@@ -509,6 +559,7 @@ void ConfigurationParser::StoreStdstrdir(lexer* lc,
                                          int pass)
 {
   LexGetToken(lc, BCT_STRING);
+  PushString(lc->str);
   if (pass == 1) {
     if (lc->str[0] != '|') {
       auto* expanded = DoShellExpansion(lc->str);
@@ -530,6 +581,7 @@ void ConfigurationParser::StoreMd5Password(lexer* lc,
                                            int pass)
 {
   LexGetToken(lc, BCT_STRING);
+  PushString(lc->str);
   if (pass == 1) { /* free old item */
     s_password* pwd = GetItemVariablePointer<s_password*>(*item);
 
@@ -613,6 +665,7 @@ void ConfigurationParser::StoreClearpassword(lexer* lc,
                                              int pass)
 {
   LexGetToken(lc, BCT_STRING);
+  PushString(lc->str);
   if (pass == 1) {
     s_password* pwd = GetItemVariablePointer<s_password*>(*item);
 
@@ -647,6 +700,7 @@ void ConfigurationParser::StoreRes(lexer* lc,
                                    int pass)
 {
   LexGetToken(lc, BCT_NAME);
+  PushString(lc->str);
   if (pass == 2) {
     BareosResource* res = GetResWithName(item->code, lc->str);
     if (res == NULL) {
@@ -691,9 +745,11 @@ void ConfigurationParser::StoreAlistRes(lexer* lc,
   }
   alist<BareosResource*>* list = *alistvalue;
 
+  PushArray();
   int token = BCT_COMMA;
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_NAME); /* scan next item */
+    PushString(lc->str);
     if (pass == 2) {
       BareosResource* res = GetResWithName(item->code, lc->str);
       if (res == NULL) {
@@ -709,6 +765,7 @@ void ConfigurationParser::StoreAlistRes(lexer* lc,
     }
     token = LexGetToken(lc, BCT_ALL);
   }
+  PopArray();
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
@@ -724,8 +781,10 @@ void ConfigurationParser::StoreStdVectorStr(lexer* lc,
     list = GetItemVariablePointer<std::vector<std::string>*>(*item);
   }
   int token = BCT_COMMA;
+  PushArray();
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING); /* scan next item */
+    PushString(lc->str);
     if (pass == 2) {
       Dmsg4(900, "Append %s to vector %p size=%" PRIuz " %s\n", lc->str, list,
             list->size(), item->name);
@@ -743,6 +802,7 @@ void ConfigurationParser::StoreStdVectorStr(lexer* lc,
     }
     token = LexGetToken(lc, BCT_ALL);
   }
+  PopArray();
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
@@ -761,10 +821,12 @@ void ConfigurationParser::StoreAlistStr(lexer* lc,
     }
   }
   alist<const char*>* list = *alistvalue;
+  PushArray();
 
   int token = BCT_COMMA;
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING); /* scan next item */
+    PushString(lc->str);
 
     if (pass == 2) {
       Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
@@ -787,6 +849,7 @@ void ConfigurationParser::StoreAlistStr(lexer* lc,
     }
     token = LexGetToken(lc, BCT_ALL);
   }
+  PopArray();
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
@@ -814,6 +877,12 @@ void ConfigurationParser::StoreAlistDir(lexer* lc,
     Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
           list->size(), item->name);
 
+    PushObject();
+    PushString("is_shell");
+    PushB(lc->str[0] == '|');
+    PushString("str");
+    PushString(lc->str + (lc->str[0] == '|'));
+    PopObject();
 
     /* See if we need to drop the default value from the alist.
      *
@@ -863,6 +932,7 @@ void ConfigurationParser::StorePluginNames(lexer* lc,
                                                    numbers/identifiers */
 
   bool finish = false;
+  PushArray();
   while (!finish) {
     switch (LexGetToken(lc, BCT_ALL)) {
       case BCT_EOL:
@@ -872,6 +942,7 @@ void ConfigurationParser::StorePluginNames(lexer* lc,
         continue;
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING: {
+        PushString(lc->str);
         char* p0 = strdup(lc->str);
         char* p1 = p0;
         char* p2 = p0;
@@ -889,6 +960,7 @@ void ConfigurationParser::StorePluginNames(lexer* lc,
         break;
     }
   }
+  PopArray();
   lc->options = saved;
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
@@ -911,6 +983,7 @@ void ConfigurationParser::StoreDefs(lexer* lc,
   BareosResource* res;
 
   LexGetToken(lc, BCT_NAME);
+  PushString(lc->str);
   if (pass == 2) {
     Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str);
     res = GetResWithName(item->code, lc->str);
@@ -931,6 +1004,7 @@ void ConfigurationParser::store_int16(lexer* lc,
                                       int)
 {
   LexGetToken(lc, BCT_INT16);
+  PushI(lc->u.int16_val);
   SetItemVariable<int16_t>(*item, lc->u.int16_val);
   ScanToEol(lc);
   item->SetPresent();
@@ -943,6 +1017,7 @@ void ConfigurationParser::store_int32(lexer* lc,
                                       int)
 {
   LexGetToken(lc, BCT_INT32);
+  PushI(lc->u.int32_val);
   SetItemVariable<int32_t>(*item, lc->u.int32_val);
   ScanToEol(lc);
   item->SetPresent();
@@ -956,6 +1031,7 @@ void ConfigurationParser::store_pint16(lexer* lc,
                                        int)
 {
   LexGetToken(lc, BCT_PINT16);
+  PushU(lc->u.pint16_val);
   SetItemVariable<uint16_t>(*item, lc->u.pint16_val);
   ScanToEol(lc);
   item->SetPresent();
@@ -968,6 +1044,7 @@ void ConfigurationParser::store_pint32(lexer* lc,
                                        int)
 {
   LexGetToken(lc, BCT_PINT32);
+  PushU(lc->u.pint32_val);
   SetItemVariable<uint32_t>(*item, lc->u.pint32_val);
   ScanToEol(lc);
   item->SetPresent();
@@ -981,6 +1058,7 @@ void ConfigurationParser::store_int64(lexer* lc,
                                       int)
 {
   LexGetToken(lc, BCT_INT64);
+  PushU(lc->u.int64_val);
   SetItemVariable<int64_t>(*item, lc->u.int64_val);
   ScanToEol(lc);
   item->SetPresent();
@@ -1017,6 +1095,8 @@ void ConfigurationParser::store_int_unit(lexer* lc,
             break;
         }
       }
+
+      PushString(bsize);
 
       switch (type) {
         case STORE_SIZE:
@@ -1114,6 +1194,8 @@ void ConfigurationParser::StoreTime(lexer* lc,
             break;
         }
       }
+
+      PushString(period);
       if (!DurationToUtime(period, &utime)) {
         scan_err1(lc, T_("expected a time period, got: %s"), period);
         return;
@@ -1138,9 +1220,11 @@ void ConfigurationParser::StoreBit(lexer* lc,
   LexGetToken(lc, BCT_NAME);
   char* bitvalue = GetItemVariablePointer<char*>(*item);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
+    PushB(true);
     SetBit(item->code, bitvalue);
   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
     ClearBit(item->code, bitvalue);
+    PushB(false);
   } else {
     scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
               lc->str); /* YES and NO must not be translated */
@@ -1160,8 +1244,10 @@ void ConfigurationParser::StoreBool(lexer* lc,
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
     SetItemVariable<bool>(*item, true);
+    PushB(true);
   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
     SetItemVariable<bool>(*item, false);
+    PushB(false);
   } else {
     scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
               lc->str); /* YES and NO must not be translated */
@@ -1182,6 +1268,8 @@ void ConfigurationParser::StoreLabel(lexer* lc,
   // Store the label pass 2 so that type is defined
   int i;
   for (i = 0; tapelabels[i].name; i++) {
+    PushString(lc->str);
+
     if (Bstrcasecmp(lc->str, tapelabels[i].name)) {
       SetItemVariable<uint32_t>(*item, tapelabels[i].token);
       i = 0;
@@ -1253,10 +1341,17 @@ void ConfigurationParser::StoreAddresses(lexer* lc,
   if (token == BCT_EOB) {
     scan_err0(lc, T_("Empty addr block is not allowed"));
   }
+
+  PushArray();
+
   do {
+    PushObject();
     if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
       scan_err1(lc, T_("Expected a string, got: %s"), lc->str);
     }
+
+    PushString("type");
+    PushString(lc->str);
     if (Bstrcasecmp("ip", lc->str) || Bstrcasecmp("ipv4", lc->str)) {
       family = AF_INET;
     } else if (Bstrcasecmp("ipv6", lc->str)) {
@@ -1280,6 +1375,7 @@ void ConfigurationParser::StoreAddresses(lexer* lc,
         scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
                   lc->str);
       }
+      PushString(lc->str);
       if (Bstrcasecmp("port", lc->str)) {
         next_line = PORTLINE;
         if (exist & PORTLINE) {
@@ -1308,6 +1404,7 @@ void ConfigurationParser::StoreAddresses(lexer* lc,
             scan_err1(lc, T_("Expected a number or a string, got: %s"),
                       lc->str);
           }
+          PushString(lc->str);
           bstrncpy(port_str, lc->str, sizeof(port_str));
           break;
         case ADDRLINE:
@@ -1315,6 +1412,7 @@ void ConfigurationParser::StoreAddresses(lexer* lc,
             scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"),
                       lc->str);
           }
+          PushString(lc->str);
           bstrncpy(hostname_str, lc->str, sizeof(hostname_str));
           break;
         case EMPTYLINE:
@@ -1323,6 +1421,7 @@ void ConfigurationParser::StoreAddresses(lexer* lc,
       }
       token = LexGetToken(lc, BCT_SKIP_EOL);
     } while (token == BCT_IDENTIFIER);
+    PopObject();
     if (token != BCT_EOB) {
       scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
     }
@@ -1335,6 +1434,8 @@ void ConfigurationParser::StoreAddresses(lexer* lc,
     }
     token = ScanToNextNotEol(lc);
   } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
+
+  PopArray();
   if (token != BCT_EOB) {
     scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
   }
@@ -1352,6 +1453,7 @@ void ConfigurationParser::StoreAddressesAddress(lexer* lc,
   int port = str_to_int32(item->default_value);
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
+  PushString(lc->str);
   if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
         || token == BCT_IDENTIFIER)) {
     scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"), lc->str);
@@ -1380,6 +1482,7 @@ void ConfigurationParser::StoreAddressesPort(lexer* lc,
         || token == BCT_IDENTIFIER)) {
     scan_err1(lc, T_("Expected a port number or string, got: %s"), lc->str);
   }
+  PushString(lc->str);
 
   bool has_address = false;
   IPADDR* iaddr;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -111,6 +111,7 @@ ConfigParserStateMachine::ScanResource(int token)
 {
   switch (token) {
     case BCT_BOB:
+      my_config_.PushObject();
       config_level_++;
       return ParseInternalReturnCode::kGetNextToken;
     case BCT_IDENTIFIER: {
@@ -119,6 +120,8 @@ ConfigParserStateMachine::ScanResource(int token)
                   lexical_parser_->str);
         return ParseInternalReturnCode::kError;
       }
+
+      my_config_.PushString(lexical_parser_->str);
 
       int resource_item_index = my_config_.GetResourceItemIndex(
           currently_parsed_resource_.resource_items_, lexical_parser_->str);
@@ -169,6 +172,7 @@ ConfigParserStateMachine::ScanResource(int token)
       return ParseInternalReturnCode::kGetNextToken;
     }
     case BCT_EOB:
+      my_config_.PopObject();
       config_level_--;
       state = ParseState::kInit;
       Dmsg0(900, "BCT_EOB => define new resource\n");
@@ -234,6 +238,8 @@ ConfigParserStateMachine::ParserInitResource(int token)
   }
 
   bool init_done = false;
+
+  my_config_.PushString(resource_identifier);
 
   if (resource_table && resource_table->items) {
     currently_parsed_resource_.rcode_ = resource_table->rcode;

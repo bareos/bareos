@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -184,6 +184,25 @@ bool ConfigurationParser::ParseConfig()
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
 
   config_resources_container_->SetTimestampToNow();
+
+  {
+    Dmsg1(10, "=======================\n");
+    int indent = 0;
+
+    for (auto& v : shape) {
+      auto [str, off]
+          = std::visit([](auto& val) { return proto::format(val); }, v);
+
+      if (off < 0) { indent += off; }
+      Dmsg1(10, "%*s%s\n", indent, "", str.c_str());
+      if (off > 0) { indent += off; }
+    }
+
+    Dmsg1(10, "=======================\n");
+  }
+
+  shape.clear();
+
 
   return success;
 }

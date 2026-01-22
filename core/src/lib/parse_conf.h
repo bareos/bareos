@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,6 +42,64 @@
 #include <map>
 #include <vector>
 #include <string>
+
+namespace proto {
+using str = std::string;
+struct obj_begin {};
+struct obj_end {};
+struct arr_begin {};
+struct arr_end {};
+
+
+static inline std::pair<std::string, int> format(const str& s)
+{
+  return {s, 0};
+}
+
+static inline std::pair<std::string, int> format(bool s)
+{
+  return {s ? "True" : "False", 0};
+}
+
+static inline std::pair<std::string, int> format(const obj_begin&)
+{
+  return {"{", 1};
+}
+
+static inline std::pair<std::string, int> format(const obj_end&)
+{
+  return {"}", -1};
+}
+
+static inline std::pair<std::string, int> format(const arr_begin&)
+{
+  return {"[", 1};
+}
+
+static inline std::pair<std::string, int> format(const arr_end&)
+{
+  return {"]", -1};
+}
+
+static inline std::pair<std::string, int> format(int64_t i)
+{
+  return {std::to_string(i), 0};
+}
+
+static inline std::pair<std::string, int> format(uint64_t u)
+{
+  return {std::to_string(u), 0};
+}
+};  // namespace proto
+
+using conf_proto = std::variant<proto::str,
+                                proto::obj_begin,
+                                proto::obj_end,
+                                proto::arr_begin,
+                                proto::arr_end,
+                                bool,
+                                int64_t,
+                                uint64_t>;
 
 struct ResourceItem;
 class ConfigParserStateMachine;
@@ -181,6 +239,26 @@ class QualifiedResourceNameTypeConverter;
 class ConfigurationParser {
   friend class ConfiguredTlsPolicyGetterPrivate;
   friend class ConfigParserStateMachine;
+
+ private:
+  std::vector<conf_proto> shape;
+
+  void PushString(std::string_view v) { shape.push_back(proto::str{v}); }
+
+  void PushB(bool b) { shape.push_back(b); }
+
+  void PushU(int64_t i) { shape.push_back(i); }
+
+  void PushI(uint64_t i) { shape.push_back(i); }
+
+  void PushArray() { shape.push_back(proto::arr_begin{}); }
+
+  void PopArray() { shape.push_back(proto::arr_end{}); }
+
+  void PushObject() { shape.push_back(proto::obj_begin{}); }
+
+  void PopObject() { shape.push_back(proto::obj_end{}); }
+
 
  public:
   using sender = PRINTF_LIKE(2, 3) bool(void* user, const char* fmt, ...);
