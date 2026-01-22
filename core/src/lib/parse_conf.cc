@@ -211,43 +211,45 @@ bool ConfigurationParser::ParseConfig()
     };
 
     auto allow_multiple = [](std::string_view k) {
+      (void)k;
       // this also needs to check for case ...
-      if (strncasecmp(k.data(), "RunScript", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "RunBeforeJob", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "RunAfterJob", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "ClientRunBeforeJob", k.size()) == 0) {
-        return true;
-      }
-      if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
-        return true;
-      }
-      if (strncasecmp(k.data(), "Run", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "FdPluginOptions", k.size()) == 0) {
-        return true;
-      }
-      if (strncasecmp(k.data(), "SdPluginOptions", k.size()) == 0) {
-        return true;
-      }
-      if (strncasecmp(k.data(), "DirPluginOptions", k.size()) == 0) {
-        return true;
-      }
-      if (strncasecmp(k.data(), "Include", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "Exclude", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "Syslog", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "Mail", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "MailOnError", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "MailOnSuccess", k.size()) == 0) {
-        return true;
-      }
-      if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "Append", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "Stdout", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "Stderr", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "Director", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "Console", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "Operator", k.size()) == 0) { return true; }
-      if (strncasecmp(k.data(), "Catalog", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "RunScript", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "RunBeforeJob", k.size()) == 0) { return
+      // true; } if (strncasecmp(k.data(), "RunAfterJob", k.size()) == 0) {
+      // return true; } if (strncasecmp(k.data(), "ClientRunBeforeJob",
+      // k.size()) == 0) {
+      //   return true;
+      // }
+      // if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
+      //   return true;
+      // }
+      // if (strncasecmp(k.data(), "Run", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "FdPluginOptions", k.size()) == 0) {
+      //   return true;
+      // }
+      // if (strncasecmp(k.data(), "SdPluginOptions", k.size()) == 0) {
+      //   return true;
+      // }
+      // if (strncasecmp(k.data(), "DirPluginOptions", k.size()) == 0) {
+      //   return true;
+      // }
+      // if (strncasecmp(k.data(), "Include", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "Exclude", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "Syslog", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "Mail", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "MailOnError", k.size()) == 0) { return true;
+      // } if (strncasecmp(k.data(), "MailOnSuccess", k.size()) == 0) {
+      //   return true;
+      // }
+      // if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "Append", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "Stdout", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "Stderr", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "Director", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "Console", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "Operator", k.size()) == 0) { return true; }
+      // if (strncasecmp(k.data(), "Catalog", k.size()) == 0) { return true; }
       // if (k == "WildFile") {
       //   return true;
       // }
