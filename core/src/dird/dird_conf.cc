@@ -2410,7 +2410,7 @@ static bool PopulateJobdefaults()
 
 bool PopulateDefs() { return PopulateJobdefaults(); }
 
-static void StorePooltype(ConfigurationParser*,
+static void StorePooltype(ConfigurationParser* p,
                           lexer* lc,
                           const ResourceItem* item,
                           int index,
@@ -2422,6 +2422,7 @@ static void StorePooltype(ConfigurationParser*,
     for (int i = 0; PoolTypes[i].name; i++) {
       if (Bstrcasecmp(lc->str, PoolTypes[i].name)) {
         SetItemVariableFreeMemory<char*>(*item, strdup(PoolTypes[i].name));
+        p->PushString(PoolTypes[i].name);
         found = true;
         break;
       }
@@ -2437,7 +2438,7 @@ static void StorePooltype(ConfigurationParser*,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreActiononpurge(ConfigurationParser*,
+static void StoreActiononpurge(ConfigurationParser* p,
                                lexer* lc,
                                const ResourceItem* item,
                                int index,
@@ -2452,6 +2453,7 @@ static void StoreActiononpurge(ConfigurationParser*,
   for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
     if (Bstrcasecmp(lc->str, ActionOnPurgeOptions[i].name)) {
       *destination = (*destination) | ActionOnPurgeOptions[i].token;
+      p->PushU(ActionOnPurgeOptions[i].token);
       found = true;
       break;
     }
@@ -2478,6 +2480,7 @@ static void StoreDevice(ConfigurationParser* p,
                         int pass)
 {
   LexGetToken(lc, BCT_NAME);
+  p->PushString(lc->str);
 
   if (pass == 1) {
     auto& devices = *GetItemVariablePointer<std::vector<Device>*>(*item);
@@ -2485,7 +2488,6 @@ static void StoreDevice(ConfigurationParser* p,
     Dmsg4(900, "Add device %s to vector %p size=%" PRIuz " %s\n", lc->str,
           &devices, devices.size(), item->name);
 
-    p->PushString(lc->str);
     devices.emplace_back(lc->str);
   }
 
@@ -2495,7 +2497,7 @@ static void StoreDevice(ConfigurationParser* p,
 }
 
 // Store Migration/Copy type
-static void StoreMigtype(ConfigurationParser*,
+static void StoreMigtype(ConfigurationParser* p,
                          lexer* lc,
                          const ResourceItem* item,
                          int index)
@@ -2506,6 +2508,7 @@ static void StoreMigtype(ConfigurationParser*,
   for (int i = 0; migtypes[i].type_name; i++) {
     if (Bstrcasecmp(lc->str, migtypes[i].type_name)) {
       SetItemVariable<uint32_t>(*item, migtypes[i].job_type);
+      p->PushU(migtypes[i].job_type);
       found = true;
       break;
     }
@@ -2549,7 +2552,7 @@ static void StoreJobtype(ConfigurationParser*,
 }
 
 // Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
-static void StoreProtocoltype(ConfigurationParser*,
+static void StoreProtocoltype(ConfigurationParser* p,
                               lexer* lc,
                               const ResourceItem* item,
                               int index,
@@ -2561,6 +2564,7 @@ static void StoreProtocoltype(ConfigurationParser*,
   for (int i = 0; backupprotocols[i].name; i++) {
     if (Bstrcasecmp(lc->str, backupprotocols[i].name)) {
       SetItemVariable<uint32_t>(*item, backupprotocols[i].token);
+      p->PushU(backupprotocols[i].token);
       found = true;
       break;
     }
@@ -2575,7 +2579,7 @@ static void StoreProtocoltype(ConfigurationParser*,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreReplace(ConfigurationParser*,
+static void StoreReplace(ConfigurationParser* p,
                          lexer* lc,
                          const ResourceItem* item,
                          int index,
@@ -2587,6 +2591,7 @@ static void StoreReplace(ConfigurationParser*,
   for (int i = 0; ReplaceOptions[i].name; i++) {
     if (Bstrcasecmp(lc->str, ReplaceOptions[i].name)) {
       SetItemVariable<uint32_t>(*item, ReplaceOptions[i].token);
+      p->PushU(ReplaceOptions[i].token);
       found = true;
       break;
     }
@@ -2603,7 +2608,7 @@ static void StoreReplace(ConfigurationParser*,
 }
 
 // Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
-static void StoreAuthprotocoltype(ConfigurationParser*,
+static void StoreAuthprotocoltype(ConfigurationParser* p,
                                   lexer* lc,
                                   const ResourceItem* item,
                                   int index,
@@ -2615,6 +2620,7 @@ static void StoreAuthprotocoltype(ConfigurationParser*,
   for (int i = 0; authprotocols[i].name; i++) {
     if (Bstrcasecmp(lc->str, authprotocols[i].name)) {
       SetItemVariable<uint32_t>(*item, authprotocols[i].token);
+      p->PushU(authprotocols[i].token);
       found = true;
       break;
     }
@@ -2631,7 +2637,7 @@ static void StoreAuthprotocoltype(ConfigurationParser*,
 }
 
 // Store authentication type (Mostly for NDMP like clear or MD5).
-static void StoreAuthtype(ConfigurationParser*,
+static void StoreAuthtype(ConfigurationParser* p,
                           lexer* lc,
                           const ResourceItem* item,
                           int index,
@@ -2643,6 +2649,7 @@ static void StoreAuthtype(ConfigurationParser*,
   for (int i = 0; authmethods[i].name; i++) {
     if (Bstrcasecmp(lc->str, authmethods[i].name)) {
       SetItemVariable<uint32_t>(*item, authmethods[i].token);
+      p->PushU(authmethods[i].token);
       found = true;
       break;
     }
@@ -2659,7 +2666,7 @@ static void StoreAuthtype(ConfigurationParser*,
 }
 
 // Store Job Level (Full, Incremental, ...)
-static void StoreLevel(ConfigurationParser*,
+static void StoreLevel(ConfigurationParser* p,
                        lexer* lc,
                        const ResourceItem* item,
                        int index,
@@ -2672,6 +2679,7 @@ static void StoreLevel(ConfigurationParser*,
   for (int i = 0; joblevels[i].level_name; i++) {
     if (Bstrcasecmp(lc->str, joblevels[i].level_name)) {
       SetItemVariable<uint32_t>(*item, joblevels[i].level);
+      p->PushU(joblevels[i].level);
       found = true;
       break;
     }
@@ -2804,7 +2812,7 @@ static void StoreAcl(ConfigurationParser* p,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreAudit(ConfigurationParser*,
+static void StoreAudit(ConfigurationParser* p,
                        lexer* lc,
                        const ResourceItem* item,
                        int index,
@@ -2823,20 +2831,28 @@ static void StoreAudit(ConfigurationParser*,
   }
   list = *alistvalue;
 
+  p->PushArray();
   for (;;) {
     LexGetToken(lc, BCT_STRING);
+    p->PushString(lc->str);
     if (pass == 1) { list->append(strdup(lc->str)); }
     token = LexGetToken(lc, BCT_ALL);
     if (token == BCT_COMMA) { continue; }
     break;
   }
+  p->PopArray();
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreRunscriptWhen(lexer* lc, const ResourceItem* item, int, int)
+static void StoreRunscriptWhen(ConfigurationParser* p,
+                               lexer* lc,
+                               const ResourceItem* item,
+                               int,
+                               int)
 {
   LexGetToken(lc, BCT_NAME);
+  p->PushString(lc->str);
 
   uint32_t value = SCRIPT_INVALID;
   if (Bstrcasecmp(lc->str, "before")) {
@@ -2862,6 +2878,7 @@ static void StoreRunscriptTarget(ConfigurationParser* p,
                                  int pass)
 {
   LexGetToken(lc, BCT_STRING);
+  p->PushString(lc->str);
 
   if (pass == 2) {
     RunScript* r = GetItemVariablePointer<RunScript*>(*item);
@@ -2887,12 +2904,14 @@ static void StoreRunscriptTarget(ConfigurationParser* p,
   ScanToEol(lc);
 }
 
-static void StoreRunscriptCmd(lexer* lc,
+static void StoreRunscriptCmd(ConfigurationParser* p,
+                              lexer* lc,
                               const ResourceItem* item,
                               int,
                               int pass)
 {
   LexGetToken(lc, BCT_STRING);
+  p->PushString(lc->str);
 
   if (pass == 2) {
     Dmsg2(100, "runscript cmd=%s type=%c\n", lc->str, item->code);
@@ -2902,7 +2921,7 @@ static void StoreRunscriptCmd(lexer* lc,
   ScanToEol(lc);
 }
 
-static void StoreShortRunscript(ConfigurationParser*,
+static void StoreShortRunscript(ConfigurationParser* p,
                                 lexer* lc,
                                 const ResourceItem* item,
                                 int,
@@ -2912,7 +2931,9 @@ static void StoreShortRunscript(ConfigurationParser*,
   alist<RunScript*>** runscripts
       = GetItemVariablePointer<alist<RunScript*>**>(*item);
 
-  if (pass == 2) {
+  if (pass == 1) {
+    p->PushString(lc->str);
+  } else if (pass == 2) {
     Dmsg0(500, "runscript: creating new RunScript object\n");
     RunScript* script = new RunScript;
 
@@ -2963,13 +2984,19 @@ static void StoreShortRunscript(ConfigurationParser*,
  * Store a bool in a bit field without modifing hdr
  * We can also add an option to StoreBool to skip hdr
  */
-static void StoreRunscriptBool(lexer* lc, const ResourceItem* item, int, int)
+static void StoreRunscriptBool(ConfigurationParser* p,
+                               lexer* lc,
+                               const ResourceItem* item,
+                               int,
+                               int)
 {
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
     SetItemVariable<bool>(*item, true);
+    p->PushB(true);
   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
     SetItemVariable<bool>(*item, false);
+    p->PushB(false);
   } else {
     scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
               lc->str); /* YES and NO must not be translated */
@@ -3007,6 +3034,7 @@ static void StoreRunscript(ConfigurationParser* p,
    * where the default differs. */
   if (res_runscript->target.empty()) { res_runscript->SetTarget("%c"); }
 
+  p->PushObject();
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
 
@@ -3017,6 +3045,7 @@ static void StoreRunscript(ConfigurationParser* p,
 
     bool keyword_ok = false;
     for (int i = 0; runscript_items[i].name; i++) {
+      p->PushString(lc->str);
       if (Bstrcasecmp(runscript_items[i].name, lc->str)) {
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
@@ -3025,16 +3054,16 @@ static void StoreRunscript(ConfigurationParser* p,
         }
         switch (runscript_items[i].type) {
           case CFG_TYPE_RUNSCRIPT_CMD:
-            StoreRunscriptCmd(lc, &runscript_items[i], i, pass);
+            StoreRunscriptCmd(p, lc, &runscript_items[i], i, pass);
             break;
           case CFG_TYPE_RUNSCRIPT_TARGET:
             StoreRunscriptTarget(p, lc, &runscript_items[i], i, pass);
             break;
           case CFG_TYPE_RUNSCRIPT_BOOL:
-            StoreRunscriptBool(lc, &runscript_items[i], i, pass);
+            StoreRunscriptBool(p, lc, &runscript_items[i], i, pass);
             break;
           case CFG_TYPE_RUNSCRIPT_WHEN:
-            StoreRunscriptWhen(lc, &runscript_items[i], i, pass);
+            StoreRunscriptWhen(p, lc, &runscript_items[i], i, pass);
             break;
           default:
             break;
@@ -3049,6 +3078,7 @@ static void StoreRunscript(ConfigurationParser* p,
       goto bail_out;
     }
   }
+  p->PopObject();
 
   if (pass == 2) {
     alist<RunScript*>** runscripts
