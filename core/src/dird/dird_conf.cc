@@ -85,8 +85,16 @@ extern struct s_kw RunFields[];
  */
 static PoolMem* configure_usage_string = NULL;
 
-extern void StoreInc(lexer* lc, const ResourceItem* item, int index, int pass);
-extern void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass);
+extern void StoreInc(ConfigurationParser*,
+                     lexer* lc,
+                     const ResourceItem* item,
+                     int index,
+                     int pass);
+extern void StoreRun(ConfigurationParser*,
+                     lexer* lc,
+                     const ResourceItem* item,
+                     int index,
+                     int pass);
 
 static void CreateAndAddUserAgentConsoleResource(
     ConfigurationParser& my_config);
@@ -2402,7 +2410,8 @@ static bool PopulateJobdefaults()
 
 bool PopulateDefs() { return PopulateJobdefaults(); }
 
-static void StorePooltype(lexer* lc,
+static void StorePooltype(ConfigurationParser*,
+                          lexer* lc,
                           const ResourceItem* item,
                           int index,
                           int pass)
@@ -2428,7 +2437,8 @@ static void StorePooltype(lexer* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreActiononpurge(lexer* lc,
+static void StoreActiononpurge(ConfigurationParser*,
+                               lexer* lc,
                                const ResourceItem* item,
                                int index,
                                int)
@@ -2461,7 +2471,8 @@ static void StoreActiononpurge(lexer* lc,
  * first reference. The details of the resource are obtained
  * later from the SD.
  */
-static void StoreDevice(lexer* lc,
+static void StoreDevice(ConfigurationParser* p,
+                        lexer* lc,
                         const ResourceItem* item,
                         int index,
                         int pass)
@@ -2474,6 +2485,7 @@ static void StoreDevice(lexer* lc,
     Dmsg4(900, "Add device %s to vector %p size=%" PRIuz " %s\n", lc->str,
           &devices, devices.size(), item->name);
 
+    p->PushString(lc->str);
     devices.emplace_back(lc->str);
   }
 
@@ -2483,7 +2495,10 @@ static void StoreDevice(lexer* lc,
 }
 
 // Store Migration/Copy type
-static void StoreMigtype(lexer* lc, const ResourceItem* item, int index)
+static void StoreMigtype(ConfigurationParser*,
+                         lexer* lc,
+                         const ResourceItem* item,
+                         int index)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2507,7 +2522,11 @@ static void StoreMigtype(lexer* lc, const ResourceItem* item, int index)
 }
 
 // Store JobType (backup, verify, restore)
-static void StoreJobtype(lexer* lc, const ResourceItem* item, int index, int)
+static void StoreJobtype(ConfigurationParser*,
+                         lexer* lc,
+                         const ResourceItem* item,
+                         int index,
+                         int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2530,7 +2549,8 @@ static void StoreJobtype(lexer* lc, const ResourceItem* item, int index, int)
 }
 
 // Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
-static void StoreProtocoltype(lexer* lc,
+static void StoreProtocoltype(ConfigurationParser*,
+                              lexer* lc,
                               const ResourceItem* item,
                               int index,
                               int)
@@ -2555,7 +2575,11 @@ static void StoreProtocoltype(lexer* lc,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreReplace(lexer* lc, const ResourceItem* item, int index, int)
+static void StoreReplace(ConfigurationParser*,
+                         lexer* lc,
+                         const ResourceItem* item,
+                         int index,
+                         int)
 {
   LexGetToken(lc, BCT_NAME);
   // Scan Replacement options
@@ -2579,7 +2603,8 @@ static void StoreReplace(lexer* lc, const ResourceItem* item, int index, int)
 }
 
 // Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
-static void StoreAuthprotocoltype(lexer* lc,
+static void StoreAuthprotocoltype(ConfigurationParser*,
+                                  lexer* lc,
                                   const ResourceItem* item,
                                   int index,
                                   int)
@@ -2606,7 +2631,11 @@ static void StoreAuthprotocoltype(lexer* lc,
 }
 
 // Store authentication type (Mostly for NDMP like clear or MD5).
-static void StoreAuthtype(lexer* lc, const ResourceItem* item, int index, int)
+static void StoreAuthtype(ConfigurationParser*,
+                          lexer* lc,
+                          const ResourceItem* item,
+                          int index,
+                          int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
@@ -2630,7 +2659,11 @@ static void StoreAuthtype(lexer* lc, const ResourceItem* item, int index, int)
 }
 
 // Store Job Level (Full, Incremental, ...)
-static void StoreLevel(lexer* lc, const ResourceItem* item, int index, int)
+static void StoreLevel(ConfigurationParser*,
+                       lexer* lc,
+                       const ResourceItem* item,
+                       int index,
+                       int)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -2657,7 +2690,8 @@ static void StoreLevel(lexer* lc, const ResourceItem* item, int index, int)
  * Store password either clear if for NDMP and catalog or MD5 hashed for
  * native.
  */
-static void StoreAutopassword(lexer* lc,
+static void StoreAutopassword(ConfigurationParser* p,
+                              lexer* lc,
                               const ResourceItem* item,
                               int index,
                               int pass)
@@ -2669,17 +2703,16 @@ static void StoreAutopassword(lexer* lc,
        * and for clear we need a code of 1. */
       switch (item->code) {
         case 1:
-          my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index,
-                                   pass);
+          p->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
           break;
         default:
-          my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+          p->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
           break;
       }
       break;
     case R_CLIENT:
       if (pass == 2) {
-        auto* res = dynamic_cast<ClientResource*>(my_config->GetResWithName(
+        auto* res = dynamic_cast<ClientResource*>(p->GetResWithName(
             R_CLIENT, (*item->allocated_resource)->resource_name_));
         ASSERT(res);
 
@@ -2694,17 +2727,16 @@ static void StoreAutopassword(lexer* lc,
         case APT_NDMPV2:
         case APT_NDMPV3:
         case APT_NDMPV4:
-          my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index,
-                                   pass);
+          p->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
           break;
         default:
-          my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+          p->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
           break;
       }
       break;
     case R_STORAGE:
       if (pass == 2) {
-        auto* res = dynamic_cast<StorageResource*>(my_config->GetResWithName(
+        auto* res = dynamic_cast<StorageResource*>(p->GetResWithName(
             R_STORAGE, (*item->allocated_resource)->resource_name_));
         ASSERT(res);
 
@@ -2719,24 +2751,27 @@ static void StoreAutopassword(lexer* lc,
         case APT_NDMPV2:
         case APT_NDMPV3:
         case APT_NDMPV4:
-          my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index,
-                                   pass);
+          p->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
           break;
         default:
-          my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+          p->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
           break;
       }
       break;
     case R_CATALOG:
-      my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+      p->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
       break;
     default:
-      my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+      p->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
   }
 }
 
-static void StoreAcl(lexer* lc, const ResourceItem* item, int index, int pass)
+static void StoreAcl(ConfigurationParser* p,
+                     lexer* lc,
+                     const ResourceItem* item,
+                     int index,
+                     int pass)
 {
   alist<const char*>** alistvalue
       = GetItemVariablePointer<alist<const char*>**>(*item);
@@ -2749,8 +2784,11 @@ static void StoreAcl(lexer* lc, const ResourceItem* item, int index, int pass)
   alist<const char*>* list = alistvalue[item->code];
   PoolMem msg;
   int token = BCT_COMMA;
+
+  p->PushArray();
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING);
+    p->PushString(lc->str);
     if (pass == 1) {
       if (!IsAclEntryValid(lc->str, msg)) {
         scan_err1(lc, T_("Cannot store Acl: %s"), msg.c_str());
@@ -2761,11 +2799,16 @@ static void StoreAcl(lexer* lc, const ResourceItem* item, int index, int pass)
     }
     token = LexGetToken(lc, BCT_ALL);
   }
+  p->PopArray();
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreAudit(lexer* lc, const ResourceItem* item, int index, int pass)
+static void StoreAudit(ConfigurationParser*,
+                       lexer* lc,
+                       const ResourceItem* item,
+                       int index,
+                       int pass)
 {
   int token;
   alist<const char*>* list;
@@ -2812,7 +2855,8 @@ static void StoreRunscriptWhen(lexer* lc, const ResourceItem* item, int, int)
   ScanToEol(lc);
 }
 
-static void StoreRunscriptTarget(lexer* lc,
+static void StoreRunscriptTarget(ConfigurationParser* p,
+                                 lexer* lc,
                                  const ResourceItem* item,
                                  int,
                                  int pass)
@@ -2830,7 +2874,7 @@ static void StoreRunscriptTarget(lexer* lc,
     } else {
       BareosResource* res;
 
-      if (!(res = my_config->GetResWithName(R_CLIENT, lc->str))) {
+      if (!(res = p->GetResWithName(R_CLIENT, lc->str))) {
         scan_err3(lc,
                   T_("Could not find config Resource %s referenced on line %d "
                      ": %s\n"),
@@ -2858,7 +2902,8 @@ static void StoreRunscriptCmd(lexer* lc,
   ScanToEol(lc);
 }
 
-static void StoreShortRunscript(lexer* lc,
+static void StoreShortRunscript(ConfigurationParser*,
+                                lexer* lc,
                                 const ResourceItem* item,
                                 int,
                                 int pass)
@@ -2939,7 +2984,8 @@ static void StoreRunscriptBool(lexer* lc, const ResourceItem* item, int, int)
  * resource.  We treat the RunScript like a sort of
  * mini-resource within the Job resource.
  */
-static void StoreRunscript(lexer* lc,
+static void StoreRunscript(ConfigurationParser* p,
+                           lexer* lc,
                            const ResourceItem* item,
                            int index,
                            int pass)
@@ -2982,7 +3028,7 @@ static void StoreRunscript(lexer* lc,
             StoreRunscriptCmd(lc, &runscript_items[i], i, pass);
             break;
           case CFG_TYPE_RUNSCRIPT_TARGET:
-            StoreRunscriptTarget(lc, &runscript_items[i], i, pass);
+            StoreRunscriptTarget(p, lc, &runscript_items[i], i, pass);
             break;
           case CFG_TYPE_RUNSCRIPT_BOOL:
             StoreRunscriptBool(lc, &runscript_items[i], i, pass);
@@ -3174,7 +3220,8 @@ static void InitResourceCb(const ResourceItem* item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void ParseConfigCb(lexer* lc,
+static void ParseConfigCb(ConfigurationParser* p,
+                          lexer* lc,
                           const ResourceItem* item,
                           int index,
                           int pass,
@@ -3182,55 +3229,55 @@ static void ParseConfigCb(lexer* lc,
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:
-      StoreAutopassword(lc, item, index, pass);
+      StoreAutopassword(p, lc, item, index, pass);
       break;
     case CFG_TYPE_ACL:
-      StoreAcl(lc, item, index, pass);
+      StoreAcl(p, lc, item, index, pass);
       break;
     case CFG_TYPE_AUDIT:
-      StoreAudit(lc, item, index, pass);
+      StoreAudit(p, lc, item, index, pass);
       break;
     case CFG_TYPE_AUTHPROTOCOLTYPE:
-      StoreAuthprotocoltype(lc, item, index, pass);
+      StoreAuthprotocoltype(p, lc, item, index, pass);
       break;
     case CFG_TYPE_AUTHTYPE:
-      StoreAuthtype(lc, item, index, pass);
+      StoreAuthtype(p, lc, item, index, pass);
       break;
     case CFG_TYPE_DEVICE:
-      StoreDevice(lc, item, index, pass);
+      StoreDevice(p, lc, item, index, pass);
       break;
     case CFG_TYPE_JOBTYPE:
-      StoreJobtype(lc, item, index, pass);
+      StoreJobtype(p, lc, item, index, pass);
       break;
     case CFG_TYPE_PROTOCOLTYPE:
-      StoreProtocoltype(lc, item, index, pass);
+      StoreProtocoltype(p, lc, item, index, pass);
       break;
     case CFG_TYPE_LEVEL:
-      StoreLevel(lc, item, index, pass);
+      StoreLevel(p, lc, item, index, pass);
       break;
     case CFG_TYPE_REPLACE:
-      StoreReplace(lc, item, index, pass);
+      StoreReplace(p, lc, item, index, pass);
       break;
     case CFG_TYPE_SHRTRUNSCRIPT:
-      StoreShortRunscript(lc, item, index, pass);
+      StoreShortRunscript(p, lc, item, index, pass);
       break;
     case CFG_TYPE_RUNSCRIPT:
-      StoreRunscript(lc, item, index, pass);
+      StoreRunscript(p, lc, item, index, pass);
       break;
     case CFG_TYPE_MIGTYPE:
-      StoreMigtype(lc, item, index);
+      StoreMigtype(p, lc, item, index);
       break;
     case CFG_TYPE_INCEXC:
-      StoreInc(lc, item, index, pass);
+      StoreInc(p, lc, item, index, pass);
       break;
     case CFG_TYPE_RUN:
-      StoreRun(lc, item, index, pass);
+      StoreRun(p, lc, item, index, pass);
       break;
     case CFG_TYPE_ACTIONONPURGE:
-      StoreActiononpurge(lc, item, index, pass);
+      StoreActiononpurge(p, lc, item, index, pass);
       break;
     case CFG_TYPE_POOLTYPE:
-      StorePooltype(lc, item, index, pass);
+      StorePooltype(p, lc, item, index, pass);
       break;
     default:
       break;
@@ -3553,7 +3600,8 @@ static void ConfigReadyCallback(ConfigurationParser& t_config)
   ResetAllClientConnectionHandshakeModes(t_config);
 }
 
-static bool AddResourceCopyToEndOfChain(int type,
+static bool AddResourceCopyToEndOfChain(ConfigurationParser* p,
+                                        int type,
                                         BareosResource* new_resource = nullptr)
 {
   if (!new_resource) {
@@ -3616,7 +3664,7 @@ static bool AddResourceCopyToEndOfChain(int type,
         return false;
     }
   }
-  return my_config->AppendToResourcesChain(new_resource, type);
+  return p->AppendToResourcesChain(new_resource, type);
 }
 
 /*
@@ -3642,7 +3690,7 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& t_config)
   c->refcnt_ = 1;
   c->internal_ = true;
 
-  AddResourceCopyToEndOfChain(R_CONSOLE, c);
+  AddResourceCopyToEndOfChain(&t_config, R_CONSOLE, c);
 }
 
 ConfigurationParser* InitDirConfig(const char* t_configfile, int exit_code)
@@ -3996,7 +4044,7 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
     return validation && ret;
   }
 
-  if (!AddResourceCopyToEndOfChain(type)) { return false; }
+  if (!AddResourceCopyToEndOfChain(my_config, type)) { return false; }
   return true;
 }
 

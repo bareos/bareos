@@ -243,27 +243,22 @@ class ConfigurationParser {
  private:
   std::vector<conf_proto> shape;
 
+ public:
   void PushString(std::string_view v) { shape.push_back(proto::str{v}); }
-
   void PushB(bool b) { shape.push_back(b); }
-
   void PushU(int64_t i) { shape.push_back(i); }
-
   void PushI(uint64_t i) { shape.push_back(i); }
-
   void PushArray() { shape.push_back(proto::arr_begin{}); }
-
   void PopArray() { shape.push_back(proto::arr_end{}); }
-
   void PushObject() { shape.push_back(proto::obj_begin{}); }
-
   void PopObject() { shape.push_back(proto::obj_end{}); }
 
 
  public:
   using sender = PRINTF_LIKE(2, 3) bool(void* user, const char* fmt, ...);
   using resource_initer = void(const ResourceItem* item, int pass);
-  using resource_storer = void(lexer* lc,
+  using resource_storer = void(ConfigurationParser* p,
+                               lexer* lc,
                                const ResourceItem* item,
                                int index,
                                int pass,

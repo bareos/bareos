@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -165,7 +165,11 @@ struct s_kw RunFields[] = {{"pool", 'P'},
  *   together.
  *
  */
-void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
+void StoreRun(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
 {
   char* p;
   int i, j;
@@ -232,7 +236,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
           case 'n': /* NextPool */
             token = LexGetToken(lc, BCT_NAME);
             if (pass == 2) {
-              res = my_config->GetResWithName(R_POOL, lc->str);
+              res = conf->GetResWithName(R_POOL, lc->str);
               if (res == NULL) {
                 scan_err1(lc, T_("Could not find specified Pool Resource: %s"),
                           lc->str);
@@ -263,7 +267,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
           case 'S': /* Storage */
             token = LexGetToken(lc, BCT_NAME);
             if (pass == 2) {
-              res = my_config->GetResWithName(R_STORAGE, lc->str);
+              res = conf->GetResWithName(R_STORAGE, lc->str);
               if (res == NULL) {
                 scan_err1(lc,
                           T_("Could not find specified Storage Resource: %s"),
@@ -276,7 +280,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
           case 'M': /* Messages */
             token = LexGetToken(lc, BCT_NAME);
             if (pass == 2) {
-              res = my_config->GetResWithName(R_MSGS, lc->str);
+              res = conf->GetResWithName(R_MSGS, lc->str);
               if (res == NULL) {
                 scan_err1(lc,
                           T_("Could not find specified Messages Resource: %s"),
