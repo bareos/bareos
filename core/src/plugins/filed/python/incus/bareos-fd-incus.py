@@ -391,7 +391,7 @@ def _set(type_):
     def f(value):
         result = []
         seen = set()
-        for v in value.split(':'):
+        for v in value.split(','):
             parsed = type_(v)
             if parsed in seen:
                 raise ValueError("a list without duplicates values")
@@ -430,7 +430,7 @@ class BareosFdIncusOptions:
             'hash': self.make_opt(_enum(*hashlib.algorithms_guaranteed), 'sha256'),
             'hijacked_stat_fields': self.make_opt(_set(_enum('st_ino', 'st_atime', 'st_mtime',
                                                              'st_ctime')),
-                                                  'st_ino:st_atime:st_mtime:st_ctime'),
+                                                  'st_ino,st_atime,st_mtime,st_ctime'),
 
             # Restore options
             'buffer_depth': self.make_opt(_int, '8'),
