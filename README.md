@@ -26,7 +26,7 @@
 
 <br>
 
-**Bareos** is a reliable, cross-network open-source backup solution for data protection, archiving, and recovery. It supports Linux, Windows, FreeBSD, macOS, and other well-established operating systems. Bareos offers scalable, enterprise-grade features for businesses of all sizes, ensuring secure and efficient data management.
+[**Bareos**](https://www.bareos.com) is a reliable, cross-network open-source backup solution for data protection, archiving, and recovery. It supports Linux, Windows, FreeBSD, macOS, and other well-established operating systems. Bareos offers scalable, enterprise-grade features for businesses of all sizes, ensuring secure and efficient data management.
 
 ---
 
@@ -34,13 +34,16 @@
 
 - **True Open Source**: Licensed under AGPLv3 with no open-core or restrictions.
 - **Cross-Platform**: Supports Linux, Windows, FreeBSD, macOS, and more.
-- **Network-Based**: Flexible, network-based backups with multiple clients and storage options.
-- **Multiple Backends**: Supports disk, tape, and cloud storage.
-- **Python Plugin Interface**: Extendable with custom plugins, including VMware integration.
+- **Scalable Architecture**: Designed for many clients and storage targets across networks.
+- **Multiple Backends**: Supports disk, tape, dedupable and cloud/object storage to store backups.
+- **Plugins for Modern Workloads**: Built-in and optional plugins for databases, virtualization, Linux and Windows bare-metal recovery and more.
+- **Virtualization Backups**: Support for hypervisors such as VMware vSphere, Proxmox, Hyper-V (depending on version/subscription).
 - **NDMP SAN Backups**: High-speed SAN backups using NDMP with DAR/DDAR support.
-- **Always Incremental Backups**: Efficient, incremental backup scheme to save storage.
+- **Incremental and Full Backups**: Supports full, incremental, differential, always incremental and virtual full workflows (as configured).
 - **Encryption**: Secure backups with built-in encryption.
-- **Scriptable CLI**: Automate with the CLI or use the web-based interface (WebUI).
+- **Automation-Friendly**: Scriptable via CLI and integrates well into automation pipelines.
+- GUI based administration via Bareos WebUI
+- CLI based administration via bconsole
 - **Role-Based ACL**: Secure access control with role-based permissions.
 
 ---
@@ -80,7 +83,17 @@ Are you a developer passionate about open-source technology? We’re always open
 
 ---
 
-## Featured Videos
+## Videos
+
+<p>
+  <a href="https://www.youtube.com/playlist?list=PLo4hatlfsTzQkRYkzHmdhyoPx1Q9PXBEL">
+    Watch Bareos videos on YouTube
+  </a>
+</p>
+
+<a href="https://youtu.be/vl9VSF8C0fg">
+  <img src="https://img.youtube.com/vi/vl9VSF8C0fg/0.jpg" width="300" alt="Hyper-V Backups with Bareos 25">
+</a>
 
 <a href="https://youtu.be/MF2BLiTDwA0?si=kL7Qg4TfVI9mBl13">
     <img src="https://img.youtube.com/vi/MF2BLiTDwA0/0.jpg" width="300">
@@ -88,33 +101,22 @@ Are you a developer passionate about open-source technology? We’re always open
 <a href="https://youtu.be/f-2dlqfLFRc?si=HComHfXTtb22bmtV">
     <img src="https://img.youtube.com/vi/f-2dlqfLFRc/0.jpg" width="300">
 </a>
-<a href="https://youtu.be/eHC4z2ZQXQ0?si=G9Q8OrkwOzFzHtXU">
-    <img src="https://img.youtube.com/vi/eHC4z2ZQXQ0/0.jpg" width="300">
-</a>
+
 
 ---
 
+
 ## What's New
 
-Bareos 24 brings several exciting enhancements across storage, plugins, and platform support. Here’s a quick look at what’s coming:
+Bareos 25 brings new plugins and platform improvements - from extended hypervisor support to Windows bare-metal recovery and improved automation.
 
-### Storage Enhancements
-- **Dedupable Storage Backend**: Optimized for deduplication, supporting ZFS, VDO, btrfs, and more.
-- **New Cloud Storage Backend**: Drop-in replacement backend that is able to read and write in the same format.
+### Bareos 25 Plugins and Features
+- **Hyper-V Plugin**: Adds native support for Microsoft Hyper-V. The plugin can back up and restore virtual machines and uses Resilient Change Tracking (RCT) for very fast incremental backups. Full and incremental backups are supported, and restore recreates the VM and its disks in Hyper-V.
+- **Proxmox Plugin**: Agentless backups for Proxmox Virtual Environment guests. After installing the Bareos File Daemon with the plugin on one cluster node, Bareos can back up both virtual machines and container guests. The plugin currently supports full backups. Restore can recreate a guest on the cluster or restore into a local `.vma` dump file for import via the Proxmox GUI.
+- **Barri Plugin (Windows Disaster Recovery)**: The new Bareos Recovery Imager (Barri) plugin provides a toolset for creating and restoring Windows disaster recovery images. It can generate a full recovery image of a running Windows system without downtime, via the File Daemon plugin or `barri-cli.exe`. Recovery can be done through a Linux live environment, via Linux/Windows CLI tools, or inside a Windows PE environment when drivers are required. Supports connected and fully offline workflows.
+- **Libcloud Plugin**: Re-adds support for backing up cloud objects stored via the S3 protocol through the Apache Libcloud plugin. The plugin can recurse nested buckets and back up objects. Updated for current Python versions and uses the standard `threading` module. Restores write objects to a local filesystem (not directly back to S3).
+- **Qumulo Plugin (Third-party, by Yuzuy)**: Integrates Qumulo clusters with the Bareos File Daemon. Supports full and incremental backups, snapshot-based backups, ACL handling, exclusions, fast scan for changed data (avoids expensive tree walks), and virtual full backups.
+- **New Regular Expression Library**: Switches from the legacy regex library to the faster PCRE2 engine on Windows. Depending on the pattern and complexity, expected speedup is between 2× and 20×.
+- **Automatic Configuration of Disk Autochanger**: For disk devices configured with `Count > 1`, Bareos now creates required virtual devices automatically and groups them into an autochanger, avoiding manual setup. The remaining manual step is setting an appropriate `Maximum Concurrent Jobs` value in the Director.
 
-### Plugin & Device Management
-- **Python Plugin in Separate Process**: Improves stability by isolating each plugin’s interpreter.
-- **Just-in-Time Device Reservation**: Boosts tape drive utilization by reserving devices only when needed.
-
-### Platform & Build Improvements
-- **Windows Binaries with MSVC Compiler**: Faster binaries with native Windows support.
-- **Universal Linux Client for OpenSSL 3 and ARM64**: Expands support to OpenSSL 3 and ARM architectures.
-- **AArch64 Binary Packages**: Testing and support for AArch64 packages.
-
-### Network & Performance
-- **Improved Network Resilience**: Enhancements to handle unstable network connections.
-- **NDMP Support Enhancements**: Bug fixes and improvements for Bareos’s NDMP support.
-- **Preparations for Large Backups**: Ready for future support of backups with over 2 billion files.
-
-<a href="https://docs.bareos.org/" target="_blank" rel="noopener noreferrer">See Release Notes & Changelog</a>
-
+<a href="https://docs.bareos.org/master/Appendix/ReleaseNotes.html" target="_blank" rel="noopener noreferrer">See Release Notes & Changelog</a>
