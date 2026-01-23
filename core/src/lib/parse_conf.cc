@@ -192,7 +192,7 @@ bool ConfigurationParser::ParseConfig()
 
 void ConfigurationParser::PrintShape()
 {
-  json_t* toplevel = json_array();
+  json_t* toplevel = json_object();
 
   size_t current_idx = 0;
 
@@ -271,19 +271,11 @@ void ConfigurationParser::PrintShape()
   auto jpush = [&](json_t* value) {
     json_t* current = stack.back();
 
-    if (current == toplevel) {
-      ASSERT(key);
-      auto* obj = json_object();
-      json_object_set_new(obj, "type", json_stringn(key->data(), key->size()));
-      json_object_set_new(obj, "conf", value);
-
-      json_array_append_new(current, obj);
-      key.reset();
-    } else if (json_is_object(current)) {
+    if (json_is_object(current)) {
       ASSERT(key);
 
       // this needs to be done better
-      if (allow_multiple(*key)) {
+      if (current == toplevel || allow_multiple(*key)) {
         json_t* arr = json_object_getn(current, key->data(), key->size());
         if (!arr) {
           arr = json_array();
