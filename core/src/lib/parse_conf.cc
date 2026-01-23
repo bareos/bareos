@@ -213,6 +213,23 @@ void ConfigurationParser::PrintShape()
     return last;
   };
 
+  auto key_convert = [](std::string_view k) -> std::string_view {
+    if (strncasecmp(k.data(), "RunBeforeJob", k.size()) == 0) {
+      return "RunScript";
+    }
+    if (strncasecmp(k.data(), "RunAfterJob", k.size()) == 0) {
+      return "RunScript";
+    }
+    if (strncasecmp(k.data(), "ClientRunBeforeJob", k.size()) == 0) {
+      return "RunScript";
+    }
+    if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
+      return "RunScript";
+    }
+
+    return k;
+  };
+
   auto allow_multiple = [](std::string_view k) {
     // this also needs to check for case ...
     if (strncasecmp(k.data(), "RunScript", k.size()) == 0) { return true; }
@@ -262,18 +279,24 @@ void ConfigurationParser::PrintShape()
     if (json_is_object(current)) {
       ASSERT(key);
 
+      auto actual_key = key_convert(*key);
+
       // this needs to be done better
-      if (current == toplevel || allow_multiple(*key)) {
-        json_t* arr = json_object_getn(current, key->data(), key->size());
+      if (current == toplevel || allow_multiple(actual_key)) {
+        json_t* arr
+            = json_object_getn(current, actual_key.data(), actual_key.size());
         if (!arr) {
           arr = json_array();
-          json_object_setn_new(current, key->data(), key->size(), arr);
+          json_object_setn_new(current, actual_key.data(), actual_key.size(),
+                               arr);
         }
         ASSERT(json_is_array(arr));
         json_array_append_new(arr, value);
       } else {
-        ASSERT(!json_object_getn(current, key->data(), key->size()));
-        json_object_setn_new(current, key->data(), key->size(), value);
+        ASSERT(
+            !json_object_getn(current, actual_key.data(), actual_key.size()));
+        json_object_setn_new(current, actual_key.data(), actual_key.size(),
+                             value);
       }
 
 
