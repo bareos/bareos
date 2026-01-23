@@ -852,31 +852,34 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return
         root = f"@INCUS/{self.options.instance}"
         # Iterate over all members and chunk disk images
-        for tarinfo in tar:
-            dst = f'{root}{tarinfo.name.removeprefix('backup')}'
-            if tarinfo.isreg():
-                f = tar.extractfile(tarinfo)
-            else:
-                f = None
-            if self.should_chunk(tarinfo):
-                chunk_id = 0
-                while True:
-                    data = f.read(self.options.chunk_size)
-                    if not data:
-                        break
-                    name = f"{dst}-{chunk_id:0{self.options.chunk_id_length}d}.chunk"
-                    if data.count(0) == len(data):
-                        if len(data) == self.options.chunk_size:
-                            digest = self.zero_digest
+        try:
+            for tarinfo in tar:
+                dst = f'{root}{tarinfo.name.removeprefix('backup')}'
+                if tarinfo.isreg():
+                    f = tar.extractfile(tarinfo)
+                else:
+                    f = None
+                if self.should_chunk(tarinfo):
+                    chunk_id = 0
+                    while True:
+                        data = f.read(self.options.chunk_size)
+                        if not data:
+                            break
+                        name = f"{dst}-{chunk_id:0{self.options.chunk_id_length}d}.chunk"
+                        if data.count(0) == len(data):
+                            if len(data) == self.options.chunk_size:
+                                digest = self.zero_digest
+                            else:
+                                digest = self.hash(data)
+                            self.queue.put(ChunkEntry(name, digest=digest, size=tarinfo.size))
                         else:
-                            digest = self.hash(data)
-                        self.queue.put(ChunkEntry(name, digest=digest, size=tarinfo.size))
-                    else:
-                        self.queue.put(ChunkEntry(name, data, self.hash(data), tarinfo.size))
-                    chunk_id += 1
-                continue
-            data = None if f is None else f.read()
-            self.queue.put(RegularEntry(dst, data, tarinfo))
+                            self.queue.put(ChunkEntry(name, data, self.hash(data), tarinfo.size))
+                        chunk_id += 1
+                    continue
+                data = None if f is None else f.read()
+                self.queue.put(RegularEntry(dst, data, tarinfo))
+        except Exception as e: # pylint: disable=broad-exception-caught
+            self.queue.put(ErrorEntry(e))
         self.queue.shutdown()
 
     def process_stderr(self, stderr):
