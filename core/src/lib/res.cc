@@ -1202,16 +1202,12 @@ void StoreLabel(ConfigurationParser* conf,
  */
 void StoreAddresses(ConfigurationParser* conf,
                     lexer* lc,
-                    const ResourceItem* item,
-                    int index,
-                    int pass)
+                    const ResourceItem*,
+                    int,
+                    int)
 {
   int token;
   int exist;
-  int family = 0;
-  char errmsg[1024];
-  char port_str[128];
-  char hostname_str[1024];
   enum
   {
     EMPTYLINE = 0x0,
@@ -1219,8 +1215,6 @@ void StoreAddresses(ConfigurationParser* conf,
     ADDRLINE = 0x2
   } next_line
       = EMPTYLINE;
-  int port = str_to_int32(item->default_value);
-
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (token != BCT_BOB) {
     scan_err1(lc, T_("Expected a block begin { , got: %s"), lc->str);
@@ -1241,9 +1235,7 @@ void StoreAddresses(ConfigurationParser* conf,
     conf->PushString("type");
     conf->PushString(lc->str);
     if (Bstrcasecmp("ip", lc->str) || Bstrcasecmp("ipv4", lc->str)) {
-      family = AF_INET;
     } else if (Bstrcasecmp("ipv6", lc->str)) {
-      family = AF_INET6;
     } else {
       scan_err1(lc, T_("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str);
     }
@@ -1257,7 +1249,6 @@ void StoreAddresses(ConfigurationParser* conf,
     }
     token = LexGetToken(lc, BCT_SKIP_EOL);
     exist = EMPTYLINE;
-    port_str[0] = hostname_str[0] = '\0';
     do {
       if (token != BCT_IDENTIFIER) {
         scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
@@ -1293,7 +1284,6 @@ void StoreAddresses(ConfigurationParser* conf,
                       lc->str);
           }
           conf->PushString(lc->str);
-          bstrncpy(port_str, lc->str, sizeof(port_str));
           break;
         case ADDRLINE:
           if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
@@ -1301,7 +1291,6 @@ void StoreAddresses(ConfigurationParser* conf,
                       lc->str);
           }
           conf->PushString(lc->str);
-          bstrncpy(hostname_str, lc->str, sizeof(hostname_str));
           break;
         case EMPTYLINE:
           scan_err0(lc, T_("State machine mismatch"));
@@ -1313,13 +1302,6 @@ void StoreAddresses(ConfigurationParser* conf,
     if (token != BCT_EOB) {
       scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
     }
-    if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_MULTIPLE, htons(port), family, hostname_str,
-                       port_str, errmsg, sizeof(errmsg))) {
-      scan_err3(lc, T_("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
-                hostname_str, port_str, errmsg);
-    }
     token = ScanToNextNotEol(lc);
   } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
 
@@ -1327,8 +1309,6 @@ void StoreAddresses(ConfigurationParser* conf,
   if (token != BCT_EOB) {
     scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
   }
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 void StoreAddressesAddress(ConfigurationParser* conf,
@@ -1456,8 +1436,8 @@ void ParseTypes(ConfigurationParser* conf, lexer* lc)
 void ParseMsgs(ConfigurationParser* conf,
                lexer* lc,
                const ResourceItem* item,
-               int index,
-               int pass)
+               int,
+               int)
 {
   int token;
   Dmsg2(900, "ParseMsgs code=%d\n", item->code);
@@ -1581,8 +1561,8 @@ void ParseMsgs(ConfigurationParser* conf,
  */
 void ParseName(ConfigurationParser* conf,
                lexer* lc,
-               const ResourceItem* item,
-               int index,
+               const ResourceItem*,
+               int,
                int)
 {
   std::string msg{};
@@ -1595,18 +1575,7 @@ void ParseName(ConfigurationParser* conf,
 
   conf->PushString(lc->str);
 
-  // Parse the name both in pass 1 and pass 2
-  char** p = GetItemVariablePointer<char**>(*item);
-
-  if (*p) {
-    scan_err2(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p,
-              lc->str);
-    return;
-  }
-  *p = strdup(lc->str);
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /*
@@ -1615,51 +1584,37 @@ void ParseName(ConfigurationParser* conf,
  */
 void ParseStrname(ConfigurationParser* conf,
                   lexer* lc,
-                  const ResourceItem* item,
-                  int index,
-                  int pass)
+                  const ResourceItem*,
+                  int,
+                  int)
 {
   LexGetToken(lc, BCT_NAME);
-
   conf->PushString(lc->str);
-  if (pass == 1) {
-    char** p = GetItemVariablePointer<char**>(*item);
-    if (*p) { free(*p); }
-    *p = strdup(lc->str);
-  }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a string at specified address
 void ParseStr(ConfigurationParser* conf,
               lexer* lc,
-              const ResourceItem* item,
-              int index,
-              int pass)
+              const ResourceItem*,
+              int,
+              int)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
-  if (pass == 1) { SetItemVariableFreeMemory<char*>(*item, strdup(lc->str)); }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a string at specified address
 void ParseStdstr(ConfigurationParser* conf,
                  lexer* lc,
-                 const ResourceItem* item,
-                 int index,
-                 int pass)
+                 const ResourceItem*,
+                 int,
+                 int)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
-  if (pass == 1) { SetItemVariable<std::string>(*item, lc->str); }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /*
@@ -1669,159 +1624,48 @@ void ParseStdstr(ConfigurationParser* conf,
  */
 void ParseDir(ConfigurationParser* conf,
               lexer* lc,
-              const ResourceItem* item,
-              int index,
-              int pass)
+              const ResourceItem*,
+              int,
+              int)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
-  if (pass == 1) {
-    char** p = GetItemVariablePointer<char**>(*item);
-    if (*p) { free(*p); }
-    if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
-    }
-    *p = strdup(lc->str);
-  }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 void ParseStdstrdir(ConfigurationParser* conf,
                     lexer* lc,
-                    const ResourceItem* item,
-                    int index,
-                    int pass)
+                    const ResourceItem*,
+                    int,
+                    int)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
-  if (pass == 1) {
-    if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
-    }
-    SetItemVariable<std::string>(*item, lc->str);
-  }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a password at specified address in MD5 coding
 void ParseMd5Password(ConfigurationParser* conf,
                       lexer* lc,
-                      const ResourceItem* item,
-                      int index,
-                      int pass)
+                      const ResourceItem*,
+                      int,
+                      int)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
-  if (pass == 1) { /* free old item */
-    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
-
-    if (pwd->value) { free(pwd->value); }
-
-    // See if we are parsing an MD5 encoded password already.
-    if (bstrncmp(lc->str, "[md5]", 5)) {
-      if (item->is_required) {
-        static const char* empty_password_md5_hash
-            = "d41d8cd98f00b204e9800998ecf8427e";
-        if (strncmp(lc->str + 5, empty_password_md5_hash,
-                    strlen(empty_password_md5_hash))
-            == 0) {
-          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
-                    (*item->allocated_resource)->resource_name_);
-          return;
-        }
-      }
-
-      std::string_view candidate{lc->str + 5};
-
-      constexpr size_t md5len = 32;
-
-      if (candidate.size() != md5len) {
-        scan_err2(lc,
-                  "md5 password does not have the right size; expected: %" PRIuz
-                  ", got: %" PRIuz "\n",
-                  md5len, candidate.size());
-        *pwd = {};
-        return;
-      }
-
-      if (auto bad = candidate.find_first_not_of("0123456789ABCDEFabcdef");
-          bad != candidate.npos) {
-        scan_err1(
-            lc, "md5 password contains non hexadecimal characters, e.g. '%c'\n",
-            candidate[bad]);
-        *pwd = {};
-        return;
-      }
-
-      pwd->encoding = p_encoding_md5;
-      pwd->value = strdup(lc->str + 5);
-    } else {
-      unsigned int i, j;
-      MD5_CTX md5c;
-      unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
-      char sig[100];
-
-      if (item->is_required) {
-        if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
-          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
-                    (*item->allocated_resource)->resource_name_);
-          return;
-        }
-      }
-
-      IGNORE_DEPRECATED_ON;
-      MD5_Init(&md5c);
-      MD5_Update(&md5c, (unsigned char*)(lc->str), lc->str_len);
-      MD5_Final(digest, &md5c);
-      IGNORE_DEPRECATED_OFF;
-      for (i = j = 0; i < sizeof(digest); i++) {
-        snprintf(&sig[j], 3, "%02x", digest[i]);
-        j += 2;
-        ASSERT(j < 100);
-      }
-      pwd->encoding = p_encoding_md5;
-      pwd->value = strdup(sig);
-    }
-  }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a password at specified address in MD5 coding
 void ParseClearpassword(ConfigurationParser* conf,
                         lexer* lc,
-                        const ResourceItem* item,
-                        int index,
-                        int pass)
+                        const ResourceItem*,
+                        int,
+                        int)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
-  if (pass == 1) {
-    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
-
-
-    if (pwd->value) { free(pwd->value); }
-
-    if (item->is_required) {
-      if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
-        scan_err1(
-            lc, "Empty Password not allowed in Resource \"%s\" not allowed.\n",
-            (*item->allocated_resource)->resource_name_);
-        return;
-      }
-    }
-
-    pwd->encoding = p_encoding_clear;
-    pwd->value = strdup(lc->str);
-  }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /*
@@ -1831,34 +1675,13 @@ void ParseClearpassword(ConfigurationParser* conf,
  */
 void ParseRes(ConfigurationParser* conf,
               lexer* lc,
-              const ResourceItem* item,
-              int index,
-              int pass)
+              const ResourceItem*,
+              int,
+              int)
 {
   LexGetToken(lc, BCT_NAME);
   conf->PushString(lc->str);
-  if (pass == 2) {
-    BareosResource* res = conf->GetResWithName(item->code, lc->str);
-    if (res == NULL) {
-      scan_err3(
-          lc,
-          T_("Could not find config resource \"%s\" referenced on line %d: %s"),
-          lc->str, lc->line_no, lc->line);
-      return;
-    }
-    BareosResource** p = GetItemVariablePointer<BareosResource**>(*item);
-    if (*p) {
-      scan_err3(
-          lc,
-          T_("Attempt to redefine resource \"%s\" referenced on line %d: %s"),
-          item->name, lc->line_no, lc->line);
-      return;
-    }
-    *p = res;
-  }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /*
@@ -1869,128 +1692,53 @@ void ParseRes(ConfigurationParser* conf,
  */
 void ParseAlistRes(ConfigurationParser* conf,
                    lexer* lc,
-                   const ResourceItem* item,
-                   int index,
-                   int pass)
+                   const ResourceItem*,
+                   int,
+                   int)
 {
-  alist<BareosResource*>** alistvalue
-      = GetItemVariablePointer<alist<BareosResource*>**>(*item);
-  if (pass == 2) {
-    if (!*alistvalue) {
-      *alistvalue = new alist<BareosResource*>(10, not_owned_by_alist);
-    }
-  }
-  alist<BareosResource*>* list = *alistvalue;
-
   conf->PushArray();
   int token = BCT_COMMA;
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_NAME); /* scan next item */
     conf->PushString(lc->str);
-    if (pass == 2) {
-      BareosResource* res = conf->GetResWithName(item->code, lc->str);
-      if (res == NULL) {
-        scan_err3(lc,
-                  T_("Could not find config Resource \"%s\" referenced on line "
-                     "%d : %s\n"),
-                  item->name, lc->line_no, lc->line);
-        return;
-      }
-      Dmsg5(900, "Append %p (%s) to alist %p size=%d %s\n", res,
-            res->resource_name_, list, list->size(), item->name);
-      list->append(res);
-    }
     token = LexGetToken(lc, BCT_ALL);
   }
   conf->PopArray();
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a std::string in an std::vector<std::string>.
 void ParseStdVectorStr(ConfigurationParser* conf,
                        lexer* lc,
-                       const ResourceItem* item,
-                       int index,
-                       int pass)
+                       const ResourceItem*,
+                       int,
+                       int)
 {
-  std::vector<std::string>* list{nullptr};
-  if (pass == 2) {
-    list = GetItemVariablePointer<std::vector<std::string>*>(*item);
-  }
   int token = BCT_COMMA;
   conf->PushArray();
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING); /* scan next item */
     conf->PushString(lc->str);
-    if (pass == 2) {
-      Dmsg4(900, "Append %s to vector %p size=%" PRIuz " %s\n", lc->str, list,
-            list->size(), item->name);
-
-      /* See if we need to drop the default value.
-       *
-       * We first check to see if the config item has the
-       * flag set and currently has exactly one entry. */
-      if (!item->IsPresent()) {
-        if (item->default_value && list->size() == 1) {
-          if (list->at(0) == item->default_value) { list->clear(); }
-        }
-      }
-      list->push_back(lc->str);
-    }
     token = LexGetToken(lc, BCT_ALL);
   }
   conf->PopArray();
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a string in an alist.
 void ParseAlistStr(ConfigurationParser* conf,
                    lexer* lc,
-                   const ResourceItem* item,
-                   int index,
-                   int pass)
+                   const ResourceItem*,
+                   int,
+                   int)
 {
-  alist<const char*>** alistvalue
-      = GetItemVariablePointer<alist<const char*>**>(*item);
-  if (pass == 2) {
-    if (!*alistvalue) {
-      *alistvalue = new alist<const char*>(10, owned_by_alist);
-    }
-  }
-  alist<const char*>* list = *alistvalue;
   conf->PushArray();
 
   int token = BCT_COMMA;
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING); /* scan next item */
     conf->PushString(lc->str);
-
-    if (pass == 2) {
-      Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
-            list->size(), item->name);
-
-      /* See if we need to drop the default value from the alist.
-       *
-       * We first check to see if the config item has the
-       * flag set and currently has exactly one entry. */
-      if (!item->IsPresent()) {
-        if (item->default_value && list->size() == 1) {
-          char* entry = (char*)list->first();
-          if (bstrcmp(entry, item->default_value)) {
-            list->destroy();
-            list->init(10, owned_by_alist);
-          }
-        }
-      }
-      list->append(strdup(lc->str));
-    }
     token = LexGetToken(lc, BCT_ALL);
   }
   conf->PopArray();
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /*
@@ -2001,71 +1749,22 @@ void ParseAlistStr(ConfigurationParser* conf,
  */
 void ParseAlistDir(ConfigurationParser* conf,
                    lexer* lc,
-                   const ResourceItem* item,
-                   int index,
-                   int pass)
+                   const ResourceItem*,
+                   int,
+                   int)
 {
-  if (pass == 2) {
-    alist<const char*>** alistvalue
-        = GetItemVariablePointer<alist<const char*>**>(*item);
-    if (!*alistvalue) {
-      *alistvalue = new alist<const char*>(10, owned_by_alist);
-    }
-    alist<const char*>* list = *alistvalue;
-
-    LexGetToken(lc, BCT_STRING); /* scan next item */
-    Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
-          list->size(), item->name);
-
-    conf->PushObject();
-    conf->PushString("is_shell");
-    conf->PushB(lc->str[0] == '|');
-    conf->PushString("str");
-    conf->PushString(lc->str + (lc->str[0] == '|'));
-    conf->PopObject();
-    if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
-    }
-
-    /* See if we need to drop the default value from the alist.
-     *
-     * We first check to see if the config item has the
-     * flag set and currently has exactly one entry. */
-    if (item->default_value && list->size() == 1) {
-      char* entry;
-
-      entry = (char*)list->first();
-      if (bstrcmp(entry, item->default_value)) {
-        list->destroy();
-        list->init(10, owned_by_alist);
-      }
-    }
-
-    list->append(strdup(lc->str));
-  }
+  LexGetToken(lc, BCT_STRING); /* scan next item */
+  conf->PushString(lc->str);
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a list of plugin names to load by the daemon on startup.
 void ParsePluginNames(ConfigurationParser* conf,
                       lexer* lc,
-                      const ResourceItem* item,
-                      int index,
-                      int pass)
+                      const ResourceItem*,
+                      int,
+                      int)
 {
-  if (pass == 1) {
-    ScanToEol(lc);
-    return;
-  }
-
-  alist<const char*>** alistvalue
-      = GetItemVariablePointer<alist<const char*>**>(*item);
-  if (!*alistvalue) {
-    *alistvalue = new alist<const char*>(10, owned_by_alist);
-  }
-
   auto saved = lc->options;
   lc->options.set(lexer::options::ForceString); /* force string, i.e. convert
                                                    numbers/identifiers */
@@ -2081,17 +1780,20 @@ void ParsePluginNames(ConfigurationParser* conf,
         continue;
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING: {
-        conf->PushString(lc->str);
-        char* p0 = strdup(lc->str);
-        char* p1 = p0;
-        char* p2 = p0;
+        const char* p0 = lc->str;
+        const char* p1 = p0;
+        const char* p2 = p0;
         while (p1) {
           p2 = strchr(p1, ':');  // split at ':'
-          if (p2 != nullptr) { *p2++ = '\0'; }
-          (*alistvalue)->append(strdup(p1));
-          p1 = p2;
+          if (p2 == nullptr) {
+            conf->PushString(p1);
+          } else {
+            conf->PushString(
+                std::string_view{p1, static_cast<std::size_t>(p2 - p1)});
+          }
+
+          p1 = p2 + 1;
         }
-        free(p0);
         break;
       }
       default:
@@ -2101,8 +1803,6 @@ void ParsePluginNames(ConfigurationParser* conf,
   }
   conf->PopArray();
   lc->options = saved;
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /*
@@ -2116,110 +1816,56 @@ void ParsePluginNames(ConfigurationParser* conf,
  */
 void ParseDefs(ConfigurationParser* conf,
                lexer* lc,
-               const ResourceItem* item,
+               const ResourceItem*,
                int,
-               int pass)
+               int)
 {
-  BareosResource* res;
-
   LexGetToken(lc, BCT_NAME);
   conf->PushString(lc->str);
-  if (pass == 2) {
-    Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str);
-    res = conf->GetResWithName(item->code, lc->str);
-    if (res == NULL) {
-      scan_err3(
-          lc, T_("Missing config Resource \"%s\" referenced on line %d : %s\n"),
-          lc->str, lc->line_no, lc->line);
-      return;
-    }
-  }
   ScanToEol(lc);
 }
 
 // Parse an integer at specified address
-void parse_int16(ConfigurationParser* conf,
-                 lexer* lc,
-                 const ResourceItem* item,
-                 int index,
-                 int)
+void parse_int16(ConfigurationParser* conf, lexer* lc)
 {
   LexGetToken(lc, BCT_INT16);
   conf->PushI(lc->u.int16_val);
-  SetItemVariable<int16_t>(*item, lc->u.int16_val);
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-void parse_int32(ConfigurationParser* conf,
-                 lexer* lc,
-                 const ResourceItem* item,
-                 int index,
-                 int)
+void parse_int32(ConfigurationParser* conf, lexer* lc)
 {
   LexGetToken(lc, BCT_INT32);
   conf->PushI(lc->u.int32_val);
-  SetItemVariable<int32_t>(*item, lc->u.int32_val);
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a positive integer at specified address
-void parse_pint16(ConfigurationParser* conf,
-                  lexer* lc,
-                  const ResourceItem* item,
-                  int index,
-                  int)
+void parse_pint16(ConfigurationParser* conf, lexer* lc)
 {
   LexGetToken(lc, BCT_PINT16);
   conf->PushU(lc->u.pint16_val);
-  SetItemVariable<uint16_t>(*item, lc->u.pint16_val);
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-void parse_pint32(ConfigurationParser* conf,
-                  lexer* lc,
-                  const ResourceItem* item,
-                  int index,
-                  int)
+void parse_pint32(ConfigurationParser* conf, lexer* lc)
 {
   LexGetToken(lc, BCT_PINT32);
   conf->PushU(lc->u.pint32_val);
-  SetItemVariable<uint32_t>(*item, lc->u.pint32_val);
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse an 64 bit integer at specified address
-void parse_int64(ConfigurationParser* conf,
-                 lexer* lc,
-                 const ResourceItem* item,
-                 int index,
-                 int)
+void parse_int64(ConfigurationParser* conf, lexer* lc)
 {
   LexGetToken(lc, BCT_INT64);
   conf->PushU(lc->u.int64_val);
-  SetItemVariable<int64_t>(*item, lc->u.int64_val);
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a size in bytes
-void parse_int_unit(ConfigurationParser* conf,
-                    lexer* lc,
-                    const ResourceItem* item,
-                    int index,
-                    int,
-                    bool size32,
-                    enum unit_type type)
+void parse_int_unit(ConfigurationParser* conf, lexer* lc, enum unit_type type)
 {
-  uint64_t uvalue;
   char bsize[500];
 
   Dmsg0(900, "Enter parse_unit\n");
@@ -2243,37 +1889,6 @@ void parse_int_unit(ConfigurationParser* conf,
       }
 
       conf->PushString(bsize);
-
-      switch (type) {
-        case STORE_SIZE:
-          if (!size_to_uint64(bsize, &uvalue)) {
-            scan_err1(lc, T_("expected a size number, got: %s"), lc->str);
-            return;
-          }
-          break;
-        case STORE_SPEED:
-          if (!speed_to_uint64(bsize, &uvalue)) {
-            scan_err1(lc, T_("expected a speed number, got: %s"), lc->str);
-            return;
-          }
-          break;
-        default:
-          scan_err0(lc, T_("unknown unit type encountered"));
-          return;
-      }
-
-      if (size32) {
-        SetItemVariable<uint32_t>(*item, uvalue);
-      } else {
-        switch (type) {
-          case STORE_SIZE:
-            SetItemVariable<int64_t>(*item, uvalue);
-            break;
-          case STORE_SPEED:
-            SetItemVariable<uint64_t>(*item, uvalue);
-            break;
-        }
-      }
       break;
     default:
       scan_err2(lc, T_("expected a %s, got: %s"),
@@ -2281,50 +1896,46 @@ void parse_int_unit(ConfigurationParser* conf,
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
   Dmsg0(900, "Leave parse_unit\n");
 }
 
 // Parse a size in bytes
 void parse_size32(ConfigurationParser* conf,
                   lexer* lc,
-                  const ResourceItem* item,
-                  int index,
-                  int pass)
+                  const ResourceItem*,
+                  int,
+                  int)
 {
-  parse_int_unit(conf, lc, item, index, pass, true /* 32 bit */, STORE_SIZE);
+  parse_int_unit(conf, lc, STORE_SIZE);
 }
 
 // Parse a size in bytes
 void parse_size64(ConfigurationParser* conf,
                   lexer* lc,
-                  const ResourceItem* item,
-                  int index,
-                  int pass)
+                  const ResourceItem*,
+                  int,
+                  int)
 {
-  parse_int_unit(conf, lc, item, index, pass, false /* not 32 bit */,
-                 STORE_SIZE);
+  parse_int_unit(conf, lc, STORE_SIZE);
 }
 
 // Parse a speed in bytes/s
 void ParseSpeed(ConfigurationParser* conf,
                 lexer* lc,
-                const ResourceItem* item,
-                int index,
-                int pass)
+                const ResourceItem*,
+                int,
+                int)
 {
-  parse_int_unit(conf, lc, item, index, pass, false /* 64 bit */, STORE_SPEED);
+  parse_int_unit(conf, lc, STORE_SPEED);
 }
 
 // Parse a time period in seconds
 void ParseTime(ConfigurationParser* conf,
                lexer* lc,
-               const ResourceItem* item,
-               int index,
+               const ResourceItem*,
+               int,
                int)
 {
-  utime_t utime;
   char period[500];
 
   int token = LexGetToken(lc, BCT_SKIP_EOL);
@@ -2347,35 +1958,25 @@ void ParseTime(ConfigurationParser* conf,
       }
 
       conf->PushString(period);
-      if (!DurationToUtime(period, &utime)) {
-        scan_err1(lc, T_("expected a time period, got: %s"), period);
-        return;
-      }
-      SetItemVariable<utime_t>(*item, utime);
       break;
     default:
       scan_err1(lc, T_("expected a time period, got: %s"), lc->str);
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a yes/no in a bit field
 void ParseBit(ConfigurationParser* conf,
               lexer* lc,
-              const ResourceItem* item,
-              int index,
+              const ResourceItem*,
+              int,
               int)
 {
   LexGetToken(lc, BCT_NAME);
-  char* bitvalue = GetItemVariablePointer<char*>(*item);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
     conf->PushB(true);
-    SetBit(item->code, bitvalue);
   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    ClearBit(item->code, bitvalue);
     conf->PushB(false);
   } else {
     scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
@@ -2383,23 +1984,19 @@ void ParseBit(ConfigurationParser* conf,
     return;
   }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse a bool in a bit field
 void ParseBool(ConfigurationParser* conf,
                lexer* lc,
-               const ResourceItem* item,
-               int index,
+               const ResourceItem*,
+               int,
                int)
 {
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-    SetItemVariable<bool>(*item, true);
     conf->PushB(true);
   } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    SetItemVariable<bool>(*item, false);
     conf->PushB(false);
   } else {
     scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
@@ -2407,36 +2004,30 @@ void ParseBool(ConfigurationParser* conf,
     return;
   }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Parse Tape Label Type (BAREOS, ANSI, IBM)
 void ParseLabel(ConfigurationParser* conf,
                 lexer* lc,
-                const ResourceItem* item,
-                int index,
+                const ResourceItem*,
+                int,
                 int)
 {
   LexGetToken(lc, BCT_NAME);
   // Parse the label pass 2 so that type is defined
-  int i;
-  for (i = 0; tapelabels[i].name; i++) {
-    conf->PushString(lc->str);
-
+  bool found = false;
+  for (int i = 0; tapelabels[i].name; i++) {
     if (Bstrcasecmp(lc->str, tapelabels[i].name)) {
-      SetItemVariable<uint32_t>(*item, tapelabels[i].token);
-      i = 0;
+      conf->PushU(tapelabels[i].token);
+      found = true;
       break;
     }
   }
-  if (i != 0) {
+  if (!found) {
     scan_err1(lc, T_("Expected a Tape Label keyword, got: %s"), lc->str);
     return;
   }
   ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 /*
@@ -2469,14 +2060,12 @@ void ParseLabel(ConfigurationParser* conf,
  */
 void ParseAddresses(ConfigurationParser* conf,
                     lexer* lc,
-                    const ResourceItem* item,
-                    int index,
-                    int pass)
+                    const ResourceItem*,
+                    int,
+                    int)
 {
   int token;
   int exist;
-  int family = 0;
-  char errmsg[1024];
   char port_str[128];
   char hostname_str[1024];
   enum
@@ -2486,7 +2075,6 @@ void ParseAddresses(ConfigurationParser* conf,
     ADDRLINE = 0x2
   } next_line
       = EMPTYLINE;
-  int port = str_to_int32(item->default_value);
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (token != BCT_BOB) {
@@ -2508,9 +2096,7 @@ void ParseAddresses(ConfigurationParser* conf,
     conf->PushString("type");
     conf->PushString(lc->str);
     if (Bstrcasecmp("ip", lc->str) || Bstrcasecmp("ipv4", lc->str)) {
-      family = AF_INET;
     } else if (Bstrcasecmp("ipv6", lc->str)) {
-      family = AF_INET6;
     } else {
       scan_err1(lc, T_("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str);
     }
@@ -2580,13 +2166,6 @@ void ParseAddresses(ConfigurationParser* conf,
     if (token != BCT_EOB) {
       scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
     }
-    if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_MULTIPLE, htons(port), family, hostname_str,
-                       port_str, errmsg, sizeof(errmsg))) {
-      scan_err3(lc, T_("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
-                hostname_str, port_str, errmsg);
-    }
     token = ScanToNextNotEol(lc);
   } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
 
@@ -2594,8 +2173,6 @@ void ParseAddresses(ConfigurationParser* conf,
   if (token != BCT_EOB) {
     scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
   }
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 void ParseAddressesAddress(ConfigurationParser* conf,
@@ -2982,22 +2559,22 @@ bool ParseResource(ConfigurationParser* conf,
       ParseAlistDir(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_INT16:
-      parse_int16(conf, lc, item, index, pass);
+      parse_int16(conf, lc);
       break;
     case CFG_TYPE_PINT16:
-      parse_pint16(conf, lc, item, index, pass);
+      parse_pint16(conf, lc);
       break;
     case CFG_TYPE_INT32:
-      parse_int32(conf, lc, item, index, pass);
+      parse_int32(conf, lc);
       break;
     case CFG_TYPE_PINT32:
-      parse_pint32(conf, lc, item, index, pass);
+      parse_pint32(conf, lc);
       break;
     case CFG_TYPE_MSGS:
       ParseMsgs(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_INT64:
-      parse_int64(conf, lc, item, index, pass);
+      parse_int64(conf, lc);
       break;
     case CFG_TYPE_BIT:
       ParseBit(conf, lc, item, index, pass);
