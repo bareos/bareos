@@ -43,6 +43,7 @@
 #include "include/compiler_macro.h"
 #include "lib/crypto.h"
 
+namespace {
 enum unit_type
 {
   STORE_SIZE,
@@ -50,171 +51,19 @@ enum unit_type
 };
 
 
-#include <sstream>
-
-// Set default indention e.g. 2 spaces.
-#define DEFAULT_INDENT_STRING "  "
-
-static int res_locked = 0; /* resource chain lock count -- for debug */
-
-// #define TRACE_RES
-
-void ConfigurationParser::b_LockRes(const char* file, int line) const
-{
-  int errstat;
-
-#ifdef TRACE_RES
-  char ed1[50];
-
-  Pmsg4(000, "LockRes  locked=%d w_active=%d at %s:%d\n", res_locked,
-        res_lock_.w_active, file, line);
-
-  if (res_locked) {
-    Pmsg2(000, "LockRes writerid=%lu myid=%s\n", res_lock_.writer_id,
-          edit_pthread(pthread_self(), ed1, sizeof(ed1)));
-  }
-#endif
-
-  if ((errstat = RwlWritelock(&res_lock_)) != 0) {
-    Emsg3(M_ABORT, 0, T_("RwlWritelock failure at %s:%d:  ERR=%s\n"), file,
-          line, strerror(errstat));
-  }
-
-  res_locked++;
-}
-
-void ConfigurationParser::b_UnlockRes(const char* file, int line) const
-{
-  int errstat;
-
-  if ((errstat = RwlWriteunlock(&res_lock_)) != 0) {
-    Emsg3(M_ABORT, 0, T_("RwlWriteunlock failure at %s:%d:. ERR=%s\n"), file,
-          line, strerror(errstat));
-  }
-  res_locked--;
-#ifdef TRACE_RES
-  Pmsg4(000, "UnLockRes locked=%d wactive=%d at %s:%d\n", res_locked,
-        res_lock_.w_active, file, line);
-#endif
-}
-
-// Return resource of type rcode that matches name
-BareosResource* ConfigurationParser::GetResWithName(int rcode,
-                                                    const char* name,
-                                                    bool lock) const
-{
-  BareosResource* res;
-  int rindex = rcode;
-
-  if (lock) {
-    ResLocker _{this};
-
-    res = config_resources_container_->configuration_resources_[rindex];
-    while (res) {
-      if (bstrcmp(res->resource_name_, name)) { break; }
-      res = res->next_;
-    }
-  } else {
-    res = config_resources_container_->configuration_resources_[rindex];
-    while (res) {
-      if (bstrcmp(res->resource_name_, name)) { break; }
-      res = res->next_;
-    }
-  }
-
-  return res;
-}
-
-/*
- * Return next resource of type rcode. On first
- * call second arg (res) is NULL, on subsequent
- * calls, it is called with previous value.
- */
-BareosResource* ConfigurationParser::GetNextRes(int rcode,
-                                                BareosResource* res) const
-{
-  BareosResource* nres;
-  int rindex = rcode;
-
-  if (res == NULL) {
-    nres = config_resources_container_->configuration_resources_[rindex];
-  } else {
-    nres = res->next_;
-  }
-
-  return nres;
-}
-
-const char* ConfigurationParser::ResToStr(int rcode) const
-{
-  if (rcode < 0 || rcode > r_num_ - 1) {
-    return T_("***UNKNOWN***");
-  } else {
-    return resource_definitions_[rcode].name;
-  }
-}
-
-const char* ConfigurationParser::ResGroupToStr(int rcode) const
-{
-  if (rcode < 0 || rcode > r_num_ - 1) {
-    return T_("***UNKNOWN***");
-  } else {
-    return resource_definitions_[rcode].groupname;
-  }
-}
-
-bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
-    ConfigurationParser* config,
-    const char* fq_name_in,
-    std::string& psk)
-{
-  char* fq_name_buffer = strdup(fq_name_in);
-  UnbashSpaces(fq_name_buffer);
-  std::string fq_name(fq_name_buffer);
-  free(fq_name_buffer);
-
-  QualifiedResourceNameTypeConverter* c
-      = config->GetQualifiedResourceNameTypeConverter();
-  if (!c) { return false; }
-
-  int r_type;
-  std::string name; /* either unique job name or client name */
-
-  bool ok = c->StringToResource(name, r_type, fq_name_in);
-  if (!ok) { return false; }
-
-  if (fq_name.find("R_JOB") != std::string::npos) {
-    const char* psk_cstr = JcrGetAuthenticateKey(name.c_str());
-    if (psk_cstr) {
-      psk = psk_cstr;
-      return true;
-    }
-  } else {
-    TlsResource* tls = dynamic_cast<TlsResource*>(
-        config->GetResWithName(r_type, name.c_str()));
-    if (tls) {
-      psk = tls->password_.value;
-      return true;
-    } else {
-      Dmsg1(100, "Could not get tls resource for %d.\n", r_type);
-    }
-  }
-  return false;
-}
-
 /*
  * Scan for message types and add them to the message
  * destination. The basic job here is to connect message types
  * (WARNING, ERROR, FATAL, INFO, ...) with an appropriate
  * destination (MAIL, FILE, OPERATOR, ...)
  */
-static void ScanTypes(ConfigurationParser* conf,
-                      lexer* lc,
-                      MessagesResource* msg,
-                      MessageDestinationCode dest_code,
-                      const std::string& where,
-                      const std::string& cmd,
-                      const std::string& timestamp_format)
+void ScanTypes(ConfigurationParser* conf,
+               lexer* lc,
+               MessagesResource* msg,
+               MessageDestinationCode dest_code,
+               const std::string& where,
+               const std::string& cmd,
+               const std::string& timestamp_format)
 {
   int i;
   bool found, is_not;
@@ -276,11 +125,11 @@ static void ScanTypes(ConfigurationParser* conf,
 }
 
 // Store Messages Destination information
-static void StoreMsgs(ConfigurationParser* conf,
-                      lexer* lc,
-                      const ResourceItem* item,
-                      int index,
-                      int pass)
+void StoreMsgs(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int pass)
 {
   int token;
   const char* cmd = nullptr;
@@ -457,11 +306,11 @@ static void StoreMsgs(ConfigurationParser* conf,
  * This routine is ONLY for resource names
  * Store a name at specified address.
  */
-static void StoreName(ConfigurationParser* conf,
-                      lexer* lc,
-                      const ResourceItem* item,
-                      int index,
-                      int)
+void StoreName(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int)
 {
   std::string msg{};
 
@@ -491,11 +340,11 @@ static void StoreName(ConfigurationParser* conf,
  * Store a name string at specified address
  * A name string is limited to MAX_RES_NAME_LENGTH
  */
-static void StoreStrname(ConfigurationParser* conf,
-                         lexer* lc,
-                         const ResourceItem* item,
-                         int index,
-                         int pass)
+void StoreStrname(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int pass)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -511,11 +360,11 @@ static void StoreStrname(ConfigurationParser* conf,
 }
 
 // Store a string at specified address
-static void StoreStr(ConfigurationParser* conf,
-                     lexer* lc,
-                     const ResourceItem* item,
-                     int index,
-                     int pass)
+void StoreStr(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
@@ -526,11 +375,11 @@ static void StoreStr(ConfigurationParser* conf,
 }
 
 // Store a string at specified address
-static void StoreStdstr(ConfigurationParser* conf,
-                        lexer* lc,
-                        const ResourceItem* item,
-                        int index,
-                        int pass)
+void StoreStdstr(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int pass)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
@@ -545,11 +394,11 @@ static void StoreStdstr(ConfigurationParser* conf,
  * shell expansion except if the string begins with a vertical
  * bar (i.e. it will likely be passed to the shell later).
  */
-static void StoreDir(ConfigurationParser* conf,
-                     lexer* lc,
-                     const ResourceItem* item,
-                     int index,
-                     int pass)
+void StoreDir(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
@@ -567,11 +416,11 @@ static void StoreDir(ConfigurationParser* conf,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreStdstrdir(ConfigurationParser* conf,
-                           lexer* lc,
-                           const ResourceItem* item,
-                           int index,
-                           int pass)
+void StoreStdstrdir(ConfigurationParser* conf,
+                    lexer* lc,
+                    const ResourceItem* item,
+                    int index,
+                    int pass)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
@@ -590,11 +439,11 @@ static void StoreStdstrdir(ConfigurationParser* conf,
 }
 
 // Store a password at specified address in MD5 coding
-static void StoreMd5Password(ConfigurationParser* conf,
-                             lexer* lc,
-                             const ResourceItem* item,
-                             int index,
-                             int pass)
+void StoreMd5Password(ConfigurationParser* conf,
+                      lexer* lc,
+                      const ResourceItem* item,
+                      int index,
+                      int pass)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
@@ -675,11 +524,11 @@ static void StoreMd5Password(ConfigurationParser* conf,
 }
 
 // Store a password at specified address in MD5 coding
-static void StoreClearpassword(ConfigurationParser* conf,
-                               lexer* lc,
-                               const ResourceItem* item,
-                               int index,
-                               int pass)
+void StoreClearpassword(ConfigurationParser* conf,
+                        lexer* lc,
+                        const ResourceItem* item,
+                        int index,
+                        int pass)
 {
   LexGetToken(lc, BCT_STRING);
   conf->PushString(lc->str);
@@ -711,11 +560,11 @@ static void StoreClearpassword(ConfigurationParser* conf,
  * If we are in pass 2, do a lookup of the
  * resource.
  */
-static void StoreRes(ConfigurationParser* conf,
-                     lexer* lc,
-                     const ResourceItem* item,
-                     int index,
-                     int pass)
+void StoreRes(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
 {
   LexGetToken(lc, BCT_NAME);
   conf->PushString(lc->str);
@@ -749,11 +598,11 @@ static void StoreRes(ConfigurationParser* conf,
  *
  * If we are in pass 2, do a lookup of the resource.
  */
-static void StoreAlistRes(ConfigurationParser* conf,
-                          lexer* lc,
-                          const ResourceItem* item,
-                          int index,
-                          int pass)
+void StoreAlistRes(ConfigurationParser* conf,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
 {
   alist<BareosResource*>** alistvalue
       = GetItemVariablePointer<alist<BareosResource*>**>(*item);
@@ -790,11 +639,11 @@ static void StoreAlistRes(ConfigurationParser* conf,
 }
 
 // Store a std::string in an std::vector<std::string>.
-static void StoreStdVectorStr(ConfigurationParser* conf,
-                              lexer* lc,
-                              const ResourceItem* item,
-                              int index,
-                              int pass)
+void StoreStdVectorStr(ConfigurationParser* conf,
+                       lexer* lc,
+                       const ResourceItem* item,
+                       int index,
+                       int pass)
 {
   std::vector<std::string>* list{nullptr};
   if (pass == 2) {
@@ -828,11 +677,11 @@ static void StoreStdVectorStr(ConfigurationParser* conf,
 }
 
 // Store a string in an alist.
-static void StoreAlistStr(ConfigurationParser* conf,
-                          lexer* lc,
-                          const ResourceItem* item,
-                          int index,
-                          int pass)
+void StoreAlistStr(ConfigurationParser* conf,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
 {
   alist<const char*>** alistvalue
       = GetItemVariablePointer<alist<const char*>**>(*item);
@@ -881,11 +730,11 @@ static void StoreAlistStr(ConfigurationParser* conf,
  * with a vertical bar (i.e. it will likely be passed to the
  * shell later).
  */
-static void StoreAlistDir(ConfigurationParser* conf,
-                          lexer* lc,
-                          const ResourceItem* item,
-                          int index,
-                          int pass)
+void StoreAlistDir(ConfigurationParser* conf,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
 {
   if (pass == 2) {
     alist<const char*>** alistvalue
@@ -933,11 +782,11 @@ static void StoreAlistDir(ConfigurationParser* conf,
 }
 
 // Store a list of plugin names to load by the daemon on startup.
-static void StorePluginNames(ConfigurationParser* conf,
-                             lexer* lc,
-                             const ResourceItem* item,
-                             int index,
-                             int pass)
+void StorePluginNames(ConfigurationParser* conf,
+                      lexer* lc,
+                      const ResourceItem* item,
+                      int index,
+                      int pass)
 {
   if (pass == 1) {
     ScanToEol(lc);
@@ -998,11 +847,11 @@ static void StorePluginNames(ConfigurationParser* conf,
  * Note, here item points to the main resource (e.g. Job, not
  *  the jobdefs, which we look up).
  */
-static void StoreDefs(ConfigurationParser* conf,
-                      lexer* lc,
-                      const ResourceItem* item,
-                      int,
-                      int pass)
+void StoreDefs(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int,
+               int pass)
 {
   BareosResource* res;
 
@@ -1022,11 +871,11 @@ static void StoreDefs(ConfigurationParser* conf,
 }
 
 // Store an integer at specified address
-static void store_int16(ConfigurationParser* conf,
-                        lexer* lc,
-                        const ResourceItem* item,
-                        int index,
-                        int)
+void store_int16(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int)
 {
   LexGetToken(lc, BCT_INT16);
   conf->PushI(lc->u.int16_val);
@@ -1036,11 +885,11 @@ static void store_int16(ConfigurationParser* conf,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void store_int32(ConfigurationParser* conf,
-                        lexer* lc,
-                        const ResourceItem* item,
-                        int index,
-                        int)
+void store_int32(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int)
 {
   LexGetToken(lc, BCT_INT32);
   conf->PushI(lc->u.int32_val);
@@ -1051,11 +900,11 @@ static void store_int32(ConfigurationParser* conf,
 }
 
 // Store a positive integer at specified address
-static void store_pint16(ConfigurationParser* conf,
-                         lexer* lc,
-                         const ResourceItem* item,
-                         int index,
-                         int)
+void store_pint16(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int)
 {
   LexGetToken(lc, BCT_PINT16);
   conf->PushU(lc->u.pint16_val);
@@ -1065,11 +914,11 @@ static void store_pint16(ConfigurationParser* conf,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void store_pint32(ConfigurationParser* conf,
-                         lexer* lc,
-                         const ResourceItem* item,
-                         int index,
-                         int)
+void store_pint32(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int)
 {
   LexGetToken(lc, BCT_PINT32);
   conf->PushU(lc->u.pint32_val);
@@ -1080,11 +929,11 @@ static void store_pint32(ConfigurationParser* conf,
 }
 
 // Store an 64 bit integer at specified address
-static void store_int64(ConfigurationParser* conf,
-                        lexer* lc,
-                        const ResourceItem* item,
-                        int index,
-                        int)
+void store_int64(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int)
 {
   LexGetToken(lc, BCT_INT64);
   conf->PushU(lc->u.int64_val);
@@ -1095,13 +944,13 @@ static void store_int64(ConfigurationParser* conf,
 }
 
 // Store a size in bytes
-static void store_int_unit(ConfigurationParser* conf,
-                           lexer* lc,
-                           const ResourceItem* item,
-                           int index,
-                           int,
-                           bool size32,
-                           enum unit_type type)
+void store_int_unit(ConfigurationParser* conf,
+                    lexer* lc,
+                    const ResourceItem* item,
+                    int index,
+                    int,
+                    bool size32,
+                    enum unit_type type)
 {
   uint64_t uvalue;
   char bsize[500];
@@ -1171,42 +1020,42 @@ static void store_int_unit(ConfigurationParser* conf,
 }
 
 // Store a size in bytes
-static void store_size32(ConfigurationParser* conf,
-                         lexer* lc,
-                         const ResourceItem* item,
-                         int index,
-                         int pass)
+void store_size32(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int pass)
 {
   store_int_unit(conf, lc, item, index, pass, true /* 32 bit */, STORE_SIZE);
 }
 
 // Store a size in bytes
-static void store_size64(ConfigurationParser* conf,
-                         lexer* lc,
-                         const ResourceItem* item,
-                         int index,
-                         int pass)
+void store_size64(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int pass)
 {
   store_int_unit(conf, lc, item, index, pass, false /* not 32 bit */,
                  STORE_SIZE);
 }
 
 // Store a speed in bytes/s
-static void StoreSpeed(ConfigurationParser* conf,
-                       lexer* lc,
-                       const ResourceItem* item,
-                       int index,
-                       int pass)
+void StoreSpeed(ConfigurationParser* conf,
+                lexer* lc,
+                const ResourceItem* item,
+                int index,
+                int pass)
 {
   store_int_unit(conf, lc, item, index, pass, false /* 64 bit */, STORE_SPEED);
 }
 
 // Store a time period in seconds
-static void StoreTime(ConfigurationParser* conf,
-                      lexer* lc,
-                      const ResourceItem* item,
-                      int index,
-                      int)
+void StoreTime(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int)
 {
   utime_t utime;
   char period[500];
@@ -1247,11 +1096,11 @@ static void StoreTime(ConfigurationParser* conf,
 }
 
 // Store a yes/no in a bit field
-static void StoreBit(ConfigurationParser* conf,
-                     lexer* lc,
-                     const ResourceItem* item,
-                     int index,
-                     int)
+void StoreBit(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int)
 {
   LexGetToken(lc, BCT_NAME);
   char* bitvalue = GetItemVariablePointer<char*>(*item);
@@ -1272,11 +1121,11 @@ static void StoreBit(ConfigurationParser* conf,
 }
 
 // Store a bool in a bit field
-static void StoreBool(ConfigurationParser* conf,
-                      lexer* lc,
-                      const ResourceItem* item,
-                      int index,
-                      int)
+void StoreBool(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int)
 {
   LexGetToken(lc, BCT_NAME);
   if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
@@ -1296,11 +1145,11 @@ static void StoreBool(ConfigurationParser* conf,
 }
 
 // Store Tape Label Type (BAREOS, ANSI, IBM)
-static void StoreLabel(ConfigurationParser* conf,
-                       lexer* lc,
-                       const ResourceItem* item,
-                       int index,
-                       int)
+void StoreLabel(ConfigurationParser* conf,
+                lexer* lc,
+                const ResourceItem* item,
+                int index,
+                int)
 {
   LexGetToken(lc, BCT_NAME);
   // Store the label pass 2 so that type is defined
@@ -1351,11 +1200,11 @@ static void StoreLabel(ConfigurationParser* conf,
  *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
  *   = { ipv4 { port = 4711 } }
  */
-static void StoreAddresses(ConfigurationParser* conf,
-                           lexer* lc,
-                           const ResourceItem* item,
-                           int index,
-                           int pass)
+void StoreAddresses(ConfigurationParser* conf,
+                    lexer* lc,
+                    const ResourceItem* item,
+                    int index,
+                    int pass)
 {
   int token;
   int exist;
@@ -1482,11 +1331,11 @@ static void StoreAddresses(ConfigurationParser* conf,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreAddressesAddress(ConfigurationParser* conf,
-                                  lexer* lc,
-                                  const ResourceItem* item,
-                                  int,
-                                  int pass)
+void StoreAddressesAddress(ConfigurationParser* conf,
+                           lexer* lc,
+                           const ResourceItem* item,
+                           int,
+                           int pass)
 {
   int token;
   char errmsg[1024];
@@ -1508,11 +1357,11 @@ static void StoreAddressesAddress(ConfigurationParser* conf,
   }
 }
 
-static void StoreAddressesPort(ConfigurationParser* conf,
-                               lexer* lc,
-                               const ResourceItem* item,
-                               int,
-                               int pass)
+void StoreAddressesPort(ConfigurationParser* conf,
+                        lexer* lc,
+                        const ResourceItem* item,
+                        int,
+                        int pass)
 {
   int token;
   char errmsg[1024];
@@ -1548,6 +1397,162 @@ static void StoreAddressesPort(ConfigurationParser* conf,
       scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
     }
   }
+}
+
+
+};  // namespace
+
+
+#include <sstream>
+
+// Set default indention e.g. 2 spaces.
+#define DEFAULT_INDENT_STRING "  "
+
+static int res_locked = 0; /* resource chain lock count -- for debug */
+
+// #define TRACE_RES
+
+void ConfigurationParser::b_LockRes(const char* file, int line) const
+{
+  int errstat;
+
+#ifdef TRACE_RES
+  char ed1[50];
+
+  Pmsg4(000, "LockRes  locked=%d w_active=%d at %s:%d\n", res_locked,
+        res_lock_.w_active, file, line);
+
+  if (res_locked) {
+    Pmsg2(000, "LockRes writerid=%lu myid=%s\n", res_lock_.writer_id,
+          edit_pthread(pthread_self(), ed1, sizeof(ed1)));
+  }
+#endif
+
+  if ((errstat = RwlWritelock(&res_lock_)) != 0) {
+    Emsg3(M_ABORT, 0, T_("RwlWritelock failure at %s:%d:  ERR=%s\n"), file,
+          line, strerror(errstat));
+  }
+
+  res_locked++;
+}
+
+void ConfigurationParser::b_UnlockRes(const char* file, int line) const
+{
+  int errstat;
+
+  if ((errstat = RwlWriteunlock(&res_lock_)) != 0) {
+    Emsg3(M_ABORT, 0, T_("RwlWriteunlock failure at %s:%d:. ERR=%s\n"), file,
+          line, strerror(errstat));
+  }
+  res_locked--;
+#ifdef TRACE_RES
+  Pmsg4(000, "UnLockRes locked=%d wactive=%d at %s:%d\n", res_locked,
+        res_lock_.w_active, file, line);
+#endif
+}
+
+// Return resource of type rcode that matches name
+BareosResource* ConfigurationParser::GetResWithName(int rcode,
+                                                    const char* name,
+                                                    bool lock) const
+{
+  BareosResource* res;
+  int rindex = rcode;
+
+  if (lock) {
+    ResLocker _{this};
+
+    res = config_resources_container_->configuration_resources_[rindex];
+    while (res) {
+      if (bstrcmp(res->resource_name_, name)) { break; }
+      res = res->next_;
+    }
+  } else {
+    res = config_resources_container_->configuration_resources_[rindex];
+    while (res) {
+      if (bstrcmp(res->resource_name_, name)) { break; }
+      res = res->next_;
+    }
+  }
+
+  return res;
+}
+
+/*
+ * Return next resource of type rcode. On first
+ * call second arg (res) is NULL, on subsequent
+ * calls, it is called with previous value.
+ */
+BareosResource* ConfigurationParser::GetNextRes(int rcode,
+                                                BareosResource* res) const
+{
+  BareosResource* nres;
+  int rindex = rcode;
+
+  if (res == NULL) {
+    nres = config_resources_container_->configuration_resources_[rindex];
+  } else {
+    nres = res->next_;
+  }
+
+  return nres;
+}
+
+const char* ConfigurationParser::ResToStr(int rcode) const
+{
+  if (rcode < 0 || rcode > r_num_ - 1) {
+    return T_("***UNKNOWN***");
+  } else {
+    return resource_definitions_[rcode].name;
+  }
+}
+
+const char* ConfigurationParser::ResGroupToStr(int rcode) const
+{
+  if (rcode < 0 || rcode > r_num_ - 1) {
+    return T_("***UNKNOWN***");
+  } else {
+    return resource_definitions_[rcode].groupname;
+  }
+}
+
+bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
+    ConfigurationParser* config,
+    const char* fq_name_in,
+    std::string& psk)
+{
+  char* fq_name_buffer = strdup(fq_name_in);
+  UnbashSpaces(fq_name_buffer);
+  std::string fq_name(fq_name_buffer);
+  free(fq_name_buffer);
+
+  QualifiedResourceNameTypeConverter* c
+      = config->GetQualifiedResourceNameTypeConverter();
+  if (!c) { return false; }
+
+  int r_type;
+  std::string name; /* either unique job name or client name */
+
+  bool ok = c->StringToResource(name, r_type, fq_name_in);
+  if (!ok) { return false; }
+
+  if (fq_name.find("R_JOB") != std::string::npos) {
+    const char* psk_cstr = JcrGetAuthenticateKey(name.c_str());
+    if (psk_cstr) {
+      psk = psk_cstr;
+      return true;
+    }
+  } else {
+    TlsResource* tls = dynamic_cast<TlsResource*>(
+        config->GetResWithName(r_type, name.c_str()));
+    if (tls) {
+      psk = tls->password_.value;
+      return true;
+    } else {
+      Dmsg1(100, "Could not get tls resource for %d.\n", r_type);
+    }
+  }
+  return false;
 }
 
 // Generic store resource dispatcher.
