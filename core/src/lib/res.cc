@@ -83,16 +83,6 @@ void ScanTypes(ConfigurationParser* conf,
       str = &lc->str[0];
     }
 
-    conf->PushObject();
-
-    conf->PushString("is");
-    conf->PushB(!is_not);
-
-    conf->PushString("value");
-    conf->PushString(str);
-
-    conf->PopObject();
-
     for (i = 0; msg_types[i].name; i++) {
       if (Bstrcasecmp(str, msg_types[i].name)) {
         msg_type = msg_types[i].token;
@@ -104,6 +94,16 @@ void ScanTypes(ConfigurationParser* conf,
       scan_err1(lc, T_("message type: %s not found"), str);
       return;
     }
+
+    conf->PushObject();
+
+    conf->PushString("is");
+    conf->PushB(!is_not);
+
+    conf->PushString("type");
+    conf->PushU(msg_type);
+
+    conf->PopObject();
 
     if (msg_type == M_MAX + 1) {     /* all? */
       for (i = 1; i <= M_MAX; i++) { /* yes set all types */
@@ -1398,8 +1398,1273 @@ void StoreAddressesPort(ConfigurationParser* conf,
     }
   }
 }
+};  // namespace
+
+namespace {
+/*
+ * Scan for message types and add them to the message
+ * destination. The basic job here is to connect message types
+ * (WARNING, ERROR, FATAL, INFO, ...) with an appropriate
+ * destination (MAIL, FILE, OPERATOR, ...)
+ */
+void ParseTypes(ConfigurationParser* conf, lexer* lc)
+{
+  bool found, is_not;
+  int msg_type = 0;
+
+  conf->PushArray();
+
+  for (;;) {
+    LexGetToken(lc, BCT_NAME); /* expect at least one type */
+    found = false;
+    const char* str = [&] {
+      if (lc->str[0] == '!') {
+        is_not = true;
+        return &lc->str[1];
+      } else {
+        is_not = false;
+        return &lc->str[0];
+      }
+    }();
+
+    for (int i = 0; msg_types[i].name; i++) {
+      if (Bstrcasecmp(str, msg_types[i].name)) {
+        msg_type = msg_types[i].token;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      scan_err1(lc, T_("message type: %s not found"), str);
+      return;
+    }
+
+    conf->PushObject();
+
+    conf->PushString("is");
+    conf->PushB(!is_not);
+
+    conf->PushString("type");
+    conf->PushU(msg_type);
+  }
+  Dmsg0(900, "Done ParseTypes()\n");
+
+  conf->PopArray();
+}
+
+// Parse Messages Destination information
+void ParseMsgs(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int pass)
+{
+  int token;
+  Dmsg2(900, "ParseMsgs code=%d\n", item->code);
+
+  switch (static_cast<MessageDestinationCode>(item->code)) {
+    case MessageDestinationCode::kStdout:
+    case MessageDestinationCode::kStderr:
+    case MessageDestinationCode::kConsole:
+    case MessageDestinationCode::kCatalog:
+      ParseTypes(conf, lc);
+      break;
+    case MessageDestinationCode::kSyslog: { /* syslog */
+      char* p;
+      int cnt = 0;
+      bool done = false;
+
+      /* See if this is an old style syslog definition.
+       * We count the number of = signs in the current config line. */
+      p = lc->line;
+      while (!done && *p) {
+        switch (*p) {
+          case '=':
+            cnt++;
+            break;
+          case ',':
+          case ';':
+            // No need to continue scanning when we encounter a ',' or ';'
+            done = true;
+            break;
+          default:
+            break;
+        }
+        p++;
+      }
+
+      conf->PushObject();
+
+      conf->PushString("is_old");
+
+      /* If there is more then one = its the new format e.g.
+       * syslog = facility = filter */
+      if (cnt > 1) {
+        conf->PushB(false);
+        // Pick up a single facility.
+        token = LexGetToken(lc, BCT_NAME); /* Scan destination */
+        conf->PushString("facility");
+        conf->PushString(lc->str);
+        token = LexGetToken(lc, BCT_SKIP_EOL);
+
+        conf->PushString("types");
+        ParseTypes(conf, lc);
+        Dmsg0(900, "done with dest codes\n");
+      } else {
+        conf->PushB(true);
+        conf->PushString("types");
+        ParseTypes(conf, lc);
+      }
+
+      conf->PopObject();
+      break;
+    }
+    case MessageDestinationCode::kOperator:
+    case MessageDestinationCode::kDirector:
+    case MessageDestinationCode::kMail:
+    case MessageDestinationCode::KMailOnError:
+    case MessageDestinationCode::kMailOnSuccess:
+      conf->PushObject();
+
+      conf->PushString("destinations");
+      conf->PushArray();
+      // Pick up comma separated list of destinations.
+      for (;;) {
+        token = LexGetToken(lc, BCT_NAME); /* Scan destination */
+        conf->PushString(lc->str);
+        Dmsg2(900, "ParseMsgs newdest=%s\n", lc->str);
+        token = LexGetToken(lc, BCT_SKIP_EOL);
+        if (token == BCT_COMMA) { continue; /* Get another destination */ }
+        if (token != BCT_EQUALS) {
+          scan_err1(lc, T_("expected an =, got: %s"), lc->str);
+          return;
+        }
+        break;
+      }
+      conf->PopArray();
+      conf->PushString("types");
+      ParseTypes(conf, lc);
+      conf->PopObject();
+      break;
+    case MessageDestinationCode::kFile:
+    case MessageDestinationCode::kAppend: {
+      // Pick up a single destination.
+      token = LexGetToken(lc, BCT_STRING); /* Scan destination */
+
+      conf->PushObject();
+      conf->PushString("destination");
+      conf->PushString(lc->str);
+      conf->PushString("types");
+
+      std::string dest_file_path(lc->str);
+      token = LexGetToken(lc, BCT_SKIP_EOL);
+      Dmsg1(900, "ParseMsgs dest=%s:\n", dest_file_path.c_str());
+      if (token != BCT_EQUALS) {
+        scan_err1(lc, T_("expected an =, got: %s"), lc->str);
+        return;
+      }
+      ParseTypes(conf, lc);
+      Dmsg0(900, "done with dest codes\n");
+      conf->PopObject();
+      break;
+    }
+    default:
+      scan_err1(lc, T_("Unknown item code: %d\n"), item->code);
+      return;
+  }
+  ScanToEol(lc);
+}
+
+/*
+ * This routine is ONLY for resource names
+ * Parse a name at specified address.
+ */
+void ParseName(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int)
+{
+  std::string msg{};
+
+  LexGetToken(lc, BCT_NAME);
+  if (!IsNameValid(lc->str, msg)) {
+    scan_err1(lc, "%s\n", msg.c_str());
+    return;
+  }
+
+  conf->PushString(lc->str);
+
+  // Parse the name both in pass 1 and pass 2
+  char** p = GetItemVariablePointer<char**>(*item);
+
+  if (*p) {
+    scan_err2(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p,
+              lc->str);
+    return;
+  }
+  *p = strdup(lc->str);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Parse a name string at specified address
+ * A name string is limited to MAX_RES_NAME_LENGTH
+ */
+void ParseStrname(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int pass)
+{
+  LexGetToken(lc, BCT_NAME);
+
+  conf->PushString(lc->str);
+  if (pass == 1) {
+    char** p = GetItemVariablePointer<char**>(*item);
+    if (*p) { free(*p); }
+    *p = strdup(lc->str);
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a string at specified address
+void ParseStr(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str);
+  if (pass == 1) { SetItemVariableFreeMemory<char*>(*item, strdup(lc->str)); }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a string at specified address
+void ParseStdstr(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str);
+  if (pass == 1) { SetItemVariable<std::string>(*item, lc->str); }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Parse a directory name at specified address. Note, we do
+ * shell expansion except if the string begins with a vertical
+ * bar (i.e. it will likely be passed to the shell later).
+ */
+void ParseDir(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str);
+  if (pass == 1) {
+    char** p = GetItemVariablePointer<char**>(*item);
+    if (*p) { free(*p); }
+    if (lc->str[0] != '|') {
+      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
+    }
+    *p = strdup(lc->str);
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+void ParseStdstrdir(ConfigurationParser* conf,
+                    lexer* lc,
+                    const ResourceItem* item,
+                    int index,
+                    int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str);
+  if (pass == 1) {
+    if (lc->str[0] != '|') {
+      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
+    }
+    SetItemVariable<std::string>(*item, lc->str);
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a password at specified address in MD5 coding
+void ParseMd5Password(ConfigurationParser* conf,
+                      lexer* lc,
+                      const ResourceItem* item,
+                      int index,
+                      int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str);
+  if (pass == 1) { /* free old item */
+    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
+
+    if (pwd->value) { free(pwd->value); }
+
+    // See if we are parsing an MD5 encoded password already.
+    if (bstrncmp(lc->str, "[md5]", 5)) {
+      if (item->is_required) {
+        static const char* empty_password_md5_hash
+            = "d41d8cd98f00b204e9800998ecf8427e";
+        if (strncmp(lc->str + 5, empty_password_md5_hash,
+                    strlen(empty_password_md5_hash))
+            == 0) {
+          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
+                    (*item->allocated_resource)->resource_name_);
+          return;
+        }
+      }
+
+      std::string_view candidate{lc->str + 5};
+
+      constexpr size_t md5len = 32;
+
+      if (candidate.size() != md5len) {
+        scan_err2(lc,
+                  "md5 password does not have the right size; expected: %" PRIuz
+                  ", got: %" PRIuz "\n",
+                  md5len, candidate.size());
+        *pwd = {};
+        return;
+      }
+
+      if (auto bad = candidate.find_first_not_of("0123456789ABCDEFabcdef");
+          bad != candidate.npos) {
+        scan_err1(
+            lc, "md5 password contains non hexadecimal characters, e.g. '%c'\n",
+            candidate[bad]);
+        *pwd = {};
+        return;
+      }
+
+      pwd->encoding = p_encoding_md5;
+      pwd->value = strdup(lc->str + 5);
+    } else {
+      unsigned int i, j;
+      MD5_CTX md5c;
+      unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
+      char sig[100];
+
+      if (item->is_required) {
+        if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
+          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
+                    (*item->allocated_resource)->resource_name_);
+          return;
+        }
+      }
+
+      IGNORE_DEPRECATED_ON;
+      MD5_Init(&md5c);
+      MD5_Update(&md5c, (unsigned char*)(lc->str), lc->str_len);
+      MD5_Final(digest, &md5c);
+      IGNORE_DEPRECATED_OFF;
+      for (i = j = 0; i < sizeof(digest); i++) {
+        snprintf(&sig[j], 3, "%02x", digest[i]);
+        j += 2;
+        ASSERT(j < 100);
+      }
+      pwd->encoding = p_encoding_md5;
+      pwd->value = strdup(sig);
+    }
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a password at specified address in MD5 coding
+void ParseClearpassword(ConfigurationParser* conf,
+                        lexer* lc,
+                        const ResourceItem* item,
+                        int index,
+                        int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str);
+  if (pass == 1) {
+    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
 
 
+    if (pwd->value) { free(pwd->value); }
+
+    if (item->is_required) {
+      if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
+        scan_err1(
+            lc, "Empty Password not allowed in Resource \"%s\" not allowed.\n",
+            (*item->allocated_resource)->resource_name_);
+        return;
+      }
+    }
+
+    pwd->encoding = p_encoding_clear;
+    pwd->value = strdup(lc->str);
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Parse a resource at specified address.
+ * If we are in pass 2, do a lookup of the
+ * resource.
+ */
+void ParseRes(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
+{
+  LexGetToken(lc, BCT_NAME);
+  conf->PushString(lc->str);
+  if (pass == 2) {
+    BareosResource* res = conf->GetResWithName(item->code, lc->str);
+    if (res == NULL) {
+      scan_err3(
+          lc,
+          T_("Could not find config resource \"%s\" referenced on line %d: %s"),
+          lc->str, lc->line_no, lc->line);
+      return;
+    }
+    BareosResource** p = GetItemVariablePointer<BareosResource**>(*item);
+    if (*p) {
+      scan_err3(
+          lc,
+          T_("Attempt to redefine resource \"%s\" referenced on line %d: %s"),
+          item->name, lc->line_no, lc->line);
+      return;
+    }
+    *p = res;
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Parse a resource pointer in an alist. default_value indicates how many
+ * times this routine can be called -- i.e. how many alists there are.
+ *
+ * If we are in pass 2, do a lookup of the resource.
+ */
+void ParseAlistRes(ConfigurationParser* conf,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
+{
+  alist<BareosResource*>** alistvalue
+      = GetItemVariablePointer<alist<BareosResource*>**>(*item);
+  if (pass == 2) {
+    if (!*alistvalue) {
+      *alistvalue = new alist<BareosResource*>(10, not_owned_by_alist);
+    }
+  }
+  alist<BareosResource*>* list = *alistvalue;
+
+  conf->PushArray();
+  int token = BCT_COMMA;
+  while (token == BCT_COMMA) {
+    LexGetToken(lc, BCT_NAME); /* scan next item */
+    conf->PushString(lc->str);
+    if (pass == 2) {
+      BareosResource* res = conf->GetResWithName(item->code, lc->str);
+      if (res == NULL) {
+        scan_err3(lc,
+                  T_("Could not find config Resource \"%s\" referenced on line "
+                     "%d : %s\n"),
+                  item->name, lc->line_no, lc->line);
+        return;
+      }
+      Dmsg5(900, "Append %p (%s) to alist %p size=%d %s\n", res,
+            res->resource_name_, list, list->size(), item->name);
+      list->append(res);
+    }
+    token = LexGetToken(lc, BCT_ALL);
+  }
+  conf->PopArray();
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a std::string in an std::vector<std::string>.
+void ParseStdVectorStr(ConfigurationParser* conf,
+                       lexer* lc,
+                       const ResourceItem* item,
+                       int index,
+                       int pass)
+{
+  std::vector<std::string>* list{nullptr};
+  if (pass == 2) {
+    list = GetItemVariablePointer<std::vector<std::string>*>(*item);
+  }
+  int token = BCT_COMMA;
+  conf->PushArray();
+  while (token == BCT_COMMA) {
+    LexGetToken(lc, BCT_STRING); /* scan next item */
+    conf->PushString(lc->str);
+    if (pass == 2) {
+      Dmsg4(900, "Append %s to vector %p size=%" PRIuz " %s\n", lc->str, list,
+            list->size(), item->name);
+
+      /* See if we need to drop the default value.
+       *
+       * We first check to see if the config item has the
+       * flag set and currently has exactly one entry. */
+      if (!item->IsPresent()) {
+        if (item->default_value && list->size() == 1) {
+          if (list->at(0) == item->default_value) { list->clear(); }
+        }
+      }
+      list->push_back(lc->str);
+    }
+    token = LexGetToken(lc, BCT_ALL);
+  }
+  conf->PopArray();
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a string in an alist.
+void ParseAlistStr(ConfigurationParser* conf,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
+{
+  alist<const char*>** alistvalue
+      = GetItemVariablePointer<alist<const char*>**>(*item);
+  if (pass == 2) {
+    if (!*alistvalue) {
+      *alistvalue = new alist<const char*>(10, owned_by_alist);
+    }
+  }
+  alist<const char*>* list = *alistvalue;
+  conf->PushArray();
+
+  int token = BCT_COMMA;
+  while (token == BCT_COMMA) {
+    LexGetToken(lc, BCT_STRING); /* scan next item */
+    conf->PushString(lc->str);
+
+    if (pass == 2) {
+      Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
+            list->size(), item->name);
+
+      /* See if we need to drop the default value from the alist.
+       *
+       * We first check to see if the config item has the
+       * flag set and currently has exactly one entry. */
+      if (!item->IsPresent()) {
+        if (item->default_value && list->size() == 1) {
+          char* entry = (char*)list->first();
+          if (bstrcmp(entry, item->default_value)) {
+            list->destroy();
+            list->init(10, owned_by_alist);
+          }
+        }
+      }
+      list->append(strdup(lc->str));
+    }
+    token = LexGetToken(lc, BCT_ALL);
+  }
+  conf->PopArray();
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Parse a directory name at specified address in an alist.
+ * Note, we do shell expansion except if the string begins
+ * with a vertical bar (i.e. it will likely be passed to the
+ * shell later).
+ */
+void ParseAlistDir(ConfigurationParser* conf,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
+{
+  if (pass == 2) {
+    alist<const char*>** alistvalue
+        = GetItemVariablePointer<alist<const char*>**>(*item);
+    if (!*alistvalue) {
+      *alistvalue = new alist<const char*>(10, owned_by_alist);
+    }
+    alist<const char*>* list = *alistvalue;
+
+    LexGetToken(lc, BCT_STRING); /* scan next item */
+    Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
+          list->size(), item->name);
+
+    conf->PushObject();
+    conf->PushString("is_shell");
+    conf->PushB(lc->str[0] == '|');
+    conf->PushString("str");
+    conf->PushString(lc->str + (lc->str[0] == '|'));
+    conf->PopObject();
+    if (lc->str[0] != '|') {
+      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
+    }
+
+    /* See if we need to drop the default value from the alist.
+     *
+     * We first check to see if the config item has the
+     * flag set and currently has exactly one entry. */
+    if (item->default_value && list->size() == 1) {
+      char* entry;
+
+      entry = (char*)list->first();
+      if (bstrcmp(entry, item->default_value)) {
+        list->destroy();
+        list->init(10, owned_by_alist);
+      }
+    }
+
+    list->append(strdup(lc->str));
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a list of plugin names to load by the daemon on startup.
+void ParsePluginNames(ConfigurationParser* conf,
+                      lexer* lc,
+                      const ResourceItem* item,
+                      int index,
+                      int pass)
+{
+  if (pass == 1) {
+    ScanToEol(lc);
+    return;
+  }
+
+  alist<const char*>** alistvalue
+      = GetItemVariablePointer<alist<const char*>**>(*item);
+  if (!*alistvalue) {
+    *alistvalue = new alist<const char*>(10, owned_by_alist);
+  }
+
+  auto saved = lc->options;
+  lc->options.set(lexer::options::ForceString); /* force string, i.e. convert
+                                                   numbers/identifiers */
+
+  bool finish = false;
+  conf->PushArray();
+  while (!finish) {
+    switch (LexGetToken(lc, BCT_ALL)) {
+      case BCT_EOL:
+        finish = true;
+        break;
+      case BCT_COMMA:
+        continue;
+      case BCT_UNQUOTED_STRING:
+      case BCT_QUOTED_STRING: {
+        conf->PushString(lc->str);
+        char* p0 = strdup(lc->str);
+        char* p1 = p0;
+        char* p2 = p0;
+        while (p1) {
+          p2 = strchr(p1, ':');  // split at ':'
+          if (p2 != nullptr) { *p2++ = '\0'; }
+          (*alistvalue)->append(strdup(p1));
+          p1 = p2;
+        }
+        free(p0);
+        break;
+      }
+      default:
+        finish = true;
+        break;
+    }
+  }
+  conf->PopArray();
+  lc->options = saved;
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Parse default values for Resource from xxxDefs
+ * If we are in pass 2, do a lookup of the
+ * resource and parse everything not explicitly set
+ * in main resource.
+ *
+ * Note, here item points to the main resource (e.g. Job, not
+ *  the jobdefs, which we look up).
+ */
+void ParseDefs(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int,
+               int pass)
+{
+  BareosResource* res;
+
+  LexGetToken(lc, BCT_NAME);
+  conf->PushString(lc->str);
+  if (pass == 2) {
+    Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str);
+    res = conf->GetResWithName(item->code, lc->str);
+    if (res == NULL) {
+      scan_err3(
+          lc, T_("Missing config Resource \"%s\" referenced on line %d : %s\n"),
+          lc->str, lc->line_no, lc->line);
+      return;
+    }
+  }
+  ScanToEol(lc);
+}
+
+// Parse an integer at specified address
+void parse_int16(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int)
+{
+  LexGetToken(lc, BCT_INT16);
+  conf->PushI(lc->u.int16_val);
+  SetItemVariable<int16_t>(*item, lc->u.int16_val);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+void parse_int32(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int)
+{
+  LexGetToken(lc, BCT_INT32);
+  conf->PushI(lc->u.int32_val);
+  SetItemVariable<int32_t>(*item, lc->u.int32_val);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a positive integer at specified address
+void parse_pint16(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int)
+{
+  LexGetToken(lc, BCT_PINT16);
+  conf->PushU(lc->u.pint16_val);
+  SetItemVariable<uint16_t>(*item, lc->u.pint16_val);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+void parse_pint32(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int)
+{
+  LexGetToken(lc, BCT_PINT32);
+  conf->PushU(lc->u.pint32_val);
+  SetItemVariable<uint32_t>(*item, lc->u.pint32_val);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse an 64 bit integer at specified address
+void parse_int64(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int)
+{
+  LexGetToken(lc, BCT_INT64);
+  conf->PushU(lc->u.int64_val);
+  SetItemVariable<int64_t>(*item, lc->u.int64_val);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a size in bytes
+void parse_int_unit(ConfigurationParser* conf,
+                    lexer* lc,
+                    const ResourceItem* item,
+                    int index,
+                    int,
+                    bool size32,
+                    enum unit_type type)
+{
+  uint64_t uvalue;
+  char bsize[500];
+
+  Dmsg0(900, "Enter parse_unit\n");
+  int token = LexGetToken(lc, BCT_SKIP_EOL);
+  errno = 0;
+  switch (token) {
+    case BCT_NUMBER:
+    case BCT_IDENTIFIER:
+    case BCT_UNQUOTED_STRING:
+      bstrncpy(bsize, lc->str, sizeof(bsize)); /* save first part */
+      // If terminated by space, scan and get modifier
+      while (lc->ch == ' ') {
+        token = LexGetToken(lc, BCT_ALL);
+        switch (token) {
+          case BCT_NUMBER:
+          case BCT_IDENTIFIER:
+          case BCT_UNQUOTED_STRING:
+            bstrncat(bsize, lc->str, sizeof(bsize));
+            break;
+        }
+      }
+
+      conf->PushString(bsize);
+
+      switch (type) {
+        case STORE_SIZE:
+          if (!size_to_uint64(bsize, &uvalue)) {
+            scan_err1(lc, T_("expected a size number, got: %s"), lc->str);
+            return;
+          }
+          break;
+        case STORE_SPEED:
+          if (!speed_to_uint64(bsize, &uvalue)) {
+            scan_err1(lc, T_("expected a speed number, got: %s"), lc->str);
+            return;
+          }
+          break;
+        default:
+          scan_err0(lc, T_("unknown unit type encountered"));
+          return;
+      }
+
+      if (size32) {
+        SetItemVariable<uint32_t>(*item, uvalue);
+      } else {
+        switch (type) {
+          case STORE_SIZE:
+            SetItemVariable<int64_t>(*item, uvalue);
+            break;
+          case STORE_SPEED:
+            SetItemVariable<uint64_t>(*item, uvalue);
+            break;
+        }
+      }
+      break;
+    default:
+      scan_err2(lc, T_("expected a %s, got: %s"),
+                (type == STORE_SIZE) ? T_("size") : T_("speed"), lc->str);
+      return;
+  }
+  if (token != BCT_EOL) { ScanToEol(lc); }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+  Dmsg0(900, "Leave parse_unit\n");
+}
+
+// Parse a size in bytes
+void parse_size32(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int pass)
+{
+  parse_int_unit(conf, lc, item, index, pass, true /* 32 bit */, STORE_SIZE);
+}
+
+// Parse a size in bytes
+void parse_size64(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int pass)
+{
+  parse_int_unit(conf, lc, item, index, pass, false /* not 32 bit */,
+                 STORE_SIZE);
+}
+
+// Parse a speed in bytes/s
+void ParseSpeed(ConfigurationParser* conf,
+                lexer* lc,
+                const ResourceItem* item,
+                int index,
+                int pass)
+{
+  parse_int_unit(conf, lc, item, index, pass, false /* 64 bit */, STORE_SPEED);
+}
+
+// Parse a time period in seconds
+void ParseTime(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int)
+{
+  utime_t utime;
+  char period[500];
+
+  int token = LexGetToken(lc, BCT_SKIP_EOL);
+  errno = 0;
+  switch (token) {
+    case BCT_NUMBER:
+    case BCT_IDENTIFIER:
+    case BCT_UNQUOTED_STRING:
+      bstrncpy(period, lc->str, sizeof(period)); /* get first part */
+      // If terminated by space, scan and get modifier
+      while (lc->ch == ' ') {
+        token = LexGetToken(lc, BCT_ALL);
+        switch (token) {
+          case BCT_NUMBER:
+          case BCT_IDENTIFIER:
+          case BCT_UNQUOTED_STRING:
+            bstrncat(period, lc->str, sizeof(period));
+            break;
+        }
+      }
+
+      conf->PushString(period);
+      if (!DurationToUtime(period, &utime)) {
+        scan_err1(lc, T_("expected a time period, got: %s"), period);
+        return;
+      }
+      SetItemVariable<utime_t>(*item, utime);
+      break;
+    default:
+      scan_err1(lc, T_("expected a time period, got: %s"), lc->str);
+      return;
+  }
+  if (token != BCT_EOL) { ScanToEol(lc); }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a yes/no in a bit field
+void ParseBit(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int)
+{
+  LexGetToken(lc, BCT_NAME);
+  char* bitvalue = GetItemVariablePointer<char*>(*item);
+  if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
+    conf->PushB(true);
+    SetBit(item->code, bitvalue);
+  } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
+    ClearBit(item->code, bitvalue);
+    conf->PushB(false);
+  } else {
+    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+              lc->str); /* YES and NO must not be translated */
+    return;
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse a bool in a bit field
+void ParseBool(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int)
+{
+  LexGetToken(lc, BCT_NAME);
+  if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
+    SetItemVariable<bool>(*item, true);
+    conf->PushB(true);
+  } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
+    SetItemVariable<bool>(*item, false);
+    conf->PushB(false);
+  } else {
+    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+              lc->str); /* YES and NO must not be translated */
+    return;
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Parse Tape Label Type (BAREOS, ANSI, IBM)
+void ParseLabel(ConfigurationParser* conf,
+                lexer* lc,
+                const ResourceItem* item,
+                int index,
+                int)
+{
+  LexGetToken(lc, BCT_NAME);
+  // Parse the label pass 2 so that type is defined
+  int i;
+  for (i = 0; tapelabels[i].name; i++) {
+    conf->PushString(lc->str);
+
+    if (Bstrcasecmp(lc->str, tapelabels[i].name)) {
+      SetItemVariable<uint32_t>(*item, tapelabels[i].token);
+      i = 0;
+      break;
+    }
+  }
+  if (i != 0) {
+    scan_err1(lc, T_("Expected a Tape Label keyword, got: %s"), lc->str);
+    return;
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Parse network addresses.
+ *
+ *   my tests
+ *   positiv
+ *   = { ip = { addr = 1.2.3.4; port = 1205; } ipv4 = { addr = 1.2.3.4; port =
+ * http; } } = { ip = { addr = 1.2.3.4; port = 1205; } ipv4 = { addr = 1.2.3.4;
+ * port = http; } ipv6 = { addr = 1.2.3.4; port = 1205;
+ *     }
+ *     ip = {
+ *       addr = 1.2.3.4
+ *       port = 1205
+ *     }
+ *     ip = {
+ *       addr = 1.2.3.4
+ *     }
+ *     ip = {
+ *       addr = 2001:220:222::2
+ *     }
+ *     ip = {
+ *       addr = bluedot.thun.net
+ *     }
+ *   }
+ *   negativ
+ *   = { ip = { } }
+ *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
+ *   = { ipv4 { port = 4711 } }
+ */
+void ParseAddresses(ConfigurationParser* conf,
+                    lexer* lc,
+                    const ResourceItem* item,
+                    int index,
+                    int pass)
+{
+  int token;
+  int exist;
+  int family = 0;
+  char errmsg[1024];
+  char port_str[128];
+  char hostname_str[1024];
+  enum
+  {
+    EMPTYLINE = 0x0,
+    PORTLINE = 0x1,
+    ADDRLINE = 0x2
+  } next_line
+      = EMPTYLINE;
+  int port = str_to_int32(item->default_value);
+
+  token = LexGetToken(lc, BCT_SKIP_EOL);
+  if (token != BCT_BOB) {
+    scan_err1(lc, T_("Expected a block begin { , got: %s"), lc->str);
+  }
+  token = LexGetToken(lc, BCT_SKIP_EOL);
+  if (token == BCT_EOB) {
+    scan_err0(lc, T_("Empty addr block is not allowed"));
+  }
+
+  conf->PushArray();
+
+  do {
+    conf->PushObject();
+    if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
+      scan_err1(lc, T_("Expected a string, got: %s"), lc->str);
+    }
+
+    conf->PushString("type");
+    conf->PushString(lc->str);
+    if (Bstrcasecmp("ip", lc->str) || Bstrcasecmp("ipv4", lc->str)) {
+      family = AF_INET;
+    } else if (Bstrcasecmp("ipv6", lc->str)) {
+      family = AF_INET6;
+    } else {
+      scan_err1(lc, T_("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str);
+    }
+    token = LexGetToken(lc, BCT_SKIP_EOL);
+    if (token != BCT_EQUALS) {
+      scan_err1(lc, T_("Expected a equal =, got: %s"), lc->str);
+    }
+    token = LexGetToken(lc, BCT_SKIP_EOL);
+    if (token != BCT_BOB) {
+      scan_err1(lc, T_("Expected a block begin { , got: %s"), lc->str);
+    }
+    token = LexGetToken(lc, BCT_SKIP_EOL);
+    exist = EMPTYLINE;
+    port_str[0] = hostname_str[0] = '\0';
+    do {
+      if (token != BCT_IDENTIFIER) {
+        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
+                  lc->str);
+      }
+      conf->PushString(lc->str);
+      if (Bstrcasecmp("port", lc->str)) {
+        next_line = PORTLINE;
+        if (exist & PORTLINE) {
+          scan_err0(lc, T_("Only one port per address block"));
+        }
+        exist |= PORTLINE;
+      } else if (Bstrcasecmp("addr", lc->str)) {
+        next_line = ADDRLINE;
+        if (exist & ADDRLINE) {
+          scan_err0(lc, T_("Only one addr per address block"));
+        }
+        exist |= ADDRLINE;
+      } else {
+        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
+                  lc->str);
+      }
+      token = LexGetToken(lc, BCT_SKIP_EOL);
+      if (token != BCT_EQUALS) {
+        scan_err1(lc, T_("Expected a equal =, got: %s"), lc->str);
+      }
+      token = LexGetToken(lc, BCT_SKIP_EOL);
+      switch (next_line) {
+        case PORTLINE:
+          if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
+                || token == BCT_IDENTIFIER)) {
+            scan_err1(lc, T_("Expected a number or a string, got: %s"),
+                      lc->str);
+          }
+          conf->PushString(lc->str);
+          bstrncpy(port_str, lc->str, sizeof(port_str));
+          break;
+        case ADDRLINE:
+          if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
+            scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"),
+                      lc->str);
+          }
+          conf->PushString(lc->str);
+          bstrncpy(hostname_str, lc->str, sizeof(hostname_str));
+          break;
+        case EMPTYLINE:
+          scan_err0(lc, T_("State machine mismatch"));
+          break;
+      }
+      token = LexGetToken(lc, BCT_SKIP_EOL);
+    } while (token == BCT_IDENTIFIER);
+    conf->PopObject();
+    if (token != BCT_EOB) {
+      scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
+    }
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_MULTIPLE, htons(port), family, hostname_str,
+                       port_str, errmsg, sizeof(errmsg))) {
+      scan_err3(lc, T_("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
+                hostname_str, port_str, errmsg);
+    }
+    token = ScanToNextNotEol(lc);
+  } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
+
+  conf->PopArray();
+  if (token != BCT_EOB) {
+    scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
+  }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+void ParseAddressesAddress(ConfigurationParser* conf,
+                           lexer* lc,
+                           const ResourceItem* item,
+                           int,
+                           int pass)
+{
+  int token;
+  char errmsg[1024];
+  int port = str_to_int32(item->default_value);
+
+  token = LexGetToken(lc, BCT_SKIP_EOL);
+  conf->PushString(lc->str);
+  if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
+        || token == BCT_IDENTIFIER)) {
+    scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"), lc->str);
+  }
+
+  if (pass == 1
+      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                     IPADDR::R_SINGLE_ADDR, htons(port),
+                     strchr(lc->str, ':') ? AF_INET6 : AF_INET, lc->str, 0,
+                     errmsg, sizeof(errmsg))) {
+    scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
+  }
+}
+
+void ParseAddressesPort(ConfigurationParser* conf,
+                        lexer* lc,
+                        const ResourceItem* item,
+                        int,
+                        int pass)
+{
+  int token;
+  char errmsg[1024];
+  int port = str_to_int32(item->default_value);
+
+  token = LexGetToken(lc, BCT_SKIP_EOL);
+  if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
+        || token == BCT_IDENTIFIER)) {
+    scan_err1(lc, T_("Expected a port number or string, got: %s"), lc->str);
+  }
+  conf->PushString(lc->str);
+
+  bool has_address = false;
+  IPADDR* iaddr;
+  dlist<IPADDR>* addrs
+      = (dlist<IPADDR>*)(*(GetItemVariablePointer<dlist<IPADDR>**>(*item)));
+  foreach_dlist (iaddr, addrs) {
+    if (iaddr->GetType() == IPADDR::R_SINGLE) { has_address = true; }
+  }
+
+  if (has_address) {
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
+                       errmsg, sizeof(errmsg))) {
+      scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
+    }
+  } else {
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE, htons(port), 0, 0, lc->str, errmsg,
+                       sizeof(errmsg))) {
+      scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
+    }
+  }
+}
 };  // namespace
 
 
@@ -1660,6 +2925,118 @@ bool StoreResource(ConfigurationParser* conf,
       break;
     case CFG_TYPE_DIR_OR_CMD:
       StoreDir(conf, lc, item, index, pass);
+      break;
+    default:
+      return false;
+  }
+
+  return true;
+}
+
+bool ParseResource(ConfigurationParser* conf,
+                   int type,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
+{
+  switch (type) {
+    case CFG_TYPE_STR:
+      ParseStr(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_DIR:
+      ParseDir(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_STDSTR:
+      ParseStdstr(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_STDSTRDIR:
+      ParseStdstrdir(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_MD5PASSWORD:
+      ParseMd5Password(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_CLEARPASSWORD:
+      ParseClearpassword(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_NAME:
+      ParseName(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_STRNAME:
+      ParseStrname(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_RES:
+      ParseRes(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_ALIST_RES:
+      ParseAlistRes(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_ALIST_STR:
+      ParseAlistStr(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_STR_VECTOR:
+    case CFG_TYPE_STR_VECTOR_OF_DIRS:
+      ParseStdVectorStr(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_ALIST_DIR:
+      ParseAlistDir(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_INT16:
+      parse_int16(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_PINT16:
+      parse_pint16(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_INT32:
+      parse_int32(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_PINT32:
+      parse_pint32(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_MSGS:
+      ParseMsgs(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_INT64:
+      parse_int64(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_BIT:
+      ParseBit(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_BOOL:
+      ParseBool(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_TIME:
+      ParseTime(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_SIZE64:
+      parse_size64(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_SIZE32:
+      parse_size32(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_SPEED:
+      ParseSpeed(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_DEFS:
+      ParseDefs(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_LABEL:
+      ParseLabel(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_ADDRESSES:
+      ParseAddresses(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_ADDRESSES_ADDRESS:
+      ParseAddressesAddress(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_ADDRESSES_PORT:
+      ParseAddressesPort(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_PLUGIN_NAMES:
+      ParsePluginNames(conf, lc, item, index, pass);
+      break;
+    case CFG_TYPE_DIR_OR_CMD:
+      ParseDir(conf, lc, item, index, pass);
       break;
     default:
       return false;
