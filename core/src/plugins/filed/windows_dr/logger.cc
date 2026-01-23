@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,18 +22,13 @@
 #include "logger.h"
 #include <cstdint>
 #include <chrono>
-#include "indicators/setting.hpp"
-
-#include <indicators/progress_bar.hpp>
-#include <indicators/cursor_control.hpp>
 #include <optional>
+#include <iostream>
+#include <algorithm>
 
 #include "format.h"
 
 namespace progressbar {
-using namespace indicators;
-
-
 struct counter {
   using Clock = std::chrono::steady_clock;
   using Duration = Clock::duration;
@@ -206,74 +201,299 @@ struct counter {
   block* FreeList{nullptr};
 };
 
+namespace terminal {
+#ifdef HAVE_WIN32
+using terminal_handle = HANDLE;
+
+bool check_if_terminal_handle(terminal_handle hndl)
+{
+  return hndl != INVALID_HANDLE_VALUE && hndl != NULL
+         && GetFileType(hndl) == FILE_TYPE_CHAR;
+}
+
+std::size_t terminal_width(terminal_handle handle)
+{
+  CONSOLE_SCREEN_BUFFER_INFO csbi;
+  GetConsoleScreenBufferInfo(handle, &csbi);
+  return csbi.srWindow.Right - csbi.srWindow.Left + 1;
+}
+
+bool terminal_write(terminal_handle handle, std::span<const char> bytes)
+{
+  size_t bytes_written = 0;
+
+  while (bytes_written < bytes.size()) {
+    DWORD new_bytes_written = 0;
+    DWORD bytes_to_write
+        = std::min(bytes.size() - bytes_written,
+                   static_cast<size_t>(std::numeric_limits<DWORD>::max()));
+
+    if (!WriteFile(handle, bytes.data() + bytes_written, bytes_to_write,
+                   &new_bytes_written, NULL)) {
+      return false;
+    }
+
+
+    bytes_written += new_bytes_written;
+  }
+
+  return true;
+}
+
+void terminal_hide_cursor(terminal_handle handle)
+{
+  CONSOLE_CURSOR_INFO cursorInfo;
+
+  GetConsoleCursorInfo(handle, &cursorInfo);
+  cursorInfo.bVisible = true;
+  SetConsoleCursorInfo(handle, &cursorInfo);
+}
+
+void terminal_show_cursor(terminal_handle handle)
+{
+  CONSOLE_CURSOR_INFO cursorInfo;
+
+  GetConsoleCursorInfo(handle, &cursorInfo);
+  cursorInfo.bVisible = true;
+  SetConsoleCursorInfo(handle, &cursorInfo);
+}
+
+void terminal_flush(terminal_handle handle) { FlushFileBuffers(handle); }
+#else
+using terminal_handle = int;
+
+#  include <asm/termbits.h>
+#  include <sys/ioctl.h>
+#  include <unistd.h>
+
+bool check_if_terminal_handle(terminal_handle handle) { return isatty(handle); }
+std::size_t terminal_width(terminal_handle handle)
+{
+  struct winsize size{};
+  int ret = ioctl(handle, TIOCGWINSZ, &size);
+  if (ret < 0) {
+    throw std::runtime_error{libbareos::format(
+        "could not determine terminal size: {}", strerror(errno))};
+  }
+  // if the terminal reports a size of 0, just treat it as 80 instead
+  return size.ws_col ? size.ws_col : 80;
+}
+
+bool terminal_write(terminal_handle handle, std::span<const char> bytes)
+{
+  size_t bytes_written = 0;
+
+  size_t zero_write_count = 0;
+
+  while (bytes_written < bytes.size()) {
+    ssize_t new_bytes_written = write(handle, bytes.data() + bytes_written,
+                                      bytes.size() - bytes_written);
+
+    if (new_bytes_written < 0) { return false; }
+
+    if (new_bytes_written == 0) {
+      zero_write_count += 1;
+
+      if (zero_write_count > 5) { return false; }
+    }
+
+    bytes_written += new_bytes_written;
+  }
+  return true;
+}
+
+void terminal_hide_cursor(terminal_handle handle)
+{
+  terminal_write(handle, "\033[?25l");
+}
+
+void terminal_show_cursor(terminal_handle handle)
+{
+  terminal_write(handle, "\033[?25h");
+}
+
+void terminal_flush(terminal_handle handle)
+{
+  static_cast<void>(fdatasync(handle));
+}
+#endif
+
+struct terminal {
+  void flush() { terminal_flush(m_handle); }
+
+  bool write(std::span<const char> bytes)
+  {
+    return terminal_write(m_handle, bytes);
+  }
+
+  size_t width() { return terminal_width(m_handle); }
+
+  void hide_cursor() { terminal_hide_cursor(m_handle); }
+
+  void show_cursor() { terminal_show_cursor(m_handle); }
+
+  static std::optional<terminal> wrap(terminal_handle hndl)
+  {
+    if (!check_if_terminal_handle(hndl)) { return std::nullopt; }
+
+    return terminal{hndl};
+  }
+
+
+ private:
+  terminal(terminal_handle handle) : m_handle{std::move(handle)} {}
+
+  terminal_handle m_handle{};
+};
+};  // namespace terminal
+
+namespace progressbar {
+
+std::string format_h_m_s(std::chrono::nanoseconds dur)
+{
+  auto hours = duration_cast<std::chrono::hours>(dur);
+  auto minutes = duration_cast<std::chrono::minutes>(dur - hours);
+  auto seconds = duration_cast<std::chrono::seconds>(dur - hours - minutes);
+
+  return libbareos::format("{:02}:{:02}:{:02}", hours.count(), minutes.count(),
+                           seconds.count());
+}
+
+
+std::string format_time(std::chrono::nanoseconds elapsed,
+                        std::size_t done,
+                        std::size_t total)
+{
+  if (done != 0) {
+    double ratio = static_cast<double>(total) / done - 1.0;
+    auto leftover
+        = std::chrono::duration_cast<std::chrono::nanoseconds>(ratio * elapsed);
+
+    return libbareos::format("[{}/{}]", format_h_m_s(elapsed),
+                             format_h_m_s(leftover));
+  } else {
+    return libbareos::format("[{}/--:--:--]", format_h_m_s(elapsed));
+  }
+}
+
+void format(std::string& buffer,
+            std::chrono::nanoseconds nanos,
+            std::size_t current,
+            std::size_t max,
+            std::string_view suffix) noexcept
+{
+  // we assume here that prefix/suffix is simple ascii text taking up
+  // one glyph per character
+
+  size_t total_size = buffer.size();
+  buffer.clear();
+
+  auto output = [&](std::string_view view) {
+    if (buffer.size() + view.size() > total_size) {
+      throw std::runtime_error{libbareos::format(
+          "{} + {} > {}\n", buffer.size(), view.size(), total_size)};
+    }
+    buffer.append(view.data(), view.size());
+  };
+
+  auto actual_suffix = format_time(nanos, current, max);
+
+  actual_suffix.append(" ");
+  actual_suffix.append(suffix);
+
+  using namespace std::literals::string_view_literals;
+
+  auto pct_done = max == 0
+                      ? 0.0
+                      : static_cast<double>(current) / static_cast<double>(max);
+
+  std::string prefix;
+
+  if (max > 0) {
+    prefix = libbareos::format("{:3}%", static_cast<size_t>(100 * pct_done));
+  } else {
+    prefix = libbareos::format("---%");
+  }
+  size_t non_bar_size = prefix.size() + actual_suffix.size();
+
+  if (total_size < non_bar_size) {
+    output(prefix);
+    output(" ");
+    output(actual_suffix);
+    return;
+  }
+
+  size_t bar_size = total_size - non_bar_size;
+
+  auto decorator_size = " [] "sv.size();
+  if (bar_size < decorator_size) {
+    output(prefix);
+    output(" ");
+    output(actual_suffix);
+    return;
+  }
+
+  size_t step_count = bar_size - decorator_size;
+
+  std::size_t finished_steps = pct_done * step_count;
+
+  output(prefix);
+  output(" [");
+  size_t current_step = 0;
+  for (; current_step < finished_steps; ++current_step) { output("="); }
+  if (current_step != step_count) {
+    output(">");
+    current_step += 1;
+  }
+  for (; current_step < step_count; ++current_step) { output(" "); }
+
+  output("] ");
+  output(actual_suffix);
+}
+};  // namespace progressbar
 
 struct logger : public GenericLogger {
-  using Destination = typename indicators::TerminalHandle;
+  enum Destination
+  {
+    StdOut,
+    StdErr,
+  };
   static constexpr Destination Current = Destination::StdErr;
 
-  static constexpr std::ostream& stream()
-  {
-    if constexpr (Current == Destination::StdOut) {
-      return std::cout;
-    } else if constexpr (Current == Destination::StdErr) {
-      return std::cerr;
-    }
-  }
-
-  static FILE* handle()
-  {
-    if constexpr (Current == Destination::StdOut) {
-      return stdout;
-    } else if constexpr (Current == Destination::StdErr) {
-      return stderr;
-    }
-  }
-
-  static void erase_line() { indicators::erase_line(Current); }
-
-  static void show_cursor(bool show)
-  {
-    indicators::show_console_cursor(show, Current);
-  }
-
-  static bool is_a_tty()
+  static terminal::terminal_handle handle()
   {
 #if defined(HAVE_WIN32)
-    HANDLE hndl = NULL;
-    switch (Current) {
-        // GetStdHandle return NULL if no such handle exists
-      case TerminalHandle::StdOut: {
-        hndl = GetStdHandle(STD_OUTPUT_HANDLE);
-      }
-      case TerminalHandle::StdErr: {
-        hndl = GetStdHandle(STD_ERROR_HANDLE);
-      }
+    if constexpr (Current == Destination::StdOut) {
+      return GetStdHandle(STD_OUTPUT_HANDLE);
+    } else if constexpr (Current == Destination::StdErr) {
+      return GetStdHandle(STD_ERROR_HANDLE);
     }
-    return hndl != INVALID_HANDLE_VALUE && hndl != NULL
-           && GetFileType(hndl) == FILE_TYPE_CHAR;
 #else
-    switch (Current) {
-      case TerminalHandle::StdOut:
-        return isatty(STDOUT_FILENO);
-      case TerminalHandle::StdErr:
-        return isatty(STDERR_FILENO);
+    if constexpr (Current == Destination::StdOut) {
+      return STDOUT_FILENO;
+    } else if constexpr (Current == Destination::StdErr) {
+      return STDERR_FILENO;
     }
-    return false;
 #endif
   }
 
   void Begin(std::size_t FileSize) override
   {
-    if (is_a_tty()) { progress_bar.emplace(FileSize); }
+    if (auto term = terminal::terminal::wrap(handle())) {
+      progress_bar.emplace(FileSize, *term);
+    }
   }
+
   void Progressed(std::size_t Amount) override
   {
     if (progress_bar) { progress_bar->progress(Amount); }
   }
+
   void End() override
   {
     if (!progress_bar) { return; }
 
+    progress_bar->finish();
     progress_bar.reset();
   }
 
@@ -284,11 +504,7 @@ struct logger : public GenericLogger {
 
   void Output(Message message) override
   {
-    if (progress_bar) {
-      stream() << termcolor::reset;
-      erase_line();
-      stream().flush();
-    }
+    if (progress_bar) { progress_bar->erase_bar(); }
     std::cerr << libbareos::format("{:{}}{}\n", "", indent, message.text);
     if (progress_bar) { progress_bar->print(); }
   }
@@ -297,35 +513,13 @@ struct logger : public GenericLogger {
     std::size_t goal{0};
     std::size_t pct{0};
     std::size_t current{0};
+    terminal::terminal term;
 
-    ProgressBar bar;
-
-    progress_bar() = default;
-    progress_bar(std::size_t goal_)
-        : goal{goal_}
-        , pct{goal_ / 100}
-        , bar{
-              option::BarWidth{50},
-              option::Start{"["},
-              option::Fill{"="},
-              option::Lead{">"},
-              option::Remainder{" "},
-              option::End{"]"},
-              option::ForegroundColor{Color::green},
-              option::ShowPercentage{true},
-              option::FontStyles{std::vector<FontStyle>{FontStyle::bold}},
-              option::MaxProgress(goal_),
-              option::ShowPercentage(true),
-
-              // using anything but cout is not really supported ...
-              option::Stream(Current),
-
-              option::ShowElapsedTime(true),
-              option::ShowRemainingTime(true),
-          }
+    progress_bar(std::size_t goal_, terminal::terminal t)
+        : goal{goal_}, pct{goal_ / 100}, term{std::move(t)}
     {
-      last_update = std::chrono::steady_clock::now();
-      show_cursor(false);
+      start_time = last_update = std::chrono::steady_clock::now();
+      t.hide_cursor();
       cursor_hidden = true;
     }
     progress_bar(progress_bar const&) = delete;
@@ -333,63 +527,105 @@ struct logger : public GenericLogger {
     progress_bar& operator=(progress_bar const&) = delete;
     progress_bar& operator=(progress_bar&&) = delete;
 
-    std::string speed_to_text(double bytes_per_sec)
+    static std::string format_size(double size)
     {
       static constexpr std::pair<double, std::string_view> breakpoints[] = {
-          {1 << 30, "GiB"},
-          {1 << 20, "MiB"},
-          {1 << 10, "KiB"},
+          {0x1p60, "Ei"}, {0x1p50, "Pi"}, {0x1p40, "Ti"},
+          {0x1p30, "Gi"}, {0x1p20, "Mi"}, {0x1p10, "Ki"},
       };
 
-      std::string_view unit = "B";
-      double speed = bytes_per_sec;
+      auto found
+          = std::find_if(std::begin(breakpoints), std::end(breakpoints),
+                         [&size](auto pair) { return pair.first < size; });
 
-      for (auto& b : breakpoints) {
-        if (bytes_per_sec > b.first) {
-          speed = bytes_per_sec / b.first;
-          unit = b.second;
-          break;
-        }
+      if (found != std::end(breakpoints)) {
+        return libbareos::format("{:.2f}{}B", size / found->first,
+                                 found->second);
+      } else {
+        return libbareos::format("{:.2f}B", size);
       }
+    }
 
-      return libbareos::format("{:.2f} {}/s", speed, unit);
+    static std::string format_speed(double bytes_per_sec)
+    {
+      auto result = format_size(bytes_per_sec);
+
+      result += "/s";
+
+      return result;
     }
 
     void progress(std::size_t amount)
     {
+      if (current >= goal) { return; }
+
       auto this_update = std::chrono::steady_clock::now();
       current += amount;
 
       throughput.add_data_point(this_update, amount);
 
-      if (bar.is_completed()) { return; }
-
       if (current != goal) {
         if (this_update - last_update < std::chrono::seconds(1)) { return; }
         last_update = this_update;
-        bar.set_option(option::PostfixText(
-            speed_to_text(throughput.compute_average_per_sec())));
+        suffix = format_size(current) + " "
+                 + format_speed(throughput.compute_average_per_sec());
+        erase_bar();
+        print();
       }
-
-      bar.set_progress(current);
     }
+
+    std::string suffix;
+    std::string buffer;
 
     void print()
     {
-      if (!bar.is_completed()) { bar.print_progress(); }
+      buffer.resize(term.width());
+      auto time_elapsed = last_update - start_time;
+      progressbar::format(buffer, time_elapsed, current, goal, suffix);
+      term.write(buffer);
+      term.flush();
+    }
+
+    void erase_bar()
+    {
+      buffer.resize(buffer.size() + 2);
+      buffer[0] = '\r';
+      for (size_t i = 1; i < buffer.size() - 1; ++i) { buffer[i] = ' '; }
+      buffer[buffer.size() - 1] = '\r';
+      term.write(buffer);
+    }
+
+    void finish()
+    {
+      erase_bar();
+      suffix = "Done";
+      auto time_elapsed = last_update - start_time;
+
+      if (time_elapsed.count() == 0) {
+        suffix = format_size(current) + " ---B/s";
+      } else {
+        double seconds = static_cast<double>(time_elapsed.count())
+                         / std::chrono::duration_cast<std::chrono::nanoseconds>(
+                               std::chrono::seconds(1))
+                               .count();
+
+        auto speed = current / seconds;
+        suffix = format_size(current) + " " + format_speed(speed);
+      }
+
+
+      print();
+      term.write("\n");
     }
 
     ~progress_bar()
     {
-      bar.set_option(option::PostfixText("Done"));
-      progress(goal - current);
-
-      if (!bar.is_completed()) { bar.mark_as_completed(); }
-      if (cursor_hidden) { show_cursor(true); }
+      if (cursor_hidden) { term.show_cursor(); }
     }
 
     bool cursor_hidden{};
     std::chrono::steady_clock::time_point last_update;
+    std::chrono::steady_clock::time_point start_time;
     counter throughput{std::chrono::minutes(1)};
   };
 
