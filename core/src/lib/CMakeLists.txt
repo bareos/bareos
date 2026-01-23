@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -187,6 +187,11 @@ install(TARGETS bareos DESTINATION ${libdir})
 set_target_properties(
   bareos PROPERTIES VERSION "${BAREOS_NUMERIC_VERSION}"
                     SOVERSION "${BAREOS_VERSION_MAJOR}"
+)
+
+add_executable(config-reparser config_reparse.cc)
+target_link_libraries(
+  config-reparser PRIVATE Bareos::Lib CLI11::CLI11 Jansson::Jansson
 )
 
 include(DebugEdit)
