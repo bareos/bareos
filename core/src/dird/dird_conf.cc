@@ -2712,10 +2712,10 @@ static void StoreAutopassword(ConfigurationParser* p,
        * and for clear we need a code of 1. */
       switch (item->code) {
         case 1:
-          p->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+          StoreResource(p, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
           break;
         default:
-          p->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+          StoreResource(p, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
           break;
       }
       break;
@@ -2736,10 +2736,10 @@ static void StoreAutopassword(ConfigurationParser* p,
         case APT_NDMPV2:
         case APT_NDMPV3:
         case APT_NDMPV4:
-          p->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+          StoreResource(p, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
           break;
         default:
-          p->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+          StoreResource(p, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
           break;
       }
       break;
@@ -2760,18 +2760,18 @@ static void StoreAutopassword(ConfigurationParser* p,
         case APT_NDMPV2:
         case APT_NDMPV3:
         case APT_NDMPV4:
-          p->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+          StoreResource(p, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
           break;
         default:
-          p->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+          StoreResource(p, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
           break;
       }
       break;
     case R_CATALOG:
-      p->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+      StoreResource(p, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
       break;
     default:
-      p->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+      StoreResource(p, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
   }
 }

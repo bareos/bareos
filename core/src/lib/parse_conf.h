@@ -363,11 +363,6 @@ class ConfigurationParser {
   void b_UnlockRes(const char* file, int line) const;
   const char* ResToStr(int rcode) const;
   const char* ResGroupToStr(int rcode) const;
-  bool StoreResource(int rcode,
-                     lexer* lc,
-                     const ResourceItem* item,
-                     int index,
-                     int pass);
   void InitializeQualifiedResourceNameTypeConverter(
       const std::map<int, std::string>&);
   QualifiedResourceNameTypeConverter* GetQualifiedResourceNameTypeConverter()
@@ -395,12 +390,6 @@ class ConfigurationParser {
   ConfigurationParser operator=(const ConfigurationParser&) = delete;
 
  private:
-  enum unit_type
-  {
-    STORE_SIZE,
-    STORE_SPEED
-  };
-
   std::string config_default_filename_; /* default config filename, that is
                                            used, if no filename is given */
   std::string config_dir_; /* base directory of configuration files */
@@ -429,67 +418,6 @@ class ConfigurationParser {
   bool GetConfigIncludePath(PoolMem& full_path, const char* config_dir);
   bool FindConfigPath(PoolMem& full_path);
   int GetResourceTableIndex(const char* resource_type_name);
-  void StoreMsgs(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreName(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreStrname(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreStr(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreStdstr(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreDir(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreStdstrdir(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreMd5Password(lexer* lc,
-                        const ResourceItem* item,
-                        int index,
-                        int pass);
-  void StoreClearpassword(lexer* lc,
-                          const ResourceItem* item,
-                          int index,
-                          int pass);
-  void StoreRes(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreAlistRes(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreAlistStr(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreStdVectorStr(lexer* lc,
-                         const ResourceItem* item,
-                         int index,
-                         int pass);
-  void StoreAlistDir(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StorePluginNames(lexer* lc,
-                        const ResourceItem* item,
-                        int index,
-                        int pass);
-  void StoreDefs(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_int16(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_int32(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_pint16(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_pint32(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_int64(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_int_unit(lexer* lc,
-                      const ResourceItem* item,
-                      int index,
-                      int pass,
-                      bool size32,
-                      enum unit_type type);
-  void store_size32(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_size64(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreSpeed(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreTime(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreBit(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreBool(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreLabel(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreAddresses(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreAddressesAddress(lexer* lc,
-                             const ResourceItem* item,
-                             int index,
-                             int pass);
-  void StoreAddressesPort(lexer* lc,
-                          const ResourceItem* item,
-                          int index,
-                          int pass);
-  void ScanTypes(lexer* lc,
-                 MessagesResource* msg,
-                 MessageDestinationCode dest_code,
-                 const std::string& where,
-                 const std::string& cmd,
-                 const std::string& timestamp_format);
   void lex_error(const char* cf,
                  lexer::error_handler* ScanError,
                  lexer::warning_handler* scan_warning) const;
@@ -594,5 +522,11 @@ class ResLocker {
   ResLocker(ResLocker&&) = delete;
   ResLocker& operator=(ResLocker&&) = delete;
 };
+bool StoreResource(ConfigurationParser* p,
+                   int rcode,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass);
 
 #endif  // BAREOS_LIB_PARSE_CONF_H_

@@ -297,19 +297,19 @@ static void StoreAutopassword(lexer* lc,
        * and for clear we need a code of 1. */
       switch (item->code) {
         case 1:
-          my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index,
-                                   pass);
+          StoreResource(my_config, CFG_TYPE_CLEARPASSWORD, lc, item, index,
+                        pass);
           break;
         default:
-          my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+          StoreResource(my_config, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
           break;
       }
       break;
     case R_NDMP:
-      my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+      StoreResource(my_config, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
       break;
     default:
-      my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+      StoreResource(my_config, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
   }
 }
@@ -320,7 +320,7 @@ static void StoreMaxblocksize(lexer* lc,
                               int index,
                               int pass)
 {
-  my_config->StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
+  StoreResource(my_config, CFG_TYPE_SIZE32, lc, item, index, pass);
   if (GetItemVariable<uint32_t>(*item) > MAX_BLOCK_LENGTH) {
     scan_err2(lc,
               T_("Maximum Block Size configured value %u is greater than "
