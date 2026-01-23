@@ -187,210 +187,188 @@ bool ConfigurationParser::ParseConfig()
 
   config_resources_container_->SetTimestampToNow();
 
-  {
-#if 1
-    json_t* toplevel = json_array();
-
-    size_t current_idx = 0;
-
-    auto is_done = [&] { return current_idx == shape.size(); };
-
-    auto pop = [&]() -> decltype(shape[0])& { return shape[current_idx++]; };
-
-    std::vector<json_t*> stack;
-    std::vector<std::optional<std::string_view>> key_stack;
-    std::optional<std::string_view> key{};
-
-    auto jpop = [&] {
-      ASSERT(stack.size() > 1);
-
-      json_t* last = stack.back();
-      stack.pop_back();
-
-      return last;
-    };
-
-    auto allow_multiple = [](std::string_view k) {
-      (void)k;
-      // this also needs to check for case ...
-      // if (strncasecmp(k.data(), "RunScript", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "RunBeforeJob", k.size()) == 0) { return
-      // true; } if (strncasecmp(k.data(), "RunAfterJob", k.size()) == 0) {
-      // return true; } if (strncasecmp(k.data(), "ClientRunBeforeJob",
-      // k.size()) == 0) {
-      //   return true;
-      // }
-      // if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
-      //   return true;
-      // }
-      // if (strncasecmp(k.data(), "Run", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "FdPluginOptions", k.size()) == 0) {
-      //   return true;
-      // }
-      // if (strncasecmp(k.data(), "SdPluginOptions", k.size()) == 0) {
-      //   return true;
-      // }
-      // if (strncasecmp(k.data(), "DirPluginOptions", k.size()) == 0) {
-      //   return true;
-      // }
-      // if (strncasecmp(k.data(), "Include", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "Exclude", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "Syslog", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "Mail", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "MailOnError", k.size()) == 0) { return true;
-      // } if (strncasecmp(k.data(), "MailOnSuccess", k.size()) == 0) {
-      //   return true;
-      // }
-      // if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "Append", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "Stdout", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "Stderr", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "Director", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "Console", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "Operator", k.size()) == 0) { return true; }
-      // if (strncasecmp(k.data(), "Catalog", k.size()) == 0) { return true; }
-      // if (k == "WildFile") {
-      //   return true;
-      // }
-      // if (k == "WildDir") {
-      //   return true;
-      // }
-      // if (k == "RegexFile") {
-      //   return true;
-      // }
-      // if (k == "RegexDir") {
-      //   return true;
-      // }
-      return false;
-    };
-
-    auto jpush = [&](json_t* value) {
-      json_t* current = stack.back();
-
-      if (current == toplevel) {
-        ASSERT(key);
-        auto* obj = json_object();
-        json_object_set_new(obj, "type",
-                            json_stringn(key->data(), key->size()));
-        json_object_set_new(obj, "conf", value);
-
-        json_array_append_new(current, obj);
-        key.reset();
-      } else if (json_is_object(current)) {
-        ASSERT(key);
-
-        // this needs to be done better
-        if (allow_multiple(*key)) {
-          json_t* arr = json_object_getn(current, key->data(), key->size());
-          if (!arr) {
-            arr = json_array();
-            json_object_setn_new(current, key->data(), key->size(), arr);
-          }
-          ASSERT(json_is_array(arr));
-          json_array_append_new(arr, value);
-        } else {
-          ASSERT(!json_object_getn(current, key->data(), key->size()));
-          json_object_setn_new(current, key->data(), key->size(), value);
-        }
-
-
-        key.reset();
-      } else if (json_is_array(current)) {
-        ASSERT(!key);
-        json_array_append_new(current, value);
-      } else {
-        ASSERT(0);
-      }
-    };
-
-    stack.push_back(toplevel);
-
-    for (;;) {
-      if (is_done()) { break; }
-
-      auto& value = pop();
-
-      if (auto* str = std::get_if<proto::str>(&value)) {
-        json_t* current = stack.back();
-        bool inside_object = current == toplevel || json_is_object(current);
-
-        if (inside_object && !key) {
-          key = *str;
-        } else {
-          jpush(json_stringn(str->c_str(), str->size()));
-        }
-      } else if (std::get_if<proto::arr_begin>(&value)) {
-        stack.push_back(json_array());
-        key_stack.push_back(key);
-        key.reset();
-      } else if (std::get_if<proto::arr_end>(&value)) {
-        auto* current = jpop();
-        ASSERT(!key);
-        ASSERT(!key_stack.empty());
-        key = key_stack.back();
-        key_stack.pop_back();
-        ASSERT(json_is_array(current));
-
-        jpush(current);
-
-      } else if (std::get_if<proto::obj_begin>(&value)) {
-        stack.push_back(json_object());
-        key_stack.push_back(key);
-        key.reset();
-      } else if (std::get_if<proto::obj_end>(&value)) {
-        auto* current = jpop();
-        ASSERT(!key);
-        ASSERT(!key_stack.empty());
-        key = key_stack.back();
-        key_stack.pop_back();
-        ASSERT(json_is_object(current));
-        jpush(current);
-      } else if (auto* b = std::get_if<bool>(&value)) {
-        jpush(json_boolean(*b));
-      } else if (auto* i = std::get_if<int64_t>(&value)) {
-        jpush(json_integer(*i));
-      } else if (auto* u = std::get_if<uint64_t>(&value)) {
-        jpush(json_integer(*u));
-      } else {
-        ASSERT(0);
-      }
-    }
-
-    char* dumped = json_dumps(toplevel, JSON_INDENT(2));
-
-    std::ofstream{"/tmp/myconf"}.write(dumped, strlen(dumped));
-
-    free(dumped);
-    json_decref(toplevel);
-
-#else
-    int indent = 0;
-
-    std::string result{};
-
-    for (auto& v : shape) {
-      auto [str, off]
-          = std::visit([](auto& val) { return proto::format(val); }, v);
-
-      if (off < 0) { indent += off; }
-      result += std::format("{:{}}{}\n", "", indent, str.c_str());
-      if (off > 0) { indent += off; }
-    }
-
-    Dmsg1(10, "=======================\n");
-    Dmsg1(10, "%s\n", result.c_str());
-    Dmsg1(10, "=======================\n");
-
-    std::ofstream{"/tmp/myconf"}.write(result.c_str(), result.size());
-#endif
-  }
-
-  shape.clear();
-
-
   return success;
 }
+
+void ConfigurationParser::PrintShape()
+{
+  json_t* toplevel = json_array();
+
+  size_t current_idx = 0;
+
+  auto is_done = [&] { return current_idx == shape.size(); };
+
+  auto pop = [&]() -> decltype(shape[0])& { return shape[current_idx++]; };
+
+  std::vector<json_t*> stack;
+  std::vector<std::optional<std::string_view>> key_stack;
+  std::optional<std::string_view> key{};
+
+  auto jpop = [&] {
+    ASSERT(stack.size() > 1);
+
+    json_t* last = stack.back();
+    stack.pop_back();
+
+    return last;
+  };
+
+  auto allow_multiple = [](std::string_view k) {
+    (void)k;
+    // this also needs to check for case ...
+    // if (strncasecmp(k.data(), "RunScript", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "RunBeforeJob", k.size()) == 0) { return
+    // true; } if (strncasecmp(k.data(), "RunAfterJob", k.size()) == 0) {
+    // return true; } if (strncasecmp(k.data(), "ClientRunBeforeJob",
+    // k.size()) == 0) {
+    //   return true;
+    // }
+    // if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
+    //   return true;
+    // }
+    // if (strncasecmp(k.data(), "Run", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "FdPluginOptions", k.size()) == 0) {
+    //   return true;
+    // }
+    // if (strncasecmp(k.data(), "SdPluginOptions", k.size()) == 0) {
+    //   return true;
+    // }
+    // if (strncasecmp(k.data(), "DirPluginOptions", k.size()) == 0) {
+    //   return true;
+    // }
+    // if (strncasecmp(k.data(), "Include", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "Exclude", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "Syslog", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "Mail", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "MailOnError", k.size()) == 0) { return true;
+    // } if (strncasecmp(k.data(), "MailOnSuccess", k.size()) == 0) {
+    //   return true;
+    // }
+    // if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "Append", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "Stdout", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "Stderr", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "Director", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "Console", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "Operator", k.size()) == 0) { return true; }
+    // if (strncasecmp(k.data(), "Catalog", k.size()) == 0) { return true; }
+    // if (k == "WildFile") {
+    //   return true;
+    // }
+    // if (k == "WildDir") {
+    //   return true;
+    // }
+    // if (k == "RegexFile") {
+    //   return true;
+    // }
+    // if (k == "RegexDir") {
+    //   return true;
+    // }
+    return false;
+  };
+
+  auto jpush = [&](json_t* value) {
+    json_t* current = stack.back();
+
+    if (current == toplevel) {
+      ASSERT(key);
+      auto* obj = json_object();
+      json_object_set_new(obj, "type", json_stringn(key->data(), key->size()));
+      json_object_set_new(obj, "conf", value);
+
+      json_array_append_new(current, obj);
+      key.reset();
+    } else if (json_is_object(current)) {
+      ASSERT(key);
+
+      // this needs to be done better
+      if (allow_multiple(*key)) {
+        json_t* arr = json_object_getn(current, key->data(), key->size());
+        if (!arr) {
+          arr = json_array();
+          json_object_setn_new(current, key->data(), key->size(), arr);
+        }
+        ASSERT(json_is_array(arr));
+        json_array_append_new(arr, value);
+      } else {
+        ASSERT(!json_object_getn(current, key->data(), key->size()));
+        json_object_setn_new(current, key->data(), key->size(), value);
+      }
+
+
+      key.reset();
+    } else if (json_is_array(current)) {
+      ASSERT(!key);
+      json_array_append_new(current, value);
+    } else {
+      ASSERT(0);
+    }
+  };
+
+  stack.push_back(toplevel);
+
+  for (;;) {
+    if (is_done()) { break; }
+
+    auto& value = pop();
+
+    if (auto* str = std::get_if<proto::str>(&value)) {
+      json_t* current = stack.back();
+      bool inside_object = current == toplevel || json_is_object(current);
+
+      if (inside_object && !key) {
+        key = *str;
+      } else {
+        jpush(json_stringn(str->c_str(), str->size()));
+      }
+    } else if (std::get_if<proto::arr_begin>(&value)) {
+      stack.push_back(json_array());
+      key_stack.push_back(key);
+      key.reset();
+    } else if (std::get_if<proto::arr_end>(&value)) {
+      auto* current = jpop();
+      ASSERT(!key);
+      ASSERT(!key_stack.empty());
+      key = key_stack.back();
+      key_stack.pop_back();
+      ASSERT(json_is_array(current));
+
+      jpush(current);
+
+    } else if (std::get_if<proto::obj_begin>(&value)) {
+      stack.push_back(json_object());
+      key_stack.push_back(key);
+      key.reset();
+    } else if (std::get_if<proto::obj_end>(&value)) {
+      auto* current = jpop();
+      ASSERT(!key);
+      ASSERT(!key_stack.empty());
+      key = key_stack.back();
+      key_stack.pop_back();
+      ASSERT(json_is_object(current));
+      jpush(current);
+    } else if (auto* b = std::get_if<bool>(&value)) {
+      jpush(json_boolean(*b));
+    } else if (auto* i = std::get_if<int64_t>(&value)) {
+      jpush(json_integer(*i));
+    } else if (auto* u = std::get_if<uint64_t>(&value)) {
+      jpush(json_integer(*u));
+    } else {
+      ASSERT(0);
+    }
+  }
+
+  char* dumped = json_dumps(toplevel, JSON_INDENT(2));
+
+  printf("%s\n", dumped);
+
+  // std::ofstream{"/tmp/myconf"}.write(dumped, strlen(dumped));
+
+  free(dumped);
+  json_decref(toplevel);
+}
+
 
 void ConfigurationParser::lex_error(const char* cf,
                                     lexer::error_handler* scan_error,

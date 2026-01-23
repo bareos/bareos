@@ -49,47 +49,6 @@ struct obj_begin {};
 struct obj_end {};
 struct arr_begin {};
 struct arr_end {};
-
-
-static inline std::pair<std::string, int> format(const str& s)
-{
-  return {"\"" + s + "\"", 0};
-}
-
-static inline std::pair<std::string, int> format(bool s)
-{
-  return {s ? "True" : "False", 0};
-}
-
-static inline std::pair<std::string, int> format(const obj_begin&)
-{
-  return {"{", 1};
-}
-
-static inline std::pair<std::string, int> format(const obj_end&)
-{
-  return {"}", -1};
-}
-
-static inline std::pair<std::string, int> format(const arr_begin&)
-{
-  return {"[", 1};
-}
-
-static inline std::pair<std::string, int> format(const arr_end&)
-{
-  return {"]", -1};
-}
-
-static inline std::pair<std::string, int> format(int64_t i)
-{
-  return {std::to_string(i), 0};
-}
-
-static inline std::pair<std::string, int> format(uint64_t u)
-{
-  return {std::to_string(u), 0};
-}
 };  // namespace proto
 
 using conf_proto = std::variant<proto::str,
@@ -287,6 +246,7 @@ class ConfigurationParser {
     shape.push_back(proto::obj_end{});
   }
 
+  void PrintShape();
 
  public:
   using sender = PRINTF_LIKE(2, 3) bool(void* user, const char* fmt, ...);
