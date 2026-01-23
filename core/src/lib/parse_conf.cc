@@ -226,6 +226,10 @@ void ConfigurationParser::PrintShape()
     if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
       return "RunScript";
     }
+    if (strncasecmp(k.data(), "Name", k.size()) == 0) {
+      // make sure the spelling is always the same!
+      return "Name";
+    }
 
     return k;
   };
@@ -238,6 +242,7 @@ void ConfigurationParser::PrintShape()
     if (strncasecmp(k.data(), "ClientRunBeforeJob", k.size()) == 0) {
       return true;
     }
+    if (strncasecmp(k.data(), "FsType", k.size()) == 0) { return true; }
     if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
       return true;
     }
@@ -266,10 +271,22 @@ void ConfigurationParser::PrintShape()
     if (strncasecmp(k.data(), "Console", k.size()) == 0) { return true; }
     if (strncasecmp(k.data(), "Operator", k.size()) == 0) { return true; }
     if (strncasecmp(k.data(), "Catalog", k.size()) == 0) { return true; }
-    if (k == "WildFile") { return true; }
-    if (k == "WildDir") { return true; }
-    if (k == "RegexFile") { return true; }
-    if (k == "RegexDir") { return true; }
+
+    if (strncasecmp(k.data(), "Wild", k.size()) == 0) { return true; }
+    if (strncasecmp(k.data(), "WildFile", k.size()) == 0) { return true; }
+    if (strncasecmp(k.data(), "WildDir", k.size()) == 0) { return true; }
+    if (strncasecmp(k.data(), "Regex", k.size()) == 0) { return true; }
+    if (strncasecmp(k.data(), "RegexFile", k.size()) == 0) { return true; }
+    if (strncasecmp(k.data(), "RegexDir", k.size()) == 0) { return true; }
+
+    if (strncasecmp(k.data(), "Options", k.size()) == 0) { return true; }
+    if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
+    if (strncasecmp(k.data(), "Plugin", k.size()) == 0) { return true; }
+
+    if (strncasecmp(k.data(), "ExcludeDirContaining", k.size()) == 0) {
+      return true;
+    }
+
     return false;
   };
 
@@ -278,11 +295,33 @@ void ConfigurationParser::PrintShape()
 
     if (json_is_object(current)) {
       ASSERT(key);
-
       auto actual_key = key_convert(*key);
 
       // this needs to be done better
-      if (current == toplevel || allow_multiple(actual_key)) {
+
+      if (current == toplevel) {
+        auto resource_name = [&] {
+          // we are adding a new resource!
+          // use its name as key, and remove name from the value
+          json_t* name = json_object_get(value, "Name");
+          ASSERT(name);
+          ASSERT(json_is_string(name));
+          std::string res = json_string_value(name);
+          ASSERT(json_object_del(value, "Name") == 0);
+
+          return res;
+        }();
+        json_t* obj
+            = json_object_getn(current, actual_key.data(), actual_key.size());
+        if (!obj) {
+          obj = json_object();
+          json_object_setn_new(current, actual_key.data(), actual_key.size(),
+                               obj);
+        }
+        ASSERT(json_is_object(obj));
+        json_object_setn_new(obj, resource_name.c_str(), resource_name.size(),
+                             value);
+      } else if (allow_multiple(actual_key)) {
         json_t* arr
             = json_object_getn(current, actual_key.data(), actual_key.size());
         if (!arr) {
@@ -298,7 +337,6 @@ void ConfigurationParser::PrintShape()
         json_object_setn_new(current, actual_key.data(), actual_key.size(),
                              value);
       }
-
 
       key.reset();
     } else if (json_is_array(current)) {
