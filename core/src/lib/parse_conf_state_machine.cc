@@ -111,7 +111,7 @@ ConfigParserStateMachine::ScanResource(int token)
 {
   switch (token) {
     case BCT_BOB:
-      my_config_.PushArray();
+      my_config_.PushObject();
       config_level_++;
       return ParseInternalReturnCode::kGetNextToken;
     case BCT_IDENTIFIER: {
@@ -126,10 +126,7 @@ ConfigParserStateMachine::ScanResource(int token)
           currently_parsed_resource_.resource_items_, lexical_parser_->str);
 
       if (resource_item_index >= 0) {
-        my_config_.PushObject();
-        my_config_.PushString("item");
         my_config_.PushString(lexical_parser_->str);
-        my_config_.PushString("value");
         const ResourceItem* item = nullptr;
         item = &currently_parsed_resource_.resource_items_[resource_item_index];
         if (!item->uses_no_equal) {
@@ -161,7 +158,6 @@ ConfigParserStateMachine::ScanResource(int token)
                                       ->configuration_resources_.data());
           }
         }
-        my_config_.PopObject();
       } else {
         Dmsg2(900, "config_level_=%d id=%s\n", config_level_,
               lexical_parser_->str);
@@ -176,7 +172,7 @@ ConfigParserStateMachine::ScanResource(int token)
       return ParseInternalReturnCode::kGetNextToken;
     }
     case BCT_EOB:
-      my_config_.PopArray();
+      my_config_.PopObject();
       config_level_--;
       state = ParseState::kInit;
       Dmsg0(900, "BCT_EOB => define new resource\n");
