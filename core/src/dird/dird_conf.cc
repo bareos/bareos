@@ -2932,41 +2932,89 @@ static void StoreShortRunscript(ConfigurationParser* p,
   alist<RunScript*>** runscripts
       = GetItemVariablePointer<alist<RunScript*>**>(*item);
 
-  if (pass == 1) {
-    p->PushString(lc->str);
-  } else if (pass == 2) {
-    Dmsg0(500, "runscript: creating new RunScript object\n");
-    RunScript* script = new RunScript;
-
+  Dmsg0(500, "runscript: creating new RunScript object\n");
+  RunScript* script = nullptr;
+  if (pass == 2) {
+    script = new RunScript;
     script->SetJobCodeCallback(job_code_callback_director);
-
     script->SetCommand(lc->str);
-    if (Bstrcasecmp(item->name, "runbeforejob")) {
+  }
+
+  p->PushObject();
+  p->PushString("command");
+  p->PushString(lc->str);
+
+  auto set_bools = [&](bool on_success, bool on_error, bool fail_on_error) {
+    p->PushString("on_success");
+    p->PushB(on_success);
+    p->PushString("on_failure");
+    p->PushB(on_error);
+    p->PushString("fail_on_error");
+    p->PushB(fail_on_error);
+  };
+
+  if (Bstrcasecmp(item->name, "runbeforejob")) {
+    p->PushString("target");
+    p->PushString("");
+    p->PushString("when");
+    p->PushString("before");
+    if (pass == 2) {
       script->when = SCRIPT_Before;
       script->SetTarget("");
-    } else if (Bstrcasecmp(item->name, "runafterjob")) {
+    }
+  } else if (Bstrcasecmp(item->name, "runafterjob")) {
+    p->PushString("target");
+    p->PushString("");
+    p->PushString("when");
+    p->PushString("after");
+    set_bools(true, false, false);
+    if (pass == 2) {
       script->when = SCRIPT_After;
       script->on_success = true;
       script->on_failure = false;
-      script->fail_on_error = false;
-      script->SetTarget("");
-    } else if (Bstrcasecmp(item->name, "clientrunafterjob")) {
-      script->when = SCRIPT_After;
-      script->on_success = true;
-      script->on_failure = false;
-      script->fail_on_error = false;
-      script->SetTarget("%c");
-    } else if (Bstrcasecmp(item->name, "clientrunbeforejob")) {
-      script->when = SCRIPT_Before;
-      script->SetTarget("%c");
-    } else if (Bstrcasecmp(item->name, "runafterfailedjob")) {
-      script->when = SCRIPT_After;
-      script->on_failure = true;
-      script->on_success = false;
       script->fail_on_error = false;
       script->SetTarget("");
     }
+  } else if (Bstrcasecmp(item->name, "clientrunafterjob")) {
+    p->PushString("target");
+    p->PushString("%c");
+    p->PushString("when");
+    p->PushString("after");
+    set_bools(true, false, false);
+    if (pass == 2) {
+      script->when = SCRIPT_After;
+      script->on_success = true;
+      script->on_failure = false;
+      script->fail_on_error = false;
+      script->SetTarget("%c");
+    }
+  } else if (Bstrcasecmp(item->name, "clientrunbeforejob")) {
+    p->PushString("target");
+    p->PushString("%c");
+    p->PushString("when");
+    p->PushString("before");
+    if (pass == 2) {
+      script->when = SCRIPT_Before;
+      script->SetTarget("%c");
+    }
+  } else if (Bstrcasecmp(item->name, "runafterfailedjob")) {
+    p->PushString("target");
+    p->PushString("");
+    p->PushString("when");
+    p->PushString("after");
+    set_bools(false, true, false);
+    if (pass == 2) {
+      script->when = SCRIPT_After;
+      script->on_success = false;
+      script->on_failure = true;
+      script->fail_on_error = false;
+      script->SetTarget("");
+    }
+  }
 
+  p->PopObject();
+
+  if (pass == 2) {
     // Remember that the entry was configured in the short runscript form.
     script->short_form = true;
 
