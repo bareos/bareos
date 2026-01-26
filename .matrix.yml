@@ -91,11 +91,6 @@ OS:
       IMAGE: "debian12"
       ARCH:
         - x86_64
-    "11":
-      TYPE: deb
-      IMAGE: "debian11"
-      ARCH:
-        - x86_64
   EL:
     "10":
       TYPE: rpm
