@@ -214,8 +214,8 @@ void StoreRun(ConfigurationParser* conf,
           case 'L': /* Level */
             token = LexGetToken(lc, BCT_NAME);
             conf->PushString(lc->str);
-            for (j = 0; joblevels[j].level_name; j++) {
-              if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
+            for (j = 0; joblevels[j].name; j++) {
+              if (Bstrcasecmp(lc->str, joblevels[j].name)) {
                 res_run.level = joblevels[j].level;
                 res_run.job_type = joblevels[j].job_type;
                 j = 0;
@@ -336,8 +336,8 @@ void StoreRun(ConfigurationParser* conf,
     /* At this point, it is not a keyword. Check for old syle
      * Job Levels without keyword. This form is depreciated!!! */
     if (!found) {
-      for (j = 0; joblevels[j].level_name; j++) {
-        if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
+      for (j = 0; joblevels[j].name; j++) {
+        if (Bstrcasecmp(lc->str, joblevels[j].name)) {
           conf->PushLabel("Level");
           conf->PushString(lc->str);
 
@@ -785,8 +785,8 @@ void ParseRun(ConfigurationParser* conf,
             conf->PushString(lc->str);
 
             bool found_level = false;
-            for (int j = 0; joblevels[j].level_name; j++) {
-              if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
+            for (int j = 0; joblevels[j].name; j++) {
+              if (Bstrcasecmp(lc->str, joblevels[j].name)) {
                 found_level = true;
                 break;
               }
@@ -845,8 +845,8 @@ void ParseRun(ConfigurationParser* conf,
     /* At this point, it is not a keyword. Check for old syle
      * Job Levels without keyword. This form is depreciated!!! */
     if (!found) {
-      for (int j = 0; joblevels[j].level_name; j++) {
-        if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
+      for (int j = 0; joblevels[j].name; j++) {
+        if (Bstrcasecmp(lc->str, joblevels[j].name)) {
           conf->PushLabel("Level");
           conf->PushString(lc->str);
 

@@ -717,8 +717,8 @@ json_t* json_datatype(const int type, s_jl items[])
   json_t* json = json_datatype_header(type, "keyword");
   if (items) {
     json_t* values = json_object();
-    for (int i = 0; items[i].level_name; i++) {
-      json_object_set_new(values, items[i].level_name, json_item(&items[i]));
+    for (int i = 0; items[i].name; i++) {
+      json_object_set_new(values, items[i].name, json_item(&items[i]));
     }
     json_object_set_new(json, "values", values);
   }
@@ -730,8 +730,8 @@ json_t* json_datatype(const int type, s_jt items[])
   json_t* json = json_datatype_header(type, "keyword");
   if (items) {
     json_t* values = json_object();
-    for (int i = 0; items[i].type_name; i++) {
-      json_object_set_new(values, items[i].type_name, json_item(&items[i]));
+    for (int i = 0; items[i].name; i++) {
+      json_object_set_new(values, items[i].name, json_item(&items[i]));
     }
     json_object_set_new(json, "values", values);
   }
@@ -1467,9 +1467,9 @@ static std::string PrintConfigRun(RunResource* run)
   }
 
   if (run->level) {
-    for (int j = 0; joblevels[j].level_name; j++) {
+    for (int j = 0; joblevels[j].name; j++) {
       if (joblevels[j].level == run->level) {
-        PmStrcat(run_str, joblevels[j].level_name);
+        PmStrcat(run_str, joblevels[j].name);
         PmStrcat(run_str, " ");
         break;
       }
@@ -2110,9 +2110,9 @@ const char* JobLevelToString(int level)
 
   Bsnprintf(level_no, sizeof(level_no), "%c (%d)", level,
             level); /* default if not found */
-  for (int i = 0; joblevels[i].level_name; i++) {
+  for (int i = 0; joblevels[i].name; i++) {
     if (level == (int)joblevels[i].level) {
-      str = joblevels[i].level_name;
+      str = joblevels[i].name;
       break;
     }
   }
@@ -2574,8 +2574,8 @@ static void StoreMigtype(ConfigurationParser* p,
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
   bool found = false;
-  for (int i = 0; migtypes[i].type_name; i++) {
-    if (Bstrcasecmp(lc->str, migtypes[i].type_name)) {
+  for (int i = 0; migtypes[i].name; i++) {
+    if (Bstrcasecmp(lc->str, migtypes[i].name)) {
       SetItemVariable<uint32_t>(*item, migtypes[i].job_type);
       p->PushU(migtypes[i].job_type);
       found = true;
@@ -2601,8 +2601,8 @@ static void ParseMigtype(ConfigurationParser* p,
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
   bool found = false;
-  for (int i = 0; migtypes[i].type_name; i++) {
-    if (Bstrcasecmp(lc->str, migtypes[i].type_name)) {
+  for (int i = 0; migtypes[i].name; i++) {
+    if (Bstrcasecmp(lc->str, migtypes[i].name)) {
       p->PushU(migtypes[i].job_type);
       found = true;
       break;
@@ -2627,8 +2627,8 @@ static void StoreJobtype(ConfigurationParser* p,
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
   bool found = false;
-  for (int i = 0; jobtypes[i].type_name; i++) {
-    if (Bstrcasecmp(lc->str, jobtypes[i].type_name)) {
+  for (int i = 0; jobtypes[i].name; i++) {
+    if (Bstrcasecmp(lc->str, jobtypes[i].name)) {
       SetItemVariable<uint32_t>(*item, jobtypes[i].job_type);
       p->PushU(jobtypes[i].job_type);
       found = true;
@@ -2654,8 +2654,8 @@ static void ParseJobtype(ConfigurationParser* p,
   LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
   bool found = false;
-  for (int i = 0; jobtypes[i].type_name; i++) {
-    if (Bstrcasecmp(lc->str, jobtypes[i].type_name)) {
+  for (int i = 0; jobtypes[i].name; i++) {
+    if (Bstrcasecmp(lc->str, jobtypes[i].name)) {
       p->PushU(jobtypes[i].job_type);
       found = true;
       break;
@@ -2893,8 +2893,8 @@ static void StoreLevel(ConfigurationParser* p,
 
   // Store the level in pass 2 so that type is defined
   bool found = false;
-  for (int i = 0; joblevels[i].level_name; i++) {
-    if (Bstrcasecmp(lc->str, joblevels[i].level_name)) {
+  for (int i = 0; joblevels[i].name; i++) {
+    if (Bstrcasecmp(lc->str, joblevels[i].name)) {
       SetItemVariable<uint32_t>(*item, joblevels[i].level);
       p->PushU(joblevels[i].level);
       found = true;
@@ -2921,8 +2921,8 @@ static void ParseLevel(ConfigurationParser* p,
 
   // Store the level in pass 2 so that type is defined
   bool found = false;
-  for (int i = 0; joblevels[i].level_name; i++) {
-    if (Bstrcasecmp(lc->str, joblevels[i].level_name)) {
+  for (int i = 0; joblevels[i].name; i++) {
+    if (Bstrcasecmp(lc->str, joblevels[i].name)) {
       p->PushU(joblevels[i].level);
       found = true;
       break;
@@ -3940,9 +3940,9 @@ static bool HasDefaultValue(const ResourceItem& item, s_jt* keywords)
   bool is_default = false;
   uint32_t value = GetItemVariable<uint32_t>(item);
   if (item.default_value) {
-    for (int j = 0; keywords[j].type_name; j++) {
+    for (int j = 0; keywords[j].name; j++) {
       if (keywords[j].job_type == value) {
-        is_default = Bstrcasecmp(item.default_value, keywords[j].type_name);
+        is_default = Bstrcasecmp(item.default_value, keywords[j].name);
         break;
       }
     }
@@ -3958,9 +3958,9 @@ static bool HasDefaultValue(const ResourceItem& item, s_jl* keywords)
   bool is_default = false;
   uint32_t value = GetItemVariable<uint32_t>(item);
   if (item.default_value) {
-    for (int j = 0; keywords[j].level_name; j++) {
+    for (int j = 0; keywords[j].name; j++) {
       if (keywords[j].level == value) {
-        is_default = Bstrcasecmp(item.default_value, keywords[j].level_name);
+        is_default = Bstrcasecmp(item.default_value, keywords[j].name);
         break;
       }
     }
@@ -4142,9 +4142,9 @@ static void PrintConfigCb(const ResourceItem& item,
       uint32_t jobtype = GetItemVariable<uint32_t>(item);
 
       if (jobtype) {
-        for (int j = 0; jobtypes[j].type_name; j++) {
+        for (int j = 0; jobtypes[j].name; j++) {
           if (jobtypes[j].job_type == jobtype) {
-            send.KeyString(item.name, jobtypes[j].type_name, inherited);
+            send.KeyString(item.name, jobtypes[j].name, inherited);
             break;
           }
         }
@@ -4159,9 +4159,9 @@ static void PrintConfigCb(const ResourceItem& item,
       uint32_t migtype = GetItemVariable<uint32_t>(item);
 
       if (migtype) {
-        for (int j = 0; migtypes[j].type_name; j++) {
+        for (int j = 0; migtypes[j].name; j++) {
           if (migtypes[j].job_type == migtype) {
-            send.KeyString(item.name, migtypes[j].type_name, inherited);
+            send.KeyString(item.name, migtypes[j].name, inherited);
             break;
           }
         }
@@ -4178,9 +4178,9 @@ static void PrintConfigCb(const ResourceItem& item,
       if (!level) {
         send.KeyString(item.name, "", true /*inherited*/);
       } else {
-        for (int j = 0; joblevels[j].level_name; j++) {
+        for (int j = 0; joblevels[j].name; j++) {
           if (joblevels[j].level == level) {
-            send.KeyString(item.name, joblevels[j].level_name, inherited);
+            send.KeyString(item.name, joblevels[j].name, inherited);
             break;
           }
         }

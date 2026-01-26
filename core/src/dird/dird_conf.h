@@ -70,14 +70,14 @@ enum
 
 // Job Level keyword structure
 struct s_jl {
-  const char* level_name; /* level keyword */
-  uint32_t level;         /* level */
-  int32_t job_type;       /* JobType permitting this level */
+  const char* name; /* level keyword */
+  uint32_t level;   /* level */
+  int32_t job_type; /* JobType permitting this level */
 };
 
 // Job Type keyword structure
 struct s_jt {
-  const char* type_name;
+  const char* name;
   uint32_t job_type;
 };
 
