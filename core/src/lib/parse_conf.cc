@@ -190,230 +190,176 @@ bool ConfigurationParser::ParseConfig()
   return success;
 }
 
-void ConfigurationParser::PrintShape()
+static inline auto key_convert(std::string_view k) -> std::string_view
 {
-  json_t* toplevel = json_object();
-
-  size_t current_idx = 0;
-
-  auto is_done = [&] { return current_idx == shape.size(); };
-
-  auto pop = [&]() -> decltype(shape[0])& { return shape[current_idx++]; };
-
-  std::vector<json_t*> stack;
-  std::vector<std::optional<std::string_view>> key_stack;
-  std::optional<std::string_view> key{};
-
-  auto jpop = [&] {
-    ASSERT(stack.size() > 1);
-
-    json_t* last = stack.back();
-    stack.pop_back();
-
-    return last;
+  std::string_view run_script_alias[] = {
+      "RunBeforeJob",
+      "RunAfterJob",
+      "ClientRunBeforeJob",
+      "ClientRunAfterJob",
   };
 
-  auto key_convert = [](std::string_view k) -> std::string_view {
-    if (strncasecmp(k.data(), "RunBeforeJob", k.size()) == 0) {
+  for (auto alias : run_script_alias) {
+    if (k.size() == alias.size()
+        && strncasecmp(k.data(), alias.data(), alias.size()) == 0) {
       return "RunScript";
-    }
-    if (strncasecmp(k.data(), "RunAfterJob", k.size()) == 0) {
-      return "RunScript";
-    }
-    if (strncasecmp(k.data(), "ClientRunBeforeJob", k.size()) == 0) {
-      return "RunScript";
-    }
-    if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
-      return "RunScript";
-    }
-    if (strncasecmp(k.data(), "Name", k.size()) == 0) {
-      // make sure the spelling is always the same!
-      return "Name";
-    }
-
-    return k;
-  };
-
-  auto allow_multiple = [](std::string_view k) {
-    // this also needs to check for case ...
-    if (strncasecmp(k.data(), "RunScript", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "RunBeforeJob", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "RunAfterJob", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "ClientRunBeforeJob", k.size()) == 0) {
-      return true;
-    }
-    if (strncasecmp(k.data(), "FsType", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
-      return true;
-    }
-    if (strncasecmp(k.data(), "Run", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "FdPluginOptions", k.size()) == 0) {
-      return true;
-    }
-    if (strncasecmp(k.data(), "SdPluginOptions", k.size()) == 0) {
-      return true;
-    }
-    if (strncasecmp(k.data(), "DirPluginOptions", k.size()) == 0) {
-      return true;
-    }
-    if (strncasecmp(k.data(), "Include", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Exclude", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Syslog", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Mail", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "MailOnError", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "MailOnSuccess", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Append", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Stdout", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Stderr", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Director", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Console", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Operator", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Catalog", k.size()) == 0) { return true; }
-
-    if (strncasecmp(k.data(), "Wild", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "WildFile", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "WildDir", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Regex", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "RegexFile", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "RegexDir", k.size()) == 0) { return true; }
-
-    if (strncasecmp(k.data(), "Options", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
-    if (strncasecmp(k.data(), "Plugin", k.size()) == 0) { return true; }
-
-    if (strncasecmp(k.data(), "ExcludeDirContaining", k.size()) == 0) {
-      return true;
-    }
-
-    return false;
-  };
-
-  auto jpush = [&](json_t* value) {
-    json_t* current = stack.back();
-
-    if (json_is_object(current)) {
-      ASSERT(key);
-      auto actual_key = key_convert(*key);
-
-      // this needs to be done better
-
-      if (current == toplevel) {
-        auto resource_name = [&] {
-          // we are adding a new resource!
-          // use its name as key, and remove name from the value
-          json_t* name = json_object_get(value, "Name");
-          ASSERT(name);
-          ASSERT(json_is_string(name));
-          std::string res = json_string_value(name);
-          ASSERT(json_object_del(value, "Name") == 0);
-
-          return res;
-        }();
-        json_t* obj
-            = json_object_getn(current, actual_key.data(), actual_key.size());
-        if (!obj) {
-          obj = json_object();
-          json_object_setn_new(current, actual_key.data(), actual_key.size(),
-                               obj);
-        }
-        ASSERT(json_is_object(obj));
-        json_object_setn_new(obj, resource_name.c_str(), resource_name.size(),
-                             value);
-      } else if (allow_multiple(actual_key)) {
-        json_t* arr
-            = json_object_getn(current, actual_key.data(), actual_key.size());
-        if (!arr) {
-          arr = json_array();
-          json_object_setn_new(current, actual_key.data(), actual_key.size(),
-                               arr);
-        }
-        ASSERT(json_is_array(arr));
-        json_array_append_new(arr, value);
-      } else {
-        ASSERT(
-            !json_object_getn(current, actual_key.data(), actual_key.size()));
-        json_object_setn_new(current, actual_key.data(), actual_key.size(),
-                             value);
-      }
-
-      key.reset();
-    } else if (json_is_array(current)) {
-      ASSERT(!key);
-      json_array_append_new(current, value);
-    } else {
-      ASSERT(0);
-    }
-  };
-
-  stack.push_back(toplevel);
-
-  for (;;) {
-    if (is_done()) { break; }
-
-    auto& value = pop();
-
-    if (auto* label = std::get_if<proto::label>(&value)) {
-      json_t* current = stack.back();
-      bool inside_object = current == toplevel || json_is_object(current);
-
-      ASSERT(inside_object);
-      ASSERT(!key);
-
-      key.emplace(*label);
-    } else if (auto* str = std::get_if<proto::str>(&value)) {
-      json_t* current = stack.back();
-      bool inside_object = current == toplevel || json_is_object(current);
-
-      ASSERT(!inside_object || key);
-
-      jpush(json_stringn(str->c_str(), str->size()));
-    } else if (std::get_if<proto::arr_begin>(&value)) {
-      stack.push_back(json_array());
-      key_stack.push_back(key);
-      key.reset();
-    } else if (std::get_if<proto::arr_end>(&value)) {
-      auto* current = jpop();
-      ASSERT(!key);
-      ASSERT(!key_stack.empty());
-      key = key_stack.back();
-      key_stack.pop_back();
-      ASSERT(json_is_array(current));
-
-      jpush(current);
-
-    } else if (std::get_if<proto::obj_begin>(&value)) {
-      stack.push_back(json_object());
-      key_stack.push_back(key);
-      key.reset();
-    } else if (std::get_if<proto::obj_end>(&value)) {
-      auto* current = jpop();
-      ASSERT(!key);
-      ASSERT(!key_stack.empty());
-      key = key_stack.back();
-      key_stack.pop_back();
-      ASSERT(json_is_object(current));
-      jpush(current);
-    } else if (auto* b = std::get_if<bool>(&value)) {
-      jpush(json_boolean(*b));
-    } else if (auto* i = std::get_if<int64_t>(&value)) {
-      jpush(json_integer(*i));
-    } else if (auto* u = std::get_if<uint64_t>(&value)) {
-      jpush(json_integer(*u));
-    } else {
-      ASSERT(0);
     }
   }
 
-  char* dumped = json_dumps(toplevel, JSON_INDENT(2));
+  // if (k.size() == sizeof("Name") - 1 &&
+  //     strncasecmp(k.data(), "Name", sizeof("Name") - 1) == 0) {
+  //   // make sure the spelling is always the same!
+  //   return "Name";
+  // }
+
+  return k;
+};
+
+static inline auto allow_multiple(std::string_view k) -> bool
+{
+  // this also needs to check for case ...
+  if (strncasecmp(k.data(), "RunScript", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "RunBeforeJob", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "RunAfterJob", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "ClientRunBeforeJob", k.size()) == 0) {
+    return true;
+  }
+  if (strncasecmp(k.data(), "FsType", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
+    return true;
+  }
+  if (strncasecmp(k.data(), "Run", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "FdPluginOptions", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "SdPluginOptions", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "DirPluginOptions", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Include", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Exclude", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Syslog", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Mail", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "MailOnError", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "MailOnSuccess", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Append", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Stdout", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Stderr", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Director", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Console", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Operator", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Catalog", k.size()) == 0) { return true; }
+
+  if (strncasecmp(k.data(), "Wild", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "WildFile", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "WildDir", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Regex", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "RegexFile", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "RegexDir", k.size()) == 0) { return true; }
+
+  if (strncasecmp(k.data(), "Options", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
+  if (strncasecmp(k.data(), "Plugin", k.size()) == 0) { return true; }
+
+  if (strncasecmp(k.data(), "ExcludeDirContaining", k.size()) == 0) {
+    return true;
+  }
+
+  return false;
+};
+
+json_t* convert(conf_proto* p, bool toplevel = true)
+{
+  return std::visit(
+      [toplevel](auto& val) -> json_t* {
+        using T = std::remove_reference_t<decltype(val)>;
+
+        if constexpr (std::is_same_v<T, bool>) {
+          return json_boolean(val);
+        } else if constexpr (std::is_same_v<T, proto::str>) {
+          return json_stringn_nocheck(val.c_str(), val.size());
+        } else if constexpr (std::is_same_v<T, int64_t>) {
+          return json_integer(val);
+        } else if constexpr (std::is_same_v<T, uint64_t>) {
+          return json_integer(val);
+        } else if constexpr (std::is_same_v<T, conf_map>) {
+          auto* obj = json_object();
+          for (auto& [k, v] : val) {
+            auto real_key = key_convert(k);
+
+            auto* converted = convert(&v, false);
+
+            if (toplevel) {
+              auto resource_name = [&] {
+                // we are adding a new resource!
+                // use its name as key, and remove name from the value
+                json_t* name = json_object_get(converted, "Name");
+                ASSERT(name);
+                ASSERT(json_is_string(name));
+                std::string res = json_string_value(name);
+                ASSERT(json_object_del(converted, "Name") == 0);
+
+                return res;
+              }();
+
+              auto* res_list
+                  = json_object_getn(obj, real_key.data(), real_key.size());
+              if (res_list) {
+                ASSERT(json_is_object(res_list));
+              } else {
+                res_list = json_object();
+                json_object_setn_new(obj, real_key.data(), real_key.size(),
+                                     res_list);
+              }
+
+              json_object_setn_new(res_list, resource_name.c_str(),
+                                   resource_name.size(), converted);
+
+            } else if (allow_multiple(real_key)) {
+              auto* arr
+                  = json_object_getn(obj, real_key.data(), real_key.size());
+              if (arr) {
+                ASSERT(json_is_array(arr));
+              } else {
+                arr = json_array();
+                json_object_setn_new(obj, real_key.data(), real_key.size(),
+                                     arr);
+              }
+
+              json_array_append_new(arr, converted);
+            } else {
+              ASSERT(!json_object_getn(obj, real_key.data(), real_key.size()));
+              json_object_setn_new(obj, real_key.data(), real_key.size(),
+                                   converted);
+            }
+          }
+          return obj;
+        } else if constexpr (std::is_same_v<T, conf_vec>) {
+          auto* arr = json_array();
+
+          for (auto& child : val) {
+            json_array_append_new(arr, convert(&child, false));
+          }
+
+          return arr;
+        } else {
+          static_assert(false);
+        }
+
+        return nullptr;
+      },
+      p->value);
+}
+
+void ConfigurationParser::PrintShape()
+{
+  auto proto = builder.build();
+  json_t* json = convert(proto.get());
+
+  char* dumped = json_dumps(json, JSON_INDENT(2));
 
   printf("%s\n", dumped);
 
-  // std::ofstream{"/tmp/myconf"}.write(dumped, strlen(dumped));
-
   free(dumped);
-  json_decref(toplevel);
+  json_decref(json);
 }
 
 

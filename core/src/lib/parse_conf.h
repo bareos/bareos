@@ -52,15 +52,108 @@ struct arr_begin {};
 struct arr_end {};
 };  // namespace proto
 
-using conf_proto = std::variant<proto::str,
-                                proto::label,
-                                proto::obj_begin,
-                                proto::obj_end,
-                                proto::arr_begin,
-                                proto::arr_end,
-                                bool,
-                                int64_t,
-                                uint64_t>;
+struct conf_proto;
+
+using conf_vec = std::vector<conf_proto>;
+using conf_map = std::vector<std::pair<std::string_view, conf_proto>>;
+
+struct conf_proto {
+  std::variant<bool, proto::str, int64_t, uint64_t, conf_vec, conf_map> value{
+      false};
+};
+
+struct proto_builder {
+  struct object {
+    conf_map* map{};
+    std::optional<std::string_view> key{};
+  };
+  struct array {
+    conf_vec* vec;
+  };
+  using conf_object = std::variant<object, array>;
+  std::vector<conf_object> open_stack;
+
+  std::unique_ptr<conf_proto> root;
+
+  std::unique_ptr<conf_proto> build()
+  {
+    if (open_stack.size() != 1) { return nullptr; }
+
+    {
+      auto* obj = is_object();
+      if (!obj) { return nullptr; }
+      if (obj->key) { return nullptr; }
+    }
+
+    open_stack.pop_back();
+    return std::move(root);
+  }
+
+  proto_builder()
+  {
+    root = std::make_unique<conf_proto>(conf_map{});
+    open_stack.push_back(object{std::get_if<conf_map>(&root->value)});
+  }
+
+  array* is_array()
+  {
+    if (open_stack.empty()) { return nullptr; }
+    return std::get_if<array>(&open_stack.back());
+  }
+
+  object* is_object()
+  {
+    if (open_stack.empty()) { return nullptr; }
+    return std::get_if<object>(&open_stack.back());
+  }
+
+  void push(bool b) { push_value(conf_proto{b}); }
+  void push(int64_t i) { push_value(conf_proto{i}); }
+  void push(uint64_t u) { push_value(conf_proto{u}); }
+
+  void push(proto::str s) { push_value(conf_proto{std::move(s)}); }
+  void push(proto::label l)
+  {
+    auto* obj = is_object();
+    ASSERT(obj);
+    ASSERT(!obj->key);
+    obj->key = l;
+  }
+  void push(proto::arr_begin)
+  {
+    auto& vec = push_value(conf_proto{conf_vec{}});
+    open_stack.push_back(array{std::get_if<conf_vec>(&vec.value)});
+  }
+  void push(proto::arr_end)
+  {
+    ASSERT(is_array());
+    open_stack.pop_back();
+  }
+  void push(proto::obj_begin)
+  {
+    auto& map = push_value(conf_proto{conf_map{}});
+    open_stack.push_back(object{std::get_if<conf_map>(&map.value)});
+  }
+  void push(proto::obj_end)
+  {
+    ASSERT(is_object());
+    open_stack.pop_back();
+  }
+
+  conf_proto& push_value(conf_proto p)
+  {
+    if (auto* arr = is_array()) {
+      return arr->vec->emplace_back(std::move(p));
+    } else if (auto* obj = is_object()) {
+      ASSERT(obj->key);
+      auto& result = obj->map->emplace_back(*obj->key, std::move(p));
+      obj->key.reset();
+      return result.second;
+    } else {
+      ASSERT(0);
+    }
+  }
+};
 
 struct ResourceItem;
 class ConfigParserStateMachine;
@@ -202,60 +295,60 @@ class ConfigurationParser {
   friend class ConfigParserStateMachine;
 
  private:
-  std::vector<conf_proto> shape;
   bool insert_into_shape{true};
+  proto_builder builder;
 
  public:
   void EnterPass2() { insert_into_shape = false; }
   template <std::size_t N> void PushLabel(const char (&constant)[N])
   {
     if (!insert_into_shape) { return; }
-    shape.push_back(proto::label{constant});
+    builder.push(proto::label{constant});
   }
   void PushLabel(std::string_view v)
   {
     if (!insert_into_shape) { return; }
-    shape.push_back(proto::label{v});
+    builder.push(proto::label{v});
   }
   void PushString(std::string_view v)
   {
     if (!insert_into_shape) { return; }
-    shape.push_back(proto::str{v});
+    builder.push(proto::str{v});
   }
   void PushB(bool b)
   {
     if (!insert_into_shape) { return; }
-    shape.push_back(b);
+    builder.push(b);
   }
   void PushU(int64_t i)
   {
     if (!insert_into_shape) { return; }
-    shape.push_back(i);
+    builder.push(i);
   }
   void PushI(uint64_t i)
   {
     if (!insert_into_shape) { return; }
-    shape.push_back(i);
+    builder.push(i);
   }
   void PushArray()
   {
     if (!insert_into_shape) { return; }
-    shape.push_back(proto::arr_begin{});
+    builder.push(proto::arr_begin{});
   }
   void PopArray()
   {
     if (!insert_into_shape) { return; }
-    shape.push_back(proto::arr_end{});
+    builder.push(proto::arr_end{});
   }
   void PushObject()
   {
     if (!insert_into_shape) { return; }
-    shape.push_back(proto::obj_begin{});
+    builder.push(proto::obj_begin{});
   }
   void PopObject()
   {
     if (!insert_into_shape) { return; }
-    shape.push_back(proto::obj_end{});
+    builder.push(proto::obj_end{});
   }
 
   void PrintShape();
@@ -546,5 +639,31 @@ bool ParseResource(ConfigurationParser* p,
                    const ResourceItem* item,
                    int index,
                    int pass);
+
+
+template <typename KeyWord, size_t N>
+auto ReadKeyword(ConfigurationParser* conf,
+                 lexer* lc,
+                 const KeyWord (&keywords)[N]) -> const KeyWord*
+{
+  LexGetToken(lc, BCT_NAME);
+
+  for (size_t i = 0; i < std::size(keywords); ++i) {
+    auto& keyword = keywords[i];
+    if (!keyword.name) { continue; }
+    if (Bstrcasecmp(lc->str, keyword.name)) {
+      conf->PushObject();
+      conf->PushLabel("index");
+      conf->PushU(i);
+      conf->PushLabel("name");
+      conf->PushString(keyword.name);
+      conf->PopObject();
+      return &keyword;
+    }
+  }
+
+  return nullptr;
+}
+
 
 #endif  // BAREOS_LIB_PARSE_CONF_H_
