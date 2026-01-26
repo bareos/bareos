@@ -1848,27 +1848,6 @@ void ParseTime(ConfigurationParser* conf,
   if (token != BCT_EOL) { ScanToEol(lc); }
 }
 
-// Parse a yes/no in a bit field
-void ParseBit(ConfigurationParser* conf,
-              lexer* lc,
-              const ResourceItem*,
-              int,
-              int)
-{
-  LexGetToken(lc, BCT_NAME);
-  if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-    conf->PushB(true);
-  } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    conf->PushB(false);
-  } else {
-    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-              lc->str); /* YES and NO must not be translated */
-    return;
-  }
-  ScanToEol(lc);
-}
-
-// Parse a bool in a bit field
 void ParseBool(ConfigurationParser* conf,
                lexer* lc,
                const ResourceItem*,
@@ -2926,8 +2905,6 @@ bool ParseResource(ConfigurationParser* conf,
       parse_int64(conf, lc);
       break;
     case CFG_TYPE_BIT:
-      ParseBit(conf, lc, item, index, pass);
-      break;
     case CFG_TYPE_BOOL:
       ParseBool(conf, lc, item, index, pass);
       break;
