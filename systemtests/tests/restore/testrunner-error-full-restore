@@ -25,6 +25,8 @@
 # The error is provoked by temporarily renaming the volume.
 #
 
+#CTEST requires=create-backup
+
 set -e
 set -o pipefail
 set -u

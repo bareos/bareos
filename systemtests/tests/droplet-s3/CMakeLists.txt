@@ -24,33 +24,6 @@ if(TARGET droplet
 )
   # IGNORE_CONFIG_WARNINGS: device S3 requires droplet backend
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} IGNORE_CONFIG_WARNINGS)
-  set_tests_properties(
-    system:droplet-s3:backup
-    PROPERTIES FIXTURES_REQUIRED
-               "system:droplet-s3-fixture;system:droplet-s3:minio-fixture"
-  )
-  set_tests_properties(
-    system:droplet-s3:restore system:droplet-s3:restore-compat
-    PROPERTIES
-      FIXTURES_REQUIRED
-      "system:droplet-s3-fixture;system:droplet-s3:minio-fixture;system:droplet-s3/backup-fixture"
-  )
-
-  # as restore-compat will change the catalog and break the restore test, we
-  # need to run in the right order
-  set_tests_properties(
-    system:droplet-s3:restore-compat PROPERTIES DEPENDS
-                                                system:droplet-s3:restore
-  )
-
-  set_tests_properties(
-    system:droplet-s3:start-minio PROPERTIES FIXTURES_SETUP
-                                             system:droplet-s3:minio-fixture
-  )
-  set_tests_properties(
-    system:droplet-s3:stop-minio PROPERTIES FIXTURES_CLEANUP
-                                            system:droplet-s3:minio-fixture
-  )
 else()
   create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} DISABLED)
 endif()

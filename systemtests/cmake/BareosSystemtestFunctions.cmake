@@ -31,8 +31,10 @@ macro(create_systemtests_directory)
   configurefilestosystemtest("systemtests" "scripts" "webui.sh" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "setup" @ONLY "")
   configurefilestosystemtest("systemtests" "scripts" "start_bareos.sh" @ONLY "")
-  configurefilestosystemtest("systemtests" "scripts" "start_minio.sh" @ONLY "")
-  configurefilestosystemtest("systemtests" "scripts" "stop_minio.sh" @ONLY "")
+  configurefilestosystemtest("systemtests" "scripts" "minio-setup.sh" @ONLY "")
+  configurefilestosystemtest(
+    "systemtests" "scripts" "minio-cleanup.sh" @ONLY ""
+  )
   configurefilestosystemtest(
     "systemtests" "scripts" "create_sparse_file.sh" @ONLY ""
   )
@@ -768,6 +770,98 @@ function(add_systemtest name file)
   endif()
 endfunction()
 
+function(init_systemtest_properties test_basename test testfile
+         setup_wanted_var
+)
+  # add a SETUP fixture, so we can express ordering requirements
+  set_tests_properties(
+    "${test_basename}:${test}" PROPERTIES FIXTURES_SETUP
+                                          "${test_basename}/${test}-fixture"
+  )
+
+  # read "#CTEST"-lines from testrunner header
+  file(
+    STRINGS "${testfile}" conf_lines
+    REGEX "^#CTEST"
+    ENCODING UTF-8
+    LENGTH_MINIMUM 6
+    LENGTH_MAXIMUM 80
+    LIMIT_COUNT 100
+    LIMIT_INPUT 4096
+  )
+  # set defaults
+  set(dependencies "")
+  set(lock ON)
+  set(requires "")
+  set(cleanups "")
+  set(setup ON)
+  set(timeout 0)
+
+  # extract expressions from lines and handle them
+  foreach(conf_line IN LISTS conf_lines)
+    # remove leading "#CTEST"
+    string(SUBSTRING "${conf_line}" 7 -1 conf_stanza)
+    # remove leading/trailing whitespace
+    string(STRIP "${conf_stanza}" conf_expr)
+
+    if(conf_expr STREQUAL "nolock")
+      set(lock OFF)
+    elseif(conf_expr STREQUAL "nosetup")
+      set(setup OFF)
+    elseif(conf_expr MATCHES "requires?=(.*)")
+      list(APPEND requires "${test_basename}/${CMAKE_MATCH_1}-fixture")
+    elseif(conf_expr MATCHES "after=(.*)")
+      list(APPEND dependencies "${test_basename}:${CMAKE_MATCH_1}")
+    elseif(conf_expr MATCHES "cleanup=(.*)")
+      list(APPEND cleanups "${test_basename}/${CMAKE_MATCH_1}-fixture")
+    elseif(conf_expr MATCHES "timeout=(.*)")
+      set(timeout "${CMAKE_MATCH_1}")
+    else()
+      message(
+        WARNING "Ignoring unknown systemtest config expression ${conf_expr}"
+      )
+    endif()
+  endforeach()
+
+  if(setup)
+    list(PREPEND requires "${test_basename}-fixture")
+    set("${setup_wanted_var}"
+        ON
+        PARENT_SCOPE
+    )
+  endif()
+  if(requires)
+    # add required fixtures, if any
+    set_tests_properties(
+      "${test_basename}:${test}" PROPERTIES FIXTURES_REQUIRED "${requires}"
+    )
+  endif()
+  if(cleanups)
+    # add cleaned up fixtures, if any
+    set_tests_properties(
+      "${test_basename}:${test}" PROPERTIES FIXTURES_CLEANUP "${requires}"
+    )
+  endif()
+  if(dependencies)
+    # add dependencies, if any
+    set_tests_properties(
+      "${test_basename}:${test}" PROPERTIES DEPENDS "${dependencies}"
+    )
+  endif()
+  if(lock)
+    # use RESOURCE_LOCK to run tests sequential
+    set_tests_properties(
+      "${test_basename}:${test}" PROPERTIES RESOURCE_LOCK
+                                            "${test_basename}-lock"
+    )
+  endif()
+  if(timeout)
+    set_tests_properties(
+      "${test_basename}:${test}" PROPERTIES TIMEOUT "${timeout}"
+    )
+  endif()
+endfunction()
+
 function(add_systemtest_from_directory test_dir test_basename)
   if(EXISTS ${test_dir}/testrunner)
     # single test directory
@@ -778,17 +872,8 @@ function(add_systemtest_from_directory test_dir test_basename)
   #
   # Multiple tests in this directory.
   #
-  if(NOT EXISTS "${test_dir}/test-setup")
-    file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/start_bareos.sh"
-         "${test_dir}/test-setup" SYMBOLIC
-    )
-  endif()
-  add_systemtest("${test_basename}:setup" "${test_dir}/test-setup")
 
-  set_tests_properties(
-    "${test_basename}:setup" PROPERTIES FIXTURES_SETUP
-                                        "${test_basename}-fixture"
-  )
+  set(setup_fixture_required OFF)
 
   # add all scripts named "testrunner-*" as tests.
   file(
@@ -800,17 +885,14 @@ function(add_systemtest_from_directory test_dir test_basename)
   foreach(testfilename ${all_tests})
     string(REPLACE "testrunner-" "" test ${testfilename})
     add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename})
-    set_tests_properties(
-      "${test_basename}:${test}"
-      PROPERTIES FIXTURES_REQUIRED
-                 "${test_basename}-fixture"
-                 # add a SETUP fixture, so we can express ordering requirements
-                 FIXTURES_SETUP
-                 "${test_basename}/${test}-fixture"
-                 # use RESOURCE_LOCK to run tests sequential
-                 RESOURCE_LOCK
-                 "${test_basename}-lock"
+
+    init_systemtest_properties(
+      ${test_basename} ${test} ${test_dir}/${testfilename}
+      test_wants_setup_fixture
     )
+    if(test_wants_setup_fixture)
+      set(setup_fixture_required ON)
+    endif()
   endforeach()
 
   # add all Python unittests named "test_*.py*" as tests.
@@ -821,6 +903,8 @@ function(add_systemtest_from_directory test_dir test_basename)
     CONFIGURE_DEPENDS "${test_dir}/test_*.py"
   )
   foreach(testfilename ${all_tests})
+    # python test currently cannot disable the setup fixture, so we will add it
+    set(setup_fixture_required ON)
     string(REPLACE ".py" "" test0 ${testfilename})
     string(REPLACE "test_" "" test ${test0})
     add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename} PYTHON)
@@ -837,18 +921,30 @@ function(add_systemtest_from_directory test_dir test_basename)
     )
   endforeach()
 
-  if(NOT EXISTS ${test_dir}/test-cleanup)
-    file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/cleanup"
-         "${test_dir}/test-cleanup" SYMBOLIC
+  if(setup_fixture_required)
+    if(NOT EXISTS "${test_dir}/test-setup")
+      file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/start_bareos.sh"
+           "${test_dir}/test-setup" SYMBOLIC
+      )
+    endif()
+    add_systemtest("${test_basename}:setup" "${test_dir}/test-setup")
+
+    set_tests_properties(
+      "${test_basename}:setup" PROPERTIES FIXTURES_SETUP
+                                          "${test_basename}-fixture"
+    )
+
+    if(NOT EXISTS ${test_dir}/test-cleanup)
+      file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/cleanup"
+           "${test_dir}/test-cleanup" SYMBOLIC
+      )
+    endif()
+    add_systemtest(${test_basename}:cleanup "${test_dir}/test-cleanup")
+    set_tests_properties(
+      ${test_basename}:cleanup PROPERTIES FIXTURES_CLEANUP
+                                          "${test_basename}-fixture"
     )
   endif()
-  add_systemtest(${test_basename}:cleanup "${test_dir}/test-cleanup")
-
-  set_tests_properties(
-    ${test_basename}:cleanup PROPERTIES FIXTURES_CLEANUP
-                                        "${test_basename}-fixture"
-  )
-
 endfunction()
 
 macro(create_enabled_systemtest prefix test_name test_srcdir test_dir

@@ -25,6 +25,8 @@
 # (i.e. an archive exists, but a non-archive is wanted.)
 #
 
+#CTEST requires=create-backup
+
 set -e
 set -o pipefail
 set -u

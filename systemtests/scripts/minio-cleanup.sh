@@ -23,7 +23,8 @@ set -u
 
 . environment
 
-minio_alias=$1-minio
+: "${minio_data_dir:=minio-data-directory}"
+: "${minio_alias:=$1-minio}"
 
 echo "$0: stopping minio server"
 
@@ -33,16 +34,16 @@ while pidof "$minio_alias" >/dev/null; do
     break
   fi
   sleep 0.1
-  ((tries++)) && [ $tries == '100' ] \
+  ((tries++)) && [ "$tries" == 100 ] \
     && {
       echo "$0: could not stop minio server"
       exit 1
     }
 done
 
-if ! pidof "$minio_alias"; then
-  exit 0
+if pidof "$minio_alias"; then
+  echo "$0: could not stop minio server"
+  exit 2
 fi
 
-echo "$0: could not stop minio server"
-exit 2
+rm -rf "${minio_data_dir}"

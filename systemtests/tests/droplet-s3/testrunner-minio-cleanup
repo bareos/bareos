@@ -19,6 +19,10 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+#CTEST nolock
+#CTEST nosetup
+#CTEST cleanup=minio-setup
+
 set -e
 set -o pipefail
 set -u
@@ -34,9 +38,4 @@ JobName=backup-s3-fd
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
-"${BAREOS_SCRIPTS_DIR}"/start_minio.sh "$MINIO_PORT" "$TestName"
-
-# shortcut for s3cmd
-S3="${S3CMD} --no-check-certificate --config ${S3CFG}"
-
-$S3 mb S3://backup
+$"${BAREOS_SCRIPTS_DIR}"/minio-cleanup.sh "$TestName"
