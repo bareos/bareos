@@ -1559,11 +1559,11 @@ void ParseMsgs(ConfigurationParser* conf,
  * This routine is ONLY for resource names
  * Parse a name at specified address.
  */
-void ParseName(ConfigurationParser* conf,
-               lexer* lc,
-               const ResourceItem*,
-               int,
-               int)
+void ParseValidName(ConfigurationParser* conf,
+                    lexer* lc,
+                    const ResourceItem*,
+                    int,
+                    int)
 {
   std::string msg{};
 
@@ -1577,21 +1577,6 @@ void ParseName(ConfigurationParser* conf,
   ScanToEol(lc);
 }
 
-/*
- * Parse a name string at specified address
- * A name string is limited to MAX_RES_NAME_LENGTH
- */
-void ParseStrname(ConfigurationParser* conf,
-                  lexer* lc,
-                  const ResourceItem*,
-                  int,
-                  int)
-{
-  LexGetToken(lc, BCT_NAME);
-  conf->PushString(lc->str);
-  ScanToEol(lc);
-}
-
 // Parse a string at specified address
 void ParseStr(ConfigurationParser* conf,
               lexer* lc,
@@ -1600,85 +1585,6 @@ void ParseStr(ConfigurationParser* conf,
               int)
 {
   LexGetToken(lc, BCT_STRING);
-  conf->PushString(lc->str);
-  ScanToEol(lc);
-}
-
-// Parse a string at specified address
-void ParseStdstr(ConfigurationParser* conf,
-                 lexer* lc,
-                 const ResourceItem*,
-                 int,
-                 int)
-{
-  LexGetToken(lc, BCT_STRING);
-  conf->PushString(lc->str);
-  ScanToEol(lc);
-}
-
-/*
- * Parse a directory name at specified address. Note, we do
- * shell expansion except if the string begins with a vertical
- * bar (i.e. it will likely be passed to the shell later).
- */
-void ParseDir(ConfigurationParser* conf,
-              lexer* lc,
-              const ResourceItem*,
-              int,
-              int)
-{
-  LexGetToken(lc, BCT_STRING);
-  conf->PushString(lc->str);
-  ScanToEol(lc);
-}
-
-void ParseStdstrdir(ConfigurationParser* conf,
-                    lexer* lc,
-                    const ResourceItem*,
-                    int,
-                    int)
-{
-  LexGetToken(lc, BCT_STRING);
-  conf->PushString(lc->str);
-  ScanToEol(lc);
-}
-
-// Parse a password at specified address in MD5 coding
-void ParseMd5Password(ConfigurationParser* conf,
-                      lexer* lc,
-                      const ResourceItem*,
-                      int,
-                      int)
-{
-  LexGetToken(lc, BCT_STRING);
-  conf->PushString(lc->str);
-  ScanToEol(lc);
-}
-
-// Parse a password at specified address in MD5 coding
-void ParseClearpassword(ConfigurationParser* conf,
-                        lexer* lc,
-                        const ResourceItem*,
-                        int,
-                        int)
-{
-  LexGetToken(lc, BCT_STRING);
-  conf->PushString(lc->str);
-  ScanToEol(lc);
-}
-
-/*
- * Parse a resource at specified address.
- * If we are in pass 2, do a lookup of the
- * resource.
- */
-void ParseRes(ConfigurationParser* conf,
-              lexer* lc,
-              const ResourceItem*,
-              int,
-              int)
-{
-  LexGetToken(lc, BCT_NAME);
   conf->PushString(lc->str);
   ScanToEol(lc);
 }
@@ -1705,33 +1611,14 @@ void ParseAlistRes(ConfigurationParser* conf,
   conf->PopArray();
 }
 
-// Parse a std::string in an std::vector<std::string>.
-void ParseStdVectorStr(ConfigurationParser* conf,
-                       lexer* lc,
-                       const ResourceItem*,
-                       int,
-                       int)
-{
-  int token = BCT_COMMA;
-  conf->PushArray();
-  while (token == BCT_COMMA) {
-    LexGetToken(lc, BCT_STRING); /* scan next item */
-    conf->PushString(lc->str);
-    token = LexGetToken(lc, BCT_ALL);
-  }
-  conf->PopArray();
-}
-
-// Parse a string in an alist.
-void ParseAlistStr(ConfigurationParser* conf,
+void ParseStrArray(ConfigurationParser* conf,
                    lexer* lc,
                    const ResourceItem*,
                    int,
                    int)
 {
-  conf->PushArray();
-
   int token = BCT_COMMA;
+  conf->PushArray();
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING); /* scan next item */
     conf->PushString(lc->str);
@@ -1753,7 +1640,12 @@ void ParseAlistDir(ConfigurationParser* conf,
                    int)
 {
   LexGetToken(lc, BCT_STRING); /* scan next item */
-  conf->PushString(lc->str);
+  conf->PushObject();
+  conf->PushString("is_shell");
+  conf->PushB(lc->str[0] == '|');
+  conf->PushString("str");
+  conf->PushString(lc->str + (lc->str[0] == '|'));
+  conf->PopObject();
   ScanToEol(lc);
 }
 
@@ -1804,16 +1696,7 @@ void ParsePluginNames(ConfigurationParser* conf,
   lc->options = saved;
 }
 
-/*
- * Parse default values for Resource from xxxDefs
- * If we are in pass 2, do a lookup of the
- * resource and parse everything not explicitly set
- * in main resource.
- *
- * Note, here item points to the main resource (e.g. Job, not
- *  the jobdefs, which we look up).
- */
-void ParseDefs(ConfigurationParser* conf,
+void ParseName(ConfigurationParser* conf,
                lexer* lc,
                const ResourceItem*,
                int,
@@ -3001,41 +2884,25 @@ bool ParseResource(ConfigurationParser* conf,
 {
   switch (type) {
     case CFG_TYPE_STR:
+    case CFG_TYPE_DIR:
+    case CFG_TYPE_STDSTR:
+    case CFG_TYPE_STDSTRDIR:
+    case CFG_TYPE_MD5PASSWORD:
+    case CFG_TYPE_CLEARPASSWORD:
+    case CFG_TYPE_STRNAME:
+    case CFG_TYPE_DIR_OR_CMD:
       ParseStr(conf, lc, item, index, pass);
       break;
-    case CFG_TYPE_DIR:
-      ParseDir(conf, lc, item, index, pass);
-      break;
-    case CFG_TYPE_STDSTR:
-      ParseStdstr(conf, lc, item, index, pass);
-      break;
-    case CFG_TYPE_STDSTRDIR:
-      ParseStdstrdir(conf, lc, item, index, pass);
-      break;
-    case CFG_TYPE_MD5PASSWORD:
-      ParseMd5Password(conf, lc, item, index, pass);
-      break;
-    case CFG_TYPE_CLEARPASSWORD:
-      ParseClearpassword(conf, lc, item, index, pass);
-      break;
     case CFG_TYPE_NAME:
-      ParseName(conf, lc, item, index, pass);
-      break;
-    case CFG_TYPE_STRNAME:
-      ParseStrname(conf, lc, item, index, pass);
-      break;
-    case CFG_TYPE_RES:
-      ParseRes(conf, lc, item, index, pass);
+      ParseValidName(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_ALIST_RES:
       ParseAlistRes(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_ALIST_STR:
-      ParseAlistStr(conf, lc, item, index, pass);
-      break;
     case CFG_TYPE_STR_VECTOR:
     case CFG_TYPE_STR_VECTOR_OF_DIRS:
-      ParseStdVectorStr(conf, lc, item, index, pass);
+      ParseStrArray(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_ALIST_DIR:
       ParseAlistDir(conf, lc, item, index, pass);
@@ -3076,8 +2943,9 @@ bool ParseResource(ConfigurationParser* conf,
     case CFG_TYPE_SPEED:
       ParseSpeed(conf, lc, item, index, pass);
       break;
+    case CFG_TYPE_RES:
     case CFG_TYPE_DEFS:
-      ParseDefs(conf, lc, item, index, pass);
+      ParseName(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_LABEL:
       ParseLabel(conf, lc, item, index, pass);
@@ -3093,9 +2961,6 @@ bool ParseResource(ConfigurationParser* conf,
       break;
     case CFG_TYPE_PLUGIN_NAMES:
       ParsePluginNames(conf, lc, item, index, pass);
-      break;
-    case CFG_TYPE_DIR_OR_CMD:
-      ParseDir(conf, lc, item, index, pass);
       break;
     default:
       return false;
