@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ADR: document daemon status after installation [PR #2453]
 - docs: large improvement on several chapters [PR #2460]
 - Update README.md [PR #2519]
+- README.md: fix video links [PR #2521]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2201,4 +2202,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2501]: https://github.com/bareos/bareos/pull/2501
 [PR #2508]: https://github.com/bareos/bareos/pull/2508
 [PR #2519]: https://github.com/bareos/bareos/pull/2519
+[PR #2521]: https://github.com/bareos/bareos/pull/2521
 [unreleased]: https://github.com/bareos/bareos/tree/master
