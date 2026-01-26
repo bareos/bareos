@@ -28,10 +28,8 @@
 
 #include "include/bareos.h"
 
-#if HAVE_POSTGRESQL
-
-#  include "cats.h"
-#  include "lib/edit.h"
+#include "cats.h"
+#include "lib/edit.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -577,4 +575,3 @@ void BareosDb::UpgradeCopies(const char* jobids)
 
   SqlQuery("DROP TABLE IF EXISTS cpy_tmp");
 }
-#endif /* HAVE_POSTGRESQL */

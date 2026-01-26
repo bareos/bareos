@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -24,13 +24,8 @@
 
 #include "include/bareos.h"
 
-#ifdef HAVE_POLL_H
-#  include <poll.h>
-#elif HAVE_SYS_POLL_H
-#  include <sys/poll.h>
-#endif
-
 #ifdef HAVE_POLL
+#  include <poll.h>
 /*
  *   Returns: 1 if data available
  *            0 if timeout

@@ -28,9 +28,7 @@
 
 #include "include/bareos.h"
 
-#if HAVE_POSTGRESQL
-
-#  include "cats.h"
+#include "cats.h"
 
 /**
  * Get a non-pooled connection used when either sql pooling is
@@ -139,5 +137,3 @@ void DbSqlClosePooledConnection(JobControlRecord* jcr, BareosDb* mdb, bool)
 {
   mdb->CloseDatabase(jcr);
 }
-
-#endif /* HAVE_POSTGRESQL */
