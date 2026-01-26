@@ -1,0 +1,164 @@
+#!/bin/bash
+set -euo pipefail
+#
+# This systemtest tests the Incus FD plugin
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-incus-vm
+#shellcheck source=../../environment.in
+. ./environment
+
+export PATH="$current_test_directory/sbin:$current_test_directory/bin:$PATH"
+
+JobName=backup-incus-vm
+#shellcheck source=../scripts/functions
+. "$BAREOS_SCRIPTS_DIR"/functions
+"$BAREOS_SCRIPTS_DIR"/cleanup
+"$BAREOS_SCRIPTS_DIR"/setup
+
+IMAGE=bareos-test-alpine
+INSTANCE=bareos-test-vm
+NEWINSTANCE=bareos-test-vm-2
+
+wait_for_agent() {
+    while ! incus exec "$1" true 2>/dev/null; do
+        sleep 2
+    done
+}
+
+sync_fs() {
+    incus exec "$INSTANCE" sync
+}
+
+check_chunks() {
+    file="$2"
+    grep -c "^ @INCUS/$file" "$1"
+}
+
+# Build a tiny Alpine image. This can be extremely slow, so we do not remove the image at the end,
+# to reproduce test results faster.
+if ! incus image info "$IMAGE" >/dev/null 2>&1; then
+    incus image export images:alpine/edge "$tmp" --vm
+    guestfish --rw -a "$tmp/disk.qcow2" <<EOF
+run
+e2fsck-f /dev/sda2
+resize2fs-M /dev/sda2
+e2fsck-f /dev/sda2
+EOF
+    qemu-img create -f qcow2 -o preallocation=metadata "$tmp/disk.400M.qcow2" 400M
+    virt-resize --shrink /dev/sda2 "$tmp/disk.qcow2" "$tmp/disk.400M.qcow2"
+    incus image import "$tmp/incus.tar.xz" "$tmp/disk.400M.qcow2" --alias "$IMAGE"
+    rm "$tmp/incus.tar.xz" "$tmp/disk.qcow2" "$tmp/disk.400M.qcow2"
+fi
+
+incus rm -f "$INSTANCE" 2>/dev/null || :
+incus rm -f "$NEWINSTANCE" 2>/dev/null || :
+incus launch "$IMAGE" "$INSTANCE" --vm -c security.secureboot=false -d root,size=400MiB
+wait_for_agent "$INSTANCE"
+incus file push - "$INSTANCE/old-file" <<< foobar
+sync_fs
+
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@#
+@# First, perform a full backup
+@#
+@$out $NULL_DEV
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName level=Full yes
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA
+
+run_bareos "$@"
+check_log "$tmp/log1.out"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log1-list.out
+list files jobid=1
+END_OF_DATA
+run_bconsole "$@"
+
+# 25 chunks should be created here
+chunks="$(check_chunks "$tmp/log1-list.out" "$INSTANCE/virtual-machine.img")"
+if ((chunks != 25)); then
+    echo "Error: expected 25 chunks, got $chunks"
+    exit 1
+fi
+
+incus file push - "$INSTANCE/new-file" <<< bazqux
+sync_fs
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@#
+@# Then, perform an incremental backup to get the new file
+@#
+@$out $tmp/log2.out
+label volume=TestVolume002 storage=File pool=Incremental
+run job=$JobName level=Incremental yes
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA
+
+run_bconsole "$@"
+check_log "$tmp/log2.out"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log2-list.out
+list files jobid=2
+END_OF_DATA
+run_bconsole "$@"
+
+# Modifying our single file should only modify ~4 chunks, but let's be safe
+chunks="$(check_chunks "$tmp/log2-list.out" "$INSTANCE/virtual-machine.img")"
+if ((chunks > 8)); then
+    echo "Error: too many chunks modified ($chunks)"
+    exit 1
+fi
+
+incus rm -f "$INSTANCE"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@#
+@# Now, restore the incremental backup to a new instance
+@#
+@$out $tmp/log3.out
+wait
+restore client=bareos-fd fileset=IncusTestVM where=/ select all done pluginoptions=python:restore_instance=$NEWINSTANCE
+yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole "$@"
+check_log "$tmp/log3.out"
+
+incus start "$NEWINSTANCE"
+wait_for_agent "$NEWINSTANCE"
+
+if [ "$(incus file pull "$NEWINSTANCE/old-file" -)" = "foobar" ] &&
+   [ "$(incus file pull "$NEWINSTANCE/new-file" -)" = "bazqux" ]; then
+    echo "Restored files OK"
+else
+    echo "Restored files ERROR: files have changed"
+    dstat=1
+    exit 1
+fi
+
+incus rm -f "$NEWINSTANCE"
+
+check_for_zombie_jobs storage=File
+
+end_test
