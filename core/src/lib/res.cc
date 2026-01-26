@@ -1574,7 +1574,6 @@ void ParseName(ConfigurationParser* conf,
   }
 
   conf->PushString(lc->str);
-
   ScanToEol(lc);
 }
 
@@ -2177,39 +2176,26 @@ void ParseAddresses(ConfigurationParser* conf,
 
 void ParseAddressesAddress(ConfigurationParser* conf,
                            lexer* lc,
-                           const ResourceItem* item,
+                           const ResourceItem*,
                            int,
-                           int pass)
+                           int)
 {
-  int token;
-  char errmsg[1024];
-  int port = str_to_int32(item->default_value);
-
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  conf->PushString(lc->str);
+  int token = LexGetToken(lc, BCT_SKIP_EOL);
   if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
         || token == BCT_IDENTIFIER)) {
     scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"), lc->str);
   }
 
-  if (pass == 1
-      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                     IPADDR::R_SINGLE_ADDR, htons(port),
-                     strchr(lc->str, ':') ? AF_INET6 : AF_INET, lc->str, 0,
-                     errmsg, sizeof(errmsg))) {
-    scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
-  }
+  conf->PushString(lc->str);
 }
 
 void ParseAddressesPort(ConfigurationParser* conf,
                         lexer* lc,
-                        const ResourceItem* item,
+                        const ResourceItem*,
                         int,
-                        int pass)
+                        int)
 {
   int token;
-  char errmsg[1024];
-  int port = str_to_int32(item->default_value);
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
@@ -2217,30 +2203,526 @@ void ParseAddressesPort(ConfigurationParser* conf,
     scan_err1(lc, T_("Expected a port number or string, got: %s"), lc->str);
   }
   conf->PushString(lc->str);
+}
 
-  bool has_address = false;
-  IPADDR* iaddr;
-  dlist<IPADDR>* addrs
-      = (dlist<IPADDR>*)(*(GetItemVariablePointer<dlist<IPADDR>**>(*item)));
-  foreach_dlist (iaddr, addrs) {
-    if (iaddr->GetType() == IPADDR::R_SINGLE) { has_address = true; }
+
+struct iter {
+  bool end() const noexcept { return data.empty(); }
+
+  conf_proto next()
+  {
+    conf_proto res = std::move(data[0]);
+
+    data = data.subspan(1);
+
+    return res;
+  };
+
+  const conf_proto& peek() const noexcept { return data[0]; }
+
+  template <typename T> std::optional<T> get()
+  {
+    if (end()) { return std::nullopt; }
+
+    auto current = next();
+    if (auto* x = std::get_if<T>(&current)) { return std::move(*x); }
+
+    return std::nullopt;
   }
 
-  if (has_address) {
-    if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
-                       errmsg, sizeof(errmsg))) {
-      scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
+  template <typename T> bool check()
+  {
+    if (end()) { return false; }
+
+    auto& current = peek();
+    return std::get_if<T>(&current) != nullptr;
+  }
+
+  std::span<conf_proto> data;
+};
+
+#define CHECK_LABEL(label)                     \
+  do {                                         \
+    if (auto s = data.get<proto::str>();       \
+        !s || *s != std::string_view{label}) { \
+      return;                                  \
+    }                                          \
+  } while (0)
+
+#define EXPECT_STR(name)                     \
+  if (!data.check<proto::str>()) { return; } \
+  proto::str name = *data.get<proto::str>()
+
+#define EXPECT_BOOL(name)              \
+  if (!data.check<bool>()) { return; } \
+  bool name = *data.get<bool>()
+
+#define BEGIN_OBJ()                                \
+  do {                                             \
+    if (!data.get<proto::obj_begin>()) { return; } \
+  } while (0)
+#define END_OBJ()                                \
+  do {                                           \
+    if (!data.get<proto::obj_end>()) { return; } \
+  } while (0)
+#define BEGIN_ARR()                                \
+  do {                                             \
+    if (!data.get<proto::arr_begin>()) { return; } \
+  } while (0)
+#define END_ARR()                                \
+  do {                                           \
+    if (!data.get<proto::arr_end>()) { return; } \
+  } while (0)
+
+void CreateTypes(iter& data,
+                 MessagesResource* msg,
+                 MessageDestinationCode dest_code,
+                 const std::string& where,
+                 const std::string& cmd,
+                 const std::string& timestamp_format)
+{
+  if (!data.get<proto::arr_begin>()) { return; }
+
+  while (!data.check<proto::arr_end>()) {
+    BEGIN_OBJ();
+    CHECK_LABEL("is");
+    auto is = data.get<bool>();
+    CHECK_LABEL("type");
+    auto type = data.get<uint64_t>();
+    END_OBJ();
+
+    if (!is || !type) {
+      // scan_err1(lc, T_("message type: %s not found"), str);
+      return;
     }
-  } else {
-    if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_SINGLE, htons(port), 0, 0, lc->str, errmsg,
-                       sizeof(errmsg))) {
-      scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
+
+    bool is_not = !*is;
+
+    if (*type == M_MAX + 1) {            /* all? */
+      for (int i = 1; i <= M_MAX; i++) { /* yes set all types */
+        msg->AddMessageDestination(dest_code, i, where, cmd, timestamp_format);
+      }
+    } else if (is_not) {
+      msg->RemoveMessageDestination(dest_code, *type, where);
+    } else {
+      msg->AddMessageDestination(dest_code, *type, where, cmd,
+                                 timestamp_format);
     }
   }
+  Dmsg0(900, "Done CreateTypes()\n");
+  data.get<proto::arr_end>();
+}
+
+[[maybe_unused]] void CreateMsgs(iter& data,
+                                 const ResourceItem* item,
+                                 int index,
+                                 int pass)
+{
+  Dmsg2(900, "StoreMsgs pass=%d code=%d\n", pass, item->code);
+
+  MessagesResource* message_resource
+      = dynamic_cast<MessagesResource*>(*item->allocated_resource);
+
+  if (!message_resource) {
+    Dmsg0(900, "Could not dynamic_cast to MessageResource\n");
+    abort();
+    return;
+  }
+
+  if (pass == 1) {
+    switch (static_cast<MessageDestinationCode>(item->code)) {
+      case MessageDestinationCode::kStdout:
+      case MessageDestinationCode::kStderr:
+      case MessageDestinationCode::kConsole:
+      case MessageDestinationCode::kCatalog:
+        CreateTypes(data, message_resource,
+                    static_cast<MessageDestinationCode>(item->code),
+                    std::string(), std::string(),
+                    message_resource->timestamp_format_);
+        break;
+      case MessageDestinationCode::kSyslog: { /* syslog */
+        BEGIN_OBJ();
+        CHECK_LABEL("is_old");
+        auto is_old = data.get<bool>();
+        if (!is_old) { return; }
+
+        std::string dest = {};
+
+        if (!*is_old) {
+          CHECK_LABEL("facility");
+          auto fac = data.get<proto::str>();
+
+          if (!fac) { return; }
+          dest = std::move(*fac);
+        }
+
+        CHECK_LABEL("types");
+        CreateTypes(data, message_resource,
+                    static_cast<MessageDestinationCode>(item->code), dest,
+                    std::string(), std::string());
+
+        END_OBJ();
+        break;
+      }
+      case MessageDestinationCode::kOperator:
+      case MessageDestinationCode::kDirector:
+      case MessageDestinationCode::kMail:
+      case MessageDestinationCode::KMailOnError:
+      case MessageDestinationCode::kMailOnSuccess: {
+        const char* cmd = [&] {
+          if (static_cast<MessageDestinationCode>(item->code)
+              == MessageDestinationCode::kOperator) {
+            return message_resource->operator_cmd_.c_str();
+          } else {
+            return message_resource->mail_cmd_.c_str();
+          }
+        }();
+
+
+        BEGIN_OBJ();
+        CHECK_LABEL("destinations");
+        BEGIN_ARR();
+
+        std::string dest = {};
+
+        // this looks a bit weird to me.  Maybe the called functions should
+        // actually take a vector/span instead of a space separated string ...
+        while (!data.check<proto::arr_end>()) {
+          auto str = data.get<proto::str>();
+          if (!str) { return; }
+          dest += *str;
+          dest += " ";
+        }
+
+        // remove last space
+        if (!dest.empty()) { dest.pop_back(); }
+
+        END_ARR();
+
+        CHECK_LABEL("types");
+
+        Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
+        CreateTypes(data, message_resource,
+                    static_cast<MessageDestinationCode>(item->code), dest, cmd,
+                    message_resource->timestamp_format_);
+
+        END_OBJ();
+        Dmsg0(900, "done with dest codes\n");
+      } break;
+      case MessageDestinationCode::kFile:
+      case MessageDestinationCode::kAppend: {
+        BEGIN_OBJ();
+        CHECK_LABEL("destination");
+        auto dest_file_path = data.get<proto::str>();
+        if (!dest_file_path) { return; }
+        CHECK_LABEL("types");
+
+        CreateTypes(data, message_resource,
+                    static_cast<MessageDestinationCode>(item->code),
+                    *dest_file_path, std::string(),
+                    message_resource->timestamp_format_);
+        Dmsg0(900, "done with dest codes\n");
+
+        END_OBJ();
+        break;
+      }
+      default: {
+        ASSERT(0);
+      }
+    }
+  }
+  message_resource->SetMemberPresent(item->name);
+  ClearBit(index, message_resource->inherit_content_);
+  Dmsg0(900, "Done StoreMsgs\n");
+}
+
+[[maybe_unused]] void CreateName(iter& data,
+                                 const ResourceItem* item,
+                                 int index)
+{
+  auto name = data.get<proto::str>();
+  if (!name) { return; }
+
+  // Store the name both in pass 1 and pass 2
+  char** p = GetItemVariablePointer<char**>(*item);
+
+  if (*p) {
+    // scan_err2(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p,
+    //           name->c_str());
+    return;
+  }
+  *p = strdup(name->c_str());
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Store a name string at specified address
+ * A name string is limited to MAX_RES_NAME_LENGTH
+ */
+[[maybe_unused]] void CreateStrname(iter& data,
+                                    const ResourceItem* item,
+                                    int index,
+                                    int pass)
+{
+  auto name = data.get<proto::str>();
+  if (!name) { return; }
+  if (pass == 1) {
+    char** p = GetItemVariablePointer<char**>(*item);
+    if (*p) { free(*p); }
+    *p = strdup(name->c_str());
+  }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a string at specified address
+[[maybe_unused]] void StoreStr(iter& data,
+                               const ResourceItem* item,
+                               int index,
+                               int pass)
+{
+  // exactly the same as StoreStrname ...
+  auto name = data.get<proto::str>();
+  if (!name) { return; }
+  if (pass == 1) {
+    SetItemVariableFreeMemory<char*>(*item, strdup(name->c_str()));
+  }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a string at specified address
+[[maybe_unused]] void StoreStdstr(iter& data,
+                                  const ResourceItem* item,
+                                  int index,
+                                  int pass)
+{
+  auto name = data.get<proto::str>();
+  if (!name) { return; }
+  if (pass == 1) { SetItemVariable<std::string>(*item, name->c_str()); }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+[[maybe_unused]] void CreateDir(iter& data,
+                                const ResourceItem* item,
+                                int index,
+                                int pass)
+{
+  auto dir = data.get<proto::str>();
+  if (!dir) { return; }
+  if (pass == 1) {
+    if ((*dir)[0] != '|') {
+      dir->resize(dir->size() + 1024);
+      DoShellExpansion(dir->data(), dir->size());
+    }
+    char** p = GetItemVariablePointer<char**>(*item);
+    if (*p) { free(*p); }
+    *p = strdup(dir->c_str());
+  }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+[[maybe_unused]] void CreateStdstrdir(iter& data,
+                                      const ResourceItem* item,
+                                      int index,
+                                      int pass)
+{
+  auto dir = data.get<proto::str>();
+  if (!dir) { return; }
+  if (pass == 1) {
+    if ((*dir)[0] != '|') {
+      dir->resize(dir->size() + 1024);
+      DoShellExpansion(dir->data(), dir->size());
+    }
+    SetItemVariable<std::string>(*item, dir->c_str());
+  }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a password at specified address in MD5 coding
+[[maybe_unused]] void CreateMd5Password(iter& data,
+                                        const ResourceItem* item,
+                                        int index,
+                                        int pass)
+{
+  EXPECT_STR(pw);
+  if (pass == 1) { /* free old item */
+    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
+
+    if (pwd->value) { free(pwd->value); }
+
+    // See if we are parsing an MD5 encoded password already.
+    if (bstrncmp(pw.c_str(), "[md5]", 5)) {
+      if (item->is_required) {
+        static const char* empty_password_md5_hash
+            = "d41d8cd98f00b204e9800998ecf8427e";
+        if (strncmp(pw.c_str() + 5, empty_password_md5_hash,
+                    strlen(empty_password_md5_hash))
+            == 0) {
+          // scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
+          //           (*item->allocated_resource)->resource_name_);
+          return;
+        }
+      }
+
+      std::string_view candidate{pw.c_str() + 5};
+
+      constexpr size_t md5len = 32;
+
+      if (candidate.size() != md5len) {
+        // scan_err2(lc,
+        //           "md5 password does not have the right size; expected: %"
+        //           PRIuz
+        //           ", got: %" PRIuz "\n",
+        //           md5len, candidate.size());
+        *pwd = {};
+        return;
+      }
+
+      if (auto bad = candidate.find_first_not_of("0123456789ABCDEFabcdef");
+          bad != candidate.npos) {
+        // scan_err1(
+        //     lc, "md5 password contains non hexadecimal characters, e.g.
+        //     '%c'\n", candidate[bad]);
+        *pwd = {};
+        return;
+      }
+
+      pwd->encoding = p_encoding_md5;
+      pwd->value = strdup(pw.c_str() + 5);
+    } else {
+      unsigned int i, j;
+      MD5_CTX md5c;
+      unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
+      char sig[100];
+
+      if (item->is_required) {
+        if (strnlen(pw.c_str(), MAX_NAME_LENGTH) == 0) {
+          // scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
+          //           (*item->allocated_resource)->resource_name_);
+          return;
+        }
+      }
+
+      IGNORE_DEPRECATED_ON;
+      MD5_Init(&md5c);
+      MD5_Update(&md5c, (unsigned char*)(pw.c_str()), pw.size());
+      MD5_Final(digest, &md5c);
+      IGNORE_DEPRECATED_OFF;
+      for (i = j = 0; i < sizeof(digest); i++) {
+        snprintf(&sig[j], 3, "%02x", digest[i]);
+        j += 2;
+        ASSERT(j < 100);
+      }
+      pwd->encoding = p_encoding_md5;
+      pwd->value = strdup(sig);
+    }
+  }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a password at specified address in MD5 coding
+[[maybe_unused]] void CreateClearpassword(iter& data,
+                                          const ResourceItem* item,
+                                          int index,
+                                          int pass)
+{
+  EXPECT_STR(pw);
+  if (pass == 1) {
+    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
+
+    if (pwd->value) { free(pwd->value); }
+
+    if (item->is_required) {
+      if (strnlen(pw.c_str(), MAX_NAME_LENGTH) == 0) {
+        // scan_err1(
+        //     lc, "Empty Password not allowed in Resource \"%s\" not
+        //     allowed.\n",
+        //     (*item->allocated_resource)->resource_name_);
+        return;
+      }
+    }
+
+    pwd->encoding = p_encoding_clear;
+    pwd->value = strdup(pw.c_str());
+  }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+[[maybe_unused]] void CreateRes(iter& data,
+                                ConfigurationParser* conf,
+                                const ResourceItem* item,
+                                int index,
+                                int pass)
+{
+  EXPECT_STR(name);
+  if (pass == 2) {
+    BareosResource* res = conf->GetResWithName(item->code, name.c_str());
+    if (res == NULL) {
+      // scan_err3(
+      //     lc,
+      //     T_("Could not find config resource \"%s\" referenced on line %d:
+      //     %s"), lc->str, lc->line_no, lc->line);
+      return;
+    }
+    BareosResource** p = GetItemVariablePointer<BareosResource**>(*item);
+    if (*p) {
+      // scan_err3(
+      //     lc,
+      //     T_("Attempt to redefine resource \"%s\" referenced on line %d:
+      //     %s"), item->name, lc->line_no, lc->line);
+      return;
+    }
+    *p = res;
+  }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+[[maybe_unused]] void StoreAlistRes(iter& data,
+                                    ConfigurationParser* conf,
+                                    const ResourceItem* item,
+                                    int index,
+                                    int pass)
+{
+  alist<BareosResource*>** alistvalue
+      = GetItemVariablePointer<alist<BareosResource*>**>(*item);
+  if (pass == 2) {
+    if (!*alistvalue) {
+      *alistvalue = new alist<BareosResource*>(10, not_owned_by_alist);
+    }
+  }
+  alist<BareosResource*>* list = *alistvalue;
+
+  BEGIN_ARR();
+
+  while (!data.check<proto::arr_end>()) {
+    EXPECT_STR(name);
+    if (pass == 2) {
+      BareosResource* res = conf->GetResWithName(item->code, name.c_str());
+      if (res == NULL) {
+        // scan_err3(lc,
+        //           T_("Could not find config Resource \"%s\" referenced on
+        //           line "
+        //              "%d : %s\n"),
+        //           item->name, lc->line_no, lc->line);
+        return;
+      }
+      Dmsg5(900, "Append %p (%s) to alist %p size=%d %s\n", res,
+            res->resource_name_, list, list->size(), item->name);
+      list->append(res);
+    }
+  }
+
+  END_ARR();
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 };  // namespace
 
