@@ -473,7 +473,7 @@ static void StoreRegex(ConfigurationParser* p,
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
         p->PushObject();
-        p->PushString("value");
+        p->PushLabel("value");
         p->PushString(lc->str);
         rc = regcomp(&preg, lc->str, REG_EXTENDED);
         if (rc != 0) {
@@ -496,7 +496,7 @@ static void StoreRegex(ConfigurationParser* p,
           res_incexe->current_opts->regex.append(strdup(lc->str));
           newsize = res_incexe->current_opts->regex.size();
         }
-        p->PushString("type");
+        p->PushLabel("type");
         p->PushString(type);
         Dmsg4(900, "set %s %p size=%d %s\n", type, res_incexe->current_opts,
               newsize, lc->str);
@@ -526,7 +526,7 @@ static void ParseRegex(ConfigurationParser* p,
     case BCT_UNQUOTED_STRING:
     case BCT_QUOTED_STRING:
       p->PushObject();
-      p->PushString("value");
+      p->PushLabel("value");
       p->PushString(lc->str);
       rc = regcomp(&preg, lc->str, REG_EXTENDED);
       if (rc != 0) {
@@ -543,7 +543,7 @@ static void ParseRegex(ConfigurationParser* p,
       } else {
         type = "regex";
       }
-      p->PushString("type");
+      p->PushLabel("type");
       p->PushString(type);
       p->PopObject();
       Dmsg4(900, "set %s %p %s\n", type, res_incexe->current_opts, lc->str);
@@ -595,7 +595,7 @@ static void StoreWild(ConfigurationParser* p,
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
         p->PushObject();
-        p->PushString("value");
+        p->PushLabel("value");
         p->PushString(lc->str);
         if (item->code == 1) {
           type = "wilddir";
@@ -616,7 +616,7 @@ static void StoreWild(ConfigurationParser* p,
           res_incexe->current_opts->wild.append(strdup(lc->str));
           newsize = res_incexe->current_opts->wild.size();
         }
-        p->PushString("type");
+        p->PushLabel("type");
         p->PushString(type);
         p->PopObject();
         Dmsg4(9, "set %s %p size=%d %s\n", type, res_incexe->current_opts,
@@ -643,7 +643,7 @@ static void ParseWild(ConfigurationParser* p,
     case BCT_UNQUOTED_STRING:
     case BCT_QUOTED_STRING:
       p->PushObject();
-      p->PushString("value");
+      p->PushLabel("value");
       p->PushString(lc->str);
       if (item->code == 1) {
         type = "wilddir";
@@ -656,7 +656,7 @@ static void ParseWild(ConfigurationParser* p,
       } else {
         type = "wild";
       }
-      p->PushString("type");
+      p->PushLabel("type");
       p->PushString(type);
       p->PopObject();
       Dmsg4(9, "set %s %p %s\n", type, res_incexe->current_opts, lc->str);
@@ -953,7 +953,7 @@ static void StoreOptionsRes(ConfigurationParser* p,
     bool found = false;
     for (int i = 0; options_items[i].name; i++) {
       if (Bstrcasecmp(options_items[i].name, lc->str)) {
-        p->PushString(lc->str);
+        p->PushLabel(options_items[i].name);
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
           scan_err1(lc, T_("expected an equals, got: %s"), lc->str);
@@ -1025,7 +1025,7 @@ static void ParseOptionsRes(ConfigurationParser* p, lexer* lc, bool exclude)
     bool found = false;
     for (int i = 0; options_items[i].name; i++) {
       if (Bstrcasecmp(options_items[i].name, lc->str)) {
-        p->PushString(options_items[i].name);
+        p->PushLabel(options_items[i].name);
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
           scan_err1(lc, T_("expected an equals, got: %s"), lc->str);
@@ -1280,7 +1280,7 @@ static void StoreNewinc(ConfigurationParser* p,
     for (int i = 0; newinc_items[i].name; i++) {
       bool options = Bstrcasecmp(lc->str, "options");
       if (Bstrcasecmp(newinc_items[i].name, lc->str)) {
-        p->PushString(lc->str);
+        p->PushLabel(newinc_items[i].name);
         if (!options) {
           token = LexGetToken(lc, BCT_SKIP_EOL);
           if (token != BCT_EQUALS) {
@@ -1359,7 +1359,7 @@ static void ParseNewinc(ConfigurationParser* p,
     for (int i = 0; newinc_items[i].name; i++) {
       bool options = Bstrcasecmp(lc->str, "options");
       if (Bstrcasecmp(newinc_items[i].name, lc->str)) {
-        p->PushString(newinc_items[i].name);
+        p->PushLabel(newinc_items[i].name);
         if (!options) {
           token = LexGetToken(lc, BCT_SKIP_EOL);
           if (token != BCT_EQUALS) {

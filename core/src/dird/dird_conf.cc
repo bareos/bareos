@@ -3314,31 +3314,31 @@ static void StoreShortRunscript(ConfigurationParser* p,
   }
 
   p->PushObject();
-  p->PushString("command");
+  p->PushLabel("command");
   p->PushString(lc->str);
 
   auto set_bools = [&](bool on_success, bool on_error, bool fail_on_error) {
-    p->PushString("on_success");
+    p->PushLabel("on_success");
     p->PushB(on_success);
-    p->PushString("on_failure");
+    p->PushLabel("on_failure");
     p->PushB(on_error);
-    p->PushString("fail_on_error");
+    p->PushLabel("fail_on_error");
     p->PushB(fail_on_error);
   };
 
   if (Bstrcasecmp(item->name, "runbeforejob")) {
-    p->PushString("target");
+    p->PushLabel("target");
     p->PushString("");
-    p->PushString("when");
+    p->PushLabel("when");
     p->PushString("before");
     if (pass == 2) {
       script->when = SCRIPT_Before;
       script->SetTarget("");
     }
   } else if (Bstrcasecmp(item->name, "runafterjob")) {
-    p->PushString("target");
+    p->PushLabel("target");
     p->PushString("");
-    p->PushString("when");
+    p->PushLabel("when");
     p->PushString("after");
     set_bools(true, false, false);
     if (pass == 2) {
@@ -3349,9 +3349,9 @@ static void StoreShortRunscript(ConfigurationParser* p,
       script->SetTarget("");
     }
   } else if (Bstrcasecmp(item->name, "clientrunafterjob")) {
-    p->PushString("target");
+    p->PushLabel("target");
     p->PushString("%c");
-    p->PushString("when");
+    p->PushLabel("when");
     p->PushString("after");
     set_bools(true, false, false);
     if (pass == 2) {
@@ -3362,18 +3362,18 @@ static void StoreShortRunscript(ConfigurationParser* p,
       script->SetTarget("%c");
     }
   } else if (Bstrcasecmp(item->name, "clientrunbeforejob")) {
-    p->PushString("target");
+    p->PushLabel("target");
     p->PushString("%c");
-    p->PushString("when");
+    p->PushLabel("when");
     p->PushString("before");
     if (pass == 2) {
       script->when = SCRIPT_Before;
       script->SetTarget("%c");
     }
   } else if (Bstrcasecmp(item->name, "runafterfailedjob")) {
-    p->PushString("target");
+    p->PushLabel("target");
     p->PushString("");
-    p->PushString("when");
+    p->PushLabel("when");
     p->PushString("after");
     set_bools(false, true, false);
     if (pass == 2) {
@@ -3413,44 +3413,44 @@ static void ParseShortRunscript(ConfigurationParser* p,
   Dmsg0(500, "runscript: creating new RunScript object\n");
 
   p->PushObject();
-  p->PushString("command");
+  p->PushLabel("command");
   p->PushString(lc->str);
 
   auto set_bools = [&](bool on_success, bool on_error, bool fail_on_error) {
-    p->PushString("on_success");
+    p->PushLabel("on_success");
     p->PushB(on_success);
-    p->PushString("on_failure");
+    p->PushLabel("on_failure");
     p->PushB(on_error);
-    p->PushString("fail_on_error");
+    p->PushLabel("fail_on_error");
     p->PushB(fail_on_error);
   };
 
   if (Bstrcasecmp(item->name, "runbeforejob")) {
-    p->PushString("target");
+    p->PushLabel("target");
     p->PushString("");
-    p->PushString("when");
+    p->PushLabel("when");
     p->PushString("before");
   } else if (Bstrcasecmp(item->name, "runafterjob")) {
-    p->PushString("target");
+    p->PushLabel("target");
     p->PushString("");
-    p->PushString("when");
+    p->PushLabel("when");
     p->PushString("after");
     set_bools(true, false, false);
   } else if (Bstrcasecmp(item->name, "clientrunafterjob")) {
-    p->PushString("target");
+    p->PushLabel("target");
     p->PushString("%c");
-    p->PushString("when");
+    p->PushLabel("when");
     p->PushString("after");
     set_bools(true, false, false);
   } else if (Bstrcasecmp(item->name, "clientrunbeforejob")) {
-    p->PushString("target");
+    p->PushLabel("target");
     p->PushString("%c");
-    p->PushString("when");
+    p->PushLabel("when");
     p->PushString("before");
   } else if (Bstrcasecmp(item->name, "runafterfailedjob")) {
-    p->PushString("target");
+    p->PushLabel("target");
     p->PushString("");
-    p->PushString("when");
+    p->PushLabel("when");
     p->PushString("after");
     set_bools(false, true, false);
   }
@@ -3540,7 +3540,7 @@ static void StoreRunscript(ConfigurationParser* p,
     bool keyword_ok = false;
     for (int i = 0; runscript_items[i].name; i++) {
       if (Bstrcasecmp(runscript_items[i].name, lc->str)) {
-        p->PushString(lc->str);
+        p->PushLabel(runscript_items[i].name);
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
           scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
@@ -3638,7 +3638,7 @@ static void ParseRunscript(ConfigurationParser* p,
     bool keyword_ok = false;
     for (int i = 0; runscript_items[i].name; i++) {
       if (Bstrcasecmp(runscript_items[i].name, lc->str)) {
-        p->PushString(runscript_items[i].name);
+        p->PushLabel(runscript_items[i].name);
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
           scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);

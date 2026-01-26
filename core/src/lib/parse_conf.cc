@@ -354,15 +354,21 @@ void ConfigurationParser::PrintShape()
 
     auto& value = pop();
 
-    if (auto* str = std::get_if<proto::str>(&value)) {
+    if (auto* label = std::get_if<proto::label>(&value)) {
       json_t* current = stack.back();
       bool inside_object = current == toplevel || json_is_object(current);
 
-      if (inside_object && !key) {
-        key = *str;
-      } else {
-        jpush(json_stringn(str->c_str(), str->size()));
-      }
+      ASSERT(inside_object);
+      ASSERT(!key);
+
+      key.emplace(*label);
+    } else if (auto* str = std::get_if<proto::str>(&value)) {
+      json_t* current = stack.back();
+      bool inside_object = current == toplevel || json_is_object(current);
+
+      ASSERT(!inside_object || key);
+
+      jpush(json_stringn(str->c_str(), str->size()));
     } else if (std::get_if<proto::arr_begin>(&value)) {
       stack.push_back(json_array());
       key_stack.push_back(key);

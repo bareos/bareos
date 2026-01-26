@@ -45,6 +45,7 @@
 
 namespace proto {
 using str = std::string;
+using label = std::string_view;
 struct obj_begin {};
 struct obj_end {};
 struct arr_begin {};
@@ -52,6 +53,7 @@ struct arr_end {};
 };  // namespace proto
 
 using conf_proto = std::variant<proto::str,
+                                proto::label,
                                 proto::obj_begin,
                                 proto::obj_end,
                                 proto::arr_begin,
@@ -205,6 +207,16 @@ class ConfigurationParser {
 
  public:
   void EnterPass2() { insert_into_shape = false; }
+  template <std::size_t N> void PushLabel(const char (&constant)[N])
+  {
+    if (!insert_into_shape) { return; }
+    shape.push_back(proto::label{constant});
+  }
+  void PushLabel(std::string_view v)
+  {
+    if (!insert_into_shape) { return; }
+    shape.push_back(proto::label{v});
+  }
   void PushString(std::string_view v)
   {
     if (!insert_into_shape) { return; }

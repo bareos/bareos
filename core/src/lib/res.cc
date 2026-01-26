@@ -97,10 +97,10 @@ void ScanTypes(ConfigurationParser* conf,
 
     conf->PushObject();
 
-    conf->PushString("is");
+    conf->PushLabel("is");
     conf->PushB(!is_not);
 
-    conf->PushString("type");
+    conf->PushLabel("type");
     conf->PushU(msg_type);
 
     conf->PopObject();
@@ -184,7 +184,7 @@ void StoreMsgs(ConfigurationParser* conf,
 
         conf->PushObject();
 
-        conf->PushString("is_old");
+        conf->PushLabel("is_old");
 
         /* If there is more then one = its the new format e.g.
          * syslog = facility = filter */
@@ -193,13 +193,13 @@ void StoreMsgs(ConfigurationParser* conf,
           dest = GetPoolMemory(PM_MESSAGE);
           // Pick up a single facility.
           token = LexGetToken(lc, BCT_NAME); /* Scan destination */
-          conf->PushString("facility");
+          conf->PushLabel("facility");
           conf->PushString(lc->str);
           PmStrcpy(dest, lc->str);
           dest_len = lc->str_len;
           token = LexGetToken(lc, BCT_SKIP_EOL);
 
-          conf->PushString("types");
+          conf->PushLabel("types");
           ScanTypes(conf, lc, message_resource,
                     static_cast<MessageDestinationCode>(item->code), dest,
                     std::string(), std::string());
@@ -207,7 +207,7 @@ void StoreMsgs(ConfigurationParser* conf,
           Dmsg0(900, "done with dest codes\n");
         } else {
           conf->PushB(true);
-          conf->PushString("types");
+          conf->PushLabel("types");
           ScanTypes(conf, lc, message_resource,
                     static_cast<MessageDestinationCode>(item->code),
                     std::string(), std::string(), std::string());
@@ -233,7 +233,7 @@ void StoreMsgs(ConfigurationParser* conf,
 
         conf->PushObject();
 
-        conf->PushString("destinations");
+        conf->PushLabel("destinations");
         conf->PushArray();
         // Pick up comma separated list of destinations.
         for (;;) {
@@ -256,7 +256,7 @@ void StoreMsgs(ConfigurationParser* conf,
           break;
         }
         conf->PopArray();
-        conf->PushString("types");
+        conf->PushLabel("types");
         Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
         ScanTypes(conf, lc, message_resource,
                   static_cast<MessageDestinationCode>(item->code), dest, cmd,
@@ -271,9 +271,9 @@ void StoreMsgs(ConfigurationParser* conf,
         token = LexGetToken(lc, BCT_STRING); /* Scan destination */
 
         conf->PushObject();
-        conf->PushString("destination");
+        conf->PushLabel("destination");
         conf->PushString(lc->str);
-        conf->PushString("types");
+        conf->PushLabel("types");
 
         std::string dest_file_path(lc->str);
         dest_len = lc->str_len;
@@ -749,9 +749,9 @@ void StoreAlistDir(ConfigurationParser* conf,
           list->size(), item->name);
 
     conf->PushObject();
-    conf->PushString("is_shell");
+    conf->PushLabel("is_shell");
     conf->PushB(lc->str[0] == '|');
-    conf->PushString("str");
+    conf->PushLabel("str");
     conf->PushString(lc->str + (lc->str[0] == '|'));
     conf->PopObject();
 
@@ -1155,9 +1155,8 @@ void StoreLabel(ConfigurationParser* conf,
   // Store the label pass 2 so that type is defined
   int i;
   for (i = 0; tapelabels[i].name; i++) {
-    conf->PushString(lc->str);
-
     if (Bstrcasecmp(lc->str, tapelabels[i].name)) {
+      conf->PushString(tapelabels[i].name);
       SetItemVariable<uint32_t>(*item, tapelabels[i].token);
       i = 0;
       break;
@@ -1232,7 +1231,7 @@ void StoreAddresses(ConfigurationParser* conf,
       scan_err1(lc, T_("Expected a string, got: %s"), lc->str);
     }
 
-    conf->PushString("type");
+    conf->PushLabel("type");
     conf->PushString(lc->str);
     if (Bstrcasecmp("ip", lc->str) || Bstrcasecmp("ipv4", lc->str)) {
     } else if (Bstrcasecmp("ipv6", lc->str)) {
@@ -1254,14 +1253,15 @@ void StoreAddresses(ConfigurationParser* conf,
         scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
                   lc->str);
       }
-      conf->PushString(lc->str);
       if (Bstrcasecmp("port", lc->str)) {
+        conf->PushLabel("port");
         next_line = PORTLINE;
         if (exist & PORTLINE) {
           scan_err0(lc, T_("Only one port per address block"));
         }
         exist |= PORTLINE;
       } else if (Bstrcasecmp("addr", lc->str)) {
+        conf->PushLabel("addr");
         next_line = ADDRLINE;
         if (exist & ADDRLINE) {
           scan_err0(lc, T_("Only one addr per address block"));
@@ -1421,10 +1421,10 @@ void ParseTypes(ConfigurationParser* conf, lexer* lc)
 
     conf->PushObject();
 
-    conf->PushString("is");
+    conf->PushLabel("is");
     conf->PushB(!is_not);
 
-    conf->PushString("type");
+    conf->PushLabel("type");
     conf->PushU(msg_type);
   }
   Dmsg0(900, "Done ParseTypes()\n");
@@ -1475,7 +1475,7 @@ void ParseMsgs(ConfigurationParser* conf,
 
       conf->PushObject();
 
-      conf->PushString("is_old");
+      conf->PushLabel("is_old");
 
       /* If there is more then one = its the new format e.g.
        * syslog = facility = filter */
@@ -1483,16 +1483,16 @@ void ParseMsgs(ConfigurationParser* conf,
         conf->PushB(false);
         // Pick up a single facility.
         token = LexGetToken(lc, BCT_NAME); /* Scan destination */
-        conf->PushString("facility");
+        conf->PushLabel("facility");
         conf->PushString(lc->str);
         token = LexGetToken(lc, BCT_SKIP_EOL);
 
-        conf->PushString("types");
+        conf->PushLabel("types");
         ParseTypes(conf, lc);
         Dmsg0(900, "done with dest codes\n");
       } else {
         conf->PushB(true);
-        conf->PushString("types");
+        conf->PushLabel("types");
         ParseTypes(conf, lc);
       }
 
@@ -1506,7 +1506,7 @@ void ParseMsgs(ConfigurationParser* conf,
     case MessageDestinationCode::kMailOnSuccess:
       conf->PushObject();
 
-      conf->PushString("destinations");
+      conf->PushLabel("destinations");
       conf->PushArray();
       // Pick up comma separated list of destinations.
       for (;;) {
@@ -1522,7 +1522,7 @@ void ParseMsgs(ConfigurationParser* conf,
         break;
       }
       conf->PopArray();
-      conf->PushString("types");
+      conf->PushLabel("types");
       ParseTypes(conf, lc);
       conf->PopObject();
       break;
@@ -1532,9 +1532,9 @@ void ParseMsgs(ConfigurationParser* conf,
       token = LexGetToken(lc, BCT_STRING); /* Scan destination */
 
       conf->PushObject();
-      conf->PushString("destination");
+      conf->PushLabel("destination");
       conf->PushString(lc->str);
-      conf->PushString("types");
+      conf->PushLabel("types");
 
       std::string dest_file_path(lc->str);
       token = LexGetToken(lc, BCT_SKIP_EOL);
@@ -1641,9 +1641,9 @@ void ParseAlistDir(ConfigurationParser* conf,
 {
   LexGetToken(lc, BCT_STRING); /* scan next item */
   conf->PushObject();
-  conf->PushString("is_shell");
+  conf->PushLabel("is_shell");
   conf->PushB(lc->str[0] == '|');
-  conf->PushString("str");
+  conf->PushLabel("str");
   conf->PushString(lc->str + (lc->str[0] == '|'));
   conf->PopObject();
   ScanToEol(lc);
@@ -1954,7 +1954,7 @@ void ParseAddresses(ConfigurationParser* conf,
       scan_err1(lc, T_("Expected a string, got: %s"), lc->str);
     }
 
-    conf->PushString("type");
+    conf->PushLabel("type");
     conf->PushString(lc->str);
     if (Bstrcasecmp("ip", lc->str) || Bstrcasecmp("ipv4", lc->str)) {
     } else if (Bstrcasecmp("ipv6", lc->str)) {
@@ -1977,14 +1977,15 @@ void ParseAddresses(ConfigurationParser* conf,
         scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
                   lc->str);
       }
-      conf->PushString(lc->str);
       if (Bstrcasecmp("port", lc->str)) {
+        conf->PushLabel("port");
         next_line = PORTLINE;
         if (exist & PORTLINE) {
           scan_err0(lc, T_("Only one port per address block"));
         }
         exist |= PORTLINE;
       } else if (Bstrcasecmp("addr", lc->str)) {
+        conf->PushLabel("addr");
         next_line = ADDRLINE;
         if (exist & ADDRLINE) {
           scan_err0(lc, T_("Only one addr per address block"));

@@ -126,9 +126,9 @@ ConfigParserStateMachine::ScanResource(int token)
           currently_parsed_resource_.resource_items_, lexical_parser_->str);
 
       if (resource_item_index >= 0) {
-        my_config_.PushString(lexical_parser_->str);
         const ResourceItem* item = nullptr;
         item = &currently_parsed_resource_.resource_items_[resource_item_index];
+        my_config_.PushLabel(item->name);
         if (!item->uses_no_equal) {
           token = LexGetToken(lexical_parser_, BCT_SKIP_EOL);
           Dmsg1(900, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
@@ -238,7 +238,7 @@ ConfigParserStateMachine::ParserInitResource(int token)
 
   bool init_done = false;
 
-  my_config_.PushString(resource_identifier);
+  my_config_.PushLabel(resource_table->name);
 
   if (resource_table && resource_table->items) {
     currently_parsed_resource_.rcode_ = resource_table->rcode;

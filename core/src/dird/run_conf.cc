@@ -188,7 +188,7 @@ void StoreRun(ConfigurationParser* conf,
     token = LexGetToken(lc, BCT_NAME);
     for (i = 0; !found && RunFields[i].name; i++) {
       if (Bstrcasecmp(lc->str, RunFields[i].name)) {
-        conf->PushString(lc->str);
+        conf->PushLabel(RunFields[i].name);
         found = true;
         if (LexGetToken(lc, BCT_ALL) != BCT_EQUALS) {
           scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
@@ -338,7 +338,7 @@ void StoreRun(ConfigurationParser* conf,
     if (!found) {
       for (j = 0; joblevels[j].level_name; j++) {
         if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
-          conf->PushString("Level");
+          conf->PushLabel("Level");
           conf->PushString(lc->str);
 
           res_run.level = joblevels[j].level;
@@ -355,7 +355,7 @@ void StoreRun(ConfigurationParser* conf,
   state = s_none;
   set_defaults(res_run);
 
-  conf->PushString("times");
+  conf->PushLabel("times");
   conf->PushArray();
   for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
     int len;
@@ -761,7 +761,7 @@ void ParseRun(ConfigurationParser* conf,
     token = LexGetToken(lc, BCT_NAME);
     for (int i = 0; !found && RunFields[i].name; i++) {
       if (Bstrcasecmp(lc->str, RunFields[i].name)) {
-        conf->PushString(RunFields[i].name);
+        conf->PushLabel(RunFields[i].name);
         found = true;
         if (LexGetToken(lc, BCT_ALL) != BCT_EQUALS) {
           scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
@@ -847,7 +847,7 @@ void ParseRun(ConfigurationParser* conf,
     if (!found) {
       for (int j = 0; joblevels[j].level_name; j++) {
         if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
-          conf->PushString("Level");
+          conf->PushLabel("Level");
           conf->PushString(lc->str);
 
           found = true;
@@ -859,7 +859,7 @@ void ParseRun(ConfigurationParser* conf,
 
   /* Scan schedule times.
    * Default is: daily at 0:0 */
-  conf->PushString("times");
+  conf->PushLabel("times");
   conf->PushArray();
   for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
     conf->PushString(lc->str);
