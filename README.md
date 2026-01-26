@@ -95,8 +95,8 @@ Are you a developer passionate about open-source technology? We’re always open
   <img src="https://img.youtube.com/vi/vl9VSF8C0fg/0.jpg" width="300" alt="Hyper-V Backups with Bareos 25">
 </a>
 
-<a href="https://youtu.be/MF2BLiTDwA0?si=kL7Qg4TfVI9mBl13">
-    <img src="https://img.youtube.com/vi/MF2BLiTDwA0/0.jpg" width="300">
+<a href="https://youtu.be/gLajfP_kF1k">
+  <img src="https://img.youtube.com/vi/gLajfP_kF1k/0.jpg" width="300" alt="Bareos 25 Proxmox Plugin – Video Overview">
 </a>
 <a href="https://youtu.be/f-2dlqfLFRc?si=HComHfXTtb22bmtV">
     <img src="https://img.youtube.com/vi/f-2dlqfLFRc/0.jpg" width="300">
