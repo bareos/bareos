@@ -41,11 +41,12 @@
 #include <string>
 #include <vector>
 
+#include "job_levels.h"
+
 namespace directordaemon {
 
 /* Imported variables */
 extern struct s_jt jobtypes[];
-extern struct s_jl joblevels[];
 
 // Confirm a retention period
 bool ConfirmRetention(UaContext* ua, utime_t* ret, const char* msg)

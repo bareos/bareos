@@ -49,10 +49,11 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
+#include "job_levels.h"
+
 namespace directordaemon {
 
 /* Imported variables */
-extern struct s_jl joblevels[];
 extern struct s_jt jobtypes[];
 extern struct s_kw ActionOnPurgeOptions[];
 extern struct s_kw VolumeStatus[];

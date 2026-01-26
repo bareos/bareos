@@ -68,13 +68,6 @@ enum
   R_NUM /* Number of entries */
 };
 
-// Job Level keyword structure
-struct s_jl {
-  const char* name; /* level keyword */
-  uint32_t level;   /* level */
-  int32_t job_type; /* JobType permitting this level */
-};
-
 // Job Type keyword structure
 struct s_jt {
   const char* name;

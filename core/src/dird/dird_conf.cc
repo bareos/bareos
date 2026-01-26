@@ -68,6 +68,8 @@
 #include "lib/output_formatter_resource.h"
 #include "lib/version.h"
 
+#include "job_levels.h"
+
 #include <cassert>
 #include <memory>
 #include <string>
@@ -526,35 +528,6 @@ static const ResourceItem runscript_items[] = {
  * strcasecmp anyhow this doesn't matter.
  */
 
-/**
- * Keywords (RHS) permitted in Job Level records
- *
- * name level job_type
- */
-struct s_jl joblevels[]
-    = {{"Full", L_FULL, JT_BACKUP},
-       {"Base", L_BASE, JT_BACKUP},
-       {"Incremental", L_INCREMENTAL, JT_BACKUP},
-       {"Differential", L_DIFFERENTIAL, JT_BACKUP},
-       {"Since", L_SINCE, JT_BACKUP},
-       {"VirtualFull", L_VIRTUAL_FULL, JT_BACKUP},
-       {"Catalog", L_VERIFY_CATALOG, JT_VERIFY},
-       {"InitCatalog", L_VERIFY_INIT, JT_VERIFY},
-       {"VolumeToCatalog", L_VERIFY_VOLUME_TO_CATALOG, JT_VERIFY},
-       {"DiskToCatalog", L_VERIFY_DISK_TO_CATALOG, JT_VERIFY},
-       {"Data", L_VERIFY_DATA, JT_VERIFY},
-       {"Full", L_FULL, JT_COPY},
-       {"Incremental", L_INCREMENTAL, JT_COPY},
-       {"Differential", L_DIFFERENTIAL, JT_COPY},
-       {"Full", L_FULL, JT_MIGRATE},
-       {"Incremental", L_INCREMENTAL, JT_MIGRATE},
-       {"Differential", L_DIFFERENTIAL, JT_MIGRATE},
-       {" ", L_NONE, JT_ADMIN},
-       {" ", L_NONE, JT_ARCHIVE},
-       {" ", L_NONE, JT_RESTORE},
-       {" ", L_NONE, JT_CONSOLIDATE},
-       {NULL, 0, 0}};
-
 /** Keywords (RHS) permitted in Job type records
  *
  * type_name job_type
@@ -658,7 +631,7 @@ struct s_kw PoolTypes[]
     = {{"Backup", 0},    {"Copy", 0},    {"Cloned", 0}, {"Archive", 0},
        {"Migration", 0}, {"Scratch", 0}, {NULL, 0}};
 
-json_t* json_item(s_jl* item)
+json_t* json_item(const s_jl* item)
 {
   json_t* json = json_object();
 
@@ -668,7 +641,7 @@ json_t* json_item(s_jl* item)
   return json;
 }
 
-json_t* json_item(s_jt* item)
+json_t* json_item(const s_jt* item)
 {
   json_t* json = json_object();
 
@@ -698,7 +671,7 @@ json_t* json_datatype(const int type)
   return json_datatype_header(type, NULL);
 }
 
-json_t* json_datatype(const int type, s_kw items[])
+json_t* json_datatype(const int type, const s_kw items[])
 {
   json_t* json = json_datatype_header(type, "keyword");
   if (items) {
@@ -711,7 +684,7 @@ json_t* json_datatype(const int type, s_kw items[])
   return json;
 }
 
-json_t* json_datatype(const int type, s_jl items[])
+json_t* json_datatype(const int type, const s_jl items[])
 {
   // FIXME: level_name keyword is not unique
   json_t* json = json_datatype_header(type, "keyword");
@@ -725,7 +698,7 @@ json_t* json_datatype(const int type, s_jl items[])
   return json;
 }
 
-json_t* json_datatype(const int type, s_jt items[])
+json_t* json_datatype(const int type, const s_jt items[])
 {
   json_t* json = json_datatype_header(type, "keyword");
   if (items) {
@@ -2835,21 +2808,12 @@ static void StoreAuthtype(ConfigurationParser* p,
                           int index,
                           int)
 {
-  LexGetToken(lc, BCT_NAME);
-  // Store the type both in pass 1 and pass 2
-  bool found = false;
-  for (int i = 0; authmethods[i].name; i++) {
-    if (Bstrcasecmp(lc->str, authmethods[i].name)) {
-      SetItemVariable<uint32_t>(*item, authmethods[i].token);
-      p->PushU(authmethods[i].token);
-      found = true;
-      break;
-    }
-  }
-
+  auto* found = ReadKeyword(p, lc, authmethods);
   if (!found) {
     scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
               lc->str);
+  } else {
+    SetItemVariable<uint32_t>(*item, found->token);
   }
 
   ScanToEol(lc);
@@ -2863,16 +2827,7 @@ static void ParseAuthtype(ConfigurationParser* p,
                           int,
                           int)
 {
-  LexGetToken(lc, BCT_NAME);
-  // Store the type both in pass 1 and pass 2
-  bool found = false;
-  for (int i = 0; authmethods[i].name; i++) {
-    if (Bstrcasecmp(lc->str, authmethods[i].name)) {
-      p->PushU(authmethods[i].token);
-      found = true;
-      break;
-    }
-  }
+  auto* found = ReadKeyword(p, lc, authmethods);
 
   if (!found) {
     scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
@@ -2889,21 +2844,13 @@ static void StoreLevel(ConfigurationParser* p,
                        int index,
                        int)
 {
-  LexGetToken(lc, BCT_NAME);
-
+  auto* found = ReadKeyword(p, lc, joblevels);
   // Store the level in pass 2 so that type is defined
-  bool found = false;
-  for (int i = 0; joblevels[i].name; i++) {
-    if (Bstrcasecmp(lc->str, joblevels[i].name)) {
-      SetItemVariable<uint32_t>(*item, joblevels[i].level);
-      p->PushU(joblevels[i].level);
-      found = true;
-      break;
-    }
-  }
 
   if (!found) {
     scan_err1(lc, T_("Expected a Job Level keyword, got: %s"), lc->str);
+  } else {
+    SetItemVariable<uint32_t>(*item, found->level);
   }
 
   ScanToEol(lc);
@@ -2917,17 +2864,7 @@ static void ParseLevel(ConfigurationParser* p,
                        int,
                        int)
 {
-  LexGetToken(lc, BCT_NAME);
-
-  // Store the level in pass 2 so that type is defined
-  bool found = false;
-  for (int i = 0; joblevels[i].name; i++) {
-    if (Bstrcasecmp(lc->str, joblevels[i].name)) {
-      p->PushU(joblevels[i].level);
-      found = true;
-      break;
-    }
-  }
+  auto* found = ReadKeyword(p, lc, joblevels);
 
   if (!found) {
     scan_err1(lc, T_("Expected a Job Level keyword, got: %s"), lc->str);
@@ -3198,29 +3135,26 @@ static void ParseAudit(ConfigurationParser* p,
   p->PopArray();
 }
 
+static constexpr s_kw script_timing[] = {
+    {"before", SCRIPT_Before},
+    {"after", SCRIPT_After},
+    {"aftervss", SCRIPT_AfterVSS},
+    {"always", SCRIPT_Any},
+};
+
 static void StoreRunscriptWhen(ConfigurationParser* p,
                                lexer* lc,
                                const ResourceItem* item,
                                int,
                                int)
 {
-  LexGetToken(lc, BCT_NAME);
-  p->PushString(lc->str);
-
-  uint32_t value = SCRIPT_INVALID;
-  if (Bstrcasecmp(lc->str, "before")) {
-    value = SCRIPT_Before;
-  } else if (Bstrcasecmp(lc->str, "after")) {
-    value = SCRIPT_After;
-  } else if (Bstrcasecmp(lc->str, "aftervss")) {
-    value = SCRIPT_AfterVSS;
-  } else if (Bstrcasecmp(lc->str, "always")) {
-    value = SCRIPT_Any;
-  } else {
+  auto* found = ReadKeyword(p, lc, script_timing);
+  if (!found) {
     scan_err2(lc, T_("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
               lc->str);
+  } else {
+    SetItemVariable<uint32_t>(*item, found->token);
   }
-  if (value != SCRIPT_INVALID) { SetItemVariable<uint32_t>(*item, value); }
   ScanToEol(lc);
 }
 
@@ -3266,8 +3200,11 @@ static void StoreRunscriptTarget(ConfigurationParser* p,
 
 static void ParseRunscriptTarget(ConfigurationParser* p, lexer* lc)
 {
-  LexGetToken(lc, BCT_STRING);
-  p->PushString(lc->str);
+  auto* found = ReadKeyword(p, lc, script_timing);
+  if (!found) {
+    scan_err2(lc, T_("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
+              lc->str);
+  }
   ScanToEol(lc);
 }
 
@@ -3470,31 +3407,27 @@ static void StoreRunscriptBool(ConfigurationParser* p,
                                int,
                                int)
 {
-  LexGetToken(lc, BCT_NAME);
-  if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-    SetItemVariable<bool>(*item, true);
-    p->PushB(true);
-  } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    SetItemVariable<bool>(*item, false);
-    p->PushB(false);
-  } else {
+  auto* found = ReadKeyword(p, lc, bool_kw);
+
+  if (!found) {
     scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
               lc->str); /* YES and NO must not be translated */
   }
+
+  SetItemVariable<bool>(*item, found->token != 0);
+
   ScanToEol(lc);
 }
 
 static void ParseRunscriptBool(ConfigurationParser* p, lexer* lc)
 {
-  LexGetToken(lc, BCT_NAME);
-  if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-    p->PushB(true);
-  } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    p->PushB(false);
-  } else {
+  auto* found = ReadKeyword(p, lc, bool_kw);
+
+  if (!found) {
     scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
               lc->str); /* YES and NO must not be translated */
   }
+
   ScanToEol(lc);
 }
 
@@ -3935,7 +3868,7 @@ static void StoreConfigCb(ConfigurationParser* p,
 }
 
 
-static bool HasDefaultValue(const ResourceItem& item, s_jt* keywords)
+static bool HasDefaultValue(const ResourceItem& item, const s_jt* keywords)
 {
   bool is_default = false;
   uint32_t value = GetItemVariable<uint32_t>(item);
@@ -3953,7 +3886,7 @@ static bool HasDefaultValue(const ResourceItem& item, s_jt* keywords)
 }
 
 
-static bool HasDefaultValue(const ResourceItem& item, s_jl* keywords)
+static bool HasDefaultValue(const ResourceItem& item, const s_jl* keywords)
 {
   bool is_default = false;
   uint32_t value = GetItemVariable<uint32_t>(item);

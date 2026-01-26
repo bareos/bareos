@@ -97,7 +97,7 @@ void ScanTypes(ConfigurationParser* conf,
 
     conf->PushObject();
 
-    conf->PushLabel("is");
+    conf->PushLabel("ignore");
     conf->PushB(!is_not);
 
     conf->PushLabel("type");
@@ -2068,7 +2068,7 @@ void ParseAddressesPort(ConfigurationParser* conf,
   conf->PushString(lc->str);
 }
 
-
+#if 0
 struct iter {
   bool end() const noexcept { return data.empty(); }
 
@@ -2104,38 +2104,38 @@ struct iter {
   std::span<conf_proto> data;
 };
 
-#define CHECK_LABEL(label)                     \
-  do {                                         \
-    if (auto s = data.get<proto::str>();       \
-        !s || *s != std::string_view{label}) { \
-      return;                                  \
-    }                                          \
-  } while (0)
+#  define CHECK_LABEL(label)                     \
+    do {                                         \
+      if (auto s = data.get<proto::str>();       \
+          !s || *s != std::string_view{label}) { \
+        return;                                  \
+      }                                          \
+    } while (0)
 
-#define EXPECT_STR(name)                     \
-  if (!data.check<proto::str>()) { return; } \
-  proto::str name = *data.get<proto::str>()
+#  define EXPECT_STR(name)                     \
+    if (!data.check<proto::str>()) { return; } \
+    proto::str name = *data.get<proto::str>()
 
-#define EXPECT_BOOL(name)              \
-  if (!data.check<bool>()) { return; } \
-  bool name = *data.get<bool>()
+#  define EXPECT_BOOL(name)              \
+    if (!data.check<bool>()) { return; } \
+    bool name = *data.get<bool>()
 
-#define BEGIN_OBJ()                                \
-  do {                                             \
-    if (!data.get<proto::obj_begin>()) { return; } \
-  } while (0)
-#define END_OBJ()                                \
-  do {                                           \
-    if (!data.get<proto::obj_end>()) { return; } \
-  } while (0)
-#define BEGIN_ARR()                                \
-  do {                                             \
-    if (!data.get<proto::arr_begin>()) { return; } \
-  } while (0)
-#define END_ARR()                                \
-  do {                                           \
-    if (!data.get<proto::arr_end>()) { return; } \
-  } while (0)
+#  define BEGIN_OBJ()                                \
+    do {                                             \
+      if (!data.get<proto::obj_begin>()) { return; } \
+    } while (0)
+#  define END_OBJ()                                \
+    do {                                           \
+      if (!data.get<proto::obj_end>()) { return; } \
+    } while (0)
+#  define BEGIN_ARR()                                \
+    do {                                             \
+      if (!data.get<proto::arr_begin>()) { return; } \
+    } while (0)
+#  define END_ARR()                                \
+    do {                                           \
+      if (!data.get<proto::arr_end>()) { return; } \
+    } while (0)
 
 void CreateTypes(iter& data,
                  MessagesResource* msg,
@@ -2587,6 +2587,7 @@ void CreateTypes(iter& data,
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
+#endif
 };  // namespace
 
 
@@ -3595,7 +3596,7 @@ json_t* json_item(const ResourceItem* item, bool is_alias)
   return json;
 }
 
-json_t* json_item(s_kw* item)
+json_t* json_item(const s_kw* item)
 {
   json_t* json = json_object();
 

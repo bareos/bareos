@@ -34,9 +34,9 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
-namespace directordaemon {
+#include "job_levels.h"
 
-extern struct s_jl joblevels[];
+namespace directordaemon {
 
 // Forward referenced subroutines
 enum e_state
@@ -196,33 +196,18 @@ void StoreRun(ConfigurationParser* conf,
         }
         switch (RunFields[i].token) {
           case 's': /* Data spooling */
-            token = LexGetToken(lc, BCT_NAME);
-            if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-              res_run.spool_data = true;
+            if (auto* parsed = ReadKeyword(conf, lc, bool_kw)) {
+              res_run.spool_data = parsed->token != 0;
               res_run.spool_data_set = true;
-              conf->PushB(true);
-            } else if (Bstrcasecmp(lc->str, "no")
-                       || Bstrcasecmp(lc->str, "false")) {
-              res_run.spool_data = false;
-              res_run.spool_data_set = true;
-              conf->PushB(false);
             } else {
               scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
-              return;
             }
             break;
           case 'L': /* Level */
-            token = LexGetToken(lc, BCT_NAME);
-            conf->PushString(lc->str);
-            for (j = 0; joblevels[j].name; j++) {
-              if (Bstrcasecmp(lc->str, joblevels[j].name)) {
-                res_run.level = joblevels[j].level;
-                res_run.job_type = joblevels[j].job_type;
-                j = 0;
-                break;
-              }
-            }
-            if (j != 0) {
+            if (auto* parsed = ReadKeyword(conf, lc, joblevels)) {
+              res_run.level = parsed->level;
+              res_run.job_type = parsed->job_type;
+            } else {
               scan_err1(lc, T_("Job level field: %s not found in run record"),
                         lc->str);
               return;

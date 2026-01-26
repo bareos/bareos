@@ -45,12 +45,9 @@
 #include "lib/parse_conf.h"
 #include "dird/jcr_util.h"
 
+#include "job_levels.h"
+
 namespace directordaemon {
-
-/* Imported subroutines */
-
-/* Imported variables */
-extern struct s_jl joblevels[];
 
 /* Imported functions */
 
