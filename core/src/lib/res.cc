@@ -788,15 +788,13 @@ void StorePluginNames(ConfigurationParser* conf,
                       int index,
                       int pass)
 {
-  if (pass == 1) {
-    ScanToEol(lc);
-    return;
-  }
+  alist<const char*>** alistvalue = nullptr;
 
-  alist<const char*>** alistvalue
-      = GetItemVariablePointer<alist<const char*>**>(*item);
-  if (!*alistvalue) {
-    *alistvalue = new alist<const char*>(10, owned_by_alist);
+  if (pass == 2) {
+    alistvalue = GetItemVariablePointer<alist<const char*>**>(*item);
+    if (!*alistvalue) {
+      *alistvalue = new alist<const char*>(10, owned_by_alist);
+    }
   }
 
   auto saved = lc->options;
@@ -821,7 +819,7 @@ void StorePluginNames(ConfigurationParser* conf,
         while (p1) {
           p2 = strchr(p1, ':');  // split at ':'
           if (p2 != nullptr) { *p2++ = '\0'; }
-          (*alistvalue)->append(strdup(p1));
+          if (alistvalue) { (*alistvalue)->append(strdup(p1)); }
           p1 = p2;
         }
         free(p0);
