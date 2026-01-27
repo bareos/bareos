@@ -24,7 +24,7 @@ if(Python3_FOUND)
   target_sources(python3-sd PRIVATE python-sd.cc module.cc)
   install(TARGETS python3-sd DESTINATION ${plugindir})
   target_link_libraries(
-    python3-sd ${Python3_LIBRARIES} Bareos::Lib python-common
+    python3-sd ${Python3_LIBRARIES} Bareos::Lib python-common fmt::fmt
   )
   target_compile_definitions(
     python3-sd PUBLIC PY3MODDIR=\"${Python3_SITEARCH}\"
