@@ -43,21 +43,14 @@ volume_checkpoint=""
 
 while [[ ${timeout} -lt 30 ]] && [[ -z $timed_checkpoint || -z $volume_checkpoint ]]; do
   timed_checkpoint=$(grep -m 1 'Doing timed backup checkpoint. Next checkpoint in 3 seconds' "$messagesfile" || :)
-  volume_checkpoint=$(grep -m 1 'Volume changed, doing checkpoint:' "$messagesfile" || :)
   sleep 1
   ((++timeout))
 done
 
 # Check that a timed checkpoint was triggered
 if [[ -z $timed_checkpoint ]]; then
-  echo "Timed checkpoint was not triggered!"
+  echo "Timed checkpoint was not triggered!" >&2
   estat=1
-fi
-
-# Check that a checkpoint happened on a volume change
-if [[ -z $volume_checkpoint ]]; then
-  echo "Checkpoint was not triggered on volume changes!"
-  estat=2
 fi
 
 slowjobid=$(grep 'Job queued. JobId=' "$backup_log" | sed -n -e 's/^.*JobId=//p')
@@ -76,6 +69,10 @@ quit
 END_OF_DATA
 
 run_bconsole
+
+expect_grep "Volume changed, doing checkpoint:" \
+  "$backup_log" \
+  "Checkpoint was not triggered on volume changes!"
 
 # Check that a cancel was triggered
 expect_grep "Termination:            Backup Canceled" \
