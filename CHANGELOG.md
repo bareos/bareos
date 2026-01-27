@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - table-formatter.js: Fix icon selection logic [PR #2481]
 - systemtests: tune for execution on Windows [PR #2502]
 - barri: remove indicators dependency [PR #2516]
+- barri: remove unnecessary quotes in version text [PR #2512]
 
 ### Fixed
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2475]
@@ -2198,6 +2199,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2502]: https://github.com/bareos/bareos/pull/2502
 [PR #2504]: https://github.com/bareos/bareos/pull/2504
 [PR #2507]: https://github.com/bareos/bareos/pull/2507
+[PR #2512]: https://github.com/bareos/bareos/pull/2512
 [PR #2513]: https://github.com/bareos/bareos/pull/2513
 [PR #2516]: https://github.com/bareos/bareos/pull/2516
 [unreleased]: https://github.com/bareos/bareos/tree/master
