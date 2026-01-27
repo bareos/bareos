@@ -85,7 +85,7 @@ struct python_thread_ctx {
 
 struct plugin_argument {
   const char* name;
-  std::variant<std::int64_t*, char**> destination;
+  std::variant<std::int64_t*, char**, bool*> destination;
 };
 
 struct option_parser {

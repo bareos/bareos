@@ -27,9 +27,6 @@
 #include <algorithm>
 
 namespace {
-constexpr int debuglevel = 100;
-
-
 // Strip any backslashes in the string.
 inline void StripBackSlashes(char* value)
 {
