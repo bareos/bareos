@@ -60,7 +60,7 @@ OS:
     "15":
       TYPE: rpm
       IMAGE: sle157
-      CUSTOM_TEST_IMAGES: [ SLE-15_SP3, SLE-15_SP6, SLE-15_SP7, openSUSE-Leap_15.6 ]
+      CUSTOM_TEST_IMAGES: [ SLE-15_SP6, SLE-15_SP7, openSUSE-Leap_15.6 ]
       ARCH:
       - x86_64
     "16":
