@@ -5,6 +5,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 
 ## [Unreleased]
 
+### Changed
+- Allow bareos to build with newer cli11 libraries [PR #2518]
+
 ## [23.1.5] - 2025-12-17
 
 ### Fixed
@@ -1754,4 +1757,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2436]: https://github.com/bareos/bareos/pull/2436
 [PR #2447]: https://github.com/bareos/bareos/pull/2447
 [PR #2449]: https://github.com/bareos/bareos/pull/2449
+[PR #2518]: https://github.com/bareos/bareos/pull/2518
 [unreleased]: https://github.com/bareos/bareos/tree/master
