@@ -171,10 +171,11 @@ option_parser option_parser::parse(
   char* bp = strchr(plugin_definition.data(), ':');
 
   if (!bp) {
-    result.error
-        = (std::stringstream{} << "Illegal plugin definition '"
-                               << plugin_definition << "' (missing ':')")
-              .str();
+    std::stringstream msg{};
+    msg << "Illegal plugin definition '" << plugin_definition
+        << "' (missing ':')";
+
+    result.error = msg.str();
 
 
     return result;
@@ -196,9 +197,9 @@ option_parser option_parser::parse(
     char* argument = bp;
     char* argument_value = strchr(bp, '=');
     if (!argument_value) {
-      result.error = (std::stringstream{} << "Illegal argument '" << argument
-                                          << "' without value")
-                         .str();
+      std::stringstream msg{};
+      msg << "Illegal argument '" << argument << "' without value";
+      result.error = msg.str();
 
       return result;
     }
