@@ -353,12 +353,14 @@ macro(check_for_pamtest)
   find_program(PAMTESTER pamtester)
 
   set(ENV{PAM_WRAPPER_LIBRARIES} "${PAM_WRAPPER_LIBRARIES}")
-  execute_process(
-    COMMAND
-      "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
-    RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC
-  )
+  if(PAM_FOUND)
+    execute_process(
+      COMMAND
+        "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/bin/check_pam_exec_available.sh"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/systemtests/tests/bconsole-pam/"
+      RESULT_VARIABLE PAM_EXEC_AVAILABLE_RC
+    )
+  endif()
   if(PAM_EXEC_AVAILABLE_RC EQUAL "0")
     set(PAM_EXEC_AVAILABLE TRUE)
   endif()

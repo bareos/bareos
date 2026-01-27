@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,8 +46,8 @@
 
 namespace directordaemon {
 
-#define PERMITTED_VERIFY_OPTIONS (const char*)"ipnugsamcd51"
-#define PERMITTED_ACCURATE_OPTIONS (const char*)"ipnugsamcd51A"
+static constexpr char const* PERMITTED_VERIFY_OPTIONS = "ipnugsamcd51";
+static constexpr char const* PERMITTED_ACCURATE_OPTIONS = "ipnugsamcd51A";
 
 typedef struct {
   bool configured;
@@ -364,6 +364,26 @@ static inline void IsInPermittedSet(lexer* lc,
   }
 }
 
+void bstrdedupcat(char* out, const char* in, int outlen)
+{
+  if (outlen < 1) { return; }
+  size_t current_len = strlen(out);
+  size_t max_len = outlen - 1;  // keep space for null terminator
+
+  char* start = out + current_len;
+  while (current_len < max_len) {
+    char c = *in++;
+    if (!c) { break; }
+
+    char* found = strchr(start, c);
+    if (found) { continue; }
+
+    out[current_len++] = c;
+  }
+
+  out[current_len] = '\0';
+}
+
 /**
  * Scan for right hand side of Include options (keyword=option) is
  * converted into one or two characters. Verifyopts=xxxx is Vxxxx:
@@ -384,13 +404,13 @@ static void ScanIncludeOptions(lexer* lc, int keyword, char* opts, int optlen)
   if (keyword == INC_KW_VERIFY) {               /* special case */
     IsInPermittedSet(lc, T_("verify"), PERMITTED_VERIFY_OPTIONS);
     bstrncat(opts, "V", optlen); /* indicate Verify */
-    bstrncat(opts, lc->str, optlen);
+    bstrdedupcat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_ACCURATE) { /* special case */
     IsInPermittedSet(lc, T_("accurate"), PERMITTED_ACCURATE_OPTIONS);
     bstrncat(opts, "C", optlen); /* indicate Accurate */
-    bstrncat(opts, lc->str, optlen);
+    bstrdedupcat(opts, lc->str, optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_STRIPPATH) { /* special case */
@@ -644,7 +664,15 @@ static void StoreOption(
   // Now scan for the value
   ScanIncludeOptions(lc, keyword, inc_opts, sizeof(inc_opts));
   if (pass == 1) {
-    bstrncat(res_incexe->current_opts->opts, inc_opts, MAX_FOPTS);
+    bstrncat(res_incexe->current_opts->opts, inc_opts,
+             std::size(res_incexe->current_opts->opts));
+
+    if (strlen(res_incexe->current_opts->opts) + 1
+        >= std::size(res_incexe->current_opts->opts)) {
+      scan_err0(lc, T_("Too many fileset options specified; cannot parse this "
+                       "correctly\n"));
+    }
+
     Dmsg2(900, "new pass=%d incexe opts=%s\n", pass,
           res_incexe->current_opts->opts);
   }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -506,13 +506,14 @@ struct FileOptions {
   FileOptions() = default;
   virtual ~FileOptions() = default;
 
-  char opts[MAX_FOPTS] = {0};   /**< Options string */
-  alist<const char*> regex;     /**< Regex string(s) */
-  alist<const char*> regexdir;  /**< Regex string(s) for directories */
-  alist<const char*> regexfile; /**< Regex string(s) for files */
-  alist<const char*> wild;      /**< Wild card strings */
-  alist<const char*> wilddir;   /**< Wild card strings for directories */
-  alist<const char*> wildfile;  /**< Wild card strings for files */
+  // accurate + verify + other fileset options
+  char opts[3 * MAX_FOPTS] = {0}; /**< Options string */
+  alist<const char*> regex;       /**< Regex string(s) */
+  alist<const char*> regexdir;    /**< Regex string(s) for directories */
+  alist<const char*> regexfile;   /**< Regex string(s) for files */
+  alist<const char*> wild;        /**< Wild card strings */
+  alist<const char*> wilddir;     /**< Wild card strings for directories */
+  alist<const char*> wildfile;    /**< Wild card strings for files */
   alist<const char*> wildbase;  /**< Wild card strings for files without '/' */
   alist<const char*> base;      /**< List of base names */
   alist<const char*> fstype;    /**< File system type limitation */
