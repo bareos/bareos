@@ -8,6 +8,9 @@ and since Bareos version 20 this project adheres to [Semantic Versioning](https:
 ### Changed
 - Allow bareos to build with newer cli11 libraries [PR #2518]
 
+### Fixed
+- core/filed: fix spurious wakeups race condition in filed. [PR #2515]
+
 ## [23.1.5] - 2025-12-17
 
 ### Fixed
@@ -1757,5 +1760,6 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2436]: https://github.com/bareos/bareos/pull/2436
 [PR #2447]: https://github.com/bareos/bareos/pull/2447
 [PR #2449]: https://github.com/bareos/bareos/pull/2449
+[PR #2515]: https://github.com/bareos/bareos/pull/2515
 [PR #2518]: https://github.com/bareos/bareos/pull/2518
 [unreleased]: https://github.com/bareos/bareos/tree/master
