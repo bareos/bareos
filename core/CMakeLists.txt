@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -398,7 +398,6 @@ if(NOT client-only
   add_subdirectory(src/droplet)
 endif()
 
-include(BareosGenerateDebianInfo)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(MSVC)
     add_definitions(
@@ -419,6 +418,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   endif()
 
   set(Python3_SITEARCH ${plugindir})
+else()
+  include(BareosGenerateDebianInfo)
 endif()
 
 # set INSTALL_LIB_DIR automatically to lib or lib64 automatically Taken from
