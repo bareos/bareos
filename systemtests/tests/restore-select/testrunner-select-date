@@ -1,0 +1,70 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+# We check that `select jobid=` always selects the right
+# jobids.
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+# job i was executed on 2020-01-01 + i days,
+#
+# job 1 - 2020-01-02
+# job 2 - 2020-01-03
+# job 3 - 2020-01-04
+# job 4 - 2020-01-05
+# ...
+
+# select a full
+check_job_ids "4" <<EOF
+restore client=bareos-fd fileset=fileset-1 select before="2000-01-05 12:00:00"
+EOF
+
+# select a differential
+check_job_ids "4,7" <<EOF
+restore client=bareos-fd fileset=fileset-1 select before="2000-01-08 12:00:00"
+EOF
+check_job_ids "4,5" <<EOF
+restore client=bareos-fd fileset=fileset-1 select before="2000-01-06 12:00:00"
+EOF
+
+# select an incremental
+check_job_ids "4,5,6" <<EOF
+restore client=bareos-fd fileset=fileset-1 select before="2000-01-07 12:00:00"
+EOF
+
+# select inbetween incremental
+# make sure that useless diff & inc are skipped (5 & 6)
+check_job_ids "4,7,8,10,11" <<EOF
+restore client=bareos-fd fileset=fileset-1 select before="2000-01-12 12:00:00"
+EOF
+
+# select a job from a different client
+check_job_ids "3,12,13" <<EOF
+restore client=client-3 fileset=fileset-1 select before="2000-01-14 12:00:00"
+EOF
