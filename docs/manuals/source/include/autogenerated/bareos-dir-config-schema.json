@@ -2632,7 +2632,6 @@
           "description": "\"Common Name\"s (CNs) of the allowed peer certificates."
         }
       },
-      "Device": {},
       "User": {
         "Name": {
           "datatype": "NAME",
