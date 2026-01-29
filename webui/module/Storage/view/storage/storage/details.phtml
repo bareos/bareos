@@ -82,9 +82,20 @@ $this->headTitle($title);
             echo '<p class="help-block">'.$this->translate("Assign media to this pool.").'</p>';
             echo $this->formRow($form->get('drive'));
             echo '<p class="help-block">'.$this->translate("Use this drive for labeling.").'</p>';
-            echo $this->formRow($form->get('encrypted'));
-            echo '<p class="help-block">'.$this->translate("When checked encryption will be used for this volume.").'</p>';
          ?>
+            <div class="checkbox">
+                 <label
+                   for="encrypted"
+                   class="checkbox-inline"
+                   data-toggle="tooltip"
+                   title="@bruno: Please add a tooltip here"
+                 >
+                        <?php echo $this->formCheckbox($form->get('encrypted')) ?>
+                        <span class="checkbox-text">
+                              <?php echo $this->escapeHtml($form->get('encrypted')->getLabel()) ?>
+                        </span>
+                 </label>
+            </div>
       </div>
       <div class="modal-footer">
          <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Cancel"); ?></button>
@@ -451,6 +462,12 @@ $this->headTitle($title);
 
    });
 
+</script>
+
+<script>
+   $(function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   });
 </script>
 
 <?php endif; ?>
