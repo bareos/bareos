@@ -97,6 +97,7 @@ class StorageForm extends Form
             'attributes' => array(
                 'class' => 'checkbox-inline',
                 'id' => 'encrypted',
+                'value' => 'nonencrypt',
             )
         ));
 
