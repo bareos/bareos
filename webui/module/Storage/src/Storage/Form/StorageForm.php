@@ -83,20 +83,20 @@ class StorageForm extends Form
                 'id' => 'drive'
             )
         ));
+
         // encrypted
         $this->add(array(
             'name' => 'encrypted',
             'type' => 'checkbox',
             'options' => array(
-                'label' => _('Use encryption for this volume'),
+                'label' => _('encrypt newly labeled volumes'),
                 'use_hidden_element' => true,
                 'checked_value' => 'encrypt',
                 'unchecked_value' => 'nonencrypt',
             ),
             'attributes' => array(
-                'class' => 'form-control bs-checkbox show-tick',
+                'class' => 'checkbox-inline',
                 'id' => 'encrypted',
-                'value' => 'yes',
             )
         ));
 
