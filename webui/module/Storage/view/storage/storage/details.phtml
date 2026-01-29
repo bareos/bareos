@@ -88,7 +88,7 @@ $this->headTitle($title);
                    for="encrypted"
                    class="checkbox-inline"
                    data-toggle="tooltip"
-                   title="@bruno: Please add a tooltip here"
+                   title="<?php echo $this->translate("When used with scsicrypto sd plugin, will create a volume kek and encryption will be used"); ?>"
                  >
                         <?php echo $this->formCheckbox($form->get('encrypted')) ?>
                         <span class="checkbox-text">
@@ -462,9 +462,6 @@ $this->headTitle($title);
 
    });
 
-</script>
-
-<script>
    $(function () {
       $('[data-toggle="tooltip"]').tooltip();
    });
