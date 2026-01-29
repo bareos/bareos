@@ -1,0 +1,46 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+show_non_printing()
+{
+  if on_freebsd_host; then
+    cat -vet <<<"$1"
+  else
+    cat -A <<<"$1"
+  fi
+}
+
+check_job_ids()
+{
+  expected_ids="$1"
+
+  # we need to remove carriage return because something on windows adds them
+  # to the end of the line (either bconsole/bareos or grep) while we do not care
+  # about them.
+  selected_ids="$(bin/bconsole | grep "You have selected the following JobIds\?: " | cut -d' ' -f7- | tr -d '\r')"
+
+  if [ "${selected_ids}" != "${expected_ids}" ]; then
+    first=$(show_non_printing "${selected_ids}")
+    second=$(show_non_printing "${expected_ids}")
+    echo "Expected to select ids '${second}', but instead '${first}' were selected" >&2
+    return 1
+  fi
+}
