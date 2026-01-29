@@ -112,7 +112,6 @@ static ScheduleResource* res_sch;
 static PoolResource* res_pool;
 static MessagesResource* res_msgs;
 static CounterResource* res_counter;
-static DeviceResource* res_dev;
 static UserResource* res_user;
 
 /* clang-format off */
@@ -471,8 +470,6 @@ static ResourceTable dird_resource_tables[] = {
       [] (){ res_profile = new ProfileResource(); }, reinterpret_cast<BareosResource**>(&res_profile) },
   { "Console", "Consoles", con_items, R_CONSOLE, sizeof(ConsoleResource),
       [] (){ res_con = new ConsoleResource(); }, reinterpret_cast<BareosResource**>(&res_con) },
-  { "Device", "Devices", NULL, R_DEVICE, sizeof(DeviceResource),/* info obtained from SD */
-      [] (){ res_dev = new DeviceResource(); }, reinterpret_cast<BareosResource**>(&res_dev) },
   { "User", "Users", user_items, R_USER, sizeof(UserResource),
       [] (){ res_user = new UserResource(); }, reinterpret_cast<BareosResource**>(&res_user) },
   { nullptr, nullptr, nullptr, 0, 0, nullptr, nullptr }
@@ -3639,10 +3636,6 @@ static bool AddResourceCopyToEndOfChain(int type,
       case R_USER:
         new_resource = res_user;
         res_user = nullptr;
-        break;
-      case R_DEVICE:
-        new_resource = res_dev;
-        res_dev = nullptr;
         break;
       default:
         Dmsg3(100, "Unhandled resource type: %d\n", type);
