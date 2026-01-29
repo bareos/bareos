@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -318,6 +318,7 @@ class StorageController extends AbstractActionController
                         $storage = $form->getInputFilter()->getValue('storage');
                         $pool = $form->getInputFilter()->getValue('pool');
                         $drive = $form->getInputFilter()->getValue('drive');
+                        $encrypted = $form->getInputFilter()->getValue('encrypted');
                         try {
                             $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                             $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
@@ -332,7 +333,7 @@ class StorageController extends AbstractActionController
                                     )
                                 );
                             } else {
-                                $result = $this->getStorageModel()->label($this->bsock, $storage, $pool, $drive);
+                                $result = $this->getStorageModel()->label($this->bsock, $storage, $pool, $drive, NULL, $encrypted);
                             }
                         } catch (Exception $e) {
                             echo $e->getMessage();
