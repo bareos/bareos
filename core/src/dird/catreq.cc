@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -264,15 +264,19 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
                 " for Volume \"%s\".\n"),
              mr.VolFiles, sdmr.VolFiles, mr.VolumeName);
         sdmr.VolFiles = mr.VolFiles;
-      }
 
-      // Sanity check for VolBlocks to be increasing
-      if (sdmr.VolBlocks < mr.VolBlocks) {
-        Jmsg(jcr, M_INFO, 0,
-             T_("Ignoring Volume Blocks at %u being set to %u"
-                " for Volume \"%s\".\n"),
-             mr.VolBlocks, sdmr.VolBlocks, mr.VolumeName);
+        // if the file is wrong, then so is the block, so we need to clean
+        // that up as well
         sdmr.VolBlocks = mr.VolBlocks;
+      } else if (sdmr.VolFiles == mr.VolFiles) {
+        // Sanity check for VolBlocks to be increasing on a filemark
+        if (sdmr.VolBlocks < mr.VolBlocks) {
+          Jmsg(jcr, M_INFO, 0,
+               T_("Ignoring Volume Blocks at %u being set to %u"
+                  " for Volume \"%s\".\n"),
+               mr.VolBlocks, sdmr.VolBlocks, mr.VolumeName);
+          sdmr.VolBlocks = mr.VolBlocks;
+        }
       }
 
       // Sanity check for VolBytes to be increasing
