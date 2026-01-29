@@ -43,6 +43,62 @@ The Bareos database backend will get automatically configured in :file:`/etc/bar
    with :command:`export dbc_debug=1` command
    before using :command:`apt` or :command:`dpkg-reconfigure bareos-database-common`.
 
+.. warning::
+
+   By default **dbconfig-common** during major upgrades will create a backup dump of the database
+   in :file:`/var/cache/dbconfig-common/backups/` before applying any upgrade. It is advised to
+   precheck there's enough free space in the partition containing this directory to handle the
+   sql text dump file.
+
+   In case you want to disable this dbconfig-common feature, you can use the following command
+   before upgrading Bareos packages:
+
+   .. code-block:: shell-session
+      :caption: disable dbconfig-common database upgrade backup
+
+      echo "bareos-database-common bareos-database-common/upgrade-backup boolean false" | debconf-set-selections -v
+
+.. note::
+
+   To show all dbconfig settings for bareos-database-common use:
+
+   .. code-block:: shell-session
+      :caption: show dbconfig-common settings for bareos-database-common
+
+      debconf-show bareos-database-common
+
+      bareos-database-common/password-confirm: (password omitted)
+      bareos-database-common/app-password-confirm: (password omitted)
+      bareos-database-common/pgsql/admin-pass: (password omitted)
+      bareos-database-common/pgsql/app-pass: (password omitted)
+      bareos-database-common/internal/reconfiguring: false
+      bareos-database-common/internal/skip-preseed: false
+      bareos-database-common/install-error: abort
+      bareos-database-common/pgsql/no-empty-passwords:
+      bareos-database-common/dbconfig-reinstall: false
+      bareos-database-common/dbconfig-upgrade: true
+      bareos-database-common/remove-error: abort
+      bareos-database-common/pgsql/admin-user: postgres
+      bareos-database-common/pgsql/method: TCP/IP
+      bareos-database-common/db/app-user: bareos@localhost
+      bareos-database-common/db/dbname: bareos
+      bareos-database-common/remote/newhost: localhost
+      bareos-database-common/database-type: pgsql
+      bareos-database-common/upgrade-backup: true
+      bareos-database-common/missing-db-package-error: abort
+      bareos-database-common/dbconfig-remove: true
+      bareos-database-common/pgsql/authmethod-admin: ident
+      bareos-database-common/passwords-do-not-match:
+      bareos-database-common/upgrade-error: abort
+      bareos-database-common/pgsql/manualconf:
+      bareos-database-common/remote/host: localhost
+      bareos-database-common/purge: false
+      bareos-database-common/pgsql/changeconf: false
+      bareos-database-common/dbconfig-install: true
+      bareos-database-common/pgsql/authmethod-user: password
+      bareos-database-common/remote/port:
+
+
 .. _CatMaintenanceManualConfiguration:
 
 Manual Configuration
