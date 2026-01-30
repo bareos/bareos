@@ -652,15 +652,17 @@ auto ReadKeyword(ConfigurationParser* conf,
     auto& keyword = keywords[i];
     if (!keyword.name) { continue; }
     if (Bstrcasecmp(lc->str, keyword.name)) {
-      conf->PushObject();
-      conf->PushLabel("index");
-      conf->PushU(i);
-      conf->PushLabel("name");
       conf->PushString(keyword.name);
-      conf->PopObject();
       return &keyword;
     }
   }
+
+  conf->PushObject();
+  conf->PushLabel("error");
+  conf->PushLabel("unknown keyword");
+  conf->PushLabel("value");
+  conf->PushString(lc->str);
+  conf->PopObject();
 
   return nullptr;
 }

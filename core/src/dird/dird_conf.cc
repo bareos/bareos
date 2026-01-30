@@ -2700,21 +2700,13 @@ static void StoreReplace(ConfigurationParser* p,
                          int index,
                          int)
 {
-  LexGetToken(lc, BCT_NAME);
-  // Scan Replacement options
-  bool found = false;
-  for (int i = 0; ReplaceOptions[i].name; i++) {
-    if (Bstrcasecmp(lc->str, ReplaceOptions[i].name)) {
-      SetItemVariable<uint32_t>(*item, ReplaceOptions[i].token);
-      p->PushU(ReplaceOptions[i].token);
-      found = true;
-      break;
-    }
-  }
+  auto found = ReadKeyword(p, lc, ReplaceOptions);
 
   if (!found) {
     scan_err1(lc, T_("Expected a Restore replacement option, got: %s"),
               lc->str);
+  } else {
+    SetItemVariable<uint32_t>(*item, found->token);
   }
 
   ScanToEol(lc);
@@ -2728,16 +2720,7 @@ static void ParseReplace(ConfigurationParser* p,
                          int,
                          int)
 {
-  LexGetToken(lc, BCT_NAME);
-  // Scan Replacement options
-  bool found = false;
-  for (int i = 0; ReplaceOptions[i].name; i++) {
-    if (Bstrcasecmp(lc->str, ReplaceOptions[i].name)) {
-      p->PushU(ReplaceOptions[i].token);
-      found = true;
-      break;
-    }
-  }
+  auto found = ReadKeyword(p, lc, ReplaceOptions);
 
   if (!found) {
     scan_err1(lc, T_("Expected a Restore replacement option, got: %s"),
@@ -2754,21 +2737,13 @@ static void StoreAuthprotocoltype(ConfigurationParser* p,
                                   int index,
                                   int)
 {
-  LexGetToken(lc, BCT_NAME);
-  // Store the type both in pass 1 and pass 2
-  bool found = false;
-  for (int i = 0; authprotocols[i].name; i++) {
-    if (Bstrcasecmp(lc->str, authprotocols[i].name)) {
-      SetItemVariable<uint32_t>(*item, authprotocols[i].token);
-      p->PushU(authprotocols[i].token);
-      found = true;
-      break;
-    }
-  }
+  auto found = ReadKeyword(p, lc, authprotocols);
 
   if (!found) {
     scan_err1(lc, T_("Expected a Auth Protocol Type keyword, got: %s"),
               lc->str);
+  } else {
+    SetItemVariable<uint32_t>(*item, found->token);
   }
 
   ScanToEol(lc);
@@ -2782,16 +2757,7 @@ static void ParseAuthprotocoltype(ConfigurationParser* p,
                                   int,
                                   int)
 {
-  LexGetToken(lc, BCT_NAME);
-  // Store the type both in pass 1 and pass 2
-  bool found = false;
-  for (int i = 0; authprotocols[i].name; i++) {
-    if (Bstrcasecmp(lc->str, authprotocols[i].name)) {
-      p->PushU(authprotocols[i].token);
-      found = true;
-      break;
-    }
-  }
+  auto found = ReadKeyword(p, lc, authprotocols);
 
   if (!found) {
     scan_err1(lc, T_("Expected a Auth Protocol Type keyword, got: %s"),

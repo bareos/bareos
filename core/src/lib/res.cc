@@ -83,14 +83,23 @@ void ScanTypes(ConfigurationParser* conf,
       str = &lc->str[0];
     }
 
+    const char* name = lc->str;
     for (i = 0; msg_types[i].name; i++) {
       if (Bstrcasecmp(str, msg_types[i].name)) {
         msg_type = msg_types[i].token;
+        name = msg_types[i].name;
         found = true;
         break;
       }
     }
     if (!found) {
+      conf->PushObject();
+      conf->PushLabel("error");
+      conf->PushLabel("unknown keyword");
+      conf->PushLabel("value");
+      conf->PushString(lc->str);
+      conf->PopObject();
+
       scan_err1(lc, T_("message type: %s not found"), str);
       return;
     }
@@ -101,7 +110,7 @@ void ScanTypes(ConfigurationParser* conf,
     conf->PushB(!is_not);
 
     conf->PushLabel("type");
-    conf->PushU(msg_type);
+    conf->PushString(name);
 
     conf->PopObject();
 
