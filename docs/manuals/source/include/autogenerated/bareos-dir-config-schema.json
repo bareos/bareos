@@ -1690,7 +1690,7 @@
         },
         "Device": {
           "datatype": "DEVICE",
-          "code": 13,
+          "code": 0,
           "equals": true,
           "required": true
         },
