@@ -93,12 +93,7 @@ void ScanTypes(ConfigurationParser* conf,
       }
     }
     if (!found) {
-      conf->PushObject();
-      conf->PushLabel("error");
-      conf->PushLabel("unknown keyword");
-      conf->PushLabel("value");
-      conf->PushString(lc->str);
-      conf->PopObject();
+      conf->PushError("unknown keyword", lc->str);
 
       scan_err1(lc, T_("message type: %s not found"), str);
       return;

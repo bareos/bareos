@@ -47,6 +47,12 @@ namespace proto {
 using str = std::string;
 using label = std::string_view;
 struct alias : std::string_view {};
+
+struct error {
+  std::string_view reason;
+  std::string value;
+};
+
 struct obj_begin {};
 struct obj_end {};
 struct arr_begin {};
@@ -59,8 +65,14 @@ using conf_vec = std::vector<conf_proto>;
 using conf_map = std::vector<std::pair<std::string_view, conf_proto>>;
 
 struct conf_proto {
-  std::variant<bool, proto::str, int64_t, uint64_t, conf_vec, conf_map> value{
-      false};
+  std::variant<bool,
+               proto::error,
+               proto::str,
+               int64_t,
+               uint64_t,
+               conf_vec,
+               conf_map>
+      value{false};
 };
 
 struct proto_builder {
@@ -111,8 +123,9 @@ struct proto_builder {
   void push(bool b) { push_value(conf_proto{b}); }
   void push(int64_t i) { push_value(conf_proto{i}); }
   void push(uint64_t u) { push_value(conf_proto{u}); }
-
   void push(proto::str s) { push_value(conf_proto{std::move(s)}); }
+  void push(proto::error e) { push_value(conf_proto{std::move(e)}); }
+
   void push(proto::label l)
   {
     auto* obj = is_object();
@@ -309,20 +322,31 @@ class ConfigurationParser {
 
  public:
   void EnterPass2() { insert_into_shape = false; }
-  template <std::size_t N> void PushLabel(const char (&constant)[N])
+
+  void PushError(std::string_view reason, std::string value)
   {
     if (!insert_into_shape) { return; }
-    builder.push(proto::label{constant});
+    builder.push(proto::error{reason, std::move(value)});
   }
   void PushAlias(std::string_view v)
   {
     if (!insert_into_shape) { return; }
     builder.push(proto::alias{v});
   }
+  template <std::size_t N> void PushAlias(const char (&constant)[N])
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::alias{constant});
+  }
   void PushLabel(std::string_view v)
   {
     if (!insert_into_shape) { return; }
     builder.push(proto::label{v});
+  }
+  template <std::size_t N> void PushLabel(const char (&constant)[N])
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::label{constant});
   }
   void PushString(std::string_view v)
   {
@@ -666,12 +690,7 @@ auto ReadKeyword(ConfigurationParser* conf,
     }
   }
 
-  conf->PushObject();
-  conf->PushLabel("error");
-  conf->PushLabel("unknown keyword");
-  conf->PushLabel("value");
-  conf->PushString(lc->str);
-  conf->PopObject();
+  conf->PushError("unknown keyword", lc->str);
 
   return nullptr;
 }

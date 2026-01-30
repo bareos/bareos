@@ -304,6 +304,17 @@ json_t* convert(conf_proto* p, bool toplevel = true)
           }
 
           return arr;
+        } else if constexpr (std::is_same_v<T, proto::error>) {
+          auto* obj = json_object();
+          json_object_set_new(obj, "type", json_string("error"));
+
+          json_object_set_new(
+              obj, "reason",
+              json_stringn(val.reason.data(), val.reason.size()));
+
+          json_object_set_new(obj, "value",
+                              json_stringn(val.value.data(), val.value.size()));
+          return obj;
         } else {
           static_assert(false);
         }
