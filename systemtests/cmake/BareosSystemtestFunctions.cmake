@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -598,9 +598,9 @@ macro(prepare_test_python)
           "${CMAKE_SOURCE_DIR}/contrib/fd-plugins/mariadb-dump;"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/stored/python/pyfiles;"
           "${CMAKE_SOURCE_DIR}/core/src/plugins/dird/python/pyfiles;"
-          "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_subdir_prefix}modules/\${CMAKE_CONFIG_TYPE};"
-          "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_subdir_prefix}modules/\${CMAKE_CONFIG_TYPE};"
-          "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_subdir_prefix}modules/\${CMAKE_CONFIG_TYPE};"
+          "${CMAKE_BINARY_DIR}/core/src/plugins/filed/python/${python_module_subdir_prefix}modules/;"
+          "${CMAKE_BINARY_DIR}/core/src/plugins/stored/python/${python_module_subdir_prefix}modules/;"
+          "${CMAKE_BINARY_DIR}/core/src/plugins/dird/python/${python_module_subdir_prefix}modules/;"
           "${CMAKE_SOURCE_DIR}/systemtests/python-modules;"
           "\""
       )
