@@ -3287,21 +3287,19 @@ static bool HasDefaultValue(const ResourceItem& item, alist<T>* values)
   return false;
 }
 
-
-static bool HasDefaultValueAlistConstChar(const ResourceItem& item)
-{
-  alist<const char*>* values = GetItemVariable<alist<const char*>*>(item);
-  return HasDefaultValue(item, values);
-}
-
-
 static bool HasDefaultValue(const ResourceItem& item)
 {
   bool is_default = false;
 
   switch (item.type) {
     case CFG_TYPE_DEVICE: {
-      is_default = HasDefaultValueAlistConstChar(item);
+      // there are no "default" devices
+
+      ASSERT(!item.default_value);
+
+      const auto& devices = *GetItemVariablePointer<std::vector<Device>*>(item);
+
+      is_default = devices.empty();
       break;
     }
     case CFG_TYPE_RUNSCRIPT: {
@@ -3415,9 +3413,14 @@ static void PrintConfigCb(const ResourceItem& item,
   switch (item.type) {
     case CFG_TYPE_DEVICE: {
       // Each member of the list is comma-separated
-      send.KeyMultipleStringsInOneLine(
-          item.name, GetItemVariable<alist<const char*>*>(item),
-          GetResourceName, false, true);
+
+      const auto& devices = *GetItemVariablePointer<std::vector<Device>*>(item);
+
+      alist<const char*> list(devices.size(), not_owned_by_alist);
+
+      for (auto& dev : devices) { list.append(dev.name.c_str()); }
+
+      send.KeyMultipleStringsInOneLine(item.name, &list, false, true);
       break;
     }
     case CFG_TYPE_RUNSCRIPT:
