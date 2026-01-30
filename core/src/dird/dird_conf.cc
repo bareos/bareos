@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -240,7 +240,7 @@ static const ResourceItem store_items[] = {
   { "Port", CFG_TYPE_PINT32, ITEM(res_store, SDport), {config::DefaultValue{SD_DEFAULT_PORT}, config::Alias{"SdPort"}}},
   { "Username", CFG_TYPE_STR, ITEM(res_store, username), {}},
   { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_store, password_), {config::Alias{"SdPassword"}, config::Required{}}},
-  { "Device", CFG_TYPE_DEVICE, ITEM(res_store, device), {config::Required{}, config::Code{R_DEVICE}}},
+  { "Device", CFG_TYPE_DEVICE, ITEM(res_store, devices), {config::Required{}}},
   { "MediaType", CFG_TYPE_STRNAME, ITEM(res_store, media_type), {config::Required{}}},
   { "AutoChanger", CFG_TYPE_BOOL, ITEM(res_store, autochanger), {config::DefaultValue{"false"}}},
   { "Enabled", CFG_TYPE_BOOL, ITEM(res_store, enabled), {config::DefaultValue{"true"}, config::Description{"En- or disable this resource."}}},
@@ -2134,7 +2134,6 @@ static bool UpdateResourcePointer(int type, const ResourceItem* items)
     case R_CATALOG:
     case R_MSGS:
     case R_FILESET:
-    case R_DEVICE:
       // Resources not containing a resource
       break;
     case R_POOL: {
@@ -2216,7 +2215,6 @@ static bool UpdateResourcePointer(int type, const ResourceItem* items)
         p->paired_storage = res_store->paired_storage;
         p->tls_cert_.allowed_certificate_common_names_
             = std::move(res_store->tls_cert_.allowed_certificate_common_names_);
-        p->device = res_store->device;
         p->runtime_storage_status
             = GetRuntimeStatus<RuntimeStorageStatus>(p->resource_name_);
       }
@@ -2466,48 +2464,22 @@ static void StoreActiononpurge(lexer* lc,
 static void StoreDevice(lexer* lc,
                         const ResourceItem* item,
                         int index,
-                        int pass,
-                        BareosResource** configuration_resources)
+                        int pass)
 {
-  int rindex = R_DEVICE;
+  LexGetToken(lc, BCT_NAME);
 
   if (pass == 1) {
-    LexGetToken(lc, BCT_NAME);
-    if (!configuration_resources[rindex]) {
-      DeviceResource* device_resource = new DeviceResource;
-      device_resource->rcode_ = R_DEVICE;
-      device_resource->resource_name_ = strdup(lc->str);
-      configuration_resources[rindex] = device_resource; /* store first entry */
-      Dmsg3(900, "Inserting first %s res: %s index=%d\n",
-            my_config->ResToStr(R_DEVICE), device_resource->resource_name_,
-            rindex);
-    } else {
-      bool found = false;
-      BareosResource* next;
-      for (next = configuration_resources[rindex]; next->next_;
-           next = next->next_) {
-        if (bstrcmp(next->resource_name_, lc->str)) {
-          found = true;  // already defined
-          break;
-        }
-      }
-      if (!found) {
-        DeviceResource* device_resource = new DeviceResource;
-        device_resource->rcode_ = R_DEVICE;
-        device_resource->resource_name_ = strdup(lc->str);
-        next->next_ = device_resource;
-        Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
-              my_config->ResToStr(R_DEVICE), device_resource->resource_name_,
-              rindex, pass);
-      }
-    }
+    auto& devices = *GetItemVariablePointer<std::vector<Device>*>(*item);
 
-    ScanToEol(lc);
-    item->SetPresent();
-    ClearBit(index, (*item->allocated_resource)->inherit_content_);
-  } else {
-    my_config->StoreResource(CFG_TYPE_ALIST_RES, lc, item, index, pass);
+    Dmsg4(900, "Add device %s to vector %p size=%" PRIuz " %s\n", lc->str,
+          &devices, devices.size(), item->name);
+
+    devices.emplace_back(lc->str);
   }
+
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Store Migration/Copy type
@@ -3206,7 +3178,7 @@ static void ParseConfigCb(lexer* lc,
                           const ResourceItem* item,
                           int index,
                           int pass,
-                          BareosResource** configuration_resources)
+                          BareosResource**)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:
@@ -3225,7 +3197,7 @@ static void ParseConfigCb(lexer* lc,
       StoreAuthtype(lc, item, index, pass);
       break;
     case CFG_TYPE_DEVICE:
-      StoreDevice(lc, item, index, pass, configuration_resources);
+      StoreDevice(lc, item, index, pass);
       break;
     case CFG_TYPE_JOBTYPE:
       StoreJobtype(lc, item, index, pass);
@@ -3315,21 +3287,19 @@ static bool HasDefaultValue(const ResourceItem& item, alist<T>* values)
   return false;
 }
 
-
-static bool HasDefaultValueAlistConstChar(const ResourceItem& item)
-{
-  alist<const char*>* values = GetItemVariable<alist<const char*>*>(item);
-  return HasDefaultValue(item, values);
-}
-
-
 static bool HasDefaultValue(const ResourceItem& item)
 {
   bool is_default = false;
 
   switch (item.type) {
     case CFG_TYPE_DEVICE: {
-      is_default = HasDefaultValueAlistConstChar(item);
+      // there are no "default" devices
+
+      ASSERT(!item.default_value);
+
+      const auto& devices = *GetItemVariablePointer<std::vector<Device>*>(item);
+
+      is_default = devices.empty();
       break;
     }
     case CFG_TYPE_RUNSCRIPT: {
@@ -3443,9 +3413,14 @@ static void PrintConfigCb(const ResourceItem& item,
   switch (item.type) {
     case CFG_TYPE_DEVICE: {
       // Each member of the list is comma-separated
-      send.KeyMultipleStringsInOneLine(
-          item.name, GetItemVariable<alist<const char*>*>(item),
-          GetResourceName, false, true);
+
+      const auto& devices = *GetItemVariablePointer<std::vector<Device>*>(item);
+
+      alist<const char*> list(devices.size(), not_owned_by_alist);
+
+      for (auto& dev : devices) { list.append(dev.name.c_str()); }
+
+      send.KeyMultipleStringsInOneLine(item.name, &list, false, true);
       break;
     }
     case CFG_TYPE_RUNSCRIPT:
@@ -3567,8 +3542,7 @@ static void ConfigBeforeCallback(ConfigurationParser& t_config)
       {R_SCHEDULE, "R_SCHEDULE"}, {R_FILESET, "R_FILESET"},
       {R_POOL, "R_POOL"},         {R_MSGS, "R_MSGS"},
       {R_COUNTER, "R_COUNTER"},   {R_PROFILE, "R_PROFILE"},
-      {R_CONSOLE, "R_CONSOLE"},   {R_DEVICE, "R_DEVICE"},
-      {R_USER, "R_USER"}};
+      {R_CONSOLE, "R_CONSOLE"},   {R_USER, "R_USER"}};
   t_config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
@@ -3728,7 +3702,6 @@ static void DumpResource(int type,
     case R_USER:
     case R_COUNTER:
     case R_CLIENT:
-    case R_DEVICE:
     case R_STORAGE:
     case R_CATALOG:
     case R_JOBDEFS:
@@ -3798,12 +3771,6 @@ static void FreeResource(BareosResource* res, int type)
       delete p;
       break;
     }
-    case R_DEVICE: {
-      DeviceResource* p = dynamic_cast<DeviceResource*>(res);
-      assert(p);
-      delete p;
-      break;
-    }
     case R_COUNTER: {
       CounterResource* p = dynamic_cast<CounterResource*>(res);
       assert(p);
@@ -3870,7 +3837,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->password_.value) { free(p->password_.value); }
       if (p->media_type) { free(p->media_type); }
       if (p->ndmp_changer_device) { free(p->ndmp_changer_device); }
-      if (p->device) { delete p->device; }
       delete p;
       break;
     }

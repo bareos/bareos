@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -115,9 +115,9 @@ static bool GetStorageDevice(char* device, char* storage)
   if (storage[0] == 0) { return false; }
   store = (StorageResource*)my_config->GetResWithName(R_STORAGE, storage);
   if (!store) { return false; }
-  DeviceResource* dev = (DeviceResource*)(store->device->first());
-  if (!dev) { return false; }
-  bstrncpy(device, dev->resource_name_, MAX_NAME_LENGTH);
+  if (store->devices.empty()) { return false; }
+  auto& dev = store->devices[0];
+  bstrncpy(device, dev.name.c_str(), MAX_NAME_LENGTH);
   return true;
 }
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -64,7 +64,6 @@ enum
   R_COUNTER,
   R_PROFILE,
   R_CONSOLE,
-  R_DEVICE,
   R_USER,
   R_NUM /* Number of entries */
 };
@@ -138,38 +137,6 @@ class DirectorResource
   s_password keyencrkey;                /* Key Encryption Key */
 
   bool enable_ktls{false};
-};
-
-/*
- * Device Resource
- *
- * This resource is a bit different from the other resources
- * because it is not defined in the Director
- * by Device { ... }, but rather by a "reference" such as
- * Device = xxx; Then when the Director connects to the
- * SD, it requests the information about the device.
- */
-class DeviceResource : public BareosResource {
- public:
-  DeviceResource() = default;
-  virtual ~DeviceResource() = default;
-
-  bool found = false;       /**< found with SD */
-  int32_t num_writers = 0;  /**< number of writers */
-  int32_t max_writers = 0;  /**< = 1 for files */
-  int32_t reserved = 0;     /**< number of reserves */
-  int32_t num_drives = 0;   /**< for autochanger */
-  bool autochanger = false; /**< set if device is autochanger */
-  bool open = false;        /**< drive open */
-  bool append = false;      /**< in append mode */
-  bool read = false;        /**< in read mode */
-  bool labeled = false;     /**< Volume name valid */
-  bool offline = false;     /**< not available */
-  bool autoselect = false;  /**< can be selected via autochanger */
-  uint32_t PoolId = 0;
-  char ChangerName[MAX_NAME_LENGTH] = {0};
-  char VolumeName[MAX_NAME_LENGTH] = {0};
-  char MediaType[MAX_NAME_LENGTH] = {0};
 };
 
 // Console ACL positions
@@ -319,6 +286,10 @@ class ClientResource
       = ClientConnectionHandshakeMode::kUndefined;
 };
 
+struct Device {
+  std::string name;
+};
+
 // Store Resource
 class StorageResource
     : public BareosResource
@@ -338,8 +309,7 @@ class StorageResource
   char* media_type = nullptr; /**< Media Type provided by this Storage */
   char* ndmp_changer_device = nullptr; /**< If DIR controls storage directly
                                 (NDMP_NATIVE) changer device used */
-  alist<DeviceResource*>* device
-      = nullptr;                     /**< Alternate devices for this Storage */
+  std::vector<Device> devices;       /**< Alternate devices for this Storage */
   int32_t MaxConcurrentJobs = 0;     /**< Maximum concurrent jobs */
   int32_t MaxConcurrentReadJobs = 0; /**< Maximum concurrent jobs reading */
   bool enabled = false;              /**< Set if device is enabled */
@@ -359,14 +329,12 @@ class StorageResource
                                       item for protocols like NDMP */
 
   /* Methods */
-  char* dev_name() const;
+  inline const char* dev_name() const
+  {
+    auto& dev = devices[0];
+    return dev.name.c_str();
+  }
 };
-
-inline char* StorageResource::dev_name() const
-{
-  DeviceResource* dev = (DeviceResource*)device->first();
-  return dev->resource_name_;
-}
 
 /**
  * This is a sort of "unified" store that has both the

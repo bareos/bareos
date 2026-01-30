@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -781,11 +781,9 @@ bool unreserve_ndmp_tapedevice_for_job(StorageResource* store,
 char* lookup_ndmp_drive(StorageResource* store, drive_number_t drivenumber)
 {
   int cnt = 0;
-  char* tapedevice;
-  for (auto* tapedeviceres : store->device) {
+  for (auto& tapedevice : store->devices) {
     if (cnt == drivenumber) {
-      tapedevice = tapedeviceres->resource_name_;
-      return tapedevice;
+      return const_cast<char*>(tapedevice.name.c_str());
     }
     cnt++;
   }
@@ -950,8 +948,7 @@ bool NdmpSendLabelRequest(UaContext* ua,
   ndmp_job.auto_remedy = 1;
 
   // Set the remote tape drive to use.
-  ndmp_job.tape_device
-      = strdup(((DeviceResource*)(store->device->first()))->resource_name_);
+  ndmp_job.tape_device = strdup(store->dev_name());
   if (!ndmp_job.tape_device) { free(ndmp_job.robot_target); }
 
   // Insert a media entry of the slot to label.
