@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1306,13 +1306,11 @@ bool DotDefaultsCmd(UaContext* ua, const char*)
                                "%s\n");
 
       std::string devices;
-      for (auto* device_resource : storage->device) {
-        if (device_resource) {
-          // if the string is nonempty, then there are already devices in the
-          // "list", so seperate the new entry with a comma.
-          if (!devices.empty()) { devices += ","; }
-          devices += device_resource->resource_name_;
-        }
+      for (auto& device : storage->devices) {
+        // if the string is nonempty, then there are already devices in the
+        // "list", so seperate the new entry with a comma.
+        if (!devices.empty()) { devices += ","; }
+        devices += device.name;
       }
       ua->send->ObjectKeyValue("device", "%s=", devices.c_str(), "%s\n");
     }

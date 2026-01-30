@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -603,8 +603,8 @@ bool IsVolumePurged(UaContext* ua, MediaDbRecord* mr, bool force)
  */
 static void do_truncate_on_purge(UaContext* ua,
                                  MediaDbRecord* mr,
-                                 char* pool,
-                                 char* storage,
+                                 std::string pool,
+                                 std::string storage,
                                  drive_number_t drive,
                                  BareosSocket* sd)
 {
@@ -637,15 +637,13 @@ static void do_truncate_on_purge(UaContext* ua,
       "relabel %s OldName=%s NewName=%s PoolName=%s MediaType=%s"
       " Slot=%" PRIi32 " drive=%" PRIi16 " MinBlocksize=%" PRIu32
       " MaxBlocksize=%" PRIu32 "\n",
-      storage, mr->VolumeName, mr->VolumeName, pool, mr->MediaType, mr->Slot,
-      drive,
+      storage.c_str(), mr->VolumeName, mr->VolumeName, pool.c_str(),
+      mr->MediaType, mr->Slot, drive,
       // If relabeling, keep blocksize settings
       mr->MinBlocksize, mr->MaxBlocksize);
 
   UnbashSpaces(mr->VolumeName);
   UnbashSpaces(mr->MediaType);
-  UnbashSpaces(pool);
-  UnbashSpaces(storage);
 
   // Send relabel command, and check for valid response
   while (sd->recv() >= 0) {
