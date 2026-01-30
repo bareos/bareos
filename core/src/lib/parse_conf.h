@@ -79,6 +79,8 @@ struct conf_proto {
                conf_vec,
                conf_map>
       value{false};
+
+  lex_location loc;
 };
 
 struct proto_builder {
@@ -126,11 +128,17 @@ struct proto_builder {
     return std::get_if<object>(&open_stack.back());
   }
 
-  void push(bool b) { push_value(conf_proto{b}); }
-  void push(int64_t i) { push_value(conf_proto{i}); }
-  void push(uint64_t u) { push_value(conf_proto{u}); }
-  void push(proto::str s) { push_value(conf_proto{std::move(s)}); }
-  void push(proto::error e) { push_value(conf_proto{std::move(e)}); }
+  void push(bool b) { push_value(conf_proto{b, current_location}); }
+  void push(int64_t i) { push_value(conf_proto{i, current_location}); }
+  void push(uint64_t u) { push_value(conf_proto{u, current_location}); }
+  void push(proto::str s)
+  {
+    push_value(conf_proto{std::move(s), current_location});
+  }
+  void push(proto::error e)
+  {
+    push_value(conf_proto{std::move(e), current_location});
+  }
 
   void push(proto::label l)
   {
@@ -149,7 +157,7 @@ struct proto_builder {
   }
   void push(proto::arr_begin arr)
   {
-    auto& vec = push_value(conf_proto{conf_vec{}});
+    auto& vec = push_value(conf_proto{conf_vec{}, current_location});
     auto* ptr = std::get_if<conf_vec>(&vec.value);
     ptr->merge = arr.merge;
     open_stack.push_back(array{ptr});
@@ -161,7 +169,7 @@ struct proto_builder {
   }
   void push(proto::obj_begin)
   {
-    auto& map = push_value(conf_proto{conf_map{}});
+    auto& map = push_value(conf_proto{conf_map{}, current_location});
     open_stack.push_back(object{std::get_if<conf_map>(&map.value)});
   }
   void push(proto::obj_end)
@@ -169,6 +177,8 @@ struct proto_builder {
     ASSERT(is_object());
     open_stack.pop_back();
   }
+
+  void push(lex_location loc) { current_location = loc; }
 
   conf_proto& push_value(conf_proto p)
   {
@@ -183,6 +193,8 @@ struct proto_builder {
       ASSERT(0);
     }
   }
+
+  lex_location current_location{};
 };
 
 struct ResourceItem;
@@ -330,6 +342,12 @@ class ConfigurationParser {
 
  public:
   void EnterPass2() { insert_into_shape = false; }
+
+  void PushLoc(lex_location loc)
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(std::move(loc));
+  }
 
   void PushError(std::string_view reason, std::string value)
   {

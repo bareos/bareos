@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,7 @@
 #include "lib/berrno.h"
 #include "lib/bpipe.h"
 #include <glob.h>
+#include <fstream>
 
 extern int debug_level;
 
@@ -1019,4 +1020,18 @@ int LexGetToken(lexer* lf, int expect)
   }
   lf->token = token; /* set possible new token */
   return token;
+}
+
+
+std::string read_line(const lex_location& l)
+{
+  std::ifstream f{l.fname};
+
+  std::string line;
+
+  for (size_t i = 0; i < l.line; ++i) { std::getline(f, line); }
+
+  std::getline(f, line);
+
+  return line;
 }

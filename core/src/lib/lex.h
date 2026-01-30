@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -92,8 +92,36 @@ class Bpipe; /* forward reference */
 
 #include <bitset>
 
+struct lex_location {
+  std::string fname;
+  size_t line;
+  size_t col;
+};
+
+struct lex_span {
+  std::string fname;
+
+  size_t start_line;
+  size_t start_col;
+
+  size_t end_line;
+  size_t end_col;
+};
+
+std::string read_line(const lex_location& l);
+
 /* Lexical context */
 struct lexer {
+  inline constexpr lex_location token_end()
+  {
+    return {fname, static_cast<size_t>(line_no), static_cast<size_t>(col_no)};
+  }
+
+  inline constexpr lex_location token_start()
+  {
+    return {fname, static_cast<size_t>(line_no), static_cast<size_t>(col_no)};
+  }
+
   enum options : size_t
   {
     /* Lex scan options */
@@ -116,6 +144,7 @@ struct lexer {
   enum lex_state state;   /* lex_state variable */
   int ch;                 /* last char/L_VAL returned by get_char */
   int token;
+
   union {
     uint16_t pint16_val;
     uint32_t pint32_val;
