@@ -190,31 +190,6 @@ bool ConfigurationParser::ParseConfig()
   return success;
 }
 
-static inline auto key_convert(std::string_view k) -> std::string_view
-{
-  std::string_view run_script_alias[] = {
-      "RunBeforeJob",
-      "RunAfterJob",
-      "ClientRunBeforeJob",
-      "ClientRunAfterJob",
-  };
-
-  for (auto alias : run_script_alias) {
-    if (k.size() == alias.size()
-        && strncasecmp(k.data(), alias.data(), alias.size()) == 0) {
-      return "RunScript";
-    }
-  }
-
-  // if (k.size() == sizeof("Name") - 1 &&
-  //     strncasecmp(k.data(), "Name", sizeof("Name") - 1) == 0) {
-  //   // make sure the spelling is always the same!
-  //   return "Name";
-  // }
-
-  return k;
-};
-
 static inline auto allow_multiple(std::string_view k) -> bool
 {
   // this also needs to check for case ...
@@ -283,8 +258,6 @@ json_t* convert(conf_proto* p, bool toplevel = true)
         } else if constexpr (std::is_same_v<T, conf_map>) {
           auto* obj = json_object();
           for (auto& [k, v] : val) {
-            auto real_key = key_convert(k);
-
             auto* converted = convert(&v, false);
 
             if (toplevel) {
@@ -300,35 +273,30 @@ json_t* convert(conf_proto* p, bool toplevel = true)
                 return res;
               }();
 
-              auto* res_list
-                  = json_object_getn(obj, real_key.data(), real_key.size());
+              auto* res_list = json_object_getn(obj, k.data(), k.size());
               if (res_list) {
                 ASSERT(json_is_object(res_list));
               } else {
                 res_list = json_object();
-                json_object_setn_new(obj, real_key.data(), real_key.size(),
-                                     res_list);
+                json_object_setn_new(obj, k.data(), k.size(), res_list);
               }
 
               json_object_setn_new(res_list, resource_name.c_str(),
                                    resource_name.size(), converted);
 
-            } else if (allow_multiple(real_key)) {
-              auto* arr
-                  = json_object_getn(obj, real_key.data(), real_key.size());
+            } else if (allow_multiple(k)) {
+              auto* arr = json_object_getn(obj, k.data(), k.size());
               if (arr) {
                 ASSERT(json_is_array(arr));
               } else {
                 arr = json_array();
-                json_object_setn_new(obj, real_key.data(), real_key.size(),
-                                     arr);
+                json_object_setn_new(obj, k.data(), k.size(), arr);
               }
 
               json_array_append_new(arr, converted);
             } else {
-              ASSERT(!json_object_getn(obj, real_key.data(), real_key.size()));
-              json_object_setn_new(obj, real_key.data(), real_key.size(),
-                                   converted);
+              ASSERT(!json_object_getn(obj, k.data(), k.size()));
+              json_object_setn_new(obj, k.data(), k.size(), converted);
             }
           }
           return obj;

@@ -3216,6 +3216,7 @@ static void StoreShortRunscript(ConfigurationParser* p,
     script->SetCommand(lc->str);
   }
 
+  p->PushAlias("RunScript");
   p->PushObject();
   p->PushLabel("command");
   p->PushString(lc->str);
@@ -3315,6 +3316,7 @@ static void ParseShortRunscript(ConfigurationParser* p,
 
   Dmsg0(500, "runscript: creating new RunScript object\n");
 
+  p->PushAlias("RunScript");
   p->PushObject();
   p->PushLabel("command");
   p->PushString(lc->str);

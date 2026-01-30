@@ -46,6 +46,7 @@
 namespace proto {
 using str = std::string;
 using label = std::string_view;
+struct alias : std::string_view {};
 struct obj_begin {};
 struct obj_end {};
 struct arr_begin {};
@@ -117,6 +118,14 @@ struct proto_builder {
     auto* obj = is_object();
     ASSERT(obj);
     ASSERT(!obj->key);
+    obj->key = l;
+  }
+  // aliases overwrite keys!
+  void push(proto::alias l)
+  {
+    auto* obj = is_object();
+    ASSERT(obj);
+    ASSERT(obj->key);
     obj->key = l;
   }
   void push(proto::arr_begin)
@@ -304,6 +313,11 @@ class ConfigurationParser {
   {
     if (!insert_into_shape) { return; }
     builder.push(proto::label{constant});
+  }
+  void PushAlias(std::string_view v)
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::alias{v});
   }
   void PushLabel(std::string_view v)
   {
