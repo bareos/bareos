@@ -3111,7 +3111,6 @@ static constexpr s_kw script_timing[] = {
 static void StoreRunscriptWhen(ConfigurationParser* p,
                                lexer* lc,
                                const ResourceItem* item,
-                               int,
                                int)
 {
   auto* found = ReadKeyword(p, lc, script_timing);
@@ -3134,7 +3133,6 @@ static void ParseRunscriptWhen(ConfigurationParser* p, lexer* lc)
 static void StoreRunscriptTarget(ConfigurationParser* p,
                                  lexer* lc,
                                  const ResourceItem* item,
-                                 int,
                                  int pass)
 {
   LexGetToken(lc, BCT_STRING);
@@ -3177,7 +3175,6 @@ static void ParseRunscriptTarget(ConfigurationParser* p, lexer* lc)
 static void StoreRunscriptCmd(ConfigurationParser* p,
                               lexer* lc,
                               const ResourceItem* item,
-                              int,
                               int pass)
 {
   LexGetToken(lc, BCT_STRING);
@@ -3372,7 +3369,6 @@ static void ParseShortRunscript(ConfigurationParser* p,
 static void StoreRunscriptBool(ConfigurationParser* p,
                                lexer* lc,
                                const ResourceItem* item,
-                               int,
                                int)
 {
   auto* found = ReadKeyword(p, lc, bool_kw);
@@ -3449,16 +3445,16 @@ static void StoreRunscript(ConfigurationParser* p,
         }
         switch (runscript_items[i].type) {
           case CFG_TYPE_RUNSCRIPT_CMD:
-            StoreRunscriptCmd(p, lc, &runscript_items[i], i, pass);
+            StoreRunscriptCmd(p, lc, &runscript_items[i], pass);
             break;
           case CFG_TYPE_RUNSCRIPT_TARGET:
-            StoreRunscriptTarget(p, lc, &runscript_items[i], i, pass);
+            StoreRunscriptTarget(p, lc, &runscript_items[i], pass);
             break;
           case CFG_TYPE_RUNSCRIPT_BOOL:
-            StoreRunscriptBool(p, lc, &runscript_items[i], i, pass);
+            StoreRunscriptBool(p, lc, &runscript_items[i], pass);
             break;
           case CFG_TYPE_RUNSCRIPT_WHEN:
-            StoreRunscriptWhen(p, lc, &runscript_items[i], i, pass);
+            StoreRunscriptWhen(p, lc, &runscript_items[i], pass);
             break;
           default:
             break;
