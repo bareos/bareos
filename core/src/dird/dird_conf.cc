@@ -4247,10 +4247,10 @@ static void CreateAndAddUserAgentConsoleResource(ConfigurationParser& t_config)
 ConfigurationParser* InitDirConfig(const char* t_configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      t_configfile, nullptr, nullptr, InitResourceCb, StoreConfigCb,
-      PrintConfigCb, exit_code, R_NUM, dird_resource_tables,
-      default_config_filename.c_str(), "bareos-dir.d", ConfigBeforeCallback,
-      ConfigReadyCallback, SaveResource, DumpResource, FreeResource);
+      t_configfile, InitResourceCb, StoreConfigCb, PrintConfigCb, exit_code,
+      R_NUM, dird_resource_tables, default_config_filename.c_str(),
+      "bareos-dir.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
+      DumpResource, FreeResource);
   if (config) { config->r_own_ = R_DIRECTOR; }
   return config;
 }

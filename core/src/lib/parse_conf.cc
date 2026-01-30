@@ -87,8 +87,6 @@ ConfigurationParser::~ConfigurationParser() = default;
 
 ConfigurationParser::ConfigurationParser(
     const char* cf,
-    lexer::error_handler* scan_error,
-    lexer::warning_handler* scan_warning,
     resource_initer* init_res,
     resource_storer* store_res,
     resource_printer* print_res,
@@ -107,8 +105,6 @@ ConfigurationParser::ConfigurationParser(
   cf_ = cf == nullptr ? "" : cf;
   use_config_include_dir_ = false;
   config_include_naming_format_ = "%s/%s/%s.conf";
-  scan_error_ = scan_error;
-  scan_warning_ = scan_warning;
   init_res_ = init_res;
   store_res_ = store_res;
   print_res_ = print_res;
@@ -181,8 +177,8 @@ bool ConfigurationParser::ParseConfig()
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
-  bool success = ParseConfigFile(config_path.c_str(), nullptr, scan_error_,
-                                 scan_warning_);
+  bool success
+      = ParseConfigFile(config_path.c_str(), nullptr, nullptr, nullptr);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
 
   config_resources_container_->SetTimestampToNow();
