@@ -309,21 +309,21 @@ void UpdateLineMap(lexer* lf)
   }
 
   if (insert_new) {
-    map.push_back(line_entry{current.fname, lf->bytes, current.bytes, 1});
+    map.push_back(line_entry{current.fname, lf->bytes_read, current.bytes, 1});
   }
 
-  lf->bytes += 1;
+  lf->bytes_read += 1;
 }
 
 void LineMapRemoveLastChar(lexer* lf)
 {
-  if (lf->bytes == 0) { return; }
+  if (lf->bytes_read == 0) { return; }
   ASSERT(!lf->line_map.empty());
 
   lf->line_map.back().length -= 1;
   if (lf->line_map.back().length == 0) { lf->line_map.pop_back(); }
 
-  lf->bytes -= 1;
+  lf->bytes_read -= 1;
 }
 
 /*
@@ -650,7 +650,7 @@ std::string read_span(const lexer* lf,
  */
 int LexGetToken(lexer* lf, int expect)
 {
-  lf->token_start = lf->bytes;
+  lf->token_start = lf->bytes_read;
   lf->token_end = lf->token_start;
   int ch;
   int token = BCT_NONE;

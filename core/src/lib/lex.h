@@ -93,19 +93,7 @@ class Bpipe; /* forward reference */
 #include <bitset>
 
 struct lex_location {
-  std::string fname;
-  size_t line;
-  size_t col;
-};
-
-struct lex_span {
-  std::string fname;
-
-  size_t start_line;
-  size_t start_col;
-
-  size_t end_line;
-  size_t end_col;
+  std::size_t begin, end;
 };
 
 struct line_entry {
@@ -141,15 +129,14 @@ struct lex_file {
 /* Lexical context */
 struct lexer {
   std::size_t token_start{};
-  std::size_t token_end{};
 
-  std::size_t bytes{};
+  std::size_t bytes_read{};
   std::vector<line_entry> line_map{};
   std::vector<lex_file> files{};
 
-  inline lex_location token_end_()
+  inline constexpr lex_location current_location()
   {
-    return {"", static_cast<size_t>(line_no()), static_cast<size_t>(col_no())};
+    return {token_start, bytes_read};
   }
 
   lex_file& current() { return files.back(); }
