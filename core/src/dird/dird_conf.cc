@@ -2597,20 +2597,14 @@ static void StoreJobtype(ConfigurationParser* p,
                          int index,
                          int)
 {
-  LexGetToken(lc, BCT_NAME);
   // Store the type both in pass 1 and pass 2
-  bool found = false;
-  for (int i = 0; jobtypes[i].name; i++) {
-    if (Bstrcasecmp(lc->str(), jobtypes[i].name)) {
-      SetItemVariable<uint32_t>(*item, jobtypes[i].job_type);
-      p->PushU(jobtypes[i].job_type);
-      found = true;
-      break;
-    }
-  }
+  auto found = ReadKeyword(p, lc, jobtypes);
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Job Type keyword, got: %s"), lc->str());
+    scan_err1(lc, T_("Expected a Restore replacement option, got: %s"),
+              lc->str());
+  } else {
+    SetItemVariable<uint32_t>(*item, found->job_type);
   }
 
   ScanToEol(lc);
@@ -2649,20 +2643,13 @@ static void StoreProtocoltype(ConfigurationParser* p,
                               int index,
                               int)
 {
-  LexGetToken(lc, BCT_NAME);
-  // Store the type both in pass 1 and pass 2
-  bool found = false;
-  for (int i = 0; backupprotocols[i].name; i++) {
-    if (Bstrcasecmp(lc->str(), backupprotocols[i].name)) {
-      SetItemVariable<uint32_t>(*item, backupprotocols[i].token);
-      p->PushU(backupprotocols[i].token);
-      found = true;
-      break;
-    }
-  }
+  auto found = ReadKeyword(p, lc, backupprotocols);
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Protocol Type keyword, got: %s"), lc->str());
+    scan_err1(lc, T_("Expected a Restore replacement option, got: %s"),
+              lc->str());
+  } else {
+    SetItemVariable<uint32_t>(*item, found->token);
   }
 
   ScanToEol(lc);
