@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - barri: remove unnecessary quotes in version text [PR #2498]
 - barri: remove indicators dependency [PR #2482]
 - cmake: disable debian info generation on Windows [PR #2525]
+- director: remove device resource [PR #2524]
 
 ### Fixed
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2461]
@@ -2204,5 +2205,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2508]: https://github.com/bareos/bareos/pull/2508
 [PR #2519]: https://github.com/bareos/bareos/pull/2519
 [PR #2521]: https://github.com/bareos/bareos/pull/2521
+[PR #2524]: https://github.com/bareos/bareos/pull/2524
 [PR #2525]: https://github.com/bareos/bareos/pull/2525
 [unreleased]: https://github.com/bareos/bareos/tree/master
