@@ -274,7 +274,7 @@ static storagedaemon::BootStrapRecord* store_vol(
 {
   int token;
   storagedaemon::BsrVolume* volume;
-  char *p, *n;
+  const char *p, *n;
 
   token = LexGetToken(lc, BCT_STRING);
   if (token == BCT_ERROR) { return NULL; }
@@ -288,11 +288,17 @@ static storagedaemon::BootStrapRecord* store_vol(
    */
   for (p = lc->str(); p && *p;) {
     n = strchr(p, '|');
-    if (n) { *n++ = 0; }
     volume
         = (storagedaemon::BsrVolume*)malloc(sizeof(storagedaemon::BsrVolume));
     memset(volume, 0, sizeof(storagedaemon::BsrVolume));
-    bstrncpy(volume->VolumeName, p, sizeof(volume->VolumeName));
+
+    size_t name_size = n - p;
+    if (name_size > sizeof(volume->VolumeName) - 1) {
+      name_size = sizeof(volume->VolumeName) - 1;
+    }
+
+    memcpy(volume->VolumeName, p, name_size);
+    volume->VolumeName[name_size] = 0;
 
     // Add it to the end of the volume chain
     if (!bsr->volume) {

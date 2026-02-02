@@ -68,7 +68,7 @@ void ScanTypes(ConfigurationParser* conf,
   int i;
   bool found, is_not;
   int msg_type = 0;
-  char* str;
+  const char* str;
 
   conf->PushArray();
 
@@ -164,7 +164,7 @@ void StoreMsgs(ConfigurationParser* conf,
                   message_resource->timestamp_format_);
         break;
       case MessageDestinationCode::kSyslog: { /* syslog */
-        char* p;
+        const char* p;
         int cnt = 0;
         bool done = false;
 
@@ -1455,7 +1455,7 @@ void ParseMsgs(ConfigurationParser* conf,
       ParseTypes(conf, lc);
       break;
     case MessageDestinationCode::kSyslog: { /* syslog */
-      char* p;
+      const char* p;
       int cnt = 0;
       bool done = false;
 

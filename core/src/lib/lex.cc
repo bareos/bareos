@@ -98,8 +98,9 @@ static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
     e_msg(file, line, lc->err_type, 0,
           T_("Config error: %s\n"
              "            : line %d, col %d of file %s\n%s\n%s"),
-          buf.c_str(), current.line_no, current.col_no, current.fname,
-          current.line, more.c_str());
+          buf.c_str(), current.line_no, current.col_no,
+          lc->file_contents[current.file_index].fname.c_str(), current.line,
+          more.c_str());
   } else {
     e_msg(file, line, lc->err_type, 0, T_("Config error: %s\n"), buf.c_str());
   }
@@ -131,8 +132,9 @@ static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
     p_msg(file, line, 0,
           T_("Config warning: %s\n"
              "            : line %d, col %d of file %s\n%s\n%s"),
-          buf.c_str(), current.line_no, current.col_no, current.fname,
-          current.line, more.c_str());
+          buf.c_str(), current.line_no, current.col_no,
+          lc->file_contents[current.file_index].fname.c_str(), current.line,
+          more.c_str());
   } else {
     p_msg(file, line, 0, T_("Config warning: %s\n"), buf.c_str());
   }
@@ -157,16 +159,9 @@ lexer* LexCloseFile(lexer* lf)
   ASSERT(!lf->files.empty());
   auto& current = lf->files.back();
 
-  Dmsg1(debuglevel, "Close lex file: %s\n", current.fname);
+  Dmsg1(debuglevel, "Close lex file: %s\n",
+        lf->file_contents[current.file_index].fname.c_str());
 
-  if (current.bpipe) {
-    CloseBpipe(current.bpipe);
-  } else {
-    fclose(current.fd);
-  }
-  Dmsg1(debuglevel, "Close cfg file %s\n", current.fname);
-  free(current.fname);
-  FreeMemory(current.line);
   FreeMemory(current.str);
 
   lf->files.pop_back();
@@ -179,9 +174,25 @@ lexer* LexCloseFile(lexer* lf)
   return lf;
 }
 
-static inline std::string lex_read_file(FILE* fd) { return {}; }
+static inline std::string lex_read_file(FILE* fd)
+{
+  std::string s;
+  constexpr std::size_t buf_size = 4096;
+  auto buf = std::make_unique<char[]>(buf_size);
 
-static inline std::string lex_execute_program(Bpipe* pipe) {}
+  for (;;) {
+    size_t bytes_read = fread(buf.get(), 1, buf_size, fd);
+
+    if (bytes_read == 0) {
+      ASSERT(!ferror(fd));
+      ASSERT(feof(fd));
+      break;
+    }
+
+    s += std::string_view{buf.get(), static_cast<std::size_t>(bytes_read)};
+  }
+  return s;
+}
 
 // Add lex structure for an included config file.
 static inline lexer* lex_add(lexer* lf,
@@ -202,14 +213,13 @@ static inline lexer* lex_add(lexer* lf,
 
   auto& contents = lf->file_contents.emplace_back();
   auto& current = lf->files.emplace_back();
-  contents.fname = strdup(filename ? filename : "");
+  contents.fname = filename ? filename : "";
+  contents.content = lex_read_file(fd);
   if (bpipe) {
     contents.generated = true;
-    contents.content = lex_execute_program(bpipe);
     CloseBpipe(bpipe);
   } else {
     contents.generated = false;
-    contents.content = lex_read_file(fd);
     fclose(fd);
   }
 
@@ -314,7 +324,7 @@ void UpdateLineMap(lexer* lf)
   if (!map.empty()) {
     auto& last = map.back();
 
-    if (last.fname == current.fname
+    if (last.file_index == current.file_index
         && last.file_start + last.length == current.bytes) {
       last.length += 1;
       insert_new = false;
@@ -322,7 +332,8 @@ void UpdateLineMap(lexer* lf)
   }
 
   if (insert_new) {
-    map.push_back(line_entry{current.fname, lf->bytes_read, current.bytes, 1});
+    map.push_back(
+        line_entry{current.file_index, lf->bytes_read, current.bytes, 1});
   }
 
   lf->bytes_read += 1;
@@ -337,6 +348,25 @@ void LineMapRemoveLastChar(lexer* lf)
   if (lf->line_map.back().length == 0) { lf->line_map.pop_back(); }
 
   lf->bytes_read -= 1;
+}
+
+static inline bool prepare_next_line(lexer* lf, lex_file_state& state)
+{
+  auto& contents = lf->file_contents[state.file_index];
+
+  if (contents.content.size() <= state.current_offset) { return false; }
+
+  auto found = contents.content.find('\n', state.current_offset);
+
+  state.line = contents.content.c_str() + state.current_offset;
+
+  if (found == std::string::npos) {
+    state.current_offset = contents.content.size();
+  } else {
+    state.current_offset = found + 1;
+  }
+
+  return true;
 }
 
 /*
@@ -358,11 +388,9 @@ int LexGetChar(lexer* lf)
 
   if (current.ch == L_EOL) {
     // See if we are really reading a file otherwise we have reached EndOfFile.
-    if (!current.fd || bfgets(current.line, current.fd) == NULL) {
+    if (!prepare_next_line(lf, current)) {
       current.ch = L_EOF;
-      if (lf->files.size() > 1) {
-        if (current.fd) { LexCloseFile(lf); }
-      }
+      if (lf->files.size() > 1) { LexCloseFile(lf); }
 
       auto& new_cur = lf->current();
 
@@ -631,7 +659,7 @@ std::string read_span(const lexer* lf,
     std::size_t end = block->byte_start + block->length;
     if (end > bytes_end) { end = bytes_end; }
 
-    result += read_part(block->fname.c_str(),
+    result += read_part(lf->file_contents[block->file_index].fname.c_str(),
                         current - block->byte_start + block->file_start,
                         end - block->byte_start + block->file_start);
 
