@@ -88,7 +88,7 @@ $this->headTitle($title);
                    for="encrypted"
                    class="checkbox-inline"
                    data-toggle="tooltip"
-                   title="<?php echo $this->translate("When used with scsicrypto sd plugin, will create a volume kek and encryption will be used"); ?>"
+                   title="<?php echo $this->translate("Instruct the director to create an encryption key for this volume.  Volume is only encrypted if the scscicrypto-sd plugin is in use."); ?>"
                  >
                         <?php echo $this->formCheckbox($form->get('encrypted')) ?>
                         <span class="checkbox-text">
