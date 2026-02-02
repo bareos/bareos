@@ -715,13 +715,13 @@ auto ReadKeyword(ConfigurationParser* conf,
   for (size_t i = 0; i < std::size(keywords); ++i) {
     auto& keyword = keywords[i];
     if (!keyword.name) { continue; }
-    if (Bstrcasecmp(lc->str, keyword.name)) {
+    if (Bstrcasecmp(lc->str(), keyword.name)) {
       conf->PushString(keyword.name);
       return &keyword;
     }
   }
 
-  conf->PushError("unknown keyword", lc->str);
+  conf->PushError("unknown keyword", lc->str());
 
   return nullptr;
 }

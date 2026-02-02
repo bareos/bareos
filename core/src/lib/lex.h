@@ -108,19 +108,54 @@ struct lex_span {
   size_t end_col;
 };
 
+struct line_entry {
+  std::string fname;
+  size_t byte_start;
+  size_t file_start;
+
+  size_t length;
+};
+
 std::string read_line(const lex_location& l);
+
+struct lex_file {
+  char* fname;  /* filename */
+  FILE* fd;     /* file descriptor */
+  Bpipe* bpipe; /* set if we are piping */
+
+  POOLMEM* line; /* input line */
+  POOLMEM* str;  /* string being scanned */
+
+  int str_len;       /* length of string */
+  int str_max_len;   /* maximum length of string */
+  int line_no;       /* file line number */
+  int col_no;        /* char position on line */
+  int begin_line_no; /* line no of beginning of string */
+
+  lex_state state; /* lex_state variable */
+  int ch;          /* last char/L_VAL returned by get_char */
+};
 
 /* Lexical context */
 struct lexer {
-  inline constexpr lex_location token_end()
+  std::vector<lex_file> files;
+
+  inline lex_location token_end()
   {
-    return {fname, static_cast<size_t>(line_no), static_cast<size_t>(col_no)};
+    return {"", static_cast<size_t>(line_no()), static_cast<size_t>(col_no())};
   }
 
-  inline constexpr lex_location token_start()
-  {
-    return {fname, static_cast<size_t>(line_no), static_cast<size_t>(col_no)};
-  }
+  lex_file& current() { return files.back(); }
+
+  char* line() const { return files.back().line; }
+  char* fname() const { return files.back().fname; }
+  char* str() const { return files.back().str; }
+
+  int line_no() const { return files.back().line_no; }
+  int col_no() const { return files.back().col_no; }
+  int str_len() const { return files.back().str_len; }
+
+  int ch() const { return files.back().ch; }
 
   enum options : size_t
   {
@@ -130,19 +165,7 @@ struct lexer {
     NoExtern = 2,    /* ignore includes */
   };
 
-  lexer* next;            /* pointer to next lexical context */
   std::bitset<3> options; /* scan options */
-  char* fname;            /* filename */
-  FILE* fd;               /* file descriptor */
-  POOLMEM* line;          /* input line */
-  POOLMEM* str;           /* string being scanned */
-  int str_len;            /* length of string */
-  int str_max_len;        /* maximum length of string */
-  int line_no;            /* file line number */
-  int col_no;             /* char position on line */
-  int begin_line_no;      /* line no of beginning of string */
-  enum lex_state state;   /* lex_state variable */
-  int ch;                 /* last char/L_VAL returned by get_char */
   int token;
 
   union {
@@ -176,7 +199,6 @@ struct lexer {
   int err_type; /* message level for scan_error (M_..) */
   int error_counter;
   void* caller_ctx; /* caller private data */
-  Bpipe* bpipe;     /* set if we are piping */
 };
 
 // Lexical scanning errors in parsing conf files

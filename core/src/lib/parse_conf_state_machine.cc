@@ -117,13 +117,13 @@ ConfigParserStateMachine::ScanResource(int token)
     case BCT_IDENTIFIER: {
       if (config_level_ != 1) {
         scan_err1(lexical_parser_, T_("not in resource definition: %s"),
-                  lexical_parser_->str);
+                  lexical_parser_->str());
         return ParseInternalReturnCode::kError;
       }
 
 
       int resource_item_index = my_config_.GetResourceItemIndex(
-          currently_parsed_resource_.resource_items_, lexical_parser_->str);
+          currently_parsed_resource_.resource_items_, lexical_parser_->str());
 
       if (resource_item_index >= 0) {
         const ResourceItem* item = nullptr;
@@ -134,7 +134,7 @@ ConfigParserStateMachine::ScanResource(int token)
           Dmsg1(900, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
           if (token != BCT_EQUALS) {
             scan_err1(lexical_parser_, T_("expected an equals, got: %s"),
-                      lexical_parser_->str);
+                      lexical_parser_->str());
             return ParseInternalReturnCode::kError;
           }
         }
@@ -142,8 +142,8 @@ ConfigParserStateMachine::ScanResource(int token)
         if (parser_pass_number_ == 1 && item->is_deprecated) {
           my_config_.AddWarning(std::string("using deprecated keyword ")
                                 + item->name + " on line "
-                                + std::to_string(lexical_parser_->line_no)
-                                + " of file " + lexical_parser_->fname);
+                                + std::to_string(lexical_parser_->line_no())
+                                + " of file " + lexical_parser_->fname());
         }
 
         Dmsg1(800, "calling handler for %s\n", item->name);
@@ -159,13 +159,13 @@ ConfigParserStateMachine::ScanResource(int token)
         }
       } else {
         Dmsg2(900, "config_level_=%d id=%s\n", config_level_,
-              lexical_parser_->str);
-        Dmsg1(900, "Keyword = %s\n", lexical_parser_->str);
+              lexical_parser_->str());
+        Dmsg1(900, "Keyword = %s\n", lexical_parser_->str());
         scan_err1(lexical_parser_,
                   T_("Keyword \"%s\" not permitted in this resource.\n"
                      "Perhaps you left the trailing brace off of the "
                      "previous resource."),
-                  lexical_parser_->str);
+                  lexical_parser_->str());
         return ParseInternalReturnCode::kError;
       }
       return ParseInternalReturnCode::kGetNextToken;
@@ -206,7 +206,7 @@ ConfigParserStateMachine::ScanResource(int token)
 ConfigParserStateMachine::ParseInternalReturnCode
 ConfigParserStateMachine::ParserInitResource(int token)
 {
-  const char* resource_identifier = lexical_parser_->str;
+  const char* resource_identifier = lexical_parser_->str();
 
   switch (token) {
     case BCT_EOL:

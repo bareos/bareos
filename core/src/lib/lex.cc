@@ -85,18 +85,21 @@ static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
     lc->err_type = M_ERROR_TERM;
   }
 
-  if (lc->line_no > lc->begin_line_no) {
-    Mmsg(more, T_("Problem probably begins at line %d.\n"), lc->begin_line_no);
+  auto& current = lc->files.back();
+
+  if (current.line_no > current.begin_line_no) {
+    Mmsg(more, T_("Problem probably begins at line %d.\n"),
+         current.begin_line_no);
   } else {
     PmStrcpy(more, "");
   }
 
-  if (lc->line_no > 0) {
+  if (current.line_no > 0) {
     e_msg(file, line, lc->err_type, 0,
           T_("Config error: %s\n"
              "            : line %d, col %d of file %s\n%s\n%s"),
-          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line,
-          more.c_str());
+          buf.c_str(), current.line_no, current.col_no, current.fname,
+          current.line, more.c_str());
   } else {
     e_msg(file, line, lc->err_type, 0, T_("Config error: %s\n"), buf.c_str());
   }
@@ -115,18 +118,21 @@ static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
   buf.Bvsprintf(msg, ap);
   va_end(ap);
 
-  if (lc->line_no > lc->begin_line_no) {
-    Mmsg(more, T_("Problem probably begins at line %d.\n"), lc->begin_line_no);
+  auto& current = lc->files.back();
+
+  if (current.line_no > current.begin_line_no) {
+    Mmsg(more, T_("Problem probably begins at line %d.\n"),
+         current.begin_line_no);
   } else {
     PmStrcpy(more, "");
   }
 
-  if (lc->line_no > 0) {
+  if (current.line_no > 0) {
     p_msg(file, line, 0,
           T_("Config warning: %s\n"
              "            : line %d, col %d of file %s\n%s\n%s"),
-          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line,
-          more.c_str());
+          buf.c_str(), current.line_no, current.col_no, current.fname,
+          current.line, more.c_str());
   } else {
     p_msg(file, line, 0, T_("Config warning: %s\n"), buf.c_str());
   }
@@ -139,11 +145,7 @@ void LexSetDefaultWarningHandler(lexer* lf) { lf->scan_warning = s_warn; }
 // Set err_type used in error_handler
 void LexSetErrorHandlerErrorType(lexer* lf, int err_type)
 {
-  lexer* lex = lf;
-  while (lex) {
-    lex->err_type = err_type;
-    lex = lex->next;
-  }
+  lf->err_type = err_type;
 }
 
 /*
@@ -152,33 +154,28 @@ void LexSetErrorHandlerErrorType(lexer* lf, int err_type)
  */
 lexer* LexCloseFile(lexer* lf)
 {
-  lexer* of;
+  ASSERT(!lf->files.empty());
+  auto& current = lf->files.back();
 
-  if (lf == NULL) { Emsg0(M_ABORT, 0, T_("Close of NULL file\n")); }
-  Dmsg1(debuglevel, "Close lex file: %s\n", lf->fname);
+  Dmsg1(debuglevel, "Close lex file: %s\n", current.fname);
 
-  of = lf->next;
-  if (lf->bpipe) {
-    CloseBpipe(lf->bpipe);
-    lf->bpipe = NULL;
+  if (current.bpipe) {
+    CloseBpipe(current.bpipe);
   } else {
-    fclose(lf->fd);
+    fclose(current.fd);
   }
-  Dmsg1(debuglevel, "Close cfg file %s\n", lf->fname);
-  free(lf->fname);
-  FreeMemory(lf->line);
-  FreeMemory(lf->str);
-  lf->line = NULL;
-  if (of) {
-    of->options = lf->options;              /* preserve options */
-    of->error_counter += lf->error_counter; /* summarize the errors */
-    memcpy(lf, of, sizeof(lexer));
-    Dmsg1(debuglevel, "Restart scan of cfg file %s\n", of->fname);
-  } else {
-    of = lf;
-    lf = NULL;
+  Dmsg1(debuglevel, "Close cfg file %s\n", current.fname);
+  free(current.fname);
+  FreeMemory(current.line);
+  FreeMemory(current.str);
+
+  lf->files.pop_back();
+
+  if (lf->files.empty()) {
+    delete lf;
+    return nullptr;
   }
-  free(of);
+
   return lf;
 }
 
@@ -190,44 +187,26 @@ static inline lexer* lex_add(lexer* lf,
                              lexer::error_handler* scan_error,
                              lexer::warning_handler* scan_warning)
 {
-  lexer* nf;
+  if (!scan_error) { scan_error = s_err; }
+  if (!scan_warning) { scan_warning = s_warn; }
 
-  Dmsg1(100, "open config file: %s\n", filename);
-  nf = (lexer*)malloc(sizeof(lexer));
-  if (lf) {
-    memcpy(nf, lf, sizeof(lexer));
-    *lf = {};
-    lf->next = nf;             /* if have lf, push it behind new one */
-    lf->options = nf->options; /* preserve user options */
-    /* preserve err_type to prevent bareos exiting on 'reload'
-     * if config is invalid. */
-    lf->err_type = nf->err_type;
-  } else {
-    lf = nf; /* start new packet */
-    *lf = {};
-    LexSetErrorHandlerErrorType(lf, M_ERROR_TERM);
-  }
-
-  if (scan_error) {
+  if (!lf) {
+    lf = new lexer;
     lf->scan_error = scan_error;
-  } else {
-    LexSetDefaultErrorHandler(lf);
-  }
-
-  if (scan_warning) {
     lf->scan_warning = scan_warning;
-  } else {
-    LexSetDefaultWarningHandler(lf);
   }
 
-  lf->fd = fd;
-  lf->bpipe = bpipe;
-  lf->fname = strdup(filename ? filename : "");
-  lf->line = GetMemory(1024);
-  lf->str = GetMemory(256);
-  lf->str_max_len = SizeofPoolMemory(lf->str);
-  lf->state = lex_none;
-  lf->ch = L_EOL;
+  auto& current = lf->files.emplace_back();
+  current.fname = strdup(filename ? filename : "");
+  current.fd = fd;
+  current.bpipe = bpipe;
+
+  current.line = GetMemory(1024);
+  current.str = GetMemory(256);
+  current.str_max_len = SizeofPoolMemory(current.str);
+
+  current.state = lex_none;
+  current.ch = L_EOL;
 
   return lf;
 }
@@ -320,71 +299,76 @@ lexer* lex_open_file(lexer* lf,
  */
 int LexGetChar(lexer* lf)
 {
-  if (lf->ch == L_EOF) {
+  auto& current = lf->current();
+
+  if (current.ch == L_EOF) {
     Emsg0(M_CONFIG_ERROR, 0,
           T_("get_char: called after EOF."
              " You may have a open double quote without the closing double "
              "quote.\n"));
   }
 
-  if (lf->ch == L_EOL) {
+  if (current.ch == L_EOL) {
     // See if we are really reading a file otherwise we have reached EndOfFile.
-    if (!lf->fd || bfgets(lf->line, lf->fd) == NULL) {
-      lf->ch = L_EOF;
-      if (lf->next) {
-        if (lf->fd) { LexCloseFile(lf); }
+    if (!current.fd || bfgets(current.line, current.fd) == NULL) {
+      current.ch = L_EOF;
+      if (lf->files.size() > 1) {
+        if (current.fd) { LexCloseFile(lf); }
       }
-      return lf->ch;
+      return lf->current().ch;
     }
-    lf->line_no++;
-    lf->col_no = 0;
-    Dmsg2(1000, "fget line=%d %s", lf->line_no, lf->line);
+    current.line_no++;
+    current.col_no = 0;
+    Dmsg2(1000, "fget line=%d %s", current.line_no, current.line);
   }
 
-  lf->ch = (uint8_t)lf->line[lf->col_no];
-  if (lf->ch == 0) {
-    lf->ch = L_EOL;
-  } else if (lf->ch == '\n') {
-    lf->ch = L_EOL;
-    lf->col_no++;
+  current.ch = (uint8_t)current.line[current.col_no];
+  if (current.ch == 0) {
+    current.ch = L_EOL;
+  } else if (current.ch == '\n') {
+    current.ch = L_EOL;
+    current.col_no++;
   } else {
-    lf->col_no++;
+    current.col_no++;
   }
-  Dmsg2(debuglevel, "LexGetChar: %c %d\n", lf->ch, lf->ch);
+  Dmsg2(debuglevel, "LexGetChar: %c %d\n", current.ch, current.ch);
 
-  return lf->ch;
+  return current.ch;
 }
 
 void LexUngetChar(lexer* lf)
 {
-  if (lf->ch == L_EOL) {
-    lf->ch = 0; /* End of line, force read of next one */
+  auto& current = lf->current();
+  if (current.ch == L_EOL) {
+    current.ch = 0; /* End of line, force read of next one */
   } else {
-    lf->col_no--; /* Backup to re-read char */
+    current.col_no--; /* Backup to re-read char */
   }
 }
 
 // Add a character to the current string
 static void add_str(lexer* lf, int ch)
 {
+  auto& current = lf->current();
   /* The default config string is sized to 256 bytes.
    * If we need longer config strings its increased with 256 bytes each time. */
-  if ((lf->str_len + 3) >= lf->str_max_len) {
-    lf->str = CheckPoolMemorySize(lf->str, lf->str_max_len + 256);
-    lf->str_max_len = SizeofPoolMemory(lf->str);
+  if ((current.str_len + 3) >= current.str_max_len) {
+    current.str = CheckPoolMemorySize(current.str, current.str_max_len + 256);
+    current.str_max_len = SizeofPoolMemory(current.str);
   }
 
-  lf->str[lf->str_len++] = ch;
-  lf->str[lf->str_len] = 0;
+  current.str[current.str_len++] = ch;
+  current.str[current.str_len] = 0;
 }
 
 // Begin the string
 static void BeginStr(lexer* lf, int ch)
 {
-  lf->str_len = 0;
-  lf->str[0] = 0;
+  auto& current = lf->current();
+  current.str_len = 0;
+  current.str[0] = 0;
   if (ch != 0) { add_str(lf, ch); }
-  lf->begin_line_no = lf->line_no; /* save start string line no */
+  current.begin_line_no = current.line_no; /* save start string line no */
 }
 
 static const char* lex_state_to_str(int state)
@@ -517,9 +501,11 @@ class TemporaryBuffer {
 
 static bool NextLineContinuesWithQuotes(lexer* lf)
 {
-  TemporaryBuffer t(lf->fd);
+  auto& current = lf->current();
 
-  if (bfgets(t.buf, lf->fd) != NULL) {
+  TemporaryBuffer t(current.fd);
+
+  if (bfgets(t.buf, current.fd) != NULL) {
     int i = 0;
     while (t.buf[i] != '\0') {
       if (t.buf[i] == '"') { return true; }
@@ -532,10 +518,11 @@ static bool NextLineContinuesWithQuotes(lexer* lf)
 
 static bool CurrentLineContinuesWithQuotes(lexer* lf)
 {
-  int i = lf->col_no;
-  while (lf->line[i] != '\0') {
-    if (lf->line[i] == '"') { return true; }
-    if (lf->line[i] != ' ' && lf->line[i] != '\t') { return false; }
+  auto& current = lf->current();
+  int i = current.col_no;
+  while (current.line[i] != '\0') {
+    if (current.line[i] == '"') { return true; }
+    if (current.line[i] != ' ' && current.line[i] != '\t') { return false; }
     ++i;
   };
   return false;
@@ -561,27 +548,30 @@ int LexGetToken(lexer* lf, int expect)
   int bom_bytes_seen = 0;
 
   Dmsg0(debuglevel, "enter LexGetToken\n");
+
   while (token == BCT_NONE) {
     ch = LexGetChar(lf);
-    switch (lf->state) {
+
+    auto& current = lf->current();
+    switch (current.state) {
       case lex_none:
         Dmsg2(debuglevel, "Lex state lex_none ch=%d,%x\n", ch, ch);
         if (B_ISSPACE(ch)) break;
         if (B_ISALPHA(ch)) {
           if (lf->options[lexer::options::NoIdent]
               || lf->options[lexer::options::ForceString]) {
-            lf->state = lex_string;
+            current.state = lex_string;
           } else {
-            lf->state = lex_identifier;
+            current.state = lex_identifier;
           }
           BeginStr(lf, ch);
           break;
         }
         if (B_ISDIGIT(ch)) {
           if (lf->options[lexer::options::ForceString]) {
-            lf->state = lex_string;
+            current.state = lex_string;
           } else {
-            lf->state = lex_number;
+            current.state = lex_number;
           }
           BeginStr(lf, ch);
           break;
@@ -593,7 +583,7 @@ int LexGetToken(lexer* lf, int expect)
             Dmsg0(debuglevel, "got L_EOF set token=T_EOF\n");
             break;
           case '#':
-            lf->state = lex_comment;
+            current.state = lex_comment;
             break;
           case '{':
             token = BCT_BOB;
@@ -607,7 +597,7 @@ int LexGetToken(lexer* lf, int expect)
             if (continue_string) { continue; }
             break;
           case '"':
-            lf->state = lex_quoted_string;
+            current.state = lex_quoted_string;
             if (!continue_string) { BeginStr(lf, 0); }
             break;
           case '=':
@@ -634,25 +624,25 @@ int LexGetToken(lexer* lf, int expect)
           case '@':
             /* In NO_EXTERN mode, @ is part of a string */
             if (lf->options[lexer::options::NoExtern]) {
-              lf->state = lex_string;
+              current.state = lex_string;
               BeginStr(lf, ch);
             } else {
-              lf->state = lex_include;
+              current.state = lex_include;
               BeginStr(lf, 0);
             }
             break;
           case 0xEF: /* probably a UTF-8 BOM */
           case 0xFF: /* probably a UTF-16le BOM */
           case 0xFE: /* probably a UTF-16be BOM (error)*/
-            if (lf->line_no != 1 || lf->col_no != 1) {
-              lf->state = lex_string;
+            if (current.line_no != 1 || current.col_no != 1) {
+              current.state = lex_string;
               BeginStr(lf, ch);
             } else {
               bom_bytes_seen = 1;
               if (ch == 0xEF) {
-                lf->state = lex_utf8_bom;
+                current.state = lex_utf8_bom;
               } else if (ch == 0xFF) {
-                lf->state = lex_utf16_le_bom;
+                current.state = lex_utf16_le_bom;
               } else {
                 scan_err0(lf,
                           T_("This config file appears to be in an "
@@ -663,7 +653,7 @@ int LexGetToken(lexer* lf, int expect)
             }
             break;
           default:
-            lf->state = lex_string;
+            current.state = lex_string;
             BeginStr(lf, ch);
             break;
         }
@@ -671,7 +661,7 @@ int LexGetToken(lexer* lf, int expect)
       case lex_comment:
         Dmsg1(debuglevel, "Lex state lex_comment ch=%x\n", ch);
         if (ch == L_EOL) {
-          lf->state = lex_none;
+          current.state = lex_none;
           if (expect != BCT_SKIP_EOL) { token = BCT_EOL; }
         } else if (ch == L_EOF) {
           token = BCT_ERROR;
@@ -692,9 +682,9 @@ int LexGetToken(lexer* lf, int expect)
         /* A valid number can be terminated by the following */
         if (B_ISSPACE(ch) || ch == L_EOL || ch == ',' || ch == ';') {
           token = BCT_NUMBER;
-          lf->state = lex_none;
+          current.state = lex_none;
         } else {
-          lf->state = lex_string;
+          current.state = lex_string;
         }
         LexUngetChar(lf);
         break;
@@ -716,7 +706,7 @@ int LexGetToken(lexer* lf, int expect)
             || (B_ISSPACE(ch)) || ch == '"') {
           LexUngetChar(lf);
           token = BCT_UNQUOTED_STRING;
-          lf->state = lex_none;
+          current.state = lex_none;
           break;
         }
         add_str(lf, ch);
@@ -733,16 +723,16 @@ int LexGetToken(lexer* lf, int expect)
                    || ch == '"' || ch == '#') {
           LexUngetChar(lf);
           token = BCT_IDENTIFIER;
-          lf->state = lex_none;
+          current.state = lex_none;
           break;
         } else if (ch == L_EOF) {
           token = BCT_ERROR;
-          lf->state = lex_none;
+          current.state = lex_none;
           BeginStr(lf, ch);
           break;
         }
         /* Some non-alpha character => string */
-        lf->state = lex_string;
+        current.state = lex_string;
         add_str(lf, ch);
         break;
       case lex_quoted_string:
@@ -769,7 +759,7 @@ int LexGetToken(lexer* lf, int expect)
           if (NextLineContinuesWithQuotes(lf)
               || CurrentLineContinuesWithQuotes(lf)) {
             continue_string = true;
-            lf->state = lex_none;
+            current.state = lex_none;
             continue;
           } else {
             token = BCT_QUOTED_STRING;
@@ -778,7 +768,7 @@ int LexGetToken(lexer* lf, int expect)
              *  one), then we put it back for rescanning. */
             LexGetChar(lf);
             LexUngetChar(lf);
-            lf->state = lex_none;
+            current.state = lex_none;
           }
           break;
         }
@@ -806,12 +796,13 @@ int LexGetToken(lexer* lf, int expect)
           /* Skip the double quote when restarting parsing */
           LexGetChar(lf);
 
-          lf->state = lex_none;
-          lf = lex_open_file(lf, lf->str, lf->scan_error, lf->scan_warning);
+          current.state = lex_none;
+          char* str = current.str;
+          lf = lex_open_file(lf, current.str, lf->scan_error, lf->scan_warning);
           if (lf == NULL) {
             BErrNo be;
             scan_err2(lfori, T_("Cannot open included config file %s: %s\n"),
-                      lfori->str, be.bstrerror());
+                      str, be.bstrerror());
             return BCT_ERROR;
           }
           break;
@@ -824,7 +815,7 @@ int LexGetToken(lexer* lf, int expect)
           break;
         }
         if (ch == '"') {
-          lf->state = lex_include_quoted_string;
+          current.state = lex_include_quoted_string;
           break;
         }
 
@@ -835,12 +826,13 @@ int LexGetToken(lexer* lf, int expect)
            * can't be opened. */
           lexer* lfori = lf;
 
-          lf->state = lex_none;
-          lf = lex_open_file(lf, lf->str, lf->scan_error, lf->scan_warning);
+          current.state = lex_none;
+          auto* str = current.str;
+          lf = lex_open_file(lf, current.str, lf->scan_error, lf->scan_warning);
           if (lf == NULL) {
             BErrNo be;
             scan_err2(lfori, T_("Cannot open included config file %s: %s\n"),
-                      lfori->str, be.bstrerror());
+                      str, be.bstrerror());
             return BCT_ERROR;
           }
           break;
@@ -855,7 +847,7 @@ int LexGetToken(lexer* lf, int expect)
           bom_bytes_seen++;
         } else if (ch == 0xBF && bom_bytes_seen == 2) {
           token = BCT_UTF8_BOM;
-          lf->state = lex_none;
+          current.state = lex_none;
         } else {
           token = BCT_ERROR;
         }
@@ -866,67 +858,70 @@ int LexGetToken(lexer* lf, int expect)
            probably dealing with an Intel based (little endian) UTF-16 file*/
         if (ch == 0xFE) {
           token = BCT_UTF16_BOM;
-          lf->state = lex_none;
+          current.state = lex_none;
         } else {
           token = BCT_ERROR;
         }
         break;
     }
     Dmsg4(debuglevel, "ch=%d state=%s token=%s %c\n", ch,
-          lex_state_to_str(lf->state), lex_tok_to_str(token), ch);
+          lex_state_to_str(current.state), lex_tok_to_str(token), ch);
   }
-  Dmsg2(debuglevel, "lex returning: line %d token: %s\n", lf->line_no,
+
+  auto& current = lf->current();
+  Dmsg2(debuglevel, "lex returning: line %d token: %s\n", current.line_no,
         lex_tok_to_str(token));
   lf->token = token;
+
 
   /* Here is where we check to see if the user has set certain
    *  expectations (e.g. 32 bit integer). If so, we do type checking
    *  and possible additional scanning (e.g. for range). */
   switch (expect) {
     case BCT_PINT16:
-      lf->u.pint16_val = (scan_pint(lf, lf->str) & 0xffff);
+      lf->u.pint16_val = (scan_pint(lf, current.str) & 0xffff);
       lf->u2.pint16_val = lf->u.pint16_val;
       token = BCT_PINT16;
       break;
 
     case BCT_PINT32:
-      lf->u.pint32_val = scan_pint(lf, lf->str);
+      lf->u.pint32_val = scan_pint(lf, current.str);
       lf->u2.pint32_val = lf->u.pint32_val;
       token = BCT_PINT32;
       break;
 
     case BCT_PINT32_RANGE:
       if (token == BCT_NUMBER) {
-        lf->u.pint32_val = scan_pint(lf, lf->str);
+        lf->u.pint32_val = scan_pint(lf, current.str);
         lf->u2.pint32_val = lf->u.pint32_val;
         token = BCT_PINT32;
       } else {
-        char* p = strchr(lf->str, '-');
+        char* p = strchr(current.str, '-');
         if (!p) {
           scan_err2(lf, T_("expected an integer or a range, got %s: %s"),
-                    lex_tok_to_str(token), lf->str);
+                    lex_tok_to_str(token), current.str);
           token = BCT_ERROR;
           break;
         }
         *p++ = 0; /* Terminate first half of range */
-        lf->u.pint32_val = scan_pint(lf, lf->str);
+        lf->u.pint32_val = scan_pint(lf, current.str);
         lf->u2.pint32_val = scan_pint(lf, p);
         token = BCT_PINT32_RANGE;
       }
       break;
 
     case BCT_INT16:
-      if (token != BCT_NUMBER || !Is_a_number(lf->str)) {
+      if (token != BCT_NUMBER || !Is_a_number(current.str)) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), lf->str);
+                  lex_tok_to_str(token), current.str);
         token = BCT_ERROR;
         break;
       }
       errno = 0;
-      lf->u.int16_val = (int16_t)str_to_int64(lf->str);
+      lf->u.int16_val = (int16_t)str_to_int64(current.str);
       if (errno != 0) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), lf->str);
+                  lex_tok_to_str(token), current.str);
         token = BCT_ERROR;
       } else {
         token = BCT_INT16;
@@ -934,17 +929,17 @@ int LexGetToken(lexer* lf, int expect)
       break;
 
     case BCT_INT32:
-      if (token != BCT_NUMBER || !Is_a_number(lf->str)) {
+      if (token != BCT_NUMBER || !Is_a_number(current.str)) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), lf->str);
+                  lex_tok_to_str(token), current.str);
         token = BCT_ERROR;
         break;
       }
       errno = 0;
-      lf->u.int32_val = (int32_t)str_to_int64(lf->str);
+      lf->u.int32_val = (int32_t)str_to_int64(current.str);
       if (errno != 0) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), lf->str);
+                  lex_tok_to_str(token), current.str);
         token = BCT_ERROR;
       } else {
         token = BCT_INT32;
@@ -952,18 +947,19 @@ int LexGetToken(lexer* lf, int expect)
       break;
 
     case BCT_INT64:
-      Dmsg2(debuglevel, "int64=:%s: %f\n", lf->str, strtod(lf->str, NULL));
-      if (token != BCT_NUMBER || !Is_a_number(lf->str)) {
+      Dmsg2(debuglevel, "int64=:%s: %f\n", current.str,
+            strtod(current.str, NULL));
+      if (token != BCT_NUMBER || !Is_a_number(current.str)) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), lf->str);
+                  lex_tok_to_str(token), current.str);
         token = BCT_ERROR;
         break;
       }
       errno = 0;
-      lf->u.int64_val = str_to_int64(lf->str);
+      lf->u.int64_val = str_to_int64(current.str);
       if (errno != 0) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), lf->str);
+                  lex_tok_to_str(token), current.str);
         token = BCT_ERROR;
       } else {
         token = BCT_INT64;
@@ -972,19 +968,19 @@ int LexGetToken(lexer* lf, int expect)
 
     case BCT_PINT64_RANGE:
       if (token == BCT_NUMBER) {
-        lf->u.pint64_val = scan_pint64(lf, lf->str);
+        lf->u.pint64_val = scan_pint64(lf, current.str);
         lf->u2.pint64_val = lf->u.pint64_val;
         token = BCT_PINT64;
       } else {
-        char* p = strchr(lf->str, '-');
+        char* p = strchr(current.str, '-');
         if (!p) {
           scan_err2(lf, T_("expected an integer or a range, got %s: %s"),
-                    lex_tok_to_str(token), lf->str);
+                    lex_tok_to_str(token), current.str);
           token = BCT_ERROR;
           break;
         }
         *p++ = 0; /* Terminate first half of range */
-        lf->u.pint64_val = scan_pint64(lf, lf->str);
+        lf->u.pint64_val = scan_pint64(lf, current.str);
         lf->u2.pint64_val = scan_pint64(lf, p);
         token = BCT_PINT64_RANGE;
       }
@@ -994,11 +990,11 @@ int LexGetToken(lexer* lf, int expect)
       if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING
           && token != BCT_QUOTED_STRING) {
         scan_err2(lf, T_("expected a name, got %s: %s"), lex_tok_to_str(token),
-                  lf->str);
+                  current.str);
         token = BCT_ERROR;
-      } else if (lf->str_len > MAX_RES_NAME_LENGTH) {
-        scan_err3(lf, T_("name %s length %d too long, max is %d\n"), lf->str,
-                  lf->str_len, MAX_RES_NAME_LENGTH);
+      } else if (current.str_len > MAX_RES_NAME_LENGTH) {
+        scan_err3(lf, T_("name %s length %d too long, max is %d\n"),
+                  current.str, current.str_len, MAX_RES_NAME_LENGTH);
         token = BCT_ERROR;
       }
       break;
@@ -1007,7 +1003,7 @@ int LexGetToken(lexer* lf, int expect)
       if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING
           && token != BCT_QUOTED_STRING) {
         scan_err2(lf, T_("expected a string, got %s: %s"),
-                  lex_tok_to_str(token), lf->str);
+                  lex_tok_to_str(token), current.str);
         token = BCT_ERROR;
       } else {
         token = BCT_STRING;

@@ -269,7 +269,7 @@ static void StoreAuthenticationType(lexer* lc,
   LexGetToken(lc, BCT_NAME);
   // Store the type both pass 1 and pass 2
   for (i = 0; authentication_methods[i].name; i++) {
-    if (Bstrcasecmp(lc->str, authentication_methods[i].name)) {
+    if (Bstrcasecmp(lc->str(), authentication_methods[i].name)) {
       SetItemVariable<uint32_t>(*item, authentication_methods[i].token);
       i = 0;
       break;
@@ -277,7 +277,7 @@ static void StoreAuthenticationType(lexer* lc,
   }
   if (i != 0) {
     scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
-              lc->str);
+              lc->str());
   }
   ScanToEol(lc);
   item->SetPresent();
@@ -339,14 +339,14 @@ static void StoreIoDirection(lexer* lc,
 
   LexGetToken(lc, BCT_NAME);
   for (i = 0; io_directions[i].name; i++) {
-    if (Bstrcasecmp(lc->str, io_directions[i].name)) {
+    if (Bstrcasecmp(lc->str(), io_directions[i].name)) {
       SetItemVariable<IODirection>(*item, io_directions[i].token);
       i = 0;
       break;
     }
   }
   if (i != 0) {
-    scan_err1(lc, T_("Expected a IO direction keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a IO direction keyword, got: %s"), lc->str());
   }
   ScanToEol(lc);
   item->SetPresent();
@@ -363,7 +363,7 @@ static void StoreCompressionalgorithm(lexer* lc,
 
   LexGetToken(lc, BCT_NAME);
   for (i = 0; compression_algorithms[i].name; i++) {
-    if (Bstrcasecmp(lc->str, compression_algorithms[i].name)) {
+    if (Bstrcasecmp(lc->str(), compression_algorithms[i].name)) {
       SetItemVariable<uint32_t>(*item,
                                 compression_algorithms[i].token & 0xffffffff);
       i = 0;
@@ -372,7 +372,7 @@ static void StoreCompressionalgorithm(lexer* lc,
   }
   if (i != 0) {
     scan_err1(lc, T_("Expected a Compression algorithm keyword, got: %s"),
-              lc->str);
+              lc->str());
   }
   ScanToEol(lc);
   item->SetPresent();

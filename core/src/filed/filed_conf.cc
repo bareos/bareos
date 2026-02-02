@@ -172,14 +172,14 @@ static void StoreCipher(lexer* lc, const ResourceItem* item, int index, int)
 
   // Scan Crypto Ciphers name.
   for (i = 0; CryptoCiphers[i].name; i++) {
-    if (Bstrcasecmp(lc->str, CryptoCiphers[i].name)) {
+    if (Bstrcasecmp(lc->str(), CryptoCiphers[i].name)) {
       SetItemVariable<uint32_t>(*item, CryptoCiphers[i].token);
       i = 0;
       break;
     }
   }
   if (i != 0) {
-    scan_err1(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str());
   }
   ScanToEol(lc);
   item->SetPresent();

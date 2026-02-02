@@ -2404,7 +2404,7 @@ static void StorePooltype(ConfigurationParser* p,
   if (pass == 1) {
     bool found = false;
     for (int i = 0; PoolTypes[i].name; i++) {
-      if (Bstrcasecmp(lc->str, PoolTypes[i].name)) {
+      if (Bstrcasecmp(lc->str(), PoolTypes[i].name)) {
         SetItemVariableFreeMemory<char*>(*item, strdup(PoolTypes[i].name));
         p->PushString(PoolTypes[i].name);
         found = true;
@@ -2413,7 +2413,7 @@ static void StorePooltype(ConfigurationParser* p,
     }
 
     if (!found) {
-      scan_err1(lc, T_("Expected a Pool Type option, got: %s"), lc->str);
+      scan_err1(lc, T_("Expected a Pool Type option, got: %s"), lc->str());
     }
   }
 
@@ -2432,7 +2432,7 @@ static void ParsePooltype(ConfigurationParser* p,
 
   bool found = false;
   for (int i = 0; PoolTypes[i].name; i++) {
-    if (Bstrcasecmp(lc->str, PoolTypes[i].name)) {
+    if (Bstrcasecmp(lc->str(), PoolTypes[i].name)) {
       p->PushString(PoolTypes[i].name);
       found = true;
       break;
@@ -2440,7 +2440,7 @@ static void ParsePooltype(ConfigurationParser* p,
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Pool Type option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Pool Type option, got: %s"), lc->str());
   }
 
   ScanToEol(lc);
@@ -2459,7 +2459,7 @@ static void StoreActiononpurge(ConfigurationParser* p,
    * Scan ActionOnPurge options */
   bool found = false;
   for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
-    if (Bstrcasecmp(lc->str, ActionOnPurgeOptions[i].name)) {
+    if (Bstrcasecmp(lc->str(), ActionOnPurgeOptions[i].name)) {
       *destination = (*destination) | ActionOnPurgeOptions[i].token;
       p->PushU(ActionOnPurgeOptions[i].token);
       found = true;
@@ -2468,7 +2468,7 @@ static void StoreActiononpurge(ConfigurationParser* p,
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected an Action On Purge option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected an Action On Purge option, got: %s"), lc->str());
   }
 
   ScanToEol(lc);
@@ -2487,7 +2487,7 @@ static void ParseActiononpurge(ConfigurationParser* p,
    * Scan ActionOnPurge options */
   bool found = false;
   for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
-    if (Bstrcasecmp(lc->str, ActionOnPurgeOptions[i].name)) {
+    if (Bstrcasecmp(lc->str(), ActionOnPurgeOptions[i].name)) {
       p->PushU(ActionOnPurgeOptions[i].token);
       found = true;
       break;
@@ -2495,7 +2495,7 @@ static void ParseActiononpurge(ConfigurationParser* p,
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected an Action On Purge option, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected an Action On Purge option, got: %s"), lc->str());
   }
 
   ScanToEol(lc);
@@ -2513,15 +2513,15 @@ static void StoreDevice(ConfigurationParser* p,
                         int pass)
 {
   LexGetToken(lc, BCT_NAME);
-  p->PushString(lc->str);
 
   if (pass == 1) {
     auto& devices = *GetItemVariablePointer<std::vector<Device>*>(*item);
 
-    Dmsg4(900, "Add device %s to vector %p size=%" PRIuz " %s\n", lc->str,
+    Dmsg4(900, "Add device %s to vector %p size=%" PRIuz " %s\n", lc->str(),
           &devices, devices.size(), item->name);
+    p->PushString(lc->str());
 
-    devices.emplace_back(lc->str);
+    devices.emplace_back(lc->str());
   }
 
   ScanToEol(lc);
@@ -2548,7 +2548,7 @@ static void StoreMigtype(ConfigurationParser* p,
   // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; migtypes[i].name; i++) {
-    if (Bstrcasecmp(lc->str, migtypes[i].name)) {
+    if (Bstrcasecmp(lc->str(), migtypes[i].name)) {
       SetItemVariable<uint32_t>(*item, migtypes[i].job_type);
       p->PushU(migtypes[i].job_type);
       found = true;
@@ -2558,7 +2558,7 @@ static void StoreMigtype(ConfigurationParser* p,
 
   if (!found) {
     scan_err1(lc, T_("Expected a Migration Job Type keyword, got: %s"),
-              lc->str);
+              lc->str());
   }
 
   ScanToEol(lc);
@@ -2575,7 +2575,7 @@ static void ParseMigtype(ConfigurationParser* p,
   // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; migtypes[i].name; i++) {
-    if (Bstrcasecmp(lc->str, migtypes[i].name)) {
+    if (Bstrcasecmp(lc->str(), migtypes[i].name)) {
       p->PushU(migtypes[i].job_type);
       found = true;
       break;
@@ -2584,7 +2584,7 @@ static void ParseMigtype(ConfigurationParser* p,
 
   if (!found) {
     scan_err1(lc, T_("Expected a Migration Job Type keyword, got: %s"),
-              lc->str);
+              lc->str());
   }
 
   ScanToEol(lc);
@@ -2601,7 +2601,7 @@ static void StoreJobtype(ConfigurationParser* p,
   // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; jobtypes[i].name; i++) {
-    if (Bstrcasecmp(lc->str, jobtypes[i].name)) {
+    if (Bstrcasecmp(lc->str(), jobtypes[i].name)) {
       SetItemVariable<uint32_t>(*item, jobtypes[i].job_type);
       p->PushU(jobtypes[i].job_type);
       found = true;
@@ -2610,7 +2610,7 @@ static void StoreJobtype(ConfigurationParser* p,
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Job Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Job Type keyword, got: %s"), lc->str());
   }
 
   ScanToEol(lc);
@@ -2628,7 +2628,7 @@ static void ParseJobtype(ConfigurationParser* p,
   // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; jobtypes[i].name; i++) {
-    if (Bstrcasecmp(lc->str, jobtypes[i].name)) {
+    if (Bstrcasecmp(lc->str(), jobtypes[i].name)) {
       p->PushU(jobtypes[i].job_type);
       found = true;
       break;
@@ -2636,7 +2636,7 @@ static void ParseJobtype(ConfigurationParser* p,
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Job Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Job Type keyword, got: %s"), lc->str());
   }
 
   ScanToEol(lc);
@@ -2653,7 +2653,7 @@ static void StoreProtocoltype(ConfigurationParser* p,
   // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; backupprotocols[i].name; i++) {
-    if (Bstrcasecmp(lc->str, backupprotocols[i].name)) {
+    if (Bstrcasecmp(lc->str(), backupprotocols[i].name)) {
       SetItemVariable<uint32_t>(*item, backupprotocols[i].token);
       p->PushU(backupprotocols[i].token);
       found = true;
@@ -2662,7 +2662,7 @@ static void StoreProtocoltype(ConfigurationParser* p,
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Protocol Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Protocol Type keyword, got: %s"), lc->str());
   }
 
   ScanToEol(lc);
@@ -2680,7 +2680,7 @@ static void ParseProtocoltype(ConfigurationParser* p,
   // Store the type both in pass 1 and pass 2
   bool found = false;
   for (int i = 0; backupprotocols[i].name; i++) {
-    if (Bstrcasecmp(lc->str, backupprotocols[i].name)) {
+    if (Bstrcasecmp(lc->str(), backupprotocols[i].name)) {
       p->PushU(backupprotocols[i].token);
       found = true;
       break;
@@ -2688,7 +2688,7 @@ static void ParseProtocoltype(ConfigurationParser* p,
   }
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Protocol Type keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Protocol Type keyword, got: %s"), lc->str());
   }
 
   ScanToEol(lc);
@@ -2704,7 +2704,7 @@ static void StoreReplace(ConfigurationParser* p,
 
   if (!found) {
     scan_err1(lc, T_("Expected a Restore replacement option, got: %s"),
-              lc->str);
+              lc->str());
   } else {
     SetItemVariable<uint32_t>(*item, found->token);
   }
@@ -2724,7 +2724,7 @@ static void ParseReplace(ConfigurationParser* p,
 
   if (!found) {
     scan_err1(lc, T_("Expected a Restore replacement option, got: %s"),
-              lc->str);
+              lc->str());
   }
 
   ScanToEol(lc);
@@ -2741,7 +2741,7 @@ static void StoreAuthprotocoltype(ConfigurationParser* p,
 
   if (!found) {
     scan_err1(lc, T_("Expected a Auth Protocol Type keyword, got: %s"),
-              lc->str);
+              lc->str());
   } else {
     SetItemVariable<uint32_t>(*item, found->token);
   }
@@ -2761,7 +2761,7 @@ static void ParseAuthprotocoltype(ConfigurationParser* p,
 
   if (!found) {
     scan_err1(lc, T_("Expected a Auth Protocol Type keyword, got: %s"),
-              lc->str);
+              lc->str());
   }
 
   ScanToEol(lc);
@@ -2777,7 +2777,7 @@ static void StoreAuthtype(ConfigurationParser* p,
   auto* found = ReadKeyword(p, lc, authmethods);
   if (!found) {
     scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
-              lc->str);
+              lc->str());
   } else {
     SetItemVariable<uint32_t>(*item, found->token);
   }
@@ -2797,7 +2797,7 @@ static void ParseAuthtype(ConfigurationParser* p,
 
   if (!found) {
     scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
-              lc->str);
+              lc->str());
   }
 
   ScanToEol(lc);
@@ -2814,7 +2814,7 @@ static void StoreLevel(ConfigurationParser* p,
   // Store the level in pass 2 so that type is defined
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Job Level keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Job Level keyword, got: %s"), lc->str());
   } else {
     SetItemVariable<uint32_t>(*item, found->level);
   }
@@ -2833,7 +2833,7 @@ static void ParseLevel(ConfigurationParser* p,
   auto* found = ReadKeyword(p, lc, joblevels);
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Job Level keyword, got: %s"), lc->str);
+    scan_err1(lc, T_("Expected a Job Level keyword, got: %s"), lc->str());
   }
 
   ScanToEol(lc);
@@ -3018,14 +3018,14 @@ static void StoreAcl(ConfigurationParser* p,
   p->PushArray();
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING);
-    p->PushString(lc->str);
+    p->PushString(lc->str());
     if (pass == 1) {
-      if (!IsAclEntryValid(lc->str, msg)) {
+      if (!IsAclEntryValid(lc->str(), msg)) {
         scan_err1(lc, T_("Cannot store Acl: %s"), msg.c_str());
         return;
       }
-      list->append(strdup(lc->str));
-      Dmsg2(900, "Appended to %d %s\n", item->code, lc->str);
+      list->append(strdup(lc->str()));
+      Dmsg2(900, "Appended to %d %s\n", item->code, lc->str());
     }
     token = LexGetToken(lc, BCT_ALL);
   }
@@ -3045,7 +3045,7 @@ static void ParseAcl(ConfigurationParser* p,
   p->PushArray();
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING);
-    p->PushString(lc->str);
+    p->PushString(lc->str());
     token = LexGetToken(lc, BCT_ALL);
   }
   p->PopArray();
@@ -3073,8 +3073,8 @@ static void StoreAudit(ConfigurationParser* p,
   p->PushArray();
   for (;;) {
     LexGetToken(lc, BCT_STRING);
-    p->PushString(lc->str);
-    if (pass == 1) { list->append(strdup(lc->str)); }
+    p->PushString(lc->str());
+    if (pass == 1) { list->append(strdup(lc->str())); }
     token = LexGetToken(lc, BCT_ALL);
     if (token == BCT_COMMA) { continue; }
     break;
@@ -3095,7 +3095,7 @@ static void ParseAudit(ConfigurationParser* p,
   int token = BCT_COMMA;
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING);
-    p->PushString(lc->str);
+    p->PushString(lc->str());
     token = LexGetToken(lc, BCT_ALL);
   }
   p->PopArray();
@@ -3116,7 +3116,7 @@ static void StoreRunscriptWhen(ConfigurationParser* p,
   auto* found = ReadKeyword(p, lc, script_timing);
   if (!found) {
     scan_err2(lc, T_("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
-              lc->str);
+              lc->str());
   } else {
     SetItemVariable<uint32_t>(*item, found->token);
   }
@@ -3126,7 +3126,7 @@ static void StoreRunscriptWhen(ConfigurationParser* p,
 static void ParseRunscriptWhen(ConfigurationParser* p, lexer* lc)
 {
   LexGetToken(lc, BCT_NAME);
-  p->PushString(lc->str);
+  p->PushString(lc->str());
   ScanToEol(lc);
 }
 
@@ -3136,27 +3136,27 @@ static void StoreRunscriptTarget(ConfigurationParser* p,
                                  int pass)
 {
   LexGetToken(lc, BCT_STRING);
-  p->PushString(lc->str);
+  p->PushString(lc->str());
 
   if (pass == 2) {
     RunScript* r = GetItemVariablePointer<RunScript*>(*item);
-    if (bstrcmp(lc->str, "%c")) {
-      r->SetTarget(lc->str);
-    } else if (Bstrcasecmp(lc->str, "yes")) {
+    if (bstrcmp(lc->str(), "%c")) {
+      r->SetTarget(lc->str());
+    } else if (Bstrcasecmp(lc->str(), "yes")) {
       r->SetTarget("%c");
-    } else if (Bstrcasecmp(lc->str, "no")) {
+    } else if (Bstrcasecmp(lc->str(), "no")) {
       r->SetTarget("");
     } else {
       BareosResource* res;
 
-      if (!(res = p->GetResWithName(R_CLIENT, lc->str))) {
+      if (!(res = p->GetResWithName(R_CLIENT, lc->str()))) {
         scan_err3(lc,
                   T_("Could not find config Resource %s referenced on line %d "
                      ": %s\n"),
-                  lc->str, lc->line_no, lc->line);
+                  lc->str(), lc->line_no(), lc->line());
       }
 
-      r->SetTarget(lc->str);
+      r->SetTarget(lc->str());
     }
   }
   ScanToEol(lc);
@@ -3167,7 +3167,7 @@ static void ParseRunscriptTarget(ConfigurationParser* p, lexer* lc)
   auto* found = ReadKeyword(p, lc, script_timing);
   if (!found) {
     scan_err2(lc, T_("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
-              lc->str);
+              lc->str());
   }
   ScanToEol(lc);
 }
@@ -3178,12 +3178,12 @@ static void StoreRunscriptCmd(ConfigurationParser* p,
                               int pass)
 {
   LexGetToken(lc, BCT_STRING);
-  p->PushString(lc->str);
+  p->PushString(lc->str());
 
   if (pass == 2) {
-    Dmsg2(100, "runscript cmd=%s type=%c\n", lc->str, item->code);
+    Dmsg2(100, "runscript cmd=%s type=%c\n", lc->str(), item->code);
     RunScript* r = GetItemVariablePointer<RunScript*>(*item);
-    r->temp_parser_command_container.emplace_back(lc->str, item->code);
+    r->temp_parser_command_container.emplace_back(lc->str(), item->code);
   }
   ScanToEol(lc);
 }
@@ -3191,7 +3191,7 @@ static void StoreRunscriptCmd(ConfigurationParser* p,
 static void ParseRunscriptCmd(ConfigurationParser* p, lexer* lc)
 {
   LexGetToken(lc, BCT_STRING);
-  p->PushString(lc->str);
+  p->PushString(lc->str());
   ScanToEol(lc);
 }
 
@@ -3210,7 +3210,7 @@ static void StoreShortRunscript(ConfigurationParser* p,
   if (pass == 2) {
     script = new RunScript;
     script->SetJobCodeCallback(job_code_callback_director);
-    script->SetCommand(lc->str);
+    script->SetCommand(lc->str());
   }
 
   p->PushAlias("RunScript");
@@ -3218,7 +3218,7 @@ static void StoreShortRunscript(ConfigurationParser* p,
   p->PushObject();
   p->PushLabel("command");
   p->PushLoc(lc->token_end());
-  p->PushString(lc->str);
+  p->PushString(lc->str());
 
   auto set_bools = [&](bool on_success, bool on_error, bool fail_on_error) {
     p->PushLabel("on_success");
@@ -3319,7 +3319,7 @@ static void ParseShortRunscript(ConfigurationParser* p,
   p->PushAlias("RunScript");
   p->PushObject();
   p->PushLabel("command");
-  p->PushString(lc->str);
+  p->PushString(lc->str());
 
   auto set_bools = [&](bool on_success, bool on_error, bool fail_on_error) {
     p->PushLabel("on_success");
@@ -3378,7 +3378,7 @@ static void StoreRunscriptBool(ConfigurationParser* p,
 
   if (!found) {
     scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-              lc->str); /* YES and NO must not be translated */
+              lc->str()); /* YES and NO must not be translated */
   }
 
   SetItemVariable<bool>(*item, found->token != 0);
@@ -3392,7 +3392,7 @@ static void ParseRunscriptBool(ConfigurationParser* p, lexer* lc)
 
   if (!found) {
     scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-              lc->str); /* YES and NO must not be translated */
+              lc->str()); /* YES and NO must not be translated */
   }
 
   ScanToEol(lc);
@@ -3416,7 +3416,7 @@ static void StoreRunscript(ConfigurationParser* p,
   int token = LexGetToken(lc, BCT_SKIP_EOL);
 
   if (token != BCT_BOB) {
-    scan_err1(lc, T_("Expecting open brace. Got %s"), lc->str);
+    scan_err1(lc, T_("Expecting open brace. Got %s"), lc->str());
     return;
   }
 
@@ -3434,17 +3434,17 @@ static void StoreRunscript(ConfigurationParser* p,
     if (token == BCT_EOB) { break; }
 
     if (token != BCT_IDENTIFIER) {
-      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str);
+      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str());
       goto bail_out;
     }
 
     bool keyword_ok = false;
     for (int i = 0; runscript_items[i].name; i++) {
-      if (Bstrcasecmp(runscript_items[i].name, lc->str)) {
+      if (Bstrcasecmp(runscript_items[i].name, lc->str())) {
         p->PushLabel(runscript_items[i].name);
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
-          scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
+          scan_err1(lc, T_("Expected an equals, got: %s"), lc->str());
           goto bail_out;
         }
         switch (runscript_items[i].type) {
@@ -3469,7 +3469,7 @@ static void StoreRunscript(ConfigurationParser* p,
     }
 
     if (!keyword_ok) {
-      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str);
+      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str());
       goto bail_out;
     }
   }
@@ -3524,7 +3524,7 @@ static void ParseRunscript(ConfigurationParser* p,
   int token = LexGetToken(lc, BCT_SKIP_EOL);
 
   if (token != BCT_BOB) {
-    scan_err1(lc, T_("Expecting open brace. Got %s"), lc->str);
+    scan_err1(lc, T_("Expecting open brace. Got %s"), lc->str());
     return;
   }
 
@@ -3533,17 +3533,17 @@ static void ParseRunscript(ConfigurationParser* p,
     if (token == BCT_EOB) { break; }
 
     if (token != BCT_IDENTIFIER) {
-      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str);
+      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str());
       goto bail_out;
     }
 
     bool keyword_ok = false;
     for (int i = 0; runscript_items[i].name; i++) {
-      if (Bstrcasecmp(runscript_items[i].name, lc->str)) {
+      if (Bstrcasecmp(runscript_items[i].name, lc->str())) {
         p->PushLabel(runscript_items[i].name);
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
-          scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
+          scan_err1(lc, T_("Expected an equals, got: %s"), lc->str());
           goto bail_out;
         }
         switch (runscript_items[i].type) {
@@ -3568,7 +3568,7 @@ static void ParseRunscript(ConfigurationParser* p,
     }
 
     if (!keyword_ok) {
-      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str);
+      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str());
       goto bail_out;
     }
   }
