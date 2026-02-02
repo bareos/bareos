@@ -106,10 +106,9 @@ struct line_entry {
 
 std::string read_line(const lex_location& l);
 
-struct lex_file {
-  char* fname;  /* filename */
-  FILE* fd;     /* file descriptor */
-  Bpipe* bpipe; /* set if we are piping */
+struct lex_file_state {
+  std::size_t file_index;
+  std::size_t current_offset;
 
   POOLMEM* line; /* input line */
   POOLMEM* str;  /* string being scanned */
@@ -126,23 +125,30 @@ struct lex_file {
   int ch;          /* last char/L_VAL returned by get_char */
 };
 
+struct lex_file {
+  char* fname; /* filename */
+  bool generated;
+  std::string content;
+};
+
 /* Lexical context */
 struct lexer {
   std::size_t token_start{};
 
   std::size_t bytes_read{};
   std::vector<line_entry> line_map{};
-  std::vector<lex_file> files{};
+  std::vector<lex_file> file_contents{};
+  std::vector<lex_file_state> files{};
 
   inline constexpr lex_location current_location()
   {
     return {token_start, bytes_read};
   }
 
-  lex_file& current() { return files.back(); }
+  lex_file_state& current() { return files.back(); }
 
   char* line() const { return files.back().line; }
-  char* fname() const { return files.back().fname; }
+  char* fname() const { return file_contents[files.back().file_index].fname; }
   char* str() const { return files.back().str; }
 
   int line_no() const { return files.back().line_no; }

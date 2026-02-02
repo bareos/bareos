@@ -179,6 +179,10 @@ lexer* LexCloseFile(lexer* lf)
   return lf;
 }
 
+static inline std::string lex_read_file(FILE* fd) { return {}; }
+
+static inline std::string lex_execute_program(Bpipe* pipe) {}
+
 // Add lex structure for an included config file.
 static inline lexer* lex_add(lexer* lf,
                              const char* filename,
@@ -196,11 +200,20 @@ static inline lexer* lex_add(lexer* lf,
     lf->scan_warning = scan_warning;
   }
 
+  auto& contents = lf->file_contents.emplace_back();
   auto& current = lf->files.emplace_back();
-  current.fname = strdup(filename ? filename : "");
-  current.fd = fd;
-  current.bpipe = bpipe;
+  contents.fname = strdup(filename ? filename : "");
+  if (bpipe) {
+    contents.generated = true;
+    contents.content = lex_execute_program(bpipe);
+    CloseBpipe(bpipe);
+  } else {
+    contents.generated = false;
+    contents.content = lex_read_file(fd);
+    fclose(fd);
+  }
 
+  current.file_index = &contents - &lf->file_contents[0];
   current.line = GetMemory(1024);
   current.str = GetMemory(256);
   current.str_max_len = SizeofPoolMemory(current.str);
@@ -578,19 +591,6 @@ static bool CurrentLineContinuesWithQuotes(lexer* lf)
   return false;
 }
 
-std::string read_line(const lex_location& l)
-{
-  std::ifstream f{l.fname};
-
-  std::string line;
-
-  for (size_t i = 0; i < l.line; ++i) { std::getline(f, line); }
-
-  std::getline(f, line);
-
-  return line;
-}
-
 std::string read_part(const char* fname, size_t start, size_t end)
 {
   ASSERT(start < end);
@@ -651,7 +651,6 @@ std::string read_span(const lexer* lf,
 int LexGetToken(lexer* lf, int expect)
 {
   lf->token_start = lf->bytes_read;
-  lf->token_end = lf->token_start;
   int ch;
   int token = BCT_NONE;
   bool continue_string = false;
