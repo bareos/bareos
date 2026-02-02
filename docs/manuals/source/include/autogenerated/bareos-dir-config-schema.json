@@ -1690,7 +1690,7 @@
         },
         "Device": {
           "datatype": "DEVICE",
-          "code": 13,
+          "code": 0,
           "equals": true,
           "required": true
         },
@@ -2632,7 +2632,6 @@
           "description": "\"Common Name\"s (CNs) of the allowed peer certificates."
         }
       },
-      "Device": {},
       "User": {
         "Name": {
           "datatype": "NAME",
