@@ -291,6 +291,41 @@ lexer* lex_open_file(lexer* lf,
   }
 }
 
+void UpdateLineMap(lexer* lf)
+{
+  auto& current = lf->current();
+  auto& map = lf->line_map;
+
+  bool insert_new = true;
+
+  if (!map.empty()) {
+    auto& last = map.back();
+
+    if (last.fname == current.fname
+        && last.file_start + last.length == current.bytes) {
+      last.length += 1;
+      insert_new = false;
+    }
+  }
+
+  if (insert_new) {
+    map.push_back(line_entry{current.fname, lf->bytes, current.bytes, 1});
+  }
+
+  lf->bytes += 1;
+}
+
+void LineMapRemoveLastChar(lexer* lf)
+{
+  if (lf->bytes == 0) { return; }
+  ASSERT(!lf->line_map.empty());
+
+  lf->line_map.back().length -= 1;
+  if (lf->line_map.back().length == 0) { lf->line_map.pop_back(); }
+
+  lf->bytes -= 1;
+}
+
 /*
  * Get the next character from the input.
  *  Returns the character or
@@ -315,7 +350,14 @@ int LexGetChar(lexer* lf)
       if (lf->files.size() > 1) {
         if (current.fd) { LexCloseFile(lf); }
       }
-      return lf->current().ch;
+
+      auto& new_cur = lf->current();
+
+      // if (new_cur.ch != L_EOF) {
+      //   UpdateLineMap(lf);
+      //   new_cur.bytes += 1;
+      // }
+      return new_cur.ch;
     }
     current.line_no++;
     current.col_no = 0;
@@ -325,11 +367,16 @@ int LexGetChar(lexer* lf)
   current.ch = (uint8_t)current.line[current.col_no];
   if (current.ch == 0) {
     current.ch = L_EOL;
-  } else if (current.ch == '\n') {
-    current.ch = L_EOL;
-    current.col_no++;
   } else {
-    current.col_no++;
+    if (current.ch == '\n') {
+      current.ch = L_EOL;
+      current.col_no++;
+    } else {
+      current.col_no++;
+    }
+
+    UpdateLineMap(lf);
+    current.bytes += 1;
   }
   Dmsg2(debuglevel, "LexGetChar: %c %d\n", current.ch, current.ch);
 
@@ -342,6 +389,9 @@ void LexUngetChar(lexer* lf)
   if (current.ch == L_EOL) {
     current.ch = 0; /* End of line, force read of next one */
   } else {
+    LineMapRemoveLastChar(lf);
+    current.bytes -= 1;
+
     current.col_no--; /* Backup to re-read char */
   }
 }
@@ -528,6 +578,71 @@ static bool CurrentLineContinuesWithQuotes(lexer* lf)
   return false;
 }
 
+std::string read_line(const lex_location& l)
+{
+  std::ifstream f{l.fname};
+
+  std::string line;
+
+  for (size_t i = 0; i < l.line; ++i) { std::getline(f, line); }
+
+  std::getline(f, line);
+
+  return line;
+}
+
+std::string read_part(const char* fname, size_t start, size_t end)
+{
+  ASSERT(start < end);
+
+  std::ifstream f{fname};
+
+  f.seekg(start);
+
+  std::string result;
+  result.resize(end - start);
+
+  f.read(result.data(), result.size());
+
+  ASSERT(result.size() == static_cast<size_t>(f.gcount()));
+
+  return result;
+}
+
+std::string read_span(const lexer* lf,
+                      std::size_t bytes_start,
+                      std::size_t bytes_end)
+{
+  auto block = std::lower_bound(lf->line_map.begin(), lf->line_map.end(),
+                                bytes_start, [](auto& val, std::size_t x) {
+                                  return val.byte_start + val.length <= x;
+                                });
+
+  if (block == lf->line_map.end()) { return ""; }
+
+  std::size_t current = bytes_start;
+
+  std::string result;
+
+  while (current < bytes_end) {
+    ASSERT(block->byte_start <= current);
+    ASSERT(current < block->byte_start + block->length);
+
+    std::size_t end = block->byte_start + block->length;
+    if (end > bytes_end) { end = bytes_end; }
+
+    result += read_part(block->fname.c_str(),
+                        current - block->byte_start + block->file_start,
+                        end - block->byte_start + block->file_start);
+
+    block++;
+    current = end;
+  }
+
+
+  return result;
+}
+
 /*
  *
  * Get the next token from the input
@@ -535,6 +650,8 @@ static bool CurrentLineContinuesWithQuotes(lexer* lf)
  */
 int LexGetToken(lexer* lf, int expect)
 {
+  lf->token_start = lf->bytes;
+  lf->token_end = lf->token_start;
   int ch;
   int token = BCT_NONE;
   bool continue_string = false;
@@ -1015,19 +1132,12 @@ int LexGetToken(lexer* lf, int expect)
       break; /* no expectation given */
   }
   lf->token = token; /* set possible new token */
+
+#if 0
+  auto token_acc = read_span(lf, lf->token_start, lf->bytes);
+
+  Dmsg0(10, "'%s' - '%s'\n", token_acc.c_str(), lf->str());
+#endif
+
   return token;
-}
-
-
-std::string read_line(const lex_location& l)
-{
-  std::ifstream f{l.fname};
-
-  std::string line;
-
-  for (size_t i = 0; i < l.line; ++i) { std::getline(f, line); }
-
-  std::getline(f, line);
-
-  return line;
 }

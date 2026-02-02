@@ -3217,7 +3217,7 @@ static void StoreShortRunscript(ConfigurationParser* p,
   p->PushMergeArray();
   p->PushObject();
   p->PushLabel("command");
-  p->PushLoc(lc->token_end());
+  p->PushLoc(lc->token_end_());
   p->PushString(lc->str());
 
   auto set_bools = [&](bool on_success, bool on_error, bool fail_on_error) {

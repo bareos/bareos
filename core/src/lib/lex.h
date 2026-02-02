@@ -132,15 +132,22 @@ struct lex_file {
   int col_no;        /* char position on line */
   int begin_line_no; /* line no of beginning of string */
 
+  size_t bytes;
+
   lex_state state; /* lex_state variable */
   int ch;          /* last char/L_VAL returned by get_char */
 };
 
 /* Lexical context */
 struct lexer {
-  std::vector<lex_file> files;
+  std::size_t token_start{};
+  std::size_t token_end{};
 
-  inline lex_location token_end()
+  std::size_t bytes{};
+  std::vector<line_entry> line_map{};
+  std::vector<lex_file> files{};
+
+  inline lex_location token_end_()
   {
     return {"", static_cast<size_t>(line_no()), static_cast<size_t>(col_no())};
   }
