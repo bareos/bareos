@@ -472,6 +472,7 @@ static void StoreRegex(ConfigurationParser* p,
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
+        p->PushMergeArray();
         p->PushObject();
         p->PushLabel("value");
         p->PushString(lc->str);
@@ -498,6 +499,8 @@ static void StoreRegex(ConfigurationParser* p,
         }
         p->PushLabel("type");
         p->PushString(type);
+        p->PopObject();
+        p->PopArray();
         Dmsg4(900, "set %s %p size=%d %s\n", type, res_incexe->current_opts,
               newsize, lc->str);
         break;
@@ -594,6 +597,7 @@ static void StoreWild(ConfigurationParser* p,
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
+        p->PushMergeArray();
         p->PushObject();
         p->PushLabel("value");
         p->PushString(lc->str);
@@ -619,6 +623,7 @@ static void StoreWild(ConfigurationParser* p,
         p->PushLabel("type");
         p->PushString(type);
         p->PopObject();
+        p->PopArray();
         Dmsg4(9, "set %s %p size=%d %s\n", type, res_incexe->current_opts,
               newsize, lc->str);
         break;
@@ -677,7 +682,9 @@ static void StoreFstype(ConfigurationParser* p,
   int token;
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
+  p->PushMergeArray();
   p->PushString(lc->str);
+  p->PopArray();
   if (pass == 1) {
     /* Pickup fstype string */
     switch (token) {
@@ -724,7 +731,9 @@ static void StoreDrivetype(ConfigurationParser* p,
   int token;
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
+  p->PushMergeArray();
   p->PushString(lc->str);
+  p->PopArray();
   if (pass == 1) {
     /* Pickup Drivetype string */
     switch (token) {
@@ -772,7 +781,9 @@ static void StoreMeta(ConfigurationParser* p,
   int token;
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
+  p->PushMergeArray();
   p->PushString(lc->str);
+  p->PopArray();
   if (pass == 1) {
     /* Pickup fstype string */
     switch (token) {
@@ -1269,6 +1280,7 @@ static void StoreNewinc(ConfigurationParser* p,
   res_fs->new_include = true;
   int token;
   bool has_options = false;
+  p->PushMergeArray();
   p->PushObject();
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
@@ -1288,6 +1300,8 @@ static void StoreNewinc(ConfigurationParser* p,
             return;
           }
         }
+
+        p->PushMergeArray();
         switch (newinc_items[i].type) {
           case CFG_TYPE_FNAME:
             StoreFname(p, lc, &newinc_items[i], pass, item->code);
@@ -1305,6 +1319,7 @@ static void StoreNewinc(ConfigurationParser* p,
           default:
             break;
         }
+        p->PopArray();
         found = true;
 
         break;
@@ -1316,6 +1331,7 @@ static void StoreNewinc(ConfigurationParser* p,
     }
   }
   p->PopObject();
+  p->PopArray();
 
   if (!has_options) {
     if (pass == 1) { StoreDefaultOptions(); }

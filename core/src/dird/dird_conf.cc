@@ -3214,6 +3214,7 @@ static void StoreShortRunscript(ConfigurationParser* p,
   }
 
   p->PushAlias("RunScript");
+  p->PushMergeArray();
   p->PushObject();
   p->PushLabel("command");
   p->PushString(lc->str);
@@ -3287,6 +3288,7 @@ static void StoreShortRunscript(ConfigurationParser* p,
   }
 
   p->PopObject();
+  p->PopArray();
 
   if (pass == 2) {
     // Remember that the entry was configured in the short runscript form.
@@ -3425,6 +3427,7 @@ static void StoreRunscript(ConfigurationParser* p,
    * where the default differs. */
   if (res_runscript->target.empty()) { res_runscript->SetTarget("%c"); }
 
+  p->PushMergeArray();
   p->PushObject();
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
@@ -3470,6 +3473,7 @@ static void StoreRunscript(ConfigurationParser* p,
     }
   }
   p->PopObject();
+  p->PopArray();
 
   if (pass == 2) {
     alist<RunScript*>** runscripts

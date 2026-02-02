@@ -152,6 +152,7 @@ void StoreMsgs(ConfigurationParser* conf,
   }
 
   if (pass == 1) {
+    conf->PushMergeArray();
     switch (static_cast<MessageDestinationCode>(item->code)) {
       case MessageDestinationCode::kStdout:
       case MessageDestinationCode::kStderr:
@@ -299,6 +300,7 @@ void StoreMsgs(ConfigurationParser* conf,
         scan_err1(lc, T_("Unknown item code: %d\n"), item->code);
         return;
     }
+    conf->PopArray();
   }
   ScanToEol(lc);
   message_resource->SetMemberPresent(item->name);
@@ -695,7 +697,7 @@ void StoreAlistStr(ConfigurationParser* conf,
     }
   }
   alist<const char*>* list = *alistvalue;
-  conf->PushArray();
+  conf->PushMergeArray();
 
   int token = BCT_COMMA;
   while (token == BCT_COMMA) {

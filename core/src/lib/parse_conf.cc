@@ -186,57 +186,6 @@ bool ConfigurationParser::ParseConfig()
   return success;
 }
 
-static inline auto allow_multiple(std::string_view k) -> bool
-{
-  // this also needs to check for case ...
-  if (strncasecmp(k.data(), "RunScript", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "RunBeforeJob", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "RunAfterJob", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "ClientRunBeforeJob", k.size()) == 0) {
-    return true;
-  }
-  if (strncasecmp(k.data(), "FsType", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "ClientRunAfterJob", k.size()) == 0) {
-    return true;
-  }
-  if (strncasecmp(k.data(), "Run", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "FdPluginOptions", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "SdPluginOptions", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "DirPluginOptions", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Include", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Exclude", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Syslog", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Mail", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "MailOnError", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "MailOnSuccess", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Append", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Stdout", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Stderr", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Director", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Console", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Operator", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Catalog", k.size()) == 0) { return true; }
-
-  if (strncasecmp(k.data(), "Wild", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "WildFile", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "WildDir", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Regex", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "RegexFile", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "RegexDir", k.size()) == 0) { return true; }
-
-  if (strncasecmp(k.data(), "Options", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "File", k.size()) == 0) { return true; }
-  if (strncasecmp(k.data(), "Plugin", k.size()) == 0) { return true; }
-
-  if (strncasecmp(k.data(), "ExcludeDirContaining", k.size()) == 0) {
-    return true;
-  }
-
-  return false;
-};
-
 json_t* convert(conf_proto* p, bool toplevel = true)
 {
   return std::visit(
@@ -280,26 +229,32 @@ json_t* convert(conf_proto* p, bool toplevel = true)
               json_object_setn_new(res_list, resource_name.c_str(),
                                    resource_name.size(), converted);
 
-            } else if (allow_multiple(k)) {
-              auto* arr = json_object_getn(obj, k.data(), k.size());
-              if (arr) {
-                ASSERT(json_is_array(arr));
-              } else {
-                arr = json_array();
-                json_object_setn_new(obj, k.data(), k.size(), arr);
-              }
-
-              json_array_append_new(arr, converted);
             } else {
-              ASSERT(!json_object_getn(obj, k.data(), k.size()));
-              json_object_setn_new(obj, k.data(), k.size(), converted);
+              if (auto ptr = std::get_if<conf_vec>(&v.value);
+                  ptr && ptr->merge) {
+                if (json_t* prev = json_object_getn(obj, k.data(), k.size())) {
+                  ASSERT(json_is_array(prev));
+                  json_t* elem;
+                  size_t idx;
+                  json_array_foreach(converted, idx, elem)
+                  {
+                    json_array_append(prev, elem);
+                  }
+                  json_decref(converted);
+                } else {
+                  json_object_setn_new(obj, k.data(), k.size(), converted);
+                }
+              } else {
+                ASSERT(!json_object_getn(obj, k.data(), k.size()));
+                json_object_setn_new(obj, k.data(), k.size(), converted);
+              }
             }
           }
           return obj;
         } else if constexpr (std::is_same_v<T, conf_vec>) {
           auto* arr = json_array();
 
-          for (auto& child : val) {
+          for (auto& child : val.data) {
             json_array_append_new(arr, convert(&child, false));
           }
 

@@ -181,6 +181,7 @@ void StoreRun(ConfigurationParser* conf,
 
   lc->options.set(lexer::options::NoIdent); /* Want only "strings" */
 
+  conf->PushMergeArray();
   conf->PushObject();
   // Scan for Job level "full", "incremental", ...
   for (found = true; found;) {
@@ -722,6 +723,7 @@ void StoreRun(ConfigurationParser* conf,
   }
 
   conf->PopObject();
+  conf->PopArray();
   lc->options = options; /* Restore scanner options */
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);

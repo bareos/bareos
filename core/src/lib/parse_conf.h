@@ -55,13 +55,19 @@ struct error {
 
 struct obj_begin {};
 struct obj_end {};
-struct arr_begin {};
+struct arr_begin {
+  bool merge;
+};
 struct arr_end {};
 };  // namespace proto
 
 struct conf_proto;
 
-using conf_vec = std::vector<conf_proto>;
+struct conf_vec {
+  std::vector<conf_proto> data;
+  bool merge;
+};
+using conf_merge = std::vector<conf_proto>;
 using conf_map = std::vector<std::pair<std::string_view, conf_proto>>;
 
 struct conf_proto {
@@ -141,10 +147,12 @@ struct proto_builder {
     ASSERT(obj->key);
     obj->key = l;
   }
-  void push(proto::arr_begin)
+  void push(proto::arr_begin arr)
   {
     auto& vec = push_value(conf_proto{conf_vec{}});
-    open_stack.push_back(array{std::get_if<conf_vec>(&vec.value)});
+    auto* ptr = std::get_if<conf_vec>(&vec.value);
+    ptr->merge = arr.merge;
+    open_stack.push_back(array{ptr});
   }
   void push(proto::arr_end)
   {
@@ -165,7 +173,7 @@ struct proto_builder {
   conf_proto& push_value(conf_proto p)
   {
     if (auto* arr = is_array()) {
-      return arr->vec->emplace_back(std::move(p));
+      return arr->vec->data.emplace_back(std::move(p));
     } else if (auto* obj = is_object()) {
       ASSERT(obj->key);
       auto& result = obj->map->emplace_back(*obj->key, std::move(p));
@@ -371,7 +379,12 @@ class ConfigurationParser {
   void PushArray()
   {
     if (!insert_into_shape) { return; }
-    builder.push(proto::arr_begin{});
+    builder.push(proto::arr_begin{false});
+  }
+  void PushMergeArray()
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::arr_begin{true});
   }
   void PopArray()
   {
