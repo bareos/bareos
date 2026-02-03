@@ -322,7 +322,7 @@ void StoreName(ConfigurationParser* conf,
 
   LexGetToken(lc, BCT_NAME);
   if (!IsNameValid(lc->str(), msg)) {
-    scan_err1(lc, "%s\n", msg.c_str());
+    scan_err1(lc, "%s", msg.c_str());
     return;
   }
 

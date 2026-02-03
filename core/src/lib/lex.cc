@@ -40,6 +40,81 @@ extern int debug_level;
 /* Debug level for this source file */
 static const int debuglevel = 5000;
 
+std::string_view read_line_containing(const lexer* lf, std::size_t offset)
+{
+  auto block = std::lower_bound(lf->line_map.begin(), lf->line_map.end(),
+                                offset, [](auto& val, std::size_t x) {
+                                  return val.byte_start + val.length <= x;
+                                });
+
+  if (block == lf->line_map.end()) { return ""; }
+
+  auto& data = lf->file_contents[block->file_index].content;
+
+  std::size_t file_offset = offset - block->byte_start + block->file_start;
+
+  std::size_t line_start = data.rfind('\n', file_offset);
+  std::size_t line_end = data.find('\n', file_offset);
+
+  if (line_start == data.npos) {
+    line_start = 0;
+  } else if (line_start < data.size()) {
+    line_start += 1; /* skip new line */
+  }
+
+  if (line_end == data.npos) { line_end = data.size(); }
+  // else if (line_end > 0) { line_end -= 1; }
+
+  return std::string_view{data}.substr(line_start, line_end - line_start);
+}
+
+std::string read_span(const lexer* lf,
+                      std::size_t bytes_start,
+                      std::size_t bytes_end)
+{
+  auto block = std::lower_bound(lf->line_map.begin(), lf->line_map.end(),
+                                bytes_start, [](auto& val, std::size_t x) {
+                                  return val.byte_start + val.length <= x;
+                                });
+
+  if (block == lf->line_map.end()) { return ""; }
+
+  std::size_t current = bytes_start;
+
+  std::string result;
+
+  while (current < bytes_end) {
+    ASSERT(block->byte_start <= current);
+    ASSERT(current < block->byte_start + block->length);
+
+    std::size_t end = block->byte_start + block->length;
+    if (end > bytes_end) { end = bytes_end; }
+
+    auto& data = lf->file_contents[block->file_index].content;
+
+    std::size_t content_start = current - block->byte_start + block->file_start;
+    std::size_t content_end = end - block->byte_start + block->file_start;
+
+
+    result += std::string_view{data}.substr(content_start,
+                                            content_end - content_start);
+
+    block++;
+    current = end;
+  }
+
+
+  return result;
+}
+
+static inline void NewErrorMsg(lexer* lf, const char* x)
+{
+  auto cause = read_line_containing(lf, lf->token_start);
+
+  Emsg0(M_CONFIG_ERROR, 0, "Error: %s in line:\n%.*s\n", x, (int)cause.size(),
+        cause.data());
+}
+
 /*
  * Scan to "logical" end of line. I.e. end of line,
  *   or semicolon, but stop on BCT_EOB (same as end of
@@ -87,20 +162,14 @@ static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
 
   auto& current = lc->files.back();
 
-  if (current.line_no > current.begin_line_no) {
-    Mmsg(more, T_("Problem probably begins at line %d.\n"),
-         current.begin_line_no);
-  } else {
-    PmStrcpy(more, "");
-  }
-
-  if (current.line_no > 0) {
+  auto err_content = read_span(lc, lc->token_start, lc->bytes_read);
+  if (!err_content.empty()) {
     e_msg(file, line, lc->err_type, 0,
           T_("Config error: %s\n"
-             "            : line %d, col %d of file %s\n%s\n%s"),
+             "            : line %d, col %d of file %s\n%.*s\n"),
           buf.c_str(), current.line_no, current.col_no,
           lc->file_contents[current.file_index].fname.c_str(),
-          current.line.c_str(), more.c_str());
+          (int)err_content.size(), err_content.data());
   } else {
     e_msg(file, line, lc->err_type, 0, T_("Config error: %s\n"), buf.c_str());
   }
@@ -385,6 +454,12 @@ int LexGetChar(lexer* lf)
   auto& current = lf->current();
 
   if (current.ch == L_EOF) {
+    NewErrorMsg(lf,
+                "get_char: called after EOF."
+                " You may have a open double quote without the closing double "
+                "quote.\n");
+
+
     Emsg0(M_CONFIG_ERROR, 0,
           T_("get_char: called after EOF."
              " You may have a open double quote without the closing double "
@@ -420,12 +495,17 @@ int LexGetChar(lexer* lf)
     } else {
       current.col_no++;
     }
-
-    UpdateLineMap(lf);
-    current.bytes += 1;
   }
+  UpdateLineMap(lf);
+  current.bytes += 1;
   Dmsg2(debuglevel, "LexGetChar: %c %d\n", current.ch, current.ch);
 
+  if (current.ch > 0) {
+    ASSERT(current.ch
+           == lf->file_contents[lf->line_map.back().file_index]
+                  .content[lf->bytes_read - lf->line_map.back().byte_start
+                           + lf->line_map.back().file_start - 1]);
+  }
   return current.ch;
 }
 
@@ -435,11 +515,10 @@ void LexUngetChar(lexer* lf)
   if (current.ch == L_EOL) {
     current.ch = 0; /* End of line, force read of next one */
   } else {
-    LineMapRemoveLastChar(lf);
-    current.bytes -= 1;
-
     current.col_no--; /* Backup to re-read char */
   }
+  LineMapRemoveLastChar(lf);
+  current.bytes -= 1;
 }
 
 // Add a character to the current string
@@ -651,39 +730,6 @@ std::string read_part(const char* fname, size_t start, size_t end)
   return result;
 }
 
-std::string read_span(const lexer* lf,
-                      std::size_t bytes_start,
-                      std::size_t bytes_end)
-{
-  auto block = std::lower_bound(lf->line_map.begin(), lf->line_map.end(),
-                                bytes_start, [](auto& val, std::size_t x) {
-                                  return val.byte_start + val.length <= x;
-                                });
-
-  if (block == lf->line_map.end()) { return ""; }
-
-  std::size_t current = bytes_start;
-
-  std::string result;
-
-  while (current < bytes_end) {
-    ASSERT(block->byte_start <= current);
-    ASSERT(current < block->byte_start + block->length);
-
-    std::size_t end = block->byte_start + block->length;
-    if (end > bytes_end) { end = bytes_end; }
-
-    result += read_part(lf->file_contents[block->file_index].fname.c_str(),
-                        current - block->byte_start + block->file_start,
-                        end - block->byte_start + block->file_start);
-
-    block++;
-    current = end;
-  }
-
-
-  return result;
-}
 
 /*
  *
@@ -1174,8 +1220,8 @@ int LexGetToken(lexer* lf, int expect)
   }
   lf->token = token; /* set possible new token */
 
-#if 0
-  auto token_acc = read_span(lf, lf->token_start, lf->bytes);
+#if 1
+  auto token_acc = read_span(lf, lf->token_start, lf->bytes_read);
 
   Dmsg0(10, "'%s' - '%s'\n", token_acc.c_str(), lf->str());
 #endif

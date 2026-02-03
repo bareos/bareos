@@ -152,6 +152,7 @@ struct lexer {
   {
     return file_contents[files.back().file_index].fname.c_str();
   }
+
   const char* str() const { return files.back().str; }
 
   int line_no() const { return files.back().line_no; }
