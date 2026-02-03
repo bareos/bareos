@@ -1,7 +1,0 @@
-Storage {
-  Name = bareos-sd
-  Working Directory =  "@working_dir@"
-  Scripts Directory = "@CMAKE_SOURCE_DIR@/core/scripts"
-  Port = @sd_port@
-  @sd_backend_config@
-}
