@@ -140,6 +140,7 @@ set(PYFILES
     vmware/bareos-fd-vmware.py
     libcloud/BareosLibcloudApi.py
     libcloud/bareos-fd-libcloud.py
+    incus/bareos-fd-incus.py
 )
 
 include(CMakeDependentOption)

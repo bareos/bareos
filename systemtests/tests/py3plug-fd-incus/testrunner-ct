@@ -1,0 +1,168 @@
+#!/bin/bash
+set -euo pipefail
+#
+# This systemtest tests the Incus FD plugin
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-incus-ct
+#shellcheck source=../../environment.in
+. ./environment
+
+export PATH="$current_test_directory/sbin:$current_test_directory/bin:$PATH"
+
+JobName=backup-incus-ct
+#shellcheck source=../scripts/functions
+. "$BAREOS_SCRIPTS_DIR"/functions
+"$BAREOS_SCRIPTS_DIR"/cleanup
+"$BAREOS_SCRIPTS_DIR"/setup
+
+INSTANCE=bareos-test-ct
+NEWINSTANCE=bareos-test-ct-2
+
+wait_for_network() {
+    while ! incus exec "$1" -- ping -c1 bareos.com 2>/dev/null; do
+        sleep 2
+    done
+}
+
+sync_fs() {
+    incus exec "$INSTANCE" sync
+}
+
+incus rm -f "$INSTANCE" 2>/dev/null || :
+incus rm -f "$NEWINSTANCE" 2>/dev/null || :
+incus launch images:alpine/edge "$INSTANCE"
+wait_for_network "$INSTANCE"
+incus exec "$INSTANCE" apk add attr
+incus file push - "$INSTANCE/old-file" <<< foobar
+incus exec "$INSTANCE" -- ln -s /old-file /slinked-file
+incus exec "$INSTANCE" -- setfattr -n user.thisis -v atest /slinked-file
+sync_fs
+
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@#
+@# First, perform a full backup
+@#
+@$out $NULL_DEV
+messages
+@$out $tmp/log1.out
+label volume=TestVolume001 storage=File pool=Full
+run job=$JobName level=Full yes
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA
+
+run_bareos "$@"
+check_log "$tmp/log1.out"
+
+incus file push - "$INSTANCE/new-file" <<< bazqux
+incus exec "$INSTANCE" -- setfattr -n user.foobar -v bazqux /new-file
+incus exec "$INSTANCE" -- setfattr -n user.barqux -v foobar /etc
+incus exec "$INSTANCE" ln /new-file /hlinked-file
+sync_fs
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@#
+@# Then, perform an incremental backup to get the new file
+@#
+@$out $tmp/log2.out
+label volume=TestVolume002 storage=File pool=Incremental
+run job=$JobName level=Incremental yes
+status director
+status client
+status storage=File
+wait
+messages
+END_OF_DATA
+
+run_bconsole "$@"
+check_log "$tmp/log2.out"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/log2-list.out
+list files jobid=2
+END_OF_DATA
+run_bconsole "$@"
+
+files="$(grep "^ @INCUS/$INSTANCE/container/rootfs/" "$tmp/log2-list.out" | grep -v "^ @INCUS/$INSTANCE/container/rootfs/var/log/messages" | sort)"
+actualfiles=(etc hlinked-file new-file)
+expected="$(printf ' @INCUS/bareos-test-ct/container/rootfs/%s\n' "${actualfiles[@]}")"
+if [ "$files" != "$expected" ]; then
+    echo "Unexpected list of modified files. Expected:"
+    echo "$expected"
+    echo "Got:"
+    echo "$files"
+    exit 1
+fi
+
+incus rm -f "$INSTANCE"
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@#
+@# Now, restore the incremental backup to a new instance
+@#
+@$out $tmp/log3.out
+wait
+restore client=bareos-fd fileset=IncusTestCT where=/ select all done pluginoptions=python:restore_instance=$NEWINSTANCE
+yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole "$@"
+check_log "$tmp/log3.out"
+
+incus start "$NEWINSTANCE"
+
+if [ "$(incus file pull "$NEWINSTANCE/old-file" -)" = "foobar" ] &&
+   [ "$(incus file pull "$NEWINSTANCE/new-file" -)" = "bazqux" ]; then
+    echo "Restored file contents OK"
+else
+    echo "Restored files ERROR: files have changed"
+    dstat=1
+    exit 1
+fi
+
+# We make extra sure that we didn't accidentally change file types
+if incus exec "$NEWINSTANCE" -- test -h /slinked-file &&
+   incus exec "$NEWINSTANCE" -- test -d /etc; then
+    echo "Files kept their types"
+else
+    echo "Files not restored properly"
+    dstat=1
+    exit 1
+fi
+
+# We check extended attributes
+if [ "$(incus exec "$NEWINSTANCE" -- getfattr --only-values -n user.foobar /new-file)" = "bazqux" ] &&
+   [ "$(incus exec "$NEWINSTANCE" -- getfattr --only-values -n user.barqux /etc)" = "foobar" ] &&
+   [ "$(incus exec "$NEWINSTANCE" -- getfattr --only-values -n user.thisis /slinked-file)" = "atest" ]; then
+    echo "Extended attributes preserved"
+else
+    echo "Extended attributes lost"
+    dstat=1
+    exit 1
+fi
+
+# We check that hard links work
+if (("$(incus exec "$NEWINSTANCE" -- stat -c%h /new-file)" == 2)); then
+    echo "Hard links preserved"
+else
+    echo "Hard links broken"
+    dstat=1
+    exit 1
+fi
+
+incus rm -f "$NEWINSTANCE"
+
+check_for_zombie_jobs storage=File
+
+end_test
