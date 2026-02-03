@@ -15,7 +15,6 @@ debug/x86_64/bareos-filedaemon-python3-plugin-debuginfo
 debug/x86_64/bareos-storage-debuginfo
 debug/x86_64/bareos-storage-dedupable-debuginfo
 debug/x86_64/bareos-storage-dplcompat-debuginfo
-debug/x86_64/bareos-storage-droplet-debuginfo
 debug/x86_64/bareos-storage-fifo-debuginfo
 debug/x86_64/bareos-storage-glusterfs-debuginfo
 debug/x86_64/bareos-storage-python3-plugin-debuginfo
@@ -55,7 +54,6 @@ x86_64/bareos-filedaemon-python3-plugin
 x86_64/bareos-storage
 x86_64/bareos-storage-dedupable
 x86_64/bareos-storage-dplcompat
-x86_64/bareos-storage-droplet
 x86_64/bareos-storage-fifo
 x86_64/bareos-storage-glusterfs
 x86_64/bareos-storage-python-plugins-common

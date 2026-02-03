@@ -1,6 +1,0 @@
-@backenddir@/libbareossd-droplet.so*
-@configtemplatedir@/bareos-dir.d/storage/S3_Object.conf.example
-@configtemplatedir@/bareos-sd.d/device/S3_ObjectStorage.conf.example
-@configtemplatedir@/bareos-sd.d/device/droplet
-@configtemplatedir@/bareos-sd.d/device/droplet/aws_eu-central-1.profile.example
-@configtemplatedir@/bareos-sd.d/device/droplet/ceph-rados-gateway.profile.example

@@ -1225,16 +1225,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{configtemplatedir}/bareos-dir.d/storage/Dedupable.conf.example
 %{configtemplatedir}/bareos-sd.d/device/Dedupable.conf.example
 
-%if 0%{?droplet}
-%files storage-droplet
-%defattr(-, root, root)
-%{backend_dir}/libbareossd-droplet*.so
-%{configtemplatedir}/bareos-dir.d/storage/S3_Object.conf.example
-%{configtemplatedir}/bareos-sd.d/device/S3_ObjectStorage.conf.example
-%dir %{configtemplatedir}/bareos-sd.d/device/droplet/
-%{configtemplatedir}/bareos-sd.d/device/droplet/*.example
-%endif
-
 %files storage-dplcompat
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-dplcompat*.so
