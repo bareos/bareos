@@ -1,7 +1,7 @@
 ;
 ;   BAREOS - Backup Archiving REcovery Open Sourced
 ;
-;   Copyright (C) 2012-2025 Bareos GmbH & Co. KG
+;   Copyright (C) 2012-2026 Bareos GmbH & Co. KG
 ;
 ;   This program is Free Software; you can redistribute it and/or
 ;   modify it under the terms of version three of the GNU Affero General Public
@@ -670,11 +670,9 @@ SectionIn 1 2 3
   File "pcre2-posix.dll"
   File "pcre2-8.dll"
 
-  !cd "C:\Program Files\Git\usr\bin"
+  !cd "C:\tools\MSYS2\ucrt64\bin"
   File "sed.exe"
-  File "msys-2.0.dll"
-  File "msys-intl-8.dll"
-  File "msys-iconv-2.dll"
+  File "libintl-8.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
@@ -1631,12 +1629,9 @@ done:
   InitPluginsDir
   SetOutPath $PLUGINSDIR
   File  "${CMAKE_SOURCE_DIR}\core\platforms\win32\*.ini"
-  !cd "C:\Program Files\Git\usr\bin"
-  File "sed.exe"
-  File "msys-2.0.dll"
-  File "msys-intl-8.dll"
-  File "msys-iconv-2.dll"
-
+   !cd "C:\tools\MSYS2\ucrt64\bin"
+   File "sed.exe"
+   File "libintl-8.dll"
   # for password generation
   File "C:\vcpkg_installed\x64-windows\tools\openssl\openssl.exe"
   File "${CMAKE_BINARY_DIR}\bin\libcrypto-3-x64.dll"
