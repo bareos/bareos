@@ -40,12 +40,6 @@ add_library(backend-utils STATIC)
 target_sources(backend-utils PRIVATE util.cc)
 target_link_libraries(backend-utils PUBLIC Bareos::Lib fmt::fmt)
 
-if(HAVE_GFAPI)
-  add_sd_backend(bareossd-gfapi)
-  target_sources(bareossd-gfapi PRIVATE gfapi_device.cc)
-  target_link_libraries(bareossd-gfapi PRIVATE PkgConfig::gfapi)
-endif()
-
 if(TARGET droplet)
   add_sd_backend(bareossd-droplet)
   target_sources(bareossd-droplet PRIVATE droplet_device.cc)

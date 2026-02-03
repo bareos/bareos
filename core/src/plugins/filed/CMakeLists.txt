@@ -101,19 +101,6 @@ if(NOT HAVE_WIN32)
   target_sources(spam-plugin-fd PRIVATE spam/spam.cc)
 endif()
 
-option(ENABLE_GFAPI_FD "Build gfapi-fd plugin if possible" ON)
-if(HAVE_GFAPI AND ENABLE_GFAPI_FD)
-  bareos_configure_file(GLOB_RECURSE "gfapi/gfapi-conf.d/*" COPY)
-  bareos_add_plugin(gfapi-fd)
-  target_sources(gfapi-fd PRIVATE gfapi/gfapi-fd.cc)
-  install(
-    TARGETS gfapi-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
-  target_link_libraries(gfapi-fd PRIVATE PkgConfig::gfapi)
-endif()
-
 add_subdirectory(grpc)
 
 if(ENABLE_BARRI)

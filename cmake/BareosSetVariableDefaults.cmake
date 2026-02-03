@@ -588,11 +588,6 @@ if(autochanger_devices_found)
   )
 endif()
 
-# gfapi-fd
-if(NOT DEFINED gfapi_fd_testvolume)
-  set(gfapi_fd_testvolume testvol)
-endif()
-
 set(DUMP_VARS
     ""
     CACHE STRING "Dump all variables that matches this regex."

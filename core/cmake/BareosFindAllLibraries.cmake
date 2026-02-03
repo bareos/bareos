@@ -131,11 +131,6 @@ elseif(
   )
 endif()
 
-find_package(PkgConfig)
-if(PkgConfig_FOUND)
-  pkg_check_modules(gfapi IMPORTED_TARGET glusterfs-api)
-endif()
-
 find_package(PAM)
 if(PAM_FOUND)
   set(HAVE_PAM 1)
