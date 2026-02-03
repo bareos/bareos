@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,14 +20,8 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 
 include(BareosConfigureFile)
 bareos_configure_file(
-  FILES
-  bareos-config-lib.sh.in
-  bareos-config.in
-  btraceback.in
-  disk-changer.in
-  logrotate.in
-  mtx-changer.in
-  mtx-logrotate.in
+  FILES bareos-config-lib.sh.in bareos-config.in btraceback.in disk-changer.in
+  logrotate.in mtx-changer.in mtx-logrotate.in
 )
 
 install(
@@ -66,8 +60,7 @@ endif()
 if(NOT client-only)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/mtx-changer
-          ${CMAKE_CURRENT_BINARY_DIR}/disk-changer
-          s3cmd-wrapper.sh
+          ${CMAKE_CURRENT_BINARY_DIR}/disk-changer s3cmd-wrapper.sh
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
                 WORLD_READ WORLD_EXECUTE
     DESTINATION "${scriptdir}"

@@ -332,7 +332,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
 endif()
 include(BareosFindStaticCodeAnalysisTools)
 
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(MSVC)
     add_definitions(
