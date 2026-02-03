@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - core/filed: fix spurious wakeups race condition in filed. [PR #2514]
 
+### Fixed
+- webui: add encrypt checkbox for label tape [PR #2528]
+
 ## [24.0.8] - 2025-12-04
 
 ### Fixed
@@ -2006,4 +2009,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2503]: https://github.com/bareos/bareos/pull/2503
 [PR #2514]: https://github.com/bareos/bareos/pull/2514
 [PR #2517]: https://github.com/bareos/bareos/pull/2517
+[PR #2528]: https://github.com/bareos/bareos/pull/2528
 [unreleased]: https://github.com/bareos/bareos/tree/master
