@@ -1,8 +1,0 @@
-Storage {
-  Name = AlternateStorage
-  Address = localhost
-  Password = "@sd_password@"
-  Device = AlternateStorage
-  Media Type = AlternateStorage
-  Port = "@sd_port@"
-}

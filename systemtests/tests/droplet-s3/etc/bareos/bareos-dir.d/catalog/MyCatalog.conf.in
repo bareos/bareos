@@ -1,6 +1,0 @@
-Catalog {
-  Name = MyCatalog
-  dbname = "@db_name@"
-  dbuser = "@db_user@"
-  dbpassword = "@db_password@"
-}
