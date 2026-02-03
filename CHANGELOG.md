@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow bareos to build with newer cli11 libraries [PR #2517]
 - systemtests: tune for execution on Windows [PR #2503]
 
+### Fixed
+- core/filed: fix spurious wakeups race condition in filed. [PR #2514]
+
 ## [24.0.8] - 2025-12-04
 
 ### Fixed
@@ -2001,5 +2004,6 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2448]: https://github.com/bareos/bareos/pull/2448
 [PR #2451]: https://github.com/bareos/bareos/pull/2451
 [PR #2503]: https://github.com/bareos/bareos/pull/2503
+[PR #2514]: https://github.com/bareos/bareos/pull/2514
 [PR #2517]: https://github.com/bareos/bareos/pull/2517
 [unreleased]: https://github.com/bareos/bareos/tree/master
