@@ -26,7 +26,6 @@ aarch64/bareos-filedaemon-python3-plugin
 aarch64/bareos-storage
 aarch64/bareos-storage-dedupable
 aarch64/bareos-storage-dplcompat
-aarch64/bareos-storage-droplet
 aarch64/bareos-storage-fifo
 aarch64/bareos-storage-glusterfs
 aarch64/bareos-storage-python-plugins-common
@@ -52,7 +51,6 @@ debug/aarch64/bareos-filedaemon-python3-plugin-debuginfo
 debug/aarch64/bareos-storage-debuginfo
 debug/aarch64/bareos-storage-dedupable-debuginfo
 debug/aarch64/bareos-storage-dplcompat-debuginfo
-debug/aarch64/bareos-storage-droplet-debuginfo
 debug/aarch64/bareos-storage-fifo-debuginfo
 debug/aarch64/bareos-storage-glusterfs-debuginfo
 debug/aarch64/bareos-storage-python3-plugin-debuginfo

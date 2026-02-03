@@ -25,7 +25,6 @@ amd64/bareos-filedaemon-python3-plugin
 amd64/bareos-storage
 amd64/bareos-storage-dedupable
 amd64/bareos-storage-dplcompat
-amd64/bareos-storage-droplet
 amd64/bareos-storage-fifo
 amd64/bareos-storage-python-plugins-common
 amd64/bareos-storage-python3-plugin

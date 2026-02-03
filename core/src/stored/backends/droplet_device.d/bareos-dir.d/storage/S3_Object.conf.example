@@ -1,7 +1,0 @@
-Storage {
-  Name = S3_Object
-  Address  = "Replace this by the Bareos Storage Daemon FQDN or IP address"
-  Password = "Replace this by the Bareos Storage Daemon director password"
-  Device = S3_ObjectStorage
-  Media Type = S3_Object1
-}

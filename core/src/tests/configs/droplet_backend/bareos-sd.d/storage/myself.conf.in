@@ -1,5 +1,0 @@
-Storage {
-  Name = test-sd
-  @UNCOMMENT_SD_BACKEND_DIRECTORY@Backend Directory = @BACKEND_OUTPUT_DIRECTORY@
-  Working Directory = @PROJECT_BINARY_DIR@/
-}

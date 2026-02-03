@@ -1,7 +1,0 @@
-host = ceph-rgw.example.com
-use_https = false
-backend = s3
-aws_auth_sign_version = 2
-access_key = "CHANGEME"
-secret_key = "CHANGEME"
-pricing_dir = ""
