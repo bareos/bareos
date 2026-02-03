@@ -10,8 +10,6 @@ Dplcompat Storage Backend
 
 The **bareos-storage-dplcompat** backend (:sinceVersion:`24.0.0: Dplcompat`) can
 be used to access Object Storage through external wrapper programs.
-The storage format of this backend is compatible with the
-:ref:`Droplet <SdBackendDroplet>` backend.
 For information on bundled wrappers, see :ref:`section-DplcompatWrappers`.
 To learn how to implement your own wrapper, see :ref:`WritingDplcompatWrappers`.
 
@@ -60,8 +58,6 @@ program_timeout
 
 
 .. tip::
-   The default values for chunksize, iothreads and ioslots were inherited from
-   the :ref:`Droplet <SdBackendDroplet>` backend.
    Due to the nature of Dplcompat, it benefits from large chunksizes, because
    that reduces the number of wrapper processes the plugin spawns.
 
