@@ -405,10 +405,10 @@ int LexGetChar(lexer* lf)
     Dmsg2(1000, "fget line=%d %s", current.line_no, current.line);
   }
 
-  current.ch = (uint8_t)current.line[current.col_no];
   if (current.ch == 0) {
     current.ch = L_EOL;
   } else {
+    current.ch = (uint8_t)current.line[current.col_no];
     if (current.ch == '\n') {
       current.ch = L_EOL;
       current.col_no++;
@@ -593,17 +593,26 @@ class TemporaryBuffer {
 static bool NextLineContinuesWithQuotes(lexer* lf)
 {
   auto& current = lf->current();
+  auto& contents = lf->file_contents[current.file_index].content;
 
-  TemporaryBuffer t(current.fd);
 
-  if (bfgets(t.buf, current.fd) != NULL) {
-    int i = 0;
-    while (t.buf[i] != '\0') {
-      if (t.buf[i] == '"') { return true; }
-      if (t.buf[i] != ' ' && t.buf[i] != '\t') { return false; }
-      ++i;
-    };
+  for (std::size_t offset = current.current_offset; offset < contents.size();
+       ++offset) {
+    switch (contents[offset]) {
+      case '"': {
+        return true;
+      } break;
+      case ' ':
+        [[fallthrough]];
+      case '\t': {
+        continue;
+      }
+      default: {
+        return false;
+      }
+    }
   }
+
   return false;
 }
 
