@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -59,7 +59,7 @@ const char* IndentMultilineString(PoolMem& resultbuffer,
 char* encode_time(utime_t time, char* buf);
 bool ConvertTimeoutToTimespec(timespec& timeout, int timeout_in_seconds);
 char* encode_mode(mode_t mode, char* buf);
-int DoShellExpansion(char* name, int name_len);
+[[nodiscard]] char* DoShellExpansion(const char* name);
 std::string JobstatusToAscii(int JobStatus);
 int RunProgram(char* prog, int wait, POOLMEM*& results);
 int RunProgramFullOutput(char* prog, int wait, POOLMEM*& results);

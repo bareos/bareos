@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,12 +23,8 @@ set -e
 set -o pipefail
 set -u
 
-#
-# make sure we can restore an incremental backup
-#
-
-TestName="$(basename "$(pwd)")"
-export TestName
+# We check that `select jobid=` always selects the right
+# jobids.
 
 #shellcheck source=../../environment.in
 . ./environment
@@ -36,26 +32,31 @@ export TestName
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
-start_test
+# select a full
+check_job_ids "3" <<EOF
+restore jobid=3 select
+EOF
 
-# remove files
-${SSH} rm -Rf "/ifs/home/regress/${NDMP_FILESYSTEM}"
+# select a differential
+check_job_ids "4,7" <<EOF
+restore jobid=7 select
+EOF
+check_job_ids "4,5" <<EOF
+restore jobid=5 select
+EOF
 
-cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/restore.out
-restore select jobid=2 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump
-mark /ifs/home/regress/${NDMP_FILESYSTEM}/incremental
-done
-yes
-wait
-END_OF_DATA
+# select an incremental
+check_job_ids "4,5,6" <<EOF
+restore jobid=6 select
+EOF
 
-run_bconsole "${tmp}/bconcmds"
+# select inbetween incremental
+# make sure that useless diff & inc are skipped (5 & 6)
+check_job_ids "4,7,8,10,11" <<EOF
+restore jobid=11 select
+EOF
 
-check_log "${log_home}/restore.out"
-
-${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental" | grep "${NDMP_FILESYSTEM}-1"
-
-check_for_zombie_jobs storage=isilonfile client=bareos-fd
-
-end_test
+# select a job from a different client
+check_job_ids "3,12,13" <<EOF
+restore jobid=13 select
+EOF

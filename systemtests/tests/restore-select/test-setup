@@ -1,0 +1,102 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
+
+bin/bareos start
+bin/bareos status
+
+# make sure that the director is up and running.
+print_debug "$(bin/bconsole <<<"status dir")"
+
+# fill the database with data
+
+bin/bconsole <<EOF
+sqlquery
+INSERT INTO Fileset (Fileset, Md5, CreateTime)
+VALUES
+  ('fileset-1', '', 'epoch')
+, ('fileset-2', '', 'epoch')
+;
+CREATE TABLE
+  JobData (id SERIAL, level CHAR(1), client INTEGER, fileset INTEGER)
+;
+INSERT INTO JobData (level, client, fileset) VALUES
+  ('F', 1, 1)
+, ('F', 2, 1)
+, ('F', 3, 1)
+, ('F', 4, 1)
+, ('D', 4, 1)
+, ('I', 4, 1)
+, ('D', 4, 1)
+, ('I', 4, 1)
+, ('I', 2, 1)
+, ('I', 4, 1)
+, ('I', 4, 1)
+, ('D', 3, 1)
+, ('I', 3, 1)
+, ('I', 2, 1)
+, ('I', 2, 1)
+, ('I', 1, 1)
+;
+INSERT INTO
+  Media (volumename, poolid, mediatype, volstatus)
+VALUES
+  ('test-volume', 1, 'File', 'Used')
+;
+INSERT INTO
+  JobMedia (jobid, mediaid)
+SELECT
+  id, 1
+FROM
+  JobData
+;
+INSERT INTO
+  Job (job, name, type, level, clientid, jobstatus, schedtime,
+       starttime, endtime, realendtime, jobtdate, jobfiles, filesetid)
+SELECT
+  level || '-' || id, 'backup-bareos-fd', 'B', level, client, 'T',
+  '2000-01-01 00:01:00'::timestamp + interval '1 day' * id,
+  '2000-01-01 00:02:00'::timestamp + interval '1 day' * id,
+  '2000-01-01 00:03:00'::timestamp + interval '1 day' * id,
+  '2000-01-01 00:04:00'::timestamp + interval '1 day' * id,
+  extract(epoch from '2000-01-01 00:00:00'::timestamp + interval '1 day' * id),
+  1, fileset
+FROM
+  JobData
+;
+DROP TABLE
+  JobData
+;
+EOF
+
+# print the job table for easier test debugging
+print_debug "$(bin/bconsole <<<"list jobs")"

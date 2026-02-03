@@ -19,43 +19,28 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-set -e
-set -o pipefail
-set -u
+show_non_printing()
+{
+  if on_freebsd_host; then
+    cat -vet <<<"$1"
+  else
+    cat -A <<<"$1"
+  fi
+}
 
-#
-# make sure we can restore an incremental backup
-#
+check_job_ids()
+{
+  expected_ids="$1"
 
-TestName="$(basename "$(pwd)")"
-export TestName
+  # we need to remove carriage return because something on windows adds them
+  # to the end of the line (either bconsole/bareos or grep) while we do not care
+  # about them.
+  selected_ids="$(bin/bconsole | grep "You have selected the following JobIds\?: " | cut -d' ' -f7- | tr -d '\r')"
 
-#shellcheck source=../../environment.in
-. ./environment
-
-#shellcheck source=../../scripts/functions
-. "${BAREOS_SCRIPTS_DIR}"/functions
-
-start_test
-
-# remove files
-${SSH} rm -Rf "/ifs/home/regress/${NDMP_FILESYSTEM}"
-
-cat <<END_OF_DATA >"${tmp}/bconcmds"
-@$out ${log_home}/restore.out
-restore select jobid=2 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump
-mark /ifs/home/regress/${NDMP_FILESYSTEM}/incremental
-done
-yes
-wait
-END_OF_DATA
-
-run_bconsole "${tmp}/bconcmds"
-
-check_log "${log_home}/restore.out"
-
-${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental" | grep "${NDMP_FILESYSTEM}-1"
-
-check_for_zombie_jobs storage=isilonfile client=bareos-fd
-
-end_test
+  if [ "${selected_ids}" != "${expected_ids}" ]; then
+    first=$(show_non_printing "${selected_ids}")
+    second=$(show_non_printing "${expected_ids}")
+    echo "Expected to select ids '${second}', but instead '${first}' were selected" >&2
+    return 1
+  fi
+}
