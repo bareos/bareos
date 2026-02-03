@@ -455,9 +455,8 @@ void StoreRun(ConfigurationParser* conf,
         }
 
         std::from_chars(view.data() + 0, view.data() + pos, code);
-        auto conv_res = std::from_chars(view.data() + pos + 1,
-                                        view.data() + view.size(), code);
-        const char* p = conv_res.ptr;
+        std::from_chars(view.data() + pos + 1, view.data() + view.size(), code);
+        const char* p = view.data() + pos + 1;
         len = strlen(p);
         if (len >= 2) { p += 2; }
         if (Bstrcasecmp(p, "pm")) {
