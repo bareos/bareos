@@ -111,10 +111,7 @@ struct lex_file_state {
   std::size_t current_offset;
 
   std::string line; /* input line */
-  POOLMEM* str;     /* string being scanned */
 
-  int str_len;       /* length of string */
-  int str_max_len;   /* maximum length of string */
   int line_no;       /* file line number */
   int col_no;        /* char position on line */
   int begin_line_no; /* line no of beginning of string */
@@ -153,11 +150,13 @@ struct lexer {
     return file_contents[files.back().file_index].fname.c_str();
   }
 
-  const char* str() const { return files.back().str; }
+  std::string current_str;
+
+  const char* str() const { return current_str.c_str(); }
 
   int line_no() const { return files.back().line_no; }
   int col_no() const { return files.back().col_no; }
-  int str_len() const { return files.back().str_len; }
+  int str_len() const { return current_str.size(); }
 
   int ch() const { return files.back().ch; }
 

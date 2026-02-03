@@ -231,8 +231,6 @@ lexer* LexCloseFile(lexer* lf)
   Dmsg1(debuglevel, "Close lex file: %s\n",
         lf->file_contents[current.file_index].fname.c_str());
 
-  FreeMemory(current.str);
-
   lf->files.pop_back();
 
   if (lf->files.empty()) {
@@ -293,8 +291,6 @@ static inline lexer* lex_add(lexer* lf,
   }
 
   current.file_index = &contents - &lf->file_contents[0];
-  current.str = GetMemory(256);
-  current.str_max_len = SizeofPoolMemory(current.str);
 
   current.state = lex_none;
   current.ch = L_EOL;
@@ -522,26 +518,13 @@ void LexUngetChar(lexer* lf)
 }
 
 // Add a character to the current string
-static void add_str(lexer* lf, int ch)
-{
-  auto& current = lf->current();
-  /* The default config string is sized to 256 bytes.
-   * If we need longer config strings its increased with 256 bytes each time. */
-  if ((current.str_len + 3) >= current.str_max_len) {
-    current.str = CheckPoolMemorySize(current.str, current.str_max_len + 256);
-    current.str_max_len = SizeofPoolMemory(current.str);
-  }
-
-  current.str[current.str_len++] = ch;
-  current.str[current.str_len] = 0;
-}
+static void add_str(lexer* lf, int ch) { lf->current_str.push_back(ch); }
 
 // Begin the string
 static void BeginStr(lexer* lf, int ch)
 {
   auto& current = lf->current();
-  current.str_len = 0;
-  current.str[0] = 0;
+  lf->current_str.clear();
   if (ch != 0) { add_str(lf, ch); }
   current.begin_line_no = current.line_no; /* save start string line no */
 }
@@ -622,7 +605,7 @@ const char* lex_tok_to_str(int token)
   }
 }
 
-static uint32_t scan_pint(lexer* lf, char* str)
+static uint32_t scan_pint(lexer* lf, const char* str)
 {
   int64_t val = 0;
 
@@ -639,7 +622,7 @@ static uint32_t scan_pint(lexer* lf, char* str)
   return (uint32_t)(val & 0xffffffff);
 }
 
-static uint64_t scan_pint64(lexer* lf, char* str)
+static uint64_t scan_pint64(lexer* lf, const char* str)
 {
   uint64_t val = 0;
 
@@ -1001,12 +984,12 @@ int LexGetToken(lexer* lf, int expect)
           LexGetChar(lf);
 
           current.state = lex_none;
-          char* str = current.str;
-          lf = lex_open_file(lf, current.str, lf->scan_error, lf->scan_warning);
+          std::string str = lf->str();
+          lf = lex_open_file(lf, lf->str(), lf->scan_error, lf->scan_warning);
           if (lf == NULL) {
             BErrNo be;
             scan_err2(lfori, T_("Cannot open included config file %s: %s\n"),
-                      str, be.bstrerror());
+                      str.c_str(), be.bstrerror());
             return BCT_ERROR;
           }
           break;
@@ -1031,12 +1014,11 @@ int LexGetToken(lexer* lf, int expect)
           lexer* lfori = lf;
 
           current.state = lex_none;
-          auto* str = current.str;
-          lf = lex_open_file(lf, current.str, lf->scan_error, lf->scan_warning);
+          lf = lex_open_file(lf, lf->str(), lf->scan_error, lf->scan_warning);
           if (lf == NULL) {
             BErrNo be;
             scan_err2(lfori, T_("Cannot open included config file %s: %s\n"),
-                      str, be.bstrerror());
+                      lf->str(), be.bstrerror());
             return BCT_ERROR;
           }
           break;
@@ -1083,49 +1065,53 @@ int LexGetToken(lexer* lf, int expect)
    *  and possible additional scanning (e.g. for range). */
   switch (expect) {
     case BCT_PINT16:
-      lf->u.pint16_val = (scan_pint(lf, current.str) & 0xffff);
+      lf->u.pint16_val = (scan_pint(lf, lf->str()) & 0xffff);
       lf->u2.pint16_val = lf->u.pint16_val;
       token = BCT_PINT16;
       break;
 
     case BCT_PINT32:
-      lf->u.pint32_val = scan_pint(lf, current.str);
+      lf->u.pint32_val = scan_pint(lf, lf->str());
       lf->u2.pint32_val = lf->u.pint32_val;
       token = BCT_PINT32;
       break;
 
     case BCT_PINT32_RANGE:
       if (token == BCT_NUMBER) {
-        lf->u.pint32_val = scan_pint(lf, current.str);
+        lf->u.pint32_val = scan_pint(lf, lf->str());
         lf->u2.pint32_val = lf->u.pint32_val;
         token = BCT_PINT32;
       } else {
-        char* p = strchr(current.str, '-');
-        if (!p) {
+        std::string_view view = lf->current_str;
+        size_t pos = view.find('-');
+        if (pos == view.npos) {
           scan_err2(lf, T_("expected an integer or a range, got %s: %s"),
-                    lex_tok_to_str(token), current.str);
+                    lex_tok_to_str(token), lf->str());
           token = BCT_ERROR;
           break;
         }
-        *p++ = 0; /* Terminate first half of range */
-        lf->u.pint32_val = scan_pint(lf, current.str);
-        lf->u2.pint32_val = scan_pint(lf, p);
+
+        std::string first{view.substr(0, pos)};
+        std::string second{view.substr(pos + 1)};
+
+        lf->u.pint32_val = scan_pint(lf, first.c_str());
+        lf->u2.pint32_val = scan_pint(lf, second.c_str());
         token = BCT_PINT32_RANGE;
       }
       break;
 
     case BCT_INT16:
-      if (token != BCT_NUMBER || !Is_a_number(current.str)) {
+      if (token != BCT_NUMBER || !Is_a_number(lf->str())) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), current.str);
+                  lex_tok_to_str(token), lf->str());
         token = BCT_ERROR;
         break;
       }
       errno = 0;
-      lf->u.int16_val = (int16_t)str_to_int64(current.str);
+      lf->u.int16_val = (int16_t)str_to_int64(lf->str());
       if (errno != 0) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), current.str);
+                  lex_tok_to_str(token), lf->str());
         token = BCT_ERROR;
       } else {
         token = BCT_INT16;
@@ -1133,17 +1119,17 @@ int LexGetToken(lexer* lf, int expect)
       break;
 
     case BCT_INT32:
-      if (token != BCT_NUMBER || !Is_a_number(current.str)) {
+      if (token != BCT_NUMBER || !Is_a_number(lf->str())) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), current.str);
+                  lex_tok_to_str(token), lf->str());
         token = BCT_ERROR;
         break;
       }
       errno = 0;
-      lf->u.int32_val = (int32_t)str_to_int64(current.str);
+      lf->u.int32_val = (int32_t)str_to_int64(lf->str());
       if (errno != 0) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), current.str);
+                  lex_tok_to_str(token), lf->str());
         token = BCT_ERROR;
       } else {
         token = BCT_INT32;
@@ -1151,19 +1137,18 @@ int LexGetToken(lexer* lf, int expect)
       break;
 
     case BCT_INT64:
-      Dmsg2(debuglevel, "int64=:%s: %f\n", current.str,
-            strtod(current.str, NULL));
-      if (token != BCT_NUMBER || !Is_a_number(current.str)) {
+      Dmsg2(debuglevel, "int64=:%s: %f\n", lf->str(), strtod(lf->str(), NULL));
+      if (token != BCT_NUMBER || !Is_a_number(lf->str())) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), current.str);
+                  lex_tok_to_str(token), lf->str());
         token = BCT_ERROR;
         break;
       }
       errno = 0;
-      lf->u.int64_val = str_to_int64(current.str);
+      lf->u.int64_val = str_to_int64(lf->str());
       if (errno != 0) {
         scan_err2(lf, T_("expected an integer number, got %s: %s"),
-                  lex_tok_to_str(token), current.str);
+                  lex_tok_to_str(token), lf->str());
         token = BCT_ERROR;
       } else {
         token = BCT_INT64;
@@ -1172,20 +1157,24 @@ int LexGetToken(lexer* lf, int expect)
 
     case BCT_PINT64_RANGE:
       if (token == BCT_NUMBER) {
-        lf->u.pint64_val = scan_pint64(lf, current.str);
+        lf->u.pint64_val = scan_pint64(lf, lf->str());
         lf->u2.pint64_val = lf->u.pint64_val;
         token = BCT_PINT64;
       } else {
-        char* p = strchr(current.str, '-');
-        if (!p) {
+        std::string_view view = lf->current_str;
+        size_t pos = view.find('-');
+        if (pos == view.npos) {
           scan_err2(lf, T_("expected an integer or a range, got %s: %s"),
-                    lex_tok_to_str(token), current.str);
+                    lex_tok_to_str(token), lf->str());
           token = BCT_ERROR;
           break;
         }
-        *p++ = 0; /* Terminate first half of range */
-        lf->u.pint64_val = scan_pint64(lf, current.str);
-        lf->u2.pint64_val = scan_pint64(lf, p);
+
+        std::string first{view.substr(0, pos)};
+        std::string second{view.substr(pos + 1)};
+
+        lf->u.pint64_val = scan_pint64(lf, first.c_str());
+        lf->u2.pint64_val = scan_pint64(lf, second.c_str());
         token = BCT_PINT64_RANGE;
       }
       break;
@@ -1194,11 +1183,11 @@ int LexGetToken(lexer* lf, int expect)
       if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING
           && token != BCT_QUOTED_STRING) {
         scan_err2(lf, T_("expected a name, got %s: %s"), lex_tok_to_str(token),
-                  current.str);
+                  lf->str());
         token = BCT_ERROR;
-      } else if (current.str_len > MAX_RES_NAME_LENGTH) {
-        scan_err3(lf, T_("name %s length %d too long, max is %d\n"),
-                  current.str, current.str_len, MAX_RES_NAME_LENGTH);
+      } else if (lf->str_len() > MAX_RES_NAME_LENGTH) {
+        scan_err3(lf, T_("name %s length %d too long, max is %d\n"), lf->str(),
+                  lf->str_len(), MAX_RES_NAME_LENGTH);
         token = BCT_ERROR;
       }
       break;
@@ -1207,7 +1196,7 @@ int LexGetToken(lexer* lf, int expect)
       if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING
           && token != BCT_QUOTED_STRING) {
         scan_err2(lf, T_("expected a string, got %s: %s"),
-                  lex_tok_to_str(token), current.str);
+                  lex_tok_to_str(token), lf->str());
         token = BCT_ERROR;
       } else {
         token = BCT_STRING;
