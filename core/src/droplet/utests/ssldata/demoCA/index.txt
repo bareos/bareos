@@ -1,2 +1,0 @@
-V	231026001807Z		1000	unknown	/C=US/ST=CA/L=San Francisco/O=Droplet Client Test/OU=Fake Certs Department/CN=Fake Client R Us/emailAddress=nobody@nowhere.com
-V	231026180208Z		1001	unknown	/C=US/ST=CA/L=San Francisco/O=Droplet Client Test/OU=Droplet Client Test/CN=Fake Client R Us/emailAddress=nobody@nowhere.com

@@ -1,7 +1,0 @@
-Client {
-  Name = bareos-fd
-  Description = "Client resource of the Director itself."
-  Address = localhost
-  Password = "@fd_password@"          # password for FileDaemon
-  Port = @fd_port@
-}

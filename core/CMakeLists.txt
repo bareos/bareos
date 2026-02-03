@@ -332,15 +332,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
 endif()
 include(BareosFindStaticCodeAnalysisTools)
 
-if(NOT client-only
-   AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS"
-   AND CMAKE_SIZEOF_VOID_P EQUAL 8
-)
-  # droplet does not build on solaris because of sys/cdefs.h: No such file or
-  # directory it is also not safe on 32-bit systems, so we only build it on
-  # 64-bit
-  add_subdirectory(src/droplet)
-endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(MSVC)
