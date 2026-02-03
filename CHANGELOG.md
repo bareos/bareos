@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - rpm: don't fail, if install log file isn't writable [PR #2473]
 - systemtests: autochanger add testrunner-restore-non-present-volume [PR #2476]
 - core/filed: fix spurious wakeups race condition in filed. [PR #2508]
+- webui: add encrypt checkbox for label tape [PR #2522]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2205,6 +2206,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2508]: https://github.com/bareos/bareos/pull/2508
 [PR #2519]: https://github.com/bareos/bareos/pull/2519
 [PR #2521]: https://github.com/bareos/bareos/pull/2521
+[PR #2522]: https://github.com/bareos/bareos/pull/2522
 [PR #2524]: https://github.com/bareos/bareos/pull/2524
 [PR #2525]: https://github.com/bareos/bareos/pull/2525
 [unreleased]: https://github.com/bareos/bareos/tree/master
