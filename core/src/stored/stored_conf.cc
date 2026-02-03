@@ -527,35 +527,6 @@ static void ConfigBeforeCallback(ConfigurationParser& config)
   config.InitializeQualifiedResourceNameTypeConverter(map);
 }
 
-static void CheckDropletDevices(ConfigurationParser& config)
-{
-  BareosResource* p = nullptr;
-
-  while ((p = config.GetNextRes(R_DEVICE, p)) != nullptr) {
-    DeviceResource* d = dynamic_cast<DeviceResource*>(p);
-    if (d && d->device_type == DeviceType::B_DROPLET_DEV) {
-      my_config->AddWarning(
-          fmt::format("device {} uses the droplet backend, "
-                      "please consider using the newer dplcompat backend.",
-                      d->archive_device_string));
-      if (d->max_concurrent_jobs == 0) {
-        /* 0 is the general default. However, for this device_type, only 1
-         * works. So we set it to this value. */
-        Jmsg1(nullptr, M_WARNING, 0,
-              T_("device %s is set to the default 'Maximum Concurrent Jobs' = "
-                 "1.\n"),
-              d->archive_device_string);
-        d->max_concurrent_jobs = 1;
-      } else if (d->max_concurrent_jobs > 1) {
-        Jmsg2(nullptr, M_ERROR_TERM, 0,
-              T_("device %s is configured with 'Maximum Concurrent Jobs' = %d, "
-                 "however only 1 is supported.\n"),
-              d->archive_device_string, d->max_concurrent_jobs);
-      }
-    }
-  }
-}
-
 static void GuessMissingDeviceTypes(ConfigurationParser& config)
 {
   BareosResource* p = nullptr;
@@ -631,7 +602,6 @@ static void ConfigReadyCallback(ConfigurationParser& config)
   MultiplyConfiguredDevices(config);
   GuessMissingDeviceTypes(config);
   CheckAndLoadDeviceBackends(config);
-  CheckDropletDevices(config);
 }
 
 ConfigurationParser* InitSdConfig(const char* t_configfile, int exit_code)

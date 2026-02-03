@@ -38,7 +38,6 @@ Vendor:     The Bareos Team
 # default settings
 %define client_only 0
 %define build_qt_monitor 1
-%define droplet 1
 %define have_git 1
 %define install_suse_fw 0
 %define systemd_support 0
@@ -301,14 +300,6 @@ Summary:       Dedupable storage format for the Bareos Storage daemon
 Group:         Productivity/Archiving/Backup
 Requires:      %{name}-common  = %{version}
 Requires:      %{name}-storage = %{version}
-
-%if 0%{?droplet}
-%package       storage-droplet
-Summary:       Object Storage support (through libdroplet) for the Bareos Storage daemon
-Group:         Productivity/Archiving/Backup
-Requires:      %{name}-common  = %{version}
-Requires:      %{name}-storage = %{version}
-%endif
 
 %package       storage-dplcompat
 Summary:       Object Storage support for the Bareos Storage daemon
@@ -751,13 +742,6 @@ This package contains the Storage Daemon tape support
 %{dscr}
 
 This package contains the Storage Backend for the dedupable storage format.
-
-%if 0%{?droplet}
-%description storage-droplet
-%{dscr}
-
-This package contains the Storage backend for Object Storage (through libdroplet).
-%endif
 
 %description storage-dplcompat
 %{dscr}

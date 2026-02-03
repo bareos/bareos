@@ -675,7 +675,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: DEVICE_TYPE
 
-   The following values are allowed: `Tape`, `File`, `FIFO`, `GFAPI`, `Droplet` :sinceVersion:`17.2.7: libdroplet`.
+   The following values are allowed: `Tape`, `File`, `FIFO`, `GFAPI`.
 
    See :config:option:`sd/device/DeviceType`.
 

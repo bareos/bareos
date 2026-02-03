@@ -199,7 +199,6 @@ enum class SeekMode
 
 // incomplete list of device types for GuessMissingDeviceTypes()
 struct DeviceType {
-  static constexpr std::string_view B_DROPLET_DEV = "droplet";
   static constexpr std::string_view B_FIFO_DEV = "fifo";
   static constexpr std::string_view B_FILE_DEV = "file";
   static constexpr std::string_view B_TAPE_DEV = "tape";

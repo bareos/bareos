@@ -55,9 +55,6 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-director-python-plugins-common")
   endif()
 
-  if(HAVE_GFAPI)
-    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-glusterfs-plugin")
-  endif()
   if(ENABLE_PYTHON AND Python3_FOUND)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-python3-plugin")
     list(APPEND DEBIAN_CONTROL_SNIPPETS
@@ -67,12 +64,6 @@ else()
 
   if(ENABLE_GRPC)
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-grpc-python3-plugin")
-  endif()
-  if(NOT client-only AND TARGET droplet)
-    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-droplet")
-  endif()
-  if(NOT client-only AND HAVE_GFAPI)
-    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-storage-glusterfs")
   endif()
   if(NOT client-only
      AND ENABLE_PYTHON

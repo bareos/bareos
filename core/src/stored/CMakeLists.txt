@@ -38,9 +38,6 @@ if(NOT build_client_only)
   if(NOT HAVE_WIN32)
     list(APPEND BACKENDS dedupable_device.d)
   endif()
-  if(TARGET droplet)
-    list(APPEND BACKENDS droplet_device.d)
-  endif()
   list(APPEND BACKENDS dplcompat_device.d)
   set(BACKENDS
       ${BACKENDS}
