@@ -26,7 +26,9 @@ check_job_ids()
   selected_ids="$(bin/bconsole | grep "You have selected the following JobIds\?: " | cut -d' ' -f7-)"
 
   if [ "${selected_ids}" != "${expected_ids}" ]; then
-    echo "Expected to select ids '${expected_ids}', but instead '${selected_ids}' were selected" >&2
+    first=$(echo "${selected_ids}" | cat -vE)
+    second=$(echo "${expected_ids}" | cat -vE)
+    echo "Expected to select ids '${first}', but instead '${second}' were selected" >&2
     return 1
   fi
 }
