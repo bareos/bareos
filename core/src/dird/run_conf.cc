@@ -170,7 +170,6 @@ void StoreRun(ConfigurationParser* conf,
               int index,
               int pass)
 {
-  char* p;
   int i, j;
   auto options = lc->options;
   int token, state, state2 = 0, code = 0, code2 = 0;
@@ -441,21 +440,24 @@ void StoreRun(ConfigurationParser* conf,
         }
         SetBit(code, res_run.date_time_mask.woy);
         break;
-      case s_time: /* Time */
+      case s_time: /* Time */ {
         if (!have_at) {
           scan_err0(lc, T_("Time must be preceded by keyword AT."));
           return;
         }
         if (!have_hour) { ClearBitRange(0, 23, res_run.date_time_mask.hour); }
         //       Dmsg1(000, "s_time=%s\n", lc->str());
-        p = strchr(lc->str(), ':');
-        if (!p) {
+        std::string_view view = lc->str();
+        size_t pos = view.find(':');
+        if (pos == view.npos) {
           scan_err0(lc, T_("Time logic error.\n"));
           return;
         }
-        *p++ = 0;               /* Separate two halves */
-        code = atoi(lc->str()); /* Pick up hour */
-        code2 = atoi(p);        /* Pick up minutes */
+
+        std::from_chars(view.data() + 0, view.data() + pos, code);
+        auto conv_res = std::from_chars(view.data() + pos + 1,
+                                        view.data() + view.size(), code);
+        const char* p = conv_res.ptr;
         len = strlen(p);
         if (len >= 2) { p += 2; }
         if (Bstrcasecmp(p, "pm")) {
@@ -484,7 +486,7 @@ void StoreRun(ConfigurationParser* conf,
         SetBit(code, res_run.date_time_mask.hour);
         res_run.minute = code2;
         have_hour = true;
-        break;
+      } break;
       case s_at:
         have_at = true;
         break;
@@ -495,19 +497,28 @@ void StoreRun(ConfigurationParser* conf,
           have_wom = true;
         }
         break;
-      case s_modulo:
-        p = strchr(lc->str(), '/');
-        if (!p) {
+      case s_modulo: {
+        std::string_view view = lc->str();
+        size_t pos = view.find(':');
+        if (pos == view.npos) {
           scan_err0(lc, T_("Modulo logic error.\n"));
           return;
         }
-        *p++ = 0; /* Separate two halves */
 
-        if (IsAnInteger(lc->str()) && IsAnInteger(p)) {
+        auto first = view.substr(0, pos);
+        auto second = view.substr(pos + 1);
+
+        if (IsAnInteger(first) && IsAnInteger(second)) {
           // Check for day modulo specification.
-          code = atoi(lc->str()) - 1;
-          code2 = atoi(p);
-          if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
+          auto first_res = std::from_chars(first.data(),
+                                           first.data() + first.size(), code);
+          auto second_res = std::from_chars(
+              second.data(), second.data() + second.size(), code2);
+          if (first_res.ec != std::errc{}
+              || first_res.ptr != first.data() + first.size()
+              || second_res.ec != std::errc{}
+              || second_res.ptr != second.data() + second.size() || code < 0
+              || code > 30 || code2 < 0 || code2 > 30) {
             scan_err0(lc, T_("Bad day specification in modulo."));
             return;
           }
@@ -526,18 +537,25 @@ void StoreRun(ConfigurationParser* conf,
               SetBit(i + code, res_run.date_time_mask.mday);
             }
           }
-        } else if (strlen(lc->str()) == 3 && strlen(p) == 3
-                   && (lc->str()[0] == 'w' || lc->str()[0] == 'W')
-                   && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str() + 1)
-                   && IsAnInteger(p + 1)) {
+        } else if (first.size() == 3 && second.size() == 3
+                   && (first[0] == 'w' || first[0] == 'W')
+                   && (second[0] == 'w' || second[0] == 'W')
+                   && IsAnInteger(first.substr(1))
+                   && IsAnInteger(second.substr(1))) {
           // Check for week modulo specification.
-          code = atoi(lc->str() + 1);
-          code2 = atoi(p + 1);
-          if (code < 0 || code > 53) {
+          auto first_res = std::from_chars(first.data() + 1,
+                                           first.data() + first.size(), code);
+          auto second_res = std::from_chars(
+              second.data() + 1, second.data() + second.size(), code2);
+          if (first_res.ec != std::errc{}
+              || first_res.ptr != first.data() + first.size() || code < 0
+              || code > 53) {
             scan_err0(lc, T_("Week number out of range (0-53) in modulo"));
             return;
           }
-          if (code2 <= 0 || code2 > 53) {
+          if (second_res.ec != std::errc{}
+              || second_res.ptr != second.data() + second.size() || code2 <= 0
+              || code2 > 53) {
             scan_err0(lc, T_("Week interval out of range (1-53) in modulo"));
             return;
           }
@@ -559,19 +577,22 @@ void StoreRun(ConfigurationParser* conf,
                            "is '01/02', for yearweeks is 'w01/w02'."));
           return;
         }
-        break;
-      case s_range:
-        p = strchr(lc->str(), '-');
-        if (!p) {
+      } break;
+      case s_range: {
+        std::string_view view = lc->str();
+        size_t pos = view.find('-');
+        if (pos == view.npos) {
           scan_err0(lc, T_("Range logic error.\n"));
           return;
         }
-        *p++ = 0; /* Separate two halves */
 
-        if (IsAnInteger(lc->str()) && IsAnInteger(p)) {
+        auto first = view.substr(0, pos);
+        auto second = view.substr(pos + 1);
+
+        if (IsAnInteger(first) && IsAnInteger(second)) {
           // Check for day range.
-          code = atoi(lc->str()) - 1;
-          code2 = atoi(p) - 1;
+          std::from_chars(first.data(), first.data() + first.size(), code);
+          std::from_chars(second.data(), second.data() + second.size(), code2);
           if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
             scan_err0(lc, T_("Bad day range specification."));
             return;
@@ -586,13 +607,15 @@ void StoreRun(ConfigurationParser* conf,
             SetBitRange(code, 30, res_run.date_time_mask.mday);
             SetBitRange(0, code2, res_run.date_time_mask.mday);
           }
-        } else if (strlen(lc->str()) == 3 && strlen(p) == 3
-                   && (lc->str()[0] == 'w' || lc->str()[0] == 'W')
-                   && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str() + 1)
-                   && IsAnInteger(p + 1)) {
+        } else if (first.size() == 3 && second.size() == 3
+                   && (first[0] == 'w' || first[0] == 'W')
+                   && (second[0] == 'w' || second[0] == 'W')
+                   && IsAnInteger(first.substr(1))
+                   && IsAnInteger(second.substr(1))) {
           // Check for week of year range.
-          code = atoi(lc->str() + 1);
-          code2 = atoi(p + 1);
+          std::from_chars(first.data() + 1, first.data() + first.size(), code);
+          std::from_chars(second.data() + 1, second.data() + second.size(),
+                          code2);
           if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
             scan_err0(lc, T_("Week number out of range (0-53)"));
             return;
@@ -609,9 +632,9 @@ void StoreRun(ConfigurationParser* conf,
           }
         } else {
           // lookup first half of keyword range (week days or months).
-          lcase(lc->str());
           for (i = 0; keyw[i].name; i++) {
-            if (bstrcmp(lc->str(), keyw[i].name)) {
+            if (first.size() == strlen(keyw[i].name)
+                && bstrncasecmp(first.data(), keyw[i].name, first.size())) {
               state = keyw[i].state;
               code = keyw[i].code;
               i = 0;
@@ -625,9 +648,9 @@ void StoreRun(ConfigurationParser* conf,
           }
 
           // Lookup end of range.
-          lcase(p);
           for (i = 0; keyw[i].name; i++) {
-            if (bstrcmp(p, keyw[i].name)) {
+            if (second.size() == strlen(keyw[i].name)
+                && bstrncasecmp(second.data(), keyw[i].name, second.size())) {
               state2 = keyw[i].state;
               code2 = keyw[i].code;
               i = 0;
@@ -675,7 +698,7 @@ void StoreRun(ConfigurationParser* conf,
             }
           }
         }
-        break;
+      } break;
       case s_hourly:
         have_hour = true;
         SetBitRange(0, 23, res_run.date_time_mask.hour);

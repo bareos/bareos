@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -541,14 +541,13 @@ bool Is_a_number_list(const char* n)
 }
 
 // Check if the specified string is an integer
-bool IsAnInteger(const char* n)
+bool IsAnInteger(std::string_view v)
 {
-  bool digit_seen = false;
-  while (B_ISDIGIT(*n)) {
-    digit_seen = true;
-    n++;
-  }
-  return digit_seen && *n == 0;
+  if (v.empty()) { return false; }
+
+  auto found = std::find_if(std::begin(v), std::end(v),
+                            [](char c) { return !B_ISDIGIT(c); });
+  return found == std::end(v);
 }
 
 /*
