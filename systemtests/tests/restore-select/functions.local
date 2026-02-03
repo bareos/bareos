@@ -32,12 +32,15 @@ check_job_ids()
 {
   expected_ids="$1"
 
-  selected_ids="$(bin/bconsole | grep "You have selected the following JobIds\?: " | cut -d' ' -f7-)"
+  # we need to remove carriage return because something on windows adds them
+  # to the end of the line (either bconsole/bareos or grep) while we do not care
+  # about them.
+  selected_ids="$(bin/bconsole | grep "You have selected the following JobIds\?: " | cut -d' ' -f7- | tr -d '\r')"
 
   if [ "${selected_ids}" != "${expected_ids}" ]; then
     first=$(show_non_printing "${selected_ids}")
     second=$(show_non_printing "${expected_ids}")
-    echo "Expected to select ids '${first}', but instead '${second}' were selected" >&2
+    echo "Expected to select ids '${second}', but instead '${first}' were selected" >&2
     return 1
   fi
 }
