@@ -19,6 +19,15 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+show_non_printing()
+{
+  if on_freebsd_host; then
+    cat -vet <<<"$1"
+  else
+    cat -A <<<"$1"
+  fi
+}
+
 check_job_ids()
 {
   expected_ids="$1"
@@ -26,8 +35,8 @@ check_job_ids()
   selected_ids="$(bin/bconsole | grep "You have selected the following JobIds\?: " | cut -d' ' -f7-)"
 
   if [ "${selected_ids}" != "${expected_ids}" ]; then
-    first=$(echo "${selected_ids}" | cat -vE)
-    second=$(echo "${expected_ids}" | cat -vE)
+    first=$(show_non_printing "${selected_ids}")
+    second=$(show_non_printing "${expected_ids}")
     echo "Expected to select ids '${first}', but instead '${second}' were selected" >&2
     return 1
   fi
