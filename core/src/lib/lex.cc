@@ -99,8 +99,8 @@ static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
           T_("Config error: %s\n"
              "            : line %d, col %d of file %s\n%s\n%s"),
           buf.c_str(), current.line_no, current.col_no,
-          lc->file_contents[current.file_index].fname.c_str(), current.line,
-          more.c_str());
+          lc->file_contents[current.file_index].fname.c_str(),
+          current.line.c_str(), more.c_str());
   } else {
     e_msg(file, line, lc->err_type, 0, T_("Config error: %s\n"), buf.c_str());
   }
@@ -133,8 +133,8 @@ static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
           T_("Config warning: %s\n"
              "            : line %d, col %d of file %s\n%s\n%s"),
           buf.c_str(), current.line_no, current.col_no,
-          lc->file_contents[current.file_index].fname.c_str(), current.line,
-          more.c_str());
+          lc->file_contents[current.file_index].fname.c_str(),
+          current.line.c_str(), more.c_str());
   } else {
     p_msg(file, line, 0, T_("Config warning: %s\n"), buf.c_str());
   }
@@ -224,7 +224,6 @@ static inline lexer* lex_add(lexer* lf,
   }
 
   current.file_index = &contents - &lf->file_contents[0];
-  current.line = GetMemory(1024);
   current.str = GetMemory(256);
   current.str_max_len = SizeofPoolMemory(current.str);
 
@@ -353,18 +352,24 @@ void LineMapRemoveLastChar(lexer* lf)
 static inline bool prepare_next_line(lexer* lf, lex_file_state& state)
 {
   auto& contents = lf->file_contents[state.file_index];
+  auto& str = contents.content;
 
-  if (contents.content.size() <= state.current_offset) { return false; }
+  if (str.size() <= state.current_offset) { return false; }
 
-  auto found = contents.content.find('\n', state.current_offset);
+  auto found = str.find('\n', state.current_offset);
 
-  state.line = contents.content.c_str() + state.current_offset;
+  std::string_view line = [&] {
+    if (found == std::string::npos) {
+      return std::string_view{str}.substr(state.current_offset);
+    } else {
+      return std::string_view{str}.substr(state.current_offset,
+                                          found - state.current_offset);
+    }
+  }();
 
-  if (found == std::string::npos) {
-    state.current_offset = contents.content.size();
-  } else {
-    state.current_offset = found + 1;
-  }
+  state.current_offset += line.size() + 1;
+
+  state.line.assign(line);
 
   return true;
 }
@@ -402,13 +407,13 @@ int LexGetChar(lexer* lf)
     }
     current.line_no++;
     current.col_no = 0;
-    Dmsg2(1000, "fget line=%d %s", current.line_no, current.line);
+    Dmsg2(1000, "fget line=%d %s", current.line_no, current.line.c_str());
   }
 
+  current.ch = (uint8_t)current.line[current.col_no];
   if (current.ch == 0) {
     current.ch = L_EOL;
   } else {
-    current.ch = (uint8_t)current.line[current.col_no];
     if (current.ch == '\n') {
       current.ch = L_EOL;
       current.col_no++;
