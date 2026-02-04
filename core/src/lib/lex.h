@@ -117,9 +117,6 @@ struct lex_file_state {
   int begin_line_no; /* line no of beginning of string */
 
   size_t bytes;
-
-  lex_state state; /* lex_state variable */
-  int ch;          /* last char/L_VAL returned by get_char */
 };
 
 struct lex_file {
@@ -158,7 +155,10 @@ struct lexer {
   int col_no() const { return files.back().col_no; }
   int str_len() const { return current_str.size(); }
 
-  int ch() const { return files.back().ch; }
+  lex_state state; /* lex_state variable */
+  int ch_;         /* last char/L_VAL returned by get_char */
+
+  int ch() const { return ch_; }
 
   enum options : size_t
   {
