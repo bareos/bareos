@@ -742,6 +742,14 @@ void StoreAlistDir(ConfigurationParser* conf,
                    int index,
                    int pass)
 {
+  LexGetToken(lc, BCT_STRING); /* scan next item */
+  conf->PushObject();
+  conf->PushLabel("is_shell");
+  conf->PushB(lc->str()[0] == '|');
+  conf->PushLabel("str");
+  conf->PushString(lc->str() + (lc->str()[0] == '|'));
+  conf->PopObject();
+
   if (pass == 2) {
     alist<const char*>** alistvalue
         = GetItemVariablePointer<alist<const char*>**>(*item);
@@ -750,16 +758,8 @@ void StoreAlistDir(ConfigurationParser* conf,
     }
     alist<const char*>* list = *alistvalue;
 
-    LexGetToken(lc, BCT_STRING); /* scan next item */
     Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str(), list,
           list->size(), item->name);
-
-    conf->PushObject();
-    conf->PushLabel("is_shell");
-    conf->PushB(lc->str()[0] == '|');
-    conf->PushLabel("str");
-    conf->PushString(lc->str() + (lc->str()[0] == '|'));
-    conf->PopObject();
 
     /* See if we need to drop the default value from the alist.
      *

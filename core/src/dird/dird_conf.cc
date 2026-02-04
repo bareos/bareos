@@ -3002,7 +3002,7 @@ static void StoreAcl(ConfigurationParser* p,
   PoolMem msg;
   int token = BCT_COMMA;
 
-  p->PushArray();
+  p->PushMergeArray();
   while (token == BCT_COMMA) {
     LexGetToken(lc, BCT_STRING);
     p->PushString(lc->str());
@@ -3165,7 +3165,11 @@ static void StoreRunscriptCmd(ConfigurationParser* p,
                               int pass)
 {
   LexGetToken(lc, BCT_STRING);
+
+  // multiple commands are allowed
+  p->PushMergeArray();
   p->PushString(lc->str());
+  p->PopArray();
 
   if (pass == 2) {
     Dmsg2(100, "runscript cmd=%s type=%c\n", lc->str(), item->code);
