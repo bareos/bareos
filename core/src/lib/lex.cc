@@ -160,8 +160,14 @@ static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
     lc->err_type = M_ERROR_TERM;
   }
 
-  auto& current = lc->files.back();
+  if (lc->files.empty()) {
+    e_msg(file, line, lc->err_type, 0, T_("Config error: %s\n"), buf.c_str());
 
+    lc->error_counter += 1;
+    return;
+  }
+
+  auto& current = lc->files.back();
   auto err_content = read_span(lc, lc->token_start, lc->bytes_read);
   if (!err_content.empty()) {
     e_msg(file, line, lc->err_type, 0,
@@ -504,10 +510,11 @@ int LexGetChar(lexer* lf)
   Dmsg2(debuglevel, "LexGetChar: %c %d\n", lf->ch_, lf->ch_);
 
   if (lf->ch_ > 0) {
-    ASSERT(lf->ch_
-           == lf->file_contents[lf->line_map.back().file_index]
-                  .content[lf->bytes_read - lf->line_map.back().byte_start
-                           + lf->line_map.back().file_start - 1]);
+    auto findex = lf->line_map.back().file_index;
+    const auto& fcontent = lf->file_contents[findex].content;
+    auto current_offset = lf->bytes_read - lf->line_map.back().byte_start
+                          + lf->line_map.back().file_start;
+    ASSERT((char)lf->ch_ == fcontent[current_offset - 1]);
   }
   return lf->ch_;
 }
