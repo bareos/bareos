@@ -983,6 +983,14 @@ static void SetAdoConnectString(PluginContext* ctx)
   PoolMem ado_connect_string(PM_NAME);
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
 
+  // If no explicit instance name given usedthe DEFAULT_INSTANCE name.
+  if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
+
+  // If no explicit server address given use the DEFAULT_SERVER_ADDRESS.
+  if (!p_ctx->server_address) {
+    p_ctx->server_address = strdup(DEFAULT_SERVER_ADDRESS);
+  }
+
   if (Bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
     Mmsg(ado_connect_string,
          "Provider=MSOLEDBSQL.1;Data Source=%s;Initial Catalog=master",
@@ -1019,9 +1027,6 @@ static inline void PerformAdoBackup(PluginContext* ctx)
   plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
   PoolMem ado_connect_string(PM_NAME), ado_query(PM_NAME);
   POOLMEM* vdsname;
-
-  // If no explicit instance name given usedthe DEFAULT_INSTANCE name.
-  if (!p_ctx->instance) { p_ctx->instance = strdup(DEFAULT_INSTANCE); }
 
   SetAdoConnectString(ctx);
 
