@@ -429,8 +429,7 @@ class ConfigurationParser {
                                lexer* lc,
                                const ResourceItem* item,
                                int index,
-                               int pass,
-                               BareosResource** configuration_resources);
+                               int pass);
   using resource_printer = void(const ResourceItem& item,
                                 OutputFormatterResource& send,
                                 bool hide_sensitive_data,

@@ -152,9 +152,7 @@ ConfigParserStateMachine::ScanResource(int token)
                            resource_item_index, parser_pass_number_)) {
           if (my_config_.store_res_) {
             my_config_.store_res_(&my_config_, lexical_parser_, item,
-                                  resource_item_index, parser_pass_number_,
-                                  my_config_.config_resources_container_
-                                      ->configuration_resources_.data());
+                                  resource_item_index, parser_pass_number_);
           }
         }
       } else {

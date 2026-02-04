@@ -3703,8 +3703,7 @@ static void StoreConfigCb(ConfigurationParser* p,
                           lexer* lc,
                           const ResourceItem* item,
                           int index,
-                          int pass,
-                          BareosResource**)
+                          int pass)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:
