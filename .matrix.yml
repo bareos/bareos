@@ -135,3 +135,12 @@ OS:
        - x86_64
       WINVERSIONS:
          - windows-11-64
+    test:
+      TYPE: win-test
+      BUILD_SCRIPT: CD/windows/build-ninja.bat
+      STAGES:
+        - win-native-64-release-hyperv
+      ARCH:
+       - x86_64
+      WINVERSIONS:
+         - windows-11-64
