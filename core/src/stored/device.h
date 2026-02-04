@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,8 +30,10 @@ void SetStartVolPosition(DeviceControlRecord* dcr);
 void SetNewVolumeParameters(DeviceControlRecord* dcr);
 void SetNewFileParameters(DeviceControlRecord* dcr);
 BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
+                                           BootStrapRecord** current,
                                            DeviceControlRecord* dcr);
 bool TryDeviceRepositioning(JobControlRecord* jcr,
+                            BootStrapRecord** current,
                             DeviceRecord* rec,
                             DeviceControlRecord* dcr);
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -293,6 +293,7 @@ bail_out:
 
 // Position to the first file on this volume
 BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
+                                           BootStrapRecord** current,
                                            DeviceControlRecord* dcr)
 {
   BootStrapRecord* bsr = NULL;
@@ -301,8 +302,20 @@ BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
   /* Now find and position to first file and block
    *   on this tape. */
   if (jcr->sd_impl->read_session.bsr) {
+    if (!*current) {
+      *current = jcr->sd_impl->read_session.bsr;
+      Dmsg2(300, "Switching to bsr { sessid = %lu, volume = %s }\n",
+            (*current)->sessid->sessid, (*current)->volume->VolumeName);
+    }
+
+
     jcr->sd_impl->read_session.bsr->Reposition = true;
-    bsr = find_next_bsr(jcr->sd_impl->read_session.bsr, dev);
+    bsr = find_next_bsr(jcr->sd_impl->read_session.bsr, *current, dev);
+    if (bsr && bsr != *current) {
+      *current = bsr;
+      Dmsg2(300, "Switching to bsr { sessid = %lu, volume = %s }\n",
+            (*current)->sessid->sessid, (*current)->volume->VolumeName);
+    }
     if (GetBsrStartAddr(bsr, &file, &block) > 0) {
       Jmsg(jcr, M_INFO, 0,
            T_("Forward spacing Volume \"%s\" to file:block %u:%u.\n"),
@@ -320,13 +333,14 @@ BootStrapRecord* PositionDeviceToFirstFile(JobControlRecord* jcr,
  *          false otherwise
  */
 bool TryDeviceRepositioning(JobControlRecord* jcr,
+                            BootStrapRecord** current,
                             DeviceRecord* rec,
                             DeviceControlRecord* dcr)
 {
   BootStrapRecord* bsr;
   Device* dev = dcr->dev;
 
-  bsr = find_next_bsr(jcr->sd_impl->read_session.bsr, dev);
+  bsr = find_next_bsr(jcr->sd_impl->read_session.bsr, *current, dev);
   if (bsr == NULL && jcr->sd_impl->read_session.bsr->mount_next_volume) {
     Dmsg0(500, "Would mount next volume here\n");
     Dmsg2(500, "Current position (file:block) %u:%u\n", dev->file,
@@ -340,7 +354,11 @@ bool TryDeviceRepositioning(JobControlRecord* jcr,
     rec->Block = 0;
     return true;
   }
-  if (bsr) {
+  if (bsr && bsr != *current) {
+    *current = bsr;
+    Dmsg2(300, "Switching to bsr { sessid = %lu, volume = %s }\n",
+          (*current)->sessid->sessid, (*current)->volume->VolumeName);
+
     /* ***FIXME*** gross kludge to make disk seeking work.  Remove
      *   when find_next_bsr() is fixed not to return a bsr already
      *   completed. */
