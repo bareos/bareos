@@ -363,6 +363,745 @@ Do not proceed to the next item until you have succeeded with the previous one.
    testing your autochanger.
 
 
+.. _TapeSpeedTesting:
+
+Testing & Debugging Tape Speed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. index::
+   single: Tape; Speed; Testing
+   single: Problem; Tape; Speed
+
+If you find that your tape drive is not keeping up with the data rate of your backups, you can check
+several things to help determine the cause of the problem.
+
+Please consider the following informations when testing tape speed:
+
+#. Please set the tape drive device :config:option:`sd/device/MaximumFileSize` to a reasonable value.
+   For LTO-7 a value of 200 GiB should work pretty good. You can change the value at will. While it will
+   affect organization of data on your tapes, it will be read and write compatible no matter what you
+   configure.
+
+   For a little context: When Bareos writes to tape, it adds a **file-mark** now and then to improve search
+   times on restore. By default these file-marks are written in immediate mode (i.e. the syscall will
+   only return after the file mark was physically written to the tape). Thus every file-mark will imply
+   a buffer-flush of the drive. While this may not sound like a problem, modern tape drives have
+   internal buffers of 1 GiB and more. Thus writing a file-mark every 1 GiB (which is still the no more
+   well suited default in Bareos), will result in the buffer being flushed before it is filled.
+
+#. Do tape performance tests with incompressible random data, everything else will produce bogus
+   results that are toally misleading. The data size must also be bigger than the buffer size of the drive,
+   otherwise the drive will just write from its buffer and not from the host, which will also produce
+   bogus results.
+
+   The following command will write 1 GiB of random data to tape, which should be enough for testing
+   most drives. You can increase the count if you have a very fast drive or if you want to test with
+   more data.
+
+.. code-block:: sh
+   :caption: write random data to tape with raw tools, considering /tmp being a memory tmpfs
+
+   dd if=/dev/urandom of=/tmp/random bs=1M count=1024 status=progress
+      1073741824 bytes (1.1 GB, 1.0 GiB) copied, 2.41229 s, 445 MB/s
+
+   tar --totals --verbose --create --file /dev/nst0 /tmp/random
+      tar: Removing leading `/' from member names
+      /tmp/random
+      Total bytes written: 1073745920 (1.1GiB, 210MiB/s)
+
+
+tapestat command
+^^^^^^^^^^^^^^^^
+
+You can monitor performance operations of your tape drive using the :command:`tapestat 1` during a
+job to see how well your tape drive is keeping up with the data rate.
+
+.. image:: /include/images/tapestat_output.png
+   :alt: tapestat output sample
+   :width: 80.0%
+
+
+sg_logs command
+^^^^^^^^^^^^^^^
+
+You can also use the :command:`sg_logs --all /dev/sgX` command to see detailled informations about
+the tape drive status and performance or errors counters. Where :file:`/dev/sgX` is the the SCSI
+generic device corresponding to your tape drive. (see :command:`lsscsi -g`)
+
+Output vary depending if the tape is loaded or not, and drive model.
+
+.. code-block:: sh
+   :caption: sg_logs example with LTO-6 tape drive and a tape loaded
+
+   #!/bin/sh
+   sg_logs --all /dev/sg12
+
+    HP        Ultrium 6-SCSI    331U
+
+      Supported log pages  [0x0]:
+         0x00        Supported log pages [sp]
+         0x02        Write error [we]
+         0x03        Read error [re]
+         0x0c        Sequential access device [sad]
+         0x0d        Temperature [temp]
+         0x11        DT Device status [dtds]
+         0x12        Tape alert response [tar]
+         0x13        Requested recovery [rr]
+         0x14        Device statistics [ds]
+         0x15        Service buffers information [sbi]
+         0x16        Tape diagnostic data [tdd]
+         0x17        Volume statistics [vs]
+         0x18        Protocol specific port [psp]
+         0x1b        Data compression [dc]
+         0x2e        Tape alert [ta]
+         0x30        Tape usage (lto-5, 6) [tu_]
+         0x31        Tape capacity (lto-5, 6) [tc_]
+         0x32        Data compression (lto-5) [dc_]
+         0x34        Read forward errors (lto-5) [rfe_]
+         0x35        DT Device Error (lto-5, 6) [dtde_]
+         0x3e        Device Status (lto-5, 6) [ds_]
+
+      Write error counter page  [0x2]
+      Errors corrected without substantial delay = 0
+      Errors corrected with possible delays = 0
+      Total rewrites or rereads = 0
+      Total errors corrected = 0
+      Total times correction algorithm processed = 0
+      Total bytes processed = 0
+      Total uncorrected errors = 0
+
+      Read error counter page  [0x3]
+      Errors corrected without substantial delay = 371
+      Errors corrected with possible delays = 0
+      Total rewrites or rereads = 0
+      Total errors corrected = 0
+      Total times correction algorithm processed = 371
+      Total bytes processed = 5839
+      Total uncorrected errors = 0
+
+      Sequential access device page (ssc-3)
+      Data bytes received with WRITE commands: 0 GB
+      Data bytes written to media by WRITE commands: 0 GB
+      Data bytes read from media by READ commands: 10 GB
+      Data bytes transferred by READ commands: 14 GB
+      Native capacity from BOP to EOD: 2520811 MB
+      Native capacity from BOP to EW of current partition: 2624517 MB
+      Minimum native capacity from EW to EOP of current partition: 99008 MB
+      Native capacity from BOP to current position: 405 MB
+      Maximum native capacity in device object buffer: 418 MB
+      Cleaning action not required (or completed)
+
+      Temperature page  [0xd]
+      Current temperature = 45 C
+      Reference temperature = <not available>
+
+      DT device status page (ssc-3, adc-3) [0x11]
+      Very high frequency data:
+      PAMR=1 HUI=0 MACC=1 CMPR=1 WRTP=0 CRQST=0 CRQRD=0 DINIT=1
+      INXTN=0 RAA=0 MPRSNT=1 MSTD=1 MTHRD=1 MOUNTED=1
+      DT device activity: No DT device activity
+      VS=1 TDDEC=0 EPP=0 ESR=0 RRQST=0 INTFC=1 TAFC=0
+      Very high frequency polling delay:  16 milliseconds
+      Primary port 1 status:
+         SAS: negotiated physical link rate: 6 Gbps
+         signal=1, pic=1, hashed SAS addr: 0x14037633
+         SAS addr: 0x500110a0015ec9e0
+      Primary port 2 status:
+         SAS: negotiated physical link rate: 6 Gbps
+         signal=1, pic=1, hashed SAS addr: 0x857590
+         SAS addr: 0x500110a0015ec9e1
+      Vendor specific [parameter_code=0x8000]:
+      00     80 00 03 06 b1 17 00 82  00 06                      ..........
+      Vendor specific [parameter_code=0x8010]:
+      00     80 10 03 08 01 00 00 00  00 00 00 00                ............
+      Vendor specific [parameter_code=0xb101]:
+      00     b1 01 03 10 00 00 00 00  00 00 00 00 00 00 00 00    ................
+      10     00 00 00 00                                         ....
+      Vendor specific [parameter_code=0xb102]:
+      00     b1 02 03 10 00 00 00 00  00 00 00 00 00 00 00 00    ................
+      10     00 00 00 00                                         ....
+
+      TapeAlert response page (ssc-3, adc-3) [0x12]
+      Flag01h: 0  02h: 0  03h: 0  04h: 0  05h: 0  06h: 0  07h: 0  08h: 0
+      Flag09h: 0  0Ah: 0  0Bh: 0  0Ch: 0  0Dh: 0  0Eh: 0  0Fh: 0  10h: 0
+      Flag11h: 0  12h: 0  13h: 0  14h: 0  15h: 0  16h: 0  17h: 0  18h: 0
+      Flag19h: 0  1Ah: 0  1Bh: 0  1Ch: 0  1Dh: 0  1Eh: 0  1Fh: 0  20h: 0
+      Flag21h: 0  22h: 0  23h: 0  24h: 0  25h: 0  26h: 0  27h: 0  28h: 0
+      Flag29h: 0  2Ah: 0  2Bh: 0  2Ch: 0  2Dh: 0  2Eh: 0  2Fh: 0  30h: 0
+      Flag31h: 0  32h: 0  33h: 0  34h: 0  35h: 0  36h: 0  37h: 0  38h: 0
+      Flag39h: 0  3Ah: 0  3Bh: 0  3Ch: 0  3Dh: 0  3Eh: 0  3Fh: 0  40h: 0
+
+      Requested recovery page (ssc-3) [0x13]
+      Recovery procedures:
+         Recovery not requested
+
+      Device statistics page (ssc-3 and adc)
+      Lifetime media loads: 751
+      Lifetime cleaning operations: 0
+      Lifetime power on hours: 99163
+      Lifetime media motion (head) hours: 1476
+      Lifetime metres of tape processed: 21687480
+      Lifetime media motion (head) hours when incompatible media last loaded: 0
+      Lifetime power on hours when last temperature condition occurred: 0
+      Lifetime power on hours when last power consumption condition occurred: 0
+      Media motion (head) hours since last successful cleaning operation: 0
+      Media motion (head) hours since 2nd to last successful cleaning: 0
+      Media motion (head) hours since 3rd to last successful cleaning: 0
+      Lifetime power on hours when last operator initiated forced reset
+         and/or emergency eject occurred: 0
+      Lifetime power cycles: 28
+      Volume loads since last parameter reset: 751
+      Hard write errors: 0
+      Hard read errors: 0
+      Duty cycle sample time (ms): 16579047000
+      Read duty cycle: 0
+      Write duty cycle: 0
+      Activity duty cycle: 0
+      Volume not present duty cycle: 4
+      Ready duty cycle: 95
+      MBs transferred from app client in duty cycle sample time: 6240816
+      MBs transferred to app client in duty cycle sample time: 3519830
+      Drive manufacturer's serial number: 0
+      Drive serial number: 0
+      Medium removal prevented: 1
+      Maximum recommended mechanism temperature exceeded: 0
+      Media motion (head) hours for each medium type:
+         Density code: 0x46, Medium type: 0x0
+            Medium motion hours: 0
+         Density code: 0x46, Medium type: 0x1
+            Medium motion hours: 0
+         Density code: 0x58, Medium type: 0x0
+            Medium motion hours: 390
+         Density code: 0x58, Medium type: 0x1
+            Medium motion hours: 0
+         Density code: 0x5a, Medium type: 0x0
+            Medium motion hours: 1103
+         Density code: 0x5a, Medium type: 0x1
+            Medium motion hours: 0
+
+      Service buffer information page (adc-3) [0x15]
+      Service buffer identifier: 0x0
+         Buffer id: 0x41, tu=0, nmp=0, nmm=0, offline=0
+         pd=0, code_set: Binary, Service buffer title:
+            DT Device Error Log
+      Service buffer identifier: 0x3
+         Buffer id: 0x44, tu=0, nmp=0, nmm=0, offline=0
+         pd=0, code_set: Binary, Service buffer title:
+            Health & Error Log
+
+      Tape diagnostics data page (ssc-3) [0x16]
+      Parameter code: 0
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 1410
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     57 31 33 30 39 31 33 34  32 30 00 00 00 00 00 00    W130913420......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 97 2a 9b 05
+      Parameter code: 1
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 1410
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     57 31 33 30 39 31 33 34  32 30 00 00 00 00 00 00    W130913420......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 97 27 bc f3
+      Parameter code: 2
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 1410
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     57 31 33 30 39 31 33 34  30 34 00 00 00 00 00 00    W130913404......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 93 26 ef 96
+      Parameter code: 3
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 1396
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     59 31 33 30 39 31 33 34  31 38 00 00 00 00 00 00    Y130913418......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 58 da 61 5c
+      Parameter code: 4
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 1396
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     59 31 33 30 39 31 33 34  31 38 00 00 00 00 00 00    Y130913418......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 58 d7 91 67
+      Parameter code: 5
+         Density code: 0x58
+         Medium type: 0x0
+         Lifetime media motion hours: 1178
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     49 43 36 48 51 45 4c 35  31 31 00 00 00 00 00 00    IC6HQEL511......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 08 01 2b ca
+      Parameter code: 6
+         Density code: 0x58
+         Medium type: 0x0
+         Lifetime media motion hours: 1177
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5092
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     49 43 36 48 51 45 4c 35  31 31 00 00 00 00 00 00    IC6HQEL511......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 07 fd 08 a9
+      Parameter code: 7
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 1041
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     57 31 33 30 39 31 33 34  31 32 00 00 00 00 00 00    W130913412......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 1a 48 0b 51
+      Parameter code: 8
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 1041
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     57 31 33 30 39 31 33 34  31 32 00 00 00 00 00 00    W130913412......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 1a 45 a1 5a
+      Parameter code: 9
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 677
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     57 31 33 30 39 31 33 34  30 34 00 00 00 00 00 00    W130913404......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 16 96 ed 84
+      Parameter code: 10
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 677
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     57 31 33 30 39 31 33 34  30 34 00 00 00 00 00 00    W130913404......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 16 93 5a 09
+      Parameter code: 11
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 396
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     57 31 33 30 39 31 33 34  30 36 00 00 00 00 00 00    W130913406......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 1c 1c 21 4f
+      Parameter code: 12
+         Density code: 0x5a
+         Medium type: 0x0
+         Lifetime media motion hours: 396
+         Repeat: 0
+         Sense key: 0x3 [Medium Error]
+         Additional sense code: 0x14
+         Additional sense code qualifier: 0x0
+            [Additional sense: Recorded entity not found]
+         Vendor specific code qualifier: 0x5090
+         Product revision level: 858992981
+         Hours since last clean: 0
+         Operation code: 0x11
+         Service action: 0x0
+         Medium id number (in hex):
+      00     57 31 33 30 39 31 33 34  30 36 00 00 00 00 00 00    W130913406......
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00    ................
+         Timestamp origin: 0x0
+         Timestamp:
+      00     00 00 1c 17 e6 e1
+
+      Volume statistics page (ssc-4), subpage=0
+      Page valid: 1
+      Thread count: 18
+      Total data sets written: 879440
+      Total write retries: 1
+      Total unrecovered write errors: 0
+      Total suspended writes: 3202
+      Total fatal suspended writes: 0
+      Total data sets read: 1073188
+      Total read retries: 31
+      Total unrecovered read errors: 0
+      Last mount unrecovered write errors: 0
+      Last mount unrecovered read errors: 0
+      Last mount megabytes written: 0
+      Last mount megabytes read: 9880
+      Lifetime megabytes written: 757
+      Lifetime megabytes read: 2968
+      Last load write compression ratio: 0
+      Last load read compression ratio: 139
+      Medium mount time: 1719047144
+      Medium ready time: 1719047144
+      Total native capacity [MB]: 2620446
+      Total used native capacity [MB]: 2520811
+      Volume serial number: N190521390
+      Tape lot identifier: T69F2145
+      Volume barcode:
+      Volume manufacturer: HPE
+      Volume license code: 0909
+      Volume personality: Ultrium-6
+      Reserved parameter code (0x46), payload in hex
+      00     32 30 31 39 30 35 32 31                             20190521
+      Write protect: 0
+      WORM: 0
+      Maximum recommended tape path temperature exceeded: 0
+      Beginning of medium passes: 656
+      Middle of medium passes: 314
+      Logical position of first encrypted logical object:
+         partition number: 0, partition record data counter: 0xffffffffffff
+      Logical position of first unencrypted logical object after first
+      encrypted logical object:
+         partition number: 0, partition record data counter: 0xffffffffffff
+      Native capacity partition(s) [MB]:
+         partition number: 0, partition record data counter: 2620446
+      Used native capacity partition(s) [MB]:
+         partition number: 0, partition record data counter: 2520811
+      Mount history:
+         index: 0, vendor: HP      , unit serial number: HU1302U4VD
+         index: 1, vendor: HP      , unit serial number: HU1302U4VD
+         index: 2, vendor: HP      , unit serial number: HU1302U4VD
+         index: 3, vendor: HP      , unit serial number: HU1302U4VD
+      Vendor specific parameter code (0xf000), payload in hex
+      00     00 01                                               ..
+
+      Protocol Specific port page for SAS SSP  (sas-2) [0x18]
+      relative target port id = 0
+      generation code = 3
+      number of phys = 1
+      phy identifier = 0
+         attached SAS device type: expander device
+         attached reason: SMP phy control function
+         reason: unknown
+         negotiated logical link rate: 6 Gbps
+         attached initiator port: ssp=0 stp=0 smp=0
+         attached target port: ssp=0 stp=0 smp=1
+         SAS address = 0x500110a0015ec9e0
+         attached SAS address = 0x500304801f514bff
+         attached phy identifier = 15
+         Invalid DWORD count = 0
+         Running disparity error count = 0
+         Loss of DWORD synchronization count = 0
+         Phy reset problem count = 0
+      relative target port id = 1
+      generation code = 3
+      number of phys = 1
+      phy identifier = 1
+         attached SAS device type: SAS or SATA device
+         attached reason: unknown
+         reason: unknown
+         negotiated logical link rate: 6 Gbps
+         attached initiator port: ssp=0 stp=0 smp=0
+         attached target port: ssp=1 stp=0 smp=0
+         SAS address = 0x500110a0015ec9e1
+         attached SAS address = 0x500110a0015ec9e1
+         attached phy identifier = 1
+         Invalid DWORD count = 0
+         Running disparity error count = 0
+         Loss of DWORD synchronization count = 0
+         Phy reset problem count = 0
+
+      Data compression page  (ssc-4) [0x1b]
+      Read compression ratio x100: 139
+      Write compression ratio x100: 0
+      Megabytes transferred to server: 13746
+      Bytes transferred to server: 602450
+      Megabytes read from tape: 9880
+      Bytes read from tape: 588564
+      Megabytes transferred from server: 0
+      Bytes transferred from server: 0
+      Megabytes written to tape: 0
+      Bytes written to tape: 0
+      Data compression enabled: 0x1
+
+      Tape alert page (ssc-3) [0x2e]
+      Read warning: 0
+      Write warning: 0
+      Hard error: 0
+      Media: 0
+      Read failure: 0
+      Write failure: 0
+      Media life: 0
+      Not data grade: 0
+      Write protect: 0
+      No removal: 0
+      Cleaning media: 0
+      Unsupported format: 0
+      Recoverable mechanical cartridge failure: 0
+      Unrecoverable mechanical cartridge failure: 0
+      Memory chip in cartridge failure: 0
+      Forced eject: 0
+      Read only format: 0
+      Tape directory corrupted on load: 0
+      Nearing media life: 0
+      Cleaning required: 0
+      Cleaning requested: 0
+      Expired cleaning media: 0
+      Invalid cleaning tape: 0
+      Retension requested: 0
+      Dual port interface error: 0
+      Cooling fan failing: 0
+      Power supply failure: 0
+      Power consumption: 0
+      Drive maintenance: 0
+      Hardware A: 0
+      Hardware B: 0
+      Interface: 0
+      Eject media: 0
+      Microcode update fail: 0
+      Drive humidity: 0
+      Drive temperature: 0
+      Drive voltage: 0
+      Predictive failure: 0
+      Diagnostics required: 0
+      Obsolete (28h): 0
+      Obsolete (29h): 0
+      Obsolete (2Ah): 0
+      Obsolete (2Bh): 0
+      Obsolete (2Ch): 0
+      Obsolete (2Dh): 0
+      Obsolete (2Eh): 0
+      Reserved (2Fh): 0
+      Reserved (30h): 0
+      Reserved (31h): 0
+      Lost statistics: 0
+      Tape directory invalid at unload: 0
+      Tape system area write failure: 0
+      Tape system area read failure: 0
+      No start of data: 0
+      Loading failure: 0
+      Unrecoverable unload failure: 0
+      Automation interface failure: 0
+      Firmware failure: 0
+      WORM medium - integrity check failed: 0
+      WORM medium - overwrite attempted: 0
+      Reserved parameter code 0x3d, flag: 0
+      Reserved parameter code 0x3e, flag: 0
+      Reserved parameter code 0x3f, flag: 0
+      Reserved parameter code 0x40, flag: 0
+
+      Tape usage page  (LTO-5 and LTO-6 specific) [0x30]
+      Thread count: 18
+      Total data sets written: 879440
+      Total write retries: 1
+      Total unrecovered write errors: 0
+      Total suspended writes: 3202
+      Total fatal suspended writes: 0
+      Total data sets read: 1073188
+      Total read retries: 31
+      Total unrecovered read errors: 0
+
+      Tape capacity page  (LTO-5 and LTO-6 specific) [0x31]
+      Main partition remaining capacity (in MiB): 95019
+      Alternate partition remaining capacity (in MiB): 0
+      Main partition maximum capacity (in MiB): 2499053
+      Alternate partition maximum capacity (in MiB): 0
+      unknown parameter code = 0x5, contents in hex:
+      00     00 05 60 04 00 00 00 00
+
+      unknown parameter code = 0x6, contents in hex:
+      00     00 06 60 04 00 00 00 00
+
+      unknown parameter code = 0x7, contents in hex:
+      00     00 07 60 04 00 00 00 00
+
+      unknown parameter code = 0x8, contents in hex:
+      00     00 08 60 04 00 00 00 00
+
+
+      Data compression page  (LTO-5 specific) [0x32]
+      Read compression ratio x100: 139
+      Write compression ratio x100: 0
+      Megabytes transferred to server: 13746
+      Bytes transferred to server: 602450
+      Megabytes read from tape: 9880
+      Bytes read from tape: 588564
+      Megabytes transferred from server: 0
+      Bytes transferred from server: 0
+      Megabytes written to tape: 0
+      Bytes written to tape: 0
+
+      Unable to decode page = 0x34, here is hex:
+      00     34 00 00 1e 00 00 60 02  00 00 00 01 60 02 00 00
+      10     00 02 60 02 00 00 00 03  60 02 00 00 00 04 40 02
+      20     06 40
+
+      Unable to decode page = 0x35, here is hex:
+      00     35 00 00 74 00 00 03 16  00 00 00 00 00 00 00 00
+      10     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 01
+      20     03 56 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+      30     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+      40     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+      50     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+      60     00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00
+      70     00 00 00 00 00 00 00 00
+
+      Unable to decode page = 0x3e, here is hex:
+      00     3e 00 00 28 00 00 40 04  00 00 00 00 00 01 40 04
+      10     00 05 01 00 00 02 60 04  00 00 02 ef 00 03 40 04
+      20     ff ff ff ff 00 04 40 04  01 09 02 33
+
+
+To a certain extent the command might help diagnose autoloader and detailled informations about
+your autochanger.
+
+.. code-block:: shell
+   :caption: sg_logs output example for an autochanger
+
+   sg_logs -a /dev/sg32
+
+         TANDBERG  StorageLoader     0470
+
+      Supported log pages  [0x0]:
+         0x00        Supported log pages [sp]
+         0x0d        Temperature [temp]
+         0x2e
+
+      Temperature page  [0xd]
+      Current temperature = 27 C
+      Reference temperature = 45 C
+      ...
+
+
+
 
 Autochanger
 -----------
@@ -533,6 +1272,7 @@ after the unload so that the script looks like:
 
 If this solves your problems, set the parameter :strong:`offline` in the config file
 :file:`/etc/bareos/mtx-changer.conf` to "1".
+
 
 Restore
 -------
