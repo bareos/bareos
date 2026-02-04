@@ -165,22 +165,20 @@ static struct s_kw CryptoCiphers[]
        {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
        {NULL, 0}};
 
-static void StoreCipher(lexer* lc, const ResourceItem* item, int index, int)
+static void StoreCipher(ConfigurationParser* conf,
+                        lexer* lc,
+                        const ResourceItem* item,
+                        int index,
+                        int)
 {
-  int i;
-  LexGetToken(lc, BCT_NAME);
+  auto found = ReadKeyword(conf, lc, CryptoCiphers);
 
-  // Scan Crypto Ciphers name.
-  for (i = 0; CryptoCiphers[i].name; i++) {
-    if (Bstrcasecmp(lc->str(), CryptoCiphers[i].name)) {
-      SetItemVariable<uint32_t>(*item, CryptoCiphers[i].token);
-      i = 0;
-      break;
-    }
-  }
-  if (i != 0) {
+  if (!found) {
     scan_err1(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str());
+  } else {
+    SetItemVariable<uint32_t>(*item, found->token);
   }
+
   ScanToEol(lc);
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
@@ -215,7 +213,7 @@ static void InitResourceCb(const ResourceItem* item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void ParseConfigCb(ConfigurationParser*,
+static void ParseConfigCb(ConfigurationParser* conf,
                           lexer* lc,
                           const ResourceItem* item,
                           int index,
@@ -224,7 +222,7 @@ static void ParseConfigCb(ConfigurationParser*,
 {
   switch (item->type) {
     case CFG_TYPE_CIPHER:
-      StoreCipher(lc, item, index, pass);
+      StoreCipher(conf, lc, item, index, pass);
       break;
     default:
       break;
