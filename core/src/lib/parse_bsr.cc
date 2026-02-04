@@ -165,31 +165,6 @@ static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
   }
 }
 
-// Format a scanner warning message
-PRINTF_LIKE(4, 5)
-static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
-{
-  va_list ap;
-  PoolMem buf(PM_NAME);
-  JobControlRecord* jcr = (JobControlRecord*)(lc->caller_ctx);
-
-  va_start(ap, msg);
-  buf.Bvsprintf(msg, ap);
-  va_end(ap);
-
-  if (jcr) {
-    Jmsg(jcr, M_WARNING, 0,
-         T_("Bootstrap file warning: %s\n"
-            "            : Line %d, col %d of file %s\n%s\n"),
-         buf.c_str(), lc->line_no(), lc->col_no(), lc->fname(), lc->line());
-  } else {
-    p_msg(file, line, 0,
-          T_("Bootstrap file warning: %s\n"
-             "            : Line %d, col %d of file %s\n%s\n"),
-          buf.c_str(), lc->line_no(), lc->col_no(), lc->fname(), lc->line());
-  }
-}
-
 static inline bool IsFastRejectionOk(storagedaemon::BootStrapRecord* bsr)
 {
   /* Although, this can be optimized, for the moment, require
@@ -221,7 +196,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
   storagedaemon::BootStrapRecord* bsr = root_bsr;
 
   Dmsg1(300, "Enter parse_bsf %s\n", fname);
-  if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
+  if ((lc = lex_open_file(lc, fname, s_err)) == NULL) {
     BErrNo be;
     Emsg2(M_ERROR_TERM, 0, T_("Cannot open bootstrap file %s: %s\n"), fname,
           be.bstrerror());

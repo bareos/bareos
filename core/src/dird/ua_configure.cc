@@ -354,7 +354,7 @@ static inline bool ConfigureAddResource(UaContext* ua,
 
   my_config->err_type_ = M_ERROR;
   if (!my_config->ParseConfigFile(filename_tmp.c_str(), ua,
-                                  ConfigureLexErrorHandler, NULL)) {
+                                  ConfigureLexErrorHandler)) {
     unlink(filename_tmp.c_str());
     my_config->RemoveResource(res_table->rcode, name.c_str());
     return false;

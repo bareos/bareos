@@ -31,12 +31,10 @@ ConfigParserStateMachine::ConfigParserStateMachine(
     const char* config_file_name,
     void* caller_ctx,
     lexer::error_handler* scan_error,
-    lexer::warning_handler* scan_warning,
     ConfigurationParser& my_config)
     : config_file_name_(config_file_name)
     , caller_ctx_(caller_ctx)
     , scan_error_(scan_error)
-    , scan_warning_(scan_warning)
     , my_config_(my_config)
 {
   return;
@@ -281,10 +279,10 @@ bool ConfigParserStateMachine::InitParserPass()
 
   Dmsg1(900, "ParseConfig parser_pass_number_ %d\n", parser_pass_number_);
 
-  lexical_parser_ = lex_open_file(lexical_parser_, config_file_name_.c_str(),
-                                  scan_error_, scan_warning_);
+  lexical_parser_
+      = lex_open_file(lexical_parser_, config_file_name_.c_str(), scan_error_);
   if (!lexical_parser_) {
-    my_config_.lex_error(config_file_name_.c_str(), scan_error_, scan_warning_);
+    my_config_.lex_error(config_file_name_.c_str(), scan_error_);
     return false;
   }
 

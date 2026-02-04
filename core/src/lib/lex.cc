@@ -183,41 +183,7 @@ static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
   lc->error_counter++;
 }
 
-// Format a scanner warning message
-PRINTF_LIKE(4, 5)
-static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
-{
-  va_list ap;
-  PoolMem buf(PM_NAME), more(PM_NAME);
-
-  va_start(ap, msg);
-  buf.Bvsprintf(msg, ap);
-  va_end(ap);
-
-  auto& current = lc->files.back();
-
-  if (current.line_no > current.begin_line_no) {
-    Mmsg(more, T_("Problem probably begins at line %d.\n"),
-         current.begin_line_no);
-  } else {
-    PmStrcpy(more, "");
-  }
-
-  if (current.line_no > 0) {
-    p_msg(file, line, 0,
-          T_("Config warning: %s\n"
-             "            : line %d, col %d of file %s\n%s\n%s"),
-          buf.c_str(), current.line_no, current.col_no,
-          lc->file_contents[current.file_index].fname.c_str(),
-          current.line.c_str(), more.c_str());
-  } else {
-    p_msg(file, line, 0, T_("Config warning: %s\n"), buf.c_str());
-  }
-}
-
 void LexSetDefaultErrorHandler(lexer* lf) { lf->scan_error = s_err; }
-
-void LexSetDefaultWarningHandler(lexer* lf) { lf->scan_warning = s_warn; }
 
 // Set err_type used in error_handler
 void LexSetErrorHandlerErrorType(lexer* lf, int err_type)
@@ -272,16 +238,13 @@ static inline lexer* lex_add(lexer* lf,
                              const char* filename,
                              FILE* fd,
                              Bpipe* bpipe,
-                             lexer::error_handler* scan_error,
-                             lexer::warning_handler* scan_warning)
+                             lexer::error_handler* scan_error)
 {
   if (!scan_error) { scan_error = s_err; }
-  if (!scan_warning) { scan_warning = s_warn; }
 
   if (!lf) {
     lf = new lexer;
     lf->scan_error = scan_error;
-    lf->scan_warning = scan_warning;
 
     lf->state = lex_none;
     lf->ch_ = L_EOL;
@@ -323,8 +286,7 @@ static inline bool IsWildcardString(const char* string)
  */
 lexer* lex_open_file(lexer* lf,
                      const char* filename,
-                     lexer::error_handler* ScanError,
-                     lexer::warning_handler* scan_warning)
+                     lexer::error_handler* ScanError)
 {
   FILE* fd;
   Bpipe* bpipe = NULL;
@@ -338,7 +300,7 @@ lexer* lex_open_file(lexer* lf,
     }
     free(bpipe_filename);
     fd = bpipe->rfd;
-    return lex_add(lf, filename, fd, bpipe, ScanError, scan_warning);
+    return lex_add(lf, filename, fd, bpipe, ScanError);
   } else {
 #ifdef HAVE_GLOB
     int globrc;
@@ -372,13 +334,13 @@ lexer* lex_open_file(lexer* lf,
         globfree(&fileglob);
         return NULL;
       }
-      lf = lex_add(lf, filename_expanded, fd, bpipe, ScanError, scan_warning);
+      lf = lex_add(lf, filename_expanded, fd, bpipe, ScanError);
     }
     globfree(&fileglob);
 #else
     Dmsg1(500, "Trying open file %s\n", filename);
     if ((fd = fopen(filename, "rb")) == NULL) { return NULL; }
-    lf = lex_add(lf, filename, fd, bpipe, ScanError, scan_warning);
+    lf = lex_add(lf, filename, fd, bpipe, ScanError);
 #endif
     return lf;
   }
@@ -998,7 +960,7 @@ int LexGetToken(lexer* lf, int expect)
 
           lf->state = lex_none;
           std::string str = lf->str();
-          lf = lex_open_file(lf, lf->str(), lf->scan_error, lf->scan_warning);
+          lf = lex_open_file(lf, lf->str(), lf->scan_error);
           if (lf == NULL) {
             BErrNo be;
             scan_err(lfori, T_("Cannot open included config file %s: %s\n"),
@@ -1027,7 +989,7 @@ int LexGetToken(lexer* lf, int expect)
           lexer* lfori = lf;
 
           lf->state = lex_none;
-          lf = lex_open_file(lf, lf->str(), lf->scan_error, lf->scan_warning);
+          lf = lex_open_file(lf, lf->str(), lf->scan_error);
           if (lf == NULL) {
             BErrNo be;
             scan_err(lfori, T_("Cannot open included config file %s: %s\n"),

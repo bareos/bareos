@@ -190,15 +190,8 @@ struct lexer {
                                                lexer* lc,
                                                const char* msg,
                                                ...);
-  using warning_handler = PRINTF_LIKE(4, 5) void(const char* file,
-                                                 int line,
-                                                 lexer* lc,
-                                                 const char* msg,
-                                                 ...);
-
 
   error_handler* scan_error;
-  warning_handler* scan_warning;
   int err_type; /* message level for scan_error (M_..) */
   int error_counter;
   void* caller_ctx; /* caller private data */
@@ -208,29 +201,13 @@ struct lexer {
 #define scan_err(lc, ...) \
   (lc)->scan_error(__FILE__, __LINE__, (lc), __VA_ARGS__)
 
-// Lexical scanning warnings in parsing conf files
-#define scan_warn0(lc, msg) (lc)->scan_warning(__FILE__, __LINE__, (lc), msg)
-#define scan_warn1(lc, msg, a1) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1)
-#define scan_warn2(lc, msg, a1, a2) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1, a2)
-#define scan_warn3(lc, msg, a1, a2, a3) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1, a2, a3)
-#define scan_warn4(lc, msg, a1, a2, a3, a4) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4)
-#define scan_warn5(lc, msg, a1, a2, a3, a4, a5) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4, a5)
-#define scan_warn6(lc, msg, a1, a2, a3, a4, a5, a6) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4, a5, a6)
-
 void ScanToEol(lexer* lc);
 int ScanToNextNotEol(lexer* lc);
 
 lexer* LexCloseFile(lexer* lf);
 lexer* lex_open_file(lexer* lf,
                      const char* fname,
-                     lexer::error_handler* ScanError,
-                     lexer::warning_handler* scan_warning);
+                     lexer::error_handler* ScanError);
 int LexGetChar(lexer* lf);
 void LexUngetChar(lexer* lf);
 const char* lex_tok_to_str(int token);

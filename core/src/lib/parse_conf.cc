@@ -177,8 +177,7 @@ bool ConfigurationParser::ParseConfig()
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
-  bool success
-      = ParseConfigFile(config_path.c_str(), nullptr, nullptr, nullptr);
+  bool success = ParseConfigFile(config_path.c_str(), nullptr, nullptr);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
 
   config_resources_container_->SetTimestampToNow();
@@ -294,8 +293,7 @@ void ConfigurationParser::PrintShape()
 
 
 void ConfigurationParser::lex_error(const char* cf,
-                                    lexer::error_handler* scan_error,
-                                    lexer::warning_handler* scan_warning) const
+                                    lexer::error_handler* scan_error) const
 {
   // We must create a lex packet to print the error
   lexer lexical_parser_{};
@@ -306,12 +304,6 @@ void ConfigurationParser::lex_error(const char* cf,
     LexSetDefaultErrorHandler(&lexical_parser_);
   }
 
-  if (scan_warning) {
-    lexical_parser_.scan_warning = scan_warning;
-  } else {
-    LexSetDefaultWarningHandler(&lexical_parser_);
-  }
-
   LexSetErrorHandlerErrorType(&lexical_parser_, err_type_);
   BErrNo be;
   scan_err(&lexical_parser_, T_("Cannot open config file \"%s\": %s\n"), cf,
@@ -320,11 +312,10 @@ void ConfigurationParser::lex_error(const char* cf,
 
 bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
                                           void* caller_ctx,
-                                          lexer::error_handler* scan_error,
-                                          lexer::warning_handler* scan_warning)
+                                          lexer::error_handler* scan_error)
 {
   ConfigParserStateMachine state_machine(config_file_name, caller_ctx,
-                                         scan_error, scan_warning, *this);
+                                         scan_error, *this);
 
   Dmsg1(900, "Enter ParseConfigFile(%s)\n", config_file_name);
 

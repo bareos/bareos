@@ -483,8 +483,7 @@ class ConfigurationParser {
   bool ParseConfig();
   bool ParseConfigFile(const char* config_file_name,
                        void* caller_ctx,
-                       lexer::error_handler* scan_error = nullptr,
-                       lexer::warning_handler* scan_warning = nullptr);
+                       lexer::error_handler* scan_error = nullptr);
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
 
@@ -586,9 +585,7 @@ class ConfigurationParser {
   bool GetConfigIncludePath(PoolMem& full_path, const char* config_dir);
   bool FindConfigPath(PoolMem& full_path);
   int GetResourceTableIndex(const char* resource_type_name);
-  void lex_error(const char* cf,
-                 lexer::error_handler* ScanError,
-                 lexer::warning_handler* scan_warning) const;
+  void lex_error(const char* cf, lexer::error_handler* ScanError) const;
   void SetAllResourceDefaultsByParserPass(int rcode,
                                           const ResourceItem items[],
                                           int pass);
