@@ -755,9 +755,6 @@ class BareosDb : public BareosDbQueryEnum {
                          JobDbRecord* jr,
                          db_list_ctx* jobids);
   db_list_ctx FilterZeroFileJobs(db_list_ctx& jobids);
-  bool GetUsedBaseJobids(JobControlRecord* jcr,
-                         const char* jobids,
-                         db_list_ctx* result);
   bool GetQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool get_quota_jobbytes(JobControlRecord* jcr,
                           JobDbRecord* jr,

@@ -1247,21 +1247,6 @@ bool BareosDb::GetFileList(JobControlRecord*,
   return BigSqlQuery(query.c_str(), ResultHandler, ctx);
 }
 
-bool BareosDb::GetUsedBaseJobids(JobControlRecord*,
-                                 const char* jobids,
-                                 db_list_ctx* result)
-{
-  PoolMem query(PM_MESSAGE);
-
-  Mmsg(query,
-       "SELECT DISTINCT BaseJobId "
-       "  FROM Job JOIN BaseFiles USING (JobId) "
-       " WHERE Job.HasBase = 1 "
-       "   AND Job.JobId IN (%s) ",
-       jobids);
-  return SqlQueryWithHandler(query.c_str(), DbListHandler, result);
-}
-
 /*
  * Remove the jobs that have JobFiles == 0 from the supplied jobid list
  * and return them in another list
