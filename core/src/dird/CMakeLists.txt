@@ -49,7 +49,6 @@ target_sources(
           consolidate.cc
           console_connection_lease.cc
           date_time.cc
-          date_time_mask.cc
           dbcheck_utils.cc
           dird_globals.cc
           dir_plugins.cc
@@ -90,6 +89,7 @@ target_sources(
           run_conf.cc
           run_on_incoming_connect_interval.cc
           sd_cmds.cc
+          schedule.cc
           scheduler.cc
           scheduler_job_item_queue.cc
           scheduler_private.cc
@@ -158,11 +158,11 @@ add_executable(bareos-dbcheck)
 target_sources(
   bareos-dbcheck
   PRIVATE date_time.cc
-          date_time_mask.cc
           dbcheck.cc
           dbcheck_utils.cc
           dird_conf.cc
           dird_globals.cc
+          schedule.cc
           ua_acl.cc
           ua_audit.cc
           run_conf.cc

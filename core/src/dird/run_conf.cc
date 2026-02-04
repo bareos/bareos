@@ -34,10 +34,265 @@
 #include "lib/keyword_table_s.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
+#include "schedule.h"
+#include "lib/bsys.h"
+
+#include <charconv>
 
 namespace directordaemon {
 
 extern struct s_jl joblevels[];
+
+template <class T> struct Parser {
+  static std::optional<T> Parse(std::string_view str);
+};
+
+template <> struct Parser<int> {
+  static std::optional<int> Parse(std::string_view str)
+  {
+    int value = 0;
+    auto [ptr, ec]
+        = std::from_chars(str.data(), str.data() + str.length(), value);
+    if (ec == std::errc() && ptr == str.data() + str.length()) { return value; }
+    return std::nullopt;
+  }
+};
+template <> struct Parser<MonthOfYear> {
+  static std::optional<MonthOfYear> Parse(std::string_view str)
+  {
+    return MonthOfYear::FromName(str);
+  }
+};
+template <> struct Parser<WeekOfYear> {
+  static std::optional<WeekOfYear> Parse(std::string_view str)
+  {
+    if (str.size() == 0 || str.at(0) != 'w') { return std::nullopt; }
+    auto index = Parser<int>::Parse(str.substr(1));
+    if (index && 0 <= *index && *index <= 53) { return WeekOfYear{*index}; }
+    return std::nullopt;
+  }
+};
+template <> struct Parser<WeekOfMonth> {
+  static std::optional<WeekOfMonth> Parse(std::string_view str)
+  {
+    return WeekOfMonth::FromName(str);
+  }
+};
+template <> struct Parser<DayOfMonth> {
+  static std::optional<DayOfMonth> Parse(std::string_view str)
+  {
+    auto number = Parser<int>::Parse(str);
+    if (number && (1 <= *number && *number <= 31)) {
+      return DayOfMonth{*number - 1};
+    }
+    return std::nullopt;
+  }
+};
+template <> struct Parser<DayOfWeek> {
+  static std::optional<DayOfWeek> Parse(std::string_view str)
+  {
+    return DayOfWeek::FromName(str);
+  }
+};
+template <> struct Parser<TimeOfDay> {
+  static std::optional<TimeOfDay> Parse(std::string_view str)
+  {
+    static constexpr std::string_view kPrefix{"at "};
+    if (str.find_first_of(kPrefix) != 0) { return std::nullopt; }
+    str = str.substr(std::string_view{kPrefix}.length());
+    size_t index = str.find(':');
+    if (str.find("am") == str.length() - 2) {
+      str = str.substr(0, str.length() - 2);
+      auto hour = Parser<int>::Parse(str.substr(0, index));
+      auto minute = Parser<int>::Parse(str.substr(index + 1));
+      if (hour && minute) {
+        if (0 <= *hour && *hour <= 12 && 0 <= *minute && *minute <= 59) {
+          return TimeOfDay{(*hour % 12), *minute};
+        }
+      }
+    } else if (str.find("pm") == str.length() - 2) {
+      str = str.substr(0, str.length() - 2);
+      auto hour = Parser<int>::Parse(str.substr(0, index));
+      auto minute = Parser<int>::Parse(str.substr(index + 1));
+      if (hour && minute) {
+        if (0 <= *hour && *hour <= 12 && 0 <= *minute && *minute <= 59) {
+          return TimeOfDay{(*hour % 12) + 12, *minute};
+        }
+      }
+    } else {
+      auto hour = Parser<int>::Parse(str.substr(0, index));
+      if (index == 0) {  // such that "hourly at :XX" is valid
+        hour = std::optional{0};
+      }
+      auto minute = Parser<int>::Parse(str.substr(index + 1));
+      if (hour && minute) {
+        if (0 <= *hour && *hour <= 23 && 0 <= *minute && *minute <= 59) {
+          return TimeOfDay{*hour, *minute};
+        }
+      }
+    }
+    return std::nullopt;
+  }
+};
+template <> struct Parser<Hourly> {
+  static std::optional<Hourly> Parse(std::string_view str)
+  {
+    return str == "hourly" ? std::optional{Hourly{}} : std::nullopt;
+  }
+};
+template <class T> struct Parser<Interval<T>> {
+  static std::optional<Interval<T>> Parse(std::string_view str)
+  {
+    size_t index = str.find('-');
+    if (index == std::string::npos) { return std::nullopt; }
+    auto first = Parser<T>::Parse(str.substr(0, index));
+    auto last = Parser<T>::Parse(str.substr(index + 1));
+    if (first && last) { return Interval<T>{*first, *last}; }
+    return std::nullopt;
+  }
+};
+template <class T> struct Parser<Modulo<T>> {
+  static std::optional<Modulo<T>> Parse(std::string_view str)
+  {
+    size_t index = str.find('/');
+    if (index == std::string::npos) { return std::nullopt; }
+    if constexpr (std::is_same_v<DayOfMonth, T>) {
+      auto remainder = Parser<int>::Parse(str.substr(0, index));
+      auto divisor = Parser<int>::Parse(str.substr(index + 1));
+      if (remainder && divisor) {
+        if (static_cast<int>(*remainder) < static_cast<int>(*divisor)) {
+          return Modulo<T>{static_cast<int>(*remainder), static_cast<int>(*divisor)};
+        }
+        else if (static_cast<int>(*remainder) == static_cast<int>(*divisor)) {
+          return Modulo<T>{0, static_cast<int>(*divisor)};
+        }
+      }
+    }
+    else {
+      auto remainder = Parser<T>::Parse(str.substr(0, index));
+      auto divisor = Parser<T>::Parse(str.substr(index + 1));
+      if (remainder && divisor) {
+        if (static_cast<int>(*remainder) < static_cast<int>(*divisor)) {
+          return Modulo<T>{static_cast<int>(*remainder), static_cast<int>(*divisor)};
+        }
+        else if (static_cast<int>(*remainder) == static_cast<int>(*divisor)) {
+          return Modulo<T>{0, static_cast<int>(*divisor)};
+        }
+      }
+    }
+    return std::nullopt;
+  }
+};
+template <class... Args> struct Parser<std::variant<Args...>> {
+  template <size_t Index = 0>
+  static std::optional<std::variant<Args...>> Parse(std::string_view str)
+  {
+    static_assert(Index < sizeof...(Args), "Index out of bounds.");
+    if (auto value
+        = Parser<std::variant_alternative_t<Index, std::variant<Args...>>>::
+            Parse(str)) {
+      return std::make_optional<std::variant<Args...>>(std::move(*value));
+    }
+    if constexpr (Index + 1 < sizeof...(Args)) { return Parse<Index + 1>(str); }
+    return std::nullopt;
+  }
+};
+std::pair<std::variant<Schedule, Parser<Schedule>::Error>,
+          Parser<Schedule>::Warnings>
+Parser<Schedule>::Parse(const std::vector<std::string>& tokens)
+{
+  std::vector<std::string> warnings;
+  Schedule schedule;
+  for (size_t i = 0; i < tokens.size(); ++i) {
+    std::string lower_str = tokens[i];
+    for (char& ch : lower_str) {
+      if (std::isupper(ch)) { ch = std::tolower(ch); }
+    }
+    if (lower_str == "on") {
+      if (i != 0) {
+        warnings.emplace_back("Token \"on\" should only appear at the start of the schedule.");
+      }
+      continue;
+    }
+    if (lower_str == "daily" || lower_str == "weekly"
+        || lower_str == "monthly") {
+      warnings.emplace_back("Run directive includes token \"" + lower_str + "\", which is deprecated "
+                     "and does nothing");
+      continue;
+    }
+    if (auto day_spec
+        = Parser<std::variant<Mask<MonthOfYear>, Mask<WeekOfYear>,
+                              Mask<WeekOfMonth>, Mask<DayOfMonth>,
+                              Mask<DayOfWeek>>>::Parse(lower_str)) {
+      std::visit(
+          [&](auto&& value) {
+            using T = std::remove_reference_t<decltype(value)>;
+            std::get<std::vector<T>>(schedule.day_masks)
+                .emplace_back(std::move(value));
+          },
+          day_spec.value());
+    } else if (auto time_spec
+               = Parser<std::variant<TimeOfDay, Hourly>>::Parse(lower_str)) {
+      if (auto* time_of_day = std::get_if<TimeOfDay>(&time_spec.value())) {
+        if (auto* times_of_day
+            = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+          times_of_day->emplace_back(*time_of_day);
+        } else {
+          std::get<Hourly>(schedule.times).minutes.insert(time_of_day->minute);
+        }
+      } else {
+        if (auto* times_of_day
+            = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+          std::set<int> minutes;
+          for (const TimeOfDay& other_time_of_day : *times_of_day) {
+            minutes.insert(other_time_of_day.minute);
+          }
+          schedule.times = Hourly{{std::move(minutes)}};
+        } else {
+          schedule.times = Hourly{};
+        }
+      }
+    } else {
+      return {
+          Error{std::string{
+                    "Could not parse Run directive because of illegal token \""}
+                + tokens[i] + "\""},
+          {std::move(warnings)}};
+    }
+  }
+  if (auto* times_of_day
+      = std::get_if<std::vector<TimeOfDay>>(&schedule.times)) {
+    if (times_of_day->empty()) { times_of_day->emplace_back(TimeOfDay(0, 0)); }
+  } else if (auto* hourly = std::get_if<Hourly>(&schedule.times)) {
+    if (hourly->minutes.empty()) { hourly->minutes.insert(0); }
+  }
+  auto now = time(nullptr);
+  if (schedule.GetMatchingTimes(now, now + kSecondsPerDay * 366).empty()) {
+    warnings.emplace_back(
+        "Run directive schedule never runs in the next 366 days");
+  }
+  return {schedule, {std::move(warnings)}};
+}
+std::pair<std::variant<Schedule, Parser<Schedule>::Error>,
+          Parser<Schedule>::Warnings>
+Parser<Schedule>::Parse(std::string_view str)
+{
+  std::vector<std::string> tokens{""};
+  for (char ch : str) {
+    if (ch == ',') { continue; }
+    if (ch == ' ') {
+      if (tokens.back() != "at") {
+        tokens.emplace_back();
+      } else {
+        tokens.back() += ' ';
+      }
+    } else {
+      tokens.back() += ch;
+    }
+  }
+  if (tokens.back().empty()) { tokens.pop_back(); }
+  return Parse(tokens);
+}
 
 // Forward referenced subroutines
 enum e_state
@@ -64,78 +319,6 @@ struct s_keyw {
   enum e_state state; /* parser state */
   int code;           /* state value */
 };
-
-// Keywords understood by parser
-static struct s_keyw keyw[] = {{NT_("on"), s_none, 0},
-                               {NT_("at"), s_at, 0},
-                               {NT_("last"), s_last, 0},
-                               {NT_("sun"), s_wday, 0},
-                               {NT_("mon"), s_wday, 1},
-                               {NT_("tue"), s_wday, 2},
-                               {NT_("wed"), s_wday, 3},
-                               {NT_("thu"), s_wday, 4},
-                               {NT_("fri"), s_wday, 5},
-                               {NT_("sat"), s_wday, 6},
-                               {NT_("jan"), s_month, 0},
-                               {NT_("feb"), s_month, 1},
-                               {NT_("mar"), s_month, 2},
-                               {NT_("apr"), s_month, 3},
-                               {NT_("may"), s_month, 4},
-                               {NT_("jun"), s_month, 5},
-                               {NT_("jul"), s_month, 6},
-                               {NT_("aug"), s_month, 7},
-                               {NT_("sep"), s_month, 8},
-                               {NT_("oct"), s_month, 9},
-                               {NT_("nov"), s_month, 10},
-                               {NT_("dec"), s_month, 11},
-                               {NT_("sunday"), s_wday, 0},
-                               {NT_("monday"), s_wday, 1},
-                               {NT_("tuesday"), s_wday, 2},
-                               {NT_("wednesday"), s_wday, 3},
-                               {NT_("thursday"), s_wday, 4},
-                               {NT_("friday"), s_wday, 5},
-                               {NT_("saturday"), s_wday, 6},
-                               {NT_("january"), s_month, 0},
-                               {NT_("february"), s_month, 1},
-                               {NT_("march"), s_month, 2},
-                               {NT_("april"), s_month, 3},
-                               {NT_("june"), s_month, 5},
-                               {NT_("july"), s_month, 6},
-                               {NT_("august"), s_month, 7},
-                               {NT_("september"), s_month, 8},
-                               {NT_("october"), s_month, 9},
-                               {NT_("november"), s_month, 10},
-                               {NT_("december"), s_month, 11},
-                               {NT_("daily"), s_daily, 0},
-                               {NT_("weekly"), s_weekly, 0},
-                               {NT_("monthly"), s_monthly, 0},
-                               {NT_("hourly"), s_hourly, 0},
-                               {NT_("1st"), s_wom, 0},
-                               {NT_("2nd"), s_wom, 1},
-                               {NT_("3rd"), s_wom, 2},
-                               {NT_("4th"), s_wom, 3},
-                               {NT_("5th"), s_wom, 4},
-                               {NT_("first"), s_wom, 0},
-                               {NT_("second"), s_wom, 1},
-                               {NT_("third"), s_wom, 2},
-                               {NT_("fourth"), s_wom, 3},
-                               {NT_("fifth"), s_wom, 4},
-                               {NULL, s_none, 0}};
-
-static bool have_hour, have_mday, have_wday, have_month, have_wom;
-static bool have_at, have_woy;
-
-static void set_defaults(RunResource& res_run)
-{
-  have_hour = have_mday = have_wday = have_month = have_wom = have_woy = false;
-  have_at = false;
-  SetBitRange(0, 23, res_run.date_time_mask.hour);
-  SetBitRange(0, 30, res_run.date_time_mask.mday);
-  SetBitRange(0, 6, res_run.date_time_mask.wday);
-  SetBitRange(0, 11, res_run.date_time_mask.month);
-  SetBitRange(0, 4, res_run.date_time_mask.wom);
-  SetBitRange(0, 53, res_run.date_time_mask.woy);
-}
 
 // Keywords (RHS) permitted in Run records
 struct s_kw RunFields[] = {{"pool", 'P'},
@@ -167,14 +350,14 @@ struct s_kw RunFields[] = {{"pool", 'P'},
  */
 void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
 {
-  char* p;
   int i, j;
-  auto options = lc->options;
-  int token, state, state2 = 0, code = 0, code2 = 0;
+  int options = lc->options;
+  int token;
   bool found;
   utime_t utime;
   BareosResource* res;
   RunResource res_run;
+  std::vector<std::string> tokens;
 
   lc->options.set(lexer::options::NoIdent); /* Want only "strings" */
 
@@ -331,61 +514,19 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
     }
   } /* end for found */
 
-  /* Scan schedule times.
-   * Default is: daily at 0:0 */
-  state = s_none;
-  set_defaults(res_run);
-
+  /* Scan schedule tokens. */
   for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
-    int len;
-    bool pm = false;
-    bool am = false;
     switch (token) {
       case BCT_NUMBER:
-        state = s_mday;
-        code = atoi(lc->str) - 1;
-        if (code < 0 || code > 30) {
-          scan_err0(lc, T_("Day number out of range (1-31)"));
-          return;
-        }
+        tokens.emplace_back(lc->str);
         break;
       case BCT_NAME: /* This handles drop through from keyword */
       case BCT_UNQUOTED_STRING:
-        if (strchr(lc->str, (int)'-')) {
-          state = s_range;
-          break;
-        }
-        if (strchr(lc->str, (int)':')) {
-          state = s_time;
-          break;
-        }
-        if (strchr(lc->str, (int)'/')) {
-          state = s_modulo;
-          break;
-        }
-        if (lc->str_len == 3 && (lc->str[0] == 'w' || lc->str[0] == 'W')
-            && IsAnInteger(lc->str + 1)) {
-          code = atoi(lc->str + 1);
-          if (code < 0 || code > 53) {
-            scan_err0(lc, T_("Week number out of range (0-53)"));
-            return;
-          }
-          state = s_woy; /* Week of year */
-          break;
-        }
-        // Everything else must be a keyword
-        for (i = 0; keyw[i].name; i++) {
-          if (Bstrcasecmp(lc->str, keyw[i].name)) {
-            state = keyw[i].state;
-            code = keyw[i].code;
-            i = 0;
-            break;
-          }
-        }
-        if (i != 0) {
-          scan_err1(lc, T_("Job type field: %s in run record not found"),
-                    lc->str);
-          return;
+        if (tokens.size() > 0 && tokens.back() == "at") {
+          tokens.back() += " ";
+          tokens.back() += lc->str;
+        } else {
+          tokens.emplace_back(lc->str);
         }
         break;
       case BCT_COMMA:
@@ -395,302 +536,18 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
         return;
         break;
     }
-    switch (state) {
-      case s_none:
-        continue;
-      case s_mday: /* Day of month */
-        if (!have_mday) {
-          ClearBitRange(0, 30, res_run.date_time_mask.mday);
-          have_mday = true;
-        }
-        SetBit(code, res_run.date_time_mask.mday);
-        break;
-      case s_month: /* Month of year */
-        if (!have_month) {
-          ClearBitRange(0, 11, res_run.date_time_mask.month);
-          have_month = true;
-        }
-        SetBit(code, res_run.date_time_mask.month);
-        break;
-      case s_wday: /* Week day */
-        if (!have_wday) {
-          ClearBitRange(0, 6, res_run.date_time_mask.wday);
-          have_wday = true;
-        }
-        SetBit(code, res_run.date_time_mask.wday);
-        break;
-      case s_wom: /* Week of month 1st, ... */
-        if (!have_wom) {
-          ClearBitRange(0, 4, res_run.date_time_mask.wom);
-          have_wom = true;
-        }
-        SetBit(code, res_run.date_time_mask.wom);
-        break;
-      case s_woy:
-        if (!have_woy) {
-          ClearBitRange(0, 53, res_run.date_time_mask.woy);
-          have_woy = true;
-        }
-        SetBit(code, res_run.date_time_mask.woy);
-        break;
-      case s_time: /* Time */
-        if (!have_at) {
-          scan_err0(lc, T_("Time must be preceded by keyword AT."));
-          return;
-        }
-        if (!have_hour) { ClearBitRange(0, 23, res_run.date_time_mask.hour); }
-        //       Dmsg1(000, "s_time=%s\n", lc->str);
-        p = strchr(lc->str, ':');
-        if (!p) {
-          scan_err0(lc, T_("Time logic error.\n"));
-          return;
-        }
-        *p++ = 0;             /* Separate two halves */
-        code = atoi(lc->str); /* Pick up hour */
-        code2 = atoi(p);      /* Pick up minutes */
-        len = strlen(p);
-        if (len >= 2) { p += 2; }
-        if (Bstrcasecmp(p, "pm")) {
-          pm = true;
-        } else if (Bstrcasecmp(p, "am")) {
-          am = true;
-        } else if (len != 2) {
-          scan_err0(lc, T_("Bad time specification."));
-          return;
-        }
-        /* Note, according to NIST, 12am and 12pm are ambiguous and
-         *  can be defined to anything.  However, 12:01am is the same
-         *  as 00:01 and 12:01pm is the same as 12:01, so we define
-         *  12am as 00:00 and 12pm as 12:00. */
-        if (pm) {
-          // Convert to 24 hour time
-          if (code != 12) { code += 12; }
-        } else if (am && code == 12) {
-          // AM
-          code -= 12;
-        }
-        if (code < 0 || code > 23 || code2 < 0 || code2 > 59) {
-          scan_err0(lc, T_("Bad time specification."));
-          return;
-        }
-        SetBit(code, res_run.date_time_mask.hour);
-        res_run.minute = code2;
-        have_hour = true;
-        break;
-      case s_at:
-        have_at = true;
-        break;
-      case s_last:
-        res_run.date_time_mask.last_7days_of_month = true;
-        if (!have_wom) {
-          ClearBitRange(0, 4, res_run.date_time_mask.wom);
-          have_wom = true;
-        }
-        break;
-      case s_modulo:
-        p = strchr(lc->str, '/');
-        if (!p) {
-          scan_err0(lc, T_("Modulo logic error.\n"));
-          return;
-        }
-        *p++ = 0; /* Separate two halves */
+  }
 
-        if (IsAnInteger(lc->str) && IsAnInteger(p)) {
-          // Check for day modulo specification.
-          code = atoi(lc->str) - 1;
-          code2 = atoi(p);
-          if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
-            scan_err0(lc, T_("Bad day specification in modulo."));
-            return;
-          }
-          if (code > code2) {
-            scan_err0(lc, T_("Bad day specification, offset must always be <= "
-                             "than modulo."));
-            return;
-          }
-          if (!have_mday) {
-            ClearBitRange(0, 30, res_run.date_time_mask.mday);
-            have_mday = true;
-          }
-          // Set the bits according to the modulo specification.
-          for (i = 0; i < 31; i++) {
-            if (i % code2 == 0) {
-              SetBit(i + code, res_run.date_time_mask.mday);
-            }
-          }
-        } else if (strlen(lc->str) == 3 && strlen(p) == 3
-                   && (lc->str[0] == 'w' || lc->str[0] == 'W')
-                   && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1)
-                   && IsAnInteger(p + 1)) {
-          // Check for week modulo specification.
-          code = atoi(lc->str + 1);
-          code2 = atoi(p + 1);
-          if (code < 0 || code > 53) {
-            scan_err0(lc, T_("Week number out of range (0-53) in modulo"));
-            return;
-          }
-          if (code2 <= 0 || code2 > 53) {
-            scan_err0(lc, T_("Week interval out of range (1-53) in modulo"));
-            return;
-          }
-          if (code > code2) {
-            scan_err0(lc, T_("Bad week number specification in modulo, offset "
-                             "must always be <= than modulo."));
-            return;
-          }
-          if (!have_woy) {
-            ClearBitRange(0, 53, res_run.date_time_mask.woy);
-            have_woy = true;
-          }
-          // Set the bits according to the modulo specification.
-          for (int week = code; week <= 53; week += code2) {
-            SetBit(week, res_run.date_time_mask.woy);
-          }
-        } else {
-          scan_err0(lc, T_("Bad modulo time specification. Format for weekdays "
-                           "is '01/02', for yearweeks is 'w01/w02'."));
-          return;
-        }
-        break;
-      case s_range:
-        p = strchr(lc->str, '-');
-        if (!p) {
-          scan_err0(lc, T_("Range logic error.\n"));
-          return;
-        }
-        *p++ = 0; /* Separate two halves */
-
-        if (IsAnInteger(lc->str) && IsAnInteger(p)) {
-          // Check for day range.
-          code = atoi(lc->str) - 1;
-          code2 = atoi(p) - 1;
-          if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
-            scan_err0(lc, T_("Bad day range specification."));
-            return;
-          }
-          if (!have_mday) {
-            ClearBitRange(0, 30, res_run.date_time_mask.mday);
-            have_mday = true;
-          }
-          if (code < code2) {
-            SetBitRange(code, code2, res_run.date_time_mask.mday);
-          } else {
-            SetBitRange(code, 30, res_run.date_time_mask.mday);
-            SetBitRange(0, code2, res_run.date_time_mask.mday);
-          }
-        } else if (strlen(lc->str) == 3 && strlen(p) == 3
-                   && (lc->str[0] == 'w' || lc->str[0] == 'W')
-                   && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1)
-                   && IsAnInteger(p + 1)) {
-          // Check for week of year range.
-          code = atoi(lc->str + 1);
-          code2 = atoi(p + 1);
-          if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
-            scan_err0(lc, T_("Week number out of range (0-53)"));
-            return;
-          }
-          if (!have_woy) {
-            ClearBitRange(0, 53, res_run.date_time_mask.woy);
-            have_woy = true;
-          }
-          if (code < code2) {
-            SetBitRange(code, code2, res_run.date_time_mask.woy);
-          } else {
-            SetBitRange(code, 53, res_run.date_time_mask.woy);
-            SetBitRange(0, code2, res_run.date_time_mask.woy);
-          }
-        } else {
-          // lookup first half of keyword range (week days or months).
-          lcase(lc->str);
-          for (i = 0; keyw[i].name; i++) {
-            if (bstrcmp(lc->str, keyw[i].name)) {
-              state = keyw[i].state;
-              code = keyw[i].code;
-              i = 0;
-              break;
-            }
-          }
-          if (i != 0
-              || (state != s_month && state != s_wday && state != s_wom)) {
-            scan_err0(lc, T_("Invalid month, week or position day range"));
-            return;
-          }
-
-          // Lookup end of range.
-          lcase(p);
-          for (i = 0; keyw[i].name; i++) {
-            if (bstrcmp(p, keyw[i].name)) {
-              state2 = keyw[i].state;
-              code2 = keyw[i].code;
-              i = 0;
-              break;
-            }
-          }
-          if (i != 0 || state != state2 || code == code2) {
-            scan_err0(lc, T_("Invalid month, weekday or position range"));
-            return;
-          }
-          if (state == s_wday) {
-            if (!have_wday) {
-              ClearBitRange(0, 6, res_run.date_time_mask.wday);
-              have_wday = true;
-            }
-            if (code < code2) {
-              SetBitRange(code, code2, res_run.date_time_mask.wday);
-            } else {
-              SetBitRange(code, 6, res_run.date_time_mask.wday);
-              SetBitRange(0, code2, res_run.date_time_mask.wday);
-            }
-          } else if (state == s_month) {
-            if (!have_month) {
-              ClearBitRange(0, 11, res_run.date_time_mask.month);
-              have_month = true;
-            }
-            if (code < code2) {
-              SetBitRange(code, code2, res_run.date_time_mask.month);
-            } else {
-              // This is a bit odd, but we accept it anyway
-              SetBitRange(code, 11, res_run.date_time_mask.month);
-              SetBitRange(0, code2, res_run.date_time_mask.month);
-            }
-          } else {
-            // Must be position
-            if (!have_wom) {
-              ClearBitRange(0, 4, res_run.date_time_mask.wom);
-              have_wom = true;
-            }
-            if (code < code2) {
-              SetBitRange(code, code2, res_run.date_time_mask.wom);
-            } else {
-              SetBitRange(code, 4, res_run.date_time_mask.wom);
-              SetBitRange(0, code2, res_run.date_time_mask.wom);
-            }
-          }
-        }
-        break;
-      case s_hourly:
-        have_hour = true;
-        SetBitRange(0, 23, res_run.date_time_mask.hour);
-        break;
-      case s_weekly:
-        have_mday = have_wom = have_woy = true;
-        SetBitRange(0, 30, res_run.date_time_mask.mday);
-        SetBitRange(0, 4, res_run.date_time_mask.wom);
-        SetBitRange(0, 53, res_run.date_time_mask.woy);
-        break;
-      case s_daily:
-        have_mday = true;
-        SetBitRange(0, 6, res_run.date_time_mask.wday);
-        break;
-      case s_monthly:
-        have_month = true;
-        SetBitRange(0, 11, res_run.date_time_mask.month);
-        break;
-      default:
-        scan_err0(lc, T_("Unexpected run state\n"));
-        return;
-        break;
+  auto [result, warnings] = Parser<Schedule>::Parse(tokens);
+  if (pass == 1) {
+    for (const std::string& warning : warnings.messages) {
+      scan_warn0(lc, warning.c_str());
     }
+  }
+  if (auto* schedule = std::get_if<Schedule>(&result)) {
+    res_run.schedule = *schedule;
+  } else {
+    scan_err0(lc, std::get<Parser<Schedule>::Error>(result).message.c_str());
   }
 
   /* Allocate run record, copy new stuff into it,

@@ -45,8 +45,6 @@ namespace directordaemon {
 using std::chrono::seconds;
 
 static constexpr int local_debuglevel = 200;
-static constexpr auto seconds_per_hour = seconds(3600);
-static constexpr auto seconds_per_minute = seconds(60);
 
 static bool IsAutomaticSchedulerJob(JobResource* job)
 {
@@ -182,23 +180,13 @@ void SchedulerPrivate::FillSchedulerJobQueueOrSleep()
   }
 }
 
-static time_t CalculateRuntime(time_t time, uint32_t minute)
-{
-  struct tm tm{};
-  Blocaltime(&time, &tm);
-  tm.tm_min = minute;
-  tm.tm_sec = 0;
-  return mktime(&tm);
-}
-
 void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 {
   Dmsg0(local_debuglevel, "Begin AddJobsForThisAndNextHourToQueue\n");
 
-  DateTime date_time_now(time_adapter->time_source_->SystemTime());
-  date_time_now.PrintDebugMessage(local_debuglevel);
-  DateTime date_time_next_hour(date_time_now.time + seconds_per_hour.count());
-  date_time_next_hour.PrintDebugMessage(local_debuglevel);
+  time_t now = time_adapter->time_source_->SystemTime();
+  DateTime(now).PrintDebugMessage(local_debuglevel);
+  DateTime(now + kSecondsPerHour).PrintDebugMessage(local_debuglevel);
 
   JobResource* job = nullptr;
 
@@ -209,25 +197,8 @@ void SchedulerPrivate::AddJobsForThisAndNextHourToQueue()
 
     for (RunResource* run = job->schedule->run; run != nullptr;
          run = run->next) {
-      bool run_this_hour
-          = run->date_time_mask.TriggersOnDayAndHour(date_time_now.time);
-      bool run_next_hour
-          = run->date_time_mask.TriggersOnDayAndHour(date_time_next_hour.time);
-
-      Dmsg3(local_debuglevel, "run@%p: run_now=%d run_next_hour=%d\n", run,
-            run_this_hour, run_next_hour);
-
-      if (run_this_hour || run_next_hour) {
-        time_t runtime = CalculateRuntime(date_time_now.time, run->minute);
-        if (run_this_hour) {
-          AddJobToQueue(job, run, date_time_now.time, runtime,
-                        JobTrigger::kScheduler);
-        }
-        if (run_next_hour) {
-          AddJobToQueue(job, run, date_time_now.time,
-                        runtime + seconds_per_hour.count(),
-                        JobTrigger::kScheduler);
-        }
+      for (auto runtime : run->schedule.GetMatchingTimes(now, now + kSecondsPerHour)) {
+        AddJobToQueue(job, run, now, runtime, JobTrigger::kScheduler);
       }
     }
   }
@@ -244,10 +215,10 @@ void SchedulerPrivate::AddJobToQueue(JobResource* job,
         job->resource_name_);
 
   if (run != nullptr) {
-    if ((runtime - run->scheduled_last) < 61) { return; }
+    if ((runtime - run->scheduled_last) <= 60) { return; }
   }
 
-  if ((runtime + 59) < now) { return; }
+  if ((runtime + 60) <= now) { return; }
 
   try {
     Dmsg1(local_debuglevel + 100, "Scheduler: Put job %s into queue.\n",
@@ -272,7 +243,7 @@ class DefaultSchedulerTimeAdapter : public SchedulerTimeAdapter {
   DefaultSchedulerTimeAdapter()
       : SchedulerTimeAdapter(std::make_unique<SystemTimeSource>())
   {
-    default_wait_interval_ = seconds_per_minute.count();
+    default_wait_interval_ = 60;
   }
 };
 

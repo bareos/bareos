@@ -36,40 +36,92 @@ Accurate=yes|no
 SpoolData=yes|no
    :index:`\ <single: SpoolData>`\  :index:`\ <single: Directive; Spool Data>`\  tells Bareos to use or not to use spooling for the specific job.
 
-Date-time-specification determines when the Job is to be run. The specification is a repetition, and as a default Bareos is set to run a job at the beginning of the hour of every hour of every day of every week of every month of every year. This is not normally what you want, so you must specify or limit when you want the job to run. Any specification given is assumed to be repetitive in nature and will serve to override or limit the default repetition. This is done by specifying masks or times
-for the hour, day of the month, day of the week, week of the month, week of the year, and month when you want the job to run. By specifying one or more of the above, you can define a schedule to repeat at almost any frequency you want.
 
-Basically, you must supply a month, day, hour, and minute the Job is to be run. Of these four items to be specified, day is special in that you may either specify a day of the month such as 1, 2, ... 31, or you may specify a day of the week such as Monday, Tuesday, ... Sunday. Finally, you may also specify a week qualifier to restrict the schedule to the first, second, third, fourth, or fifth week of the month.
+To define on what day the schedule is triggered, you can supply specifiers from the following categories:
+- month of year (jan, feb, ...)
+- week of year (w00, w01, ...)
+- week of month (1st, ..., 5th, last)
+- day of month (1, 2, ...)
+- day of week (mon, tue, ...)
 
-For example, if you specify only a day of the week, such as Tuesday the Job will be run every hour of every Tuesday of every Month. That is the month and hour remain set to the defaults of every month and all hours.
+If you do not specify any of these, the schedule triggers every day.
 
-Note, by default with no other specification, your job will run at the beginning of every hour. If you wish your job to run more than once in any given hour, you will need to specify multiple run specifications each with a different minute.
+For a schedule to be triggered on a certain day, it must match with a specifier from all specified categories:
+``jan mon``
+triggers every monday in january
 
-The date/time to run the Job can be specified in the following way in pseudo-BNF:
+You can specify multiple keywords from the same category:
+``jan, feb mon``
+triggers every monday in january and february
 
+You can also specify a range for a category:
+``mar-dec``
+triggers every day from march to december
+``jan, mar, jun-aug``
+triggers every day in january, march, june, juli, august
+
+The order you specify keywords is irrelevant:
+``jan, feb mon``
+is the same as
+``feb mon jan``
+Though for the sake of readabilty it makes sense to specify them in the order the categories are listed above.
+
+For advanced schedules, you can specify a modulo operation:
+``w00/w02``
+triggers every day on even weeks (of the year).
+``1/2``
+triggers every odd day (of the month).
+
+If a schedule triggers on a day, you can specify at which time(s) the schedule is triggered by supplying specifiers from the following categories:
+- time of day (at 12:15, at 09:45pm, ...)
+- hourly
+
+If you do not specify any of these, the schedule is triggers at 00:00.
+
+For example
+``mon at 12:15``
+triggers every monday at 12:15
+``mon at 18:00, at 20:15``
+triggers every monday at 18:00 and 20:15, so runs twice on mondays!
+
+``mon hourly``
+runs every monday every full hour, so 24 times on mondays (at 00:00, ..., at 23:00)! 
+
+``hourly at :15``
+or
+``hourly at 00:15``
+or
+``hourly at 13:15``
+triggers every day, every hour at quater past (at 00:15, ..., at 23:15)!
+Note that specifying a hour in that case has no effect whatsoever.
+
+``hourly at :15, :30``
+triggers twice an hour at quarter past and half past.
+
+Again, the order you specify keywords is irrelevant:
+``jan first mon at 20:15``
+is the same as
+``mon at 20:15 first jan``
+
+The following Pseudo-BNF defines the syntax for specifying a schedule:
 
 .. code-block:: bnf
    :caption: schedule run
 
-   <week-keyword>         ::= 1st | 2nd | 3rd | 4th | 5th | first | second | third | fourth | fifth | last
-   <wday-keyword>         ::= sun | mon | tue | wed | thu | fri | sat | sunday | monday | tuesday | wednesday | thursday | friday | saturday
-   <week-of-year-keyword> ::= w00 | w01 | ... w52 | w53
-   <month-keyword>        ::= jan | feb | mar | apr | may | jun | jul | aug | sep | oct | nov | dec | january | february | ... | december
-   <digit>                ::= 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0
-   <number>               ::= <digit> | <digit><number>
-   <12hour>               ::= 0 | 1 | 2 | ... 12
-   <hour>                 ::= 0 | 1 | 2 | ... 23
-   <minute>               ::= 0 | 1 | 2 | ... 59
-   <day>                  ::= 1 | 2 | ... 31
-   <time>                 ::= <hour>:<minute> | <12hour>:<minute>am | <12hour>:<minute>pm
-   <time-spec>            ::= at <time> | hourly
-   <day-range>            ::= <day>-<day>
-   <month-range>          ::= <month-keyword>-<month-keyword>
-   <wday-range>           ::= <wday-keyword>-<wday-keyword>
-   <range>                ::= <day-range> | <month-range> | <wday-range>
-   <modulo>               ::= <day>/<day> | <week-of-year-keyword>/<week-of-year-keyword>
-   <date>                 ::= <date-keyword> | <day> | <range>
-   <date-spec>            ::= <date> | <date-spec>
-   <day-spec>             ::= <day> | <wday-keyword> | <day> | <wday-range> | <week-keyword> <wday-keyword> | <week-keyword> <wday-range> | daily
-   <month-spec>           ::= <month-keyword> | <month-range> | monthly
-   <date-time-spec>       ::= <month-spec> <day-spec> <time-spec>
+   <month-of-year>        ::= jan | feb | mar | apr | may | jun | jul | aug | sep | oct | nov | dec | january | ... | december
+   <week-of-year>         ::= w00 | ... | w53 // where w01 is the first week of the year according to ISO8601
+   <week-of-month>        ::= 1st | 2nd | 3rd | 4th | 5th | first | second | third | fourth | fifth | last
+   <day-of-month>         ::= 1 | ... | 31
+   <day-of-week>          ::= sun | mon | tue | wed | thu | fri | sat | sunday | ... | saturday
+
+   <range>                ::= <month-of-year>-<month-of-year> | ... | <day-of-week>-<day-of-week>
+   <modulo>               ::= <week-of-year>/<week-of-year> | <day-of-month>/<day-of-month>
+
+   <time-of-day-24>       ::= [(0 | ... | 23)]:(0 | ... | 59)
+   <time-of-day-12>       ::= (0 | ... | 12):(0 | ... | 59)(am | pm)
+   <time-of-day>          ::= at(<time-of-day-24> | <time-of-day-12>)
+   
+   <cycle>                ::= monthly | weekly | daily // these keywords are deprecated since they have not effect on the schedule
+   <schedule>             ::= [on] ((<month-of-year> | ... | <day-of-week>) | <range> | <modulo> | <time-of-day> | hourly | <cycle>) [[,]<schedule>] 
+
+if no schedule is specified, we fall back to "at 00:00" (i.e. run every day at 00:00).

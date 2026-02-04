@@ -1349,69 +1349,119 @@ static void PrintConfigRunscript(OutputFormatterResource& send,
 std::optional<time_t> RunResource::NextScheduleTime(time_t start,
                                                     uint32_t ndays) const
 {
-  for (uint32_t d = 0; d <= ndays; ++d) {
-    if (date_time_mask.TriggersOnDay(start)) {
-      struct tm tm = {};
-      Blocaltime(&start, &tm);
-      for (int h = (d == 0 ? tm.tm_hour : 0); h < 24; ++h) {
-        if (BitIsSet(h, date_time_mask.hour)) {
-          tm.tm_hour = h;
-          tm.tm_min = minute;
-          tm.tm_sec = 0;
-          return mktime(&tm);
-        }
-      }
-    }
-    start += 24 * 60 * 60;
+  auto times = schedule.GetMatchingTimes(start, start + kSecondsPerDay * ndays);
+  if (times.empty()) { return std::nullopt; }
+  return times.front();
+}
+
+// ToString
+// :: int
+std::string ToString(int value) { return std::to_string(value); }
+// :: MonthOfYear
+std::string ToString(MonthOfYear month_of_year)
+{
+  return std::string(month_of_year.name.substr(0, 3));
+}
+// :: WeekOfYear
+std::string ToString(WeekOfYear week_of_year)
+{
+  std::string number = std::to_string(int(week_of_year));
+  return (number.length() == 1 ? "w0" + number : "w" + number);
+}
+// :: WeekOfMonth
+std::string ToString(WeekOfMonth week_of_month)
+{
+  return std::string(week_of_month.name);
+}
+// :: DayOfMonth
+std::string ToString(DayOfMonth value)
+{
+  return std::to_string(int(value) + 1);
+}
+// :: DayOfWeek
+std::string ToString(DayOfWeek day_of_week)
+{
+  return std::string(day_of_week.name.substr(0, 3));
+}
+// :: TimeOfDay
+std::string ToString(TimeOfDay time)
+{
+  std::string hour = std::to_string(int(time.hour));
+  std::string minute = std::to_string(int(time.minute));
+  return "at " + (hour.length() == 1 ? "0" + hour : hour) + ":"
+         + (minute.length() == 1 ? "0" + minute : minute);
+}
+// :: Hourly
+std::string ToString(const Hourly& hourly)
+{
+  std::string result = "hourly";
+  for (int minute : hourly.minutes) {
+    std::string minute_str = std::to_string(int(minute));
+    result += " at 00:"
+              + (minute_str.length() == 1 ? "0" + minute_str : minute_str);
   }
-  return std::nullopt;
+  return result;
+}
+// :: Modulo
+template <class T> std::string ToString(const Modulo<T>& modulo)
+{
+  if constexpr (std::is_same_v<DayOfMonth, T>) {
+    return ToString(modulo.remainder) + "/" + ToString(modulo.divisor);
+  }
+  else {
+    return ToString(T{modulo.remainder}) + "/" + ToString(T{modulo.divisor});
+  }
+}
+// :: std::variant
+template <class... Args>
+std::string ToString(const std::variant<Args...>& variant)
+{
+  return std::visit([](const auto& value) { return ToString(value); }, variant);
+}
+// :: std::tuple
+template <class... Args> std::string ToString(const std::tuple<Args...>& tuple)
+{
+  std::vector<std::string> str_list;
+  std::apply(
+      [&](auto&&... args) { (str_list.emplace_back(ToString(args)), ...); },
+      tuple);
+  std::string result;
+  for (const std::string& str : str_list) {
+    if (str.empty()) { continue; }
+    if (!result.empty()) { result += ' '; }
+    result += str;
+  }
+  return result;
+}
+// :: Interval
+template <class T> std::string ToString(const Interval<T>& range)
+{
+  return ToString(range.first) + "-" + ToString(range.last);
+}
+// :: std::vector
+template <class T> std::string ToString(const std::vector<T>& vec)
+{
+  std::string result;
+  for (const T& elem : vec) {
+    if (!result.empty()) { result += ", "; }
+    result += ToString(elem);
+  }
+  return result;
+}
+// :: Schedule
+std::string ToString(const Schedule& schedule)
+{
+  std::string day_str = ToString(schedule.day_masks);
+  if (!day_str.empty()) {
+    return day_str + " " + ToString(schedule.times);
+  } else {
+    return ToString(schedule.times);
+  }
 }
 
 static std::string PrintConfigRun(RunResource* run)
 {
   PoolMem temp;
-
-  bool all_set;
-  int i, nr_items;
-  int interval_start;
-
-  /* clang-format off */
-
-   char *weekdays[] = {
-      (char *)"Sun",
-      (char *)"Mon",
-      (char *)"Tue",
-      (char *)"Wed",
-      (char *)"Thu",
-      (char *)"Fri",
-      (char *)"Sat"
-   };
-
-   char *months[] = {
-      (char *)"Jan",
-      (char *)"Feb",
-      (char *)"Mar",
-      (char *)"Apr",
-      (char *)"May",
-      (char *)"Jun",
-      (char *)"Jul",
-      (char *)"Aug",
-      (char *)"Sep",
-      (char *)"Oct",
-      (char *)"Nov",
-      (char *)"Dec"
-   };
-
-   char *ordinals[] = {
-      (char *)"1st",
-      (char *)"2nd",
-      (char *)"3rd",
-      (char *)"4th",
-      (char *)"5th"
-   };
-
-  /* clang-format on */
-
 
   PoolMem run_str;  /* holds the complete run= ... line */
   PoolMem interval; /* is one entry of day/month/week etc. */
@@ -1484,284 +1534,8 @@ static std::string PrintConfigRun(RunResource* run)
     PmStrcat(run_str, temp.c_str());
   }
 
-  // Now the time specification
 
-  // run->mday , output is just the number comma separated
-  PmStrcpy(temp, "");
-
-  // First see if not all bits are set.
-  all_set = true;
-  nr_items = 31;
-  for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_mask.mday)) { all_set = false; }
-  }
-
-  if (!all_set) {
-    interval_start = -1;
-
-    for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_mask.mday)) {
-        if (interval_start
-            == -1) {          /* bit is set and we are not in an interval */
-          interval_start = i; /* start an interval */
-          Dmsg1(200, "starting interval at %d\n", i + 1);
-          Mmsg(interval, ",%d", i + 1);
-          PmStrcat(temp, interval.c_str());
-        }
-      }
-
-      if (!BitIsSet(i, run->date_time_mask.mday)) {
-        if (interval_start != -1) { /* bit is unset and we are in an interval */
-          if ((i - interval_start) > 1) {
-            Dmsg2(200, "found end of interval from %d to %d\n",
-                  interval_start + 1, i);
-            Mmsg(interval, "-%d", i);
-            PmStrcat(temp, interval.c_str());
-          }
-          interval_start = -1; /* end the interval */
-        }
-      }
-    }
-
-    /* See if we are still in an interval and the last bit is also set then
-     * the interval stretches to the last item. */
-    i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.mday)) {
-      if ((i - interval_start) > 1) {
-        Dmsg2(200, "found end of interval from %d to %d\n", interval_start + 1,
-              i + 1);
-        Mmsg(interval, "-%d", i + 1);
-        PmStrcat(temp, interval.c_str());
-      }
-    }
-
-    PmStrcat(temp, " ");
-    PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
-  }
-
-  /* run->wom output is 1st, 2nd... 5th or last comma separated
-   *                    first, second, third... is also allowed
-   *                    but we ignore that for now */
-  all_set = true;
-  nr_items = 5;
-  for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_mask.wom)) { all_set = false; }
-  }
-
-  if (!all_set) {
-    interval_start = -1;
-
-    PmStrcpy(temp, "");
-    for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_mask.wom)) {
-        if (interval_start
-            == -1) {          /* bit is set and we are not in an interval */
-          interval_start = i; /* start an interval */
-          Dmsg1(200, "starting interval at %s\n", ordinals[i]);
-          Mmsg(interval, ",%s", ordinals[i]);
-          PmStrcat(temp, interval.c_str());
-        }
-      }
-
-      if (!BitIsSet(i, run->date_time_mask.wom)) {
-        if (interval_start != -1) { /* bit is unset and we are in an interval */
-          if ((i - interval_start) > 1) {
-            Dmsg2(200, "found end of interval from %s to %s\n",
-                  ordinals[interval_start], ordinals[i - 1]);
-            Mmsg(interval, "-%s", ordinals[i - 1]);
-            PmStrcat(temp, interval.c_str());
-          }
-          interval_start = -1; /* end the interval */
-        }
-      }
-    }
-
-    /* See if we are still in an interval and the last bit is also set then
-     * the interval stretches to the last item. */
-    i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.wom)) {
-      if ((i - interval_start) > 1) {
-        Dmsg2(200, "found end of interval from %s to %s\n",
-              ordinals[interval_start], ordinals[i]);
-        Mmsg(interval, "-%s", ordinals[i]);
-        PmStrcat(temp, interval.c_str());
-      }
-    }
-
-    PmStrcat(temp, " ");
-    PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
-  }
-  if (run->date_time_mask.last_7days_of_month) {
-    PmStrcat(run_str, "last");
-    PmStrcat(run_str, " ");
-  }
-
-  // run->wday output is Sun, Mon, ..., Sat comma separated
-  all_set = true;
-  nr_items = 7;
-  for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_mask.wday)) { all_set = false; }
-  }
-
-  if (!all_set) {
-    interval_start = -1;
-
-    PmStrcpy(temp, "");
-    for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_mask.wday)) {
-        if (interval_start
-            == -1) {          /* bit is set and we are not in an interval */
-          interval_start = i; /* start an interval */
-          Dmsg1(200, "starting interval at %s\n", weekdays[i]);
-          Mmsg(interval, ",%s", weekdays[i]);
-          PmStrcat(temp, interval.c_str());
-        }
-      }
-
-      if (!BitIsSet(i, run->date_time_mask.wday)) {
-        if (interval_start != -1) { /* bit is unset and we are in an interval */
-          if ((i - interval_start) > 1) {
-            Dmsg2(200, "found end of interval from %s to %s\n",
-                  weekdays[interval_start], weekdays[i - 1]);
-            Mmsg(interval, "-%s", weekdays[i - 1]);
-            PmStrcat(temp, interval.c_str());
-          }
-          interval_start = -1; /* end the interval */
-        }
-      }
-    }
-
-    /* See if we are still in an interval and the last bit is also set then
-     * the interval stretches to the last item. */
-    i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.wday)) {
-      if ((i - interval_start) > 1) {
-        Dmsg2(200, "found end of interval from %s to %s\n",
-              weekdays[interval_start], weekdays[i]);
-        Mmsg(interval, "-%s", weekdays[i]);
-        PmStrcat(temp, interval.c_str());
-      }
-    }
-
-    PmStrcat(temp, " ");
-    PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
-  }
-
-  // run->month output is Jan, Feb, ..., Dec comma separated
-  all_set = true;
-  nr_items = 12;
-  for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_mask.month)) { all_set = false; }
-  }
-
-  if (!all_set) {
-    interval_start = -1;
-
-    PmStrcpy(temp, "");
-    for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_mask.month)) {
-        if (interval_start
-            == -1) {          /* bit is set and we are not in an interval */
-          interval_start = i; /* start an interval */
-          Dmsg1(200, "starting interval at %s\n", months[i]);
-          Mmsg(interval, ",%s", months[i]);
-          PmStrcat(temp, interval.c_str());
-        }
-      }
-
-      if (!BitIsSet(i, run->date_time_mask.month)) {
-        if (interval_start != -1) { /* bit is unset and we are in an interval */
-          if ((i - interval_start) > 1) {
-            Dmsg2(200, "found end of interval from %s to %s\n",
-                  months[interval_start], months[i - 1]);
-            Mmsg(interval, "-%s", months[i - 1]);
-            PmStrcat(temp, interval.c_str());
-          }
-          interval_start = -1; /* end the interval */
-        }
-      }
-    }
-
-    /* See if we are still in an interval and the last bit is also set then
-     * the interval stretches to the last item. */
-    i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.month)) {
-      if ((i - interval_start) > 1) {
-        Dmsg2(200, "found end of interval from %s to %s\n",
-              months[interval_start], months[i]);
-        Mmsg(interval, "-%s", months[i]);
-        PmStrcat(temp, interval.c_str());
-      }
-    }
-
-    PmStrcat(temp, " ");
-    PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
-  }
-
-  // run->woy output is w00 - w53, comma separated
-  all_set = true;
-  nr_items = 54;
-  for (i = 0; i < nr_items; i++) {
-    if (!BitIsSet(i, run->date_time_mask.woy)) { all_set = false; }
-  }
-
-  if (!all_set) {
-    interval_start = -1;
-
-    PmStrcpy(temp, "");
-    for (i = 0; i < nr_items; i++) {
-      if (BitIsSet(i, run->date_time_mask.woy)) {
-        if (interval_start
-            == -1) {          /* bit is set and we are not in an interval */
-          interval_start = i; /* start an interval */
-          Dmsg1(200, "starting interval at w%02d\n", i);
-          Mmsg(interval, ",w%02d", i);
-          PmStrcat(temp, interval.c_str());
-        }
-      }
-
-      if (!BitIsSet(i, run->date_time_mask.woy)) {
-        if (interval_start != -1) { /* bit is unset and we are in an interval */
-          if ((i - interval_start) > 1) {
-            Dmsg2(200, "found end of interval from w%02d to w%02d\n",
-                  interval_start, i - 1);
-            Mmsg(interval, "-w%02d", i - 1);
-            PmStrcat(temp, interval.c_str());
-          }
-          interval_start = -1; /* end the interval */
-        }
-      }
-    }
-
-    /* See if we are still in an interval and the last bit is also set then
-     * the interval stretches to the last item. */
-    i = nr_items - 1;
-    if (interval_start != -1 && BitIsSet(i, run->date_time_mask.woy)) {
-      if ((i - interval_start) > 1) {
-        Dmsg2(200, "found end of interval from w%02d to w%02d\n",
-              interval_start, i);
-        Mmsg(interval, "-w%02d", i);
-        PmStrcat(temp, interval.c_str());
-      }
-    }
-
-    PmStrcat(temp, " ");
-    PmStrcat(run_str, temp.c_str() + 1); /* jump over first comma*/
-  }
-
-  /* run->hour output is HH:MM for hour and minute though its a bitfield.
-   * only "hourly" sets all bits. */
-  PmStrcpy(temp, "");
-  for (i = 0; i < 24; i++) {
-    if (BitIsSet(i, run->date_time_mask.hour)) {
-      Mmsg(temp, "at %02d:%02d", i, run->minute);
-      PmStrcat(run_str, temp.c_str());
-    }
-  }
-
-  // run->minute output is smply the minute in HH:MM
-
-  return std::string(run_str.c_str());
+  return run_str.c_str() + ToString(run->schedule);
 }
 
 

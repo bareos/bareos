@@ -154,101 +154,70 @@ According to the NIST (US National Institute of Standards and Technology), 12am 
 
 An example schedule resource that is named WeeklyCycle and runs a job with level full each Sunday at 2:05am and an incremental job Monday through Saturday at 2:05am is:
 
-.. code-block:: bareosconfig
-   :caption: Schedule Example
 
-   Schedule {
-     Name = "WeeklyCycle"
-     Run = Level=Full sun at 2:05
-     Run = Level=Incremental mon-sat at 2:05
-   }
-
-An example of a possible monthly cycle is as follows:
+Some examples for Schedule resources
 
 .. code-block:: bareosconfig
+   :caption: Schedule Examples
 
    Schedule {
-     Name = "MonthlyCycle"
-     Run = Level=Full Pool=Monthly 1st sun at 2:05
-     Run = Level=Differential 2nd-5th sun at 2:05
-     Run = Level=Incremental Pool=Daily mon-sat at 2:05
-   }
-
-The first of every month:
-
-.. code-block:: bareosconfig
-
-   Schedule {
-     Name = "First"
-     Run = Level=Full on 1 at 2:05
-     Run = Level=Incremental on 2-31 at 2:05
-   }
-
-The last friday of the month (i.e. the last friday in the last week of the month)
-
-.. code-block:: bareosconfig
-
-   Schedule {
-     Name = "Last Friday"
-     Run = Level=Full last fri at 21:00
-   }
-
-Every 10 minutes:
-
-.. code-block:: bareosconfig
-
-   Schedule {
-     Name = "TenMinutes"
-     Run = Level=Full hourly at 0:05
-     Run = Level=Full hourly at 0:15
-     Run = Level=Full hourly at 0:25
-     Run = Level=Full hourly at 0:35
-     Run = Level=Full hourly at 0:45
-     Run = Level=Full hourly at 0:55
-   }
-
-The modulo scheduler makes it easy to specify schedules like odd or even days/weeks, or more generally every n days or weeks. It is called modulo scheduler because it uses the modulo to determine if the schedule must be run or not. The second variable behind the slash lets you determine in which cycle of days/weeks a job should be run. The first part determines on which day/week the job should be run first. E.g. if you want to run a backup in a 5-week-cycle, starting on week 3, you set it up as
-w03/w05.
-
-.. code-block:: bareosconfig
-   :caption: Schedule Examples: modulo
-
-   Schedule {
-     Name = "Odd Days"
-     Run = 1/2 at 23:10
+      Name = "Hourly"
+      Run = hourly # run every full hour (24 times per day)
    }
 
    Schedule {
-     Name = "Even Days"
-     Run = 2/2 at 23:10
+      Name = "HourlyAt15"
+      Run = hourly at :15 # run every hour with minute=15 (i.e. at 00:15, ..., at 23:15)
    }
 
    Schedule {
-     Name = "On the 3rd week in a 5-week-cycle"
-     Run = w03/w05 at 23:10
+      Name = "Daily"
+      Run = at 20:00 # run daily at 20:00
+      Run = at 08:00 at 19:00 # run daily at 08:00 and at 19:00
    }
 
    Schedule {
-     Name = "Odd Weeks"
-     Run = w01/w02 at 23:10
+      Name = "Weekly"
+      Run = mon at 20:00 # run every monday at 20:00
    }
 
    Schedule {
-     Name = "Even Weeks"
-     Run = w02/w02 at 23:10
+      Name = "Monthly"
+      Run = 1 at 20:00 # run every first day of the month at 20:00
+      Run = 1st mon at 20:00 # run every first monday of the month at 20:00
+      Run = last sun at 20:00 # run every last sunday of the month at 20:00
    }
 
+   Schedule {
+      Name = "Range"
+      Run = mon-fri at 20:00 # run from monday to friday at 20:00 
+   }
 
-Technical Notes on Schedules
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   # The modulo scheduler makes it easy to specify schedules like odd or even days/weeks, or more generally every n days or weeks.
+   # It is called modulo scheduler because it uses the modulo to determine if the schedule must be run or not.
+   # The second variable behind the slash lets you determine in which cycle of days/weeks a job should be run.
+   # The first part determines on which day/week the job should be run first.
+   # E.g. if you want to run a backup in a 5-week-cycle, starting on week 4, you set it up as w03/w05.
+   # Note that if you want to run your backup always at the beginning of the cycle, you need to set the first value to 0, e.g. w00/w05.
+   # Modulos where the first value is not bigger than the second value are invalid, so w10/w05 is invalid.
+   Schedule {
+      Name = "Modulo"
+      Run = w05/w07 at 20:00 # run every 7th week of the year all 7 days at 20:00 starting from week 5 (i.e. w05, w12, w19, w26, w33, w40, w47)
+      Run = 0/2 at 20:00 # run every even day of the month at 20:0
+      Run = 1/2 at 20:00 # run every odd day of the month at 20:00
+   }
 
-.. index:: Schedule; Technical Notes
+   Schedule {
+      Name = "SpecifyLevels"
+      Run = Level=Full sun at 20:00 # run a full backup every sunday at 20:00
+      Run = Level=Incremental mon-fri at 23:00 # run an incremental backup from monday to friday at 23:00
+   }
 
-Internally Bareos keeps a schedule as a bit mask. There are six masks and a minute field to each schedule. The masks are hour, day of the month (mday), month, day of the week (wday), week of the month (wom), and week of the year (woy). The schedule is initialized to have the bits of each of these masks set, which means that at the beginning of every hour, the job will run. When you specify a month for the first time, the mask will be cleared and the bit corresponding to your selected month will
-be selected. If you specify a second month, the bit corresponding to it will also be added to the mask. Thus when Bareos checks the masks to see if the bits are set corresponding to the current time, your job will run only in the two months you have set. Likewise, if you set a time (hour), the hour mask will be cleared, and the hour you specify will be set in the bit mask and the minutes will be stored in the minute field.
-
-For any schedule you have defined, you can see how these bits are set by doing a show schedules command in the Console program. Please note that the bit mask is zero based, and Sunday is the first day of the week (bit zero).
-
+   Schedule {
+      Name = "SpecifiyPools"
+      Run = Pool=Monthly 1st sun at 08:00 # run backup using pool "Monthly" every first sunday of the month at 08:00
+      Run = Pool=Daily at 20:00 # run backup using pool "Daily" every day at 20:00
+   }
 
 .. _DirectorResourceFileSet:
 

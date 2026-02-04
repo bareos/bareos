@@ -33,7 +33,7 @@
 #include <optional>
 
 #include "dird/client_connection_handshake_mode.h"
-#include "dird/date_time_mask.h"
+#include "dird/schedule.h"
 #include "lib/alist.h"
 #include "lib/messages_resource.h"
 #include "lib/resource_item.h"
@@ -621,9 +621,8 @@ class RunResource : public BareosResource {
   PoolResource* next_pool = nullptr;  /**< Next Pool override */
   StorageResource* storage = nullptr; /**< Storage override */
   MessagesResource* msgs = nullptr;   /**< Messages override */
-  uint32_t minute = 0;                /* minute to run job */
   time_t scheduled_last = {0};
-  DateTimeMask date_time_mask;
+  Schedule schedule = Schedule{std::vector{TimeOfDay(0, 0)}};
 
   /* Methods */
   std::optional<time_t> NextScheduleTime(time_t start, uint32_t ndays) const;
