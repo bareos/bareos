@@ -98,17 +98,6 @@ extern void StoreRun(ConfigurationParser* p,
                      int index,
                      int pass);
 
-extern void ParseInc(ConfigurationParser* p,
-                     lexer* lc,
-                     const ResourceItem* item,
-                     int index,
-                     int pass);
-extern void ParseRun(ConfigurationParser* p,
-                     lexer* lc,
-                     const ResourceItem* item,
-                     int index,
-                     int pass);
-
 static void CreateAndAddUserAgentConsoleResource(
     ConfigurationParser& my_config);
 static bool SaveResource(int type, const ResourceItem* items, int pass);
@@ -2422,30 +2411,6 @@ static void StorePooltype(ConfigurationParser* p,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void ParsePooltype(ConfigurationParser* p,
-                          lexer* lc,
-                          const ResourceItem*,
-                          int,
-                          int)
-{
-  LexGetToken(lc, BCT_NAME);
-
-  bool found = false;
-  for (int i = 0; PoolTypes[i].name; i++) {
-    if (Bstrcasecmp(lc->str(), PoolTypes[i].name)) {
-      p->PushString(PoolTypes[i].name);
-      found = true;
-      break;
-    }
-  }
-
-  if (!found) {
-    scan_err(lc, T_("Expected a Pool Type option, got: %s"), lc->str());
-  }
-
-  ScanToEol(lc);
-}
-
 static void StoreActiononpurge(ConfigurationParser* p,
                                lexer* lc,
                                const ResourceItem* item,
@@ -2476,31 +2441,6 @@ static void StoreActiononpurge(ConfigurationParser* p,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void ParseActiononpurge(ConfigurationParser* p,
-                               lexer* lc,
-                               const ResourceItem*,
-                               int,
-                               int)
-{
-  LexGetToken(lc, BCT_NAME);
-  /* Store the type both in pass 1 and pass 2
-   * Scan ActionOnPurge options */
-  bool found = false;
-  for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
-    if (Bstrcasecmp(lc->str(), ActionOnPurgeOptions[i].name)) {
-      p->PushU(ActionOnPurgeOptions[i].token);
-      found = true;
-      break;
-    }
-  }
-
-  if (!found) {
-    scan_err(lc, T_("Expected an Action On Purge option, got: %s"), lc->str());
-  }
-
-  ScanToEol(lc);
-}
-
 /**
  * Store Device. Note, the resource is created upon the
  * first reference. The details of the resource are obtained
@@ -2527,15 +2467,6 @@ static void StoreDevice(ConfigurationParser* p,
   ScanToEol(lc);
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-static void ParseDevice(ConfigurationParser* p,
-                        lexer* lc,
-                        const ResourceItem* item,
-                        int index,
-                        int pass)
-{
-  StoreResource(p, CFG_TYPE_ALIST_RES, lc, item, index, pass);
 }
 
 // Store Migration/Copy type
@@ -2566,30 +2497,6 @@ static void StoreMigtype(ConfigurationParser* p,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void ParseMigtype(ConfigurationParser* p,
-                         lexer* lc,
-                         const ResourceItem*,
-                         int)
-{
-  LexGetToken(lc, BCT_NAME);
-  // Store the type both in pass 1 and pass 2
-  bool found = false;
-  for (int i = 0; migtypes[i].name; i++) {
-    if (Bstrcasecmp(lc->str(), migtypes[i].name)) {
-      p->PushU(migtypes[i].job_type);
-      found = true;
-      break;
-    }
-  }
-
-  if (!found) {
-    scan_err(lc, T_("Expected a Migration Job Type keyword, got: %s"),
-             lc->str());
-  }
-
-  ScanToEol(lc);
-}
-
 // Store JobType (backup, verify, restore)
 static void StoreJobtype(ConfigurationParser* p,
                          lexer* lc,
@@ -2610,30 +2517,6 @@ static void StoreJobtype(ConfigurationParser* p,
   ScanToEol(lc);
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-static void ParseJobtype(ConfigurationParser* p,
-                         lexer* lc,
-                         const ResourceItem*,
-                         int,
-                         int)
-{
-  LexGetToken(lc, BCT_NAME);
-  // Store the type both in pass 1 and pass 2
-  bool found = false;
-  for (int i = 0; jobtypes[i].name; i++) {
-    if (Bstrcasecmp(lc->str(), jobtypes[i].name)) {
-      p->PushU(jobtypes[i].job_type);
-      found = true;
-      break;
-    }
-  }
-
-  if (!found) {
-    scan_err(lc, T_("Expected a Job Type keyword, got: %s"), lc->str());
-  }
-
-  ScanToEol(lc);
 }
 
 // Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
@@ -2657,30 +2540,6 @@ static void StoreProtocoltype(ConfigurationParser* p,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void ParseProtocoltype(ConfigurationParser* p,
-                              lexer* lc,
-                              const ResourceItem*,
-                              int,
-                              int)
-{
-  LexGetToken(lc, BCT_NAME);
-  // Store the type both in pass 1 and pass 2
-  bool found = false;
-  for (int i = 0; backupprotocols[i].name; i++) {
-    if (Bstrcasecmp(lc->str(), backupprotocols[i].name)) {
-      p->PushU(backupprotocols[i].token);
-      found = true;
-      break;
-    }
-  }
-
-  if (!found) {
-    scan_err(lc, T_("Expected a Protocol Type keyword, got: %s"), lc->str());
-  }
-
-  ScanToEol(lc);
-}
-
 static void StoreReplace(ConfigurationParser* p,
                          lexer* lc,
                          const ResourceItem* item,
@@ -2699,22 +2558,6 @@ static void StoreReplace(ConfigurationParser* p,
   ScanToEol(lc);
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-static void ParseReplace(ConfigurationParser* p,
-                         lexer* lc,
-                         const ResourceItem*,
-                         int,
-                         int)
-{
-  auto found = ReadKeyword(p, lc, ReplaceOptions);
-
-  if (!found) {
-    scan_err(lc, T_("Expected a Restore replacement option, got: %s"),
-             lc->str());
-  }
-
-  ScanToEol(lc);
 }
 
 // Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
@@ -2738,22 +2581,6 @@ static void StoreAuthprotocoltype(ConfigurationParser* p,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void ParseAuthprotocoltype(ConfigurationParser* p,
-                                  lexer* lc,
-                                  const ResourceItem*,
-                                  int,
-                                  int)
-{
-  auto found = ReadKeyword(p, lc, authprotocols);
-
-  if (!found) {
-    scan_err(lc, T_("Expected a Auth Protocol Type keyword, got: %s"),
-             lc->str());
-  }
-
-  ScanToEol(lc);
-}
-
 // Store authentication type (Mostly for NDMP like clear or MD5).
 static void StoreAuthtype(ConfigurationParser* p,
                           lexer* lc,
@@ -2772,22 +2599,6 @@ static void StoreAuthtype(ConfigurationParser* p,
   ScanToEol(lc);
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-static void ParseAuthtype(ConfigurationParser* p,
-                          lexer* lc,
-                          const ResourceItem*,
-                          int,
-                          int)
-{
-  auto* found = ReadKeyword(p, lc, authmethods);
-
-  if (!found) {
-    scan_err(lc, T_("Expected a Authentication Type keyword, got: %s"),
-             lc->str());
-  }
-
-  ScanToEol(lc);
 }
 
 // Store Job Level (Full, Incremental, ...)
@@ -2809,21 +2620,6 @@ static void StoreLevel(ConfigurationParser* p,
   ScanToEol(lc);
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-static void ParseLevel(ConfigurationParser* p,
-                       lexer* lc,
-                       const ResourceItem*,
-                       int,
-                       int)
-{
-  auto* found = ReadKeyword(p, lc, joblevels);
-
-  if (!found) {
-    scan_err(lc, T_("Expected a Job Level keyword, got: %s"), lc->str());
-  }
-
-  ScanToEol(lc);
 }
 
 /**
@@ -2907,83 +2703,6 @@ static void StoreAutopassword(ConfigurationParser* p,
   }
 }
 
-static void ParseAutopassword(ConfigurationParser* p,
-                              lexer* lc,
-                              const ResourceItem* item,
-                              int index,
-                              int pass)
-{
-  switch ((*item->allocated_resource)->rcode_) {
-    case R_DIRECTOR:
-      /* As we need to store both clear and MD5 hashed within the same
-       * resource class we use the item->code as a hint default is 0
-       * and for clear we need a code of 1. */
-      switch (item->code) {
-        case 1:
-          ParseResource(p, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
-          break;
-        default:
-          ParseResource(p, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
-          break;
-      }
-      break;
-    case R_CLIENT:
-      if (pass == 2) {
-        auto* res = dynamic_cast<ClientResource*>(p->GetResWithName(
-            R_CLIENT, (*item->allocated_resource)->resource_name_));
-        ASSERT(res);
-
-        if (res_client->Protocol != res->Protocol) {
-          scan_err(lc,
-                   "Trying to store password to resource \"%s\", but protocol "
-                   "is not known.\n",
-                   (*item->allocated_resource)->resource_name_);
-        }
-      }
-      switch (res_client->Protocol) {
-        case APT_NDMPV2:
-        case APT_NDMPV3:
-        case APT_NDMPV4:
-          ParseResource(p, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
-          break;
-        default:
-          ParseResource(p, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
-          break;
-      }
-      break;
-    case R_STORAGE:
-      if (pass == 2) {
-        auto* res = dynamic_cast<StorageResource*>(p->GetResWithName(
-            R_STORAGE, (*item->allocated_resource)->resource_name_));
-        ASSERT(res);
-
-        if (res_store->Protocol != res->Protocol) {
-          scan_err(lc,
-                   "Trying to store password to resource \"%s\", but protocol "
-                   "is not known.\n",
-                   (*item->allocated_resource)->resource_name_);
-        }
-      }
-      switch (res_store->Protocol) {
-        case APT_NDMPV2:
-        case APT_NDMPV3:
-        case APT_NDMPV4:
-          ParseResource(p, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
-          break;
-        default:
-          ParseResource(p, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
-          break;
-      }
-      break;
-    case R_CATALOG:
-      ParseResource(p, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
-      break;
-    default:
-      ParseResource(p, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
-      break;
-  }
-}
-
 static void StoreAcl(ConfigurationParser* p,
                      lexer* lc,
                      const ResourceItem* item,
@@ -3021,23 +2740,6 @@ static void StoreAcl(ConfigurationParser* p,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void ParseAcl(ConfigurationParser* p,
-                     lexer* lc,
-                     const ResourceItem*,
-                     int,
-                     int)
-{
-  int token = BCT_COMMA;
-
-  p->PushArray();
-  while (token == BCT_COMMA) {
-    LexGetToken(lc, BCT_STRING);
-    p->PushString(lc->str());
-    token = LexGetToken(lc, BCT_ALL);
-  }
-  p->PopArray();
-}
-
 static void StoreAudit(ConfigurationParser* p,
                        lexer* lc,
                        const ResourceItem* item,
@@ -3071,23 +2773,6 @@ static void StoreAudit(ConfigurationParser* p,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void ParseAudit(ConfigurationParser* p,
-                       lexer* lc,
-                       const ResourceItem*,
-                       int,
-                       int)
-{
-  p->PushArray();
-
-  int token = BCT_COMMA;
-  while (token == BCT_COMMA) {
-    LexGetToken(lc, BCT_STRING);
-    p->PushString(lc->str());
-    token = LexGetToken(lc, BCT_ALL);
-  }
-  p->PopArray();
-}
-
 static constexpr s_kw script_timing[] = {
     {"before", SCRIPT_Before},
     {"after", SCRIPT_After},
@@ -3107,13 +2792,6 @@ static void StoreRunscriptWhen(ConfigurationParser* p,
   } else {
     SetItemVariable<uint32_t>(*item, found->token);
   }
-  ScanToEol(lc);
-}
-
-static void ParseRunscriptWhen(ConfigurationParser* p, lexer* lc)
-{
-  LexGetToken(lc, BCT_NAME);
-  p->PushString(lc->str());
   ScanToEol(lc);
 }
 
@@ -3149,16 +2827,6 @@ static void StoreRunscriptTarget(ConfigurationParser* p,
   ScanToEol(lc);
 }
 
-static void ParseRunscriptTarget(ConfigurationParser* p, lexer* lc)
-{
-  auto* found = ReadKeyword(p, lc, script_timing);
-  if (!found) {
-    scan_err(lc, T_("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
-             lc->str());
-  }
-  ScanToEol(lc);
-}
-
 static void StoreRunscriptCmd(ConfigurationParser* p,
                               lexer* lc,
                               const ResourceItem* item,
@@ -3176,13 +2844,6 @@ static void StoreRunscriptCmd(ConfigurationParser* p,
     RunScript* r = GetItemVariablePointer<RunScript*>(*item);
     r->temp_parser_command_container.emplace_back(lc->str(), item->code);
   }
-  ScanToEol(lc);
-}
-
-static void ParseRunscriptCmd(ConfigurationParser* p, lexer* lc)
-{
-  LexGetToken(lc, BCT_STRING);
-  p->PushString(lc->str());
   ScanToEol(lc);
 }
 
@@ -3296,65 +2957,6 @@ static void StoreShortRunscript(ConfigurationParser* p,
   ScanToEol(lc);
 }
 
-static void ParseShortRunscript(ConfigurationParser* p,
-                                lexer* lc,
-                                const ResourceItem* item,
-                                int,
-                                int)
-{
-  LexGetToken(lc, BCT_STRING);
-
-  Dmsg0(500, "runscript: creating new RunScript object\n");
-
-  p->PushAlias("RunScript");
-  p->PushObject();
-  p->PushLabel("command");
-  p->PushString(lc->str());
-
-  auto set_bools = [&](bool on_success, bool on_error, bool fail_on_error) {
-    p->PushLabel("on_success");
-    p->PushB(on_success);
-    p->PushLabel("on_failure");
-    p->PushB(on_error);
-    p->PushLabel("fail_on_error");
-    p->PushB(fail_on_error);
-  };
-
-  if (Bstrcasecmp(item->name, "runbeforejob")) {
-    p->PushLabel("target");
-    p->PushString("");
-    p->PushLabel("when");
-    p->PushString("before");
-  } else if (Bstrcasecmp(item->name, "runafterjob")) {
-    p->PushLabel("target");
-    p->PushString("");
-    p->PushLabel("when");
-    p->PushString("after");
-    set_bools(true, false, false);
-  } else if (Bstrcasecmp(item->name, "clientrunafterjob")) {
-    p->PushLabel("target");
-    p->PushString("%c");
-    p->PushLabel("when");
-    p->PushString("after");
-    set_bools(true, false, false);
-  } else if (Bstrcasecmp(item->name, "clientrunbeforejob")) {
-    p->PushLabel("target");
-    p->PushString("%c");
-    p->PushLabel("when");
-    p->PushString("before");
-  } else if (Bstrcasecmp(item->name, "runafterfailedjob")) {
-    p->PushLabel("target");
-    p->PushString("");
-    p->PushLabel("when");
-    p->PushString("after");
-    set_bools(false, true, false);
-  }
-
-  p->PopObject();
-
-  ScanToEol(lc);
-}
-
 /**
  * Store a bool in a bit field without modifing hdr
  * We can also add an option to StoreBool to skip hdr
@@ -3372,18 +2974,6 @@ static void StoreRunscriptBool(ConfigurationParser* p,
   }
 
   SetItemVariable<bool>(*item, found->token != 0);
-
-  ScanToEol(lc);
-}
-
-static void ParseRunscriptBool(ConfigurationParser* p, lexer* lc)
-{
-  auto* found = ReadKeyword(p, lc, bool_kw);
-
-  if (!found) {
-    scan_err(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-             lc->str()); /* YES and NO must not be translated */
-  }
 
   ScanToEol(lc);
 }
@@ -3503,69 +3093,6 @@ bail_out:
   ScanToEol(lc);
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-static void ParseRunscript(ConfigurationParser* p,
-                           lexer* lc,
-                           const ResourceItem*,
-                           int,
-                           int)
-{
-  int token = LexGetToken(lc, BCT_SKIP_EOL);
-
-  if (token != BCT_BOB) {
-    scan_err(lc, T_("Expecting open brace. Got %s"), lc->str());
-    return;
-  }
-
-  p->PushObject();
-  while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
-    if (token == BCT_EOB) { break; }
-
-    if (token != BCT_IDENTIFIER) {
-      scan_err(lc, T_("Expecting keyword, got: %s\n"), lc->str());
-      goto bail_out;
-    }
-
-    bool keyword_ok = false;
-    for (int i = 0; runscript_items[i].name; i++) {
-      if (Bstrcasecmp(runscript_items[i].name, lc->str())) {
-        p->PushLabel(runscript_items[i].name);
-        token = LexGetToken(lc, BCT_SKIP_EOL);
-        if (token != BCT_EQUALS) {
-          scan_err(lc, T_("Expected an equals, got: %s"), lc->str());
-          goto bail_out;
-        }
-        switch (runscript_items[i].type) {
-          case CFG_TYPE_RUNSCRIPT_CMD:
-            ParseRunscriptCmd(p, lc);
-            break;
-          case CFG_TYPE_RUNSCRIPT_TARGET:
-            ParseRunscriptTarget(p, lc);
-            break;
-          case CFG_TYPE_RUNSCRIPT_BOOL:
-            ParseRunscriptBool(p, lc);
-            break;
-          case CFG_TYPE_RUNSCRIPT_WHEN:
-            ParseRunscriptWhen(p, lc);
-            break;
-          default:
-            break;
-        }
-        keyword_ok = true;
-        break;
-      }
-    }
-
-    if (!keyword_ok) {
-      scan_err(lc, T_("Keyword %s not permitted in this resource"), lc->str());
-      goto bail_out;
-    }
-  }
-  p->PopObject();
-
-bail_out:
-  ScanToEol(lc);
 }
 
 /**
@@ -3761,70 +3288,6 @@ static void StoreConfigCb(ConfigurationParser* p,
       break;
   }
 }
-
-[[maybe_unused]] static void ParseConfigCb(ConfigurationParser* p,
-                                           lexer* lc,
-                                           const ResourceItem* item,
-                                           int index,
-                                           int pass)
-{
-  switch (item->type) {
-    case CFG_TYPE_AUTOPASSWORD:
-      ParseAutopassword(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_ACL:
-      ParseAcl(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_AUDIT:
-      ParseAudit(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_AUTHPROTOCOLTYPE:
-      ParseAuthprotocoltype(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_AUTHTYPE:
-      ParseAuthtype(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_DEVICE:
-      ParseDevice(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_JOBTYPE:
-      ParseJobtype(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_PROTOCOLTYPE:
-      ParseProtocoltype(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_LEVEL:
-      ParseLevel(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_REPLACE:
-      ParseReplace(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_SHRTRUNSCRIPT:
-      ParseShortRunscript(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_RUNSCRIPT:
-      ParseRunscript(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_MIGTYPE:
-      ParseMigtype(p, lc, item, index);
-      break;
-    case CFG_TYPE_INCEXC:
-      ParseInc(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_RUN:
-      ParseRun(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_ACTIONONPURGE:
-      ParseActiononpurge(p, lc, item, index, pass);
-      break;
-    case CFG_TYPE_POOLTYPE:
-      ParsePooltype(p, lc, item, index, pass);
-      break;
-    default:
-      break;
-  }
-}
-
 
 static bool HasDefaultValue(const ResourceItem& item, const s_jt* keywords)
 {

@@ -693,13 +693,6 @@ bool StoreResource(ConfigurationParser* p,
                    const ResourceItem* item,
                    int index,
                    int pass);
-bool ParseResource(ConfigurationParser* p,
-                   int rcode,
-                   lexer* lc,
-                   const ResourceItem* item,
-                   int index,
-                   int pass);
-
 
 template <typename KeyWord, size_t N>
 auto ReadKeyword(ConfigurationParser* conf,

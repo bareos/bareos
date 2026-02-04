@@ -441,18 +441,6 @@ static void ScanIncludeOptions(ConfigurationParser* p,
   if (lc->ch() == ',') { LexGetToken(lc, BCT_ALL); /* yes, eat comma */ }
 }
 
-static void ParseIncludeOptions(ConfigurationParser* p, lexer* lc)
-{
-  auto lcopts = lc->options;
-  lc->options.set(lexer::options::ForceString); /* force string */
-  LexGetToken(lc, BCT_STRING);                  /* expect at least one option */
-  p->PushString(lc->str());
-  lc->options = lcopts;
-
-  // If option terminated by comma, eat it
-  if (lc->ch() == ',') { LexGetToken(lc, BCT_ALL); /* yes, eat comma */ }
-}
-
 // Store regex info
 static void StoreRegex(ConfigurationParser* p,
                        lexer* lc,
@@ -513,52 +501,6 @@ static void StoreRegex(ConfigurationParser* p,
   ScanToEol(lc);
 }
 
-static void ParseRegex(ConfigurationParser* p,
-                       lexer* lc,
-                       const ResourceItem* item)
-{
-  int token, rc;
-  regex_t preg{};
-  char prbuf[500];
-  const char* type;
-
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  /* Pickup regex string
-   */
-  switch (token) {
-    case BCT_IDENTIFIER:
-    case BCT_UNQUOTED_STRING:
-    case BCT_QUOTED_STRING:
-      p->PushObject();
-      p->PushLabel("value");
-      p->PushString(lc->str());
-      rc = regcomp(&preg, lc->str(), REG_EXTENDED);
-      if (rc != 0) {
-        regerror(rc, &preg, prbuf, sizeof(prbuf));
-        regfree(&preg);
-        scan_err(lc, T_("Regex compile error. ERR=%s\n"), prbuf);
-        return;
-      }
-      regfree(&preg);
-      if (item->code == 1) {
-        type = "regexdir";
-      } else if (item->code == 2) {
-        type = "regexfile";
-      } else {
-        type = "regex";
-      }
-      p->PushLabel("type");
-      p->PushString(type);
-      p->PopObject();
-      Dmsg4(900, "set %s %p %s\n", type, res_incexe->current_opts, lc->str());
-      break;
-    default:
-      scan_err(lc, T_("Expected a regex string, got: %s\n"), lc->str());
-      return;
-  }
-  ScanToEol(lc);
-}
-
 // Store reader info
 static void StorePlugin(ConfigurationParser* p,
                         lexer* lc,
@@ -571,13 +513,6 @@ static void StorePlugin(ConfigurationParser* p,
     // Pickup plugin command
     res_incexe->current_opts->plugin = strdup(lc->str());
   }
-  ScanToEol(lc);
-}
-
-static void ParsePlugin(ConfigurationParser* p, lexer* lc, const ResourceItem*)
-{
-  LexGetToken(lc, BCT_NAME);
-  p->PushString(lc->str());
   ScanToEol(lc);
 }
 
@@ -636,44 +571,6 @@ static void StoreWild(ConfigurationParser* p,
   ScanToEol(lc);
 }
 
-static void ParseWild(ConfigurationParser* p,
-                      lexer* lc,
-                      const ResourceItem* item)
-{
-  int token;
-  const char* type;
-
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  switch (token) {
-    case BCT_IDENTIFIER:
-    case BCT_UNQUOTED_STRING:
-    case BCT_QUOTED_STRING:
-      p->PushObject();
-      p->PushLabel("value");
-      p->PushString(lc->str());
-      if (item->code == 1) {
-        type = "wilddir";
-      } else if (item->code == 2) {
-        if (strpbrk(lc->str(), "/\\") != NULL) {
-          type = "wildfile";
-        } else {
-          type = "wildbase";
-        }
-      } else {
-        type = "wild";
-      }
-      p->PushLabel("type");
-      p->PushString(type);
-      p->PopObject();
-      Dmsg4(9, "set %s %p %s\n", type, res_incexe->current_opts, lc->str());
-      break;
-    default:
-      scan_err(lc, T_("Expected a wild-card string, got: %s\n"), lc->str());
-      return;
-  }
-  ScanToEol(lc);
-}
-
 // Store fstype info
 static void StoreFstype(ConfigurationParser* p,
                         lexer* lc,
@@ -700,25 +597,6 @@ static void StoreFstype(ConfigurationParser* p,
         scan_err(lc, T_("Expected a fstype string, got: %s\n"), lc->str());
         return;
     }
-  }
-  ScanToEol(lc);
-}
-
-static void ParseFstype(ConfigurationParser* p, lexer* lc, const ResourceItem*)
-{
-  int token;
-
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  /* Pickup fstype string */
-  switch (token) {
-    case BCT_IDENTIFIER:
-    case BCT_UNQUOTED_STRING:
-    case BCT_QUOTED_STRING:
-      p->PushString(lc->str());
-      break;
-    default:
-      scan_err(lc, T_("Expected a fstype string, got: %s\n"), lc->str());
-      return;
   }
   ScanToEol(lc);
 }
@@ -753,27 +631,6 @@ static void StoreDrivetype(ConfigurationParser* p,
   ScanToEol(lc);
 }
 
-static void ParseDrivetype(ConfigurationParser* p,
-                           lexer* lc,
-                           const ResourceItem*)
-{
-  int token;
-
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  /* Pickup Drivetype string */
-  switch (token) {
-    case BCT_IDENTIFIER:
-    case BCT_UNQUOTED_STRING:
-    case BCT_QUOTED_STRING:
-      p->PushString(lc->str());
-      break;
-    default:
-      scan_err(lc, T_("Expected a Drivetype string, got: %s\n"), lc->str());
-      return;
-  }
-  ScanToEol(lc);
-}
-
 static void StoreMeta(ConfigurationParser* p,
                       lexer* lc,
                       const ResourceItem*,
@@ -799,25 +656,6 @@ static void StoreMeta(ConfigurationParser* p,
         scan_err(lc, T_("Expected a meta string, got: %s\n"), lc->str());
         return;
     }
-  }
-  ScanToEol(lc);
-}
-
-static void ParseMeta(ConfigurationParser* p, lexer* lc, const ResourceItem*)
-{
-  int token;
-
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  /* Pickup fstype string */
-  switch (token) {
-    case BCT_IDENTIFIER:
-    case BCT_UNQUOTED_STRING:
-    case BCT_QUOTED_STRING:
-      p->PushString(lc->str());
-      break;
-    default:
-      scan_err(lc, T_("Expected a meta string, got: %s\n"), lc->str());
-      return;
   }
   ScanToEol(lc);
 }
@@ -860,33 +698,6 @@ static void StoreOption(
     Dmsg2(900, "new pass=%d incexe opts=%s\n", pass,
           res_incexe->current_opts->opts);
   }
-
-  ScanToEol(lc);
-}
-
-static void ParseOption(ConfigurationParser* p,
-                        lexer* lc,
-                        const ResourceItem* item)
-{
-  int i;
-  int keyword;
-  keyword = INC_KW_NONE;
-
-  // Look up the keyword
-  for (i = 0; FS_option_kw[i].name; i++) {
-    if (Bstrcasecmp(item->name, FS_option_kw[i].name)) {
-      keyword = FS_option_kw[i].token;
-      break;
-    }
-  }
-
-  if (keyword == INC_KW_NONE) {
-    scan_err(lc, T_("Expected a FileSet keyword, got: %s"), lc->str());
-    return;
-  }
-
-  // Now scan for the value
-  ParseIncludeOptions(p, lc);
 
   ScanToEol(lc);
 }
@@ -1012,75 +823,6 @@ static void StoreOptionsRes(ConfigurationParser* p,
   if (pass == 1) { ApplyDefaultValuesForUnsetOptions(default_values); }
 }
 
-static void ParseOptionsRes(ConfigurationParser* p, lexer* lc, bool exclude)
-{
-  int token;
-
-  if (exclude) {
-    scan_err(lc, T_("Options section not permitted in Exclude\n"));
-    return;
-  }
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (token != BCT_BOB) {
-    scan_err(lc, T_("Expecting open brace. Got %s"), lc->str());
-    return;
-  }
-  p->PushObject();
-
-  while ((token = LexGetToken(lc, BCT_ALL)) != BCT_EOF) {
-    if (token == BCT_EOL) { continue; }
-    if (token == BCT_EOB) { break; }
-    if (token != BCT_IDENTIFIER) {
-      scan_err(lc, T_("Expecting keyword, got: %s\n"), lc->str());
-      return;
-    }
-    bool found = false;
-    for (int i = 0; options_items[i].name; i++) {
-      if (Bstrcasecmp(options_items[i].name, lc->str())) {
-        p->PushLabel(options_items[i].name);
-        token = LexGetToken(lc, BCT_SKIP_EOL);
-        if (token != BCT_EQUALS) {
-          scan_err(lc, T_("expected an equals, got: %s"), lc->str());
-          return;
-        }
-        /* Call item handler */
-        switch (options_items[i].type) {
-          case CFG_TYPE_OPTION:
-            ParseOption(p, lc, &options_items[i]);
-            break;
-          case CFG_TYPE_REGEX:
-            ParseRegex(p, lc, &options_items[i]);
-            break;
-          case CFG_TYPE_WILD:
-            ParseWild(p, lc, &options_items[i]);
-            break;
-          case CFG_TYPE_PLUGIN:
-            ParsePlugin(p, lc, &options_items[i]);
-            break;
-          case CFG_TYPE_FSTYPE:
-            ParseFstype(p, lc, &options_items[i]);
-            break;
-          case CFG_TYPE_DRIVETYPE:
-            ParseDrivetype(p, lc, &options_items[i]);
-            break;
-          case CFG_TYPE_META:
-            ParseMeta(p, lc, &options_items[i]);
-            break;
-          default:
-            break;
-        }
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      scan_err(lc, T_("Keyword %s not permitted in this resource"), lc->str());
-      return;
-    }
-  }
-  p->PopObject();
-}
-
 static FilesetResource* GetStaticFilesetResource(ConfigurationParser* p)
 {
   FilesetResource* res_fs = nullptr;
@@ -1143,13 +885,6 @@ static void StoreFname(ConfigurationParser* p,
   ScanToEol(lc);
 }
 
-static void ParseFname(ConfigurationParser* p, lexer* lc, bool)
-{
-  LexGetToken(lc, BCT_SKIP_EOL);
-  p->PushString(lc->str());
-  ScanToEol(lc);
-}
-
 /**
  * Store Filename info. Note, for minor efficiency reasons, we
  * always increase the name buffer by 10 items because we expect
@@ -1205,17 +940,6 @@ static void StorePluginName(ConfigurationParser* p,
   ScanToEol(lc);
 }
 
-static void ParsePluginName(ConfigurationParser* p, lexer* lc, bool exclude)
-{
-  if (exclude) {
-    scan_err(lc, T_("Plugin directive not permitted in Exclude\n"));
-    return;
-  }
-  LexGetToken(lc, BCT_SKIP_EOL);
-  p->PushString(lc->str());
-  ScanToEol(lc);
-}
-
 // Store exclude directory containing info
 static void StoreExcludedir(ConfigurationParser* p,
                             lexer* lc,
@@ -1238,19 +962,6 @@ static void StoreExcludedir(ConfigurationParser* p,
     res_incexe->ignoredir.append(strdup(lc->str()));
     Dmsg1(900, "Add to ignoredir_list %s\n", lc->str());
   }
-  ScanToEol(lc);
-}
-
-static void ParseExcludedir(ConfigurationParser* p, lexer* lc, bool exclude)
-{
-  if (exclude) {
-    scan_err(lc,
-             T_("ExcludeDirContaining directive not permitted in Exclude.\n"));
-    return;
-  }
-
-  LexGetToken(lc, BCT_NAME);
-  p->PushString(lc->str());
   ScanToEol(lc);
 }
 
@@ -1358,63 +1069,6 @@ static void StoreNewinc(ConfigurationParser* p,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void ParseNewinc(ConfigurationParser* p,
-                        lexer* lc,
-                        const ResourceItem* item,
-                        int,
-                        int)
-{
-  int token;
-  p->PushObject();
-  while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
-    if (token == BCT_EOB) { break; }
-    if (token != BCT_IDENTIFIER) {
-      scan_err(lc, T_("Expecting keyword, got: %s\n"), lc->str());
-      return;
-    }
-    bool found = false;
-    for (int i = 0; newinc_items[i].name; i++) {
-      bool options = Bstrcasecmp(lc->str(), "options");
-      if (Bstrcasecmp(newinc_items[i].name, lc->str())) {
-        p->PushLabel(newinc_items[i].name);
-        if (!options) {
-          token = LexGetToken(lc, BCT_SKIP_EOL);
-          if (token != BCT_EQUALS) {
-            scan_err(lc, T_("expected an equals, got: %s"), lc->str());
-            return;
-          }
-        }
-        switch (newinc_items[i].type) {
-          case CFG_TYPE_FNAME:
-            ParseFname(p, lc, item->code);
-            break;
-          case CFG_TYPE_PLUGINNAME:
-            ParsePluginName(p, lc, item->code);
-            break;
-          case CFG_TYPE_EXCLUDEDIR:
-            ParseExcludedir(p, lc, item->code);
-            break;
-          case CFG_TYPE_OPTIONS:
-            ParseOptionsRes(p, lc, item->code);
-            break;
-          default:
-            break;
-        }
-        found = true;
-
-        break;
-      }
-    }
-    if (!found) {
-      scan_err(lc, T_("Keyword %s not permitted in this resource"), lc->str());
-      return;
-    }
-  }
-  p->PopObject();
-
-  ScanToEol(lc);
-}
-
 /**
  * Store FileSet Include/Exclude info
  *  new style includes are handled in StoreNewinc()
@@ -1433,25 +1087,6 @@ void StoreInc(ConfigurationParser* p,
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (token == BCT_BOB) {
     StoreNewinc(p, lc, item, index, pass);
-    return;
-  }
-  scan_err(lc, T_("Old style Include/Exclude not supported\n"));
-}
-
-void ParseInc(ConfigurationParser* p,
-              lexer* lc,
-              const ResourceItem* item,
-              int index,
-              int pass)
-{
-  int token;
-
-  /* Decide if we are doing a new Include or an old include. The
-   *  new Include is followed immediately by open brace, whereas the
-   *  old include has options following the Include. */
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (token == BCT_BOB) {
-    ParseNewinc(p, lc, item, index, pass);
     return;
   }
   scan_err(lc, T_("Old style Include/Exclude not supported\n"));
