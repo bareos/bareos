@@ -95,7 +95,7 @@ void ScanTypes(ConfigurationParser* conf,
     if (!found) {
       conf->PushError("unknown keyword", lc->str());
 
-      scan_err1(lc, T_("message type: %s not found"), str);
+      scan_err(lc, T_("message type: %s not found"), str);
       return;
     }
 
@@ -255,7 +255,7 @@ void StoreMsgs(ConfigurationParser* conf,
           token = LexGetToken(lc, BCT_SKIP_EOL);
           if (token == BCT_COMMA) { continue; /* Get another destination */ }
           if (token != BCT_EQUALS) {
-            scan_err1(lc, T_("expected an =, got: %s"), lc->str());
+            scan_err(lc, T_("expected an =, got: %s"), lc->str());
             return;
           }
           break;
@@ -285,7 +285,7 @@ void StoreMsgs(ConfigurationParser* conf,
         token = LexGetToken(lc, BCT_SKIP_EOL);
         Dmsg1(900, "StoreMsgs dest=%s:\n", dest_file_path.c_str());
         if (token != BCT_EQUALS) {
-          scan_err1(lc, T_("expected an =, got: %s"), lc->str());
+          scan_err(lc, T_("expected an =, got: %s"), lc->str());
           return;
         }
         ScanTypes(conf, lc, message_resource,
@@ -297,7 +297,7 @@ void StoreMsgs(ConfigurationParser* conf,
         break;
       }
       default:
-        scan_err1(lc, T_("Unknown item code: %d\n"), item->code);
+        scan_err(lc, T_("Unknown item code: %d\n"), item->code);
         return;
     }
     conf->PopArray();
@@ -322,7 +322,7 @@ void StoreName(ConfigurationParser* conf,
 
   LexGetToken(lc, BCT_NAME);
   if (!IsNameValid(lc->str(), msg)) {
-    scan_err1(lc, "%s", msg.c_str());
+    scan_err(lc, "%s", msg.c_str());
     return;
   }
 
@@ -332,8 +332,8 @@ void StoreName(ConfigurationParser* conf,
   char** p = GetItemVariablePointer<char**>(*item);
 
   if (*p) {
-    scan_err2(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p,
-              lc->str());
+    scan_err(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p,
+             lc->str());
     return;
   }
   *p = strdup(lc->str());
@@ -466,8 +466,8 @@ void StoreMd5Password(ConfigurationParser* conf,
         if (strncmp(lc->str() + 5, empty_password_md5_hash,
                     strlen(empty_password_md5_hash))
             == 0) {
-          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
-                    (*item->allocated_resource)->resource_name_);
+          scan_err(lc, "Empty Password not allowed in Resource \"%s\"\n",
+                   (*item->allocated_resource)->resource_name_);
           return;
         }
       }
@@ -477,17 +477,17 @@ void StoreMd5Password(ConfigurationParser* conf,
       constexpr size_t md5len = 32;
 
       if (candidate.size() != md5len) {
-        scan_err2(lc,
-                  "md5 password does not have the right size; expected: %" PRIuz
-                  ", got: %" PRIuz "\n",
-                  md5len, candidate.size());
+        scan_err(lc,
+                 "md5 password does not have the right size; expected: %" PRIuz
+                 ", got: %" PRIuz "\n",
+                 md5len, candidate.size());
         *pwd = {};
         return;
       }
 
       if (auto bad = candidate.find_first_not_of("0123456789ABCDEFabcdef");
           bad != candidate.npos) {
-        scan_err1(
+        scan_err(
             lc, "md5 password contains non hexadecimal characters, e.g. '%c'\n",
             candidate[bad]);
         *pwd = {};
@@ -504,8 +504,8 @@ void StoreMd5Password(ConfigurationParser* conf,
 
       if (item->is_required) {
         if (strnlen(lc->str(), MAX_NAME_LENGTH) == 0) {
-          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
-                    (*item->allocated_resource)->resource_name_);
+          scan_err(lc, "Empty Password not allowed in Resource \"%s\"\n",
+                   (*item->allocated_resource)->resource_name_);
           return;
         }
       }
@@ -546,9 +546,9 @@ void StoreClearpassword(ConfigurationParser* conf,
 
     if (item->is_required) {
       if (strnlen(lc->str(), MAX_NAME_LENGTH) == 0) {
-        scan_err1(
-            lc, "Empty Password not allowed in Resource \"%s\" not allowed.\n",
-            (*item->allocated_resource)->resource_name_);
+        scan_err(lc,
+                 "Empty Password not allowed in Resource \"%s\" not allowed.\n",
+                 (*item->allocated_resource)->resource_name_);
         return;
       }
     }
@@ -577,7 +577,7 @@ void StoreRes(ConfigurationParser* conf,
   if (pass == 2) {
     BareosResource* res = conf->GetResWithName(item->code, lc->str());
     if (res == NULL) {
-      scan_err3(
+      scan_err(
           lc,
           T_("Could not find config resource \"%s\" referenced on line %d: %s"),
           lc->str(), lc->line_no(), lc->line());
@@ -585,7 +585,7 @@ void StoreRes(ConfigurationParser* conf,
     }
     BareosResource** p = GetItemVariablePointer<BareosResource**>(*item);
     if (*p) {
-      scan_err3(
+      scan_err(
           lc,
           T_("Attempt to redefine resource \"%s\" referenced on line %d: %s"),
           item->name, lc->line_no(), lc->line());
@@ -627,10 +627,10 @@ void StoreAlistRes(ConfigurationParser* conf,
     if (pass == 2) {
       BareosResource* res = conf->GetResWithName(item->code, lc->str());
       if (res == NULL) {
-        scan_err3(lc,
-                  T_("Could not find config Resource \"%s\" referenced on line "
-                     "%d : %s\n"),
-                  item->name, lc->line_no(), lc->line());
+        scan_err(lc,
+                 T_("Could not find config Resource \"%s\" referenced on line "
+                    "%d : %s\n"),
+                 item->name, lc->line_no(), lc->line());
         return;
       }
       Dmsg5(900, "Append %p (%s) to alist %p size=%d %s\n", res,
@@ -865,7 +865,7 @@ void StoreDefs(ConfigurationParser* conf,
     Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str());
     res = conf->GetResWithName(item->code, lc->str());
     if (res == NULL) {
-      scan_err3(
+      scan_err(
           lc, T_("Missing config Resource \"%s\" referenced on line %d : %s\n"),
           lc->str(), lc->line_no(), lc->line());
       return;
@@ -984,18 +984,18 @@ void store_int_unit(ConfigurationParser* conf,
       switch (type) {
         case STORE_SIZE:
           if (!size_to_uint64(bsize, &uvalue)) {
-            scan_err1(lc, T_("expected a size number, got: %s"), lc->str());
+            scan_err(lc, T_("expected a size number, got: %s"), lc->str());
             return;
           }
           break;
         case STORE_SPEED:
           if (!speed_to_uint64(bsize, &uvalue)) {
-            scan_err1(lc, T_("expected a speed number, got: %s"), lc->str());
+            scan_err(lc, T_("expected a speed number, got: %s"), lc->str());
             return;
           }
           break;
         default:
-          scan_err0(lc, T_("unknown unit type encountered"));
+          scan_err(lc, T_("unknown unit type encountered"));
           return;
       }
 
@@ -1013,8 +1013,8 @@ void store_int_unit(ConfigurationParser* conf,
       }
       break;
     default:
-      scan_err2(lc, T_("expected a %s, got: %s"),
-                (type == STORE_SIZE) ? T_("size") : T_("speed"), lc->str());
+      scan_err(lc, T_("expected a %s, got: %s"),
+               (type == STORE_SIZE) ? T_("size") : T_("speed"), lc->str());
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
@@ -1085,13 +1085,13 @@ void StoreTime(ConfigurationParser* conf,
 
       conf->PushString(period);
       if (!DurationToUtime(period, &utime)) {
-        scan_err1(lc, T_("expected a time period, got: %s"), period);
+        scan_err(lc, T_("expected a time period, got: %s"), period);
         return;
       }
       SetItemVariable<utime_t>(*item, utime);
       break;
     default:
-      scan_err1(lc, T_("expected a time period, got: %s"), lc->str());
+      scan_err(lc, T_("expected a time period, got: %s"), lc->str());
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
@@ -1115,8 +1115,8 @@ void StoreBit(ConfigurationParser* conf,
     ClearBit(item->code, bitvalue);
     conf->PushB(false);
   } else {
-    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-              lc->str()); /* YES and NO must not be translated */
+    scan_err(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+             lc->str()); /* YES and NO must not be translated */
     return;
   }
   ScanToEol(lc);
@@ -1139,8 +1139,8 @@ void StoreBool(ConfigurationParser* conf,
     SetItemVariable<bool>(*item, false);
     conf->PushB(false);
   } else {
-    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-              lc->str()); /* YES and NO must not be translated */
+    scan_err(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+             lc->str()); /* YES and NO must not be translated */
     return;
   }
   ScanToEol(lc);
@@ -1167,7 +1167,7 @@ void StoreLabel(ConfigurationParser* conf,
     }
   }
   if (i != 0) {
-    scan_err1(lc, T_("Expected a Tape Label keyword, got: %s"), lc->str());
+    scan_err(lc, T_("Expected a Tape Label keyword, got: %s"), lc->str());
     return;
   }
   ScanToEol(lc);
@@ -1220,19 +1220,17 @@ void StoreAddresses(ConfigurationParser* conf,
       = EMPTYLINE;
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (token != BCT_BOB) {
-    scan_err1(lc, T_("Expected a block begin { , got: %s"), lc->str());
+    scan_err(lc, T_("Expected a block begin { , got: %s"), lc->str());
   }
   token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (token == BCT_EOB) {
-    scan_err0(lc, T_("Empty addr block is not allowed"));
-  }
+  if (token == BCT_EOB) { scan_err(lc, T_("Empty addr block is not allowed")); }
 
   conf->PushArray();
 
   do {
     conf->PushObject();
     if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
-      scan_err1(lc, T_("Expected a string, got: %s"), lc->str());
+      scan_err(lc, T_("Expected a string, got: %s"), lc->str());
     }
 
     conf->PushLabel("type");
@@ -1240,78 +1238,78 @@ void StoreAddresses(ConfigurationParser* conf,
     if (Bstrcasecmp("ip", lc->str()) || Bstrcasecmp("ipv4", lc->str())) {
     } else if (Bstrcasecmp("ipv6", lc->str())) {
     } else {
-      scan_err1(lc, T_("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str());
+      scan_err(lc, T_("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str());
     }
     token = LexGetToken(lc, BCT_SKIP_EOL);
     if (token != BCT_EQUALS) {
-      scan_err1(lc, T_("Expected a equal =, got: %s"), lc->str());
+      scan_err(lc, T_("Expected a equal =, got: %s"), lc->str());
     }
     token = LexGetToken(lc, BCT_SKIP_EOL);
     if (token != BCT_BOB) {
-      scan_err1(lc, T_("Expected a block begin { , got: %s"), lc->str());
+      scan_err(lc, T_("Expected a block begin { , got: %s"), lc->str());
     }
     token = LexGetToken(lc, BCT_SKIP_EOL);
     exist = EMPTYLINE;
     do {
       if (token != BCT_IDENTIFIER) {
-        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
-                  lc->str());
+        scan_err(lc, T_("Expected a identifier [addr|port], got: %s"),
+                 lc->str());
       }
       if (Bstrcasecmp("port", lc->str())) {
         conf->PushLabel("port");
         next_line = PORTLINE;
         if (exist & PORTLINE) {
-          scan_err0(lc, T_("Only one port per address block"));
+          scan_err(lc, T_("Only one port per address block"));
         }
         exist |= PORTLINE;
       } else if (Bstrcasecmp("addr", lc->str())) {
         conf->PushLabel("addr");
         next_line = ADDRLINE;
         if (exist & ADDRLINE) {
-          scan_err0(lc, T_("Only one addr per address block"));
+          scan_err(lc, T_("Only one addr per address block"));
         }
         exist |= ADDRLINE;
       } else {
-        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
-                  lc->str());
+        scan_err(lc, T_("Expected a identifier [addr|port], got: %s"),
+                 lc->str());
       }
       token = LexGetToken(lc, BCT_SKIP_EOL);
       if (token != BCT_EQUALS) {
-        scan_err1(lc, T_("Expected a equal =, got: %s"), lc->str());
+        scan_err(lc, T_("Expected a equal =, got: %s"), lc->str());
       }
       token = LexGetToken(lc, BCT_SKIP_EOL);
       switch (next_line) {
         case PORTLINE:
           if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
                 || token == BCT_IDENTIFIER)) {
-            scan_err1(lc, T_("Expected a number or a string, got: %s"),
-                      lc->str());
+            scan_err(lc, T_("Expected a number or a string, got: %s"),
+                     lc->str());
           }
           conf->PushString(lc->str());
           break;
         case ADDRLINE:
           if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
-            scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"),
-                      lc->str());
+            scan_err(lc, T_("Expected an IP number or a hostname, got: %s"),
+                     lc->str());
           }
           conf->PushString(lc->str());
           break;
         case EMPTYLINE:
-          scan_err0(lc, T_("State machine mismatch"));
+          scan_err(lc, T_("State machine mismatch"));
           break;
       }
       token = LexGetToken(lc, BCT_SKIP_EOL);
     } while (token == BCT_IDENTIFIER);
     conf->PopObject();
     if (token != BCT_EOB) {
-      scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str());
+      scan_err(lc, T_("Expected a end of block }, got: %s"), lc->str());
     }
     token = ScanToNextNotEol(lc);
   } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
 
   conf->PopArray();
   if (token != BCT_EOB) {
-    scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str());
+    scan_err(lc, T_("Expected a end of block }, got: %s"), lc->str());
   }
 }
 
@@ -1329,8 +1327,7 @@ void StoreAddressesAddress(ConfigurationParser* conf,
   conf->PushString(lc->str());
   if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
         || token == BCT_IDENTIFIER)) {
-    scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"),
-              lc->str());
+    scan_err(lc, T_("Expected an IP number or a hostname, got: %s"), lc->str());
   }
 
   if (pass == 1
@@ -1338,7 +1335,7 @@ void StoreAddressesAddress(ConfigurationParser* conf,
                      IPADDR::R_SINGLE_ADDR, htons(port),
                      strchr(lc->str(), ':') ? AF_INET6 : AF_INET, lc->str(), 0,
                      errmsg, sizeof(errmsg))) {
-    scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str(), errmsg);
+    scan_err(lc, T_("can't add port (%s) to (%s)"), lc->str(), errmsg);
   }
 }
 
@@ -1355,7 +1352,7 @@ void StoreAddressesPort(ConfigurationParser* conf,
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
         || token == BCT_IDENTIFIER)) {
-    scan_err1(lc, T_("Expected a port number or string, got: %s"), lc->str());
+    scan_err(lc, T_("Expected a port number or string, got: %s"), lc->str());
   }
   conf->PushString(lc->str());
 
@@ -1372,14 +1369,14 @@ void StoreAddressesPort(ConfigurationParser* conf,
         && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
                        IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0,
                        lc->str(), errmsg, sizeof(errmsg))) {
-      scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str(), errmsg);
+      scan_err(lc, T_("can't add port (%s) to (%s)"), lc->str(), errmsg);
     }
   } else {
     if (pass == 1
         && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
                        IPADDR::R_SINGLE, htons(port), 0, 0, lc->str(), errmsg,
                        sizeof(errmsg))) {
-      scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str(), errmsg);
+      scan_err(lc, T_("can't add port (%s) to (%s)"), lc->str(), errmsg);
     }
   }
 }
@@ -1420,7 +1417,7 @@ void ParseTypes(ConfigurationParser* conf, lexer* lc)
       }
     }
     if (!found) {
-      scan_err1(lc, T_("message type: %s not found"), str);
+      scan_err(lc, T_("message type: %s not found"), str);
       return;
     }
 
@@ -1521,7 +1518,7 @@ void ParseMsgs(ConfigurationParser* conf,
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token == BCT_COMMA) { continue; /* Get another destination */ }
         if (token != BCT_EQUALS) {
-          scan_err1(lc, T_("expected an =, got: %s"), lc->str());
+          scan_err(lc, T_("expected an =, got: %s"), lc->str());
           return;
         }
         break;
@@ -1545,7 +1542,7 @@ void ParseMsgs(ConfigurationParser* conf,
       token = LexGetToken(lc, BCT_SKIP_EOL);
       Dmsg1(900, "ParseMsgs dest=%s:\n", dest_file_path.c_str());
       if (token != BCT_EQUALS) {
-        scan_err1(lc, T_("expected an =, got: %s"), lc->str());
+        scan_err(lc, T_("expected an =, got: %s"), lc->str());
         return;
       }
       ParseTypes(conf, lc);
@@ -1554,7 +1551,7 @@ void ParseMsgs(ConfigurationParser* conf,
       break;
     }
     default:
-      scan_err1(lc, T_("Unknown item code: %d\n"), item->code);
+      scan_err(lc, T_("Unknown item code: %d\n"), item->code);
       return;
   }
   ScanToEol(lc);
@@ -1574,7 +1571,7 @@ void ParseValidName(ConfigurationParser* conf,
 
   LexGetToken(lc, BCT_NAME);
   if (!IsNameValid(lc->str(), msg)) {
-    scan_err1(lc, "%s\n", msg.c_str());
+    scan_err(lc, "%s\n", msg.c_str());
     return;
   }
 
@@ -1778,8 +1775,8 @@ void parse_int_unit(ConfigurationParser* conf, lexer* lc, enum unit_type type)
       conf->PushString(bsize);
       break;
     default:
-      scan_err2(lc, T_("expected a %s, got: %s"),
-                (type == STORE_SIZE) ? T_("size") : T_("speed"), lc->str());
+      scan_err(lc, T_("expected a %s, got: %s"),
+               (type == STORE_SIZE) ? T_("size") : T_("speed"), lc->str());
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
@@ -1847,7 +1844,7 @@ void ParseTime(ConfigurationParser* conf,
       conf->PushString(period);
       break;
     default:
-      scan_err1(lc, T_("expected a time period, got: %s"), lc->str());
+      scan_err(lc, T_("expected a time period, got: %s"), lc->str());
       return;
   }
   if (token != BCT_EOL) { ScanToEol(lc); }
@@ -1865,8 +1862,8 @@ void ParseBool(ConfigurationParser* conf,
   } else if (Bstrcasecmp(lc->str(), "no") || Bstrcasecmp(lc->str(), "false")) {
     conf->PushB(false);
   } else {
-    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-              lc->str()); /* YES and NO must not be translated */
+    scan_err(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+             lc->str()); /* YES and NO must not be translated */
     return;
   }
   ScanToEol(lc);
@@ -1890,7 +1887,7 @@ void ParseLabel(ConfigurationParser* conf,
     }
   }
   if (!found) {
-    scan_err1(lc, T_("Expected a Tape Label keyword, got: %s"), lc->str());
+    scan_err(lc, T_("Expected a Tape Label keyword, got: %s"), lc->str());
     return;
   }
   ScanToEol(lc);
@@ -1944,19 +1941,17 @@ void ParseAddresses(ConfigurationParser* conf,
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (token != BCT_BOB) {
-    scan_err1(lc, T_("Expected a block begin { , got: %s"), lc->str());
+    scan_err(lc, T_("Expected a block begin { , got: %s"), lc->str());
   }
   token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (token == BCT_EOB) {
-    scan_err0(lc, T_("Empty addr block is not allowed"));
-  }
+  if (token == BCT_EOB) { scan_err(lc, T_("Empty addr block is not allowed")); }
 
   conf->PushArray();
 
   do {
     conf->PushObject();
     if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
-      scan_err1(lc, T_("Expected a string, got: %s"), lc->str());
+      scan_err(lc, T_("Expected a string, got: %s"), lc->str());
     }
 
     conf->PushLabel("type");
@@ -1964,81 +1959,81 @@ void ParseAddresses(ConfigurationParser* conf,
     if (Bstrcasecmp("ip", lc->str()) || Bstrcasecmp("ipv4", lc->str())) {
     } else if (Bstrcasecmp("ipv6", lc->str())) {
     } else {
-      scan_err1(lc, T_("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str());
+      scan_err(lc, T_("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str());
     }
     token = LexGetToken(lc, BCT_SKIP_EOL);
     if (token != BCT_EQUALS) {
-      scan_err1(lc, T_("Expected a equal =, got: %s"), lc->str());
+      scan_err(lc, T_("Expected a equal =, got: %s"), lc->str());
     }
     token = LexGetToken(lc, BCT_SKIP_EOL);
     if (token != BCT_BOB) {
-      scan_err1(lc, T_("Expected a block begin { , got: %s"), lc->str());
+      scan_err(lc, T_("Expected a block begin { , got: %s"), lc->str());
     }
     token = LexGetToken(lc, BCT_SKIP_EOL);
     exist = EMPTYLINE;
     port_str[0] = hostname_str[0] = '\0';
     do {
       if (token != BCT_IDENTIFIER) {
-        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
-                  lc->str());
+        scan_err(lc, T_("Expected a identifier [addr|port], got: %s"),
+                 lc->str());
       }
       if (Bstrcasecmp("port", lc->str())) {
         conf->PushLabel("port");
         next_line = PORTLINE;
         if (exist & PORTLINE) {
-          scan_err0(lc, T_("Only one port per address block"));
+          scan_err(lc, T_("Only one port per address block"));
         }
         exist |= PORTLINE;
       } else if (Bstrcasecmp("addr", lc->str())) {
         conf->PushLabel("addr");
         next_line = ADDRLINE;
         if (exist & ADDRLINE) {
-          scan_err0(lc, T_("Only one addr per address block"));
+          scan_err(lc, T_("Only one addr per address block"));
         }
         exist |= ADDRLINE;
       } else {
-        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
-                  lc->str());
+        scan_err(lc, T_("Expected a identifier [addr|port], got: %s"),
+                 lc->str());
       }
       token = LexGetToken(lc, BCT_SKIP_EOL);
       if (token != BCT_EQUALS) {
-        scan_err1(lc, T_("Expected a equal =, got: %s"), lc->str());
+        scan_err(lc, T_("Expected a equal =, got: %s"), lc->str());
       }
       token = LexGetToken(lc, BCT_SKIP_EOL);
       switch (next_line) {
         case PORTLINE:
           if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
                 || token == BCT_IDENTIFIER)) {
-            scan_err1(lc, T_("Expected a number or a string, got: %s"),
-                      lc->str());
+            scan_err(lc, T_("Expected a number or a string, got: %s"),
+                     lc->str());
           }
           conf->PushString(lc->str());
           bstrncpy(port_str, lc->str(), sizeof(port_str));
           break;
         case ADDRLINE:
           if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
-            scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"),
-                      lc->str());
+            scan_err(lc, T_("Expected an IP number or a hostname, got: %s"),
+                     lc->str());
           }
           conf->PushString(lc->str());
           bstrncpy(hostname_str, lc->str(), sizeof(hostname_str));
           break;
         case EMPTYLINE:
-          scan_err0(lc, T_("State machine mismatch"));
+          scan_err(lc, T_("State machine mismatch"));
           break;
       }
       token = LexGetToken(lc, BCT_SKIP_EOL);
     } while (token == BCT_IDENTIFIER);
     conf->PopObject();
     if (token != BCT_EOB) {
-      scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str());
+      scan_err(lc, T_("Expected a end of block }, got: %s"), lc->str());
     }
     token = ScanToNextNotEol(lc);
   } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
 
   conf->PopArray();
   if (token != BCT_EOB) {
-    scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str());
+    scan_err(lc, T_("Expected a end of block }, got: %s"), lc->str());
   }
 }
 
@@ -2051,8 +2046,7 @@ void ParseAddressesAddress(ConfigurationParser* conf,
   int token = LexGetToken(lc, BCT_SKIP_EOL);
   if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
         || token == BCT_IDENTIFIER)) {
-    scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"),
-              lc->str());
+    scan_err(lc, T_("Expected an IP number or a hostname, got: %s"), lc->str());
   }
 
   conf->PushString(lc->str());
@@ -2069,7 +2063,7 @@ void ParseAddressesPort(ConfigurationParser* conf,
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
         || token == BCT_IDENTIFIER)) {
-    scan_err1(lc, T_("Expected a port number or string, got: %s"), lc->str());
+    scan_err(lc, T_("Expected a port number or string, got: %s"), lc->str());
   }
   conf->PushString(lc->str());
 }
@@ -2161,7 +2155,7 @@ void CreateTypes(iter& data,
     END_OBJ();
 
     if (!is || !type) {
-      // scan_err1(lc, T_("message type: %s not found"), str);
+      // scan_err(lc, T_("message type: %s not found"), str);
       return;
     }
 
@@ -2316,7 +2310,7 @@ void CreateTypes(iter& data,
   char** p = GetItemVariablePointer<char**>(*item);
 
   if (*p) {
-    // scan_err2(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p,
+    // scan_err(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p,
     //           name->c_str());
     return;
   }
@@ -2432,7 +2426,7 @@ void CreateTypes(iter& data,
         if (strncmp(pw.c_str() + 5, empty_password_md5_hash,
                     strlen(empty_password_md5_hash))
             == 0) {
-          // scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
+          // scan_err(lc, "Empty Password not allowed in Resource \"%s\"\n",
           //           (*item->allocated_resource)->resource_name_);
           return;
         }
@@ -2443,7 +2437,7 @@ void CreateTypes(iter& data,
       constexpr size_t md5len = 32;
 
       if (candidate.size() != md5len) {
-        // scan_err2(lc,
+        // scan_err(lc,
         //           "md5 password does not have the right size; expected: %"
         //           PRIuz
         //           ", got: %" PRIuz "\n",
@@ -2454,7 +2448,7 @@ void CreateTypes(iter& data,
 
       if (auto bad = candidate.find_first_not_of("0123456789ABCDEFabcdef");
           bad != candidate.npos) {
-        // scan_err1(
+        // scan_err(
         //     lc, "md5 password contains non hexadecimal characters, e.g.
         //     '%c'\n", candidate[bad]);
         *pwd = {};
@@ -2471,7 +2465,7 @@ void CreateTypes(iter& data,
 
       if (item->is_required) {
         if (strnlen(pw.c_str(), MAX_NAME_LENGTH) == 0) {
-          // scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
+          // scan_err(lc, "Empty Password not allowed in Resource \"%s\"\n",
           //           (*item->allocated_resource)->resource_name_);
           return;
         }
@@ -2509,7 +2503,7 @@ void CreateTypes(iter& data,
 
     if (item->is_required) {
       if (strnlen(pw.c_str(), MAX_NAME_LENGTH) == 0) {
-        // scan_err1(
+        // scan_err(
         //     lc, "Empty Password not allowed in Resource \"%s\" not
         //     allowed.\n",
         //     (*item->allocated_resource)->resource_name_);
@@ -2534,7 +2528,7 @@ void CreateTypes(iter& data,
   if (pass == 2) {
     BareosResource* res = conf->GetResWithName(item->code, name.c_str());
     if (res == NULL) {
-      // scan_err3(
+      // scan_err(
       //     lc,
       //     T_("Could not find config resource \"%s\" referenced on line %d:
       //     %s"), lc->str(), lc->line_no, lc->line);
@@ -2542,7 +2536,7 @@ void CreateTypes(iter& data,
     }
     BareosResource** p = GetItemVariablePointer<BareosResource**>(*item);
     if (*p) {
-      // scan_err3(
+      // scan_err(
       //     lc,
       //     T_("Attempt to redefine resource \"%s\" referenced on line %d:
       //     %s"), item->name, lc->line_no, lc->line);
@@ -2576,7 +2570,7 @@ void CreateTypes(iter& data,
     if (pass == 2) {
       BareosResource* res = conf->GetResWithName(item->code, name.c_str());
       if (res == NULL) {
-        // scan_err3(lc,
+        // scan_err(lc,
         //           T_("Could not find config Resource \"%s\" referenced on
         //           line "
         //              "%d : %s\n"),

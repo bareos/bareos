@@ -82,8 +82,8 @@ bool ConfigParserStateMachine::ParseAllTokens()
         }
         break;
       default:
-        scan_err1(lexical_parser_, T_("Unknown parser state %d\n"),
-                  to_underlying(state));
+        scan_err(lexical_parser_, T_("Unknown parser state %d\n"),
+                 to_underlying(state));
         return false;
     }
   }
@@ -116,8 +116,8 @@ ConfigParserStateMachine::ScanResource(int token)
       return ParseInternalReturnCode::kGetNextToken;
     case BCT_IDENTIFIER: {
       if (config_level_ != 1) {
-        scan_err1(lexical_parser_, T_("not in resource definition: %s"),
-                  lexical_parser_->str());
+        scan_err(lexical_parser_, T_("not in resource definition: %s"),
+                 lexical_parser_->str());
         return ParseInternalReturnCode::kError;
       }
 
@@ -133,8 +133,8 @@ ConfigParserStateMachine::ScanResource(int token)
           token = LexGetToken(lexical_parser_, BCT_SKIP_EOL);
           Dmsg1(900, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
           if (token != BCT_EQUALS) {
-            scan_err1(lexical_parser_, T_("expected an equals, got: %s"),
-                      lexical_parser_->str());
+            scan_err(lexical_parser_, T_("expected an equals, got: %s"),
+                     lexical_parser_->str());
             return ParseInternalReturnCode::kError;
           }
         }
@@ -159,11 +159,11 @@ ConfigParserStateMachine::ScanResource(int token)
         Dmsg2(900, "config_level_=%d id=%s\n", config_level_,
               lexical_parser_->str());
         Dmsg1(900, "Keyword = %s\n", lexical_parser_->str());
-        scan_err1(lexical_parser_,
-                  T_("Keyword \"%s\" not permitted in this resource.\n"
-                     "Perhaps you left the trailing brace off of the "
-                     "previous resource."),
-                  lexical_parser_->str());
+        scan_err(lexical_parser_,
+                 T_("Keyword \"%s\" not permitted in this resource.\n"
+                    "Perhaps you left the trailing brace off of the "
+                    "previous resource."),
+                 lexical_parser_->str());
         return ParseInternalReturnCode::kError;
       }
       return ParseInternalReturnCode::kGetNextToken;
@@ -174,7 +174,7 @@ ConfigParserStateMachine::ScanResource(int token)
       state = ParseState::kInit;
       Dmsg0(900, "BCT_EOB => define new resource\n");
       if (!currently_parsed_resource_.allocated_resource_->resource_name_) {
-        scan_err0(lexical_parser_, T_("Name not specified for resource"));
+        scan_err(lexical_parser_, T_("Name not specified for resource"));
         return ParseInternalReturnCode::kError;
       }
       /* save resource */
@@ -182,7 +182,7 @@ ConfigParserStateMachine::ScanResource(int token)
               currently_parsed_resource_.rcode_,
               currently_parsed_resource_.resource_items_,
               parser_pass_number_)) {
-        scan_err0(lexical_parser_, T_("SaveResource failed"));
+        scan_err(lexical_parser_, T_("SaveResource failed"));
         return ParseInternalReturnCode::kError;
       }
 
@@ -193,9 +193,9 @@ ConfigParserStateMachine::ScanResource(int token)
       return ParseInternalReturnCode::kGetNextToken;
 
     default:
-      scan_err2(lexical_parser_,
-                T_("unexpected token %d %s in resource definition"), token,
-                lex_tok_to_str(token));
+      scan_err(lexical_parser_,
+               T_("unexpected token %d %s in resource definition"), token,
+               lex_tok_to_str(token));
       return ParseInternalReturnCode::kError;
   }
   return ParseInternalReturnCode::kGetNextToken;
@@ -211,15 +211,15 @@ ConfigParserStateMachine::ParserInitResource(int token)
     case BCT_UTF8_BOM:
       return ParseInternalReturnCode::kGetNextToken;
     case BCT_UTF16_BOM:
-      scan_err0(lexical_parser_,
-                T_("Currently we cannot handle UTF-16 source files. "
-                   "Please convert the conf file to UTF-8\n"));
+      scan_err(lexical_parser_,
+               T_("Currently we cannot handle UTF-16 source files. "
+                  "Please convert the conf file to UTF-8\n"));
       return ParseInternalReturnCode::kError;
     default:
       if (token != BCT_IDENTIFIER) {
-        scan_err1(lexical_parser_,
-                  T_("Expected a Resource name identifier, got: %s"),
-                  resource_identifier);
+        scan_err(lexical_parser_,
+                 T_("Expected a Resource name identifier, got: %s"),
+                 resource_identifier);
         return ParseInternalReturnCode::kError;
       }
       break;
@@ -228,9 +228,9 @@ ConfigParserStateMachine::ParserInitResource(int token)
   const ResourceTable* resource_table
       = my_config_.GetResourceTable(resource_identifier);
   if (!resource_table) {
-    scan_err1(lexical_parser_,
-              T_("Expected a Resource name identifier, got: %s"),
-              resource_identifier);
+    scan_err(lexical_parser_,
+             T_("Expected a Resource name identifier, got: %s"),
+             resource_identifier);
     return ParseInternalReturnCode::kError;
   }
 
@@ -262,8 +262,8 @@ ConfigParserStateMachine::ParserInitResource(int token)
   }
 
   if (!init_done) {
-    scan_err1(lexical_parser_, T_("expected resource identifier, got: %s"),
-              resource_identifier);
+    scan_err(lexical_parser_, T_("expected resource identifier, got: %s"),
+             resource_identifier);
     return ParseInternalReturnCode::kError;
   }
   return ParseInternalReturnCode::kNextState;

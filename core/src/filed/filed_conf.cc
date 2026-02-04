@@ -174,7 +174,7 @@ static void StoreCipher(ConfigurationParser* conf,
   auto found = ReadKeyword(conf, lc, CryptoCiphers);
 
   if (!found) {
-    scan_err1(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str());
+    scan_err(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str());
   } else {
     SetItemVariable<uint32_t>(*item, found->token);
   }

@@ -235,7 +235,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
         token = LexGetToken(lc, BCT_ALL);
         Dmsg1(300, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
         if (token != BCT_EQUALS) {
-          scan_err1(lc, "expected an equals, got: %s", lc->str());
+          scan_err(lc, "expected an equals, got: %s", lc->str());
           bsr = NULL;
           break;
         }
@@ -248,7 +248,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
     }
     if (i >= 0) {
       Dmsg1(300, "Keyword = %s\n", lc->str());
-      scan_err1(lc, "Keyword %s not found", lc->str());
+      scan_err(lc, "Keyword %s not found", lc->str());
       bsr = NULL;
       break;
     }
