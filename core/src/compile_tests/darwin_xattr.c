@@ -19,14 +19,24 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_BREGEX_H_
-#define BAREOS_LIB_BREGEX_H_
+#include <sys/types.h>
+#include <sys/xattr.h>
 
-#if __has_include(<regex.h>)
-#  include <regex.h>
-#elif __has_include(<pcre2posix.h>)
-#  include <pcre2posix.h>
-#else
-#  error "no suitable regex engine found."
-#endif
-#endif  // BAREOS_LIB_BREGEX_H_
+void* ptr;
+void* ptr2;
+void* ptr3;
+void* ptr4;
+
+int main(int argc, char** argv)
+{
+  (void)argc;
+  (void)argv;
+
+  // MacOS/Darwin extended attribute functions
+  getxattr(ptr, ptr2, ptr3, 0, 0, 0);
+  getxattr(ptr, ptr2, ptr3, 0, 0, XATTR_NOFOLLOW);
+  listxattr(ptr, ptr2, 0, 0);
+  listxattr(ptr, ptr2, 0, XATTR_NOFOLLOW);
+  setxattr(ptr, ptr2, ptr3, 0, 0, 0);
+  setxattr(ptr, ptr2, ptr3, 0, 0, XATTR_NOFOLLOW);
+}

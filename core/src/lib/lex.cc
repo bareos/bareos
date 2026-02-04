@@ -231,12 +231,10 @@ static inline lexer* lex_add(lexer* lf,
   return lf;
 }
 
-#ifdef HAVE_GLOB
 static inline bool IsWildcardString(const char* string)
 {
   return (strchr(string, '*') || strchr(string, '?'));
 }
-#endif
 
 /*
  * Open a new configuration file. We push the
@@ -267,7 +265,6 @@ lexer* lex_open_file(lexer* lf,
     fd = bpipe->rfd;
     return lex_add(lf, filename, fd, bpipe, ScanError, scan_warning);
   } else {
-#ifdef HAVE_GLOB
     int globrc;
     glob_t fileglob;
     char* filename_expanded = NULL;
@@ -302,11 +299,6 @@ lexer* lex_open_file(lexer* lf,
       lf = lex_add(lf, filename_expanded, fd, bpipe, ScanError, scan_warning);
     }
     globfree(&fileglob);
-#else
-    Dmsg1(500, "Trying open file %s\n", filename);
-    if ((fd = fopen(filename, "rb")) == NULL) { return NULL; }
-    lf = lex_add(lf, filename, fd, bpipe, ScanError, scan_warning);
-#endif
     return lf;
   }
 }

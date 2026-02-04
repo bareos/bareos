@@ -36,7 +36,11 @@
 #include "include/bareos.h"
 #include "lib/berrno.h"
 #include "lib/recent_job_results_list.h"
-#include "lib/bregex.h"
+#if __has_include(<regex.h>)
+#  include <regex.h>
+#else
+#  include "lib/bregex.h"
+#endif
 #include "lib/bpipe.h"
 
 #include <fstream>
@@ -169,7 +173,7 @@ int Bmicrosleep(int32_t sec, int32_t usec)
   timeout.tv_sec = sec;
   timeout.tv_nsec = static_cast<decltype(timeout.tv_nsec)>(usec) * 1000l;
 
-#ifdef HAVE_NANOSLEEP
+#if !defined(HAVE_WIN32)
   status = nanosleep(&timeout, NULL);
   if (!(status < 0 && errno == ENOSYS)) { return status; }
   // If we reach here it is because nanosleep is not supported by the OS
@@ -1076,7 +1080,7 @@ static char** backtrace_symbols(void* const* array, int size)
  */
 #  ifndef HAVE_BACKTRACE
 
-#    ifdef HAVE_UCONTEXT_H
+#    if __has_include(<ucontext.h>)
 #      include <ucontext.h>
 #    endif
 
@@ -1123,11 +1127,11 @@ static int backtrace(void** buffer, int count)
 #if defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) \
     && defined(HAVE_GCC)
 
-#  ifdef HAVE_CXXABI_H
+#  if __has_include(<cxxabi.h>)
 #    include <cxxabi.h>
 #  endif
 
-#  ifdef HAVE_EXECINFO_H
+#  if __has_include(<execinfo.h>)
 #    include <execinfo.h>
 #  endif
 
@@ -1181,14 +1185,12 @@ void stack_trace()
 
 // Support strack_trace support on Solaris when using the SUNPRO_CC compiler.
 #elif defined(HAVE_SUN_OS) && !defined(HAVE_NON_WORKING_WALKCONTEXT) \
-    && defined(HAVE_UCONTEXT_H) && defined(HAVE_DEMANGLE_H)          \
-    && defined(HAVE_CPLUS_DEMANGLE) && defined(__SUNPRO_CC)
+    && __has_include(<ucontext.h>) && __has_include(<demangle.h>)    \
+    && defined(__SUNPRO_CC)
 
-#  ifdef HAVE_UCONTEXT_H
-#    include <ucontext.h>
-#  endif
+#  include <ucontext.h>
 
-#  if defined(HAVE_EXECINFO_H)
+#  if has_include(<execinfo.h>)
 #    include <execinfo.h>
 #  endif
 

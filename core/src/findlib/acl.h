@@ -33,7 +33,7 @@
 #include "include/bc_types.h"
 #include "lib/mem_pool.h"
 
-#ifdef HAVE_SYS_ACL_H
+#if __has_include(<sys/acl.h>)
 #  include <sys/acl.h>
 /**
  * This value is used as ostype when we encounter an invalid acl type.

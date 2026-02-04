@@ -53,9 +53,6 @@
 // Define to 1 for pthread_attr_get_np() instead of pthread_getattr_np()
 #cmakedefine HAVE_PTHREAD_ATTR_GET_NP @HAVE_PTHREAD_ATTR_GET_NP@
 
-// Define to 1 if pthread_*_np() are in a seperate header
-#cmakedefine HAVE_PTHREAD_NP_H @HAVE_PTHREAD_NP_H@
-
 // Define to 1 if you want Normal acl support
 #cmakedefine HAVE_ACL @HAVE_ACL@
 
@@ -71,9 +68,6 @@
 // Defines if your system have the ACL_TYPE_NFS4 acl type
 #cmakedefine HAVE_ACL_TYPE_NFS4 @HAVE_ACL_TYPE_NFS4@
 
-// Define to 1 if you have the `add_proplist_entry' function
-#cmakedefine HAVE_ADD_PROPLIST_ENTRY @HAVE_ADD_PROPLIST_ENTRY@
-
 // Define to 1 if your system has AFS support
 #cmakedefine HAVE_AFS @HAVE_AFS@
 
@@ -81,23 +75,8 @@
 // FIXME: this is used, but never configured
 #cmakedefine HAVE_AFS_ACL @HAVE_AFS_ACL@
 
-// Define to 1 if you have the <afs/afsint.h> header file
-#cmakedefine HAVE_AFS_AFSINT_H @HAVE_AFS_AFSINT_H@
-
-// Define to 1 if you have the <afs/venus.h> header file
-#cmakedefine HAVE_AFS_VENUS_H @HAVE_AFS_VENUS_H@
-
 // Define to 1 if you are running AIX
 #cmakedefine HAVE_AIX_OS @HAVE_AIX_OS@
-
-// Define to 1 if you have <alloca.h> and it should be used (not on Ultrix)
-#cmakedefine HAVE_ALLOCA_H @HAVE_ALLOCA_H@
-
-// Define to 1 if you have the <arpa/nameser.h> header file
-#cmakedefine HAVE_ARPA_NAMESER_H @HAVE_ARPA_NAMESER_H@
-
-// Define to 1 if you have the <attr.h> header file
-#cmakedefine HAVE_ATTR_H @HAVE_ATTR_H@
 
 // Define to 1 if you have the `backtrace' function
 #cmakedefine HAVE_BACKTRACE @HAVE_BACKTRACE@
@@ -114,95 +93,29 @@
 // Define to 1 if you have the `closefrom' function
 #cmakedefine HAVE_CLOSEFROM @HAVE_CLOSEFROM@
 
-// Define to 1 if you have compressBound
-#cmakedefine HAVE_COMPRESS_BOUND @HAVE_COMPRESS_BOUND@
-
 // Define to 1 if cplus_demangle exists in libdemangle
 #cmakedefine HAVE_CPLUS_DEMANGLE @HAVE_CPLUS_DEMANGLE@
-
-// Define to 1 if you have the <cxxabi.h> header file
-#cmakedefine HAVE_CXXABI_H @HAVE_CXXABI_H@
 
 // Define to 1 if you are running OSX
 #cmakedefine HAVE_DARWIN_OS @HAVE_DARWIN_OS@
 
-// Define to 1 if you have the <demangle.h> header file
-#cmakedefine HAVE_DEMANGLE_H @HAVE_DEMANGLE_H@
-
 // Define to 1 if dynamic loading of storage backends is enabled
 #cmakedefine HAVE_DYNAMIC_SD_BACKENDS @HAVE_DYNAMIC_SD_BACKENDS@
 
-// Define to 1 if OpenSSL library has ENGINE_load_pk11 available
-#cmakedefine HAVE_ENGINE_LOAD_PK11 @HAVE_ENGINE_LOAD_PK11@
-
-// Define to 1 if you have the <execinfo.h> header file
-#cmakedefine HAVE_EXECINFO_H @HAVE_EXECINFO_H@
-
-// Define to 1 if you have the `extattr_get_file' function
-#cmakedefine HAVE_EXTATTR_GET_FILE @HAVE_EXTATTR_GET_FILE@
-
-// Define to 1 if you have the `extattr_get_link' function
-#cmakedefine HAVE_EXTATTR_GET_LINK @HAVE_EXTATTR_GET_LINK@
-
-// Define to 1 if you have the `extattr_list_file' function
-#cmakedefine HAVE_EXTATTR_LIST_FILE @HAVE_EXTATTR_LIST_FILE@
-
-// Define to 1 if you have the `extattr_list_link' function
-#cmakedefine HAVE_EXTATTR_LIST_LINK @HAVE_EXTATTR_LIST_LINK@
-
-// Define to 1 if you have the `extattr_namespace_to_string' function
-#cmakedefine HAVE_EXTATTR_NAMESPACE_TO_STRING @HAVE_EXTATTR_NAMESPACE_TO_STRING@
-
-// Define to 1 if you have the `extattr_set_file' function
-#cmakedefine HAVE_EXTATTR_SET_FILE @HAVE_EXTATTR_SET_FILE@
-
-// Define to 1 if you have the `extattr_set_link' function
-#cmakedefine HAVE_EXTATTR_SET_LINK @HAVE_EXTATTR_SET_LINK@
-
-// Define to 1 if you have the `extattr_string_to_namespace' function
-#cmakedefine HAVE_EXTATTR_STRING_TO_NAMESPACE @HAVE_EXTATTR_STRING_TO_NAMESPACE@
+// Define if you have FreeBSD extattr support
+#cmakedefine HAVE_FREEBSD_EXTATTR
 
 // Define to 1 if you want Extended acl support
 #cmakedefine HAVE_EXTENDED_ACL @HAVE_EXTENDED_ACL@
 
-// Define to 1 if you have the `fchmod' function
-#cmakedefine HAVE_FCHMOD @HAVE_FCHMOD@
-
-// Define to 1 if you have the `fchown' function
-#cmakedefine HAVE_FCHOWN @HAVE_FCHOWN@
-
-// Define to 1 if you have the `fchownat' function
-#cmakedefine HAVE_FCHOWNAT @HAVE_FCHOWNAT@
-
 // Define to 1 if you have the fcntl F_CLOSEM flag
 #cmakedefine HAVE_FCNTL_F_CLOSEM @HAVE_FCNTL_F_CLOSEM@
-
-// Define to 1 if you have the `fdatasync' function
-#cmakedefine HAVE_FDATASYNC @HAVE_FDATASYNC@
 
 // Define to 1 if you are running FreeBSD
 #cmakedefine HAVE_FREEBSD_OS @HAVE_FREEBSD_OS@
 
-// Define to 1 if you have the `fseeko' function
-#cmakedefine HAVE_FSEEKO @HAVE_FSEEKO@
-
-// Define to 1 if you have the `futimens' function
-#cmakedefine HAVE_FUTIMENS @HAVE_FUTIMENS@
-
-// Define to 1 if you have the `futimes' function
-#cmakedefine HAVE_FUTIMES @HAVE_FUTIMES@
-
-// Define to 1 if you have the `futimesat' function
-#cmakedefine HAVE_FUTIMESAT @HAVE_FUTIMESAT@
-
-// Define to 1 if you have the `getaddrinfo' function
-#cmakedefine HAVE_GETADDRINFO @HAVE_GETADDRINFO@
-
-// Define to 1 if you have the `getea' function
-#cmakedefine HAVE_GETEA @HAVE_GETEA@
-
-// Define to 1 if you have the `gethostbyname2' function
-#cmakedefine HAVE_GETHOSTBYNAME2 @HAVE_GETHOSTBYNAME2@
+// Define if you have AIX EA support
+#cmakedefine HAVE_AIX_EA
 
 // Define to 1 if you have the `getmntent' function
 #cmakedefine HAVE_GETMNTENT @HAVE_GETMNTENT@
@@ -213,32 +126,14 @@
 // Define to 1 if you have the `getpagesize' function
 #cmakedefine HAVE_GETPAGESIZE @HAVE_GETPAGESIZE@
 
-// Define to 1 if you have the `getproplist' function
-#cmakedefine HAVE_GETPROPLIST @HAVE_GETPROPLIST@
+// Define if you have Linux xattr support
+#cmakedefine HAVE_LINUX_XATTR
 
-// Define to 1 if you have the `getxattr' function
-#cmakedefine HAVE_GETXATTR @HAVE_GETXATTR@
-
-// Define to 1 if you have the `get_proplist_entry' function
-#cmakedefine HAVE_GET_PROPLIST_ENTRY @HAVE_GET_PROPLIST_ENTRY@
+// Define if you have MacOS/Darwin xattr support
+#cmakedefine HAVE_DARWIN_XATTR
 
 // Define to 1 if you have gfapi lib
 #cmakedefine HAVE_GFAPI @HAVE_GFAPI@
-
-// Define to 1 if the `glfs_ftruncate' function has four arguments
-#cmakedefine GLFS_FTRUNCATE_HAS_FOUR_ARGS @GLFS_FTRUNCATE_HAS_FOUR_ARGS@
-
-// Define to 1 if you have the `glfs_readdirplus' function
-#cmakedefine HAVE_GLFS_READDIRPLUS @HAVE_GLFS_READDIRPLUS@
-
-// Define to 1 if you have the `glob' function
-#cmakedefine HAVE_GLOB @HAVE_GLOB@
-
-// Define to 1 if you have the <grp.h> header file
-#cmakedefine HAVE_GRP_H @HAVE_GRP_H@
-
-// Define to 1 if you have the `inet_ntop' function
-#cmakedefine HAVE_INET_NTOP @HAVE_INET_NTOP@
 
 // Define to 1 if ioctl request is unsigned long int
 #cmakedefine HAVE_IOCTL_ULINT_REQUEST @HAVE_IOCTL_ULINT_REQUEST@
@@ -252,65 +147,17 @@
 // Define to 1 if you have the `lchmod' function
 #cmakedefine HAVE_LCHMOD @HAVE_LCHMOD@
 
-// Define to 1 if you have the `lchown' function
-#cmakedefine HAVE_LCHOWN @HAVE_LCHOWN@
-
-// Define to 1 if you have the `lgetea' function
-#cmakedefine HAVE_LGETEA @HAVE_LGETEA@
-
-// Define to 1 if you have the `lgetxattr' function
-#cmakedefine HAVE_LGETXATTR @HAVE_LGETXATTR@
-
-// Define to 1 if you have the `util' library (-lutil)
-#cmakedefine HAVE_LIBUTIL @HAVE_LIBUTIL@
-
-// Define to 1 if you have the <libutil.h> header file
-#cmakedefine HAVE_LIBUTIL_H @HAVE_LIBUTIL_H@
-
 // Define to 1 if you are running Linux
 #cmakedefine HAVE_LINUX_OS @HAVE_LINUX_OS@
-
-// Define to 1 if you have the `listea' function
-#cmakedefine HAVE_LISTEA @HAVE_LISTEA@
-
-// Define to 1 if you have the `listxattr' function
-#cmakedefine HAVE_LISTXATTR @HAVE_LISTXATTR@
-
-// Define to 1 if you have the `llistea' function
-#cmakedefine HAVE_LLISTEA @HAVE_LLISTEA@
-
-// Define to 1 if you have the `llistxattr' function
-#cmakedefine HAVE_LLISTXATTR @HAVE_LLISTXATTR@
 
 // Define to 1 if LMDB support should be enabled
 #cmakedefine HAVE_LMDB @HAVE_LMDB@
 
-// Define to 1 if you have the `localtime_r' function
-#cmakedefine HAVE_LOCALTIME_R @HAVE_LOCALTIME_R@
-
-// Define if you have the 'long double' type
-#cmakedefine HAVE_LONG_DOUBLE @HAVE_LONG_DOUBLE@
-
 // Low level SCSI Interface support
 #cmakedefine HAVE_LOWLEVEL_SCSI_INTERFACE @HAVE_LOWLEVEL_SCSI_INTERFACE@
 
-// Define to 1 if you have the `lsetea' function
-#cmakedefine HAVE_LSETEA @HAVE_LSETEA@
-
-// Define to 1 if you have the `lsetxattr' function
-#cmakedefine HAVE_LSETXATTR @HAVE_LSETXATTR@
-
-// Define to 1 if you have the `lutimes' function
-#cmakedefine HAVE_LUTIMES @HAVE_LUTIMES@
-
 // Define to 1 if you have lzo lib
 #cmakedefine HAVE_LZO @HAVE_LZO@
-
-// Define to 1 if you have the <mtio.h> header file
-#cmakedefine HAVE_MTIO_H @HAVE_MTIO_H@
-
-// Define to 1 if you have the `nanosleep' function
-#cmakedefine HAVE_NANOSLEEP @HAVE_NANOSLEEP@
 
 // Define to 1 if NDMP support should be enabled
 #cmakedefine HAVE_NDMP @HAVE_NDMP@
@@ -321,26 +168,14 @@
 // Define to 1 to use the old sockopt option
 #cmakedefine HAVE_OLD_SOCKOPT @HAVE_OLD_SOCKOPT@
 
-// Define to 1 if you have the `openat' function
-#cmakedefine HAVE_OPENAT @HAVE_OPENAT@
-
 // Define to 1 if you have the `poll' function
 #cmakedefine HAVE_POLL @HAVE_POLL@
-
-// Define to 1 if you have the <poll.h> header file
-#cmakedefine HAVE_POLL_H @HAVE_POLL_H@
 
 // Define to 1 if you have the `posix_fadvise' function
 #cmakedefine HAVE_POSIX_FADVISE @HAVE_POSIX_FADVISE@
 
-// Set if you have an PostgreSQL Database
-#cmakedefine HAVE_POSTGRESQL @HAVE_POSTGRESQL@
-
 // Define to 1 if you have the `prctl' function
 #cmakedefine HAVE_PRCTL @HAVE_PRCTL@
-
-// Define to 1 if you have the <pwd.h> header file
-#cmakedefine HAVE_PWD_H @HAVE_PWD_H@
 
 // Define to 1 if python support should be enabled
 #cmakedefine HAVE_PYTHON @HAVE_PYTHON@
@@ -348,29 +183,8 @@
 // Define to 1 if you have the `readdir_r' function
 #cmakedefine HAVE_READDIR_R @HAVE_READDIR_R@
 
-// Define to 1 if you have the <regex.h> header file
-#cmakedefine HAVE_REGEX_H @HAVE_REGEX_H@
-
-// Define to 1 if you have the <pcre2posix.h> header file
-#cmakedefine HAVE_PCRE2_POSIX_H @HAVE_PCRE2_POSIX_H@
-
-// Define to 1 if you have the `setea' function
-#cmakedefine HAVE_SETEA @HAVE_SETEA@
-
-// Define to 1 if you have the `setproplist' function
-#cmakedefine HAVE_SETPROPLIST @HAVE_SETPROPLIST@
-
-// Define to 1 if you have the `setreuid' function
-#cmakedefine HAVE_SETREUID @HAVE_SETREUID@
-
-// Define to 1 if you have the `setxattr' function
-#cmakedefine HAVE_SETXATTR @HAVE_SETXATTR@
-
 // Define to 1 if the SHA-2 family of digest algorithms is available
 #cmakedefine HAVE_SHA2 @HAVE_SHA2@
-
-// Define to 1 if you have the `sizeof_proplist_entry' function
-#cmakedefine HAVE_SIZEOF_PROPLIST_ENTRY @HAVE_SIZEOF_PROPLIST_ENTRY@
 
 // Define to 1 if you are running Solaris
 #cmakedefine HAVE_SUN_OS @HAVE_SUN_OS@
@@ -381,62 +195,11 @@
 // Define to 1 if you have the <sys/acl.h> header file
 #cmakedefine HAVE_SYS_ACL_H @HAVE_SYS_ACL_H@
 
-// Define to 1 if you have the <sys/attr.h> header file
-#cmakedefine HAVE_SYS_ATTR_H @HAVE_SYS_ATTR_H@
-
 // Define to 1 if you have the <sys/capability.h> header file
 #cmakedefine HAVE_SYS_CAPABILITY_H @HAVE_SYS_CAPABILITY_H@
 
 // Define if you want to use cap_* functions
 #cmakedefine ENABLE_CAPABILITY
-
-// Define to 1 if you have the <sys/ea.h> header file
-#cmakedefine HAVE_SYS_EA_H @HAVE_SYS_EA_H@
-
-// Define to 1 if you have the <sys/extattr.h> header file
-#cmakedefine HAVE_SYS_EXTATTR_H @HAVE_SYS_EXTATTR_H@
-
-// Define to 1 if you have the <sys/mman.h> header file
-#undef HAVE_SYS_MMAN_H
-
-// Define to 1 if you have the <sys/mtio.h> header file
-#cmakedefine HAVE_SYS_MTIO_H @HAVE_SYS_MTIO_H@
-
-// Define to 1 if you have the <sys/nvpair.h> header file
-#cmakedefine HAVE_SYS_NVPAIR_H @HAVE_SYS_NVPAIR_H@
-
-// Define to 1 if you have the <sys/poll.h> header file
-#cmakedefine HAVE_SYS_POLL_H @HAVE_SYS_POLL_H@
-
-// Define to 1 if you have the <sys/prctl.h> header file
-#cmakedefine HAVE_SYS_PRCTL_H @HAVE_SYS_PRCTL_H@
-
-// Define to 1 if you have the <sys/proplist.h> header file
-#cmakedefine HAVE_SYS_PROPLIST_H @HAVE_SYS_PROPLIST_H@
-
-// Define to 1 if you have the <sys/statvfs.h> header file
-#cmakedefine HAVE_SYS_STATVFS_H @HAVE_SYS_STATVFS_H@
-
-// Define to 1 if you have the <sys/tape.h> header file
-#cmakedefine HAVE_SYS_TAPE_H @HAVE_SYS_TAPE_H@
-
-// Define to 1 if you have the <sys/time.h> header file
-#cmakedefine HAVE_SYS_TIME_H @HAVE_SYS_TIME_H@
-
-// Define to 1 if you have the <sys/xattr.h> header file
-#cmakedefine HAVE_SYS_XATTR_H @HAVE_SYS_XATTR_H@
-
-// Define to 1 if you have the <ucontext.h> header file
-#cmakedefine HAVE_UCONTEXT_H @HAVE_UCONTEXT_H@
-
-// Define to 1 if you have the <umem.h> header file
-#cmakedefine HAVE_UMEM_H @HAVE_UMEM_H@
-
-// Define to 1 if you have the `unlinkat' function
-#cmakedefine HAVE_UNLINKAT @HAVE_UNLINKAT@
-
-// Define to 1 if you have the `utimes' function
-#cmakedefine HAVE_UTIMES @HAVE_UTIMES@
 
 // Extended Attributes support
 #cmakedefine HAVE_XATTR @HAVE_XATTR@
@@ -452,9 +215,6 @@
 
 // Where are system config files stored
 #cmakedefine SYSCONFDIR @SYSCONFDIR@
-
-// Define to 1 if you can safely include both <sys/time.h> and <time.h>
-#cmakedefine TIME_WITH_SYS_TIME @TIME_WITH_SYS_TIME@
 
 // Define to 1 if DB batch insert code enabled
 #cmakedefine USE_BATCH_FILE_INSERT @USE_BATCH_FILE_INSERT@

@@ -28,9 +28,7 @@
 #include "include/bareos.h"
 #include "lib/util.h"
 
-#if HAVE_POSTGRESQL
-
-#  include "cats.h"
+#include "cats.h"
 
 static const int debuglevel = 100;
 
@@ -172,4 +170,3 @@ bool BareosDb::SqlQuery(const char* query,
 
   return retval;
 }
-#endif /* HAVE_POSTGRESQL */

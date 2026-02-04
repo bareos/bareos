@@ -32,10 +32,8 @@
 
 static const int dbglevel = 100;
 
-#if HAVE_POSTGRESQL
-
-#  include "cats.h"
-#  include "lib/edit.h"
+#include "cats.h"
+#include "lib/edit.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -1405,4 +1403,3 @@ bool BareosDb::CreateTapealertStatistics(JobControlRecord* jcr,
     return true;
   }
 }
-#endif /* HAVE_POSTGRESQL */

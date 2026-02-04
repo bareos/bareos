@@ -182,7 +182,7 @@ foreach(NDMP_VERSION 0 2 3 4 9)
 endforeach()
 
 add_library(bareosndmp SHARED ${LIBBAREOSNDMP_SRCS} ${RPC_GEN_FILES})
-include(BareosDisableWarnings)
+include(BareosCompilerFlags)
 bareos_disable_warnings(
   TARGET
   bareosndmp

@@ -57,14 +57,8 @@ static bool set_win32_attributes(JobControlRecord* jcr,
 void WinError(JobControlRecord* jcr, const char* prefix, POOLMEM* ofile);
 #endif /* HAVE_WIN32 */
 
-// For old systems that don't have lchown() use chown()
-
-#ifndef HAVE_LCHOWN
-#  define lchown chown
-#endif
-
-// For old systems that don't have lchmod() use chmod()
-#ifndef HAVE_LCHMOD
+// For old systems that don't have lchmod() or where it is a stub use chmod()
+#if !defined(HAVE_LCHMOD) || defined(__stub_lchmod) || defined(__stub___lchmod)
 #  define lchmod chmod
 #endif
 
@@ -172,8 +166,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
 {
   bool ok = true;
   bool suppress_errors;
-#if defined(HAVE_FCHOWN) || defined(HAVE_FCHMOD) || defined(HAVE_FUTIMES) \
-    || defined(FUTIMENS)
+#if !defined(HAVE_WIN32)
   bool file_is_open;
 
   // Save if we are working on an open file.
@@ -184,7 +177,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
   suppress_errors = (debug_level >= 100 || my_uid != 0);
 
   // Restore owner and group.
-#ifdef HAVE_FCHOWN
+#if !defined(HAVE_WIN32)
   if (file_is_open) {
     if (fchown(ofd->filedes, attr->statp.st_uid, attr->statp.st_gid) < 0
         && !suppress_errors) {
@@ -209,7 +202,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
   }
 
   // Restore filemode.
-#ifdef HAVE_FCHMOD
+#if !defined(HAVE_WIN32)
   if (file_is_open) {
     if (fchmod(ofd->filedes, attr->statp.st_mode) < 0 && !suppress_errors) {
       BErrNo be;
@@ -219,14 +212,11 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
       ok = false;
     }
   } else {
+    if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && !suppress_errors) {
 #else
   {
-#endif
-#if defined(HAVE_WIN32)
     if (win32_chmod(attr->ofname, attr->statp.st_mode, attr->statp.st_rdev) < 0
         && !suppress_errors) {
-#else
-    if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && !suppress_errors) {
 #endif
       BErrNo be;
 
@@ -237,7 +227,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
   }
 
   // Reset file times.
-#if defined(HAVE_FUTIMES)
+#if !defined(HAVE_WIN32)
   if (file_is_open) {
     struct timeval restore_times[2];
 
@@ -254,27 +244,6 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
       ok = false;
     }
   } else {
-#elif defined(HAVE_FUTIMENS)
-  if (file_is_open) {
-    struct timespec restore_times[2];
-
-    restore_times[0].tv_sec = attr->statp.st_atime;
-    restore_times[0].tv_nsec = 0;
-    restore_times[1].tv_sec = attr->statp.st_mtime;
-    restore_times[1].tv_nsec = 0;
-
-    if (futimens(ofd->filedes, restore_times) < 0 && !suppress_errors) {
-      BErrNo be;
-
-      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),
-            attr->ofname, be.bstrerror());
-      ok = false;
-    }
-  } else {
-#else
-{
-#endif
-#if defined(HAVE_LUTIMES)
     struct timeval restore_times[2];
 
     restore_times[0].tv_sec = attr->statp.st_atime;
@@ -289,21 +258,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
             attr->ofname, be.bstrerror());
       ok = false;
     }
-#elif defined(HAVE_UTIMES)
-    struct timeval restore_times[2];
-
-    restore_times[0].tv_sec = attr->statp.st_atime;
-    restore_times[0].tv_usec = 0;
-    restore_times[1].tv_sec = attr->statp.st_mtime;
-    restore_times[1].tv_usec = 0;
-
-    if (utimes(attr->ofname, restore_times) < 0 && !suppress_errors) {
-      BErrNo be;
-
-      Jmsg2(jcr, M_ERROR, 0, T_("Unable to set file times %s: ERR=%s\n"),
-            attr->ofname, be.bstrerror());
-      ok = false;
-    }
+  }
 #else
   struct utimbuf restore_times;
 
@@ -316,8 +271,7 @@ static inline bool RestoreFileAttributes(JobControlRecord* jcr,
           attr->ofname, be.bstrerror());
     ok = false;
   }
-#endif /* HAVE_LUTIMES */
-  }
+#endif
 
   return ok;
 }
@@ -415,7 +369,7 @@ bool SetAttributes(JobControlRecord* jcr,
       ok = false;
     }
 
-#ifdef HAVE_LCHMOD
+#if defined(HAVE_LCHMOD) && !defined(__stub_lchmod) && !defined(__stub___lchmod)
     if (lchmod(attr->ofname, attr->statp.st_mode) < 0 && !suppress_errors) {
       BErrNo be;
 
@@ -428,7 +382,7 @@ bool SetAttributes(JobControlRecord* jcr,
     if (!ofd->cmd_plugin) {
       ok = RestoreFileAttributes(jcr, attr, ofd);
 
-#ifdef HAVE_CHFLAGS
+#if defined(HAVE_CHFLAGS) && !defined(__stub_chflags)
       /* FreeBSD user flags
        *
        * Note, this should really be done before the utime() above,

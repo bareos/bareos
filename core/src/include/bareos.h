@@ -82,10 +82,10 @@
 #define _POSIX_PTHREAD_SEMANTICS 1
 
 /* System includes */
-#if defined(HAVE_UMEM_H)
+#if __has_include(<umem.h>)
 #  include <umem.h>
 #endif
-#if defined(HAVE_ALLOCA_H)
+#if __has_include(<alloca.h>)
 #  include <alloca.h>
 #endif
 #if defined(HAVE_MSVC)

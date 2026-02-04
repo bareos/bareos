@@ -146,9 +146,6 @@ struct plugin_ctx {
   POOLMEM* next_filename; /* Next filename to save */
   POOLMEM* link_target;   /* Target symlink points to */
   POOLMEM* xattr_list;    /* List of xattrs */
-#ifndef HAVE_GLFS_READDIRPLUS
-  POOLMEM* dirent_buffer; /* Temporary buffer for current dirent structure */
-#endif
   alist<dir_stack_entry*>* dir_stack; /* Stack of directories when recursing */
   PathList* path_list;    /* Hash table with directories created on restore. */
   glfs_t* glfs;           /* Gluster volume handle */
@@ -385,10 +382,6 @@ static bRC freePlugin(PluginContext* ctx)
     glfs_fini(p_ctx->glfs);
     p_ctx->glfs = NULL;
   }
-
-#ifndef HAVE_GLFS_READDIRPLUS
-  if (p_ctx->dirent_buffer) { FreePoolMemory(p_ctx->dirent_buffer); }
-#endif
 
   if (p_ctx->cwd) { FreePoolMemory(p_ctx->cwd); }
 
@@ -632,13 +625,7 @@ static bRC get_next_file_to_backup(PluginContext* ctx)
         }
       }
     } else {
-#ifndef HAVE_GLFS_READDIRPLUS
-      entry = NULL;
-      glfs_readdirplus_r(p_ctx->gdir, &p_ctx->statp,
-                         (dirent*)p_ctx->dirent_buffer, &entry);
-#else
       entry = glfs_readdirplus(p_ctx->gdir, &p_ctx->statp);
-#endif
 
       // No more entries in this directory ?
       if (!entry) {
@@ -1459,13 +1446,6 @@ static bRC setup_backup(PluginContext* ctx, void* value)
      * - For the older glfs_readdirplus_r() function an dirent hold buffer. */
     p_ctx->cwd = GetPoolMemory(PM_FNAME);
     p_ctx->cwd = CheckPoolMemorySize(p_ctx->cwd, GLFS_PATH_MAX);
-#ifndef HAVE_GLFS_READDIRPLUS
-    p_ctx->dirent_buffer = GetPoolMemory(PM_FNAME);
-
-    /* Resize the dirent buffer to 512 bytes which should be enough to hold any
-     * dirent. */
-    p_ctx->dirent_buffer = CheckPoolMemorySize(p_ctx->dirent_buffer, 512);
-#endif
 
     /* This is an alist that holds the stack of directories we have open.
      * We push the current directory onto this stack the moment we start

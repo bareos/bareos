@@ -28,11 +28,9 @@
 
 #include "include/bareos.h"
 
-#if HAVE_POSTGRESQL
-
-#  include "cats.h"
-#  include "lib/edit.h"
-#  include "lib/util.h"
+#include "cats.h"
+#include "lib/edit.h"
+#include "lib/util.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -744,4 +742,3 @@ void BareosDb::ListFilesets(JobControlRecord* jcr,
 
   SqlFreeResult();
 }
-#endif /* HAVE_POSTGRESQL */

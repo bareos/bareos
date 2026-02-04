@@ -25,15 +25,12 @@
 
 #include "include/bareos.h"
 
+#include "cats/column_data.h"
+#include "cats.h"
+#include "libpq-fe.h"
 
-#ifdef HAVE_POSTGRESQL
-
-#  include "cats/column_data.h"
-#  include "cats.h"
-#  include "libpq-fe.h"
-
-#  include <string>
-#  include <vector>
+#include <string>
+#include <vector>
 
 struct AttributesDbRecord;
 class JobControlRecord;
@@ -118,6 +115,4 @@ class BareosDbPostgresql : public BareosDb {
   static const char*
       query_definitions[]; /**< table of predefined sql queries */
 };
-
-#endif  /* HAVE_POSTGRESQL */
 #endif  // BAREOS_CATS_POSTGRESQL_H_

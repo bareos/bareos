@@ -60,6 +60,9 @@
 #include "lib/util.h"
 #include "lib/watchdog.h"
 #include "include/jcr.h"
+#if !defined(HAVE_WIN32)
+#  include "lib/priv.h"
+#endif
 
 namespace storagedaemon {
 extern bool ParseSdConfig(const char* configfile, int exit_code);
@@ -190,7 +193,6 @@ int main(int argc, char* argv[])
   if (!foreground && !test_config && !pidfile_path.empty()) {
     pidfile_fd = CreatePidFile("bareos-sd", pidfile_path.c_str());
   }
-#endif
 
   // See if we want to drop privs.
   char* uid = nullptr;
@@ -206,6 +208,7 @@ int main(int argc, char* argv[])
           T_("The commandline options indicate to run as specified user/group, "
              "but program was not started with required root privileges.\n"));
   }
+#endif
 
   if (export_config_schema) {
     PoolMem buffer;

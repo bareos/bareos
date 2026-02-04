@@ -19,14 +19,7 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_LIB_BREGEX_H_
-#define BAREOS_LIB_BREGEX_H_
-
-#if __has_include(<regex.h>)
-#  include <regex.h>
-#elif __has_include(<pcre2posix.h>)
-#  include <pcre2posix.h>
-#else
-#  error "no suitable regex engine found."
-#endif
-#endif  // BAREOS_LIB_BREGEX_H_
+#ifndef BAREOS_LIB_PRIV_H_
+#define BAREOS_LIB_PRIV_H_
+void drop(char* uid, char* gid, bool keep_readall_caps);
+#endif  // BAREOS_LIB_PRIV_H_

@@ -209,10 +209,6 @@ file(STRINGS ${CMAKE_SOURCE_DIR}/core/src/cats/cats.h DB_VERSION_STRING
 string(REGEX MATCH [0-9]+ BDB_VERSION ${DB_VERSION_STRING})
 message(STATUS "db version from cats.h is ${BDB_VERSION}")
 
-cmake_print_variables(DEFAULT_DB_TYPE)
-
-# set(TAPEDRIVE "TAPEDRIVE")
-
 set(archivedir "${PROJECT_BINARY_DIR}/archivedir")
 
 set(bin ${PROJECT_BINARY_DIR}/bin)
