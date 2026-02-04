@@ -192,7 +192,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         )
         DebugMessage(100, f'get_lsn_by_command: "{get_lsn_cmd}"\n')
         try:
-            ret = check_output(get_lsn_cmd).decode()
+            ret = check_output(get_lsn_cmd).decode(errors='ignore')
             return ret
         except CalledProcessError as run_err:
             JobMessage(
