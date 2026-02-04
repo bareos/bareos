@@ -992,8 +992,6 @@ bool BareosDb::CreateAttributesRecord(JobControlRecord* jcr,
     } else {
       retval = CreateFileAttributesRecord(jcr, ar);
     }
-  } else if (jcr->HasBase) {
-    retval = CreateBaseFileAttributesRecord(jcr, ar);
   } else {
     Mmsg0(errmsg, T_("Cannot Copy/Migrate job using BaseJob.\n"));
     Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
@@ -1037,38 +1035,6 @@ void BareosDb::CleanupBaseFile(JobControlRecord* jcr)
 
   Mmsg(buf, "DROP TABLE IF EXISTS basefile%" PRIu32, jcr->JobId);
   SqlQuery(buf.c_str());
-}
-
-/**
- * Put all base file seen in the backup to the BaseFile table
- * and cleanup temporary tables
- * Returns: false on failure
- *          true on success
- */
-bool BareosDb::CommitBaseFileAttributesRecord(JobControlRecord* jcr)
-{
-  bool retval;
-  char ed1[50];
-
-  DbLocker _{this};
-
-  /* clang-format off */
-  Mmsg(cmd,
-       "INSERT INTO BaseFiles (BaseJobId, JobId, FileId, FileIndex) "
-       "SELECT B.JobId AS BaseJobId, %s AS JobId, "
-       "B.FileId, B.FileIndex "
-       "FROM basefile%s AS A, new_basefile%s AS B "
-       "WHERE A.Path = B.Path "
-       "AND A.Name = B.Name "
-       "ORDER BY B.FileId",
-       edit_uint64(jcr->JobId, ed1), ed1, ed1);
-  /* clang-format on */
-
-  retval = SqlQuery(cmd);
-  jcr->nb_base_files_used = SqlAffectedRows();
-  CleanupBaseFile(jcr);
-
-  return retval;
 }
 
 /**

@@ -217,7 +217,6 @@ class JobControlRecord {
   bool opt_plugin{};        /**< Set when processing an option Plugin = */
   bool keep_path_list{};    /**< Keep newly created path in a hash */
   bool accurate{};          /**< True if job is accurate */
-  bool HasBase{};           /**< True if job use base jobs */
   bool rerunning{};         /**< Rerunning an incomplete job */
   bool job_started{};       /**< Set when the job is actually started */
   bool suppress_output{};   /**< Set if this JobControlRecord should not output any Jmsgs */

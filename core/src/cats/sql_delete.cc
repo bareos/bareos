@@ -145,7 +145,7 @@ int BareosDb::DeleteNullJobmediaRecords(JobControlRecord* jcr,
  * associated with a particular Volume. It will
  * not delete the media record itself.
  * TODO: This function is broken and it doesn't purge
- *       File, BaseFiles, Log, ...
+ *       File, Log, ...
  *       We call it from relabel and delete volume=, both ensure
  *       that the volume is properly purged.
  */
@@ -211,9 +211,6 @@ void BareosDb::PurgeFiles(const char* jobids)
   PoolMem query(PM_MESSAGE);
 
   Mmsg(query, "DELETE FROM File WHERE JobId IN (%s)", jobids);
-  SqlQuery(query.c_str());
-
-  Mmsg(query, "DELETE FROM BaseFiles WHERE JobId IN (%s)", jobids);
   SqlQuery(query.c_str());
 
   Mmsg(query, "UPDATE Job SET PurgedFiles=1 WHERE JobId IN (%s)", jobids);
