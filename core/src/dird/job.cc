@@ -1451,7 +1451,6 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   jcr->dir_impl->jr.VolSessionId = jcr->VolSessionId;
   jcr->dir_impl->jr.VolSessionTime = jcr->VolSessionTime;
   jcr->dir_impl->jr.JobErrors = jcr->JobErrors;
-  jcr->dir_impl->jr.HasBase = jcr->HasBase;
   if (DbLocker _{jcr->db};
       !jcr->db->UpdateJobEndRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0, T_("Error updating job record. %s\n"),
