@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -40,17 +40,6 @@ add_library(backend-utils STATIC)
 target_sources(backend-utils PRIVATE util.cc)
 target_link_libraries(backend-utils PUBLIC Bareos::Lib fmt::fmt)
 
-if(HAVE_GFAPI)
-  add_sd_backend(bareossd-gfapi)
-  target_sources(bareossd-gfapi PRIVATE gfapi_device.cc)
-  target_link_libraries(bareossd-gfapi PRIVATE PkgConfig::gfapi)
-endif()
-
-if(TARGET droplet)
-  add_sd_backend(bareossd-droplet)
-  target_sources(bareossd-droplet PRIVATE droplet_device.cc)
-  target_link_libraries(bareossd-droplet PRIVATE droplet chunked-device)
-endif()
 add_sd_backend(bareossd-dplcompat)
 target_sources(bareossd-dplcompat PRIVATE dplcompat_device.cc crud_storage.cc)
 target_link_libraries(

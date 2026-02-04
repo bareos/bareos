@@ -38,8 +38,6 @@ Vendor:     The Bareos Team
 # default settings
 %define client_only 0
 %define build_qt_monitor 1
-%define glusterfs 0
-%define droplet 1
 %define have_git 1
 %define install_suse_fw 0
 %define systemd_support 0
@@ -85,7 +83,6 @@ BuildRequires: fmt-devel
 #
 
 %if 0%{?fedora} >= 20
-%define glusterfs 1
 %define systemd_support 1
 %endif
 
@@ -94,7 +91,6 @@ BuildRequires: fmt-devel
 %endif
 
 %if 0%{?rhel} >= 7 && (0%{?rhel} <= 9)
-%define glusterfs 1
 %endif
 
 %if 0%{?rhel} == 7
@@ -131,10 +127,6 @@ BuildRequires: systemd
 BuildRequires: systemd-rpm-macros
 %endif
 %{?systemd_requires}
-%endif
-
-%if 0%{?glusterfs}
-BuildRequires: glusterfs-devel glusterfs-api-devel
 %endif
 
 %if 0%{?have_git}
@@ -309,28 +301,11 @@ Group:         Productivity/Archiving/Backup
 Requires:      %{name}-common  = %{version}
 Requires:      %{name}-storage = %{version}
 
-%if 0%{?droplet}
-%package       storage-droplet
-Summary:       Object Storage support (through libdroplet) for the Bareos Storage daemon
-Group:         Productivity/Archiving/Backup
-Requires:      %{name}-common  = %{version}
-Requires:      %{name}-storage = %{version}
-%endif
-
 %package       storage-dplcompat
 Summary:       Object Storage support for the Bareos Storage daemon
 Group:         Productivity/Archiving/Backup
 Requires:      %{name}-common  = %{version}
 Requires:      %{name}-storage = %{version}
-
-%if 0%{?glusterfs}
-%package       storage-glusterfs
-Summary:       GlusterFS support for the Bareos Storage daemon (deprecated)
-Group:         Productivity/Archiving/Backup
-Requires:      %{name}-common  = %{version}
-Requires:      %{name}-storage = %{version}
-Requires:      glusterfs
-%endif
 
 %package       storage-tape
 Summary:       Tape support for the Bareos Storage daemon
@@ -633,20 +608,6 @@ This package contains the python 3 plugin for the storage daemon
 This package contains the common files for the python storage plugins.
 %endif
 
-%if 0%{?glusterfs}
-%package       filedaemon-glusterfs-plugin
-Summary:       GlusterFS plugin for Bareos File daemon (deprecated)
-Group:         Productivity/Archiving/Backup
-Requires:      bareos-filedaemon = %{version}
-Requires:      glusterfs
-
-%description filedaemon-glusterfs-plugin
-%{dscr}
-
-This package contains the GlusterFS plugin for the file daemon
-(deprecated since version 25.0.0)
-%endif
-
 %if 0%{?webui}
 %package webui
 Summary:       Bareos Web User Interface
@@ -782,25 +743,10 @@ This package contains the Storage Daemon tape support
 
 This package contains the Storage Backend for the dedupable storage format.
 
-%if 0%{?droplet}
-%description storage-droplet
-%{dscr}
-
-This package contains the Storage backend for Object Storage (through libdroplet).
-%endif
-
 %description storage-dplcompat
 %{dscr}
 
 This package contains the Storage backend for Object Storage (via scripts).
-
-%if 0%{?glusterfs}
-%description storage-glusterfs
-%{dscr}
-
-This package contains the Storage backend for GlusterFS.
-(deprecated since version 25.0.0)
-%endif
 
 %description storage-fifo
 %{dscr}
@@ -1037,10 +983,6 @@ rm -f %{buildroot}/%{plugin_dir}/*.py*
 rm -f %{buildroot}/%{_sysconfdir}/%{name}/bareos-dir.d/plugin-python-ldap.conf
 %endif
 
-%if ! 0%{?glusterfs}
-rm -f %{buildroot}/%{script_dir}/bareos-glusterfind-wrapper
-%endif
-
 # remove man page if qt tray monitor is not built
 %if !0%{?build_qt_monitor}
 rm %{buildroot}%{_mandir}/man1/bareos-tray-monitor.*
@@ -1267,30 +1209,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{configtemplatedir}/bareos-dir.d/storage/Dedupable.conf.example
 %{configtemplatedir}/bareos-sd.d/device/Dedupable.conf.example
 
-%if 0%{?droplet}
-%files storage-droplet
-%defattr(-, root, root)
-%{backend_dir}/libbareossd-droplet*.so
-%{configtemplatedir}/bareos-dir.d/storage/S3_Object.conf.example
-%{configtemplatedir}/bareos-sd.d/device/S3_ObjectStorage.conf.example
-%dir %{configtemplatedir}/bareos-sd.d/device/droplet/
-%{configtemplatedir}/bareos-sd.d/device/droplet/*.example
-%endif
-
 %files storage-dplcompat
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-dplcompat*.so
 %{script_dir}/s3cmd-wrapper.sh
 %{configtemplatedir}/bareos-dir.d/storage/dplcompat.conf.example
 %{configtemplatedir}/bareos-sd.d/device/dplcompat.conf.example
-
-%if 0%{?glusterfs}
-%files storage-glusterfs
-%defattr(-, root, root)
-%{backend_dir}/libbareossd-gfapi*.so
-%{configtemplatedir}/bareos-dir.d/storage/Gluster.conf.example
-%{configtemplatedir}/bareos-sd.d/device/GlusterStorage.conf.example
-%endif
 
 # not client_only
 %endif
@@ -1543,15 +1467,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/bareos-sd-class-plugin.py*
 
 # python_plugins
-%endif
-
-%if 0%{?glusterfs}
-%files filedaemon-glusterfs-plugin
-%{script_dir}/bareos-glusterfind-wrapper
-%{plugin_dir}/gfapi-fd.so
-%{configtemplatedir}/bareos-dir.d/fileset/plugin-gfapi.conf.example
-%{configtemplatedir}/bareos-dir.d/job/BackupGFAPI.conf.example
-%{configtemplatedir}/bareos-dir.d/job/RestoreGFAPI.conf.example
 %endif
 
 %if 0%{?contrib}

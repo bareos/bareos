@@ -332,16 +332,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "AIX")
 endif()
 include(BareosFindStaticCodeAnalysisTools)
 
-if(NOT client-only
-   AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS"
-   AND CMAKE_SIZEOF_VOID_P EQUAL 8
-)
-  # droplet does not build on solaris because of sys/cdefs.h: No such file or
-  # directory it is also not safe on 32-bit systems, so we only build it on
-  # 64-bit
-  add_subdirectory(src/droplet)
-endif()
-
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   if(MSVC)
     add_definitions(
@@ -594,10 +584,6 @@ if("${HAVE_SYS_XATTR_H}" OR "${HAVE_SYS_EXTATTR_H}")
   set(have_xattr YES)
 endif()
 
-if(gfapi_FOUND)
-  set(HAVE_GFAPI 1)
-endif()
-
 if(NOT HAVE_WIN32)
   if(${ndmp})
     set(HAVE_NDMP 1)
@@ -619,10 +605,6 @@ if(VIXDISKLIB_FOUND)
   list(APPEND PLUGINS python-vmware)
 endif()
 
-if(HAVE_GFAPI)
-  list(APPEND PLUGINS gfapi)
-endif()
-
 set(PLUGINS
     ${PLUGINS}
     PARENT_SCOPE
@@ -634,12 +616,6 @@ if(build_client_only)
 else()
   set(BACKENDS unix_tape_device.d)
   list(APPEND BACKENDS unix_fifo_device.d)
-  if(HAVE_GFAPI)
-    list(APPEND BACKENDS gfapi_device.d)
-  endif()
-  if(TARGET droplet)
-    list(APPEND BACKENDS droplet_device.d)
-  endif()
   list(APPEND BACKENDS dplcompat_device.d)
 endif()
 
@@ -788,7 +764,6 @@ message("   XATTR support:                ${have_xattr} ")
 message(
   "   SCSI Crypto support:          ${scsi-crypto} ${HAVE_LOWLEVEL_SCSI_INTERFACE} "
 )
-message("   GFAPI(GLUSTERFS) support:     ${gfapi_FOUND} ")
 message(
   "   Python3 support:              ${Python3_FOUND} ${Python3_VERSION} ${Python3_INCLUDE_DIRS} ${Python3_EXECUTABLE}"
 )

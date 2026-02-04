@@ -1,8 +1,0 @@
-Storage {
-  Name = Gluster
-  Description = "Deprecated since 25.0.0"
-  Address  = "Replace this by the Bareos Storage Daemon FQDN or IP address"
-  Password = "Replace this by the Bareos Storage Daemon director password"
-  Device = GlusterStorage
-  Media Type = GlusterFile
-}

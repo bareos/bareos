@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -48,7 +48,6 @@ add_subdirectory(dbcheck)
 add_subdirectory(dedupable)
 add_subdirectory(dedupestimate)
 add_subdirectory(deprecation)
-add_subdirectory(droplet-s3)
 add_subdirectory(dplcompat)
 add_subdirectory(encrypt-signature-no-tls)
 add_subdirectory(encrypt-signature-tls-cert)
@@ -59,8 +58,6 @@ endif()
 add_subdirectory(file-count-regression)
 add_subdirectory(fileset-multiple-blocks)
 add_subdirectory(filesets)
-add_subdirectory(gfapi-fd)
-add_subdirectory(glusterfs-backend)
 add_subdirectory(grpc-fd)
 add_subdirectory(heartbeat-interval)
 add_subdirectory(ignoreduplicatecheck)

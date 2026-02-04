@@ -1,4 +1,0 @@
-@plugindir@/gfapi-fd.so
-@configtemplatedir@/bareos-dir.d/fileset/plugin-gfapi.conf.example
-@configtemplatedir@/bareos-dir.d/job/BackupGFAPI.conf.example
-@configtemplatedir@/bareos-dir.d/job/RestoreGFAPI.conf.example

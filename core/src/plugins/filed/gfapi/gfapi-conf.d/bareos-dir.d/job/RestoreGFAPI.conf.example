@@ -1,7 +1,0 @@
-Job {
-  Name = "RestoreGFAPI"
-  JobDefs = "DefaultJob"
-  Type = Restore
-  Fileset= "plugin-gfapi"
-  # Client = "gfappihost-fd"
-}

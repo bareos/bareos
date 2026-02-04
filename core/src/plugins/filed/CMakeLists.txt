@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -99,19 +99,6 @@ endif()
 if(NOT HAVE_WIN32)
   bareos_add_plugin(spam-plugin-fd)
   target_sources(spam-plugin-fd PRIVATE spam/spam.cc)
-endif()
-
-option(ENABLE_GFAPI_FD "Build gfapi-fd plugin if possible" ON)
-if(HAVE_GFAPI AND ENABLE_GFAPI_FD)
-  bareos_configure_file(GLOB_RECURSE "gfapi/gfapi-conf.d/*" COPY)
-  bareos_add_plugin(gfapi-fd)
-  target_sources(gfapi-fd PRIVATE gfapi/gfapi-fd.cc)
-  install(
-    TARGETS gfapi-fd
-    DESTINATION ${plugindir}
-    COMPONENT filedaemon
-  )
-  target_link_libraries(gfapi-fd PRIVATE PkgConfig::gfapi)
 endif()
 
 add_subdirectory(grpc)

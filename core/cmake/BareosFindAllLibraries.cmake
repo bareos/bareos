@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -129,11 +129,6 @@ elseif(
     FATAL_ERROR
       "vmware options were set but VMware Vix Disklib was not found. Cannot run vmware tests."
   )
-endif()
-
-find_package(PkgConfig)
-if(PkgConfig_FOUND)
-  pkg_check_modules(gfapi IMPORTED_TARGET glusterfs-api)
 endif()
 
 find_package(PAM)

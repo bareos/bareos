@@ -10,18 +10,6 @@ See :ref:`SdBackends` for options.
 **Fifo**
    is a first-in-first-out sequential access read-only or write-only device.
 
-**GFAPI** (GlusterFS)
-   is used to access a GlusterFS storage. It must be configured using :config:option:`sd/device/DeviceOptions`\ . For details, refer to :ref:`SdBackendGfapi`.
-
-   :sinceVersion:`14.2.2: GlusterFS (gfapi)`
-
-   .. deprecated:: 25.0.0
-
-**Droplet**
-   is used to access an object store supported by **libdroplet**, most notably S3. For details, refer to :ref:`SdBackendDroplet`.
-
-   :sinceVersion:`17.2.7: Droplet`
-
 The Device Type directive is not required in all cases. If it is not specified,
 Bareos will attempt to guess what kind of device has been specified using the
 :config:option:`sd/device/ArchiveDevice`\  specification supplied. 

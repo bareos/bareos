@@ -1,8 +1,0 @@
-Storage {
-  Name = droplet
-  Address = localhost
-  Password = "@sd_password@"
-  Device = S3_ObjectStorage
-  Media Type = S3_Object1
-  Port = "@sd_port@"
-}

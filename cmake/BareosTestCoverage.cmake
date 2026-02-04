@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -46,9 +46,6 @@ if(PROGRAM_GCOVR)
     cov-report
     COMMENT "Creating HTML coverage report in ${CMAKE_BINARY_DIR}/coverage"
     # avoid irritating gcov error by removing a broken gcno file
-    COMMAND
-      "${CMAKE_COMMAND}" -E rm -f
-      "${CMAKE_BINARY_DIR}/core/src/droplet/libdroplet/CMakeFiles/droplet.dir/src/getdate.c.gcno"
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_BINARY_DIR}/coverage"
     COMMAND
       "${PROGRAM_GCOVR}" --html-details
