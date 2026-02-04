@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,33 +18,4 @@
 #   02110-1301, USA.
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
-
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-
-get_test_property(${SYSTEMTEST_PREFIX}${BASENAME} DISABLED ISDISABLED)
-if(NOT ISDISABLED)
-  # it would be better if we could just check if create_systemtest succeeded
-  set_tests_properties(
-    system:dedupable:create-backup
-    PROPERTIES FIXTURES_SETUP "system:dedupable:backup-job-fixture"
-  )
-  set_tests_properties(
-    system:dedupable:restore-file
-    PROPERTIES FIXTURES_REQUIRED
-               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
-  )
-  set_tests_properties(
-    system:dedupable:restore-dir
-    PROPERTIES FIXTURES_REQUIRED
-               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
-  )
-  set_tests_properties(
-    system:dedupable:full-restore
-    PROPERTIES FIXTURES_REQUIRED
-               "system:dedupable:backup-job-fixture;system:dedupable-fixture"
-  )
-  set_tests_properties(
-    system:dedupable:purge-truncate PROPERTIES FIXTURES_REQUIRED
-                                               "system:dedupable-fixture"
-  )
-endif()

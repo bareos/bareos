@@ -24,6 +24,7 @@
 #   to restore instead of just picking the newest one.
 #
 
+#CTEST requires=create-backup
 set -e
 set -o pipefail
 set -u

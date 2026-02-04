@@ -1,4 +1,6 @@
 #!/bin/bash
+#CTEST requires=simple-backup-and-restore
+
 set -e
 set -o pipefail
 set -u

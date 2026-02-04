@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,30 +19,3 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-
-get_test_property(${SYSTEMTEST_PREFIX}${BASENAME} DISABLED ISDISABLED)
-if(NOT ISDISABLED)
-  set_tests_properties(
-    system:ignoreduplicatecheck:create-backups
-    PROPERTIES FIXTURES_REQUIRED "system:ignoreduplicatecheck-fixture"
-               FIXTURES_SETUP "system:ignoreduplicatechecks:backups-fixture"
-  )
-  set_tests_properties(
-    system:ignoreduplicatecheck:copy
-    PROPERTIES
-      FIXTURES_REQUIRED
-      "system:ignoreduplicatecheck-fixture;system:ignoreduplicatechecks:backups-fixture"
-  )
-  set_tests_properties(
-    system:ignoreduplicatecheck:migrate
-    PROPERTIES
-      FIXTURES_REQUIRED
-      "system:ignoreduplicatecheck-fixture;system:ignoreduplicatechecks:backups-fixture"
-  )
-  set_tests_properties(
-    system:ignoreduplicatecheck:consolidate
-    PROPERTIES
-      FIXTURES_REQUIRED
-      "system:ignoreduplicatecheck-fixture;system:ignoreduplicatechecks:backups-fixture"
-  )
-endif()

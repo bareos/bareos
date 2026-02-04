@@ -21,11 +21,10 @@
 set -e
 set -u
 
-tmp="tmp"
 logdir="log"
-minio_tmp_data_dir="$tmp"/minio-data-directory
-minio_port_number="$1"
-minio_alias="$2"-minio
+: "${minio_data_dir:=minio-data-directory}"
+: "${minio_port_number:=$1}"
+: "${minio_alias:=$2-minio}"
 
 . environment
 
@@ -34,11 +33,11 @@ if ! "${MINIO}" -v >/dev/null 2>&1; then
   exit 1
 fi
 
-if [ -d "$minio_tmp_data_dir" ]; then
-  rm -rf "$minio_tmp_data_dir"
+if [ -d "$minio_data_dir" ]; then
+  rm -rf "$minio_data_dir"
 fi
 
-mkdir "$minio_tmp_data_dir"
+mkdir -p "$minio_data_dir"
 
 echo "$0: starting minio server"
 
@@ -53,6 +52,13 @@ while pidof "$minio_alias" >/dev/null; do
     }
 done
 
+if lsof="$(command -v lsof)"; then
+  if pid=$("${lsof}" -ti "tcp:$minio_port_number"); then
+    print_debug "Killing process listening on $minio_port_number with PID $pid"
+    kill -9 "$pid"
+  fi
+fi
+
 export MINIO_DOMAIN=localhost,127.0.0.1
 
 certificate_dir="${CMAKE_BINARY_DIR}/systemtests/tls/minio"
@@ -62,26 +68,15 @@ if [ "${systemtests_s3_use_https}" == "true" ]; then
     echo "$0: could not find certificate dir (${certificate_dir})"
     exit 1
   fi
-  certs="--certs-dir ${certificate_dir}"
+  cert_args=(--certs-dir "${certificate_dir}")
 else
-  certs=""
+  cert_args=()
 fi
 
-exec -a "$minio_alias" "${MINIO}" server ${certs} --address ":${minio_port_number}" "$minio_tmp_data_dir" >"$logdir"/minio.log 2>"$logdir"/minio_err.log &
-
-if ! pidof ${MINIO} >/dev/null; then
-  echo "$0: could not start minio server"
-  exit 2
-fi
-
-tries=0
-while ! s3cmd --config=${S3CFG} --no-check-certificate ls S3:// >/dev/null 2>&1; do
-  sleep 0.1
-  ((tries++)) && [ "$tries" == '100' ] \
-    && {
-      echo "$0: could not start minio server"
-      exit 3
-    }
-done
-
-exit 0
+exec -a "$minio_alias" \
+  "${MINIO}" server \
+  "${cert_args[@]}" \
+  --address ":${minio_port_number}" \
+  "${minio_data_dir}" \
+  >"$logdir"/minio.log 2>"$logdir"/minio_err.log \
+  &

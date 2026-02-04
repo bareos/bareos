@@ -1,4 +1,5 @@
 #!/bin/bash
+#CTEST after=parallel-jobs
 set -e
 set -o pipefail
 set -u

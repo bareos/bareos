@@ -19,6 +19,8 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+#CTEST requires=01-full+incr
+
 TestName="$(basename "$(pwd)")"
 export TestName
 

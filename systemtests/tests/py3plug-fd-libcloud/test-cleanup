@@ -30,7 +30,7 @@ bucket_name=bareos-test
 #shellcheck source=../../environment.in
 . ./environment
 
-"${BAREOS_SCRIPTS_DIR}"/stop_minio.sh "$TestName"
+"${BAREOS_SCRIPTS_DIR}"/minio-cleanup.sh "$TestName"
 
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions

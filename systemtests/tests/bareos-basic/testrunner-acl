@@ -1,4 +1,5 @@
 #!/bin/bash
+#CTEST nolock
 set -e
 set -o pipefail
 set -u
@@ -13,12 +14,8 @@ export TestName
 
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
-"${BAREOS_SCRIPTS_DIR}"/cleanup
-"${BAREOS_SCRIPTS_DIR}"/setup
 
 start_test
-
-run_bareos "$@"
 
 echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-none.conf >${logdir}/acl-none.log
 echo "status conf" | "${BAREOS_BCONSOLE_BINARY}" -c etc/bareos/bconsole-acl-status.conf >${logdir}/acl-status.log

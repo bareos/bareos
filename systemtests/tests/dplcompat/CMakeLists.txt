@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -24,8 +24,3 @@ else()
   set(DPLCOMPAT_TEST_PROGRAM "localfile-wrapper.sh")
 endif()
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
-set_tests_properties(
-  system:dplcompat:restore
-  PROPERTIES FIXTURES_REQUIRED
-             "system:dplcompat-fixture;system:dplcompat/backup-fixture"
-)
