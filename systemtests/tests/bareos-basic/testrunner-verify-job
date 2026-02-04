@@ -1,0 +1,95 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+# Run a verify job
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+run_log="${tmp}/run.out"
+JobName=verifyjob
+
+# Check if parsed options are identical to those configured
+options_out="${tmp}/verify_options_parsed.out"
+rm -f "${options_out}"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${options_out}
+show fileset=SelfTest
+quit
+END_OF_DATA
+
+run_bconsole
+
+parse_options()
+{
+  # each option is just a single character, their position also doesnt matter
+  # we create a canonical representation by sorting the string and
+  # removing all repetitions
+  # this way two strings are equal to each other after the transformation iff
+  # they mean the same thing to bareos
+
+  fold -c -w1 <<<"$1" | sort | uniq | tr -d '\n'
+}
+
+options_equal()
+{
+  [ "$(parse_options "$1")" == "$(parse_options "$2")" ]
+}
+
+# duplicated flag are now filtered by parsing code.
+# To emulate this and as we used fixed configuration string we just
+# remove the leftover duplicated characters with bash string cut.
+accurate_options_parsed=$(awk '/Accurate.*=/ {gsub("\"","",$3); print $3}' "${options_out}")
+accurate_options_conf=$(awk '/Accurate.*=/ {gsub("\"","",$3); print $3}' "etc/bareos/bareos-dir.d/fileset/SelfTest.conf")
+if ! options_equal "${accurate_options_parsed}" "${accurate_options_conf}"; then
+  estat=93
+  echo "Accurate options doesn't match: \"${accurate_options_parsed}\" parsed versus \"${accurate_options_conf}\" configured"
+fi
+
+verify_options_parsed=$(awk '/Verify.*=/ {gsub("\"","",$3); print $3}' "${options_out}")
+verify_options_conf=$(awk '/Verify.*=/ {gsub("\"","",$3); print $3}' "etc/bareos/bareos-dir.d/fileset/SelfTest.conf")
+
+if ! options_equal "${verify_options_parsed}" "${verify_options_conf}"; then
+  estat=92
+  echo "Verify options doesn't match: \"${verify_options_parsed}\" parsed versus \"${verify_options_conf}\" configured"
+fi
+
+rm -f "${run_log}"
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${run_log}
+setdebug level=200 trace=1 timestamp=1 all
+run job=${JobName} level=InitCatalog yes
+wait
+messages
+run job=${JobName} yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep "Verify OK" \
+  "${run_log}" \
+  "No verify OK found in log"
+
+expect_not_grep "ERROR in" \
+  "${run_log}" \
+  "ERROR in found in log"
+
+end_test

@@ -1,0 +1,28 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+LSAN_OPTIONS=suppressions="$(pwd)/lsan-suppressions.txt"
+export LSAN_OPTIONS
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
+
+# Use a tgz to setup data to be backuped.
+# Fill ${BackupDirectory} with data.
+setup_data
+
+bin/bareos start
+bin/bareos status
+
+# make sure that the director is up and running.
+print_debug "$(bin/bconsole <<<"status dir")"

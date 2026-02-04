@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -148,7 +148,7 @@ static std::string GetStringFromPyErrorHandler()
 }
 
 
-static void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
+void PyErrorHandler(PluginContext* bareos_plugin_ctx, int msgtype)
 {
   std::string error_string = GetStringFromPyErrorHandler();
 

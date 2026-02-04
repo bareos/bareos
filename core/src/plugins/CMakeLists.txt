@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -43,6 +43,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 endif()
 
 set(pymod3_include_dirs ${Python3_INCLUDE_DIRS} ${pymod_include_dirs})
+
+if(ENABLE_PYTHON)
+  add_library(python-common python/common.cc)
+  target_link_libraries(python-common PUBLIC Python3::Python Bareos::Lib)
+  target_include_directories(
+    python-common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/python
+  )
+endif()
 
 if(NOT client-only)
   add_subdirectory(dird)

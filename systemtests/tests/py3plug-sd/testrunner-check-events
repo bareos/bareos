@@ -20,19 +20,12 @@ JobName=backup-bareos-fd
 #shellcheck source=../../environment.in
 . ./environment
 
-JobName=backup-bareos-fd
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
-"${BAREOS_SCRIPTS_DIR}"/cleanup
-"${BAREOS_SCRIPTS_DIR}"/setup
-
-# Use a tgz to setup data to be backuped.
-# Fill ${BackupDirectory} with data.
-setup_data
 
 start_test
 
-cat <<END_OF_DATA >$tmp/bconcmds
+cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
 messages
 @$out $tmp/log1.out
@@ -46,7 +39,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole
 check_for_zombie_jobs storage=File
 
 events=(bsdEventJobStart
@@ -65,7 +58,7 @@ events=(bsdEventJobStart
   bsdEventJobEnd)
 
 for i in "${events[@]}"; do
-  if ! grep -q "$i" ${tmp}/test-plugin.log; then
+  if ! grep -q "$i" "${tmp}/test-plugin.log"; then
     set_error "Failed to find logged event $i"
   fi
 done
