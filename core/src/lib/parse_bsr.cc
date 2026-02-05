@@ -267,13 +267,20 @@ static storagedaemon::BootStrapRecord* store_vol(
         = (storagedaemon::BsrVolume*)malloc(sizeof(storagedaemon::BsrVolume));
     memset(volume, 0, sizeof(storagedaemon::BsrVolume));
 
-    size_t name_size = n - p;
-    if (name_size > sizeof(volume->VolumeName) - 1) {
-      name_size = sizeof(volume->VolumeName) - 1;
-    }
+    if (n) {
+      size_t name_size = n - p;
+      if (name_size > sizeof(volume->VolumeName) - 1) {
+        name_size = sizeof(volume->VolumeName) - 1;
+      }
 
-    memcpy(volume->VolumeName, p, name_size);
-    volume->VolumeName[name_size] = 0;
+      memcpy(volume->VolumeName, p, name_size);
+      volume->VolumeName[name_size] = 0;
+
+      p = n + 1;
+    } else {
+      bstrncpy(volume->VolumeName, p, sizeof(volume->VolumeName));
+      p = nullptr;
+    }
 
     // Add it to the end of the volume chain
     if (!bsr->volume) {
@@ -283,7 +290,6 @@ static storagedaemon::BootStrapRecord* store_vol(
       for (; bc->next; bc = bc->next) {}
       bc->next = volume;
     }
-    p = n;
   }
   return bsr;
 }
