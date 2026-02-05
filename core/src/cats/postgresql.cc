@@ -762,14 +762,10 @@ uint64_t BareosDbPostgresql::SqlInsertAutokeyRecord(const char* query,
    * Therefore, we need to special case that one table.
    *
    * everything else can use the PostgreSQL formula. */
-  if (Bstrcasecmp(table_name, "basefiles")) {
-    bstrncpy(sequence, "basefiles_baseid", sizeof(sequence));
-  } else {
-    bstrncpy(sequence, table_name, sizeof(sequence));
-    bstrncat(sequence, "_", sizeof(sequence));
-    bstrncat(sequence, table_name, sizeof(sequence));
-    bstrncat(sequence, "id", sizeof(sequence));
-  }
+  bstrncpy(sequence, table_name, sizeof(sequence));
+  bstrncat(sequence, "_", sizeof(sequence));
+  bstrncat(sequence, table_name, sizeof(sequence));
+  bstrncat(sequence, "id", sizeof(sequence));
 
   bstrncat(sequence, "_seq", sizeof(sequence));
   Bsnprintf(getkeyval_query, sizeof(getkeyval_query), "SELECT currval('%s')",

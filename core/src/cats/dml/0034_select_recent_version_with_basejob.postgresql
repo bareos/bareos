@@ -23,7 +23,7 @@ FROM
           Fhnode
    FROM File
    WHERE JobId IN (%s)
-     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
+   ) AS T
 JOIN Job USING (JobId)
 ORDER BY Name,
          PathId,

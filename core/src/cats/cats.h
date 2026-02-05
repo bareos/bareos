@@ -887,10 +887,6 @@ class BareosDb : public BareosDbQueryEnum {
                          const char* jobids,
                          OutputFormatter* sendit,
                          e_list_type type);
-  void ListBaseFilesForJob(JobControlRecord* jcr,
-                           JobId_t jobid,
-                           OutputFormatter* sendit);
-
   /* sql_query.cc */
   const char* get_predefined_query_name(SQL_QUERY query);
   const char* get_predefined_query(SQL_QUERY query);
