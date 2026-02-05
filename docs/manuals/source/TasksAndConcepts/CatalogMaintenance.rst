@@ -77,38 +77,37 @@ The Bareos database backend will get automatically configured in :file:`/etc/bar
    .. code-block:: shell-session
       :caption: show dbconfig-common settings for bareos-database-common
 
-      debconf-show bareos-database-common
-
-      bareos-database-common/password-confirm: (password omitted)
-      bareos-database-common/app-password-confirm: (password omitted)
-      bareos-database-common/pgsql/admin-pass: (password omitted)
-      bareos-database-common/pgsql/app-pass: (password omitted)
-      bareos-database-common/internal/reconfiguring: false
-      bareos-database-common/internal/skip-preseed: false
-      bareos-database-common/install-error: abort
-      bareos-database-common/pgsql/no-empty-passwords:
-      bareos-database-common/dbconfig-reinstall: false
-      bareos-database-common/dbconfig-upgrade: true
-      bareos-database-common/remove-error: abort
-      bareos-database-common/pgsql/admin-user: postgres
-      bareos-database-common/pgsql/method: TCP/IP
-      bareos-database-common/db/app-user: bareos@localhost
-      bareos-database-common/db/dbname: bareos
-      bareos-database-common/remote/newhost: localhost
-      bareos-database-common/database-type: pgsql
-      bareos-database-common/upgrade-backup: true
-      bareos-database-common/missing-db-package-error: abort
-      bareos-database-common/dbconfig-remove: true
-      bareos-database-common/pgsql/authmethod-admin: ident
-      bareos-database-common/passwords-do-not-match:
-      bareos-database-common/upgrade-error: abort
-      bareos-database-common/pgsql/manualconf:
-      bareos-database-common/remote/host: localhost
-      bareos-database-common/purge: false
-      bareos-database-common/pgsql/changeconf: false
-      bareos-database-common/dbconfig-install: true
-      bareos-database-common/pgsql/authmethod-user: password
-      bareos-database-common/remote/port:
+      root@host:~# debconf-show bareos-database-common | sort
+        bareos-database-common/app-password-confirm: (password omitted)
+      * bareos-database-common/database-type: pgsql
+        bareos-database-common/db/app-user: bareos@localhost
+      * bareos-database-common/dbconfig-install: true
+        bareos-database-common/dbconfig-reinstall: false
+        bareos-database-common/dbconfig-remove: true
+        bareos-database-common/dbconfig-upgrade: true
+        bareos-database-common/db/dbname: bareos
+        bareos-database-common/install-error: abort
+        bareos-database-common/internal/reconfiguring: false
+        bareos-database-common/internal/skip-preseed: false
+        bareos-database-common/missing-db-package-error: abort
+        bareos-database-common/password-confirm: (password omitted)
+        bareos-database-common/passwords-do-not-match:
+        bareos-database-common/pgsql/admin-pass: (password omitted)
+        bareos-database-common/pgsql/admin-user: postgres
+        bareos-database-common/pgsql/app-pass: (password omitted)
+        bareos-database-common/pgsql/authmethod-admin: ident
+        bareos-database-common/pgsql/authmethod-user: ident
+        bareos-database-common/pgsql/changeconf: false
+        bareos-database-common/pgsql/manualconf:
+        bareos-database-common/pgsql/method: Unix socket
+        bareos-database-common/pgsql/no-empty-passwords:
+        bareos-database-common/purge: false
+      * bareos-database-common/remote/host: localhost
+        bareos-database-common/remote/newhost: localhost
+        bareos-database-common/remote/port:
+        bareos-database-common/remove-error: abort
+        bareos-database-common/upgrade-backup: false
+        bareos-database-common/upgrade-error: abort
 
 
 .. _CatMaintenanceManualConfiguration:
