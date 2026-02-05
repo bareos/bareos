@@ -270,7 +270,7 @@ json_t* convert(conf_proto* p, bool toplevel = true)
                               json_stringn(val.value.data(), val.value.size()));
           return obj;
         } else {
-          static_assert(false);
+          static_assert(!std::is_same_v<T, T>);
         }
 
         return nullptr;
