@@ -1,4 +1,0 @@
-#!/bin/sh
-
-su - bareos -s /bin/sh -c "/usr/sbin/bareos-dir -t" && /usr/sbin/service bareos-dir restart
-exit $?
