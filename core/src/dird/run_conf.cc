@@ -455,7 +455,8 @@ void StoreRun(ConfigurationParser* conf,
         }
 
         std::from_chars(view.data() + 0, view.data() + pos, code);
-        std::from_chars(view.data() + pos + 1, view.data() + view.size(), code);
+        std::from_chars(view.data() + pos + 1, view.data() + view.size(),
+                        code2);
         const char* p = view.data() + pos + 1;
         len = strlen(p);
         if (len >= 2) { p += 2; }
@@ -498,7 +499,7 @@ void StoreRun(ConfigurationParser* conf,
         break;
       case s_modulo: {
         std::string_view view = lc->str();
-        size_t pos = view.find(':');
+        size_t pos = view.find('/');
         if (pos == view.npos) {
           scan_err(lc, T_("Modulo logic error.\n"));
           return;

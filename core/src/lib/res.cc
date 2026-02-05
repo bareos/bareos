@@ -1173,12 +1173,16 @@ void StoreLabel(ConfigurationParser* conf,
  */
 void StoreAddresses(ConfigurationParser* conf,
                     lexer* lc,
-                    const ResourceItem*,
-                    int,
-                    int)
+                    const ResourceItem* item,
+                    int index,
+                    int pass)
 {
   int token;
   int exist;
+  int family = 0;
+  char errmsg[1024];
+  char port_str[128];
+  char hostname_str[1024];
   enum
   {
     EMPTYLINE = 0x0,
@@ -1186,6 +1190,8 @@ void StoreAddresses(ConfigurationParser* conf,
     ADDRLINE = 0x2
   } next_line
       = EMPTYLINE;
+  int port = str_to_int32(item->default_value);
+
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (token != BCT_BOB) {
     scan_err(lc, T_("Expected a block begin { , got: %s"), lc->str());
@@ -1204,7 +1210,9 @@ void StoreAddresses(ConfigurationParser* conf,
     conf->PushLabel("type");
     conf->PushString(lc->str());
     if (Bstrcasecmp("ip", lc->str()) || Bstrcasecmp("ipv4", lc->str())) {
+      family = AF_INET;
     } else if (Bstrcasecmp("ipv6", lc->str())) {
+      family = AF_INET6;
     } else {
       scan_err(lc, T_("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str());
     }
@@ -1218,6 +1226,7 @@ void StoreAddresses(ConfigurationParser* conf,
     }
     token = LexGetToken(lc, BCT_SKIP_EOL);
     exist = EMPTYLINE;
+    port_str[0] = hostname_str[0] = '\0';
     do {
       if (token != BCT_IDENTIFIER) {
         scan_err(lc, T_("Expected a identifier [addr|port], got: %s"),
@@ -1254,6 +1263,7 @@ void StoreAddresses(ConfigurationParser* conf,
                      lc->str());
           }
           conf->PushString(lc->str());
+          bstrncpy(port_str, lc->str(), sizeof(port_str));
           break;
         case ADDRLINE:
           if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
@@ -1261,6 +1271,7 @@ void StoreAddresses(ConfigurationParser* conf,
                      lc->str());
           }
           conf->PushString(lc->str());
+          bstrncpy(hostname_str, lc->str(), sizeof(hostname_str));
           break;
         case EMPTYLINE:
           scan_err(lc, T_("State machine mismatch"));
@@ -1272,6 +1283,13 @@ void StoreAddresses(ConfigurationParser* conf,
     if (token != BCT_EOB) {
       scan_err(lc, T_("Expected a end of block }, got: %s"), lc->str());
     }
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_MULTIPLE, htons(port), family, hostname_str,
+                       port_str, errmsg, sizeof(errmsg))) {
+      scan_err(lc, T_("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
+               hostname_str, port_str, errmsg);
+    }
     token = ScanToNextNotEol(lc);
   } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
 
@@ -1279,6 +1297,8 @@ void StoreAddresses(ConfigurationParser* conf,
   if (token != BCT_EOB) {
     scan_err(lc, T_("Expected a end of block }, got: %s"), lc->str());
   }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 void StoreAddressesAddress(ConfigurationParser* conf,
