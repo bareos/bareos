@@ -842,38 +842,6 @@ void StorePluginNames(ConfigurationParser* conf,
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-/*
- * Store default values for Resource from xxxDefs
- * If we are in pass 2, do a lookup of the
- * resource and store everything not explicitly set
- * in main resource.
- *
- * Note, here item points to the main resource (e.g. Job, not
- *  the jobdefs, which we look up).
- */
-void StoreDefs(ConfigurationParser* conf,
-               lexer* lc,
-               const ResourceItem* item,
-               int,
-               int pass)
-{
-  BareosResource* res;
-
-  LexGetToken(lc, BCT_NAME);
-  conf->PushString(lc->str());
-  if (pass == 2) {
-    Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str());
-    res = conf->GetResWithName(item->code, lc->str());
-    if (res == NULL) {
-      scan_err(
-          lc, T_("Missing config Resource \"%s\" referenced on line %d : %s\n"),
-          lc->str(), lc->line_no(), lc->line());
-      return;
-    }
-  }
-  ScanToEol(lc);
-}
-
 // Store an integer at specified address
 void store_int16(ConfigurationParser* conf,
                  lexer* lc,
@@ -1619,9 +1587,6 @@ bool StoreResource(ConfigurationParser* conf,
     case CFG_TYPE_SPEED:
       StoreSpeed(conf, lc, item, index, pass);
       break;
-    case CFG_TYPE_DEFS:
-      StoreDefs(conf, lc, item, index, pass);
-      break;
     case CFG_TYPE_LABEL:
       StoreLabel(conf, lc, item, index, pass);
       break;
@@ -2349,7 +2314,6 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_SIZE64, "SIZE64", "64 bits file size"},
     {CFG_TYPE_SIZE32, "SIZE32", "32 bits file size"},
     {CFG_TYPE_SPEED, "SPEED", "speed"},
-    {CFG_TYPE_DEFS, "DEFS", "definition"},
     {CFG_TYPE_LABEL, "LABEL", "label"},
     {CFG_TYPE_ADDRESSES, "ADDRESSES", "ip addresses list"},
     {CFG_TYPE_ADDRESSES_ADDRESS, "ADDRESS", "ip address"},
@@ -2389,7 +2353,6 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_OPTIONS, "OPTIONS", "Options block"},
     {CFG_TYPE_OPTION, "OPTION", "Option of Options block"},
     {CFG_TYPE_REGEX, "REGEX", "Regular Expression"},
-    {CFG_TYPE_BASE, "BASEJOB", "Basejob Expression"},
     {CFG_TYPE_WILD, "WILDCARD", "Wildcard Expression"},
     {CFG_TYPE_PLUGIN, "PLUGIN", "Plugin definition"},
     {CFG_TYPE_FSTYPE, "FILESYSTEM_TYPE", "FileSystem match criterium (UNIX)"},

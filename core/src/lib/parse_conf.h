@@ -265,7 +265,7 @@ enum
   CFG_TYPE_SIZE64 = 21,             /* 64 bits file size */
   CFG_TYPE_SIZE32 = 22,             /* 32 bits file size */
   CFG_TYPE_SPEED = 23,              /* Speed limit */
-  CFG_TYPE_DEFS = 24,               /* Definition */
+  // CFG_TYPE_DEFS = 24,               /* Definition */
   CFG_TYPE_LABEL = 25,              /* Label */
   CFG_TYPE_ADDRESSES = 26,          /* List of ip addresses */
   CFG_TYPE_ADDRESSES_ADDRESS = 27,  /* Ip address */
@@ -307,12 +307,12 @@ enum
   CFG_TYPE_OPTIONS = 83,    /* Options block */
   CFG_TYPE_OPTION = 84,     /* Option of Options block */
   CFG_TYPE_REGEX = 85,      /* Regular Expression */
-  CFG_TYPE_BASE = 86,       /* Basejob Expression */
-  CFG_TYPE_WILD = 87,       /* Wildcard Expression */
-  CFG_TYPE_PLUGIN = 88,     /* Plugin definition */
-  CFG_TYPE_FSTYPE = 89,     /* FileSytem match criterium (UNIX)*/
-  CFG_TYPE_DRIVETYPE = 90,  /* DriveType match criterium (Windows) */
-  CFG_TYPE_META = 91,       /* Meta tag */
+  // CFG_TYPE_BASE = 86,       /* Basejob Expression */
+  CFG_TYPE_WILD = 87,      /* Wildcard Expression */
+  CFG_TYPE_PLUGIN = 88,    /* Plugin definition */
+  CFG_TYPE_FSTYPE = 89,    /* FileSytem match criterium (UNIX)*/
+  CFG_TYPE_DRIVETYPE = 90, /* DriveType match criterium (Windows) */
+  CFG_TYPE_META = 91,      /* Meta tag */
 
   // Storage daemon resource types
   // CFG_TYPE_DEVTYPE = 201,      /* Device Type */
