@@ -39,6 +39,9 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
     dbc_dbname=@db_name@ || true
     dbc_dbuser=@db_user@ || true
     dbc_dbtypes="pgsql"
+    # This setting indicates, that we want to use ident as authmethod.
+    # However, at least in dbconfig-common-2.0.25 this hint does not get applied.
+    # Therefore we later on use bareos_db_set_default to modify this default.
     dbc_authmethod_user="ident"
     # action
     if [ $# -gt 0 ]; then
@@ -97,11 +100,13 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
             # when using "Unix socket", use "ident" by default.
             bareos_db_set_default "bareos-database-common/pgsql/authmethod-user" "ident"
           fi
-          bareos_db_set_default "bareos-database-common/upgrade-backup" "false"
-          # If this settings should be altered during installation,
-          # use following setting:
-          # export DEBIAN_PRIORITY=low
         fi
+        # Per default, don't use dbconfig internal backup mechanism.
+        # Bareos is doing a catalog backup itself.
+        # Also the Bareos database can get very large,
+        # so that a dump may not fit
+        # on the default backup path (/var/cache/dbconfig-common/backups/).
+        bareos_db_set_default "bareos-database-common/upgrade-backup" "false"
         ;;
       *) ;;
     esac
