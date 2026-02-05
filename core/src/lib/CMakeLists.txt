@@ -189,9 +189,4 @@ set_target_properties(
                     SOVERSION "${BAREOS_VERSION_MAJOR}"
 )
 
-add_executable(config-reparser config_reparse.cc)
-target_link_libraries(
-  config-reparser PRIVATE Bareos::Lib CLI11::CLI11 Jansson::Jansson
-)
-
 include(DebugEdit)
