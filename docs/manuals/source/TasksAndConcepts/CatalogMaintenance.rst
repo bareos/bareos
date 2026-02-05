@@ -43,13 +43,25 @@ The Bareos database backend will get automatically configured in :file:`/etc/bar
    with :command:`export dbc_debug=1` command
    before using :command:`apt` or :command:`dpkg-reconfigure bareos-database-common`.
 
+
+.. note::
+
+   In case you want to answer/see all low level questions of dbconfig-common, prepare your environment
+   with the following command:
+
+   .. code-block:: shell-session
+      :caption: Allow all dbconfig-common question to be shown
+
+      export DEBIAN_PRIORITY=low
+      apt install bareos-database-common
+
+
 .. warning::
 
    By default **dbconfig-common** during major upgrades will create a backup dump of the database
    in :file:`/var/cache/dbconfig-common/backups/` before applying any upgrade. It is advised to
    precheck there's enough free space in the partition containing this directory to handle the
    sql text dump file.
-
    In case you want to disable this dbconfig-common feature, you can use the following command
    before upgrading Bareos packages:
 
