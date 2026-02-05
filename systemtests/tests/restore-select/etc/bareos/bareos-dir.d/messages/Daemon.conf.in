@@ -1,0 +1,7 @@
+Messages {
+  Name = Daemon
+  Description = "Message delivery for daemon messages (no job)."
+  console = all, !skipped, !saved, !audit
+  append = "@logdir@/bareos.log" = all, !skipped, !audit
+  append = "@logdir@/bareos-audit.log" = audit
+}

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,6 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
 #include "findlib/match.h"
 #include "lib/parse_conf.h"
@@ -348,7 +347,7 @@ static inline void IsInPermittedSet(lexer* lc,
   const char *p, *q;
   bool found;
 
-  for (p = lc->str; *p; p++) {
+  for (p = lc->str(); *p; p++) {
     found = false;
     for (q = permitted_set; *q; q++) {
       if (*p == *q) {
@@ -358,8 +357,8 @@ static inline void IsInPermittedSet(lexer* lc,
     }
 
     if (!found) {
-      scan_err3(lc, T_("Illegal %s option %c, got option string: %s:"), SetType,
-                *p, lc->str);
+      scan_err(lc, T_("Illegal %s option %c, got option string: %s:"), SetType,
+               *p, lc->str());
     }
   }
 }
@@ -371,7 +370,11 @@ static inline void IsInPermittedSet(lexer* lc,
  *
  * This code is also used inside an Options resource.
  */
-static void ScanIncludeOptions(lexer* lc, int keyword, char* opts, int optlen)
+static void ScanIncludeOptions(ConfigurationParser* p,
+                               lexer* lc,
+                               int keyword,
+                               char* opts,
+                               int optlen)
 {
   int i;
   char option[64];
@@ -381,49 +384,51 @@ static void ScanIncludeOptions(lexer* lc, int keyword, char* opts, int optlen)
   memset(option, 0, sizeof(option));
   lc->options.set(lexer::options::ForceString); /* force string */
   LexGetToken(lc, BCT_STRING);                  /* expect at least one option */
-  if (keyword == INC_KW_VERIFY) {               /* special case */
+  p->PushString(lc->str());
+  if (keyword == INC_KW_VERIFY) { /* special case */
     IsInPermittedSet(lc, T_("verify"), PERMITTED_VERIFY_OPTIONS);
     bstrncat(opts, "V", optlen); /* indicate Verify */
-    bstrncat(opts, lc->str, optlen);
+    bstrncat(opts, lc->str(), optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_ACCURATE) { /* special case */
     IsInPermittedSet(lc, T_("accurate"), PERMITTED_ACCURATE_OPTIONS);
     bstrncat(opts, "C", optlen); /* indicate Accurate */
-    bstrncat(opts, lc->str, optlen);
+    bstrncat(opts, lc->str(), optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_STRIPPATH) { /* special case */
-    if (!IsAnInteger(lc->str)) {
-      scan_err1(lc, T_("Expected a strip path positive integer, got: %s:"),
-                lc->str);
+    if (!IsAnInteger(lc->str())) {
+      scan_err(lc, T_("Expected a strip path positive integer, got: %s:"),
+               lc->str());
       return;
     }
     bstrncat(opts, "P", optlen); /* indicate strip path */
-    bstrncat(opts, lc->str, optlen);
+    bstrncat(opts, lc->str(), optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else if (keyword == INC_KW_SIZE) { /* special case */
-    if (!ParseSizeMatch(lc->str, &size_matching)) {
-      scan_err1(lc, T_("Expected a parseable size, got: %s:"), lc->str);
+    if (!ParseSizeMatch(lc->str(), &size_matching)) {
+      scan_err(lc, T_("Expected a parseable size, got: %s:"), lc->str());
       return;
     }
     bstrncat(opts, "z", optlen); /* indicate size */
-    bstrncat(opts, lc->str, optlen);
+    bstrncat(opts, lc->str(), optlen);
     bstrncat(opts, ":", optlen); /* Terminate it */
     Dmsg3(900, "Catopts=%s option=%s optlen=%d\n", opts, option, optlen);
   } else {
     // Standard keyword options for Include/Exclude
     for (i = 0; FS_options[i].name; i++) {
       if (FS_options[i].keyword == keyword
-          && Bstrcasecmp(lc->str, FS_options[i].name)) {
+          && Bstrcasecmp(lc->str(), FS_options[i].name)) {
         bstrncpy(option, FS_options[i].option, sizeof(option));
         i = 0;
         break;
       }
     }
     if (i != 0) {
-      scan_err1(lc, T_("Expected a FileSet option keyword, got: %s:"), lc->str);
+      scan_err(lc, T_("Expected a FileSet option keyword, got: %s:"),
+               lc->str());
       return;
     } else { /* add option */
       bstrncat(opts, option, optlen);
@@ -433,11 +438,14 @@ static void ScanIncludeOptions(lexer* lc, int keyword, char* opts, int optlen)
   lc->options = lcopts;
 
   // If option terminated by comma, eat it
-  if (lc->ch == ',') { LexGetToken(lc, BCT_ALL); /* yes, eat comma */ }
+  if (lc->ch() == ',') { LexGetToken(lc, BCT_ALL); /* yes, eat comma */ }
 }
 
 // Store regex info
-static void StoreRegex(lexer* lc, const ResourceItem* item, int pass)
+static void StoreRegex(ConfigurationParser* p,
+                       lexer* lc,
+                       const ResourceItem* item,
+                       int pass)
 {
   int token, rc;
   regex_t preg{};
@@ -453,32 +461,40 @@ static void StoreRegex(lexer* lc, const ResourceItem* item, int pass)
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
-        rc = regcomp(&preg, lc->str, REG_EXTENDED);
+        p->PushMergeArray();
+        p->PushObject();
+        p->PushLabel("value");
+        p->PushString(lc->str());
+        rc = regcomp(&preg, lc->str(), REG_EXTENDED);
         if (rc != 0) {
           regerror(rc, &preg, prbuf, sizeof(prbuf));
           regfree(&preg);
-          scan_err1(lc, T_("Regex compile error. ERR=%s\n"), prbuf);
+          scan_err(lc, T_("Regex compile error. ERR=%s\n"), prbuf);
           return;
         }
         regfree(&preg);
         if (item->code == 1) {
           type = "regexdir";
-          res_incexe->current_opts->regexdir.append(strdup(lc->str));
+          res_incexe->current_opts->regexdir.append(strdup(lc->str()));
           newsize = res_incexe->current_opts->regexdir.size();
         } else if (item->code == 2) {
           type = "regexfile";
-          res_incexe->current_opts->regexfile.append(strdup(lc->str));
+          res_incexe->current_opts->regexfile.append(strdup(lc->str()));
           newsize = res_incexe->current_opts->regexfile.size();
         } else {
           type = "regex";
-          res_incexe->current_opts->regex.append(strdup(lc->str));
+          res_incexe->current_opts->regex.append(strdup(lc->str()));
           newsize = res_incexe->current_opts->regex.size();
         }
+        p->PushLabel("type");
+        p->PushString(type);
+        p->PopObject();
+        p->PopArray();
         Dmsg4(900, "set %s %p size=%d %s\n", type, res_incexe->current_opts,
-              newsize, lc->str);
+              newsize, lc->str());
         break;
       default:
-        scan_err1(lc, T_("Expected a regex string, got: %s\n"), lc->str);
+        scan_err(lc, T_("Expected a regex string, got: %s\n"), lc->str());
         return;
     }
   }
@@ -486,18 +502,25 @@ static void StoreRegex(lexer* lc, const ResourceItem* item, int pass)
 }
 
 // Store reader info
-static void StorePlugin(lexer* lc, const ResourceItem*, int pass)
+static void StorePlugin(ConfigurationParser* p,
+                        lexer* lc,
+                        const ResourceItem*,
+                        int pass)
 {
   LexGetToken(lc, BCT_NAME);
+  p->PushString(lc->str());
   if (pass == 1) {
     // Pickup plugin command
-    res_incexe->current_opts->plugin = strdup(lc->str);
+    res_incexe->current_opts->plugin = strdup(lc->str());
   }
   ScanToEol(lc);
 }
 
 // Store Wild-card info
-static void StoreWild(lexer* lc, const ResourceItem* item, int pass)
+static void StoreWild(ConfigurationParser* p,
+                      lexer* lc,
+                      const ResourceItem* item,
+                      int pass)
 {
   int token;
   const char* type;
@@ -510,30 +533,38 @@ static void StoreWild(lexer* lc, const ResourceItem* item, int pass)
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
+        p->PushMergeArray();
+        p->PushObject();
+        p->PushLabel("value");
+        p->PushString(lc->str());
         if (item->code == 1) {
           type = "wilddir";
-          res_incexe->current_opts->wilddir.append(strdup(lc->str));
+          res_incexe->current_opts->wilddir.append(strdup(lc->str()));
           newsize = res_incexe->current_opts->wilddir.size();
         } else if (item->code == 2) {
-          if (strpbrk(lc->str, "/\\") != NULL) {
+          if (strpbrk(lc->str(), "/\\") != NULL) {
             type = "wildfile";
-            res_incexe->current_opts->wildfile.append(strdup(lc->str));
+            res_incexe->current_opts->wildfile.append(strdup(lc->str()));
             newsize = res_incexe->current_opts->wildfile.size();
           } else {
             type = "wildbase";
-            res_incexe->current_opts->wildbase.append(strdup(lc->str));
+            res_incexe->current_opts->wildbase.append(strdup(lc->str()));
             newsize = res_incexe->current_opts->wildbase.size();
           }
         } else {
           type = "wild";
-          res_incexe->current_opts->wild.append(strdup(lc->str));
+          res_incexe->current_opts->wild.append(strdup(lc->str()));
           newsize = res_incexe->current_opts->wild.size();
         }
+        p->PushLabel("type");
+        p->PushString(type);
+        p->PopObject();
+        p->PopArray();
         Dmsg4(9, "set %s %p size=%d %s\n", type, res_incexe->current_opts,
-              newsize, lc->str);
+              newsize, lc->str());
         break;
       default:
-        scan_err1(lc, T_("Expected a wild-card string, got: %s\n"), lc->str);
+        scan_err(lc, T_("Expected a wild-card string, got: %s\n"), lc->str());
         return;
     }
   }
@@ -541,23 +572,29 @@ static void StoreWild(lexer* lc, const ResourceItem* item, int pass)
 }
 
 // Store fstype info
-static void StoreFstype(lexer* lc, const ResourceItem*, int pass)
+static void StoreFstype(ConfigurationParser* p,
+                        lexer* lc,
+                        const ResourceItem*,
+                        int pass)
 {
   int token;
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
+  p->PushMergeArray();
+  p->PushString(lc->str());
+  p->PopArray();
   if (pass == 1) {
     /* Pickup fstype string */
     switch (token) {
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
-        res_incexe->current_opts->fstype.append(strdup(lc->str));
+        res_incexe->current_opts->fstype.append(strdup(lc->str()));
         Dmsg3(900, "set fstype %p size=%d %s\n", res_incexe->current_opts,
-              res_incexe->current_opts->fstype.size(), lc->str);
+              res_incexe->current_opts->fstype.size(), lc->str());
         break;
       default:
-        scan_err1(lc, T_("Expected a fstype string, got: %s\n"), lc->str);
+        scan_err(lc, T_("Expected a fstype string, got: %s\n"), lc->str());
         return;
     }
   }
@@ -565,46 +602,58 @@ static void StoreFstype(lexer* lc, const ResourceItem*, int pass)
 }
 
 // Store Drivetype info
-static void StoreDrivetype(lexer* lc, const ResourceItem*, int pass)
+static void StoreDrivetype(ConfigurationParser* p,
+                           lexer* lc,
+                           const ResourceItem*,
+                           int pass)
 {
   int token;
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
+  p->PushMergeArray();
+  p->PushString(lc->str());
+  p->PopArray();
   if (pass == 1) {
     /* Pickup Drivetype string */
     switch (token) {
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
-        res_incexe->current_opts->Drivetype.append(strdup(lc->str));
+        res_incexe->current_opts->Drivetype.append(strdup(lc->str()));
         Dmsg3(900, "set Drivetype %p size=%d %s\n", res_incexe->current_opts,
-              res_incexe->current_opts->Drivetype.size(), lc->str);
+              res_incexe->current_opts->Drivetype.size(), lc->str());
         break;
       default:
-        scan_err1(lc, T_("Expected a Drivetype string, got: %s\n"), lc->str);
+        scan_err(lc, T_("Expected a Drivetype string, got: %s\n"), lc->str());
         return;
     }
   }
   ScanToEol(lc);
 }
 
-static void StoreMeta(lexer* lc, const ResourceItem*, int pass)
+static void StoreMeta(ConfigurationParser* p,
+                      lexer* lc,
+                      const ResourceItem*,
+                      int pass)
 {
   int token;
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
+  p->PushMergeArray();
+  p->PushString(lc->str());
+  p->PopArray();
   if (pass == 1) {
     /* Pickup fstype string */
     switch (token) {
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
       case BCT_QUOTED_STRING:
-        res_incexe->current_opts->meta.append(strdup(lc->str));
+        res_incexe->current_opts->meta.append(strdup(lc->str()));
         Dmsg3(900, "set meta %p size=%d %s\n", res_incexe->current_opts,
-              res_incexe->current_opts->meta.size(), lc->str);
+              res_incexe->current_opts->meta.size(), lc->str());
         break;
       default:
-        scan_err1(lc, T_("Expected a meta string, got: %s\n"), lc->str);
+        scan_err(lc, T_("Expected a meta string, got: %s\n"), lc->str());
         return;
     }
   }
@@ -613,6 +662,7 @@ static void StoreMeta(lexer* lc, const ResourceItem*, int pass)
 
 // New style options come here
 static void StoreOption(
+    ConfigurationParser* p,
     lexer* lc,
     const ResourceItem* item,
     int pass,
@@ -637,12 +687,12 @@ static void StoreOption(
   }
 
   if (keyword == INC_KW_NONE) {
-    scan_err1(lc, T_("Expected a FileSet keyword, got: %s"), lc->str);
+    scan_err(lc, T_("Expected a FileSet keyword, got: %s"), lc->str());
     return;
   }
 
   // Now scan for the value
-  ScanIncludeOptions(lc, keyword, inc_opts, sizeof(inc_opts));
+  ScanIncludeOptions(p, lc, keyword, inc_opts, sizeof(inc_opts));
   if (pass == 1) {
     bstrncat(res_incexe->current_opts->opts, inc_opts, MAX_FOPTS);
     Dmsg2(900, "new pass=%d incexe opts=%s\n", pass,
@@ -694,7 +744,8 @@ static void StoreDefaultOptions()
 }
 
 // Come here when Options seen in Include/Exclude
-static void StoreOptionsRes(lexer* lc,
+static void StoreOptionsRes(ConfigurationParser* p,
+                            lexer* lc,
                             const ResourceItem*,
                             int pass,
                             bool exclude)
@@ -703,14 +754,15 @@ static void StoreOptionsRes(lexer* lc,
   OptionsDefaultValues default_values;
 
   if (exclude) {
-    scan_err0(lc, T_("Options section not permitted in Exclude\n"));
+    scan_err(lc, T_("Options section not permitted in Exclude\n"));
     return;
   }
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (token != BCT_BOB) {
-    scan_err1(lc, T_("Expecting open brace. Got %s"), lc->str);
+    scan_err(lc, T_("Expecting open brace. Got %s"), lc->str());
     return;
   }
+  p->PushObject();
 
   if (pass == 1) { SetupCurrentOpts(); }
 
@@ -718,40 +770,41 @@ static void StoreOptionsRes(lexer* lc,
     if (token == BCT_EOL) { continue; }
     if (token == BCT_EOB) { break; }
     if (token != BCT_IDENTIFIER) {
-      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str);
+      scan_err(lc, T_("Expecting keyword, got: %s\n"), lc->str());
       return;
     }
     bool found = false;
     for (int i = 0; options_items[i].name; i++) {
-      if (Bstrcasecmp(options_items[i].name, lc->str)) {
+      if (Bstrcasecmp(options_items[i].name, lc->str())) {
+        p->PushLabel(options_items[i].name);
         token = LexGetToken(lc, BCT_SKIP_EOL);
         if (token != BCT_EQUALS) {
-          scan_err1(lc, T_("expected an equals, got: %s"), lc->str);
+          scan_err(lc, T_("expected an equals, got: %s"), lc->str());
           return;
         }
         /* Call item handler */
         switch (options_items[i].type) {
           case CFG_TYPE_OPTION:
-            StoreOption(lc, &options_items[i], pass,
+            StoreOption(p, lc, &options_items[i], pass,
                         default_values.option_default_values);
             break;
           case CFG_TYPE_REGEX:
-            StoreRegex(lc, &options_items[i], pass);
+            StoreRegex(p, lc, &options_items[i], pass);
             break;
           case CFG_TYPE_WILD:
-            StoreWild(lc, &options_items[i], pass);
+            StoreWild(p, lc, &options_items[i], pass);
             break;
           case CFG_TYPE_PLUGIN:
-            StorePlugin(lc, &options_items[i], pass);
+            StorePlugin(p, lc, &options_items[i], pass);
             break;
           case CFG_TYPE_FSTYPE:
-            StoreFstype(lc, &options_items[i], pass);
+            StoreFstype(p, lc, &options_items[i], pass);
             break;
           case CFG_TYPE_DRIVETYPE:
-            StoreDrivetype(lc, &options_items[i], pass);
+            StoreDrivetype(p, lc, &options_items[i], pass);
             break;
           case CFG_TYPE_META:
-            StoreMeta(lc, &options_items[i], pass);
+            StoreMeta(p, lc, &options_items[i], pass);
             break;
           default:
             break;
@@ -761,18 +814,19 @@ static void StoreOptionsRes(lexer* lc,
       }
     }
     if (!found) {
-      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str);
+      scan_err(lc, T_("Keyword %s not permitted in this resource"), lc->str());
       return;
     }
   }
+  p->PopObject();
 
   if (pass == 1) { ApplyDefaultValuesForUnsetOptions(default_values); }
 }
 
-static FilesetResource* GetStaticFilesetResource()
+static FilesetResource* GetStaticFilesetResource(ConfigurationParser* p)
 {
   FilesetResource* res_fs = nullptr;
-  const ResourceTable* t = my_config->GetResourceTable("FileSet");
+  const ResourceTable* t = p->GetResourceTable("FileSet");
   ASSERT(t);
   if (t) { res_fs = dynamic_cast<FilesetResource*>(*t->allocated_resource_); }
   assert(res_fs);
@@ -784,42 +838,47 @@ static FilesetResource* GetStaticFilesetResource()
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StoreFname(lexer* lc, const ResourceItem*, int pass, bool)
+static void StoreFname(ConfigurationParser* p,
+                       lexer* lc,
+                       const ResourceItem*,
+                       int pass,
+                       bool)
 {
   int token;
 
   token = LexGetToken(lc, BCT_SKIP_EOL);
+  p->PushString(lc->str());
   if (pass == 1) {
     /* Pickup Filename string
      */
     switch (token) {
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
-        if (strchr(lc->str, '\\')) {
-          scan_err1(lc,
-                    T_("Backslash found. Use forward slashes or quote the "
-                       "string.: %s\n"),
-                    lc->str);
+        if (strchr(lc->str(), '\\')) {
+          scan_err(lc,
+                   T_("Backslash found. Use forward slashes or quote the "
+                      "string.: %s\n"),
+                   lc->str());
           return;
         }
         FALLTHROUGH_INTENDED;
       case BCT_QUOTED_STRING: {
-        FilesetResource* res_fs = GetStaticFilesetResource();
+        FilesetResource* res_fs = GetStaticFilesetResource(p);
         if (res_fs->have_MD5) {
           IGNORE_DEPRECATED_ON;
-          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
+          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str(), lc->str_len());
           IGNORE_DEPRECATED_OFF;
         }
 
         if (res_incexe->name_list.size() == 0) {
           res_incexe->name_list.init(10, true);
         }
-        res_incexe->name_list.append(strdup(lc->str));
-        Dmsg1(900, "Add to name_list %s\n", lc->str);
+        res_incexe->name_list.append(strdup(lc->str()));
+        Dmsg1(900, "Add to name_list %s\n", lc->str());
         break;
       }
       default:
-        scan_err1(lc, T_("Expected a filename, got: %s"), lc->str);
+        scan_err(lc, T_("Expected a filename, got: %s"), lc->str());
         return;
     }
   }
@@ -831,7 +890,8 @@ static void StoreFname(lexer* lc, const ResourceItem*, int pass, bool)
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void StorePluginName(lexer* lc,
+static void StorePluginName(ConfigurationParser* p,
+                            lexer* lc,
                             const ResourceItem*,
                             int pass,
                             bool exclude)
@@ -839,40 +899,41 @@ static void StorePluginName(lexer* lc,
   int token;
 
   if (exclude) {
-    scan_err0(lc, T_("Plugin directive not permitted in Exclude\n"));
+    scan_err(lc, T_("Plugin directive not permitted in Exclude\n"));
     return;
   }
   token = LexGetToken(lc, BCT_SKIP_EOL);
+  p->PushString(lc->str());
   if (pass == 1) {
     // Pickup Filename string
     switch (token) {
       case BCT_IDENTIFIER:
       case BCT_UNQUOTED_STRING:
-        if (strchr(lc->str, '\\')) {
-          scan_err1(lc,
-                    T_("Backslash found. Use forward slashes or quote the "
-                       "string.: %s\n"),
-                    lc->str);
+        if (strchr(lc->str(), '\\')) {
+          scan_err(lc,
+                   T_("Backslash found. Use forward slashes or quote the "
+                      "string.: %s\n"),
+                   lc->str());
           return;
         }
         FALLTHROUGH_INTENDED;
       case BCT_QUOTED_STRING: {
-        FilesetResource* res_fs = GetStaticFilesetResource();
+        FilesetResource* res_fs = GetStaticFilesetResource(p);
 
         if (res_fs->have_MD5) {
           IGNORE_DEPRECATED_ON;
-          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str, lc->str_len);
+          MD5_Update(&res_fs->md5c, (unsigned char*)lc->str(), lc->str_len());
           IGNORE_DEPRECATED_OFF;
         }
         if (res_incexe->plugin_list.size() == 0) {
           res_incexe->plugin_list.init(10, true);
         }
-        res_incexe->plugin_list.append(strdup(lc->str));
-        Dmsg1(900, "Add to plugin_list %s\n", lc->str);
+        res_incexe->plugin_list.append(strdup(lc->str()));
+        Dmsg1(900, "Add to plugin_list %s\n", lc->str());
         break;
       }
       default:
-        scan_err1(lc, T_("Expected a filename, got: %s"), lc->str);
+        scan_err(lc, T_("Expected a filename, got: %s"), lc->str());
         return;
     }
   }
@@ -880,24 +941,26 @@ static void StorePluginName(lexer* lc,
 }
 
 // Store exclude directory containing info
-static void StoreExcludedir(lexer* lc,
+static void StoreExcludedir(ConfigurationParser* p,
+                            lexer* lc,
                             const ResourceItem*,
                             int pass,
                             bool exclude)
 {
   if (exclude) {
-    scan_err0(lc,
-              T_("ExcludeDirContaining directive not permitted in Exclude.\n"));
+    scan_err(lc,
+             T_("ExcludeDirContaining directive not permitted in Exclude.\n"));
     return;
   }
 
   LexGetToken(lc, BCT_NAME);
+  p->PushString(lc->str());
   if (pass == 1) {
     if (res_incexe->ignoredir.size() == 0) {
       res_incexe->ignoredir.init(10, true);
     }
-    res_incexe->ignoredir.append(strdup(lc->str));
-    Dmsg1(900, "Add to ignoredir_list %s\n", lc->str);
+    res_incexe->ignoredir.append(strdup(lc->str()));
+    Dmsg1(900, "Add to ignoredir_list %s\n", lc->str());
   }
   ScanToEol(lc);
 }
@@ -909,12 +972,13 @@ static void StoreExcludedir(lexer* lc,
  *  resource.  We treat the Include/Exclude like a sort of
  *  mini-resource within the FileSet resource.
  */
-static void StoreNewinc(lexer* lc,
+static void StoreNewinc(ConfigurationParser* p,
+                        lexer* lc,
                         const ResourceItem* item,
                         int index,
                         int pass)
 {
-  FilesetResource* res_fs = GetStaticFilesetResource();
+  FilesetResource* res_fs = GetStaticFilesetResource(p);
 
   // Store.. functions below only store in pass = 1
   if (pass == 1) { res_incexe = new IncludeExcludeItem; }
@@ -928,49 +992,58 @@ static void StoreNewinc(lexer* lc,
   res_fs->new_include = true;
   int token;
   bool has_options = false;
+  p->PushMergeArray();
+  p->PushObject();
   while ((token = LexGetToken(lc, BCT_SKIP_EOL)) != BCT_EOF) {
     if (token == BCT_EOB) { break; }
     if (token != BCT_IDENTIFIER) {
-      scan_err1(lc, T_("Expecting keyword, got: %s\n"), lc->str);
+      scan_err(lc, T_("Expecting keyword, got: %s\n"), lc->str());
       return;
     }
     bool found = false;
     for (int i = 0; newinc_items[i].name; i++) {
-      bool options = Bstrcasecmp(lc->str, "options");
-      if (Bstrcasecmp(newinc_items[i].name, lc->str)) {
+      bool options = Bstrcasecmp(lc->str(), "options");
+      if (Bstrcasecmp(newinc_items[i].name, lc->str())) {
+        p->PushLabel(newinc_items[i].name);
         if (!options) {
           token = LexGetToken(lc, BCT_SKIP_EOL);
           if (token != BCT_EQUALS) {
-            scan_err1(lc, T_("expected an equals, got: %s"), lc->str);
+            scan_err(lc, T_("expected an equals, got: %s"), lc->str());
             return;
           }
         }
+
+        p->PushMergeArray();
         switch (newinc_items[i].type) {
           case CFG_TYPE_FNAME:
-            StoreFname(lc, &newinc_items[i], pass, item->code);
+            StoreFname(p, lc, &newinc_items[i], pass, item->code);
             break;
           case CFG_TYPE_PLUGINNAME:
-            StorePluginName(lc, &newinc_items[i], pass, item->code);
+            StorePluginName(p, lc, &newinc_items[i], pass, item->code);
             break;
           case CFG_TYPE_EXCLUDEDIR:
-            StoreExcludedir(lc, &newinc_items[i], pass, item->code);
+            StoreExcludedir(p, lc, &newinc_items[i], pass, item->code);
             break;
           case CFG_TYPE_OPTIONS:
-            StoreOptionsRes(lc, &newinc_items[i], pass, item->code);
+            StoreOptionsRes(p, lc, &newinc_items[i], pass, item->code);
             has_options = true;
             break;
           default:
             break;
         }
+        p->PopArray();
         found = true;
+
         break;
       }
     }
     if (!found) {
-      scan_err1(lc, T_("Keyword %s not permitted in this resource"), lc->str);
+      scan_err(lc, T_("Keyword %s not permitted in this resource"), lc->str());
       return;
     }
   }
+  p->PopObject();
+  p->PopArray();
 
   if (!has_options) {
     if (pass == 1) { StoreDefaultOptions(); }
@@ -1000,7 +1073,11 @@ static void StoreNewinc(lexer* lc,
  * Store FileSet Include/Exclude info
  *  new style includes are handled in StoreNewinc()
  */
-void StoreInc(lexer* lc, const ResourceItem* item, int index, int pass)
+void StoreInc(ConfigurationParser* p,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
 {
   int token;
 
@@ -1009,10 +1086,10 @@ void StoreInc(lexer* lc, const ResourceItem* item, int index, int pass)
    *  old include has options following the Include. */
   token = LexGetToken(lc, BCT_SKIP_EOL);
   if (token == BCT_BOB) {
-    StoreNewinc(lc, item, index, pass);
+    StoreNewinc(p, lc, item, index, pass);
     return;
   }
-  scan_err0(lc, T_("Old style Include/Exclude not supported\n"));
+  scan_err(lc, T_("Old style Include/Exclude not supported\n"));
 }
 
 json_t* json_incexc(const int type)

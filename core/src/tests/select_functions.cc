@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -116,8 +116,8 @@ TEST_F(JobTypeSelection, PermittedJobtypesFullNamesAreCorrectlyParsed)
   std::vector<char> jobtypelist{};
   std::vector<char> expected_types{};
   std::string argument{};
-  for (int i = 0; allowed_jobtypes[i].type_name; i++) {
-    auto type_name = allowed_jobtypes[i].type_name;
+  for (int i = 0; allowed_jobtypes[i].name; i++) {
+    auto type_name = allowed_jobtypes[i].name;
     argument += type_name;
     argument += ',';
 
@@ -135,7 +135,7 @@ TEST_F(JobTypeSelection, PermittedShortJobtypesAreCorrectlyParsed)
   std::vector<char> jobtypelist{};
   std::vector<char> expected_types{};
   std::string argument{};
-  for (int i = 0; allowed_jobtypes[i].type_name; i++) {
+  for (int i = 0; allowed_jobtypes[i].name; i++) {
     auto jobtype = allowed_jobtypes[i].job_type;
     argument += jobtype;
     argument += ',';
@@ -155,11 +155,11 @@ TEST_F(JobTypeSelection,
   std::vector<char> jobtypelist{};
   std::vector<char> expected_types{};
   std::string argument{};
-  for (int i = 0; allowed_jobtypes[i].type_name; i++) {
+  for (int i = 0; allowed_jobtypes[i].name; i++) {
     auto jobtype = allowed_jobtypes[i];
 
     if (i % 2 == 0) {
-      argument += jobtype.type_name;
+      argument += jobtype.name;
     } else {
       argument += jobtype.job_type;
     }

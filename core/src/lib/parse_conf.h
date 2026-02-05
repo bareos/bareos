@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,6 +42,160 @@
 #include <map>
 #include <vector>
 #include <string>
+
+namespace proto {
+using str = std::string;
+using label = std::string_view;
+struct alias : std::string_view {};
+
+struct error {
+  std::string_view reason;
+  std::string value;
+};
+
+struct obj_begin {};
+struct obj_end {};
+struct arr_begin {
+  bool merge;
+};
+struct arr_end {};
+};  // namespace proto
+
+struct conf_proto;
+
+struct conf_vec {
+  std::vector<conf_proto> data;
+  bool merge;
+};
+using conf_merge = std::vector<conf_proto>;
+using conf_map = std::vector<std::pair<std::string_view, conf_proto>>;
+
+struct conf_proto {
+  std::variant<bool,
+               proto::error,
+               proto::str,
+               int64_t,
+               uint64_t,
+               conf_vec,
+               conf_map>
+      value{false};
+
+  lex_location loc;
+};
+
+struct proto_builder {
+  struct object {
+    conf_map* map{};
+    std::optional<std::string_view> key{};
+  };
+  struct array {
+    conf_vec* vec;
+  };
+  using conf_object = std::variant<object, array>;
+  std::vector<conf_object> open_stack;
+
+  std::unique_ptr<conf_proto> root;
+
+  std::unique_ptr<conf_proto> build()
+  {
+    if (open_stack.size() != 1) { return nullptr; }
+
+    {
+      auto* obj = is_object();
+      if (!obj) { return nullptr; }
+      if (obj->key) { return nullptr; }
+    }
+
+    open_stack.pop_back();
+    return std::move(root);
+  }
+
+  proto_builder()
+  {
+    root = std::make_unique<conf_proto>(conf_map{});
+    open_stack.push_back(object{std::get_if<conf_map>(&root->value)});
+  }
+
+  array* is_array()
+  {
+    if (open_stack.empty()) { return nullptr; }
+    return std::get_if<array>(&open_stack.back());
+  }
+
+  object* is_object()
+  {
+    if (open_stack.empty()) { return nullptr; }
+    return std::get_if<object>(&open_stack.back());
+  }
+
+  void push(bool b) { push_value(conf_proto{b, current_location}); }
+  void push(int64_t i) { push_value(conf_proto{i, current_location}); }
+  void push(uint64_t u) { push_value(conf_proto{u, current_location}); }
+  void push(proto::str s)
+  {
+    push_value(conf_proto{std::move(s), current_location});
+  }
+  void push(proto::error e)
+  {
+    push_value(conf_proto{std::move(e), current_location});
+  }
+
+  void push(proto::label l)
+  {
+    auto* obj = is_object();
+    ASSERT(obj);
+    ASSERT(!obj->key);
+    obj->key = l;
+  }
+  // aliases overwrite keys!
+  void push(proto::alias l)
+  {
+    auto* obj = is_object();
+    ASSERT(obj);
+    ASSERT(obj->key);
+    obj->key = l;
+  }
+  void push(proto::arr_begin arr)
+  {
+    auto& vec = push_value(conf_proto{conf_vec{}, current_location});
+    auto* ptr = std::get_if<conf_vec>(&vec.value);
+    ptr->merge = arr.merge;
+    open_stack.push_back(array{ptr});
+  }
+  void push(proto::arr_end)
+  {
+    ASSERT(is_array());
+    open_stack.pop_back();
+  }
+  void push(proto::obj_begin)
+  {
+    auto& map = push_value(conf_proto{conf_map{}, current_location});
+    open_stack.push_back(object{std::get_if<conf_map>(&map.value)});
+  }
+  void push(proto::obj_end)
+  {
+    ASSERT(is_object());
+    open_stack.pop_back();
+  }
+
+  void push(lex_location loc) { current_location = loc; }
+
+  conf_proto& push_value(conf_proto p)
+  {
+    if (auto* arr = is_array()) {
+      return arr->vec->data.emplace_back(std::move(p));
+    } else if (auto* obj = is_object()) {
+      ASSERT(obj->key);
+      auto& result = obj->map->emplace_back(*obj->key, std::move(p));
+      obj->key.reset();
+      return result.second;
+    } else {
+      ASSERT(0);
+    }
+  }
+
+  lex_location current_location{};
+};
 
 struct ResourceItem;
 class ConfigParserStateMachine;
@@ -111,7 +265,7 @@ enum
   CFG_TYPE_SIZE64 = 21,             /* 64 bits file size */
   CFG_TYPE_SIZE32 = 22,             /* 32 bits file size */
   CFG_TYPE_SPEED = 23,              /* Speed limit */
-  CFG_TYPE_DEFS = 24,               /* Definition */
+  // CFG_TYPE_DEFS = 24,               /* Definition */
   CFG_TYPE_LABEL = 25,              /* Label */
   CFG_TYPE_ADDRESSES = 26,          /* List of ip addresses */
   CFG_TYPE_ADDRESSES_ADDRESS = 27,  /* Ip address */
@@ -153,12 +307,12 @@ enum
   CFG_TYPE_OPTIONS = 83,    /* Options block */
   CFG_TYPE_OPTION = 84,     /* Option of Options block */
   CFG_TYPE_REGEX = 85,      /* Regular Expression */
-  CFG_TYPE_BASE = 86,       /* Basejob Expression */
-  CFG_TYPE_WILD = 87,       /* Wildcard Expression */
-  CFG_TYPE_PLUGIN = 88,     /* Plugin definition */
-  CFG_TYPE_FSTYPE = 89,     /* FileSytem match criterium (UNIX)*/
-  CFG_TYPE_DRIVETYPE = 90,  /* DriveType match criterium (Windows) */
-  CFG_TYPE_META = 91,       /* Meta tag */
+  // CFG_TYPE_BASE = 86,       /* Basejob Expression */
+  CFG_TYPE_WILD = 87,      /* Wildcard Expression */
+  CFG_TYPE_PLUGIN = 88,    /* Plugin definition */
+  CFG_TYPE_FSTYPE = 89,    /* FileSytem match criterium (UNIX)*/
+  CFG_TYPE_DRIVETYPE = 90, /* DriveType match criterium (Windows) */
+  CFG_TYPE_META = 91,      /* Meta tag */
 
   // Storage daemon resource types
   // CFG_TYPE_DEVTYPE = 201,      /* Device Type */
@@ -182,24 +336,107 @@ class ConfigurationParser {
   friend class ConfiguredTlsPolicyGetterPrivate;
   friend class ConfigParserStateMachine;
 
+ private:
+  bool insert_into_shape{true};
+  proto_builder builder;
+
+ public:
+  void EnterPass2() { insert_into_shape = false; }
+
+  void PushLoc(lex_location loc)
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(std::move(loc));
+  }
+
+  void PushError(std::string_view reason, std::string value)
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::error{reason, std::move(value)});
+  }
+  void PushAlias(std::string_view v)
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::alias{v});
+  }
+  template <std::size_t N> void PushAlias(const char (&constant)[N])
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::alias{constant});
+  }
+  void PushLabel(std::string_view v)
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::label{v});
+  }
+  template <std::size_t N> void PushLabel(const char (&constant)[N])
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::label{constant});
+  }
+  void PushString(std::string_view v)
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::str{v});
+  }
+  void PushB(bool b)
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(b);
+  }
+  void PushU(int64_t i)
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(i);
+  }
+  void PushI(uint64_t i)
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(i);
+  }
+  void PushArray()
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::arr_begin{false});
+  }
+  void PushMergeArray()
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::arr_begin{true});
+  }
+  void PopArray()
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::arr_end{});
+  }
+  void PushObject()
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::obj_begin{});
+  }
+  void PopObject()
+  {
+    if (!insert_into_shape) { return; }
+    builder.push(proto::obj_end{});
+  }
+
+  void PrintShape();
+
  public:
   using sender = PRINTF_LIKE(2, 3) bool(void* user, const char* fmt, ...);
   using resource_initer = void(const ResourceItem* item, int pass);
-  using resource_storer = void(lexer* lc,
+  using resource_storer = void(ConfigurationParser* p,
+                               lexer* lc,
                                const ResourceItem* item,
                                int index,
-                               int pass,
-                               BareosResource** configuration_resources);
+                               int pass);
   using resource_printer = void(const ResourceItem& item,
                                 OutputFormatterResource& send,
                                 bool hide_sensitive_data,
                                 bool inherited,
                                 bool verbose);
 
-  std::string cf_;                            /* Config file parameter */
-  lexer::error_handler* scan_error_{nullptr}; /* Error handler if non-null */
-  lexer::warning_handler* scan_warning_{
-      nullptr}; /* Warning handler if non-null */
+  std::string cf_; /* Config file parameter */
   resource_initer* init_res_{
       nullptr}; /* Init resource handler for non default types if non-null */
   resource_storer* store_res_{
@@ -225,8 +462,6 @@ class ConfigurationParser {
 
   ConfigurationParser();
   ConfigurationParser(const char* cf,
-                      lexer::error_handler* scan_error,
-                      lexer::warning_handler* scan_warning,
                       resource_initer* init_res,
                       resource_storer* store_res,
                       resource_printer* print_res,
@@ -248,8 +483,7 @@ class ConfigurationParser {
   bool ParseConfig();
   bool ParseConfigFile(const char* config_file_name,
                        void* caller_ctx,
-                       lexer::error_handler* scan_error = nullptr,
-                       lexer::warning_handler* scan_warning = nullptr);
+                       lexer::error_handler* scan_error = nullptr);
   const std::string& get_base_config_path() const { return used_config_path_; }
   void FreeResources();
 
@@ -296,11 +530,6 @@ class ConfigurationParser {
   void b_UnlockRes(const char* file, int line) const;
   const char* ResToStr(int rcode) const;
   const char* ResGroupToStr(int rcode) const;
-  bool StoreResource(int rcode,
-                     lexer* lc,
-                     const ResourceItem* item,
-                     int index,
-                     int pass);
   void InitializeQualifiedResourceNameTypeConverter(
       const std::map<int, std::string>&);
   QualifiedResourceNameTypeConverter* GetQualifiedResourceNameTypeConverter()
@@ -328,12 +557,6 @@ class ConfigurationParser {
   ConfigurationParser operator=(const ConfigurationParser&) = delete;
 
  private:
-  enum unit_type
-  {
-    STORE_SIZE,
-    STORE_SPEED
-  };
-
   std::string config_default_filename_; /* default config filename, that is
                                            used, if no filename is given */
   std::string config_dir_; /* base directory of configuration files */
@@ -362,70 +585,7 @@ class ConfigurationParser {
   bool GetConfigIncludePath(PoolMem& full_path, const char* config_dir);
   bool FindConfigPath(PoolMem& full_path);
   int GetResourceTableIndex(const char* resource_type_name);
-  void StoreMsgs(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreName(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreStrname(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreStr(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreStdstr(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreDir(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreStdstrdir(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreMd5Password(lexer* lc,
-                        const ResourceItem* item,
-                        int index,
-                        int pass);
-  void StoreClearpassword(lexer* lc,
-                          const ResourceItem* item,
-                          int index,
-                          int pass);
-  void StoreRes(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreAlistRes(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreAlistStr(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreStdVectorStr(lexer* lc,
-                         const ResourceItem* item,
-                         int index,
-                         int pass);
-  void StoreAlistDir(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StorePluginNames(lexer* lc,
-                        const ResourceItem* item,
-                        int index,
-                        int pass);
-  void StoreDefs(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_int16(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_int32(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_pint16(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_pint32(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_int64(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_int_unit(lexer* lc,
-                      const ResourceItem* item,
-                      int index,
-                      int pass,
-                      bool size32,
-                      enum unit_type type);
-  void store_size32(lexer* lc, const ResourceItem* item, int index, int pass);
-  void store_size64(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreSpeed(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreTime(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreBit(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreBool(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreLabel(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreAddresses(lexer* lc, const ResourceItem* item, int index, int pass);
-  void StoreAddressesAddress(lexer* lc,
-                             const ResourceItem* item,
-                             int index,
-                             int pass);
-  void StoreAddressesPort(lexer* lc,
-                          const ResourceItem* item,
-                          int index,
-                          int pass);
-  void ScanTypes(lexer* lc,
-                 MessagesResource* msg,
-                 MessageDestinationCode dest_code,
-                 const std::string& where,
-                 const std::string& cmd,
-                 const std::string& timestamp_format);
-  void lex_error(const char* cf,
-                 lexer::error_handler* ScanError,
-                 lexer::warning_handler* scan_warning) const;
+  void lex_error(const char* cf, lexer::error_handler* ScanError) const;
   void SetAllResourceDefaultsByParserPass(int rcode,
                                           const ResourceItem items[],
                                           int pass);
@@ -527,5 +687,33 @@ class ResLocker {
   ResLocker(ResLocker&&) = delete;
   ResLocker& operator=(ResLocker&&) = delete;
 };
+bool StoreResource(ConfigurationParser* p,
+                   int rcode,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass);
+
+template <typename KeyWord, size_t N>
+auto ReadKeyword(ConfigurationParser* conf,
+                 lexer* lc,
+                 const KeyWord (&keywords)[N]) -> const KeyWord*
+{
+  LexGetToken(lc, BCT_NAME);
+
+  for (size_t i = 0; i < std::size(keywords); ++i) {
+    auto& keyword = keywords[i];
+    if (!keyword.name) { continue; }
+    if (Bstrcasecmp(lc->str(), keyword.name)) {
+      conf->PushString(keyword.name);
+      return &keyword;
+    }
+  }
+
+  conf->PushError("unknown keyword", lc->str());
+
+  return nullptr;
+}
+
 
 #endif  // BAREOS_LIB_PARSE_CONF_H_

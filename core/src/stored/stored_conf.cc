@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -259,33 +259,29 @@ static s_kw compression_algorithms[]
        {"lzfast", COMPRESS_FZFZ}, {"lz4", COMPRESS_FZ4L},
        {"lz4hc", COMPRESS_FZ4H},  {NULL, 0}};
 
-static void StoreAuthenticationType(lexer* lc,
+static void StoreAuthenticationType(ConfigurationParser* conf,
+                                    lexer* lc,
                                     const ResourceItem* item,
                                     int index,
                                     int)
 {
-  int i;
+  auto found = ReadKeyword(conf, lc, authentication_methods);
 
-  LexGetToken(lc, BCT_NAME);
-  // Store the type both pass 1 and pass 2
-  for (i = 0; authentication_methods[i].name; i++) {
-    if (Bstrcasecmp(lc->str, authentication_methods[i].name)) {
-      SetItemVariable<uint32_t>(*item, authentication_methods[i].token);
-      i = 0;
-      break;
-    }
+  if (!found) {
+    scan_err(lc, T_("Expected a Authentication Type keyword, got: %s"),
+             lc->str());
+  } else {
+    SetItemVariable<uint32_t>(*item, found->token);
   }
-  if (i != 0) {
-    scan_err1(lc, T_("Expected a Authentication Type keyword, got: %s"),
-              lc->str);
-  }
+
   ScanToEol(lc);
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
 // Store password either clear if for NDMP or MD5 hashed for native.
-static void StoreAutopassword(lexer* lc,
+static void StoreAutopassword(ConfigurationParser* conf,
+                              lexer* lc,
                               const ResourceItem* item,
                               int index,
                               int pass)
@@ -297,56 +293,50 @@ static void StoreAutopassword(lexer* lc,
        * and for clear we need a code of 1. */
       switch (item->code) {
         case 1:
-          my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index,
-                                   pass);
+          StoreResource(conf, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
           break;
         default:
-          my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+          StoreResource(conf, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
           break;
       }
       break;
     case R_NDMP:
-      my_config->StoreResource(CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
+      StoreResource(conf, CFG_TYPE_CLEARPASSWORD, lc, item, index, pass);
       break;
     default:
-      my_config->StoreResource(CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
+      StoreResource(conf, CFG_TYPE_MD5PASSWORD, lc, item, index, pass);
       break;
   }
 }
 
 // Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
-static void StoreMaxblocksize(lexer* lc,
+static void StoreMaxblocksize(ConfigurationParser* conf,
+                              lexer* lc,
                               const ResourceItem* item,
                               int index,
                               int pass)
 {
-  my_config->StoreResource(CFG_TYPE_SIZE32, lc, item, index, pass);
+  StoreResource(conf, CFG_TYPE_SIZE32, lc, item, index, pass);
   if (GetItemVariable<uint32_t>(*item) > MAX_BLOCK_LENGTH) {
-    scan_err2(lc,
-              T_("Maximum Block Size configured value %u is greater than "
-                 "allowed maximum: %u"),
-              GetItemVariable<uint32_t>(*item), MAX_BLOCK_LENGTH);
+    scan_err(lc,
+             T_("Maximum Block Size configured value %u is greater than "
+                "allowed maximum: %u"),
+             GetItemVariable<uint32_t>(*item), MAX_BLOCK_LENGTH);
   }
 }
 
 // Store the IO direction on a certain device.
-static void StoreIoDirection(lexer* lc,
+static void StoreIoDirection(ConfigurationParser* conf,
+                             lexer* lc,
                              const ResourceItem* item,
                              int index,
                              int)
 {
-  int i;
-
-  LexGetToken(lc, BCT_NAME);
-  for (i = 0; io_directions[i].name; i++) {
-    if (Bstrcasecmp(lc->str, io_directions[i].name)) {
-      SetItemVariable<IODirection>(*item, io_directions[i].token);
-      i = 0;
-      break;
-    }
-  }
-  if (i != 0) {
-    scan_err1(lc, T_("Expected a IO direction keyword, got: %s"), lc->str);
+  auto found = ReadKeyword(conf, lc, io_directions);
+  if (!found) {
+    scan_err(lc, T_("Expected a IO direction keyword, got: %s"), lc->str());
+  } else {
+    SetItemVariable<IODirection>(*item, found->token);
   }
   ScanToEol(lc);
   item->SetPresent();
@@ -354,25 +344,19 @@ static void StoreIoDirection(lexer* lc,
 }
 
 // Store the compression algorithm to use on a certain device.
-static void StoreCompressionalgorithm(lexer* lc,
+static void StoreCompressionalgorithm(ConfigurationParser* conf,
+                                      lexer* lc,
                                       const ResourceItem* item,
                                       int index,
                                       int)
 {
-  int i;
+  auto found = ReadKeyword(conf, lc, compression_algorithms);
 
-  LexGetToken(lc, BCT_NAME);
-  for (i = 0; compression_algorithms[i].name; i++) {
-    if (Bstrcasecmp(lc->str, compression_algorithms[i].name)) {
-      SetItemVariable<uint32_t>(*item,
-                                compression_algorithms[i].token & 0xffffffff);
-      i = 0;
-      break;
-    }
-  }
-  if (i != 0) {
-    scan_err1(lc, T_("Expected a Compression algorithm keyword, got: %s"),
-              lc->str);
+  if (!found) {
+    scan_err(lc, T_("Expected a Compression algorithm keyword, got: %s"),
+             lc->str());
+  } else {
+    SetItemVariable<uint32_t>(*item, found->token & 0xffffffff);
   }
   ScanToEol(lc);
   item->SetPresent();
@@ -405,27 +389,27 @@ static void InitResourceCb(const ResourceItem* item, int pass)
   }
 }
 
-static void ParseConfigCb(lexer* lc,
+static void ParseConfigCb(ConfigurationParser* conf,
+                          lexer* lc,
                           const ResourceItem* item,
                           int index,
-                          int pass,
-                          BareosResource**)
+                          int pass)
 {
   switch (item->type) {
     case CFG_TYPE_AUTOPASSWORD:
-      StoreAutopassword(lc, item, index, pass);
+      StoreAutopassword(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_AUTHTYPE:
-      StoreAuthenticationType(lc, item, index, pass);
+      StoreAuthenticationType(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_MAXBLOCKSIZE:
-      StoreMaxblocksize(lc, item, index, pass);
+      StoreMaxblocksize(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_IODIRECTION:
-      StoreIoDirection(lc, item, index, pass);
+      StoreIoDirection(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_CMPRSALGO:
-      StoreCompressionalgorithm(lc, item, index, pass);
+      StoreCompressionalgorithm(conf, lc, item, index, pass);
       break;
     default:
       break;
@@ -637,10 +621,10 @@ static void ConfigReadyCallback(ConfigurationParser& config)
 ConfigurationParser* InitSdConfig(const char* t_configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      t_configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
-      exit_code, R_NUM, resources, default_config_filename.c_str(),
-      "bareos-sd.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
-      DumpResource, FreeResource);
+      t_configfile, InitResourceCb, ParseConfigCb, nullptr, exit_code, R_NUM,
+      resources, default_config_filename.c_str(), "bareos-sd.d",
+      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
+      FreeResource);
   if (config) { config->r_own_ = R_STORAGE; }
   return config;
 }

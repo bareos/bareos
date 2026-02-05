@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -156,37 +156,12 @@ static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
     Jmsg(jcr, M_FATAL, 0,
          T_("Bootstrap file error: %s\n"
             "            : Line %d, col %d of file %s\n%s\n"),
-         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
+         buf.c_str(), lc->line_no(), lc->col_no(), lc->fname(), lc->line());
   } else {
     e_msg(file, line, M_FATAL, 0,
           T_("Bootstrap file error: %s\n"
              "            : Line %d, col %d of file %s\n%s\n"),
-          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
-  }
-}
-
-// Format a scanner warning message
-PRINTF_LIKE(4, 5)
-static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
-{
-  va_list ap;
-  PoolMem buf(PM_NAME);
-  JobControlRecord* jcr = (JobControlRecord*)(lc->caller_ctx);
-
-  va_start(ap, msg);
-  buf.Bvsprintf(msg, ap);
-  va_end(ap);
-
-  if (jcr) {
-    Jmsg(jcr, M_WARNING, 0,
-         T_("Bootstrap file warning: %s\n"
-            "            : Line %d, col %d of file %s\n%s\n"),
-         buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
-  } else {
-    p_msg(file, line, 0,
-          T_("Bootstrap file warning: %s\n"
-             "            : Line %d, col %d of file %s\n%s\n"),
-          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line);
+          buf.c_str(), lc->line_no(), lc->col_no(), lc->fname(), lc->line());
   }
 }
 
@@ -221,7 +196,7 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
   storagedaemon::BootStrapRecord* bsr = root_bsr;
 
   Dmsg1(300, "Enter parse_bsf %s\n", fname);
-  if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
+  if ((lc = lex_open_file(lc, fname, s_err)) == NULL) {
     BErrNo be;
     Emsg2(M_ERROR_TERM, 0, T_("Cannot open bootstrap file %s: %s\n"), fname,
           be.bstrerror());
@@ -231,11 +206,11 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
     Dmsg1(300, "parse got token=%s\n", lex_tok_to_str(token));
     if (token == BCT_EOL) { continue; }
     for (i = 0; items[i].name; i++) {
-      if (Bstrcasecmp(items[i].name, lc->str)) {
+      if (Bstrcasecmp(items[i].name, lc->str())) {
         token = LexGetToken(lc, BCT_ALL);
         Dmsg1(300, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
         if (token != BCT_EQUALS) {
-          scan_err1(lc, "expected an equals, got: %s", lc->str);
+          scan_err(lc, "expected an equals, got: %s", lc->str());
           bsr = NULL;
           break;
         }
@@ -247,8 +222,8 @@ storagedaemon::BootStrapRecord* parse_bsr(JobControlRecord* jcr, char* fname)
       }
     }
     if (i >= 0) {
-      Dmsg1(300, "Keyword = %s\n", lc->str);
-      scan_err1(lc, "Keyword %s not found", lc->str);
+      Dmsg1(300, "Keyword = %s\n", lc->str());
+      scan_err(lc, "Keyword %s not found", lc->str());
       bsr = NULL;
       break;
     }
@@ -274,7 +249,7 @@ static storagedaemon::BootStrapRecord* store_vol(
 {
   int token;
   storagedaemon::BsrVolume* volume;
-  char *p, *n;
+  const char *p, *n;
 
   token = LexGetToken(lc, BCT_STRING);
   if (token == BCT_ERROR) { return NULL; }
@@ -286,13 +261,26 @@ static storagedaemon::BootStrapRecord* store_vol(
   /* This may actually be more than one volume separated by a |
    * If so, separate them.
    */
-  for (p = lc->str; p && *p;) {
+  for (p = lc->str(); p && *p;) {
     n = strchr(p, '|');
-    if (n) { *n++ = 0; }
     volume
         = (storagedaemon::BsrVolume*)malloc(sizeof(storagedaemon::BsrVolume));
     memset(volume, 0, sizeof(storagedaemon::BsrVolume));
-    bstrncpy(volume->VolumeName, p, sizeof(volume->VolumeName));
+
+    if (n) {
+      size_t name_size = n - p;
+      if (name_size > sizeof(volume->VolumeName) - 1) {
+        name_size = sizeof(volume->VolumeName) - 1;
+      }
+
+      memcpy(volume->VolumeName, p, name_size);
+      volume->VolumeName[name_size] = 0;
+
+      p = n + 1;
+    } else {
+      bstrncpy(volume->VolumeName, p, sizeof(volume->VolumeName));
+      p = nullptr;
+    }
 
     // Add it to the end of the volume chain
     if (!bsr->volume) {
@@ -302,7 +290,6 @@ static storagedaemon::BootStrapRecord* store_vol(
       for (; bc->next; bc = bc->next) {}
       bc->next = volume;
     }
-    p = n;
   }
   return bsr;
 }
@@ -318,12 +305,12 @@ static storagedaemon::BootStrapRecord* store_mediatype(
   if (token == BCT_ERROR) { return NULL; }
   if (!bsr->volume) {
     Emsg1(M_ERROR, 0, T_("MediaType %s in bsr at inappropriate place.\n"),
-          lc->str);
+          lc->str());
     return bsr;
   }
   storagedaemon::BsrVolume* bv;
   for (bv = bsr->volume; bv; bv = bv->next) {
-    bstrncpy(bv->MediaType, lc->str, sizeof(bv->MediaType));
+    bstrncpy(bv->MediaType, lc->str(), sizeof(bv->MediaType));
   }
   return bsr;
 }
@@ -350,12 +337,12 @@ static storagedaemon::BootStrapRecord* StoreDevice(
   if (token == BCT_ERROR) { return NULL; }
   if (!bsr->volume) {
     Emsg1(M_ERROR, 0, T_("Device \"%s\" in bsr at inappropriate place.\n"),
-          lc->str);
+          lc->str());
     return bsr;
   }
   storagedaemon::BsrVolume* bv;
   for (bv = bsr->volume; bv; bv = bv->next) {
-    bstrncpy(bv->device, lc->str, sizeof(bv->device));
+    bstrncpy(bv->device, lc->str(), sizeof(bv->device));
   }
   return bsr;
 }
@@ -373,7 +360,7 @@ static storagedaemon::BootStrapRecord* store_client(
     client
         = (storagedaemon::BsrClient*)malloc(sizeof(storagedaemon::BsrClient));
     memset(client, 0, sizeof(storagedaemon::BsrClient));
-    bstrncpy(client->ClientName, lc->str, sizeof(client->ClientName));
+    bstrncpy(client->ClientName, lc->str(), sizeof(client->ClientName));
 
     // Add it to the end of the client chain
     if (!bsr->client) {
@@ -401,7 +388,7 @@ static storagedaemon::BootStrapRecord* store_job(
     if (token == BCT_ERROR) { return NULL; }
     job = (storagedaemon::BsrJob*)malloc(sizeof(storagedaemon::BsrJob));
     memset(job, 0, sizeof(storagedaemon::BsrJob));
-    bstrncpy(job->Job, lc->str, sizeof(job->Job));
+    bstrncpy(job->Job, lc->str(), sizeof(job->Job));
 
     // Add it to the end of the client chain
     if (!bsr->job) {
@@ -503,7 +490,7 @@ static storagedaemon::BootStrapRecord* store_fileregex(
   if (token == BCT_ERROR) { return NULL; }
 
   if (bsr->fileregex) free(bsr->fileregex);
-  bsr->fileregex = strdup(lc->str);
+  bsr->fileregex = strdup(lc->str());
 
   if (bsr->fileregex_re == NULL) {
     bsr->fileregex_re = (regex_t*)malloc(sizeof(regex_t));

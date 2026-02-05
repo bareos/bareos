@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -641,58 +641,41 @@ char* encode_mode(mode_t mode, char* buf)
 }
 
 #if defined(HAVE_WIN32)
-int DoShellExpansion(char* name, int name_len)
+char* DoShellExpansion(const char* name)
 {
-  char* src = strdup(name);
+  // this should return chars needed + 1 (NUL) + 1 (for some ascii reason)
+  DWORD space_required = ExpandEnvironmentStringsA(name, nullptr, 0);
 
-  ExpandEnvironmentStrings(src, name, name_len);
+  if (space_required == 0) { return strdup(name); }
 
-  free(src);
+  char* expanded = static_cast<char*>(malloc(space_required + 1));
 
-  return 1;
+  // since this fits, it should return chars needed + 1 (for some reason)
+  DWORD space_used = ExpandEnvironmentStringsA(name, expanded, space_required);
+
+  Dmsg3(2000,
+        "ShellExpansion(%s) => %s needed %u bytes and we wrote %u bytes.  The "
+        "last char "
+        "is '%c' (%d)\n",
+        name, space_used > 0 ? expanded : "(error)", space_required, space_used,
+        space_used > 0 ? expanded[space_used - 1] : 0,
+        space_used > 0 ? expanded[space_used - 1] : -1);
+
+  // we expect space_used to be exactly one smaller than space_required
+  // (see above)
+  if (space_used + 1 != space_required) {
+    free(expanded);
+    return strdup(name);
+  }
+
+  // ExpandEnvironmentStrings should null terminate the string already
+  // but just to be 100% sure, we add a null byte at the end of the buffer.
+  expanded[space_required] = '\0';
+
+  return expanded;
 }
 #else
-int DoShellExpansion(char* name, int name_len)
-{
-  static char meta[] = "~\\$[]*?`'<>\"";
-  bool found = false;
-  int len, i, status;
-  POOLMEM *cmd, *line;
-  Bpipe* bpipe;
-  const char* shellcmd;
-
-  // Check if any meta characters are present
-  len = strlen(meta);
-  for (i = 0; i < len; i++) {
-    if (strchr(name, meta[i])) {
-      found = true;
-      break;
-    }
-  }
-  if (found) {
-    cmd = GetPoolMemory(PM_FNAME);
-    line = GetPoolMemory(PM_FNAME);
-    // Look for shell
-    if ((shellcmd = getenv("SHELL")) == NULL) { shellcmd = "/bin/sh"; }
-    PmStrcpy(cmd, shellcmd);
-    PmStrcat(cmd, " -c \"echo ");
-    PmStrcat(cmd, name);
-    PmStrcat(cmd, "\"");
-    Dmsg1(400, "Send: %s\n", cmd);
-    if ((bpipe = OpenBpipe(cmd, 0, "r"))) {
-      bfgets(line, bpipe->rfd);
-      StripTrailingJunk(line);
-      status = CloseBpipe(bpipe);
-      Dmsg2(400, "status=%d got: %s\n", status, line);
-    } else {
-      status = 1; /* error */
-    }
-    if (status == 0) { bstrncpy(name, line, name_len); }
-    FreePoolMemory(cmd);
-    FreePoolMemory(line);
-  }
-  return 1;
-}
+char* DoShellExpansion(const char* name) { return strdup(name); }
 #endif
 
 /* Create a new session key. key needs to be able to hold at least

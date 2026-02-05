@@ -49,10 +49,11 @@
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
+#include "job_levels.h"
+
 namespace directordaemon {
 
 /* Imported variables */
-extern struct s_jl joblevels[];
 extern struct s_jt jobtypes[];
 extern struct s_kw ActionOnPurgeOptions[];
 extern struct s_kw VolumeStatus[];
@@ -960,9 +961,9 @@ bool DotAopCmd(UaContext* ua, const char*)
 bool DotTypesCmd(UaContext* ua, const char*)
 {
   ua->send->ArrayStart("jobtypes");
-  for (int i = 0; jobtypes[i].type_name; i++) {
+  for (int i = 0; jobtypes[i].name; i++) {
     ua->send->ObjectStart();
-    ua->send->ObjectKeyValue("name", jobtypes[i].type_name, "%s\n");
+    ua->send->ObjectKeyValue("name", jobtypes[i].name, "%s\n");
     ua->send->ObjectEnd();
   }
   ua->send->ArrayEnd("jobtypes");
@@ -1159,10 +1160,10 @@ bool DotLevelsCmd(UaContext* ua, const char*)
   // Note some levels are blank, which means none is needed
   ua->send->ArrayStart("levels");
   if (ua->argc == 1) {
-    for (int i = 0; joblevels[i].level_name; i++) {
-      if (joblevels[i].level_name[0] != ' ') {
+    for (int i = 0; joblevels[i].name; i++) {
+      if (joblevels[i].name[0] != ' ') {
         ua->send->ObjectStart();
-        ua->send->ObjectKeyValue("name", joblevels[i].level_name, "%s\n");
+        ua->send->ObjectKeyValue("name", joblevels[i].name, "%s\n");
         ua->send->ObjectKeyValue("level", joblevels[i].level);
         ua->send->ObjectKeyValue("jobtype", joblevels[i].job_type);
         ua->send->ObjectEnd();
@@ -1172,18 +1173,17 @@ bool DotLevelsCmd(UaContext* ua, const char*)
     int jobtype = 0;
 
     // Assume that first argument is the Job Type
-    for (int i = 0; jobtypes[i].type_name; i++) {
-      if (Bstrcasecmp(ua->argk[1], jobtypes[i].type_name)) {
+    for (int i = 0; jobtypes[i].name; i++) {
+      if (Bstrcasecmp(ua->argk[1], jobtypes[i].name)) {
         jobtype = jobtypes[i].job_type;
         break;
       }
     }
 
-    for (int i = 0; joblevels[i].level_name; i++) {
-      if ((joblevels[i].job_type == jobtype)
-          && (joblevels[i].level_name[0] != ' ')) {
+    for (int i = 0; joblevels[i].name; i++) {
+      if ((joblevels[i].job_type == jobtype) && (joblevels[i].name[0] != ' ')) {
         ua->send->ObjectStart();
-        ua->send->ObjectKeyValue("name", joblevels[i].level_name, "%s\n");
+        ua->send->ObjectKeyValue("name", joblevels[i].name, "%s\n");
         ua->send->ObjectKeyValue("level", joblevels[i].level);
         ua->send->ObjectKeyValue("jobtype", joblevels[i].job_type);
         ua->send->ObjectEnd();

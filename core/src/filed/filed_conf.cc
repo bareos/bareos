@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -165,22 +165,20 @@ static struct s_kw CryptoCiphers[]
        {"aes256hmacsha1", CRYPTO_CIPHER_AES_256_CBC_HMAC_SHA1},
        {NULL, 0}};
 
-static void StoreCipher(lexer* lc, const ResourceItem* item, int index, int)
+static void StoreCipher(ConfigurationParser* conf,
+                        lexer* lc,
+                        const ResourceItem* item,
+                        int index,
+                        int)
 {
-  int i;
-  LexGetToken(lc, BCT_NAME);
+  auto found = ReadKeyword(conf, lc, CryptoCiphers);
 
-  // Scan Crypto Ciphers name.
-  for (i = 0; CryptoCiphers[i].name; i++) {
-    if (Bstrcasecmp(lc->str, CryptoCiphers[i].name)) {
-      SetItemVariable<uint32_t>(*item, CryptoCiphers[i].token);
-      i = 0;
-      break;
-    }
+  if (!found) {
+    scan_err(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str());
+  } else {
+    SetItemVariable<uint32_t>(*item, found->token);
   }
-  if (i != 0) {
-    scan_err1(lc, T_("Expected a Crypto Cipher option, got: %s"), lc->str);
-  }
+
   ScanToEol(lc);
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
@@ -215,15 +213,15 @@ static void InitResourceCb(const ResourceItem* item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function ParseConfig, for more generic handling.
  */
-static void ParseConfigCb(lexer* lc,
+static void ParseConfigCb(ConfigurationParser* conf,
+                          lexer* lc,
                           const ResourceItem* item,
                           int index,
-                          int pass,
-                          BareosResource**)
+                          int pass)
 {
   switch (item->type) {
     case CFG_TYPE_CIPHER:
-      StoreCipher(lc, item, index, pass);
+      StoreCipher(conf, lc, item, index, pass);
       break;
     default:
       break;
@@ -245,10 +243,10 @@ static void ConfigReadyCallback(ConfigurationParser&) {}
 ConfigurationParser* InitFdConfig(const char* t_configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      t_configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
-      exit_code, R_NUM, resources, default_config_filename.c_str(),
-      "bareos-fd.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
-      DumpResource, FreeResource);
+      t_configfile, InitResourceCb, ParseConfigCb, nullptr, exit_code, R_NUM,
+      resources, default_config_filename.c_str(), "bareos-fd.d",
+      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
+      FreeResource);
   if (config) { config->r_own_ = R_CLIENT; }
   return config;
 }

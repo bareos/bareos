@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -43,7 +43,7 @@ ${SSH} rm -Rf "/ifs/home/regress/${NDMP_FILESYSTEM}"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/restore.out
-restore jobid=2 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump select current
+restore select jobid=2 client=isilon fileset=isilon-fileset restorejob=NDMPRestoreDump
 mark /ifs/home/regress/${NDMP_FILESYSTEM}/incremental
 done
 yes
@@ -54,7 +54,7 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore.out"
 
-${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental" | grep "${NDMP_FILESYSTEM}"
+${SSH} "tail -c 200 /ifs/home/regress/${NDMP_FILESYSTEM}/incremental" | grep "${NDMP_FILESYSTEM}-1"
 
 check_for_zombie_jobs storage=isilonfile client=bareos-fd
 

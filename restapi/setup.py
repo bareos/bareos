@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -52,7 +52,7 @@ def get_version():
 setup(
     name="bareos-restapi",
     version=get_version(),
-    license="AGPLv3",
+    license="AGPL-3.0-only",
     author="Bareos Team",
     author_email="packager@bareos.com",
     packages=find_packages(),

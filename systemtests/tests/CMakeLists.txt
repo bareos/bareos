@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -106,6 +106,7 @@ add_subdirectory(random-commands)
 add_subdirectory(reload)
 add_subdirectory(restapi)
 add_subdirectory(restore)
+add_subdirectory(restore-select)
 add_subdirectory(scheduler)
 add_subdirectory(scsicrypto)
 add_subdirectory(sd-volume-limit)
