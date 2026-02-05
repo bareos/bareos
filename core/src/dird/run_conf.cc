@@ -36,6 +36,8 @@
 
 #include "job_levels.h"
 
+#include <charconv>
+
 namespace directordaemon {
 
 // Forward referenced subroutines
