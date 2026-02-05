@@ -46,6 +46,7 @@
 #include "lib/berrno.h"
 #include "lib/bsock.h"
 #include "lib/btimers.h"
+#include "lib/message.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 #include "lib/version.h"
@@ -200,6 +201,8 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 
   CleanupCompression(jcr);
   CryptoSessionEnd(jcr);
+
+  Jmsg(jcr, M_INFO, 0, "finished sending data");
 
   Dmsg1(100, "end blast_data ok=%d\n", ok);
   return ok;
@@ -843,6 +846,8 @@ bail_out:
   }
   if (bsctx.digest) { CryptoDigestFree(bsctx.digest); }
   if (bsctx.signing_digest) { CryptoDigestFree(bsctx.signing_digest); }
+
+  DequeueMessages(jcr);
 
   return rtnstat;
 }
