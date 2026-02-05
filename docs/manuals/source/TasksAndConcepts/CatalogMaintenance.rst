@@ -22,9 +22,8 @@ dbconfig-common (Debian)
 .. index::
    single: Platform; Debian; dbconfig-common
    single: Platform; Ubuntu; dbconfig-common
-   single: Platform; Univention Corporate Server; dbconfig-common
 
-Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian / Ubuntu / UCS packages support the **dbconfig-common** mechanism to create and update the Bareos database, according to the user choices.
+Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian and Ubuntu packages support the **dbconfig-common** mechanism to create and update the Bareos database, according to the user choices.
 
 The first choice is, if **dbconfig-common** should be used at all. If you decide against it, the database must be configured manually, see :ref:`CatMaintenanceManualConfiguration`.
 
@@ -32,7 +31,7 @@ If you decided to use **dbconfig-common**, the next question will be asked.
 
 .. image:: /include/images/dbconfig-1-enable.*
 
-The **dbconfig-common** configuration (and credentials) is done by the **bareos-database-common** package. Settings are stored in the file :file:`/etc/dbconfig-common/bareos-database-common.conf`. If you need to repeat this step, you can use the :command:`dpkg-reconfigure bareos-database-common` command.
+The **dbconfig-common** configuration (and credentials) is done by the **bareos-database-common** package. Settings are stored in the file :file:`/etc/dbconfig-common/bareos-database-common.conf`.
 
 The Bareos database backend will get automatically configured in :file:`/etc/bareos/bareos-dir.d/catalog/MyCatalog.conf`. If the Server is not running locally you need to specify :config:option:`dir/catalog/DbAddress`\  in the catalog resource. A later reconfiguration might require manual changes.
 
