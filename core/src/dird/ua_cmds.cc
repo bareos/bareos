@@ -166,7 +166,6 @@ static bool DoTruncate(UaContext* ua,
 bool quit_cmd(UaContext* ua, const char* cmd);
 
 const char list_cmd_usage[] = NT_(
-    "basefiles ( jobid=<jobid> | ujobid=<complete_name> ) | "
     "backups client=<client-name> [fileset=<fileset-name>] "
     "[jobstatus=<status>] [level=<level>] [order=<asc|desc>] "
     "[limit=<number>] [days=<number>] [hours=<number>] | "
