@@ -16,14 +16,6 @@ FROM
          WHERE
             File.JobId IN (%s) AND
             PathId = %s
-        UNION ALL
-        SELECT JobTDate, PathId, File.Name
-        FROM BaseFiles
-        JOIN File USING (FileId)
-        JOIN Job ON (BaseJobId = Job.JobId)
-        WHERE
-           BaseFiles.JobId IN (%s) AND
-           PathId = %s
       ) AS tmp
       GROUP BY PathId, Name
       LIMIT %lld
@@ -36,9 +28,5 @@ WHERE
    T1.Name = File.Name AND
    File.Name != '' AND
    File.FileIndex > 0 %s
-   AND (
-      Job.JobId IN (
-         SELECT DISTINCT BaseJobId FROM BaseFiles WHERE JobId IN (%s)
-      ) OR
-      Job.JobId IN (%s)
-   )
+   AND Job.JobId IN (%s)
+   
