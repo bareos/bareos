@@ -7,6 +7,30 @@ set -e
 #set -x
 #echo "bareos-database-common.config: $@" >&2
 
+bareos_db_set_default()
+{
+  key="$1"
+  value="$2"
+
+  if db_fget "$key" seen; then
+    if [ "$RET" = "false" ]; then
+      db_set "$key" "$value"
+    fi
+  fi
+}
+
+bareos_db_compare()
+{
+  key="$1"
+  value="$2"
+
+  db_get "$key" || return $?
+  if [ "$RET" = "$value" ]; then
+    return 0
+  fi
+  return 1
+}
+
 if [ -r @scriptdir@/bareos-config-lib.sh ]; then
   . @scriptdir@/bareos-config-lib.sh
   if [ -f /usr/share/dbconfig-common/dpkg/config ]; then
@@ -15,6 +39,10 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
     dbc_dbname=@db_name@ || true
     dbc_dbuser=@db_user@ || true
     dbc_dbtypes="pgsql"
+    # This setting indicates, that we want to use ident as authmethod.
+    # However, at least in dbconfig-common-2.0.25 this hint does not get applied.
+    # Therefore we later on use bareos_db_set_default to modify this default.
+    dbc_authmethod_user="ident"
     # action
     if [ $# -gt 0 ]; then
       param1="$1"
@@ -27,12 +55,12 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
       shift
     fi
 
-    # When upgrading from an older version (param2),
-    # do not pass the version number of the old package.
-    # Instead we pass the database version number of the old package.
-    if [ "$param2" ]; then
-      case "$param1" in
-        configure | reconfigure)
+    case "$param1" in
+      configure | reconfigure)
+        if [ "$param2" ]; then
+          # When upgrading from an older version (param2),
+          # do not pass the version number of the old package.
+          # Instead we pass the database version number of the old package.
           param2=$(get_database_version_by_release "$param2")
 
           # dbconfig is available since Bareos version >= 14.1.0.
@@ -48,21 +76,40 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
               dbc_authmethod_user="password"
             fi
           fi
-          ;;
-        *) ;;
-      esac
-    fi
+        fi
+        ;;
+      *) ;;
+    esac
 
-    dbc_go bareos-database-common $param1 $param2 $@
+    dbc_go bareos-database-common "$param1" "$param2" "$@"
 
-    if [ "$bareos_migrate_to_dbconfig" = "yes" ]; then
-      # TODO: check if settings app-pass to "" is really required.
-      #       Or is it only required for "DEBIAN_FRONTEND=noninteractive" ?
-      if [ -z "${bareos_database_password}" ]; then
-        #db_set bareos-database-common/pgsql/authmethod-user "ident"
-        # workaround: if an empty database password is defined, explicitly set it
-        db_set bareos-database-common/pgsql/app-pass ""
-      fi
-    fi
+    case "$param1" in
+      configure | reconfigure)
+        if [ "$param2" ]; then
+          if [ "$bareos_migrate_to_dbconfig" = "yes" ]; then
+            if [ -z "${bareos_database_password}" ]; then
+              # workaround: if an empty database password is defined, explicitly set it
+              db_set bareos-database-common/pgsql/app-pass ""
+            fi
+          fi
+        else
+          # param2 is not set, so initial installation.
+          # Define our preferences, that differ from dbconfig-common defaults:
+          bareos_db_set_default "bareos-database-common/pgsql/method" "Unix socket"
+          if bareos_db_compare "bareos-database-common/pgsql/method" "Unix socket"; then
+            # when using "Unix socket", use "ident" by default.
+            bareos_db_set_default "bareos-database-common/pgsql/authmethod-user" "ident"
+          fi
+        fi
+        # Per default, don't use dbconfig internal backup mechanism.
+        # Bareos is doing a catalog backup itself.
+        # Also the Bareos database can get very large,
+        # so that a dump may not fit
+        # on the default backup path (/var/cache/dbconfig-common/backups/).
+        bareos_db_set_default "bareos-database-common/upgrade-backup" "false"
+        ;;
+      *) ;;
+    esac
+
   fi
 fi

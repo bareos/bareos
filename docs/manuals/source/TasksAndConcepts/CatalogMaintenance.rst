@@ -22,9 +22,8 @@ dbconfig-common (Debian)
 .. index::
    single: Platform; Debian; dbconfig-common
    single: Platform; Ubuntu; dbconfig-common
-   single: Platform; Univention Corporate Server; dbconfig-common
 
-Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian / Ubuntu / UCS packages support the **dbconfig-common** mechanism to create and update the Bareos database, according to the user choices.
+Since Bareos :sinceVersion:`14.2.0: dbconfig-common (Debian)` the Debian and Ubuntu packages support the **dbconfig-common** mechanism to create and update the Bareos database, according to the user choices.
 
 The first choice is, if **dbconfig-common** should be used at all. If you decide against it, the database must be configured manually, see :ref:`CatMaintenanceManualConfiguration`.
 
@@ -32,7 +31,7 @@ If you decided to use **dbconfig-common**, the next question will be asked.
 
 .. image:: /include/images/dbconfig-1-enable.*
 
-The **dbconfig-common** configuration (and credentials) is done by the **bareos-database-common** package. Settings are stored in the file :file:`/etc/dbconfig-common/bareos-database-common.conf`. If you need to repeat this step, you can use the :command:`dpkg-reconfigure bareos-database-common` command.
+The **dbconfig-common** configuration (and credentials) is done by the **bareos-database-common** package. Settings are stored in the file :file:`/etc/dbconfig-common/bareos-database-common.conf`.
 
 The Bareos database backend will get automatically configured in :file:`/etc/bareos/bareos-dir.d/catalog/MyCatalog.conf`. If the Server is not running locally you need to specify :config:option:`dir/catalog/DbAddress`\  in the catalog resource. A later reconfiguration might require manual changes.
 
@@ -42,6 +41,73 @@ The Bareos database backend will get automatically configured in :file:`/etc/bar
    you can export the variable **dbc_debug**
    with :command:`export dbc_debug=1` command
    before using :command:`apt` or :command:`dpkg-reconfigure bareos-database-common`.
+
+
+.. note::
+
+   In case you want to answer/see all low level questions of dbconfig-common, prepare your environment
+   with the following command:
+
+   .. code-block:: shell-session
+      :caption: Allow all dbconfig-common question to be shown
+
+      export DEBIAN_PRIORITY=low
+      apt install bareos-database-common
+
+
+.. warning::
+
+   By default **dbconfig-common** during major upgrades will create a backup dump of the database
+   in :file:`/var/cache/dbconfig-common/backups/` before applying any upgrade. It is advised to
+   precheck there's enough free space in the partition containing this directory to handle the
+   sql text dump file.
+   In case you want to disable this dbconfig-common feature, you can use the following command
+   before upgrading Bareos packages:
+
+   .. code-block:: shell-session
+      :caption: disable dbconfig-common database upgrade backup
+
+      echo "bareos-database-common bareos-database-common/upgrade-backup boolean false" | debconf-set-selections -v
+
+.. note::
+
+   To show all dbconfig settings for bareos-database-common use:
+
+   .. code-block:: shell-session
+      :caption: show dbconfig-common settings for bareos-database-common
+
+      root@host:~# debconf-show bareos-database-common | sort
+        bareos-database-common/app-password-confirm: (password omitted)
+      * bareos-database-common/database-type: pgsql
+        bareos-database-common/db/app-user: bareos@localhost
+      * bareos-database-common/dbconfig-install: true
+        bareos-database-common/dbconfig-reinstall: false
+        bareos-database-common/dbconfig-remove: true
+        bareos-database-common/dbconfig-upgrade: true
+        bareos-database-common/db/dbname: bareos
+        bareos-database-common/install-error: abort
+        bareos-database-common/internal/reconfiguring: false
+        bareos-database-common/internal/skip-preseed: false
+        bareos-database-common/missing-db-package-error: abort
+        bareos-database-common/password-confirm: (password omitted)
+        bareos-database-common/passwords-do-not-match:
+        bareos-database-common/pgsql/admin-pass: (password omitted)
+        bareos-database-common/pgsql/admin-user: postgres
+        bareos-database-common/pgsql/app-pass: (password omitted)
+        bareos-database-common/pgsql/authmethod-admin: ident
+        bareos-database-common/pgsql/authmethod-user: ident
+        bareos-database-common/pgsql/changeconf: false
+        bareos-database-common/pgsql/manualconf:
+        bareos-database-common/pgsql/method: Unix socket
+        bareos-database-common/pgsql/no-empty-passwords:
+        bareos-database-common/purge: false
+      * bareos-database-common/remote/host: localhost
+        bareos-database-common/remote/newhost: localhost
+        bareos-database-common/remote/port:
+        bareos-database-common/remove-error: abort
+        bareos-database-common/upgrade-backup: false
+        bareos-database-common/upgrade-error: abort
+
 
 .. _CatMaintenanceManualConfiguration:
 
