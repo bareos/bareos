@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -729,14 +729,9 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
-  /* If we found jobs to exclude from the DelCandidates list, we should
-   * also remove BaseJobs that can be linked with them
-   */
   if (!jobids.empty()) {
     Dmsg1(60, "jobids to exclude before basejobs = %s\n",
           jobids.GetAsString().c_str());
-    // We also need to exclude all basejobs used
-    ua->db->GetUsedBaseJobids(ua->jcr, jobids.GetAsString().c_str(), &jobids);
 
     // Removing useful jobs from the DelCandidates list
     Mmsg(query,

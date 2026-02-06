@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -166,7 +166,6 @@ static bool DoTruncate(UaContext* ua,
 bool quit_cmd(UaContext* ua, const char* cmd);
 
 const char list_cmd_usage[] = NT_(
-    "basefiles ( jobid=<jobid> | ujobid=<complete_name> ) | "
     "backups client=<client-name> [fileset=<fileset-name>] "
     "[jobstatus=<status>] [level=<level>] [order=<asc|desc>] "
     "[limit=<number>] [days=<number>] [hours=<number>] | "

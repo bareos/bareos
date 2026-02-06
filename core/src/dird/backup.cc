@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -177,28 +177,6 @@ bool DoNativeBackupInit(JobControlRecord* jcr)
   return true;
 }
 
-// Take all base jobs from job resource and find the last L_BASE jobid.
-static bool GetBaseJobids(JobControlRecord* jcr, db_list_ctx* jobids)
-{
-  JobDbRecord jr;
-  JobId_t id;
-
-  if (!jcr->dir_impl->res.job->base) {
-    return false; /* no base job, stop accurate */
-  }
-
-  jr.StartTime = jcr->dir_impl->jr.StartTime;
-
-  for (auto* job : jcr->dir_impl->res.job->base) {
-    bstrncpy(jr.Name, job->resource_name_, sizeof(jr.Name));
-    jcr->db->GetBaseJobid(jcr, &jr, &id);
-
-    if (id) { jobids->add(id); }
-  }
-
-  return (!jobids->empty());
-}
-
 struct accurate_list_handler_args {
   JobControlRecord* jcr{nullptr};
   std::size_t sent{0};
@@ -246,7 +224,6 @@ static bool IsChecksumNeededByFileset(JobControlRecord* jcr)
   FileOptions* fopts;
   FilesetResource* fs;
   bool in_block = false;
-  bool have_basejob_option = false;
 
   if (!jcr->dir_impl->res.job || !jcr->dir_impl->res.job->fileset) {
     return false;
@@ -263,9 +240,6 @@ static bool IsChecksumNeededByFileset(JobControlRecord* jcr)
         switch (*k) {
           case 'V':                                /* verify */
             in_block = jcr->is_JobType(JT_VERIFY); /* not used now */
-            break;
-          case 'J': /* Basejob keyword */
-            have_basejob_option = in_block = jcr->HasBase;
             break;
           case 'C': /* Accurate keyword */
             in_block = !jcr->is_JobLevel(L_FULL);
@@ -286,9 +260,6 @@ static bool IsChecksumNeededByFileset(JobControlRecord* jcr)
       }
     }
   }
-
-  /* By default for BaseJobs, we send the checksum */
-  if (!have_basejob_option && jcr->HasBase) { return true; }
 
   Dmsg0(50, "Checksum will be sent to FD\n");
   return false;
@@ -315,13 +286,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
 
   if (jcr->is_JobLevel(L_FULL)) {
     // On Full mode, if no previous base job, no accurate things
-    if (GetBaseJobids(jcr, &jobids)) {
-      jcr->HasBase = true;
-      Jmsg(jcr, M_INFO, 0, T_("Using BaseJobId(s): %s\n"),
-           jobids.GetAsString().c_str());
-    } else {
-      return true;
-    }
+    return true;
   } else {
     // For Incr/Diff level, we search for older jobs
     jcr->db->AccurateGetJobids(jcr, &jcr->dir_impl->jr, &jobids);
@@ -355,35 +320,19 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   accurate_list_handler_args args;
   args.jcr = jcr;
 
-  if (jcr->HasBase) {
-    jcr->nb_base_files = nb.GetFrontAsInteger();
-    DbLocker _{jcr->db};
-    if (!jcr->db->CreateBaseFileList(jcr, jobids.GetAsString().c_str())) {
-      Jmsg(jcr, M_FATAL, 0, "error in jcr->db->CreateBaseFileList:%s\n",
-           jcr->db->strerror());
-      return false;
-    }
-    if (!jcr->db->GetBaseFileList(jcr, jcr->dir_impl->use_accurate_chksum,
-                                  AccurateListHandler, (void*)&args)) {
-      Jmsg(jcr, M_FATAL, 0, "error in jcr->db->GetBaseFileList:%s\n",
-           jcr->db->strerror());
-      return false;
-    }
-  } else {
-    if (DbLocker _{jcr->db}; !jcr->db->OpenBatchConnection(jcr)) {
-      Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connection");
-      return false; /* Fail */
-    }
-
-    if (DbLocker _{jcr->db_batch}; !jcr->db_batch->GetFileList(
-            jcr, jobids.GetAsString().c_str(),
-            jcr->dir_impl->use_accurate_chksum, false /* no delta */,
-            AccurateListHandler, (void*)&args)) {
-      Jmsg(jcr, M_FATAL, 0, "error in jcr->db_batch->GetBaseFileList:%s\n",
-           jcr->db_batch->strerror());
-      return false;
-    }
+  if (DbLocker _{jcr->db}; !jcr->db->OpenBatchConnection(jcr)) {
+    Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connection");
+    return false; /* Fail */
   }
+
+  if (DbLocker _{jcr->db_batch}; !jcr->db_batch->GetFileList(
+          jcr, jobids.GetAsString().c_str(), jcr->dir_impl->use_accurate_chksum,
+          false /* no delta */, AccurateListHandler, (void*)&args)) {
+    Jmsg(jcr, M_FATAL, 0, "error in jcr->db_batch->GetBaseFileList:%s\n",
+         jcr->db_batch->strerror());
+    return false;
+  }
+
   accurate_timer.stop();
 
   if (jcr->JobId) { /* display the message only for real jobs */
@@ -639,11 +588,6 @@ bool DoNativeBackup(JobControlRecord* jcr)
   if (jcr->batch_started) {
     jcr->db_batch->WriteBatchFileRecords(
         jcr);  // used by bulk batch file insert
-  }
-  if (jcr->HasBase) {
-    if (DbLocker _{jcr->db}; !jcr->db->CommitBaseFileAttributesRecord(jcr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
-    }
   }
 
   /* Check softquotas after job did run.
@@ -1093,33 +1037,17 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
            sd_term_msg.c_str(),
            jcr->accurate ? T_("yes") : T_("no"));
       } else {
-         if (jcr->HasBase) {
-            Mmsg(client_options, T_(
-                 "  Software Compression:   %s%s\n"
-                 "  Base files/Used files:  %" PRIu64 "/%" PRIu64 "(%.2f%%)\n"
-                 "  VSS:                    %s\n"
-                 "  Encryption:             %s\n"
-                 "  Accurate:               %s\n"),
-                 compress,
-                 compress_algo_list.c_str(),
-                 jcr->nb_base_files,
-                 jcr->nb_base_files_used,
-                 jcr->nb_base_files_used * 100.0 / jcr->nb_base_files,
-                 jcr->dir_impl->VSS ? T_("yes") : T_("no"),
-                 jcr->dir_impl->Encrypt ? T_("yes") : T_("no"),
-                 jcr->accurate ? T_("yes") : T_("no"));
-         } else {
-            Mmsg(client_options, T_(
-                 "  Software Compression:   %s%s\n"
-                 "  VSS:                    %s\n"
-                 "  Encryption:             %s\n"
-                 "  Accurate:               %s\n"),
-                 compress,
-                 compress_algo_list.c_str(),
-                 jcr->dir_impl->VSS ? T_("yes") : T_("no"),
-                 jcr->dir_impl->Encrypt ? T_("yes") : T_("no"),
-                 jcr->accurate ? T_("yes") : T_("no"));
-         }
+         Mmsg(client_options, T_(
+              "  Software Compression:   %s%s\n"
+              "  VSS:                    %s\n"
+              "  Encryption:             %s\n"
+              "  Accurate:               %s\n"),
+              compress,
+              compress_algo_list.c_str(),
+              jcr->dir_impl->VSS ? T_("yes") : T_("no"),
+              jcr->dir_impl->Encrypt ? T_("yes") : T_("no"),
+              jcr->accurate ? T_("yes") : T_("no"));
+        
 
          Mmsg(daemon_status, T_(
               "  Non-fatal FD errors:    %d\n"

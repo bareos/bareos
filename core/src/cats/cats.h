@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -755,9 +755,6 @@ class BareosDb : public BareosDbQueryEnum {
                          JobDbRecord* jr,
                          db_list_ctx* jobids);
   db_list_ctx FilterZeroFileJobs(db_list_ctx& jobids);
-  bool GetUsedBaseJobids(JobControlRecord* jcr,
-                         const char* jobids,
-                         db_list_ctx* result);
   bool GetQuotaRecord(JobControlRecord* jcr, ClientDbRecord* cr);
   bool get_quota_jobbytes(JobControlRecord* jcr,
                           JobDbRecord* jr,
@@ -890,10 +887,6 @@ class BareosDb : public BareosDbQueryEnum {
                          const char* jobids,
                          OutputFormatter* sendit,
                          e_list_type type);
-  void ListBaseFilesForJob(JobControlRecord* jcr,
-                           JobId_t jobid,
-                           OutputFormatter* sendit);
-
   /* sql_query.cc */
   const char* get_predefined_query_name(SQL_QUERY query);
   const char* get_predefined_query(SQL_QUERY query);

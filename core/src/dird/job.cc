@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1451,7 +1451,6 @@ void UpdateJobEndRecord(JobControlRecord* jcr)
   jcr->dir_impl->jr.VolSessionId = jcr->VolSessionId;
   jcr->dir_impl->jr.VolSessionTime = jcr->VolSessionTime;
   jcr->dir_impl->jr.JobErrors = jcr->JobErrors;
-  jcr->dir_impl->jr.HasBase = jcr->HasBase;
   if (DbLocker _{jcr->db};
       !jcr->db->UpdateJobEndRecord(jcr, &jcr->dir_impl->jr)) {
     Jmsg(jcr, M_WARNING, 0, T_("Error updating job record. %s\n"),

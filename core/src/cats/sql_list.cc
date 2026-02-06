@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -648,42 +648,13 @@ void BareosDb::ListFilesForJob(JobControlRecord* jcr,
   Mmsg(cmd,
        "SELECT Path.Path||Name AS Filename "
        "FROM (SELECT PathId, Name FROM File WHERE JobId=%s "
-       "UNION ALL "
-       "SELECT PathId, Name "
-       "FROM BaseFiles JOIN File "
-       "ON (BaseFiles.FileId = File.FileId) "
-       "WHERE BaseFiles.JobId = %s"
        ") AS F, Path "
        "WHERE Path.PathId=F.PathId ",
-       edit_int64(jobid, ed1), ed1);
+       edit_int64(jobid, ed1));
 
   sendit->ArrayStart("filenames");
   if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { return; }
   sendit->ArrayEnd("filenames");
-
-  SqlFreeResult();
-}
-
-void BareosDb::ListBaseFilesForJob(JobControlRecord* jcr,
-                                   JobId_t jobid,
-                                   OutputFormatter* sendit)
-{
-  char ed1[50];
-  ListContext lctx(jcr, this, sendit, NF_LIST);
-
-  DbLocker _{this};
-
-  Mmsg(cmd,
-       "SELECT Path.Path||File.Name AS Filename "
-       "FROM BaseFiles, File, Path "
-       "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
-       "AND BaseFiles.FileId = File.FileId "
-       "AND Path.PathId=File.PathId ",
-       edit_int64(jobid, ed1));
-
-  sendit->ArrayStart("files");
-  if (!BigSqlQuery(cmd, ::ListResult, &lctx)) { return; }
-  sendit->ArrayEnd("files");
 
   SqlFreeResult();
 }

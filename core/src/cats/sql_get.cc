@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1245,21 +1245,6 @@ bool BareosDb::GetFileList(JobControlRecord*,
   Dmsg1(100, "q=%s\n", query.c_str());
 
   return BigSqlQuery(query.c_str(), ResultHandler, ctx);
-}
-
-bool BareosDb::GetUsedBaseJobids(JobControlRecord*,
-                                 const char* jobids,
-                                 db_list_ctx* result)
-{
-  PoolMem query(PM_MESSAGE);
-
-  Mmsg(query,
-       "SELECT DISTINCT BaseJobId "
-       "  FROM Job JOIN BaseFiles USING (JobId) "
-       " WHERE Job.HasBase = 1 "
-       "   AND Job.JobId IN (%s) ",
-       jobids);
-  return SqlQueryWithHandler(query.c_str(), DbListHandler, result);
 }
 
 /*

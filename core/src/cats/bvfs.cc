@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -173,11 +173,8 @@ bool BareosDb::UpdatePathHierarchyCache(JobControlRecord* jcr,
        "INSERT INTO PathVisibility (PathId, JobId) "
        "SELECT DISTINCT PathId, JobId "
        "FROM (SELECT PathId, JobId FROM File WHERE JobId = %s "
-       "UNION "
-       "SELECT PathId, BaseFiles.JobId "
-       "FROM BaseFiles JOIN File AS F USING (FileId) "
-       "WHERE BaseFiles.JobId = %s) AS B",
-       jobid, jobid);
+       ") AS B",
+       jobid);
 
   if (!QueryDb(jcr, cmd)) {
     Dmsg1(dbglevel, "Can't fill PathVisibility %d\n", (uint32_t)JobId);
@@ -588,13 +585,8 @@ static void build_ls_files_query(JobControlRecord*,
                                  int64_t limit,
                                  int64_t offset)
 {
-  if (db->GetTypeIndex() == SQL_TYPE_POSTGRESQL) {
-    db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files, JobId, PathId,
-                  JobId, PathId, filter, limit, offset);
-  } else {
-    db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files, JobId, PathId,
-                  JobId, PathId, limit, offset, filter, JobId, JobId);
-  }
+  db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files, JobId, PathId,
+                filter, limit, offset);
 }
 
 // Returns true if we have files to read
@@ -765,20 +757,6 @@ bool Bvfs::compute_restore_list(char* fileid,
          tmp2.c_str(), jobids);
     query.strcat(tmp.c_str());
     init = true;
-
-    query.strcat(" UNION ");
-
-    /* A directory can have files from a BaseJob */
-    Mmsg(tmp,
-         "SELECT File.JobId, JobTDate, BaseFiles.FileIndex, "
-         "File.Name, File.PathId, BaseFiles.FileId "
-         "FROM BaseFiles "
-         "JOIN File USING (FileId) "
-         "JOIN Job ON (BaseFiles.JobId = Job.JobId) "
-         "JOIN Path USING (PathId) "
-         "WHERE Path.Path LIKE '%s' AND BaseFiles.JobId IN (%s) ",
-         tmp2.c_str(), jobids);
-    query.strcat(tmp.c_str());
   }
 
   /* expect jobid,fileindex */

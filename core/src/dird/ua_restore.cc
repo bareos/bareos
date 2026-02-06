@@ -93,7 +93,6 @@ static int RestoreCountHandler(void* ctx, int num_fields, char** row);
 static bool InsertTableIntoFindexList(UaContext* ua,
                                       RestoreContext* rx,
                                       char* table);
-static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx);
 static bool CheckAndSetFileregex(UaContext* ua,
                                  RestoreContext* rx,
                                  const char* regex);
@@ -116,7 +115,6 @@ bool RestoreCmd(UaContext* ua, const char*)
   rx.fname = GetPoolMemory(PM_FNAME);
   rx.JobIds = GetPoolMemory(PM_FNAME);
   rx.JobIds[0] = 0;
-  rx.BaseJobIds = GetPoolMemory(PM_FNAME);
   rx.query = GetPoolMemory(PM_FNAME);
   rx.bsr = std::make_unique<RestoreBootstrapRecord>();
 
@@ -216,7 +214,6 @@ bool RestoreCmd(UaContext* ua, const char*)
     case 0: /* error */
       goto bail_out;
     case 1: /* selected by jobid */
-      GetAndDisplayBasejobs(ua, &rx);
       if (!BuildDirectoryTree(ua, &rx)) {
         ua->SendMsg(T_("Restore not done.\n"));
         goto bail_out;
@@ -367,26 +364,6 @@ bail_out:
   return false;
 }
 
-// Fill the rx->BaseJobIds and display the list
-static void GetAndDisplayBasejobs(UaContext* ua, RestoreContext* rx)
-{
-  db_list_ctx jobids;
-
-  if (!ua->db->GetUsedBaseJobids(ua->jcr, rx->JobIds, &jobids)) {
-    ua->WarningMsg("%s", ua->db->strerror());
-  }
-
-  if (!jobids.empty()) {
-    PoolMem query(PM_MESSAGE);
-
-    ua->SendMsg(T_("The restore will use the following job(s) as Base\n"));
-    ua->db->FillQuery(query, BareosDb::SQL_QUERY::uar_print_jobs,
-                      jobids.GetAsString().c_str());
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
-  }
-  PmStrcpy(rx->BaseJobIds, jobids.GetAsString().c_str());
-}
-
 static void free_rx(RestoreContext* rx)
 {
   rx->bsr.reset(nullptr);
@@ -402,7 +379,6 @@ static void free_rx(RestoreContext* rx)
   }
 
   FreeAndNullPoolMemory(rx->JobIds);
-  FreeAndNullPoolMemory(rx->BaseJobIds);
   FreeAndNullPoolMemory(rx->fname);
   FreeAndNullPoolMemory(rx->path);
   FreeAndNullPoolMemory(rx->query);
@@ -1255,10 +1231,6 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
-  if (*rx->BaseJobIds) {
-    PmStrcat(rx->JobIds, ",");
-    PmStrcat(rx->JobIds, rx->BaseJobIds);
-  }
 
   /* Look at the first JobId on the list (presumably the oldest) and
    *  if it is marked purged, don't do the manual selection because
