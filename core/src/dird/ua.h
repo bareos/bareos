@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -195,7 +195,7 @@ struct RestoreContext {
   char* ClientName = nullptr;        /**< Backup client */
   char* RestoreClientName = nullptr; /**< Restore client */
   char last_jobid[20]{0};
-  POOLMEM* JobIds = nullptr;     /**< User entered string of JobIds */
+  POOLMEM* JobIds = nullptr; /**< User entered string of JobIds */
   StorageResource* store = nullptr;
   JobResource* restore_job = nullptr;
   PoolResource* pool = nullptr;
