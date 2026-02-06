@@ -638,7 +638,6 @@ const char *BareosDbPostgresql::query_definitions[] = {
       "FROM File "
       "WHERE JobId IN (%s) "
         "AND PathId = %s "
-        "AND File.PathId = %s "
    ") AS T "
    "JOIN Job USING (JobId) "
    "WHERE "

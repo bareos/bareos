@@ -586,11 +586,13 @@ static void build_ls_files_query(JobControlRecord*,
                                  int64_t offset)
 {
   if (db->GetTypeIndex() == SQL_TYPE_POSTGRESQL) {
-    db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files, JobId, PathId,
-                  JobId, PathId, filter, limit, offset);
+    db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files,
+                  JobId, PathId,
+                  filter,
+                  limit, offset);
   } else {
     db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files, JobId, PathId,
-                  JobId, PathId, limit, offset, filter, JobId, JobId);
+                  limit, offset, filter, JobId, JobId);
   }
 }
 
@@ -762,17 +764,6 @@ bool Bvfs::compute_restore_list(char* fileid,
          tmp2.c_str(), jobids);
     query.strcat(tmp.c_str());
     init = true;
-
-    query.strcat(" UNION ");
-
-    Mmsg(tmp,
-         "SELECT File.JobId, JobTDate,"
-         "File.Name, File.PathId "
-         "FROM File "
-         "JOIN Path USING (PathId) "
-         "WHERE Path.Path LIKE '%s'",
-         tmp2.c_str());
-    query.strcat(tmp.c_str());
   }
 
   /* expect jobid,fileindex */
