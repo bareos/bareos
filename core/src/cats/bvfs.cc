@@ -585,10 +585,8 @@ static void build_ls_files_query(JobControlRecord*,
                                  int64_t limit,
                                  int64_t offset)
 {
-  db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files,
-                JobId, PathId,
-                filter,
-                limit, offset);
+  db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files, JobId, PathId,
+                filter, limit, offset);
 }
 
 // Returns true if we have files to read
