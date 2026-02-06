@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -727,6 +727,26 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
 
   if (!ua->db->SqlQuery(query.c_str(), DbListHandler, &jobids)) {
     ua->ErrorMsg("%s", ua->db->strerror());
+  }
+
+  if (!jobids.empty()) {
+    Dmsg1(60, "jobids to exclude before basejobs = %s\n",
+          jobids.GetAsString().c_str());
+
+    // Removing useful jobs from the DelCandidates list
+    Mmsg(query,
+         "DELETE FROM DelCandidates "
+         "WHERE JobId IN (%s) "  // JobId used in accurate
+         "AND JobFiles!=0",      // Discard when JobFiles=0
+         jobids.GetAsString().c_str());
+
+    if (!ua->db->SqlExec(query.c_str())) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+      // Don't continue if the list isn't clean
+      DropTempTables(ua);
+      return true;
+    }
+    Dmsg1(60, "jobids to exclude = %s\n", jobids.GetAsString().c_str());
   }
 
   // We use DISTINCT because we can have two times the same job
