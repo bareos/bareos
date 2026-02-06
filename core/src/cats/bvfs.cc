@@ -757,17 +757,6 @@ bool Bvfs::compute_restore_list(char* fileid,
          escaped_path_like->c_str(), jobids);
     query.strcat(tmp.c_str());
     init = true;
-
-    query.strcat(" UNION ");
-
-    Mmsg(tmp,
-         "SELECT File.JobId, JobTDate,"
-         "File.Name, File.PathId "
-         "FROM File "
-         "JOIN Path USING (PathId) "
-         "WHERE Path.Path LIKE '%s'",
-         escaped_path_like->c_str());
-    query.strcat(tmp.c_str());
   }
 
   /* expect jobid,fileindex */
