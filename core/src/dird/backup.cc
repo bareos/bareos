@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -326,14 +326,13 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   }
 
   if (DbLocker _{jcr->db_batch}; !jcr->db_batch->GetFileList(
-          jcr, jobids.GetAsString().c_str(),
-          jcr->dir_impl->use_accurate_chksum, false /* no delta */,
-          AccurateListHandler, (void*)&args)) {
+          jcr, jobids.GetAsString().c_str(), jcr->dir_impl->use_accurate_chksum,
+          false /* no delta */, AccurateListHandler, (void*)&args)) {
     Jmsg(jcr, M_FATAL, 0, "error in jcr->db_batch->GetBaseFileList:%s\n",
          jcr->db_batch->strerror());
     return false;
   }
-  
+
   accurate_timer.stop();
 
   if (jcr->JobId) { /* display the message only for real jobs */
