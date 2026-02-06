@@ -230,7 +230,7 @@ struct RestoreContext {
   char* ClientName = nullptr;        /**< Backup client */
   char* RestoreClientName = nullptr; /**< Restore client */
   char last_jobid[20]{0};
-  POOLMEM* JobIds = nullptr;     /**< User entered string of JobIds */
+  POOLMEM* JobIds = nullptr; /**< User entered string of JobIds */
   StorageResource* store = nullptr;
   JobResource* restore_job = nullptr;
   PoolResource* pool = nullptr;
