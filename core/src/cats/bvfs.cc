@@ -585,15 +585,10 @@ static void build_ls_files_query(JobControlRecord*,
                                  int64_t limit,
                                  int64_t offset)
 {
-  if (db->GetTypeIndex() == SQL_TYPE_POSTGRESQL) {
-    db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files,
-                  JobId, PathId,
-                  filter,
-                  limit, offset);
-  } else {
-    db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files, JobId, PathId,
-                  limit, offset, filter, JobId, JobId);
-  }
+  db->FillQuery(query, BareosDb::SQL_QUERY::bvfs_list_files,
+                JobId, PathId,
+                filter,
+                limit, offset);
 }
 
 // Returns true if we have files to read
