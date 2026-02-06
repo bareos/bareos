@@ -326,14 +326,13 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   }
 
   if (DbLocker _{jcr->db_batch}; !jcr->db_batch->GetFileList(
-          jcr, jobids.GetAsString().c_str(),
-          jcr->dir_impl->use_accurate_chksum, false /* no delta */,
-          AccurateListHandler, (void*)&args)) {
+          jcr, jobids.GetAsString().c_str(), jcr->dir_impl->use_accurate_chksum,
+          false /* no delta */, AccurateListHandler, (void*)&args)) {
     Jmsg(jcr, M_FATAL, 0, "error in jcr->db_batch->GetBaseFileList:%s\n",
          jcr->db_batch->strerror());
     return false;
   }
-  
+
   accurate_timer.stop();
 
   if (jcr->JobId) { /* display the message only for real jobs */
