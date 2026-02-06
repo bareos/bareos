@@ -729,6 +729,26 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
     ua->ErrorMsg("%s", ua->db->strerror());
   }
 
+  if (!jobids.empty()) {
+    Dmsg1(60, "jobids to exclude before basejobs = %s\n",
+          jobids.GetAsString().c_str());
+
+    // Removing useful jobs from the DelCandidates list
+    Mmsg(query,
+         "DELETE FROM DelCandidates "
+         "WHERE JobId IN (%s) "  // JobId used in accurate
+         "AND JobFiles!=0",      // Discard when JobFiles=0
+         jobids.GetAsString().c_str());
+
+    if (!ua->db->SqlExec(query.c_str())) {
+      ua->ErrorMsg("%s", ua->db->strerror());
+      // Don't continue if the list isn't clean
+      DropTempTables(ua);
+      return true;
+    }
+    Dmsg1(60, "jobids to exclude = %s\n", jobids.GetAsString().c_str());
+  }
+
   // We use DISTINCT because we can have two times the same job
   Mmsg(query,
        "SELECT DISTINCT DelCandidates.JobId "
