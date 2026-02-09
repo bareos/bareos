@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -192,7 +192,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         )
         DebugMessage(100, f'get_lsn_by_command: "{get_lsn_cmd}"\n')
         try:
-            ret = check_output(get_lsn_cmd).decode()
+            ret = check_output(get_lsn_cmd).decode(errors="ignore")
             return ret
         except CalledProcessError as run_err:
             JobMessage(
