@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- add SUSE 15SP7 and 16.0 [PR #2535]
+
 ### Changed
 - table-formatter.js: Fix icon selection logic [PR #2481]
 - systemtests: tune for execution on Windows [PR #2502]
@@ -2206,4 +2209,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2516]: https://github.com/bareos/bareos/pull/2516
 [PR #2526]: https://github.com/bareos/bareos/pull/2526
 [PR #2529]: https://github.com/bareos/bareos/pull/2529
+[PR #2535]: https://github.com/bareos/bareos/pull/2535
 [unreleased]: https://github.com/bareos/bareos/tree/master
