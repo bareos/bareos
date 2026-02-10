@@ -1,2 +1,0 @@
-# restart the bareos director before running the daily backup jobs
-30 20 * * * root /usr/share/univention-bareos/bareos-dir-restart-on-change

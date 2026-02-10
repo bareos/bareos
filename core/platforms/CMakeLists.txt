@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -26,20 +26,11 @@ if(NOT HAVE_WIN32)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
   if(${BAREOS_PLATFORM} STREQUAL ubuntu)
     add_subdirectory(debian)
-  elseif(${BAREOS_PLATFORM} STREQUAL univention)
-    message(STATUS "adding subdirectories debian and univention")
-    add_subdirectory(debian)
-    add_subdirectory(univention)
-  elseif(${BAREOS_PLATFORM} STREQUAL hpux)
-    message(STATUS "BAREOS_PLATFORM: " ${BAREOS_PLATFORM})
-  elseif(${BAREOS_PLATFORM} STREQUAL archlinux)
-    message(STATUS "BAREOS_PLATFORM: " ${BAREOS_PLATFORM})
   elseif(${systemd})
     add_subdirectory(systemd)
-  else()
+  elseif(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${BAREOS_PLATFORM}")
     add_subdirectory(${BAREOS_PLATFORM})
   endif()
-
 else()
   add_subdirectory(win32)
 endif()
