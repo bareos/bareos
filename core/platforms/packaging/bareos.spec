@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2025 Bareos GmbH & Co KG
+#               2013-2026 Bareos GmbH & Co KG
 #
 
 Name:       bareos
@@ -40,9 +40,6 @@ Vendor:     The Bareos Team
 %define build_qt_monitor 1
 %define glusterfs 0
 %define droplet 1
-%define have_git 1
-%define install_suse_fw 0
-%define systemd_support 0
 %define python_plugins 1
 %define contrib 1
 %define webui 1
@@ -53,53 +50,11 @@ Vendor:     The Bareos Team
 %define CMAKE_BUILDDIR       cmake-build
 
 
-BuildRequires: rpcgen
-BuildRequires: libtirpc-devel
-
-%if 0%{?fedora} || 0%{?suse_version}
-BuildRequires: fmt-devel
-%endif
-
-#
-# SUSE (openSUSE, SLES) specific settings
-#
-%if 0%{?sles_version} == 10
-%define build_qt_monitor 0
-%define have_git 0
-%define python_plugins 0
-%endif
-
-%if 0%{?suse_version} > 1010 && 0%{?suse_version} < 1500
-%define install_suse_fw 1
-%define _fwdefdir   %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services
-%endif
-
-
-%if 0%{?suse_version} > 1140
-%define systemd_support 1
-%endif
-
-
 #
 # RedHat (CentOS, Fedora, RHEL) specific settings
 #
-
 %if 0%{?fedora} >= 20
 %define glusterfs 1
-%define systemd_support 1
-%endif
-
-%if 0%{?rhel} >= 7
-%define systemd_support 1
-%endif
-
-%if 0%{?rhel} >= 7 && (0%{?rhel} <= 9)
-%define glusterfs 1
-%endif
-
-%if 0%{?rhel} == 7
-%define webui 0
-%define __python python3
 %endif
 
 # use modernized GCC 14 toolchain for C++20 support
@@ -107,67 +62,78 @@ BuildRequires: fmt-devel
 BuildRequires: gcc-toolset-14-gcc
 BuildRequires: gcc-toolset-14-annobin-plugin-gcc
 BuildRequires: gcc-toolset-14-gcc-c++
-%endif
-
+%define glusterfs 1
 # rhel <=8 does not have grpc
-%if %{defined rhel} && (0%{?rhel} <= 8)
+%if 0%{?rhel} && 0%{?rhel} <= 8
 %define enable_grpc 0
 %endif
-# fedora <=39 does not have grpc
-%if %{defined fedora} && (0%{?fedora} <= 39)
-%define enable_grpc 0
 %endif
 
-%if 0%{?suse_version}
-BuildRequires: gcc13
-BuildRequires: gcc13-c++
-%define enable_grpc 1
+
+%if 0%{?suse_version} && 0%{?suse_version} <= 1599
+BuildRequires: gcc15
+BuildRequires: gcc15-c++
 %endif
 
-%if 0%{?systemd_support}
+%if 0%{?fedora} || 0%{?suse_version}
+BuildRequires: fmt-devel
+%endif
+
+
 BuildRequires: systemd
 # see https://en.opensuse.org/openSUSE:Systemd_packaging_guidelines
-%if 0%{?suse_version} >= 1210
+%if 0%{?suse_version}
 BuildRequires: systemd-rpm-macros
 %endif
 %{?systemd_requires}
-%endif
+
 
 %if 0%{?glusterfs}
 BuildRequires: glusterfs-devel glusterfs-api-devel
 %endif
 
-%if 0%{?have_git}
-BuildRequires: git-core
-%endif
 
 Source0: %{name}-%{version}.tar.gz
 
 BuildRequires: cmake >= 3.17
 BuildRequires: gcc
 BuildRequires: gcc-c++
-BuildRequires: make
+BuildRequires: git-core
 BuildRequires: glibc
 BuildRequires: glibc-devel
+BuildRequires: libacl-devel
+BuildRequires: libcap-devel
+BuildRequires: libstdc++-devel
+BuildRequires: libtirpc-devel
+BuildRequires: logrotate
+BuildRequires: lzo-devel
+BuildRequires: make
+BuildRequires: mtx
 BuildRequires: ncurses-devel
+BuildRequires: openssl
+BuildRequires: openssl-devel
 BuildRequires: pam-devel
 BuildRequires: pkgconfig
+BuildRequires: pkgconfig(jansson)
+BuildRequires: pkgconfig(json-c)
+BuildRequires: pkgconfig(libxml-2.0)
+BuildRequires: postgresql-devel
 BuildRequires: python-rpm-macros
 BuildRequires: readline-devel
-BuildRequires: libacl-devel
-BuildRequires: libstdc++-devel
+BuildRequires: rpcgen
 BuildRequires: zlib-devel
-BuildRequires: openssl-devel
-BuildRequires: lzo-devel
-BuildRequires: logrotate
-BuildRequires: postgresql-devel
-BuildRequires: openssl
-BuildRequires: libcap-devel
-BuildRequires: mtx
 
 %if 0%{?build_qt_monitor}
+
 %if 0%{?suse_version}
+
+%if 0%{?suse_version} > 1599
+BuildRequires: qt6-base-devel
+%else
 BuildRequires: libqt5-qtbase-devel
+%endif
+
+
 %else
 
 %if 0%{?rhel} > 7 || 0%{?fedora} >= 29
@@ -180,28 +146,23 @@ BuildRequires: qt-devel
 %endif
 
 %if 0%{?python_plugins}
-BuildRequires: python3-devel >= 3.4
+BuildRequires: python3-devel >= 3.6
 %endif
+
 
 %if 0%{?suse_version}
 
 # suse_version:
+#   1600: SLE_16
 #   1500: SLE_15
-#   1315: SLE_12
-#   1110: SLE_11
 
 BuildRequires: distribution-release
 BuildRequires: shadow
 BuildRequires: update-desktop-files
-BuildRequires: pkgconfig(libxml-2.0)
-BuildRequires: pkgconfig(json-c)
 
-%if 0%{?suse_version} > 1010
 # link identical files
 BuildRequires: fdupes
-BuildRequires: libjansson-devel
 BuildRequires: lsb-release
-%endif
 
 %else
 # non suse
@@ -220,11 +181,8 @@ BuildRequires: redhat-lsb
 BuildRequires: fedora-release
 %endif
 
-BuildRequires: jansson-devel
-
 %else
 # non suse, non redhat: eg. mandriva.
-
 BuildRequires: lsb-release
 
 %endif
@@ -235,6 +193,7 @@ BuildRequires: lsb-release
 %global __requires_exclude ^(.*libvixDiskLib.*|.*CXXABI_1.3.9.*)$
 
 %define replace_python_shebang sed -i '1s|^#!.*|#!%{__python3} %{py3_shbang_opts}|'
+
 
 Summary:    Backup Archiving REcovery Open Sourced - metapackage
 Requires:   %{name}-director = %{version}
@@ -257,9 +216,10 @@ Bareos source code has been released under the AGPL version 3 license.
 %{dscr}
 
 
-%if 0%{?suse_version}
+%if 0%{?suse_version} && 0%{?suse_version} < 1600
 %debug_package
 %endif
+
 
 # Notice : Don't try to change the order of package declaration
 # You will have side effect with PreReq
@@ -880,10 +840,10 @@ pushd %{CMAKE_BUILDDIR}
 source /opt/rh/gcc-toolset-14/enable
 %endif
 
-# use modern compiler on suse
-%if 0%{?suse_version}
-CC=gcc-13  ; export CC
-CXX=g++-13 ; export CXX
+# use modern compiler on suse 15
+%if 0%{?suse_version} && 0%{?suse_version} <= 1599
+CC=gcc-15  ; export CC
+CXX=g++-15 ; export CXX
 %endif
 
 CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ;
@@ -934,9 +894,7 @@ cmake  .. \
   -Dmon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
   -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
-%if 0%{?systemd_support}
   -Dsystemd=yes \
-%endif
 %if !0%{?webui}
   -DENABLE_WEBUI=no \
 %endif
@@ -998,19 +956,12 @@ for F in  \
     %{script_dir}/mtx-changer \
     %{_sysconfdir}/%{name}/mtx-changer.conf \
 %endif
-%if 0%{?install_suse_fw} == 0
-    %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-dir \
-    %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-sd \
-    %{_sysconfdir}/sysconfig/SuSEfirewall2.d/services/bareos-fd \
-%endif
-%if 0%{?systemd_support}
     %{_sysconfdir}/rc.d/init.d/bareos-dir \
     %{_sysconfdir}/rc.d/init.d/bareos-sd \
     %{_sysconfdir}/rc.d/init.d/bareos-fd \
     %{_sysconfdir}/init.d/bareos-dir \
     %{_sysconfdir}/init.d/bareos-sd \
     %{_sysconfdir}/init.d/bareos-fd \
-%endif
 %if !0%{?vmware}
     %{_sbindir}/bareos_vadp_dumper \
     %{_sbindir}/bareos_vadp_dumper_wrapper.sh \
@@ -1051,7 +1002,6 @@ rm %{buildroot}%{_mandir}/man1/bareos-tray-monitor.*
 rm -f %{buildroot}%{plugin_dir}/bareos-fd-vmware.py*
 %endif
 # install systemd service files
-%if 0%{?systemd_support}
 install -d -m 755 %{buildroot}%{_unitdir}
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}
@@ -1060,7 +1010,6 @@ install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-sd.service %{buil
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-dir
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-fd
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-sd
-%endif
 %endif
 
 # Create the Readme files for the meta packages
@@ -1133,18 +1082,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 # dir package (bareos-dir)
 %defattr(-, root, root)
 %if 0%{?suse_version}
-%if !0%{?systemd_support}
-%{_sysconfdir}/init.d/bareos-dir
-%endif
 %{_sbindir}/rcbareos-dir
-%if 0%{?install_suse_fw}
-# use noreplace if user has adjusted its list of IP
-%attr(0644, root, root) %config(noreplace) %{_fwdefdir}/bareos-dir
-%endif
-%else
-%if !0%{?systemd_support}
-%{_sysconfdir}/rc.d/init.d/bareos-dir
-%endif
 %endif
 %{configtemplatedir}/bareos-dir.d/catalog/MyCatalog.conf
 %{configtemplatedir}/bareos-dir.d/client/bareos-fd.conf
@@ -1186,9 +1124,8 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %dir %{_docdir}/%{name}
 %{_mandir}/man8/bareos-dir.8.gz
 %{_mandir}/man8/bareos.8.gz
-%if 0%{?systemd_support}
 %{_unitdir}/bareos-dir.service
-%endif
+
 
 # query.sql is not a config file,
 # but can be personalized by end user.
@@ -1199,25 +1136,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 # sd package (bareos-sd, bls, btape, bcopy, bextract)
 %defattr(-, root, root)
 %if 0%{?suse_version}
-%if !0%{?systemd_support}
-%{_sysconfdir}/init.d/bareos-sd
-%endif
 %{_sbindir}/rcbareos-sd
-%if 0%{?install_suse_fw}
-# use noreplace if user has adjusted its list of IP
-%attr(0644, root, root) %config(noreplace) %{_fwdefdir}/bareos-sd
-%endif
-%else
-%if !0%{?systemd_support}
-%{_sysconfdir}/rc.d/init.d/bareos-sd
-%endif
 %endif
 %{_sbindir}/bareos-sd
 %{script_dir}/disk-changer
 %{_mandir}/man8/bareos-sd.8.gz
-%if 0%{?systemd_support}
 %{_unitdir}/bareos-sd.service
-%endif
 %attr(0775, %{storage_daemon_user}, %{daemon_group}) %dir /var/lib/%{name}/storage
 %dir %{configtemplatedir}/bareos-sd.d
 %dir %{configtemplatedir}/bareos-sd.d/autochanger
@@ -1299,26 +1223,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 # fd package (bareos-fd, plugins)
 %defattr(-, root, root)
 %if 0%{?suse_version}
-%if !0%{?systemd_support}
-%{_sysconfdir}/init.d/bareos-fd
-%endif
 %{_sbindir}/rcbareos-fd
-%if 0%{?install_suse_fw}
-# use noreplace if user has adjusted its list of IP
-%attr(0644, root, root) %config(noreplace) %{_fwdefdir}/bareos-fd
-%endif
-%else
-%if !0%{?systemd_support}
-%{_sysconfdir}/rc.d/init.d/bareos-fd
-%endif
 %endif
 %{_sbindir}/bareos-fd
 %{plugin_dir}/bpipe-fd.so
 %{_mandir}/man8/bareos-fd.8.gz
-# tray monitor
-%if 0%{?systemd_support}
 %{_unitdir}/bareos-fd.service
-%endif
 %dir %{configtemplatedir}/bareos-fd.d/
 %dir %{configtemplatedir}/bareos-fd.d/client
 %dir %{configtemplatedir}/bareos-fd.d/director
@@ -1327,6 +1237,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{configtemplatedir}/bareos-fd.d/director/bareos-dir.conf
 %{configtemplatedir}/bareos-fd.d/director/bareos-mon.conf
 %{configtemplatedir}/bareos-fd.d/messages/Standard.conf
+# tray monitor
 %if 0%{?build_qt_monitor}
 %dir %{configtemplatedir}/tray-monitor.d/client
 %{configtemplatedir}/tray-monitor.d/client/FileDaemon-local.conf
@@ -1588,63 +1499,6 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %endif
 
 
-#
-# Define some macros for updating the system settings.
-#
-%if 0%{?suse_version}
-
-%if 0%{?systemd_support}
-%define insserv_cleanup() (/bin/true; %nil)
-%else
-%if 0%{!?add_service_start:1}
-%define add_service_start() \
-SERVICE=%1 \
-#service_add $1 \
-%fillup_and_insserv $SERVICE \
-%nil
-%endif
-%endif
-
-%else
-# non suse, systemd
-
-%define insserv_cleanup() \
-/bin/true \
-%nil
-
-%if 0%{?systemd_support}
-# non suse, systemd
-
-%define add_service_start() \
-/bin/systemctl daemon-reload >/dev/null 2>&1 || true \
-/bin/systemctl enable %1.service >/dev/null 2>&1 || true \
-%nil
-
-%define stop_on_removal() \
-test -n "$FIRST_ARG" || FIRST_ARG=$1 \
-if test "$FIRST_ARG" = "0" ; then \
-  /bin/systemctl stop %1.service > /dev/null 2>&1 || true \
-fi \
-%nil
-
-%else
-# non suse, init.d
-
-%define add_service_start() \
-/sbin/chkconfig --add %1 \
-%nil
-
-%define stop_on_removal() \
-test -n "$FIRST_ARG" || FIRST_ARG=$1 \
-if test "$FIRST_ARG" = "0" ; then \
-  /sbin/service %1 stop >/dev/null 2>&1 || \
-  /sbin/chkconfig --del %1 || true \
-fi \
-%nil
-
-%endif
-
-%endif
 
 # check if LOGFILE is writable,
 # to prevent failures on immutable systems (eg. Fedora Silverblue).
@@ -1822,31 +1676,18 @@ exit 0
 %post filedaemon
 %logging_start filedaemon post
 %{script_dir}/bareos-config deploy_config "bareos-fd"
-%if 0%{?suse_version} >= 1210
 %service_add_post bareos-fd.service
-/bin/systemctl enable bareos-fd.service >/dev/null 2>&1 || true
-%else
-%add_service_start bareos-fd
-%endif
+/bin/systemctl enable --now bareos-fd.service >/dev/null 2>&1 || true
 %logging_end
 
 %preun filedaemon
 %logging_start filedaemon preun
-%if 0%{?suse_version} >= 1210
 %service_del_preun bareos-fd.service
-%else
-%stop_on_removal bareos-fd
-%endif
 %logging_end
 
 %postun filedaemon
 %logging_start filedaemon postun
-%if 0%{?suse_version} >= 1210
 %service_del_postun bareos-fd.service
-%else
-/bin/systemctl try-restart bareos-fd.service >/dev/null 2>&1 || true
-%endif
-%insserv_cleanup
 %logging_end
 
 %posttrans filedaemon
@@ -1927,27 +1768,13 @@ exit 0
 %post director
 %logging_start director post
 %{script_dir}/bareos-config deploy_config "bareos-dir"
-%if 0%{?suse_version} >= 1210
 %service_add_post bareos-dir.service
 /bin/systemctl enable bareos-dir.service >/dev/null 2>&1 || true
-%else
-%add_service_start bareos-dir
-%endif
 %logging_end
 
 %preun director
 %logging_start director preun
-%if 0%{?suse_version} >= 1210
 %service_del_preun bareos-dir.service
-%else
-%stop_on_removal bareos-dir
-%endif
-%logging_end
-
-%postun director
-%logging_start director postun
-# to prevent aborting jobs, no restart on update
-%insserv_cleanup
 %logging_end
 
 %posttrans director
@@ -2010,27 +1837,13 @@ exit 0
 # but here we add the user to additional groups
 %{script_dir}/bareos-config setup_sd_user
 %post_scsicrypto
-%if 0%{?suse_version} >= 1210
 %service_add_post bareos-sd.service
 /bin/systemctl enable bareos-sd.service >/dev/null 2>&1 || true
-%else
-%add_service_start bareos-sd
-%endif
 %logging_end
 
 %preun storage
 %logging_start storage preun
-%if 0%{?suse_version} >= 1210
 %service_del_preun bareos-sd.service
-%else
-%stop_on_removal bareos-sd
-%endif
-%logging_end
-
-%postun storage
-%logging_start storage postun
-# to prevent aborting jobs, no restart on update
-%insserv_cleanup
 %logging_end
 
 %posttrans storage
