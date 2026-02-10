@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- add SUSE 15SP7 and 16.0 [PR #2505]
+
 ### Changed
 - dirconfig: add subscription setting with comment [PR #2468]
 - hyper-v: fix restores with portable data [PR #2469]
@@ -2203,6 +2206,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2483]: https://github.com/bareos/bareos/pull/2483
 [PR #2498]: https://github.com/bareos/bareos/pull/2498
 [PR #2501]: https://github.com/bareos/bareos/pull/2501
+[PR #2505]: https://github.com/bareos/bareos/pull/2505
 [PR #2508]: https://github.com/bareos/bareos/pull/2508
 [PR #2519]: https://github.com/bareos/bareos/pull/2519
 [PR #2521]: https://github.com/bareos/bareos/pull/2521
