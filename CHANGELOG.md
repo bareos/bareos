@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add SUSE 15SP7 and 16.0 [PR #2535]
 
 ### Changed
-- table-formatter.js: Fix icon selection logic [PR #2481]
 - systemtests: tune for execution on Windows [PR #2502]
 - barri: remove indicators dependency [PR #2516]
 - barri: remove unnecessary quotes in version text [PR #2512]
@@ -21,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemtests: autochanger add testrunner-restore-non-present-volume [PR #2504]
 - core/filed: fix spurious wakeups race condition in filed. [PR #2513]
 - webui: add encrypt checkbox for label tape [PR #2529]
+- table-formatter.js: Fix icon selection logic [PR #2481]
 
 ### Documentation
 - docs: large improvement on several chapters [PR #2507]
