@@ -374,46 +374,48 @@ Testing & Debugging Tape Speed
 If you find that your tape drive is not keeping up with the data rate of your backups, you can check
 several things to help determine the cause of the problem.
 
-Please consider the following informations when testing tape speed:
+Please consider the following information when testing tape speed:
 
 #. Please set the tape drive device :config:option:`sd/device/MaximumFileSize` to a reasonable value.
-   For LTO-7 a value of 200 GiB should work pretty good. You can change the value at will. While it will
-   affect organization of data on your tapes, it will be read and write compatible no matter what you
-   configure.
+   For LTO-7 a value of 200 GiB should work pretty good.
+   When Bareos writes to tape, it adds a **file-mark** after :config:option:`sd/device/MaximumFileSize`
+   Bytes to the tape to improve search times on restore. By default these file-marks are written in
+   immediate mode (i.e. the syscall will only return after the file mark was physically written to
+   the tape). Thus every file-mark implies a buffer-flush of the drive which significantly reduces
+   the total write speed.
+   Modern tape drives have internal buffers of 1 GiB and more and a write speed of 400MB/s.
+   With :config:option:`sd/device/MaximumFileSize = 200G`, such a tape drive will write a file mark
+   every 512 seconds or roughly 9 minutes.
 
-   For a little context: When Bareos writes to tape, it adds a **file-mark** now and then to improve search
-   times on restore. By default these file-marks are written in immediate mode (i.e. the syscall will
-   only return after the file mark was physically written to the tape). Thus every file-mark will imply
-   a buffer-flush of the drive. While this may not sound like a problem, modern tape drives have
-   internal buffers of 1 GiB and more. Thus writing a file-mark every 1 GiB (which is still the no more
-   well suited default in Bareos), will result in the buffer being flushed before it is filled.
+   Bigger values of :config:option:`sd/device/MaximumFileSize` will increase the total backup speed,
+   but will also increase the restore time of single file restores.
 
 #. Do tape performance tests with incompressible random data, everything else will produce bogus
-   results that are toally misleading. The data size must also be bigger than the buffer size of the drive,
-   otherwise the drive will just write from its buffer and not from the host, which will also produce
-   bogus results.
+   results that are totally misleading. The data size must also be bigger than the buffer size of
+   the drive, otherwise the drive will just write from its buffer and not from the host, which will
+   also produce bogus results.
 
-   The following command will write 1 GiB of random data to tape, which should be enough for testing
+   The following command will write 10 GiB of random data to tape, which should be enough for testing
    most drives. You can increase the count if you have a very fast drive or if you want to test with
    more data.
 
 .. code-block:: sh
    :caption: write random data to tape with raw tools, considering /tmp being a memory tmpfs
 
-   dd if=/dev/urandom of=/tmp/random bs=1M count=1024 status=progress
-      1073741824 bytes (1.1 GB, 1.0 GiB) copied, 2.41229 s, 445 MB/s
+   dd if=/dev/urandom of=/var/tmp/random bs=1M count=10240 status=progress
+     10458497024 bytes (10 GB, 9.7 GiB) copied, 24 s, 436 MB/s
 
-   tar --totals --verbose --create --file /dev/nst0 /tmp/random
+   tar --totals --verbose --create --file /dev/nst0 /var/tmp/random
       tar: Removing leading `/' from member names
-      /tmp/random
-      Total bytes written: 1073745920 (1.1GiB, 210MiB/s)
+      /var/tmp/random
+      Total bytes written: 10737428480 (11GiB, 281MiB/s)
 
 
 tapestat command
 ^^^^^^^^^^^^^^^^
 
 You can monitor performance operations of your tape drive using the :command:`tapestat 1` during a
-job to see how well your tape drive is keeping up with the data rate.
+job to see how well your tape drive is keeping up with the data rate. The `1` is the interval that `tapestat` waits between updating the output.
 
 .. image:: /include/images/tapestat_output.png
    :alt: tapestat output sample
@@ -427,7 +429,7 @@ You can also use the :command:`sg_logs --all /dev/sgX` command to see detailled 
 the tape drive status and performance or errors counters. Where :file:`/dev/sgX` is the the SCSI
 generic device corresponding to your tape drive. (see :command:`lsscsi -g`)
 
-Output vary depending if the tape is loaded or not, and drive model.
+The output varies depending on whether the tape is loaded or not, as well as on the drive model.
 
 .. code-block:: sh
    :caption: sg_logs example with LTO-6 tape drive and a tape loaded
