@@ -1,0 +1,38 @@
+status subscriptions anonymize
+
+Detailed backup unit report:
++--------------+---------------------+-------+-------------+
+| client       | plugin              | count | size_gb     |
++--------------+---------------------+-------+-------------+
+| Client 10000 | none (file data)    |     1 |        3.00 |
+| Client 10001 | barri               |     2 |        2.00 |
+| Client 10002 | barri               |     1 |        1.00 |
+| Client 10002 | bpipe               |     1 |        1.00 |
+| Client 10002 | none (file data)    |     1 |        1.00 |
+| Client 10003 | barri               |     2 |       11.00 |
+| Client 10003 | bpipe               |     1 |        1.00 |
+| Client 10003 | hyper-v             |     3 |      111.00 |
+| Client 10003 | mssqlvdi            |     4 |     1111.00 |
+| Client 10004 | ldap                |     1 |        0.09 |
+| Client 10004 | libcloud            |     1 |        0.80 |
+| Client 10004 | mariabackup         |     1 |        7.00 |
+| Client 10004 | ovirt               |     1 |       60.00 |
+| Client 10004 | percona             |     1 |      500.00 |
+| Client 10004 | postgres            |     1 |     4000.00 |
+| Client 10004 | proxmox             |     1 |    30000.00 |
+| Client 10004 | qumulo              |     1 |   200000.00 |
+| Client 10004 | vmware              |     1 |  1000000.00 |
+| Client 10005 | bridged             |     1 |        1.00 |
+| Client 10005 | custom-plugin       |     1 |        1.00 |
+| Client 10005 | my-gprc-plugin      |     1 |        1.00 |
+| Client 10005 | noprefix            |     1 |        1.00 |
+| Client 10005 | other python plugin |     1 |        1.00 |
+| TOTAL        |                     |    30 |  1235814.89 |
++--------------+---------------------+-------+-------------+
+
+Backup unit summary:
+ accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)
+            used: 1,236
+      configured: 1,240
+       remaining: 4
+

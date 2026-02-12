@@ -1,0 +1,25 @@
+# List units used aggregated per plugin.
+# Parameters:
+# - placeholder for WITH clause
+#   inject the snippet from subscription_with_clause_0 here
+%s
+SELECT
+  plugin,
+  count,
+  to_char(size_gb, '9999990.00') AS size_gb
+FROM (
+  SELECT
+    plugin,
+    count,
+    size_gb,
+    1 AS order 
+  FROM plugin_aggregated
+  UNION
+  SELECT
+    'TOTAL' as plugin,
+    SUM(count) as count,
+    SUM(size_gb) AS size_gb,
+    2 AS order
+  FROM plugin_aggregated
+) t
+ORDER BY t.order, t.plugin;

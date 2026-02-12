@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -481,11 +481,10 @@ std::string get_subscription_status_checksum_source_text(UaContext* ua,
   PoolMem query(PM_MESSAGE);
   OutputFormatter output_text
       = OutputFormatter(pm_append, &subscriptions, nullptr, nullptr);
-  ua->db->FillQuery(
-      query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_2,
-      ua->db->get_predefined_query(
-          BareosDb::SQL_QUERY::subscription_with_clause_0),
-      me->subscriptions);
+  ua->db->FillQuery(query, BareosDb::SQL_QUERY::subscription_units_total_2,
+                    ua->db->get_predefined_query(
+                        BareosDb::SQL_QUERY::subscription_with_clause_0),
+                    me->subscriptions);
   ua->db->ListSqlQuery(ua->jcr, query.c_str(), &output_text, VERT_LIST, false);
   std::string checksum_source
       = salt + "\n" + timestamp + "\n" + subscriptions.c_str();
@@ -517,22 +516,20 @@ static bool DoSubscriptionStatus(UaContext* ua)
   const bool kw_detail = (FindArg(ua, NT_("detail")) > 0);
   const bool kw_unknown = (FindArg(ua, NT_("unknown")) > 0);
   const bool kw_all = (FindArg(ua, NT_("all")) > 0);
+  const bool kw_anon = (FindArg(ua, NT_("anonymize")) > 0);
+  const bool kw_plugins = (FindArg(ua, NT_("plugins")) > 0);
+  const bool kw_clients = (FindArg(ua, NT_("clients")) > 0);
 
-  if (kw_detail && kw_unknown) {
-    ua->ErrorMsg("Cannot combine keywords 'detail' and 'unknown'.\n");
-    return false;
-  } else if (kw_all && kw_detail) {
-    ua->ErrorMsg("Cannot combine keywords 'all' and 'detail'.\n");
-    return false;
-  } else if (kw_all && kw_unknown) {
-    ua->ErrorMsg("Cannot combine keywords 'all' and 'unknown'.\n");
-    return false;
+  if (kw_unknown) {
+    ua->ErrorMsg(
+        "Parameter 'unknown' ignored. There is no unknown data anymore.\n");
+  } else if (kw_detail) {
+    ua->ErrorMsg("Parameter 'detail' ignored. This is now the default.\n");
   }
-
   char now[30] = {0};
   bstrftime(now, sizeof(now), (utime_t)time(NULL), "%F %T");
 
-  if (kw_all || kw_detail) {
+  if (kw_all || (!kw_clients && !kw_plugins)) {
     ua->send->ObjectKeyValue(
         "version", "Bareos version: ", kBareosVersionStrings.Full, "%s");
     ua->send->ObjectKeyValue("os", kBareosVersionStrings.GetOsInfo(),
@@ -544,61 +541,55 @@ static bool DoSubscriptionStatus(UaContext* ua)
     ua->SendMsg(T_("\nDetailed backup unit report:\n"));
 
     PoolMem query(PM_MESSAGE);
-    ua->db->FillQuery(
-        query, BareosDb::SQL_QUERY::subscription_select_backup_unit_overview_1,
-        ua->db->get_predefined_query(
-            BareosDb::SQL_QUERY::subscription_with_clause_0));
+    ua->db->FillQuery(query, BareosDb::SQL_QUERY::subscription_units_3,
+                      ua->db->get_predefined_query(
+                          BareosDb::SQL_QUERY::subscription_with_clause_0),
+                      kw_anon ? "client_anon" : "client_name",
+                      kw_anon ? "client_id" : "client_name");
 
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
                          "unit-detail", true);
   }
-  if (kw_all || kw_detail || !kw_unknown) {
-    ua->SendMsg(T_("\nBackup unit totals:\n"));
+  if (kw_all || kw_clients) {
+    ua->SendMsg(T_("\nBackup unit report aggregated by client:\n"));
     PoolMem query(PM_MESSAGE);
-    ua->db->FillQuery(
-        query, BareosDb::SQL_QUERY::subscription_select_backup_unit_total_2,
-        ua->db->get_predefined_query(
-            BareosDb::SQL_QUERY::subscription_with_clause_0),
-        me->subscriptions);
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, VERT_LIST,
-                         "total-units-required", true,
-                         BareosDb::CollapseMode::Collapse);
-    std::string checksum_source
-        = get_subscription_status_checksum_source_text(ua, now);
-    auto checksum = compute_hash(checksum_source);
-    if (checksum) {
-      ua->send->ObjectKeyValue("checksum", "Checksum: ", checksum->c_str(),
-                               "%s\n");
-    }
-  }
-  if (kw_all || kw_unknown) {
-    ua->SendMsg(
-        T_("\nClients/Filesets that cannot be categorized for backup units "
-           "yet:\n"));
-    PoolMem query(PM_MESSAGE);
-    ua->db->FillQuery(
-        query,
-        BareosDb::SQL_QUERY::subscription_select_unclassified_client_fileset_1,
-        ua->db->get_predefined_query(
-            BareosDb::SQL_QUERY::subscription_with_clause_0));
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
-                         "filesets-not-catogorized", true);
+    ua->db->FillQuery(query,
+                      BareosDb::SQL_QUERY::subscription_units_client_total_3,
+                      ua->db->get_predefined_query(
+                          BareosDb::SQL_QUERY::subscription_with_clause_0),
+                      kw_anon ? "client_anon" : "client_name",
+                      kw_anon ? "client_id" : "client_name");
 
-    ua->SendMsg(
-        T_("\nAmount of data that cannot be categorized for backup units "
-           "yet:\n"));
-    ua->db->FillQuery(
-        query,
-        BareosDb::SQL_QUERY::subscription_select_unclassified_amount_data_1,
-        ua->db->get_predefined_query(
-            BareosDb::SQL_QUERY::subscription_with_clause_0));
-    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, VERT_LIST,
-                         "data-not-categorized", true,
-                         BareosDb::CollapseMode::Collapse);
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
+                         "unit-clients", true);
   }
-  ua->SendMsg(
-      T_("\nEstimate only. Contact Bareos for actual quote"
-         " https://www.bareos.com/contact/\n"));
+  if (kw_all || kw_plugins) {
+    ua->SendMsg(T_("\nBackup unit report aggregated by plugin:\n"));
+    PoolMem query(PM_MESSAGE);
+    ua->db->FillQuery(query,
+                      BareosDb::SQL_QUERY::subscription_units_plugin_total_1,
+                      ua->db->get_predefined_query(
+                          BareosDb::SQL_QUERY::subscription_with_clause_0));
+
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
+                         "unit-plugins", true);
+  }
+
+  ua->SendMsg(T_("\nBackup unit summary:\n"));
+  PoolMem query(PM_MESSAGE);
+  ua->db->FillQuery(query, BareosDb::SQL_QUERY::subscription_units_total_2,
+                    ua->db->get_predefined_query(
+                        BareosDb::SQL_QUERY::subscription_with_clause_0),
+                    me->subscriptions);
+  ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, VERT_LIST,
+                       "unit-summary", true, BareosDb::CollapseMode::Collapse);
+  std::string checksum_source
+      = get_subscription_status_checksum_source_text(ua, now);
+  auto checksum = compute_hash(checksum_source);
+  if (checksum) {
+    ua->send->ObjectKeyValue("checksum", "Checksum: ", checksum->c_str(),
+                             "%s\n");
+  }
   return true;
 }
 

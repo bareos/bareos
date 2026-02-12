@@ -3,1189 +3,1195 @@
 
 const char *BareosDbPostgresql::query_definitions[] = {
 /* 0001_get_restore_objects */
-"SELECT JobId, ObjectLength, ObjectFullLength, ObjectIndex, ObjectType, ObjectCompression, FileIndex, ObjectName, RestoreObject, PluginName "
-  "FROM RestoreObject "
- "WHERE JobId IN (%s) "
-   "AND ObjectType = %d "
- "ORDER BY ObjectIndex ASC "
-,
+R"SQL(SELECT JobId, ObjectLength, ObjectFullLength, ObjectIndex, ObjectType, ObjectCompression, FileIndex, ObjectName, RestoreObject, PluginName
+  FROM RestoreObject
+ WHERE JobId IN (%s)
+   AND ObjectType = %d
+ ORDER BY ObjectIndex ASC
+)SQL",
 
 /* 0002_cleanup_created_job */
-"UPDATE Job "
-   "SET JobStatus = 'f', StartTime = SchedTime, EndTime = SchedTime "
- "WHERE JobStatus = 'C' "
-,
+R"SQL(UPDATE Job
+   SET JobStatus = 'f', StartTime = SchedTime, EndTime = SchedTime
+ WHERE JobStatus = 'C'
+)SQL",
 
 /* 0003_cleanup_running_job */
-"UPDATE Job "
-   "SET JobStatus = 'f', EndTime = StartTime "
- "WHERE JobStatus = 'R' "
-,
+R"SQL(UPDATE Job
+   SET JobStatus = 'f', EndTime = StartTime
+ WHERE JobStatus = 'R'
+)SQL",
 
 /* 0004_fill_jobhisto */
-"INSERT INTO JobHisto ( "
-	       "JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, "
-	       "VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, "
-	       "PriorJobId, PurgedFiles, "
-	       "HasBase, Reviewed, Comment "
-       ") "
-"SELECT JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, VolSessionId, "
-       "VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, PriorJobId, PurgedFiles, "
-       "HasBase, "
-       "Reviewed, Comment "
-  "FROM Job "
- "WHERE JobStatus IN ('T','W','f','A','E') "
-   "AND NOT EXISTS ( "
-		"SELECT JobHisto.JobId "
-		  "FROM JobHisto "
-		 "WHERE JobHisto.Jobid = Job.JobId "
-       ") "
-   "AND JobTDate       < %s "
-,
+R"SQL(INSERT INTO JobHisto (
+	       JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate,
+	       VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId,
+	       PriorJobId, PurgedFiles,
+	       HasBase, Reviewed, Comment
+       )
+SELECT JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, VolSessionId,
+       VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, PriorJobId, PurgedFiles,
+       HasBase,
+       Reviewed, Comment
+  FROM Job
+ WHERE JobStatus IN ('T','W','f','A','E')
+   AND NOT EXISTS (
+		SELECT JobHisto.JobId
+		  FROM JobHisto
+		 WHERE JobHisto.Jobid = Job.JobId
+       )
+   AND JobTDate       < %s
+)SQL",
 
 /* 0005_list_pool */
-"SELECT * "
-  "FROM Pool "
- "WHERE PoolId = %s "
-,
+R"SQL(SELECT *
+  FROM Pool
+ WHERE PoolId = %s
+)SQL",
 
 /* 0006_list_jobs */
-"SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client, "
-"Job.StartTime, "
-"CASE "
-    "WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime "
-    "ELSE CURRENT_TIMESTAMP(0) - Job.starttime "
-    "END as Duration, "
-"Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus "
-"FROM Job "
-"LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-"LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
-"LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
-"LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
-"WHERE Job.JobId > 0 "
-"%s "
-"ORDER BY StartTime%s; "
-,
+R"SQL(SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client,
+Job.StartTime,
+CASE
+    WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
+    ELSE CURRENT_TIMESTAMP(0) - Job.starttime
+    END as Duration,
+Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
+FROM Job
+LEFT JOIN Client ON Client.ClientId=Job.ClientId
+LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+WHERE Job.JobId > 0
+%s
+ORDER BY StartTime%s;
+)SQL",
 
 /* 0007_list_jobs_long */
-"SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level, "
-"Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime, "
-"Job.EndTime,Job.RealEndtime, "
-"CASE "
-    "WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime "
-    "ELSE CURRENT_TIMESTAMP(0) - Job.starttime "
-    "END as Duration, "
-"Job.JobTDate, Job.VolSessionId, Job.VolSessionTime, "
-"Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId, "
-"Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet "
-"FROM Job "
-"LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-"LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
-"LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
-"LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
-"LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
-"WHERE Job.JobId > 0 "
-"%s "
-"ORDER BY StartTime%s; "
-,
+R"SQL(SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level,
+Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime,
+Job.EndTime,Job.RealEndtime,
+CASE
+    WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
+    ELSE CURRENT_TIMESTAMP(0) - Job.starttime
+    END as Duration,
+Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
+Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
+Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet
+FROM Job
+LEFT JOIN Client ON Client.ClientId=Job.ClientId
+LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
+LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+WHERE Job.JobId > 0
+%s
+ORDER BY StartTime%s;
+)SQL",
 
 /* 0008_list_jobs_count */
-"SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count "
-"FROM Job "
-"LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-"LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
-"LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
-"LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
-"WHERE Job.JobId > 0 "
-"%s "
-"%s; "
-,
+R"SQL(SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
+FROM Job
+LEFT JOIN Client ON Client.ClientId=Job.ClientId
+LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+WHERE Job.JobId > 0
+%s
+%s;
+)SQL",
 
 /* 0009_list_jobs_last */
-"SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client, "
-"Job.StartTime, "
-"CASE "
-    "WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime "
-    "ELSE CURRENT_TIMESTAMP(0) - Job.starttime "
-    "END as Duration, "
-"Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus "
-"FROM Job "
-"LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-"LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
-"LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
-"LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
-"INNER JOIN ( "
-   "SELECT MAX(Job.JobId) as MaxJobId "
-   "FROM Job "
-   "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-   "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
-   "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
-   "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
-   "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
-   "WHERE Job.JobId > 0 "
-   "%s "
-   "GROUP BY Job.Name "
-") LastJob "
-"ON Job.JobId = LastJob.MaxJobId "
-"ORDER BY StartTime%s; "
-,
+R"SQL(SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client,
+Job.StartTime,
+CASE
+    WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
+    ELSE CURRENT_TIMESTAMP(0) - Job.starttime
+    END as Duration,
+Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
+FROM Job
+LEFT JOIN Client ON Client.ClientId=Job.ClientId
+LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+INNER JOIN (
+   SELECT MAX(Job.JobId) as MaxJobId
+   FROM Job
+   LEFT JOIN Client ON Client.ClientId=Job.ClientId
+   LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
+   LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+   LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+   LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+   WHERE Job.JobId > 0
+   %s
+   GROUP BY Job.Name
+) LastJob
+ON Job.JobId = LastJob.MaxJobId
+ORDER BY StartTime%s;
+)SQL",
 
 /* 0010_list_jobs_long_last */
-"SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level, "
-"Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime, "
-"Job.EndTime, Job.RealEndTime, "
-"CASE "
-    "WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime "
-    "ELSE CURRENT_TIMESTAMP(0) - Job.starttime "
-    "END as Duration, "
-"Job.JobTDate, Job.VolSessionId, Job.VolSessionTime, "
-"Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId, "
-"Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet "
-"FROM Job "
-"LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-"LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
-"LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
-"LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
-"LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
-"INNER JOIN ( "
-   "SELECT MAX(Job.JobId) as MaxJobId "
-   "FROM Job "
-   "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
-   "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
-   "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
-   "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
-   "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
-   "WHERE Job.JobId > 0 "
-   "%s "
-   "GROUP BY Job.Name "
-") LastJob "
-"ON Job.JobId = LastJob.MaxJobId "
-"ORDER BY StartTime%s; "
-,
+R"SQL(SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level,
+Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime,
+Job.EndTime, Job.RealEndTime,
+CASE
+    WHEN Job.endtime IS NOT NULL AND Job.endtime >= Job.starttime THEN Job.endtime - Job.starttime
+    ELSE CURRENT_TIMESTAMP(0) - Job.starttime
+    END as Duration,
+Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
+Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
+Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet
+FROM Job
+LEFT JOIN Client ON Client.ClientId=Job.ClientId
+LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
+LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+INNER JOIN (
+   SELECT MAX(Job.JobId) as MaxJobId
+   FROM Job
+   LEFT JOIN Client ON Client.ClientId=Job.ClientId
+   LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
+   LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+   LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+   LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+   WHERE Job.JobId > 0
+   %s
+   GROUP BY Job.Name
+) LastJob
+ON Job.JobId = LastJob.MaxJobId
+ORDER BY StartTime%s;
+)SQL",
 
 /* 0011_sel_JobMedia */
-"SELECT DISTINCT JobMedia.JobId "
-   "FROM JobMedia, Job "
-   "WHERE MediaId      = %s "
-   "AND Job.JobId    = JobMedia.JobId "
-   "AND Job.JobTDate < %s "
-   "ORDER BY JobId "
-,
+R"SQL(SELECT DISTINCT JobMedia.JobId
+   FROM JobMedia, Job
+   WHERE MediaId      = %s
+   AND Job.JobId    = JobMedia.JobId
+   AND Job.JobTDate < %s
+   ORDER BY JobId
+)SQL",
 
 /* 0012_drop_deltabs.postgresql */
-"DROP TABLE IF EXISTS DelCandidates "
-,
+R"SQL(DROP TABLE IF EXISTS DelCandidates
+)SQL",
 
 /* 0013_create_deltabs.postgresql */
-"CREATE TEMPORARY TABLE "
-       "DelCandidates ( JobId INTEGER NOT NULL, PurgedFiles SMALLINT, FileSetId INTEGER, JobFiles INTEGER, JobStatus char(1)) "
-,
+R"SQL(CREATE TEMPORARY TABLE
+       DelCandidates ( JobId INTEGER NOT NULL, PurgedFiles SMALLINT, FileSetId INTEGER, JobFiles INTEGER, JobStatus char(1))
+)SQL",
 
 /* 0014_create_delindex */
-"CREATE INDEX DelInx1 ON DelCandidates (JobId) "
-,
+R"SQL(CREATE INDEX DelInx1 ON DelCandidates (JobId)
+)SQL",
 
 /* 0015_uar_count_files */
-"SELECT JobFiles "
-  "FROM Job "
- "WHERE JobId = %s "
-,
+R"SQL(SELECT JobFiles
+  FROM Job
+ WHERE JobId = %s
+)SQL",
 
 /* 0016_uar_list_jobs */
-"SELECT JobId, Client.Name as Client, StartTime, Level as JobLevel, JobFiles, JobBytes "
-  "FROM Client, Job "
- "WHERE Client.ClientId = Job.ClientId "
-   "AND JobStatus IN ('T','W') "
-   "AND Type            = '%c' "
- "ORDER BY StartTime DESC LIMIT 20 "
-,
+R"SQL(SELECT JobId, Client.Name as Client, StartTime, Level as JobLevel, JobFiles, JobBytes
+  FROM Client, Job
+ WHERE Client.ClientId = Job.ClientId
+   AND JobStatus IN ('T','W')
+   AND Type            = '%c'
+ ORDER BY StartTime DESC LIMIT 20
+)SQL",
 
 /* 0017_uar_print_jobs */
-"SELECT DISTINCT JobId, Level, JobFiles, JobBytes, StartTime, VolumeName "
-  "FROM Job "
-  "JOIN JobMedia "
- "USING (JobId) "
-  "JOIN Media "
- "USING (MediaId) "
- "WHERE JobId IN (%s) "
- "ORDER BY StartTime ASC "
-,
+R"SQL(SELECT DISTINCT JobId, Level, JobFiles, JobBytes, StartTime, VolumeName
+  FROM Job
+  JOIN JobMedia
+ USING (JobId)
+  JOIN Media
+ USING (MediaId)
+ WHERE JobId IN (%s)
+ ORDER BY StartTime ASC
+)SQL",
 
 /* 0018_uar_del_temp */
-"DROP TABLE IF EXISTS temp "
-,
+R"SQL(DROP TABLE IF EXISTS temp
+)SQL",
 
 /* 0019_uar_del_temp1 */
-"DROP TABLE IF EXISTS temp1 "
-,
+R"SQL(DROP TABLE IF EXISTS temp1
+)SQL",
 
 /* 0020_uar_last_full */
-"INSERT INTO temp1 "
-"SELECT Job.JobId, JobTdate "
-  "FROM Job, JobMedia, Media, FileSet "
- "WHERE Job.ClientId     = %s "
-   "AND Job.StartTime    < '%s' "
-   "AND Level            = 'F' "
-   "AND JobStatus IN ('T','W') "
-   "AND Type             = '%c' "
-   "AND JobMedia.JobId   = Job.JobId "
-   "AND Media.Enabled    = 1 "
-   "AND JobMedia.MediaId = Media.MediaId "
-   "AND Job.FileSetId    = FileSet.FileSetId "
-   "AND FileSet.FileSet  = '%s' %s "
- "ORDER BY Job.JobTDate DESC LIMIT 1 "
-,
+R"SQL(INSERT INTO temp1
+SELECT Job.JobId, JobTdate
+  FROM Job, JobMedia, Media, FileSet
+ WHERE Job.ClientId     = %s
+   AND Job.StartTime    < '%s'
+   AND Level            = 'F'
+   AND JobStatus IN ('T','W')
+   AND Type             = '%c'
+   AND JobMedia.JobId   = Job.JobId
+   AND Media.Enabled    = 1
+   AND JobMedia.MediaId = Media.MediaId
+   AND Job.FileSetId    = FileSet.FileSetId
+   AND FileSet.FileSet  = '%s' %s
+ ORDER BY Job.JobTDate DESC LIMIT 1
+)SQL",
 
 /* 0021_uar_last_full_no_pool */
-"INSERT INTO temp1 "
-"SELECT Job.JobId, JobTdate "
-  "FROM Job, FileSet "
- "WHERE Job.ClientId    = %s "
-   "AND Job.StartTime   < '%s' "
-   "AND Level           = 'F' "
-   "AND JobStatus IN ('T','W') "
-   "AND Type            = '%c' "
-   "AND Job.FileSetId   = FileSet.FileSetId "
-   "AND FileSet.FileSet = '%s' "
- "ORDER BY Job.JobTDate DESC LIMIT 1 "
-,
+R"SQL(INSERT INTO temp1
+SELECT Job.JobId, JobTdate
+  FROM Job, FileSet
+ WHERE Job.ClientId    = %s
+   AND Job.StartTime   < '%s'
+   AND Level           = 'F'
+   AND JobStatus IN ('T','W')
+   AND Type            = '%c'
+   AND Job.FileSetId   = FileSet.FileSetId
+   AND FileSet.FileSet = '%s'
+ ORDER BY Job.JobTDate DESC LIMIT 1
+)SQL",
 
 /* 0022_uar_full */
-"INSERT INTO temp "
-"SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, StartTime, VolumeName, JobMedia.StartFile, "
-       "VolSessionId, VolSessionTime "
-  "FROM temp1, Job, JobMedia, Media "
- "WHERE temp1.JobId      = Job.JobId "
-   "AND Level            = 'F' "
-   "AND JobStatus IN ('T','W') "
-   "AND Type             = '%c' "
-   "AND Media.Enabled    = 1 "
-   "AND JobMedia.JobId   = Job.JobId "
-   "AND JobMedia.MediaId = Media.MediaId "
-,
+R"SQL(INSERT INTO temp
+SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, StartTime, VolumeName, JobMedia.StartFile,
+       VolSessionId, VolSessionTime
+  FROM temp1, Job, JobMedia, Media
+ WHERE temp1.JobId      = Job.JobId
+   AND Level            = 'F'
+   AND JobStatus IN ('T','W')
+   AND Type             = '%c'
+   AND Media.Enabled    = 1
+   AND JobMedia.JobId   = Job.JobId
+   AND JobMedia.MediaId = Media.MediaId
+)SQL",
 
 /* 0023_uar_dif */
-"INSERT INTO temp "
-"SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName, "
-       "JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime "
-  "FROM Job, JobMedia, Media, FileSet "
- "WHERE Job.JobTDate     > %s "
-   "AND Job.StartTime    < '%s' "
-   "AND Job.ClientId     = %s "
-   "AND JobMedia.JobId   = Job.JobId "
-   "AND Media.Enabled    = 1 "
-   "AND JobMedia.MediaId = Media.MediaId "
-   "AND Job.Level        = 'D' "
-   "AND JobStatus IN ('T','W') "
-   "AND Type             = '%c' "
-   "AND Job.FileSetId    = FileSet.FileSetId "
-   "AND FileSet.FileSet  = '%s' %s "
- "ORDER BY Job.JobTDate DESC LIMIT 1 "
-,
+R"SQL(INSERT INTO temp
+SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName,
+       JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime
+  FROM Job, JobMedia, Media, FileSet
+ WHERE Job.JobTDate     > %s
+   AND Job.StartTime    < '%s'
+   AND Job.ClientId     = %s
+   AND JobMedia.JobId   = Job.JobId
+   AND Media.Enabled    = 1
+   AND JobMedia.MediaId = Media.MediaId
+   AND Job.Level        = 'D'
+   AND JobStatus IN ('T','W')
+   AND Type             = '%c'
+   AND Job.FileSetId    = FileSet.FileSetId
+   AND FileSet.FileSet  = '%s' %s
+ ORDER BY Job.JobTDate DESC LIMIT 1
+)SQL",
 
 /* 0024_uar_inc */
-"INSERT INTO temp "
-"SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName, "
-       "JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime "
-  "FROM Job, JobMedia, Media, FileSet "
- "WHERE Job.JobTDate     > %s "
-   "AND Job.StartTime    < '%s' "
-   "AND Job.ClientId     = %s "
-   "AND Media.Enabled    = 1 "
-   "AND JobMedia.JobId   = Job.JobId "
-   "AND JobMedia.MediaId = Media.MediaId "
-   "AND Job.Level        = 'I' "
-   "AND JobStatus IN ('T','W') "
-   "AND Type             = '%c' "
-   "AND Job.FileSetId    = FileSet.FileSetId "
-   "AND FileSet.FileSet  = '%s' %s "
-,
+R"SQL(INSERT INTO temp
+SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName,
+       JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime
+  FROM Job, JobMedia, Media, FileSet
+ WHERE Job.JobTDate     > %s
+   AND Job.StartTime    < '%s'
+   AND Job.ClientId     = %s
+   AND Media.Enabled    = 1
+   AND JobMedia.JobId   = Job.JobId
+   AND JobMedia.MediaId = Media.MediaId
+   AND Job.Level        = 'I'
+   AND JobStatus IN ('T','W')
+   AND Type             = '%c'
+   AND Job.FileSetId    = FileSet.FileSetId
+   AND FileSet.FileSet  = '%s' %s
+)SQL",
 
 /* 0025_uar_list_jobs_by_idlist */
-"SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName "
-  "FROM Job, JobMedia, Media "
- "WHERE Job.JobId IN (%s) "
-   "AND JobMedia.JobId   = Job.JobId "
-   "AND Media.Enabled    = 1 "
-   "AND JobMedia.MediaId = Media.MediaId "
- "ORDER BY StartTime ASC "
-,
+R"SQL(SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName
+  FROM Job, JobMedia, Media
+ WHERE Job.JobId IN (%s)
+   AND JobMedia.JobId   = Job.JobId
+   AND Media.Enabled    = 1
+   AND JobMedia.MediaId = Media.MediaId
+ ORDER BY StartTime ASC
+)SQL",
 
 /* 0026_uar_sel_jobid_temp */
-"SELECT DISTINCT JobId, StartTime "
-  "FROM temp "
- "ORDER BY StartTime ASC "
-,
+R"SQL(SELECT DISTINCT JobId, StartTime
+  FROM temp
+ ORDER BY StartTime ASC
+)SQL",
 
 /* 0027_uar_sel_all_temp1 */
-"SELECT * "
-  "FROM temp1 "
-,
+R"SQL(SELECT *
+  FROM temp1
+)SQL",
 
 /* 0028_uar_sel_all_temp */
-"SELECT * "
-  "FROM temp "
-,
+R"SQL(SELECT *
+  FROM temp
+)SQL",
 
 /* 0029_uar_sel_fileset */
-"SELECT DISTINCT FileSet.FileSet "
-  "FROM Job, Client, FileSet "
- "WHERE Job.FileSetId   = FileSet.FileSetId "
-   "AND Job.ClientId    = %s "
-   "AND Client.ClientId = %s "
- "ORDER BY FileSet.FileSet "
-,
+R"SQL(SELECT DISTINCT FileSet.FileSet
+  FROM Job, Client, FileSet
+ WHERE Job.FileSetId   = FileSet.FileSetId
+   AND Job.ClientId    = %s
+   AND Client.ClientId = %s
+ ORDER BY FileSet.FileSet
+)SQL",
 
 /* 0030_uar_sel_filesetid */
-"SELECT MAX(FileSet.FileSetId) "
-  "FROM FileSet "
-  "JOIN Job "
- "USING (FileSetId) "
- "WHERE Job.ClientId = %s "
- "GROUP BY FileSet "
-,
+R"SQL(SELECT MAX(FileSet.FileSetId)
+  FROM FileSet
+  JOIN Job
+ USING (FileSetId)
+ WHERE Job.ClientId = %s
+ GROUP BY FileSet
+)SQL",
 
 /* 0031_uar_jobid_fileindex */
-"SELECT Job.JobId, "
-       "File.FileIndex "
-"FROM Job, "
-     "File, "
-     "Path, "
-     "Client "
-"WHERE Job.JobId=File.JobId "
-  "AND Job.StartTime<='%s' "
-  "AND Path.Path='%s' "
-  "AND File.Name='%s' "
-  "AND Client.Name='%s' "
-  "AND Job.ClientId=Client.ClientId "
-  "AND Path.PathId=File.PathId "
-  "AND JobStatus IN ('T', "
-                    "'W') "
-  "AND TYPE='%c' "
-"ORDER BY Job.StartTime DESC "
-"LIMIT 1 "
-,
+R"SQL(SELECT Job.JobId,
+       File.FileIndex
+FROM Job,
+     File,
+     Path,
+     Client
+WHERE Job.JobId=File.JobId
+  AND Job.StartTime<='%s'
+  AND Path.Path='%s'
+  AND File.Name='%s'
+  AND Client.Name='%s'
+  AND Job.ClientId=Client.ClientId
+  AND Path.PathId=File.PathId
+  AND JobStatus IN ('T',
+                    'W')
+  AND TYPE='%c'
+ORDER BY Job.StartTime DESC
+LIMIT 1
+)SQL",
 
 /* 0032_uar_jobids_fileindex */
-"SELECT Job.JobId, "
-       "File.FileIndex "
-"FROM Job, "
-     "File, "
-     "Path, "
-     "Client "
-"WHERE Job.JobId IN (%s) "
-  "AND Job.JobId=File.JobId "
-  "AND Job.StartTime<='%s' "
-  "AND Path.Path='%s' "
-  "AND File.Name='%s' "
-  "AND Client.Name='%s' "
-  "AND Job.ClientId=Client.ClientId "
-  "AND Path.PathId=File.PathId "
-"ORDER BY Job.StartTime DESC "
-"LIMIT 1 "
-,
+R"SQL(SELECT Job.JobId,
+       File.FileIndex
+FROM Job,
+     File,
+     Path,
+     Client
+WHERE Job.JobId IN (%s)
+  AND Job.JobId=File.JobId
+  AND Job.StartTime<='%s'
+  AND Path.Path='%s'
+  AND File.Name='%s'
+  AND Client.Name='%s'
+  AND Job.ClientId=Client.ClientId
+  AND Path.PathId=File.PathId
+ORDER BY Job.StartTime DESC
+LIMIT 1
+)SQL",
 
 /* 0033_uar_jobid_fileindex_from_table */
-"SELECT JobId, FileIndex "
-  "FROM %s "
- "ORDER BY JobId, FileIndex ASC "
-,
+R"SQL(SELECT JobId, FileIndex
+  FROM %s
+ ORDER BY JobId, FileIndex ASC
+)SQL",
 
 /* 0034_select_recent_version_with_basejob.postgresql */
-"SELECT DISTINCT ON (Name, "
-                    "PathId) JobTDate, "
-                   "JobId, "
-                   "FileId, "
-                   "FileIndex, "
-                   "PathId, "
-                   "FileName AS Name, "
-                   "LStat, "
-                   "MD5, "
-                   "DeltaSeq, "
-                   "Fhinfo, "
-                   "Fhnode "
-"FROM "
-  "(SELECT FileId, "
-          "JobId, "
-          "PathId, "
-          "Name AS FileName, "
-          "FileIndex, "
-          "LStat, "
-          "MD5, "
-          "DeltaSeq, "
-          "Fhinfo, "
-          "Fhnode "
-   "FROM File "
-   "WHERE JobId IN (%s) "
-     "UNION ALL "
-     "SELECT File.FileId, "
-            "File.JobId, "
-            "PathId, "
-            "File.Name AS FileName, "
-            "File.FileIndex, "
-            "LStat, "
-            "MD5, "
-            "DeltaSeq, "
-            "Fhinfo, "
-            "Fhnode "
-     "FROM BaseFiles "
-     "JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T "
-"JOIN Job USING (JobId) "
-"ORDER BY Name, "
-         "PathId, "
-         "JobTDate DESC "
-,
+R"SQL(SELECT DISTINCT ON (Name,
+                    PathId) JobTDate,
+                   JobId,
+                   FileId,
+                   FileIndex,
+                   PathId,
+                   FileName AS Name,
+                   LStat,
+                   MD5,
+                   DeltaSeq,
+                   Fhinfo,
+                   Fhnode
+FROM
+  (SELECT FileId,
+          JobId,
+          PathId,
+          Name AS FileName,
+          FileIndex,
+          LStat,
+          MD5,
+          DeltaSeq,
+          Fhinfo,
+          Fhnode
+   FROM File
+   WHERE JobId IN (%s)
+     UNION ALL
+     SELECT File.FileId,
+            File.JobId,
+            PathId,
+            File.Name AS FileName,
+            File.FileIndex,
+            LStat,
+            MD5,
+            DeltaSeq,
+            Fhinfo,
+            Fhnode
+     FROM BaseFiles
+     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
+JOIN Job USING (JobId)
+ORDER BY Name,
+         PathId,
+         JobTDate DESC
+)SQL",
 
 /* 0035_select_recent_version_with_basejob_and_delta.postgresql */
-"SELECT DISTINCT ON (Name, "
-                    "PathId, "
-                    "DeltaSeq) JobTDate, "
-                   "JobId, "
-                   "FileId, "
-                   "FileIndex, "
-                   "PathId, "
-                   "Filename AS Name, "
-                   "LStat, "
-                   "MD5, "
-                   "DeltaSeq, "
-                   "Fhinfo, "
-                   "Fhnode "
-"FROM "
-  "(SELECT FileId, "
-          "JobId, "
-          "PathId, "
-          "Name AS FileName, "
-          "FileIndex, "
-          "LStat, "
-          "MD5, "
-          "DeltaSeq, "
-          "Fhinfo, "
-          "Fhnode "
-   "FROM File "
-   "WHERE JobId IN (%s) "
-     "UNION ALL "
-     "SELECT File.FileId, "
-            "File.JobId, "
-            "PathId, "
-            "File.Name AS FileName, "
-            "File.FileIndex, "
-            "LStat, "
-            "MD5, "
-            "DeltaSeq, "
-            "Fhinfo, "
-            "Fhnode "
-     "FROM BaseFiles "
-     "JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T "
-"JOIN Job USING (JobId) "
-"ORDER BY Name, "
-         "PathId, "
-         "DeltaSeq, "
-         "JobTDate DESC "
-,
+R"SQL(SELECT DISTINCT ON (Name,
+                    PathId,
+                    DeltaSeq) JobTDate,
+                   JobId,
+                   FileId,
+                   FileIndex,
+                   PathId,
+                   Filename AS Name,
+                   LStat,
+                   MD5,
+                   DeltaSeq,
+                   Fhinfo,
+                   Fhnode
+FROM
+  (SELECT FileId,
+          JobId,
+          PathId,
+          Name AS FileName,
+          FileIndex,
+          LStat,
+          MD5,
+          DeltaSeq,
+          Fhinfo,
+          Fhnode
+   FROM File
+   WHERE JobId IN (%s)
+     UNION ALL
+     SELECT File.FileId,
+            File.JobId,
+            PathId,
+            File.Name AS FileName,
+            File.FileIndex,
+            LStat,
+            MD5,
+            DeltaSeq,
+            Fhinfo,
+            Fhnode
+     FROM BaseFiles
+     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
+JOIN Job USING (JobId)
+ORDER BY Name,
+         PathId,
+         DeltaSeq,
+         JobTDate DESC
+)SQL",
 
 /* 0036_select_recent_version.postgresql */
-"SELECT DISTINCT ON (File.Name, "
-                    "PathId) JobTDate, "
-                   "JobId, "
-                   "FileId, "
-                   "FileIndex, "
-                   "PathId, "
-                   "File.Name, "
-                   "LStat, "
-                   "MD5, "
-                   "Fhinfo, "
-                   "Fhnode "
-"FROM File "
-"JOIN Job USING (JobId) "
-"WHERE JobId IN (%s) "
-"ORDER BY File.Name, "
-         "PathId, "
-         "JobTDate DESC "
-,
+R"SQL(SELECT DISTINCT ON (File.Name,
+                    PathId) JobTDate,
+                   JobId,
+                   FileId,
+                   FileIndex,
+                   PathId,
+                   File.Name,
+                   LStat,
+                   MD5,
+                   Fhinfo,
+                   Fhnode
+FROM File
+JOIN Job USING (JobId)
+WHERE JobId IN (%s)
+ORDER BY File.Name,
+         PathId,
+         JobTDate DESC
+)SQL",
 
 /* 0037_create_temp_accurate_jobids */
-"CREATE TABLE btemp3%s AS "
-"SELECT JobId, "
-       "StartTime, "
-       "EndTime, "
-       "JobTDate, "
-       "PurgedFiles "
-"FROM Job "
-"JOIN FileSet USING (FileSetId) "
-"WHERE ClientId = %s "
-  "AND Level = 'F' "
-  "AND JobStatus IN ('T', "
-                    "'W') "
-  "AND Type = '%c' "
-  "AND StartTime < '%s' "
-  "AND FileSet.FileSetId = %s "
-"ORDER BY Job.JobId DESC, "
-         "Job.JobTDate DESC "
-"LIMIT 1 "
-,
+R"SQL(CREATE TABLE btemp3%s AS
+SELECT JobId,
+       StartTime,
+       EndTime,
+       JobTDate,
+       PurgedFiles
+FROM Job
+JOIN FileSet USING (FileSetId)
+WHERE ClientId = %s
+  AND Level = 'F'
+  AND JobStatus IN ('T',
+                    'W')
+  AND Type = '%c'
+  AND StartTime < '%s'
+  AND FileSet.FileSetId = %s
+ORDER BY Job.JobId DESC,
+         Job.JobTDate DESC
+LIMIT 1
+)SQL",
 
 /* 0038_create_temp_basefile */
-"CREATE TEMPORARY TABLE basefile%lld ( Path TEXT, Name TEXT) "
-,
+R"SQL(CREATE TEMPORARY TABLE basefile%lld ( Path TEXT, Name TEXT)
+)SQL",
 
 /* 0039_create_temp_new_basefile */
-"CREATE "
-"TEMPORARY TABLE new_basefile%lld AS "
-"SELECT Path.Path AS Path, "
-       "Temp.Name AS Name, "
-       "Temp.FileIndex AS FileIndex, "
-       "Temp.JobId AS JobId, "
-       "Temp.LStat AS LStat, "
-       "Temp.FileId AS FileId, "
-       "Temp.MD5 AS MD5, "
-       "Temp.Fhinfo AS Fhinfo, "
-       "Temp.Fhnode AS Fhnode "
-"FROM (%s) AS Temp "
-"JOIN Path ON (Path.PathId = Temp.PathId) "
-"WHERE Temp.FileIndex > 0 "
-,
+R"SQL(CREATE
+TEMPORARY TABLE new_basefile%lld AS
+SELECT Path.Path AS Path,
+       Temp.Name AS Name,
+       Temp.FileIndex AS FileIndex,
+       Temp.JobId AS JobId,
+       Temp.LStat AS LStat,
+       Temp.FileId AS FileId,
+       Temp.MD5 AS MD5,
+       Temp.Fhinfo AS Fhinfo,
+       Temp.Fhnode AS Fhnode
+FROM (%s) AS Temp
+JOIN Path ON (Path.PathId = Temp.PathId)
+WHERE Temp.FileIndex > 0
+)SQL",
 
 /* 0040_uap_upgrade_copies_oldest_job */
-"CREATE TEMPORARY TABLE cpy_tmp AS "
-"SELECT MIN(JobId) AS JobId "
-  "FROM Job "
- "WHERE Type = '%c' "
-   "AND ( "
-          "PriorJobId IN (%s) "
-       "OR PriorJobId IN ( "
-         "SELECT PriorJobId "
-           "FROM Job "
-          "WHERE JobId IN (%s) "
-            "AND Type = 'B' "
-          ") "
-       ") "
- "GROUP BY PriorJobId "
-,
+R"SQL(CREATE TEMPORARY TABLE cpy_tmp AS
+SELECT MIN(JobId) AS JobId
+  FROM Job
+ WHERE Type = '%c'
+   AND (
+          PriorJobId IN (%s)
+       OR PriorJobId IN (
+         SELECT PriorJobId
+           FROM Job
+          WHERE JobId IN (%s)
+            AND Type = 'B'
+          )
+       )
+ GROUP BY PriorJobId
+)SQL",
 
 /* 0041_uar_file */
-"SELECT Job.JobId AS JobId, "
-       "Path.Path||File.Name AS Name, "
-       "StartTime, "
-       "TYPE AS JobType, "
-       "JobStatus, "
-       "JobFiles, "
-       "JobBytes "
-"FROM Client, "
-     "Job, "
-     "File, "
-     "Path "
-"WHERE Client.Name='%s' "
-  "AND Client.ClientId=Job.ClientId "
-  "AND Job.JobId=File.JobId "
-  "AND File.FileIndex > 0 "
-  "AND Path.PathId=File.PathId "
-  "AND File.Name='%s' "
-"ORDER BY StartTime DESC "
-"LIMIT 20 "
-,
+R"SQL(SELECT Job.JobId AS JobId,
+       Path.Path||File.Name AS Name,
+       StartTime,
+       TYPE AS JobType,
+       JobStatus,
+       JobFiles,
+       JobBytes
+FROM Client,
+     Job,
+     File,
+     Path
+WHERE Client.Name='%s'
+  AND Client.ClientId=Job.ClientId
+  AND Job.JobId=File.JobId
+  AND File.FileIndex > 0
+  AND Path.PathId=File.PathId
+  AND File.Name='%s'
+ORDER BY StartTime DESC
+LIMIT 20
+)SQL",
 
 /* 0042_uar_create_temp.postgresql */
-"CREATE TEMPORARY TABLE "
-       "temp ( "
-          "JobId INTEGER NOT NULL, JobTDate BIGINT, ClientId INTEGER, Level CHAR, JobFiles INTEGER, JobBytes BIGINT, StartTime "
-          "TEXT, VolumeName TEXT, StartFile INTEGER, VolSessionId INTEGER, VolSessionTime INTEGER "
-       ") "
-,
+R"SQL(CREATE TEMPORARY TABLE
+       temp (
+          JobId INTEGER NOT NULL, JobTDate BIGINT, ClientId INTEGER, Level CHAR, JobFiles INTEGER, JobBytes BIGINT, StartTime
+          TEXT, VolumeName TEXT, StartFile INTEGER, VolSessionId INTEGER, VolSessionTime INTEGER
+       )
+)SQL",
 
 /* 0043_uar_create_temp1.postgresql */
-"CREATE TEMPORARY TABLE temp1 ( JobId INTEGER NOT NULL, JobTDate BIGINT) "
-,
+R"SQL(CREATE TEMPORARY TABLE temp1 ( JobId INTEGER NOT NULL, JobTDate BIGINT)
+)SQL",
 
 /* 0044_uar_jobid_fileindex_from_dir.postgresql */
-"SELECT Job.JobId, "
-       "File.FileIndex "
-"FROM Job, "
-     "File, "
-     "Path, "
-     "Client "
-"WHERE Job.JobId IN (%s) "
-  "AND Job.JobId=File.JobId "
-  "AND Path.Path='%s' "
-  "AND Client.Name='%s' "
-  "AND Job.ClientId=Client.ClientId "
-  "AND Path.PathId=File.Pathid "
-,
+R"SQL(SELECT Job.JobId,
+       File.FileIndex
+FROM Job,
+     File,
+     Path,
+     Client
+WHERE Job.JobId IN (%s)
+  AND Job.JobId=File.JobId
+  AND Path.Path='%s'
+  AND Client.Name='%s'
+  AND Job.ClientId=Client.ClientId
+  AND Path.PathId=File.Pathid
+)SQL",
 
 /* 0045_sql_media_order_most_recently_written */
-"ORDER BY LastWritten IS NULL,LastWritten DESC,MediaId "
-,
+R"SQL(ORDER BY LastWritten IS NULL,LastWritten DESC,MediaId
+)SQL",
 
 /* 0046_sql_get_max_connections.postgresql */
-"SHOW max_connections "
-,
+R"SQL(SHOW max_connections
+)SQL",
 
 /* 0047_bvfs_select.postgresql */
-"CREATE TABLE %s AS "
-  "(SELECT JobId, "
-          "FileIndex, "
-          "FileId "
-   "FROM "
-     "(SELECT DISTINCT ON (PathId, "
-                          "Name) JobId, "
-                         "FileIndex, "
-                         "FileId "
-      "FROM btemp%s "
-      "ORDER BY PathId, "
-               "Name, "
-               "JobTDate DESC) AS T "
-   "WHERE FileIndex > 0) "
-,
+R"SQL(CREATE TABLE %s AS
+  (SELECT JobId,
+          FileIndex,
+          FileId
+   FROM
+     (SELECT DISTINCT ON (PathId,
+                          Name) JobId,
+                         FileIndex,
+                         FileId
+      FROM btemp%s
+      ORDER BY PathId,
+               Name,
+               JobTDate DESC) AS T
+   WHERE FileIndex > 0)
+)SQL",
 
 /* 0048_bvfs_list_files.postgresql */
-"SELECT TYPE, "
-       "PathId, "
-       "Name, "
-       "JobId, "
-       "LStat, "
-       "FileId "
-"FROM ( "
-   "SELECT DISTINCT ON (Name) 'F' AS TYPE, "
-                       "PathId, "
-                       "FileName AS Name, "
-                       "JobId, "
-                       "LStat, "
-                       "FileId, "
-                       "FileIndex "
-   "FROM ( "
-      "SELECT FileId, "
-             "JobId, "
-             "PathId, "
-             "Name AS FileName, "
-             "FileIndex, "
-             "LStat, "
-             "MD5 "
-      "FROM File "
-      "WHERE JobId IN (%s) "
-        "AND PathId = %s "
-        "UNION ALL "
-        "SELECT File.FileId, "
-               "File.JobId, "
-               "PathId, "
-               "File.Name AS FileName, "
-               "File.FileIndex, "
-               "LStat, "
-               "MD5 "
-        "FROM BaseFiles "
-        "JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) "
-        "AND File.PathId = %s "
-   ") AS T "
-   "JOIN Job USING (JobId) "
-   "WHERE "
-      "FileName != '' "
-      "%s "
-   "ORDER BY FileName, "
-            "StartTime DESC "
-") AS A "
-"WHERE A.FileIndex > 0 "
-"LIMIT %lld "
-"OFFSET %lld "
-,
+R"SQL(SELECT TYPE,
+       PathId,
+       Name,
+       JobId,
+       LStat,
+       FileId
+FROM (
+   SELECT DISTINCT ON (Name) 'F' AS TYPE,
+                       PathId,
+                       FileName AS Name,
+                       JobId,
+                       LStat,
+                       FileId,
+                       FileIndex
+   FROM (
+      SELECT FileId,
+             JobId,
+             PathId,
+             Name AS FileName,
+             FileIndex,
+             LStat,
+             MD5
+      FROM File
+      WHERE JobId IN (%s)
+        AND PathId = %s
+        UNION ALL
+        SELECT File.FileId,
+               File.JobId,
+               PathId,
+               File.Name AS FileName,
+               File.FileIndex,
+               LStat,
+               MD5
+        FROM BaseFiles
+        JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s)
+        AND File.PathId = %s
+   ) AS T
+   JOIN Job USING (JobId)
+   WHERE
+      FileName != ''
+      %s
+   ORDER BY FileName,
+            StartTime DESC
+) AS A
+WHERE A.FileIndex > 0
+LIMIT %lld
+OFFSET %lld
+)SQL",
 
 /* 0049_batch_lock_path_query.postgresql */
-"BEGIN; LOCK TABLE Path IN SHARE ROW EXCLUSIVE MODE "
-,
+R"SQL(BEGIN; LOCK TABLE Path IN SHARE ROW EXCLUSIVE MODE
+)SQL",
 
 /* 0050_batch_lock_filename_query.postgresql */
-"BEGIN; LOCK TABLE Filename IN SHARE ROW EXCLUSIVE MODE "
-,
+R"SQL(BEGIN; LOCK TABLE Filename IN SHARE ROW EXCLUSIVE MODE
+)SQL",
 
 /* 0051_batch_unlock_tables_query */
-"COMMIT "
-,
+R"SQL(COMMIT
+)SQL",
 
 /* 0052_batch_fill_path_query.postgresql */
-"INSERT INTO Path (Path) "
-"SELECT a.Path "
-  "FROM ( "
-      "SELECT DISTINCT Path "
-        "FROM batch "
-       ") AS a "
- "WHERE NOT EXISTS ( "
-      "SELECT Path "
-        "FROM Path "
-       "WHERE Path = a.Path "
-       ") "
-,
+R"SQL(INSERT INTO Path (Path)
+SELECT a.Path
+  FROM (
+      SELECT DISTINCT Path
+        FROM batch
+       ) AS a
+ WHERE NOT EXISTS (
+      SELECT Path
+        FROM Path
+       WHERE Path = a.Path
+       )
+)SQL",
 
 /* 0053_batch_fill_filename_query.postgresql */
-"INSERT INTO Filename (Name) "
-"SELECT a.Name "
-  "FROM ( "
-      "SELECT DISTINCT Name "
-        "FROM batch "
-       ") as a "
- "WHERE NOT EXISTS ( "
-      "SELECT Name "
-        "FROM Filename "
-       "WHERE Name = a.Name "
-       ") "
-,
+R"SQL(INSERT INTO Filename (Name)
+SELECT a.Name
+  FROM (
+      SELECT DISTINCT Name
+        FROM batch
+       ) as a
+ WHERE NOT EXISTS (
+      SELECT Name
+        FROM Filename
+       WHERE Name = a.Name
+       )
+)SQL",
 
 /* 0054_match_query.postgresql */
- "AND Path2.Path ~ '%s' "
-,
+R"SQL( AND Path2.Path ~ '%s'
+)SQL",
 
 /* 0055_match_query2.postgresql */
- "AND Filename.Name ~ '%s' "
-,
+R"SQL( AND Filename.Name ~ '%s'
+)SQL",
 
 /* 0056_insert_counter_values */
-"INSERT INTO Counters (Counter, MinValue, MaxValue, CurrentValue, WrapCounter) "
-"VALUES ('%s','%d','%d','%d','%s') "
-,
+R"SQL(INSERT INTO Counters (Counter, MinValue, MaxValue, CurrentValue, WrapCounter)
+VALUES ('%s','%d','%d','%d','%s')
+)SQL",
 
 /* 0057_select_counter_values */
-"SELECT MinValue, MaxValue, CurrentValue, WrapCounter "
-  "FROM Counters "
- "WHERE Counter = '%s' "
-,
+R"SQL(SELECT MinValue, MaxValue, CurrentValue, WrapCounter
+  FROM Counters
+ WHERE Counter = '%s'
+)SQL",
 
 /* 0058_update_counter_values */
-"UPDATE Counters "
-   "SET MinValue = %d, MaxValue = %d, CurrentValue = %d, WrapCounter = '%s' "
- "WHERE Counter  = '%s' "
-,
+R"SQL(UPDATE Counters
+   SET MinValue = %d, MaxValue = %d, CurrentValue = %d, WrapCounter = '%s'
+ WHERE Counter  = '%s'
+)SQL",
 
 /* 0059_get_quota_jobbytes.postgresql */
-"SELECT SUM(JobBytes) "
-  "FROM Job "
- "WHERE ClientId  =  %s "
-   "AND JobId     != %s "
-   "AND SchedTime >  TIMESTAMP '%s' "
-,
+R"SQL(SELECT SUM(JobBytes)
+  FROM Job
+ WHERE ClientId  =  %s
+   AND JobId     != %s
+   AND SchedTime >  TIMESTAMP '%s'
+)SQL",
 
 /* 0060_get_quota_jobbytes_nofailed.postgresql */
-"SELECT SUM(JobBytes) "
-  "FROM Job "
- "WHERE ClientId  =  %s "
-   "AND Job.JobId != %s "
-   "AND SchedTime >  TIMESTAMP '%s' "
-   "AND JobStatus NOT IN ('E','f','A') "
-,
+R"SQL(SELECT SUM(JobBytes)
+  FROM Job
+ WHERE ClientId  =  %s
+   AND Job.JobId != %s
+   AND SchedTime >  TIMESTAMP '%s'
+   AND JobStatus NOT IN ('E','f','A')
+)SQL",
 
 /* 0061_uar_sel_jobid_copies */
-"SELECT DISTINCT JobId, StartTime "
-  "FROM Job "
- "WHERE Type = 'C' "
-   "AND (PriorJobId IN (%s)) "
- "ORDER BY StartTime ASC "
-,
+R"SQL(SELECT DISTINCT JobId, StartTime
+  FROM Job
+ WHERE Type = 'C'
+   AND (PriorJobId IN (%s))
+ ORDER BY StartTime ASC
+)SQL",
 
 /* 0062_get_jobstatus_details */
-"SELECT DISTINCT JobStatus, JobStatusLong, Severity, "
-       "CASE "
-       "WHEN JobStatus in ('T') THEN '0' "
-       "WHEN JobStatus in ('W') THEN '1' "
-       "WHEN JobStatus in ('e', 'f', 'A', 'E') THEN '2' "
-       "END as ExitLevel, "
-       "CASE "
-       "WHEN JobStatus in ('T') THEN 'Ok' "
-       "WHEN JobStatus in ('W') THEN 'Warning' "
-       "WHEN JobStatus in ('e', 'f', 'A', 'E') THEN 'Error' "
-       "END as ExitStatus "
-  "FROM Status %s "
- "ORDER BY JobStatus "
-,
+R"SQL(SELECT DISTINCT JobStatus, JobStatusLong, Severity,
+       CASE
+       WHEN JobStatus in ('T') THEN '0'
+       WHEN JobStatus in ('W') THEN '1'
+       WHEN JobStatus in ('e', 'f', 'A', 'E') THEN '2'
+       END as ExitLevel,
+       CASE
+       WHEN JobStatus in ('T') THEN 'Ok'
+       WHEN JobStatus in ('W') THEN 'Warning'
+       WHEN JobStatus in ('e', 'f', 'A', 'E') THEN 'Error'
+       END as ExitStatus
+  FROM Status %s
+ ORDER BY JobStatus
+)SQL",
 
 /* 0063_bvfs_versions_6 */
-"SELECT 'V', File.PathId, File.Name, File.JobId, File.LStat, File.FileId, File.Md5, Media.VolumeName, Media.InChanger "
-"FROM File, Job, Client, JobMedia, Media "
-"WHERE File.Name = '%s' "
-  "AND File.PathId = %s "
-  "AND File.JobId = Job.JobId "
-  "AND Job.JobId = JobMedia.JobId "
-  "AND File.FileIndex >= JobMedia.FirstIndex "
-  "AND File.FileIndex <= JobMedia.LastIndex "
-  "AND JobMedia.MediaId = Media.MediaId "
-  "AND Job.ClientId = Client.ClientId "
-  "AND Client.Name = '%s' "
-  "%s "
-"ORDER BY File.FileId "
-"LIMIT %d "
-"OFFSET %d "
-,
+R"SQL(SELECT 'V', File.PathId, File.Name, File.JobId, File.LStat, File.FileId, File.Md5, Media.VolumeName, Media.InChanger
+FROM File, Job, Client, JobMedia, Media
+WHERE File.Name = '%s'
+  AND File.PathId = %s
+  AND File.JobId = Job.JobId
+  AND Job.JobId = JobMedia.JobId
+  AND File.FileIndex >= JobMedia.FirstIndex
+  AND File.FileIndex <= JobMedia.LastIndex
+  AND JobMedia.MediaId = Media.MediaId
+  AND Job.ClientId = Client.ClientId
+  AND Client.Name = '%s'
+  %s
+ORDER BY File.FileId
+LIMIT %d
+OFFSET %d
+)SQL",
 
 /* 0064_bvfs_lsdirs_4 */
-"%s "
-"UNION "
-"%s "
-"ORDER BY Path ASC,JobId DESC "
-"LIMIT %d "
-"OFFSET %d "
-,
+R"SQL(%s
+UNION
+%s
+ORDER BY Path ASC,JobId DESC
+LIMIT %d
+OFFSET %d
+)SQL",
 
 /* 0065_bvfs_clear_cache_0 */
-"BEGIN; "
-   "UPDATE Job SET HasCache=0; "
-   "TRUNCATE PathHierarchy; "
-   "TRUNCATE PathVisibility; "
-"COMMIT; "
-,
+R"SQL(BEGIN;
+   UPDATE Job SET HasCache=0;
+   TRUNCATE PathHierarchy;
+   TRUNCATE PathVisibility;
+COMMIT;
+)SQL",
 
 /* 0066_bvfs_update_path_visibility_3 */
-"INSERT INTO PathVisibility (PathId, JobId) "
-"SELECT a.PathId,%s "
-"FROM ( "
-   "SELECT DISTINCT h.PPathId AS PathId "
-   "FROM PathHierarchy AS h "
-   "JOIN PathVisibility AS p ON (h.PathId=p.PathId) "
-   "WHERE p.JobId=%s "
-") AS a "
-"LEFT JOIN PathVisibility AS b "
-"ON (b.JobId=%s AND a.PathId = b.PathId) "
-"WHERE b.PathId IS NULL "
-,
+R"SQL(INSERT INTO PathVisibility (PathId, JobId)
+SELECT a.PathId,%s
+FROM (
+   SELECT DISTINCT h.PPathId AS PathId
+   FROM PathHierarchy AS h
+   JOIN PathVisibility AS p ON (h.PathId=p.PathId)
+   WHERE p.JobId=%s
+) AS a
+LEFT JOIN PathVisibility AS b
+ON (b.JobId=%s AND a.PathId = b.PathId)
+WHERE b.PathId IS NULL
+)SQL",
 
 /* 0067_list_volumes_count_0 */
-"SELECT COUNT(DISTINCT Media.MediaId) as count FROM Media; "
-,
+R"SQL(SELECT COUNT(DISTINCT Media.MediaId) as count FROM Media;
+)SQL",
 
 /* 0068_list_volumes_by_name_count_1 */
-"SELECT COUNT(DISTINCT Media.MediaId) as count "
-"FROM Media "
-"WHERE VolumeName='%s' "
-,
+R"SQL(SELECT COUNT(DISTINCT Media.MediaId) as count
+FROM Media
+WHERE VolumeName='%s'
+)SQL",
 
 /* 0069_list_volumes_by_poolid_count_1 */
-"SELECT COUNT(DISTINCT Media.MediaId) as count "
-"FROM Media "
-"WHERE Media.PoolId=%s "
-,
+R"SQL(SELECT COUNT(DISTINCT Media.MediaId) as count
+FROM Media
+WHERE Media.PoolId=%s
+)SQL",
 
 /* 0070_list_joblog_2 */
-"SELECT Time, LogText FROM Log "
-"WHERE Log.JobId=%s "
-"ORDER BY Log.LogId "
-"%s "
-,
+R"SQL(SELECT Time, LogText FROM Log
+WHERE Log.JobId=%s
+ORDER BY Log.LogId
+%s
+)SQL",
 
 /* 0071_list_joblog_count_1 */
-"SELECT COUNT(*) AS count "
-"FROM Log "
-"WHERE Log.JobId=%s "
-,
+R"SQL(SELECT COUNT(*) AS count
+FROM Log
+WHERE Log.JobId=%s
+)SQL",
 
 /* 0072_get_orphaned_paths_0 */
-"SELECT DISTINCT Path.PathId, File.PathId, Path.Path "
-"FROM Path "
-"LEFT JOIN File USING (PathId) "
-"LEFT JOIN PathHierarchy ON (Path.Pathid = PathHierarchy.PPathId) "
-"WHERE File.PathId IS NULL "
-  "AND PathHierarchy.PPathId IS NULL "
-"LIMIT 300000 "
-,
+R"SQL(SELECT DISTINCT Path.PathId, File.PathId, Path.Path
+FROM Path
+LEFT JOIN File USING (PathId)
+LEFT JOIN PathHierarchy ON (Path.Pathid = PathHierarchy.PPathId)
+WHERE File.PathId IS NULL
+  AND PathHierarchy.PPathId IS NULL
+LIMIT 300000
+)SQL",
 
 /* 0073_get_bad_paths_0 */
-"SELECT PathId, Path FROM Path "
-"WHERE  Path != '' "
-  "AND  Path NOT LIKE '%%/' "
-,
+R"SQL(SELECT PathId, Path FROM Path
+WHERE  Path != ''
+  AND  Path NOT LIKE '%%/'
+)SQL",
 
 /* 0074_bvfs_ls_special_dirs_3.postgresql */
-"SELECT DISTINCT ON (PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId "
-"FROM ( "
-    "SELECT %s AS PathId, '.' AS Path "
-    "UNION "
-    "SELECT PPathId AS PathId, '..' AS Path "
-    "FROM   PathHierarchy "
-    "WHERE  PathId = %s "
-") AS SpecialDir "
-"LEFT JOIN ( "
-    "SELECT PathId, JobId, LStat, FileId "
-    "FROM File "
-    "WHERE File.Name = '' "
-      "AND File.JobId IN (%s) "
-    "ORDER BY PathId ASC, JobId DESC "
-") AS DirAttribute "
-"ON (SpecialDir.PathId = DirAttribute.PathId) "
-,
+R"SQL(SELECT DISTINCT ON (PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
+FROM (
+    SELECT %s AS PathId, '.' AS Path
+    UNION
+    SELECT PPathId AS PathId, '..' AS Path
+    FROM   PathHierarchy
+    WHERE  PathId = %s
+) AS SpecialDir
+LEFT JOIN (
+    SELECT PathId, JobId, LStat, FileId
+    FROM File
+    WHERE File.Name = ''
+      AND File.JobId IN (%s)
+    ORDER BY PathId ASC, JobId DESC
+) AS DirAttribute
+ON (SpecialDir.PathId = DirAttribute.PathId)
+)SQL",
 
 /* 0075_bvfs_ls_sub_dirs_5.postgresql */
-"( "
-"SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId "
-"FROM ( "
-   "SELECT "
-      "Path1.PathId AS PathId, "
-      "Path1.Path AS Path, "
-      "lower(Path1.Path) AS lpath, "
-      "listfile1.JobId AS JobId, "
-      "listfile1.LStat AS LStat, "
-      "listfile1.FileId AS FileId "
-   "FROM ( "
-      "SELECT listpath1.PathId AS PathId "
-      "FROM ( "
-         "SELECT DISTINCT PathHierarchy1.PathId AS PathId "
-         "FROM PathHierarchy AS PathHierarchy1 "
-         "INNER JOIN Path AS Path2 "
-         "ON (PathHierarchy1.PathId = Path2.PathId) "
-         "INNER JOIN PathVisibility AS PathVisibility1 "
-         "ON (PathHierarchy1.PathId = PathVisibility1.PathId) "
-         "WHERE PathHierarchy1.PPathId = %s "
-         "AND PathVisibility1.JobId IN (%s) "
-         ") AS listpath1 "
-      "LEFT JOIN ( "
-          "SELECT PVD1.PathId AS PathId "
-          "FROM ( "
-             "SELECT PV1.PathId AS PathId, MAX(JobId) AS MaxJobId "
-             "FROM PathVisibility AS PV1 WHERE JobId IN (%s) GROUP BY PathId "
-             ") AS PVD1 "
-             "INNER JOIN File AS F2 "
-             "ON (F2.PathId = PVD1.PathId AND F2.JobId = PVD1.MaxJobId AND F2.FileIndex = 0 AND F2.Name = '') "
-      ") AS listpath2 "
-      "ON (listpath1.PathId = listpath2.PathId) "
-      "WHERE listpath2.PathId IS NULL "
-      "%s "
-   ") AS listpath3 "
-   "INNER JOIN Path AS Path1 ON (listpath3.PathId = Path1.PathId) "
-   "LEFT JOIN ( "
-      "SELECT File1.PathId AS PathId, File1.JobId AS JobId, File1.LStat AS LStat, File1.FileId AS FileId "
-      "FROM File AS File1 "
-      "WHERE File1.Name = '' "
-        "AND File1.JobId IN (%s) "
-   ") AS listfile1 "
-   "ON (listpath3.PathId = listfile1.PathId) "
-") AS A "
-"ORDER BY Path ASC, JobId DESC "
-") "
-,
+R"SQL((
+SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId
+FROM (
+   SELECT
+      Path1.PathId AS PathId,
+      Path1.Path AS Path,
+      lower(Path1.Path) AS lpath,
+      listfile1.JobId AS JobId,
+      listfile1.LStat AS LStat,
+      listfile1.FileId AS FileId
+   FROM (
+      SELECT listpath1.PathId AS PathId
+      FROM (
+         SELECT DISTINCT PathHierarchy1.PathId AS PathId
+         FROM PathHierarchy AS PathHierarchy1
+         INNER JOIN Path AS Path2
+         ON (PathHierarchy1.PathId = Path2.PathId)
+         INNER JOIN PathVisibility AS PathVisibility1
+         ON (PathHierarchy1.PathId = PathVisibility1.PathId)
+         WHERE PathHierarchy1.PPathId = %s
+         AND PathVisibility1.JobId IN (%s)
+         ) AS listpath1
+      LEFT JOIN (
+          SELECT PVD1.PathId AS PathId
+          FROM (
+             SELECT PV1.PathId AS PathId, MAX(JobId) AS MaxJobId
+             FROM PathVisibility AS PV1 WHERE JobId IN (%s) GROUP BY PathId
+             ) AS PVD1
+             INNER JOIN File AS F2
+             ON (F2.PathId = PVD1.PathId AND F2.JobId = PVD1.MaxJobId AND F2.FileIndex = 0 AND F2.Name = '')
+      ) AS listpath2
+      ON (listpath1.PathId = listpath2.PathId)
+      WHERE listpath2.PathId IS NULL
+      %s
+   ) AS listpath3
+   INNER JOIN Path AS Path1 ON (listpath3.PathId = Path1.PathId)
+   LEFT JOIN (
+      SELECT File1.PathId AS PathId, File1.JobId AS JobId, File1.LStat AS LStat, File1.FileId AS FileId
+      FROM File AS File1
+      WHERE File1.Name = ''
+        AND File1.JobId IN (%s)
+   ) AS listfile1
+   ON (listpath3.PathId = listfile1.PathId)
+) AS A
+ORDER BY Path ASC, JobId DESC
+)
+)SQL",
 
 /* 0076_list_volumes_select_0 */
-"SELECT    MediaId,VolumeName,VolStatus,Enabled, "
-          "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger, "
-          "MediaType,LastWritten,Name AS Storage "
-"FROM      Media "
-"LEFT JOIN Storage USING(StorageId) "
-,
+R"SQL(SELECT    MediaId,VolumeName,VolStatus,Enabled,
+          VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,
+          MediaType,LastWritten,Name AS Storage
+FROM      Media
+LEFT JOIN Storage USING(StorageId)
+)SQL",
 
 /* 0077_list_volumes_select_long_0 */
-"SELECT    Media.MediaId, "
-          "Media.VolumeName, "
-          "Media.Slot, "
-          "Media.PoolId, "
-          "(SELECT Name FROM Pool WHERE Pool.PoolId=Media.PoolId) AS Pool, "
-          "Media.MediaType, "
-          "Media.FirstWritten, "
-          "Media.LastWritten, "
-          "Media.LabelDate, "
-          "Media.VolJobs, "
-          "Media.VolFiles, "
-          "Media.VolBlocks, "
-          "Media.VolMounts, "
-          "Media.VolBytes, "
-          "Media.VolErrors, "
-          "Media.VolWrites, "
-          "Media.VolCapacityBytes, "
-          "Media.VolStatus, "
-          "Media.Enabled, "
-          "Media.Recycle, "
-          "Media.VolRetention, "
-          "Media.VolUseDuration, "
-          "Media.MaxVolJobs, "
-          "Media.MaxVolFiles, "
-          "Media.MaxVolBytes, "
-          "Media.InChanger, "
-          "Media.EndFile, "
-          "Media.EndBlock, "
-          "Media.LabelType, "
-          "Media.StorageId, "
-          "Media.DeviceId, "
-          "Media.LocationId, "
-          "Media.RecycleCount, "
-          "Media.InitialWrite, "
-          "Media.ScratchPoolId, "
-          "(SELECT Name FROM Pool WHERE Pool.PoolId=Media.ScratchPoolId) AS ScratchPool, "
-          "Media.RecyclePoolId, "
-          "(SELECT Name FROM Pool WHERE Pool.PoolId=Media.RecyclePoolId) AS RecyclePool, "
-          "Media.Comment, "
-          "Storage.Name AS Storage "
-"FROM      Media "
-"LEFT JOIN Storage USING(StorageId) "
-,
+R"SQL(SELECT    Media.MediaId,
+          Media.VolumeName,
+          Media.Slot,
+          Media.PoolId,
+          (SELECT Name FROM Pool WHERE Pool.PoolId=Media.PoolId) AS Pool,
+          Media.MediaType,
+          Media.FirstWritten,
+          Media.LastWritten,
+          Media.LabelDate,
+          Media.VolJobs,
+          Media.VolFiles,
+          Media.VolBlocks,
+          Media.VolMounts,
+          Media.VolBytes,
+          Media.VolErrors,
+          Media.VolWrites,
+          Media.VolCapacityBytes,
+          Media.VolStatus,
+          Media.Enabled,
+          Media.Recycle,
+          Media.VolRetention,
+          Media.VolUseDuration,
+          Media.MaxVolJobs,
+          Media.MaxVolFiles,
+          Media.MaxVolBytes,
+          Media.InChanger,
+          Media.EndFile,
+          Media.EndBlock,
+          Media.LabelType,
+          Media.StorageId,
+          Media.DeviceId,
+          Media.LocationId,
+          Media.RecycleCount,
+          Media.InitialWrite,
+          Media.ScratchPoolId,
+          (SELECT Name FROM Pool WHERE Pool.PoolId=Media.ScratchPoolId) AS ScratchPool,
+          Media.RecyclePoolId,
+          (SELECT Name FROM Pool WHERE Pool.PoolId=Media.RecyclePoolId) AS RecyclePool,
+          Media.Comment,
+          Storage.Name AS Storage
+FROM      Media
+LEFT JOIN Storage USING(StorageId)
+)SQL",
 
 /* 0078_bvfs_lock_pathhierarchy_0.postgresql */
-"BEGIN; LOCK TABLE PathHierarchy IN SHARE ROW EXCLUSIVE MODE "
-,
+R"SQL(BEGIN; LOCK TABLE PathHierarchy IN SHARE ROW EXCLUSIVE MODE
+)SQL",
 
 /* 0079_bvfs_unlock_tables_0 */
-"COMMIT "
-,
+R"SQL(COMMIT
+)SQL",
 
-/* 0080_subscription_select_backup_unit_overview_1 */
-"%s "
-"SELECT * FROM ( "
-  "SELECT * "
-  "FROM backup_unit_overview "
-  "ORDER BY client, fileset "
-") subq_a "
-"UNION ALL "
-"SELECT 'TOTAL' as client, "
-       "NULL as fileset, "
-       "SUM(db_units) as db_units, "
-       "SUM(vm_units) as vm_units, "
-       "SUM(filer_units) as filer_units, "
-       "SUM(normal_units) as normal_units "
-"FROM backup_unit_overview; "
-,
+/* 0080_subscription_with_clause_0 */
+R"SQL(WITH
+fileset_plugin AS (
+  SELECT
+    filesetid,
+    fileset, 
+    LOWER(
+      COALESCE(
+        SUBSTRING(filesettext FROM '(?i)plugin = python3?:(?:.*:)*module_name=bareos-fd-([^:\s]+)'),
+        SUBSTRING(filesettext FROM '(?i)plugin = python3?:(?:.*:)?module_name=bareos-([^:\s]+)'),
+        SUBSTRING(filesettext FROM '(?i)plugin = python3?:(?:.*:)?module_name=([^:\s]+)'),
+        CASE
+          WHEN filesettext ~* '(?i)plugin = python3?(:|$)' THEN 'other python plugin'
+        END,
+        SUBSTRING(filesettext FROM '(?i)plugin = grpc:([^:\s]+)'),
+        SUBSTRING(filesettext FROM '(?i)Plugin = ([^:\s]+)')
+      )
+    ) AS plugin
+  FROM (
+    SELECT
+      filesetid,
+      fileset,
+      regexp_replace(
+        regexp_replace(
+          regexp_replace(filesettext, '\\.', '§', 'g'), -- replace escaped characters
+          '"', '', 'g' -- remove quotes
+        ),
+      '(?i)plugin = grpc:bareos-grpc-fd-plugin-bridge:', 'plugin = ', 'g' -- strip grpc prefixes
+      ) AS filesettext
+    FROM fileset
+  ) bashed_fileset
+),
+client_detail AS (
+  SELECT
+    c.name AS client_name,
+    'Client ' || c.clientid AS client_anon,
+    c.clientid AS client_id,
+    f.fileset AS fileset,
+    GREATEST(j.readbytes::bigint, j.jobbytes::bigint) / 10^9 AS size_gb,
+    f.plugin AS plugin
+  FROM job j
+  INNER JOIN client c
+    ON c.clientid = j.clientid
+  INNER JOIN fileset_plugin f
+    ON j.filesetid = f.filesetid
+  WHERE jobid IN (
+    SELECT
+      MAX(j.jobid) AS jobid
+    FROM job j
+    INNER JOIN fileset f
+      ON j.filesetid = f.filesetid
+    WHERE level = 'F'
+      AND j.jobstatus IN ('T','W')
+      AND j.type = 'B'
+      AND j.jobbytes > 0
+    GROUP BY j.clientid, f.fileset
+  )
+),
+client_aggregated AS (
+  SELECT
+    client_name,
+    client_anon,
+    client_id,
+    CASE
+      WHEN plugin IS NULL THEN 1
+      ELSE COUNT(fileset)
+    END as count,
+    SUM(size_gb) as size_gb,
+    COALESCE(plugin, 'none (file data)') as plugin
+  FROM client_detail
+  GROUP BY client_name, client_anon, client_id, plugin
+),
+plugin_aggregated AS (
+  SELECT
+    COALESCE(plugin, 'none (file data)') as plugin,
+    SUM(count) as count,
+    SUM(size_gb) as size_gb
+  FROM client_aggregated
+  GROUP BY plugin
+  ORDER BY plugin
+)
+)SQL",
 
-/* 0081_subscription_select_backup_unit_total_2 */
-"%s "
-"SELECT "
-  "*, configured - used as remaining "
-"FROM (SELECT "
-  "COALESCE(SUM(db_units), 0) "
-    "+ COALESCE(SUM(vm_units), 0) "
-    "+ COALESCE(SUM(filer_units), 0) "
-    "+ COALESCE(SUM(normal_units), 0) "
-    "AS used, "
-  "%d AS configured "
-  "FROM backup_unit_overview) subquery_a; "
-,
+/* 0081_subscription_units_total_2 */
+R"SQL(%s
+SELECT
+  CASE
+    WHEN t.size_units >= t.count_units THEN 'volume-based (' || t.size_units || ' volume-based units >= ' || t.count_units || ' count-based units)'
+    ELSE 'count-based (' || t.size_units || ' volume-based < ' || t.count_units || ' count-based)'
+  END AS accounting_mode,
+  GREATEST(t.count_units, t.size_units) AS used,
+  configured_units as configured,
+  configured_units - GREATEST(t.count_units, t.size_units) as remaining
+FROM (
+  SELECT
+    COALESCE(SUM(count), 0) AS count_units,
+    CEIL(COALESCE(SUM(size_gb)/1000, 0.0)) AS size_units,
+    %d AS configured_units
+  FROM client_aggregated
+) t
+)SQL",
 
-/* 0082_subscription_select_unclassified_client_fileset_1 */
-"%s "
-"SELECT client, fileset, filesettext "
-"FROM latest_full_size_categorized "
-"WHERE unknown_mb > 0 "
-"ORDER BY client, fileset; "
-,
+/* 0082_subscription_units_3 */
+R"SQL(%s
+SELECT %s as client, plugin, count, to_char(size_gb, '9999990.00') AS size_gb FROM (
+  SELECT
+    client_name,
+    client_anon,
+    client_id,
+    plugin,
+    SUM(count) AS count,
+    SUM(size_gb) AS size_gb,
+    1 AS order
+  FROM client_aggregated
+  GROUP BY client_name, client_anon, client_id, plugin
+  UNION
+  SELECT
+    'TOTAL' AS client_name,
+    'TOTAL' AS client_anon,
+    0 as client_id,
+    NULL AS plugin,
+    SUM(count) AS count,
+    SUM(size_gb) AS size_gb,
+    2 AS order
+  FROM client_aggregated
+) t
+ORDER BY t.order, t.%s, t.plugin;
+)SQL",
 
-/* 0083_subscription_select_unclassified_amount_data_1 */
-"%s "
-"SELECT "
-  "SUM(unknown_mb) AS unknown_mb, "
-  "ROUND(sum(unknown_mb)/sum(total_mb) * 100, 2) AS unknown_percentage "
-"FROM latest_full_size_categorized; "
-,
+/* 0083_subscription_units_client_total_3 */
+R"SQL(%s
+SELECT %s as client, count, to_char(size_gb, '9999990.00') AS size_gb FROM (
+  SELECT
+    client_name,
+    client_anon,
+    client_id,
+    SUM(count) AS count,
+    SUM(size_gb) AS size_gb,
+    1 AS order
+  FROM client_aggregated
+  GROUP BY client_name, client_anon, client_id
+  UNION
+  SELECT
+    'TOTAL' AS client_name,
+    'TOTAL' AS client_anon,
+    0 as client_id,
+    SUM(count) AS count,
+    SUM(size_gb) AS size_gb,
+    2 AS order
+  FROM client_aggregated
+) t
+ORDER BY t.order, t.%s;
+)SQL",
 
-/* 0084_subscription_with_clause_0 */
-"WITH latest_full_size_categorized AS ( "
-  "SELECT "
-    "c.name AS client, "
-    "f.fileset AS fileset, "
-    "GREATEST(j.readbytes::bigint, j.jobbytes::bigint) / 1000000 AS total_mb, "
-    "CASE "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-mariabackup%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-postgres%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL "
-    "END::bigint AS db_mb, "
-    "CASE "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%barri' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%barri:%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%hyper-v:%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ovirt%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-proxmox%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-vmware%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL "
-    "END::bigint AS vm_mb, "
-    "CASE "
-      "WHEN f.filesettext ILIKE '%{%{%meta%=%' THEN j.jobbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-libcloud%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-qumulo%' THEN j.readbytes / 1000000 "
-      "WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL "
-    "END::bigint AS filer_mb, "
-    "CASE "
-      "WHEN f.filesettext ILIKE '%{%{%meta%=%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%File%=%' THEN j.readbytes / 1000000 "
-    "END::bigint AS normal_mb, "
-    "CASE "
-      "WHEN f.filesettext ILIKE '%{%{%meta%=%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%barri' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%barri:%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%hyper-v:%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-libcloud%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-mariabackup%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ovirt%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-postgres%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-proxmox%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-qumulo%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-vmware%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL "
-      "ELSE GREATEST(j.readbytes, j.jobbytes) / 1000000 "
-    "END::bigint AS unknown_mb, "
-    "CASE "
-      "WHEN f.filesettext ILIKE '%{%{%meta%=%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%barri' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%barri:%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%hyper-v:%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%mssqlvdi:%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ldap%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-libcloud%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-mariabackup%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-ovirt%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-percona%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-postgres%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-proxmox%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-qumulo%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%Plugin%=%python%:module_name=bareos-fd-vmware%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%File%=%' THEN NULL "
-      "WHEN f.filesettext ILIKE '%{%{%File%=%Plugin%=%' OR f.filesettext ILIKE '%{%{%Plugin%=%File%=%' THEN "
-        "CASE WHEN LENGTH(f.filesettext) < 10 THEN '<empty>' ELSE f.filesettext END "
-      "ELSE "
-        "CASE WHEN LENGTH(f.filesettext) < 10 THEN '<empty>' ELSE f.filesettext END "
-    "END AS filesettext "
-  "FROM job j "
-  "INNER JOIN client c "
-    "ON c.clientid = j.clientid "
-  "INNER JOIN fileset f "
-    "ON j.filesetid = f.filesetid "
-  "WHERE jobid IN ( "
-    "SELECT "
-      "MAX(j.jobid) AS jobid "
-    "FROM job j "
-    "INNER JOIN fileset f "
-      "ON j.filesetid = f.filesetid "
-    "WHERE level = 'F' "
-      "AND j.jobstatus IN ('T','W') "
-      "AND j.type = 'B' "
-      "AND j.jobbytes > 0 "
-    "GROUP BY j.clientid, f.fileset "
-  ") "
-"), "
-"backup_unit_overview AS ( "
-  "SELECT "
-    "client, "
-    "'<all file-based>' AS fileset, "
-    "NULL::bigint AS db_units, "
-    "NULL::bigint AS vm_units, "
-    "CEIL(SUM(filer_mb) / 1000000)::bigint AS filer_units, "
-    "CASE "
-      "WHEN SUM(normal_mb) <= 10000000 THEN 1 "
-      "ELSE CEIL(SUM(normal_mb)/1000000) - 9 "
-    "END::bigint AS normal_units "
-  "FROM latest_full_size_categorized "
-  "WHERE normal_mb IS NOT NULL "
-     "OR filer_mb IS NOT NULL "
-  "GROUP BY client "
-  "UNION "
-  "SELECT "
-    "client, "
-    "fileset, "
-    "CASE "
-      "WHEN db_mb > 0 THEN 1 "
-    "END::bigint AS db_units, "
-    "CASE "
-      "WHEN vm_mb > 10000000 THEN CEIL(vm_mb / 1000000) - 9 "
-      "WHEN vm_mb > 0 THEN 1 "
-    "END::bigint AS vm_units, "
-    "NULL::bigint AS filer_units, "
-    "NULL::bigint AS normal_units "
-  "FROM latest_full_size_categorized "
-  "WHERE (db_mb IS NOT NULL AND db_mb > 0) "
-     "OR (vm_mb IS NOT NULL AND vm_mb > 0) "
-") "
-,
+/* 0084_subscription_units_plugin_total_1 */
+R"SQL(%s
+SELECT
+  plugin,
+  count,
+  to_char(size_gb, '9999990.00') AS size_gb
+FROM (
+  SELECT
+    plugin,
+    count,
+    size_gb,
+    1 AS order 
+  FROM plugin_aggregated
+  UNION
+  SELECT
+    'TOTAL' as plugin,
+    SUM(count) as count,
+    SUM(size_gb) AS size_gb,
+    2 AS order
+  FROM plugin_aggregated
+) t
+ORDER BY t.order, t.plugin;
+)SQL",
 
 NULL
 };

@@ -1,0 +1,30 @@
+# List units used aggregated per client.
+# Parameters:
+# - placeholder for WITH clause
+#   inject the snippet from subscription_with_clause_0 here
+# - client name column
+#   client_name (clear client names) or client_anon (anonymized client names)
+# - client sorting column
+#   set client_name for clear client names or client_id for anonymized client names
+%s
+SELECT %s as client, count, to_char(size_gb, '9999990.00') AS size_gb FROM (
+  SELECT
+    client_name,
+    client_anon,
+    client_id,
+    SUM(count) AS count,
+    SUM(size_gb) AS size_gb,
+    1 AS order
+  FROM client_aggregated
+  GROUP BY client_name, client_anon, client_id
+  UNION
+  SELECT
+    'TOTAL' AS client_name,
+    'TOTAL' AS client_anon,
+    0 as client_id,
+    SUM(count) AS count,
+    SUM(size_gb) AS size_gb,
+    2 AS order
+  FROM client_aggregated
+) t
+ORDER BY t.order, t.%s;
