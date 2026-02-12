@@ -1,0 +1,21 @@
+status subscriptions clients anonymize
+
+Backup unit report aggregated by client:
++--------------+-------+-------------+
+| client       | count | size_gb     |
++--------------+-------+-------------+
+| Client 10000 |     1 |        3.00 |
+| Client 10001 |     2 |        2.00 |
+| Client 10002 |     3 |        3.00 |
+| Client 10003 |    10 |     1234.00 |
+| Client 10004 |     9 |  1234567.89 |
+| Client 10005 |     5 |        5.00 |
+| TOTAL        |    30 |  1235814.89 |
++--------------+-------+-------------+
+
+Backup unit summary:
+ accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)
+            used: 1,236
+      configured: 1,240
+       remaining: 4
+

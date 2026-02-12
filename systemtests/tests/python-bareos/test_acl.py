@@ -1,7 +1,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -363,9 +363,7 @@ class PythonBareosAclTest(bareos_unittest.Json):
         )
 
         result = director_root.call("status subscription all")
-        self.assertEqual(
-            configured_subscriptions, result["total-units-required"]["configured"]
-        )
+        self.assertEqual(configured_subscriptions, result["unit-summary"]["configured"])
 
     def test_status_subscription_admin(self):
         username = self.get_operator_username()

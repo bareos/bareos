@@ -19,88 +19,126 @@ start_test
 
 rm -f "$tmp"/status-subscription*.txt
 
-cat <<END_OF_DATA >$tmp/bconcmds
-@$out ${NULL_DEV}
-sqlquery
-DELETE from job WHERE jobid!=1;
+# Generate a set of test clients and filesets together with a bunch of jobs
 
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/status-subscriptions-setup.txt
 use
-@$out $tmp/status-subscriptions.txt
+sqlquery sharedsession
+DELETE FROM Job WHERE JobId >= 10000;
+DELETE FROM Client WHERE ClientId >= 10000;
+DELETE FROM Fileset WHERE FileSetId >= 10000;
+INSERT INTO Client (ClientId, Name, UName) VALUES
+(10000, 'file-only', 'synthetic test client'),
+(10001, 'two-barri-jobs', 'synthetic test client'),
+(10002, 'file-and-plugins', 'synthetic test client'),
+(10003, 'native-plugins', 'synthetic test client'),
+(10004, 'python-plugins', 'synthetic test client'),
+(10005, 'special-syntax', 'synthetic test client');
+INSERT INTO Fileset (FileSetId, Fileset, FileSetText, Md5, CreateTime) VALUES
+(10000, 'file1', E'{\n{\nFile = "/a"\n}\n}', 'x', now()),
+(10001, 'file2', E'{\n{\nFile = "/b"\n}\n}', 'x', now()),
+(10002, 'file3', E'{\n{\nFile = "/c"\n}\n}', 'x', now()),
+(10003, 'barri1', E'{\n{\nPlugin = "barri"\n}\n}', 'x', now()),
+(10004, 'barri2', E'{\n{\nPlugin = "barri:"\n}\n}', 'x', now()),
+(10005, 'bpipe1', E'{\n{\nPlugin = "bpipe:reader=\\"/bin/prog\\""\n}\n}', 'x', now()),
+(10006, 'hyper-v1', E'{\n{\nPlugin = "hyper-v:"\n}\n}', 'x', now()),
+(10007, 'hyper-v2', E'{\n{\nPlugin = "hyper-v:"\n}\n}', 'x', now()),
+(10008, 'hyper-v3', E'{\n{\nPlugin = "hyper-v"\n}\n}', 'x', now()),
+(10009, 'mssql1', E'{\n{\nPlugin = "mssqlvdi:"\n}\n}', 'x', now()),
+(10010, 'mssql2', E'{\n{\nPlugin = "Mssqlvdi:"\n}\n}', 'x', now()),
+(10011, 'mssql3', E'{\n{\nPlugin = "MSSQLVDI:"\n}\n}', 'x', now()),
+(10012, 'mssql4', E'{\n{\nPlugin = "mssqlvdi"\n}\n}', 'x', now()),
+(10013, 'ldap', E'{\n{\nPlugin = "python:module_name=bareos-fd-ldap"\n}\n}', 'x', now()),
+(10014, 'libcloud', E'{\n{\nPlugin = "python:module_name=bareos-fd-libcloud"\n}\n}', 'x', now()),
+(10015, 'mariadb', E'{\n{\nPlugin = "python3:module_name=bareos-fd-mariabackup"\n}\n}', 'x', now()),
+(10016, 'ovirt', E'{\n{\nPlugin = "python:module_name=bareos-fd-ovirt"\n}\n}', 'x', now()),
+(10017, 'percona', E'{\n{\nPlugin = "python:module_name=bareos-fd-percona"\n}\n}', 'x', now()),
+(10018, 'postgres', E'{\n{\nPlugin = "python:module_name=bareos-fd-postgres"\n}\n}', 'x', now()),
+(10019, 'proxmox', E'{\n\{\nPlugin = "python:module_name=bareos-fd-proxmox"\n}\n}', 'x', now()),
+(10020, 'qumulo', E'{\n{\nPlugin = "python:module_name=bareos-fd-qumulo"\n}\n}', 'x', now()),
+(10021, 'vmware', E'{\n{\nPlugin = "python:module_name=bareos-fd-vmware"\n}\n}', 'x', now()),
+(10022, 'nomod-py', E'{\n{\nPlugin = "python3:no_module_name"\n}\n}', 'x', now()),
+(10023, 'custom', E'{\n{\nPlugin = "custom-plugin"\n}\n}', 'x', now()),
+(10024, 'grpc1', E'{\n{\nPlugin = "grpc:bareos-grpc-fd-plugin-bridge:python3:arg1:arg2:module_name=bareos-fd-bridged"\n}\n}', 'x', now()),
+(10025, 'grpc2', E'{\n{\nPlugin = "grpc:my-gprc-plugin:arg1=val1:arg2"\n}\n}', 'x', now()),
+(10026, 'noprefix', E'{\n{\nPlugin = "python:arg:module_name=noprefix"\n}\n}', 'x', now());
+INSERT INTO Job (JobId, Job, Name, Type, Level, ClientId, JobStatus, JobBytes, ReadBytes, FilesetId) VALUES
+(10000, 'file1-1',  'file1',    'B', 'F', 10000, 'T', 10^9, 1000, 10000),
+(10001, 'file2-1',  'file2',    'B', 'F', 10000, 'T', 1000, 10^9, 10001),
+(10002, 'file3-1',  'file3',    'B', 'F', 10000, 'T', 10^9, 1000, 10002),
+(10003, 'file1-2',  'file1',    'B', 'F', 10000, 'T', 1000, 10^9, 10000),
+(10004, 'barri1-1', 'barri1',   'B', 'F', 10001, 'T', 1000, 10^9, 10003),
+(10005, 'barri2-1', 'barri2',   'B', 'F', 10001, 'T', 1000, 10^9, 10004),
+(10006, 'barri1-2', 'barri1',   'B', 'F', 10001, 'T', 1000, 10^9, 10003),
+(10007, 'barri2-2', 'barri2',   'B', 'F', 10001, 'T', 1000, 10^9, 10004),
+(10008, 'file1-3',  'file1',    'B', 'F', 10002, 'T', 1000, 10^9, 10000),
+(10009, 'bpipe1-1', 'bpipe1',   'B', 'F', 10002, 'T', 1000, 10^9, 10005),
+(10010, 'barri1-3', 'barri1',   'B', 'F', 10002, 'T', 1000, 10^9, 10003),
+(10011, 'bpipe1-2', 'bpipe1',   'B', 'F', 10003, 'T', 1000, 10^9, 10005),
+(10012, 'barri1-4', 'barri1',   'B', 'F', 10003, 'T', 1000, 10^9, 10003),
+(10013, 'barri2-3', 'barri2',   'B', 'F', 10003, 'T', 1000, 10^10, 10004),
+(10014, 'hyper-v1', 'hyper-v1', 'B', 'F', 10003, 'T', 1000, 10^9, 10006),
+(10015, 'hyper-v2', 'hyper-v2', 'B', 'F', 10003, 'T', 1000, 10^10, 10007),
+(10016, 'hyper-v3', 'hyper-v3', 'B', 'F', 10003, 'T', 1000, 10^11, 10008),
+(10017, 'mssql1',   'mssql1',   'B', 'F', 10003, 'T', 1000, 10^9, 10009),
+(10018, 'mssql2',   'mssql2',   'B', 'F', 10003, 'T', 1000, 10^10, 10010),
+(10019, 'mssql3',   'mssql3',   'B', 'F', 10003, 'T', 1000, 10^11, 10011),
+(10020, 'mssql4',   'mssql4',   'B', 'F', 10003, 'T', 1000, 10^12, 10012),
+(10021, 'ldap',     'ldap',     'B', 'F', 10004, 'T', 1000, 9 * 10^7, 10013),
+(10022, 'libcloud', 'libcloud', 'B', 'F', 10004, 'T', 1000, 8 * 10^8, 10014),
+(10023, 'mariadb',  'mariadb',  'B', 'F', 10004, 'T', 1000, 7 * 10^9, 10015),
+(10024, 'ovirt',    'ovirt',    'B', 'F', 10004, 'T', 1000, 6 * 10^10, 10016),
+(10025, 'percona',  'percona',  'B', 'F', 10004, 'T', 1000, 5 * 10^11, 10017),
+(10026, 'postgres', 'postgres', 'B', 'F', 10004, 'T', 1000, 4 * 10^12, 10018),
+(10027, 'proxmox',  'proxmox',  'B', 'F', 10004, 'T', 1000, 3 * 10^13, 10019),
+(10028, 'qumulo',   'qumulo',   'B', 'F', 10004, 'T', 1000, 2 * 10^14, 10020),
+(10029, 'vmware',   'vmware',   'B', 'F', 10004, 'T', 1000, 1 * 10^15, 10021),
+(10030, 'nomod-py', 'nomod-py', 'B', 'F', 10005, 'T', 1000, 10^9, 10022),
+(10031, 'custom',   'custom',   'B', 'F', 10005, 'T', 1000, 10^9, 10023),
+(10032, 'grpc1',    'grpc1',    'B', 'F', 10005, 'T', 1000, 10^9, 10024),
+(10033, 'grpc2',    'grpc2',    'B', 'F', 10005, 'T', 1000, 10^9, 10025),
+(10034, 'noprefix', 'noprefix', 'B', 'F', 10005, 'T', 1000, 10^9, 10026);
+CREATE TEMPORARY VIEW Job AS SELECT * FROM Job WHERE JobId >= 10000;
+
+@$out $tmp/status-subscriptions-default.txt
 status subscriptions
-@$out $tmp/status-subscriptions-detail.txt
-status subscriptions detail
-@$out $tmp/status-subscriptions-unknown.txt
-status subscriptions unknown
+@$out $tmp/status-subscriptions-anon.txt
+status subscriptions anonymize
+@$out $tmp/status-subscriptions-client.txt
+status subscriptions clients
+@$out $tmp/status-subscriptions-client-anon.txt
+status subscriptions clients anonymize
+@$out $tmp/status-subscriptions-plugin.txt
+status subscriptions plugins
+
+@$out ${NULL_DEV}
+sqlquery sharedsession
+UPDATE Job SET ReadBytes = 10^12 WHERE ReadBytes > 10^12;
+SELECT * FROM Job;
+
+@$out $tmp/status-subscriptions-countbased.txt
+status subscriptions
+
+@$out $tmp/status-subscriptions-cleanup.txt
+sqlquery sharedsession
+DROP VIEW Job;
+DELETE FROM Job WHERE JobId >= 10000;
+DELETE FROM Client WHERE ClientId >= 10000;
+DELETE FROM Fileset WHERE FileSetId >= 10000;
+
 END_OF_DATA
 run_bconsole
 
 # remove lines starting with @ so output is comparable
-sed -i'.bak' -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" "$tmp"/status-subscription*.txt
+sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" "$tmp"/status-subscriptions-*.txt
 
-for f in status-subscriptions status-subscriptions-detail status-subscriptions-unknown; do
+for f in expected/status-subscriptions-*.txt; do
+  f="$(basename "$f" .txt)"
   if ! diff --ignore-all-space --unified expected/$f.txt "$tmp/$f.txt"; then
     echo "Output $f does not match expectation!" >&2
     estat=1
   fi
-done
-
-declare -A PLUGINDEFS
-
-PLUGINDEFS["db"]="python3:module_name=bareos-fd-ldap\
-        python3:module_name=bareos-fd-mariabackup\
-        python3:module_name=bareos-fd-percona\
-        python3:module_name=bareos-fd-postgres\
-        mssqlvdi:instance=default:database=myDatabase:username=bareos:password=bareos"
-
-PLUGINDEFS["filer"]="python3:module_name=bareos-fd-libcloud \
-        python3:module_name=bareos-fd-qumulo\
-        meta=\"BUTYPE=DUMP\""
-
-PLUGINDEFS["vm"]="barri:dingens \
-        hyper-v:vmname=testvm \
-        python3:module_name=bareos-fd-ovirt \
-        python3:module_name=bareos-fd-proxmox \
-        python3:module_name=bareos-fd-vmware"
-
-for PLUGINTYPE in "${!PLUGINDEFS[@]}"; do
-
-  for PLUGINSTRING in ${PLUGINDEFS[${PLUGINTYPE}]}; do
-
-    rm -f "$tmp"/status-subscription*.txt
-
-    cat <<END_OF_DATA2 >$tmp/bconcmds
-@$out ${NULL_DEV}
-use
-
-sqlquery 
-update fileset set filesettext = '{ { plugin=${PLUGINSTRING} } }' where filesetid=1;
-select * from  fileset where filesetid=1;
-
-@$out $tmp/status-subscriptions-${PLUGINTYPE}only.txt
-status subscriptions
-@$out $tmp/status-subscriptions-detail-${PLUGINTYPE}only.txt
-status subscriptions detail
-@$out $tmp/status-subscriptions-unknown-${PLUGINTYPE}only.txt
-status subscriptions unknown
-quit
-
-END_OF_DATA2
-    run_bconsole
-
-    echo "Checking if \"$PLUGINSTRING\" counts as $PLUGINTYPE unit"
-
-    # remove lines starting with @ so output is comparable
-    sed -i'.bak' -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" "$tmp"/status-subscription*.txt
-    #
-    for f in status-subscriptions-${PLUGINTYPE}only status-subscriptions-detail-${PLUGINTYPE}only status-subscriptions-unknown-${PLUGINTYPE}only; do
-      if ! diff --ignore-all-space --unified expected/$f.txt "$tmp/$f.txt"; then
-        echo "Output $f does not match expectation!" >&2
-        estat=1
-      fi
-    done
-
-  done
-
 done
 
 end_test
