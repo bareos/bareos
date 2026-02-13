@@ -400,22 +400,25 @@ Please consider the following information when testing tape speed:
    more data.
 
 .. code-block:: sh
-   :caption: write random data to tape with raw tools, considering /tmp being a memory tmpfs
+   :caption: write random data to tape with raw tools, considering /tmp being a memory tmpfs ensure
+             it has enough space to have the 10GiB output, or consider using another filesystem.
 
-   dd if=/dev/urandom of=/var/tmp/random bs=1M count=10240 status=progress
-     10458497024 bytes (10 GB, 9.7 GiB) copied, 24 s, 436 MB/s
+   dd if=/dev/urandom of=/tmp/random bs=1M count=10240 status=progress
+      10240+0 records in
+      10240+0 records out
+      10737418240 bytes (11 GB, 10 GiB) copied, 20.5069 s, 524 MB/s
 
-   tar --totals --verbose --create --file /dev/nst0 /var/tmp/random
+   tar --totals --verbose --create --file /dev/nst0 /tmp/random
       tar: Removing leading `/' from member names
-      /var/tmp/random
+      /tmp/random
       Total bytes written: 10737428480 (11GiB, 281MiB/s)
 
 
 tapestat command
 ^^^^^^^^^^^^^^^^
 
-You can monitor performance operations of your tape drive using the :command:`tapestat 1` during a
-job to see how well your tape drive is keeping up with the data rate. The `1` is the interval that `tapestat` waits between updating the output.
+You can monitor tape drive performance during a job with :command:`tapestat 1` — the `1`
+is the update interval.
 
 .. image:: /include/images/tapestat_output.png
    :alt: tapestat output sample
@@ -425,9 +428,9 @@ job to see how well your tape drive is keeping up with the data rate. The `1` is
 sg_logs command
 ^^^^^^^^^^^^^^^
 
-You can also use the :command:`sg_logs --all /dev/sgX` command to see detailled informations about
-the tape drive status and performance or errors counters. Where :file:`/dev/sgX` is the the SCSI
-generic device corresponding to your tape drive. (see :command:`lsscsi -g`)
+You can output detailled status, performance or errors counters of you drive with
+:command:`sg_logs --all /dev/sgX`. Where :file:`/dev/sgX` is the SCSI generic device corresponding
+to your tape drive. (see :command:`lsscsi -g`)
 
 The output varies depending on whether the tape is loaded or not, as well as on the drive model.
 
@@ -1082,8 +1085,8 @@ The output varies depending on whether the tape is loaded or not, as well as on 
       20     ff ff ff ff 00 04 40 04  01 09 02 33
 
 
-To a certain extent the command might help diagnose autoloader and detailled informations about
-your autochanger.
+To a certain extent, the command might help diagnose autoloader issues and provide detailed
+information about your autochanger.
 
 .. code-block:: shell
    :caption: sg_logs output example for an autochanger
@@ -1204,7 +1207,7 @@ If a tape is loaded from slot 1, this should cause it to be unloaded.
 
 :command:`/usr/lib/bareos/scripts/mtx-changer /dev/sch0 load 3 /dev/nst0 0`
 
-.. index::`
+.. index::
    single: mtx-changer load
 
 Assuming you have a tape in slot 3, it will be loaded into drive (0).
@@ -1230,7 +1233,7 @@ configuration, Bareos should be able to operate the changer. The only remaining 
 will be if your autoloader needs some time to get the tape loaded after issuing the command.
 After the mtx-changer script returns, Bareos will immediately rewind and read the tape. If Bareos
 gets rewind I/O errors after a tape change, you will probably need to configure the
-:strong:`load_sleep` paramenter in the config file :file:`/etc/bareos/mtx-changer.conf`. You can
+:strong:`load_sleep` parameter in the config file :file:`/etc/bareos/mtx-changer.conf`. You can
 test whether or not you need a sleep by putting the following commands into a file and running it
 as a script:
 
@@ -1249,7 +1252,7 @@ as a script:
 
 If the above script runs, you probably have no timing problems. If it does not run, start by putting
 a sleep 30 or possibly a sleep 60 in the script just after the mtx-changer load command. If that
-works, then you should configure the :strong:`load_sleep` paramenter in the config file
+works, then you should configure the :strong:`load_sleep` parameter in the config file
 :file:`/etc/bareos/mtx-changer.conf` to the specified value so that it will be effective when
 Bareos runs.
 
@@ -1287,8 +1290,8 @@ Restore a pruned job using a pattern
    single: Problem; Restore; pruned file job
    single: Regex
 
-It is possible to configure Bareos in a way, that job information are still stored in the Bareos
-catalog, while the individual file information are already pruned.
+It is possible to configure Bareos in a way, that job information is still stored in the Bareos
+catalog, while the individual file information is already pruned.
 
 If all File records are pruned from the catalog for a Job, normally Bareos can restore only all
 files saved. That is there is no way using the catalog to select individual files. With this new
@@ -1301,7 +1304,7 @@ the full backup.
 
      Building directory tree for JobId(s) 1,3 ...
      There were no files inserted into the tree, so file selection
-     is not possible.Most likely your retention policy pruned the files
+     is not possible. Most likely your retention policy pruned the files
 
      Do you want to restore all the files? (yes|no): no
 
@@ -1732,9 +1735,10 @@ Solution
 
    #. Ensure that the Bareos databases are created. This is also described at the above link.
 
-   #. Start and stop the Bareos Director using the probate |dir| configuration files so that it can
-      create the Client and Storage records which are not stored on the Volumes. Without these
-      records, scanning is unable to connect the Job records to the proper client.
+   #. Start and stop the Bareos Director using the appropriate |dir| configuration files (aka the
+      one you want to recover the database) so that it can create the Client and Storage records
+      which are not stored on the Volumes. Without these records, scanning is unable to connect
+      the Job records to the proper client.
 
    When the above is complete, you can begin bscanning your Volumes.
    Please see the :ref:`bscan`\  chapter for more details.
