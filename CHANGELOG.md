@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - cmake: disable debian info generation on Windows [PR #2525]
 - director: remove device resource [PR #2524]
 - bareos-fd-mariabackup: ignore invalid utf8 on decode() [PR #2527]
+- debian: dbconfig allow major upgrade without backup dump [PR #2506]
 
 ### Fixed
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2461]
@@ -2208,6 +2209,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2498]: https://github.com/bareos/bareos/pull/2498
 [PR #2501]: https://github.com/bareos/bareos/pull/2501
 [PR #2505]: https://github.com/bareos/bareos/pull/2505
+[PR #2506]: https://github.com/bareos/bareos/pull/2506
 [PR #2508]: https://github.com/bareos/bareos/pull/2508
 [PR #2519]: https://github.com/bareos/bareos/pull/2519
 [PR #2521]: https://github.com/bareos/bareos/pull/2521
