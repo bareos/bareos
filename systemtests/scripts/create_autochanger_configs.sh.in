@@ -72,9 +72,9 @@ EOF
   drive_index=0
   tape_devices="TAPE_DEVICES${changer_index}[@]"
   for tape_device in ${!tape_devices}; do
-    # Ex nanmig 
-    bareos_tape_device_name="tapedrive${changer_index}-${drive_index}"
+    # Previous nanmig convention was 
     # bareos_tape_device_name=$(echo "tapedrive-${drive_index}-${tape_device}" | sed 's/\//\./g')
+    bareos_tape_device_name="tapedrive${changer_index}-${drive_index}"
     echo "  Attaching ${tape_device} to autochanger"
 
     #### add the type device
@@ -91,12 +91,12 @@ Device {
     DriveIndex = ${drive_index}
     ArchiveDevice = ${tape_device}
     MediaType = LTO
-    AutoChanger = yes
-    AutomaticMount = yes
+    AutoChanger = Yes
+    AutomaticMount = Yes
     MaximumFileSize = 10GB
     AlwaysOpen = Yes
     Maximum Concurrent Jobs = 1
-	Drive Tape Alert Enabled = yes
+    Drive Tape Alert Enabled = Yes
     Drive Crypto Enabled = Yes
     Query Crypto Status = Yes
  }
