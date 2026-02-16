@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -20,8 +20,7 @@
 
 # Common functions for NDMP Testing
 
-# Rexport the testing path with defined testname
-export NDMP_TEST_PATH=${NDMP_TEST_PATH}/${TestName}
+# TestName needs to be defined including in test-setup
 
 # Determine the SED to be used
 os_type=$(uname -s)
@@ -42,11 +41,11 @@ wait_jobid()
   JOBID=$1
   TIMEOUT=${2:-10}
 
-  while [ ${TIMEOUT} -gt 0 ] && ${BCONSOLE} <<< "wait jobid=${JOBID}" | grep "JobStatus=Unknown"; do
+  while [ ${TIMEOUT} -gt 0 ] && ${BCONSOLE} <<<"wait jobid=${JOBID}" | grep "JobStatus=Unknown"; do
     sleep 1
-    TIMEOUT=$((TIMEOUT-1))
+    TIMEOUT=$((TIMEOUT - 1))
   done
-  ${BCONSOLE} <<< "wait jobid=${JOBID}"
+  ${BCONSOLE} <<<"wait jobid=${JOBID}"
 }
 
 check_jobid()
@@ -54,12 +53,12 @@ check_jobid()
   JOBID=$1
 
   wait_jobid "${JOBID}"
-  RESULT=$(${BCONSOLE} <<< "list joblog jobid=${JOBID}")
-  if grep 'Fatal error:' <<< "${RESULT}"; then
+  RESULT=$(${BCONSOLE} <<<"list joblog jobid=${JOBID}")
+  if grep 'Fatal error:' <<<"${RESULT}"; then
     set_error "${RESULT}"
     exit 1
   fi
-  if ! grep 'Termination:.*OK' <<< "${RESULT}"; then
+  if ! grep 'Termination:.*OK' <<<"${RESULT}"; then
     set_error "${RESULT}"
     exit 1
   fi
@@ -70,12 +69,12 @@ check_jobid_failed()
   JOBID=$1
 
   wait_jobid "${JOBID}"
-  RESULT=$(${BCONSOLE} <<< "list joblog jobid=${JOBID}")
-  if grep 'Termination:.*OK' <<< "${RESULT}"; then
+  RESULT=$(${BCONSOLE} <<<"list joblog jobid=${JOBID}")
+  if grep 'Termination:.*OK' <<<"${RESULT}"; then
     set_error "${RESULT}"
     exit 1
   fi
-  if ! grep 'Fatal error:' <<< "${RESULT}"; then
+  if ! grep 'Fatal error:' <<<"${RESULT}"; then
     set_error "${RESULT}"
     exit 1
   fi
@@ -92,9 +91,9 @@ make_remote_data_full()
   ${SSH} mkdir -p "${NDMP_TEST_PATH}"
   ${SSH} dd if=/dev/zero of="${NDMP_TEST_PATH}/full" bs=1M count=20
   ${SSH} "echo \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}\" >> \"${NDMP_TEST_PATH}/full\""
-  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile\"" < $(readlink sbin/bareos_dir-*)
+  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile\"" <$(readlink sbin/bareos_dir-*)
   # we need an additional file, so the restore doesn't pick the last file of the volume and data stream
-  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile2\"" < $(readlink sbin/bareos_sd-*)
+  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile2\"" <$(readlink sbin/bareos_sd-*)
 }
 
 make_remote_data_incremental()
