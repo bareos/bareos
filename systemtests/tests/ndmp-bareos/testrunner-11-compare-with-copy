@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -46,6 +46,10 @@ start_test
 copy_volume=$(bin/bconsole <<< ".api 2
 list volumes pool=ndmp-copy
 " | awk '/"volumename":/ {gsub("\"","",$2);gsub(",","",$2);print $2}' | head -n1)
+if [[ -z "${copy_volume}" ]]; then
+  echo "ERROR: No copy volume found in pool ndmp-copy"
+  exit 1
+fi
 
 run_bscan_db --list-records --verbose --volumes ndmp-0001 \
     --update-volume-info FileStorage
