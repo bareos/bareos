@@ -61,7 +61,7 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
     #dbc_sql_substitutions="yes"
 
     # run dbconfig
-    dbc_go bareos-database-common $param1 $param2 $@
+    dbc_go bareos-database-common "$param1" "$param2" "$@"
 
     # apply the dbconfig settings, ignore errors
     @scriptdir@/bareos-config apply_dbconfig_settings || true
