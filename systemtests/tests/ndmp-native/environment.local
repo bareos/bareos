@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -22,3 +22,5 @@
 runner_name="$(basename "$0")"
 export log_home="${tmp}/${runner_name}"
 mkdir -p "${log_home}"
+# Rexport the testing path with defined testname
+export NDMP_TEST_PATH=${NDMP_TEST_PATH}/${TestName}
