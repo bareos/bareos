@@ -110,4 +110,3 @@ make_remote_subdata_incremental()
   ${SSH} cp -a "${NDMP_TEST_PATH}/testfile" "${NDMP_TEST_PATH}/subdir/subtestfile1"
   ${SSH} cp -a "${NDMP_TEST_PATH}/testfile2" "${NDMP_TEST_PATH}/subdir/subtestfile2"
 }
-
