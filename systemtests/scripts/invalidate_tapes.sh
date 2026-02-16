@@ -23,14 +23,15 @@ set -u
 
 . ./environment
 . ./test-config
-. ./redirect_output
+. "${BAREOS_SCRIPTS_DIR}/redirect_output"
 
 TestName="$(basename "$(pwd)")"
 export TestName
 
 echo "=== ${TestName} Running ==="
 
-invalidate_slots_on_autochanger() {
+invalidate_slots_on_autochanger()
+{
   changer_device=$1
   tape_device=$2
 
@@ -68,10 +69,10 @@ invalidate_slots_on_autochanger() {
     while read -r line && [ "${i}" -le "$LAST_SLOT_NUMBER" ]; do
       if echo "${line}" | grep "$(printf 'Storage Element %d:Full\n' ${i})"; then
         set -x
-        if mtx -f "${changer_device}" load "${i}" "${USE_TAPE_DEVICE}" &&
-          mt -f "${tape_device}" rewind &&
-          mt -f "${tape_device}" weof &&
-          mtx -f "${changer_device}" unload "${i}" "${USE_TAPE_DEVICE}"; then
+        if mtx -f "${changer_device}" load "${i}" "${USE_TAPE_DEVICE}" \
+          && mt -f "${tape_device}" rewind \
+          && mt -f "${tape_device}" weof \
+          && mtx -f "${changer_device}" unload "${i}" "${USE_TAPE_DEVICE}"; then
           set +x
           echo
           ((i = i + 1))
