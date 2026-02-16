@@ -477,12 +477,28 @@ static std::optional<db_list_ctx> FindJobDependencies(UaContext* ua,
 {
   db_list_ctx found;
   uint32_t jobid = 0;
-  for (const char* p = jobids; GetNextJobidFromList(&p, &jobid) > 0;) {
+  const char* p = jobids;
+  for (;;) {
+    auto status = GetNextJobidFromList(&p, &jobid);
+
+    if (status == 0) { break; }
+
+    if (status < 0) {
+      ua->ErrorMsg(T_("Could not parse jobid from '%s'\n"), p);
+      return std::nullopt;
+    }
+
+    if (jobid == 0) {
+      ua->ErrorMsg(T_("0 is not a valid jobid\n"));
+      return std::nullopt;
+    }
+
     JobDbRecord jr;
     jr.JobId = jobid;
     if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
-      ua->ErrorMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
-                   ua->cmd, ua->db->strerror());
+      ua->ErrorMsg(
+          T_("Unable to get Job record for JobId=%" PRIu32 ": ERR=%s\n"), jobid,
+          ua->db->strerror());
       return std::nullopt;
     }
     ua->SendMsg(T_("Selecting jobs to build the Full state at %s\n"),
@@ -626,8 +642,6 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
               FMTARG(date_index), FMTARG(i));
           return 0;
         }
-
-        if (date_index >= 0) { return 0; }
 
         set_index(job_index, i);
         PmStrcat(rx->JobIds, ua->argv[i]);
