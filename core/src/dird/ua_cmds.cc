@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2772,7 +2772,7 @@ static bool help_cmd(UaContext* ua, const char*)
         ua->send->ObjectKeyValue("command", commands[i].key, "  %-18s");
         ua->send->ObjectKeyValue("description", commands[i].help, " %s\n\n");
         ua->send->ObjectKeyValue("arguments", "Arguments:\n\t",
-                                 commands[i].usage, "%s\n", 40);
+                                 commands[i].usage, "%s\n", 45);
         ua->send->ObjectKeyValueBool(
             "permission", ua->AclAccessOk(Command_ACL, commands[i].key));
         ua->send->ObjectEnd(commands[i].key);
