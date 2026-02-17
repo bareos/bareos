@@ -310,7 +310,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
             # contributed by https://github.com/kjetilho
             if hasMySQLdbModule:
                 try:
-                    conn = MySQLdb.connect(**self.connect_options)
+                    conn = MySQLdb.connect(**self.connect_options, use_unicode=False)
                     cursor = conn.cursor()
                     cursor.execute("SHOW ENGINE INNODB STATUS")
                     result = cursor.fetchall()
@@ -320,7 +320,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                             "Could not fetch SHOW ENGINE INNODB STATUS, unprivileged user?",
                         )
                         return bRC_Error
-                    innodb_status = result[0][2]
+                    innodb_status = result[0][2].decode(errors="ignore")
                     conn.close()
                 except Exception as e:
                     JobMessage(
