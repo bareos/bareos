@@ -43,22 +43,31 @@ start_test
 # but it is not always the case.
 # https://github.com/bareos/internal/issues/349
 
-copy_volume=$(bin/bconsole <<<".api 2
+source_volumes=$(bin/bconsole <<<".api 2
+list volumes pool=ndmp
+" | awk '/"volumename":/ {gsub("\"","",$2);gsub(",","",$2);print $2}' | xargs | sed -e "s, ,|,g")
+if [[ -z "${source_volumes}" ]]; then
+  echo "ERROR: No source volume found in pool ndmp"
+  exit 1
+fi
+copy_volumes=$(bin/bconsole <<<".api 2
 list volumes pool=ndmp-copy
-" | awk '/"volumename":/ {gsub("\"","",$2);gsub(",","",$2);print $2}' | head -n1)
-if [[ -z "${copy_volume}" ]]; then
+" | awk '/"volumename":/ {gsub("\"","",$2);gsub(",","",$2);print $2}' | xargs | sed -e "s, ,|,g")
+if [[ -z "${source_volumes}" ]]; then
   echo "ERROR: No copy volume found in pool ndmp-copy"
   exit 1
 fi
 
-run_bscan_db --list-records --verbose --volumes ndmp-0001 \
+run_bscan_db --list-records --verbose --volumes "${source_volumes}" \
   --update-volume-info FileStorage
 mv "${tmp}/bscan.out" "${tmp}/bscan_FileStorage.out"
 
-run_bscan_db --list-records --verbose --volumes "${copy_volume}" \
+run_bscan_db --list-records --verbose --volumes "${copy_volumes}" \
   --update-volume-info CopyStorage
 mv "${tmp}/bscan.out" "${tmp}/bscan_CopyStorage.out"
 
+# TODO find adequate filters to compare both output
+# Record: SessId=35 SessTim=1771339665 FileIndex=1 Stream=29 len=307
 diff -u "${tmp}/bscan_FileStorage.out" "${tmp}/bscan_CopyStorage.out" >"${tmp}/diff.out" || dstat=$?
 
 end_test
