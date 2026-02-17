@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,7 @@ set(ndmp_tape_and_robot_agent_address "192.168.50.1")
 set(ndmp_tape_and_robot_agent_user "ndmpadmin")
 set(ndmp_tape_and_robot_agent_password "test")
 set(ndmp_tape_and_robot_agent_auth_type "MD5")
-set(ndmp_tape_and_robot_agent_tape_device "/dev/rmt/10n;/dev/rmt/11n;/dev/rmt12n;/dev/rmt/13n")
+set(ndmp_tape_and_robot_agent_tape_device "/dev/rmt/10n;/dev/rmt/11n;/dev/rmt/12n;/dev/rmt/13n")
 set(ndmp_tape_and_robot_agent_changer_device "/dev/scsi/changer/c3t0d0")
 message(
       INFO
