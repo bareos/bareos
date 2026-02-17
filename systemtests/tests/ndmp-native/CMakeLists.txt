@@ -70,7 +70,16 @@ if(ndmp_data_agent_address)
       ${ROUTE_INFO_TO_ACCESS_NDMP_DATA_AGENT}
     )
     # cmake-format: on
-
+    # validation after extraction
+    if(IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT)
+      string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$" IP_VALID
+                   "${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}"
+      )
+      if(NOT IP_VALID)
+        message(DEBUG "ERROR NDMP ROUTE INFO INVALID")
+        set(IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT "")
+      endif()
+    endif()
     message(DEBUG "NDMP ROUTE INFO: ${ROUTE_INFO_TO_ACCESS_NDMP_DATA_AGENT}")
 
     message(
