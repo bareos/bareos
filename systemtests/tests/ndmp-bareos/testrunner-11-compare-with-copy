@@ -59,7 +59,6 @@ run_bscan_db --list-records --verbose --volumes "${copy_volume}" \
   --update-volume-info CopyStorage
 mv "${tmp}/bscan.out" "${tmp}/bscan_CopyStorage.out"
 
-diff -u "${tmp}/bscan_FileStorage.out" "${tmp}/bscan_CopyStorage.out" >"${tmp}/diff.out"
-dstat=$?
+diff -u "${tmp}/bscan_FileStorage.out" "${tmp}/bscan_CopyStorage.out" >"${tmp}/diff.out" || dstat=$?
 
 end_test
