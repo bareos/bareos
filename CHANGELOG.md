@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemtests: autochanger add testrunner-restore-non-present-volume [PR #2476]
 - core/filed: fix spurious wakeups race condition in filed. [PR #2508]
 - webui: add encrypt checkbox for label tape [PR #2522]
+- Increase read timeout in Proxmox plugin [PR #2544]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2217,4 +2218,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2524]: https://github.com/bareos/bareos/pull/2524
 [PR #2525]: https://github.com/bareos/bareos/pull/2525
 [PR #2527]: https://github.com/bareos/bareos/pull/2527
+[PR #2544]: https://github.com/bareos/bareos/pull/2544
 [unreleased]: https://github.com/bareos/bareos/tree/master
