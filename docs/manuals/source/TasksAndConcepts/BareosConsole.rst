@@ -1504,6 +1504,8 @@ sqlquery
    what you are doing otherwise you could damage the catalog database. See the query command below
    for simpler and safer way of entering SQL queries.
 
+.. _console-command-status:
+
 status
    :index:`\ <single: Console; Command; status>`\
 
@@ -1518,7 +1520,8 @@ status
       :caption: status
 
       status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> |
-              client=<client-name> | storage=<storage-name> slots | subscriptions | configuration]
+              client=<client-name> | storage=<storage-name> slots |
+              subscriptions [clients] [plugins] [all] [anonymize] | configuration]
 
    If you do a status dir, the console will list any currently running jobs, a summary of all jobs
    scheduled to be run in the next 24 hours, and a listing of the last ten terminated jobs with
@@ -1699,96 +1702,141 @@ status scheduler
 .. _status-subscription:
 
 status subscriptions
-   In case you have a service contract for Bareos,
-   the command :bcommand:`status subscriptions` (:sinceVersion:`21: status subscriptions`)
-   can help you to keep the overview over the subscriptions that are used.
+   In case you have a service contract for Bareos, the command
+   :bcommand:`status subscriptions` (:sinceVersion:`21: status subscriptions`)
+   can help you to keep an overview of the subscription units your |dir| is
+   consuming.
 
-   Using the console command :bcommand:`status subscriptions`, the status of the subscriptions
-   can be checked any time interactively:
+   Using the console command :bcommand:`status subscriptions`, the current usage
+   of subscription units can be checked interactively at any time:
 
    .. code-block:: bconsole
       :caption: status subscriptions
 
       *<input>status subscriptions</input>
-      Automatically selected Catalog: MyCatalog
-      Using Catalog "MyCatalog"
-
-      Backup unit totals:
-             used: 42
-       configured: 100
-        remaining: 58
-
-   This shows the backup units that are used by your current setup.
-   It also shows the value configured in :config:option:`dir/director/Subscriptions` and the
-   difference between the two (i.e. how many units you have remaining).
-   You can configure :config:option:`dir/director/Subscriptions` to the amount of units you
-   have subscribed. However, this does not have any effect on the system outside of the
-   :bcommand:`status subscriptions` and is completely optional.
-
-   If you need more detailed information which client uses how many backup units, you can use
-   :bcommand:`status subscriptions detail` which will show a detailed list of clients and filesets
-   and the amount of backup units each of these consumes.
-
-   .. code-block:: bconsole
-      :caption: status subscriptions detail
-
-      *<input>status subscriptions detail</input>
 
       Detailed backup unit report:
-      +------------------+------------------+----------+----------+-------------+--------------+
-      | client           | fileset          | db_units | vm_units | filer_units | normal_units |
-      +------------------+------------------+----------+----------+-------------+--------------+
-      | bareos-fd        | <all file-based> |          |          |             | 1            |
-      | dbsrv1-fd        | <all file-based> |          |          |             | 1            |
-      | dbsrv1-fd        | mssql-dev-db     |        1 |          |             |              |
-      | dbsrv1-fd        | mssql-prod-db    |        1 |          |             |              |
-      | dbsrv2-fd        | mariadb-crm-db   |        1 |          |             |              |
-      | dbsrv2-fd        | mariadb-web-db   |        1 |          |             |              |
-      | filesrv-fd       | <all file-based> |          |          |             | 24           |
-      | netapp-ndmp      | <all file-based> |          |          | 7           | 1            |
-      | vcenter-proxy-fd | vm-cisrv         |          |        1 |             |              |
-      | vcenter-proxy-fd | vm-crmsrv        |          |        1 |             |              |
-      | vcenter-proxy-fd | vm-printsrv      |          |        1 |             |              |
-      | websrv-fd        | <all file-based> |          |          |             | 1            |
-      | TOTAL            |                  |        4 |        3 | 7           | 28           |
-      +------------------+------------------+----------+----------+-------------+--------------+
+      +------------+------------------+-------+----------+
+      | client     | plugin           | count | size_gb  |
+      +------------+------------------+-------+----------+
+      | windows-fd | barri            |     1 |    12.46 |
+      | windows-fd | mssqlvdi         |     2 |     0.73 |
+      | windows-fd | none (file data) |     1 |     3.14 |
+      | linux-fd   | postgresql       |     1 |     0.92 |
+      | linux-fd   | none (file data) |     1 |    27.48 |
+      | TOTAL      |                  |     6 |    44.73 |
+      +------------+------------------+-------+----------+
 
       Backup unit totals:
-             used: 42
-       configured: 100
-        remaining: 58
+       accounting_mode: count-based (1 volume-based units < 6 count-based units)
+                  used: 6
+            configured: 10
+             remaining: 4
 
-   Some clients and/or filesets may not be listed in the detailed report and also not be accounted.
-   You can get a list of these systems and filesets with :bcommand:`status subscriptions unknown`.
+
+   This shows a combined list of clients and plugins, together with the
+   use-count of the plugins and the aggregated amount of backed up frontend
+   data (in gigabytes).
+   At the end a summary shows the accounting-mode (i.e. count- or volume-based)
+   alongside with the used, configured and remaining units.
+   The value for the configured units can be set in
+   :config:option:`dir/director/Subscriptions`.
+
+   To get data aggregated only per client (instead of per client and plugin),
+   you can use the keyword ``clients`` (e.g.
+   :bcommand:`status subscriptions clients`).
 
    .. code-block:: bconsole
-      :caption: status subscriptions unknown
+      :caption: status subscriptions clients
 
-      *<input>status subscriptions unknown</input>
+      *<input>status subscriptions clients</input>
 
-      Clients/Filesets that cannot be categorized for backup units yet:
-      +----------------------+-----------------------------------------+-------------+
-      | client               | fileset                                 | filesettext |
-      +----------------------+-----------------------------------------+-------------+
-      | websrv-fd            | Archive Set                             | <empty>     |
-      | legayc-system-fd     | very-old-filset                         | <empty>     |
-      +----------------------+-----------------------------------------+-------------+
+      Backup unit report aggregated by client:
+      +------------+-------+----------+
+      | client     | count | size_gb  |
+      +------------+-------+----------+
+      | windows-fd |     4 |    16.33 |
+      | linux-fd   |     2 |    28.40 |
+      | TOTAL      |     6 |    44.73 |
+      +------------+-------+----------+
 
-      Amount of data that cannot be categorized for backup units yet:
-               unknown_mb: 1510970
-       unknown_percentage: 2.50
+      Backup unit summary:
+       accounting_mode: count-based (1 volume-based units < 6 count-based units)
+                  used: 6
+            configured: 10
+             remaining: 4
 
-   .. limitation:: status subscription provides only an approximation
 
-      The backup units determined by :bcommand:`status subscription` are an approximation that
-      covers the basics. If you back up the same files with different filesets, this data would be
-      accounted twice. When you back up a VM using a plugin and with a filedaemon installed inside
-      of the VM, that will also be accounted twice.
+   To get data aggregated only per plugin (instead of per client and plugin),
+   use the keyword ``plugins`` (e.g. :bcommand:`status subscriptions plugins`).
 
-   .. note:: status subscriptions report can also be obtained also with webui
+   .. code-block:: bconsole
+      :caption: status subscriptions plugins
 
-      see :ref:`WebuiSubscription` for more information about how to regenerate and
-      download the report.
+      *<input>status subscriptions plugins</input>
+
+      Backup unit report aggregated by plugin:
+      +------------------+-------+----------+
+      | plugin           | count | size_gb  |
+      +------------------+-------+----------+
+      | barri            |     1 |    12.46 |
+      | mssqlvdi         |     2 |     0.73 |
+      | none (file data) |     2 |    30.62 |
+      | postgresql       |     1 |     0.92 |
+      | TOTAL            |     6 |    44.73 |
+      +------------------+-------+----------+
+
+      Backup unit summary:
+       accounting_mode: count-based (1 volume-based units < 6 count-based units)
+                  used: 6
+            configured: 10
+             remaining: 4
+
+   If you want to share your report, but do not want to disclose your client's
+   names, you can add the keyword ``anonymize`` (e.g.
+   :bcommand:`status subscriptions clients anonymize`).
+
+   .. code-block:: bconsole
+      :caption: status subscriptions clients anonymize
+
+      *<input>status subscriptions clients anonymize</input>
+
+      +----------+-------+----------+
+      | client   | count | size_gb  |
+      +----------+-------+----------+
+      | Client 1 |     4 |    16.33 |
+      | Client 2 |     2 |    28.40 |
+      | TOTAL    |     6 |    44.73 |
+      +----------+-------+----------+
+
+      Backup unit summary:
+       accounting_mode: count-based (1 volume-based units < 6 count-based units)
+                  used: 6
+            configured: 10
+             remaining: 4
+
+   To get all the reports in one go you can use keyword ``all`` (e.g.
+   :bcommand:`status subscriptions all`).
+
+   .. note::
+     Previous versions of Bareos also supported the keywords ``unknown`` and
+     ``detail``.
+     In the current version there is no unknown data and detail is now the
+     default.
+
+   .. limitation:: status subscriptions may account the same data multiple times
+
+      In some circumstances the number of backup units determined by
+      :bcommand:`status subscriptions` might not be accurate.
+      For example, if you back up the same files with different filesets, this
+      data will be accounted twice.
+      If you back up a VM using a plugin and with a |fd| installed inside of
+      the VM, that will also be accounted twice.
+
+   .. note::
+      :bcommand:`status subscriptions` report can also be obtained using |webui|
+      see :ref:`WebuiSubscription` for more information about how to generate
+      and download the report.
 
 status configuration
    Using the console command :bcommand:`status configuration` will show a list of deprecated
