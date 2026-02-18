@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -256,7 +256,9 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         write_started = False
 
         try:
-            for line in self.log_pipe.readlines(init_timeout=10000, read_timeout=500):
+            for line in self.log_pipe.readlines(
+                init_timeout=10000, read_timeout=300000
+            ):
                 bareosfd.JobMessage(bareosfd.M_INFO, line)
                 if line.startswith("INFO: Starting Backup of VM"):
                     # """INFO: Starting Backup of VM 999010 (qemu)"""
