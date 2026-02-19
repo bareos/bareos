@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -172,7 +172,7 @@ class volume {
   volume(open_type type, const char* path);
 
   const char* path() const { return sys_path.c_str(); }
-  int fileno() const { return dird; }
+  int fileno() const { return dird.fileno(); }
 
   static void create_new(int creation_mode,
                          const char* path,
@@ -196,7 +196,7 @@ class volume {
 
  private:
   std::string sys_path;
-  int dird;
+  raii_fd dird;
 
   std::unordered_map<std::uint32_t, std::string> block_names;
   std::unordered_map<std::uint32_t, std::string> record_names;
