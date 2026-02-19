@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -133,7 +133,7 @@ struct raii_fd {
     return *this;
   }
 
-  int fileno() { return fd; }
+  int fileno() const { return fd; }
 
   int release()
   {
@@ -142,13 +142,14 @@ struct raii_fd {
     return old;
   }
 
-  operator bool() const { return fd >= 0; }
+  explicit operator bool() const { return fd >= 0; }
 
   ~raii_fd()
   {
     if (fd >= 0) { close(fd); }
   }
 
+ private:
   int fd{-1};
 };
 

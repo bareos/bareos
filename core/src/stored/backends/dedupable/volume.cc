@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -179,14 +179,14 @@ volume::volume(open_type type, const char* path) : sys_path{path}
   int dir_flags = O_RDONLY | O_DIRECTORY;
   dird = open(path, dir_flags);
 
-  if (dird < 0) {
+  if (!dird) {
     std::string errctx = "Cannot open '";
     errctx += path;
     errctx += "'";
     throw std::system_error(errno, std::generic_category(), errctx);
   }
 
-  raii_fd conf_fd = openat(dird, "config", flags);
+  raii_fd conf_fd = openat(dird.fileno(), "config", flags);
 
   if (!conf_fd) {
     std::string errctx = "Cannot open '";
@@ -205,7 +205,7 @@ volume::volume(open_type type, const char* path) : sys_path{path}
       open_context{
           .read_only = read_only,
           .flags = flags,
-          .dird = dird,
+          .dird = dird.fileno(),
       },
       conf);
 }
@@ -270,7 +270,7 @@ data::data(open_context ctx, const config& conf)
 
 void volume::update_config()
 {
-  raii_fd conf_fd = openat(dird, "config", O_WRONLY);
+  raii_fd conf_fd = openat(dird.fileno(), "config", O_WRONLY);
 
   if (!conf_fd) {
     std::string errctx = "Could not open dedup config file";
