@@ -123,26 +123,26 @@ struct record_header {
 
 struct raii_fd {
   raii_fd() = default;
-  raii_fd(int fd_) : fd{fd_} {}
+  raii_fd(int fd_) noexcept : fd{fd_} {}
   raii_fd(const raii_fd&) = delete;
   raii_fd& operator=(const raii_fd&) = delete;
-  raii_fd(raii_fd&& other) : raii_fd{} { *this = std::move(other); }
-  raii_fd& operator=(raii_fd&& other)
+  raii_fd(raii_fd&& other) noexcept : raii_fd{} { *this = std::move(other); }
+  raii_fd& operator=(raii_fd&& other) noexcept
   {
     std::swap(fd, other.fd);
     return *this;
   }
 
-  int fileno() const { return fd; }
+  int fileno() const noexcept { return fd; }
 
-  int release()
+  int release() noexcept
   {
     auto old = fd;
     fd = -1;
     return old;
   }
 
-  explicit operator bool() const { return fd >= 0; }
+  explicit operator bool() const noexcept { return fd >= 0; }
 
   ~raii_fd()
   {
