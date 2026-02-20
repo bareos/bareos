@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -91,7 +91,7 @@ class DirectorModel
 
         // check for proper ACL settings
         if ($api != 2) {
-            $cmd = 'status subscription';
+            $cmd = 'status subscriptions';
             $result = $bsock->send_command($cmd, 2);
             $status = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
             if (empty($status['result'])) {
@@ -99,7 +99,7 @@ class DirectorModel
             }
         }
 
-        $cmd = sprintf("status subscription %s", $options);
+        $cmd = sprintf("status subscriptions %s", $options);
         $result = $bsock->send_command($cmd, $api);
 
         if ($api == 2) {
