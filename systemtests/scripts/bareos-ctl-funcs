@@ -17,6 +17,25 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+
+pidfromfile()
+{
+  if [ $# = 0 ]; then
+    echo "Usage: pidfromfile {pidfile}"
+    return 1
+  fi
+
+  while true; do
+    pid=$(cat "$1")
+    if [ "${pid}" != "" ]; then
+      break
+    fi
+    sleep 0.1
+  done
+
+  echo "${pid}"
+}
+
 # A function to find the pid of a program.
 pidofproc()
 {
@@ -102,14 +121,15 @@ killproc()
 
   # Find pid.
   if [ -v BAREOS_PIDFILE ] && [ -f "${BAREOS_PIDFILE}" ]; then
-    pid=$(cat "${BAREOS_PIDFILE}")
-
+    pid=$(pidfromfile "${BAREOS_PIDFILE}")
     # Get base program name
     base=$(basename "$1")
 
     badpid=$(pidofproc "$base" "$2")
 
-    echo "Got ${pid} from pidfile; wouldve gotten ${badpid} from pidofproc" >&2
+    if [ "${pid}" != "${badpid}" ]; then
+      echo "Got ${pid} from pidfile; would have gotten ${badpid} from pidofproc" >&2
+    fi
   else
     # Get base program name
     base=$(basename "$1")
@@ -186,7 +206,7 @@ status()
 
   # Find pid.
   if [ -v BAREOS_PIDFILE ] && [ -f "${BAREOS_PIDFILE}" ]; then
-    pid=$(cat "${BAREOS_PIDFILE}")
+    pid=$(pidfromfile "${BAREOS_PIDFILE}")
 
     # Get base program name
     base=$(basename "$1")
