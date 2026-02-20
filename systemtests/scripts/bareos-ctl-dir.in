@@ -16,6 +16,12 @@ BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY:-@sbindir@/bareos-dir}"
 export BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
 BAREOS_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT:-@dir_port@}
 BAREOS_SCRIPTS_DIR=${BAREOS_SCRIPTS_DIR:-@scriptdir@}
+BAREOS_PIDFILE_PREFIX=${BAREOS_PIDFILE_PREFIX:-""}
+
+if [ "${BAREOS_PIDFILE_PREFIX}" != '' ]; then
+  BAREOS_PIDFILE="${BAREOS_PIDFILE_PREFIX}dir.pid"
+  export BAREOS_PIDFILE
+fi
 
 #
 # Source the generic functions.
@@ -29,6 +35,9 @@ case "$1" in
       OPTIONS=''
       if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
         OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+      fi
+      if [ -v BAREOS_PIDFILE ]; then
+        OPTIONS="${OPTIONS} -p ${BAREOS_PIDFILE}"
       fi
 
       check_database dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?

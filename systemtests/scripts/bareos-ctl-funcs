@@ -1,7 +1,7 @@
 #! /bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -100,11 +100,22 @@ killproc()
     killlevel="-9"
   fi
 
-  # Get base program name
-  base=$(basename $1)
-
   # Find pid.
-  pid=$(pidofproc $base $2)
+  if [ -v BAREOS_PIDFILE ] && [ -f "${BAREOS_PIDFILE}" ]; then
+    pid=$(cat "${BAREOS_PIDFILE}")
+
+    # Get base program name
+    base=$(basename "$1")
+
+    badpid=$(pidofproc "$base" "$2")
+
+    echo "Got ${pid} from pidfile; wouldve gotten ${badpid} from pidofproc" >&2
+  else
+    # Get base program name
+    base=$(basename "$1")
+
+    pid=$(pidofproc "$base" "$2")
+  fi
 
   # Kill it.
   if checkPid "$pid"; then
@@ -173,11 +184,22 @@ status()
     return 1
   fi
 
-  # Get base program name
-  base=$(basename $1)
-
   # Find pid.
-  pid=$(pidofproc $base $2)
+  if [ -v BAREOS_PIDFILE ] && [ -f "${BAREOS_PIDFILE}" ]; then
+    pid=$(cat "${BAREOS_PIDFILE}")
+
+    # Get base program name
+    base=$(basename "$1")
+
+    badpid=$(pidofproc "$base" "$2")
+
+    echo "Got ${pid} from pidfile; wouldve gotten ${badpid} from pidofproc" >&2
+  else
+    # Get base program name
+    base=$(basename "$1")
+
+    pid=$(pidofproc "$base" "$2")
+  fi
 
   if checkPid "$pid"; then
     echo "$base (pid $pid) is running..."

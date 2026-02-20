@@ -15,6 +15,9 @@ export TestName
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
+BAREOS_PIDFILE_PREFIX="${working}/"
+export BAREOS_PIDFILE_PREFIX
+
 start_test
 
 slowjob="slow-backup-bareos-fd"
