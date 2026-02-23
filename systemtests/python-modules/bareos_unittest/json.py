@@ -2,7 +2,7 @@
 #
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -252,7 +252,6 @@ class Json(PythonBareosBase):
 
         jobId = self.run_job(director, jobname, level, wait=True)
         self.search_joblog(director, jobId, patterns)
-        return jobId
 
     def list_jobid(self, director, jobid):
         result = director.call("llist jobid={}".format(jobid))
