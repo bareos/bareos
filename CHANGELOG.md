@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Increase read timeout in Proxmox plugin [PR #2545]
 
+### Documentation
+- docs: add tape speed test, tapestat & sg_logs in troubleshooting [PR #2555]
+
 ## [25.0.2] - 2026-02-11
 
 ### Added
@@ -2221,4 +2224,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2535]: https://github.com/bareos/bareos/pull/2535
 [PR #2538]: https://github.com/bareos/bareos/pull/2538
 [PR #2545]: https://github.com/bareos/bareos/pull/2545
+[PR #2555]: https://github.com/bareos/bareos/pull/2555
 [unreleased]: https://github.com/bareos/bareos/tree/master
