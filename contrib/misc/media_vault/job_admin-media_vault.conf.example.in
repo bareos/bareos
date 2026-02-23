@@ -8,9 +8,9 @@ Job {
         Runs On Failure = yes
         Runs On Success = yes
         Runs On Client = no
+        Fail Job On Error = Yes
         Command = "@scriptdir@/media_vault.sh"
   }
-
   Reschedule On Error = yes
   Reschedule Interval = 3600
   Reschedule Times = 2

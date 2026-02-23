@@ -40,7 +40,7 @@ python3 -m pip install python_bareos ConfigArgParse
 .. note:
    TLS-PSK native support requires Python version >= 3.12. Alternatively,
    the ``sslpsk`` module can be used for python versions <= 3.9, but it requires gcc.
-   gcc installed). It can also be installed from github repository
+   It can also be installed from github repository
    to support Python version up to 3.10.
 
 ### Without Virtualenv
@@ -320,8 +320,7 @@ For example:
 su bareos -l -s /bin/bash
 source ~/.local/share/virtualenvs/bareos_media_vault/bin/activate && \
 /usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault_autochanger-0.ini && \
-/usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault_autochanger-1.ini && \
-deactivate
+/usr/lib/bareos/scripts/media_vault.py --config /etc/bareos/media_vault_autochanger-1.ini
 ```
 
 - Pros: only one job and one wrapper script to maintain.
