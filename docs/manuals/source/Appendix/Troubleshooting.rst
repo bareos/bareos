@@ -1290,7 +1290,7 @@ Restore a pruned job using a pattern
    single: Problem; Restore; pruned file job
    single: Regex
 
-It is possible to configure Bareos in a way, that job information is still stored in the Bareos
+It is possible to configure Bareos in a way that job information is still stored in the Bareos
 catalog, while the individual file information is already pruned.
 
 If all File records are pruned from the catalog for a Job, normally Bareos can restore only all
