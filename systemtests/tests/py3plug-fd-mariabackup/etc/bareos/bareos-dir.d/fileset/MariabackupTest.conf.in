@@ -10,7 +10,6 @@ FileSet {
             ":module_name=bareos-fd-mariabackup"
             ":mycnf=my.cnf:"
             ":dumpbinary=@MARIADB_BACKUP_BINARY@"
-            ":extradumpoptions=--user=@USER@@extradumpoptions@"
-            # ":mysqlcmd=@MARIADB_CLIENT_BINARY@ --defaults-file=@PROJECT_BINARY_DIR@/tests/@TEST_NAME@/my.cnf --user=@USER@"
+            ":extradumpoptions="
   }
 }
