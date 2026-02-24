@@ -269,8 +269,17 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
 
     def start_backup_job(self):
         """
-        We will check, if database has changed since last backup
-        in the incremental case
+        Determine and prepare incremental backup boundaries by verifying plugin options and MariaDB version, then (for incremental jobs) obtain the current InnoDB Log Sequence Number (LSN) to decide whether to perform a full stream backup or only pass through LSN metadata.
+        
+        If the job is incremental, this method ensures a restore-object LSN is present, attempts to read the server's INNODB STATUS (prefer MySQLdb if available, otherwise via command), parses the LSN, and sets files_to_backup to ["lsn_only"] when strict incremental semantics require skipping the stream.
+        
+        Returns:
+            bRC_OK: Plugin ready to proceed with backup (or no-op incremental handled).
+            bRC_Error: One of:
+                - plugin options check failed,
+                - unable to determine MariaDB version,
+                - incremental job without a provided LSN,
+                - failure to fetch or parse INNODB STATUS / LSN.
         """
         bareosfd.DebugMessage(100, "start_backup_job, check_plugin_option\n")
         check_option_bRC = self.check_plugin_options()
@@ -310,7 +319,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
             # contributed by https://github.com/kjetilho
             if hasMySQLdbModule:
                 try:
-                    conn = MySQLdb.connect(**self.connect_options)
+                    conn = MySQLdb.connect(**self.connect_options, use_unicode=False)
                     cursor = conn.cursor()
                     cursor.execute("SHOW ENGINE INNODB STATUS")
                     result = cursor.fetchall()
@@ -320,7 +329,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                             "Could not fetch SHOW ENGINE INNODB STATUS, unprivileged user?",
                         )
                         return bRC_Error
-                    innodb_status = result[0][2]
+                    innodb_status = result[0][2].decode(errors='ignore')
                     conn.close()
                 except Exception as e:
                     JobMessage(
