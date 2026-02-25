@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - director: remove device resource [PR #2524]
 - bareos-fd-mariabackup: ignore invalid utf8 on decode() [PR #2527]
 - debian: dbconfig allow major upgrade without backup dump [PR #2506]
+- plugins: mariabackup python-mysqlclient ignore invalid utf8 [PR #2546]
 
 ### Fixed
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2461]
@@ -2221,4 +2222,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2527]: https://github.com/bareos/bareos/pull/2527
 [PR #2537]: https://github.com/bareos/bareos/pull/2537
 [PR #2544]: https://github.com/bareos/bareos/pull/2544
+[PR #2546]: https://github.com/bareos/bareos/pull/2546
 [unreleased]: https://github.com/bareos/bareos/tree/master
