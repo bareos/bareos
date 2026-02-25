@@ -60,12 +60,15 @@ if not getattr(ssl, "HAS_PSK", False):
 
     warnings.formatwarning = format_warning_short
     try:
-        import sslpsk
+        import sslpsk3
     except ImportError:
-        warnings.warn(
-            "Connection encryption via TLS-PSK is not available "
-            "(not available in 'ssl' and extra module 'sslpsk' is not installed)."
-        )
+        try:
+            import sslpsk
+        except ImportError:
+            warnings.warn(
+                "Connection encryption via TLS-PSK is not available "
+                "(not available in 'ssl' and extra module 'sslpsk3' or 'sslpsk' is not installed)."
+            )
 
 
 class LowLevel(object):
@@ -285,19 +288,26 @@ class LowLevel(object):
             context.set_psk_client_callback(lambda hint: (identity, password))
             self.socket = context.wrap_socket(client_socket, server_side=False)
         else:
-            try:
-                self.socket = sslpsk.wrap_socket(
-                    client_socket,
-                    ssl_version=self.tls_version,
-                    ciphers=ciphers,
-                    psk=(password, identity),
-                    server_side=False,
-                )
-            except ssl.SSLError as e:
-                # raise ConnectionError(
-                #     "failed to connect to host {0}, port {1}: {2}".format(self.address, self.port, str(e)))
-                # Using a general raise to keep more information about the type of error.
-                raise
+            if "sslpsk3" in sys.modules:
+                context = sslpsk3.SSLPSKContext(ssl.PROTOCOL_TLS_CLIENT)
+                context.check_hostname = False
+                context.set_ciphers(ciphers)
+                context.set_psk_client_callback(lambda hint: (identity, password))
+                self.socket = context.wrap_socket(client_socket, server_side=False)
+            else:
+                try:
+                    self.socket = sslpsk.wrap_socket(
+                        client_socket,
+                        ssl_version=self.tls_version,
+                        ciphers=ciphers,
+                        psk=(password, identity),
+                        server_side=False,
+                    )
+                except ssl.SSLError as e:
+                    # raise ConnectionError(
+                    #     "failed to connect to host {0}, port {1}: {2}".format(self.address, self.port, str(e)))
+                    # Using a general raise to keep more information about the type of error.
+                    raise
         return True
 
     def get_tls_psk_identity(self):
@@ -313,7 +323,7 @@ class LowLevel(object):
     @staticmethod
     def is_tls_psk_available():
         """Checks if TLS-PSK is available."""
-        return getattr(ssl, "HAS_PSK", False) or ("sslpsk" in sys.modules)
+        return getattr(ssl, "HAS_PSK", False) or ("sslpsk3" in sys.modules) or ("sslpsk" in sys.modules)
 
     def get_protocol_version(self):
         """Get the Bareos Console protocol version that is used.
