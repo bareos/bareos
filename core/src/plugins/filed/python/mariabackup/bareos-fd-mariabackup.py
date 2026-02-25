@@ -320,7 +320,14 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
                             "Could not fetch SHOW ENGINE INNODB STATUS, unprivileged user?",
                         )
                         return bRC_Error
-                    innodb_status = result[0][2].decode(errors="ignore")
+                    raw_status = result[0][2]
+                    if raw_status is None:
+                        JobMessage(
+                            M_FATAL,
+                            "SHOW ENGINE INNODB STATUS returned a NULL status field",
+                        )
+                        return bRC_Error
+                    innodb_status = raw_status.decode(errors="ignore")
                     conn.close()
                 except Exception as e:
                     JobMessage(
