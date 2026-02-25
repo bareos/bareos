@@ -311,24 +311,26 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
             if hasMySQLdbModule:
                 try:
                     conn = MySQLdb.connect(**self.connect_options, use_unicode=False)
-                    cursor = conn.cursor()
-                    cursor.execute("SHOW ENGINE INNODB STATUS")
-                    result = cursor.fetchall()
-                    if len(result) == 0:
-                        JobMessage(
-                            M_FATAL,
-                            "Could not fetch SHOW ENGINE INNODB STATUS, unprivileged user?",
-                        )
-                        return bRC_Error
-                    raw_status = result[0][2]
-                    if raw_status is None:
-                        JobMessage(
-                            M_FATAL,
-                            "SHOW ENGINE INNODB STATUS returned a NULL status field",
-                        )
-                        return bRC_Error
-                    innodb_status = raw_status.decode(errors="ignore")
-                    conn.close()
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute("SHOW ENGINE INNODB STATUS")
+                        result = cursor.fetchall()
+                        if len(result) == 0:
+                            JobMessage(
+                                M_FATAL,
+                                "Could not fetch SHOW ENGINE INNODB STATUS, unprivileged user?",
+                            )
+                            return bRC_Error
+                        raw_status = result[0][2]
+                        if raw_status is None:
+                            JobMessage(
+                                M_FATAL,
+                                "SHOW ENGINE INNODB STATUS returned a NULL status field",
+                            )
+                            return bRC_Error
+                        innodb_status = raw_status.decode(errors="ignore")
+                    finally:
+                        conn.close()
                 except Exception as e:
                     JobMessage(
                         M_FATAL,
