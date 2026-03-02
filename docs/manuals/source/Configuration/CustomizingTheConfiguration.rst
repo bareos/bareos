@@ -193,7 +193,7 @@ on upgrade none of the Bareos components
 (**bareos-dir**, **bareos-sd**, **bareos-fd**, **bconsole** and **bareos-traymonitor**)
 modify/extend an existing configuration.
 Package configuration files are stored in the Bareos Template Configuration Path (see :ref:`section-BareosPaths`).
-The package use :command:`bareos-config deploy_config $COMPONENT` to deploy the configuration. 
+The package use :command:`bareos-config deploy_config $COMPONENT` to deploy the configuration.
 On fresh installation it:
 
 * copies the config files from the Bareos Template Configuration Path (Linux: :file:`/usr/lib/bareos/defaultconfigs/`) to the Bareos Configuration Path (Linux: :file:`/etc/bareos/`)
@@ -216,6 +216,24 @@ Behavior
 * Configuration files from sub-packages will probably not get installed,
   especially if the sub-package is installed after the main package (e.g. the **bareos-storage-tape** package is installed after the **bareos-storage** package). This also applies to configuration example files (:file:`*.conf.example`).
 
+Add missing
+~~~~~~~~~~~
+
+In case your local /etc/bareos configuration is missing one of the default file, after a delete,
+or adding a new subcomponent like a plugin. You can always deploy the missing file with the following
+command :command:`bareos-config deploy_config --add-missing $COMPONENT` to deploy the missing files.
+
+
+.. code-block:: shell-session
+   :caption: Shell example script to deploy missing example configuration file
+
+   /usr/lib/bareos/scripts/bareos-config deploy_config --add-missing bareos-sd
+
+   '/usr/lib/bareos/defaultconfigs/bareos-sd.d//./autochanger/autochanger-0.conf.example' -> '/etc/bareos/bareos-sd.d/./autochanger/autochanger-0.conf.example'
+   '/usr/lib/bareos/defaultconfigs/bareos-sd.d//./device/tapedrive-0.conf.example' -> '/etc/bareos/bareos-sd.d/./device/tapedrive-0.conf.example'
+   '/usr/lib/bareos/defaultconfigs/bareos-sd.d//./device/dplcompat.conf.example' -> '/etc/bareos/bareos-sd.d/./device/dplcompat.conf.example'
+
+
 Upgrades from Bareos < 25 to Bareos >= 25
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -224,6 +242,7 @@ The other platforms did already use Bareos Template Configuration Path before.
 
 .. index::
    single: Linux; RPM
+   single: FreeBSD; pkg
 
 When upgrading from Bareos < 25 to Bareos >= 25 with RPM packages,
 RPM would delete or rename the old configuration,
