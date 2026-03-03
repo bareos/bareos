@@ -123,7 +123,7 @@ struct record_header {
 
 struct raii_fd {
   raii_fd() = default;
-  raii_fd(int fd_) noexcept : fd{fd_} {}
+  explicit raii_fd(int fd_) noexcept : fd{fd_} {}
   raii_fd(const raii_fd&) = delete;
   raii_fd& operator=(const raii_fd&) = delete;
   raii_fd(raii_fd&& other) noexcept : raii_fd{} { *this = std::move(other); }
