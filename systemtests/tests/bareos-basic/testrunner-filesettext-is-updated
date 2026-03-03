@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 set -u
 
-# Delete fileset text from database and check that it is readded
+# Invalidate fileset text from database and check that it is updated
 # when estimate call uses the fileset
 TestName="$(basename "$(pwd)")"
 export TestName
@@ -21,7 +21,7 @@ filesetwithtext=$tmp/fileset-with-filesettext
 filesetwithouttext=$tmp/fileset-without-filesettext
 JobName=backup-bareos-fd
 
-rm -f $run_log $filesetwithtext $filesetwithouttext
+rm -f "${run_log}" "${filesetwithtext}" "${filesetwithouttext}"
 
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
@@ -32,7 +32,7 @@ estimate listing job=$JobName
 
 @# remove filesettext from db entry
 sqlquery
-update fileset set filesettext='';
+update fileset set filesettext='invalid-text' where fileset='SelfTest';
 
 @$out $filesetwithouttext
 @# display fileset entry (without filesettext)
@@ -50,15 +50,13 @@ END_OF_DATA
 
 run_bconsole
 
-run_bconsole
-
 # check that the fileset has not the fileset text after it was deleted
-expect_grep "|[[:space:]]*1[[:space:]]*|[[:space:]]*SelfTest[[:space:]]*|[[:space:]]*FileSet {" \
+expect_grep "|[[:space:]]*[0-9]\+[[:space:]]*|[[:space:]]*SelfTest[[:space:]]*|[[:space:]]*FileSet {" \
   "$filesetwithtext" \
   "The expected fileset text was not found."
 
 # check that the fileset has the fileset was added by the estimate call
-expect_grep "|[[:space:]]*1[[:space:]]*|[[:space:]]*SelfTest[[:space:]]*|[[:space:]]*|" \
+expect_grep "|[[:space:]]*[0-9]\+[[:space:]]*|[[:space:]]*SelfTest[[:space:]]*|[[:space:]]*invalid-text[[:space:]]*|" \
   "$filesetwithouttext" \
   "The expected fileset without text was not found."
 
