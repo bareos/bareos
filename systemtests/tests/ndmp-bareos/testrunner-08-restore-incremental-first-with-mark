@@ -57,9 +57,8 @@ check_log "${log_home}/restore-mark.out"
 
 # we deterministically use one jobid and look that we found the corresponding incremental
 # here the restore should be the first incremental
-if ! ${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1 | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-1\""
-then
-  echo "Not first Incremental expected has been restored"
+if ! ${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1 | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-1\""; then
+  echo "Restored file is not the expected first Incremental"
   estat=1
 fi
 
