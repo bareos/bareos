@@ -53,7 +53,7 @@ fi
 copy_volumes=$(bin/bconsole <<<".api 2
 list volumes pool=ndmp-copy
 " | "${AWK}" '/"volumename":/ {gsub("\"","",$2);gsub(",","",$2);print $2}' | xargs | sed -e "s, ,|,g")
-if [[ -z "${source_volumes}" ]]; then
+if [[ -z "${copy_volumes}" ]]; then
   echo "ERROR: No copy volume found in pool ndmp-copy"
   exit 1
 fi
