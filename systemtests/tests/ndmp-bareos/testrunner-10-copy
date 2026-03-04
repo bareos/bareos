@@ -58,7 +58,7 @@ check_log "${log_home}/copy.out"
 copy_full_jobid=$(
   bin/bconsole <<<".api 2
 .sql query=\"select jobid from job where type='C' and level='F' and priorjobid=1 order by starttime limit 1;\"
-" | awk '/"jobid":/ {gsub("\"","",$2);gsub(",","",$2); print $2}'
+" | "${AWK}" '/"jobid":/ {gsub("\"","",$2);gsub(",","",$2); print $2}'
 )
 if [ -z "${copy_full_jobid}" ]; then
   echo "copy_full_jobid not found; aborting restore" >&2
@@ -84,7 +84,7 @@ cleanup_remote
 copy_inc_jobid=$(
   bin/bconsole <<<".api 2
 .sql query=\"select jobid from job where type='C' and level='I' order by starttime desc limit 1;\"
-" | awk '/"jobid":/ {gsub("\"","",$2);gsub(",","",$2); print $2}'
+" | "${AWK}" '/"jobid":/ {gsub("\"","",$2);gsub(",","",$2); print $2}'
 )
 if [ -z "${copy_inc_jobid}" ]; then
   echo "copy_inc_jobid not found; aborting restore" >&2
