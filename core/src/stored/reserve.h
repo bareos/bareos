@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -87,8 +87,6 @@ void TermReservationsLock();
 void LockReservations();
 bool TryReserveAfterUse(JobControlRecord* jcr, bool append);
 void UnlockReservations();
-void LockVolumes();
-void UnlockVolumes();
 void LockReadVolumes();
 void UnlockReadVolumes();
 void UnreserveDevice(DeviceControlRecord* dcr);
@@ -96,6 +94,18 @@ int SearchResForDevice(JobControlRecord* jcr, ReserveContext& rctx);
 void ClearReserveMessages(JobControlRecord* jcr);
 
 bool use_cmd(JobControlRecord* jcr);
+
+template <typename F> void with_volume_lock(F f)
+{
+  void LockVolumes(void);
+  void UnlockVolumes(void);
+
+  LockVolumes();
+
+  f();
+
+  UnlockVolumes();
+}
 
 } /* namespace storagedaemon */
 

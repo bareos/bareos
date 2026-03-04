@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -218,89 +218,89 @@ bool StorageDaemonDeviceControlRecord::DirFindNextAppendableVolume()
   /* Try the twenty oldest or most available volumes. Note,
    * the most available could already be mounted on another
    * drive, so we continue looking for a not in use Volume. */
-  LockVolumes();
-  lock_mutex(vol_info_mutex);
-  ClearFoundInUse();
+  with_volume_lock([&] {
+    lock_mutex(vol_info_mutex);
+    ClearFoundInUse();
 
-  PmStrcpy(unwanted_volumes, "");
+    PmStrcpy(unwanted_volumes, "");
 
-  std::size_t device_count = 0;
+    std::size_t device_count = 0;
 
-  {
-    ResLocker _{my_config};
+    {
+      ResLocker _{my_config};
 
-    BareosResource* found_dev = nullptr;
-    foreach_res (found_dev, R_DEVICE) { device_count += 1; }
-  }
+      BareosResource* found_dev = nullptr;
+      foreach_res (found_dev, R_DEVICE) { device_count += 1; }
+    }
 
-  if (device_count == 0) {
-    Emsg0(M_ERROR, 0,
-          "Trying to find a volume, but there are apparently no devices.");
-    // not sure what happened here, but this should hopefully be enough
-    device_count = 100;
-  }
+    if (device_count == 0) {
+      Emsg0(M_ERROR, 0,
+            "Trying to find a volume, but there are apparently no devices.");
+      // not sure what happened here, but this should hopefully be enough
+      device_count = 100;
+    }
 
-  // x >> 3 == x / 8 ~ 10% * x
-  // there should never be a need to ask for more volumes than there are devices
-  // because each device should only be allowed to reserve one volume, but we
-  // add some headroom here in case some recommended volume is broken or
-  // in case some devices are currently reserving multiple volumes
-  // (maybe they are currently switching volumes)
-  std::size_t ask_limit = device_count + (device_count >> 3);
+    // x >> 3 == x / 8 ~ 10% * x
+    // there should never be a need to ask for more volumes than there are
+    // devices because each device should only be allowed to reserve one volume,
+    // but we add some headroom here in case some recommended volume is broken
+    // or in case some devices are currently reserving multiple volumes (maybe
+    // they are currently switching volumes)
+    std::size_t ask_limit = device_count + (device_count >> 3);
 
-  Dmsg0(400, "device count = %llu => ask limit = %llu\n",
-        static_cast<long long unsigned>(device_count),
-        static_cast<long long unsigned>(ask_limit));
+    Dmsg0(400, "device count = %llu => ask limit = %llu\n",
+          static_cast<long long unsigned>(device_count),
+          static_cast<long long unsigned>(ask_limit));
 
-  // use <= because we start counting at 1
-  for (std::size_t vol_index = 1; vol_index <= ask_limit; vol_index++) {
-    BashSpaces(media_type);
-    BashSpaces(pool_name);
-    BashSpaces(unwanted_volumes.c_str());
-    dir->fsend(Find_media, jcr->Job, static_cast<int>(vol_index), pool_name,
-               media_type, unwanted_volumes.c_str());
-    UnbashSpaces(media_type);
-    UnbashSpaces(pool_name);
-    UnbashSpaces(unwanted_volumes.c_str());
-    Dmsg1(debuglevel, ">dird %s", dir->msg);
+    // use <= because we start counting at 1
+    for (std::size_t vol_index = 1; vol_index <= ask_limit; vol_index++) {
+      BashSpaces(media_type);
+      BashSpaces(pool_name);
+      BashSpaces(unwanted_volumes.c_str());
+      dir->fsend(Find_media, jcr->Job, static_cast<int>(vol_index), pool_name,
+                 media_type, unwanted_volumes.c_str());
+      UnbashSpaces(media_type);
+      UnbashSpaces(pool_name);
+      UnbashSpaces(unwanted_volumes.c_str());
+      Dmsg1(debuglevel, ">dird %s", dir->msg);
 
-    if (DoGetVolumeInfo(this)) {
-      if (vol_index == 1) {
-        PmStrcpy(unwanted_volumes, VolumeName);
-      } else {
-        PmStrcat(unwanted_volumes, ",");
-        PmStrcat(unwanted_volumes, VolumeName);
-      }
+      if (DoGetVolumeInfo(this)) {
+        if (vol_index == 1) {
+          PmStrcpy(unwanted_volumes, VolumeName);
+        } else {
+          PmStrcat(unwanted_volumes, ",");
+          PmStrcat(unwanted_volumes, VolumeName);
+        }
 
-      if (Can_i_write_volume()) {
-        Dmsg1(debuglevel, "Call reserve_volume for write. Vol=%s\n",
-              VolumeName);
-        if (reserve_volume(this, VolumeName) == NULL) {
-          Dmsg2(debuglevel, "Could not reserve volume %s on %s\n", VolumeName,
-                dev->print_name());
+        if (Can_i_write_volume()) {
+          Dmsg1(debuglevel, "Call reserve_volume for write. Vol=%s\n",
+                VolumeName);
+          if (reserve_volume(this, VolumeName) == NULL) {
+            Dmsg2(debuglevel, "Could not reserve volume %s on %s\n", VolumeName,
+                  dev->print_name());
+            continue;
+          }
+          Dmsg1(debuglevel, "DirFindNextAppendableVolume return true. vol=%s\n",
+                VolumeName);
+          retval = true;
+          goto get_out;
+        } else {
+          Dmsg1(debuglevel, "Volume %s is in use.\n", VolumeName);
+
+          // If volume is not usable, it is in use by someone else
+          SetFoundInUse();
           continue;
         }
-        Dmsg1(debuglevel, "DirFindNextAppendableVolume return true. vol=%s\n",
-              VolumeName);
-        retval = true;
-        goto get_out;
-      } else {
-        Dmsg1(debuglevel, "Volume %s is in use.\n", VolumeName);
-
-        // If volume is not usable, it is in use by someone else
-        SetFoundInUse();
-        continue;
       }
+      Dmsg2(debuglevel, "No vol. index %zu return false. dev=%s\n", vol_index,
+            dev->print_name());
+      break;
     }
-    Dmsg2(debuglevel, "No vol. index %zu return false. dev=%s\n", vol_index,
-          dev->print_name());
-    break;
-  }
-  VolumeName[0] = 0;
+    VolumeName[0] = 0;
 
-get_out:
-  unlock_mutex(vol_info_mutex);
-  UnlockVolumes();
+  get_out:
+    unlock_mutex(vol_info_mutex);
+  });
 
   return retval;
 }

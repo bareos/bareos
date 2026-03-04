@@ -53,14 +53,6 @@ template <typename T> class dlist;
 
 namespace storagedaemon {
 
-class VolumeReservationItem;
-VolumeReservationItem* vol_walk_start();
-VolumeReservationItem* VolWalkNext(VolumeReservationItem* prev_vol);
-void VolWalkEnd(VolumeReservationItem* vol);
-VolumeReservationItem* read_vol_walk_start();
-VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol);
-void ReadVolWalkEnd(VolumeReservationItem* vol);
-
 // Volume reservation class -- see vol_mgr.c and reserve.c
 class VolumeReservationItem {
   bool swapping_{false};              /**< set when swapping to another drive */
@@ -101,19 +93,23 @@ class VolumeReservationItem {
 
 template <typename PerVolumeAction> void foreach_vol (PerVolumeAction visitor)
 {
-  LockVolumes();
+  VolumeReservationItem* vol_walk_start(void);
+  VolumeReservationItem* VolWalkNext(VolumeReservationItem * prev_vol);
 
-  for (VolumeReservationItem* vol = vol_walk_start(); vol;
-       vol = VolWalkNext(vol)) {
-    visitor(vol);
-  }
-
-  UnlockVolumes();
+  with_volume_lock([&]() {
+    for (VolumeReservationItem* vol = vol_walk_start(); vol;
+         vol = VolWalkNext(vol)) {
+      visitor(vol);
+    }
+  });
 }
 
 template <typename PerVolumeAction>
 void foreach_read_vol(PerVolumeAction visitor)
 {
+  VolumeReservationItem* read_vol_walk_start(void);
+  VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem * prev_vol);
+
   LockReadVolumes();
 
   for (VolumeReservationItem* vol = read_vol_walk_start(); vol;
