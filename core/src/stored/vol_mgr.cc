@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -204,16 +204,17 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
  */
 static VolumeReservationItem* find_read_volume(const char* VolumeName)
 {
-  VolumeReservationItem vol, *fvol;
-
-  if (read_vol_list->empty()) {
-    Dmsg0(debuglevel, "find_read_vol: read_vol_list empty.\n");
-    return NULL;
-  }
+  VolumeReservationItem vol, *fvol = nullptr;
 
   // Do not lock reservations here
   LockReadVolumes();
   vol.vol_name = strdup(VolumeName);
+  if (read_vol_list->empty()) {
+    Dmsg0(debuglevel, "find_read_vol: read_vol_list empty.\n");
+    UnlockReadVolumes();
+    return nullptr;
+  }
+
 
   // Note, we do want a simple CompareByVolumename on volume name only here
   fvol = (VolumeReservationItem*)read_vol_list->binary_search(
@@ -235,10 +236,9 @@ enum
 
 static void DebugListVolumes(const char* imsg)
 {
-  VolumeReservationItem* vol;
   PoolMem msg(PM_MESSAGE);
 
-  foreach_vol (vol) {
+  foreach_vol ([&msg, &imsg](auto* vol) {
     if (vol->dev) {
       Mmsg(msg, "List %s: %s in_use=%d swap=%d on device %s\n", imsg,
            vol->vol_name, vol->IsInUse(), vol->IsSwapping(),
@@ -248,8 +248,7 @@ static void DebugListVolumes(const char* imsg)
            vol->IsInUse(), vol->IsSwapping());
     }
     Dmsg1(debuglevel, "%s", msg.c_str());
-  }
-  endeach_vol(vol);
+  });
 }
 
 /**
@@ -524,21 +523,7 @@ get_out:
   return vol;
 }
 
-/**
- * Start walk of vol chain
- * The proper way to walk the vol chain is:
- *
- * VolumeReservationItem *vol;
- * foreach_vol(vol) {
- *    ...
- * }
- * endeach_vol(vol);
- *
- * It is possible to leave out the endeach_vol(vol), but in that case,
- * the last vol referenced must be explicitly released with:
- *
- * FreeVolItem(vol);
- */
+// Start walk of vol chain
 VolumeReservationItem* vol_walk_start()
 {
   VolumeReservationItem* vol;
@@ -572,33 +557,7 @@ VolumeReservationItem* VolWalkNext(VolumeReservationItem* prev_vol)
   return vol;
 }
 
-// Release last vol referenced
-void VolWalkEnd(VolumeReservationItem* vol)
-{
-  if (vol) {
-    LockVolumes();
-    Dmsg2(debuglevel, "Free walk_end UseCount=%d volname=%s\n", vol->UseCount(),
-          vol->vol_name);
-    FreeVolItem(vol);
-    UnlockVolumes();
-  }
-}
-
-/*
- * Start walk of vol chain
- * The proper way to walk the vol chain is:
- *
- * VolumeReservationItem *vol;
- * foreach_read_vol(vol) {
- *    ...
- * }
- * endeach_read_vol(vol);
- *
- * It is possible to leave out the endeach_read_vol(vol), but in that case,
- * the last vol referenced must be explicitly released with:
- *
- * FreeReadVolItem(vol);
- */
+// Start walk of vol chain
 VolumeReservationItem* read_vol_walk_start()
 {
   VolumeReservationItem* vol;
@@ -632,18 +591,6 @@ VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol)
   return vol;
 }
 
-// Release last vol referenced
-void ReadVolWalkEnd(VolumeReservationItem* vol)
-{
-  if (vol) {
-    LockReadVolumes();
-    Dmsg2(debuglevel, "Free walk_end UseCount=%d volname=%s\n", vol->UseCount(),
-          vol->vol_name);
-    FreeVolItem(vol);
-    UnlockReadVolumes();
-  }
-}
-
 /**
  * Search for a Volume name in the Volume list.
  *
@@ -652,11 +599,14 @@ void ReadVolWalkEnd(VolumeReservationItem* vol)
  */
 static VolumeReservationItem* find_volume(const char* VolumeName)
 {
-  VolumeReservationItem vol, *fvol;
+  VolumeReservationItem vol, *fvol = nullptr;
 
-  if (vol_list->empty()) { return NULL; }
   /* Do not lock reservations here */
   LockVolumes();
+  if (vol_list->empty()) {
+    UnlockVolumes();
+    return nullptr;
+  }
   vol.vol_name = strdup(VolumeName);
   fvol = (VolumeReservationItem*)vol_list->binary_search(&vol,
                                                          CompareByVolumename);
@@ -903,13 +853,12 @@ get_out:
 dlist<VolumeReservationItem>* dup_vol_list(JobControlRecord* jcr)
 {
   dlist<VolumeReservationItem>* temp_vol_list;
-  VolumeReservationItem* vol = NULL;
 
   Dmsg0(debuglevel, "lock volumes\n");
 
   Dmsg0(debuglevel, "duplicate vol list\n");
   temp_vol_list = new dlist<VolumeReservationItem>();
-  foreach_vol (vol) {
+  foreach_vol ([&](auto* vol) {
     VolumeReservationItem *nvol, *tvol;
 
     tvol = new_vol_item(NULL, vol->vol_name);
@@ -923,8 +872,7 @@ dlist<VolumeReservationItem>* dup_vol_list(JobControlRecord* jcr)
       Jmsg(jcr, M_WARNING, 0,
            "Logic error. Duplicating vol list hit duplicate.\n");
     }
-  }
-  endeach_vol(vol);
+  });
   Dmsg0(debuglevel, "unlock volumes\n");
 
   return temp_vol_list;
