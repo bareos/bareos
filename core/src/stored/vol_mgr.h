@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,6 +47,7 @@
 #define BAREOS_STORED_VOL_MGR_H_
 
 #include <atomic>
+#include "stored/reserve.h"
 
 template <typename T> class dlist;
 
@@ -98,15 +99,30 @@ class VolumeReservationItem {
   void SetJobid(uint32_t JobId) { JobId_ = JobId; }
 };
 
-#define foreach_vol(vol) \
-  for (vol = vol_walk_start(); vol; (vol = VolWalkNext(vol)))
+template <typename PerVolumeAction> void foreach_vol (PerVolumeAction visitor)
+{
+  LockVolumes();
 
-#define endeach_vol(vol) VolWalkEnd(vol)
+  for (VolumeReservationItem* vol = vol_walk_start(); vol;
+       vol = VolWalkNext(vol)) {
+    visitor(vol);
+  }
 
-#define foreach_read_vol(vol) \
-  for (vol = read_vol_walk_start(); vol; (vol = ReadVolWalkNext(vol)))
+  UnlockVolumes();
+}
 
-#define endeach_read_vol(vol) ReadVolWalkEnd(vol)
+template <typename PerVolumeAction>
+void foreach_read_vol(PerVolumeAction visitor)
+{
+  LockReadVolumes();
+
+  for (VolumeReservationItem* vol = read_vol_walk_start(); vol;
+       vol = ReadVolWalkNext(vol)) {
+    visitor(vol);
+  }
+
+  UnlockReadVolumes();
+}
 
 void InitVolListLock();
 void TermVolListLock();
