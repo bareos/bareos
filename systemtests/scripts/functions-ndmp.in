@@ -94,9 +94,21 @@ make_remote_data_full()
   ${SSH} mkdir -p "${NDMP_TEST_PATH}"
   ${SSH} dd if=/dev/zero of="${NDMP_TEST_PATH}/full" bs=1M count=20
   ${SSH} "echo \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}\" >> \"${NDMP_TEST_PATH}/full\""
-  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile\"" <$(readlink sbin/bareos_dir-*)
+  local dir_file
+  dir_file="$(readlink sbin/bareos_dir-* 2>/dev/null | head -1)"
+  if [ -z "$dir_file" ] || [ ! -f "$dir_file" ]; then
+    echo "ERROR: Could not resolve bareos_dir-* symlink" >&2
+    return 1
+  fi
+  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile\"" <"$dir_file"
   # we need an additional file, so the restore doesn't pick the last file of the volume and data stream
-  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile2\"" <$(readlink sbin/bareos_sd-*)
+  local sd_file
+  sd_file="$(readlink sbin/bareos_sd-* 2>/dev/null | head -1)"
+  if [ -z "$sd_file" ] || [ ! -f "$sd_file" ]; then
+    echo "ERROR: Could not resolve bareos_sd-* symlink" >&2
+    return 1
+  fi
+  ${SSH} "cat - > \"${NDMP_TEST_PATH}/testfile2\"" <"$sd_file"
 }
 
 make_remote_data_incremental()
