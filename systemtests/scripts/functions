@@ -49,14 +49,19 @@ last_jobid_or_zero()
 {
   # return the last jobid if it exists, or 0, so that
   # result + 1 is the next jobid
-  set +o pipefail
-  "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<EOD | tail -n3 | head -n1 | cut -d'|' -f2 | xargs
-sqlquery
-SELECT CASE
-WHEN is_called THEN last_value ELSE 0 END
-FROM job_jobid_seq;
-EOD
-  set -o pipefail
+  local output
+  local result
+  output=$(
+    "${BAREOS_BCONSOLE_BINARY}" -c "${BAREOS_CONFIG_DIR}" <<EOF
+.api 2
+.sql query="SELECT CASE WHEN is_called THEN last_value ELSE 0 END AS jobid FROM job_jobid_seq;"
+EOF
+  )
+
+  print_debug "${output}"
+
+  result=$("${AWK}" '/"jobid":/ {gsub("[\"\\r]","",$2); print $2}' <<<"${output}")
+  echo "${result:-0}"
 }
 
 wait_for_jobs_to_terminate()
@@ -410,7 +415,7 @@ check_files_written()
 {
   LOG=$1
   NB=$2
-  FILES="$(awk '/FD Files Written:/ { last=$4 } END { print last }' "$LOG")"
+  FILES="$("${AWK}" '/FD Files Written:/ { last=$4 } END { print last }' "$LOG")"
 
   if [ "$NB" != "$FILES" ]; then
     print_debug "ERROR: Expect $NB files, get $FILES"
@@ -421,7 +426,7 @@ check_files_written()
 check_sd_files_written()
 {
   LOG=$1
-  FILES="$(awk '/SD Files Written:/ { last=$4 } END { print last }' "$LOG")"
+  FILES="$("${AWK}" '/SD Files Written:/ { last=$4 } END { print last }' "$LOG")"
 
   if [[ "$FILES" -lt 1 || -z "$FILES" ]]; then
     print_debug "ERROR: Expected number of SD files written > 0, got \"$FILES\"."
@@ -508,13 +513,13 @@ get_mig_info()
   # Prev Backup JobId
   JOBID=$1
   LOG=$2
-  RET="$(awk -F: "BEGIN { jobid=$JOBID } "'/Prev Backup JobId/ { cjid=$2 } /New Backup JobId/  { if (cjid == jobid) { print $2 } }' "$LOG")"
+  RET="$("${AWK}" -F: 'BEGIN { jobid=${JOBID} }/Prev Backup JobId/ { cjid=$2 } /New Backup JobId/ { if (cjid == jobid) { print $2 } }' "$LOG")"
 }
 
 get_duration()
 {
   LOG=$1
-  RET="$(awk 'BEGIN {t["secs"]=1;t["sec"]=1;t["min"]=60;t["mins"]=60}; /Elapsed time:/ { last=$3*t[$4] } END { print last }' "$LOG")"
+  RET="$("${AWK}" 'BEGIN {t["secs"]=1;t["sec"]=1;t["min"]=60;t["mins"]=60}; /Elapsed time:/ { last=$3*t[$4] } END { print last }' "$LOG")"
 }
 
 check_duration_gt()
@@ -1407,12 +1412,32 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-""}
 LD_LIBRARY_PATH=$bin:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH
 
+# Determine the SED to be used
+os_type=$(uname -s)
+if on_freebsd_host || on_darwin_host; then
+  SED="sed -i ''"
+else
+  SED="sed --in-place"
+  if on_windows_host; then
+    conf=$(cygpath -w "${BAREOS_CONFIG_DIR}")
+    export conf
+  fi
+fi
+export SED
+export os_type
+
 fd_pid=0
 sd_pid=0
 dir_pid=0
 
 trap "{ estat=999; end_test; }" TERM INT
 
+# load specific ndmp functions if they exists
+if [ -f "${BAREOS_SCRIPTS_DIR}"/functions-ndmp ]; then
+  source "$BAREOS_SCRIPTS_DIR"/functions-ndmp
+fi
+
+# load local functions if they exists
 if [ -f functions.local ]; then
   source functions.local
 fi
