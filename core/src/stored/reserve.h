@@ -87,8 +87,6 @@ void TermReservationsLock();
 void LockReservations();
 bool TryReserveAfterUse(JobControlRecord* jcr, bool append);
 void UnlockReservations();
-void LockReadVolumes();
-void UnlockReadVolumes();
 void UnreserveDevice(DeviceControlRecord* dcr);
 int SearchResForDevice(JobControlRecord* jcr, ReserveContext& rctx);
 void ClearReserveMessages(JobControlRecord* jcr);
@@ -105,6 +103,18 @@ template <typename F> void with_volume_lock(F f)
   f();
 
   UnlockVolumes();
+}
+
+template <typename F> void with_read_volume_lock(F f)
+{
+  void LockReadVolumes(void);
+  void UnlockReadVolumes(void);
+
+  LockReadVolumes();
+
+  f();
+
+  UnlockReadVolumes();
 }
 
 } /* namespace storagedaemon */

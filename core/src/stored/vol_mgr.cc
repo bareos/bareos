@@ -160,8 +160,10 @@ void AddReadVolume(JobControlRecord* jcr, const char* VolumeName)
   nvol = new_vol_item(NULL, VolumeName);
   nvol->SetJobid(jcr->JobId);
   nvol->SetReading();
-  LockReadVolumes();
-  vol = (VolumeReservationItem*)read_vol_list->binary_insert(nvol, ReadCompare);
+  with_read_volume_lock([&] {
+    vol = (VolumeReservationItem*)read_vol_list->binary_insert(nvol,
+                                                               ReadCompare);
+  });
   if (vol != nvol) {
     FreeVolItem(nvol);
     Dmsg2(debuglevel, "read_vol=%s JobId=%d already in list.\n", VolumeName,
@@ -169,7 +171,6 @@ void AddReadVolume(JobControlRecord* jcr, const char* VolumeName)
   } else {
     Dmsg2(debuglevel, "add_read_vol=%s JobId=%d\n", VolumeName, jcr->JobId);
   }
-  UnlockReadVolumes();
 }
 
 // Remove a given volume name from the read list.
@@ -177,23 +178,23 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
 {
   VolumeReservationItem vol, *fvol;
 
-  LockReadVolumes();
-  vol.vol_name = strdup(VolumeName);
-  vol.SetJobid(jcr->JobId);
+  with_read_volume_lock([&] {
+    vol.vol_name = strdup(VolumeName);
+    vol.SetJobid(jcr->JobId);
 
-  fvol
-      = (VolumeReservationItem*)read_vol_list->binary_search(&vol, ReadCompare);
-  free(vol.vol_name);
+    fvol = (VolumeReservationItem*)read_vol_list->binary_search(&vol,
+                                                                ReadCompare);
+    free(vol.vol_name);
 
-  if (fvol) {
-    Dmsg3(debuglevel, "remove_read_vol=%s JobId=%d found=%d\n", VolumeName,
-          jcr->JobId, fvol != NULL);
-  }
-  if (fvol) {
-    read_vol_list->remove(fvol);
-    FreeVolItem(fvol);
-  }
-  UnlockReadVolumes();
+    if (fvol) {
+      Dmsg3(debuglevel, "remove_read_vol=%s JobId=%d found=%d\n", VolumeName,
+            jcr->JobId, fvol != NULL);
+    }
+    if (fvol) {
+      read_vol_list->remove(fvol);
+      FreeVolItem(fvol);
+    }
+  });
   // pthread_cond_broadcast(&wait_next_vol);
 }
 
@@ -208,22 +209,20 @@ static VolumeReservationItem* find_read_volume(const char* VolumeName)
   VolumeReservationItem vol, *fvol = nullptr;
 
   // Do not lock reservations here
-  LockReadVolumes();
-  vol.vol_name = strdup(VolumeName);
-  if (read_vol_list->empty()) {
-    Dmsg0(debuglevel, "find_read_vol: read_vol_list empty.\n");
-    UnlockReadVolumes();
-    return nullptr;
-  }
+  with_read_volume_lock([&] {
+    if (read_vol_list->empty()) {
+      Dmsg0(debuglevel, "find_read_vol: read_vol_list empty.\n");
+      return;
+    }
+    vol.vol_name = strdup(VolumeName);
 
+    // Note, we do want a simple CompareByVolumename on volume name only here
+    fvol = (VolumeReservationItem*)read_vol_list->binary_search(
+        &vol, CompareByVolumename);
+    free(vol.vol_name);
 
-  // Note, we do want a simple CompareByVolumename on volume name only here
-  fvol = (VolumeReservationItem*)read_vol_list->binary_search(
-      &vol, CompareByVolumename);
-  free(vol.vol_name);
-
-  Dmsg2(debuglevel, "find_read_vol=%s found=%d\n", VolumeName, fvol != NULL);
-  UnlockReadVolumes();
+    Dmsg2(debuglevel, "find_read_vol=%s found=%d\n", VolumeName, fvol != NULL);
+  });
 
   return fvol;
 }
@@ -772,11 +771,11 @@ void FreeVolumeLists()
   }
 
   if (read_vol_list) {
-    LockReadVolumes();
-    FreeVolumeList("read_vol_list", read_vol_list);
-    delete read_vol_list;
-    read_vol_list = NULL;
-    UnlockReadVolumes();
+    with_read_volume_lock([&] {
+      FreeVolumeList("read_vol_list", read_vol_list);
+      delete read_vol_list;
+      read_vol_list = NULL;
+    });
   }
 }
 
