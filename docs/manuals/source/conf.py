@@ -342,7 +342,6 @@ linkcheck_ignore = [
     "http://127.0.0.1:8000/redoc",
     "https://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/*",
     r"https://github\.com/bareos/bareos/pull/\d+",
-    "https://www.glusterfs.org",  # failing too often
     "https://www.sphinx-doc.org/en/1.7/intro.html#",
     "https://www.snia.org/ndmp",  # cloudflare protected
     "https://www.dell.com/support/*",  # client protected
