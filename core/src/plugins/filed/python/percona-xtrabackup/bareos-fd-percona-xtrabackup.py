@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+# Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -221,18 +221,27 @@ class BareosFdPercona(BareosFdPluginBaseclass):
             # contributed by https://github.com/kjetilho
             if hasMySQLdbModule:
                 try:
-                    conn = MySQLdb.connect(**self.connect_options)
-                    cursor = conn.cursor()
-                    cursor.execute("SHOW ENGINE INNODB STATUS")
-                    result = cursor.fetchall()
-                    if len(result) == 0:
-                        JobMessage(
-                            M_FATAL,
-                            "Could not fetch SHOW ENGINE INNODB STATUS, unprivileged user?",
-                        )
-                        return bRC_Error
-                    info = result[0][2]
-                    conn.close()
+                    conn = MySQLdb.connect(**self.connect_options, use_unicode=False)
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute("SHOW ENGINE INNODB STATUS")
+                        result = cursor.fetchall()
+                        if len(result) == 0:
+                            JobMessage(
+                                M_FATAL,
+                                "Could not fetch SHOW ENGINE INNODB STATUS, unprivileged user?",
+                            )
+                            return bRC_Error
+                        raw_status = result[0][2]
+                        if raw_status is None:
+                            JobMessage(
+                                M_FATAL,
+                                "SHOW ENGINE INNODB STATUS returned a NULL status field",
+                            )
+                            return bRC_Error
+                        info = raw_status.decode(errors="ignore")
+                    finally:
+                        conn.close()
                     for line in info.split("\n"):
                         if line.startswith("Log sequence number"):
                             last_lsn = int(line.split(" ")[-1])
