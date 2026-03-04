@@ -110,14 +110,12 @@ void foreach_read_vol(PerVolumeAction visitor)
   VolumeReservationItem* read_vol_walk_start(void);
   VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem * prev_vol);
 
-  LockReadVolumes();
-
-  for (VolumeReservationItem* vol = read_vol_walk_start(); vol;
-       vol = ReadVolWalkNext(vol)) {
-    visitor(vol);
-  }
-
-  UnlockReadVolumes();
+  with_read_volume_lock([&] {
+    for (VolumeReservationItem* vol = read_vol_walk_start(); vol;
+         vol = ReadVolWalkNext(vol)) {
+      visitor(vol);
+    }
+  });
 }
 
 void InitVolListLock();
