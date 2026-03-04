@@ -65,32 +65,30 @@ invalidate_slots_on_autochanger()
 
   # invalidate tape label
   i="${FIRST_SLOT_NUMBER}"
-  mtx -f "${changer_device}" status | {
-    while read -r line && [ "${i}" -le "$LAST_SLOT_NUMBER" ]; do
-      if echo "${line}" | grep "$(printf 'Storage Element %d:Full\n' ${i})"; then
-        set -x
-        if mtx -f "${changer_device}" load "${i}" "${USE_TAPE_DEVICE}" \
-          && mt -f "${tape_device}" rewind \
-          && mt -f "${tape_device}" weof \
-          && mtx -f "${changer_device}" unload "${i}" "${USE_TAPE_DEVICE}"; then
-          set +x
-          echo
-          ((i = i + 1))
-        else
-          echo "error $?"
-          exit 1
-        fi
+  while read -r line && [ "${i}" -le "$LAST_SLOT_NUMBER" ]; do
+    if echo "${line}" | grep "$(printf 'Storage Element %d:Full\n' ${i})"; then
+      set -x
+      if mtx -f "${changer_device}" load "${i}" "${USE_TAPE_DEVICE}" \
+        && mt -f "${tape_device}" rewind \
+        && mt -f "${tape_device}" weof \
+        && mtx -f "${changer_device}" unload "${i}" "${USE_TAPE_DEVICE}"; then
+        set +x
+        echo
+        ((i = i + 1))
+      else
+        echo "error $?"
+        exit 1
       fi
-    done
-
-    slots_ready=$((i - 1))
-
-    if [ ${slots_ready} -eq 0 ]; then
-      echo "Could not invalidate any tape"
-    else
-      echo "Invalidated ${slots_ready} tapes of autochanger ${changer_device}."
     fi
-  }
+  done < <(mtx -f "${changer_device}" status)
+
+  slots_ready=$((i - 1))
+
+  if [ ${slots_ready} -eq 0 ]; then
+    echo "Could not invalidate any tape"
+  else
+    echo "Invalidated ${slots_ready} tapes of autochanger ${changer_device}."
+  fi
 }
 
 for i in {0..9}; do
