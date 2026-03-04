@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -84,13 +84,11 @@ list volumes
 END_OF_DATA
 run_bconsole "${tmp}/bconcmds"
 
-
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @out ${tmp}/update_volumes.out
 END_OF_DATA
 
-for V in $(awk -F ":" '/volumename/ {gsub("\"","",$2);gsub(",","",$2);gsub(" ","",$2); print $2}' ${tmp}/volumes.out)
-do
-  echo "update volstatus=Append volume=${V}" >> "${tmp}/bconcmds"
+for V in $("${AWK}" -F ":" '/volumename/ {gsub("\"","",$2);gsub(",","",$2);gsub(" ","",$2); print $2}' "${tmp}/volumes.out"); do
+  echo "update volstatus=Append volume=${V}" >>"${tmp}/bconcmds"
 done
 run_bconsole "${tmp}/bconcmds"
