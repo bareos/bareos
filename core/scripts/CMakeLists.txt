@@ -23,7 +23,6 @@ bareos_configure_file(
   FILES
   bareos-config-lib.sh.in
   bareos-config.in
-  bareos-glusterfind-wrapper.in
   btraceback.in
   disk-changer.in
   logrotate.in
@@ -68,7 +67,6 @@ if(NOT client-only)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/mtx-changer
           ${CMAKE_CURRENT_BINARY_DIR}/disk-changer
-          ${CMAKE_CURRENT_BINARY_DIR}/bareos-glusterfind-wrapper
           s3cmd-wrapper.sh
     PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE
                 WORLD_READ WORLD_EXECUTE
