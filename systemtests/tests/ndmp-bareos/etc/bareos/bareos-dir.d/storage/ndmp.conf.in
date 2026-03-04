@@ -7,7 +7,7 @@ Storage {
   Address = @IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
   Port = 10000
   Protocol = NDMPv4                         # Need to specify protocol before password as protocol determines password encoding used.
-  Auth Type = @ndmp_data_agent_auth_type@                         # Clear == Clear Text, MD5 == Challenge protocol
+  Auth Type = @ndmp_data_agent_auth_type@   # Clear == Clear Text, MD5 == Challenge protocol
   Username = "@ndmp_data_agent_user@"       # username of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
   Password = "@ndmp_data_agent_password@"   # password of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
   Device = FileStorage
@@ -31,7 +31,7 @@ Storage {
   Address = @IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
   Port = 10000
   Protocol = NDMPv4                         # Need to specify protocol before password as protocol determines password encoding used.
-  Auth Type = @ndmp_data_agent_auth_type@                         # Clear == Clear Text, MD5 == Challenge protocol
+  Auth Type = @ndmp_data_agent_auth_type@   # Clear == Clear Text, MD5 == Challenge protocol
   Username = "@ndmp_data_agent_user@"       # username of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
   Password = "@ndmp_data_agent_password@"   # password of the NDMP user on the TAPE AGENT e.g. the Bareos SD but accessed via the NDMP protocol.
   Device = CopyStorage
@@ -43,7 +43,7 @@ Storage {
 Storage {
   Name = LocalCopyStorage
   Address = @IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT@
-  Password = @sd_password@
+  Password = "@sd_password@"
   Device = CopyStorage
   Media Type = Copy
   Port = @sd_port@
