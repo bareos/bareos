@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - debian: dbconfig allow major upgrade without backup dump [PR #2538]
+- plugins: mariabackup python-mysqlclient ignore invalid utf8 [PR #2560]
 
 ### Fixed
 - Increase read timeout in Proxmox plugin [PR #2545]
@@ -2225,4 +2226,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2538]: https://github.com/bareos/bareos/pull/2538
 [PR #2545]: https://github.com/bareos/bareos/pull/2545
 [PR #2555]: https://github.com/bareos/bareos/pull/2555
+[PR #2560]: https://github.com/bareos/bareos/pull/2560
 [unreleased]: https://github.com/bareos/bareos/tree/master
