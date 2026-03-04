@@ -64,6 +64,49 @@ EOF
   echo "${result:-0}"
 }
 
+wait_jobid()
+{
+  local jobid=$1
+  local timeout=${2:-10}
+
+  while [ ${timeout} -gt 0 ] && ${BCONSOLE} <<<"wait jobid=${jobid}" | grep "JobStatus=Unknown"; do
+    sleep 1
+    timeout=$((timeout - 1))
+  done
+  ${BCONSOLE} <<<"wait jobid=${jobid}"
+}
+
+check_jobid()
+{
+  local jobid=$1
+  wait_jobid "${jobid}"
+  RESULT=$(${BCONSOLE} <<<"list joblog jobid=${jobid}")
+  if grep 'Fatal error:' <<<"${RESULT}"; then
+    set_error "${RESULT}"
+    exit 1
+  fi
+  if ! grep 'Termination:.*OK' <<<"${RESULT}"; then
+    set_error "${RESULT}"
+    exit 1
+  fi
+}
+
+check_jobid_failed()
+{
+  local jobid=$1
+
+  wait_jobid "${jobid}"
+  RESULT=$(${BCONSOLE} <<<"list joblog jobid=${jobid}")
+  if grep 'Termination:.*OK' <<<"${RESULT}"; then
+    set_error "${RESULT}"
+    exit 1
+  fi
+  if ! grep 'Fatal error:' <<<"${RESULT}"; then
+    set_error "${RESULT}"
+    exit 1
+  fi
+}
+
 wait_for_jobs_to_terminate()
 {
   status_of_what=$1
@@ -1431,11 +1474,6 @@ sd_pid=0
 dir_pid=0
 
 trap "{ estat=999; end_test; }" TERM INT
-
-# load specific ndmp functions if they exists
-if [ -f "${BAREOS_SCRIPTS_DIR}"/functions-ndmp ]; then
-  source "$BAREOS_SCRIPTS_DIR"/functions-ndmp
-fi
 
 # load local functions if they exists
 if [ -f functions.local ]; then
