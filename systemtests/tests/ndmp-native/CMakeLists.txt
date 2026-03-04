@@ -94,6 +94,9 @@ if(ndmp_data_agent_address)
       if(NOT ndmp_data_agent_password)
         set(ndmp_data_agent_password test)
       endif()
+      if(NOT ndmp_tape_and_robot_agent_auth_type)
+        set(ndmp_tape_and_robot_agent_auth_type Clear)
+      endif()
 
       if(ndmp_tape_and_robot_agent_address)
         set(ndmp_tapes_devices
