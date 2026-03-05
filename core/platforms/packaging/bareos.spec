@@ -57,7 +57,6 @@ Vendor:     The Bareos Team
 BuildRequires: gcc-toolset-14-gcc
 BuildRequires: gcc-toolset-14-annobin-plugin-gcc
 BuildRequires: gcc-toolset-14-gcc-c++
-%define glusterfs 1
 # rhel <=8 does not have grpc
 %if 0%{?rhel} && 0%{?rhel} <= 8
 %define enable_grpc 0
