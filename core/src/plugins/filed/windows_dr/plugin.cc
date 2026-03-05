@@ -236,6 +236,12 @@ struct plugin_arguments {
                                                std::string_view str)
   {
     static constexpr std::string_view keywords[] = {
+        "save-unreferenced-disks",
+        "save-unreferenced-partitions",
+        "save-unreferenced-extents",
+        "ignore-disks",
+
+  // deprecated but still allowed with the same meaning as above
         "unknown disks",
         "unknown partitions",
         "unknown extents",
@@ -260,6 +266,8 @@ struct plugin_arguments {
 
       std::string_view value = {};
       switch (next_option(str, keywords, &value)) {
+
+        case index_of(keywords, "save-unreferenced-disks"):
         case index_of(keywords, "unknown disks"): {
           if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
@@ -268,6 +276,8 @@ struct plugin_arguments {
           }
           args.save_unknown_disks = true;
         } break;
+
+        case index_of(keywords, "save-unreferenced-partitions"):
         case index_of(keywords, "unknown partitions"): {
           if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
@@ -276,6 +286,8 @@ struct plugin_arguments {
           }
           args.save_unknown_partitions = true;
         } break;
+
+        case index_of(keywords, "save-unreferenced-extents"):
         case index_of(keywords, "unknown extents"): {
           if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
@@ -284,6 +296,8 @@ struct plugin_arguments {
           }
           args.save_unknown_extents = true;
         } break;
+
+        case index_of(keywords, "ignore-disks"):
         case index_of(keywords, "ignore disks"): {
           if (value.empty()) {
             fatal_msg(ctx, "unexpected empty value for {} option",
