@@ -519,6 +519,7 @@ static bool DoSubscriptionStatus(UaContext* ua)
   const bool kw_anon = (FindArg(ua, NT_("anonymize")) > 0);
   const bool kw_plugins = (FindArg(ua, NT_("plugins")) > 0);
   const bool kw_clients = (FindArg(ua, NT_("clients")) > 0);
+  const bool kw_client = (FindArgWithValue(ua, NT_("client")) > 0);
 
   if (kw_unknown) {
     ua->ErrorMsg(
@@ -526,6 +527,30 @@ static bool DoSubscriptionStatus(UaContext* ua)
   } else if (kw_detail) {
     ua->ErrorMsg("Parameter 'detail' ignored. This is now the default.\n");
   }
+  if (kw_client) {
+    if (kw_clients | kw_plugins | kw_anon | kw_all) {
+      ua->ErrorMsg(
+          "Parameter 'client=' provided. Ignoring other parameters.\n");
+    }
+    const char* client = GetArgValue(ua, NT_("client"));
+    if (std::string errmsg; !IsNameValid(client, errmsg)) {
+      ua->ErrorMsg(T_("Client name invalid: %s"), errmsg.c_str());
+      return false;
+    }
+    ua->SendMsg(T_("\nDetailed backup unit report for client '%s':\n"), client);
+    PoolMem query(PM_MESSAGE);
+    ua->db->FillQuery(query, BareosDb::SQL_QUERY::subscription_client_detail_2,
+                      ua->db->get_predefined_query(
+                          BareosDb::SQL_QUERY::subscription_with_clause_0),
+                      client);
+
+    ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
+                         "unit-detail", true);
+    ua->SendMsg(
+        T_("All plugin jobs and the first non-plugin job are counted.\n"));
+    return true;
+  }
+
   char now[30] = {0};
   bstrftime(now, sizeof(now), (utime_t)time(NULL), "%F %T");
 
@@ -562,6 +587,10 @@ static bool DoSubscriptionStatus(UaContext* ua)
 
     ua->db->ListSqlQuery(ua->jcr, query.c_str(), ua->send, HORZ_LIST,
                          "unit-clients", true);
+
+    ua->SendMsg(
+        T_("For a detailed per-client report run 'status subscriptions "
+           "client=<client-name>'\n"));
   }
   if (kw_all || kw_plugins) {
     ua->SendMsg(T_("\nBackup unit report aggregated by plugin:\n"));

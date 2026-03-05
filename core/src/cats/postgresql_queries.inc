@@ -1193,5 +1193,19 @@ FROM (
 ORDER BY t.order, t.plugin;
 )SQL",
 
+/* 0085_subscription_client_detail_2 */
+R"SQL(%s
+SELECT
+  fileset,
+  COALESCE(plugin, 'none (file data)') as plugin,
+  to_char(size_gb, '9999990.00') AS size_gb
+FROM
+  client_detail
+WHERE
+  client_name = '%s'
+ORDER BY
+  fileset;
+)SQL",
+
 NULL
 };
