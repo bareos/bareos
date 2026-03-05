@@ -80,11 +80,11 @@ const PluginInformation my_info = {
     = "This plugin allows you to backup your windows system for disaster "
       "recovery.",
     .plugin_usage = PLUGIN_NAME
-    R"(:unknown disks:unknown partitions:unknown extents:ignore disks=<disks to ignore>
+    R"(:save-unreferenced-disks:save-unreferenced-partitions:save-unreferenced-extents:ignore-disks=<disks to ignore>
 
-  unknown disks: try to save disks, that contain no snapshotted data
-  unknown partitions: try to save partitions, that contain no snapshotted data
-  unknown extents: try to save even unsnapshotted parts of partitions
+  save-unreferenced-disks: try to save disks, that contain no snapshotted data
+  save-unreferenced-partitions: try to save partitions, that contain no snapshotted data
+  save-unreferenced-extents: try to save even unsnapshotted parts of partitions
   disks to ignore: a comma-separated list of disk ids (i.e. '1,2,5') of disks
                    to not backup
 )"};
@@ -271,7 +271,7 @@ struct plugin_arguments {
         case index_of(keywords, "unknown disks"): {
           if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      keywords[0]);
+                      "save-unreferenced-disks");
             return std::nullopt;
           }
           args.save_unknown_disks = true;
@@ -281,7 +281,7 @@ struct plugin_arguments {
         case index_of(keywords, "unknown partitions"): {
           if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      "unknown partitions");
+                      "save-unreferenced-partitions");
             return std::nullopt;
           }
           args.save_unknown_partitions = true;
@@ -291,7 +291,7 @@ struct plugin_arguments {
         case index_of(keywords, "unknown extents"): {
           if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      "unknown extents");
+                      "save-unreferenced-extents");
             return std::nullopt;
           }
           args.save_unknown_extents = true;
@@ -301,12 +301,12 @@ struct plugin_arguments {
         case index_of(keywords, "ignore disks"): {
           if (value.empty()) {
             fatal_msg(ctx, "unexpected empty value for {} option",
-                      "ignore disk");
+                      "ignore-disks");
             return std::nullopt;
           }
           if (auto error = insert_numbers(args.ignored_disks, value)) {
             fatal_msg(ctx, "could not parse {} as a list of ints ({}): {}",
-                      value, "ignore disk", error.value());
+                      value, "ignore-disks", error.value());
             return std::nullopt;
           }
         } break;
