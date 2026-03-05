@@ -193,7 +193,7 @@ on upgrade none of the Bareos components
 (**bareos-dir**, **bareos-sd**, **bareos-fd**, **bconsole** and **bareos-traymonitor**)
 modify/extend an existing configuration.
 Package configuration files are stored in the Bareos Template Configuration Path (see :ref:`section-BareosPaths`).
-The package use :command:`bareos-config deploy_config $COMPONENT` to deploy the configuration.
+The package uses :command:`bareos-config deploy_config $COMPONENT` to deploy the configuration.
 On fresh installation it:
 
 * copies the config files from the Bareos Template Configuration Path (Linux: :file:`/usr/lib/bareos/defaultconfigs/`) to the Bareos Configuration Path (Linux: :file:`/etc/bareos/`)
@@ -219,9 +219,10 @@ Behavior
 Add missing
 ~~~~~~~~~~~
 
-In case your local /etc/bareos configuration is missing one of the default file, after a delete,
-or adding a new subcomponent like a plugin. You can always deploy the missing file with the following
-command :command:`bareos-config deploy_config --add-missing $COMPONENT` to deploy the missing files.
+If your local :file:`/etc/bareos` configuration is missing one of the default files
+(for example after deleting a file or adding a new subcomponent such as a plugin),
+you can deploy missing files with
+:command:`bareos-config deploy_config --add-missing $COMPONENT`.
 
 
 .. code-block:: shell-session
@@ -251,7 +252,7 @@ Therefore we use a package pre-script to backup the config files
 and restore them with a post-script (posttrans).
 The normal automated restart of the |fd| will fail in between, but a proper restart will be performed at the end.
 In short: for this scenario we created workarounds
-so that the Administrator should not notice any trouble when upgrading.
+so that the administrator should not notice any trouble when upgrading.
 
 The :os:`FreeBSD` packaging mechanism prevents that a backup of the old configuration could be done,
 therefore unmodified configuration files from the old package get removed.

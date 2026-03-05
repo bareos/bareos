@@ -143,7 +143,7 @@ The restore basically works like this:
 
 .. warning::
 
-   In order to make coherent backups, it is imperative that :strong:`the same |postgresql| major version`
+   In order to make coherent backups, it is imperative that :strong:`the same PostgreSQL major version`
    is used for :strong:`full and incremental` backups depending on each other.
 
 
