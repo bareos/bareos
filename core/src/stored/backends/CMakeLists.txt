@@ -40,11 +40,6 @@ add_library(backend-utils STATIC)
 target_sources(backend-utils PRIVATE util.cc)
 target_link_libraries(backend-utils PUBLIC Bareos::Lib fmt::fmt)
 
-if(TARGET droplet)
-  add_sd_backend(bareossd-droplet)
-  target_sources(bareossd-droplet PRIVATE droplet_device.cc)
-  target_link_libraries(bareossd-droplet PRIVATE droplet chunked-device)
-endif()
 add_sd_backend(bareossd-dplcompat)
 target_sources(bareossd-dplcompat PRIVATE dplcompat_device.cc crud_storage.cc)
 target_link_libraries(

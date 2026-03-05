@@ -46,9 +46,6 @@ if(PROGRAM_GCOVR)
     cov-report
     COMMENT "Creating HTML coverage report in ${CMAKE_BINARY_DIR}/coverage"
     # avoid irritating gcov error by removing a broken gcno file
-    COMMAND
-      "${CMAKE_COMMAND}" -E rm -f
-      "${CMAKE_BINARY_DIR}/core/src/droplet/libdroplet/CMakeFiles/droplet.dir/src/getdate.c.gcno"
     COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_BINARY_DIR}/coverage"
     COMMAND
       "${PROGRAM_GCOVR}" --html-details

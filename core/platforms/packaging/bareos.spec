@@ -260,14 +260,6 @@ Group:         Productivity/Archiving/Backup
 Requires:      %{name}-common  = %{version}
 Requires:      %{name}-storage = %{version}
 
-%if 0%{?droplet}
-%package       storage-droplet
-Summary:       Object Storage support (through libdroplet) for the Bareos Storage daemon
-Group:         Productivity/Archiving/Backup
-Requires:      %{name}-common  = %{version}
-Requires:      %{name}-storage = %{version}
-%endif
-
 %package       storage-dplcompat
 Summary:       Object Storage support for the Bareos Storage daemon
 Group:         Productivity/Archiving/Backup
@@ -709,13 +701,6 @@ This package contains the Storage Daemon tape support
 %{dscr}
 
 This package contains the Storage Backend for the dedupable storage format.
-
-%if 0%{?droplet}
-%description storage-droplet
-%{dscr}
-
-This package contains the Storage backend for Object Storage (through libdroplet).
-%endif
 
 %description storage-dplcompat
 %{dscr}

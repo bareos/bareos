@@ -50,7 +50,6 @@ Vendor: 	The Bareos Team
 %define client_only 1
 %define build_qt_monitor 0
 %define check_cmocka 1
-%define glusterfs 0
 %define objectstorage 0
 %define have_git 0
 %define ceph 0
