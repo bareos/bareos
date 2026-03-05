@@ -106,11 +106,11 @@ was successfully loaded:
     Version    : 0.9.0 (July 2025)
     Author     : Sebastian Sura
     License    : Bareos AGPLv3
-    Usage      : barri:unknown disks:unknown partitions:unknown extents:ignore disks=<disks to ignore>
+    Usage      : barri:save-unreferenced-disks:save-unreferenced-partitions:save-unreferenced-extents:ignore-disks=<disks to ignore>
    
-     unknown disks: try to save disks, that contain no snapshotted data
-     unknown partitions: try to save partitions, that contain no snapshotted data
-     unknown extents: try to save even unsnapshotted parts of partitions
+     save-unreferenced-disks: try to save disks, that contain no snapshotted data
+     save-unreferenced-partitions: try to save partitions, that contain no snapshotted data
+     save-unreferenced-extents: try to save even unsnapshotted parts of partitions
      disks to ignore: a comma-separated list of disk ids (i.e. '1,2,5') of disks
                       to not backup
    
@@ -816,21 +816,21 @@ Description of all Plugin Options
 
 The windows plugin has the following options:
 
-unknown disks
+save-unreferenced-disks
   If this option is given, the barri plugin will also save **disks** that contain no snapshotted data.
   This could be a linux disk in a multi-boot environment.
 
-unknown partitions
+save-unreferenced-partitions
   If this option is given, the barri plugin will also save **partitions** that contain no snapshotted data.
   This could be a linux partition in a multi-boot environment.
 
-unknown extents
+save-unreferenced-extents
   If this option is given, the barri plugin will save **extents** that contain no snapshotted data.
   This usually does not make sense, as it will enlarge the backup size with unneeded data.
 
-ignore disks=<disks to ignore>
+ignore-disks=<disks to ignore>
   If this option is given, the barri plugin will skip the disks with the given numbers.
-  To avoid disk 1 being snapshotted and backed up, add `ignore disks=1` to the plugin options
+  To avoid disk 1 being snapshotted and backed up, add `ignore-disks=1` to the plugin options
 
 
 The linux plugin has the following options:
