@@ -499,7 +499,8 @@ if(NOT HAVE_WIN32)
   bareos_add_test(dedupable_util_test LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
   bareos_add_test(dedupable_volume_test
     ADDITIONAL_SOURCES ../stored/backends/dedupable/volume.cc
-    LINK_LIBRARIES Bareos::Lib CLI11::CLI11 GTest::gtest_main stdc++fs)
+    LINK_LIBRARIES Bareos::Lib CLI11::CLI11 GTest::gtest_main
+                   $<$<NOT:$<PLATFORM_ID:FreeBSD>>:stdc++fs>)
 endif()
 
 if(NOT client-only)
