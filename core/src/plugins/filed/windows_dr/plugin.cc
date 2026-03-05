@@ -235,17 +235,27 @@ struct plugin_arguments {
   static std::optional<plugin_arguments> parse(PluginContext* ctx,
                                                std::string_view str)
   {
-    static constexpr std::string_view keywords[] = {
-        "save-unreferenced-disks",
-        "save-unreferenced-partitions",
-        "save-unreferenced-extents",
-        "ignore-disks",
+    static constexpr std::string_view save_unreferenced_disks = "save-unreferenced-disks";
+    static constexpr std::string_view save_unreferenced_partitions = "save-unreferenced-partitions";
+    static constexpr std::string_view save_unreferenced_extents = "save-unreferenced-extents";
+    static constexpr std::string_view ignore_disks = "ignore-disks";
 
   // deprecated but still allowed with the same meaning as above
-        "unknown disks",
-        "unknown partitions",
-        "unknown extents",
-        "ignore disks",
+    static constexpr std::string_view unknowndisks = "unknown disks";
+    static constexpr std::string_view unknownpartitions = "unknown partitions";
+    static constexpr std::string_view unknownextents = "unknown extents";
+    static constexpr std::string_view ignoredisks = "ignore disks";
+
+    static constexpr std::string_view keywords[] = {
+        save_unreferenced_disks,
+        save_unreferenced_partitions,
+        save_unreferenced_extents,
+        ignore_disks,
+
+        unknowndisks,
+        unknownpartitions,
+        unknownextents,
+        ignoredisks,
     };
 
     auto name = next_part(str, ':');
@@ -267,46 +277,46 @@ struct plugin_arguments {
       std::string_view value = {};
       switch (next_option(str, keywords, &value)) {
 
-        case index_of(keywords, "save-unreferenced-disks"):
-        case index_of(keywords, "unknown disks"): {
+        case index_of(keywords, save_unreferenced_disks):
+        case index_of(keywords, unknowndisks): {
           if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      "save-unreferenced-disks");
+                      save_unreferenced_disks);
             return std::nullopt;
           }
           args.save_unknown_disks = true;
         } break;
 
-        case index_of(keywords, "save-unreferenced-partitions"):
-        case index_of(keywords, "unknown partitions"): {
+        case index_of(keywords, save_unreferenced_partitions):
+        case index_of(keywords, unknownpartitions): {
           if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      "save-unreferenced-partitions");
+                      save_unreferenced_partitions);
             return std::nullopt;
           }
           args.save_unknown_partitions = true;
         } break;
 
-        case index_of(keywords, "save-unreferenced-extents"):
-        case index_of(keywords, "unknown extents"): {
+        case index_of(keywords, save_unreferenced_extents):
+        case index_of(keywords, unknownextents): {
           if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      "save-unreferenced-extents");
+                      save_unreferenced_extents);
             return std::nullopt;
           }
           args.save_unknown_extents = true;
         } break;
 
-        case index_of(keywords, "ignore-disks"):
-        case index_of(keywords, "ignore disks"): {
+        case index_of(keywords, ignore_disks):
+        case index_of(keywords, ignoredisks): {
           if (value.empty()) {
             fatal_msg(ctx, "unexpected empty value for {} option",
-                      "ignore-disks");
+                      ignore_disks);
             return std::nullopt;
           }
           if (auto error = insert_numbers(args.ignored_disks, value)) {
             fatal_msg(ctx, "could not parse {} as a list of ints ({}): {}",
-                      value, "ignore-disks", error.value());
+                      value, ignore_disks, error.value());
             return std::nullopt;
           }
         } break;
