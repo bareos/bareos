@@ -680,7 +680,7 @@ We now import the database dump to the database:
   root@bareos:~ # su postgres -c "psql -d bareos -f /tmp/var/lib/bareos/bareos.sql"
 
 
-We now replay again the database privileges grant:
+We now reapply the database privileges grant:
 
 .. code-block:: shell-session
 
