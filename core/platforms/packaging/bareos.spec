@@ -38,7 +38,6 @@ Vendor:     The Bareos Team
 # default settings
 %define client_only 0
 %define build_qt_monitor 1
-%define droplet 1
 %define python_plugins 1
 %define contrib 1
 %define webui 1
@@ -52,21 +51,6 @@ Vendor:     The Bareos Team
 #
 # RedHat (CentOS, Fedora, RHEL) specific settings
 #
-%if 0%{?fedora} >= 20
-%define systemd_support 1
-%endif
-
-%if 0%{?rhel} >= 7
-%define systemd_support 1
-%endif
-
-%if 0%{?rhel} >= 7 && (0%{?rhel} <= 9)
-%endif
-
-%if 0%{?rhel} == 7
-%define webui 0
-%define __python python3
-%endif
 
 # use modernized GCC 14 toolchain for C++20 support
 %if 0%{?rhel} && 0%{?rhel} <= 9
@@ -99,9 +83,6 @@ BuildRequires: systemd-rpm-macros
 %{?systemd_requires}
 
 
-%if 0%{?have_git}
-BuildRequires: git-core
-%endif
 
 Source0: %{name}-%{version}.tar.gz
 
