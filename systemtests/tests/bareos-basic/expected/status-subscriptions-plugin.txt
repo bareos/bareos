@@ -14,7 +14,7 @@ Backup unit report aggregated by plugin:
 | mariabackup         |     1 |        7.00 |
 | mssqlvdi            |     4 |     1111.00 |
 | my-gprc-plugin      |     1 |        1.00 |
-| none (file data)    |     2 |        4.00 |
+| none (file data)    |     2 |        5.00 |
 | noprefix            |     1 |        1.00 |
 | other python plugin |     1 |        1.00 |
 | ovirt               |     1 |       60.00 |
@@ -23,7 +23,7 @@ Backup unit report aggregated by plugin:
 | proxmox             |     1 |    30000.00 |
 | qumulo              |     1 |   200000.00 |
 | vmware              |     1 |  1000000.00 |
-| TOTAL               |    30 |  1235814.89 |
+| TOTAL               |    30 |  1235815.89 |
 +---------------------+-------+-------------+
 
 Backup unit summary:
@@ -31,5 +31,4 @@ Backup unit summary:
             used: 1,236
       configured: 1,240
        remaining: 4
-
 

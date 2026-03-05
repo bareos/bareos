@@ -6,7 +6,7 @@ Detailed backup unit report:
 +------------------+---------------------+-------+-------------+
 | file-and-plugins | barri               |     1 |        1.00 |
 | file-and-plugins | bpipe               |     1 |        1.00 |
-| file-and-plugins | none (file data)    |     1 |        1.00 |
+| file-and-plugins | none (file data)    |     1 |        2.00 |
 | file-only        | none (file data)    |     1 |        3.00 |
 | native-plugins   | barri               |     2 |       11.00 |
 | native-plugins   | bpipe               |     1 |        1.00 |
@@ -27,7 +27,7 @@ Detailed backup unit report:
 | special-syntax   | noprefix            |     1 |        1.00 |
 | special-syntax   | other python plugin |     1 |        1.00 |
 | two-barri-jobs   | barri               |     2 |        2.00 |
-| TOTAL            |                     |    30 |     5814.89 |
+| TOTAL            |                     |    30 |     5815.89 |
 +------------------+---------------------+-------+-------------+
 
 Backup unit summary:

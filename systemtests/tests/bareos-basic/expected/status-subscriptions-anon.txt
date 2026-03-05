@@ -8,7 +8,7 @@ Detailed backup unit report:
 | Client 10001 | barri               |     2 |        2.00 |
 | Client 10002 | barri               |     1 |        1.00 |
 | Client 10002 | bpipe               |     1 |        1.00 |
-| Client 10002 | none (file data)    |     1 |        1.00 |
+| Client 10002 | none (file data)    |     1 |        2.00 |
 | Client 10003 | barri               |     2 |       11.00 |
 | Client 10003 | bpipe               |     1 |        1.00 |
 | Client 10003 | hyper-v             |     3 |      111.00 |
@@ -27,7 +27,7 @@ Detailed backup unit report:
 | Client 10005 | my-gprc-plugin      |     1 |        1.00 |
 | Client 10005 | noprefix            |     1 |        1.00 |
 | Client 10005 | other python plugin |     1 |        1.00 |
-| TOTAL        |                     |    30 |  1235814.89 |
+| TOTAL        |                     |    30 |  1235815.89 |
 +--------------+---------------------+-------+-------------+
 
 Backup unit summary:

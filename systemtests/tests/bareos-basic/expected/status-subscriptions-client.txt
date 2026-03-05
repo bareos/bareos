@@ -4,14 +4,15 @@ Backup unit report aggregated by client:
 +------------------+-------+-------------+
 | client           | count | size_gb     |
 +------------------+-------+-------------+
-| file-and-plugins |     3 |        3.00 |
+| file-and-plugins |     3 |        4.00 |
 | file-only        |     1 |        3.00 |
 | native-plugins   |    10 |     1234.00 |
 | python-plugins   |     9 |  1234567.89 |
 | special-syntax   |     5 |        5.00 |
 | two-barri-jobs   |     2 |        2.00 |
-| TOTAL            |    30 |  1235814.89 |
+| TOTAL            |    30 |  1235815.89 |
 +------------------+-------+-------------+
+For a detailed per-client report run 'status subscriptions client=<client-name>'
 
 Backup unit summary:
  accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)

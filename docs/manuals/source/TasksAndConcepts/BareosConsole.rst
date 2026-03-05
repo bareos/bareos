@@ -1521,7 +1521,8 @@ status
 
       status [all | dir=<dir-name> | director | scheduler | schedule=<schedule-name> |
               client=<client-name> | storage=<storage-name> slots |
-              subscriptions [clients] [plugins] [all] [anonymize] | configuration]
+              subscriptions [clients] [plugins] [all] [anonymize] [client=<client-name>] |
+              configuration]
 
    If you do a status dir, the console will list any currently running jobs, a summary of all jobs
    scheduled to be run in the next 24 hours, and a listing of the last ten terminated jobs with
@@ -1759,6 +1760,7 @@ status subscriptions
       | linux-fd   |     2 |    28.40 |
       | TOTAL      |     6 |    44.73 |
       +------------+-------+----------+
+      For a detailed per-client report run 'status subscriptions client=<client-name>'
 
       Backup unit summary:
        accounting_mode: count-based (1 volume-based units < 6 count-based units)
@@ -1808,6 +1810,7 @@ status subscriptions
       | Client 2 |     2 |    28.40 |
       | TOTAL    |     6 |    44.73 |
       +----------+-------+----------+
+      For a detailed per-client report run 'status subscriptions client=<client-name>'
 
       Backup unit summary:
        accounting_mode: count-based (1 volume-based units < 6 count-based units)
@@ -1817,6 +1820,24 @@ status subscriptions
 
    To get all the reports in one go you can use keyword ``all`` (e.g.
    :bcommand:`status subscriptions all`).
+
+   To view the non-aggregated data for a specific client, you can use
+   :bcommand:`status subscriptions client=<client-name>`.
+
+   .. code-block:: bconsole
+      :caption: status subscriptions client=linux-fd
+
+      *<input>status subscriptions client=linux-fd</input>
+
+      Detailed backup unit report for client 'linux-fd':
+      +----------+------------------+-------------+
+      | fileset  | plugin           | size_gb     |
+      +----------+------------------+-------------+
+      | pgsql    | postgresql       |        0.92 |
+      | system   | none (file data) |        4.31 |
+      | homedirs | none (file data) |       23.17 |
+      +----------+------------------+-------------+
+      All plugin jobs and the first non-plugin job are counted.
 
    .. note::
      Previous versions of Bareos also supported the keywords ``unknown`` and
