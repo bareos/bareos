@@ -796,7 +796,9 @@
         "WriteVerifyList": {
           "datatype": "DIRECTORY",
           "code": 0,
-          "equals": true
+          "deprecated": true,
+          "equals": true,
+          "versions": "-25.1.0"
         },
         "Replace": {
           "datatype": "REPLACE_OPTION",
@@ -1282,7 +1284,9 @@
         "WriteVerifyList": {
           "datatype": "DIRECTORY",
           "code": 0,
-          "equals": true
+          "deprecated": true,
+          "equals": true,
+          "versions": "-25.1.0"
         },
         "Replace": {
           "datatype": "REPLACE_OPTION",
@@ -2229,12 +2233,16 @@
         "FileRetention": {
           "datatype": "TIME",
           "code": 0,
-          "equals": true
+          "deprecated": true,
+          "equals": true,
+          "versions": "-25.1.0"
         },
         "JobRetention": {
           "datatype": "TIME",
           "code": 0,
-          "equals": true
+          "deprecated": true,
+          "equals": true,
+          "versions": "-25.1.0"
         },
         "MinimumBlockSize": {
           "datatype": "SIZE32",
