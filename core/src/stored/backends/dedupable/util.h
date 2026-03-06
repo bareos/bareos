@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -123,32 +123,33 @@ struct record_header {
 
 struct raii_fd {
   raii_fd() = default;
-  raii_fd(int fd_) : fd{fd_} {}
+  explicit raii_fd(int fd_) noexcept : fd{fd_} {}
   raii_fd(const raii_fd&) = delete;
   raii_fd& operator=(const raii_fd&) = delete;
-  raii_fd(raii_fd&& other) : raii_fd{} { *this = std::move(other); }
-  raii_fd& operator=(raii_fd&& other)
+  raii_fd(raii_fd&& other) noexcept : raii_fd{} { *this = std::move(other); }
+  raii_fd& operator=(raii_fd&& other) noexcept
   {
     std::swap(fd, other.fd);
     return *this;
   }
 
-  int fileno() { return fd; }
+  int fileno() const noexcept { return fd; }
 
-  int release()
+  int release() noexcept
   {
     auto old = fd;
     fd = -1;
     return old;
   }
 
-  operator bool() const { return fd >= 0; }
+  explicit operator bool() const noexcept { return fd >= 0; }
 
   ~raii_fd()
   {
     if (fd >= 0) { close(fd); }
   }
 
+ private:
   int fd{-1};
 };
 
