@@ -540,4 +540,10 @@ if(ENABLE_BARRI)
   )
 endif()
 
+if(ENABLE_PYTHON)
+  bareos_add_test(
+    python_common_test LINK_LIBRARIES python-common GTest::gtest_main
+  )
+endif()
+
 include(DebugEdit)
