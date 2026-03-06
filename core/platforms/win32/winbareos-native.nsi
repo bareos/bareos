@@ -663,6 +663,8 @@ SectionIn 1 2 3
   !cd "C:\tools\MSYS2\ucrt64\bin"
   File "sed.exe"
   File "libintl-8.dll"
+  File "libwinpthread-1.dll"
+  File "libiconv-2.dll"
 
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
@@ -1586,6 +1588,8 @@ done:
    !cd "C:\tools\MSYS2\ucrt64\bin"
    File "sed.exe"
    File "libintl-8.dll"
+   File "libwinpthread-1.dll"
+   File "libiconv-2.dll"
   # for password generation
   File "C:\vcpkg_installed\x64-windows\tools\openssl\openssl.exe"
   File "${CMAKE_BINARY_DIR}\bin\libcrypto-3-x64.dll"
