@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- dedup backend: Fix leaking filedescriptor [PR #2550]
+
 ## [24.0.9] - 2026-02-11
 
 ### Changed
@@ -2011,4 +2014,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2514]: https://github.com/bareos/bareos/pull/2514
 [PR #2517]: https://github.com/bareos/bareos/pull/2517
 [PR #2528]: https://github.com/bareos/bareos/pull/2528
+[PR #2550]: https://github.com/bareos/bareos/pull/2550
 [unreleased]: https://github.com/bareos/bareos/tree/master
