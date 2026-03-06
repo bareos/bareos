@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -132,7 +132,7 @@ void WriteFile(int fd, const std::vector<char>& written)
   }
 }
 
-int OpenRelative(open_context ctx, const char* path)
+raii_fd OpenRelative(open_context ctx, const char* path)
 {
   int fd = openat(ctx.dird, path, ctx.flags);
 
@@ -143,7 +143,7 @@ int OpenRelative(open_context ctx, const char* path)
     throw std::system_error(errno, std::generic_category(), errctx);
   }
 
-  return fd;
+  return raii_fd{fd};
 }
 
 block to_dedup(block_header header, std::uint64_t Begin, std::uint32_t Count)
@@ -177,16 +177,16 @@ volume::volume(open_type type, const char* path) : sys_path{path}
   bool read_only = type == open_type::ReadOnly;
   int flags = (read_only) ? O_RDONLY : O_RDWR;
   int dir_flags = O_RDONLY | O_DIRECTORY;
-  dird = open(path, dir_flags);
+  dird = raii_fd{open(path, dir_flags)};
 
-  if (dird < 0) {
+  if (!dird) {
     std::string errctx = "Cannot open '";
     errctx += path;
     errctx += "'";
     throw std::system_error(errno, std::generic_category(), errctx);
   }
 
-  raii_fd conf_fd = openat(dird, "config", flags);
+  raii_fd conf_fd{openat(dird.fileno(), "config", flags)};
 
   if (!conf_fd) {
     std::string errctx = "Cannot open '";
@@ -205,7 +205,7 @@ volume::volume(open_type type, const char* path) : sys_path{path}
       open_context{
           .read_only = read_only,
           .flags = flags,
-          .dird = dird,
+          .dird = dird.fileno(),
       },
       conf);
 }
@@ -270,7 +270,7 @@ data::data(open_context ctx, const config& conf)
 
 void volume::update_config()
 {
-  raii_fd conf_fd = openat(dird, "config", O_WRONLY);
+  raii_fd conf_fd{openat(dird.fileno(), "config", O_WRONLY)};
 
   if (!conf_fd) {
     std::string errctx = "Could not open dedup config file";
@@ -463,7 +463,7 @@ void volume::create_new(int creation_mode,
 
   int flags = O_RDWR | O_CREAT;
   int dir_flags = O_RDONLY | O_DIRECTORY;
-  raii_fd dird = open(path, dir_flags);
+  raii_fd dird{open(path, dir_flags)};
 
   if (!dird) {
     std::string errctx = "Cannot open '";
@@ -476,7 +476,7 @@ void volume::create_new(int creation_mode,
 
   auto data = config::serialize(conf);
 
-  raii_fd conf_fd = openat(dird.fileno(), "config", flags, creation_mode);
+  raii_fd conf_fd{openat(dird.fileno(), "config", flags, creation_mode)};
   if (!conf_fd) {
     std::string errctx = "Cannot open '";
     errctx += path;
@@ -486,8 +486,8 @@ void volume::create_new(int creation_mode,
   WriteFile(conf_fd.fileno(), data);
 
   for (auto& bfile : conf.bfiles) {
-    if (raii_fd block_fd
-        = openat(dird.fileno(), bfile.relpath.c_str(), flags, creation_mode);
+    if (raii_fd block_fd{
+            openat(dird.fileno(), bfile.relpath.c_str(), flags, creation_mode)};
         !block_fd) {
       std::string errctx = "Cannot open '";
       errctx += path;
@@ -498,8 +498,8 @@ void volume::create_new(int creation_mode,
     }
   }
   for (auto& pfile : conf.pfiles) {
-    if (raii_fd record_fd
-        = openat(dird.fileno(), pfile.relpath.c_str(), flags, creation_mode);
+    if (raii_fd record_fd{
+            openat(dird.fileno(), pfile.relpath.c_str(), flags, creation_mode)};
         !record_fd) {
       std::string errctx = "Cannot open '";
       errctx += path;
@@ -510,8 +510,8 @@ void volume::create_new(int creation_mode,
     }
   }
   for (auto& dfile : conf.dfiles) {
-    if (raii_fd block_fd
-        = openat(dird.fileno(), dfile.relpath.c_str(), flags, creation_mode);
+    if (raii_fd block_fd{
+            openat(dird.fileno(), dfile.relpath.c_str(), flags, creation_mode)};
         !block_fd) {
       std::string errctx = "Cannot open '";
       errctx += path;
