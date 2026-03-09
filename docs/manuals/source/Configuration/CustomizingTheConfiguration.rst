@@ -695,10 +695,12 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: DEVICE_TYPE
 
-   The following values are allowed: `Tape`, `File`, `FIFO`, `GFAPI`.
+   The following values are allowed: `Tape`, `File`, `FIFO`, `Dedupable`, `DplCompat`.
 
    See :config:option:`sd/device/DeviceType`.
 
+..
+   Hint: check REGISTER_SD in /stored/backends to find allowed types
 
 
 .. config:datatype:: DIRECTORY
