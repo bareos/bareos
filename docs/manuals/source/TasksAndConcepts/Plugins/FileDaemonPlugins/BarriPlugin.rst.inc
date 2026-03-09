@@ -108,8 +108,8 @@ was successfully loaded:
     License    : Bareos AGPLv3
     Usage      : barri:save-unreferenced-disks:save-unreferenced-partitions:save-unreferenced-extents:ignore-disks=<disks to ignore>
    
-     save-unreferenced-disks: try to save disks, that contain no snapshotted data
-     save-unreferenced-partitions: try to save partitions, that contain no snapshotted data
+     save-unreferenced-disks: try to save disks that contain no snapshotted data
+     save-unreferenced-partitions: try to save partitions that contain no snapshotted data
      save-unreferenced-extents: try to save even unsnapshotted parts of partitions
      disks to ignore: a comma-separated list of disk ids (i.e. '1,2,5') of disks
                       to not backup
