@@ -428,6 +428,8 @@ class BareosFdIncusOptions:
             ## Data compression (lz4 is supported by Incus but not tarfile, zstd is only supported
             ## on Python 3.14+)
             'compression': self.make_opt(_enum(*TARFILE_MODES), 'none'),
+            ## Bareos storage path prefix (default = [remote:][project])
+            'path_prefix': self.make_opt(_str, ''),
 
             # RAM tuning
             ## Buffering queue depth (the queue takes at most
@@ -584,6 +586,8 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.queue = None
         # Intermediate pipe that behaves both like a pipe and a pair of files
         self.data_pipe = DataPipe()
+        # Backup files’ prefix
+        self.prefix = None
 
         # Backup-specific variables
         ## The current record being backed up
@@ -659,7 +663,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             )
         return self.options.check()
 
-    # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-branches,too-many-return-statements
     def parse_plugin_definition(self, plugindef):
         """Parse the plugin arguments"""
         try:
@@ -670,6 +674,19 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return fail(f"Unknown option '{e}' passed to plugin")
         except ValueError as e:
             return fail(f"{e}\n")
+
+        # Compute the backup files’ prefix
+        if self.options.path_prefix == '':
+            if self.options.remote == '':
+                if self.options.project == '':
+                    self.prefix = f'@INCUS/instances/{self.options.instance}'
+                else:
+                    self.prefix = f'@INCUS/instances/{self.options.project}/{self.options.instance}'
+            else:
+                self.prefix = (f'@INCUS/{self.options.remote}:{self.options.project}/instances/'
+                               f'{self.options.instance}')
+        else:
+            self.prefix = f'@INCUS/{self.options.path_prefix}/instances/{self.options.instance}'
 
         level = chr(self.level)
         if level == 'F':
@@ -829,7 +846,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if self.tar is None:
             self.start_restore_job()
         restorepkt.create_status = bareosfd.CF_EXTRACT
-        fname = f'backup{restorepkt.ofname.removeprefix(f'@INCUS/{self.options.instance}')}'
+        fname = f'backup{restorepkt.ofname.removeprefix(self.prefix)}'
         if self.is_chunk(fname):
             # Here, we initialize the chunk collector
             fname, chunk_str = fname.removesuffix('.chunk').rsplit('-', 1)
@@ -909,11 +926,10 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         except Exception as e: # pylint: disable=broad-exception-caught
             self.queue.put(ErrorEntry(f"Cannot open export stream as a tar: {e}"))
             return
-        root = f"@INCUS/{self.options.instance}"
         # Iterate over all members and chunk disk images
         try: # pylint: disable=too-many-nested-blocks
             for tarinfo in tar:
-                dst = f'{root}{tarinfo.name.removeprefix('backup')}'
+                dst = f'{self.prefix}{tarinfo.name.removeprefix('backup')}'
                 if not tarinfo.isreg():
                     self.queue.put(RegularEntry(dst, None, tarinfo))
                     continue
