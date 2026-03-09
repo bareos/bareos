@@ -26,7 +26,7 @@ import BareosFdPluginBaseclass  # pylint: disable=import-error
 
 
 SIZE_MULTIPLIERS = {'k': 1_000, 'm': 1_000_000, 'g': 1_000_000_000, 't': 1_000_000_000_000,
-                    'ki': 1_024, 'mi': 1_048_576, 'gi': 1_073_741_824, 'ti': 1_073_741_824_000}
+                    'ki': 1_024, 'mi': 1_048_576, 'gi': 1_073_741_824, 'ti': 1_099_511_627_776}
 
 TIME_MULTIPLIERS = {'s': 1, 'min': 60, 'h': 3_600, 'd': 86_400}
 
@@ -143,7 +143,7 @@ class LogQueue:
         try:
             while True:
                 message = self.queue.get(False)
-                if message[0] == bareosfd.M_ERROR:
+                if message[0] == bareosfd.M_FATAL:
                     rc = bareosfd.bRC_Error
                 bareosfd.JobMessage(*message)
         except queue.Empty:
@@ -231,6 +231,7 @@ class ChunkCollector:
         self.next_chunk = 0
         # We keep a seekable byte array containing the blob being sent to minimize memmoves
         self.current_blob = bytearray()
+        # Finally, we track how many bytes from the current blob have already been read
         self.cur = 0
 
     def add(self, chunk_id, data):
@@ -253,14 +254,19 @@ class ChunkCollector:
                 # When the element should replace another in RAM
                 old_id = -heapq.heapreplace(self.ram_chunk_ids, -chunk_id)
                 self.ram_chunks[chunk_id] = data
-                self.add(old_id, self.ram_chunks.pop(old_id))
+                self.write_to_disk(old_id, self.ram_chunks.pop(old_id))
             else:
                 # When the element should be saved on disk
-                heapq.heappush(self.disk_chunk_ids, chunk_id)
-                f = tempfile.TemporaryFile(dir=self.dir)
-                f.write(data)
-                f.seek(0)
-                self.disk_chunk_fds[chunk_id] = f
+                self.write_to_disk(chunk_id, data)
+
+    def write_to_disk(self, chunk_id, data):
+        """Write a chunk to disk"""
+        with self.lock:
+            heapq.heappush(self.disk_chunk_ids, chunk_id)
+            f = tempfile.TemporaryFile(dir=self.dir)
+            f.write(data)
+            f.seek(0)
+            self.disk_chunk_fds[chunk_id] = f
 
     def ready(self):
         """Return whether the next chunk is ready for processing"""
@@ -292,8 +298,9 @@ class ChunkCollector:
             old_cur = self.cur
             self.cur = old_cur + n
             return self.current_blob[old_cur:self.cur]
-        blob = bytearray()
-        while size < n:
+        data = bytearray(self.current_blob[self.cur:])
+        self.cur = 0
+        while len(data) < n:
             # In most cases, the loop should only refresh a single already-aligned chunk, but we
             # have no strong guarantee of it and can only hope the costly code paths are not too
             # frequently taken. To minimize memmoves, we defer allocations to self.current_blob as
@@ -301,22 +308,14 @@ class ChunkCollector:
             with self.lock:
                 self.lock.wait_for(self.ready)
                 if self.next_chunk in self.zero_chunk_ids:
-                    blob.extend(self.zero_chunk)
+                    data.extend(self.zero_chunk)
                 else:
-                    blob.extend(self.ram_chunks.pop(self.next_chunk))
+                    data.extend(self.ram_chunks.pop(self.next_chunk))
                     self.ram_chunk_ids.remove(-self.next_chunk)
                     self.rebalance()
                 self.next_chunk += 1
-            size = len(self.current_blob) + len(blob) - self.cur
-        data = bytearray(self.current_blob[self.cur:])
-        self.cur = 0
-        if n == size:
-            self.current_blob = bytearray()
-            data.extend(blob)
-        else:
-            self.current_blob = blob[n-size:]
-            data.extend(blob[:n-size])
-        return data
+        self.current_blob = data[n:]
+        return data[:n]
 
 
 def _str(value):
@@ -453,7 +452,7 @@ class BareosFdIncusOptions:
         """Check required options"""
         rc = bareosfd.bRC_OK
         for name, option in self._options.items():
-            if not option['value_set'] and option['value'] is None:
+            if option['value'] is None:
                 rc = bareosfd.bRC_Error
                 bareosfd.JobMessage(bareosfd.M_FATAL, f'Mandatory option "{name}" not defined.\n')
         return rc
@@ -588,7 +587,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if sys.version_info < (3, 13):
             return fail('Python version 3.13 or above is required to run this plugin')
         # Prevent the user from doing very unoptimized tuning
-        if self.options.chunk_size % 262_144:
+        if self.options.chunk_size % (256 << 10):
             return fail('"chunk_size" must be a multiple of 256kiB')
         # This option does absolutely nothing, but is a good reminder that this feature would be
         # nice to have if enough users ask for it
@@ -596,7 +595,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return fail('Clever handling of disk resize is currently not supported by this plugin')
         # Support for zstd only appeared in Python 3.14
         if sys.version_info < (3, 14) and self.options.compression == 'zstd':
-            return fail('ZSTD compression is not supported on your version of Python')
+            return fail('ZSTD compression is only supported starting with Python 3.14')
         # Alert the user if the chosen hash algorithm takes more bits than available in the hijacked
         # stat fields
         digest_bits = hashlib.new(self.options.hash, usedforsecurity=False).digest_size * 8
@@ -689,7 +688,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         remote = self.options.restore_remote or self.options.remote
         instance = self.options.restore_instance or self.options.instance
-        project = self.options.project or self.options.restore_project
+        project = self.options.restore_project or self.options.project
         cmd = ['incus', 'import']
         if remote:
             cmd.append(f'{remote}:')
@@ -735,7 +734,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         try:
             entry = self.queue.get(timeout=self.options.backup_poll_timeout)
         except queue.Empty:
-            return fail(f"No data received from Incus after {self.options.export_start_timeout}s")
+            return fail(f"No data received from Incus after {self.options.backup_poll_timeout}s")
         except queue.ShutDown:
             return bareosfd.bRC_Stop
 
@@ -929,7 +928,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # In the case of restores, we expose a write pipe to the core that feeds our queue.
         self.data_pipe.open()
         iop.filedes = self.data_pipe.w
-        self.restore_io_thread = threading.Thread(target=self.current_writer, daemon=True)
+        self.restore_io_thread = threading.Thread(target=self.current_writer)
         self.restore_io_thread.start()
         return bareosfd.bRC_OK
 
