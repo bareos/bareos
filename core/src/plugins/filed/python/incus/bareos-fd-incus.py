@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name,too-many-lines
 """This module provides the Incus FD plugin for Bareos"""
 
 import ctypes
@@ -171,19 +171,15 @@ class DataPipe:
             self.size = int(file.read())
         fcntl.fcntl(self.w, fcntl.F_SETPIPE_SZ, self.size)
 
-    def write(self, data, close=False):
+    def write(self, r):
         """Write data to the pipe"""
-        try:
-            if data is None:
-                return
-            length = len(data)
-            offset = 0
-            while offset < length:
-                written = os.write(self.w, data[offset:offset+self.size])
-                offset += written
-        finally:
-            if close:
-                self.close_w()
+        if r is None:
+            return
+        while True:
+            data = r.read(self.size)
+            if not data:
+                break
+            os.write(self.w, data)
 
     def read(self, close=False):
         """Read the data from the pipe"""
@@ -344,6 +340,8 @@ def _bool(value):
 def _size(value):
     """Size option converter"""
     s = value.strip().lower()
+    if s == 'auto':
+        return -1
     if s.endswith('b'):
         s = s[:-1]
     suffix = s[-2:]
@@ -357,7 +355,10 @@ def _size(value):
             suffix = None
     mul = SIZE_MULTIPLIERS.get(suffix, 1)
     try:
-        return int(s.strip()) * mul
+        v = int(s.strip())
+        if v <= 0:
+            raise ValueError("Cannot use a negative size")
+        return v * mul
     except ValueError as e:
         raise ValueError("a valid size in bytes") from e
 
@@ -381,7 +382,10 @@ def _time(value):
         suffix = None
     mul = TIME_MULTIPLIERS.get(suffix, 1)
     try:
-        return int(s.strip()) * mul
+        v = int(s.strip())
+        if v <= 0:
+            raise ValueError("Cannot use a negative time")
+        return v * mul
     except ValueError as e:
         raise ValueError("a valid time in seconds") from e
 
@@ -418,11 +422,18 @@ class BareosFdIncusOptions:
             'allow_disk_resize': self.make_opt(_bool, 'no'),
             'chunk_size': self.make_opt(_size, '64MiB'),
             'chunk_id_length': self.make_opt(_int, '8'),
-            ## RAM tuning (the queue takes at most chunk_size * [chunk_size + a few metadata])
-            'queue_depth': self.make_opt(_int, '8'),
             ## Data compression (lz4 is supported by Incus but not tarfile, zstd is only supported
             ## on Python 3.14+)
             'compression': self.make_opt(_enum(*TARFILE_MODES), 'none'),
+
+            # RAM tuning
+            ## Buffering queue depth (the queue takes at most
+            ## queue_depth * [chunk_size + a few metadata] when dealing with chunked images)
+            'queue_depth': self.make_opt(_int, '8'),
+            ## When dealing with regular files, the queue doesn’t buffer files bigger than
+            ## max_file_size (default = chunk_size * max(queue_depth / 2, 1)) and blocks until those
+            ## are processed
+            'max_file_size': self.make_opt(_size, 'auto'),
 
             # Backup options
             'backup_poll_timeout': self.make_opt(_time, '1h'),
@@ -432,7 +443,7 @@ class BareosFdIncusOptions:
                                                   'st_ino,st_atime,st_mtime,st_ctime'),
 
             # Restore options
-            'buffer_depth': self.make_opt(_int, '8'),
+            'restore_buffer_depth': self.make_opt(_int, '8'),
             'restore_instance': self.make_opt(_str, ''),
             'restore_path': self.make_opt(_str, ''),
             'restore_project': self.make_opt(_str, ''),
@@ -496,26 +507,40 @@ class ErrorEntry:
     """Error queue entry"""
     err: str
 
-@dataclasses.dataclass(frozen=True, slots=True)
-class RegularEntry:
-    """Regular file queue entry"""
+@dataclasses.dataclass(slots=True)
+class DataEntry:
+    """Data queue entry"""
     name: str
-    data: bytes
+    reader: io.BufferedIOBase
+
+    def read_to_pipe(self, data_pipe):
+        """Read data to the given data pipe"""
+        try:
+            data_pipe.write(self.reader)
+        finally:
+            data_pipe.close_w()
+
+@dataclasses.dataclass(slots=True)
+class BlockingEntry(DataEntry):
+    """File queue entry locking the processing queue"""
+    tarinfo: tarfile.TarInfo
+    done: threading.Event = dataclasses.field(default_factory=threading.Event, init=False)
+
+    def read_to_pipe(self, data_pipe):
+        """Read data to the given data pipe"""
+        DataEntry.read_to_pipe(self, data_pipe)
+        self.done.set()
+
+@dataclasses.dataclass(slots=True)
+class RegularEntry(DataEntry):
+    """Regular file queue entry"""
     tarinfo: tarfile.TarInfo
 
-@dataclasses.dataclass(frozen=True, slots=True)
-class ChunkEntry:
+@dataclasses.dataclass(slots=True)
+class ChunkEntry(DataEntry):
     """Image chunk queue entry"""
-    name: str
-    data: bytes = b''
-    digest: bytes = b''
-    size: int = 0
-
-@dataclasses.dataclass(frozen=True, slots=True)
-class BackupEntry:
-    """Backup file queue entry"""
-    data: bytes
-    header: bytearray
+    digest: bytes
+    size: int
 
 
 def fail(msg):
@@ -580,7 +605,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         ## The thread reading the data pipe into current_writer
         self.restore_io_thread = None
 
-    def check_options(self, mandatory_options=None):
+    def check_options(self, mandatory_options=None): # pylint: disable=too-many-return-statements
         """Check the options provided by the core"""
         del mandatory_options
         # First, check the minimal Python version. We only support Python ⩾ 3.13.
@@ -589,6 +614,22 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # Prevent the user from doing very unoptimized tuning
         if self.options.chunk_size % (256 << 10):
             return fail('"chunk_size" must be a multiple of 256kiB')
+        # Check whether the chunk id length makes sense
+        if self.options.chunk_id_length < 1:
+            return fail('"chunk_id_length" must be a strictly positive integer')
+        # Check whether the queue depth makes sense
+        if self.options.queue_depth < 1:
+            return fail('"queue_depth" must be a strictly positive integer')
+        # Check whether the maximum file size in the queue makes sense, or recompute one if needed
+        if self.options.max_file_size == -1:
+            # pylint: disable=attribute-defined-outside-init
+            self.options.max_file_size = (self.options.chunk_size *
+                                          max(self.options.queue_depth / 2, 1))
+        elif self.options.max_file_size < self.options.chunk_size:
+            return fail('"max_file_size" must be greater than or equal to chunk_size')
+        # Check whether the restore buffer depth makes sense
+        if self.options.restore_buffer_depth < 1:
+            return fail('"restore_buffer_depth" must be a strictly positive integer')
         # This option does absolutely nothing, but is a good reminder that this feature would be
         # nice to have if enough users ask for it
         if self.options.allow_disk_resize:
@@ -717,7 +758,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         try:
             while True:
                 entry = self.queue.get()
-                self.tar.addfile(entry.tarinfo, io.BytesIO(entry.data))
+                self.tar.addfile(entry.tarinfo, entry.reader)
         except queue.ShutDown:
             pass
         self.tar.close()
@@ -730,6 +771,11 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def start_backup_file(self, savepkt):
         """Process a Bareos save packet"""
+        # If the previous record hasn’t been cleaned up, it means that the core skipped it. If it is
+        # a locking entry, we have to release its lock, to make the producer continue processing
+        # Incus’ stream.
+        if self.current_record is not None and isinstance(self.current_record[0], BlockingEntry):
+            self.current_record[0].done.set()
         # Pull the next entry
         try:
             entry = self.queue.get(timeout=self.options.backup_poll_timeout)
@@ -752,11 +798,11 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             for (offset, field) in enumerate(self.options.hijacked_stat_fields):
                 setattr(savepkt.statp, field,
                         ctypes.c_int64(int.from_bytes(entry.digest[8*offset:8*(offset+1)])).value)
-            header = b''
+            header = None
         else:
-            header = populate_pkt(savepkt, entry.tarinfo)
+            header = io.BytesIO(populate_pkt(savepkt, entry.tarinfo))
 
-        self.current_record = BackupEntry(entry.data, header)
+        self.current_record = (entry, header)
         return bareosfd.bRC_OK
 
     def is_chunk(self, fname):
@@ -783,7 +829,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     # the code structure.
                     return please_open_an_issue(1)
                 self.collectors[fname] = ChunkCollector(self.options.chunk_size,
-                                                        self.options.buffer_depth,
+                                                        self.options.restore_buffer_depth,
                                                         self.options.temp_dir)
             if chunk_id == 0:
                 # We consider that receiving the first chunk of data should be the trigger to switch
@@ -816,7 +862,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             def writer():
                 with open(self.data_pipe.r, 'rb') as r:
                     restore_tarinfo(tarinfo, restorepkt, r)
-                    self.queue.put(RegularEntry(fname, r.read(), tarinfo))
+                    self.queue.put(RegularEntry(fname, io.BytesIO(r.read()), tarinfo))
             self.current_writer = writer
             return bareosfd.bRC_OK
         # Here, we can bypass the DataPipe buffering and directly connect to the read pipe
@@ -841,7 +887,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return (len(path) == 2 and path[0] == 'backup' and path[1].endswith('.img') and
                 tarinfo.size > self.options.chunk_size)
 
-    def process_stdout(self, stdout):
+    def process_stdout(self, stdout): # pylint: disable=too-many-branches
         """Parse the incus export tar stream continuously"""
         try:
             # pylint: disable=consider-using-with
@@ -851,13 +897,13 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return
         root = f"@INCUS/{self.options.instance}"
         # Iterate over all members and chunk disk images
-        try:
+        try: # pylint: disable=too-many-nested-blocks
             for tarinfo in tar:
                 dst = f'{root}{tarinfo.name.removeprefix('backup')}'
-                if tarinfo.isreg():
-                    f = tar.extractfile(tarinfo)
-                else:
-                    f = None
+                if not tarinfo.isreg():
+                    self.queue.put(RegularEntry(dst, None, tarinfo))
+                    continue
+                f = tar.extractfile(tarinfo)
                 if self.should_chunk(tarinfo):
                     chunk_id = 0
                     while True:
@@ -870,13 +916,18 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                                 digest = self.zero_digest
                             else:
                                 digest = self.hash(data)
-                            self.queue.put(ChunkEntry(name, digest=digest, size=tarinfo.size))
+                            self.queue.put(ChunkEntry(name, None, digest, tarinfo.size))
                         else:
-                            self.queue.put(ChunkEntry(name, data, self.hash(data), tarinfo.size))
+                            self.queue.put(ChunkEntry(name, io.BytesIO(data), self.hash(data),
+                                                      tarinfo.size))
                         chunk_id += 1
                     continue
-                data = None if f is None else f.read()
-                self.queue.put(RegularEntry(dst, data, tarinfo))
+                if tarinfo.size > self.options.max_file_size:
+                    entry = BlockingEntry(dst, f, tarinfo)
+                    self.queue.put(entry)
+                    entry.done.wait()
+                else:
+                    self.queue.put(RegularEntry(dst, io.BytesIO(f.read()), tarinfo))
         except Exception as e: # pylint: disable=broad-exception-caught
             self.queue.put(ErrorEntry(e))
         self.queue.shutdown()
@@ -919,9 +970,9 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.data_pipe.open()
             iop.filedes = self.data_pipe.r
             def writer():
-                if self.current_record.header:
-                    self.data_pipe.write(self.current_record.header)
-                self.data_pipe.write(self.current_record.data, True)
+                if self.current_record[1] is not None:
+                    self.data_pipe.write(self.current_record[1])
+                self.current_record[0].read_to_pipe(self.data_pipe)
             threading.Thread(target=writer, daemon=True).start()
             return bareosfd.bRC_OK
 
@@ -936,7 +987,9 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """Close the handle provided to the core"""
         del iop
         if self.is_backup:
-            self.data_pipe.close_r()
+            if self.current_record is not None:
+                self.data_pipe.close_r()
+                self.current_record = None
         else:
             # This triggers EOF, unblocking the read operation.
             self.data_pipe.close_w()
