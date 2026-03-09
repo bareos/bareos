@@ -104,6 +104,10 @@ else()
     list(APPEND DEBIAN_CONTROL_SNIPPETS "proxmox")
   endif()
 
+  if(ENABLE_INCUS_PLUGIN)
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "incus")
+  endif()
+
 endif()
 
 include(BareosConfigureFile)
