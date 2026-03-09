@@ -309,6 +309,11 @@ queue_depth (optional)
    doesn’t fill up all your available memory. Expect the memory usage of the backup buffer to be
    around ``queue_depth * chunk_size``. Defaults to ``8``.
 
+max_file_size (optional)
+   The maximum file size allowed in the backup buffer when performing filesystem backups. If a file
+   bigger than this maximum is backed up, the backup queue is blocked until this file is processed,
+   then buffering can resume as normal.
+
 compression (optional)
    The compression algorithm to use with |incus| when streaming tarballs. This should only matter if
    you are using a remote |incus| server. ``zstd`` is only supported on Python 3.14+. Defaults to
@@ -334,11 +339,11 @@ hijacked_stat_fields (optional)
    what you are doing, to at least ``ips`` + the fields used in ``hijacked_stat_fields``). Defaults
    to ``st_ino,st_atime,st_mtime,st_ctime``
 
-buffer_depth (optional)
+restore_buffer_depth (optional)
    The maximum number of chunks to buffer to RAM during restore before writing temporary data to
    disk. This should be properly sized so it doesn’t fill up all your available memory. Expect the
-   memory usage of the restore buffer to be around ``(buffer_depth + 2) * chunk_size``. Defaults to
-   ``8``.
+   memory usage of the restore buffer to be around ``(restore_buffer_depth + 2) * chunk_size``.
+   Defaults to ``8``.
 
 restore_instance (optional)
    The name of the instance in which the restore will be done. Defaults to using the instance
