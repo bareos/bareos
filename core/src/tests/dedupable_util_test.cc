@@ -19,9 +19,7 @@
    02110-1301, USA.
 */
 
-//#if defined(HAVE_MINGW)
 #include "include/bareos.h"
-//#endif
 
 #include "gtest/gtest.h"
 #include "stored/backends/dedupable/util.h"

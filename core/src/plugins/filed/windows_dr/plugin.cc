@@ -31,6 +31,7 @@
 #include "parser.h"
 #include "dump.h"
 #include "plugin.h"
+#include "lib/bool_string.h"
 #include <comdef.h>
 #include <time.h>
 
@@ -267,7 +268,7 @@ struct plugin_arguments {
 
         case index_of(keywords, save_unreferenced_disks): {
           try {
-            args.save_unknown_disks = BoolString(value).get<bool>();
+            args.save_unknown_disks = BoolString(std::string{value}).get<bool>();
           } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_disks);
@@ -277,7 +278,7 @@ struct plugin_arguments {
 
         case index_of(keywords, save_unreferenced_partitions): {
           try {
-            args.save_unknown_partitions = BoolString(value).get<bool>();
+            args.save_unknown_partitions = BoolString(std::string{value}).get<bool>();
           } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_partitions);
@@ -287,7 +288,7 @@ struct plugin_arguments {
 
         case index_of(keywords, save_unreferenced_extents): {
           try {
-            args.save_unknown_extents = BoolString(value).get<bool>();
+            args.save_unknown_extents = BoolString(std::string{value}).get<bool>();
           } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_extents);
