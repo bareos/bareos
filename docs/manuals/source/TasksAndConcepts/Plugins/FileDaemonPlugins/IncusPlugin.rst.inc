@@ -319,6 +319,9 @@ compression (optional)
    you are using a remote |incus| server. ``zstd`` is only supported on Python 3.14+. Defaults to
    ``none``.
 
+path_prefix (optional)
+   The namespace under which the backup files should be placed. Defaults to `[remote:][project]`.
+
 backup_poll_timeout (optional)
    The delay after which, if there is no data in our processing queue, we should stop the export.
    Currently, |incus| doesn’t directly stream its backup tarballs, but rather dumps them to disk
