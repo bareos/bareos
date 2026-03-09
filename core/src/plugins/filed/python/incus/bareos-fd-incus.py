@@ -167,9 +167,12 @@ class DataPipe:
     def open(self):
         """Open and tune the pipe"""
         self.r, self.w = os.pipe()
-        with open('/proc/sys/fs/pipe-max-size', 'r', encoding='ascii') as file:
-            self.size = int(file.read())
-        fcntl.fcntl(self.w, fcntl.F_SETPIPE_SZ, self.size)
+        try:
+            with open('/proc/sys/fs/pipe-max-size', 'r', encoding='ascii') as file:
+                self.size = int(file.read())
+            fcntl.fcntl(self.w, fcntl.F_SETPIPE_SZ, self.size)
+        except: # pylint: disable=bare-except
+            pass
 
     def write(self, r):
         """Write data to the pipe"""
@@ -701,10 +704,15 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                self.options.compression]
         if self.options.project:
             cmd.extend(['--project', self.options.project])
-
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(cmd)}\n")
-        # pylint: disable=consider-using-with
-        self.incus_process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        try:
+            # pylint: disable=consider-using-with
+            self.incus_process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                                  stderr=subprocess.PIPE)
+        except Exception as e: # pylint: disable=broad-exception-caught
+            bareosfd.JobMessage(bareosfd.M_FATAL, f"Command {' '.join(cmd)} failed: {e}")
+            return bareosfd.bRC_Error
 
         threading.Thread(target=self.process_stdout, args=(self.incus_process.stdout,),
                          daemon=True).start()
@@ -738,10 +746,16 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             cmd.extend(['--project', project])
         if self.options.restore_storage:
             cmd.extend(['--storage', self.options.restore_storage])
-
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(cmd)}\n")
-        # pylint: disable=consider-using-with
-        self.incus_process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        try:
+            # pylint: disable=consider-using-with
+            self.incus_process = subprocess.Popen(cmd, stdin=subprocess.PIPE,
+                                                  stderr=subprocess.PIPE)
+        except Exception as e: # pylint: disable=broad-exception-caught
+            bareosfd.JobMessage(bareosfd.M_FATAL, f"Command {' '.join(cmd)} failed: {e}")
+            return bareosfd.bRC_Error
+
         # pylint: disable=consider-using-with
         self.tar = tarfile.open(fileobj=self.incus_process.stdin,
                                 mode=f'w|{TARFILE_MODES[self.options.compression]}',
@@ -943,7 +957,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if self.incus_process and self.incus_process.poll() is None:
                 try:
                     self.incus_process.terminate()
-                except Exception: # pylint: disable=broad-exception-caught
+                except: # pylint: disable=bare-except
                     pass
             if self.queue is not None:
                 self.queue.put(ErrorEntry("job cancelled"))
