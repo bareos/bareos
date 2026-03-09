@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -156,7 +156,6 @@ if(BUILD_UNIVERSAL_CLIENT)
   force_option(FETCHCONTENT_FULLY_DISCONNECTED OFF)
   force_option(CPM_USE_LOCAL_PACKAGES OFF)
   force_option(ENABLE_PYTHON OFF)
-  force_option(ENABLE_GFAPI_FD OFF)
   force_option(ENABLE_JANSSON OFF)
   force_option(ENABLE_LZO OFF)
   force_option(ENABLE_CAPABILITY OFF)

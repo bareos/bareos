@@ -700,7 +700,7 @@ When parsing the resource directives, Bareos classifies the data according to th
    See :config:option:`sd/device/DeviceType`.
 
 ..
-   Hint: check REGISTER_SD in /stored/backends to find allowed types
+   Hint: check REGISTER_SD_BACKEND in /stored/backends to find allowed types
 
 
 .. config:datatype:: DIRECTORY
