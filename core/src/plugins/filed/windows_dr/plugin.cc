@@ -266,12 +266,9 @@ struct plugin_arguments {
       switch (next_option(str, keywords, &value)) {
 
         case index_of(keywords, save_unreferenced_disks): {
-
-          if (value == "yes") {
-            args.save_unknown_disks = true;
-          } else if (value == "no") {
-            args.save_unknown_disks = false;
-          } else {
+          try {
+            args.save_unknown_disks = BoolString(value).get<bool>();
+          } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_disks);
             return std::nullopt;
@@ -279,11 +276,9 @@ struct plugin_arguments {
         } break;
 
         case index_of(keywords, save_unreferenced_partitions): {
-          if (value == "yes") {
-            args.save_unknown_partitions = true;
-          } else if (value == "no") {
-            args.save_unknown_partitions = false;
-          } else {
+          try {
+            args.save_unknown_partitions = BoolString(value).get<bool>();
+          } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_partitions);
             return std::nullopt;
@@ -291,16 +286,13 @@ struct plugin_arguments {
         } break;
 
         case index_of(keywords, save_unreferenced_extents): {
-          if (value == "yes") {
-            args.save_unknown_extents = true;
-          } else if (value == "no") {
-            args.save_unknown_extents = false;
-          } else {
+          try {
+            args.save_unknown_extents = BoolString(value).get<bool>();
+          } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_extents);
             return std::nullopt;
           }
-          args.save_unknown_extents = true;
         } break;
 
         case index_of(keywords, ignore_disks): {
