@@ -39,7 +39,7 @@ cleanup_instances() {
 
 check_chunks() {
     file="$2"
-    grep -c "^ @INCUS/$file" "$1"
+    grep -c "^ @INCUS/instances/$file" "$1" || :
 }
 
 # Build a tiny Alpine image. This can be extremely slow, so we do not remove the image at the end,

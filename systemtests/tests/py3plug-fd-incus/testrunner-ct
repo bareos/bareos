@@ -98,9 +98,9 @@ list files jobid=2
 END_OF_DATA
 run_bconsole "$@"
 
-files="$(grep "^ @INCUS/$INSTANCE/container/rootfs/" "$tmp/log2-list.out" | grep -v "^ @INCUS/$INSTANCE/container/rootfs/var/log/messages" | sort)"
+files="$(grep "^ @INCUS/instances/$INSTANCE/container/rootfs/" "$tmp/log2-list.out" | grep -v "^ @INCUS/instances/$INSTANCE/container/rootfs/var/log/messages" | sort)"
 actualfiles=(etc hlinked-file new-file)
-expected="$(printf ' @INCUS/bareos-test-ct/container/rootfs/%s\n' "${actualfiles[@]}")"
+expected="$(printf " @INCUS/instances/$INSTANCE/container/rootfs/%s\n" "${actualfiles[@]}")"
 if [ "$files" != "$expected" ]; then
     echo "Unexpected list of modified files. Expected:"
     echo "$expected"
