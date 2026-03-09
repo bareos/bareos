@@ -74,8 +74,8 @@ const PluginInformation my_info = {
     .plugin_magic = FD_PLUGIN_MAGIC,
     .plugin_license = "Bareos AGPLv3",
     .plugin_author = "Sebastian Sura",
-    .plugin_date = "Juli 2025",
-    .plugin_version = "0.9.0",
+    .plugin_date = "March 2026",
+    .plugin_version = "26.0.0",
     .plugin_description
     = "This plugin allows you to backup your windows system for disaster "
       "recovery.",
