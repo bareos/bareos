@@ -748,6 +748,7 @@ static void SetupCurrentOpts(void)
 }
 
 static void ApplyDefaultValuesForUnsetOptions(
+    lexer* lc,
     OptionsDefaultValues default_values)
 {
   for (auto const& option : default_values.option_default_values) {
@@ -755,18 +756,25 @@ static void ApplyDefaultValuesForUnsetOptions(
     bool was_set_in_config = option.second.configured;
     std::string default_value = option.second.default_value;
     if (!was_set_in_config) {
+      if (strlen(res_incexe->current_opts->opts) + default_value.size()
+          >= std::size(res_incexe->current_opts->opts)) {
+        scan_err0(
+            lc, T_("Options value is too long; cannot append default options"));
+        return;
+      }
+
       bstrncat(res_incexe->current_opts->opts, default_value.c_str(),
-               MAX_FOPTS);
+               std::size(res_incexe->current_opts->opts));
       Dmsg2(900, "setting default value for keyword-id=%d, %s\n", keyword_id,
             default_value.c_str());
     }
   }
 }
 
-static void StoreDefaultOptions()
+static void StoreDefaultOptions(lexer* lc)
 {
   SetupCurrentOpts();
-  ApplyDefaultValuesForUnsetOptions(OptionsDefaultValues{});
+  ApplyDefaultValuesForUnsetOptions(lc, OptionsDefaultValues{});
 }
 
 // Come here when Options seen in Include/Exclude
@@ -842,7 +850,7 @@ static void StoreOptionsRes(lexer* lc,
     }
   }
 
-  if (pass == 1) { ApplyDefaultValuesForUnsetOptions(default_values); }
+  if (pass == 1) { ApplyDefaultValuesForUnsetOptions(lc, default_values); }
 }
 
 static FilesetResource* GetStaticFilesetResource()
@@ -1049,7 +1057,7 @@ static void StoreNewinc(lexer* lc,
   }
 
   if (!has_options) {
-    if (pass == 1) { StoreDefaultOptions(); }
+    if (pass == 1) { StoreDefaultOptions(lc); }
   }
 
   if (pass == 1) {
