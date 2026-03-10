@@ -2314,7 +2314,18 @@ struct plugin_ctx {
 
     std::optional<HANDLE> hndl{};
 
-    std::vector<WMI::String> restored_definition_files{};
+    struct restored_config {
+      restored_config() = default;
+      restored_config(std::string vm_name_, WMI::String config_file_)
+          : vm_name{std::move(vm_name_)}, config_file{std::move(config_file_)}
+      {
+      }
+
+      std::string vm_name;
+      WMI::String config_file;
+    };
+
+    std::vector<restored_config> restored_configs{};
     std::vector<std::wstring> temporary_files{};
 
     std::wstring default_disk_loc{};
@@ -3486,9 +3497,8 @@ static void prepare_restore_object(PluginContext* ctx)
 }
 
 // maybe we should add the cluster name here somehow ?
-std::string create_vm_path(std::wstring_view vm_name,
-                           std::wstring_view sub_dir,
-                           std::wstring_view path)
+std::string create_vm_disk_path(std::wstring_view vm_name,
+                                std::wstring_view path)
 {
   auto last_slash = path.find_last_of(L"\\/");
   auto cutoff_point = [&] {
@@ -3502,8 +3512,48 @@ std::string create_vm_path(std::wstring_view vm_name,
     }
   }();
 
-  std::wstring new_path = std::format(L"@HYPER-V/{}/{}/{}", vm_name, sub_dir,
-                                      path.substr(cutoff_point));
+  auto filename = path.substr(cutoff_point);
+
+  std::wstring new_path
+      = std::format(L"@HYPER-V/{}/disks/{}", vm_name, filename);
+
+  std::replace(std::begin(new_path), std::end(new_path), L'\\', L'/');
+  return utf16_to_utf8(new_path);
+}
+
+std::string create_vm_config_path(std::wstring_view vm_name,
+                                  std::wstring_view path)
+{
+  auto last_slash = path.find_last_of(L"\\/");
+  auto cutoff_point = [&] {
+    if (last_slash == path.npos) {
+      // if there somehow is no slash in the path, then we just take
+      // everything.
+      return decltype(last_slash){0};
+    } else {
+      // skip the slash
+      return last_slash + 1;
+    }
+  }();
+
+  auto filename = path.substr(cutoff_point);
+  auto last_dot = filename.rfind(L".");
+
+  auto dot_cutoff_point = [&] {
+    if (last_dot == filename.npos) {
+      // if there somehow is no dot in the path, then we just take
+      // everything.
+      return decltype(last_dot){0};
+    } else {
+      // skip the dot
+      return last_dot + 1;
+    }
+  }();
+
+  auto ending = filename.substr(dot_cutoff_point);
+
+  std::wstring new_path
+      = std::format(L"@HYPER-V/{}/config/config.{}", vm_name, ending);
 
   std::replace(std::begin(new_path), std::end(new_path), L'\\', L'/');
   return utf16_to_utf8(new_path);
@@ -3866,8 +3916,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
       auto disk_path = make_disk_path(vst, disk_id);
       DBGC(ctx, L"transforming {} ...", disk_path);
-      p_ctx->current_path
-          = create_vm_path(prepared.vm_name, L"disks", disk_path);
+      p_ctx->current_path = create_vm_disk_path(prepared.vm_name, disk_path);
       DBGC(ctx, "into {}!", p_ctx->current_path);
       TRCC(ctx, "delta seq = {}", prepared.delta_seq);
 
@@ -3922,7 +3971,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
       JINFO(ctx, L"Starting backup of metadata {}", path);
 
       DBGC(ctx, L"transforming {} ...", path);
-      p_ctx->current_path = create_vm_path(prepared.vm_name, L"config", path);
+      p_ctx->current_path = create_vm_config_path(prepared.vm_name, path);
       DBGC(ctx, "into {}!", p_ctx->current_path);
       auto now = time(NULL);
       sp->fname = p_ctx->current_path.data();
@@ -4759,7 +4808,9 @@ static bRC end_restore_job(PluginContext* ctx)
   const auto& srvc = p_ctx->virt_service;
   const auto& system_srvc = restore_ctx->system_srvc;
 
-  for (auto& definition_file : restore_ctx->restored_definition_files) {
+  for (auto& restored : restore_ctx->restored_configs) {
+    auto& definition_file = restored.config_file;
+    auto& vm_name = restored.vm_name;
     bool generate_new_id = true;
 
     JINFO(ctx, L"creating a new vm from the restored configuration file '{}'",
@@ -4787,9 +4838,7 @@ static bRC end_restore_job(PluginContext* ctx)
       SystemDestroyer destroyer{srvc, system_srvc, &planned_system};
 
       auto& backed_up_vm = [&]() -> const vm_info& {
-        auto external_name = utf16_to_utf8(
-            planned_system.get<WMI::cim_type::string>(L"ElementName")
-                .as_view());
+        auto external_name = vm_name;
         vm_info* info = nullptr;
         for (auto& vm : p_ctx->received_vms) {
           if (vm.external_name == external_name) {
@@ -5196,8 +5245,8 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
     if (is_definition_file(actual_path)) {
       DBGC(ctx, L"found definitions file at {}", tmp_path);
-      restore_ctx->restored_definition_files.emplace_back(
-          WMI::String::copy(tmp_path));
+      restore_ctx->restored_configs.emplace_back(std::string{vm_name},
+                                                 WMI::String::copy(tmp_path));
     }
 
     restore_ctx->hndl = h;
