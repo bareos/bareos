@@ -1689,16 +1689,16 @@ struct Snapshot : ClassObject {
       L"Msvm_VirtualSystemSettingData"};
 };
 
+enum class ConsistencyLevel : std::int32_t
+{
+  Unknown = 0,
+  ApplicationConsistent = 1,
+  CrashConsistent = 2,
+};
+
 struct VirtualSystemSnapshotSettingData {
   static constexpr std::wstring_view class_name{
       L"Msvm_VirtualSystemSnapshotSettingData"};
-
-  enum class ConsistencyLevel : std::int32_t
-  {
-    Unknown = 0,
-    ApplicationConsistent = 1,
-    CrashConsistent = 2,
-  };
 
   enum class GuestBackupType : std::int32_t
   {
@@ -2340,8 +2340,6 @@ struct plugin_ctx {
   std::wstring directory;
 
   std::string current_path;
-
-  WMI::VirtualSystemSnapshotSettingData snapshot_settings;
 
   struct config {
     std::string vm_name;
@@ -3355,8 +3353,15 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   JINFO(ctx, "creating snapshot of VM '{}' ...", vm_name);
 
+  WMI::VirtualSystemSnapshotSettingData snapshot_settings = {
+      .consistency_level = WMI::ConsistencyLevel::CrashConsistent,
+      .guest_backup_type
+      = WMI::VirtualSystemSnapshotSettingData::GuestBackupType::Full,
+      .ignore_non_snapshottable_disks = true,
+  };
+
   auto snapshot = snapshot_srvc.create_snapshot(
-      srvc, vm.value(), p_ctx->snapshot_settings,
+      srvc, vm.value(), snapshot_settings,
       WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
 
   auto snapshot_name = std::format(L"Bareos JobId {}", p_ctx->jobid);
