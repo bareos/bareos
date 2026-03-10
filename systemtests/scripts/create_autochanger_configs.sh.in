@@ -99,7 +99,7 @@ Device {
     Drive Tape Alert Enabled = Yes
     Drive Crypto Enabled = Yes
     Query Crypto Status = Yes
- }
+}
 
 EOF
 
