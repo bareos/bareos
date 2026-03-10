@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -80,7 +80,7 @@ if(HAVE_WIN32)
   target_sources(hyper-v-fd PRIVATE ../../win32/plugins/filed/hyper-v.cc)
   target_link_libraries(hyper-v-fd PRIVATE ${THREADS_THREADS} bareos)
   target_link_libraries(
-    hyper-v-fd PRIVATE wbemuuid.lib virtdisk.lib Shell32.lib
+    hyper-v-fd PRIVATE wbemuuid.lib virtdisk.lib Shell32.lib Pathcch.lib
   )
   target_link_libraries(hyper-v-fd PRIVATE Jansson::Jansson)
 
