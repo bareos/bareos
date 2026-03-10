@@ -103,7 +103,7 @@ check_log "${log_home}/restore-incr.out"
 
 # we deterministically use one jobid and look that we found the corresponding incremental
 # here the restore use the copy of 9th incremental
-${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | xargs | tail -n 1 | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-9\""
+${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | xargs | tail -n 1 | grep -F -- \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-9\""
 
 #uncomment when fixed
 #check_for_zombie_jobs storage=isilonfile client=bareos-fd
