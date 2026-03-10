@@ -41,6 +41,7 @@
 #include <atlsafe.h>
 #include <initguid.h>  // ask virtdisk.h to include guid definitions
 #include <virtdisk.h>
+#include <pathcch.h>
 
 #include <filesystem>
 
@@ -3184,51 +3185,65 @@ static std::vector<WMI::String> get_disk_paths_of_snapshot(
   return paths;
 }
 
-static std::vector<std::wstring> get_files_in_dir(std::wstring_view dir)
+static std::vector<std::wstring> get_config_files(
+    std::wstring_view config_file_path)
 {
-  std::vector<std::wstring> files;
-  std::vector<std::wstring> directories;
+  // This _should_ use ExportSystemDefinition, but this is sadly not possible:
+  // There is no way to _just_ export the configuration from a snapshot
+  // without messing up the automerge process.
+  // If you do tell ExportSystemDefinition to not export any storage,
+  // then it locks the vhdx chain for some reason, meaning that the chain
+  // CANNOT be merged unless either VMMS or the vm is restarted.
 
-  directories.emplace_back(dir);
+  // This boggles my mind, but maybe there is a way around this.
+  // For now we do this, but if this turns out to be a problem,
+  // we could try telling export to export everything (including the storage)
+  // but also use ExcludeHardDiskPaths to simply exclude all disks of a vm.
+  // This is basically the only thing that I did not try yet.
 
-  while (directories.size() > 0) {
-    std::wstring current_dir = std::move(directories.back());
-    directories.pop_back();
 
-    TRC(L"entering directory '{}' ...", current_dir);
-
-    std::wstring search_path = current_dir + L"\\*";
-
-    WIN32_FIND_DATAW data;
-    HANDLE finder = FindFirstFileW(search_path.c_str(), &data);
-
-    if (finder == INVALID_HANDLE_VALUE) {
-      throw std::runtime_error(
-          std::format("could not enter generated directory {}",
-                      utf16_to_utf8(current_dir)));
-    }
-
-    do {
-      std::wstring_view entry = data.cFileName;
-      TRC(L"found '{}' ...", entry);
-
-      if (entry == L"." || entry == L"..") { continue; }
-
-      std::wstring full_path{current_dir};
-      full_path += L"\\";
-      full_path += entry;
-
-      if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-        directories.emplace_back(std::move(full_path));
-      } else {
-        files.emplace_back(std::move(full_path));
-      }
-    } while (FindNextFileW(finder, &data));
-
-    FindClose(finder);
+  if (!config_file_path.ends_with(L"vmcx")) {
+    throw std::runtime_error(
+        std::format("config file path '{}' does not end in 'vmcx'",
+                    utf16_to_utf8(config_file_path)));
   }
 
-  return files;
+  std::wstring root{config_file_path};
+
+  // remove vmcx
+  root.resize(root.size() - 4);
+  root += L"*";
+
+  std::wstring dir = root;
+  PathCchRemoveFileSpec(dir.data(), dir.size());
+
+  DBG(L"Searching for files like '{}'", root);
+
+  std::vector<std::wstring> paths;
+
+  WIN32_FIND_DATAW find_data = {};
+  HANDLE iter = FindFirstFileW(root.c_str(), &find_data);
+  if (iter == INVALID_HANDLE_VALUE) {
+    // something went wrong
+    throw std::runtime_error(
+        std::format("no file like '{}'", utf16_to_utf8(root)));
+  } else {
+    do {
+      if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        paths.emplace_back(
+            std::format(L"{}\\{}", dir.c_str(), find_data.cFileName));
+      }
+    } while (FindNextFileW(iter, &find_data) != 0);
+    if (auto err = GetLastError(); err != ERROR_NO_MORE_FILES) {
+      throw std::runtime_error(
+          std::format("could not enumerate '{}'-like files: {}",
+                      utf16_to_utf8(root), format_win32_error_2(err)));
+    }
+    FindClose(iter);
+  }
+
+
+  return paths;
 }
 
 static restore_object get_info(PluginContext*,
@@ -3374,42 +3389,24 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   std::optional<WMI::ReferencePoint> refpoint = std::nullopt;
   uint32_t delta_seq = 0;
-  if (p_ctx->is_full()) {
-    WMI::VirtualSystemExportSettingData export_settings = {
-        .snapshot_virtual_system_path = snapshot.path(),
-        .backup_intent = WMI::BackupIntent::Merge,
-        .copy_snapshot_configuration
-        = WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
-        .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
-        .copy_vm_runtime_information = true,
-        .copy_vm_storage = false,
-        .create_vm_export_subdirectory = false,
-    };
-
-    system_srvc.export_system_definition(srvc, vm.value(), dir,
-                                         export_settings);
-  } else {
+  if (!p_ctx->is_full()) {
     refpoint = ref_point_of_system(ctx, &delta_seq, p_ctx, srvc, vm_name,
                                    vm.value());
     delta_seq += 1;
-
-    WMI::VirtualSystemExportSettingData export_settings = {
-        .snapshot_virtual_system_path = snapshot.path(),
-        .differential_backup_base_path = refpoint->path(),
-        .backup_intent = WMI::BackupIntent::Merge,
-        .copy_snapshot_configuration
-        = WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
-        .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
-        .copy_vm_runtime_information = true,
-        .copy_vm_storage = false,
-        .create_vm_export_subdirectory = false,
-    };
-
-    system_srvc.export_system_definition(srvc, vm.value(), dir,
-                                         export_settings);
   }
 
   JINFO(ctx, L"retrieving information from snapshot ...");
+
+  auto config_root
+      = snapshot.get<WMI::cim_type::string>(L"ConfigurationDataRoot");
+  // this _only_ gives us the path to the configuration file (vmcx), we also
+  // want all other files, so we need to backup all files that are the same
+  // except for the ending
+  auto config_rel_path
+      = snapshot.get<WMI::cim_type::string>(L"ConfigurationFile");
+
+  auto config_full_path = std::format(L"{}\\{}", config_root.as_view(),
+                                      config_rel_path.as_view());
 
   std::optional<analyzed_ref_point> analyzed;
   if (refpoint) {
@@ -3420,7 +3417,7 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
       std::move(vm.value()), utf8_to_utf16(vm_name), std::move(analyzed),
       std::nullopt, dir, std::move(snapshot), delta_seq);
 
-  prepared.files_to_backup = get_files_in_dir(dir);
+  prepared.files_to_backup = get_config_files(config_full_path);
   prepared.disks_to_backup
       = get_disk_paths_of_snapshot(srvc, prepared.vm_snapshot);
 
@@ -4343,8 +4340,8 @@ static bRC pluginBackupIO(PluginContext* ctx,
                                FILE_ATTRIBUTE_NORMAL, NULL);
           } else {
             return CreateFileW(current_file.c_str(), GENERIC_READ,
-                               FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                               FILE_ATTRIBUTE_NORMAL, NULL);
+                               FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
           }
         }();
 
