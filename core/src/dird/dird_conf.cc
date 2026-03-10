@@ -44,6 +44,7 @@
  *
  */
 
+#include "lib/bool_string.h"
 #include "lib/resource_item.h"
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
@@ -2921,13 +2922,18 @@ static void StoreShortRunscript(lexer* lc,
 static void StoreRunscriptBool(lexer* lc, const ResourceItem* item, int, int)
 {
   LexGetToken(lc, BCT_NAME);
-  if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-    SetItemVariable<bool>(*item, true);
-  } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    SetItemVariable<bool>(*item, false);
-  } else {
-    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-              lc->str); /* YES and NO must not be translated */
+  switch (parse_user_bool(lc->str)) {
+    case parse_bool_result::True: {
+      SetItemVariable<bool>(*item, true);
+    } break;
+    case parse_bool_result::False: {
+      SetItemVariable<bool>(*item, false);
+    } break;
+    case parse_bool_result::Error: {
+      scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+                lc->str); /* YES and NO must not be translated */
+      return;
+    } break;
   }
   ScanToEol(lc);
 }

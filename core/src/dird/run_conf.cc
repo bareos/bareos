@@ -30,6 +30,7 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
+#include "lib/bool_string.h"
 #include "lib/edit.h"
 #include "lib/keyword_table_s.h"
 #include "lib/parse_conf.h"
@@ -192,16 +193,19 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
         switch (RunFields[i].token) {
           case 's': /* Data spooling */
             token = LexGetToken(lc, BCT_NAME);
-            if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-              res_run.spool_data = true;
-              res_run.spool_data_set = true;
-            } else if (Bstrcasecmp(lc->str, "no")
-                       || Bstrcasecmp(lc->str, "false")) {
-              res_run.spool_data = false;
-              res_run.spool_data_set = true;
-            } else {
-              scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
-              return;
+            switch (parse_user_bool(lc->str)) {
+              case parse_bool_result::True: {
+                res_run.spool_data = true;
+                res_run.spool_data_set = true;
+              } break;
+              case parse_bool_result::False: {
+                res_run.spool_data = false;
+                res_run.spool_data_set = true;
+              } break;
+              case parse_bool_result::Error: {
+                scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
+                return;
+              } break;
             }
             break;
           case 'L': /* Level */
@@ -297,16 +301,19 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
             break;
           case 'a': /* Accurate */
             token = LexGetToken(lc, BCT_NAME);
-            if (strcasecmp(lc->str, "yes") == 0
-                || strcasecmp(lc->str, "true") == 0) {
-              res_run.accurate = true;
-              res_run.accurate_set = true;
-            } else if (strcasecmp(lc->str, "no") == 0
-                       || strcasecmp(lc->str, "false") == 0) {
-              res_run.accurate = false;
-              res_run.accurate_set = true;
-            } else {
-              scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
+            switch (parse_user_bool(lc->str)) {
+              case parse_bool_result::True: {
+                res_run.accurate = true;
+                res_run.accurate_set = true;
+              } break;
+              case parse_bool_result::False: {
+                res_run.accurate = false;
+                res_run.accurate_set = true;
+              } break;
+              case parse_bool_result::Error: {
+                scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
+                return;
+              } break;
             }
             break;
           default:

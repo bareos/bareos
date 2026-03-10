@@ -45,6 +45,7 @@
 #include "dird/storage.h"
 #include "include/auth_protocol_types.h"
 #include "lib/attribs.h"
+#include "lib/bool_string.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
@@ -995,10 +996,15 @@ bool DotApiCmd(UaContext* ua, const char*)
       ua->api = API_MODE_JSON;
       ua->batch = true;
       if ((ua->argc == 3) && (FindArgWithValue(ua, "compact") == 2)) {
-        if (Bstrcasecmp(ua->argv[2], "yes")) {
-          ua->send->SetCompact(true);
-        } else {
-          ua->send->SetCompact(false);
+        switch (parse_user_bool(ua->argv[2])) {
+          case parse_bool_result::True: {
+            ua->send->SetCompact(true);
+          } break;
+          case parse_bool_result::False:
+            [[fallthrough]];
+          case parse_bool_result::Error: {
+            ua->send->SetCompact(false);
+          } break;
         }
       }
     } else {

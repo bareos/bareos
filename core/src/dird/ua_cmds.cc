@@ -1531,13 +1531,17 @@ SetDeviceCommand::ArgumentsList SetDeviceCommand::ScanCommandLine(UaContext* ua)
   }
   if (argument_missing) { return ArgumentsList(); }
 
-  try {
-    BoolString s{arguments["autoselect"].data()};  // throws
-    arguments["autoselect"].clear();
-    arguments["autoselect"] = s.get<bool>() == true ? "1" : "0";
-  } catch (const std::out_of_range& e) {
-    ua->ErrorMsg("Wrong argument: %s\n", arguments["autoselect"].c_str());
-    return ArgumentsList();
+  switch (parse_user_bool(arguments["autoselect"])) {
+    case parse_bool_result::True: {
+      arguments["autoselect"] = "1";
+    } break;
+    case parse_bool_result::False: {
+      arguments["autoselect"] = "0";
+    } break;
+    case parse_bool_result::Error: {
+      ua->ErrorMsg("Wrong argument: %s\n", arguments["autoselect"].c_str());
+      return ArgumentsList();
+    } break;
   }
 
   return arguments;
