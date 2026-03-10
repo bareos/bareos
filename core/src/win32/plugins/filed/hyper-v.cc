@@ -5377,7 +5377,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
       TRCC(ctx, L"created hard disk {} at {}", created_path.c_str(),
            fmt_as_ptr(disk_handle));
 
-      JINFO(ctx, L"restoring disk  {} ('{}') to '{}'", wdisk_name, wactual_name,
+      JINFO(ctx, L"restoring disk {} ('{}') to '{}'", wdisk_name, wactual_name,
             created_path);
     }
 
