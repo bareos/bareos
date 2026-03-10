@@ -41,7 +41,6 @@ start_test
 # remove files
 cleanup_remote
 
-id=last_jobid_or_zero
 # first run the copy jobs
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/copy.out
