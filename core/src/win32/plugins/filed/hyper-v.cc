@@ -1777,7 +1777,7 @@ class VirtualSystemSnapshotService : ClassObject {
   static constexpr std::wstring_view class_name{
       L"Msvm_VirtualSystemSnapshotService"};
 
-  enum class SnapshotType : std::int32_t
+  enum class SnapshotType : std::uint16_t
   {
     FullSnapshot = 2,
     DiskSnapshot = 3,
