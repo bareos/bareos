@@ -1,6 +1,6 @@
 # source this file
 
-logfile="${tmp}/$(basename ${0}).log"
+logfile="${tmp}/$(basename "${0}").log"
 echo "Writing log to ${logfile}"
 if [ "${REGRESS_DEBUG:-0}" -gt 0 ]; then
   exec &> >(tee "${logfile}")
