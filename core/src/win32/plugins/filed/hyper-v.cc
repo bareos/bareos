@@ -4903,9 +4903,10 @@ static bRC end_restore_job(PluginContext* ctx)
       JINFO(ctx, L"realizing created vm");
       system_srvc.realize_planned_system(srvc, std::move(planned_system));
     } catch (const std::exception& ex) {
-      JERR(ctx, "plugin was not able to restore the vm (Err={})", ex.what());
+      JFATAL(ctx, "plugin was not able to restore the vm (Err={})", ex.what());
       return bRC_Error;
     } catch (...) {
+      JFATAL(ctx, "plugin was not able to restore the vm (unknown error)");
       return bRC_Error;
     }
   }
