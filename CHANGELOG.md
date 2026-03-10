@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plugins: mariabackup python-mysqlclient ignore invalid utf8 [PR #2546]
 - dedup backend: Fix leaking filedescriptor [PR #2548]
 
+### Removed
+- dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
+
 ### Fixed
 - VMware Plugin: Fix NVRAM backup when datacenter is not in root folder [PR #2461]
 - rpm: don't fail, if install log file isn't writable [PR #2473]
@@ -2225,4 +2228,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2544]: https://github.com/bareos/bareos/pull/2544
 [PR #2546]: https://github.com/bareos/bareos/pull/2546
 [PR #2548]: https://github.com/bareos/bareos/pull/2548
+[PR #2567]: https://github.com/bareos/bareos/pull/2567
 [unreleased]: https://github.com/bareos/bareos/tree/master

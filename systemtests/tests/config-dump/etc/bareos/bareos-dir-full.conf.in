@@ -201,7 +201,6 @@ JobDefs {
   # AddSuffix =
   # Bootstrap =
   WriteBootstrap = "/var/lib/bareos/%c.bsr"
-  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -280,7 +279,6 @@ JobDefs {
   # AddSuffix =
   # Bootstrap =
   WriteBootstrap = "/var/lib/bareos/%c.bsr"
-  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -383,7 +381,6 @@ Job {
   # AddSuffix =
   # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
-  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -462,7 +459,6 @@ Job {
   # AddSuffix =
   # Bootstrap =
   # WriteBootstrap =
-  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -542,7 +538,6 @@ Job {
   AddSuffix = ".bak"
   Bootstrap = "/tmp/used_for_restore/"
   WriteBootstrap = "|/bin/true"
-  WriteVerifyList = "/tmp/verifylist.txt"
   Replace = IfNewer
   MaximumBandwidth = 10000
   MaxRunSchedTime = 1 hours
@@ -634,7 +629,6 @@ Job {
   # AddSuffix =
   # Bootstrap =
   # WriteBootstrap =
-  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -713,7 +707,6 @@ Job {
   # AddSuffix =
   # Bootstrap =
   WriteBootstrap = "|/usr/bin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root"
-  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -794,7 +787,6 @@ Job {
   # AddSuffix =
   # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
-  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -936,7 +928,6 @@ Job {
   # AddSuffix =
   # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
-  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -1043,7 +1034,6 @@ Job {
   # AddSuffix =
   # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
-  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -1146,7 +1136,6 @@ Job {
   # AddSuffix =
   # Bootstrap =
   # WriteBootstrap = "/var/lib/bareos/%c.bsr"
-  # WriteVerifyList =
   # Replace = Always
   # MaximumBandwidth = 0
   # MaxRunSchedTime = 0
@@ -1543,8 +1532,6 @@ Pool {
   # RecyclePool = ""
   # ScratchPool = ""
   # Catalog = ""
-  # FileRetention = 0
-  # JobRetention = 0
   # MinimumBlockSize = 0
   # MaximumBlockSize = 0
 }
@@ -1578,8 +1565,6 @@ Pool {
   # RecyclePool = ""
   # ScratchPool = ""
   # Catalog = ""
-  # FileRetention = 0
-  # JobRetention = 0
   # MinimumBlockSize = 0
   # MaximumBlockSize = 0
 }
@@ -1613,8 +1598,6 @@ Pool {
   # RecyclePool = ""
   ScratchPool = "Scratch"
   # Catalog = ""
-  FileRetention = 1 years
-  JobRetention = 2 years
   MinimumBlockSize = 80 k
   MaximumBlockSize = 1 m
 }
@@ -1648,8 +1631,6 @@ Pool {
   # RecyclePool = ""
   # ScratchPool = ""
   # Catalog = ""
-  # FileRetention = 0
-  # JobRetention = 0
   # MinimumBlockSize = 0
   # MaximumBlockSize = 0
 }
