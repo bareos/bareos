@@ -26,6 +26,7 @@ if(AUTOCHANGER_TEST_ENABLED)
     ${SYSTEMTEST_PREFIX}autochanger:backup-restore
     ${SYSTEMTEST_PREFIX}autochanger:label-release-autoselect
     ${SYSTEMTEST_PREFIX}autochanger:restore-non-present-volume
+    ${SYSTEMTEST_PREFIX}autochanger:broken-volume
     ${SYSTEMTEST_PREFIX}autochanger:cleanup
     PROPERTIES RESOURCE_LOCK autochanger_resource
   )

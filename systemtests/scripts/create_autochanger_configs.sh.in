@@ -72,7 +72,7 @@ EOF
   drive_index=0
   tape_devices="TAPE_DEVICES${changer_index}[@]"
   for tape_device in ${!tape_devices}; do
-    # Previous nanmig convention was
+    # Previous naming convention was
     # bareos_tape_device_name=$(echo "tapedrive-${drive_index}-${tape_device}" | sed 's/\//\./g')
     bareos_tape_device_name="tapedrive${changer_index}-${drive_index}"
     echo "  Attaching ${tape_device} to autochanger"
