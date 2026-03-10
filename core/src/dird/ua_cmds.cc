@@ -1507,40 +1507,51 @@ static bool SetdebugCmd(UaContext* ua, const char* cmd)
   return true;
 }
 
-SetDeviceCommand::ArgumentsList SetDeviceCommand::ScanCommandLine(UaContext* ua)
+auto SetDeviceCommand::ScanCommandLine(UaContext* ua)
+    -> std::optional<ArgumentsList>
 {
-  ArgumentsList arguments{{"storage", ""}, {"device", ""}, {"autoselect", ""}};
+  const char* argument_name[] = {
+      "storage",
+      "device",
+      "autoselect",
+  };
+
+  const char* argument_value[std::size(argument_name)] = {};
 
   for (int i = 1; i < ua->argc; i++) {
-    try {
-      auto& value = arguments.at(ua->argk[i]);
-      int idx = FindArgWithValue(ua, NT_(ua->argk[i]));
-      if (idx >= 0) { value = ua->argv[idx]; }
-    } catch (std::out_of_range& e) {
-      ua->ErrorMsg("Wrong argument: %s\n", ua->argk[i]);
-      return ArgumentsList();
+    for (size_t argument_idx = 0; argument_idx < std::size(argument_name);
+         ++argument_idx) {
+      if (Bstrcasecmp(ua->argk[i], argument_name[argument_idx])) {
+        argument_value[argument_idx] = ua->argv[i];
+      }
     }
   }
 
-  bool argument_missing = false;
-  for (const auto& arg : arguments) {
-    if (arg.second.empty()) {  // value
-      ua->ErrorMsg("Argument missing: %s\n", arg.first.c_str());
-      argument_missing = true;
+  for (size_t argument_idx = 0; argument_idx < std::size(argument_name);
+       ++argument_idx) {
+    if (!argument_value[argument_idx]) {
+      ua->ErrorMsg("Argument missing: %s\n", argument_name[argument_idx]);
+      return std::nullopt;
     }
   }
-  if (argument_missing) { return ArgumentsList(); }
 
-  switch (parse_user_bool(arguments["autoselect"])) {
+  std::optional<ArgumentsList> arguments = {};
+  arguments.emplace();
+
+  arguments->storage = argument_value[0];
+  arguments->device = argument_value[1];
+
+  switch (parse_user_bool(argument_value[2])) {
     case parse_bool_result::True: {
-      arguments["autoselect"] = "1";
+      arguments->autoselect = true;
     } break;
     case parse_bool_result::False: {
-      arguments["autoselect"] = "0";
+      arguments->autoselect = false;
     } break;
     case parse_bool_result::Error: {
-      ua->ErrorMsg("Wrong argument: %s\n", arguments["autoselect"].c_str());
-      return ArgumentsList();
+      ua->ErrorMsg("Bad value for argument %s: %s\n", argument_name[2],
+                   argument_value[2]);
+      return std::nullopt;
     } break;
   }
 
@@ -1576,8 +1587,8 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
 
   Dmsg0(120, T_("Connected to storage daemon\n"));
   ua->jcr->store_bsock->fsend("setdevice device=%s autoselect=%d",
-                              arguments.at("device").c_str(),
-                              std::stoi(arguments.at("autoselect")));
+                              arguments.device.c_str(),
+                              arguments.autoselect ? 1 : 0);
   if (ua->jcr->store_bsock->recv() >= 0) {
     ua->SendMsg("%s", ua->jcr->store_bsock->msg);
   }
@@ -1594,27 +1605,28 @@ bool SetDeviceCommand::SendToSd(UaContext* ua,
 // setdevice storage=<storage-name> device=<device-name> autoselect=<bool>
 bool SetDeviceCommand::Cmd(UaContext* ua, const char*)
 {
-  auto arguments = ScanCommandLine(ua);
+  auto arguments_opt = ScanCommandLine(ua);
 
-  if (arguments.empty()) {
+  if (!arguments_opt) {
     ua->SendCmdUsage("");
     return false;
   }
 
+  auto& arguments = *arguments_opt;
+
   if (ua->AclHasRestrictions(Storage_ACL)) {
-    if (!ua->AclAccessOk(Storage_ACL, arguments["storage"].c_str())) {
+    if (!ua->AclAccessOk(Storage_ACL, arguments.storage.c_str())) {
       std::string err{"Access to storage "};
-      err += "\"" + arguments["storage"] + "\" forbidden\n";
+      err += "\"" + arguments.storage + "\" forbidden\n";
       ua->ErrorMsg("%s", err.c_str());
       return false;
     }
   }
 
-  StorageResource* sd = ua->GetStoreResWithName(arguments["storage"].c_str());
+  StorageResource* sd = ua->GetStoreResWithName(arguments.storage.c_str());
 
   if (sd == nullptr) {
-    ua->ErrorMsg(T_("Storage \"%s\" not found.\n"),
-                 arguments["storage"].c_str());
+    ua->ErrorMsg(T_("Storage \"%s\" not found.\n"), arguments.storage.c_str());
     return false;
   }
 
