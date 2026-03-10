@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -53,7 +53,7 @@ run_bconsole "${tmp}/bconcmds"
 
 check_log "${log_home}/restore.out"
 
-${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/${restore_path}/full\" | xargs | grep ${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}"
+${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/${restore_path}/full\" | xargs | grep -F -- \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}\""
 ${SSH} "cat \"${NDMP_TEST_PATH}/${restore_path}/testfile\"" | diff - sbin/bareos_dir-ndmp-bareos
 ${SSH} "cat \"${NDMP_TEST_PATH}/${restore_path}/testfile2\"" | diff - sbin/bareos_sd-ndmp-bareos
 
