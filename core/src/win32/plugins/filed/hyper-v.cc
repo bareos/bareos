@@ -3722,33 +3722,6 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
     auto& prepared
         = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
 
-    if (prepared.files_to_backup.size() > 0) {
-      auto& path = prepared.files_to_backup.back();
-
-      JINFO(ctx, L"Starting backup of metadata {}", path);
-
-      DBGC(ctx, L"transforming {} ...", path);
-      p_ctx->current_path = create_vm_path(prepared.vm_name, L"config", path);
-      DBGC(ctx, "into {}!", p_ctx->current_path);
-      auto now = time(NULL);
-      sp->fname = p_ctx->current_path.data();
-      sp->type = FT_REG;
-      ClearAllBits(FO_MAX, sp->flags);
-
-      // todo: fix these
-      sp->statp.st_mode = 0700 | S_IFREG;
-      sp->statp.st_ctime = now;
-      sp->statp.st_mtime = now;
-      sp->statp.st_atime = now;
-      sp->statp.st_size = -1;
-      sp->statp.st_blksize = 4096;
-      sp->statp.st_blocks = 1;
-
-      return bRC_OK;
-    }
-
-    DBGC(ctx, L"All files were backed up");
-
     if (prepared.disks_to_backup.size() > 0) {
       auto& path = prepared.disks_to_backup.back();
 
@@ -3941,8 +3914,34 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
       return bRC_OK;
     }
-
     DBGC(ctx, L"All disks were backed up");
+
+    if (prepared.files_to_backup.size() > 0) {
+      auto& path = prepared.files_to_backup.back();
+
+      JINFO(ctx, L"Starting backup of metadata {}", path);
+
+      DBGC(ctx, L"transforming {} ...", path);
+      p_ctx->current_path = create_vm_path(prepared.vm_name, L"config", path);
+      DBGC(ctx, "into {}!", p_ctx->current_path);
+      auto now = time(NULL);
+      sp->fname = p_ctx->current_path.data();
+      sp->type = FT_REG;
+      ClearAllBits(FO_MAX, sp->flags);
+
+      // todo: fix these
+      sp->statp.st_mode = 0700 | S_IFREG;
+      sp->statp.st_ctime = now;
+      sp->statp.st_mtime = now;
+      sp->statp.st_atime = now;
+      sp->statp.st_size = -1;
+      sp->statp.st_blksize = 4096;
+      sp->statp.st_blocks = 1;
+
+      return bRC_OK;
+    }
+    DBGC(ctx, L"All files were backed up");
+
 
     if (prepared.vm_snapshot.ptr.p) {
       // the snapshot still exists, so we need to create a reference point now
@@ -4018,13 +4017,13 @@ static bRC end_backup_file(PluginContext* ctx)
     }
 
     if (!prepared->finished()) {
-      if (prepared->files_to_backup.size() > 0) {
-        DBGC(ctx, L"finishing up {}", prepared->files_to_backup.back());
-        prepared->files_to_backup.pop_back();
-      } else if (prepared->disks_to_backup.size() > 0) {
+      if (prepared->disks_to_backup.size() > 0) {
         DBGC(ctx, L"finishing up {}",
              prepared->disks_to_backup.back().as_view());
         prepared->disks_to_backup.pop_back();
+      } else if (prepared->files_to_backup.size() > 0) {
+        DBGC(ctx, L"finishing up {}", prepared->files_to_backup.back());
+        prepared->files_to_backup.pop_back();
       }
       TRCC(ctx, "more work");
       return bRC_More;
@@ -4329,30 +4328,6 @@ static bRC pluginBackupIO(PluginContext* ctx,
 
   switch (io->func) {
     case filedaemon::IO_OPEN: {
-      if (prepared.files_to_backup.size() > 0) {
-        // we are backing up a normal file
-        auto& current_file = prepared.files_to_backup.back();
-
-        HANDLE h = [&] {
-          if (io->flags & O_WRONLY) {
-            return CreateFileW(current_file.c_str(), GENERIC_WRITE,
-                               FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
-                               FILE_ATTRIBUTE_NORMAL, NULL);
-          } else {
-            return CreateFileW(current_file.c_str(), GENERIC_READ,
-                               FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
-                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-          }
-        }();
-
-        io->hndl = h;
-        io->status = IoStatus::do_io_in_core;
-
-        JINFO(ctx, "doing io in core for {}", utf16_to_utf8(current_file));
-
-        return bRC_OK;
-      }
-
       if (prepared.disks_to_backup.size() > 0) {
         // we are backing up a disk
         if (!prepared.disk_to_backup) {
@@ -4380,6 +4355,31 @@ static bRC pluginBackupIO(PluginContext* ctx,
         io->status = 0;
         return bRC_OK;
       }
+
+      if (prepared.files_to_backup.size() > 0) {
+        // we are backing up a normal file
+        auto& current_file = prepared.files_to_backup.back();
+
+        HANDLE h = [&] {
+          if (io->flags & O_WRONLY) {
+            return CreateFileW(current_file.c_str(), GENERIC_WRITE,
+                               FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
+                               FILE_ATTRIBUTE_NORMAL, NULL);
+          } else {
+            return CreateFileW(current_file.c_str(), GENERIC_READ,
+                               FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+          }
+        }();
+
+        io->hndl = h;
+        io->status = IoStatus::do_io_in_core;
+
+        JINFO(ctx, "doing io in core for {}", utf16_to_utf8(current_file));
+
+        return bRC_OK;
+      }
+
       return bRC_Error;
     } break;
     case filedaemon::IO_READ: {
