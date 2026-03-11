@@ -4401,6 +4401,12 @@ static bRC pluginBackupIO(PluginContext* ctx,
           }
         }();
 
+        if (h == INVALID_HANDLE_VALUE) {
+          JFATAL(ctx, L"could not open file {} for backup", current_file);
+          io->win32 = true;
+          return bRC_Error;
+        }
+
         io->hndl = h;
         io->status = IoStatus::do_io_in_core;
 
