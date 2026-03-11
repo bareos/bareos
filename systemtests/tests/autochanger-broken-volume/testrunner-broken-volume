@@ -25,8 +25,6 @@
 # bareos-sd Error: stored/block.cc:1004 Read error on fd=392 at file:blk 0:0 on device "IBM-LTO8-25" ERR=Input/output error.
 # bareos-sd Warning: Could not check volume label: ERR=Requested Volume "123456L8" on "IBM-LTO8-25" is not a Bareos labeled Volume, because: ERR=stored/block.cc:1004 Read error on fd=392 at file:blk 0:0 on device "IBM-LTO8-25". ERR=Input/output error.
 
-
-
 set -e
 set -o pipefail
 set -u
@@ -55,20 +53,20 @@ trap 'on_error' ERR
 
 # Create more data
 
-for i in $(seq 1 6);do
+for i in $(seq 1 6); do
   dd if=/dev/urandom of="${tmp}/data/fs${i}.bin" count=10 bs=100k
 done
 
 # remove jobs from previous runs in pool Full-0
-volumes=$(bin/bconsole <<< ".api 2
+volumes=$(bin/bconsole <<<".api 2
 list volumes pool=Full
 " | awk '/volumename/ {gsub("\"","",$2);gsub(",","",$2);print $2}')
 
 cat <<END_OF_DATA >"${runner_tmp}/bconcmds"
 @$out ${runner_tmp}/purge-volume.out
 END_OF_DATA
-for V in ${volumes};do
-  echo "purge volume=${V} yes" >> "${runner_tmp}/bconcmds"
+for V in ${volumes}; do
+  echo "purge volume=${V} yes" >>"${runner_tmp}/bconcmds"
 done
 cat <<END_OF_DATA >>"${runner_tmp}/bconcmds"
 wait
@@ -86,9 +84,9 @@ tracefile="$(bin/bconsole <<<"setdebug level=250 trace=1 dir" | awk -F"tracefile
 : >"${tracefile}" # clear tracefile
 
 pool=Scratch
-slot_start="$(( FIRST_SLOT_NUMBER ))"
-slot_end="$(( LAST_SLOT_NUMBER ))"
-slot_broken="$(( FIRST_SLOT_NUMBER + 1 ))"
+slot_start="$((FIRST_SLOT_NUMBER))"
+slot_end="$((LAST_SLOT_NUMBER))"
+slot_broken="$((FIRST_SLOT_NUMBER + 1))"
 echo "label barcodes slots start: ${slot_start}, end: ${slot_end}, broken: ${slot_broken}"
 cat <<END_OF_DATA >"${runner_tmp}/bconcmds"
 @$out ${runner_tmp}/label-broken-volumes.out
@@ -100,7 +98,7 @@ release storage=Tape-0 drive=1 yes
 quit
 END_OF_DATA
 run_bconsole "${runner_tmp}/bconcmds"
- grep -E "(OK label|already exists)" "${runner_tmp}/label-broken-volumes.out"
+grep -E "(OK label|already exists)" "${runner_tmp}/label-broken-volumes.out"
 
 echo "destroy label on the second tape of 3"
 mtx -f ${CHANGER_DEVICE0} load ${slot_broken} 0
@@ -118,7 +116,7 @@ EOF
 echo "list volumes"
 run_bconsole "${runner_tmp}/bconsole_list_scratch_volumes"
 broken_volume=$(awk '/volumename/ {gsub("\"","",$2);gsub(",","",$2);print $2}' "${runner_tmp}/list_scratch_volumes.out" | tail -n2 | head -n1)
-if [ -z "${broken_volume}" ];then
+if [ -z "${broken_volume}" ]; then
   echo "broken volume not defined something goes wrong"
   exit 1
 fi
@@ -141,7 +139,7 @@ last_jobid=$(awk -F"=" '/Job queued. JobId=/ {print $2}' "${runner_tmp}/broken_l
 
 # Wait the error to pop up and the mount request
 # Unfortunately this might take some times
-export BCONSOLE_TIMEOUT=1000
+export BCONSOLE_TIMEOUT=1010
 
 is_mount_requested=0
 max_runs=500
@@ -168,12 +166,11 @@ cat <<END_OF_DATA >"${tmp}/bconcmds"
 update volstatus=Error volume=${broken_volume_found} yes
 wait jobid=${last_jobid}
 messages
+@out "${runner_tmp}/jobid-${last_jobid}.log"
+list joblog jobid=${last_jobid}
 quit
 END_OF_DATA
 run_bconsole
-
-# Refresh log
-bin/bconsole <<<"list joblog jobid=${last_jobid}" >"${runner_tmp}/jobid-${last_jobid}.log"
 
 # control job ok
 expect_grep "Backup OK" \
