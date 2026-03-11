@@ -161,7 +161,7 @@ while [ ${is_mount_requested} -eq 0 ]; do
 done
 
 echo "Run update volstatus on volume ${broken_volume} versus ${broken_volume_found}"
-cat <<END_OF_DATA >"${tmp}/bconcmds"
+cat <<END_OF_DATA >"${runner_tmp}/bconcmds"
 @$out ${runner_tmp}/broken_label_job.out
 update volstatus=Error volume=${broken_volume_found} yes
 wait jobid=${last_jobid}
@@ -170,7 +170,7 @@ messages
 list joblog jobid=${last_jobid}
 quit
 END_OF_DATA
-run_bconsole
+run_bconsole "${runner_tmp}/bconcmds"
 
 # control job ok
 expect_grep "Backup OK" \
