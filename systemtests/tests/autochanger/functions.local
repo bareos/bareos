@@ -39,14 +39,15 @@ release_all_devices()
 {
   #release all drives
   # Total of drives ${#tapedevices[@]}
-  d=0
   cat <<END_OF_DATA >"${runner_tmp}/bconcmd_release_all_devices"
 @$out ${runner_tmp}/release_all_devices.out
 END_OF_DATA
 
-  for d in $(seq ${#tapedevices[@]}); do
+  d=0
+  while [ ${d} -lt ${#tapedevices[@]} ]; do
     echo "release storage=Tape-0 drive=${d}" >> \
       "${runner_tmp}/bconcmd_release_all_devices"
+    d=$((d + 1))
   done
 
   cat <<END_OF_DATA >>"${runner_tmp}/bconcmd_release_all_devices"
