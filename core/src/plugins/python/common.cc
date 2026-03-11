@@ -201,6 +201,17 @@ option_parser option_parser::parse(
 
       return result;
     }
+
+    if (argument == argument_value) {
+      // key is empty, we should not allow this unless there is a reason to
+
+      std::stringstream msg{};
+      msg << "Options without key are not allowed";
+      result.error = msg.str();
+
+      return result;
+    }
+
     *argument_value++ = '\0';
 
     // See if there are more arguments and setup for the next run.
