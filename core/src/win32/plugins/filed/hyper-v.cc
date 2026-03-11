@@ -2272,7 +2272,6 @@ struct plugin_ctx {
       std::wstring vm_name;
       std::optional<analyzed_ref_point> refpoint;
       std::optional<WMI::ReferencePoint> created_ref_point;
-      std::wstring tmp_dir;
       WMI::Snapshot vm_snapshot;
       uint32_t delta_seq;
 
@@ -2668,19 +2667,6 @@ static bRC free_current_state(PluginContext* ctx)
             if (prepared->disk_to_backup) {
               CloseHandle(prepared->disk_to_backup.value());
               prepared->disk_to_backup.reset();
-            }
-
-            if (!prepared->tmp_dir.empty()
-                && PathFileExistsW(prepared->tmp_dir.c_str())) {
-              std::error_code ec = {};
-              auto num_removed
-                  = std::filesystem::remove_all(prepared->tmp_dir.c_str(), ec);
-              DBGC(ctx, L"remove({}) deleted {} files", prepared->tmp_dir,
-                   num_removed);
-              if (num_removed == static_cast<std::uintmax_t>(-1)) {
-                JWARN(ctx, L"could not delete directory '{}': {}",
-                      prepared->tmp_dir, format_win32_error(ec.value()));
-              }
             }
 
             if (prepared->created_ref_point) {
@@ -3374,9 +3360,6 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   if (!vm) { return false; }
 
-  // do this first, so we do not create a snapshot for nothing
-  std::wstring dir = make_temp_dir(p_ctx->jobid);
-
   JINFO(ctx, "creating snapshot of VM '{}' ...", vm_name);
 
   WMI::VirtualSystemSnapshotSettingData snapshot_settings = {
@@ -3394,9 +3377,6 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
   system_srvc.rename(srvc, snapshot, WMI::String::copy(snapshot_name));
 
   JINFO(ctx, L"created snapshot with name '{}'", snapshot_name);
-
-  JINFO(ctx, "exporting system definition for VM '{}' to {}", vm_name,
-        utf16_to_utf8(dir));
 
   std::optional<WMI::ReferencePoint> refpoint = std::nullopt;
   uint32_t delta_seq = 0;
@@ -3426,7 +3406,7 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   auto& prepared = bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
       std::move(vm.value()), utf8_to_utf16(vm_name), std::move(analyzed),
-      std::nullopt, dir, std::move(snapshot), delta_seq);
+      std::nullopt, std::move(snapshot), delta_seq);
 
   prepared.files_to_backup = get_config_files(config_full_path);
   prepared.disks_to_backup
@@ -4563,9 +4543,6 @@ static bRC pluginBackupIO(PluginContext* ctx,
         } else {
           io->status = 0;
         }
-
-        // we do not need these files anymore, so we just delete them
-        DeleteFileW(current_file.c_str());
 
         return bRC_OK;
       }
