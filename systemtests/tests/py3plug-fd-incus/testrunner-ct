@@ -15,8 +15,6 @@ export PATH="$current_test_directory/sbin:$current_test_directory/bin:$PATH"
 JobName=backup-incus-ct
 #shellcheck source=../scripts/functions
 . "$BAREOS_SCRIPTS_DIR"/functions
-"$BAREOS_SCRIPTS_DIR"/cleanup
-"$BAREOS_SCRIPTS_DIR"/setup
 
 INSTANCE=bareos-test-ct
 NEWINSTANCE=bareos-test-ct-2
@@ -66,7 +64,7 @@ wait
 messages
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole "$@"
 check_log "$tmp/log1.out"
 
 incus file push - "$INSTANCE/new-file" <<< bazqux
@@ -94,7 +92,7 @@ check_log "$tmp/log2.out"
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/log2-list.out
-list files jobid=2
+list files jobid=$(last_jobid_or_zero)
 END_OF_DATA
 run_bconsole "$@"
 

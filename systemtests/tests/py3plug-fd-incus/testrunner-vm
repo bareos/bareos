@@ -15,8 +15,6 @@ export PATH="$current_test_directory/sbin:$current_test_directory/bin:$PATH"
 JobName=backup-incus-vm
 #shellcheck source=../scripts/functions
 . "$BAREOS_SCRIPTS_DIR"/functions
-"$BAREOS_SCRIPTS_DIR"/cleanup
-"$BAREOS_SCRIPTS_DIR"/setup
 
 IMAGE=bareos-test-alpine
 INSTANCE=bareos-test-vm
@@ -38,8 +36,7 @@ cleanup_instances() {
 }
 
 check_chunks() {
-    file="$2"
-    grep -c "^ @INCUS/instances/$file" "$1" || :
+    grep -c "^ @INCUS/instances/$2" "$1" || :
 }
 
 # Build a tiny Alpine image. This can be extremely slow, so we do not remove the image at the end,
@@ -75,8 +72,8 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @$out $NULL_DEV
 messages
-@$out $tmp/log1.out
-label volume=TestVolume001 storage=File pool=Full
+@$out $tmp/log4.out
+label volume=TestVolume003 storage=File pool=Full
 run job=$JobName level=Full yes
 status director
 status client
@@ -85,17 +82,17 @@ wait
 messages
 END_OF_DATA
 
-run_bareos "$@"
-check_log "$tmp/log1.out"
+run_bconsole "$@"
+check_log "$tmp/log4.out"
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out $tmp/log1-list.out
-list files jobid=1
+@$out $tmp/log4-list.out
+list files jobid=$(last_jobid_or_zero)
 END_OF_DATA
 run_bconsole "$@"
 
 # 25 chunks should be created here
-chunks="$(check_chunks "$tmp/log1-list.out" "$INSTANCE/virtual-machine.img")"
+chunks="$(check_chunks "$tmp/log4-list.out" "$INSTANCE/virtual-machine.img")"
 if ((chunks != 25)); then
     echo "Error: expected 25 chunks, got $chunks"
     exit 1
@@ -108,8 +105,8 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# Then, perform an incremental backup to get the new file
 @#
-@$out $tmp/log2.out
-label volume=TestVolume002 storage=File pool=Incremental
+@$out $tmp/log5.out
+label volume=TestVolume004 storage=File pool=Incremental
 run job=$JobName level=Incremental yes
 status director
 status client
@@ -119,16 +116,16 @@ messages
 END_OF_DATA
 
 run_bconsole "$@"
-check_log "$tmp/log2.out"
+check_log "$tmp/log5.out"
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out $tmp/log2-list.out
-list files jobid=2
+list files jobid=$(last_jobid_or_zero)
 END_OF_DATA
 run_bconsole "$@"
 
 # Modifying our single file should only modify ~4 chunks, but let's be safe
-chunks="$(check_chunks "$tmp/log2-list.out" "$INSTANCE/virtual-machine.img")"
+chunks="$(check_chunks "$tmp/log5-list.out" "$INSTANCE/virtual-machine.img")"
 if ((chunks > 8)); then
     echo "Error: too many chunks modified ($chunks)"
     exit 1
@@ -140,7 +137,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# Now, restore the incremental backup to a new instance
 @#
-@$out $tmp/log3.out
+@$out $tmp/log6.out
 wait
 restore client=bareos-fd fileset=IncusTestVM where=/ select all done pluginoptions=python:restore_instance=$NEWINSTANCE
 yes
@@ -149,7 +146,7 @@ messages
 END_OF_DATA
 
 run_bconsole "$@"
-check_log "$tmp/log3.out"
+check_log "$tmp/log6.out"
 
 incus start "$NEWINSTANCE"
 wait_for_agent "$NEWINSTANCE"
