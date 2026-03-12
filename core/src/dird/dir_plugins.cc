@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -747,6 +747,13 @@ static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...)
   for (i = 0; i < nr_events; i++) {
     event = va_arg(args, uint32_t);
     Dmsg1(debuglevel, "dir-plugin: Plugin registered event=%u\n", event);
+
+    if (event >= sizeof(b_ctx->events) * 8) {
+      bareosJobMsg(ctx, __FILE__, __LINE__, M_FATAL, 0,
+                   "Cannot set event unknown event %d (out of bounds)\n",
+                   event);
+      return bRC_Error;
+    }
     SetBit(event, b_ctx->events);
   }
   va_end(args);
@@ -767,6 +774,14 @@ static bRC bareosUnRegisterEvents(PluginContext* ctx, int nr_events, ...)
   for (i = 0; i < nr_events; i++) {
     event = va_arg(args, uint32_t);
     Dmsg1(debuglevel, "dir-plugin: Plugin unregistered event=%u\n", event);
+
+    if (event >= sizeof(b_ctx->events) * 8) {
+      bareosJobMsg(ctx, __FILE__, __LINE__, M_FATAL, 0,
+                   "Cannot unset event unknown event %d (out of bounds)\n",
+                   event);
+      return bRC_Error;
+    }
+
     ClearBit(event, b_ctx->events);
   }
   va_end(args);
