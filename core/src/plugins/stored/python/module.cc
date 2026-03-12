@@ -292,8 +292,7 @@ static PyObject* PyBareosRegisterEvents(PyObject* module, PyObject* args)
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyLong_AsLong(pyEvent);
 
-    if (event >= storagedaemon::bSdEventJobStart
-        && event <= storagedaemon::bSdEventWriteRecordTranslation) {
+    if (event >= 1 && event <= storagedaemon::PLUGIN_EVENT_COUNT) {
       Dmsg(state, debuglevel,
            fmt::format("PyBareosRegisterEvents registering event {}", event));
       retval = registerBareosEvent(state, event);
@@ -338,8 +337,7 @@ static PyObject* PyBareosUnRegisterEvents(PyObject* module, PyObject* args)
     pyEvent = PySequence_Fast_GET_ITEM(pySeq, i);
     event = PyLong_AsLong(pyEvent);
 
-    if (event >= storagedaemon::bSdEventJobStart
-        && event <= storagedaemon::bSdEventWriteRecordTranslation) {
+    if (event >= 1 && event <= storagedaemon::PLUGIN_EVENT_COUNT) {
       Dmsg(state, debuglevel,
            fmt::format("PyBareosUnRegisterEvents: unregistering event {}",
                        event));
