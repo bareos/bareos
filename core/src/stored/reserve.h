@@ -93,28 +93,35 @@ void ClearReserveMessages(JobControlRecord* jcr);
 
 bool use_cmd(JobControlRecord* jcr);
 
+namespace private_locks {
+// forward declaring these functions in the functions that use them
+// is sadly broken in msvc as it does not correctly attach them to the
+// enclosing namespace.
+// hopefully this namespace makes it clear that you are not supposed
+// to use them directly
+void LockVolumes(void);
+void UnlockVolumes(void);
+
+void LockReadVolumes(void);
+void UnlockReadVolumes(void);
+};  // namespace private_locks
+
 template <typename F> void with_volume_lock(F f)
 {
-  void LockVolumes(void);
-  void UnlockVolumes(void);
-
-  LockVolumes();
+  private_locks::LockVolumes();
 
   f();
 
-  UnlockVolumes();
+  private_locks::UnlockVolumes();
 }
 
 template <typename F> void with_read_volume_lock(F f)
 {
-  void LockReadVolumes(void);
-  void UnlockReadVolumes(void);
-
-  LockReadVolumes();
+  private_locks::LockReadVolumes();
 
   f();
 
-  UnlockReadVolumes();
+  private_locks::UnlockReadVolumes();
 }
 
 } /* namespace storagedaemon */
