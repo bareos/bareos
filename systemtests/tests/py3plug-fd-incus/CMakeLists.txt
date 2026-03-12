@@ -7,8 +7,12 @@ find_program(GUESTFISH guestfish)
 find_program(QEMUIMG qemu-img)
 find_program(VIRTRESIZE virt-resize)
 
+# We use LZMA compression in our tests
+find_program(LZMA lzma)
+
 if(INCUS
    AND GUESTFISH
+   AND LZMA
    AND QEMUIMG
    AND VIRTRESIZE
    AND TARGET python3-fd
