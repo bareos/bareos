@@ -143,7 +143,7 @@ The restore basically works like this:
 
 .. warning::
 
-   In order to make coherent backups, it is imperative that :strong:`the same |postgresql| major version`
+   In order to make coherent backups, it is imperative that :strong:`the same PostgreSQL major version`
    is used for :strong:`full and incremental` backups depending on each other.
 
 
@@ -172,6 +172,10 @@ backed up from the local filesystem.
    As a minimum this requires that you create an WAL archive directory
    and matching settings in your |postgresql| configuration file :strong:`postgresql.conf`.
 
+   While the PostgreSQL plugin backups only the required files from the WAL archive directory,
+   old files are not removed automatically. It is **your responsability** to setup a cleanup
+   routine doing so.
+
 
 In our examples we assume the WAL archive directory as :file:`/var/lib/pgsql/wal_archive/`.
 
@@ -186,11 +190,6 @@ In our examples we assume the WAL archive directory as :file:`/var/lib/pgsql/wal
    ...
 
 Please refer to the |postgresql| documentation for details.
-
-.. note::
-
-   While the PostgreSQL plugin backups only the required files from the WAL archive directory,
-   old files are not removed automatically.
 
 
 Installation of the PostgreSQL Plugin
