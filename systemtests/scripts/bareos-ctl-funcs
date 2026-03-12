@@ -21,7 +21,7 @@
 pidfromfile()
 {
   if [ $# = 0 ]; then
-    echo "Usage: pidfromfile {pidfile}"
+    echo "Usage: ${FUNCNAME[0]} {pidfile}"
     return 1
   fi
 
@@ -42,7 +42,7 @@ pidofproc()
   pid=""
   # Test syntax.
   if [ $# = 0 ]; then
-    echo "Usage: pidofproc {program} {port}"
+    echo "Usage: ${FUNCNAME[0]} {program} {port}"
     return 1
   fi
 
@@ -106,7 +106,7 @@ killproc()
   RC=0
   # Test syntax.
   if [ $# = 0 ]; then
-    echo "Usage: killproc {program} {port} [signal]"
+    echo "Usage: ${FUNCNAME[0]} {program} {port} [signal]"
     return 1
   fi
 
@@ -200,7 +200,7 @@ status()
 {
   # Test syntax.
   if [ $# = 0 ]; then
-    echo "Usage: status {program} {port}"
+    echo "Usage: ${FUNCNAME[0]} {program} {port}"
     return 1
   fi
 
