@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - webui: add encrypt checkbox for label tape [PR #2522]
 - Increase read timeout in Proxmox plugin [PR #2544]
 - packaging: add missing DLLs to windows installer [PR #2569]
+- systemtests check runscript failed - improve media_vault [PR #2556]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2229,6 +2230,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2544]: https://github.com/bareos/bareos/pull/2544
 [PR #2546]: https://github.com/bareos/bareos/pull/2546
 [PR #2548]: https://github.com/bareos/bareos/pull/2548
+[PR #2556]: https://github.com/bareos/bareos/pull/2556
 [PR #2567]: https://github.com/bareos/bareos/pull/2567
 [PR #2569]: https://github.com/bareos/bareos/pull/2569
 [unreleased]: https://github.com/bareos/bareos/tree/master
