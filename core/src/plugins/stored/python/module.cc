@@ -180,6 +180,10 @@ static PyObject* PyBareosSetValue(PyObject* module, PyObject* args)
   switch (var) {
     using namespace storagedaemon;
 
+    case bsdwVarJobReport: {
+      // unimplemented
+      retval = bRC_OK;
+    } break;
     case bsdwVarVolumeName: {
       const char* value;
 
