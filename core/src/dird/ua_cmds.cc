@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -224,7 +224,8 @@ static struct ua_cmdstruct commands[] = {
     {NT_(".authorized"), DotAuthorizedCmd, T_("Check for authorization"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name> "
          "| schedule=<schedule-name> | pool=<pool-name> | cmd=<command> "
-         "| fileset=<fileset-name> | catalog=<catalog>"),
+         "| fileset=<fileset-name> | catalog=<catalog>"
+         "| where=<restore-path> | pluginoptions=<plugin-options>"),
      false, false},
     {NT_(".catalogs"), DotCatalogsCmd, T_("List all catalog resources"), NULL,
      false, false},

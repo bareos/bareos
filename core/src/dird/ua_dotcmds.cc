@@ -74,6 +74,8 @@ static authorization_mapping authorization_mappings[] = {
     {"cmd", Command_ACL},
     {"fileset", FileSet_ACL},
     {"catalog", Catalog_ACL},
+    {"where", Where_ACL},
+    {"pluginoptions", PluginOptions_ACL},
     {NULL, 0},
 };
 
