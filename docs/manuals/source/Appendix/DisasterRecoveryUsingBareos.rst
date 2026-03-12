@@ -680,6 +680,21 @@ We now import the database dump to the database:
   root@bareos:~ # su postgres -c "psql -d bareos -f /tmp/var/lib/bareos/bareos.sql"
 
 
+We now reapply the database privileges grant:
+
+.. code-block:: shell-session
+
+   root@bareos:~ # su postgres -c /usr/lib/bareos/scripts/grant_bareos_privileges
+
+
+.. code-block:: none
+
+   Info: Granting bareos tables
+   CREATE ROLE
+   GRANT
+   Info: Privileges for user bareos granted ON database bareos.
+
+
 We backup the newly installed configuration to another location
 
 .. code-block:: shell-session

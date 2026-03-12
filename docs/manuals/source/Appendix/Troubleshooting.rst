@@ -1132,7 +1132,7 @@ changer works. To do so, we suggest you do the following commands:
 
 Make sure Bareos is not running.
 
-:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sch0 list 0 /dev/nst0 0`
+:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 list 0 /dev/nst0 0`
 
 .. index::
    single: mtx-changer list
@@ -1153,10 +1153,10 @@ This command should print:
 or one number per line for each slot that is occupied in your changer, and the number should be
 terminated by a colon (:). If your changer has barcodes, the barcode will follow the colon. If an
 error message is printed, you must resolve the problem (e.g. try a different SCSI control device
-name if /dev/sch0 is incorrect). For example, on FreeBSD systems, the autochanger SCSI control device
+name if /dev/sg0 is incorrect). For example, on FreeBSD systems, the autochanger SCSI control device
 is generally /dev/pass2.
 
-:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sch0 listall 0 /dev/nst0 0`
+:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 listall 0 /dev/nst0 0`
 
 .. index::
    single: mtx-changer listall
@@ -1184,35 +1184,35 @@ This command should print:
 
 
 
-:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sch0 transfer 1 2`
+:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 transfer 1 2`
 
 .. index::
    single: mtx-changer transfer
 
 This command should transfer a volume from source (1) to destination (2)
 
-:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sch0 slots`
+:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 slots`
 
 .. index::
    single: mtx-changer slots
 
 This command should return the number of slots in your autochanger.
 
-:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sch0 unload 1 /dev/nst0 0`
+:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 unload 1 /dev/nst0 0`
 
 .. index::
    single: mtx-changer unload
 
 If a tape is loaded from slot 1, this should cause it to be unloaded.
 
-:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sch0 load 3 /dev/nst0 0`
+:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 load 3 /dev/nst0 0`
 
 .. index::
    single: mtx-changer load
 
 Assuming you have a tape in slot 3, it will be loaded into drive (0).
 
-:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sch0 loaded 0 /dev/nst0 0`
+:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 loaded 0 /dev/nst0 0`
 
 .. index::
    single: mtx-changer loaded
@@ -1221,7 +1221,7 @@ It should print "3" Note, we have used an "illegal" slot number 0. In this case,
 ignored because the slot number is not used. However, it must be specified because the drive
 parameter at the end of the command is needed to select the correct drive.
 
-:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sch0 unload 3 /dev/nst0 0`
+:command:`/usr/lib/bareos/scripts/mtx-changer /dev/sg0 unload 3 /dev/nst0 0`
 
 .. index::
    single: mtx-changer unload
@@ -1243,8 +1243,8 @@ as a script:
    :caption: Testing if sleep is needed between unload and load
 
    #!/bin/sh
-   /usr/lib/bareos/scripts/mtx-changer /dev/sch0 unload 1 /dev/nst0 0
-   /usr/lib/bareos/scripts/mtx-changer /dev/sch0 load 3 /dev/nst0 0
+   /usr/lib/bareos/scripts/mtx-changer /dev/sg0 unload 1 /dev/nst0 0
+   /usr/lib/bareos/scripts/mtx-changer /dev/sg0 load 3 /dev/nst0 0
    mt -f /dev/st0 rewind
    mt -f /dev/st0 weof
 
@@ -1267,9 +1267,9 @@ after the unload so that the script looks like:
    :caption: Testing if offline is needed
 
    #!/bin/sh
-   /usr/lib/bareos/scripts/mtx-changer /dev/sch0 unload 1 /dev/nst0 0
+   /usr/lib/bareos/scripts/mtx-changer /dev/sg0 unload 1 /dev/nst0 0
    mt -f /dev/st0 offline
-   /usr/lib/bareos/scripts/mtx-changer /dev/sch0 load 3 /dev/nst0 0
+   /usr/lib/bareos/scripts/mtx-changer /dev/sg0 load 3 /dev/nst0 0
    mt -f /dev/st0 rewind
    mt -f /dev/st0 weof
 
