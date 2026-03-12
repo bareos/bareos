@@ -91,14 +91,21 @@ class VolumeReservationItem {
   void SetJobid(uint32_t JobId) { JobId_ = JobId; }
 };
 
+namespace private_functions {
+// workaround for msvc not being able to correctly add forward declared
+// functions inside of a block to the innermost namespace
+VolumeReservationItem* vol_walk_start(void);
+VolumeReservationItem* VolWalkNext(VolumeReservationItem* prev_vol);
+VolumeReservationItem* read_vol_walk_start(void);
+VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol);
+};  // namespace private_functions
+
+
 template <typename PerVolumeAction> void foreach_vol (PerVolumeAction visitor)
 {
-  VolumeReservationItem* vol_walk_start(void);
-  VolumeReservationItem* VolWalkNext(VolumeReservationItem * prev_vol);
-
   with_volume_lock([&]() {
-    for (VolumeReservationItem* vol = vol_walk_start(); vol;
-         vol = VolWalkNext(vol)) {
+    for (VolumeReservationItem* vol = private_functions::vol_walk_start(); vol;
+         vol = private_functions::VolWalkNext(vol)) {
       visitor(vol);
     }
   });
@@ -107,12 +114,9 @@ template <typename PerVolumeAction> void foreach_vol (PerVolumeAction visitor)
 template <typename PerVolumeAction>
 void foreach_read_vol(PerVolumeAction visitor)
 {
-  VolumeReservationItem* read_vol_walk_start(void);
-  VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem * prev_vol);
-
   with_read_volume_lock([&] {
-    for (VolumeReservationItem* vol = read_vol_walk_start(); vol;
-         vol = ReadVolWalkNext(vol)) {
+    for (VolumeReservationItem* vol = private_functions::read_vol_walk_start();
+         vol; vol = private_functions::ReadVolWalkNext(vol)) {
       visitor(vol);
     }
   });

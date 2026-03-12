@@ -104,8 +104,9 @@ void InitVolListLock()
 
 void TermVolListLock() { RwlDestroy(&vol_list_lock); }
 
+namespace private_locks {
 // This allows a given thread to recursively call to LockVolumes()
-void LockVolumes()
+void LockVolumes(void)
 {
   int errstat;
 
@@ -117,7 +118,7 @@ void LockVolumes()
   }
 }
 
-void UnlockVolumes()
+void UnlockVolumes(void)
 {
   int errstat;
 
@@ -140,6 +141,7 @@ void UnlockReadVolumes()
   read_vol_list_lock_count--;
   pthread_mutex_unlock(&read_vol_lock);
 }
+};  // namespace private_locks
 
 /**
  * Add a volume to the read list.
@@ -522,6 +524,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
   return vol;
 }
 
+namespace private_functions {
 // Start walk of vol chain
 VolumeReservationItem* vol_walk_start()
 {
@@ -581,6 +584,7 @@ VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol)
 
   return vol;
 }
+};  // namespace private_functions
 
 /**
  * Search for a Volume name in the Volume list.
@@ -594,9 +598,7 @@ static VolumeReservationItem* find_volume(const char* VolumeName)
 
   /* Do not lock reservations here */
   with_volume_lock([&] {
-    if (vol_list->empty()) {
-      return;
-    }
+    if (vol_list->empty()) { return; }
     vol.vol_name = strdup(VolumeName);
     fvol = (VolumeReservationItem*)vol_list->binary_search(&vol,
                                                            CompareByVolumename);
