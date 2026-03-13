@@ -89,7 +89,7 @@ void output_authorized(OutputFormatter* send, bool authorized)
   }
 }
 
-bool do_check_and_ouptut_authorized_cmd_parameter(UaContext* ua)
+bool do_check_and_output_authorized_cmd_parameter(UaContext* ua)
 {
   // overall authorized status is true,
   // until one of the parameters is not authorized.
@@ -132,7 +132,7 @@ bool DotAuthorizedCmd(UaContext* ua, const char*)
 {
   ua->send->ObjectStart(".authorized");
 
-  bool retval = do_check_and_ouptut_authorized_cmd_parameter(ua);
+  bool retval = do_check_and_output_authorized_cmd_parameter(ua);
 
   // overall authorized status
   output_authorized(ua->send, retval);
