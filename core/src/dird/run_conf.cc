@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,15 +29,16 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#include "dird/dird_globals.h"
 #include "lib/edit.h"
 #include "lib/keyword_table_s.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
-namespace directordaemon {
+#include "job_levels.h"
 
-extern struct s_jl joblevels[];
+#include <charconv>
+
+namespace directordaemon {
 
 // Forward referenced subroutines
 enum e_state
@@ -165,9 +166,12 @@ struct s_kw RunFields[] = {{"pool", 'P'},
  *   together.
  *
  */
-void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
+void StoreRun(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
 {
-  char* p;
   int i, j;
   auto options = lc->options;
   int token, state, state2 = 0, code = 0, code2 = 0;
@@ -178,50 +182,42 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
 
   lc->options.set(lexer::options::NoIdent); /* Want only "strings" */
 
+  conf->PushMergeArray();
+  conf->PushObject();
   // Scan for Job level "full", "incremental", ...
   for (found = true; found;) {
     found = false;
     token = LexGetToken(lc, BCT_NAME);
     for (i = 0; !found && RunFields[i].name; i++) {
-      if (Bstrcasecmp(lc->str, RunFields[i].name)) {
+      if (Bstrcasecmp(lc->str(), RunFields[i].name)) {
+        conf->PushLabel(RunFields[i].name);
         found = true;
         if (LexGetToken(lc, BCT_ALL) != BCT_EQUALS) {
-          scan_err1(lc, T_("Expected an equals, got: %s"), lc->str);
+          scan_err(lc, T_("Expected an equals, got: %s"), lc->str());
           return;
         }
         switch (RunFields[i].token) {
           case 's': /* Data spooling */
-            token = LexGetToken(lc, BCT_NAME);
-            if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-              res_run.spool_data = true;
-              res_run.spool_data_set = true;
-            } else if (Bstrcasecmp(lc->str, "no")
-                       || Bstrcasecmp(lc->str, "false")) {
-              res_run.spool_data = false;
+            if (auto* parsed = ReadKeyword(conf, lc, bool_kw)) {
+              res_run.spool_data = parsed->token != 0;
               res_run.spool_data_set = true;
             } else {
-              scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
-              return;
+              scan_err(lc, T_("Expect a YES or NO, got: %s"), lc->str());
             }
             break;
           case 'L': /* Level */
-            token = LexGetToken(lc, BCT_NAME);
-            for (j = 0; joblevels[j].level_name; j++) {
-              if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
-                res_run.level = joblevels[j].level;
-                res_run.job_type = joblevels[j].job_type;
-                j = 0;
-                break;
-              }
-            }
-            if (j != 0) {
-              scan_err1(lc, T_("Job level field: %s not found in run record"),
-                        lc->str);
+            if (auto* parsed = ReadKeyword(conf, lc, joblevels)) {
+              res_run.level = parsed->level;
+              res_run.job_type = parsed->job_type;
+            } else {
+              scan_err(lc, T_("Job level field: %s not found in run record"),
+                       lc->str());
               return;
             }
             break;
           case 'p': /* Priority */
             token = LexGetToken(lc, BCT_PINT32);
+            conf->PushU(lc->u.pint32_val);
             if (pass == 2) { res_run.Priority = lc->u.pint32_val; }
             break;
           case 'P': /* Pool */
@@ -230,12 +226,14 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
           case 'i': /* IncPool */
           case 'd': /* DiffPool */
           case 'n': /* NextPool */
+
             token = LexGetToken(lc, BCT_NAME);
+            conf->PushString(lc->str());
             if (pass == 2) {
-              res = my_config->GetResWithName(R_POOL, lc->str);
+              res = conf->GetResWithName(R_POOL, lc->str());
               if (res == NULL) {
-                scan_err1(lc, T_("Could not find specified Pool Resource: %s"),
-                          lc->str);
+                scan_err(lc, T_("Could not find specified Pool Resource: %s"),
+                         lc->str());
                 return;
               }
               switch (RunFields[i].token) {
@@ -262,12 +260,13 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
             break;
           case 'S': /* Storage */
             token = LexGetToken(lc, BCT_NAME);
+            conf->PushString(lc->str());
             if (pass == 2) {
-              res = my_config->GetResWithName(R_STORAGE, lc->str);
+              res = conf->GetResWithName(R_STORAGE, lc->str());
               if (res == NULL) {
-                scan_err1(lc,
-                          T_("Could not find specified Storage Resource: %s"),
-                          lc->str);
+                scan_err(lc,
+                         T_("Could not find specified Storage Resource: %s"),
+                         lc->str());
                 return;
               }
               res_run.storage = (StorageResource*)res;
@@ -275,12 +274,13 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
             break;
           case 'M': /* Messages */
             token = LexGetToken(lc, BCT_NAME);
+            conf->PushString(lc->str());
             if (pass == 2) {
-              res = my_config->GetResWithName(R_MSGS, lc->str);
+              res = conf->GetResWithName(R_MSGS, lc->str());
               if (res == NULL) {
-                scan_err1(lc,
-                          T_("Could not find specified Messages Resource: %s"),
-                          lc->str);
+                scan_err(lc,
+                         T_("Could not find specified Messages Resource: %s"),
+                         lc->str());
                 return;
               }
               res_run.msgs = (MessagesResource*)res;
@@ -288,8 +288,9 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
             break;
           case 'm': /* Max run sched time */
             token = LexGetToken(lc, BCT_QUOTED_STRING);
-            if (!DurationToUtime(lc->str, &utime)) {
-              scan_err1(lc, T_("expected a time period, got: %s"), lc->str);
+            conf->PushString(lc->str());
+            if (!DurationToUtime(lc->str(), &utime)) {
+              scan_err(lc, T_("expected a time period, got: %s"), lc->str());
               return;
             }
             res_run.MaxRunSchedTime = utime;
@@ -297,20 +298,22 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
             break;
           case 'a': /* Accurate */
             token = LexGetToken(lc, BCT_NAME);
-            if (strcasecmp(lc->str, "yes") == 0
-                || strcasecmp(lc->str, "true") == 0) {
+            if (strcasecmp(lc->str(), "yes") == 0
+                || strcasecmp(lc->str(), "true") == 0) {
               res_run.accurate = true;
               res_run.accurate_set = true;
-            } else if (strcasecmp(lc->str, "no") == 0
-                       || strcasecmp(lc->str, "false") == 0) {
+              conf->PushB(true);
+            } else if (strcasecmp(lc->str(), "no") == 0
+                       || strcasecmp(lc->str(), "false") == 0) {
               res_run.accurate = false;
               res_run.accurate_set = true;
+              conf->PushB(false);
             } else {
-              scan_err1(lc, T_("Expect a YES or NO, got: %s"), lc->str);
+              scan_err(lc, T_("Expect a YES or NO, got: %s"), lc->str());
             }
             break;
           default:
-            scan_err1(lc, T_("Expected a keyword name, got: %s"), lc->str);
+            scan_err(lc, T_("Expected a keyword name, got: %s"), lc->str());
             return;
             break;
         } /* end switch */
@@ -320,8 +323,11 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
     /* At this point, it is not a keyword. Check for old syle
      * Job Levels without keyword. This form is depreciated!!! */
     if (!found) {
-      for (j = 0; joblevels[j].level_name; j++) {
-        if (Bstrcasecmp(lc->str, joblevels[j].level_name)) {
+      for (j = 0; joblevels[j].name; j++) {
+        if (Bstrcasecmp(lc->str(), joblevels[j].name)) {
+          conf->PushLabel("Level");
+          conf->PushString(lc->str());
+
           res_run.level = joblevels[j].level;
           res_run.job_type = joblevels[j].job_type;
           found = true;
@@ -336,38 +342,41 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
   state = s_none;
   set_defaults(res_run);
 
+  conf->PushLabel("times");
+  conf->PushArray();
   for (; token != BCT_EOL; (token = LexGetToken(lc, BCT_ALL))) {
     int len;
     bool pm = false;
     bool am = false;
+    conf->PushString(lc->str());
     switch (token) {
       case BCT_NUMBER:
         state = s_mday;
-        code = atoi(lc->str) - 1;
+        code = atoi(lc->str()) - 1;
         if (code < 0 || code > 30) {
-          scan_err0(lc, T_("Day number out of range (1-31)"));
+          scan_err(lc, T_("Day number out of range (1-31)"));
           return;
         }
         break;
       case BCT_NAME: /* This handles drop through from keyword */
       case BCT_UNQUOTED_STRING:
-        if (strchr(lc->str, (int)'-')) {
+        if (strchr(lc->str(), (int)'-')) {
           state = s_range;
           break;
         }
-        if (strchr(lc->str, (int)':')) {
+        if (strchr(lc->str(), (int)':')) {
           state = s_time;
           break;
         }
-        if (strchr(lc->str, (int)'/')) {
+        if (strchr(lc->str(), (int)'/')) {
           state = s_modulo;
           break;
         }
-        if (lc->str_len == 3 && (lc->str[0] == 'w' || lc->str[0] == 'W')
-            && IsAnInteger(lc->str + 1)) {
-          code = atoi(lc->str + 1);
+        if (lc->str_len() == 3 && (lc->str()[0] == 'w' || lc->str()[0] == 'W')
+            && IsAnInteger(lc->str() + 1)) {
+          code = atoi(lc->str() + 1);
           if (code < 0 || code > 53) {
-            scan_err0(lc, T_("Week number out of range (0-53)"));
+            scan_err(lc, T_("Week number out of range (0-53)"));
             return;
           }
           state = s_woy; /* Week of year */
@@ -375,7 +384,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
         }
         // Everything else must be a keyword
         for (i = 0; keyw[i].name; i++) {
-          if (Bstrcasecmp(lc->str, keyw[i].name)) {
+          if (Bstrcasecmp(lc->str(), keyw[i].name)) {
             state = keyw[i].state;
             code = keyw[i].code;
             i = 0;
@@ -383,15 +392,15 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
           }
         }
         if (i != 0) {
-          scan_err1(lc, T_("Job type field: %s in run record not found"),
-                    lc->str);
+          scan_err(lc, T_("Job type field: %s in run record not found"),
+                   lc->str());
           return;
         }
         break;
       case BCT_COMMA:
         continue;
       default:
-        scan_err2(lc, T_("Unexpected token: %d:%s"), token, lc->str);
+        scan_err(lc, T_("Unexpected token: %d:%s"), token, lc->str());
         return;
         break;
     }
@@ -433,21 +442,24 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
         }
         SetBit(code, res_run.date_time_mask.woy);
         break;
-      case s_time: /* Time */
+      case s_time: /* Time */ {
         if (!have_at) {
-          scan_err0(lc, T_("Time must be preceded by keyword AT."));
+          scan_err(lc, T_("Time must be preceded by keyword AT."));
           return;
         }
         if (!have_hour) { ClearBitRange(0, 23, res_run.date_time_mask.hour); }
-        //       Dmsg1(000, "s_time=%s\n", lc->str);
-        p = strchr(lc->str, ':');
-        if (!p) {
-          scan_err0(lc, T_("Time logic error.\n"));
+        //       Dmsg1(000, "s_time=%s\n", lc->str());
+        std::string_view view = lc->str();
+        size_t pos = view.find(':');
+        if (pos == view.npos) {
+          scan_err(lc, T_("Time logic error.\n"));
           return;
         }
-        *p++ = 0;             /* Separate two halves */
-        code = atoi(lc->str); /* Pick up hour */
-        code2 = atoi(p);      /* Pick up minutes */
+
+        std::from_chars(view.data() + 0, view.data() + pos, code);
+        std::from_chars(view.data() + pos + 1, view.data() + view.size(),
+                        code2);
+        const char* p = view.data() + pos + 1;
         len = strlen(p);
         if (len >= 2) { p += 2; }
         if (Bstrcasecmp(p, "pm")) {
@@ -455,7 +467,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
         } else if (Bstrcasecmp(p, "am")) {
           am = true;
         } else if (len != 2) {
-          scan_err0(lc, T_("Bad time specification."));
+          scan_err(lc, T_("Bad time specification."));
           return;
         }
         /* Note, according to NIST, 12am and 12pm are ambiguous and
@@ -470,13 +482,13 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
           code -= 12;
         }
         if (code < 0 || code > 23 || code2 < 0 || code2 > 59) {
-          scan_err0(lc, T_("Bad time specification."));
+          scan_err(lc, T_("Bad time specification."));
           return;
         }
         SetBit(code, res_run.date_time_mask.hour);
         res_run.minute = code2;
         have_hour = true;
-        break;
+      } break;
       case s_at:
         have_at = true;
         break;
@@ -487,25 +499,34 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
           have_wom = true;
         }
         break;
-      case s_modulo:
-        p = strchr(lc->str, '/');
-        if (!p) {
-          scan_err0(lc, T_("Modulo logic error.\n"));
+      case s_modulo: {
+        std::string_view view = lc->str();
+        size_t pos = view.find('/');
+        if (pos == view.npos) {
+          scan_err(lc, T_("Modulo logic error.\n"));
           return;
         }
-        *p++ = 0; /* Separate two halves */
 
-        if (IsAnInteger(lc->str) && IsAnInteger(p)) {
+        auto first = view.substr(0, pos);
+        auto second = view.substr(pos + 1);
+
+        if (IsAnInteger(first) && IsAnInteger(second)) {
           // Check for day modulo specification.
-          code = atoi(lc->str) - 1;
-          code2 = atoi(p);
-          if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
-            scan_err0(lc, T_("Bad day specification in modulo."));
+          auto first_res = std::from_chars(first.data(),
+                                           first.data() + first.size(), code);
+          auto second_res = std::from_chars(
+              second.data(), second.data() + second.size(), code2);
+          if (first_res.ec != std::errc{}
+              || first_res.ptr != first.data() + first.size()
+              || second_res.ec != std::errc{}
+              || second_res.ptr != second.data() + second.size() || code < 0
+              || code > 30 || code2 < 0 || code2 > 30) {
+            scan_err(lc, T_("Bad day specification in modulo."));
             return;
           }
           if (code > code2) {
-            scan_err0(lc, T_("Bad day specification, offset must always be <= "
-                             "than modulo."));
+            scan_err(lc, T_("Bad day specification, offset must always be <= "
+                            "than modulo."));
             return;
           }
           if (!have_mday) {
@@ -518,24 +539,31 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
               SetBit(i + code, res_run.date_time_mask.mday);
             }
           }
-        } else if (strlen(lc->str) == 3 && strlen(p) == 3
-                   && (lc->str[0] == 'w' || lc->str[0] == 'W')
-                   && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1)
-                   && IsAnInteger(p + 1)) {
+        } else if (first.size() == 3 && second.size() == 3
+                   && (first[0] == 'w' || first[0] == 'W')
+                   && (second[0] == 'w' || second[0] == 'W')
+                   && IsAnInteger(first.substr(1))
+                   && IsAnInteger(second.substr(1))) {
           // Check for week modulo specification.
-          code = atoi(lc->str + 1);
-          code2 = atoi(p + 1);
-          if (code < 0 || code > 53) {
-            scan_err0(lc, T_("Week number out of range (0-53) in modulo"));
+          auto first_res = std::from_chars(first.data() + 1,
+                                           first.data() + first.size(), code);
+          auto second_res = std::from_chars(
+              second.data() + 1, second.data() + second.size(), code2);
+          if (first_res.ec != std::errc{}
+              || first_res.ptr != first.data() + first.size() || code < 0
+              || code > 53) {
+            scan_err(lc, T_("Week number out of range (0-53) in modulo"));
             return;
           }
-          if (code2 <= 0 || code2 > 53) {
-            scan_err0(lc, T_("Week interval out of range (1-53) in modulo"));
+          if (second_res.ec != std::errc{}
+              || second_res.ptr != second.data() + second.size() || code2 <= 0
+              || code2 > 53) {
+            scan_err(lc, T_("Week interval out of range (1-53) in modulo"));
             return;
           }
           if (code > code2) {
-            scan_err0(lc, T_("Bad week number specification in modulo, offset "
-                             "must always be <= than modulo."));
+            scan_err(lc, T_("Bad week number specification in modulo, offset "
+                            "must always be <= than modulo."));
             return;
           }
           if (!have_woy) {
@@ -547,25 +575,28 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
             SetBit(week, res_run.date_time_mask.woy);
           }
         } else {
-          scan_err0(lc, T_("Bad modulo time specification. Format for weekdays "
-                           "is '01/02', for yearweeks is 'w01/w02'."));
+          scan_err(lc, T_("Bad modulo time specification. Format for weekdays "
+                          "is '01/02', for yearweeks is 'w01/w02'."));
           return;
         }
-        break;
-      case s_range:
-        p = strchr(lc->str, '-');
-        if (!p) {
-          scan_err0(lc, T_("Range logic error.\n"));
+      } break;
+      case s_range: {
+        std::string_view view = lc->str();
+        size_t pos = view.find('-');
+        if (pos == view.npos) {
+          scan_err(lc, T_("Range logic error.\n"));
           return;
         }
-        *p++ = 0; /* Separate two halves */
 
-        if (IsAnInteger(lc->str) && IsAnInteger(p)) {
+        auto first = view.substr(0, pos);
+        auto second = view.substr(pos + 1);
+
+        if (IsAnInteger(first) && IsAnInteger(second)) {
           // Check for day range.
-          code = atoi(lc->str) - 1;
-          code2 = atoi(p) - 1;
+          std::from_chars(first.data(), first.data() + first.size(), code);
+          std::from_chars(second.data(), second.data() + second.size(), code2);
           if (code < 0 || code > 30 || code2 < 0 || code2 > 30) {
-            scan_err0(lc, T_("Bad day range specification."));
+            scan_err(lc, T_("Bad day range specification."));
             return;
           }
           if (!have_mday) {
@@ -578,15 +609,17 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
             SetBitRange(code, 30, res_run.date_time_mask.mday);
             SetBitRange(0, code2, res_run.date_time_mask.mday);
           }
-        } else if (strlen(lc->str) == 3 && strlen(p) == 3
-                   && (lc->str[0] == 'w' || lc->str[0] == 'W')
-                   && (p[0] == 'w' || p[0] == 'W') && IsAnInteger(lc->str + 1)
-                   && IsAnInteger(p + 1)) {
+        } else if (first.size() == 3 && second.size() == 3
+                   && (first[0] == 'w' || first[0] == 'W')
+                   && (second[0] == 'w' || second[0] == 'W')
+                   && IsAnInteger(first.substr(1))
+                   && IsAnInteger(second.substr(1))) {
           // Check for week of year range.
-          code = atoi(lc->str + 1);
-          code2 = atoi(p + 1);
+          std::from_chars(first.data() + 1, first.data() + first.size(), code);
+          std::from_chars(second.data() + 1, second.data() + second.size(),
+                          code2);
           if (code < 0 || code > 53 || code2 < 0 || code2 > 53) {
-            scan_err0(lc, T_("Week number out of range (0-53)"));
+            scan_err(lc, T_("Week number out of range (0-53)"));
             return;
           }
           if (!have_woy) {
@@ -601,9 +634,9 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
           }
         } else {
           // lookup first half of keyword range (week days or months).
-          lcase(lc->str);
           for (i = 0; keyw[i].name; i++) {
-            if (bstrcmp(lc->str, keyw[i].name)) {
+            if (first.size() == strlen(keyw[i].name)
+                && bstrncasecmp(first.data(), keyw[i].name, first.size())) {
               state = keyw[i].state;
               code = keyw[i].code;
               i = 0;
@@ -612,14 +645,14 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
           }
           if (i != 0
               || (state != s_month && state != s_wday && state != s_wom)) {
-            scan_err0(lc, T_("Invalid month, week or position day range"));
+            scan_err(lc, T_("Invalid month, week or position day range"));
             return;
           }
 
           // Lookup end of range.
-          lcase(p);
           for (i = 0; keyw[i].name; i++) {
-            if (bstrcmp(p, keyw[i].name)) {
+            if (second.size() == strlen(keyw[i].name)
+                && bstrncasecmp(second.data(), keyw[i].name, second.size())) {
               state2 = keyw[i].state;
               code2 = keyw[i].code;
               i = 0;
@@ -627,7 +660,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
             }
           }
           if (i != 0 || state != state2 || code == code2) {
-            scan_err0(lc, T_("Invalid month, weekday or position range"));
+            scan_err(lc, T_("Invalid month, weekday or position range"));
             return;
           }
           if (state == s_wday) {
@@ -667,7 +700,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
             }
           }
         }
-        break;
+      } break;
       case s_hourly:
         have_hour = true;
         SetBitRange(0, 23, res_run.date_time_mask.hour);
@@ -687,11 +720,12 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
         SetBitRange(0, 11, res_run.date_time_mask.month);
         break;
       default:
-        scan_err0(lc, T_("Unexpected run state\n"));
+        scan_err(lc, T_("Unexpected run state\n"));
         return;
         break;
     }
   }
+  conf->PopArray();
 
   /* Allocate run record, copy new stuff into it,
    * and append it to the list of run records
@@ -713,6 +747,8 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
     }
   }
 
+  conf->PopObject();
+  conf->PopArray();
   lc->options = options; /* Restore scanner options */
   item->SetPresent();
   ClearBit(index, (*item->allocated_resource)->inherit_content_);

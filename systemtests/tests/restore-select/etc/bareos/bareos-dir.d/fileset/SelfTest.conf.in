@@ -1,0 +1,22 @@
+FileSet {
+  Name = "SelfTest"
+  Description = "fileset just to backup some files for selftest"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = xxh128
+      HardLinks = Yes
+      fstype = ext2
+      fstype = ext3
+      fstype = ext4
+      fstype = overlay
+      fstype = jfs
+      fstype = ufs
+      fstype = xfs
+      fstype = zfs
+      fstype = btrfs
+      fstype = vfat
+    }
+    File=<@tmpdir@/file-list
+  }
+}

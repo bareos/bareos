@@ -66,7 +66,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx);
 static int FilesetHandler(void* ctx, int num_fields, char** row);
 static bool SelectBackupsBeforeDate(UaContext* ua,
                                     RestoreContext* rx,
-                                    char* date);
+                                    const char* date);
 static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx);
 static void free_rx(RestoreContext* rx);
 static void SplitPathAndFilename(UaContext* ua,
@@ -76,15 +76,15 @@ static int JobidFileindexHandler(void* ctx, int num_fields, char** row);
 static bool InsertFileIntoFindexList(UaContext* ua,
                                      RestoreContext* rx,
                                      char* file,
-                                     char* date);
+                                     const char* date);
 static bool InsertDirIntoFindexList(UaContext* ua,
                                     RestoreContext* rx,
                                     char* dir,
-                                    char* date);
+                                    const char* date);
 static void InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
                                char* p,
-                               char* date,
+                               const char* date,
                                bool dir);
 static bool GetClientName(UaContext* ua, RestoreContext* rx);
 static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx);
@@ -472,6 +472,33 @@ static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx)
   return true;
 }
 
+static std::optional<db_list_ctx> FindJobDependencies(UaContext* ua,
+                                                      const char* jobids)
+{
+  db_list_ctx found;
+  uint32_t jobid = 0;
+  for (const char* p = jobids; GetNextJobidFromList(&p, &jobid) > 0;) {
+    JobDbRecord jr;
+    jr.JobId = jobid;
+    if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
+      ua->ErrorMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
+                   ua->cmd, ua->db->strerror());
+      return std::nullopt;
+    }
+    ua->SendMsg(T_("Selecting jobs to build the Full state at %s\n"),
+                jr.cStartTime);
+    jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
+    db_list_ctx new_found;
+    if (!ua->db->AccurateGetJobids(ua->jcr, &jr, &new_found)) {
+      return std::nullopt;
+    }
+
+    found.Append(new_found);
+  }
+
+  return found;
+}
+
 /**
  * The first step in the restore process is for the user to
  *  select a list of JobIds from which he will subsequently
@@ -485,10 +512,16 @@ static bool GetRestoreClientName(UaContext* ua, RestoreContext& rx)
 static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
 {
   const char* p;
-  char date[MAX_TIME_LENGTH];
-  bool have_date = false;
   /* Include current second if using current time */
-  utime_t now = time(NULL) + 1;
+  /* Note, we add one second here just to include any job
+   *  that may have finished within the current second,
+   *  which happens a lot in scripting small jobs. */
+  utime_t current_time = time(NULL) + 1;
+
+  // by default we use the current time
+  char date[MAX_TIME_LENGTH];
+  bstrutime(date, sizeof(date), current_time);
+
   JobId_t JobId;
   bool done = false;
   int i, j;
@@ -547,6 +580,19 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   bool use_select = false;
   bool use_fileregex = false;
 
+  // these are just used to check if any option specifies them in some way
+  // this way we can give the user some feedback.  I.e.
+  // Cannot specify both `jobid=3` and `current`.
+  // These just point to some examples and not to every use or some particular
+  // use.
+  int date_index = -1;
+  int job_index = -1;
+
+  auto set_index = [](int& loc, int indx) {
+    ASSERT(indx >= 0);
+    if (loc < 0) { loc = indx; }
+  };
+
   for (i = 1; i < ua->argc; i++) { /* loop through arguments */
     bool found_kw = false;
     for (j = 0; kw[j]; j++) { /* loop through keywords */
@@ -559,25 +605,69 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
       ua->ErrorMsg(T_("Unknown keyword: %s\n"), ua->argk[i]);
       return 0;
     }
+
+#define FMTARG(index)                              \
+  ua->argk[(index)], ua->argv[(index)] ? "=" : "", \
+      ua->argv[(index)] ? ua->argv[(index)] : ""
+
     /* Found keyword in kw[] list, process it */
     switch (j) {
       case 0: /* jobid */
         if (!HasValue(ua, i)) { return 0; }
         if (*rx->JobIds != 0) { PmStrcat(rx->JobIds, ","); }
+
+        if (date_index >= 0) {
+          ua->ErrorMsg(
+              T_("A date was already chosen via '%s%s%s' which is incompatible "
+                 "with chosing a job explicitly via '%s%s%s'\n"),
+              FMTARG(date_index), FMTARG(i));
+          return 0;
+        }
+
+        if (date_index >= 0) { return 0; }
+
+        set_index(job_index, i);
         PmStrcat(rx->JobIds, ua->argv[i]);
         bstrncpy(rx->last_jobid, ua->argv[i], sizeof(rx->last_jobid));
         done = true;
         break;
       case 1: /* current */
-        /* Note, we add one second here just to include any job
-         *  that may have finished within the current second,
-         *  which happens a lot in scripting small jobs. */
-        bstrutime(date, sizeof(date), now);
-        have_date = true;
+        if (job_index >= 0) {
+          ua->ErrorMsg(
+              T_("A job was already explicitly chosen via '%s%s%s' which is "
+                 "incompatible with chosing a job by date '%s%s%s'\n"),
+              FMTARG(job_index), FMTARG(i));
+          return 0;
+        }
+
+        if (date_index >= 0) {
+          ua->ErrorMsg(T_("A date was already chosen via '%s%s%s'. Cannot "
+                          "choose another one via '%s%s%s'\n"),
+                       FMTARG(date_index), FMTARG(i));
+          return 0;
+        }
+
+        set_index(date_index, i);
+
         break;
       case 2: /* before */
       {
-        if (have_date || !HasValue(ua, i)) { return 0; }
+        if (!HasValue(ua, i)) { return 0; }
+
+        if (job_index >= 0) {
+          ua->ErrorMsg(
+              T_("A job was already explicitly chosen via '%s%s%s' which is "
+                 "incompatible with chosing a job by date '%s%s%s'\n"),
+              FMTARG(job_index), FMTARG(i));
+          return 0;
+        }
+
+        if (date_index >= 0) {
+          ua->ErrorMsg(T_("A date was already chosen via '%s%s%s'. Cannot "
+                          "choose another one via '%s%s%s'\n"),
+                       FMTARG(date_index), FMTARG(i));
+          return 0;
+        }
 
         std::string cpdate = CompensateShortDate(ua->argv[i]);
 
@@ -586,7 +676,7 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           return 0;
         }
         bstrncpy(date, cpdate.c_str(), sizeof(date));
-        have_date = true;
+        set_index(date_index, i);
         break;
       }
       case 3: /* file */
@@ -622,7 +712,6 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   }
 
   if (files.size() + dirs.size() > 0 || use_fileregex) {
-    if (!have_date) { bstrutime(date, sizeof(date), now); }
     if (!GetClientName(ua, rx)) { return 0; }
 
     for (auto& file : files) { InsertOneFileOrDir(ua, rx, file, date, false); }
@@ -644,8 +733,13 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
   }
 
   if (use_select) {
-    if (!have_date) { bstrutime(date, sizeof(date), now); }
-    if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+    if (job_index >= 0) {
+      std::optional jobids = FindJobDependencies(ua, rx->JobIds);
+      if (!jobids) { return 0; }
+      PmStrcpy(rx->JobIds, jobids->GetAsString().c_str());
+    } else {
+      if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+    }
     done = true;
   }
 
@@ -664,7 +758,6 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
     char* fname;
     int len;
     bool gui_save;
-    db_list_ctx jobids;
 
     StartPrompt(ua,
                 T_("To select the JobIds, you have the following choices:\n"));
@@ -721,18 +814,17 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         ua->jcr->gui = gui_save;
         done = false;
         break;
-      case 4: /* Select the most recent backups */
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
+      case 4: /* Select the most recent backups */ {
+        decltype(date) current_date;
+        bstrutime(current_date, sizeof(current_date), current_time);
+        if (!SelectBackupsBeforeDate(ua, rx, current_date)) { return 0; }
+      } break;
+      case 5: /* select backup at specified time */ {
+        decltype(date) that_date;
+        if (!get_date(ua, that_date, sizeof(that_date))) { return 0; }
         if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
-        break;
-      case 5: /* select backup at specified time */
-        if (!have_date) {
-          if (!get_date(ua, date, sizeof(date))) { return 0; }
-        }
-        if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
-        break;
+      } break;
       case 6: /* Enter files */
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
             T_("Enter file names with paths, or < to enter a filename\n"
@@ -745,10 +837,9 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
         }
         return 2;
-      case 7: /* enter files backed up before specified time */
-        if (!have_date) {
-          if (!get_date(ua, date, sizeof(date))) { return 0; }
-        }
+      case 7: /* enter files backed up before specified time */ {
+        decltype(date) that_date;
+        if (!get_date(ua, that_date, sizeof(that_date))) { return 0; }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
             T_("Enter file names with paths, or < to enter a filename\n"
@@ -758,23 +849,24 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           if (!GetCmd(ua, T_("Enter full filename: "))) { return 0; }
           len = strlen(ua->cmd);
           if (len == 0) { break; }
-          InsertOneFileOrDir(ua, rx, ua->cmd, date, false);
+          InsertOneFileOrDir(ua, rx, ua->cmd, that_date, false);
         }
         return 2;
+      }
 
-      case 8: /* Find JobIds for current backup */
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
-        if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+      case 8: /* Find JobIds for current backup */ {
+        decltype(date) current_date;
+        bstrutime(current_date, sizeof(current_date), current_time);
+        if (!SelectBackupsBeforeDate(ua, rx, current_date)) { return 0; }
         done = false;
-        break;
+      } break;
 
-      case 9: /* Find JobIds for give date */
-        if (!have_date) {
-          if (!get_date(ua, date, sizeof(date))) { return 0; }
-        }
-        if (!SelectBackupsBeforeDate(ua, rx, date)) { return 0; }
+      case 9: /* Find JobIds for give date */ {
+        decltype(date) that_date;
+        if (!get_date(ua, that_date, sizeof(that_date))) { return 0; }
+        if (!SelectBackupsBeforeDate(ua, rx, that_date)) { return 0; }
         done = false;
-        break;
+      } break;
 
       case 10: /* Enter directories */
         if (*rx->JobIds != 0) {
@@ -792,7 +884,6 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
           *rx->JobIds = 0;
           return 0; /* nothing entered, return */
         }
-        if (!have_date) { bstrutime(date, sizeof(date), now); }
         if (!GetClientName(ua, rx)) { return 0; }
         ua->SendMsg(
             T_("Enter full directory names or start the name\n"
@@ -810,27 +901,17 @@ static int UserSelectJobidsOrFiles(UaContext* ua, RestoreContext* rx)
         }
         return 2;
 
-      case 11: /* Choose a jobid and select jobs */
+      case 11: /* Choose a jobid and select jobs */ {
         if (!GetCmd(ua, T_("Enter JobId to get the state to restore: "))
             || !IsAnInteger(ua->cmd)) {
           return 0;
         }
-        {
-          JobDbRecord jr;
-          jr.JobId = str_to_int64(ua->cmd);
-          if (!ua->db->GetJobRecord(ua->jcr, &jr)) {
-            ua->ErrorMsg(T_("Unable to get Job record for JobId=%s: ERR=%s\n"),
-                         ua->cmd, ua->db->strerror());
-            return 0;
-          }
-          ua->SendMsg(T_("Selecting jobs to build the Full state at %s\n"),
-                      jr.cStartTime);
-          jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
-          if (!ua->db->AccurateGetJobids(ua->jcr, &jr, &jobids)) { return 0; }
-        }
-        PmStrcpy(rx->JobIds, jobids.GetAsString().c_str());
+
+        std::optional jobids = FindJobDependencies(ua, ua->cmd);
+        if (!jobids) { return 0; }
+        PmStrcpy(rx->JobIds, jobids->GetAsString().c_str());
         Dmsg1(30, "Item 12: jobids = %s\n", rx->JobIds);
-        break;
+      } break;
       case 12: /* Cancel or quit */
         return 0;
     }
@@ -956,7 +1037,7 @@ std::string CompensateShortDate(const char* cmd)
 static void InsertOneFileOrDir(UaContext* ua,
                                RestoreContext* rx,
                                char* p,
-                               char* date,
+                               const char* date,
                                bool dir)
 {
   FILE* ffd;
@@ -1009,7 +1090,7 @@ static void InsertOneFileOrDir(UaContext* ua,
 static bool InsertFileIntoFindexList(UaContext* ua,
                                      RestoreContext* rx,
                                      char* file,
-                                     char* date)
+                                     const char* date)
 {
   StripTrailingNewline(file);
   SplitPathAndFilename(ua, rx, file);
@@ -1044,10 +1125,8 @@ static bool InsertFileIntoFindexList(UaContext* ua,
 static bool InsertDirIntoFindexList(UaContext* ua,
                                     RestoreContext* rx,
                                     char* dir,
-                                    char*)
+                                    const char*)
 {
-  StripTrailingJunk(dir);
-
   if (*rx->JobIds == 0) {
     ua->ErrorMsg(T_("No JobId specified cannot continue.\n"));
     return false;
@@ -1333,10 +1412,10 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
 static bool InsertLastFullBackupOfType(UaContext* ua,
                                        RestoreContext* rx,
                                        RestoreContext::JobTypeFilter filter,
-                                       char* client_id,
-                                       char* date,
-                                       char* file_set,
-                                       char* pool_select)
+                                       const char* client_id,
+                                       const char* date,
+                                       const char* file_set,
+                                       const char* pool_select)
 {
   char filter_name = RestoreContext::FilterIdentifier(filter);
   // Find JobId of last Full backup for this client, fileset
@@ -1373,7 +1452,7 @@ static bool InsertLastFullBackupOfType(UaContext* ua,
  */
 static bool SelectBackupsBeforeDate(UaContext* ua,
                                     RestoreContext* rx,
-                                    char* date)
+                                    const char* date)
 {
   int i;
   ClientDbRecord cr;

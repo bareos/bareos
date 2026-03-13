@@ -45,12 +45,9 @@
 #include "lib/parse_conf.h"
 #include "dird/jcr_util.h"
 
+#include "job_levels.h"
+
 namespace directordaemon {
-
-/* Imported subroutines */
-
-/* Imported variables */
-extern struct s_jl joblevels[];
 
 /* Imported functions */
 
@@ -1102,10 +1099,9 @@ static inline bool parse_level_selection_param(PoolMem& selection,
       if (bp) { *bp++ = '\0'; }
 
       // Try mapping from text level to internal level.
-      for (int i = 0; joblevels[i].level_name; i++) {
+      for (int i = 0; joblevels[i].name; i++) {
         if (joblevels[i].job_type == JT_BACKUP
-            && bstrncasecmp(joblevels[i].level_name, cur_level,
-                            strlen(cur_level))) {
+            && bstrncasecmp(joblevels[i].name, cur_level, strlen(cur_level))) {
           if (cnt == 0) {
             Mmsg(temp, " AND Level IN ('%c'", joblevels[i].level);
             PmStrcat(selection, temp.c_str());

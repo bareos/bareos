@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,11 +41,12 @@
 #include <string>
 #include <vector>
 
+#include "job_levels.h"
+
 namespace directordaemon {
 
 /* Imported variables */
 extern struct s_jt jobtypes[];
-extern struct s_jl joblevels[];
 
 // Confirm a retention period
 bool ConfirmRetention(UaContext* ua, utime_t* ret, const char* msg)
@@ -1529,8 +1530,8 @@ bool GetLevelFromName(JobControlRecord* jcr, const char* level_name)
   bool found = false;
 
   // Look up level name and pull code
-  for (int i = 0; joblevels[i].level_name; i++) {
-    if (Bstrcasecmp(level_name, joblevels[i].level_name)) {
+  for (int i = 0; joblevels[i].name; i++) {
+    if (Bstrcasecmp(level_name, joblevels[i].name)) {
       jcr->setJobLevel(joblevels[i].level);
       found = true;
       break;
@@ -1923,11 +1924,11 @@ static int GetParsedJobType(std::string jobtype_argument)
       }
     }
   } else {
-    for (i = 0; jobtypes[i].type_name; i++) {
-      if (jobtypes[i].type_name == jobtype_argument) { break; }
+    for (i = 0; jobtypes[i].name; i++) {
+      if (jobtypes[i].name == jobtype_argument) { break; }
     }
   }
-  if (jobtypes[i].type_name) { return_jobtype = jobtypes[i].job_type; }
+  if (jobtypes[i].name) { return_jobtype = jobtypes[i].job_type; }
 
   return return_jobtype;
 }
@@ -1943,9 +1944,7 @@ bool GetUserJobTypeListSelection(UaContext* ua,
     bstrncpy(jobtype_argument, ua->argv[argument], sizeof(jobtype_argument));
   } else if (ask_user) {
     StartPrompt(ua, T_("Jobtype:\n"));
-    for (int i = 0; jobtypes[i].type_name; i++) {
-      AddPrompt(ua, jobtypes[i].type_name);
-    }
+    for (int i = 0; jobtypes[i].name; i++) { AddPrompt(ua, jobtypes[i].name); }
 
     if (DoPrompt(ua, T_("JobType"), T_("Select Job Type"), jobtype_argument,
                  sizeof(jobtype_argument))

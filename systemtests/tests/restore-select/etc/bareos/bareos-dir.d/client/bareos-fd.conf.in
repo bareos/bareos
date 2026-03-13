@@ -1,0 +1,31 @@
+Client {
+  Name = client-1
+  Description = "Client resource of the Director itself."
+  Address = @hostname@
+  Password = "@fd_password@"          # password for FileDaemon
+  Port = @fd_port@
+}
+
+Client {
+  Name = client-2
+  Description = "Client resource of the Director itself."
+  Address = @hostname@
+  Password = "@fd_password@"          # password for FileDaemon
+  Port = @fd_port@
+}
+
+Client {
+  Name = client-3
+  Description = "Client resource of the Director itself."
+  Address = @hostname@
+  Password = "@fd_password@"          # password for FileDaemon
+  Port = @fd_port@
+}
+
+Client {
+  Name = bareos-fd
+  Description = "Client resource of the Director itself."
+  Address = @hostname@
+  Password = "@fd_password@"          # password for FileDaemon
+  Port = @fd_port@
+}

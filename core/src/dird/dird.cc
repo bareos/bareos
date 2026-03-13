@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -193,33 +193,36 @@ int main(int argc, char* argv[])
 
   AddVerboseOption(dir_app);
 
+  CLI::Option_group* exp = dir_app.add_option_group(
+      "configuration export", "various ways to export the configuration");
+
   bool export_config = false;
+  bool export_config_json = false;
   std::string export_config_resourcetype;
   std::string export_config_resourcename;
-  CLI::Option* xc
-      = dir_app
-            .add_option(
-                "--xc,--export-config",
-                [&export_config, &export_config_resourcetype,
-                 &export_config_resourcename](std::vector<std::string> val) {
-                  export_config = true;
-                  if (val.size() >= 1) {
-                    export_config_resourcetype = val[0];
-                    if (val.size() >= 2) {
-                      export_config_resourcename = val[1];
-                    }
-                  }
-                  return true;
-                },
-                "Print all or specific configuration resources and exit.")
-            ->type_name("[<resource_type> [<name>]]")
-            ->expected(0, 2);
+  exp->add_option(
+         "--xc,--export-config",
+         [&export_config, &export_config_resourcetype,
+          &export_config_resourcename](std::vector<std::string> val) {
+           export_config = true;
+           if (val.size() >= 1) {
+             export_config_resourcetype = val[0];
+             if (val.size() >= 2) { export_config_resourcename = val[1]; }
+           }
+           return true;
+         },
+         "Print all or specific configuration resources and exit.")
+      ->type_name("[<resource_type> [<name>]]")
+      ->expected(0, 2);
 
   bool export_config_schema = false;
-  dir_app
-      .add_flag("--xs,--export-schema", export_config_schema,
-                "Print configuration schema in JSON format and exit.")
-      ->excludes(xc);
+  exp->add_flag("--xs,--export-schema", export_config_schema,
+                "Print configuration schema in JSON format and exit.");
+
+  exp->add_flag("--xj,--export-json", export_config_json,
+                "Print all configuration resources in a json format.");
+
+  exp->require_option(0, 1);
 
   AddDeprecatedExportOptionsHelp(dir_app);
 
@@ -261,7 +264,9 @@ int main(int argc, char* argv[])
 
   my_config->ParseConfigOrExit();
 
-  if (export_config) {
+  if (export_config_json) {
+    my_config->PrintShape();
+  } else if (export_config) {
     int rc = 0;
     if (!my_config->DumpResources(PrintMessage, nullptr,
                                   export_config_resourcetype,
@@ -270,6 +275,7 @@ int main(int argc, char* argv[])
     }
     TerminateDird(rc);
     return BEXIT_SUCCESS;
+  } else if (export_config_json) {
   }
 
   if (!CheckResources()) {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -377,7 +377,7 @@ static void ConfigReadyCallback(ConfigurationParser&) {}
 ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code, R_NUM,
+      configfile, nullptr, nullptr, nullptr, exit_code, R_NUM,
       resource_definitions, default_config_filename.c_str(), "tray-monitor.d",
       ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
       FreeResource);

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,6 +53,7 @@
 
 #include <algorithm>
 #include <string_view>
+#include <fstream>
 
 #include "include/bareos.h"
 #include "include/jcr.h"
@@ -60,6 +61,7 @@
 #include "lib/address_conf.h"
 #include "lib/edit.h"
 #include "lib/parse_conf.h"
+#include <jansson.h>
 #include "lib/parse_conf_state_machine.h"
 #include "lib/qualified_resource_name_type_converter.h"
 #include "lib/bstringlist.h"
@@ -85,8 +87,6 @@ ConfigurationParser::~ConfigurationParser() = default;
 
 ConfigurationParser::ConfigurationParser(
     const char* cf,
-    lexer::error_handler* scan_error,
-    lexer::warning_handler* scan_warning,
     resource_initer* init_res,
     resource_storer* store_res,
     resource_printer* print_res,
@@ -105,8 +105,6 @@ ConfigurationParser::ConfigurationParser(
   cf_ = cf == nullptr ? "" : cf;
   use_config_include_dir_ = false;
   config_include_naming_format_ = "%s/%s/%s.conf";
-  scan_error_ = scan_error;
-  scan_warning_ = scan_warning;
   init_res_ = init_res;
   store_res_ = store_res;
   print_res_ = print_res;
@@ -179,8 +177,7 @@ bool ConfigurationParser::ParseConfig()
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
-  bool success = ParseConfigFile(config_path.c_str(), nullptr, scan_error_,
-                                 scan_warning_);
+  bool success = ParseConfigFile(config_path.c_str(), nullptr, nullptr);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
 
   config_resources_container_->SetTimestampToNow();
@@ -188,9 +185,115 @@ bool ConfigurationParser::ParseConfig()
   return success;
 }
 
+json_t* convert(conf_proto* p, bool toplevel = true)
+{
+  return std::visit(
+      [toplevel](auto& val) -> json_t* {
+        using T = std::remove_reference_t<decltype(val)>;
+
+        if constexpr (std::is_same_v<T, bool>) {
+          return json_boolean(val);
+        } else if constexpr (std::is_same_v<T, proto::str>) {
+          return json_stringn_nocheck(val.c_str(), val.size());
+        } else if constexpr (std::is_same_v<T, int64_t>) {
+          return json_integer(val);
+        } else if constexpr (std::is_same_v<T, uint64_t>) {
+          return json_integer(val);
+        } else if constexpr (std::is_same_v<T, conf_map>) {
+          auto* obj = json_object();
+          for (auto& [k, v] : val) {
+            auto* converted = convert(&v, false);
+
+            if (toplevel) {
+              auto resource_name = [&] {
+                // we are adding a new resource!
+                // use its name as key, and remove name from the value
+                json_t* name = json_object_get(converted, "Name");
+                ASSERT(name);
+                ASSERT(json_is_string(name));
+                std::string res = json_string_value(name);
+                ASSERT(json_object_del(converted, "Name") == 0);
+
+                return res;
+              }();
+
+              auto* res_list = json_object_getn(obj, k.data(), k.size());
+              if (res_list) {
+                ASSERT(json_is_object(res_list));
+              } else {
+                res_list = json_object();
+                json_object_setn_new(obj, k.data(), k.size(), res_list);
+              }
+
+              json_object_setn_new(res_list, resource_name.c_str(),
+                                   resource_name.size(), converted);
+
+            } else {
+              if (auto ptr = std::get_if<conf_vec>(&v.value);
+                  ptr && ptr->merge) {
+                if (json_t* prev = json_object_getn(obj, k.data(), k.size())) {
+                  ASSERT(json_is_array(prev));
+                  json_t* elem;
+                  size_t idx;
+                  json_array_foreach(converted, idx, elem)
+                  {
+                    json_array_append(prev, elem);
+                  }
+                  json_decref(converted);
+                } else {
+                  json_object_setn_new(obj, k.data(), k.size(), converted);
+                }
+              } else {
+                ASSERT(!json_object_getn(obj, k.data(), k.size()));
+                json_object_setn_new(obj, k.data(), k.size(), converted);
+              }
+            }
+          }
+          return obj;
+        } else if constexpr (std::is_same_v<T, conf_vec>) {
+          auto* arr = json_array();
+
+          for (auto& child : val.data) {
+            json_array_append_new(arr, convert(&child, false));
+          }
+
+          return arr;
+        } else if constexpr (std::is_same_v<T, proto::error>) {
+          auto* obj = json_object();
+          json_object_set_new(obj, "type", json_string("error"));
+
+          json_object_set_new(
+              obj, "reason",
+              json_stringn(val.reason.data(), val.reason.size()));
+
+          json_object_set_new(obj, "value",
+                              json_stringn(val.value.data(), val.value.size()));
+          return obj;
+        } else {
+          static_assert(!std::is_same_v<T, T>);
+        }
+
+        return nullptr;
+      },
+      p->value);
+}
+
+void ConfigurationParser::PrintShape()
+{
+  auto proto = builder.build();
+  json_t* json = convert(proto.get());
+
+  char* dumped = json_dumps(json, JSON_INDENT(2));
+
+  printf("%s\n", dumped);
+
+  free(dumped);
+  json_decref(json);
+}
+
+
 void ConfigurationParser::lex_error(const char* cf,
-                                    lexer::error_handler* scan_error,
-                                    lexer::warning_handler* scan_warning) const
+                                    lexer::error_handler* scan_error) const
 {
   // We must create a lex packet to print the error
   lexer lexical_parser_{};
@@ -201,25 +304,18 @@ void ConfigurationParser::lex_error(const char* cf,
     LexSetDefaultErrorHandler(&lexical_parser_);
   }
 
-  if (scan_warning) {
-    lexical_parser_.scan_warning = scan_warning;
-  } else {
-    LexSetDefaultWarningHandler(&lexical_parser_);
-  }
-
   LexSetErrorHandlerErrorType(&lexical_parser_, err_type_);
   BErrNo be;
-  scan_err2(&lexical_parser_, T_("Cannot open config file \"%s\": %s\n"), cf,
-            be.bstrerror());
+  scan_err(&lexical_parser_, T_("Cannot open config file \"%s\": %s\n"), cf,
+           be.bstrerror());
 }
 
 bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
                                           void* caller_ctx,
-                                          lexer::error_handler* scan_error,
-                                          lexer::warning_handler* scan_warning)
+                                          lexer::error_handler* scan_error)
 {
   ConfigParserStateMachine state_machine(config_file_name, caller_ctx,
-                                         scan_error, scan_warning, *this);
+                                         scan_error, *this);
 
   Dmsg1(900, "Enter ParseConfigFile(%s)\n", config_file_name);
 
@@ -227,17 +323,17 @@ bool ConfigurationParser::ParseConfigFile(const char* config_file_name,
     if (!state_machine.InitParserPass()) { return false; }
 
     if (!state_machine.ParseAllTokens()) {
-      scan_err0(state_machine.lexical_parser_, T_("ParseAllTokens failed."));
+      scan_err(state_machine.lexical_parser_, T_("ParseAllTokens failed."));
       return false;
     }
 
     switch (state_machine.GetParseError()) {
       case ConfigParserStateMachine::ParserError::kResourceIncomplete:
-        scan_err0(state_machine.lexical_parser_,
-                  T_("End of conf file reached with unclosed resource."));
+        scan_err(state_machine.lexical_parser_,
+                 T_("End of conf file reached with unclosed resource."));
         return false;
       case ConfigParserStateMachine::ParserError::kParserError:
-        scan_err0(state_machine.lexical_parser_, T_("Parser Error occurred."));
+        scan_err(state_machine.lexical_parser_, T_("Parser Error occurred."));
         return false;
       case ConfigParserStateMachine::ParserError::kNoError:
         break;

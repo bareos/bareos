@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,6 +42,1333 @@
 #include "lib/output_formatter.h"
 #include "include/compiler_macro.h"
 #include "lib/crypto.h"
+
+namespace {
+enum unit_type
+{
+  STORE_SIZE,
+  STORE_SPEED
+};
+
+
+/*
+ * Scan for message types and add them to the message
+ * destination. The basic job here is to connect message types
+ * (WARNING, ERROR, FATAL, INFO, ...) with an appropriate
+ * destination (MAIL, FILE, OPERATOR, ...)
+ */
+void ScanTypes(ConfigurationParser* conf,
+               lexer* lc,
+               MessagesResource* msg,
+               MessageDestinationCode dest_code,
+               const std::string& where,
+               const std::string& cmd,
+               const std::string& timestamp_format)
+{
+  int i;
+  bool found, is_not;
+  int msg_type = 0;
+  const char* str;
+
+  conf->PushArray();
+
+  for (;;) {
+    LexGetToken(lc, BCT_NAME); /* expect at least one type */
+    found = false;
+    if (lc->str()[0] == '!') {
+      is_not = true;
+      str = &lc->str()[1];
+    } else {
+      is_not = false;
+      str = &lc->str()[0];
+    }
+
+    const char* name = lc->str();
+    for (i = 0; msg_types[i].name; i++) {
+      if (Bstrcasecmp(str, msg_types[i].name)) {
+        msg_type = msg_types[i].token;
+        name = msg_types[i].name;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      conf->PushError("unknown keyword", lc->str());
+
+      scan_err(lc, T_("message type: %s not found"), str);
+      return;
+    }
+
+    conf->PushObject();
+
+    conf->PushLabel("ignore");
+    conf->PushB(!is_not);
+
+    conf->PushLabel("type");
+    conf->PushString(name);
+
+    conf->PopObject();
+
+    if (msg_type == M_MAX + 1) {     /* all? */
+      for (i = 1; i <= M_MAX; i++) { /* yes set all types */
+        msg->AddMessageDestination(dest_code, i, where, cmd, timestamp_format);
+      }
+    } else if (is_not) {
+      msg->RemoveMessageDestination(dest_code, msg_type, where);
+    } else {
+      msg->AddMessageDestination(dest_code, msg_type, where, cmd,
+                                 timestamp_format);
+    }
+    if (lc->ch() != ',') { break; }
+    Dmsg0(900, "call LexGetToken() to eat comma\n");
+    LexGetToken(lc, BCT_ALL); /* eat comma */
+  }
+  Dmsg0(900, "Done ScanTypes()\n");
+
+  conf->PopArray();
+}
+
+// Store Messages Destination information
+void StoreMsgs(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int pass)
+{
+  int token;
+  const char* cmd = nullptr;
+  POOLMEM* dest;
+  int dest_len;
+
+  Dmsg2(900, "StoreMsgs pass=%d code=%d\n", pass, item->code);
+
+  MessagesResource* message_resource
+      = dynamic_cast<MessagesResource*>(*item->allocated_resource);
+
+  if (!message_resource) {
+    Dmsg0(900, "Could not dynamic_cast to MessageResource\n");
+    abort();
+    return;
+  }
+
+  if (pass == 1) {
+    conf->PushMergeArray();
+    switch (static_cast<MessageDestinationCode>(item->code)) {
+      case MessageDestinationCode::kStdout:
+      case MessageDestinationCode::kStderr:
+      case MessageDestinationCode::kConsole:
+      case MessageDestinationCode::kCatalog:
+        ScanTypes(conf, lc, message_resource,
+                  static_cast<MessageDestinationCode>(item->code),
+                  std::string(), std::string(),
+                  message_resource->timestamp_format_);
+        break;
+      case MessageDestinationCode::kSyslog: { /* syslog */
+        const char* p;
+        int cnt = 0;
+        bool done = false;
+
+        /* See if this is an old style syslog definition.
+         * We count the number of = signs in the current config line. */
+        p = lc->line();
+        while (!done && *p) {
+          switch (*p) {
+            case '=':
+              cnt++;
+              break;
+            case ',':
+            case ';':
+              // No need to continue scanning when we encounter a ',' or ';'
+              done = true;
+              break;
+            default:
+              break;
+          }
+          p++;
+        }
+
+        conf->PushObject();
+
+        conf->PushLabel("is_old");
+
+        /* If there is more then one = its the new format e.g.
+         * syslog = facility = filter */
+        if (cnt > 1) {
+          conf->PushB(false);
+          dest = GetPoolMemory(PM_MESSAGE);
+          // Pick up a single facility.
+          token = LexGetToken(lc, BCT_NAME); /* Scan destination */
+          conf->PushLabel("facility");
+          conf->PushString(lc->str());
+          PmStrcpy(dest, lc->str());
+          dest_len = lc->str_len();
+          token = LexGetToken(lc, BCT_SKIP_EOL);
+
+          conf->PushLabel("types");
+          ScanTypes(conf, lc, message_resource,
+                    static_cast<MessageDestinationCode>(item->code), dest,
+                    std::string(), std::string());
+          FreePoolMemory(dest);
+          Dmsg0(900, "done with dest codes\n");
+        } else {
+          conf->PushB(true);
+          conf->PushLabel("types");
+          ScanTypes(conf, lc, message_resource,
+                    static_cast<MessageDestinationCode>(item->code),
+                    std::string(), std::string(), std::string());
+        }
+
+        conf->PopObject();
+        break;
+      }
+      case MessageDestinationCode::kOperator:
+      case MessageDestinationCode::kDirector:
+      case MessageDestinationCode::kMail:
+      case MessageDestinationCode::KMailOnError:
+      case MessageDestinationCode::kMailOnSuccess:
+        if (static_cast<MessageDestinationCode>(item->code)
+            == MessageDestinationCode::kOperator) {
+          cmd = message_resource->operator_cmd_.c_str();
+        } else {
+          cmd = message_resource->mail_cmd_.c_str();
+        }
+        dest = GetPoolMemory(PM_MESSAGE);
+        dest[0] = 0;
+        dest_len = 0;
+
+        conf->PushObject();
+
+        conf->PushLabel("destinations");
+        conf->PushArray();
+        // Pick up comma separated list of destinations.
+        for (;;) {
+          token = LexGetToken(lc, BCT_NAME); /* Scan destination */
+          dest = CheckPoolMemorySize(dest, dest_len + lc->str_len() + 2);
+          if (dest[0] != 0) {
+            PmStrcat(dest, " "); /* Separate multiple destinations with space */
+            dest_len++;
+          }
+          conf->PushString(lc->str());
+          PmStrcat(dest, lc->str());
+          dest_len += lc->str_len();
+          Dmsg2(900, "StoreMsgs newdest=%s: dest=%s:\n", lc->str(), NPRT(dest));
+          token = LexGetToken(lc, BCT_SKIP_EOL);
+          if (token == BCT_COMMA) { continue; /* Get another destination */ }
+          if (token != BCT_EQUALS) {
+            scan_err(lc, T_("expected an =, got: %s"), lc->str());
+            return;
+          }
+          break;
+        }
+        conf->PopArray();
+        conf->PushLabel("types");
+        Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
+        ScanTypes(conf, lc, message_resource,
+                  static_cast<MessageDestinationCode>(item->code), dest, cmd,
+                  message_resource->timestamp_format_);
+        FreePoolMemory(dest);
+        conf->PopObject();
+        Dmsg0(900, "done with dest codes\n");
+        break;
+      case MessageDestinationCode::kFile:
+      case MessageDestinationCode::kAppend: {
+        // Pick up a single destination.
+        token = LexGetToken(lc, BCT_STRING); /* Scan destination */
+
+        conf->PushObject();
+        conf->PushLabel("destination");
+        conf->PushString(lc->str());
+        conf->PushLabel("types");
+
+        std::string dest_file_path(lc->str());
+        dest_len = lc->str_len();
+        token = LexGetToken(lc, BCT_SKIP_EOL);
+        Dmsg1(900, "StoreMsgs dest=%s:\n", dest_file_path.c_str());
+        if (token != BCT_EQUALS) {
+          scan_err(lc, T_("expected an =, got: %s"), lc->str());
+          return;
+        }
+        ScanTypes(conf, lc, message_resource,
+                  static_cast<MessageDestinationCode>(item->code),
+                  dest_file_path, std::string(),
+                  message_resource->timestamp_format_);
+        Dmsg0(900, "done with dest codes\n");
+        conf->PopObject();
+        break;
+      }
+      default:
+        scan_err(lc, T_("Unknown item code: %d\n"), item->code);
+        return;
+    }
+    conf->PopArray();
+  }
+  ScanToEol(lc);
+  message_resource->SetMemberPresent(item->name);
+  ClearBit(index, message_resource->inherit_content_);
+  Dmsg0(900, "Done StoreMsgs\n");
+}
+
+/*
+ * This routine is ONLY for resource names
+ * Store a name at specified address.
+ */
+void StoreName(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int)
+{
+  std::string msg{};
+
+  LexGetToken(lc, BCT_NAME);
+  if (!IsNameValid(lc->str(), msg)) {
+    scan_err(lc, "%s", msg.c_str());
+    return;
+  }
+
+  conf->PushString(lc->str());
+
+  // Store the name both in pass 1 and pass 2
+  char** p = GetItemVariablePointer<char**>(*item);
+
+  if (*p) {
+    scan_err(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p,
+             lc->str());
+    return;
+  }
+  *p = strdup(lc->str());
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Store a name string at specified address
+ * A name string is limited to MAX_RES_NAME_LENGTH
+ */
+void StoreStrname(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int pass)
+{
+  LexGetToken(lc, BCT_NAME);
+
+  conf->PushString(lc->str());
+  if (pass == 1) {
+    char** p = GetItemVariablePointer<char**>(*item);
+    if (*p) { free(*p); }
+    *p = strdup(lc->str());
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a string at specified address
+void StoreStr(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str());
+  if (pass == 1) { SetItemVariableFreeMemory<char*>(*item, strdup(lc->str())); }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a string at specified address
+void StoreStdstr(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str());
+  if (pass == 1) { SetItemVariable<std::string>(*item, lc->str()); }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Store a directory name at specified address. Note, we do
+ * shell expansion except if the string begins with a vertical
+ * bar (i.e. it will likely be passed to the shell later).
+ */
+void StoreDir(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str());
+  if (pass == 1) {
+    char** p = GetItemVariablePointer<char**>(*item);
+    if (*p) { free(*p); }
+    if (lc->str()[0] != '|') {
+      *p = DoShellExpansion(lc->str());
+    } else {
+      *p = strdup(lc->str());
+    }
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+void StoreStdstrdir(ConfigurationParser* conf,
+                    lexer* lc,
+                    const ResourceItem* item,
+                    int index,
+                    int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str());
+  if (pass == 1) {
+    if (lc->str()[0] != '|') {
+      auto* expanded = DoShellExpansion(lc->str());
+      SetItemVariable<std::string>(*item, expanded);
+      free(expanded);
+    } else {
+      SetItemVariable<std::string>(*item, lc->str());
+    }
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a password at specified address in MD5 coding
+void StoreMd5Password(ConfigurationParser* conf,
+                      lexer* lc,
+                      const ResourceItem* item,
+                      int index,
+                      int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str());
+  if (pass == 1) { /* free old item */
+    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
+
+    if (pwd->value) { free(pwd->value); }
+
+    // See if we are parsing an MD5 encoded password already.
+    if (bstrncmp(lc->str(), "[md5]", 5)) {
+      if (item->is_required) {
+        static const char* empty_password_md5_hash
+            = "d41d8cd98f00b204e9800998ecf8427e";
+        if (strncmp(lc->str() + 5, empty_password_md5_hash,
+                    strlen(empty_password_md5_hash))
+            == 0) {
+          scan_err(lc, "Empty Password not allowed in Resource \"%s\"\n",
+                   (*item->allocated_resource)->resource_name_);
+          return;
+        }
+      }
+
+      std::string_view candidate{lc->str() + 5};
+
+      constexpr size_t md5len = 32;
+
+      if (candidate.size() != md5len) {
+        scan_err(lc,
+                 "md5 password does not have the right size; expected: %" PRIuz
+                 ", got: %" PRIuz "\n",
+                 md5len, candidate.size());
+        *pwd = {};
+        return;
+      }
+
+      if (auto bad = candidate.find_first_not_of("0123456789ABCDEFabcdef");
+          bad != candidate.npos) {
+        scan_err(
+            lc, "md5 password contains non hexadecimal characters, e.g. '%c'\n",
+            candidate[bad]);
+        *pwd = {};
+        return;
+      }
+
+      pwd->encoding = p_encoding_md5;
+      pwd->value = strdup(lc->str() + 5);
+    } else {
+      unsigned int i, j;
+      MD5_CTX md5c;
+      unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
+      char sig[100];
+
+      if (item->is_required) {
+        if (strnlen(lc->str(), MAX_NAME_LENGTH) == 0) {
+          scan_err(lc, "Empty Password not allowed in Resource \"%s\"\n",
+                   (*item->allocated_resource)->resource_name_);
+          return;
+        }
+      }
+
+      IGNORE_DEPRECATED_ON;
+      MD5_Init(&md5c);
+      MD5_Update(&md5c, (unsigned char*)(lc->str()), lc->str_len());
+      MD5_Final(digest, &md5c);
+      IGNORE_DEPRECATED_OFF;
+      for (i = j = 0; i < sizeof(digest); i++) {
+        snprintf(&sig[j], 3, "%02x", digest[i]);
+        j += 2;
+        ASSERT(j < 100);
+      }
+      pwd->encoding = p_encoding_md5;
+      pwd->value = strdup(sig);
+    }
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a password at specified address in MD5 coding
+void StoreClearpassword(ConfigurationParser* conf,
+                        lexer* lc,
+                        const ResourceItem* item,
+                        int index,
+                        int pass)
+{
+  LexGetToken(lc, BCT_STRING);
+  conf->PushString(lc->str());
+  if (pass == 1) {
+    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
+
+
+    if (pwd->value) { free(pwd->value); }
+
+    if (item->is_required) {
+      if (strnlen(lc->str(), MAX_NAME_LENGTH) == 0) {
+        scan_err(lc,
+                 "Empty Password not allowed in Resource \"%s\" not allowed.\n",
+                 (*item->allocated_resource)->resource_name_);
+        return;
+      }
+    }
+
+    pwd->encoding = p_encoding_clear;
+    pwd->value = strdup(lc->str());
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Store a resource at specified address.
+ * If we are in pass 2, do a lookup of the
+ * resource.
+ */
+void StoreRes(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int pass)
+{
+  LexGetToken(lc, BCT_NAME);
+  conf->PushString(lc->str());
+  if (pass == 2) {
+    BareosResource* res = conf->GetResWithName(item->code, lc->str());
+    if (res == NULL) {
+      scan_err(
+          lc,
+          T_("Could not find config resource \"%s\" referenced on line %d: %s"),
+          lc->str(), lc->line_no(), lc->line());
+      return;
+    }
+    BareosResource** p = GetItemVariablePointer<BareosResource**>(*item);
+    if (*p) {
+      scan_err(
+          lc,
+          T_("Attempt to redefine resource \"%s\" referenced on line %d: %s"),
+          item->name, lc->line_no(), lc->line());
+      return;
+    }
+    *p = res;
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Store a resource pointer in an alist. default_value indicates how many
+ * times this routine can be called -- i.e. how many alists there are.
+ *
+ * If we are in pass 2, do a lookup of the resource.
+ */
+void StoreAlistRes(ConfigurationParser* conf,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
+{
+  alist<BareosResource*>** alistvalue
+      = GetItemVariablePointer<alist<BareosResource*>**>(*item);
+  if (pass == 2) {
+    if (!*alistvalue) {
+      *alistvalue = new alist<BareosResource*>(10, not_owned_by_alist);
+    }
+  }
+  alist<BareosResource*>* list = *alistvalue;
+
+  conf->PushArray();
+  int token = BCT_COMMA;
+  while (token == BCT_COMMA) {
+    LexGetToken(lc, BCT_NAME); /* scan next item */
+    conf->PushString(lc->str());
+    if (pass == 2) {
+      BareosResource* res = conf->GetResWithName(item->code, lc->str());
+      if (res == NULL) {
+        scan_err(lc,
+                 T_("Could not find config Resource \"%s\" referenced on line "
+                    "%d : %s\n"),
+                 item->name, lc->line_no(), lc->line());
+        return;
+      }
+      Dmsg5(900, "Append %p (%s) to alist %p size=%d %s\n", res,
+            res->resource_name_, list, list->size(), item->name);
+      list->append(res);
+    }
+    token = LexGetToken(lc, BCT_ALL);
+  }
+  conf->PopArray();
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a std::string in an std::vector<std::string>.
+void StoreStdVectorStr(ConfigurationParser* conf,
+                       lexer* lc,
+                       const ResourceItem* item,
+                       int index,
+                       int pass)
+{
+  std::vector<std::string>* list{nullptr};
+  if (pass == 2) {
+    list = GetItemVariablePointer<std::vector<std::string>*>(*item);
+  }
+  int token = BCT_COMMA;
+  conf->PushArray();
+  while (token == BCT_COMMA) {
+    LexGetToken(lc, BCT_STRING); /* scan next item */
+    conf->PushString(lc->str());
+    if (pass == 2) {
+      Dmsg4(900, "Append %s to vector %p size=%" PRIuz " %s\n", lc->str(), list,
+            list->size(), item->name);
+
+      /* See if we need to drop the default value.
+       *
+       * We first check to see if the config item has the
+       * flag set and currently has exactly one entry. */
+      if (!item->IsPresent()) {
+        if (item->default_value && list->size() == 1) {
+          if (list->at(0) == item->default_value) { list->clear(); }
+        }
+      }
+      list->push_back(lc->str());
+    }
+    token = LexGetToken(lc, BCT_ALL);
+  }
+  conf->PopArray();
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a string in an alist.
+void StoreAlistStr(ConfigurationParser* conf,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
+{
+  alist<const char*>** alistvalue
+      = GetItemVariablePointer<alist<const char*>**>(*item);
+  if (pass == 2) {
+    if (!*alistvalue) {
+      *alistvalue = new alist<const char*>(10, owned_by_alist);
+    }
+  }
+  alist<const char*>* list = *alistvalue;
+  conf->PushMergeArray();
+
+  int token = BCT_COMMA;
+  while (token == BCT_COMMA) {
+    LexGetToken(lc, BCT_STRING); /* scan next item */
+    conf->PushString(lc->str());
+
+    if (pass == 2) {
+      Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str(), list,
+            list->size(), item->name);
+
+      /* See if we need to drop the default value from the alist.
+       *
+       * We first check to see if the config item has the
+       * flag set and currently has exactly one entry. */
+      if (!item->IsPresent()) {
+        if (item->default_value && list->size() == 1) {
+          char* entry = (char*)list->first();
+          if (bstrcmp(entry, item->default_value)) {
+            list->destroy();
+            list->init(10, owned_by_alist);
+          }
+        }
+      }
+      list->append(strdup(lc->str()));
+    }
+    token = LexGetToken(lc, BCT_ALL);
+  }
+  conf->PopArray();
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Store a directory name at specified address in an alist.
+ * Note, we do shell expansion except if the string begins
+ * with a vertical bar (i.e. it will likely be passed to the
+ * shell later).
+ */
+void StoreAlistDir(ConfigurationParser* conf,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
+{
+  LexGetToken(lc, BCT_STRING); /* scan next item */
+  conf->PushObject();
+  conf->PushLabel("is_shell");
+  conf->PushB(lc->str()[0] == '|');
+  conf->PushLabel("str");
+  conf->PushString(lc->str() + (lc->str()[0] == '|'));
+  conf->PopObject();
+
+  if (pass == 2) {
+    alist<const char*>** alistvalue
+        = GetItemVariablePointer<alist<const char*>**>(*item);
+    if (!*alistvalue) {
+      *alistvalue = new alist<const char*>(10, owned_by_alist);
+    }
+    alist<const char*>* list = *alistvalue;
+
+    Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str(), list,
+          list->size(), item->name);
+
+    /* See if we need to drop the default value from the alist.
+     *
+     * We first check to see if the config item has the
+     * flag set and currently has exactly one entry. */
+    if (item->default_value && list->size() == 1) {
+      char* entry;
+
+      entry = (char*)list->first();
+      if (bstrcmp(entry, item->default_value)) {
+        list->destroy();
+        list->init(10, owned_by_alist);
+      }
+    }
+
+    if (lc->str()[0] != '|') {
+      auto* expanded = DoShellExpansion(lc->str());
+      list->append(expanded);
+    } else {
+      list->append(strdup(lc->str()));
+    }
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a list of plugin names to load by the daemon on startup.
+void StorePluginNames(ConfigurationParser* conf,
+                      lexer* lc,
+                      const ResourceItem* item,
+                      int index,
+                      int pass)
+{
+  alist<const char*>** alistvalue = nullptr;
+
+  if (pass == 2) {
+    alistvalue = GetItemVariablePointer<alist<const char*>**>(*item);
+    if (!*alistvalue) {
+      *alistvalue = new alist<const char*>(10, owned_by_alist);
+    }
+  }
+
+  auto saved = lc->options;
+  lc->options.set(lexer::options::ForceString); /* force string, i.e. convert
+                                                   numbers/identifiers */
+
+  bool finish = false;
+  conf->PushArray();
+  while (!finish) {
+    switch (LexGetToken(lc, BCT_ALL)) {
+      case BCT_EOL:
+        finish = true;
+        break;
+      case BCT_COMMA:
+        continue;
+      case BCT_UNQUOTED_STRING:
+      case BCT_QUOTED_STRING: {
+        conf->PushString(lc->str());
+        char* p0 = strdup(lc->str());
+        char* p1 = p0;
+        char* p2 = p0;
+        while (p1) {
+          p2 = strchr(p1, ':');  // split at ':'
+          if (p2 != nullptr) { *p2++ = '\0'; }
+          if (alistvalue) { (*alistvalue)->append(strdup(p1)); }
+          p1 = p2;
+        }
+        free(p0);
+        break;
+      }
+      default:
+        finish = true;
+        break;
+    }
+  }
+  conf->PopArray();
+  lc->options = saved;
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store an integer at specified address
+void store_int16(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int)
+{
+  LexGetToken(lc, BCT_INT16);
+  conf->PushI(lc->u.int16_val);
+  SetItemVariable<int16_t>(*item, lc->u.int16_val);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+void store_int32(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int)
+{
+  LexGetToken(lc, BCT_INT32);
+  conf->PushI(lc->u.int32_val);
+  SetItemVariable<int32_t>(*item, lc->u.int32_val);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a positive integer at specified address
+void store_pint16(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int)
+{
+  LexGetToken(lc, BCT_PINT16);
+  conf->PushU(lc->u.pint16_val);
+  SetItemVariable<uint16_t>(*item, lc->u.pint16_val);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+void store_pint32(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int)
+{
+  LexGetToken(lc, BCT_PINT32);
+  conf->PushU(lc->u.pint32_val);
+  SetItemVariable<uint32_t>(*item, lc->u.pint32_val);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store an 64 bit integer at specified address
+void store_int64(ConfigurationParser* conf,
+                 lexer* lc,
+                 const ResourceItem* item,
+                 int index,
+                 int)
+{
+  LexGetToken(lc, BCT_INT64);
+  conf->PushU(lc->u.int64_val);
+  SetItemVariable<int64_t>(*item, lc->u.int64_val);
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a size in bytes
+void store_int_unit(ConfigurationParser* conf,
+                    lexer* lc,
+                    const ResourceItem* item,
+                    int index,
+                    int,
+                    bool size32,
+                    enum unit_type type)
+{
+  uint64_t uvalue;
+  char bsize[500];
+
+  Dmsg0(900, "Enter store_unit\n");
+  int token = LexGetToken(lc, BCT_SKIP_EOL);
+  errno = 0;
+  switch (token) {
+    case BCT_NUMBER:
+    case BCT_IDENTIFIER:
+    case BCT_UNQUOTED_STRING:
+      bstrncpy(bsize, lc->str(), sizeof(bsize)); /* save first part */
+      // If terminated by space, scan and get modifier
+      while (lc->ch() == ' ') {
+        token = LexGetToken(lc, BCT_ALL);
+        switch (token) {
+          case BCT_NUMBER:
+          case BCT_IDENTIFIER:
+          case BCT_UNQUOTED_STRING:
+            bstrncat(bsize, lc->str(), sizeof(bsize));
+            break;
+        }
+      }
+
+      conf->PushString(bsize);
+
+      switch (type) {
+        case STORE_SIZE:
+          if (!size_to_uint64(bsize, &uvalue)) {
+            scan_err(lc, T_("expected a size number, got: %s"), lc->str());
+            return;
+          }
+          break;
+        case STORE_SPEED:
+          if (!speed_to_uint64(bsize, &uvalue)) {
+            scan_err(lc, T_("expected a speed number, got: %s"), lc->str());
+            return;
+          }
+          break;
+        default:
+          scan_err(lc, T_("unknown unit type encountered"));
+          return;
+      }
+
+      if (size32) {
+        SetItemVariable<uint32_t>(*item, uvalue);
+      } else {
+        switch (type) {
+          case STORE_SIZE:
+            SetItemVariable<int64_t>(*item, uvalue);
+            break;
+          case STORE_SPEED:
+            SetItemVariable<uint64_t>(*item, uvalue);
+            break;
+        }
+      }
+      break;
+    default:
+      scan_err(lc, T_("expected a %s, got: %s"),
+               (type == STORE_SIZE) ? T_("size") : T_("speed"), lc->str());
+      return;
+  }
+  if (token != BCT_EOL) { ScanToEol(lc); }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+  Dmsg0(900, "Leave store_unit\n");
+}
+
+// Store a size in bytes
+void store_size32(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int pass)
+{
+  store_int_unit(conf, lc, item, index, pass, true /* 32 bit */, STORE_SIZE);
+}
+
+// Store a size in bytes
+void store_size64(ConfigurationParser* conf,
+                  lexer* lc,
+                  const ResourceItem* item,
+                  int index,
+                  int pass)
+{
+  store_int_unit(conf, lc, item, index, pass, false /* not 32 bit */,
+                 STORE_SIZE);
+}
+
+// Store a speed in bytes/s
+void StoreSpeed(ConfigurationParser* conf,
+                lexer* lc,
+                const ResourceItem* item,
+                int index,
+                int pass)
+{
+  store_int_unit(conf, lc, item, index, pass, false /* 64 bit */, STORE_SPEED);
+}
+
+// Store a time period in seconds
+void StoreTime(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int)
+{
+  utime_t utime;
+  char period[500];
+
+  int token = LexGetToken(lc, BCT_SKIP_EOL);
+  errno = 0;
+  switch (token) {
+    case BCT_NUMBER:
+    case BCT_IDENTIFIER:
+    case BCT_UNQUOTED_STRING:
+      bstrncpy(period, lc->str(), sizeof(period)); /* get first part */
+      // If terminated by space, scan and get modifier
+      while (lc->ch() == ' ') {
+        token = LexGetToken(lc, BCT_ALL);
+        switch (token) {
+          case BCT_NUMBER:
+          case BCT_IDENTIFIER:
+          case BCT_UNQUOTED_STRING:
+            bstrncat(period, lc->str(), sizeof(period));
+            break;
+        }
+      }
+
+      conf->PushString(period);
+      if (!DurationToUtime(period, &utime)) {
+        scan_err(lc, T_("expected a time period, got: %s"), period);
+        return;
+      }
+      SetItemVariable<utime_t>(*item, utime);
+      break;
+    default:
+      scan_err(lc, T_("expected a time period, got: %s"), lc->str());
+      return;
+  }
+  if (token != BCT_EOL) { ScanToEol(lc); }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a yes/no in a bit field
+void StoreBit(ConfigurationParser* conf,
+              lexer* lc,
+              const ResourceItem* item,
+              int index,
+              int)
+{
+  LexGetToken(lc, BCT_NAME);
+  char* bitvalue = GetItemVariablePointer<char*>(*item);
+  if (Bstrcasecmp(lc->str(), "yes") || Bstrcasecmp(lc->str(), "true")) {
+    conf->PushB(true);
+    SetBit(item->code, bitvalue);
+  } else if (Bstrcasecmp(lc->str(), "no") || Bstrcasecmp(lc->str(), "false")) {
+    ClearBit(item->code, bitvalue);
+    conf->PushB(false);
+  } else {
+    scan_err(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+             lc->str()); /* YES and NO must not be translated */
+    return;
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store a bool in a bit field
+void StoreBool(ConfigurationParser* conf,
+               lexer* lc,
+               const ResourceItem* item,
+               int index,
+               int)
+{
+  LexGetToken(lc, BCT_NAME);
+  if (Bstrcasecmp(lc->str(), "yes") || Bstrcasecmp(lc->str(), "true")) {
+    SetItemVariable<bool>(*item, true);
+    conf->PushB(true);
+  } else if (Bstrcasecmp(lc->str(), "no") || Bstrcasecmp(lc->str(), "false")) {
+    SetItemVariable<bool>(*item, false);
+    conf->PushB(false);
+  } else {
+    scan_err(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+             lc->str()); /* YES and NO must not be translated */
+    return;
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+// Store Tape Label Type (BAREOS, ANSI, IBM)
+void StoreLabel(ConfigurationParser* conf,
+                lexer* lc,
+                const ResourceItem* item,
+                int index,
+                int)
+{
+  LexGetToken(lc, BCT_NAME);
+  // Store the label pass 2 so that type is defined
+  int i;
+  for (i = 0; tapelabels[i].name; i++) {
+    if (Bstrcasecmp(lc->str(), tapelabels[i].name)) {
+      conf->PushString(tapelabels[i].name);
+      SetItemVariable<uint32_t>(*item, tapelabels[i].token);
+      i = 0;
+      break;
+    }
+  }
+  if (i != 0) {
+    scan_err(lc, T_("Expected a Tape Label keyword, got: %s"), lc->str());
+    return;
+  }
+  ScanToEol(lc);
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+/*
+ * Store network addresses.
+ *
+ *   my tests
+ *   positiv
+ *   = { ip = { addr = 1.2.3.4; port = 1205; } ipv4 = { addr = 1.2.3.4; port =
+ * http; } } = { ip = { addr = 1.2.3.4; port = 1205; } ipv4 = { addr = 1.2.3.4;
+ * port = http; } ipv6 = { addr = 1.2.3.4; port = 1205;
+ *     }
+ *     ip = {
+ *       addr = 1.2.3.4
+ *       port = 1205
+ *     }
+ *     ip = {
+ *       addr = 1.2.3.4
+ *     }
+ *     ip = {
+ *       addr = 2001:220:222::2
+ *     }
+ *     ip = {
+ *       addr = bluedot.thun.net
+ *     }
+ *   }
+ *   negativ
+ *   = { ip = { } }
+ *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
+ *   = { ipv4 { port = 4711 } }
+ */
+void StoreAddresses(ConfigurationParser* conf,
+                    lexer* lc,
+                    const ResourceItem* item,
+                    int index,
+                    int pass)
+{
+  int token;
+  int exist;
+  int family = 0;
+  char errmsg[1024];
+  char port_str[128];
+  char hostname_str[1024];
+  enum
+  {
+    EMPTYLINE = 0x0,
+    PORTLINE = 0x1,
+    ADDRLINE = 0x2
+  } next_line
+      = EMPTYLINE;
+  int port = str_to_int32(item->default_value);
+
+  token = LexGetToken(lc, BCT_SKIP_EOL);
+  if (token != BCT_BOB) {
+    scan_err(lc, T_("Expected a block begin { , got: %s"), lc->str());
+  }
+  token = LexGetToken(lc, BCT_SKIP_EOL);
+  if (token == BCT_EOB) { scan_err(lc, T_("Empty addr block is not allowed")); }
+
+  conf->PushArray();
+
+  do {
+    conf->PushObject();
+    if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
+      scan_err(lc, T_("Expected a string, got: %s"), lc->str());
+    }
+
+    conf->PushLabel("type");
+    conf->PushString(lc->str());
+    if (Bstrcasecmp("ip", lc->str()) || Bstrcasecmp("ipv4", lc->str())) {
+      family = AF_INET;
+    } else if (Bstrcasecmp("ipv6", lc->str())) {
+      family = AF_INET6;
+    } else {
+      scan_err(lc, T_("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str());
+    }
+    token = LexGetToken(lc, BCT_SKIP_EOL);
+    if (token != BCT_EQUALS) {
+      scan_err(lc, T_("Expected a equal =, got: %s"), lc->str());
+    }
+    token = LexGetToken(lc, BCT_SKIP_EOL);
+    if (token != BCT_BOB) {
+      scan_err(lc, T_("Expected a block begin { , got: %s"), lc->str());
+    }
+    token = LexGetToken(lc, BCT_SKIP_EOL);
+    exist = EMPTYLINE;
+    port_str[0] = hostname_str[0] = '\0';
+    do {
+      if (token != BCT_IDENTIFIER) {
+        scan_err(lc, T_("Expected a identifier [addr|port], got: %s"),
+                 lc->str());
+      }
+      if (Bstrcasecmp("port", lc->str())) {
+        conf->PushLabel("port");
+        next_line = PORTLINE;
+        if (exist & PORTLINE) {
+          scan_err(lc, T_("Only one port per address block"));
+        }
+        exist |= PORTLINE;
+      } else if (Bstrcasecmp("addr", lc->str())) {
+        conf->PushLabel("addr");
+        next_line = ADDRLINE;
+        if (exist & ADDRLINE) {
+          scan_err(lc, T_("Only one addr per address block"));
+        }
+        exist |= ADDRLINE;
+      } else {
+        scan_err(lc, T_("Expected a identifier [addr|port], got: %s"),
+                 lc->str());
+      }
+      token = LexGetToken(lc, BCT_SKIP_EOL);
+      if (token != BCT_EQUALS) {
+        scan_err(lc, T_("Expected a equal =, got: %s"), lc->str());
+      }
+      token = LexGetToken(lc, BCT_SKIP_EOL);
+      switch (next_line) {
+        case PORTLINE:
+          if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
+                || token == BCT_IDENTIFIER)) {
+            scan_err(lc, T_("Expected a number or a string, got: %s"),
+                     lc->str());
+          }
+          conf->PushString(lc->str());
+          bstrncpy(port_str, lc->str(), sizeof(port_str));
+          break;
+        case ADDRLINE:
+          if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
+            scan_err(lc, T_("Expected an IP number or a hostname, got: %s"),
+                     lc->str());
+          }
+          conf->PushString(lc->str());
+          bstrncpy(hostname_str, lc->str(), sizeof(hostname_str));
+          break;
+        case EMPTYLINE:
+          scan_err(lc, T_("State machine mismatch"));
+          break;
+      }
+      token = LexGetToken(lc, BCT_SKIP_EOL);
+    } while (token == BCT_IDENTIFIER);
+    conf->PopObject();
+    if (token != BCT_EOB) {
+      scan_err(lc, T_("Expected a end of block }, got: %s"), lc->str());
+    }
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_MULTIPLE, htons(port), family, hostname_str,
+                       port_str, errmsg, sizeof(errmsg))) {
+      scan_err(lc, T_("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
+               hostname_str, port_str, errmsg);
+    }
+    token = ScanToNextNotEol(lc);
+  } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
+
+  conf->PopArray();
+  if (token != BCT_EOB) {
+    scan_err(lc, T_("Expected a end of block }, got: %s"), lc->str());
+  }
+  item->SetPresent();
+  ClearBit(index, (*item->allocated_resource)->inherit_content_);
+}
+
+void StoreAddressesAddress(ConfigurationParser* conf,
+                           lexer* lc,
+                           const ResourceItem* item,
+                           int,
+                           int pass)
+{
+  int token;
+  char errmsg[1024];
+  int port = str_to_int32(item->default_value);
+
+  token = LexGetToken(lc, BCT_SKIP_EOL);
+  conf->PushString(lc->str());
+  if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
+        || token == BCT_IDENTIFIER)) {
+    scan_err(lc, T_("Expected an IP number or a hostname, got: %s"), lc->str());
+  }
+
+  if (pass == 1
+      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                     IPADDR::R_SINGLE_ADDR, htons(port),
+                     strchr(lc->str(), ':') ? AF_INET6 : AF_INET, lc->str(), 0,
+                     errmsg, sizeof(errmsg))) {
+    scan_err(lc, T_("can't add port (%s) to (%s)"), lc->str(), errmsg);
+  }
+}
+
+void StoreAddressesPort(ConfigurationParser* conf,
+                        lexer* lc,
+                        const ResourceItem* item,
+                        int,
+                        int pass)
+{
+  int token;
+  char errmsg[1024];
+  int port = str_to_int32(item->default_value);
+
+  token = LexGetToken(lc, BCT_SKIP_EOL);
+  if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
+        || token == BCT_IDENTIFIER)) {
+    scan_err(lc, T_("Expected a port number or string, got: %s"), lc->str());
+  }
+  conf->PushString(lc->str());
+
+  bool has_address = false;
+  IPADDR* iaddr;
+  dlist<IPADDR>* addrs
+      = (dlist<IPADDR>*)(*(GetItemVariablePointer<dlist<IPADDR>**>(*item)));
+  foreach_dlist (iaddr, addrs) {
+    if (iaddr->GetType() == IPADDR::R_SINGLE) { has_address = true; }
+  }
+
+  if (has_address) {
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0,
+                       lc->str(), errmsg, sizeof(errmsg))) {
+      scan_err(lc, T_("can't add port (%s) to (%s)"), lc->str(), errmsg);
+    }
+  } else {
+    if (pass == 1
+        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+                       IPADDR::R_SINGLE, htons(port), 0, 0, lc->str(), errmsg,
+                       sizeof(errmsg))) {
+      scan_err(lc, T_("can't add port (%s) to (%s)"), lc->str(), errmsg);
+    }
+  }
+}
+};  // namespace
 
 #include <sstream>
 
@@ -195,1315 +1522,108 @@ bool ConfigurationParser::GetTlsPskByFullyQualifiedResourceName(
   return false;
 }
 
-/*
- * Scan for message types and add them to the message
- * destination. The basic job here is to connect message types
- * (WARNING, ERROR, FATAL, INFO, ...) with an appropriate
- * destination (MAIL, FILE, OPERATOR, ...)
- */
-void ConfigurationParser::ScanTypes(lexer* lc,
-                                    MessagesResource* msg,
-                                    MessageDestinationCode dest_code,
-                                    const std::string& where,
-                                    const std::string& cmd,
-                                    const std::string& timestamp_format)
-{
-  int i;
-  bool found, is_not;
-  int msg_type = 0;
-  char* str;
-
-  for (;;) {
-    LexGetToken(lc, BCT_NAME); /* expect at least one type */
-    found = false;
-    if (lc->str[0] == '!') {
-      is_not = true;
-      str = &lc->str[1];
-    } else {
-      is_not = false;
-      str = &lc->str[0];
-    }
-    for (i = 0; msg_types[i].name; i++) {
-      if (Bstrcasecmp(str, msg_types[i].name)) {
-        msg_type = msg_types[i].token;
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      scan_err1(lc, T_("message type: %s not found"), str);
-      return;
-    }
-
-    if (msg_type == M_MAX + 1) {     /* all? */
-      for (i = 1; i <= M_MAX; i++) { /* yes set all types */
-        msg->AddMessageDestination(dest_code, i, where, cmd, timestamp_format);
-      }
-    } else if (is_not) {
-      msg->RemoveMessageDestination(dest_code, msg_type, where);
-    } else {
-      msg->AddMessageDestination(dest_code, msg_type, where, cmd,
-                                 timestamp_format);
-    }
-    if (lc->ch != ',') { break; }
-    Dmsg0(900, "call LexGetToken() to eat comma\n");
-    LexGetToken(lc, BCT_ALL); /* eat comma */
-  }
-  Dmsg0(900, "Done ScanTypes()\n");
-}
-
-// Store Messages Destination information
-void ConfigurationParser::StoreMsgs(lexer* lc,
-                                    const ResourceItem* item,
-                                    int index,
-                                    int pass)
-{
-  int token;
-  const char* cmd = nullptr;
-  POOLMEM* dest;
-  int dest_len;
-
-  Dmsg2(900, "StoreMsgs pass=%d code=%d\n", pass, item->code);
-
-  MessagesResource* message_resource
-      = dynamic_cast<MessagesResource*>(*item->allocated_resource);
-
-  if (!message_resource) {
-    Dmsg0(900, "Could not dynamic_cast to MessageResource\n");
-    abort();
-    return;
-  }
-
-  if (pass == 1) {
-    switch (static_cast<MessageDestinationCode>(item->code)) {
-      case MessageDestinationCode::kStdout:
-      case MessageDestinationCode::kStderr:
-      case MessageDestinationCode::kConsole:
-      case MessageDestinationCode::kCatalog:
-        ScanTypes(lc, message_resource,
-                  static_cast<MessageDestinationCode>(item->code),
-                  std::string(), std::string(),
-                  message_resource->timestamp_format_);
-        break;
-      case MessageDestinationCode::kSyslog: { /* syslog */
-        char* p;
-        int cnt = 0;
-        bool done = false;
-
-        /* See if this is an old style syslog definition.
-         * We count the number of = signs in the current config line. */
-        p = lc->line;
-        while (!done && *p) {
-          switch (*p) {
-            case '=':
-              cnt++;
-              break;
-            case ',':
-            case ';':
-              // No need to continue scanning when we encounter a ',' or ';'
-              done = true;
-              break;
-            default:
-              break;
-          }
-          p++;
-        }
-
-        /* If there is more then one = its the new format e.g.
-         * syslog = facility = filter */
-        if (cnt > 1) {
-          dest = GetPoolMemory(PM_MESSAGE);
-          // Pick up a single facility.
-          token = LexGetToken(lc, BCT_NAME); /* Scan destination */
-          PmStrcpy(dest, lc->str);
-          dest_len = lc->str_len;
-          token = LexGetToken(lc, BCT_SKIP_EOL);
-
-          ScanTypes(lc, message_resource,
-                    static_cast<MessageDestinationCode>(item->code), dest,
-                    std::string(), std::string());
-          FreePoolMemory(dest);
-          Dmsg0(900, "done with dest codes\n");
-        } else {
-          ScanTypes(lc, message_resource,
-                    static_cast<MessageDestinationCode>(item->code),
-                    std::string(), std::string(), std::string());
-        }
-        break;
-      }
-      case MessageDestinationCode::kOperator:
-      case MessageDestinationCode::kDirector:
-      case MessageDestinationCode::kMail:
-      case MessageDestinationCode::KMailOnError:
-      case MessageDestinationCode::kMailOnSuccess:
-        if (static_cast<MessageDestinationCode>(item->code)
-            == MessageDestinationCode::kOperator) {
-          cmd = message_resource->operator_cmd_.c_str();
-        } else {
-          cmd = message_resource->mail_cmd_.c_str();
-        }
-        dest = GetPoolMemory(PM_MESSAGE);
-        dest[0] = 0;
-        dest_len = 0;
-
-        // Pick up comma separated list of destinations.
-        for (;;) {
-          token = LexGetToken(lc, BCT_NAME); /* Scan destination */
-          dest = CheckPoolMemorySize(dest, dest_len + lc->str_len + 2);
-          if (dest[0] != 0) {
-            PmStrcat(dest, " "); /* Separate multiple destinations with space */
-            dest_len++;
-          }
-          PmStrcat(dest, lc->str);
-          dest_len += lc->str_len;
-          Dmsg2(900, "StoreMsgs newdest=%s: dest=%s:\n", lc->str, NPRT(dest));
-          token = LexGetToken(lc, BCT_SKIP_EOL);
-          if (token == BCT_COMMA) { continue; /* Get another destination */ }
-          if (token != BCT_EQUALS) {
-            scan_err1(lc, T_("expected an =, got: %s"), lc->str);
-            return;
-          }
-          break;
-        }
-        Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
-        ScanTypes(lc, message_resource,
-                  static_cast<MessageDestinationCode>(item->code), dest, cmd,
-                  message_resource->timestamp_format_);
-        FreePoolMemory(dest);
-        Dmsg0(900, "done with dest codes\n");
-        break;
-      case MessageDestinationCode::kFile:
-      case MessageDestinationCode::kAppend: {
-        // Pick up a single destination.
-        token = LexGetToken(lc, BCT_STRING); /* Scan destination */
-        std::string dest_file_path(lc->str);
-        dest_len = lc->str_len;
-        token = LexGetToken(lc, BCT_SKIP_EOL);
-        Dmsg1(900, "StoreMsgs dest=%s:\n", dest_file_path.c_str());
-        if (token != BCT_EQUALS) {
-          scan_err1(lc, T_("expected an =, got: %s"), lc->str);
-          return;
-        }
-        ScanTypes(lc, message_resource,
-                  static_cast<MessageDestinationCode>(item->code),
-                  dest_file_path, std::string(),
-                  message_resource->timestamp_format_);
-        Dmsg0(900, "done with dest codes\n");
-        break;
-      }
-      default:
-        scan_err1(lc, T_("Unknown item code: %d\n"), item->code);
-        return;
-    }
-  }
-  ScanToEol(lc);
-  message_resource->SetMemberPresent(item->name);
-  ClearBit(index, message_resource->inherit_content_);
-  Dmsg0(900, "Done StoreMsgs\n");
-}
-
-/*
- * This routine is ONLY for resource names
- * Store a name at specified address.
- */
-void ConfigurationParser::StoreName(lexer* lc,
-                                    const ResourceItem* item,
-                                    int index,
-                                    int)
-{
-  std::string msg{};
-
-  LexGetToken(lc, BCT_NAME);
-  if (!IsNameValid(lc->str, msg)) {
-    scan_err1(lc, "%s\n", msg.c_str());
-    return;
-  }
-  // Store the name both in pass 1 and pass 2
-  char** p = GetItemVariablePointer<char**>(*item);
-
-  if (*p) {
-    scan_err2(lc, T_("Attempt to redefine name \"%s\" to \"%s\"."), *p,
-              lc->str);
-    return;
-  }
-  *p = strdup(lc->str);
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-/*
- * Store a name string at specified address
- * A name string is limited to MAX_RES_NAME_LENGTH
- */
-void ConfigurationParser::StoreStrname(lexer* lc,
-                                       const ResourceItem* item,
-                                       int index,
-                                       int pass)
-{
-  LexGetToken(lc, BCT_NAME);
-  if (pass == 1) {
-    char** p = GetItemVariablePointer<char**>(*item);
-    if (*p) { free(*p); }
-    *p = strdup(lc->str);
-  }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a string at specified address
-void ConfigurationParser::StoreStr(lexer* lc,
-                                   const ResourceItem* item,
-                                   int index,
-                                   int pass)
-{
-  LexGetToken(lc, BCT_STRING);
-  if (pass == 1) { SetItemVariableFreeMemory<char*>(*item, strdup(lc->str)); }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a string at specified address
-void ConfigurationParser::StoreStdstr(lexer* lc,
-                                      const ResourceItem* item,
-                                      int index,
-                                      int pass)
-{
-  LexGetToken(lc, BCT_STRING);
-  if (pass == 1) { SetItemVariable<std::string>(*item, lc->str); }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-/*
- * Store a directory name at specified address. Note, we do
- * shell expansion except if the string begins with a vertical
- * bar (i.e. it will likely be passed to the shell later).
- */
-void ConfigurationParser::StoreDir(lexer* lc,
-                                   const ResourceItem* item,
-                                   int index,
-                                   int pass)
-{
-  LexGetToken(lc, BCT_STRING);
-  if (pass == 1) {
-    char** p = GetItemVariablePointer<char**>(*item);
-    if (*p) { free(*p); }
-    if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
-    }
-    *p = strdup(lc->str);
-  }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-void ConfigurationParser::StoreStdstrdir(lexer* lc,
-                                         const ResourceItem* item,
-                                         int index,
-                                         int pass)
-{
-  LexGetToken(lc, BCT_STRING);
-  if (pass == 1) {
-    if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
-    }
-    SetItemVariable<std::string>(*item, lc->str);
-  }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a password at specified address in MD5 coding
-void ConfigurationParser::StoreMd5Password(lexer* lc,
-                                           const ResourceItem* item,
-                                           int index,
-                                           int pass)
-{
-  LexGetToken(lc, BCT_STRING);
-  if (pass == 1) { /* free old item */
-    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
-
-    if (pwd->value) { free(pwd->value); }
-
-    // See if we are parsing an MD5 encoded password already.
-    if (bstrncmp(lc->str, "[md5]", 5)) {
-      if (item->is_required) {
-        static const char* empty_password_md5_hash
-            = "d41d8cd98f00b204e9800998ecf8427e";
-        if (strncmp(lc->str + 5, empty_password_md5_hash,
-                    strlen(empty_password_md5_hash))
-            == 0) {
-          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
-                    (*item->allocated_resource)->resource_name_);
-          return;
-        }
-      }
-
-      std::string_view candidate{lc->str + 5};
-
-      constexpr size_t md5len = 32;
-
-      if (candidate.size() != md5len) {
-        scan_err2(lc,
-                  "md5 password does not have the right size; expected: %" PRIuz
-                  ", got: %" PRIuz "\n",
-                  md5len, candidate.size());
-        *pwd = {};
-        return;
-      }
-
-      if (auto bad = candidate.find_first_not_of("0123456789ABCDEFabcdef");
-          bad != candidate.npos) {
-        scan_err1(
-            lc, "md5 password contains non hexadecimal characters, e.g. '%c'\n",
-            candidate[bad]);
-        *pwd = {};
-        return;
-      }
-
-      pwd->encoding = p_encoding_md5;
-      pwd->value = strdup(lc->str + 5);
-    } else {
-      unsigned int i, j;
-      MD5_CTX md5c;
-      unsigned char digest[CRYPTO_DIGEST_MD5_SIZE];
-      char sig[100];
-
-      if (item->is_required) {
-        if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
-          scan_err1(lc, "Empty Password not allowed in Resource \"%s\"\n",
-                    (*item->allocated_resource)->resource_name_);
-          return;
-        }
-      }
-
-      IGNORE_DEPRECATED_ON;
-      MD5_Init(&md5c);
-      MD5_Update(&md5c, (unsigned char*)(lc->str), lc->str_len);
-      MD5_Final(digest, &md5c);
-      IGNORE_DEPRECATED_OFF;
-      for (i = j = 0; i < sizeof(digest); i++) {
-        snprintf(&sig[j], 3, "%02x", digest[i]);
-        j += 2;
-        ASSERT(j < 100);
-      }
-      pwd->encoding = p_encoding_md5;
-      pwd->value = strdup(sig);
-    }
-  }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a password at specified address in MD5 coding
-void ConfigurationParser::StoreClearpassword(lexer* lc,
-                                             const ResourceItem* item,
-                                             int index,
-                                             int pass)
-{
-  LexGetToken(lc, BCT_STRING);
-  if (pass == 1) {
-    s_password* pwd = GetItemVariablePointer<s_password*>(*item);
-
-
-    if (pwd->value) { free(pwd->value); }
-
-    if (item->is_required) {
-      if (strnlen(lc->str, MAX_NAME_LENGTH) == 0) {
-        scan_err1(
-            lc, "Empty Password not allowed in Resource \"%s\" not allowed.\n",
-            (*item->allocated_resource)->resource_name_);
-        return;
-      }
-    }
-
-    pwd->encoding = p_encoding_clear;
-    pwd->value = strdup(lc->str);
-  }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-/*
- * Store a resource at specified address.
- * If we are in pass 2, do a lookup of the
- * resource.
- */
-void ConfigurationParser::StoreRes(lexer* lc,
-                                   const ResourceItem* item,
-                                   int index,
-                                   int pass)
-{
-  LexGetToken(lc, BCT_NAME);
-  if (pass == 2) {
-    BareosResource* res = GetResWithName(item->code, lc->str);
-    if (res == NULL) {
-      scan_err3(
-          lc,
-          T_("Could not find config resource \"%s\" referenced on line %d: %s"),
-          lc->str, lc->line_no, lc->line);
-      return;
-    }
-    BareosResource** p = GetItemVariablePointer<BareosResource**>(*item);
-    if (*p) {
-      scan_err3(
-          lc,
-          T_("Attempt to redefine resource \"%s\" referenced on line %d: %s"),
-          item->name, lc->line_no, lc->line);
-      return;
-    }
-    *p = res;
-  }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-/*
- * Store a resource pointer in an alist. default_value indicates how many
- * times this routine can be called -- i.e. how many alists there are.
- *
- * If we are in pass 2, do a lookup of the resource.
- */
-void ConfigurationParser::StoreAlistRes(lexer* lc,
-                                        const ResourceItem* item,
-                                        int index,
-                                        int pass)
-{
-  alist<BareosResource*>** alistvalue
-      = GetItemVariablePointer<alist<BareosResource*>**>(*item);
-  if (pass == 2) {
-    if (!*alistvalue) {
-      *alistvalue = new alist<BareosResource*>(10, not_owned_by_alist);
-    }
-  }
-  alist<BareosResource*>* list = *alistvalue;
-
-  int token = BCT_COMMA;
-  while (token == BCT_COMMA) {
-    LexGetToken(lc, BCT_NAME); /* scan next item */
-    if (pass == 2) {
-      BareosResource* res = GetResWithName(item->code, lc->str);
-      if (res == NULL) {
-        scan_err3(lc,
-                  T_("Could not find config Resource \"%s\" referenced on line "
-                     "%d : %s\n"),
-                  item->name, lc->line_no, lc->line);
-        return;
-      }
-      Dmsg5(900, "Append %p (%s) to alist %p size=%d %s\n", res,
-            res->resource_name_, list, list->size(), item->name);
-      list->append(res);
-    }
-    token = LexGetToken(lc, BCT_ALL);
-  }
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a std::string in an std::vector<std::string>.
-void ConfigurationParser::StoreStdVectorStr(lexer* lc,
-                                            const ResourceItem* item,
-                                            int index,
-                                            int pass)
-{
-  std::vector<std::string>* list{nullptr};
-  if (pass == 2) {
-    list = GetItemVariablePointer<std::vector<std::string>*>(*item);
-  }
-  int token = BCT_COMMA;
-  while (token == BCT_COMMA) {
-    LexGetToken(lc, BCT_STRING); /* scan next item */
-    if (pass == 2) {
-      Dmsg4(900, "Append %s to vector %p size=%" PRIuz " %s\n", lc->str, list,
-            list->size(), item->name);
-
-      /* See if we need to drop the default value.
-       *
-       * We first check to see if the config item has the
-       * flag set and currently has exactly one entry. */
-      if (!item->IsPresent()) {
-        if (item->default_value && list->size() == 1) {
-          if (list->at(0) == item->default_value) { list->clear(); }
-        }
-      }
-      list->push_back(lc->str);
-    }
-    token = LexGetToken(lc, BCT_ALL);
-  }
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a string in an alist.
-void ConfigurationParser::StoreAlistStr(lexer* lc,
-                                        const ResourceItem* item,
-                                        int index,
-                                        int pass)
-{
-  alist<const char*>** alistvalue
-      = GetItemVariablePointer<alist<const char*>**>(*item);
-  if (pass == 2) {
-    if (!*alistvalue) {
-      *alistvalue = new alist<const char*>(10, owned_by_alist);
-    }
-  }
-  alist<const char*>* list = *alistvalue;
-
-  int token = BCT_COMMA;
-  while (token == BCT_COMMA) {
-    LexGetToken(lc, BCT_STRING); /* scan next item */
-
-    if (pass == 2) {
-      Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
-            list->size(), item->name);
-
-      /* See if we need to drop the default value from the alist.
-       *
-       * We first check to see if the config item has the
-       * flag set and currently has exactly one entry. */
-      if (!item->IsPresent()) {
-        if (item->default_value && list->size() == 1) {
-          char* entry = (char*)list->first();
-          if (bstrcmp(entry, item->default_value)) {
-            list->destroy();
-            list->init(10, owned_by_alist);
-          }
-        }
-      }
-      list->append(strdup(lc->str));
-    }
-    token = LexGetToken(lc, BCT_ALL);
-  }
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-/*
- * Store a directory name at specified address in an alist.
- * Note, we do shell expansion except if the string begins
- * with a vertical bar (i.e. it will likely be passed to the
- * shell later).
- */
-void ConfigurationParser::StoreAlistDir(lexer* lc,
-                                        const ResourceItem* item,
-                                        int index,
-                                        int pass)
-{
-  if (pass == 2) {
-    alist<const char*>** alistvalue
-        = GetItemVariablePointer<alist<const char*>**>(*item);
-    if (!*alistvalue) {
-      *alistvalue = new alist<const char*>(10, owned_by_alist);
-    }
-    alist<const char*>* list = *alistvalue;
-
-    LexGetToken(lc, BCT_STRING); /* scan next item */
-    Dmsg4(900, "Append %s to alist %p size=%d %s\n", lc->str, list,
-          list->size(), item->name);
-
-    if (lc->str[0] != '|') {
-      DoShellExpansion(lc->str, SizeofPoolMemory(lc->str));
-    }
-
-    /* See if we need to drop the default value from the alist.
-     *
-     * We first check to see if the config item has the
-     * flag set and currently has exactly one entry. */
-    if (item->default_value && list->size() == 1) {
-      char* entry;
-
-      entry = (char*)list->first();
-      if (bstrcmp(entry, item->default_value)) {
-        list->destroy();
-        list->init(10, owned_by_alist);
-      }
-    }
-
-    list->append(strdup(lc->str));
-  }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a list of plugin names to load by the daemon on startup.
-void ConfigurationParser::StorePluginNames(lexer* lc,
-                                           const ResourceItem* item,
-                                           int index,
-                                           int pass)
-{
-  if (pass == 1) {
-    ScanToEol(lc);
-    return;
-  }
-
-  alist<const char*>** alistvalue
-      = GetItemVariablePointer<alist<const char*>**>(*item);
-  if (!*alistvalue) {
-    *alistvalue = new alist<const char*>(10, owned_by_alist);
-  }
-
-  auto saved = lc->options;
-  lc->options.set(lexer::options::ForceString); /* force string, i.e. convert
-                                                   numbers/identifiers */
-
-  bool finish = false;
-  while (!finish) {
-    switch (LexGetToken(lc, BCT_ALL)) {
-      case BCT_EOL:
-        finish = true;
-        break;
-      case BCT_COMMA:
-        continue;
-      case BCT_UNQUOTED_STRING:
-      case BCT_QUOTED_STRING: {
-        char* p0 = strdup(lc->str);
-        char* p1 = p0;
-        char* p2 = p0;
-        while (p1) {
-          p2 = strchr(p1, ':');  // split at ':'
-          if (p2 != nullptr) { *p2++ = '\0'; }
-          (*alistvalue)->append(strdup(p1));
-          p1 = p2;
-        }
-        free(p0);
-        break;
-      }
-      default:
-        finish = true;
-        break;
-    }
-  }
-  lc->options = saved;
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-/*
- * Store default values for Resource from xxxDefs
- * If we are in pass 2, do a lookup of the
- * resource and store everything not explicitly set
- * in main resource.
- *
- * Note, here item points to the main resource (e.g. Job, not
- *  the jobdefs, which we look up).
- */
-void ConfigurationParser::StoreDefs(lexer* lc,
-                                    const ResourceItem* item,
-                                    int,
-                                    int pass)
-{
-  BareosResource* res;
-
-  LexGetToken(lc, BCT_NAME);
-  if (pass == 2) {
-    Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str);
-    res = GetResWithName(item->code, lc->str);
-    if (res == NULL) {
-      scan_err3(
-          lc, T_("Missing config Resource \"%s\" referenced on line %d : %s\n"),
-          lc->str, lc->line_no, lc->line);
-      return;
-    }
-  }
-  ScanToEol(lc);
-}
-
-// Store an integer at specified address
-void ConfigurationParser::store_int16(lexer* lc,
-                                      const ResourceItem* item,
-                                      int index,
-                                      int)
-{
-  LexGetToken(lc, BCT_INT16);
-  SetItemVariable<int16_t>(*item, lc->u.int16_val);
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-void ConfigurationParser::store_int32(lexer* lc,
-                                      const ResourceItem* item,
-                                      int index,
-                                      int)
-{
-  LexGetToken(lc, BCT_INT32);
-  SetItemVariable<int32_t>(*item, lc->u.int32_val);
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a positive integer at specified address
-void ConfigurationParser::store_pint16(lexer* lc,
-                                       const ResourceItem* item,
-                                       int index,
-                                       int)
-{
-  LexGetToken(lc, BCT_PINT16);
-  SetItemVariable<uint16_t>(*item, lc->u.pint16_val);
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-void ConfigurationParser::store_pint32(lexer* lc,
-                                       const ResourceItem* item,
-                                       int index,
-                                       int)
-{
-  LexGetToken(lc, BCT_PINT32);
-  SetItemVariable<uint32_t>(*item, lc->u.pint32_val);
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store an 64 bit integer at specified address
-void ConfigurationParser::store_int64(lexer* lc,
-                                      const ResourceItem* item,
-                                      int index,
-                                      int)
-{
-  LexGetToken(lc, BCT_INT64);
-  SetItemVariable<int64_t>(*item, lc->u.int64_val);
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a size in bytes
-void ConfigurationParser::store_int_unit(lexer* lc,
-                                         const ResourceItem* item,
-                                         int index,
-                                         int,
-                                         bool size32,
-                                         enum unit_type type)
-{
-  uint64_t uvalue;
-  char bsize[500];
-
-  Dmsg0(900, "Enter store_unit\n");
-  int token = LexGetToken(lc, BCT_SKIP_EOL);
-  errno = 0;
-  switch (token) {
-    case BCT_NUMBER:
-    case BCT_IDENTIFIER:
-    case BCT_UNQUOTED_STRING:
-      bstrncpy(bsize, lc->str, sizeof(bsize)); /* save first part */
-      // If terminated by space, scan and get modifier
-      while (lc->ch == ' ') {
-        token = LexGetToken(lc, BCT_ALL);
-        switch (token) {
-          case BCT_NUMBER:
-          case BCT_IDENTIFIER:
-          case BCT_UNQUOTED_STRING:
-            bstrncat(bsize, lc->str, sizeof(bsize));
-            break;
-        }
-      }
-
-      switch (type) {
-        case STORE_SIZE:
-          if (!size_to_uint64(bsize, &uvalue)) {
-            scan_err1(lc, T_("expected a size number, got: %s"), lc->str);
-            return;
-          }
-          break;
-        case STORE_SPEED:
-          if (!speed_to_uint64(bsize, &uvalue)) {
-            scan_err1(lc, T_("expected a speed number, got: %s"), lc->str);
-            return;
-          }
-          break;
-        default:
-          scan_err0(lc, T_("unknown unit type encountered"));
-          return;
-      }
-
-      if (size32) {
-        SetItemVariable<uint32_t>(*item, uvalue);
-      } else {
-        switch (type) {
-          case STORE_SIZE:
-            SetItemVariable<int64_t>(*item, uvalue);
-            break;
-          case STORE_SPEED:
-            SetItemVariable<uint64_t>(*item, uvalue);
-            break;
-        }
-      }
-      break;
-    default:
-      scan_err2(lc, T_("expected a %s, got: %s"),
-                (type == STORE_SIZE) ? T_("size") : T_("speed"), lc->str);
-      return;
-  }
-  if (token != BCT_EOL) { ScanToEol(lc); }
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-  Dmsg0(900, "Leave store_unit\n");
-}
-
-// Store a size in bytes
-void ConfigurationParser::store_size32(lexer* lc,
-                                       const ResourceItem* item,
-                                       int index,
-                                       int pass)
-{
-  store_int_unit(lc, item, index, pass, true /* 32 bit */, STORE_SIZE);
-}
-
-// Store a size in bytes
-void ConfigurationParser::store_size64(lexer* lc,
-                                       const ResourceItem* item,
-                                       int index,
-                                       int pass)
-{
-  store_int_unit(lc, item, index, pass, false /* not 32 bit */, STORE_SIZE);
-}
-
-// Store a speed in bytes/s
-void ConfigurationParser::StoreSpeed(lexer* lc,
-                                     const ResourceItem* item,
-                                     int index,
-                                     int pass)
-{
-  store_int_unit(lc, item, index, pass, false /* 64 bit */, STORE_SPEED);
-}
-
-// Store a time period in seconds
-void ConfigurationParser::StoreTime(lexer* lc,
-                                    const ResourceItem* item,
-                                    int index,
-                                    int)
-{
-  utime_t utime;
-  char period[500];
-
-  int token = LexGetToken(lc, BCT_SKIP_EOL);
-  errno = 0;
-  switch (token) {
-    case BCT_NUMBER:
-    case BCT_IDENTIFIER:
-    case BCT_UNQUOTED_STRING:
-      bstrncpy(period, lc->str, sizeof(period)); /* get first part */
-      // If terminated by space, scan and get modifier
-      while (lc->ch == ' ') {
-        token = LexGetToken(lc, BCT_ALL);
-        switch (token) {
-          case BCT_NUMBER:
-          case BCT_IDENTIFIER:
-          case BCT_UNQUOTED_STRING:
-            bstrncat(period, lc->str, sizeof(period));
-            break;
-        }
-      }
-      if (!DurationToUtime(period, &utime)) {
-        scan_err1(lc, T_("expected a time period, got: %s"), period);
-        return;
-      }
-      SetItemVariable<utime_t>(*item, utime);
-      break;
-    default:
-      scan_err1(lc, T_("expected a time period, got: %s"), lc->str);
-      return;
-  }
-  if (token != BCT_EOL) { ScanToEol(lc); }
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a yes/no in a bit field
-void ConfigurationParser::StoreBit(lexer* lc,
-                                   const ResourceItem* item,
-                                   int index,
-                                   int)
-{
-  LexGetToken(lc, BCT_NAME);
-  char* bitvalue = GetItemVariablePointer<char*>(*item);
-  if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-    SetBit(item->code, bitvalue);
-  } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    ClearBit(item->code, bitvalue);
-  } else {
-    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-              lc->str); /* YES and NO must not be translated */
-    return;
-  }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store a bool in a bit field
-void ConfigurationParser::StoreBool(lexer* lc,
-                                    const ResourceItem* item,
-                                    int index,
-                                    int)
-{
-  LexGetToken(lc, BCT_NAME);
-  if (Bstrcasecmp(lc->str, "yes") || Bstrcasecmp(lc->str, "true")) {
-    SetItemVariable<bool>(*item, true);
-  } else if (Bstrcasecmp(lc->str, "no") || Bstrcasecmp(lc->str, "false")) {
-    SetItemVariable<bool>(*item, false);
-  } else {
-    scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
-              lc->str); /* YES and NO must not be translated */
-    return;
-  }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-// Store Tape Label Type (BAREOS, ANSI, IBM)
-void ConfigurationParser::StoreLabel(lexer* lc,
-                                     const ResourceItem* item,
-                                     int index,
-                                     int)
-{
-  LexGetToken(lc, BCT_NAME);
-  // Store the label pass 2 so that type is defined
-  int i;
-  for (i = 0; tapelabels[i].name; i++) {
-    if (Bstrcasecmp(lc->str, tapelabels[i].name)) {
-      SetItemVariable<uint32_t>(*item, tapelabels[i].token);
-      i = 0;
-      break;
-    }
-  }
-  if (i != 0) {
-    scan_err1(lc, T_("Expected a Tape Label keyword, got: %s"), lc->str);
-    return;
-  }
-  ScanToEol(lc);
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-/*
- * Store network addresses.
- *
- *   my tests
- *   positiv
- *   = { ip = { addr = 1.2.3.4; port = 1205; } ipv4 = { addr = 1.2.3.4; port =
- * http; } } = { ip = { addr = 1.2.3.4; port = 1205; } ipv4 = { addr = 1.2.3.4;
- * port = http; } ipv6 = { addr = 1.2.3.4; port = 1205;
- *     }
- *     ip = {
- *       addr = 1.2.3.4
- *       port = 1205
- *     }
- *     ip = {
- *       addr = 1.2.3.4
- *     }
- *     ip = {
- *       addr = 2001:220:222::2
- *     }
- *     ip = {
- *       addr = bluedot.thun.net
- *     }
- *   }
- *   negativ
- *   = { ip = { } }
- *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
- *   = { ipv4 { port = 4711 } }
- */
-void ConfigurationParser::StoreAddresses(lexer* lc,
-                                         const ResourceItem* item,
-                                         int index,
-                                         int pass)
-{
-  int token;
-  int exist;
-  int family = 0;
-  char errmsg[1024];
-  char port_str[128];
-  char hostname_str[1024];
-  enum
-  {
-    EMPTYLINE = 0x0,
-    PORTLINE = 0x1,
-    ADDRLINE = 0x2
-  } next_line
-      = EMPTYLINE;
-  int port = str_to_int32(item->default_value);
-
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (token != BCT_BOB) {
-    scan_err1(lc, T_("Expected a block begin { , got: %s"), lc->str);
-  }
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (token == BCT_EOB) {
-    scan_err0(lc, T_("Empty addr block is not allowed"));
-  }
-  do {
-    if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
-      scan_err1(lc, T_("Expected a string, got: %s"), lc->str);
-    }
-    if (Bstrcasecmp("ip", lc->str) || Bstrcasecmp("ipv4", lc->str)) {
-      family = AF_INET;
-    } else if (Bstrcasecmp("ipv6", lc->str)) {
-      family = AF_INET6;
-    } else {
-      scan_err1(lc, T_("Expected a string [ip|ipv4|ipv6], got: %s"), lc->str);
-    }
-    token = LexGetToken(lc, BCT_SKIP_EOL);
-    if (token != BCT_EQUALS) {
-      scan_err1(lc, T_("Expected a equal =, got: %s"), lc->str);
-    }
-    token = LexGetToken(lc, BCT_SKIP_EOL);
-    if (token != BCT_BOB) {
-      scan_err1(lc, T_("Expected a block begin { , got: %s"), lc->str);
-    }
-    token = LexGetToken(lc, BCT_SKIP_EOL);
-    exist = EMPTYLINE;
-    port_str[0] = hostname_str[0] = '\0';
-    do {
-      if (token != BCT_IDENTIFIER) {
-        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
-                  lc->str);
-      }
-      if (Bstrcasecmp("port", lc->str)) {
-        next_line = PORTLINE;
-        if (exist & PORTLINE) {
-          scan_err0(lc, T_("Only one port per address block"));
-        }
-        exist |= PORTLINE;
-      } else if (Bstrcasecmp("addr", lc->str)) {
-        next_line = ADDRLINE;
-        if (exist & ADDRLINE) {
-          scan_err0(lc, T_("Only one addr per address block"));
-        }
-        exist |= ADDRLINE;
-      } else {
-        scan_err1(lc, T_("Expected a identifier [addr|port], got: %s"),
-                  lc->str);
-      }
-      token = LexGetToken(lc, BCT_SKIP_EOL);
-      if (token != BCT_EQUALS) {
-        scan_err1(lc, T_("Expected a equal =, got: %s"), lc->str);
-      }
-      token = LexGetToken(lc, BCT_SKIP_EOL);
-      switch (next_line) {
-        case PORTLINE:
-          if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
-                || token == BCT_IDENTIFIER)) {
-            scan_err1(lc, T_("Expected a number or a string, got: %s"),
-                      lc->str);
-          }
-          bstrncpy(port_str, lc->str, sizeof(port_str));
-          break;
-        case ADDRLINE:
-          if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
-            scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"),
-                      lc->str);
-          }
-          bstrncpy(hostname_str, lc->str, sizeof(hostname_str));
-          break;
-        case EMPTYLINE:
-          scan_err0(lc, T_("State machine mismatch"));
-          break;
-      }
-      token = LexGetToken(lc, BCT_SKIP_EOL);
-    } while (token == BCT_IDENTIFIER);
-    if (token != BCT_EOB) {
-      scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
-    }
-    if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_MULTIPLE, htons(port), family, hostname_str,
-                       port_str, errmsg, sizeof(errmsg))) {
-      scan_err3(lc, T_("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
-                hostname_str, port_str, errmsg);
-    }
-    token = ScanToNextNotEol(lc);
-  } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
-  if (token != BCT_EOB) {
-    scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
-  }
-  item->SetPresent();
-  ClearBit(index, (*item->allocated_resource)->inherit_content_);
-}
-
-void ConfigurationParser::StoreAddressesAddress(lexer* lc,
-                                                const ResourceItem* item,
-                                                int,
-                                                int pass)
-{
-  int token;
-  char errmsg[1024];
-  int port = str_to_int32(item->default_value);
-
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
-        || token == BCT_IDENTIFIER)) {
-    scan_err1(lc, T_("Expected an IP number or a hostname, got: %s"), lc->str);
-  }
-
-  if (pass == 1
-      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                     IPADDR::R_SINGLE_ADDR, htons(port),
-                     strchr(lc->str, ':') ? AF_INET6 : AF_INET, lc->str, 0,
-                     errmsg, sizeof(errmsg))) {
-    scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
-  }
-}
-
-void ConfigurationParser::StoreAddressesPort(lexer* lc,
-                                             const ResourceItem* item,
-                                             int,
-                                             int pass)
-{
-  int token;
-  char errmsg[1024];
-  int port = str_to_int32(item->default_value);
-
-  token = LexGetToken(lc, BCT_SKIP_EOL);
-  if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER
-        || token == BCT_IDENTIFIER)) {
-    scan_err1(lc, T_("Expected a port number or string, got: %s"), lc->str);
-  }
-
-  bool has_address = false;
-  IPADDR* iaddr;
-  dlist<IPADDR>* addrs
-      = (dlist<IPADDR>*)(*(GetItemVariablePointer<dlist<IPADDR>**>(*item)));
-  foreach_dlist (iaddr, addrs) {
-    if (iaddr->GetType() == IPADDR::R_SINGLE) { has_address = true; }
-  }
-
-  if (has_address) {
-    if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
-                       errmsg, sizeof(errmsg))) {
-      scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
-    }
-  } else {
-    if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
-                       IPADDR::R_SINGLE, htons(port), 0, 0, lc->str, errmsg,
-                       sizeof(errmsg))) {
-      scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
-    }
-  }
-}
-
 // Generic store resource dispatcher.
-bool ConfigurationParser::StoreResource(int type,
-                                        lexer* lc,
-                                        const ResourceItem* item,
-                                        int index,
-                                        int pass)
+bool StoreResource(ConfigurationParser* conf,
+                   int type,
+                   lexer* lc,
+                   const ResourceItem* item,
+                   int index,
+                   int pass)
 {
   switch (type) {
     case CFG_TYPE_STR:
-      StoreStr(lc, item, index, pass);
+      StoreStr(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_DIR:
-      StoreDir(lc, item, index, pass);
+      StoreDir(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_STDSTR:
-      StoreStdstr(lc, item, index, pass);
+      StoreStdstr(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_STDSTRDIR:
-      StoreStdstrdir(lc, item, index, pass);
+      StoreStdstrdir(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_MD5PASSWORD:
-      StoreMd5Password(lc, item, index, pass);
+      StoreMd5Password(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_CLEARPASSWORD:
-      StoreClearpassword(lc, item, index, pass);
+      StoreClearpassword(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_NAME:
-      StoreName(lc, item, index, pass);
+      StoreName(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_STRNAME:
-      StoreStrname(lc, item, index, pass);
+      StoreStrname(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_RES:
-      StoreRes(lc, item, index, pass);
+      StoreRes(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_ALIST_RES:
-      StoreAlistRes(lc, item, index, pass);
+      StoreAlistRes(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_ALIST_STR:
-      StoreAlistStr(lc, item, index, pass);
+      StoreAlistStr(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_STR_VECTOR:
     case CFG_TYPE_STR_VECTOR_OF_DIRS:
-      StoreStdVectorStr(lc, item, index, pass);
+      StoreStdVectorStr(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_ALIST_DIR:
-      StoreAlistDir(lc, item, index, pass);
+      StoreAlistDir(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_INT16:
-      store_int16(lc, item, index, pass);
+      store_int16(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_PINT16:
-      store_pint16(lc, item, index, pass);
+      store_pint16(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_INT32:
-      store_int32(lc, item, index, pass);
+      store_int32(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_PINT32:
-      store_pint32(lc, item, index, pass);
+      store_pint32(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_MSGS:
-      StoreMsgs(lc, item, index, pass);
+      StoreMsgs(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_INT64:
-      store_int64(lc, item, index, pass);
+      store_int64(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_BIT:
-      StoreBit(lc, item, index, pass);
+      StoreBit(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_BOOL:
-      StoreBool(lc, item, index, pass);
+      StoreBool(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_TIME:
-      StoreTime(lc, item, index, pass);
+      StoreTime(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_SIZE64:
-      store_size64(lc, item, index, pass);
+      store_size64(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_SIZE32:
-      store_size32(lc, item, index, pass);
+      store_size32(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_SPEED:
-      StoreSpeed(lc, item, index, pass);
-      break;
-    case CFG_TYPE_DEFS:
-      StoreDefs(lc, item, index, pass);
+      StoreSpeed(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_LABEL:
-      StoreLabel(lc, item, index, pass);
+      StoreLabel(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_ADDRESSES:
-      StoreAddresses(lc, item, index, pass);
+      StoreAddresses(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_ADDRESSES_ADDRESS:
-      StoreAddressesAddress(lc, item, index, pass);
+      StoreAddressesAddress(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_ADDRESSES_PORT:
-      StoreAddressesPort(lc, item, index, pass);
+      StoreAddressesPort(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_PLUGIN_NAMES:
-      StorePluginNames(lc, item, index, pass);
+      StorePluginNames(conf, lc, item, index, pass);
       break;
     case CFG_TYPE_DIR_OR_CMD:
-      StoreDir(lc, item, index, pass);
+      StoreDir(conf, lc, item, index, pass);
       break;
     default:
       return false;
@@ -2160,7 +2280,7 @@ json_t* json_item(const ResourceItem* item, bool is_alias)
   return json;
 }
 
-json_t* json_item(s_kw* item)
+json_t* json_item(const s_kw* item)
 {
   json_t* json = json_object();
 
@@ -2214,7 +2334,6 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_SIZE64, "SIZE64", "64 bits file size"},
     {CFG_TYPE_SIZE32, "SIZE32", "32 bits file size"},
     {CFG_TYPE_SPEED, "SPEED", "speed"},
-    {CFG_TYPE_DEFS, "DEFS", "definition"},
     {CFG_TYPE_LABEL, "LABEL", "label"},
     {CFG_TYPE_ADDRESSES, "ADDRESSES", "ip addresses list"},
     {CFG_TYPE_ADDRESSES_ADDRESS, "ADDRESS", "ip address"},
@@ -2254,7 +2373,6 @@ static DatatypeName datatype_names[] = {
     {CFG_TYPE_OPTIONS, "OPTIONS", "Options block"},
     {CFG_TYPE_OPTION, "OPTION", "Option of Options block"},
     {CFG_TYPE_REGEX, "REGEX", "Regular Expression"},
-    {CFG_TYPE_BASE, "BASEJOB", "Basejob Expression"},
     {CFG_TYPE_WILD, "WILDCARD", "Wildcard Expression"},
     {CFG_TYPE_PLUGIN, "PLUGIN", "Plugin definition"},
     {CFG_TYPE_FSTYPE, "FILESYSTEM_TYPE", "FileSystem match criterium (UNIX)"},
