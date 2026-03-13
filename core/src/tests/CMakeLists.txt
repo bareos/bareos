@@ -441,6 +441,8 @@ bareos_add_test(test_bsnprintf LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(test_var LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
+bareos_add_test(test_message LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
+
 add_executable(test_bpipe_prog)
 target_sources(test_bpipe_prog PRIVATE test_bpipe_prog.cc)
 bareos_add_test(test_bpipe LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
