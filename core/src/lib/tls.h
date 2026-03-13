@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU Lesser General
@@ -64,6 +64,8 @@ class Tls {
   virtual bool TlsBsockAccept(BareosSocket* bsock) = 0;
   virtual int TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes)
       = 0;
+
+  virtual int TlsPendingBytes() = 0;
   virtual int TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes) = 0;
   virtual bool TlsBsockConnect(BareosSocket* bsock) = 0;
   virtual void TlsBsockShutdown(BareosSocket* bsock) = 0;

@@ -911,9 +911,16 @@ void BareosSocketTCP::RestoreBlocking(int flags)
  */
 int BareosSocketTCP::WaitData(int sec, int usec)
 {
-  int msec;
+  if (tls_conn) {
+    auto pending_bytes = tls_conn->TlsPendingBytes();
+    if (pending_bytes > 0) {
+      Dmsg2(4000, "have %d pending bytes\n", pending_bytes);
+      b_errno = 0;
+      return 1;
+    }
+  }
 
-  msec = (sec * 1000) + (usec / 1000);
+  int msec = (sec * 1000) + (usec / 1000);
   switch (WaitForReadableFd(fd_, msec, true)) {
     case 0:
       b_errno = 0;
@@ -930,9 +937,16 @@ int BareosSocketTCP::WaitData(int sec, int usec)
 // As above, but returns on interrupt
 int BareosSocketTCP::WaitDataIntr(int sec, int usec)
 {
-  int msec;
+  if (tls_conn) {
+    auto pending_bytes = tls_conn->TlsPendingBytes();
+    if (pending_bytes > 0) {
+      Dmsg2(4000, "have %d pending bytes\n", pending_bytes);
+      b_errno = 0;
+      return 1;
+    }
+  }
 
-  msec = (sec * 1000) + (usec / 1000);
+  int msec = (sec * 1000) + (usec / 1000);
   switch (WaitForReadableFd(fd_, msec, false)) {
     case 0:
       b_errno = 0;
