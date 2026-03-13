@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -129,6 +129,8 @@ BareosSocket::BareosSocket(const BareosSocket& other)
   nb_bytes_ = other.nb_bytes_;
   last_tick_ = other.last_tick_;
   tls_established_ = other.tls_established_;
+
+  enable_ktls_ = other.enable_ktls_;
 }
 
 BareosSocket::~BareosSocket()
