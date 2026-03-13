@@ -46,6 +46,7 @@
 #include "include/auth_protocol_types.h"
 #include "lib/attribs.h"
 #include "lib/edit.h"
+#include "lib/output_formatter.h"
 #include "lib/parse_conf.h"
 #include "lib/util.h"
 
@@ -79,30 +80,63 @@ static authorization_mapping authorization_mappings[] = {
     {NULL, 0},
 };
 
-bool DotAuthorizedCmd(UaContext* ua, const char*)
+void output_authorized(OutputFormatter* send, bool authorized)
 {
-  bool retval = false;
+  if (authorized) {
+    send->ObjectKeyValueBool("authorized", authorized, "authorized\n");
+  } else {
+    send->ObjectKeyValueBool("authorized", authorized, "not authorized\n");
+  }
+}
 
+bool do_check_and_ouptut_authorized_cmd_parameter(UaContext* ua)
+{
+  // overall authorized status is true,
+  // until one of the parameters is not authorized.
+  bool retval = true;
+
+  // show authorization status of every given parameter.
+  ua->send->ArrayStart("details");
   for (int i = 1; i < ua->argc; i++) {
-    for (int j = 0; authorization_mappings[j].type; j++) {
+    ua->send->ObjectStart();
+    bool found = false;
+    int j = 0;
+    while (authorization_mappings[j].type && (!found)) {
       if (Bstrcasecmp(ua->argk[i], authorization_mappings[j].type)) {
-        if (ua->argv[i]
-            && ua->AclAccessOk(authorization_mappings[j].acl_type, ua->argv[i],
-                               false)) {
-          retval = true;
+        found = true;
+        ua->send->ObjectKeyValue(ua->argk[i], "%s=", ua->argv[i], "%s: ");
+        if (ua->argv[i]) {
+          bool acl_ok = ua->AclAccessOk(authorization_mappings[j].acl_type,
+                                        ua->argv[i], false);
+          output_authorized(ua->send, acl_ok);
+          ua->send->ObjectKeyValueBool("verified", true);
+          if (!acl_ok) { retval = false; }
         } else {
-          retval = false;
+          ua->send->ObjectKeyValueBool("verified", false, "ignored\n");
         }
       }
+      j++;
     }
+    if (!found) {
+      ua->send->ObjectKeyValue(ua->argk[i], "%s=", ua->argv[i], "%s: ");
+      ua->send->ObjectKeyValueBool("verified", false, "ignored\n");
+    }
+    ua->send->ObjectEnd();
   }
+  ua->send->ArrayEnd("details");
 
+  return retval;
+}
+
+bool DotAuthorizedCmd(UaContext* ua, const char*)
+{
   ua->send->ObjectStart(".authorized");
-  if (retval) {
-    ua->send->ObjectKeyValueBool("authorized", retval, "authorized\n");
-  } else {
-    ua->send->ObjectKeyValueBool("authorized", retval, "not authorized\n");
-  }
+
+  bool retval = do_check_and_ouptut_authorized_cmd_parameter(ua);
+
+  // overall authorized status
+  output_authorized(ua->send, retval);
+
   ua->send->ObjectEnd(".authorized");
 
   return retval;
