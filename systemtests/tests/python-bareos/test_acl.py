@@ -501,8 +501,8 @@ class PythonBareosAclTest(bareos_unittest.Json):
 
         # try with non-allowed where path
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
-            result = console.call(f".authorized where=/tmp/INVALID")
+            result = console.call(".authorized where=/tmp/INVALID")
 
         # try with non-allowed empty where path
         with self.assertRaises(bareos.exceptions.JsonRpcErrorReceivedException):
-            result = console.call(f".authorized where=")
+            result = console.call(".authorized where=")
