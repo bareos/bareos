@@ -308,8 +308,7 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
     case SSL_ERROR_NONE:
       break;
     case SSL_ERROR_ZERO_RETURN:
-      /* TLS connection was shut down on us via a TLS protocol-level closure
-       */
+      /* TLS connection was shut down on us via a TLS protocol-level closure */
       OpensslPostErrors(jcr, M_ERROR, message.c_str());
       break;
     default:
@@ -329,7 +328,19 @@ int TlsOpenSsl::TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes)
   return d_->OpensslBsockReadwrite(bsock, ptr, nbytes, false);
 }
 
-int TlsOpenSsl::TlsPendingBytes() { return SSL_pending(d_->openssl_); }
+int TlsOpenSsl::TlsPendingBytes()
+{
+  /* SSL_pending() returns the amount of already decrypted bytes
+   * since we are using readahead, openssl will read as many bytes as possible
+   * without decrypting them, so SSL_pending() may return
+   * false even though some bytes are ready to be read.
+   * As such, we use SSL_has_pending() as that returns a truthy value if
+   * any number of bytes are inside openssls buffer.
+   * See https://docs.openssl.org/3.6/man3/SSL_pending for more information */
+  if (SSL_has_pending(d_->openssl_)) { return 1; }
+
+  return 0;
+}
 
 bool TlsOpenSsl::KtlsSendStatus() { return d_->KtlsSendStatus(); }
 
