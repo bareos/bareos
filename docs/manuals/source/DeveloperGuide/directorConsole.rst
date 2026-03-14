@@ -99,7 +99,7 @@ To structure data, the ``OutputFormatter`` class offers functions:
 -  ``void array_start(const char *name);``
 -  ``void array_end(const char *name);``
 
-These functions define the structure of the reult object in API mode 2,
+These functions define the structure of the result object in API mode 2,
 but are ignored in API mode 0 and 1.
 
 named objects

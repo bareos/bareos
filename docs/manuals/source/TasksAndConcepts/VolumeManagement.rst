@@ -529,7 +529,7 @@ Example: use four storage devices pointing to the same directory
    [...]
 
 .. code-block:: bareosconfig
-   :caption: |sd| configuraton: using 4 storage devices
+   :caption: |sd| configuration: using 4 storage devices
 
    Storage {
      Name = bareos-sd.example.com

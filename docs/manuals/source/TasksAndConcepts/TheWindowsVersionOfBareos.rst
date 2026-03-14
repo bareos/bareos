@@ -287,7 +287,7 @@ When backing up a Volume Mount Point, it is backed up as directory.
 If :strong:`OneFS`\  is set to yes (default), the Volume Mount Point (VMP) is backed up as directory but the content of the VMP will not be backed up. Also, the Joblog will contain a message like this:
 
 .. code-block:: bareosmessage
-   :caption: Warning on Volume Moint Point and OneFS=yes
+   :caption: Warning on Volume Mount Point and OneFS=yes
 
    C:/linktest/vmp is a different filesystem. Will not descend from C:/linktest into it.
 
@@ -340,7 +340,7 @@ The full path to this registry key is ``HKEY_LOCAL_MACHINE\SYSTEM\CurrentControl
 
 Bareos automatically converts these entries to wildcards which will be automatically excluded from backup.
 
-The backup log shows a short information about the creation of the exludes like this:
+The backup log shows a short information about the creation of the excludes like this:
 
 .. code-block:: bareosmessage
    :caption: Excludes according to the FilesNotToBackup registry key

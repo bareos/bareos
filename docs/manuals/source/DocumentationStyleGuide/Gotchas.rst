@@ -17,7 +17,7 @@ Not shown text
 
 When using :ref:`DocumentationStyleGuide/RestOverview:Directives`, they are prepanded by the comment directives: ''.. ''
 
-For this reason, any mispelled directives will not be shown at all (and not even are warning is shown during sphinx-build).
+For this reason, any misspelled directives will not be shown at all (and not even are warning is shown during sphinx-build).
 
 Similar things happen, is a space is forgotten or a space or line break too many is used.
 
@@ -51,8 +51,8 @@ For this reason it is important, that the included document must match the secti
 
 To avoid :program:`sphinx-build` warnings, included files should use a different extension as the normal files (included by toctree).
 
-  * File extention of the master file and files included by **toctree**: ``*.rst``
-  * File extention of files included by **include**: ``*.rst.inc``
+  * File extension of the master file and files included by **toctree**: ``*.rst``
+  * File extension of files included by **include**: ``*.rst.inc``
 
 Background: As sphinx-build scans all matching files during the build process, it is aware about documents included by  toctree, but not about plain **include** statements. As result, it will see the content of the included file twice: one as included file as part of the source file, once by the scan process during the build. Sphinx will then complain about double defined heading and references.
 
@@ -60,7 +60,7 @@ Background: As sphinx-build scans all matching files during the build process, i
 toctree
 ~~~~~~~
 
-* When using (nested) toctrees, make sure to define a section header above it. Otherwise the header line of the result document will show **<no title>** in the hierarchie of headings.
+* When using (nested) toctrees, make sure to define a section header above it. Otherwise the header line of the result document will show **<no title>** in the hierarchy of headings.
 
 * All files included by toctree start at the same section level. If the sections of a document should start at a lower level, a nested toctree element is needed.
 

@@ -173,7 +173,7 @@ backed up from the local filesystem.
    and matching settings in your |postgresql| configuration file :strong:`postgresql.conf`.
 
    While the PostgreSQL plugin backups only the required files from the WAL archive directory,
-   old files are not removed automatically. It is **your responsability** to setup a cleanup
+   old files are not removed automatically. It is **your responsibility** to setup a cleanup
    routine doing so.
 
 

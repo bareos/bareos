@@ -7,7 +7,7 @@ Specific strings are used again and again in the Bareos documentation.
 
 Here we define how these name should be written (upper or lower case, in one word vs. multiple words, ...).
 
-Text subsitutions can be defined in :file:`conf.py` file.
+Text substitutions can be defined in :file:`conf.py` file.
 
 Bareos Names
 ------------

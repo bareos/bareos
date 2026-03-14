@@ -256,7 +256,7 @@ There are different types of Bareos binaries:
 
    * Available in the Bareos Subscription customers repositories.
    * The last three major releases are maintained in https://download.bareos.com/bareos/release/
-   * The repostories contain the whole binary history of each release, so that downgrades are
+   * The repositories contain the whole binary history of each release, so that downgrades are
      possible if required.
    * Repositories of discontinued versions stay available.
    * While the repository can be browsed, accessing the binaries requires a Bareos Subscription.

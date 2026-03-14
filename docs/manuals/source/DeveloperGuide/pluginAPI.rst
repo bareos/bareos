@@ -502,7 +502,7 @@ bEventCancelCommand
 bEventVssBackupAddComponents
     bEventPluginCommand
     is called for each PluginCommand present in the current FileSet. The
-    event will be sent only on plugin specifed in the command. The
+    event will be sent only on plugin specified in the command. The
     argument is the PluginCommand (not valid after the call).
 bEventHandleBackupFile
     is called for each file of a FileSet when using a Options Plugin. If
@@ -558,7 +558,7 @@ might want to create a virtual file. That is a file that does not
 actually exist on the filesystem, but represents say an object that you
 are backing up. In that case, you need to ensure that the **fname**
 string that you pass back is unique so that it does not conflict with a
-real file on the system, and you need to artifically create values in
+real file on the system, and you need to artificially create values in
 the statp packet.
 
 Example programs such as **bpipe-fd.c** show how to set these fields.
@@ -722,7 +722,7 @@ Creating a directory is similar, but requires a few extra steps:
        sp->statp.st_blocks = 1;
        return bRC_OK;
 
-The link field must be set with the full cononical path name, which
+The link field must be set with the full canonical path name, which
 always ends with a forward slash. If you do not terminate it with a
 forward slash, you will surely have problems later.
 
@@ -828,7 +828,7 @@ IO_LSEEK
     You will be passed: offset, and whence. offset is a 64 bit value and
     is the position to seek to relative to whence. whence is one of the
     following SEEK_SET, SEEK_CUR, or SEEK_END indicating to either to
-    seek to an absolute possition, relative to the current position or
+    seek to an absolute position, relative to the current position or
     relative to the end of the file. You must pass back in offset the
     absolute location to which you seeked. If there is an error, offset
     should be set to -1. If there is a Unix error io_errno must be set
@@ -849,7 +849,7 @@ marked deleted. If you return **true** the file will not be marked
 deleted. This permits a plugin to ensure that previously saved virtual
 files or files controlled by your plugin that have not change (not
 backed up in the current job) are not marked to be deleted. This entry
-point will only be called during Accurate Incrmental and Differential
+point will only be called during Accurate Incremental and Differential
 backup jobs.
 
 Bareos Plugin Entrypoints
@@ -863,7 +863,7 @@ bRC registerBareosEvents(bpContext \*ctx, …)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This Bareos entrypoint will allow you to register to receive events that
-are not autmatically passed to your plugin by default. This entrypoint
+are not automatically passed to your plugin by default. This entrypoint
 currently is unimplemented.
 
 bRC getBareosValue(bpContext \*ctx, bVariable var, void \*value)
