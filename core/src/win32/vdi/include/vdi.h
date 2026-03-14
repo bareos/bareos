@@ -118,7 +118,7 @@ typedef interface IServerVirtualDeviceSet2 IServerVirtualDeviceSet2;
 
 
 /* header files for imported files */
-#  include "unknown.h"
+#  include "unknwn.h"
 
 #  ifdef __cplusplus
 extern "C" {
