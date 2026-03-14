@@ -97,7 +97,7 @@ in the client definition of the |dir|:
 .. _LanAddress:
 
 Using different IP Addresses for SD – FD Communication
------------------------------------------------------
+------------------------------------------------------
 
 .. index::
    single: LAN Address
