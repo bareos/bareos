@@ -17,7 +17,7 @@ export HAVE_AIX_OS=@HAVE_AIX_OS@
 
 BAREOS_UNITTESTS_BINARY_DIR=$CMAKE_BINARY_DIR/core/src/tests
 
-current_test_directory=${PROJECT_BINARY_DIR}/tests/@TEST_NAME@
+current_test_directory=@current_test_directory@
 
 export config_directory_dir_additional_test_config=@config_directory_dir_additional_test_config@
 
