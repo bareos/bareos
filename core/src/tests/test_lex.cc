@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
-#include <cstdio>
+#include <chrono>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <string>
 #include "include/bareos.h"
 #include "lib/lex.h"
@@ -23,15 +25,14 @@ void NullWarningHandler(const char* /*file*/,
 // Creates a temporary file with the given content and returns its path
 std::string WriteTempFile(const std::string& content)
 {
-  char tmpname[] = "/tmp/bareos_lex_test_XXXXXX";
-  int fd = mkstemp(tmpname);
-  if (fd < 0) return "";
-  if (write(fd, content.c_str(), content.size()) < 0) {
-    ::close(fd);
-    return "";
-  }
-  ::close(fd);
-  return tmpname;
+  auto unique_id = std::chrono::steady_clock::now().time_since_epoch().count();
+  std::filesystem::path path = std::filesystem::temp_directory_path()
+                               / ("bareos_lex_test_"
+                                  + std::to_string(unique_id));
+  std::ofstream ofs(path);
+  if (!ofs) return "";
+  ofs << content;
+  return path.string();
 }
 
 // Opens a lexer on a temp file containing the given content
