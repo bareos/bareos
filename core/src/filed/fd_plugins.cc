@@ -2366,7 +2366,7 @@ static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...)
   return bRC_OK;
 }
 
-// Get the number of instaces instantiated of a certain plugin.
+// Get the number of instances instantiated of a certain plugin.
 static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
   int cnt;
@@ -2487,7 +2487,7 @@ static bRC bareosAddExclude(PluginContext* ctx, const char* fname)
   // Save the include context
   old = get_incexe(jcr);
 
-  // Not right time to add exlude
+  // Not right time to add exclude
   if (!old) { return bRC_Error; }
 
   if (!bctx->exclude) {

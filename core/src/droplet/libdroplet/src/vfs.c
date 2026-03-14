@@ -905,7 +905,7 @@ end:
  *
  * @param vfile
  * @param len
- * @parma offset
+ * @param offset
  * @param[out] bufp
  * @param[out] buf_lenp
  * @param[out] metadatap

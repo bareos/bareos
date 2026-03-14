@@ -281,7 +281,7 @@ bool DropletDevice::ForEachChunkInDirectoryRunCallback(
  * Check if a specific path exists.
  * It uses dpl_getattr() for this.
  * However, dpl_getattr() results wrong results in a couple of situations,
- * espescially directoy names should not be checked using a prepended "/".
+ * espescially directory names should not be checked using a prepended "/".
  *
  * Results in detail:
  *

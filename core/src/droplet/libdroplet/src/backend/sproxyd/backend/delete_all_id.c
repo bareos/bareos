@@ -89,7 +89,7 @@ static dpl_status_t get_delete_data_content(dpl_ctx_t* ctx,
 
 static dpl_status_t delete_all(dpl_ctx_t* ctx,
                                const char* bucket,
-                               const char* ressource,
+                               const char* resource,
                                dpl_locators_t* locators,
                                struct dall_req* dctx,
                                dpl_vec_t** objectsp)
@@ -111,7 +111,7 @@ static dpl_status_t delete_all(dpl_ctx_t* ctx,
   ret = dpl_req_set_bucket(dctx->req, bucket);
   if (ret != DPL_SUCCESS) return ret;
 
-  snprintf(path, sizeof(path), "%s/.delete", ressource);
+  snprintf(path, sizeof(path), "%s/.delete", resource);
   ret = dpl_req_set_resource(dctx->req, path);
   if (ret != DPL_SUCCESS) return ret;
 
@@ -185,7 +185,7 @@ static dpl_status_t delete_all(dpl_ctx_t* ctx,
 
 dpl_status_t dpl_sproxyd_delete_all_id(dpl_ctx_t* ctx,
                                        const char* bucket,
-                                       const char* ressource,
+                                       const char* resource,
                                        dpl_locators_t* locators,
                                        UNUSED const dpl_option_t* option,
                                        UNUSED const dpl_condition_t* condition,
@@ -203,7 +203,7 @@ dpl_status_t dpl_sproxyd_delete_all_id(dpl_ctx_t* ctx,
       .objects = NULL,
   };
 
-  ret = delete_all(ctx, bucket, ressource, locators, &dctx, objectsp);
+  ret = delete_all(ctx, bucket, resource, locators, &dctx, objectsp);
 
   if (dctx.conn != NULL) {
     if (dctx.connection_close)

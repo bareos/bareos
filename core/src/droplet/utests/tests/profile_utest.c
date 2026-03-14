@@ -363,8 +363,8 @@ START_TEST(logging_test)
 
   profile = dpl_dict_new(13);
   dpl_assert_ptr_not_null(profile);
-  /* the host is an unparseable IPv4 address literal, which should
-   * result in a predicable error */
+  /* the host is an unparsable IPv4 address literal, which should
+   * result in a predictable error */
   dpl_assert_int_eq(DPL_SUCCESS,
                     dpl_dict_add(profile, "host", "123.456.789.012", 0));
   dpl_assert_int_eq(DPL_SUCCESS,

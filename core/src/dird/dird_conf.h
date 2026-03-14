@@ -124,7 +124,7 @@ class DirectorResource
   alist<const char*>* audit_events
       = nullptr;                  /* Specific audit events to enable */
   uint32_t ndmp_loglevel = 0;     /* NDMP Protocol specific loglevel to use */
-  uint32_t subscriptions = 0;     /* Number of subscribtions available */
+  uint32_t subscriptions = 0;     /* Number of subscriptions available */
   uint32_t jcr_watchdog_time = 0; /* Absolute time after which a Job gets
                                  terminated  regardless of its progress */
   uint32_t stats_collect_interval

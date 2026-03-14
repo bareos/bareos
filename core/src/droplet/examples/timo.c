@@ -232,7 +232,7 @@ void get_object_meta()
       = (dpl_async_task_t*)dpl_head_async_prepare(ctx,            // the context
                                                   NULL,           // no bucket
                                                   file3_path,     // the key
-                                                  NULL,           // no opion
+                                                  NULL,           // no option
                                                   DPL_FTYPE_REG,  // object type
                                                   NULL);  // no condition
 
@@ -335,7 +335,7 @@ void get_named_object()
       = (dpl_async_task_t*)dpl_get_async_prepare(ctx,            // the context
                                                  NULL,           // no bucket
                                                  file3_path,     // the key
-                                                 NULL,           // no opion
+                                                 NULL,           // no option
                                                  DPL_FTYPE_REG,  // object type
                                                  NULL,           // no condition
                                                  NULL);          // no range
@@ -386,7 +386,7 @@ void get_nameless_object()
       ctx,            // the context
       NULL,           // no bucket
       id1,            // the key
-      NULL,           // no opion
+      NULL,           // no option
       DPL_FTYPE_REG,  // object type
       NULL,           // no condition
       NULL);          // no range

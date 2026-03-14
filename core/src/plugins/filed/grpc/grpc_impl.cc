@@ -1987,7 +1987,7 @@ struct grpc_connection_builder {
     if (!IsPredefinedFD(fd)) { return true; }
     // we first need to get it out of our range
     // later we put it into the right place
-    int newfd = dup2(fd, dummy);  // this closes dummy if it refered to a file,
+    int newfd = dup2(fd, dummy);  // this closes dummy if it referred to a file,
     // but we chose dummy in such a way that this does not
     // matter
 

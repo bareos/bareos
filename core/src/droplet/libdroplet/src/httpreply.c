@@ -788,7 +788,7 @@ dpl_status_t dpl_read_http_reply_ext(dpl_conn_t* conn,
     goto end;
   }
 
-  // connection_close might explicitely be requested
+  // connection_close might explicitly be requested
   if (dpl_connection_close(hc.headers)) connection_close = 1;
 
   // some servers does not send explicit connection information and does not

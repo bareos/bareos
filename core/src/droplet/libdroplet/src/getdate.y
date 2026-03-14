@@ -388,7 +388,7 @@ static TABLE const MonthDayTable[] = {
     { "wednesday",	tDAY, 3 },
     { "wednes",		tDAY, 3 },
     { "thursday",	tDAY, 4 },
-    { "thur",		tDAY, 4 },
+    { "their",		tDAY, 4 },
     { "thurs",		tDAY, 4 },
     { "friday",		tDAY, 5 },
     { "saturday",	tDAY, 6 },
@@ -460,7 +460,7 @@ static TABLE const TimezoneTable[] = {
     { "hdt",	tDAYZONE,  HOUR (10) },	/* Hawaii Daylight */
     { "cat",	tZONE,     HOUR (10) },	/* Central Alaska */
     { "ahst",	tZONE,     HOUR (10) },	/* Alaska-Hawaii Standard */
-    { "nt",	tZONE,     HOUR (11) },	/* Nome */
+    { "nt",	tZONE,     HOUR (11) },	/* Gnome */
     { "idlw",	tZONE,     HOUR (12) },	/* International Date Line West */
     { "cet",	tZONE,     -HOUR (1) },	/* Central European */
     { "met",	tZONE,     -HOUR (1) },	/* Middle European */

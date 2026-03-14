@@ -420,7 +420,7 @@ void GetArguments(const char* what)
   regfree(&preg);
 }
 
-/* retreive a simple list (.pool, .client) and store it into items */
+/* retrieve a simple list (.pool, .client) and store it into items */
 static void GetItems(const char* what)
 {
   init_items();
@@ -1126,7 +1126,7 @@ static void TerminateConsole(int sig)
 {
   static bool already_here = false;
 
-  if (already_here) { /* avoid recursive temination problems */
+  if (already_here) { /* avoid recursive termination problems */
     exit(BEXIT_FAILURE);
   }
   already_here = true;

@@ -39,8 +39,8 @@ class ConfigParserStateMachine {
                            lexer::warning_handler* scan_warning,
                            ConfigurationParser& my_config);
   ~ConfigParserStateMachine();
-  ConfigParserStateMachine(ConfigParserStateMachine& ohter) = delete;
-  ConfigParserStateMachine(ConfigParserStateMachine&& ohter) = delete;
+  ConfigParserStateMachine(ConfigParserStateMachine& other) = delete;
+  ConfigParserStateMachine(ConfigParserStateMachine&& other) = delete;
   ConfigParserStateMachine& operator=(ConfigParserStateMachine& rhs) = delete;
   ConfigParserStateMachine& operator=(ConfigParserStateMachine&& rhs) = delete;
 

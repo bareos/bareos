@@ -33,7 +33,7 @@
  * added MIT license header
  * added bareos-style include guards
  * fixed cross compilation errors (extra tokens after #else/#endif)
- * reformated in bareos style */
+ * reformatted in bareos style */
 
 /* this ALWAYS GENERATED file contains the IIDs and CLSIDs */
 

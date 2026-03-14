@@ -474,7 +474,7 @@ dpl_status_t dpl_addrlist_refresh_blacklist_nolock(dpl_addrlist_t* addrlist)
 /**
  * @brief Add an item to a bootstrap list.
  *
- * The addrlist takes ownership of the boostrap item and will free it
+ * The addrlist takes ownership of the bootstrap item and will free it
  * when appropriate.
  *
  * @note This function does not take the addrlist lock, so use with care.

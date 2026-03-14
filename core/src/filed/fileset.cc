@@ -258,7 +258,7 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
       case 'A':
         SetBit(FO_ACL, fo->flags);
         break;
-      case 'a': /* Alway replace */
+      case 'a': /* Always replace */
       case '0': /* No option */
         break;
       case 'C': /* Accurate options */
@@ -495,7 +495,7 @@ static int SetOptionsAndFlags(findFOPTS* fo, const char* opts)
               = (struct s_sz_matching*)malloc(sizeof(struct s_sz_matching));
         }
         if (!ParseSizeMatch(size, fo->size_match)) {
-          Emsg1(M_ERROR, 0, T_("Unparseable size option: %s\n"), size);
+          Emsg1(M_ERROR, 0, T_("Unparsable size option: %s\n"), size);
         }
         break;
       default:

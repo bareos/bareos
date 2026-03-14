@@ -179,7 +179,7 @@ int main(int argc, char** argv)
   ret = dpl_get(ctx,                 // the context
                 NULL,                // no bucket
                 new_path,            // the key
-                NULL,                // no opion
+                NULL,                // no option
                 DPL_FTYPE_REG,       // object type
                 NULL,                // no condition
                 NULL,                // no range

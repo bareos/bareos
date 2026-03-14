@@ -180,7 +180,7 @@ static int BvfsResultHandler(void* ctx, int, char** row)
   char zero[] = "0";
   int32_t LinkFI = 0;
 
-  // We need to deal with non existant path
+  // We need to deal with non existent path
   if (!fileid || !Is_a_number(fileid)) {
     lstat = empty;
     jobid = zero;
@@ -1308,7 +1308,7 @@ bool DotDefaultsCmd(UaContext* ua, const char*)
       std::string devices;
       for (auto& device : storage->devices) {
         // if the string is nonempty, then there are already devices in the
-        // "list", so seperate the new entry with a comma.
+        // "list", so separate the new entry with a comma.
         if (!devices.empty()) { devices += ","; }
         devices += device.name;
       }

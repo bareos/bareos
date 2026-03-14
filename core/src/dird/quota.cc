@@ -81,7 +81,7 @@ uint64_t FetchRemainingQuotas(JobControlRecord* jcr)
     remaining = jcr->dir_impl->res.client->HardQuota
                 - jcr->dir_impl->jr.JobSumTotalBytes;
   } else {
-    /* If just over quota return 0. This shouldnt happen because quotas
+    /* If just over quota return 0. This shouldn't happen because quotas
      * are checked properly prior to this code. */
     remaining = 0;
   }

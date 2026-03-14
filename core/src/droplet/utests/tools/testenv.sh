@@ -28,7 +28,7 @@ fi
 
 # Under normal circumstances this is where we would invoke Valgrind.
 # However libtool makes it extremely difficult to locate the correct
-# shared libary *and* run through Valgrind at the same time.  So
+# shared library *and* run through Valgrind at the same time.  So
 # there's an awful hack in utest_main.c to start Valgrind from inside
 # the process.
 

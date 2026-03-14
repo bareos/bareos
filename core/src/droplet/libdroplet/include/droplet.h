@@ -522,7 +522,7 @@ typedef struct dpl_ctx {
   int read_timeout;    /*!< Read timeout (sec)        */
   int write_timeout;   /*!< Write timeout (sec)       */
   dpl_addrlist_t* addrlist; /*!< List of addresses to contact */
-  int cur_host;             /*!< Current host beeing used in addrlist */
+  int cur_host;             /*!< Current host being used in addrlist */
   int blacklist_expiretime; /*!< Expiration time of blacklisting */
   char* base_path;          /*!< or RootURI */
   char* access_key;

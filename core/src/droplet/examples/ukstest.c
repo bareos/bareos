@@ -77,7 +77,7 @@ int main(int argc, char** argv)
                             -1,  // oid (unused)
                             -1,  // volid (unused)
                             -1,  // serviceid (unused)
-                            1);  // specific (overriden)
+                            1);  // specific (overridden)
   if (DPL_SUCCESS != ret) {
     fprintf(stderr, "dpl_uks_gen_key failed: %s (%d)\n", dpl_status_str(ret),
             ret);

@@ -171,7 +171,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
   node = FirstTreeNode(jcr->dir_impl->restore_tree_root);
   while (node) {
     /* node->extract_dir  means that only the directory should be selected for
-     * extraction itself, the subdirs and subfiles are not automaticaly marked
+     * extraction itself, the subdirs and subfiles are not automatically marked
      * for extraction ( i.e. set node->extract)
      *
      * We can use this to select a directory for DDAR.

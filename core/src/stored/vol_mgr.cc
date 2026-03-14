@@ -356,7 +356,7 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
   Dmsg2(debuglevel, "enter reserve_volume=%s drive=%s\n", VolumeName,
         dcr->dev->print_name());
 
-  // If aquiring a volume for writing it may not be on the read volume list.
+  // If acquiring a volume for writing it may not be on the read volume list.
   if (me->filedevice_concurrent_read && dcr->IsWriting()
       && find_read_volume(VolumeName)) {
     Mmsg(dcr->jcr->errmsg,
@@ -754,7 +754,7 @@ bool FreeVolume(Device* dev)
       }
     }
 
-    /* Volume is on write volume list if one of the folling is applicable:
+    /* Volume is on write volume list if one of the following is applicable:
      *  - The volume is written to.
      *  - Config option filedevice_concurrent_read is not on.
      *  - The device is not of type File. */

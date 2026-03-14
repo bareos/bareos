@@ -45,7 +45,7 @@ struct MYJCR {
 };
 
 /*
- * if a contructor is used without parameter,
+ * if a constructor is used without parameter,
  * dlink must be the first item in the used structure.
  * (otherwise loffset must be calculated)
  */
@@ -209,7 +209,7 @@ TEST(dlist, RemoveAndReplaceAppendedElement)
   MYJCR* next_jcr;
   int index = 0;
 
-  /* The following may seem a bit odd, but we create a chaing
+  /* The following may seem a bit odd, but we create a chain
    *  of jcr objects.  Within a jcr object, there is a buf
    *  that points to a malloced string containing data
    */

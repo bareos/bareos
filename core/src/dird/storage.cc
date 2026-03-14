@@ -477,7 +477,7 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
   SetRstorage(jcr, &ustore);
   jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
-  // Wait for up to 6 hours to increment read stoage counter
+  // Wait for up to 6 hours to increment read storage counter
   for (int i = 0; i < MAX_TRIES; i++) {
     // Try to get read storage counter incremented
     if (IncReadStore(jcr)) {

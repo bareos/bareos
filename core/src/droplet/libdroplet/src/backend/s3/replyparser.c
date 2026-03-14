@@ -98,7 +98,7 @@ dpl_status_t dpl_s3_get_metadatum_from_header(
 
         if (value_len < DPL_SYSMD_ETAG_SIZE && value_len >= 2) {
           sysmdp->mask |= DPL_SYSMD_MASK_ETAG;
-          // supress double quotes
+          // suppress double quotes
           strncpy(sysmdp->etag, value + 1, DPL_SYSMD_ETAG_SIZE);
           sysmdp->etag[value_len - 2] = 0;
         }

@@ -39,7 +39,7 @@
 #include <droplet/s3/s3.h>
 
 static dpl_status_t _status_read_get(struct json_object* status,
-                                     unsigned int* offsetp)
+                                     unsigned int* offset)
 {
   dpl_status_t ret = DPL_FAILURE;
   struct json_object* json_mode = NULL;
@@ -68,7 +68,7 @@ static dpl_status_t _status_read_get(struct json_object* status,
     json_object_object_add(status, "offset", json_offset);
   }
 
-  *offsetp = json_object_get_int64(json_offset);
+  *offset = json_object_get_int64(json_offset);
 
   ret = DPL_SUCCESS;
 

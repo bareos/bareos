@@ -418,7 +418,7 @@ void BareosDb::ListLogRecords(JobControlRecord* jcr,
 
   if (type != VERT_LIST) {
     /* When something else then a vertical list is requested set the list type
-     * to RAW_LIST e.g. non formated raw data as that makes the only sense for
+     * to RAW_LIST e.g. non formatted raw data as that makes the only sense for
      * the logtext output. The logtext already has things like \n etc in it
      * so we should just dump the raw content out for the best visible output.
      */
@@ -454,7 +454,7 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
     FillQuery(SQL_QUERY::list_joblog_2, edit_int64(JobId, ed1), range);
     if (type != VERT_LIST) {
       /* When something else then a vertical list is requested set the list type
-       * to RAW_LIST e.g. non formated raw data as that makes the only sense for
+       * to RAW_LIST e.g. non formatted raw data as that makes the only sense for
        * the logtext output. The logtext already has things like \n etc in it
        * so we should just dump the raw content out for the best visible output.
        */

@@ -552,7 +552,7 @@ void dpl_blacklist_host(dpl_ctx_t* ctx, const char* host, const char* portstr)
 /**
  * Get a connection from the context.
  *
- * Creates or re-uses a connection suitable for use with the request
+ * Creates or reuses a connection suitable for use with the request
  * `req`.  The calling thread is guaranteed exclusive use of the
  * connection.  If a recently released connection is suitable, it will be
  * returned.

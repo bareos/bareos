@@ -1165,7 +1165,7 @@ static inline bool GfapiMakedirs(plugin_ctx* p_ctx, const char* directory)
  * 'server' specifies the server where the volume file specification for
  * the given volume resides. This can be either hostname, ipv4 address
  * or ipv6 address. ipv6 address needs to be within square brackets [ ].
- * If transport type is 'unix', then 'server' field should not be specifed.
+ * If transport type is 'unix', then 'server' field should not be specified.
  * The 'socket' field needs to be populated with the path to unix domain
  * socket.
  *
@@ -2075,7 +2075,7 @@ static bRC getXattr(PluginContext* ctx, xattr_pkt* xp)
   }
 
   while (1) {
-    /* On some OSes you also get the acls in the extented attribute list.
+    /* On some OSes you also get the acls in the extended attribute list.
      * So we check if we are already backing up acls and if we do we
      * don't store the extended attribute with the same info. */
     skip_xattr = false;

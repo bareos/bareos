@@ -63,10 +63,10 @@ START_TEST(get_set_test)
   int r;
   char id[41];
   static const char data[]
-      = "Carles wolf yr Austin, chambray twee lo-fi iPhone brunch Neutra"
+      = "Carles wolf yr Austin, chambray twee lo-fi iPhone branch Neutra"
         "slow-carb. Viral +1 kitsch fashion axe wolf.  Selvage flexitarian"
         "ugh banjo Godard, jean shorts occupy Marfa fingerstache literally"
-        "whatever keffiyeh put a bird on it biodiesel brunch. Forage plaid"
+        "whatever keffiyeh put a bird on it biodiesel branch. Forage plaid"
         "wolf kitsch Etsy. Literally ugh Carles, Intelligentsia sartorial";
 
   /* create a context with all defaults */
@@ -108,7 +108,7 @@ static dpl_status_t send_authenticated_request(const char* username,
   dpl_dict_t* prof2;
   char id[41];
   static const char data[]
-      = "Carles wolf yr Austin, chambray twee lo-fi iPhone brunch Neutra"
+      = "Carles wolf yr Austin, chambray twee lo-fi iPhone branch Neutra"
         "slow-carb. Viral";
 
   prof2 = dpl_dict_dup(profile);

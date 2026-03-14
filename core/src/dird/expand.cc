@@ -330,7 +330,7 @@ static var_rc_t lookup_var(var_t* ctx,
     if (*p == '|') { count++; }
   }
 
-  Dmsg3(100, "For %s, reqest index=%d have=%d\n", buf.c_str(), var_index,
+  Dmsg3(100, "For %s, request index=%d have=%d\n", buf.c_str(), var_index,
         count);
 
   // -1 => return size of array

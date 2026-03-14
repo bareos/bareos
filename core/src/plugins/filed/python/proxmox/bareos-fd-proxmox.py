@@ -388,7 +388,7 @@ class BareosFdProxmox(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # restore to io_process' stdin
             iop.filedes = self.io_process.stdin.fileno()
         else:
-            # other levels already catched at job start
+            # other levels already caught at job start
             assert False
 
         return bareosfd.bRC_OK

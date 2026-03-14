@@ -456,8 +456,8 @@ int BareosDb::ListResult(void* vctx, int, char** row)
   switch (type) {
     case NF_LIST:
     case RAW_LIST:
-      /* No need to calculate things like maximum field lenght for
-       * unformated or raw output. */
+      /* No need to calculate things like maximum field length for
+       * unformatted or raw output. */
       break;
     case HORZ_LIST:
     case VERT_LIST:

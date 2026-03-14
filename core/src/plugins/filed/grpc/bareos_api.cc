@@ -84,7 +84,7 @@ bool checkChanges(PluginContext* ctx,
   if (fd.core) {
     filedaemon::save_pkt pkt{};
 
-    // depending on whether the paket is a file or a directory,
+    // depending on whether the packet is a file or a directory,
     // checkChanges uses either the link or fname field to get the file name.
     // We just set both to the correct name here and hope for the best!
 
@@ -112,7 +112,7 @@ bool AcceptFile(PluginContext* ctx,
   if (fd.core) {
     filedaemon::save_pkt pkt{};
 
-    // depending on whether the paket is a file or a directory,
+    // depending on whether the packet is a file or a directory,
     // checkChanges uses either the link or fname field to get the file name.
     // We just set both to the correct name here and hope for the best!
 

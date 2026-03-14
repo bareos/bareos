@@ -414,7 +414,7 @@ dpl_status_t dpl_timetoiso8601(time_t t, char* buf, int buf_size)
 /**/
 
 /**
- * find the last occurence of needle in haystack
+ * find the last occurrence of needle in haystack
  *
  * @param haystack
  * @param needle
@@ -1045,7 +1045,7 @@ void dpl_set_log_func(dpl_log_func_t logfunc)
 /** @} */
 
 /**
- * Fills a dictionnary with file extended attributes.
+ * Fills a dictionary with file extended attributes.
  *
  * @param path path to the file
  * @param dict dict to fill, must be pre-allocated

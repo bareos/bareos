@@ -385,7 +385,7 @@ int removeService()
       if (opt_debug) {
         MessageBox(NULL,
                    T_("Could not find registry entry.\nService probably not "
-                      "registerd - the Bareos service was not removed"),
+                      "registered - the Bareos service was not removed"),
                    APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       }
     } else {

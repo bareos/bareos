@@ -57,7 +57,7 @@ START_TEST(ntinydb_test)
   const char* keys[]
       = {"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
          "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"};
-  char* datas[sizeof(keys) / sizeof(keys[0])];
+  char* data[sizeof(keys) / sizeof(keys[0])];
   unsigned int i;
   int ret;
   dpl_status_t s;
@@ -65,8 +65,8 @@ START_TEST(ntinydb_test)
   srand48(0xdeadbeef);
 
   for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
-    datas[i] = new_pseudorandom_bytes(512);
-    s = dpl_ntinydb_set(b, keys[i], datas[i], 512);
+    data[i] = new_pseudorandom_bytes(512);
+    s = dpl_ntinydb_set(b, keys[i], data[i], 512);
     dpl_assert_int_eq(DPL_SUCCESS, s);
   }
   for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) {
@@ -75,7 +75,7 @@ START_TEST(ntinydb_test)
     s = dpl_ntinydb_get(b->buf, b->len, keys[i], datas_check + i, &out_len);
     dpl_assert_int_eq(DPL_SUCCESS, s);
     dpl_assert_int_eq(512, out_len);
-    fail_unless(0 == memcmp(datas_check[i], datas[i], 512));
+    fail_unless(0 == memcmp(datas_check[i], data[i], 512));
   }
   arg_list all_keys;
   all_keys.nelem = sizeof(keys) / sizeof(keys[0]);
@@ -90,7 +90,7 @@ START_TEST(ntinydb_test)
   }
   free(all_keys.found);
 
-  for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) free(datas[i]);
+  for (i = 0; i < sizeof(keys) / sizeof(keys[0]); i++) free(data[i]);
   dpl_sbuf_free(b);
 }
 END_TEST

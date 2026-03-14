@@ -53,7 +53,7 @@
  * Users are supposed to call these functions as opposed to using the backend
  * functions directly.
  *
- * Configuring the backend is done is the profile dictionnary or the profile
+ * Configuring the backend is done is the profile dictionary or the profile
  * configuration file (see dpl_ctx_new())
  */
 
@@ -877,7 +877,7 @@ end:
  *
  * @param ctx the droplet context
  * @param bucket the optional bucket
- * @param ressource path of ID (ex: /proxy/arc) for REST backend
+ * @param resource path of ID (ex: /proxy/arc) for REST backend
  * @param option DPL_OPTION_HTTP_COMPAT use if possible the HTTP compat mode
  * @param object_type
  * @param condition the optional condition
@@ -888,7 +888,7 @@ end:
  */
 dpl_status_t dpl_delete_all_id(dpl_ctx_t* ctx,
                                const char* bucket,
-                               const char* ressource,
+                               const char* resource,
                                dpl_locators_t* locators,
                                const dpl_option_t* option,
                                const dpl_condition_t* condition,
@@ -901,7 +901,7 @@ dpl_status_t dpl_delete_all_id(dpl_ctx_t* ctx,
     goto end;
   }
 
-  ret = ctx->backend->delete_all_id(ctx, bucket, ressource, locators, option,
+  ret = ctx->backend->delete_all_id(ctx, bucket, resource, locators, option,
                                     condition, objectsp);
   if (DPL_SUCCESS != ret) goto end;
 

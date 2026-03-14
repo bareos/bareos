@@ -26,7 +26,7 @@
  *
  */
 
-/* Concerning times. There are a number of differnt time standards
+/* Concerning times. There are a number of different time standards
  * in BAREOS (fdate_t, ftime_t, time_t (Unix standard), btime_t, and
  * utime_t).  fdate_t and ftime_t are deprecated and should no longer
  * be used, and in general, Unix time time_t should no longer be used,

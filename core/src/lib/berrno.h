@@ -34,7 +34,7 @@
 #ifdef HAVE_WIN32
 #  define b_errno_win32 (1 << 29) /* user reserved bit */
 #else
-#  define b_errno_win32 0 /* On Unix/Linix system */
+#  define b_errno_win32 0 /* On Unix/Linux system */
 #endif
 #define b_errno_exit (1 << 28)   /* child exited, exit code returned */
 #define b_errno_signal (1 << 27) /* child died, signal code returned */

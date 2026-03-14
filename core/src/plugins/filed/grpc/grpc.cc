@@ -64,7 +64,7 @@ bool next_section(std::string_view& input, std::string& output, char delimiter)
   }
 
   // we only want to advance the string once we have made sure that the parsing
-  // succeded.
+  // succeeded.
   input.remove_prefix(read_bytes);
   return true;
 }
@@ -506,7 +506,7 @@ constexpr PluginInformation my_info = {
       " bareos plugins by the use of a grpc interface.",
     .plugin_usage
     = "grpc:<grpc executable>:...\n"
-      "Additional paramenters are parsed by the executable instead.\n"
+      "Additional parameters are parsed by the executable instead.\n"
       "EXAMPLE grpc:grpc-test-module:file=/my/file",
 };
 

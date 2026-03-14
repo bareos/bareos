@@ -119,7 +119,7 @@ static dpl_status_t delete_all(dpl_ctx_t* ctx,
   dctx->query_params = dpl_dict_new(1);
   if (dctx->query_params == NULL) return ENOMEM;
 
-  /* Note: Juste for authentification signature calcul */
+  /* Note: Juste for authentication signature calcul */
   ret = dpl_dict_add(dctx->query_params, "delete", "", 0);
   if (DPL_SUCCESS != ret) return ret;
 

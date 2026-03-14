@@ -196,7 +196,7 @@ dpl_status_t dpl_delete_id(dpl_ctx_t* ctx,
                            const dpl_condition_t* condition);
 dpl_status_t dpl_delete_all_id(dpl_ctx_t* ctx,
                                const char* bucket,
-                               const char* ressource,
+                               const char* resource,
                                dpl_locators_t* locators,
                                const dpl_option_t* option,
                                const dpl_condition_t* condition,

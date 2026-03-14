@@ -291,7 +291,7 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
   }
 
   /* During pass 2 in each "store" routine, we looked up pointers
-   * to all the resource_definitions referrenced in the current resource, now we
+   * to all the resource_definitions referenced in the current resource, now we
    * must copy their addresses from the static record to the allocated
    * record. */
   if (pass == 2) {

@@ -410,13 +410,13 @@ bool StartStorageDaemonJob(JobControlRecord* jcr, bool send_bsr)
 bool StartStorageDaemonMessageThread(JobControlRecord* jcr)
 {
   int status;
-  pthread_t thid;
+  pthread_t this;
 
   jcr->IncUseCount(); /* mark in use by msg thread */
   jcr->dir_impl->sd_msg_thread_done = false;
   jcr->dir_impl->SD_msg_chan_started = false;
   Dmsg0(100, "Start SD msg_thread.\n");
-  if ((status = pthread_create(&thid, NULL, msg_thread, (void*)jcr)) != 0) {
+  if ((status = pthread_create(&this, NULL, msg_thread, (void*)jcr)) != 0) {
     BErrNo be;
     Jmsg1(jcr, M_ABORT, 0, T_("Cannot create message thread: %s\n"),
           be.bstrerror(status));

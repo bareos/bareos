@@ -338,7 +338,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       }
       WaitForStorageDaemonTermination(jcr);
     }
-  } /* the whole boostrap has been send */
+  } /* the whole bootstrap has been send */
 
   if (fd && jcr->dir_impl->FDVersion >= FD_VERSION_2) {
     fd->fsend("endrestore");

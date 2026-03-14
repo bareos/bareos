@@ -368,7 +368,7 @@ void get_object()
       = (dpl_async_task_t*)dpl_get_async_prepare(ctx,            // the context
                                                  NULL,           // no bucket
                                                  new_path,       // the key
-                                                 NULL,           // no opion
+                                                 NULL,           // no option
                                                  DPL_FTYPE_REG,  // object type
                                                  NULL,           // no condition
                                                  NULL);          // no range

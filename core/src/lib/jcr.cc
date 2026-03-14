@@ -37,7 +37,7 @@
  *  in the list while traversing it rather than a single lock
  *  at the beginning of a traversal and one at the end.  This
  *  incurs slightly more overhead, but effectively eliminates
- *  the possibilty of race conditions.  In addition, with the
+ *  the possibility of race conditions.  In addition, with the
  *  exception of the global locking of the list during the
  *  re-reading of the config file, no recursion is needed.
  *

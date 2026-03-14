@@ -37,7 +37,7 @@
 #include <droplet/s3/s3.h>
 
 static dpl_status_t _status_write_get(struct json_object* status,
-                                      unsigned int* offsetp,
+                                      unsigned int* offset,
                                       unsigned int* npartsp)
 {
   dpl_status_t ret = DPL_FAILURE;
@@ -68,7 +68,7 @@ static dpl_status_t _status_write_get(struct json_object* status,
     }
     json_object_object_add(status, "offset", json_off);
   }
-  *offsetp = (unsigned int)json_object_get_int64(json_off);
+  *offset = (unsigned int)json_object_get_int64(json_off);
 
   if (json_object_object_get_ex(status, "nparts", &json_nparts) == 0) {
     json_nparts = json_object_new_int64(0);

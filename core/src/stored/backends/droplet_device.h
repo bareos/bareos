@@ -50,7 +50,7 @@ typedef dpl_status_t (*t_dpl_walk_chunks_call_back)(dpl_sysmd_t* sysmd,
 
 class DropletDevice : public ChunkedDevice {
  private:
-  /* maximun number of chunks in a volume (0000 to 9999) */
+  /* maximum number of chunks in a volume (0000 to 9999) */
   const int max_chunks_ = 10000;
   char* configstring_{};
   const char* profile_{};

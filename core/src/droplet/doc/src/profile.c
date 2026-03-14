@@ -13,7 +13,7 @@
 @section format Syntax Overview
 
 The profile file is in UNIX text format, with lines separated by
-'\\n' (newline) characaters.
+'\\n' (newline) characters.
 
 Comments begin with a '#' character and continue until the end of the line.
 
@@ -236,7 +236,7 @@ TODO
 @par ssl_comp = \<bool\>
 Whether to explicitly disable SSL compression in order to mitigate CRIME
 attack.  Default is 'false'.  If set to 'true', you then rely on the
-configuration of the underlaying SSL library.
+configuration of the underlying SSL library.
 
 @par pricing = \<string\>
 Specifies the name of a pricing model.  The pricing model is read from a

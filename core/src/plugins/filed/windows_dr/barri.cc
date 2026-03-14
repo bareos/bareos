@@ -221,7 +221,7 @@ When executed in a terminal, the progress will be displayed in a progress bar.)"
   save->add_flag("--dry", dry, "do not read/write actual disk data");
 
   save->add_flag("--save-unreferenced-disks", save_unreferenced_disks,
-                 "save completey unsnapshotted disks");
+                 "save completely unsnapshotted disks");
   save->add_flag("--save-unreferenced-partitions", save_unreferenced_partitions,
                  "save even unsnapshotted partitions from disks that contain "
                  "snapshotted partitions");

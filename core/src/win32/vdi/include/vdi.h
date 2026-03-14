@@ -32,7 +32,7 @@
  *                             tree/master/samples/features/sqlvdi
  * added MIT license header
  * added bareos-style include guards
- * reformated in bareos style */
+ * reformatted in bareos style */
 
 /* this ALWAYS GENERATED file contains the definitions for the interfaces */
 
@@ -118,7 +118,7 @@ typedef interface IServerVirtualDeviceSet2 IServerVirtualDeviceSet2;
 
 
 /* header files for imported files */
-#  include "unknwn.h"
+#  include "unknown.h"
 
 #  ifdef __cplusplus
 extern "C" {

@@ -156,7 +156,7 @@ struct wait_pkt {
  * this routine is only used for jobs started from the console
  * for which the user explicitly specified a start time. Otherwise
  * most jobs are put into the job queue only when their
- * scheduled time arives.
+ * scheduled time arrives.
  */
 extern "C" void* sched_wait(void* arg)
 {
@@ -694,7 +694,7 @@ static bool RescheduleJob(JobControlRecord* jcr, jobq_t* jq, jobq_item_t* je)
  */
 static bool AcquireResources(JobControlRecord* jcr)
 {
-  // Set that we didn't acquire any resourse locks yet.
+  // Set that we didn't acquire any resource locks yet.
   jcr->dir_impl->acquired_resource_locks = false;
 
   /* Some Job Types are excluded from the client and storage concurrency

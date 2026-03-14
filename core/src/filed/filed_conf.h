@@ -109,7 +109,7 @@ class ClientResource
   crypto_cipher_t pki_cipher = CRYPTO_CIPHER_NONE;    /* PKI Cipher to use */
   bool always_use_lmdb = false; /* Use LMDB for accurate data */
   uint32_t lmdb_threshold = 0;  /* Switch to using LDMD when number of accurate
-                               entries exceeds treshold. */
+                               entries exceeds threshold. */
   X509_KEYPAIR* pki_keypair = nullptr; /* Shared PKI Public/Private Keypair */
 
   alist<X509_KEYPAIR*>* pki_signers = nullptr; /* Shared PKI Trusted Signers */

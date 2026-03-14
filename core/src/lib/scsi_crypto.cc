@@ -202,7 +202,7 @@ int GetScsiDriveEncryptionStatus(int fd,
   PmStrcpy(status, "");
   IndentStatusMsg(status, T_("Drive encryption status:\n"), indent);
 
-  // See what encrption mode is enabled.
+  // See what encryption mode is enabled.
   switch (spd->encryptionMode) {
     case SPP_ENCR_MODE_DISABLE:
       IndentStatusMsg(status, T_("Encryption Mode: Disabled\n"), indent + 3);

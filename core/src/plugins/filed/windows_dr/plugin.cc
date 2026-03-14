@@ -74,7 +74,7 @@ const PluginInformation my_info = {
     .plugin_magic = FD_PLUGIN_MAGIC,
     .plugin_license = "Bareos AGPLv3",
     .plugin_author = "Sebastian Sura",
-    .plugin_date = "Juli 2025",
+    .plugin_date = "July 2025",
     .plugin_version = "0.9.0",
     .plugin_description
     = "This plugin allows you to backup your windows system for disaster "
@@ -682,7 +682,7 @@ bRC pluginIO_Dump(PluginContext* ctx, filedaemon::io_pkt* pkt)
         pkt->status = -1;
         return bRC_Error;
       } catch (...) {
-        err_msg(ctx, "could not start: unknown error occured");
+        err_msg(ctx, "could not start: unknown error occurred");
         pkt->status = -1;
         return bRC_Error;
       }

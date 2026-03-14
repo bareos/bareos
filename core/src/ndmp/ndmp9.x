@@ -31,7 +31,7 @@
  * Ident:    $Id: $
  *
  * Description:
- *      NDMPv9, represented here, is a ficticious version
+ *      NDMPv9, represented here, is a fictitious version
  *      used internally and never over-the-wire. This
  *      isolates higher-level routines from variations
  *      between NDMP protocol version. At this time,
@@ -352,7 +352,7 @@ union ndmp9_addr switch (ndmp9_addr_type addr_type) {
  * to the DATA, TAPE, or SCSI Agent (DSP, Servers).
  *
  * Most of this is addressed by NDMP0 (zero), which is a companion
- * ficticious version. The NDMP0 features must never change to
+ * fictitious version. The NDMP0 features must never change to
  * support protocol version negotiation. Once the version is
  * negotiated, subsequent negotiations and authorization can
  * take place.
@@ -930,7 +930,7 @@ struct ndmp9_notify_data_halted_request {
 };
 
 enum ndmp9_connect_reason {
-        NDMP9_CONNECTED,        /* Connect sucessfully */
+        NDMP9_CONNECTED,        /* Connect successfully */
         NDMP9_SHUTDOWN,         /* Connection shutdown */
         NDMP9_REFUSED           /* reach the maximum number of connections */
 };

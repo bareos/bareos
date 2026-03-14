@@ -1203,7 +1203,7 @@ static bool process_single_cbt(std::vector<uint8>& buffer,
   if (raw_disk_fd != -1) {
     lseek(raw_disk_fd, start_offset, SEEK_SET);
     if (verbose) {
-      fprintf(stderr, "Log: RAWFILE: Adusting seek position in file\n");
+      fprintf(stderr, "Log: RAWFILE: Adjusting seek position in file\n");
     }
   }
 
@@ -1426,7 +1426,7 @@ static inline bool process_cbt(const char* key, vec allocated, json_t* cbt)
   // this is the current index into the allocated blocks array
   uint64 allocated_index = 0;
 
-  // this is the amount of data that we were going to backup if it wasnt
+  // this is the amount of data that we were going to backup if it wasn't
   // for the QueryAllocatedBlocks Api, i.e. the total amount of changed
   // data
   uint64 changed_count = 0;

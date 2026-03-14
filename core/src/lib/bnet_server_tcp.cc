@@ -111,7 +111,7 @@ class BNetThreadServerCleanupObject {
   ThreadList& thread_list_;
 };
 
-void RemoveDuplicateAddresses(dlist<IPADDR>* addr_list)
+void RemoveDuplicateAddresss(dlist<IPADDR>* addr_list)
 {
   IPADDR* ipaddr = nullptr;
   IPADDR* next = nullptr;
@@ -134,12 +134,12 @@ void RemoveDuplicateAddresses(dlist<IPADDR>* addr_list)
   }
 }
 
-static void LogAllAddresses(dlist<IPADDR>* addr_list)
+static void LogAllAddresss(dlist<IPADDR>* addr_list)
 {
   std::vector<char> buf(256 * addr_list->size());
 
-  Dmsg1(100, "Addresses %s\n",
-        BuildAddressesString(addr_list, buf.data(), buf.size()));
+  Dmsg1(100, "Address %s\n",
+        BuildAddresssString(addr_list, buf.data(), buf.size()));
 }
 
 int OpenSocketAndBind(IPADDR* ipaddr,
@@ -164,7 +164,7 @@ int OpenSocketAndBind(IPADDR* ipaddr,
     Emsg3(M_WARNING, 0,
           T_("Cannot open stream socket. ERR=%s. Current %s All %s\n"),
           be.bstrerror(), ipaddr->build_address_str(buf1.data(), buf1.size()),
-          BuildAddressesString(addr_list, buf2.data(), buf2.size()));
+          BuildAddresssString(addr_list, buf2.data(), buf2.size()));
 
     return -1;
   }
@@ -224,8 +224,8 @@ int OpenSocketAndBind(IPADDR* ipaddr,
 
 std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list)
 {
-  RemoveDuplicateAddresses(addr_list);
-  LogAllAddresses(addr_list);
+  RemoveDuplicateAddresss(addr_list);
+  LogAllAddresss(addr_list);
 
   std::vector<s_sockfd> bound_sockets;
   IPADDR* ipaddr = nullptr;
@@ -260,7 +260,7 @@ std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list)
  * Become Threaded Network Server
  *
  * This function is able to handle multiple server ips in
- * ipv4 and ipv6 style. The Addresse are give in a comma
+ * ipv4 and ipv6 style. The Address are give in a comma
  * separated string in bind_addr
  *
  * At the moment it is impossible to bind to different ports.

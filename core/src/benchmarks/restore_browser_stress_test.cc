@@ -154,7 +154,7 @@ BENCHMARK(BM_markallfiles)
 
 /*
  * Over ten million files requires quiet a bit a ram, so if you are going to
- * use the higher numbers, make sure you have enough ressources, otherwise the
+ * use the higher numbers, make sure you have enough resources, otherwise the
  * benchmark will crash
  */
 

@@ -294,20 +294,20 @@ END_TEST
 
 
 #if 0
-/* the getdate.y code doesn't seem to check for leapyear correctness */
+/* the getdate.y code doesn't seem to check for leap year correctness */
 START_TEST(rfc3501_leapyear_test)
 {
     time_t t;
 
-    /* 2000 is a leapyear */
+    /* 2000 is a leap year */
     t = dpl_get_date("29-Feb-2000 11:22:33 +1100", (time_t *)NULL);
     dpl_assert_int_eq(t, 951783753);
 
-    /* 2001 is not a leapyear */
+    /* 2001 is not a leap year */
     t = dpl_get_date("29-Feb-2001 11:22:33 +1100", (time_t *)NULL);
     dpl_assert_int_eq(t, -1);
 
-    /* 2004 is a leapyear */
+    /* 2004 is a leap year */
     t = dpl_get_date("29-Feb-2004 11:22:33 +1100", (time_t *)NULL);
     dpl_assert_int_eq(t, 1078014153);
 }

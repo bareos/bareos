@@ -66,7 +66,7 @@
 /******************************************************************************/
 
 /* The following #ifndef encloses this entire */
-/* header file, rendering it indempotent.     */
+/* header file, rendering it idempotent.     */
 #ifndef BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_CRCMODEL_H_
 #define BAREOS_DROPLET_LIBDROPLET_INCLUDE_DROPLET_CDMI_CRCMODEL_H_
 

@@ -40,7 +40,7 @@
  *      selected by #ifdef's of NDMOS_ID.
  *
  *      Refer to ndmos.h for explanations of the
- *      macros thar are or can be #define'd here.
+ *      macros that are or can be #define'd here.
  */
 
 #define NDMOS_ID_FREEBSD NDMOS_IDENT('F', 'B', 's', 'd')

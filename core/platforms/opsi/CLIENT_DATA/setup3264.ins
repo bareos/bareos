@@ -142,7 +142,7 @@ endif
 
 
 ; winbatch installer:
-; /S silent installl
+; /S silent install
 ; /D destination path
 ;       use this, otherwise it installs to "program files" for all languages.
 ;       don't use " around argument, otherwise argument is ignored
@@ -186,7 +186,7 @@ endif
 [Sub_check_exitcode]
 comment "Test for installation success via exit code"
 set $ExitCode$ = getLastExitCode
-; informations to exit codes see
+; information to exit codes see
 ; http://msdn.microsoft.com/en-us/library/aa372835(VS.85).aspx
 ; http://msdn.microsoft.com/en-us/library/aa368542.aspx
 if ($ExitCode$ = "0")

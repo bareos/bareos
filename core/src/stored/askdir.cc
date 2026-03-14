@@ -23,8 +23,8 @@
 // Kern Sibbald, December 2000
 /**
  * @file
- * Subroutines to handle Catalog reqests sent to the Director
- * Reqests/commands from the Director are handled in dircmd.c
+ * Subroutines to handle Catalog requests sent to the Director
+ * Requests/commands from the Director are handled in dircmd.c
  */
 
 #include "include/baconfig.h"

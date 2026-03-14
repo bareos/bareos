@@ -317,7 +317,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
       } /* end if Bstrcasecmp */
     } /* end for RunFields */
 
-    /* At this point, it is not a keyword. Check for old syle
+    /* At this point, it is not a keyword. Check for old style
      * Job Levels without keyword. This form is depreciated!!! */
     if (!found) {
       for (j = 0; joblevels[j].level_name; j++) {

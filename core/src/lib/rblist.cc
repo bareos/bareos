@@ -222,7 +222,7 @@ void* rblist::next(void* item)
 }
 
 /*
- * Similer to next(), but visits all right nodes when
+ * Similar to next(), but visits all right nodes when
  *  coming up the tree.
  */
 void* rblist::any(void* item)
