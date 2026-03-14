@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <chrono>
+#include <atomic>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -22,17 +22,20 @@ void NullWarningHandler(const char* /*file*/,
                         const char* /*msg*/,
                         ...) {}
 
-// Creates a temporary file with the given content and returns its path
+// Creates a temporary file with the given content and returns its path.
+// Uses testing::TempDir() which returns an ANSI-safe narrow path on all
+// platforms (avoids UTF-16→ANSI conversion issues on Windows).
+// Opens in binary mode so the lexer sees exact bytes regardless of platform.
 std::string WriteTempFile(const std::string& content)
 {
-  auto unique_id = std::chrono::steady_clock::now().time_since_epoch().count();
-  std::filesystem::path path = std::filesystem::temp_directory_path()
-                               / ("bareos_lex_test_"
-                                  + std::to_string(unique_id));
-  std::ofstream ofs(path);
+  static std::atomic<int> counter{0};
+  // testing::TempDir() always ends with a path separator
+  std::string path = ::testing::TempDir() + "bareos_lex_test_"
+                     + std::to_string(++counter);
+  std::ofstream ofs(path, std::ios::binary);
   if (!ofs) return "";
   ofs << content;
-  return path.string();
+  return path;
 }
 
 // Opens a lexer on a temp file containing the given content
@@ -55,7 +58,7 @@ void CloseLexer(lexer* lf)
 {
   if (!lf) return;
   if (lf->caller_ctx) {
-    unlink(static_cast<char*>(lf->caller_ctx));
+    std::filesystem::remove(static_cast<char*>(lf->caller_ctx));
     free(lf->caller_ctx);
     lf->caller_ctx = nullptr;
   }
