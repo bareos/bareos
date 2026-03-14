@@ -23,19 +23,20 @@ void NullWarningHandler(const char* /*file*/,
                         ...) {}
 
 // Creates a temporary file with the given content and returns its path.
-// Uses testing::TempDir() which returns an ANSI-safe narrow path on all
-// platforms (avoids UTF-16→ANSI conversion issues on Windows).
+// Uses testing::TempDir() for a writable directory, combined with
+// std::filesystem::path operator/ to correctly handle whether TempDir()
+// includes a trailing separator or not (e.g. when TEST_TMPDIR is set).
 // Opens in binary mode so the lexer sees exact bytes regardless of platform.
 std::string WriteTempFile(const std::string& content)
 {
   static std::atomic<int> counter{0};
-  // testing::TempDir() always ends with a path separator
-  std::string path = ::testing::TempDir() + "bareos_lex_test_"
-                     + std::to_string(++counter);
+  std::filesystem::path path
+      = std::filesystem::path(::testing::TempDir())
+        / ("bareos_lex_test_" + std::to_string(++counter));
   std::ofstream ofs(path, std::ios::binary);
   if (!ofs) return "";
   ofs << content;
-  return path;
+  return path.string();
 }
 
 // Opens a lexer on a temp file containing the given content
