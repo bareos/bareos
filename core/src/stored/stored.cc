@@ -95,7 +95,7 @@ static std::string pidfile_path;
 
 int main(int argc, char* argv[])
 {
-  pthread_t this;
+  pthread_t thid;
 
   setlocale(LC_ALL, "");
   tzset();
@@ -283,7 +283,7 @@ int main(int argc, char* argv[])
 
   // Start the device allocation thread
   CreateVolumeLists(); /* do before device_init */
-  if (pthread_create(&this, nullptr, device_initialization, nullptr) != 0) {
+  if (pthread_create(&thid, nullptr, device_initialization, nullptr) != 0) {
     BErrNo be;
     Emsg1(M_ABORT, 0, T_("Unable to create thread. ERR=%s\n"), be.bstrerror());
   }
