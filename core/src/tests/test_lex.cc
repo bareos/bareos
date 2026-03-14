@@ -36,7 +36,7 @@ std::string WriteTempFile(const std::string& content)
   std::ofstream ofs(path, std::ios::binary);
   if (!ofs) return "";
   ofs << content;
-  return path.string();
+  return path.generic_string();
 }
 
 // Opens a lexer on a temp file containing the given content
@@ -245,7 +245,7 @@ TEST(LexOpenCloseTest, CloseNullReturnsNull) {
   lexer* result = LexCloseFile(lf);
   // Returns the previous lexer in the chain (nullptr if no chain)
   EXPECT_EQ(result, nullptr);
-  unlink(path.c_str());
+  std::filesystem::remove(path);
 }
 
 TEST(LexOpenCloseTest, OpenMultiLineConfig) {
