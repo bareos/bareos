@@ -309,7 +309,8 @@ TEST_F(JcrTest, SetMultipleProperties) {
 // Mutex guard test
 TEST_F(JcrTest, MutexGuardExists) {
   std::mutex& m = jcr->mutex_guard();
-  EXPECT_TRUE(&m != nullptr);
+  EXPECT_TRUE(m.try_lock());
+  m.unlock();
 }
 
 // High use count test

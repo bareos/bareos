@@ -26,7 +26,10 @@ std::string WriteTempFile(const std::string& content)
   char tmpname[] = "/tmp/bareos_lex_test_XXXXXX";
   int fd = mkstemp(tmpname);
   if (fd < 0) return "";
-  write(fd, content.c_str(), content.size());
+  if (write(fd, content.c_str(), content.size()) < 0) {
+    ::close(fd);
+    return "";
+  }
   ::close(fd);
   return tmpname;
 }
