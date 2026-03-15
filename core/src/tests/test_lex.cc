@@ -74,12 +74,16 @@ lexer* OpenLexer(const std::string& content)
 void CloseLexer(lexer* lf)
 {
   if (!lf) return;
+  // Save path before LexCloseFile frees lf; on Windows a file cannot be
+  // deleted while it is still open, so close first then remove.
+  std::string path;
   if (lf->caller_ctx) {
-    std::filesystem::remove(static_cast<const char*>(lf->caller_ctx));
+    path = static_cast<const char*>(lf->caller_ctx);
     free(lf->caller_ctx);
     lf->caller_ctx = nullptr;
   }
   LexCloseFile(lf);
+  if (!path.empty()) { std::filesystem::remove(path); }
 }
 
 }  // namespace
