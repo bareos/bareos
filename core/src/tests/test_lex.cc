@@ -3,6 +3,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <random>
 #include <string>
 #include "include/bareos.h"
 #include "lib/lex.h"
@@ -22,17 +23,24 @@ void NullWarningHandler(const char* /*file*/,
                         const char* /*msg*/,
                         ...) {}
 
+// Per-process random token so parallel test invocations don't collide
+// on the same filename in the shared temp directory.
+static const uint32_t kProcessToken = std::random_device{}();
+
 // Creates a temporary file with the given content and returns its path.
 // Uses testing::TempDir() for a writable directory, combined with
 // std::filesystem::path operator/ to correctly handle whether TempDir()
 // includes a trailing separator or not (e.g. when TEST_TMPDIR is set).
 // Opens in binary mode so the lexer sees exact bytes regardless of platform.
+// Uses generic_string() (forward slashes) so Windows glob treats '\' as
+// directory separator rather than escape character.
 std::string WriteTempFile(const std::string& content)
 {
   static std::atomic<int> counter{0};
   std::filesystem::path path
       = std::filesystem::path(::testing::TempDir())
-        / ("bareos_lex_test_" + std::to_string(++counter));
+        / ("bareos_lex_test_" + std::to_string(kProcessToken) + "_"
+           + std::to_string(++counter));
   std::ofstream ofs(path, std::ios::binary);
   if (!ofs) return "";
   ofs << content;
