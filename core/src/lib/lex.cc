@@ -238,6 +238,20 @@ static inline bool IsWildcardString(const char* string)
 }
 #endif
 
+// Open a lexer from an already-open FILE*, bypassing glob expansion.
+// This is useful in unit tests and on platforms where the glob-based
+// path resolution does not work (e.g. Windows VSS path translation).
+lexer* LexOpenFromFd(lexer* lf,
+                     const char* filename,
+                     FILE* fd,
+                     lexer::error_handler* ScanError,
+                     lexer::warning_handler* scan_warning)
+{
+  if (!fd) return NULL;
+  return lex_add(lf, filename ? filename : "", fd, nullptr, ScanError,
+                 scan_warning);
+}
+
 /*
  * Open a new configuration file. We push the
  * state of the current file (lf) so that we

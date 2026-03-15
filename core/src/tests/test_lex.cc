@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <atomic>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -27,38 +28,45 @@ void NullWarningHandler(const char* /*file*/,
 // on the same filename in the shared temp directory.
 static const uint32_t kProcessToken = std::random_device{}();
 
-// Creates a temporary file with the given content and returns its path.
-// Uses testing::TempDir() for a writable directory, combined with
-// std::filesystem::path operator/ to correctly handle whether TempDir()
-// includes a trailing separator or not (e.g. when TEST_TMPDIR is set).
-// Opens in binary mode so the lexer sees exact bytes regardless of platform.
-// Uses generic_string() (forward slashes) so Windows glob treats '\' as
-// directory separator rather than escape character.
-std::string WriteTempFile(const std::string& content)
+// Returns the native filesystem path of a new unique temp file.
+// Uses testing::TempDir() + std::filesystem::path operator/ for correct
+// path joining regardless of whether TempDir() has a trailing separator.
+static std::filesystem::path TempFilePath()
 {
   static std::atomic<int> counter{0};
-  std::filesystem::path path
-      = std::filesystem::path(::testing::TempDir())
-        / ("bareos_lex_test_" + std::to_string(kProcessToken) + "_"
-           + std::to_string(++counter));
-  std::ofstream ofs(path, std::ios::binary);
-  if (!ofs) return "";
-  ofs << content;
-  return path.generic_string();
+  return std::filesystem::path(::testing::TempDir())
+         / ("bareos_lex_test_" + std::to_string(kProcessToken) + "_"
+            + std::to_string(++counter));
 }
 
-// Opens a lexer on a temp file containing the given content
+// Opens a lexer on a temp file containing the given content.
+// Uses fopen() + LexOpenFromFd() to bypass the glob-based path resolution
+// in lex_open_file(), which is unreliable on Windows (VSS path translation
+// causes FindFirstFileW failures for user temp directory paths).
 lexer* OpenLexer(const std::string& content)
 {
-  std::string path = WriteTempFile(content);
-  if (path.empty()) return nullptr;
-  lexer* lf = lex_open_file(nullptr, path.c_str(), NullErrorHandler,
-                            NullWarningHandler);
+  std::filesystem::path path = TempFilePath();
+
+  // Write content using ofstream (handles encoding correctly on all platforms)
+  {
+    std::ofstream ofs(path, std::ios::binary);
+    if (!ofs) return nullptr;
+    ofs << content;
+  }  // ofs is flushed and closed here
+
+  // Re-open with fopen for hand-off to the lexer
+  FILE* fd = std::fopen(path.string().c_str(), "rb");
+  if (!fd) return nullptr;
+
+  lexer* lf = LexOpenFromFd(nullptr, path.string().c_str(), fd,
+                             NullErrorHandler, NullWarningHandler);
   if (lf) {
     LexSetDefaultErrorHandler(lf);
     LexSetDefaultWarningHandler(lf);
-    // Store filename for cleanup
-    lf->caller_ctx = strdup(path.c_str());
+    // Store native path string for cleanup (caller_ctx owns the memory)
+    lf->caller_ctx = strdup(path.string().c_str());
+  } else {
+    std::fclose(fd);
   }
   return lf;
 }
@@ -67,7 +75,7 @@ void CloseLexer(lexer* lf)
 {
   if (!lf) return;
   if (lf->caller_ctx) {
-    std::filesystem::remove(static_cast<char*>(lf->caller_ctx));
+    std::filesystem::remove(static_cast<const char*>(lf->caller_ctx));
     free(lf->caller_ctx);
     lf->caller_ctx = nullptr;
   }
@@ -246,14 +254,16 @@ TEST(LexOpenCloseTest, OpenSimpleConfig) {
 TEST(LexOpenCloseTest, CloseNullReturnsNull) {
   // Closing a nullptr lexer - the return type is lexer* (nullptr chain)
   // We just verify it doesn't crash when given a freshly opened file
-  std::string path = WriteTempFile("hello\n");
-  lexer* lf = lex_open_file(nullptr, path.c_str(), NullErrorHandler,
-                            NullWarningHandler);
+  lexer* lf = OpenLexer("hello\n");
   ASSERT_NE(lf, nullptr);
+  // Grab path for cleanup before LexCloseFile (which frees lf)
+  std::filesystem::path cleanup_path(static_cast<const char*>(lf->caller_ctx));
+  free(lf->caller_ctx);
+  lf->caller_ctx = nullptr;
   lexer* result = LexCloseFile(lf);
   // Returns the previous lexer in the chain (nullptr if no chain)
   EXPECT_EQ(result, nullptr);
-  std::filesystem::remove(path);
+  std::filesystem::remove(cleanup_path);
 }
 
 TEST(LexOpenCloseTest, OpenMultiLineConfig) {

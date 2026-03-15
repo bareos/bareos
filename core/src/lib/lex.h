@@ -188,6 +188,13 @@ lexer* lex_open_file(lexer* lf,
                      const char* fname,
                      lexer::error_handler* ScanError,
                      lexer::warning_handler* scan_warning);
+// Open a lexer from an already-open FILE*, bypassing glob expansion.
+// Ownership of fd is transferred to the lexer; do not close it yourself.
+lexer* LexOpenFromFd(lexer* lf,
+                     const char* fname,
+                     FILE* fd,
+                     lexer::error_handler* ScanError,
+                     lexer::warning_handler* scan_warning);
 int LexGetChar(lexer* lf);
 void LexUngetChar(lexer* lf);
 const char* lex_tok_to_str(int token);
