@@ -207,7 +207,7 @@ bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
   CleanupCompression(jcr);
   CryptoSessionEnd(jcr);
 
-  Jmsg(jcr, M_INFO, 0, "finished sending data");
+  Jmsg(jcr, M_INFO, 0, "finished sending data\n");
 
   Dmsg1(100, "end blast_data ok=%d\n", ok);
   return ok;
