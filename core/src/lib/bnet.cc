@@ -472,7 +472,7 @@ bool ReadoutCommandIdFromMessage(const BStringList& list_of_arguments,
   try { /* "1000 OK: <director name> ..." */
     const std::string& first_argument = list_of_arguments.front();
     id = std::stoul(first_argument);
-  } catch (const std::exception& e) {
+  } catch (const std::exception&) {
     id_out = kMessageIdProtokollError;
     return false;
   }

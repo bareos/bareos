@@ -507,6 +507,7 @@ Bpipe* OpenBpipe(const char* prog,
 
   if (wait > 0) {
     // the cast here is ok as the child timer only uses the pid for printing
+#pragma warning(suppress : 4311 4302)
     bpipe->timer_id = StartChildTimer(NULL, (pid_t)bpipe->worker_pid, wait);
   }
 

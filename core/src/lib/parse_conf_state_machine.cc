@@ -197,7 +197,6 @@ ConfigParserStateMachine::ScanResource(int token)
                 lex_tok_to_str(token));
       return ParseInternalReturnCode::kError;
   }
-  return ParseInternalReturnCode::kGetNextToken;
 }
 
 ConfigParserStateMachine::ParseInternalReturnCode

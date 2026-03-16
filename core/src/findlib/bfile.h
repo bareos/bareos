@@ -147,6 +147,7 @@ const char* stream_to_ascii(int stream);
 static inline int Bgetfd(BareosFilePacket* bfd)
 {
 #if HAVE_WIN32
+#pragma warning(suppress : 4311 4302)
   return reinterpret_cast<int>(bfd->fh);
 #else
   return bfd->filedes;
