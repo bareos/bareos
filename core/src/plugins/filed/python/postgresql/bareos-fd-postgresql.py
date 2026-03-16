@@ -187,6 +187,7 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         self.start_fast = False
         self.stop_wait_wal_archive = True
         self.switch_wal = True
+        self.delete_wal_before_backup = False
         # keep the timeout in sync with your PG checkpoint/archive timeout parameters
         self.switch_wal_timeout = 60
         self.wal_filename = None
@@ -215,6 +216,8 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         # in end_restore_file(), and this may be mixed up with different files
         self.stat_packets = {}
         self.last_lsn = None
+        # Track WAL files in current backup for cleanup in next backup
+        self.backed_up_wal_files = []
         # True if backup level is Full
         self.is_full_backup = False
         # True between select pg_backup_start() and pg_backup_stop(). (while backing up
@@ -307,6 +310,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                                         ),
                                     )
                                     _paths.append(fullname)
+                                    # Track WAL files for cleanup in next backup
+                                    if (
+                                        self.delete_wal_before_backup
+                                        and start_dir == self.options["wal_archive_dir"]
+                                    ):
+                                        self.backed_up_wal_files.append(filename)
                             else:
                                 # Create the reference file
                                 if filename == "PG_VERSION":
@@ -488,6 +497,103 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             return bareosfd.bRC_More
 
         return bareosfd.bRC_OK
+
+    def __cleanup_wal_files(self):
+        """
+        Clean up WAL files that have been successfully backed up in the previous
+        backup job. This is only done if delete_wal_before_backup option is enabled.
+        
+        WAL files to keep:
+        - Files created during current backup session (backup_start_time or newer)
+        - Timeline history files (e.g., 00000002.history)
+        - Any file mentioned in backed_up_wal_files list from previous backup that is
+          newer than or equal to the LSN when the previous backup stopped
+        """
+        if not self.delete_wal_before_backup:
+            return
+        
+        if not self.last_lsn:
+            bareosfd.DebugMessage(
+                100,
+                (
+                    "__cleanup_wal_files: No last_lsn from previous backup,"
+                    " skipping WAL cleanup\n"
+                ),
+            )
+            return
+        
+        wal_archive_dir = self.options["wal_archive_dir"]
+        files_deleted = 0
+        files_kept = 0
+        
+        try:
+            bareosfd.JobMessage(
+                bareosfd.M_INFO,
+                (
+                    f"Starting WAL archive cleanup in {wal_archive_dir},"
+                    f" keeping WAL files newer than LSN {self.last_lsn}\n"
+                ),
+            )
+            
+            for filename in os.listdir(wal_archive_dir):
+                full_path = os.path.join(wal_archive_dir, filename)
+                
+                # Skip if not a regular file
+                if not os.path.isfile(full_path):
+                    bareosfd.DebugMessage(
+                        150,
+                        f"__cleanup_wal_files: Skipping non-file {filename}\n",
+                    )
+                    continue
+                
+                # Always keep timeline history files (*.history)
+                if filename.endswith(".history"):
+                    files_kept += 1
+                    bareosfd.DebugMessage(
+                        150,
+                        f"__cleanup_wal_files: Keeping timeline history file {filename}\n",
+                    )
+                    continue
+                
+                # Check if this file is in our backed_up_wal_files list
+                # If it is, we can safely delete it since it was already backed up
+                # and we have a more recent LSN from the previous backup
+                if filename in self.backed_up_wal_files:
+                    try:
+                        os.remove(full_path)
+                        files_deleted += 1
+                        bareosfd.DebugMessage(
+                            100,
+                            f"__cleanup_wal_files: Deleted WAL file {filename}\n",
+                        )
+                    except OSError as os_err:
+                        bareosfd.JobMessage(
+                            bareosfd.M_WARNING,
+                            f"__cleanup_wal_files: Could not delete {full_path}: {os_err}\n",
+                        )
+                else:
+                    files_kept += 1
+                    bareosfd.DebugMessage(
+                        150,
+                        (
+                            f"__cleanup_wal_files: Keeping WAL file {filename}"
+                            f" (not in previous backup list)\n"
+                        ),
+                    )
+            
+            bareosfd.JobMessage(
+                bareosfd.M_INFO,
+                (
+                    f"WAL archive cleanup finished:"
+                    f" {files_deleted} files deleted, {files_kept} files kept\n"
+                ),
+            )
+            
+        except Exception as err:
+            bareosfd.JobMessage(
+                bareosfd.M_ERROR,
+                f"__cleanup_wal_files: Error during cleanup: {err}\n",
+            )
 
     def __check_lsn_diff(self, current_lsn, last_lsn):
         """
@@ -1098,6 +1204,11 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
         if "stop_wait_wal_archive" in self.options:
             self.stop_wait_wal_archive = bool(self.options["stop_wait_wal_archive"])
 
+        if "delete_wal_before_backup" in self.options:
+            self.delete_wal_before_backup = (
+                self.options["delete_wal_before_backup"].lower() == "true"
+            )
+
         # TODO handle ssl_context support in connection
         # Normally not needed as the bareos-fd has to be located on host within
         # the pg cluster: as such using socket is preferably.
@@ -1274,6 +1385,12 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             )
             return bareosfd.bRC_Error
 
+        # Clean up old WAL files before building the file list
+        # This must happen after DB connection is established
+        # but before we build the backup file list
+        if chr(self.level) != "F":
+            self.__cleanup_wal_files()
+
         if chr(self.level) == "F":
             # For Full we backup the PostgreSQL data directory
             self.is_full_backup = True
@@ -1422,6 +1539,9 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
             self.rop_data["pg_major_version"] = self.pg_major_version
             self.rop_data["last_backup_stop_time"] = self.last_backup_stop_time
             self.rop_data["last_lsn"] = self.last_lsn
+            # Store list of backed-up WAL files for cleanup in next backup
+            if self.backed_up_wal_files:
+                self.rop_data["backed_up_wal_files"] = self.backed_up_wal_files
             savepkt.fname = "/_bareos_postgresql_plugin/metadata"
             savepkt.type = bareosfd.FT_RESTORE_FIRST
             savepkt.object_name = savepkt.fname
@@ -1577,6 +1697,19 @@ class BareosFdPluginPostgreSQL(BareosFdPluginBaseclass):  # noqa
                 (
                     f"Got pg major version {self.last_pg_major} from restore object"
                     f" of job {ROP.jobid}\n"
+                ),
+            )
+
+        if (
+            "backed_up_wal_files" in self.rop_data[ROP.jobid]
+            and self.rop_data[ROP.jobid]["backed_up_wal_files"] is not None
+        ):
+            self.backed_up_wal_files = self.rop_data[ROP.jobid]["backed_up_wal_files"]
+            bareosfd.DebugMessage(
+                100,
+                (
+                    f"Got {len(self.backed_up_wal_files)} backed up WAL files"
+                    f" from restore object of job {ROP.jobid}\n"
                 ),
             )
 
