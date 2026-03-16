@@ -1,7 +1,7 @@
 /**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2020 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,41 +28,41 @@
 
 #include "lib/bool_string.h"
 
-#include <iostream>
-#include <map>
-#include <string>
-
-TEST(BoolString, convert_supported_bool_strings)
+TEST(ParseBool, simple_yes)
 {
-  const std::map<std::string, bool> test_pattern{
-      {"true", true},   {"yes", true}, {"1", true},
-      {"false", false}, {"no", false}, {"0", false}};
-
-  for (const auto& t : test_pattern) {
-    bool value = false;
-    try {
-      BoolString s{t.first};
-      value = s.get<bool>();
-    } catch (const std::out_of_range& e) {
-      // abort the test
-      ASSERT_TRUE(false) << "Failed to create BoolString: " << e.what();
-    }
-    EXPECT_EQ(value, t.second) << "test pattern: '" << t.first << "'";
-  }
+  EXPECT_EQ(parse_user_bool("yes"), parse_bool_result::True);
+  EXPECT_EQ(parse_user_bool("true"), parse_bool_result::True);
+  EXPECT_EQ(parse_user_bool("1"), parse_bool_result::True);
 }
 
-TEST(BoolString, try_to_convert_not_supported_bool_strings)
+TEST(ParseBool, simple_no)
 {
-  const std::set<std::string> test_pattern{
-      {"o"}, {"tru"}, {"ye"}, {"12"}, {"offf"}, {"ffalse"}, {"0-no"}};
+  EXPECT_EQ(parse_user_bool("no"), parse_bool_result::False);
+  EXPECT_EQ(parse_user_bool("false"), parse_bool_result::False);
+  EXPECT_EQ(parse_user_bool("0"), parse_bool_result::False);
+}
 
-  for (const auto& t : test_pattern) {
-    bool can_be_converted = true;
-    try {
-      BoolString s{t};
-    } catch (const std::out_of_range& e) {
-      can_be_converted = false;
-    }
-    EXPECT_FALSE(can_be_converted) << "test pattern: '" << t << "'";
-  }
+TEST(ParseBool, random_capitalisation)
+{
+  EXPECT_EQ(parse_user_bool("YeS"), parse_bool_result::True);
+  EXPECT_EQ(parse_user_bool("fAlSe"), parse_bool_result::False);
+}
+
+TEST(ParseBool, bad_numbers)
+{
+  EXPECT_EQ(parse_user_bool("2"), parse_bool_result::Error);
+  EXPECT_EQ(parse_user_bool("01"), parse_bool_result::Error);
+  EXPECT_EQ(parse_user_bool("10"), parse_bool_result::Error);
+}
+
+TEST(ParseBool, whitespace)
+{
+  // parse_user_bool does _not_ handle trimming
+  EXPECT_EQ(parse_user_bool(" yes"), parse_bool_result::Error);
+  EXPECT_EQ(parse_user_bool("yes "), parse_bool_result::Error);
+  EXPECT_EQ(parse_user_bool("false "), parse_bool_result::Error);
+  EXPECT_EQ(parse_user_bool(" false"), parse_bool_result::Error);
+
+  EXPECT_EQ(parse_user_bool(""), parse_bool_result::Error);
+  EXPECT_EQ(parse_user_bool(" "), parse_bool_result::Error);
 }

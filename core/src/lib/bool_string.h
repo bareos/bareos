@@ -65,31 +65,4 @@ static inline parse_bool_result parse_user_bool(std::string_view input)
   return Error;
 }
 
-#include <set>
-#include <stdexcept>
-#include <string>
-
-class BoolString {
- public:
-  explicit BoolString(const std::string& s) : str_value(s)
-  {
-    if (true_values.find(str_value) == true_values.end()
-        && false_values.find(str_value) == false_values.end()) {
-      std::string err = {"Wrong parameter: "};
-      throw std::out_of_range(err + str_value);
-    }
-  }
-  template <typename T = std::string> T get() const { return str_value; }
-
- private:
-  std::string str_value;
-  const std::set<std::string> true_values{"true", "yes", "1"};
-  const std::set<std::string> false_values{"false", "no", "0"};
-};
-
-template <> inline bool BoolString::get<bool>() const
-{
-  return true_values.find(str_value) != true_values.end();
-}
-
 #endif  // BAREOS_LIB_BOOL_STRING_H_
