@@ -528,6 +528,13 @@ class FilesetResource : public BareosResource {
                                         FileOptions* fo,
                                         bool verbose);
   std::string GetOptionValue(const char** option);
+
+ private:
+  void PrintFileOptions_(OutputFormatterResource& send, FileOptions* fo);
+  void HandleBasicOption_(OutputFormatterResource& send, char option);
+  void HandleShadowingOption_(OutputFormatterResource& send, const char** p);
+  void HandleSignatureOption_(OutputFormatterResource& send, const char** p);
+  void HandleCompressionOption_(OutputFormatterResource& send, const char** p);
 };
 
 // Schedule Resource
