@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -25,7 +25,8 @@ else()
   set(global_fileset_options "")
 endif()
 
-create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+# This test uses the deprecated options Pool->FileRetention, Pool->JobRetention
+create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME} IGNORE_CONFIG_WARNINGS)
 
 # have each test require the previous one (sorted alphabetically) via fixtures
 add_alphabetic_requirements(${SYSTEMTEST_PREFIX} ${BASENAME})

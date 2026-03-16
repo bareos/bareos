@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plugins: mariabackup python-mysqlclient ignore invalid utf8 [PR #2560]
 - dedup backend: Fix leaking filedescriptor [PR #2549]
 
+### Removed
+- dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2573]
+
 ### Fixed
 - Increase read timeout in Proxmox plugin [PR #2545]
 - systemtests check runscript failed - improve media_vault [PR #2568]
@@ -2232,5 +2235,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2555]: https://github.com/bareos/bareos/pull/2555
 [PR #2560]: https://github.com/bareos/bareos/pull/2560
 [PR #2568]: https://github.com/bareos/bareos/pull/2568
+[PR #2573]: https://github.com/bareos/bareos/pull/2573
 [PR #2574]: https://github.com/bareos/bareos/pull/2574
 [unreleased]: https://github.com/bareos/bareos/tree/master
