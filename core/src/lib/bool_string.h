@@ -41,9 +41,9 @@ enum class parse_bool_result
 
 static inline parse_bool_result parse_user_bool(std::string_view input)
 {
-  static constexpr std::string_view true_accepted[] = {"yes", "true", "1"};
+  static constexpr std::string_view true_accepted[] = {"yes", "true"};
 
-  static constexpr std::string_view false_accepted[] = {"no", "false", "0"};
+  static constexpr std::string_view false_accepted[] = {"no", "false"};
 
   using enum parse_bool_result;
 

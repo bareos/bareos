@@ -1549,8 +1549,10 @@ auto SetDeviceCommand::ScanCommandLine(UaContext* ua)
       arguments->autoselect = false;
     } break;
     case parse_bool_result::Error: {
-      ua->ErrorMsg("Bad value for argument %s: %s\n", argument_name[2],
-                   argument_value[2]);
+      ua->ErrorMsg(
+          "Bad value for argument %s: %s (expect one of YES, NO, TRUE, "
+          "FALSE)\n",
+          argument_name[2], argument_value[2]);
       return std::nullopt;
     } break;
   }

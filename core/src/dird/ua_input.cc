@@ -178,8 +178,8 @@ bool GetConfirmation(UaContext* ua, const char* prompt, bool fallback_value)
 }
 
 /**
- * Gets an Enabled value => 0, 1, 2, yes, no, archived
- * Returns: 0, 1, 2 if OK
+ * Gets an Enabled value => yes, no, true, false, archived
+ * Returns: e_enabled_val if OK
  *          -1 on error
  */
 int GetEnabled(UaContext* ua, const char* val)
@@ -195,12 +195,12 @@ int GetEnabled(UaContext* ua, const char* val)
     } break;
     case parse_bool_result::Error: {
       // in this case we either got some garbage, or archived
-      if (Bstrcasecmp(val, "archived") || strcmp(val, "2") == 0) {
+      if (Bstrcasecmp(val, "archived")) {
         Enabled = VOL_ARCHIVED;
       } else {
         ua->ErrorMsg(
-            T_("Invalid Enabled value, it must be yes, no, archived, 0, 1, or "
-               "2\n"));
+            T_("Invalid Enabled value, it must be yes, no, true, false, "
+               "archived\n"));
         return -1;
       }
     } break;
