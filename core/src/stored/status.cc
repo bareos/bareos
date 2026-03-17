@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -350,15 +350,14 @@ static void ListDevices(JobControlRecord* jcr,
 static void ListVolumes(StatusPacket* sp, const char* devicenames)
 {
   int len;
-  VolumeReservationItem* vol;
   PoolMem msg(PM_MESSAGE);
 
-  foreach_vol (vol) {
+  foreach_vol ([&](auto* vol) {
     Device* dev = vol->dev;
 
     if (dev) {
       if (devicenames && !NeedToListDevice(devicenames, dev->device_resource)) {
-        continue;
+        return;
       }
 
       len = Mmsg(msg, "%s on device %s\n", vol->vol_name, dev->print_name());
@@ -372,16 +371,14 @@ static void ListVolumes(StatusPacket* sp, const char* devicenames)
                  vol->IsInUse());
       sp->send(msg, len);
     }
-  }
-  endeach_vol(vol);
+  });
 
-  foreach_read_vol(vol)
-  {
+  foreach_read_vol([&](auto* vol) {
     Device* dev = vol->dev;
 
     if (dev) {
       if (devicenames && !NeedToListDevice(devicenames, dev->device_resource)) {
-        continue;
+        return;
       }
 
       len = Mmsg(msg, "Read volume: %s on device %s\n", vol->vol_name,
@@ -397,8 +394,7 @@ static void ListVolumes(StatusPacket* sp, const char* devicenames)
                  vol->vol_name, vol->IsInUse());
       sp->send(msg, len);
     }
-  }
-  endeach_read_vol(vol);
+  });
 }
 
 static void ListStatusHeader(StatusPacket* sp)

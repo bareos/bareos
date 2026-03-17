@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - debian: dbconfig allow major upgrade without backup dump [PR #2506]
 - plugins: mariabackup python-mysqlclient ignore invalid utf8 [PR #2546]
 - dedup backend: Fix leaking filedescriptor [PR #2548]
+- vol-mgr: fix not locking the volume reservation chain during copying [PR #2565]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2231,6 +2232,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2546]: https://github.com/bareos/bareos/pull/2546
 [PR #2548]: https://github.com/bareos/bareos/pull/2548
 [PR #2556]: https://github.com/bareos/bareos/pull/2556
+[PR #2565]: https://github.com/bareos/bareos/pull/2565
 [PR #2567]: https://github.com/bareos/bareos/pull/2567
 [PR #2569]: https://github.com/bareos/bareos/pull/2569
 [unreleased]: https://github.com/bareos/bareos/tree/master

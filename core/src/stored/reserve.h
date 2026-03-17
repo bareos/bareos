@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -87,15 +87,42 @@ void TermReservationsLock();
 void LockReservations();
 bool TryReserveAfterUse(JobControlRecord* jcr, bool append);
 void UnlockReservations();
-void LockVolumes();
-void UnlockVolumes();
-void LockReadVolumes();
-void UnlockReadVolumes();
 void UnreserveDevice(DeviceControlRecord* dcr);
 int SearchResForDevice(JobControlRecord* jcr, ReserveContext& rctx);
 void ClearReserveMessages(JobControlRecord* jcr);
 
 bool use_cmd(JobControlRecord* jcr);
+
+namespace private_locks {
+// forward declaring these functions in the functions that use them
+// is sadly broken in msvc as it does not correctly attach them to the
+// enclosing namespace.
+// hopefully this namespace makes it clear that you are not supposed
+// to use them directly
+void LockVolumes(void);
+void UnlockVolumes(void);
+
+void LockReadVolumes(void);
+void UnlockReadVolumes(void);
+};  // namespace private_locks
+
+template <typename F> void with_volume_lock(F f)
+{
+  private_locks::LockVolumes();
+
+  f();
+
+  private_locks::UnlockVolumes();
+}
+
+template <typename F> void with_read_volume_lock(F f)
+{
+  private_locks::LockReadVolumes();
+
+  f();
+
+  private_locks::UnlockReadVolumes();
+}
 
 } /* namespace storagedaemon */
 
