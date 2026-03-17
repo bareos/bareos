@@ -1810,12 +1810,22 @@ static bool EstimateCmd(UaContext* ua, const char*)
 
     if (Bstrcasecmp(ua->argk[i], NT_("accurate"))) {
       if (ua->argv[i]) {
-        if (!IsYesno(ua->argv[i], &accurate)) {
-          ua->ErrorMsg(
-              T_("Invalid value for accurate. "
-                 "It must be yes or no.\n"));
+        switch (parse_user_bool(ua->argv[i])) {
+          case parse_bool_result::True: {
+            accurate_set = true;
+            accurate = true;
+          } break;
+          case parse_bool_result::False: {
+            accurate_set = true;
+            accurate = false;
+          } break;
+          case parse_bool_result::Error: {
+            ua->ErrorMsg(
+                T_("Invalid value for accurate. "
+                   "It must be yes, no, true, or false.\n"));
+            return false;
+          } break;
         }
-        accurate_set = true;
         continue;
       } else {
         ua->ErrorMsg(T_("Accurate value missing.\n"));

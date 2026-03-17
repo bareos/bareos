@@ -34,6 +34,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "dird/ua_run.h"
+#include "lib/bool_string.h"
 #include "lib/breg.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -2025,11 +2026,20 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               ua->SendMsg(T_("Spool flag specified twice.\n"));
               return false;
             }
-            if (IsYesno(ua->argv[i], &rc.spool_data)) {
-              rc.spool_data_set = true;
-              kw_ok = true;
-            } else {
-              ua->SendMsg(T_("Invalid spooldata flag.\n"));
+            switch (parse_user_bool(ua->argv[i])) {
+              case parse_bool_result::True: {
+                rc.spool_data_set = true;
+                rc.spool_data = true;
+                kw_ok = true;
+              } break;
+              case parse_bool_result::False: {
+                rc.spool_data_set = true;
+                rc.spool_data = false;
+                kw_ok = true;
+              } break;
+              case parse_bool_result::Error: {
+                ua->SendMsg(T_("Invalid spooldata flag.\n"));
+              } break;
             }
             break;
           case 28: /* comment */
@@ -2041,11 +2051,20 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               ua->SendMsg(T_("IgnoreDuplicateCheck flag specified twice.\n"));
               return false;
             }
-            if (IsYesno(ua->argv[i], &rc.ignoreduplicatecheck)) {
-              rc.ignoreduplicatecheck_set = true;
-              kw_ok = true;
-            } else {
-              ua->SendMsg(T_("Invalid ignoreduplicatecheck flag.\n"));
+            switch (parse_user_bool(ua->argv[i])) {
+              case parse_bool_result::True: {
+                rc.ignoreduplicatecheck_set = true;
+                rc.ignoreduplicatecheck = true;
+                kw_ok = true;
+              } break;
+              case parse_bool_result::False: {
+                rc.ignoreduplicatecheck_set = true;
+                rc.ignoreduplicatecheck = false;
+                kw_ok = true;
+              } break;
+              case parse_bool_result::Error: {
+                ua->SendMsg(T_("Invalid ignoreduplicatecheck flag.\n"));
+              } break;
             }
             break;
           case 30: /* accurate */
@@ -2053,11 +2072,20 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
               ua->SendMsg(T_("Accurate flag specified twice.\n"));
               return false;
             }
-            if (IsYesno(ua->argv[i], &rc.accurate)) {
-              rc.accurate_set = true;
-              kw_ok = true;
-            } else {
-              ua->SendMsg(T_("Invalid accurate flag.\n"));
+            switch (parse_user_bool(ua->argv[i])) {
+              case parse_bool_result::True: {
+                rc.accurate_set = true;
+                kw_ok = true;
+                rc.accurate = true;
+              } break;
+              case parse_bool_result::False: {
+                rc.accurate_set = true;
+                kw_ok = true;
+                rc.accurate = false;
+              } break;
+              case parse_bool_result::Error: {
+                ua->SendMsg(T_("Invalid accurate flag.\n"));
+              } break;
             }
             break;
           case 31: /* backupformat */

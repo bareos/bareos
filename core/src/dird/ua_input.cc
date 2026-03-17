@@ -139,24 +139,27 @@ bool IsYesno(char* val, bool* ret)
  */
 bool GetYesno(UaContext* ua, const char* prompt)
 {
-  int len;
-  bool ret;
-
   ua->pint32_val = 0;
   for (;;) {
     if (ua->api) { ua->UA_sock->signal(BNET_YESNO); }
 
     if (!GetCmd(ua, prompt)) { return false; }
 
-    len = strlen(ua->cmd);
-    if (len < 1 || len > 3) { continue; }
 
-    if (IsYesno(ua->cmd, &ret)) {
-      ua->pint32_val = ret;
-      return true;
+    switch (parse_user_bool(ua->cmd)) {
+      case parse_bool_result::True: {
+        ua->pint32_val = true;
+        return true;
+      } break;
+      case parse_bool_result::False: {
+        ua->pint32_val = false;
+        return true;
+      } break;
+      case parse_bool_result::Error: {
+        ua->WarningMsg(
+            T_("Invalid response. You must answer yes, no, true, or false.\n"));
+      } break;
     }
-
-    ua->WarningMsg(T_("Invalid response. You must answer yes or no.\n"));
   }
 }
 
