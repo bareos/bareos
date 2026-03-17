@@ -123,7 +123,7 @@ Proceed to the next section, to install last minor bugfix release on your system
 
 .. _section-UpdateMinorBugfix:
 
-Updating Bareos to the lastest minor or bugfix release
+Updating Bareos to the latest minor or bugfix release
 ------------------------------------------------------
 
 .. index::

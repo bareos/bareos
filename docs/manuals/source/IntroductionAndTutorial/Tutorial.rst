@@ -920,7 +920,7 @@ create the file :file:`/etc/bareos/bareos-fd.d/director/bareos-dir.conf`:
    Director {
      Name = "bareos-dir"   # Name of your Bareos Director
      Password = "secret"   # Password (cleartext or MD5) must be identical
-                           # to the password of your client reosurce in the Direcotr
+                           # to the password of your client resource in the Direcotr
                            # (bareos-dir.d/client/client2-fd.conf)
    }
 

@@ -26,7 +26,7 @@ Features
 
 -  Tape Autochanger management with the possibility to label, import/export media and update your autochanger slot status
 
--  Temporarly enable or disable jobs, clients and schedules and also see their current state
+-  Temporarily enable or disable jobs, clients and schedules and also see their current state
 
 -  Show
 

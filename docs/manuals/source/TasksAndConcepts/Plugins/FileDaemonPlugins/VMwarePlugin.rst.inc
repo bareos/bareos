@@ -339,7 +339,7 @@ Since :sinceVersion:`17.2.8: VMware Plugin: non-ascii characters` it is possible
 
 However, it is important to know that it is not possible to use non-ascii characters as an argument for the :strong:`Name`\  of a job or fileset resource.
 
-Since :sinceVersion:`20: VMware Plugin: config file` it is optionally possible to use a configuration file on the system running the Bareos File Daemon. This can be useful to specify common plugin options instead of having to repeat them in every Fileset. Options which are specifed in the config file will override options from the Fileset, if the same option is given there, too. A warning will be issued in that case. Use the plugin option **config_file** to specify the config file name as in the following example:
+Since :sinceVersion:`20: VMware Plugin: config file` it is optionally possible to use a configuration file on the system running the Bareos File Daemon. This can be useful to specify common plugin options instead of having to repeat them in every Fileset. Options which are specified in the config file will override options from the Fileset, if the same option is given there, too. A warning will be issued in that case. Use the plugin option **config_file** to specify the config file name as in the following example:
 
 .. code-block:: bareosconfig
    :caption: bareos-dir.conf: VMware Plugin Job and FileSet definition with config_file
@@ -473,7 +473,7 @@ After enabling CBT, Backup Jobs can be run or scheduled as usual, for example in
 Restore
 ^^^^^^^
 
-For restoring to the same still exising VM from which the backup has been taken, the VM must be **powered off** and **no snapshot** must exist. In :command:`bconsole` use the restore menu 5, select the correct FileSet and enter :bcommand:`mark *`, then :bcommand:`done`. After restore has finished, the VM will be set to its previous powerstate. So if it was powered on at backup time, it will be powered on after restore. This can be changed by using the plugin option :command:`restore_powerstate` (see below).
+For restoring to the same still existing VM from which the backup has been taken, the VM must be **powered off** and **no snapshot** must exist. In :command:`bconsole` use the restore menu 5, select the correct FileSet and enter :bcommand:`mark *`, then :bcommand:`done`. After restore has finished, the VM will be set to its previous powerstate. So if it was powered on at backup time, it will be powered on after restore. This can be changed by using the plugin option :command:`restore_powerstate` (see below).
 
 Since :sinceVersion:`22.0.0: VMware Plugin: recreate VMs` the plugin will recreate the VM if it does not exist. By passing plugin options, with this version it is also possible to recreate the VM in a different folder, datacenter, host, cluster, resource pool or datastore, see below for details. The MAC address and the UUID of the VM will be restored, too. Restoring to a different VM location, eg, by passing a different folder, will **create a new VM** even **if the VM** which was backed up **still exists**. In this case, the new VM will get a new generated MAC address and UUID.
 
@@ -488,7 +488,7 @@ To restore to a different folder, datacenter, host, cluster, resource pool or da
 
    python:datastore=datastore2:vmname=testvm1restored
 
-All other plugin options which are not passed explicitily on restore will be the same as at backup time.
+All other plugin options which are not passed explicitly on restore will be the same as at backup time.
 
 Note that most plugin options are used for backup and restore, but there are some which can be only used on restore, for example to prevent from powering on the VM automatically after restore if it was powered on at backup time, use this plugin options string:
 

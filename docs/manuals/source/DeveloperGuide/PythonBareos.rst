@@ -9,7 +9,7 @@ The main functionality is to access a |dir| via its console interface.
 This is the same interface as used by the :command:`bconsole` command line tool
 or the |webui|.
 
-This module is not intended for Bareos Python plugins. Bareos plugins run inside the Bareos daemons, while this module connects to the Bareos Daemon constrol interfaces.
+This module is not intended for Bareos Python plugins. Bareos plugins run inside the Bareos daemons, while this module connects to the Bareos Daemon control interfaces.
 
 The relevant classes are:
 
@@ -35,7 +35,7 @@ https://github.com/bareos/bareos/tree/master/python-bareos/bin might be useful.
    and creates corresponding RST files in the toctree directory.
 
    autosummary :recursive: requires Sphinx >= 3.1.
-   Use the manualy workaround, until the build environment canbe updated to this.
+   Use the manually workaround, until the build environment can be updated to this.
 
 .. 
    autosummary::

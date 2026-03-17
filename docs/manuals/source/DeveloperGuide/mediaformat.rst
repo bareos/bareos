@@ -639,7 +639,7 @@ bls command can be used.
 -  ``bls <StorageName> -V <VolumeName> -k -vv``
 
    -  shows block and record information. Opposite to the commands
-      before, it also shows all parts of records splitted by block
+      before, it also shows all parts of records split by block
       boundaries.
 
 Unix File Attributes
