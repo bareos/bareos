@@ -370,6 +370,7 @@ else()
 endif()
 
 set(WEBUI_TEST_PREFIX "webui:")
+set(WEBUI_TESTS_DIR_PREFIX "webui-")
 if(NOT ENABLE_WEBUI_SELENIUM_TEST)
   set(WEBUI_SELENIUM_TESTS)
   foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
@@ -385,7 +386,9 @@ else()
   foreach(TEST_NAME ${WEBUI_SELENIUM_TESTS})
     message(STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}")
 
-    prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
+    prepare_test(
+      ${TEST_NAME} ${TEST_NAME} ${WEBUI_TESTS_DIR_PREFIX}${TEST_NAME}
+    )
     prepare_testdir_for_daemon_run()
     # split WEBUI_TEST_NAME into PROFILE and TESTNAME
     string(REPLACE "-" ";" SELENIUM_TESTCOMPONENTS ${TEST_NAME})
@@ -403,24 +406,31 @@ else()
       NEWLINE_STYLE UNIX
     )
     configurefilestosystemtest(
-      "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
+      "systemtests" "tests/${WEBUI_TESTS_DIR_PREFIX}${TEST_NAME}" "*" @ONLY
+      "tests/webui-common"
     )
 
     configure_file(
-      "environment.in" "tests/${TEST_NAME}/environment" @ONLY
+      "environment.in"
+      "tests/${WEBUI_TESTS_DIR_PREFIX}${TEST_NAME}/environment" @ONLY
       NEWLINE_STYLE UNIX
     )
 
     # create a bin/bareos and bin/bconsole script in every testdir for
-    # start/stop and bconsole file(MAKE_DIRECTORY
-    # "${CMAKE_BINARY_DIR}/tests/${TEST_NAME}/bin")
-    configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
-    configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
+    # start/stop and bconsole
+    configure_file(
+      "bin/bconsole"
+      "tests/${WEBUI_TESTS_DIR_PREFIX}${TEST_NAME}/bin/bconsole" COPYONLY
+    )
+    configure_file(
+      "bin/bareos"
+      "tests/${WEBUI_TESTS_DIR_PREFIX}${TEST_NAME}/bin/bareos" COPYONLY
+    )
 
     add_test(
       NAME "${WEBUI_TEST_PREFIX}${TEST_NAME}"
-      COMMAND ${tests_dir}/${TEST_NAME}/testrunner
-      WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
+      COMMAND ${tests_dir}/${WEBUI_TESTS_DIR_PREFIX}${TEST_NAME}/testrunner
+      WORKING_DIRECTORY ${tests_dir}/${WEBUI_TESTS_DIR_PREFIX}${TEST_NAME}
     )
     if(${TEST_NAME} IN_LIST WEBUI_TESTS_BROKEN)
       set_tests_properties(
