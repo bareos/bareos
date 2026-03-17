@@ -81,7 +81,7 @@ Backup
       .. index::
          single: VirtualFull Backup
 
-      When the Level is set to VirtualFull, a new Full backup is generated from the last existing Full backup and the matching Differential- and Incremental-Backups. It matches this according the :config:option:`dir/client/Name`\  and :config:option:`dir/fileset/Name`\ . This means, a new Full backup get created without transfering all the data from the client to the backup
+      When the Level is set to VirtualFull, a new Full backup is generated from the last existing Full backup and the matching Differential- and Incremental-Backups. It matches this according the :config:option:`dir/client/Name`\  and :config:option:`dir/fileset/Name`\ . This means, a new Full backup get created without transferring all the data from the client to the backup
       server again. The new Full backup will be stored in the pool defined in :config:option:`dir/pool/NextPool`\ .
 
 

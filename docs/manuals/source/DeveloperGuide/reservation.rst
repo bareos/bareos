@@ -21,7 +21,7 @@ Each swimlane denotes a separate function.
 UseDeviceCmd
 ------------
 This function reads the list of storages and devices the director is willing to use for this job.
-Afterwards several different methods of finding a device to reseve are used.
+Afterwards several different methods of finding a device to reserve are used.
 If no device could be reserved the function waits for up to a minute or until ReleaseDeviceCond() is called and then tries again.
 
 .. uml:: reservation/UseDeviceCmd.puml

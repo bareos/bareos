@@ -45,7 +45,7 @@ The following is an example of a valid Client resource definition:
 
 
 .. code-block:: bareosconfig
-   :caption: Client ressource example
+   :caption: Client resource example
 
    Client {
      Name = bareos-fd

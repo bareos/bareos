@@ -71,7 +71,7 @@ Finally, whitespace around keys, values or continuation lines is discarded.
 Encoded option values
 '''''''''''''''''''''
 
-In some cases it is desireable to have option values in an encoded format.
+In some cases it is desirable to have option values in an encoded format.
 Every option passed to a Python plugin, can be encoded using the supplied script ``bareos_encode_string.py`` from the scripts directory.
 To use such an encoded value, the option-name must be suffixed with ``#enc`` so the plugin knows it needs to decode the value.
 Thus, if you previously configured ``api_key=secret_string`` you could now configure ``api_key#enc=b7f<4WprP2baH8KX8``.

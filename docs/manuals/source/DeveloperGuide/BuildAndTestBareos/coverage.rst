@@ -32,7 +32,7 @@ As existing files are updated, running multiple programs or a single program mul
 If you want to reset the coverage data, you need to remove all the count-data-files.
 You can then run the programs again to collect new data.
 
-For convienience there is the custom target ``cov-clean`` that will clean out count-data-files and the reports.
+For convenience there is the custom target ``cov-clean`` that will clean out count-data-files and the reports.
 
 Plotting analysis data
 ^^^^^^^^^^^^^^^^^^^^^^

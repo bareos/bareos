@@ -96,8 +96,8 @@ in the client definition of the |dir|:
 
 .. _LanAddress:
 
-Using different IP Adresses for SD – FD Communication
------------------------------------------------------
+Using different IP Addresses for SD – FD Communication
+------------------------------------------------------
 
 .. index::
    single: LAN Address
@@ -291,7 +291,7 @@ Network Connections Overview
 The following diagrams show Bareos components with any possible
 network connections between them. Arrows point always from the TCP
 Client to the respective TCP Server, thus the direction of the connection
-initiation. This is not neccessarily the direction of the data flow.
+initiation. This is not necessarily the direction of the data flow.
 
 Full connection overview
 ------------------------

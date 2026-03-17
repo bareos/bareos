@@ -73,7 +73,7 @@ Return code
 testconnection operation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 This operation checks if the object storage works correctly with the supplied
-configuation.
+configuration.
 
 Command line
    ``<wrapper-program> testconnection``

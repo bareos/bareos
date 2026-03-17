@@ -505,7 +505,7 @@ HIST
       Specifies the default file history format determined by your NDMP backup settings.
 
    N
-      Disables file history. Without file hostory, single file restore is not possible with Bareos.
+      Disables file history. Without file history, single file restore is not possible with Bareos.
 
    Some NDMP environments (eg. Isilon OneFS) allow additional parameter:
 
@@ -1098,7 +1098,7 @@ After this, a restore from :strong:`bareos-sd2.example.com` directly to the NDMP
 Limitations
 ~~~~~~~~~~~
 
-   This list the specific limitiations of the NDMP_BAREOS protocol. For limitation for all Bareos NDMP implementation, see :ref:`section-NdmpCommonLimitations`.
+   This list the specific limitations of the NDMP_BAREOS protocol. For limitation for all Bareos NDMP implementation, see :ref:`section-NdmpCommonLimitations`.
 
 .. _section-ndmp-filehistory:
 
@@ -1127,7 +1127,7 @@ Restore always transfers the full main backup file to the Primary Storage System
 
 Contrary to |ndmpnative|, the |ndmpbareos| implementation do not support NDMP "Direct Access Restore" (DAR).
 
-On restore, the full main backup file (:file:`@NDMP/...%.`) is always transfered back to the Primary Storage System, together with a description, what files to restore.
+On restore, the full main backup file (:file:`@NDMP/...%.`) is always transferred back to the Primary Storage System, together with a description, what files to restore.
 
 The reason for this is that the Primary Storage System handles the backup data by itself. Bareos will not modify the backup data it receives from the Primary Storage System.
 

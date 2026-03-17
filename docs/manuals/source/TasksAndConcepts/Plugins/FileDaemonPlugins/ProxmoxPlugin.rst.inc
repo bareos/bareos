@@ -147,7 +147,7 @@ Make sure to add or enable the following settings in your |fd| configuration:
 
 Restart the |fd| after the changes with :command:`systemctl restart bareos-fd`.
 :qk
-After connectng the client to the director as described in :ref:`section-AddAClient`,
+After connecting the client to the director as described in :ref:`section-AddAClient`,
 we go on with configuring jobs and filesets.
 
 
@@ -514,7 +514,7 @@ The guest has been recovered and can be now be started via commandline or |proxm
 While the above example shows the restore of a KVM guest, the procedure to
 recover a container guest is slightly different.
 When recovering a container backup, the target storage and size need to be
-passed via the plugin paramter ``pctstorage`` to the plugin in the format
+passed via the plugin parameter ``pctstorage`` to the plugin in the format
 
 ``pctstorage=<storagename>\:<size-in-GiB>``
 
@@ -615,11 +615,11 @@ which results in the following plugin options:
 Overwriting an existing guest with the same ID
 ''''''''''''''''''''''''''''''''''''''''''''''
 If you want to overwrite an existing guest with the same ID, it is required that:
- * The existing guest ist **powered off**
+ * The existing guest is **powered off**
  * The restore is started with the plugin option **force=yes**
 
 .. code-block:: bareosconfig
-   :caption: allow to overwrite an exisiting guest
+   :caption: allow to overwrite an existing guest
 
    python:force=yes
 

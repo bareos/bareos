@@ -23,7 +23,7 @@ with current Python versions. Unfortunately libcloud is not fully thread safe,
 this can cause unresponsive worker threads on bad network connections when
 libcloud calls run into timeouts. The plugin code tries to handle that in a
 reasonable way, but especially when the option **fail_on_download_error** is
-disabled, this can cause the plugin to hang indefinetely and would require
+disabled, this can cause the plugin to hang indefinitely and would require
 restarting the bareos-filedaemon. So the default and recommended setting for
 is option is now disabled.
 
