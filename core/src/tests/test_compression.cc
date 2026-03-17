@@ -38,9 +38,11 @@ TEST(CompressionNameTest, CompressorName_GZIP) {
   EXPECT_EQ(CompressorName(COMPRESS_GZIP), "GZIP");
 }
 
+#ifdef HAVE_LZO
 TEST(CompressionNameTest, CompressorName_LZO) {
   EXPECT_EQ(CompressorName(COMPRESS_LZO1X), "LZO");
 }
+#endif  // HAVE_LZO
 
 TEST(CompressionNameTest, CompressorName_FASTLZ) {
   EXPECT_EQ(CompressorName(COMPRESS_FZFZ), "FASTLZ");
@@ -69,6 +71,7 @@ TEST(CompressionOutputSizeTest, GZIP_large_input) {
   EXPECT_GT(size, 1000000);
 }
 
+#ifdef HAVE_LZO
 TEST(CompressionOutputSizeTest, LZO_small_input) {
   std::size_t size = RequiredCompressionOutputBufferSize(COMPRESS_LZO1X, 100);
   EXPECT_GT(size, 100);
@@ -78,6 +81,7 @@ TEST(CompressionOutputSizeTest, LZO_large_input) {
   std::size_t size = RequiredCompressionOutputBufferSize(COMPRESS_LZO1X, 100000);
   EXPECT_GT(size, 100000);
 }
+#endif  // HAVE_LZO
 
 TEST(CompressionOutputSizeTest, FASTLZ_small_input) {
   std::size_t size = RequiredCompressionOutputBufferSize(COMPRESS_FZFZ, 100);
@@ -102,12 +106,14 @@ TEST_F(CompressionTest, SetupCompressionBuffers_GZIP) {
   EXPECT_GT(buf_size, 0);
 }
 
+#ifdef HAVE_LZO
 TEST_F(CompressionTest, SetupCompressionBuffers_LZO) {
   uint32_t buf_size = 0;
   bool result = SetupCompressionBuffers(jcr, COMPRESS_LZO1X, &buf_size);
   EXPECT_TRUE(result);
   EXPECT_GT(buf_size, 0);
 }
+#endif  // HAVE_LZO
 
 TEST_F(CompressionTest, SetupCompressionBuffers_FASTLZ) {
   uint32_t buf_size = 0;
@@ -166,12 +172,14 @@ TEST_F(CompressionTest, SetupSpecificCompressionContext_GZIP_level9) {
   EXPECT_TRUE(result);
 }
 
+#ifdef HAVE_LZO
 TEST_F(CompressionTest, SetupSpecificCompressionContext_LZO) {
   uint32_t buf_size = 0;
   ASSERT_TRUE(SetupCompressionBuffers(jcr, COMPRESS_LZO1X, &buf_size));
   bool result = SetupSpecificCompressionContext(*jcr, COMPRESS_LZO1X, 1);
   EXPECT_TRUE(result);
 }
+#endif  // HAVE_LZO
 
 TEST_F(CompressionTest, SetupSpecificCompressionContext_FASTLZ) {
   uint32_t buf_size = 0;
@@ -246,6 +254,7 @@ TEST_F(CompressionTest, ThreadlocalCompress_GZIP_various_levels) {
   }
 }
 
+#ifdef HAVE_LZO
 TEST_F(CompressionTest, ThreadlocalCompress_LZO_simple) {
   const char* input = "Hello, World!";
   std::size_t input_len = strlen(input);
@@ -258,6 +267,7 @@ TEST_F(CompressionTest, ThreadlocalCompress_LZO_simple) {
   EXPECT_FALSE(result.holds_error());
   EXPECT_GT(*result.value(), 0);
 }
+#endif  // HAVE_LZO
 
 TEST_F(CompressionTest, ThreadlocalCompress_FASTLZ_simple) {
   const char* input = "Hello, World!";
@@ -357,12 +367,14 @@ TEST_F(CompressionTest, CompressData_GZIP_repetitive) {
   EXPECT_LT(compress_len, test_data.size());
 }
 
+#ifdef HAVE_LZO
 TEST_F(CompressionTest, CompressData_LZO_setup) {
   uint32_t buf_size = 0;
   bool result = SetupCompressionBuffers(jcr, COMPRESS_LZO1X, &buf_size);
   EXPECT_TRUE(result);
   EXPECT_GT(buf_size, 0);
 }
+#endif  // HAVE_LZO
 
 TEST_F(CompressionTest, CompressData_FASTLZ_setup) {
   uint32_t buf_size = 0;
@@ -415,7 +427,9 @@ TEST_F(CompressionTest, CleanupCompression_after_setup) {
 TEST_F(CompressionTest, CleanupCompression_multiple_setups) {
   uint32_t buf_size = 0;
   ASSERT_TRUE(SetupCompressionBuffers(jcr, COMPRESS_GZIP, &buf_size));
+#ifdef HAVE_LZO
   ASSERT_TRUE(SetupCompressionBuffers(jcr, COMPRESS_LZO1X, &buf_size));
+#endif
 
   CleanupCompression(jcr);
   EXPECT_TRUE(true);

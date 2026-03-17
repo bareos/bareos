@@ -445,6 +445,8 @@ bareos_add_test(test_message LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
 bareos_add_test(test_compression LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
+bareos_add_test(test_parse_conf LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
+
 # Skipping crypto_openssl tests due to OpenSSL environment issues (double-free, segfaults)
 # bareos_add_test(test_crypto_openssl LINK_LIBRARIES Bareos::Lib GTest::gtest_main)
 
