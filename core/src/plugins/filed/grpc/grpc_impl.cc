@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1105,6 +1105,9 @@ class PluginClient {
     return handlePluginEvent(type, &req);
   }
 
+  std::string fname;
+  std::string link;
+
   bRC startBackupFile(filedaemon::save_pkt* pkt)
   {
     bp::startBackupFileRequest req;
@@ -1140,14 +1143,6 @@ class PluginClient {
                      bco::FileType_Name(file.ft()), int(file.ft()));
             return bRC_Error;
           }
-          if (pkt->fname) {
-            free(pkt->fname);
-            pkt->fname = nullptr;
-          }
-          if (pkt->link) {
-            free(pkt->link);
-            pkt->link = nullptr;
-          }
 
           switch (file.ft()) {
             case bco::SpecialFile:
@@ -1167,7 +1162,8 @@ class PluginClient {
             case bco::UnchangedFile:
               [[fallthrough]];
             case bco::RegularFile: {
-              pkt->fname = strdup(file.file().c_str());
+              fname = file.file();
+              pkt->fname = const_cast<char*>(fname.c_str());
               pkt->link = nullptr;
             } break;
             case bco::UnchangedDirectory:
@@ -1179,15 +1175,20 @@ class PluginClient {
               // for directories:
               // pkt->fname _should not_ end in a '/'
               // pkt->link _should_ end in a '/'
-              pkt->fname = strdup(name.c_str());
+              fname = name;
+              pkt->fname = const_cast<char*>(fname.c_str());
 
               if (name.back() != '/') { name += '/'; }
 
-              pkt->link = strdup(name.c_str());
+              link = std::move(name);
+
+              pkt->link = const_cast<char*>(link.c_str());
             } break;
             case bco::SoftLink: {
-              pkt->fname = strdup(file.file().c_str());
-              pkt->link = strdup(file.link().c_str());
+              fname = file.file();
+              link = file.link();
+              pkt->fname = const_cast<char*>(fname.c_str());
+              pkt->link = const_cast<char*>(link.c_str());
             } break;
             default: {
               DebugLog(50, FMT_STRING("bad filetype {} ({})"),
@@ -1275,7 +1276,8 @@ class PluginClient {
             }
           }
 
-          pkt->fname = strdup(err.file().c_str());
+          fname = err.file();
+          pkt->fname = const_cast<char*>(fname.c_str());
         } else {
           DebugLog(100, FMT_STRING("received nothing"));
           return bRC_Error;
@@ -1655,6 +1657,7 @@ class PluginClient {
     }
 
     auto& data = resp.content().data();
+    // bareos core will call free() on this buffer
     *buffer = reinterpret_cast<char*>(malloc(data.size() + 1));
     *size = data.size();
 
@@ -1718,6 +1721,8 @@ class PluginClient {
 
     auto& key = current.key();
     auto& val = current.value();
+
+    // the core will call free() on these
 
     *name_size = key.size();
     *name_buf = reinterpret_cast<char*>(malloc(key.size() + 1));
