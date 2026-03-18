@@ -682,7 +682,7 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: COMPRESSION_ALGORITHM
 
-   The following values are allowed: `GZIP` (GZIP1 to GZIP9), `LZO`, `LZFAST` (deprecated :sinceVersion:`19.2.: lzfast`, `LZ4`, `LZ4HC`.
+   The following values are allowed: `GZIP` (GZIP1 to GZIP9), `LZO`, `LZFAST` (deprecated :sinceVersion:`19.2.: lzfast`), `LZ4`, `LZ4HC`.
 
    See :config:option:`dir/fileset/include/options/compression`.
 
@@ -695,12 +695,8 @@ When parsing the resource directives, Bareos classifies the data according to th
 
 .. config:datatype:: DEVICE_TYPE
 
-   The following values are allowed: `Tape`, `File`, `FIFO`, `Dedupable`, `DplCompat`.
 
-   See :config:option:`sd/device/DeviceType`.
-
-..
-   Hint: check REGISTER_SD_BACKEND in /stored/backends to find allowed types
+   See :ref:`SdBackends` for further details.
 
 
 .. config:datatype:: DIRECTORY
