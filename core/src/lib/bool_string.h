@@ -22,9 +22,13 @@
 #ifndef BAREOS_LIB_BOOL_STRING_H_
 #define BAREOS_LIB_BOOL_STRING_H_
 
-#include <lib/bsys.h>
+#include "include/bareos.h"
+
 #include <string_view>
-#include <span>
+#include <strings.h>
+
+#include "lex.h"
+#include "source_location.h"
 
 /**
  * Parses a user provided string for a bool.
@@ -39,30 +43,93 @@ enum class parse_bool_result
   Error,
 };
 
+namespace bool_parsing::internal {
+template <size_t N>
+inline bool is_in_vec(const std::string_view (&candidates)[N],
+                      std::string_view value)
+{
+  for (auto candidate : candidates) {
+    if (value.size() == candidate.size()
+        && strncasecmp(value.data(), candidate.data(), value.size()) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+inline std::pair<parse_bool_result, bool> parse_bool(std::string_view input,
+                                                     bool allow_deprecated
+                                                     = false)
+{
+  static constexpr std::string_view true_accepted[] = {"yes"};
+  static constexpr std::string_view true_deprecated[] = {"true", "1"};
+
+  static constexpr std::string_view false_accepted[] = {"no"};
+  static constexpr std::string_view false_deprecated[] = {"false", "0"};
+
+  bool deprecated = false;
+
+  if (is_in_vec(true_accepted, input)) {
+    return {parse_bool_result::True, deprecated};
+  }
+  if (is_in_vec(false_accepted, input)) {
+    return {parse_bool_result::False, deprecated};
+  }
+
+  deprecated = true;
+  if (is_in_vec(true_deprecated, input)) {
+    if (allow_deprecated) {
+      return {parse_bool_result::True, deprecated};
+    } else {
+      return {parse_bool_result::Error, deprecated};
+    }
+  }
+  if (is_in_vec(false_deprecated, input)) {
+    if (allow_deprecated) {
+      return {parse_bool_result::False, deprecated};
+    } else {
+      return {parse_bool_result::Error, deprecated};
+    }
+  }
+
+  return {parse_bool_result::Error, false};
+}
+}  // namespace bool_parsing::internal
+
 static inline parse_bool_result parse_user_bool(std::string_view input)
 {
-  static constexpr std::string_view true_accepted[] = {"yes", "true"};
+  using namespace bool_parsing::internal;
 
-  static constexpr std::string_view false_accepted[] = {"no", "false"};
+  auto [result, deprecated] = parse_bool(input);
 
-  using enum parse_bool_result;
+  if (deprecated) {
+    // we do not accept deprecated options in user contexts
 
-  auto is_in_vec = [](std::span<const std::string_view> candidates,
-                      std::string_view value) -> bool {
-    for (auto candidate : candidates) {
-      if (value.size() == candidate.size()
-          && bstrncasecmp(value.data(), candidate.data(), value.size())) {
-        return true;
-      }
-    }
-    return false;
-  };
+    Dmsg0(100, "User passed deprecated option %.*s\n", (int)input.size(),
+          input.data());
 
-  if (is_in_vec(true_accepted, input)) { return True; }
+    return parse_bool_result::Error;
+  }
+  return result;
+}
 
-  if (is_in_vec(false_accepted, input)) { return False; }
+static inline parse_bool_result parse_conf_bool(
+    lexer* lc,
+    libbareos::source_location loc = libbareos::source_location::current())
+{
+  using namespace bool_parsing::internal;
 
-  return Error;
+  if (!lc->str) { return parse_bool_result::Error; }
+
+  auto [result, deprecated] = parse_bool(lc->str, true);
+
+  if (deprecated) {
+    (*lc->scan_warning)(
+        loc.file_name(), loc.line(), lc,
+        "setting boolean value via true/false/1/0 is deprecated; only yes/no will be supported on newer versions");
+  }
+
+  return result;
 }
 
 #endif  // BAREOS_LIB_BOOL_STRING_H_

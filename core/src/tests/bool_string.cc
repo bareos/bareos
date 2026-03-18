@@ -28,41 +28,71 @@
 
 #include "lib/bool_string.h"
 
+using namespace bool_parsing::internal;
+
+
+static inline std::pair<parse_bool_result, bool> deprecated(parse_bool_result x)
+{
+  return {x, true};
+}
+
+static inline std::pair<parse_bool_result, bool> allowed(parse_bool_result x)
+{
+  return {x, false};
+}
+
 TEST(ParseBool, simple_yes)
 {
-  EXPECT_EQ(parse_user_bool("yes"), parse_bool_result::True);
-  EXPECT_EQ(parse_user_bool("true"), parse_bool_result::True);
-  EXPECT_EQ(parse_user_bool("1"), parse_bool_result::True);
+  EXPECT_EQ(parse_bool("yes", true), allowed(parse_bool_result::True));
+  EXPECT_EQ(parse_bool("true", true), deprecated(parse_bool_result::True));
+  EXPECT_EQ(parse_bool("1", true), deprecated(parse_bool_result::True));
+}
+
+TEST(ParseBool, deprecation_true)
+{
+  EXPECT_EQ(parse_bool("yes"), allowed(parse_bool_result::True));
+  EXPECT_EQ(parse_bool("true"), deprecated(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("1"), deprecated(parse_bool_result::Error));
 }
 
 TEST(ParseBool, simple_no)
 {
-  EXPECT_EQ(parse_user_bool("no"), parse_bool_result::False);
-  EXPECT_EQ(parse_user_bool("false"), parse_bool_result::False);
-  EXPECT_EQ(parse_user_bool("0"), parse_bool_result::False);
+  EXPECT_EQ(parse_bool("no", true), allowed(parse_bool_result::False));
+  EXPECT_EQ(parse_bool("false", true), deprecated(parse_bool_result::False));
+  EXPECT_EQ(parse_bool("0", true), deprecated(parse_bool_result::False));
+}
+
+TEST(ParseBool, deprecation_false)
+{
+  EXPECT_EQ(parse_bool("no"), allowed(parse_bool_result::False));
+  EXPECT_EQ(parse_bool("false"), deprecated(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("0"), deprecated(parse_bool_result::Error));
 }
 
 TEST(ParseBool, random_capitalisation)
 {
-  EXPECT_EQ(parse_user_bool("YeS"), parse_bool_result::True);
-  EXPECT_EQ(parse_user_bool("fAlSe"), parse_bool_result::False);
+  EXPECT_EQ(parse_bool("YeS", true), allowed(parse_bool_result::True));
+  EXPECT_EQ(parse_bool("nO", true), allowed(parse_bool_result::False));
+
+  EXPECT_EQ(parse_bool("TrUe", true), deprecated(parse_bool_result::True));
+  EXPECT_EQ(parse_bool("fAlSe", true), deprecated(parse_bool_result::False));
 }
 
 TEST(ParseBool, bad_numbers)
 {
-  EXPECT_EQ(parse_user_bool("2"), parse_bool_result::Error);
-  EXPECT_EQ(parse_user_bool("01"), parse_bool_result::Error);
-  EXPECT_EQ(parse_user_bool("10"), parse_bool_result::Error);
+  EXPECT_EQ(parse_bool("2"), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("01"), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("10"), allowed(parse_bool_result::Error));
 }
 
 TEST(ParseBool, whitespace)
 {
-  // parse_user_bool does _not_ handle trimming
-  EXPECT_EQ(parse_user_bool(" yes"), parse_bool_result::Error);
-  EXPECT_EQ(parse_user_bool("yes "), parse_bool_result::Error);
-  EXPECT_EQ(parse_user_bool("false "), parse_bool_result::Error);
-  EXPECT_EQ(parse_user_bool(" false"), parse_bool_result::Error);
+  // parse_bool does _not_ handle trimming
+  EXPECT_EQ(parse_bool(" yes"), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("yes "), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool("false "), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool(" false"), allowed(parse_bool_result::Error));
 
-  EXPECT_EQ(parse_user_bool(""), parse_bool_result::Error);
-  EXPECT_EQ(parse_user_bool(" "), parse_bool_result::Error);
+  EXPECT_EQ(parse_bool(""), allowed(parse_bool_result::Error));
+  EXPECT_EQ(parse_bool(" "), allowed(parse_bool_result::Error));
 }
