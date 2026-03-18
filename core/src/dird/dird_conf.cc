@@ -2922,7 +2922,7 @@ static void StoreShortRunscript(lexer* lc,
 static void StoreRunscriptBool(lexer* lc, const ResourceItem* item, int, int)
 {
   LexGetToken(lc, BCT_NAME);
-  switch (parse_user_bool(lc->str)) {
+  switch (parse_conf_bool(lc)) {
     case parse_bool_result::True: {
       SetItemVariable<bool>(*item, true);
     } break;

@@ -1138,7 +1138,7 @@ void ConfigurationParser::StoreBit(lexer* lc,
 {
   LexGetToken(lc, BCT_NAME);
   char* bitvalue = GetItemVariablePointer<char*>(*item);
-  switch (parse_user_bool(lc->str)) {
+  switch (parse_conf_bool(lc)) {
     case parse_bool_result::True: {
       SetBit(item->code, bitvalue);
     } break;
@@ -1163,7 +1163,7 @@ void ConfigurationParser::StoreBool(lexer* lc,
                                     int)
 {
   LexGetToken(lc, BCT_NAME);
-  switch (parse_user_bool(lc->str)) {
+  switch (parse_conf_bool(lc)) {
     case parse_bool_result::True: {
       SetItemVariable<bool>(*item, true);
     } break;

@@ -126,7 +126,8 @@ static inline parse_bool_result parse_conf_bool(
   if (deprecated) {
     (*lc->scan_warning)(
         loc.file_name(), loc.line(), lc,
-        "setting boolean value via true/false/1/0 is deprecated; only yes/no will be supported on newer versions");
+        "setting boolean value via true/false/1/0 is deprecated; only yes/no "
+        "will be supported in newer versions");
   }
 
   return result;

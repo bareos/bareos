@@ -193,7 +193,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
         switch (RunFields[i].token) {
           case 's': /* Data spooling */
             token = LexGetToken(lc, BCT_NAME);
-            switch (parse_user_bool(lc->str)) {
+            switch (parse_conf_bool(lc)) {
               case parse_bool_result::True: {
                 res_run.spool_data = true;
                 res_run.spool_data_set = true;
@@ -302,7 +302,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
             break;
           case 'a': /* Accurate */
             token = LexGetToken(lc, BCT_NAME);
-            switch (parse_user_bool(lc->str)) {
+            switch (parse_conf_bool(lc)) {
               case parse_bool_result::True: {
                 res_run.accurate = true;
                 res_run.accurate_set = true;
