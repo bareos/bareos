@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,18 +47,11 @@
 #define BAREOS_STORED_VOL_MGR_H_
 
 #include <atomic>
+#include "stored/reserve.h"
 
 template <typename T> class dlist;
 
 namespace storagedaemon {
-
-class VolumeReservationItem;
-VolumeReservationItem* vol_walk_start();
-VolumeReservationItem* VolWalkNext(VolumeReservationItem* prev_vol);
-void VolWalkEnd(VolumeReservationItem* vol);
-VolumeReservationItem* read_vol_walk_start();
-VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol);
-void ReadVolWalkEnd(VolumeReservationItem* vol);
 
 // Volume reservation class -- see vol_mgr.c and reserve.c
 class VolumeReservationItem {
@@ -98,15 +91,36 @@ class VolumeReservationItem {
   void SetJobid(uint32_t JobId) { JobId_ = JobId; }
 };
 
-#define foreach_vol(vol) \
-  for (vol = vol_walk_start(); vol; (vol = VolWalkNext(vol)))
+namespace private_functions {
+// workaround for msvc not being able to correctly add forward declared
+// functions inside of a block to the innermost namespace
+VolumeReservationItem* vol_walk_start(void);
+VolumeReservationItem* VolWalkNext(VolumeReservationItem* prev_vol);
+VolumeReservationItem* read_vol_walk_start(void);
+VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol);
+};  // namespace private_functions
 
-#define endeach_vol(vol) VolWalkEnd(vol)
 
-#define foreach_read_vol(vol) \
-  for (vol = read_vol_walk_start(); vol; (vol = ReadVolWalkNext(vol)))
+template <typename PerVolumeAction> void foreach_vol (PerVolumeAction visitor)
+{
+  with_volume_lock([&]() {
+    for (VolumeReservationItem* vol = private_functions::vol_walk_start(); vol;
+         vol = private_functions::VolWalkNext(vol)) {
+      visitor(vol);
+    }
+  });
+}
 
-#define endeach_read_vol(vol) ReadVolWalkEnd(vol)
+template <typename PerVolumeAction>
+void foreach_read_vol(PerVolumeAction visitor)
+{
+  with_read_volume_lock([&] {
+    for (VolumeReservationItem* vol = private_functions::read_vol_walk_start();
+         vol; vol = private_functions::ReadVolWalkNext(vol)) {
+      visitor(vol);
+    }
+  });
+}
 
 void InitVolListLock();
 void TermVolListLock();
