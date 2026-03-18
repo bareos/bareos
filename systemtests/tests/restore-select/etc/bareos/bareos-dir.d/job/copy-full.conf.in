@@ -1,0 +1,17 @@
+Job {
+    Name = "copy-full"
+    Type = Copy
+    Messages = Standard
+    Pool = Full
+    Selection Type = PoolUncopiedJobs
+    Spool Data = yes
+}
+
+Job {
+    Name = "copy-incr"
+    Type = Copy
+    Messages = Standard
+    Pool = Incremental
+    Selection Type = PoolUncopiedJobs
+    Spool Data = yes
+}

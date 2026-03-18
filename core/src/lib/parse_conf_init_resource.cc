@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,10 +30,12 @@
 
 static void MakePathName(PoolMem& pathname, const char* str)
 {
-  PmStrcpy(pathname, str);
-  if (pathname.c_str()[0] != '|') {
-    pathname.check_size(pathname.size() + 1024);
-    DoShellExpansion(pathname.c_str(), pathname.size());
+  if (str[0] != '|') {
+    auto* expanded = DoShellExpansion(str);
+    PmStrcpy(pathname, expanded);
+    free(expanded);
+  } else {
+    PmStrcpy(pathname, str);
   }
 }
 
@@ -131,7 +133,6 @@ void ConfigurationParser::SetResourceDefaultsParserPass2(
         break;
       }
       case CFG_TYPE_ALIST_DIR: {
-        PoolMem pathname(PM_FNAME);
         alist<const char*>** alistvalue
             = GetItemVariablePointer<alist<const char*>**>(*item);
 
@@ -139,30 +140,25 @@ void ConfigurationParser::SetResourceDefaultsParserPass2(
           *alistvalue = new alist<const char*>(10, owned_by_alist);
         }
 
-        PmStrcpy(pathname, item->default_value);
-        if (*item->default_value != '|') {
-          int size;
-
-          // Make sure we have enough room
-          size = pathname.size() + 1024;
-          pathname.check_size(size);
-          DoShellExpansion(pathname.c_str(), pathname.size());
+        if (item->default_value[0] != '|') {
+          auto* expanded = DoShellExpansion(item->default_value);
+          (*alistvalue)->append(expanded);
+        } else {
+          (*alistvalue)->append(strdup(item->default_value));
         }
-        (*alistvalue)->append(strdup(pathname.c_str()));
         break;
       }
       case CFG_TYPE_STR_VECTOR_OF_DIRS: {
         std::vector<std::string>* list
             = GetItemVariablePointer<std::vector<std::string>*>(*item);
 
-        PoolMem pathname(PM_FNAME);
-        PmStrcpy(pathname, item->default_value);
-        if (*item->default_value != '|') {
-          int size = pathname.size() + 1024;
-          pathname.check_size(size);
-          DoShellExpansion(pathname.c_str(), pathname.size());
+        if (item->default_value[0] != '|') {
+          auto* expanded = DoShellExpansion(item->default_value);
+          list->emplace_back(expanded);
+          free(expanded);
+        } else {
+          list->emplace_back(item->default_value);
         }
-        list->emplace_back(pathname.c_str());
         break;
       }
       default:

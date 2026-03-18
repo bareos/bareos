@@ -1,7 +1,7 @@
 #! /bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -17,13 +17,32 @@
 #   along with this program; if not, write to the Free Software
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
+
+pidfromfile()
+{
+  if [ $# = 0 ]; then
+    echo "Usage: ${FUNCNAME[0]} {pidfile}"
+    return 1
+  fi
+
+  while true; do
+    pid=$(cat "$1")
+    if [ "${pid}" != "" ]; then
+      break
+    fi
+    sleep 0.1
+  done
+
+  echo "${pid}"
+}
+
 # A function to find the pid of a program.
 pidofproc()
 {
   pid=""
   # Test syntax.
   if [ $# = 0 ]; then
-    echo "Usage: pidofproc {program} {port}"
+    echo "Usage: ${FUNCNAME[0]} {program} {port}"
     return 1
   fi
 
@@ -87,7 +106,7 @@ killproc()
   RC=0
   # Test syntax.
   if [ $# = 0 ]; then
-    echo "Usage: killproc {program} {port} [signal]"
+    echo "Usage: ${FUNCNAME[0]} {program} {port} [signal]"
     return 1
   fi
 
@@ -100,11 +119,23 @@ killproc()
     killlevel="-9"
   fi
 
-  # Get base program name
-  base=$(basename $1)
-
   # Find pid.
-  pid=$(pidofproc $base $2)
+  if [ -v BAREOS_PIDFILE ] && [ -f "${BAREOS_PIDFILE}" ]; then
+    pid=$(pidfromfile "${BAREOS_PIDFILE}")
+    # Get base program name
+    base=$(basename "$1")
+
+    badpid=$(pidofproc "$base" "$2")
+
+    if [ "${pid}" != "${badpid}" ]; then
+      echo "Got ${pid} from pidfile; would have gotten ${badpid} from pidofproc" >&2
+    fi
+  else
+    # Get base program name
+    base=$(basename "$1")
+
+    pid=$(pidofproc "$base" "$2")
+  fi
 
   # Kill it.
   if checkPid "$pid"; then
@@ -169,15 +200,26 @@ status()
 {
   # Test syntax.
   if [ $# = 0 ]; then
-    echo "Usage: status {program} {port}"
+    echo "Usage: ${FUNCNAME[0]} {program} {port}"
     return 1
   fi
 
-  # Get base program name
-  base=$(basename $1)
-
   # Find pid.
-  pid=$(pidofproc $base $2)
+  if [ -v BAREOS_PIDFILE ] && [ -f "${BAREOS_PIDFILE}" ]; then
+    pid=$(pidfromfile "${BAREOS_PIDFILE}")
+
+    # Get base program name
+    base=$(basename "$1")
+
+    badpid=$(pidofproc "$base" "$2")
+
+    echo "Got ${pid} from pidfile; wouldve gotten ${badpid} from pidofproc" >&2
+  else
+    # Get base program name
+    base=$(basename "$1")
+
+    pid=$(pidofproc "$base" "$2")
+  fi
 
   if checkPid "$pid"; then
     echo "$base (pid $pid) is running..."

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -978,8 +978,16 @@ int GetNextJobidFromList(const char** p, uint32_t* JobId)
   } else if (!Is_a_number(jobid)) {
     return -1; /* error */
   }
+  auto candidate = str_to_int64(jobid);
+
+  Dmsg1(400, "parsed jobid as %" PRIi64 "\n", candidate);
+
+  if (candidate <= 0 || candidate > std::numeric_limits<uint32_t>::max()) {
+    return -1;
+  }
+
   *p = q;
-  *JobId = str_to_int64(jobid);
+  *JobId = candidate;
   return 1;
 }
 

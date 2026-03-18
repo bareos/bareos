@@ -1,7 +1,7 @@
 #!/bin/bash
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,9 @@ for confdir in "${CONF_ROOT}"*; do
     BAREOS_DIRECTOR_BINARY_TO_USE="${BAREOS_DIRECTOR_BINARY}${daemonsuffix}"
   fi
   BAREOS_STORAGEDAEMON_BINARY="${BAREOS_STORAGEDAEMON_BINARY_TO_USE}" \
-  BAREOS_FILEDAEMON_BINARY="${BAREOS_FILEDAEMON_BINARY_TO_USE}" \
-  BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY_TO_USE}" \
-  BAREOS_CONFIG_DIR="${confdir}" "${BAREOS_SCRIPTS_DIR}"/bareos "$@"
+    BAREOS_FILEDAEMON_BINARY="${BAREOS_FILEDAEMON_BINARY_TO_USE}" \
+    BAREOS_DIRECTOR_BINARY="${BAREOS_DIRECTOR_BINARY_TO_USE}" \
+    BAREOS_CONFIG_DIR="${confdir}" \
+    BAREOS_PIDFILE_PREFIX="${working}/${daemonsuffix:1}" \
+    "${BAREOS_SCRIPTS_DIR}"/bareos "$@"
 done
