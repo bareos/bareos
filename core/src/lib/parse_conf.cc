@@ -155,11 +155,11 @@ void ConfigurationParser::ParseConfigOrExit()
   }
 }
 
-void ConfigurationParser_ScanWarning(const char* file,
-                                     int line,
-                                     lexer* lc,
-                                     const char* fmt,
-                                     ...)
+void ConfigurationParser_PrintWarning(const char* file,
+                                      int line,
+                                      lexer* lc,
+                                      const char* fmt,
+                                      ...)
 {
   auto* conf = static_cast<ConfigurationParser*>(lc->caller_ctx);
 
@@ -199,7 +199,7 @@ bool ConfigurationParser::ParseConfig()
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
   bool success = ParseConfigFile(config_path.c_str(), this, nullptr,
-                                 &ConfigurationParser_ScanWarning);
+                                 &ConfigurationParser_PrintWarning);
   if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
 
   config_resources_container_->SetTimestampToNow();
@@ -220,11 +220,7 @@ void ConfigurationParser::lex_error(const char* cf,
     LexSetDefaultErrorHandler(&lexical_parser_);
   }
 
-  if (scan_warning) {
-    lexical_parser_.scan_warning = scan_warning;
-  } else {
-    LexSetDefaultWarningHandler(&lexical_parser_);
-  }
+  lexical_parser_.print_warning = scan_warning;
 
   LexSetErrorHandlerErrorType(&lexical_parser_, err_type_);
   BErrNo be;

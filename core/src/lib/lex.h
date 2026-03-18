@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -142,43 +142,47 @@ struct lexer {
                                                  ...);
 
 
-  error_handler* scan_error;
-  warning_handler* scan_warning;
+  error_handler* scan_error = {};
+  warning_handler* print_warning = {};
   int err_type; /* message level for scan_error (M_..) */
   int error_counter;
   void* caller_ctx; /* caller private data */
   Bpipe* bpipe;     /* set if we are piping */
 };
 
+PRINTF_LIKE(4, 5)
+void scan_warn(const char* file, int line, lexer* lc, const char* msg, ...);
+
 // Lexical scanning errors in parsing conf files
-#define scan_err0(lc, msg) (lc)->scan_error(__FILE__, __LINE__, (lc), msg)
-#define scan_err1(lc, msg, a1) \
-  (lc)->scan_error(__FILE__, __LINE__, (lc), msg, a1)
-#define scan_err2(lc, msg, a1, a2) \
-  (lc)->scan_error(__FILE__, __LINE__, (lc), msg, a1, a2)
-#define scan_err3(lc, msg, a1, a2, a3) \
-  (lc)->scan_error(__FILE__, __LINE__, (lc), msg, a1, a2, a3)
-#define scan_err4(lc, msg, a1, a2, a3, a4) \
-  (lc)->scan_error(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4)
+#define scan_err(lc, msg, ...)                               \
+  do {                                                       \
+    lexer* _temp_lex_ = (lc);                                \
+    _temp_lex_->scan_error(__FILE__, __LINE__, _temp_lex_,   \
+                           (msg)__VA_OPT__(, ) __VA_ARGS__); \
+  } while (0)
+#define scan_err0(lc, msg) scan_err((lc), (msg))
+#define scan_err1(lc, msg, a1) scan_err((lc), (msg), a1)
+#define scan_err2(lc, msg, a1, a2) scan_err((lc), (msg), a1, a2)
+#define scan_err3(lc, msg, a1, a2, a3) scan_err((lc), (msg), a1, a2, a3)
+#define scan_err4(lc, msg, a1, a2, a3, a4) scan_err((lc), (msg), a1, a2, a3, a4)
 #define scan_err5(lc, msg, a1, a2, a3, a4, a5) \
-  (lc)->scan_error(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4, a5)
+  scan_err((lc), (msg), a1, a2, a3, a4, a5)
 #define scan_err6(lc, msg, a1, a2, a3, a4, a5, a6) \
-  (lc)->scan_error(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4, a5, a6)
+  scan_err((lc), (msg), a1, a2, a3, a4, a5, a6)
 
 // Lexical scanning warnings in parsing conf files
-#define scan_warn0(lc, msg) (lc)->scan_warning(__FILE__, __LINE__, (lc), msg)
-#define scan_warn1(lc, msg, a1) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1)
+#define scan_warn0(lc, msg) scan_warn(__FILE__, __LINE__, (lc), msg)
+#define scan_warn1(lc, msg, a1) scan_warn(__FILE__, __LINE__, (lc), msg, a1)
 #define scan_warn2(lc, msg, a1, a2) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1, a2)
+  scan_warn(__FILE__, __LINE__, (lc), msg, a1, a2)
 #define scan_warn3(lc, msg, a1, a2, a3) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1, a2, a3)
+  scan_warn(__FILE__, __LINE__, (lc), msg, a1, a2, a3)
 #define scan_warn4(lc, msg, a1, a2, a3, a4) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4)
+  scan_warn(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4)
 #define scan_warn5(lc, msg, a1, a2, a3, a4, a5) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4, a5)
+  scan_warn(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4, a5)
 #define scan_warn6(lc, msg, a1, a2, a3, a4, a5, a6) \
-  (lc)->scan_warning(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4, a5, a6)
+  scan_warn(__FILE__, __LINE__, (lc), msg, a1, a2, a3, a4, a5, a6)
 
 void ScanToEol(lexer* lc);
 int ScanToNextNotEol(lexer* lc);
@@ -193,7 +197,6 @@ void LexUngetChar(lexer* lf);
 const char* lex_tok_to_str(int token);
 int LexGetToken(lexer* lf, int expect);
 void LexSetDefaultErrorHandler(lexer* lf);
-void LexSetDefaultWarningHandler(lexer* lf);
 void LexSetErrorHandlerErrorType(lexer* lf, int err_type);
 
 #endif  // BAREOS_LIB_LEX_H_

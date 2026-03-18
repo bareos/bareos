@@ -105,7 +105,7 @@ static void s_err(const char* file, int line, lexer* lc, const char* msg, ...)
 
 // Format a scanner warning message
 PRINTF_LIKE(4, 5)
-static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
+void scan_warn(const char* file, int line, lexer* lc, const char* msg, ...)
 {
   va_list ap;
   PoolMem buf(PM_NAME), more(PM_NAME);
@@ -121,19 +121,29 @@ static void s_warn(const char* file, int line, lexer* lc, const char* msg, ...)
   }
 
   if (lc->line_no > 0) {
-    p_msg(file, line, 0,
-          T_("Config warning: %s\n"
-             "            : line %d, col %d of file %s\n%s\n%s"),
-          buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line,
-          more.c_str());
+    if (lc->print_warning) {
+      lc->print_warning(file, line, lc,
+                        T_("%s;\n"
+                           "See line %d, col %d of file %s\n%s\n%s"),
+                        buf.c_str(), lc->line_no, lc->col_no, lc->fname,
+                        lc->line, more.c_str());
+    } else {
+      p_msg(file, line, 0,
+            T_("Config warning: %s\n"
+               "            : line %d, col %d of file %s\n%s\n%s"),
+            buf.c_str(), lc->line_no, lc->col_no, lc->fname, lc->line,
+            more.c_str());
+    }
   } else {
-    p_msg(file, line, 0, T_("Config warning: %s\n"), buf.c_str());
+    if (lc->print_warning) {
+      lc->print_warning(file, line, lc, T_("%s\n"), buf.c_str());
+    } else {
+      p_msg(file, line, 0, T_("Config warning: %s\n"), buf.c_str());
+    }
   }
 }
 
 void LexSetDefaultErrorHandler(lexer* lf) { lf->scan_error = s_err; }
-
-void LexSetDefaultWarningHandler(lexer* lf) { lf->scan_warning = s_warn; }
 
 // Set err_type used in error_handler
 void LexSetErrorHandlerErrorType(lexer* lf, int err_type)
@@ -219,11 +229,7 @@ static inline lexer* lex_add(lexer* lf,
     LexSetDefaultErrorHandler(lf);
   }
 
-  if (scan_warning) {
-    lf->scan_warning = scan_warning;
-  } else {
-    LexSetDefaultWarningHandler(lf);
-  }
+  lf->print_warning = scan_warning;
 
   lf->fd = fd;
   lf->bpipe = bpipe;
@@ -812,7 +818,7 @@ int LexGetToken(lexer* lf, int expect)
           LexGetChar(lf);
 
           lf->state = lex_none;
-          lf = lex_open_file(lf, lf->str, lf->scan_error, lf->scan_warning);
+          lf = lex_open_file(lf, lf->str, lf->scan_error, lf->print_warning);
           if (lf == NULL) {
             BErrNo be;
             scan_err2(lfori, T_("Cannot open included config file %s: %s\n"),
@@ -841,7 +847,7 @@ int LexGetToken(lexer* lf, int expect)
           lexer* lfori = lf;
 
           lf->state = lex_none;
-          lf = lex_open_file(lf, lf->str, lf->scan_error, lf->scan_warning);
+          lf = lex_open_file(lf, lf->str, lf->scan_error, lf->print_warning);
           if (lf == NULL) {
             BErrNo be;
             scan_err2(lfori, T_("Cannot open included config file %s: %s\n"),
