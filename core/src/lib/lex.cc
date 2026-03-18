@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -169,8 +169,14 @@ lexer* LexCloseFile(lexer* lf)
   FreeMemory(lf->str);
   lf->line = NULL;
   if (of) {
+    // this is just an extremely bad idea, but it is kinda entangled
+    // with the rest of the code.
+    // We should try to make this make sense when we touch the lexer
+    // the next time.
+
     of->options = lf->options;              /* preserve options */
     of->error_counter += lf->error_counter; /* summarize the errors */
+    of->caller_ctx = lf->caller_ctx;
     memcpy(lf, of, sizeof(lexer));
     Dmsg1(debuglevel, "Restart scan of cfg file %s\n", of->fname);
   } else {
