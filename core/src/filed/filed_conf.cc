@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -245,10 +245,10 @@ static void ConfigReadyCallback(ConfigurationParser&) {}
 ConfigurationParser* InitFdConfig(const char* t_configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      t_configfile, nullptr, nullptr, InitResourceCb, ParseConfigCb, nullptr,
-      exit_code, R_NUM, resources, default_config_filename.c_str(),
-      "bareos-fd.d", ConfigBeforeCallback, ConfigReadyCallback, SaveResource,
-      DumpResource, FreeResource);
+      t_configfile, InitResourceCb, ParseConfigCb, nullptr, exit_code, R_NUM,
+      resources, default_config_filename.c_str(), "bareos-fd.d",
+      ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
+      FreeResource);
   if (config) { config->r_own_ = R_CLIENT; }
   return config;
 }

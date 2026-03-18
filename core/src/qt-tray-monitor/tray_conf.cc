@@ -377,7 +377,7 @@ static void ConfigReadyCallback(ConfigurationParser&) {}
 ConfigurationParser* InitTmonConfig(const char* configfile, int exit_code)
 {
   ConfigurationParser* config = new ConfigurationParser(
-      configfile, nullptr, nullptr, nullptr, nullptr, nullptr, exit_code, R_NUM,
+      configfile, nullptr, nullptr, nullptr, exit_code, R_NUM,
       resource_definitions, default_config_filename.c_str(), "tray-monitor.d",
       ConfigBeforeCallback, ConfigReadyCallback, SaveResource, DumpResource,
       FreeResource);
