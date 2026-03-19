@@ -61,7 +61,7 @@ class ConsoleController extends AbstractRestfulController
             $this->result = $this->getDirectorModel()->sendDirectorCommand($this->bsock, $command);
         } catch(Exception $e) {
             $this->getResponse()->setStatusCode(500);
-            error_log($e);
+            error_log($e->getMessage());
         }
 
         $response = $this->getResponse();

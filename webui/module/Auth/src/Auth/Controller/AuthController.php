@@ -274,7 +274,7 @@ class AuthController extends AbstractActionController
         try {
             $commands = $this->getDirectorModel()->getAvailableCommands($this->bsock);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         if ($commands['.help']['permission'] == 0) {
@@ -300,7 +300,7 @@ class AuthController extends AbstractActionController
                 $dird_version = $dird_version_array['version'];
             }
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         if (isset($dird_version)) {
