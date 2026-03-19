@@ -34,7 +34,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getClients(&$bsock = null)
+    public function getClients(&$bsock = null): array
     {
         if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
@@ -51,7 +51,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getDotClients(&$bsock = null)
+    public function getDotClients(&$bsock = null): array
     {
         if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
@@ -68,7 +68,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getClientsWithBackups(&$bsock = null)
+    public function getClientsWithBackups(&$bsock = null): array
     {
         if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
@@ -86,7 +86,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getClient(&$bsock = null, $client)
+    public function getClient(&$bsock = null, $client): array
     {
         if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
@@ -108,7 +108,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getClientBackups(&$bsock = null, $client = null, $fileset = null, $order = null, $limit = null)
+    public function getClientBackups(&$bsock = null, $client = null, $fileset = null, $order = null, $limit = null): array
     {
         if (isset($bsock, $client)) {
             $cmd = 'llist backups client="' . $client . '"';
@@ -156,7 +156,7 @@ class ClientModel
      *
      * @return array
      */
-    public function getClientJobs(&$bsock = null, $client = null, $fileset = null, $order = null, $limit = null)
+    public function getClientJobs(&$bsock = null, $client = null, $fileset = null, $order = null, $limit = null): array
     {
         if (isset($bsock, $client)) {
             $cmd = 'llist jobs client="' . $client . '"';
@@ -185,7 +185,7 @@ class ClientModel
      *
      * @return string
      */
-    public function statusClient(&$bsock = null, $name = null)
+    public function statusClient(&$bsock = null, $name = null): string
     {
         if (isset($bsock, $name)) {
             $cmd = 'status client="' . $name;
@@ -204,7 +204,7 @@ class ClientModel
      *
      * @return string
      */
-    public function enableClient(&$bsock = null, $name = null)
+    public function enableClient(&$bsock = null, $name = null): string
     {
         if (isset($bsock, $name)) {
             $cmd = 'enable client="' . $name . '" yes';
@@ -223,7 +223,7 @@ class ClientModel
      *
      * @return string
      */
-    public function disableClient(&$bsock = null, $name = null)
+    public function disableClient(&$bsock = null, $name = null): string
     {
         if (isset($bsock, $name)) {
             $cmd = 'disable client="' . $name . '" yes';
