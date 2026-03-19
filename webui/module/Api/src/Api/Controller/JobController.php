@@ -70,58 +70,34 @@ class JobController extends AbstractRestfulController
             } elseif ($filter === "last24h") {
                 $days = 1;
                 $hours = null;
-                $waiting = null;
-                $running = null;
-                $successful = null;
-                $warning = null;
-                $failed = null;
 
-                // waiting
-                $jobs_F = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'F', $days, $hours);
-                $jobs_S = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'S', $days, $hours);
-                $jobs_s = $this->getJobModel()->getJobsByStatus($this->bsock, null, 's', $days, $hours);
-                $jobs_m = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'm', $days, $hours);
-                $jobs_M = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'M', $days, $hours);
-                $jobs_j = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'j', $days, $hours);
-                $jobs_c = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'c', $days, $hours);
-                $jobs_C = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'C', $days, $hours);
-                $jobs_d = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'd', $days, $hours);
-                $jobs_t = $this->getJobModel()->getJobsByStatus($this->bsock, null, 't', $days, $hours);
-                $jobs_p = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'p', $days, $hours);
-                $jobs_q = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'q', $days, $hours);
-                $waiting = count($jobs_F) + count($jobs_S) +
-                    count($jobs_s) + count($jobs_m) +
-                    count($jobs_M) + count($jobs_j) +
-                    count($jobs_c) + count($jobs_C) +
-                    count($jobs_d) + count($jobs_t) +
-                    count($jobs_p) + count($jobs_q);
+                $status_categories = [
+                    'running' => ['R'],
+                    'successful' => ['T', 'D'],
+                    'warning' => ['W'],
+                    'failed' => ['E', 'e', 'f'],
+                    'canceled' => ['A'],
+                    'waiting' => ['F', 'S', 'm', 'M', 's', 'j', 'c', 'r', 'C'],
+                ];
 
-                // running
-                $jobs_R = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'R', $days, $hours);
-                $jobs_l = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'l', $days, $hours);
-                $running = count($jobs_R) + count($jobs_l);
+                $jobs = [];
+                $total = 0;
+                foreach ($status_categories as $category => $statuses) {
+                    $jobs[$category] = [];
+                    foreach ($statuses as $status) {
+                        $result = $this->getJobModel()->getJobsByStatus($this->bsock, null, $status, $days, $hours);
+                        if (is_array($result)) {
+                            $jobs[$category] = array_merge($jobs[$category], $result);
+                            $total += count($result);
+                        }
+                    }
+                }
 
-                // successful
-                $jobs_T = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'T', $days, $hours);
-                $successful = count($jobs_T);
-
-                // warning
-                $jobs_A = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'A', $days, $hours);
-                $jobs_W = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'W', $days, $hours);
-                $warning = count($jobs_A) + count($jobs_W);
-
-                // failed
-                $jobs_E = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'E', $days, $hours);
-                $jobs_e = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'e', $days, $hours);
-                $jobs_f = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'f', $days, $hours);
-                $failed = count($jobs_E) + count($jobs_e) + count($jobs_f);
-
-                // json result
-                $this->result['waiting'] = $waiting;
-                $this->result['running'] = $running;
-                $this->result['successful'] = $successful;
-                $this->result['warning'] = $warning;
-                $this->result['failed'] = $failed;
+                $this->result['waiting'] = count($jobs['waiting']);
+                $this->result['running'] = count($jobs['running']);
+                $this->result['successful'] = count($jobs['successful']);
+                $this->result['warning'] = count($jobs['warning']) + count($jobs['canceled']);
+                $this->result['failed'] = count($jobs['failed']);
 
             } elseif(isset($client)) {
                 $this->result = $this->getClientModel()->getClientJobs($this->bsock, $client, null, 'desc', null);
