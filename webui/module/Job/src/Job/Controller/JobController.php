@@ -117,6 +117,9 @@ class JobController extends AbstractActionController
                     );
                     if (count($invalid_commands) > 0 && in_array('rerun', $invalid_commands)) {
                         $this->acl_alert = true;
+                        if ($this->bsock) {
+                            $this->bsock->disconnect();
+                        }
                         return new ViewModel(
                             array(
                                 'acl_alert' => $this->acl_alert,
@@ -127,6 +130,7 @@ class JobController extends AbstractActionController
                         $result = $this->getJobModel()->rerunJob($this->bsock, $jobid);
                         if (!preg_match("/authorization/i", $result)) {
                             $jobid = rtrim(substr($result, strrpos($result, "=") + 1));
+                            $this->bsock->disconnect();
                             return $this->redirect()->toRoute('job', array('action' => 'details', 'id' => $jobid));
                         }
                     }
