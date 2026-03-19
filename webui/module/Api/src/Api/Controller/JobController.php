@@ -130,7 +130,7 @@ class JobController extends AbstractRestfulController
             }
         } catch(Exception $e) {
             $this->getResponse()->setStatusCode(500);
-            error_log($e);
+            error_log($e->getMessage());
         }
 
         return new JsonModel($this->result);
@@ -162,7 +162,7 @@ class JobController extends AbstractRestfulController
             $this->result = $this->getJobModel()->getJob($this->bsock, $jobid);
         } catch(Exception $e) {
             $this->getResponse()->setStatusCode(500);
-            error_log($e);
+            error_log($e->getMessage());
         }
 
         return new JsonModel($this->result);

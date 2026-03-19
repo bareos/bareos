@@ -81,7 +81,7 @@ class MediaController extends AbstractActionController
             $volumes = $this->getMediaModel()->getVolumes($this->bsock);
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(

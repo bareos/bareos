@@ -85,7 +85,7 @@ class JobController extends AbstractActionController
             $jobs = $this->getJobModel()->getJobsByType($this->bsock, null);
             array_push($jobs, array('name' => 'all'));
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         $form = new JobForm($jobs, $jobname, $period, $status);
@@ -105,7 +105,7 @@ class JobController extends AbstractActionController
             try {
                 $this->bsock = $this->getServiceLocator()->get('director');
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
 
             if ($action == "rerun") {
@@ -131,14 +131,14 @@ class JobController extends AbstractActionController
                         }
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             }
 
             try {
                 $this->bsock->disconnect();
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
 
             return new ViewModel(
@@ -192,7 +192,7 @@ class JobController extends AbstractActionController
             $this->bsock = $this->getServiceLocator()->get('director');
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(array(
@@ -242,7 +242,7 @@ class JobController extends AbstractActionController
             $result = $this->getJobModel()->cancelJob($this->bsock, $jobid);
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(
@@ -295,7 +295,7 @@ class JobController extends AbstractActionController
             try {
                 $this->bsock = $this->getServiceLocator()->get('director');
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
 
             if ($action == "queue") {
@@ -317,7 +317,7 @@ class JobController extends AbstractActionController
                         $result = $this->getJobModel()->runJob($this->bsock, $jobname);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "enable") {
                 $jobname = $this->params()->fromQuery('job');
@@ -338,7 +338,7 @@ class JobController extends AbstractActionController
                         $result = $this->getJobModel()->enableJob($this->bsock, $jobname);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "disable") {
                 $jobname = $this->params()->fromQuery('job');
@@ -359,14 +359,14 @@ class JobController extends AbstractActionController
                         $result = $this->getJobModel()->disableJob($this->bsock, $jobname);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             }
 
             try {
                 $this->bsock->disconnect();
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
 
             return new ViewModel(
@@ -496,7 +496,7 @@ class JobController extends AbstractActionController
                         return $this->redirect()->toRoute('job', array('action' => 'details', 'id' => $filtered[0]));
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } else {
                 $this->bsock->disconnect();

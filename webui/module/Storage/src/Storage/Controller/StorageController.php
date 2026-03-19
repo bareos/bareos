@@ -129,7 +129,7 @@ class StorageController extends AbstractActionController
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         try {
@@ -153,7 +153,7 @@ class StorageController extends AbstractActionController
                 }
             }
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         try {
@@ -179,7 +179,7 @@ class StorageController extends AbstractActionController
                 }
             }
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         $form = new StorageForm($storagename, $pools, $drives);
@@ -213,7 +213,7 @@ class StorageController extends AbstractActionController
                         $result = $this->getStorageModel()->importSlots($this->bsock, $storage, $srcslots, $dstslots);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "export") {
                 $storage = $this->params()->fromQuery('storage');
@@ -236,7 +236,7 @@ class StorageController extends AbstractActionController
                         $result = $this->getStorageModel()->exportSlots($this->bsock, $storage, $srcslots);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "mount") {
                 $storage = $this->params()->fromQuery('storage');
@@ -260,7 +260,7 @@ class StorageController extends AbstractActionController
                         $result = $this->getStorageModel()->mountSlot($this->bsock, $storage, $slot, $drive);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "unmount") {
                 $storage = $this->params()->fromQuery('storage');
@@ -283,7 +283,7 @@ class StorageController extends AbstractActionController
                         $result = $this->getStorageModel()->unmountSlot($this->bsock, $storage, $drive);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "release") {
                 $storage = $this->params()->fromQuery('storage');
@@ -306,7 +306,7 @@ class StorageController extends AbstractActionController
                         $result = $this->getStorageModel()->releaseSlot($this->bsock, $storage, $drive);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "label") {
                 $request = $this->getRequest();
@@ -336,7 +336,7 @@ class StorageController extends AbstractActionController
                                 $result = $this->getStorageModel()->label($this->bsock, $storage, $pool, $drive, NULL, $encrypted);
                             }
                         } catch (Exception $e) {
-                            echo $e->getMessage();
+                            error_log($e->getMessage());
                         }
                     } else {
                         // Form data not valid
@@ -362,14 +362,14 @@ class StorageController extends AbstractActionController
                         $result = $this->getStorageModel()->updateSlots($this->bsock, $storage);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             }
 
             try {
                 $this->bsock->disconnect();
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
 
             return new ViewModel(array(
@@ -427,7 +427,7 @@ class StorageController extends AbstractActionController
             $result = $this->getStorageModel()->statusStorage($this->bsock, $storage);
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(

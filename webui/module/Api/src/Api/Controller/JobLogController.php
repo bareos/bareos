@@ -83,7 +83,7 @@ class JobLogController extends AbstractRestfulController
             $this->result = $this->getJobModel()->getJobLog($this->bsock, $jobid);
         } catch(Exception $e) {
             $this->getResponse()->setStatusCode(500);
-            error_log($e);
+            error_log($e->getMessage());
         }
 
         return new JsonModel($this->result);

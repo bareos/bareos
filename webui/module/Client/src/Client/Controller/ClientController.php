@@ -83,7 +83,7 @@ class ClientController extends AbstractActionController
             try {
                 $this->bsock = $this->getServiceLocator()->get('director');
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
 
             if ($action == "enable") {
@@ -105,7 +105,7 @@ class ClientController extends AbstractActionController
                         $result = $this->getClientModel()->enableClient($this->bsock, $clientname);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "disable") {
                 $clientname = $this->params()->fromQuery('client');
@@ -126,14 +126,14 @@ class ClientController extends AbstractActionController
                         $result = $this->getClientModel()->disableClient($this->bsock, $clientname);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             }
 
             try {
                 $this->bsock->disconnect();
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
 
             return new ViewModel(
@@ -236,7 +236,7 @@ class ClientController extends AbstractActionController
             $result = $this->getClientModel()->statusClient($this->bsock, $clientname);
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(

@@ -124,7 +124,7 @@ class RestoreController extends AbstractActionController
             $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
             $restorejobresources = $this->getRestoreModel()->getRestoreJobResources($this->bsock, $restorejobs);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         $this->updateRestoreParams($restore_source_clients, $restore_target_clients, $restorejobresources);
@@ -206,7 +206,7 @@ class RestoreController extends AbstractActionController
                         // contains information about this has happened.
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
 
                 $this->bsock->disconnect();
@@ -257,7 +257,7 @@ class RestoreController extends AbstractActionController
                     $this->restore_params['jobid'] = $latestbackup[0]['jobid'];
                 }
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
         }
     }
@@ -267,7 +267,7 @@ class RestoreController extends AbstractActionController
         try {
             $this->restore_params['jobids'] = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'], $this->restore_params['mergefilesets']);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -276,7 +276,7 @@ class RestoreController extends AbstractActionController
         try {
             return $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -328,7 +328,7 @@ class RestoreController extends AbstractActionController
                 $this->restore_params['id']
             );
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -346,7 +346,7 @@ class RestoreController extends AbstractActionController
                 $this->restore_params['id']
             );
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -363,7 +363,7 @@ class RestoreController extends AbstractActionController
                 $this->restore_params['mergejobs']
             );
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -378,7 +378,7 @@ class RestoreController extends AbstractActionController
                 $this->restore_params['jobids']
             );
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -627,7 +627,7 @@ class RestoreController extends AbstractActionController
                 $result = $this->getRestoreModel()->getFileVersions($this->bsock, $clientname, $pathid, $filename);
                 $this->bsock->disconnect();
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
         }
 
@@ -648,7 +648,7 @@ class RestoreController extends AbstractActionController
             $result = $this->getRestoreModel()->isNDMPBackupClient($this->bsock, $client);
             return $result;
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 

@@ -85,7 +85,7 @@ class ScheduleController extends AbstractActionController
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         if (empty($action)) {
@@ -93,7 +93,7 @@ class ScheduleController extends AbstractActionController
                 $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
                 $this->bsock->disconnect();
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
             return new ViewModel(
                 array(
@@ -120,7 +120,7 @@ class ScheduleController extends AbstractActionController
                         $result = $this->getScheduleModel()->enableSchedule($this->bsock, $schedulename);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "disable") {
                 try {
@@ -141,14 +141,14 @@ class ScheduleController extends AbstractActionController
                         $result = $this->getScheduleModel()->disableSchedule($this->bsock, $schedulename);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             }
 
             try {
                 $this->bsock->disconnect();
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
 
             return new ViewModel(
@@ -205,7 +205,7 @@ class ScheduleController extends AbstractActionController
                 $this->bsock->disconnect();
             }
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(
@@ -260,7 +260,7 @@ class ScheduleController extends AbstractActionController
                 $this->bsock->disconnect();
             }
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(
@@ -317,7 +317,7 @@ class ScheduleController extends AbstractActionController
                 $this->bsock->disconnect();
             }
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(

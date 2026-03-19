@@ -124,7 +124,7 @@ class FilesetController extends AbstractActionController
             $fileset = $this->getFilesetModel()->getFileset($this->bsock, $filesetid);
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(

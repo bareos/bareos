@@ -81,7 +81,7 @@ class PoolController extends AbstractActionController
             $pools = $this->getPoolModel()->getPools($this->bsock);
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(
@@ -136,7 +136,7 @@ class PoolController extends AbstractActionController
             $pool = $this->getPoolModel()->getPool($this->bsock, $poolname);
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(
