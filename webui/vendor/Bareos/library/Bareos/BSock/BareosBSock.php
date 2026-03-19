@@ -280,7 +280,13 @@ class BareosBSock implements BareosBSockInterface
             return $msg;
         }
 
+        $max_iterations = 1000;
+        $iteration = 0;
         while (true) {
+            if (++$iteration > $max_iterations) {
+                error_log('receive_message: max iteration limit reached');
+                break;
+            }
             $buffer = stream_get_contents($this->socket, 4);
 
             if ($buffer === false) {
