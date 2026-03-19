@@ -483,6 +483,19 @@ bool BareosSocketTCP::SendPacket(int32_t* hdr, int32_t pktsiz)
   return ok;
 }
 
+bool BareosSocketTCP::KtlsForSend()
+{
+  if (!tls_conn) { return false; }
+
+  return tls_conn->KtlsSendStatus();
+}
+bool BareosSocketTCP::KtlsForRecv()
+{
+  if (!tls_conn) { return false; }
+
+  return tls_conn->KtlsRecvStatus();
+}
+
 /*
  * Send a message over the network. The send consists of
  * two network packets. The first is sends a 32 bit integer containing

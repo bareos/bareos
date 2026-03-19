@@ -287,6 +287,9 @@ class BareosSocket {
       std::string destination_qualified_name);
   bool IsBnetDumpEnabled() const { return bnet_dump_.get() != nullptr; }
   void SetEnableKtls(bool enable_ktls) { enable_ktls_ = enable_ktls; }
+
+  virtual bool KtlsForSend() = 0;
+  virtual bool KtlsForRecv() = 0;
 };
 
 /**
