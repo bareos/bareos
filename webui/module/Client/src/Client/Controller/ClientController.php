@@ -88,6 +88,12 @@ class ClientController extends AbstractActionController
 
             if ($action == "enable") {
                 $clientname = $this->params()->fromQuery('client');
+                if (empty($clientname) || !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $clientname)) {
+                    if ($this->bsock) {
+                        $this->bsock->disconnect();
+                    }
+                    return new ViewModel(['error' => 'Invalid client name']);
+                }
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
@@ -112,6 +118,12 @@ class ClientController extends AbstractActionController
                 }
             } elseif ($action == "disable") {
                 $clientname = $this->params()->fromQuery('client');
+                if (empty($clientname) || !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $clientname)) {
+                    if ($this->bsock) {
+                        $this->bsock->disconnect();
+                    }
+                    return new ViewModel(['error' => 'Invalid client name']);
+                }
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(

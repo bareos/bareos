@@ -62,6 +62,25 @@ class MediaController extends AbstractRestfulController
         $filter = $this->params()->fromQuery('filter');
         $jobid = $this->params()->fromQuery('jobid');
 
+        if ($pool !== null && !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $pool)) {
+            $this->bsock->disconnect();
+            $this->getResponse()->setStatusCode(400);
+            return new JsonModel(['error' => 'Invalid pool name']);
+        }
+        if ($volume !== null && !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $volume)) {
+            $this->bsock->disconnect();
+            $this->getResponse()->setStatusCode(400);
+            return new JsonModel(['error' => 'Invalid volume name']);
+        }
+        if ($jobid !== null) {
+            $jobid = (int) $jobid;
+            if ($jobid <= 0) {
+                $this->bsock->disconnect();
+                $this->getResponse()->setStatusCode(400);
+                return new JsonModel(['error' => 'Invalid job ID']);
+            }
+        }
+
         try{
             if ($filter === "jobs" && isset($volume)) {
                 $this->result = $this->getMediaModel()->getVolumeJobs($this->bsock, $volume);
