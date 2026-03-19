@@ -106,7 +106,13 @@ class AuthController extends AbstractActionController
         $this->bsock->set_config($config['directors'][$director]);
         $this->bsock->set_user_credentials($username, $password);
 
-        if (!$this->bsock->connect_and_authenticate()) {
+        try {
+            $authenticated = $this->bsock->connect_and_authenticate();
+        } catch (\Exception $e) {
+            $authenticated = false;
+        }
+
+        if (!$authenticated) {
             $err_msg = "Sorry, cannot authenticate. Wrong username, password or SSL/TLS handshake failed.";
             return $this->createNewLoginForm($form, $multi_dird_env, $err_msg, $this->bsock);
         }
@@ -206,8 +212,7 @@ class AuthController extends AbstractActionController
         if ($bsock != null) {
             $bsock->disconnect();
         }
-        $session = new Container('bareos');
-        $session->getManager()->destroy(['clear_storage' => true]);
+        session_destroy();
         return new ViewModel(
             array(
                 'form' => $form,
