@@ -95,6 +95,9 @@ class ClientController extends AbstractActionController
                     );
                     if (count($invalid_commands) > 0 && in_array('enable', $invalid_commands)) {
                         $this->acl_alert = true;
+                        if ($this->bsock) {
+                            $this->bsock->disconnect();
+                        }
                         return new ViewModel(
                             array(
                                 'acl_alert' => $this->acl_alert,
@@ -116,6 +119,9 @@ class ClientController extends AbstractActionController
                     );
                     if (count($invalid_commands) > 0 && in_array('disable', $invalid_commands)) {
                         $this->acl_alert = true;
+                        if ($this->bsock) {
+                            $this->bsock->disconnect();
+                        }
                         return new ViewModel(
                             array(
                                 'acl_alert' => $this->acl_alert,
