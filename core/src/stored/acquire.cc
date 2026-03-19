@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -513,82 +513,83 @@ bool ReleaseDevice(DeviceControlRecord* dcr)
     was_blocked = dev->blocked();
     dev->SetBlocked(BST_RELEASING);
   }
-  LockVolumes();
-  Dmsg1(100, "releasing device %s\n", dev->print_name());
 
-  // If device is reserved, job never started, so release the reserve here
-  dcr->ClearReserved();
+  with_volume_lock([&] {
+    Dmsg1(100, "releasing device %s\n", dev->print_name());
 
-  if (dev->CanRead()) {
-    VolumeCatalogInfo* vol = &dev->VolCatInfo;
+    // If device is reserved, job never started, so release the reserve here
+    dcr->ClearReserved();
 
-    dev->ClearRead(); /* clear read bit */
-    Dmsg2(150, "dir_update_vol_info. label=%d Vol=%s\n", dev->IsLabeled(),
-          vol->VolCatName);
-    if (dev->IsLabeled() && vol->VolCatName[0] != 0) {
-      dcr->DirUpdateVolumeInfo(
-          is_labeloperation::False); /* send Volume info to Director */
-      RemoveReadVolume(jcr, dcr->VolumeName);
-      VolumeUnused(dcr);
-    }
-  } else if (dev->num_writers > 0) {
-    /* Note if WEOT is set, we are at the end of the tape and may not be
-     * positioned correctly, so the job_media_record and update_vol_info have
-     * already been done, which means we skip them here. */
-    dev->num_writers--;
-    Dmsg1(100, "There are %d writers in ReleaseDevice\n", dev->num_writers);
-    if (dcr->VolFirstIndex) {
-      // Send a new jobmedia record if we have written to a volume
-      // take note that the volume we wrote to is not necessarily the volume
-      // that is currently inside the device.
-      dcr->DirCreateJobmediaRecord(false);
-    }
-    if (dev->IsLabeled()) {
-      Dmsg2(200, "dir_create_jobmedia. Release vol=%s dev=%s\n",
-            dev->getVolCatName(), dev->print_name());
-      if (!dev->AtWeot() && !dcr->DirCreateJobmediaRecord(false)) {
-        Jmsg2(jcr, M_FATAL, 0,
-              T_("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
-              dcr->getVolCatName(), jcr->Job);
-      }
+    if (dev->CanRead()) {
+      VolumeCatalogInfo* vol = &dev->VolCatInfo;
 
-      // If no more writers, and no errors, and wrote something, write an EOF
-      if (!dev->num_writers && dev->CanWrite() && dev->block_num > 0) {
-        dev->weof(1);
-        WriteAnsiIbmLabels(dcr, ANSI_EOF_LABEL, dev->VolHdr.VolumeName);
-      }
-      if (!dev->AtWeot()) {
-        dev->VolCatInfo.VolCatFiles = dev->file; /* set number of files */
-
-        // Note! do volume update before close, which zaps VolCatInfo
+      dev->ClearRead(); /* clear read bit */
+      Dmsg2(150, "dir_update_vol_info. label=%d Vol=%s\n", dev->IsLabeled(),
+            vol->VolCatName);
+      if (dev->IsLabeled() && vol->VolCatName[0] != 0) {
         dcr->DirUpdateVolumeInfo(
             is_labeloperation::False); /* send Volume info to Director */
-        Dmsg2(200, "dir_update_vol_info. Release vol=%s dev=%s\n",
+        RemoveReadVolume(jcr, dcr->VolumeName);
+        VolumeUnused(dcr);
+      }
+    } else if (dev->num_writers > 0) {
+      /* Note if WEOT is set, we are at the end of the tape and may not be
+       * positioned correctly, so the job_media_record and update_vol_info have
+       * already been done, which means we skip them here. */
+      dev->num_writers--;
+      Dmsg1(100, "There are %d writers in ReleaseDevice\n", dev->num_writers);
+      if (dcr->VolFirstIndex) {
+        // Send a new jobmedia record if we have written to a volume
+        // take note that the volume we wrote to is not necessarily the volume
+        // that is currently inside the device.
+        dcr->DirCreateJobmediaRecord(false);
+      }
+      if (dev->IsLabeled()) {
+        Dmsg2(200, "dir_create_jobmedia. Release vol=%s dev=%s\n",
               dev->getVolCatName(), dev->print_name());
+        if (!dev->AtWeot() && !dcr->DirCreateJobmediaRecord(false)) {
+          Jmsg2(
+              jcr, M_FATAL, 0,
+              T_("Could not create JobMedia record for Volume=\"%s\" Job=%s\n"),
+              dcr->getVolCatName(), jcr->Job);
+        }
+
+        // If no more writers, and no errors, and wrote something, write an EOF
+        if (!dev->num_writers && dev->CanWrite() && dev->block_num > 0) {
+          dev->weof(1);
+          WriteAnsiIbmLabels(dcr, ANSI_EOF_LABEL, dev->VolHdr.VolumeName);
+        }
+        if (!dev->AtWeot()) {
+          dev->VolCatInfo.VolCatFiles = dev->file; /* set number of files */
+
+          // Note! do volume update before close, which zaps VolCatInfo
+          dcr->DirUpdateVolumeInfo(
+              is_labeloperation::False); /* send Volume info to Director */
+          Dmsg2(200, "dir_update_vol_info. Release vol=%s dev=%s\n",
+                dev->getVolCatName(), dev->print_name());
+        }
+        if (dev->num_writers == 0) { /* if not being used */
+          VolumeUnused(dcr); /*  we obviously are not using the volume */
+        }
       }
-      if (dev->num_writers == 0) { /* if not being used */
-        VolumeUnused(dcr);         /*  we obviously are not using the volume */
-      }
+
+    } else {
+      /* If we reach here, it is most likely because the job has failed,
+       * since the device is not in read mode and there are no writers.
+       * It was probably reserved. */
+      VolumeUnused(dcr);
     }
 
-  } else {
-    /* If we reach here, it is most likely because the job has failed,
-     * since the device is not in read mode and there are no writers.
-     * It was probably reserved. */
-    VolumeUnused(dcr);
-  }
+    Dmsg3(100, "%d writers, %d reserve, dev=%s\n", dev->num_writers,
+          dev->NumReserved(), dev->print_name());
 
-  Dmsg3(100, "%d writers, %d reserve, dev=%s\n", dev->num_writers,
-        dev->NumReserved(), dev->print_name());
-
-  // If no writers, close if file or !CAP_ALWAYS_OPEN
-  if (dev->num_writers == 0
-      && (!dev->IsTape() || !dev->HasCap(CAP_ALWAYSOPEN))) {
-    dev->close(dcr);
-    FreeVolume(dev);
-  }
-
-  UnlockVolumes();
+    // If no writers, close if file or !CAP_ALWAYS_OPEN
+    if (dev->num_writers == 0
+        && (!dev->IsTape() || !dev->HasCap(CAP_ALWAYSOPEN))) {
+      dev->close(dcr);
+      FreeVolume(dev);
+    }
+  });
 
   // Fire off Alert command and include any output
   if (!jcr->IsJobCanceled()) {
