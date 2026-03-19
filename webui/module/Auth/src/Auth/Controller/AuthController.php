@@ -206,7 +206,8 @@ class AuthController extends AbstractActionController
         if ($bsock != null) {
             $bsock->disconnect();
         }
-        session_destroy();
+        $session = new Container('bareos');
+        $session->getManager()->destroy(['clear_storage' => true]);
         return new ViewModel(
             array(
                 'form' => $form,
