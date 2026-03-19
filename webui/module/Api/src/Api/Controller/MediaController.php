@@ -80,6 +80,8 @@ class MediaController extends AbstractRestfulController
             error_log($e->getMessage());
         }
 
+        $this->bsock->disconnect();
+
         return new JsonModel($this->result);
     }
 
