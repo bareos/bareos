@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - plugins: mariabackup python-mysqlclient ignore invalid utf8 [PR #2546]
 - dedup backend: Fix leaking filedescriptor [PR #2548]
 - vol-mgr: fix not locking the volume reservation chain during copying [PR #2565]
+- windows: reduce compiler warnings on windows build [PR #2588]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2237,4 +2238,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2565]: https://github.com/bareos/bareos/pull/2565
 [PR #2567]: https://github.com/bareos/bareos/pull/2567
 [PR #2569]: https://github.com/bareos/bareos/pull/2569
+[PR #2588]: https://github.com/bareos/bareos/pull/2588
 [unreleased]: https://github.com/bareos/bareos/tree/master

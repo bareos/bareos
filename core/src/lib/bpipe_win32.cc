@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -507,6 +507,7 @@ Bpipe* OpenBpipe(const char* prog,
 
   if (wait > 0) {
     // the cast here is ok as the child timer only uses the pid for printing
+#pragma warning(suppress : 4311 4302)
     bpipe->timer_id = StartChildTimer(NULL, (pid_t)bpipe->worker_pid, wait);
   }
 
