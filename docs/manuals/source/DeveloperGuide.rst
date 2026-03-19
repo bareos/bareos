@@ -34,4 +34,5 @@ Developer Guide
    DeveloperGuide/PythonBareos.rst
    DeveloperGuide/PHP.rst
    DeveloperGuide/Webui.rst
+   DeveloperGuide/BarriFormat.rst
    DeveloperGuide/developerFAQ.rst
