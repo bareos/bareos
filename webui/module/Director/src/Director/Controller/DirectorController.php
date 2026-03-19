@@ -82,6 +82,9 @@ class DirectorController extends AbstractActionController
             $result = $this->getDirectorModel()->getDirectorStatus($this->bsock);
             $this->bsock->disconnect();
         } catch (Exception $e) {
+            if ($this->bsock) {
+                $this->bsock->disconnect();
+            }
             error_log($e->getMessage());
         }
 
@@ -128,6 +131,9 @@ class DirectorController extends AbstractActionController
             $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 0, "");
             $this->bsock->disconnect();
         } catch (Exception $e) {
+            if ($this->bsock) {
+                $this->bsock->disconnect();
+            }
             error_log($e->getMessage());
         }
 
@@ -183,6 +189,9 @@ class DirectorController extends AbstractActionController
             $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 2, $reportOptions);
             $this->bsock->disconnect();
         } catch (Exception $e) {
+            if ($this->bsock) {
+                $this->bsock->disconnect();
+            }
             error_log($e->getMessage());
         }
 
