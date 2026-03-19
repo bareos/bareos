@@ -194,7 +194,7 @@ $this->headTitle($title);
          <h4 class="modal-title" id="myModalLabel">Director message</h4>
       </div>
       <div class="modal-body">
-         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
+         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->escapeHtml($this->result)); ?></p>
       </div>
       <div class="modal-footer">
          <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
@@ -220,7 +220,7 @@ $this->headTitle($title);
 <script>
 
    var basePath = "<?php echo $this->basePath(); ?>";
-   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+   var result = '<?php echo $this->escapeJs(str_replace(array("\n","\r"), "", $this->result)); ?>';
    var displayRange = <?php echo $this->period; ?>;
 
    var rsLabel1 = "1 " + iJS._("day");
