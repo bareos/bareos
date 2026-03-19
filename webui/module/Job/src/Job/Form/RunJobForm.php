@@ -47,215 +47,12 @@ class RunJobForm extends Form
         $this->pools = $pools;
         $this->jobdefaults = $jobdefaults;
 
-        // Client
-        if (isset($jobdefaults['client'])) {
-            $this->add(array(
-                'name' => 'client',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Client'),
-                    'empty_option' => '',
-                    'value_options' => $this->getClientList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'client',
-                    'value' => $jobdefaults['client']
-                )
-            ));
-        } else {
-            $this->add(array(
-                'name' => 'client',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Client'),
-                    'empty_option' => '',
-                    'value_options' => $this->getClientList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'client',
-                    'value' => null
-                )
-            ));
-        }
-
-        // Job
-        if (isset($jobdefaults['job'])) {
-            $this->add(array(
-                'name' => 'job',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Job'),
-                    'empty_option' => '',
-                    'value_options' => $this->getJobList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'job',
-                    'value' => $jobdefaults['job']
-                )
-            ));
-        } else {
-            $this->add(array(
-                'name' => 'job',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Job'),
-                    'empty_option' => '',
-                    'value_options' => $this->getJobList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'job',
-                    'value' => null
-                )
-            ));
-        }
-
-        // Fileset
-        if (isset($jobdefaults['fileset'])) {
-            $this->add(array(
-                'name' => 'fileset',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Fileset'),
-                    'empty_option' => '',
-                    'value_options' => $this->getFilesetList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'fileset',
-                    'value' => $jobdefaults['fileset']
-                )
-            ));
-        } else {
-            $this->add(array(
-                'name' => 'fileset',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Fileset'),
-                    'empty_option' => '',
-                    'value_options' => $this->getFilesetList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'fileset',
-                    'value' => null
-                )
-            ));
-        }
-
-        // Storage
-        if (isset($jobdefaults['storage'])) {
-            $this->add(array(
-                'name' => 'storage',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Storage'),
-                    'empty_option' => '',
-                    'value_options' => $this->getStorageList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'storage',
-                    'value' => $jobdefaults['storage']
-                )
-            ));
-        } else {
-            $this->add(array(
-                'name' => 'storage',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Storage'),
-                    'empty_option' => '',
-                    'value_options' => $this->getStorageList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'storage',
-                    'value' => null
-                )
-            ));
-        }
-
-        // Pool
-        if (isset($jobdefaults['pool'])) {
-            $this->add(array(
-                'name' => 'pool',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Pool'),
-                    'empty_option' => '',
-                    'value_options' => $this->getPoolList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'pool',
-                    'value' => $jobdefaults['pool']
-                )
-            ));
-        } else {
-            $this->add(array(
-                'name' => 'pool',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Pool'),
-                    'empty_option' => '',
-                    'value_options' => $this->getPoolList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'pool',
-                    'value' => null
-                )
-            ));
-        }
-
-        // Level
-        if (isset($jobdefaults['level'])) {
-            $this->add(array(
-                'name' => 'level',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Level'),
-                    'empty_option' => '',
-                    'value_options' => $this->getLevelList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'level',
-                    'value' => $jobdefaults['level']
-                )
-            ));
-        } else {
-            $this->add(array(
-                'name' => 'level',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Level'),
-                    'empty_option' => '',
-                    'value_options' => $this->getLevelList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'level',
-                    'value' => null
-                )
-            ));
-        }
+        $this->addSelectElement('client', _('Client'), $this->getClientList(), $jobdefaults['client'] ?? null);
+        $this->addSelectElement('job', _('Job'), $this->getJobList(), $jobdefaults['job'] ?? null);
+        $this->addSelectElement('fileset', _('Fileset'), $this->getFilesetList(), $jobdefaults['fileset'] ?? null);
+        $this->addSelectElement('storage', _('Storage'), $this->getStorageList(), $jobdefaults['storage'] ?? null);
+        $this->addSelectElement('pool', _('Pool'), $this->getPoolList(), $jobdefaults['pool'] ?? null);
+        $this->addSelectElement('level', _('Level'), $this->getLevelList(), $jobdefaults['level'] ?? null);
 
         // Priority
         $this->add(array(
@@ -272,88 +69,27 @@ class RunJobForm extends Form
         ));
 
         // Type
-        if (isset($jobdefaults['type'])) {
-            $this->add(array(
-                'name' => 'type',
-                'type' => 'Laminas\Form\Element\Text',
-                'options' => array(
-                    'label' => _('Type'),
-                    'empty_option' => '',
-                ),
-                'attributes' => array(
-                    'class' => 'form-control',
-                    'id' => 'type',
-                    'value' => $jobdefaults['type'],
-                    'readonly' => true
-                )
-            ));
-        } else {
-            $this->add(array(
-                'name' => 'type',
-                'type' => 'Laminas\Form\Element\Text',
-                'options' => array(
-                    'label' => _('Type'),
-                    'empty_option' => '',
-                ),
-                'attributes' => array(
-                    'class' => 'form-control',
-                    'id' => 'type',
-                    'value' => null,
-                    'readonly' => true
-                )
-            ));
-        }
+        $this->add(array(
+            'name' => 'type',
+            'type' => 'Laminas\Form\Element\Text',
+            'options' => array(
+                'label' => _('Type'),
+                'empty_option' => '',
+            ),
+            'attributes' => array(
+                'class' => 'form-control',
+                'id' => 'type',
+                'value' => $jobdefaults['type'] ?? null,
+                'readonly' => true
+            )
+        ));
 
-        // NextPool
-        if (isset($jobdefaults['pool'])) {
-            $this->add(array(
-                'name' => 'nextpool',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Next Pool'),
-                    'empty_option' => '',
-                    'value_options' => $this->getPoolList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'nextpool',
-                    'value' => $this->getNextPool($jobdefaults['pool'])
-                )
-            ));
-        } else {
-            $this->add(array(
-                'name' => 'nextpool',
-                'type' => 'select',
-                'options' => array(
-                    'label' => _('Next Pool'),
-                    'empty_option' => '',
-                    'value_options' => $this->getPoolList()
-                ),
-                'attributes' => array(
-                    'class' => 'form-control selectpicker show-tick',
-                    'data-live-search' => 'true',
-                    'id' => 'nextpool',
-                    'value' => null
-                )
-            ));
-        }
-
-        /*
-      // Backup Format
-      $this->add(array(
-         'name' => 'backupformat',
-         'type' => 'Laminas\Form\Element\Text',
-         'options' => array(
-            'label' => _('Backup Format'),
-         ),
-         'attributes' => array(
-            'class' => 'form-control',
-            'id' => 'backupformat',
-            'placeholder' => 'Native'
-         )
-      ));
-*/
+        $this->addSelectElement(
+            'nextpool',
+            _('Next Pool'),
+            $this->getPoolList(),
+            isset($jobdefaults['pool']) ? $this->getNextPool($jobdefaults['pool']) : null
+        );
 
         // When
         $this->add(array(
@@ -389,64 +125,60 @@ class RunJobForm extends Form
         ));
     }
 
+    private function addSelectElement(string $name, string $label, array $valueOptions, $value): void
+    {
+        $this->add(array(
+            'name' => $name,
+            'type' => 'select',
+            'options' => array(
+                'label' => $label,
+                'empty_option' => '',
+                'value_options' => $valueOptions
+            ),
+            'attributes' => array(
+                'class' => 'form-control selectpicker show-tick',
+                'data-live-search' => 'true',
+                'id' => $name,
+                'value' => $value
+            )
+        ));
+    }
+
+    private function buildNameList(?array $items): array
+    {
+        $selectData = [];
+        if (!empty($items)) {
+            foreach ($items as $item) {
+                $selectData[$item['name']] = $item['name'];
+            }
+            ksort($selectData);
+        }
+        return $selectData;
+    }
+
     private function getClientList(): array
     {
-        $selectData = array();
-        if (!empty($this->clients)) {
-            foreach ($this->clients as $client) {
-                $selectData[$client['name']] = $client['name'];
-            }
-        }
-        ksort($selectData);
-        return $selectData;
+        return $this->buildNameList($this->clients);
     }
 
     private function getJobList(): array
     {
-        $selectData = array();
-        if (!empty($this->jobs)) {
-            foreach ($this->jobs as $job) {
-                $selectData[$job['name']] = $job['name'];
-            }
-        }
-        ksort($selectData);
-        return $selectData;
+        return $this->buildNameList($this->jobs);
     }
 
     private function getFilesetList(): array
     {
-        $selectData = array();
-        if (!empty($this->filesets)) {
-            foreach ($this->filesets as $fileset) {
-                $selectData[$fileset['name']] = $fileset['name'];
-            }
-        }
-        ksort($selectData);
-        return $selectData;
+        return $this->buildNameList($this->filesets);
     }
 
     private function getStorageList(): array
     {
-        $selectData = array();
-        if (!empty($this->storages)) {
-            foreach ($this->storages as $storage) {
-                $selectData[$storage['name']] = $storage['name'];
-            }
-        }
-        ksort($selectData);
-        return $selectData;
+        return $this->buildNameList($this->storages);
     }
 
     private function getPoolList(): array
     {
-        $selectData = array();
-        if (!empty($this->pools)) {
-            foreach ($this->pools as $pool) {
-                $selectData[$pool['name']] = $pool['name'];
-            }
-        }
-        ksort($selectData);
-        return $selectData;
+        return $this->buildNameList($this->pools);
     }
 
     private function getLevelList(): array
