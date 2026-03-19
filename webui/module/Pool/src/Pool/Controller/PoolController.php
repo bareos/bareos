@@ -81,6 +81,9 @@ class PoolController extends AbstractActionController
             $pools = $this->getPoolModel()->getPools($this->bsock);
             $this->bsock->disconnect();
         } catch (Exception $e) {
+            if ($this->bsock) {
+                $this->bsock->disconnect();
+            }
             error_log($e->getMessage());
         }
 
@@ -136,6 +139,9 @@ class PoolController extends AbstractActionController
             $pool = $this->getPoolModel()->getPool($this->bsock, $poolname);
             $this->bsock->disconnect();
         } catch (Exception $e) {
+            if ($this->bsock) {
+                $this->bsock->disconnect();
+            }
             error_log($e->getMessage());
         }
 
