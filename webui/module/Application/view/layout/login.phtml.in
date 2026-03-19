@@ -41,12 +41,14 @@ echo $this->doctype();
       ?>
 
       <!-- Styles -->
-      <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/img/favicon.ico'))
-         ->prependStylesheet($this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/css/login.css')
-         ->prependStylesheet($this->basePath() . '/css/login.css')
-         ->prependStylesheet($this->basePath() . '/css/main.css')
-         ->prependStylesheet($this->basePath() . '/css/bootstrap-select.min.css')
-         ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css')
+      <?php
+         $theme = $_SESSION['bareos']['theme'] ?? 'default';
+         echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/themes/'.$theme.'/img/favicon.ico'))
+            ->prependStylesheet($this->basePath() . '/themes/'.$theme.'/css/login.css')
+            ->prependStylesheet($this->basePath() . '/css/login.css')
+            ->prependStylesheet($this->basePath() . '/css/main.css')
+            ->prependStylesheet($this->basePath() . '/css/bootstrap-select.min.css')
+            ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css')
       ?>
 
       <!-- Scripts -->
@@ -69,7 +71,7 @@ echo $this->doctype();
    ?>
 
    <div class="container text-center">
-      <img src="<?php echo $this->basePath() . '/themes/'.$_SESSION['bareos']['theme'].'/img/bareos.png'; ?>" />
+      <img src="<?php echo $this->basePath() . '/themes/'.($theme ?? 'default').'/img/bareos.png'; ?>" />
       <br /><br /><br />
       <?php echo $this->content; ?>
       <br />
