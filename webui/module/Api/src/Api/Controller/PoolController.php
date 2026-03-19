@@ -57,6 +57,12 @@ class PoolController extends AbstractRestfulController
         $this->bsock = $this->getServiceLocator()->get('director');
         $pool = $this->params()->fromQuery('pool');
 
+        if ($pool !== null && !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $pool)) {
+            $this->bsock->disconnect();
+            $this->getResponse()->setStatusCode(400);
+            return new JsonModel(['error' => 'Invalid pool name']);
+        }
+
         try{
             if (isset($pool)) {
                 $this->result = $this->getPoolModel()->getPool($this->bsock, $pool);

@@ -60,6 +60,15 @@ class JobController extends AbstractRestfulController
         $filter = $this->params()->fromQuery('filter');
         $client = $this->params()->fromQuery('client');
 
+        if ($period !== null) {
+            $period = max(1, (int) $period);
+        }
+        if ($client !== null && !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $client)) {
+            $this->bsock->disconnect();
+            $this->getResponse()->setStatusCode(400);
+            return new JsonModel(['error' => 'Invalid client name']);
+        }
+
         try {
             if ($filter === "rerun") {
                 $this->result = $this->getJobModel()->getJobsToRerun($this->bsock, $period, null);
@@ -134,7 +143,13 @@ class JobController extends AbstractRestfulController
         }
 
         $this->bsock = $this->getServiceLocator()->get('director');
-        $jobid = $this->params()->fromRoute('id');
+        $jobid = (int) $this->params()->fromRoute('id');
+
+        if ($jobid <= 0) {
+            $this->bsock->disconnect();
+            $this->getResponse()->setStatusCode(400);
+            return new JsonModel(['error' => 'Invalid job ID']);
+        }
 
         try {
             $this->result = $this->getJobModel()->getJob($this->bsock, $jobid);
