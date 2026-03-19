@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - dedup backend: Fix leaking filedescriptor [PR #2550]
+- vol-mgr: fix not locking the volume reservation chain during copying [PR #2583]
 
 ### Fixed
 - packaging: add missing DLLs to windows installer [PR #2575]
@@ -2019,4 +2020,5 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2528]: https://github.com/bareos/bareos/pull/2528
 [PR #2550]: https://github.com/bareos/bareos/pull/2550
 [PR #2575]: https://github.com/bareos/bareos/pull/2575
+[PR #2583]: https://github.com/bareos/bareos/pull/2583
 [unreleased]: https://github.com/bareos/bareos/tree/master
