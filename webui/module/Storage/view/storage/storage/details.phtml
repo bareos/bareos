@@ -101,6 +101,7 @@ $this->headTitle($title);
          <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Cancel"); ?></button>
          <?php
             echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
+            echo $this->formHidden($form->get('csrf'));
             echo $this->form()->closeTag($form);
          ?>
       </div>
