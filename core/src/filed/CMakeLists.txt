@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -89,8 +89,7 @@ target_link_libraries(bareos-test-fd PRIVATE fd_objects_test CLI11::CLI11)
 if(HAVE_WIN32)
   target_sources(
     fd_objects_common
-    PRIVATE ../win32/filed/vss.cc ../win32/filed/vss_XP.cc
-            ../win32/filed/vss_W2K3.cc ../win32/filed/vss_Vista.cc
+    PRIVATE ../win32/filed/vss.cc ../win32/filed/vss_Vista.cc
             ../win32/generic/service.cc ../win32/generic/main.cc
   )
   target_compile_definitions(fd_objects_common PUBLIC WIN32_VSS HAVE_VSS64)
