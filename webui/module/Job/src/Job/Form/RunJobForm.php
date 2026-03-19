@@ -389,7 +389,7 @@ class RunJobForm extends Form
         ));
     }
 
-    private function getClientList()
+    private function getClientList(): array
     {
         $selectData = array();
         if (!empty($this->clients)) {
@@ -401,7 +401,7 @@ class RunJobForm extends Form
         return $selectData;
     }
 
-    private function getJobList()
+    private function getJobList(): array
     {
         $selectData = array();
         if (!empty($this->jobs)) {
@@ -413,7 +413,7 @@ class RunJobForm extends Form
         return $selectData;
     }
 
-    private function getFilesetList()
+    private function getFilesetList(): array
     {
         $selectData = array();
         if (!empty($this->filesets)) {
@@ -425,7 +425,7 @@ class RunJobForm extends Form
         return $selectData;
     }
 
-    private function getStorageList()
+    private function getStorageList(): array
     {
         $selectData = array();
         if (!empty($this->storages)) {
@@ -437,7 +437,7 @@ class RunJobForm extends Form
         return $selectData;
     }
 
-    private function getPoolList()
+    private function getPoolList(): array
     {
         $selectData = array();
         if (!empty($this->pools)) {
@@ -449,7 +449,7 @@ class RunJobForm extends Form
         return $selectData;
     }
 
-    private function getLevelList()
+    private function getLevelList(): array
     {
         $selectData = array();
         $selectData['Full'] = 'Full';
@@ -468,7 +468,7 @@ class RunJobForm extends Form
         }
     }
 
-    public function getPoolNextPoolMapping()
+    public function getPoolNextPoolMapping(): array
     {
         $mapping = [];
 
