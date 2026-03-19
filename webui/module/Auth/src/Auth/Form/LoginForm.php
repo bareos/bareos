@@ -356,9 +356,8 @@ class LoginForm extends Form
     {
         $selectData = array();
 
-        foreach ($this->config as $dird) {
-            $selectData[key($this->config)] = key($this->config);
-            next($this->config);
+        foreach ($this->config as $key => $dird) {
+            $selectData[$key] = $key;
         }
 
         return $selectData;
