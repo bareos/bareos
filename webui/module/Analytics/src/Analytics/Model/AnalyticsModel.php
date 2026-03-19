@@ -27,7 +27,7 @@ namespace Analytics\Model;
 
 class AnalyticsModel
 {
-    public function getJobTotals(&$bsock = null)
+    public function getJobTotals(&$bsock = null): array
     {
         if (isset($bsock)) {
             $cmd = 'list jobtotals';
@@ -40,7 +40,7 @@ class AnalyticsModel
         }
     }
 
-    public function getOverallJobTotals(&$bsock = null)
+    public function getOverallJobTotals(&$bsock = null): array
     {
         if (isset($bsock)) {
             $cmd = 'list jobtotals';
@@ -53,13 +53,13 @@ class AnalyticsModel
         }
     }
 
-    public function getConfigResourceId($type, &$name)
+    public function getConfigResourceId($type, &$name): string
     {
         # valid CSS id can only contain characters [a-zA-Z0-9-_]
         return $type . "_" . md5($name);
     }
 
-    public function createConfigResourceNode($type, &$resource)
+    public function createConfigResourceNode($type, &$resource): \stdClass
     {
         $node = new \stdClass();
         $node->type = $type;
@@ -70,7 +70,7 @@ class AnalyticsModel
     }
 
 
-    public function getConfigResourceGraph(&$bsock = null)
+    public function getConfigResourceGraph(&$bsock = null): array
     {
         if (!isset($bsock)) {
             throw new \Exception('Missing argument.');
