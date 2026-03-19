@@ -170,6 +170,16 @@ class LoginForm extends Form
 
         $this->add(
             array(
+                'name' => 'csrf',
+                'type' => 'Laminas\Form\Element\Csrf',
+                'options' => array(
+                    'csrf_options' => array('timeout' => 3600),
+                ),
+            )
+        );
+
+        $this->add(
+            array(
                 'name' => 'submit',
                 'type' => 'submit',
                 'attributes' => array(
