@@ -67,16 +67,21 @@ class ClientController extends AbstractRestfulController
                 $clients = $this->getClientModel()->getClients($this->bsock);
                 $dot_clients = $this->getClientModel()->getDotClients($this->bsock);
 
-                $this->result = array();
+                $enabled_map = [];
+                foreach ($dot_clients as $dc) {
+                    $enabled_map[$dc['name']] = $dc;
+                }
 
-                for ($i = 0; $i < count($clients); $i++) {
-                    $this->result[$i]['clientid'] = $clients[$i]['clientid'];
-                    $this->result[$i]['uname'] = $clients[$i]['uname'];
-                    $this->result[$i]['name'] = $clients[$i]['name'];
-                    $this->result[$i]['autoprune'] = $clients[$i]['autoprune'];
-                    $this->result[$i]['fileretention'] = $clients[$i]['fileretention'];
-                    $this->result[$i]['jobretention'] = $clients[$i]['jobretention'];
-                    $uname = explode(",", $clients[$i]['uname']);
+                $this->result = [];
+
+                foreach ($clients as $i => $client) {
+                    $this->result[$i]['clientid'] = $client['clientid'];
+                    $this->result[$i]['uname'] = $client['uname'];
+                    $this->result[$i]['name'] = $client['name'];
+                    $this->result[$i]['autoprune'] = $client['autoprune'];
+                    $this->result[$i]['fileretention'] = $client['fileretention'];
+                    $this->result[$i]['jobretention'] = $client['jobretention'];
+                    $uname = explode(",", $client['uname']);
                     $v = explode(" ", $uname[0]);
                     $this->result[$i]['version'] = $v[0];
                     $this->result[$i]['version_tooltip'] = "";
@@ -86,12 +91,7 @@ class ClientController extends AbstractRestfulController
                         $this->result[$i]['version_tooltip'] = $version_info['package_update_info'];
                         $this->result[$i]['version_status'] = $version_info['status'];
                     }
-                    $this->result[$i]['enabled'] = "";
-                    for ($j = 0; $j < count($dot_clients); $j++) {
-                        if ($this->result[$i]['name'] == $dot_clients[$j]['name']) {
-                            $this->result[$i]['enabled'] = $dot_clients[$j]['enabled'];
-                        }
-                    }
+                    $this->result[$i]['enabled'] = isset($enabled_map[$client['name']]) ? $enabled_map[$client['name']]['enabled'] : "";
                 }
             }
         } catch(Exception $e) {

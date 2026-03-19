@@ -125,18 +125,19 @@ class ClientModel
             $backups = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
 
             if (!isset($limit)) {
-                $filesets_pluginjob = array();
+                $all_filesets_result = \Laminas\Json\Json::decode(
+                    $bsock->send_command('show fileset', 2),
+                    \Laminas\Json\Json::TYPE_ARRAY
+                );
+                $filesets_all = $all_filesets_result['result']['filesets'] ?? [];
+
+                $fileset_plugin_map = [];
+                foreach ($filesets_all as $fs_name => $fs) {
+                    $fileset_plugin_map[$fs_name] = !empty($fs['include'][0]['plugin']);
+                }
+
                 foreach ($backups['result']['backups'] as $key => $backup) {
-                    if (!array_key_exists($backup['fileset'], $filesets_pluginjob)) {
-                        $cmd = 'show fileset="' . $backup['fileset'] . '"';
-                        $result = $bsock->send_command($cmd, 2);
-                        $fileset = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
-                        $filesets_pluginjob[$backup['fileset']] = false;
-                        if (!empty($fileset['result']['filesets'][$backup['fileset']]['include'][0]['plugin'])) {
-                            $filesets_pluginjob[$backup['fileset']] = true;
-                        }
-                    }
-                    $backups['result']['backups'][$key]['pluginjob'] = $filesets_pluginjob[$backup['fileset']];
+                    $backups['result']['backups'][$key]['pluginjob'] = $fileset_plugin_map[$backup['fileset']] ?? false;
                 }
             }
             return $backups['result']['backups'];
