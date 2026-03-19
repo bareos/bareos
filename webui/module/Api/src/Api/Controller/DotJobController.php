@@ -58,45 +58,26 @@ class DotJobController extends AbstractRestfulController
         $type = $this->params()->fromQuery('type');
 
         try {
-            if ($type === "executable") {
-                // Only get manually executable jobs.
-                // Jobs of type M,V,R,U,I,C and S are excluded here.
-                $jobs_B = $this->getJobModel()->getJobsByType($this->bsock, 'B'); // Backup Job
-                $jobs_D = $this->getJobModel()->getJobsByType($this->bsock, 'D'); // Admin Job
-                $jobs_A = $this->getJobModel()->getJobsByType($this->bsock, 'A'); // Archive Job
-                $jobs_c = $this->getJobModel()->getJobsByType($this->bsock, 'c'); // Copy Job
-                $jobs_g = $this->getJobModel()->getJobsByType($this->bsock, 'g'); // Migration Job
-                $jobs_O = $this->getJobModel()->getJobsByType($this->bsock, 'O'); // Always Incremental Consolidate Job
-                $jobs_V = $this->getJobModel()->getJobsByType($this->bsock, 'V'); // Verify Job
-                $this->result = array_merge(
-                    $jobs_B,
-                    $jobs_D,
-                    $jobs_A,
-                    $jobs_c,
-                    $jobs_g,
-                    $jobs_O,
-                    $jobs_V
-                );
-            } else {
-                $jobs_B = $this->getJobModel()->getJobsByType($this->bsock, 'B'); // Backup Job
-                $jobs_D = $this->getJobModel()->getJobsByType($this->bsock, 'D'); // Admin Job
-                $jobs_A = $this->getJobModel()->getJobsByType($this->bsock, 'A'); // Archive Job
-                $jobs_c = $this->getJobModel()->getJobsByType($this->bsock, 'c'); // Copy Job
-                $jobs_g = $this->getJobModel()->getJobsByType($this->bsock, 'g'); // Migration Job
-                $jobs_O = $this->getJobModel()->getJobsByType($this->bsock, 'O'); // Always Incremental Consolidate Job
-                $jobs_V = $this->getJobModel()->getJobsByType($this->bsock, 'V'); // Verify Job
-                $jobs_R = $this->getJobModel()->getJobsByType($this->bsock, 'R'); // Restore Job
-                $this->result = array_merge(
-                    $jobs_B,
-                    $jobs_D,
-                    $jobs_A,
-                    $jobs_c,
-                    $jobs_g,
-                    $jobs_O,
-                    $jobs_V,
-                    $jobs_R
-                );
+            $types = [
+                'B' => 'Backup Job',
+                'D' => 'Admin Job',
+                'A' => 'Archive Job',
+                'c' => 'Copy Job',
+                'g' => 'Migration Job',
+                'O' => 'Always Incremental Consolidate Job',
+                'V' => 'Verify Job',
+            ];
+
+            if ($type !== "executable") {
+                $types['R'] = 'Restore Job';
             }
+
+            $jobs = [];
+            foreach ($types as $type_char => $type_label) {
+                $jobs[] = $this->getJobModel()->getJobsByType($this->bsock, $type_char);
+            }
+
+            $this->result = array_merge(...$jobs);
         } catch(Exception $e) {
             $this->getResponse()->setStatusCode(500);
             error_log($e->getMessage());
