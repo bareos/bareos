@@ -60,7 +60,7 @@ class FilesetController extends AbstractRestfulController
             $this->result = $this->getFilesetModel()->getFilesets($this->bsock);
         } catch(Exception $e) {
             $this->getResponse()->setStatusCode(500);
-            error_log($e);
+            error_log($e->getMessage());
         }
 
         return new JsonModel($this->result);
@@ -92,7 +92,7 @@ class FilesetController extends AbstractRestfulController
             $this->result = $this->getFilesetModel()->getFileset($this->bsock, $filesetid);
         } catch(Exception $e) {
             $this->getResponse()->setStatusCode(500);
-            error_log($e);
+            error_log($e->getMessage());
         }
 
         return new JsonModel($this->result);

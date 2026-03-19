@@ -483,8 +483,8 @@ class BareosBSock implements BareosBSockInterface
             }
             // socket_set_nonblock($this->socket);
         } catch(\Exception $e) {
-            echo $e->getMessage();
-            exit;
+            error_log($e->getMessage());
+            throw $e;
         }
         if ($this->config['debug']) {
             echo "Connected to " . $this->config['host'] . " on port " . $this->config['port'] . "\n";
@@ -909,8 +909,8 @@ class BareosBSock implements BareosBSockInterface
                 try {
                     $debug = self::receive_message();
                 } catch(\Exception $e) {
-                    echo $e->getMessage();
-                    exit;
+                    error_log($e->getMessage());
+                    throw $e;
                 }
                 break;
             case 1:

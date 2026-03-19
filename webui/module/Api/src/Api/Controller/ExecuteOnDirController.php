@@ -68,7 +68,7 @@ class ExecuteOnDirController extends AbstractRestfulController
             }
         } catch(Exception $e) {
             $this->getResponse()->setStatusCode(500);
-            error_log($e);
+            error_log($e->getMessage());
         }
 
         return new JsonModel($this->result);
