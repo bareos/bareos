@@ -42,7 +42,7 @@ echo $this->doctype();
 
       <!-- Styles -->
       <?php
-         $theme = $_SESSION['bareos']['theme'] ?? 'default';
+         $theme = $_SESSION['bareos']['theme'] ?? 'sunflower';
          echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/themes/'.$theme.'/img/favicon.ico'))
             ->prependStylesheet($this->basePath() . '/themes/'.$theme.'/css/login.css')
             ->prependStylesheet($this->basePath() . '/css/login.css')
@@ -71,7 +71,7 @@ echo $this->doctype();
    ?>
 
    <div class="container text-center">
-      <img src="<?php echo $this->basePath() . '/themes/'.($theme ?? 'default').'/img/bareos.png'; ?>" />
+      <img src="<?php echo $this->basePath() . '/themes/'.($theme ?? 'sunflower').'/img/bareos.png'; ?>" />
       <br /><br /><br />
       <?php echo $this->content; ?>
       <br />
