@@ -103,7 +103,13 @@ class RestoreController extends AbstractActionController
         $result = null;
         $restore_jobid = null;
 
-        $restore_source_clients = $this->getClientModel()->getClientsWithBackups($this->bsock);
+        try {
+            $restore_source_clients = $this->getClientModel()->getClientsWithBackups($this->bsock);
+        } catch (Exception $e) {
+            error_log($e->getMessage());
+            $this->bsock->disconnect();
+            return new ViewModel(array('errors' => $e->getMessage()));
+        }
         $this->updateClientParam($restore_source_clients);
 
         if ($this->restore_params['client'] != null) {
@@ -119,6 +125,9 @@ class RestoreController extends AbstractActionController
             $backups = null;
         }
 
+        $restore_target_clients = array();
+        $restorejobs = array();
+        $restorejobresources = array();
         try {
             $restore_target_clients = $this->getClientModel()->getClients($this->bsock);
             $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
