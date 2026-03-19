@@ -109,6 +109,8 @@ class JobController extends AbstractRestfulController
             error_log($e->getMessage());
         }
 
+        $this->bsock->disconnect();
+
         return new JsonModel($this->result);
     }
 
@@ -140,6 +142,8 @@ class JobController extends AbstractRestfulController
             $this->getResponse()->setStatusCode(500);
             error_log($e->getMessage());
         }
+
+        $this->bsock->disconnect();
 
         return new JsonModel($this->result);
     }
