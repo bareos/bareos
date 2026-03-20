@@ -208,6 +208,6 @@ class RunJobForm extends Form
             $mapping[$pool["name"]] =  $pool["nextpool"];
         }
 
-        return json_encode($mapping);
+        return $mapping;
     }
 }
