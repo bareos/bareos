@@ -25,6 +25,10 @@
 CONF_ROOT="$(dirname "${BAREOS_CONFIG_DIR}")/"
 
 for confdir in "${CONF_ROOT}"*; do
+  if [[ "$confdir" == *bareos-webui ]]; then
+    # bareos-webui is not an additional daemon config directory
+    continue
+  fi
   BAREOS_STORAGEDAEMON_BINARY_TO_USE=""
   BAREOS_FILEDAEMON_BINARY_TO_USE=""
   BAREOS_DIRECTOR_BINARY_TO_USE=""
