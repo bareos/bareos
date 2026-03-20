@@ -407,6 +407,92 @@ class SeleniumTest(unittest.TestCase):
             self.select_navbar_element("dashboard")
         self.logout()
 
+    def test_job_list_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/job")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "jobtable")
+        self.logout()
+
+    def test_job_timeline_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/job/timeline")
+        self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_schedule_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/schedule")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "schedules")
+        self.logout()
+
+    def test_schedule_overview_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/schedule/overview")
+        self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_schedule_status_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/schedule/status")
+        self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_storage_devices_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/storage")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "storagedevices")
+        self.logout()
+
+    def test_pool_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/pool")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "pools")
+        self.logout()
+
+    def test_media_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/media")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "volumes")
+        self.logout()
+
+    def test_director_status_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/director")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.CSS_SELECTOR, "pre.dird-messages")
+        self.logout()
+
+    def test_director_messages_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/director/messages")
+        self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_fileset_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/fileset")
+        self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_console_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/console")
+        self.wait_for_element(By.ID, "bconsole")
+        self.wait_for_element(By.ID, "cli")
+        self.logout()
+
+    def test_analytics_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/analytics")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "overall-jobtotals")
+        self.logout()
+
     #
     # Methods used for testing
     #
@@ -488,12 +574,7 @@ class SeleniumTest(unittest.TestCase):
             raise WrongCredentialsException(self.username, self.password)
 
     def logout(self):
-        self.wait_and_click(
-            By.CSS_SELECTOR,
-            "span.glyphicon.glyphicon-user",
-            [(By.CSS_SELECTOR, "div.navbar-header > button")],
-        )
-        self.wait_and_click(By.LINK_TEXT, "Logout")
+        self.driver.get(self.base_url + "/auth/logout")
         sleep(self.sleeptime)
 
     def select_navbar_element(self, tab, additional_modals=None):
