@@ -229,7 +229,9 @@ status()
 
     badpid=$(pidofproc "$base" "$2")
 
-    echo "Got ${pid} from pidfile; wouldve gotten ${badpid} from pidofproc" >&2
+    if [ "${pid}" != "${badpid}" ]; then
+      echo "Got ${pid} from pidfile; would have gotten ${badpid} from pidofproc" >&2
+    fi
   else
     # Get base program name
     base=$(basename "$1")
