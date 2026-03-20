@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,16 +31,16 @@
 
 const int sd_debuglevel = 300;
 
-#ifdef HAVE_MTIO_H
+#if __has_include(<mtio.h>)
 #  include <mtio.h>
 #else
-#  ifdef HAVE_SYS_MTIO_H
+#  if __has_include(<sys/mtio.h>)
 #    ifdef HAVE_AIX_OS
 #      define _MTEXTEND_H 1
 #    endif
 #    include <sys/mtio.h>
 #  else
-#    ifdef HAVE_SYS_TAPE_H
+#    if __has_include(<sys/tape.h>)
 #      include <sys/tape.h>
 #    else
 /* Needed for Mac 10.6 (Snow Leopard) */

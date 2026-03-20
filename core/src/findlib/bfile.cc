@@ -56,10 +56,6 @@ boffset_t (*plugin_blseek)(BareosFilePacket* bfd, boffset_t offset, int whence)
 #  include <sys/paths.h>
 #endif
 
-#if !defined(HAVE_FDATASYNC)
-#  define fdatasync(fd)
-#endif
-
 /* ===============================================================
  *
  *            U N I X   AND   W I N D O W S

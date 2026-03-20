@@ -140,45 +140,6 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18.0)
   endif()
 endif()
 
-include(CheckCCompilerFlag)
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-Wsuggest-override compiler_will_suggest_override)
-
-if(${compiler_will_suggest_override})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
-endif()
-
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-  # make format-security issues a compiler-error
-  check_cxx_compiler_flag(-Wformat compiler_format_security)
-  if(${compiler_format_security})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat")
-  endif()
-  check_cxx_compiler_flag(
-    -Werror=format-security compiler_error_format_security
-  )
-  if(${compiler_error_format_security})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=format-security")
-  endif()
-endif()
-
-check_cxx_compiler_flag(-Winvalid-offsetof compiler_has_invalid_offsetof)
-if(compiler_has_invalid_offsetof)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-offsetof")
-endif()
-
-# warn on sign-conversion include(CheckCCompilerFlag)
-# CHECK_C_COMPILER_FLAG(-Wsign-conversion c_compiler_will_warn_sign_conversion)
-#
-# if (${c_compiler_will_warn_sign_conversion}) set (CMAKE_C_FLAGS
-# "${CMAKE_C_FLAGS} -Wsign-conversion") endif()
-#
-# CHECK_CXX_COMPILER_FLAG(-Wsign-conversion
-# cxx_compiler_will_warn_sign_conversion)
-#
-# if (${cxx_compiler_will_warn_sign_conversion}) set (CMAKE_CXX_FLAGS
-# "${CMAKE_CXX_FLAGS} -Wsign-conversion") endif()
-
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   include_directories(/usr/include)
 endif()
@@ -256,9 +217,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
   include_directories(SYSTEM /usr/local/include)
   link_directories(/usr/local/lib)
   link_libraries(intl)
-  check_cxx_compiler_flag(
-    -Wunused-but-set-variable compiler_will_warn_of_unused_but_set_variable
-  )
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -307,6 +265,7 @@ else()
   add_compile_definitions("_FILE_OFFSET_BITS=64")
 endif()
 
+include(BareosCompilerFlags)
 if(MSVC)
   set(BAREOS_WARNING_FLAGS
       /W4 # enable all reasonable warnings, but disable the following
@@ -318,12 +277,16 @@ if(MSVC)
       /wd4389 # sign mismatch
       /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
   )
+  list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 else()
-  set(BAREOS_WARNING_FLAGS -Werror -Wall -Wextra -Wshadow)
+  bareos_add_compile_flags(-Werror -Wall -Wextra -Wshadow)
+  bareos_add_compile_flags(-Wsuggest-override -Wno-invalid-offsetof CXX_ONLY)
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+    bareos_add_compile_flags(-Wformat -Wformat-security)
+  endif()
 endif()
-list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
 
@@ -404,8 +367,6 @@ set(CMAKE_REQUIRED_DEFINITIONS "-D_FILE_OFFSET_BITS=64")
 include(BareosCheckIncludes)
 
 include(BareosCheckFunctions)
-
-include(BareosCheckSymbols)
 
 include(BareosDetermineHaveLowLevelScsiInterface)
 
@@ -559,7 +520,7 @@ if("${PAM_FOUND}")
 endif()
 
 option(ENABLE_CAPABILITY "Enable keep readall capability in filedaemon"
-       "${HAVE_CAPABILITY_H}"
+       "${HAVE_SYS_CAPABILITY_H}"
 )
 
 try_compile(
@@ -589,7 +550,11 @@ if(${acl})
   endif()
 endif()
 
-if("${HAVE_SYS_XATTR_H}" OR "${HAVE_SYS_EXTATTR_H}")
+if(HAVE_LINUX_XATTR
+   OR HAVE_DARWIN_XATTR
+   OR HAVE_FREEBSD_EXTATTR
+   OR HAVE_AIX_EA
+)
   set(HAVE_XATTR 1)
   set(have_xattr YES)
 endif()
