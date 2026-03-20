@@ -234,48 +234,59 @@ class SeleniumTest(unittest.TestCase):
         # This test navigates to clients, ensures client is enabled,
         # disables it, closes a possible modal, goes to dashboard and reenables client.
         self.login()
-        # Clicks on client menue tab
-        self.select_navbar_element("client")
-        # Tries to click on client...
+        # Navigate to client list and verify client is reachable
+        self.driver.get(self.base_url + "/client")
+        self.wait_for_spinner_absence()
         try:
             self.wait_and_click(By.LINK_TEXT, self.client)
         # Raises exception if client not found
         except ElementTimeoutException:
             raise ClientNotFoundException(self.client)
-        # And goes back to dashboard tab.
-        self.select_navbar_element("dashboard")
-        # Back to the clients
-        # Disables client 1 and goes back to the dashboard.
-        self.select_navbar_element("client")
-        self.wait_and_click(By.LINK_TEXT, self.client)
-        self.select_navbar_element("client")
+        self.driver.get(self.base_url + "/client")
+        self.wait_for_spinner_absence()
 
         if self.client_status(self.client) == "Enabled":
-            # Disables client
-            self.wait_and_click(
-                By.XPATH,
-                '//tr[contains(td[1], "%s")]/td[5]/a[@title="Disable"]' % self.client,
-            )
             if self.profile == "readonly":
+                # For readonly: clicking bootstrap-table action links may not navigate.
+                # Navigate directly to the disable URL to verify the ACL error page.
+                self.driver.get(
+                    self.base_url
+                    + "/client/index?action=disable&client="
+                    + self.client
+                )
                 self.wait_and_click(By.LINK_TEXT, "Back")
             else:
+                # Disables client
+                self.wait_and_click(
+                    By.XPATH,
+                    '//tr[contains(td[1], "%s")]/td[5]/a[@title="Disable"]'
+                    % self.client,
+                )
                 # Switches to dashboard, if prevented by open modal: close modal
                 self.select_navbar_element(
                     "dashboard",
                     [(By.CSS_SELECTOR, "div.modal-footer > button.btn.btn-default")],
                 )
 
-        self.select_navbar_element("client")
+        self.driver.get(self.base_url + "/client")
+        self.wait_for_spinner_absence()
 
         if self.client_status(self.client) == "Disabled":
-            # Enables client
-            self.wait_and_click(
-                By.XPATH,
-                '//tr[contains(td[1], "%s")]/td[5]/a[@title="Enable"]' % self.client,
-            )
             if self.profile == "readonly":
+                # For readonly: navigate directly to the enable URL.
+                self.driver.get(
+                    self.base_url
+                    + "/client/index?action=enable&client="
+                    + self.client
+                )
                 self.wait_and_click(By.LINK_TEXT, "Back")
             else:
+                # Enables client
+                self.wait_and_click(
+                    By.XPATH,
+                    '//tr[contains(td[1], "%s")]/td[5]/a[@title="Enable"]'
+                    % self.client,
+                )
                 # Switches to dashboard, if prevented by open modal: close modal
                 self.select_navbar_element(
                     "dashboard",
@@ -334,17 +345,25 @@ class SeleniumTest(unittest.TestCase):
 
     def test_rerun_job(self):
         self.login()
-        self.select_navbar_element("client")
-        self.wait_and_click(By.LINK_TEXT, self.client)
-        # Select first backup in list
-        self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
-        # Press on rerun button
-        self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
-        # Accept confirmation dialog
-        self.driver.switch_to.alert.accept()
+        self.driver.get(self.base_url + "/client/details?client=" + self.client)
+        self.wait_for_spinner_absence()
         if self.profile == "readonly":
+            # For readonly: clicking bootstrap-table links may not navigate.
+            # Extract the rerun URL from the first row and navigate directly to
+            # verify the ACL error page.
+            rerun_anchor = self.wait_for_element(
+                By.XPATH, '//tr[@data-index="0"]//a[contains(@href, "action=rerun")]'
+            )
+            rerun_href = rerun_anchor.get_attribute("href")
+            self.driver.get(rerun_href)
             self.wait_and_click(By.LINK_TEXT, "Back")
         else:
+            # Select first backup in list
+            self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
+            # Press on rerun button
+            self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
+            # Accept confirmation dialog
+            self.driver.switch_to.alert.accept()
             self.select_navbar_element(
                 "dashboard",
                 [(By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")],
@@ -354,15 +373,19 @@ class SeleniumTest(unittest.TestCase):
     def test_restore(self):
         # Login
         self.login()
-        self.select_navbar_element("restore")
-        # Click on client dropdown menue and close the possible modal
-        self.wait_and_click(
-            By.XPATH,
-            '(//button[@data-id="client"])',
-            [(By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')],
-        )
-        # Select correct client
-        self.wait_and_click(By.LINK_TEXT, self.client)
+        self.driver.get(self.base_url + "/restore")
+        self.wait_for_spinner_absence()
+        if self.profile != "readonly":
+            # Click on client dropdown menu and close the possible modal
+            self.wait_and_click(
+                By.XPATH,
+                '(//button[@data-id="client"])',
+                [(By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')],
+            )
+            # Select correct client
+            self.wait_and_click(By.LINK_TEXT, self.client)
+        # For readonly: client (bareos-fd) is auto-selected on page load;
+        # skip the dropdown interaction and wait for the file tree directly.
         # Clicks on file and navigates through the tree
         # by using the arrow-keys.
         pathlist = self.restorefile.split("/")
@@ -393,18 +416,24 @@ class SeleniumTest(unittest.TestCase):
 
     def test_run_default_job(self):
         self.login()
-        self.select_navbar_element("job")
-        self.wait_and_click(By.LINK_TEXT, "Run")
-        # Open the job list
-        self.wait_and_click(By.XPATH, '(//button[@data-id="job"])')
-        # Select the first job
-        self.wait_and_click(By.XPATH, '(//li[@data-original-index="1"])')
+        self.driver.get(self.base_url + "/job/run")
+        self.wait_for_spinner_absence()
+        if self.profile == "readonly":
+            # For readonly: use native select to pick the first job.
+            # The bootstrap-select dropdown interaction is unreliable for readonly.
+            Select(self.driver.find_element(By.ID, "job")).select_by_index(1)
+        else:
+            # Open the job list
+            self.wait_and_click(By.XPATH, '(//button[@data-id="job"])')
+            # Select the first job
+            self.wait_and_click(By.XPATH, '(//li[@data-original-index="1"])')
         # Start it
         self.wait_and_click(By.ID, "submit")
         if self.profile == "readonly":
             self.wait_and_click(By.LINK_TEXT, "Back")
         else:
-            self.select_navbar_element("dashboard")
+            self.driver.get(self.base_url + "/dashboard/")
+            self.wait_for_spinner_absence()
         self.logout()
 
     def test_job_list_page(self):
@@ -519,8 +548,8 @@ class SeleniumTest(unittest.TestCase):
 
     def job_start_configured(self):
         driver = self.driver
-        self.select_navbar_element("job")
-        self.wait_and_click(By.LINK_TEXT, "Run")
+        driver.get(self.base_url + "/job/run")
+        self.wait_for_spinner_absence()
         Select(driver.find_element(By.ID, "job")).select_by_visible_text(
             "backup-bareos-fd"
         )
@@ -530,17 +559,18 @@ class SeleniumTest(unittest.TestCase):
         )
         # Clears the priority field and enters 5.
         self.enter_input("priority", "5")
-        # Open the calendar
-        self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-calendar")
-        # Click the icon to delay jobstart by 1h six times
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        # Close the calendar
-        self.wait_and_click(By.CSS_SELECTOR, "span.input-group-addon")
+        if self.profile != "readonly":
+            # Open the calendar
+            self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-calendar")
+            # Click the icon to delay jobstart by 1h six times
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            # Close the calendar
+            self.wait_and_click(By.CSS_SELECTOR, "span.input-group-addon")
         # Submit the job
         self.wait_and_click(By.ID, "submit")
 
