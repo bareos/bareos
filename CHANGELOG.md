@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - vol-mgr: fix not locking the volume reservation chain during copying [PR #2565]
 - windows: reduce compiler warnings on windows build [PR #2588]
 - grpc-fd: fix not freeing memory of backed up filenames [PR #2590]
+- cleanup: remove glusterfs and droplet [PR #2531]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2231,6 +2232,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2524]: https://github.com/bareos/bareos/pull/2524
 [PR #2525]: https://github.com/bareos/bareos/pull/2525
 [PR #2527]: https://github.com/bareos/bareos/pull/2527
+[PR #2531]: https://github.com/bareos/bareos/pull/2531
 [PR #2537]: https://github.com/bareos/bareos/pull/2537
 [PR #2544]: https://github.com/bareos/bareos/pull/2544
 [PR #2546]: https://github.com/bareos/bareos/pull/2546

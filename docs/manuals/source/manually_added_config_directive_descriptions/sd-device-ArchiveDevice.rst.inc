@@ -28,13 +28,6 @@ fifo
 
    A FIFO device can also be used to test your configuration, see the :ref:`Howto section <TestUsingFifoDevice>`.
 
-GlusterFS Storage
-
-.. deprecated:: 25.0.0
-
-.. _GlusterArchiveType:
-
-   don’t use this directive, but only :config:option:`sd/device/DeviceType`\  and :config:option:`sd/device/DeviceOptions`\  (this behavior have changed with :sinceVersion:`15.2.0: Device Options`).
 
 Ceph Object Store
 

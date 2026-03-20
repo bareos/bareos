@@ -15,7 +15,6 @@ File Daemon plugins are configured by the :strong:`Plugin` directive of a :ref:`
 .. include:: Plugins/FileDaemonPlugins/ApacheLibcloudPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/BarriPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/BpipePlugin.rst.inc
-.. include:: Plugins/FileDaemonPlugins/GlusterFSPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/GrpcPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/HyperVPlugin.rst.inc
 .. include:: Plugins/FileDaemonPlugins/LDAPPlugin.rst.inc

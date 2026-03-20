@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -307,9 +307,6 @@ if(NOT client-only)
                    GTest::gtest_main
   )
   bareos_add_test(sd_backend LINK_LIBRARIES ${LINK_LIBRARIES})
-  if(TARGET droplet)
-    bareos_add_test(droplet_backend LINK_LIBRARIES ${LINK_LIBRARIES})
-  endif()
   if(${CMAKE_SYSTEM_NAME} MATCHES "SunOS") # disable on solaris
     set(disable "DISABLE")
   else()

@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -50,7 +50,6 @@ Vendor: 	The Bareos Team
 %define client_only 1
 %define build_qt_monitor 0
 %define check_cmocka 1
-%define glusterfs 0
 %define objectstorage 0
 %define have_git 0
 %define ceph 0

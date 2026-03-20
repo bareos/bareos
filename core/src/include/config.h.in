@@ -3,7 +3,7 @@
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -221,9 +221,6 @@
 
 // Define to 1 if you have the `get_proplist_entry' function
 #cmakedefine HAVE_GET_PROPLIST_ENTRY @HAVE_GET_PROPLIST_ENTRY@
-
-// Define to 1 if you have gfapi lib
-#cmakedefine HAVE_GFAPI @HAVE_GFAPI@
 
 // Define to 1 if the `glfs_ftruncate' function has four arguments
 #cmakedefine GLFS_FTRUNCATE_HAS_FOUR_ARGS @GLFS_FTRUNCATE_HAS_FOUR_ARGS@

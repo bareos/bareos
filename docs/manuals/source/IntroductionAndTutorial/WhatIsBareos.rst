@@ -180,7 +180,6 @@ bareos-filedaemon-python3-plugin                   Python 3 plugin for Bareos Fi
 bareos-storage                                     Bareos Storage daemon
 bareos-storage-dedupable                           Dedup friendly volume format support for Bareos Storage backend
 bareos-storage-dplcompat                           Droplet compatible support for s3 backends
-bareos-storage-droplet                             Object Storage support (through libdroplet) for the Bareos Storage daemon
 bareos-storage-fifo                                FIFO support for the Bareos Storage backend
 bareos-storage-python-plugins-common               Common Python plugins for Bareos Storage daemon
 bareos-storage-python3-plugin                      Python3 plugin for Bareos Storage daemon
