@@ -349,23 +349,20 @@ set(ADMIN_WEBUI_SELENIUM_TESTNAMES
     "analytics_page"
 )
 
-# Individual readonly tests, each with their own director instance.
-set(AVAILABLE_WEBUI_SELENIUM_TESTS
-    "readonly-client_disabling"
-    "readonly-rerun_job"
-    "readonly-restore"
-    "readonly-run_configured_job"
-    "readonly-run_default_job"
-    "readonly-job_list_page"
-    "readonly-schedule_page"
-    "readonly-storage_devices_page"
-    "readonly-pool_page"
-    "readonly-media_page"
-    "readonly-fileset_page"
-)
-
-set(WEBUI_TESTS_BROKEN
-    readonly-client_disabling # sometimes fails with a find_element exception
+# Readonly selenium test method names (without the "test_" prefix). All run in
+# a single director instance under the webui:readonly ctest entry.
+set(READONLY_WEBUI_SELENIUM_TESTNAMES
+    "client_disabling"
+    "rerun_job"
+    "restore"
+    "run_configured_job"
+    "run_default_job"
+    "job_list_page"
+    "schedule_page"
+    "storage_devices_page"
+    "pool_page"
+    "media_page"
+    "fileset_page"
 )
 
 find_program(PHP php)
@@ -394,74 +391,32 @@ endif()
 
 set(WEBUI_TEST_PREFIX "webui:")
 if(NOT ENABLE_WEBUI_SELENIUM_TEST)
-  # Disable the merged admin test
-  add_test(NAME ${WEBUI_TEST_PREFIX}admin COMMAND false)
-  set_tests_properties(${WEBUI_TEST_PREFIX}admin PROPERTIES DISABLED true)
-  message(STATUS "Disabled test: ${WEBUI_TEST_PREFIX}admin")
-  # Disable individual readonly tests
-  foreach(TEST_NAME_DISABLED ${AVAILABLE_WEBUI_SELENIUM_TESTS})
-    add_test(NAME ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED} COMMAND false)
+  # Disable both merged tests when requirements are missing.
+  foreach(profile admin readonly)
+    add_test(NAME ${WEBUI_TEST_PREFIX}${profile} COMMAND false)
     set_tests_properties(
-      ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED} PROPERTIES DISABLED true
+      ${WEBUI_TEST_PREFIX}${profile} PROPERTIES DISABLED true
     )
-    message(STATUS "Disabled test: ${WEBUI_TEST_PREFIX}${TEST_NAME_DISABLED}")
+    message(STATUS "Disabled test: ${WEBUI_TEST_PREFIX}${profile}")
   endforeach()
 else()
-  # Build the space-separated list of all admin selenium test methods.
-  set(admin_test_list "")
-  foreach(test_name ${ADMIN_WEBUI_SELENIUM_TESTNAMES})
-    list(APPEND admin_test_list "SeleniumTest.test_${test_name}")
-  endforeach()
-  list(JOIN admin_test_list " " BAREOS_WEBUI_TESTS)
+  # Helper macro: register one merged webui ctest test for the given profile.
+  # All test method names in testnames_var are run in a single Bareos director
+  # and PHP server instance.
+  macro(register_webui_profile_test profile testnames_var timeout)
+    set(_test_list "")
+    foreach(_name ${${testnames_var}})
+      list(APPEND _test_list "SeleniumTest.test_${_name}")
+    endforeach()
+    list(JOIN _test_list " " BAREOS_WEBUI_TESTS)
 
-  # Register one merged admin test that runs all admin methods against a single
-  # director instance.
-  set(TEST_NAME "admin")
-  set(BAREOS_WEBUI_PROFILE "admin")
-  set(BAREOS_WEBUI_TESTNAME "")
-  message(STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}")
-
-  prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
-  prepare_testdir_for_daemon_run()
-
-  set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui)
-  file(MAKE_DIRECTORY ${WEBUICONFDIR})
-  configure_file(
-    "${CMAKE_SOURCE_DIR}/webui/config/autoload/global.php.in"
-    "${current_test_directory}/webui/config/autoload/global.php" @ONLY
-    NEWLINE_STYLE UNIX
-  )
-  configurefilestosystemtest(
-    "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
-  )
-  configure_file(
-    "environment.in" "tests/${TEST_NAME}/environment" @ONLY NEWLINE_STYLE UNIX
-  )
-  configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
-  configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
-
-  add_test(
-    NAME "${WEBUI_TEST_PREFIX}${TEST_NAME}"
-    COMMAND ${tests_dir}/${TEST_NAME}/testrunner
-    WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
-  )
-  # Timeout scaled for all admin tests running sequentially in one process.
-  set_tests_properties(
-    ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 600 COST 1.0
-  )
-  math(EXPR BASEPORT "${BASEPORT} + 10")
-
-  # Register individual readonly tests, each with their own director instance.
-  set(BAREOS_WEBUI_TESTS "")
-  foreach(TEST_NAME ${AVAILABLE_WEBUI_SELENIUM_TESTS})
+    set(TEST_NAME "${profile}")
+    set(BAREOS_WEBUI_PROFILE "${profile}")
+    set(BAREOS_WEBUI_TESTNAME "")
     message(STATUS "Configuring test: ${WEBUI_TEST_PREFIX}${TEST_NAME}")
 
     prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
     prepare_testdir_for_daemon_run()
-    # split WEBUI_TEST_NAME into PROFILE and TESTNAME
-    string(REPLACE "-" ";" SELENIUM_TESTCOMPONENTS ${TEST_NAME})
-    list(GET SELENIUM_TESTCOMPONENTS 0 BAREOS_WEBUI_PROFILE)
-    list(GET SELENIUM_TESTCOMPONENTS 1 BAREOS_WEBUI_TESTNAME)
 
     set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui)
     file(MAKE_DIRECTORY ${WEBUICONFDIR})
@@ -473,12 +428,10 @@ else()
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
     )
-
     configure_file(
       "environment.in" "tests/${TEST_NAME}/environment" @ONLY
       NEWLINE_STYLE UNIX
     )
-
     configure_file("bin/bconsole" "tests/${TEST_NAME}/bin/bconsole" COPYONLY)
     configure_file("bin/bareos" "tests/${TEST_NAME}/bin/bareos" COPYONLY)
 
@@ -487,16 +440,16 @@ else()
       COMMAND ${tests_dir}/${TEST_NAME}/testrunner
       WORKING_DIRECTORY ${tests_dir}/${TEST_NAME}
     )
-    if(${TEST_NAME} IN_LIST WEBUI_TESTS_BROKEN)
-      set_tests_properties(
-        ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES LABELS "broken"
-      )
-    endif()
     set_tests_properties(
-      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT 120 COST 1.0
+      ${WEBUI_TEST_PREFIX}${TEST_NAME} PROPERTIES TIMEOUT ${timeout} COST 1.0
     )
     math(EXPR BASEPORT "${BASEPORT} + 10")
-  endforeach()
+  endmacro()
+
+  # One director instance for all admin tests, one for all readonly tests.
+  register_webui_profile_test(admin ADMIN_WEBUI_SELENIUM_TESTNAMES 600)
+  register_webui_profile_test(readonly READONLY_WEBUI_SELENIUM_TESTNAMES 600)
+
   # unset variables, so that they are not set in other environments.
   set(BAREOS_WEBUI_PROFILE "")
   set(BAREOS_WEBUI_TESTNAME "")
