@@ -349,8 +349,8 @@ set(ADMIN_WEBUI_SELENIUM_TESTNAMES
     "analytics_page"
 )
 
-# Readonly selenium test method names (without the "test_" prefix). All run in
-# a single director instance under the webui:readonly ctest entry.
+# Readonly selenium test method names (without the "test_" prefix). All run in a
+# single director instance under the webui:readonly ctest entry.
 set(READONLY_WEBUI_SELENIUM_TESTNAMES
     "client_disabling"
     "rerun_job"
