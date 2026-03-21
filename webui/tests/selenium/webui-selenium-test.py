@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -250,9 +250,7 @@ class SeleniumTest(unittest.TestCase):
                 # For readonly: clicking bootstrap-table action links may not navigate.
                 # Navigate directly to the disable URL to verify the ACL error page.
                 self.driver.get(
-                    self.base_url
-                    + "/client/index?action=disable&client="
-                    + self.client
+                    self.base_url + "/client/index?action=disable&client=" + self.client
                 )
                 self.wait_and_click(By.LINK_TEXT, "Back")
             else:
@@ -275,9 +273,7 @@ class SeleniumTest(unittest.TestCase):
             if self.profile == "readonly":
                 # For readonly: navigate directly to the enable URL.
                 self.driver.get(
-                    self.base_url
-                    + "/client/index?action=enable&client="
-                    + self.client
+                    self.base_url + "/client/index?action=enable&client=" + self.client
                 )
                 self.wait_and_click(By.LINK_TEXT, "Back")
             else:
