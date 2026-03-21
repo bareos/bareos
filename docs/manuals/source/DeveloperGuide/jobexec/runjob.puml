@@ -3,31 +3,31 @@
 start
 |SetupJob|
 :InitMsg();
-#aqua:initialize term_wait condition]
-#aqua:initialize nextrun_ready condition]
-:CreateUniqueJobName()|
+:initialize term_wait condition; <<task>> <<#aqua>>
+:initialize nextrun_ready condition; <<task>> <<#aqua>>
+:CreateUniqueJobName(); <<procedure>>
 :set job status to JS_Created;
 :get db connection from pool;
-:InitJcrJobRecord()|
+:InitJcrJobRecord(); <<procedure>>
 if (job has client) then (yes)
-  :GetOrCreateClientRecord()|
+  :GetOrCreateClientRecord(); <<procedure>>
 endif
-:CreateJobRecord()|
-:set jcr->jobid from jcr->jr.jobid]
-:NewPlugins()|
-:DispatchNewPluginOptions()|
-:GeneratePluginEvent(bDirEventJobStart)|
+:CreateJobRecord(); <<procedure>>
+:set jcr->jobid from jcr->jr.jobid; <<task>>
+:NewPlugins(); <<procedure>>
+:DispatchNewPluginOptions(); <<procedure>>
+:GeneratePluginEvent(bDirEventJobStart); <<procedure>>
 if (JobReads && !jcr->res.read_storage_list) then (yes)
-  :CopyRwstorage()|
+  :CopyRwstorage(); <<procedure>>
 endif
 partition "Type Specific Setup" {
   :lots of magic omitted here;
 }
-:GeneratePluginEvent(bDirEventJobInit)|
+:GeneratePluginEvent(bDirEventJobInit); <<procedure>>
 |RunJob|
 if (success) then (yes)
   |JobqAdd|
-  :increment jcr's use counter]
+  :increment jcr's use counter; <<task>>
   if (scheduled in the future) then (yes)
     :spawn waiter thread;
   else (no)
@@ -36,7 +36,7 @@ if (success) then (yes)
     else (no)
       :priority-aware insert to waiting_jobs;
     endif
-    :StartServer()|
+    :StartServer(); <<procedure>>
     note
       this will spawn a new jobq_server
       thread each time it is called until
@@ -45,7 +45,7 @@ if (success) then (yes)
   endif
   |RunJob|
   if (success) then (yes)
-    #tomato:return jobid;
+    :return jobid; <<#tomato>>
     note
       at this point the jcr is either
       somewhere in the job-queue or there
@@ -55,6 +55,6 @@ if (success) then (yes)
     detach
   endif
 endif
-#tomato:return 0;
+:return 0; <<#tomato>>
 detach
 @enduml
