@@ -4,12 +4,15 @@
       <q-card-section class="panel-header row items-center">
         <span>Bareos Console</span>
         <q-space />
+        <q-chip dense square :color="statusColor" text-color="white" :label="director.status" class="q-mr-sm" style="font-size:0.72rem" />
         <q-btn flat round dense icon="delete_sweep" color="white" title="Clear" @click="output = []" />
       </q-card-section>
       <q-card-section>
         <div class="console-output q-mb-md" ref="outputEl">
-          <div v-for="(line, i) in output" :key="i" :class="line.type === 'cmd' ? 'text-info' : ''">
-            <span v-if="line.type === 'cmd'">* </span>{{ line.text }}
+          <div v-for="(line, i) in output" :key="i" :class="lineClass(line)">
+            <span v-if="line.type === 'cmd'">* </span>
+            <span v-else-if="line.type === 'err'" class="text-negative">! </span>
+            {{ line.text }}
           </div>
           <span class="text-positive">*&nbsp;</span>
         </div>
@@ -19,6 +22,7 @@
               v-model="cmd"
               outlined dense
               placeholder="Enter command (e.g. status director)"
+              :disable="!director.isConnected"
               @keyup.enter="send"
               class="font-mono"
             >
@@ -26,11 +30,12 @@
             </q-input>
           </div>
           <div class="col-auto">
-            <q-btn color="primary" label="Send" icon="send" @click="send" no-caps />
+            <q-btn color="primary" label="Send" icon="send" @click="send" no-caps :disable="!director.isConnected" />
           </div>
         </div>
         <div class="row q-gutter-xs q-mt-sm flex-wrap">
-          <q-chip v-for="c in quickCmds" :key="c" clickable @click="quickSend(c)" color="grey-3" text-color="dark" size="sm">{{ c }}</q-chip>
+          <q-chip v-for="c in quickCmds" :key="c" clickable @click="quickSend(c)"
+                  color="grey-3" text-color="dark" size="sm" :disable="!director.isConnected">{{ c }}</q-chip>
         </div>
       </q-card-section>
     </q-card>
@@ -38,17 +43,45 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
-import { directorStatus } from '../mock/index.js'
+import { ref, computed, nextTick } from 'vue'
+import { useDirectorStore } from '../stores/director.js'
 
-const cmd = ref('')
-const output = ref([
-  { type: 'out', text: 'Bareos WebUI Console — connected to bareos-dir' },
-  { type: 'out', text: 'Type "help" for a list of commands.' },
+const director = useDirectorStore()
+const cmd       = ref('')
+const outputEl  = ref(null)
+const output    = ref([
+  { type: 'out', text: 'Bareos WebUI Console' },
+  { type: 'out', text: director.isConnected
+      ? `Connected to ${director.status === 'connected' ? 'director' : '…'}`
+      : 'Not connected — log in to use the console.' },
 ])
-const outputEl = ref(null)
 
-const quickCmds = ['status director', 'status client', 'list jobs', 'list clients', 'list volumes', 'messages', 'help']
+const quickCmds = ['status director', 'list jobs', 'list clients', 'list volumes', 'list pools', 'messages', 'help', 'version']
+
+const statusColor = computed(() => ({
+  connected: 'positive', connecting: 'warning', authenticating: 'warning',
+  error: 'negative', disconnected: 'grey',
+}[director.status] ?? 'grey'))
+
+function lineClass(line) {
+  if (line.type === 'cmd') return 'text-info'
+  if (line.type === 'err') return 'text-negative'
+  return ''
+}
+
+function appendOutput(text, type = 'out') {
+  if (typeof text === 'object') {
+    // Pretty-print JSON data from the director
+    output.value.push({ type, text: JSON.stringify(text, null, 2) })
+  } else {
+    String(text).split('\n').forEach(l => output.value.push({ type, text: l }))
+  }
+}
+
+async function scrollBottom() {
+  await nextTick()
+  if (outputEl.value) outputEl.value.scrollTop = outputEl.value.scrollHeight
+}
 
 async function send() {
   const c = cmd.value.trim()
@@ -56,18 +89,20 @@ async function send() {
   output.value.push({ type: 'cmd', text: c })
   cmd.value = ''
 
-  // Mock responses
-  let resp
-  if (c === 'status director' || c === 'status') resp = directorStatus
-  else if (c === 'list jobs')    resp = 'JobId  Level  Files     Bytes     Status  Name\n' + Array.from({length:5},(_,i)=>`${i+1}      Full   ${(Math.random()*1e6|0).toLocaleString()}  2.1 GB    T       BackupClient${i+1}`).join('\n')
-  else if (c === 'list clients') resp = 'bareos-fd\nfileserver-fd\ndb-server-fd\nmail-fd\nweb-fd'
-  else if (c === 'messages')     resp = 'No new messages.'
-  else if (c === 'help')         resp = 'Available commands: status, list, run, restore, cancel, messages, version, quit'
-  else                           resp = `Command "${c}" accepted.`
+  if (!director.isConnected) {
+    appendOutput('Not connected to director.', 'err')
+    await scrollBottom()
+    return
+  }
 
-  output.value.push({ type: 'out', text: resp })
-  await nextTick()
-  if (outputEl.value) outputEl.value.scrollTop = outputEl.value.scrollHeight
+  try {
+    const result = await director.call(c)
+    appendOutput(result)
+  } catch (err) {
+    appendOutput(err.message, 'err')
+  }
+
+  await scrollBottom()
 }
 
 function quickSend(c) { cmd.value = c; send() }
@@ -76,3 +111,4 @@ function quickSend(c) { cmd.value = c; send() }
 <style scoped>
 .font-mono :deep(input) { font-family: 'Courier New', monospace; font-size: 0.85rem; }
 </style>
+

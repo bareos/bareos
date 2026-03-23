@@ -8,6 +8,7 @@
           <q-card-section class="panel-header row items-center">
             <span>Jobs started during the past 24 hours</span>
             <q-space />
+            <q-spinner v-if="loadingJobs" color="white" size="18px" class="q-mr-sm" />
             <q-btn flat round dense icon="refresh" color="white" size="sm" @click="refresh" />
           </q-card-section>
           <q-card-section>
@@ -39,18 +40,18 @@
             >
               <template #body-cell-status="props">
                 <q-td :props="props">
-                  <JobStatusBadge :status="props.value" />
+                  <JobStatusBadge :status="jobStatus(props.row)" />
                 </q-td>
               </template>
               <template #body-cell-name="props">
                 <q-td :props="props">
-                  <router-link :to="{ name: 'job-details', params: { id: props.row.id } }" class="text-primary">
+                  <router-link :to="{ name: 'job-details', params: { id: jobId(props.row) } }" class="text-primary">
                     {{ props.value }}
                   </router-link>
                 </q-td>
               </template>
               <template #body-cell-bytes="props">
-                <q-td :props="props" class="text-right">{{ fmtBytes(props.row.bytes) }}</q-td>
+                <q-td :props="props" class="text-right">{{ jobBytes(props.row) }}</q-td>
               </template>
             </q-table>
           </q-card-section>
@@ -86,16 +87,16 @@
           </q-card-section>
           <q-card-section style="max-height:320px; overflow-y:auto; padding:0">
             <q-list separator>
-              <q-item v-for="job in runningJobs" :key="job.id" class="q-py-sm">
+              <q-item v-for="job in runningJobs" :key="jobId(job)" class="q-py-sm">
                 <q-item-section>
                   <q-item-label>
-                    <router-link :to="{ name: 'job-details', params: { id: job.id } }" class="text-primary text-weight-medium">
+                    <router-link :to="{ name: 'job-details', params: { id: jobId(job) } }" class="text-primary text-weight-medium">
                       {{ job.name }}
                     </router-link>
                     <span class="text-grey-6 text-caption q-ml-xs">({{ job.client }})</span>
                   </q-item-label>
                   <q-item-label caption>
-                    {{ job.files.toLocaleString() }} files &middot; {{ fmtBytes(job.bytes) }}
+                    {{ (job.files ?? job.jobfiles ?? 0).toLocaleString() }} files &middot; {{ jobBytes(job) }}
                   </q-item-label>
                   <q-linear-progress :value="0.45" color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
                 </q-item-section>
@@ -115,40 +116,89 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { mockJobs, formatBytes } from '../mock/index.js'
+import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import StatNumber from '../components/StatNumber.vue'
 
+const director = useDirectorStore()
 const fmtBytes = formatBytes
 
+// ── data (starts with mock, replaced by real when connected) ─────────────────
+const jobs        = ref([...mockJobs])
+const jobTotals   = ref(null)       // from "list jobs totals"
+const loadingJobs = ref(false)
+
+async function fetchJobs() {
+  if (!director.isConnected) return
+  loadingJobs.value = true
+  try {
+    const result = await director.call('list jobs')
+    if (result?.jobs?.length) jobs.value = result.jobs
+  } catch { /* keep mock */ } finally {
+    loadingJobs.value = false
+  }
+}
+
+async function fetchTotals() {
+  if (!director.isConnected) return
+  try {
+    const result = await director.call('list jobs totals')
+    if (result) jobTotals.value = result
+  } catch { /* ignore */ }
+}
+
+function refresh() {
+  fetchJobs()
+  fetchTotals()
+}
+
+onMounted(refresh)
+watch(() => director.isConnected, (connected) => { if (connected) refresh() })
+
+// ── computed views ────────────────────────────────────────────────────────────
 const recentCols = [
-  { name: 'id',     label: 'ID',       field: 'id',       align: 'right', sortable: true },
-  { name: 'name',   label: 'Job Name', field: 'name',     align: 'left',  sortable: true },
-  { name: 'client', label: 'Client',   field: 'client',   align: 'left',  sortable: true },
-  { name: 'level',  label: 'Level',    field: 'level',    align: 'center' },
-  { name: 'starttime', label: 'Start', field: 'starttime',align: 'left',  sortable: true },
-  { name: 'bytes',  label: 'Bytes',    field: 'bytes',    align: 'right'  },
-  { name: 'status', label: 'Status',   field: 'status',   align: 'center' },
+  { name: 'id',        label: 'ID',       field: 'jobid',     align: 'right', sortable: true },
+  { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',  sortable: true },
+  { name: 'client',    label: 'Client',   field: 'client',    align: 'left',  sortable: true },
+  { name: 'level',     label: 'Level',    field: 'level',     align: 'center' },
+  { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',  sortable: true },
+  { name: 'bytes',     label: 'Bytes',    field: 'jobbytes',  align: 'right'  },
+  { name: 'status',    label: 'Status',   field: 'jobstatus', align: 'center' },
 ]
 
-const recentJobs = mockJobs.slice(0, 8)
-const runningJobs = mockJobs.filter(j => j.status === 'R')
+const recentJobs  = computed(() => jobs.value.slice(0, 8))
+const runningJobs = computed(() => jobs.value.filter(j => (j.status ?? j.jobstatus) === 'R'))
 
-const last24h = mockJobs
-const summaryStats = [
-  { label: 'Running',    status: 'R', color: 'info',     count: last24h.filter(j => j.status === 'R').length },
-  { label: 'Waiting',    status: 'C', color: 'grey',     count: last24h.filter(j => j.status === 'C').length },
-  { label: 'Successful', status: 'T', color: 'positive', count: last24h.filter(j => j.status === 'T').length },
-  { label: 'Warning',    status: 'W', color: 'warning',  count: last24h.filter(j => j.status === 'W').length },
-  { label: 'Failed',     status: 'f', color: 'negative', count: last24h.filter(j => j.status === 'f').length },
-]
+const summaryStats = computed(() => {
+  const s = (code) => jobs.value.filter(j => (j.status ?? j.jobstatus) === code).length
+  return [
+    { label: 'Running',    status: 'R', color: 'info',     count: s('R') },
+    { label: 'Waiting',    status: 'C', color: 'grey',     count: s('C') },
+    { label: 'Successful', status: 'T', color: 'positive', count: s('T') },
+    { label: 'Warning',    status: 'W', color: 'warning',  count: s('W') },
+    { label: 'Failed',     status: 'f', color: 'negative', count: s('f') },
+  ]
+})
 
-const totals = computed(() => ({
-  jobs:  mockJobs.length,
-  files: mockJobs.reduce((a, j) => a + j.files, 0),
-  bytes: mockJobs.reduce((a, j) => a + j.bytes, 0),
-}))
+const totals = computed(() => {
+  if (jobTotals.value) return jobTotals.value
+  return {
+    jobs:  jobs.value.length,
+    files: jobs.value.reduce((a, j) => a + (j.files ?? j.jobfiles ?? 0), 0),
+    bytes: jobs.value.reduce((a, j) => a + (j.bytes ?? j.jobbytes ?? 0), 0),
+  }
+})
 
-function refresh() { /* would trigger API reload */ }
+// helper: get status code regardless of field name (mock vs real)
+function jobStatus(row) {
+  return row.status ?? row.jobstatus ?? '?'
+}
+function jobBytes(row) {
+  return fmtBytes(row.bytes ?? row.jobbytes ?? 0)
+}
+function jobId(row) {
+  return row.id ?? row.jobid
+}
 </script>

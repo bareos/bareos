@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex flex-center">
-    <div style="width: 360px; padding: 24px">
+    <div style="width: 380px; padding: 24px">
       <div class="text-center q-mb-lg">
         <q-icon name="shield" size="48px" color="white" />
         <div class="text-h5 text-white text-weight-bold q-mt-sm">BAREOS</div>
@@ -13,19 +13,40 @@
         </q-card-section>
         <q-card-section>
           <q-form @submit.prevent="doLogin">
+            <q-input
+              v-model="host"
+              label="Director Host"
+              outlined dense
+              class="q-mb-sm"
+              placeholder="localhost"
+              autocomplete="off"
+            >
+              <template #append>
+                <q-input
+                  v-model.number="port"
+                  dense borderless
+                  style="width:60px"
+                  type="number"
+                  :min="1" :max="65535"
+                />
+              </template>
+            </q-input>
             <q-select
               v-model="director"
               :options="directors"
-              label="Director"
+              label="Director Name"
               outlined dense
-              class="q-mb-md"
               emit-value map-options
+              class="q-mb-sm"
+              use-input
+              input-debounce="0"
+              @new-value="(val, done) => done(val)"
             />
             <q-input
               v-model="username"
               label="Username"
               outlined dense
-              class="q-mb-md"
+              class="q-mb-sm"
               autocomplete="username"
             />
             <q-input
@@ -36,6 +57,12 @@
               class="q-mb-md"
               autocomplete="current-password"
             />
+
+            <q-banner v-if="errorMsg" dense class="bg-negative text-white q-mb-md rounded-borders">
+              <template #avatar><q-icon name="error" /></template>
+              {{ errorMsg }}
+            </q-banner>
+
             <q-btn
               type="submit"
               label="Login"
@@ -55,25 +82,59 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { useDirectorStore } from '../stores/director.js'
 
-const auth = useAuthStore()
-const router = useRouter()
+const auth     = useAuthStore()
+const director = useDirectorStore()
+const router   = useRouter()
 
-const director = ref('bareos-dir')
-const directors = ['bareos-dir', 'backup-dir', 'dr-director']
-const username = ref('admin')
-const password = ref('')
-const loading = ref(false)
+const host      = ref('localhost')
+const port      = ref(9101)
+const dirName   = 'bareos-dir'
+const directors = ref(['bareos-dir', 'backup-dir', 'dr-director'])
+const directorRef = ref(dirName)
+const username  = ref('admin')
+const password  = ref('')
+const loading   = ref(false)
+const errorMsg  = ref(null)
 
 async function doLogin() {
   loading.value = true
-  // Simulate auth – replace with real API call
-  await new Promise(r => setTimeout(r, 400))
-  auth.login(username.value, director.value)
+  errorMsg.value = null
+
+  // Connect WebSocket proxy → director
+  director.connect({
+    username:  username.value,
+    password:  password.value,
+    director:  directorRef.value,
+    host:      host.value,
+    port:      port.value,
+  })
+
+  // Wait up to 8 s for auth result
+  const ok = await new Promise((resolve) => {
+    const stop = watch(
+      () => director.status,
+      (s) => {
+        if (s === 'connected')   { stop(); resolve(true)  }
+        if (s === 'error')       { stop(); resolve(false) }
+      }
+    )
+    setTimeout(() => { stop(); resolve(false) }, 8000)
+  })
+
+  if (!ok) {
+    errorMsg.value = director.errorMsg || 'Could not connect to director. Is the proxy running?'
+    loading.value = false
+    return
+  }
+
+  auth.login(username.value, directorRef.value, password.value, host.value, port.value)
   loading.value = false
   router.push({ name: 'dashboard' })
 }
 </script>
+
