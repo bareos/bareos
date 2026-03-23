@@ -47,7 +47,7 @@ is implemented via an python extension module, i.e. an dll.
 The other modules are created during runtime.
 
 .. uml::
-  :caption: Bareos Python Plugin Architecture for Bareos >= 20
+  :caption: Bareos Python Plugin Architecture for Bareos >= 26
 
   package "Bareos Daemon" {
   [Core]
@@ -57,7 +57,7 @@ The other modules are created during runtime.
   [Python Interpreter]
   }
 
-  package "Python Module" {
+  package "Python Module (internal)" {
   [Python Module]
   }
 
@@ -67,8 +67,8 @@ The other modules are created during runtime.
 
   [Core] <-> [Python Interpreter] : Bareos Plugin API
 
-  [Python Interpreter] <-> [Python Extension Module] :  load and use
-  [Python Extension Module] <-> [Python Plugin Files] : Python Plugin API
+  [Python Interpreter] <-> [Python Module] :  load and use
+  [Python Module] <-> [Python Plugin Files] : Python Plugin API
 
 
 
