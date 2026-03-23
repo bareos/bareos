@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -236,9 +236,12 @@ struct plugin_arguments {
   static std::optional<plugin_arguments> parse(PluginContext* ctx,
                                                std::string_view str)
   {
-    static constexpr std::string_view save_unreferenced_disks = "save-unreferenced-disks";
-    static constexpr std::string_view save_unreferenced_partitions = "save-unreferenced-partitions";
-    static constexpr std::string_view save_unreferenced_extents = "save-unreferenced-extents";
+    static constexpr std::string_view save_unreferenced_disks
+        = "save-unreferenced-disks";
+    static constexpr std::string_view save_unreferenced_partitions
+        = "save-unreferenced-partitions";
+    static constexpr std::string_view save_unreferenced_extents
+        = "save-unreferenced-extents";
     static constexpr std::string_view ignore_disks = "ignore-disks";
     static constexpr std::string_view keywords[] = {
         save_unreferenced_disks,
@@ -265,10 +268,10 @@ struct plugin_arguments {
 
       std::string_view value = {};
       switch (next_option(str, keywords, &value)) {
-
         case index_of(keywords, save_unreferenced_disks): {
           try {
-            args.save_unknown_disks = BoolString(std::string{value}).get<bool>();
+            args.save_unknown_disks
+                = BoolString(std::string{value}).get<bool>();
           } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_disks);
@@ -278,7 +281,8 @@ struct plugin_arguments {
 
         case index_of(keywords, save_unreferenced_partitions): {
           try {
-            args.save_unknown_partitions = BoolString(std::string{value}).get<bool>();
+            args.save_unknown_partitions
+                = BoolString(std::string{value}).get<bool>();
           } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_partitions);
@@ -288,7 +292,8 @@ struct plugin_arguments {
 
         case index_of(keywords, save_unreferenced_extents): {
           try {
-            args.save_unknown_extents = BoolString(std::string{value}).get<bool>();
+            args.save_unknown_extents
+                = BoolString(std::string{value}).get<bool>();
           } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_extents);

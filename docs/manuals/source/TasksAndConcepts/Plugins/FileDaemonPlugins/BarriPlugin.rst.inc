@@ -569,7 +569,7 @@ The recovery process is as follows:
    root@livesystem: <input>./barri-cli restore --files /dev/nvme0n1 < @BARRI/windr-fd.barri</input>
    barri - bareos recovery imager
    Version 25.0.0~pre1093.c2d6db38b (06 October 2025)
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
    Get professional support from https://www.bareos.com
    Restoring 1 Disks
    Restoring disk 0
@@ -789,7 +789,7 @@ Applied to our example this leads to:
 
    barri - bareos recovery imager
    Version 25.0.0~pre1152.a0abe56e3 (09 October 2025)
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
    Get professional support from https://www.bareos.com
    found 3 volumes on the selected disks
     begin disk { size: 256060514304, extent count: 20582 }
