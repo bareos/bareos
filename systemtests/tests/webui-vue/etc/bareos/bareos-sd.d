@@ -1,1 +1,0 @@
-../../../webui-common/etc/bareos/bareos-sd.d

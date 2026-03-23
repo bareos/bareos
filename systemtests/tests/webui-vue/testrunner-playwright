@@ -2,19 +2,12 @@
 #
 # webui-vue system test – Playwright E2E browser tests
 #
-# Requires:  playwright-python ("python -m playwright install chromium")
-# Disabled:  automatically when playwright is not installed (see CMakeLists.txt)
-#
-# What we test:
-#   1. Login page renders and accepts credentials
-#   2. Dashboard shows job count statistics after successful login
-#   3. Jobs page shows the backup job created by testrunner-simple-backup
-#   4. Console page accepts a command and shows a JSON response
-#   5. Logout clears the session and returns to login page
-#
 set -e
 set -o pipefail
 set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
 
 #shellcheck source=../../environment.in
 . ./environment
@@ -37,7 +30,7 @@ trap cleanup EXIT
 
 # ── 1. Build the Vue app (production preview) ────────────────────────────────
 print_debug "Building Vue WebUI ..."
-cd "${PROJECT_SOURCE_DIR}/webui-vue"
+cd "${CMAKE_SOURCE_DIR}/webui-vue"
 npm run build >"${tmp}/vite-build.log" 2>&1
 print_debug "Starting vite preview on port ${VITE_PORT} ..."
 npx vite preview --port "${VITE_PORT}" --host 127.0.0.1 >"${tmp}/vite-preview.log" 2>&1 &
@@ -47,7 +40,7 @@ cd -
 # ── 2. Start the WS proxy ────────────────────────────────────────────────────
 print_debug "Starting WS proxy on port ${PROXY_PORT} ..."
 WS_PORT="${PROXY_PORT}" \
-  "${PYTHON_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/webui-vue/proxy/director_ws_proxy.py" \
+  "${PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/webui-vue/proxy/director_ws_proxy.py" \
   >"${tmp}/ws-proxy-playwright.log" 2>&1 &
 PROXY_PID=$!
 

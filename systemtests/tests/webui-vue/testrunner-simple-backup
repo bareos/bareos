@@ -2,12 +2,12 @@
 #
 # webui-vue system test – run a simple backup job
 #
-# This testrunner is declared as FIXTURES_SETUP for the "backup-fixture" so
-# the playwright testrunner (which needs real data) can depend on it.
-#
 set -e
 set -o pipefail
 set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
 
 #shellcheck source=../../environment.in
 . ./environment

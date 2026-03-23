@@ -27,15 +27,25 @@ execute_process(
   OUTPUT_QUIET ERROR_QUIET
 )
 
-if(_playwright_missing)
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
+# Register the test (and its testrunner-* files) from our source directory.
+# This MUST happen before the webui-common configurefilestosystemtest call
+# below so that create_systemtest sees our testrunner-* files (not
+# webui-common's single testrunner) when it calls add_systemtest_from_directory.
+create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 
+if(_playwright_missing)
   set_tests_properties(
     "${SYSTEMTEST_PREFIX}${BASENAME}:playwright" PROPERTIES DISABLED TRUE
   )
-else()
-  create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 endif()
+
+# Pull in the shared Bareos daemon configuration from webui-common (director,
+# storage, file-daemon configs, catalog, pool, schedule, fileset, etc.).
+# This must happen AFTER create_systemtest() so that the testrunner-* file
+# glob happens before webui-common's single "testrunner" is copied here.
+configurefilestosystemtest(
+  "systemtests" "tests/webui-vue" "*" @ONLY "tests/webui-common"
+)
 
 # The playwright testrunner also requires the backup job to have completed,
 # so it has data to display.  Use systemtest_requires() to append to – not
