@@ -685,7 +685,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
           VSS_CALL(pDepedency, GetComponentName, &bstrComponentName);
 
           char* name2 = BSTR_2_str(bstrComponentName);
-          Dmsg1(500, "Depedency: %s\n", name2);
+          Dmsg1(500, "Dependency: %s\n", name2);
           free(name2);
 
           SysFreeString(bstrComponentName);
@@ -764,7 +764,7 @@ void VSSClientGeneric::AddVolumeSnapshots(
 
     bool snapshot_success = false;
 
-    // Store uniquevolumname if it doesnt already exist
+    // Store uniquevolumname if it doesn't already exist
     if (auto found = snapshoted_volumes.find(unique_name);
         found == snapshoted_volumes.end()) {
       if (SUCCEEDED(pVssObj->AddToSnapshotSet(
@@ -995,7 +995,7 @@ bool VSSClientGeneric::CloseBackup()
   pVssObj->Release();
   pVssObject_ = NULL;
 
-  // Call CoUninitialize if the CoInitializeEx was performed sucesfully
+  // Call CoUninitialize if the CoInitializeEx was performed successfully
   if (bCoInitializeCalled_) {
     CoUninitialize();
     bCoInitializeCalled_ = false;

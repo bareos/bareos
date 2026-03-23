@@ -121,7 +121,7 @@ BxattrExitCode SendXattrStream(JobControlRecord* jcr,
     return BxattrExitCode::kErrorFatal;
   }
 
-  // Send the buffer to the storage deamon
+  // Send the buffer to the storage daemon
   Dmsg1(400, "Backing up XATTR <%s>\n", xattr_data->content.c_str());
   msgsave = sd->msg;
   sd->msg = xattr_data->content.c_str();
@@ -398,7 +398,7 @@ static BxattrExitCode aix_build_xattr_streams(JobControlRecord* jcr,
       break;
   }
 
-  // Allocate room for the extented attribute list.
+  // Allocate room for the extended attribute list.
   xattr_list = (char*)malloc(xattr_list_len + 1);
   memset(xattr_list, 0, xattr_list_len + 1);
 
@@ -733,7 +733,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
       break;
   }
 
-  // Allocate room for the extented attribute list.
+  // Allocate room for the extended attribute list.
   xattr_list = (char*)malloc(xattr_list_len + 1);
   memset(xattr_list, 0, xattr_list_len + 1);
 
@@ -768,7 +768,7 @@ static BxattrExitCode generic_build_xattr_streams(JobControlRecord* jcr,
        bp = strchr(bp, '\0') + 1) {
     skip_xattr = false;
 
-    /* On some OSes you also get the acls in the extented attribute list.
+    /* On some OSes you also get the acls in the extended attribute list.
      * So we check if we are already backing up acls and if we do we
      * don't store the extended attribute with the same info. */
     if (BitIsSet(FO_ACL, ff_pkt->flags)) {
@@ -1079,7 +1079,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
         break;
     }
 
-    // Allocate room for the extented attribute list.
+    // Allocate room for the extended attribute list.
     xattr_list = (char*)malloc(xattr_list_len + 1);
     memset(xattr_list, 0, xattr_list_len + 1);
 
@@ -1142,7 +1142,7 @@ static BxattrExitCode bsd_build_xattr_streams(JobControlRecord* jcr,
       Bsnprintf(current_attrtuple, sizeof(current_attrtuple), "%s.%s",
                 current_attrnamespace, current_attrname);
 
-      /* On some OSes you also get the acls in the extented attribute list.
+      /* On some OSes you also get the acls in the extended attribute list.
        * So we check if we are already backing up acls and if we do we
        * don't store the extended attribute with the same info. */
       if (BitIsSet(FO_ACL, ff_pkt->flags)) {
@@ -1998,7 +1998,7 @@ static BxattrExitCode solaris_save_xattr(JobControlRecord* jcr,
   if (retval != BxattrExitCode::kSuccess) { goto bail_out; }
   xattr_data->nr_saved++;
 
-  /* Recursivly call solaris_save_extended_attributes for archiving the
+  /* Recursively call solaris_save_extended_attributes for archiving the
    * attributes available on this extended attribute. */
   retval = solaris_save_xattrs(jcr, xattr_data, xattr_namespace, attrname);
 

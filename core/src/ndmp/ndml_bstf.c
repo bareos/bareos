@@ -67,7 +67,7 @@ int n_seek, n_align, n_line, n_getc;
 int ndmbstf_first(FILE* fp,         /* the file to search */
                   char* key,        /* what we're looking for */
                   char* buf,        /* returned line */
-                  unsigned max_buf) /* maximum lenght of buf (sizeof (buf)) */
+                  unsigned max_buf) /* maximum length of buf (sizeof (buf)) */
 {
   return ndmbstf_first_with_bounds(fp, key, buf, max_buf, 0, 0);
 }
@@ -76,7 +76,7 @@ int ndmbstf_first_with_bounds(
     FILE* fp,          /* the file to search */
     char* key,         /* what we're looking for */
     char* buf,         /* returned line */
-    unsigned max_buf,  /* maximum lenght of buf (sizeof (buf)) */
+    unsigned max_buf,  /* maximum length of buf (sizeof (buf)) */
     off_t lower_bound, /* offset, to skip headers, usually 0 */
     off_t upper_bound) /* 0->don't know, >0 limit */
 {
@@ -176,7 +176,7 @@ int ndmbstf_first_with_bounds(
   }
 
   /*
-   * Do an unbounded linear search begining at the
+   * Do an unbounded linear search beginning at the
    * lower bound.
    */
 
@@ -217,7 +217,7 @@ int ndmbstf_first_with_bounds(
 int ndmbstf_next(FILE* fp,         /* the file to search */
                  char* key,        /* what we're looking for */
                  char* buf,        /* returned line */
-                 unsigned max_buf) /* maximum lenght of buf (sizeof (buf)) */
+                 unsigned max_buf) /* maximum length of buf (sizeof (buf)) */
 {
   int rc, buf_len;
 
@@ -286,12 +286,12 @@ int ndmbstf_seek_and_align(FILE* fp, off_t* off)
 
   /*
    * There is a slim chance that we're at the
-   * true begining of a line. Too slim.
+   * true beginning of a line. Too slim.
    * Scan forward discarding the trailing
    * portion of the line we just fseek()ed
    * to, and leave the stdio stream positioned
    * for the subsequent line. Notice
-   * we keep off upated so that it reflects
+   * we keep off updated so that it reflects
    * the seek position of the stdio stream.
    */
 

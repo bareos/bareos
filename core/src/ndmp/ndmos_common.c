@@ -40,7 +40,7 @@
  *      There are four major portions:
  *      1) Misc support routines: password check, local info, etc
  *      2) Non-blocking I/O support routines
- *      3) Tape interfacs ndmos_tape_xxx()
+ *      3) Tape interfaces ndmos_tape_xxx()
  *      4) OS Specific NDMP request dispatcher which intercepts
  *         requests implemented here, such as SCSI operations
  *         and system configuration queries.
@@ -391,7 +391,7 @@ ndmp9_error ndmos_scsi_execute_cdb(struct ndm_session* sess,
  * dispatcher, ndma_dispatch_request(), whether or not the request
  * was intercepted. ndmos_dispatch_request() is called after basic
  * reply setup is done (message headers and buffers), but before
- * the request is interpretted.
+ * the request is interpreted.
  */
 
 #ifndef I_HAVE_DISPATCH_REQUEST

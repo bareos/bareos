@@ -37,7 +37,7 @@
  *      There are multiple version of NDMP. This gathers them together.
  *      Under control of #ifdef NDMOS_OPTION_NO_NDMPx specific versions
  *      may be omitted. At this time, NDMPv2 and NDMPv3 are deployed.
- *      NDMPv1 was defined but not widely deployed, and deemed irrelavent.
+ *      NDMPv1 was defined but not widely deployed, and deemed irrelevant.
  *      NDMPv4 is under consideration.
  *
  *      NDMP is defined using RPC protocol specification
@@ -76,7 +76,7 @@
  *      isolates higher layers of NDMJOB from most variations between
  *      protocol version. NDMPv9 makes it a little easier to add
  *      new versions and omit older ones. NDMPv9 is never used
- *      over-the-wire, and therefor there are no XDR routines.
+ *      over-the-wire, and therefore there are no XDR routines.
  *
  *      There are three primary elements of this layer:
  *
@@ -117,7 +117,7 @@
 
 
 /*
- * Protocol ammendments. These are important constants
+ * Protocol amendments. These are important constants
  * omitted from the spec and .x files.
  */
 #include "ndmp_ammend.h"

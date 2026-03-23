@@ -44,7 +44,7 @@ template <typename Interface> class ImplementationFactory {
   }
 
  public:
-  // this retuns a bool, so you can initialize a global static variable from it
+  // this returns a bool, so you can initialize a global static variable from it
   // to register your plugin when the program starts or during dl_open()
   static bool Add(const std::string& implementation_name, Factory factory)
   {

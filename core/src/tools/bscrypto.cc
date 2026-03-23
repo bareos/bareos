@@ -107,7 +107,7 @@ static void unwrap_key(char* keydata,
   /* A wrapped key is base64 encoded after it was wrapped so first
    * convert it from base64 to bin. As we first go from base64 to bin
    * and the Base64ToBin has a check if the decoded string will fit
-   * we need to alocate some more bytes for the decoded buffer to be
+   * we need to allocate some more bytes for the decoded buffer to be
    * sure it will fit. */
   size_t length = DEFAULT_PASSPHRASE_LENGTH + 12;
   char* wrapped_passphrase = (char*)malloc(length);
@@ -349,7 +349,7 @@ int main(int argc, char* const* argv)
 
     /* Read new entries from stdin and parse them to update
      * the cache. */
-    fprintf(stdout, T_("Enter cache entrie(s) (close with ^D): "));
+    fprintf(stdout, T_("Enter cache entries (close with ^D): "));
     fflush(stdout);
 
     memset(new_cache_entry, 0, sizeof(new_cache_entry));
@@ -470,7 +470,7 @@ int main(int argc, char* const* argv)
     } else {
       if (base64_transform) {
         /* As we first go from base64 to bin and the Base64ToBin has a check
-         * if the decoded string will fit we need to alocate some more bytes
+         * if the decoded string will fit we need to allocate some more bytes
          * for the decoded buffer to be sure it will fit. */
         length = DEFAULT_PASSPHRASE_LENGTH + 4;
         passphrase = (char*)calloc(length, 1);

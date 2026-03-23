@@ -346,7 +346,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
       SerBytes("BAREOS.DATA", 11); /* Filename field */
 
       SerBegin(&label[21], sizeof(label) - 21); /* fileset field */
-      SerBytes(ansi_volname, 6);                /* write Vol Ser No. */
+      SerBytes(ansi_volname, 6);                /* write Vol Set No. */
       SerBegin(&label[27], sizeof(label) - 27);
       SerBytes("00010001000100",
                14); /* File section, File seq no, Generation no */

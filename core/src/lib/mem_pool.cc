@@ -63,7 +63,7 @@ constexpr int32_t HEAD_SIZE{BALIGN(sizeof(struct abufhead))};
 
 /*
  * Special version of error reporting using a static buffer so we don't use
- * the normal error reporting which uses dynamic memory e.g. recursivly calls
+ * the normal error reporting which uses dynamic memory e.g. recursively calls
  * these routines again leading to deadlocks.
  */
 [[noreturn]] PRINTF_LIKE(3, 4) static void MemPoolErrorMessage(const char* file,

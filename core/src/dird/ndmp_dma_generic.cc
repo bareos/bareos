@@ -457,7 +457,7 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
   nis = (NIS*)log->ctx;
   if (!nis) { return; }
 
-  /* If the log level of this message is under our logging treshold we
+  /* If the log level of this message is under our logging threshold we
    * log it as part of the Job. */
   if (level <= (int)nis->LogLevel) {
     if (nis->jcr) {

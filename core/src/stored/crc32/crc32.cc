@@ -19,7 +19,7 @@
 
 #include "crc32.h"
 
-// define endianess and some integer data types
+// define endianness and some integer data types
 #if defined(_MSC_VER) || defined(__MINGW32__)
   #define __LITTLE_ENDIAN 1234
   #define __BIG_ENDIAN    4321
@@ -77,7 +77,7 @@
 /// zlib's CRC32 polynomial
 const uint32_t Polynomial = 0xEDB88320;
 
-/// swap endianess
+/// swap endianness
 #if __BYTE_ORDER == __BIG_ENDIAN
 static inline uint32_t swap(uint32_t x)
 {
@@ -138,7 +138,7 @@ uint32_t crc32_bitwise(const void* data, size_t length, uint32_t previousCrc32)
 }
 
 
-/// compute CRC32 (half-byte algoritm)
+/// compute CRC32 (half-byte algorithm)
 uint32_t crc32_halfbyte(const void* data, size_t length, uint32_t previousCrc32)
 {
   uint32_t crc = ~previousCrc32; // same as previousCrc32 ^ 0xFFFFFFFF

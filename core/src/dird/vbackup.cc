@@ -557,7 +557,7 @@ static bool CreateBootstrapFile(JobControlRecord& jcr,
                                 const std::string& jobids)
 {
   if (DbLocker _{jcr.db}; !jcr.db->OpenBatchConnection(&jcr)) {
-    Jmsg0(&jcr, M_FATAL, 0, "Can't get batch sql connexion");
+    Jmsg0(&jcr, M_FATAL, 0, "Can't get batch sql connection");
     return false;
   }
 

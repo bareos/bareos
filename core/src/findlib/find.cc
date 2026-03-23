@@ -174,7 +174,7 @@ int FindFiles(JobControlRecord* jcr,
   findFILESET* fileset = ff->fileset;
   if (fileset) {
     /* TODO: We probably need be move the initialization in the fileset loop,
-     * at this place flags options are "concatenated" accross Include {} blocks
+     * at this place flags options are "concatenated" across Include {} blocks
      * (not only Options{} blocks inside a Include{}) */
     ClearAllBits(FO_MAX, ff->flags);
     for (int i = 0; i < fileset->include_list.size(); i++) {

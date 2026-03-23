@@ -710,7 +710,7 @@ void Device::SetAteot()
 /**
  * Position device to end of medium (end of data)
  *
- * Returns: true  on succes
+ * Returns: true  on success
  *          false on error
  */
 bool Device::eod(DeviceControlRecord* dcr)
@@ -753,7 +753,7 @@ bool Device::eod(DeviceControlRecord* dcr)
 /**
  * Set the position of the device.
  *
- * Returns: true  on succes
+ * Returns: true  on success
  *          false on error
  */
 bool Device::UpdatePos(DeviceControlRecord* dcr)

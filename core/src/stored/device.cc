@@ -235,7 +235,7 @@ void SetNewFileParameters(DeviceControlRecord* dcr)
 {
   SetStartVolPosition(dcr);
 
-  /* Reset indicies */
+  /* Reset indices */
   dcr->VolFirstIndex = 0;
   dcr->VolLastIndex = 0;
   dcr->NewFile = false;

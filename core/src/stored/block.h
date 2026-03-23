@@ -76,7 +76,7 @@ class Device; /* for forward reference */
 /**
  * DeviceBlock for reading and writing blocks.
  * This is the basic unit that is written to the device, and
- * it contains a Block Header followd by Records.  Note,
+ * it contains a Block Header followed by Records.  Note,
  * at times (when reading a file), this block may contain
  * multiple blocks.
  *

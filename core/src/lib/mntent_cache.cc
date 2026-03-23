@@ -401,7 +401,7 @@ void FlushMntentCache(void)
 
 /**
  * Release a mntent mapping reference returned
- * by a successfull call to find_mntent_mapping.
+ * by a successful call to find_mntent_mapping.
  */
 void ReleaseMntentMapping(mntent_cache_entry_t* mce)
 {
@@ -464,7 +464,7 @@ mntent_cache_entry_t* find_mntent_mapping(uint32_t dev)
         &lookup, CompareMntentMapping);
   }
 
-  /* Store the last successfull lookup as the previous_cache_hit.
+  /* Store the last successful lookup as the previous_cache_hit.
    * And increment the reference count. */
   if (mce) {
     previous_cache_hit = mce;

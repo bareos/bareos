@@ -611,7 +611,7 @@ static void do_truncate_on_purge(UaContext* ua,
   bool ok = false;
   uint64_t VolBytes = 0;
 
-  // TODO: Return if not mr->Recyle ?
+  // TODO: Return if not mr->Recycle ?
   if (!mr->Recycle) { return; }
 
   // Do it only if action on purge = truncate is set

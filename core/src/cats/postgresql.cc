@@ -104,7 +104,7 @@ result try_query(PGconn* db_handle, bool try_reconnection, const char* query)
     }
   }
   if (res) {
-    Dmsg1(500, "try_query suceeded with query %s", query);
+    Dmsg1(500, "try_query succeeded with query %s", query);
     Dmsg0(500, "We have a result\n");
   } else {
     Dmsg1(500, "try_query failed with query %s", query);
@@ -488,7 +488,7 @@ void BareosDbPostgresql::StartTransaction(JobControlRecord* jcr)
   if (transaction_ && changes > 25000) { EndTransaction(jcr); }
   if (!transaction_) {
     SqlQueryWithoutHandler("BEGIN"); /* begin transaction */
-    Dmsg0(400, "Start PosgreSQL transaction\n");
+    Dmsg0(400, "Start postgresql transaction\n");
     transaction_ = true;
   }
 }

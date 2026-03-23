@@ -172,7 +172,7 @@ struct VolumeParameters {
   char VolumeName[MAX_NAME_LENGTH]{0}; /**< Volume name */
   char MediaType[MAX_NAME_LENGTH]{0};  /**< Media Type */
   char Storage[MAX_NAME_LENGTH]{0};    /**< Storage name */
-  uint32_t VolIndex = 0;               /**< Volume seqence no. */
+  uint32_t VolIndex = 0;               /**< Volume sequence no. */
   uint32_t FirstIndex = 0;             /**< First index this Volume */
   uint32_t LastIndex = 0;              /**< Last index this Volume */
   int32_t Slot = 0;                    /**< Slot */

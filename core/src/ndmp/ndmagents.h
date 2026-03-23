@@ -1213,7 +1213,7 @@ extern void ndmalogfv(struct ndm_session* sess,
 
 
 /*
- * Dispatch Version/Reqeust Tables (DVT, DRT)
+ * Dispatch Version/Request Tables (DVT, DRT)
  ****************************************************************
  */
 

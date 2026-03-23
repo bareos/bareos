@@ -176,7 +176,7 @@ int ndmca_tt_wrapper(struct ndm_session* sess,
   ndmca_tape_mtio(sess, NDMP9_MTIO_REW, 1, 0);
   rc = ndmca_tape_close(sess); /* close, collective error */
   if (rc != 0) {
-    ndmca_test_log_note(sess, 0, "Cleaning up failed, quiting");
+    ndmca_test_log_note(sess, 0, "Cleaning up failed, quitting");
   } else {
     ndmca_test_log_note(sess, 2, "Cleaning up done");
   }

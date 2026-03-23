@@ -69,7 +69,7 @@ struct FiledJcrImpl {
   char* big_buf{};                /**< I/O buffer */
   int32_t replace{};              /**< Replace options */
   FindFilesPacket* ff{};          /**< Find Files packet */
-  char PrevJob[MAX_NAME_LENGTH]{};/**< Previous job name assiciated with since time */
+  char PrevJob[MAX_NAME_LENGTH]{};/**< Previous job name associated with since time */
   uint32_t ExpectedFiles{};       /**< Expected restore files */
   uint32_t StartFile{};
   uint32_t EndFile{};

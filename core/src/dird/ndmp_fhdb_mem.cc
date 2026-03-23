@@ -477,7 +477,7 @@ extern "C" int bndmp_fhdb_mem_add_dir(struct ndmlog* ixlog,
   return 0;
 }
 
-// This tries recursivly to add the missing parents to the tree.
+// This tries recursively to add the missing parents to the tree.
 static N_TREE_NODE* insert_metadata_parent_node(MetadataTable* meta_data,
                                                 N_TREE_ROOT* fhdb_root,
                                                 uint64_t dir_node)
@@ -533,7 +533,7 @@ static inline bool ProcessOutOfOrderMetadata(MetadataTable* meta_data,
   OOO_MD* md_entry;
 
   foreach_htable (md_entry, meta_data) {
-    // Alread visited ?
+    // Already visited ?
     if (!md_entry->nt_node) { continue; }
 
     Dmsg1(100, "bndmp_fhdb_mem_add_dir: Inserting node for %llu into tree\n",

@@ -78,7 +78,7 @@
 wd=@working_dir@
 
 #
-# log whats done
+# log what's done
 #
 # to turn on logging, uncomment the following line
 #touch $wd/disk-changer.log
@@ -116,7 +116,7 @@ check_parm_count()
     echo "usage: disk-changer ctl-device command [slot archive-device drive-index]"
     echo "  Insufficient number of arguments arguments given."
     if test $pCount -lt 2; then
-      echo "  Mimimum usage is first two arguments ..."
+      echo "  Minimum usage is first two arguments ..."
     else
       echo "  Command expected $pCountNeed arguments"
     fi
@@ -356,7 +356,7 @@ case $cmd in
       exit 1
     fi
 
-    echo "Transfering $slot to $slotdest"
+    echo "Transferring $slot to $slotdest"
     mv $dir/slot${slot} $dir/slot{$slotdest}
 
     if [ -f $dir/barcodes ]; then

@@ -41,7 +41,7 @@
  * Env list mgmt.
  *
  * Return a chunk of memory with all entries from the envlist as
- * one big enumeration useable for rpc to use as return value.
+ * one big enumeration usable for rpc to use as return value.
  * We allacate the memory and keep the pointer in the table handle
  * which gets freed on destroy of the table.
  */
@@ -181,7 +181,7 @@ void ndma_destroy_env_list(struct ndm_env_table* envtab)
  * Nlist mgmt.
  *
  * Return a chunk of memory with all entries from the nlist as
- * one big enumeration useable for rpc to use as return value.
+ * one big enumeration usable for rpc to use as return value.
  * We allacate the memory and keep the pointer in the table handle
  * which gets freed on destroy of the table.
  */

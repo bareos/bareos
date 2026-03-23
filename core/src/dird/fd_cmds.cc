@@ -181,7 +181,7 @@ static void SendInfoChosenCipher(JobControlRecord* jcr, UaContext* ua)
   std::string str = jcr->file_bsock->GetCipherMessageString();
   str += '\n';
   if (jcr->JobId != 0) { Jmsg(jcr, M_INFO, 0, "%s", str.c_str()); }
-  if (ua) { /* only whith console connection */
+  if (ua) { /* only with console connection */
     ua->SendRawMsg(str.c_str());
   }
 }
@@ -213,7 +213,7 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
     m1 += std::string("\n");
     Jmsg(jcr, M_INFO, 0, "%s", m1.c_str());
   }
-  if (ua) { /* only whith console connection */
+  if (ua) { /* only with console connection */
     ua->SendRawMsg(m.c_str());
   }
 }

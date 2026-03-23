@@ -291,7 +291,7 @@ static int tokenbuf_append(tokenbuf_t* output, const char* data, int len)
   /* does the token contain text, but no buffer has been allocated yet? */
   if (output->buffer_size == 0) {
     /* check whether data borders to output. If, we can append
-       simly by increasing the end pointer. */
+       simply by increasing the end pointer. */
     if (output->end == data) {
       output->end += len;
       return 1;
@@ -558,7 +558,7 @@ static int parse_exptext(var_t* var,
   return (p - begin);
 }
 
-/* parse opertion argument text */
+/* parse operation argument text */
 static int parse_opargtext(var_t* var,
                            var_parse_t*,
                            const char* begin,
@@ -2395,7 +2395,7 @@ var_rc_t var_expand(var_t* var,
 
   /* post-processing */
   if (rc >= 0) {
-    /* always EOS-Terminate output for convinience reasons
+    /* always EOS-Terminate output for convenience reasons
        but do not count the EOS-terminator in the length */
     if (!tokenbuf_append(&output, "\0", 1)) {
       tokenbuf_free(&output);

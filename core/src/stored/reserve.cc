@@ -380,8 +380,8 @@ static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
  * Search for a device suitable for this job.
  *
  * Note, this routine sets sets rctx.suitable_device if any
- * device exists within the SD. The device may not be actually useable.
- * It also returns if it finds a useable device.
+ * device exists within the SD. The device may not be actually usable.
+ * It also returns if it finds a usable device.
  */
 bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
 {
@@ -476,7 +476,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
           rctx.VolumeName);
     return true;
   } else {
-    // no existing volume found; reseting volume name.
+    // no existing volume found; resetting volume name.
     dcr->VolumeName[0] = 0;
   }
 

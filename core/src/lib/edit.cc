@@ -291,7 +291,7 @@ static std::pair<std::uint64_t, const char*> parse_number_with_mod(
   return {total, str};
 }
 
-// returns wether the string only contains junk characters
+// returns whether the string only contains junk characters
 static bool IsJunk(const char* str)
 {
   for (auto* head = str; *head; ++head) {

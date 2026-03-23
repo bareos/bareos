@@ -944,7 +944,7 @@ bool BareosDb::PrepareMediaSqlQuery(JobControlRecord* jcr,
 
 /**
  * This function creates a sql query string at cmd to return a list of all the
- * Media records for the current Pool, the correct Media Type, Recyle, Enabled,
+ * Media records for the current Pool, the correct Media Type, Recycle, Enabled,
  * StorageId, VolBytes and volumes or VolumeName if specified. Comma separated
  * list of volumes takes precedence over VolumeName. The caller must free ids if
  * non-NULL.
@@ -1493,7 +1493,7 @@ bool BareosDb::get_quota_jobbytes(JobControlRecord* jcr,
   now = time(NULL);
   schedtime = now - JobRetention;
 
-  /* Bugfix, theres a small timing bug in the scheduler.
+  /* Bugfix, there's a small timing bug in the scheduler.
    * Add 5 seconds to the schedtime to ensure the
    * last job from the job retention gets excluded. */
   schedtime += 5;
@@ -1542,7 +1542,7 @@ bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord* jcr,
   now = time(NULL);
   schedtime = now - JobRetention;
 
-  /* Bugfix, theres a small timing bug in the scheduler.
+  /* Bugfix, there's a small timing bug in the scheduler.
    * Add 5 seconds to the schedtime to ensure the
    * last job from the job retention gets excluded. */
   schedtime += 5;
@@ -1667,7 +1667,7 @@ int BareosDb::GetNdmpLevelMapping(JobControlRecord* jcr,
 /**
  * CountingHandler() with a CountContext* can be used to count the number of
  * times that SqlQueryWithHandler() calls the handler.
- * This is not neccesarily the number of rows, because the ResultHandler can
+ * This is not necessarily the number of rows, because the ResultHandler can
  * stop processing of further rows by returning non-zero.
  */
 struct CountContext {
@@ -1773,7 +1773,7 @@ bool BareosDb::GetNdmpEnvironmentString(const VolumeSessionInfo& vsi,
 
 /**
  * This function creates a sql query string at cmd to return a list of all the
- * Media records for the current Pool, the correct Media Type, Recyle, Enabled,
+ * Media records for the current Pool, the correct Media Type, Recycle, Enabled,
  * StorageId, VolBytes and volumes or VolumeName if specified. Comma separated
  * list of volumes takes precedence over VolumeName. The caller must free ids if
  * non-NULL.

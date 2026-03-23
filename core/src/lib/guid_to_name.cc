@@ -23,7 +23,7 @@
  * Written by Kern Sibbald, July 2007 to replace idcache.c
  *
  * Program to convert uid and gid into names, and cache the results
- * for preformance reasons.
+ * for performance reasons.
  */
 
 #include <pwd.h>

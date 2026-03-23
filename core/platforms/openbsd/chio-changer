@@ -39,7 +39,7 @@ check_parm_count() {
 		exit 1
 	if test ${pCount} -lt 2; then
 		usage
-		echo "!!! mimimum usage is the first two arguments"
+		echo "!!! minimum usage is the first two arguments"
 		exit 1
 	else
 		usage

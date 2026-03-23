@@ -183,7 +183,7 @@
 #define STREAM_XATTR_SOLARIS_SYS             1994       /**< Solaris specific extensible attributes or
                                                          * otherwise named extended system attributes.
                                                          */
-#define STREAM_XATTR_SOLARIS                 1995       /**< Solaris specific extented attributes */
+#define STREAM_XATTR_SOLARIS                 1995       /**< Solaris specific extended attributes */
 #define STREAM_XATTR_DARWIN                  1996       /**< Darwin (OSX) specific extended attributes */
 #define STREAM_XATTR_FREEBSD                 1997       /**< FreeBSD specific extended attributes */
 #define STREAM_XATTR_LINUX                   1998       /**< Linux specific extended attributes */

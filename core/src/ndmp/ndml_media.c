@@ -49,7 +49,7 @@
  *
  * FILEMARKS is a small decimal number and indicates
  * how many filemarks to skip when using the media.
- * 0 means begining of tape. If no +FILEMARKS is given,
+ * 0 means beginning of tape. If no +FILEMARKS is given,
  * 1 is used if LABEL is given, 0 otherwise.
  *
  * NBYTES indicates the maximum amount of data on the

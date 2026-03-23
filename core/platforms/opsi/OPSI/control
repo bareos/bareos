@@ -149,7 +149,7 @@ default: ["system specific"]
   * adapted to be build with http://build.opensuse.org
 
 20130129, Daniel Neuberger
-  * inital Bareos
+  * initial Bareos
   * added properties filedaemon_client_address
   * added Variables in setup
   * added silent installation in Setup

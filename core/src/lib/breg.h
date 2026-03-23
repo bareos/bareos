@@ -43,7 +43,7 @@
 
 #define BREG_NREGS 11
 
-// Structure for BareosRegex ressource
+// Structure for BareosRegex resource
 class BareosRegex {
  public:
   BareosRegex() = default;
@@ -55,7 +55,7 @@ class BareosRegex {
   char* replace(const char* fname); /**< return this.result */
 
   /* private */
-  POOLMEM* expr = nullptr;       /**< search epression */
+  POOLMEM* expr = nullptr;       /**< search expression */
   POOLMEM* subst = nullptr;      /**< substitution */
   regex_t preg{};                /**< regex_t result of regcomp() */
   regmatch_t regs[BREG_NREGS]{}; /**< contains match */

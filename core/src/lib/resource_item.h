@@ -78,7 +78,7 @@ struct PlatformSpecific {};
 }  // namespace config
 
 
-template <typename What, typename... Args> struct occurances {
+template <typename What, typename... Args> struct occurrences {
   static constexpr size_t value = []() {
     if constexpr (sizeof...(Args) == 0) {
       return 0;
@@ -89,7 +89,7 @@ template <typename What, typename... Args> struct occurances {
 };
 
 template <typename What, typename... Args> struct is_present {
-  static constexpr bool value{occurances<What, Args...>::value > 0};
+  static constexpr bool value{occurrences<What, Args...>::value > 0};
 };
 
 
@@ -123,23 +123,23 @@ struct ResourceItemFlags {
          && ...),
         "only allowed flags may be used");
 
-    static_assert(occurances<config::DefaultValue, Types...>::value <= 1,
+    static_assert(occurrences<config::DefaultValue, Types...>::value <= 1,
                   "flag may only be specified once");
-    static_assert(occurances<config::IntroducedIn, Types...>::value <= 1,
+    static_assert(occurrences<config::IntroducedIn, Types...>::value <= 1,
                   "flag may only be specified once");
-    static_assert(occurances<config::DeprecatedSince, Types...>::value <= 1,
+    static_assert(occurrences<config::DeprecatedSince, Types...>::value <= 1,
                   "flag may only be specified once");
-    static_assert(occurances<config::Code, Types...>::value <= 1,
+    static_assert(occurrences<config::Code, Types...>::value <= 1,
                   "flag may only be specified once");
-    static_assert(occurances<config::Required, Types...>::value <= 1,
+    static_assert(occurrences<config::Required, Types...>::value <= 1,
                   "flag may only be specified once");
-    static_assert(occurances<config::Alias, Types...>::value <= 1,
+    static_assert(occurrences<config::Alias, Types...>::value <= 1,
                   "flag may only be specified once");
-    static_assert(occurances<config::Description, Types...>::value <= 1,
+    static_assert(occurrences<config::Description, Types...>::value <= 1,
                   "flag may only be specified once");
-    static_assert(occurances<config::PlatformSpecific, Types...>::value <= 1,
+    static_assert(occurrences<config::PlatformSpecific, Types...>::value <= 1,
                   "flag may only be specified once");
-    static_assert(occurances<config::UsesNoEquals, Types...>::value <= 1,
+    static_assert(occurrences<config::UsesNoEquals, Types...>::value <= 1,
                   "flag may only be specified once");
 
     std::tuple<Types...> tup{std::forward<Types>(values)...};

@@ -1023,7 +1023,7 @@ reread:
   Dmsg3(250, "Read device got %" PRIiz " bytes at %u:%u\n", status, dev->file,
         dev->block_num);
 
-  if (status == 0) { /* EOF (Berkley I/O Conventions) */
+  if (status == 0) { /* EOF (Berkeley I/O Conventions) */
     dev->block_num = 0;
     block->read_len = 0;
     Mmsg3(dev->errmsg, T_("Read zero bytes at %u:%u on device %s.\n"),

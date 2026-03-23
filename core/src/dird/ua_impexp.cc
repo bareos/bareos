@@ -61,7 +61,7 @@ namespace directordaemon {
  * When you want to be sure the moves are performed in the
  * way you expect them to happen make sure the selection
  * cannot be wrongly interpreted by the code e.g. use
- * unambigious ranges. Or ranges of only one slot for
+ * unambiguous ranges. Or ranges of only one slot for
  * both the source and destination.
  */
 
@@ -493,7 +493,7 @@ static inline slot_number_t get_slot_list_using_volnames(
   slot_number_t cnt = 0;
   char *s, *token, *sep;
 
-  /* The arg argument contains the index of the first occurence
+  /* The arg argument contains the index of the first occurrence
    * of the volume keyword. We scan the whole cmdline for one
    * or more volume= cmdline parameters. */
   for (i = arg; i < ua->argc; i++) {

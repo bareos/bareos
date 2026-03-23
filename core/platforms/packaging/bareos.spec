@@ -1189,7 +1189,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %dir %{configtemplatedir}/bareos-dir.d/schedule
 %dir %{configtemplatedir}/bareos-dir.d/storage
 %dir %{configtemplatedir}/bareos-dir.d/user
-# tray monitor configurate is installed by the target daemons
+# tray monitor configure is installed by the target daemons
 %if 0%{?build_qt_monitor}
 %dir %{configtemplatedir}/tray-monitor.d
 %endif
@@ -1467,7 +1467,7 @@ then \
 %nil
 
 # With the introduction of config subdirectories (bareos-16.2)
-# some config files have been renamed (or even splitted into multiple files).
+# some config files have been renamed (or even split into multiple files).
 # However, bareos is still able to work with the old config files,
 # but rpm renames them to *.rpmsave.
 # To keep the bareos working after updating to bareos-16.2,

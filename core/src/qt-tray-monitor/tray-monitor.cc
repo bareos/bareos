@@ -283,7 +283,7 @@ void exit(int status)
   /* avoid to call the std::exit() cleanup handlers
    * via atexit() since exit() destroys objects that
    * are used by the QApplication class and this would
-   * lead to a sementation fault when QApplication
+   * lead to a segmentation fault when QApplication
    * in turn wants to destroy its child-objects. */
 
   // first do the Qt cleanup

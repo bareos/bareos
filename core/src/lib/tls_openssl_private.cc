@@ -332,7 +332,7 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
         /* TLS connection was cleanly shut down */
         /* Fall through wanted */
       default:
-        /* Socket Error Occured */
+        /* Socket Error Occurred */
         OpensslPostErrors(bsock->get_jcr(), M_FATAL,
                           T_("TLS read/write failure."));
         goto cleanup;
@@ -479,7 +479,7 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL* ssl,
   }
   BStringList lst(std::string(identity),
                   AsciiControlCharacters::RecordSeparator());
-  Dmsg1(100, "psk_server_cb. identitiy: %s.\n", lst.JoinReadable().c_str());
+  Dmsg1(100, "psk_server_cb. identity: %s.\n", lst.JoinReadable().c_str());
 
   std::string configured_psk;
 

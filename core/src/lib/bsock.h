@@ -302,7 +302,7 @@ enum
   BNET_TERMINATE = -4,     /* Conversation terminated, doing close() */
   BNET_POLL = -5,          /* Poll request, I'm hanging on a read */
   BNET_HEARTBEAT = -6,     /* Heartbeat Response requested */
-  BNET_HB_RESPONSE = -7,   /* Only response permited to HB */
+  BNET_HB_RESPONSE = -7,   /* Only response permitted to HB */
   BNET_xxxxxxPROMPT = -8,  /* No longer used -- Prompt for subcommand */
   BNET_BTIME = -9,         /* Send UTC btime */
   BNET_BREAK = -10,        /* Stop current command -- ctl-c */

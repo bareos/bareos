@@ -950,7 +950,7 @@ bRC Wrapper_checkChanges(PluginContext*, save_pkt* sp)
   }
   std::optional res = checkChanges(*ft, sp->fname, sp->save_time, sp->statp);
   if (!res) { return bRC_Error; }
-  // TODO: check changes can also change the delte seq
+  // TODO: check changes can also change the delete seq
   sp->accurate_found = *res;
 
   if (sp->accurate_found) { return bRC_Seen; }

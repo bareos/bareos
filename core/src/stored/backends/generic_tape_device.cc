@@ -138,7 +138,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
 /**
  * Position device to end of medium (end of data)
  *
- * Returns: true  on succes
+ * Returns: true  on success
  *          false on error
  */
 bool generic_tape_device::eod(DeviceControlRecord* dcr)

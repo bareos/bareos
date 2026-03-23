@@ -637,7 +637,7 @@ static inline bool IsOnSameStorage(JobControlRecord* jcr, char* new_one)
   // With old FD, we send the whole bootstrap to the storage
   if (jcr->dir_impl->FDVersion < FD_VERSION_2) { return true; }
 
-  // We are in init loop ? shoudn't fail here
+  // We are in init loop ? shouldn't fail here
   if (!*new_one) { return true; }
 
   // Same name
