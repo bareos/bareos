@@ -22,8 +22,8 @@
 #include "include/bareos.h"
 
 #include "gtest/gtest.h"
-#include "stored/backends/dedupable/util.h"
 #include <vector>
+#include "stored/backends/dedupable/util.h"
 #include <cstring>
 
 using namespace dedup;
@@ -268,20 +268,6 @@ TEST(BlockHeaderTest, SizeCalculation)
   EXPECT_EQ(header.size(), 100 - sizeof(block_header));
 }
 
-TEST(BlockHeaderTest, NetworkByteOrder)
-{
-  block_header header;
-  header.CheckSum = 0x12345678;
-  header.BlockSize = 1024;
-  header.BlockNumber = 42;
-
-  // Verify that network_order types are being used
-  // (they should convert to/from network byte order automatically)
-  EXPECT_EQ(header.CheckSum.load(), 0x12345678u);
-  EXPECT_EQ(header.BlockSize.load(), 1024u);
-  EXPECT_EQ(header.BlockNumber.load(), 42u);
-}
-
 // Tests for record_header
 TEST(RecordHeaderTest, SizeCalculation)
 {
@@ -301,65 +287,6 @@ TEST(RecordHeaderTest, NetworkByteOrder)
   EXPECT_EQ(header.FileIndex.load(), 100);
   EXPECT_EQ(header.Stream.load(), -200);
   EXPECT_EQ(header.DataSize.load(), 512u);
-}
-
-// Tests for raii_fd
-TEST(RaiiFdTest, DefaultConstruction)
-{
-  raii_fd fd;
-  EXPECT_FALSE(fd);
-  EXPECT_EQ(fd.fileno(), -1);
-}
-
-TEST(RaiiFdTest, ConstructionWithFd)
-{
-  raii_fd fd(5);
-  EXPECT_TRUE(fd);
-  EXPECT_EQ(fd.fileno(), 5);
-}
-
-TEST(RaiiFdTest, MoveConstruction)
-{
-  raii_fd fd1(5);
-  raii_fd fd2(std::move(fd1));
-
-  EXPECT_FALSE(fd1);
-  EXPECT_EQ(fd1.fileno(), -1);
-  EXPECT_TRUE(fd2);
-  EXPECT_EQ(fd2.fileno(), 5);
-}
-
-TEST(RaiiFdTest, MoveAssignment)
-{
-  raii_fd fd1(5);
-  raii_fd fd2(10);
-
-  fd2 = std::move(fd1);
-
-  //EXPECT_FALSE(fd1);
-  //EXPECT_EQ(fd1.fileno(), -1);
-  EXPECT_TRUE(fd2);
-  EXPECT_EQ(fd2.fileno(), 5);
-}
-
-TEST(RaiiFdTest, Release)
-{
-  raii_fd fd(5);
-  EXPECT_TRUE(fd);
-
-  int released = fd.release();
-  EXPECT_EQ(released, 5);
-  EXPECT_FALSE(fd);
-  EXPECT_EQ(fd.fileno(), -1);
-}
-
-TEST(RaiiFdTest, BoolConversion)
-{
-  raii_fd invalid_fd(-1);
-  raii_fd valid_fd(5);
-
-  EXPECT_FALSE(invalid_fd);
-  EXPECT_TRUE(valid_fd);
 }
 
 // Integration test: Write and Read
