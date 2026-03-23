@@ -1,0 +1,83 @@
+$bareos-blue: #0075be;
+
+.bareos-panel {
+  .q-card__section.panel-header {
+    background-color: $bareos-blue;
+    color: white;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+}
+
+.status-badge {
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.page-tabs .q-tab {
+  text-transform: none;
+  font-size: 0.875rem;
+}
+
+.q-table thead th {
+  background-color: $bareos-blue;
+  color: white;
+  font-weight: 600;
+}
+
+.q-table tbody tr:hover {
+  background-color: #f0f7fd;
+}
+
+.bareos-toolbar {
+  background-color: $bareos-blue !important;
+}
+
+.nav-link-text {
+  font-size: 0.875rem;
+}
+
+.console-output {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 12px;
+  border-radius: 4px;
+  height: 500px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.job-log {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  background: #f8f9fa;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border-radius: 0 0 4px 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.text-mono {
+  font-family: 'Courier New', monospace;
+}
