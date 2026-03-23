@@ -279,7 +279,7 @@ char* BareosRegex::EditSubst(const char* fname, regmatch_t pmatch[])
 
   for (i = 0; i < pmatch[0].rm_so; i++) { result[i] = fname[i]; }
 
-  /* on recopie le motif de replacement (avec tous les $x) */
+  /* we copy the substitution pattern (including all the $x's) */
 
   for (p = psubst++; *p; p = psubst++) {
     /* match $1 \1 back references */

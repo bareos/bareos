@@ -662,7 +662,7 @@ Examples
 ^^^^^^^^
 
 ==================== ===================== ================================= ==============================
-Original filename     New filename          RegexWhere                        Comments
+Original filename    New filename          RegexWhere                        Comments
 ==================== ===================== ================================= ==============================
 ``c:/system.ini``    ``c:/system.old.ini`` ``/.ini$/.old.ini/``              $ matches end of name
 ``/prod/u01/pdata/`` ``/rect/u01/rdata``   ``/prod/rect/,/pdata/rdata/``     uses two regexp

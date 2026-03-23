@@ -21,7 +21,7 @@
   THE SOFTWARE.
 
   Remarks/Bugs:
-  LZ4 compression library by Yann Collect (yann.collect.73@gmail.com)
+  LZ4 compression library by Yann Collet (yann.collet.73@gmail.com)
   FastLZ compression library by Ariya Hidayat (ariya@kde.org)
   Library encapsulation by Xavier Roche (fastlz@exalead.com)
 */

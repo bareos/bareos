@@ -577,7 +577,7 @@ int  mdb_env_create(MDB_env **env);
 	 *		metadata flush. Defer that until the system flushes files to disk,
 	 *		or next non-MDB_RDONLY commit or #mdb_env_sync(). This optimization
 	 *		maintains database integrity, but a system crash may undo the last
-	 *		committed transaction. I.e. it preserves the ACPI (atomicity,
+	 *		committed transaction. I.e. it preserves the ACI (atomicity,
 	 *		consistency, isolation) but not D (durability) database property.
 	 *		This flag may be changed at any time using #mdb_env_set_flags().
 	 *	<li>#MDB_NOSYNC
@@ -587,7 +587,7 @@ int  mdb_env_create(MDB_env **env);
 	 *		The risk is governed by how often the system flushes dirty buffers
 	 *		to disk and how often #mdb_env_sync() is called.  However, if the
 	 *		filesystem preserves write order and the #MDB_WRITEMAP flag is not
-	 *		used, transactions exhibit ACPI (atomicity, consistency, isolation)
+	 *		used, transactions exhibit ACI (atomicity, consistency, isolation)
 	 *		properties and only lose D (durability).  I.e. database integrity
 	 *		is maintained, but a system crash may undo the final transactions.
 	 *		Note that (#MDB_NOSYNC | #MDB_WRITEMAP) leaves the system with no

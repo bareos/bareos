@@ -488,7 +488,7 @@ void BareosDbPostgresql::StartTransaction(JobControlRecord* jcr)
   if (transaction_ && changes > 25000) { EndTransaction(jcr); }
   if (!transaction_) {
     SqlQueryWithoutHandler("BEGIN"); /* begin transaction */
-    Dmsg0(400, "Start postgresql transaction\n");
+    Dmsg0(400, "Start PostgreSQL transaction\n");
     transaction_ = true;
   }
 }
