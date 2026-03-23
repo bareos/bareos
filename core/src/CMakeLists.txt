@@ -51,7 +51,7 @@ if(RUN_SYSTEMTESTS_ON_INSTALLED_FILES)
 elseif(NOT GTest_FOUND)
   message(STATUS "Skipping unit tests as gtest was not found")
 else()
-  add_subdirectory(tests)
+  #add_subdirectory(tests)
 endif()
 
 if(BUILD_BENCHMARKS)

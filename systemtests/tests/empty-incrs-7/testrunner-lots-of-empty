@@ -1,0 +1,104 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=ai-backup-bareos-fd
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/extra.out
+messages
+@$out $tmp/full+incr_start.out
+.api 2
+run job=$JobName level=Full yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-1'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-2'"
+run job=$JobName level=Incremental yes
+wait
+@exec "sh -c 'touch ${tmp}/data/weird-files/file-3'"
+run job=$JobName level=Incremental yes
+wait
+run job=Consolidate yes
+.api 1
+wait
+@$out $tmp/full+incr_messages.out
+messages
+status director
+status client
+status storage=File
+list jobs
+END_OF_DATA
+run_bconsole
+
+# LAST_ID=$(last_jobid_or_zero)
+
+for i in {1..10}; do
+  cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/empty-$i
+run job=$JobName level=Incremental yes
+wait
+mess
+END_OF_DATA
+  run_bconsole
+
+  jobid=$(last_jobid_or_zero)
+
+  cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/empty-$i-query
+.sql query="SELECT JobFiles FROM Job WHERE JobId = ${jobid}"
+END_OF_DATA
+  run_bconsole
+
+  result=$(tail -n 5 "${tmp}/empty-$i-query")
+  expected_result="\
++----------+
+| jobfiles |
++----------+
+|        0 |
++----------+\
+"
+  if [ "${result}" != "${expected_result}" ]; then
+    echo "bad result for job ${jobid}:" >&2
+    printf "  expected:\n%s\n" "${expected_result}" >&2
+    printf "  got:\n%s\n" "${result}" >&2
+    estat=1
+
+    cat <<END_OF_DATA >$tmp/bconcmds
+@$out $tmp/empty-$i-not
+.sql query="SELECT * FROM File WHERE JobId = ${jobid}"
+END_OF_DATA
+    run_bconsole
+  fi
+done
+
+end_test
