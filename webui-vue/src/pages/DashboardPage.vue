@@ -39,7 +39,7 @@
             >
               <template #body-cell-status="props">
                 <q-td :props="props">
-                  <q-badge :color="statusMap[props.value]?.color || 'grey'" :label="statusMap[props.value]?.label || props.value" />
+                  <JobStatusBadge :status="props.value" />
                 </q-td>
               </template>
               <template #body-cell-name="props">
