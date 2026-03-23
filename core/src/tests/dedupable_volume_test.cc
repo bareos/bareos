@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -40,15 +40,9 @@ std::uint32_t SafeCast(std::size_t size)
 }
 
 // Tests for SafeCast function
-TEST(SafeCastTest, ZeroValue)
-{
-  EXPECT_EQ(SafeCast(0), 0u);
-}
+TEST(SafeCastTest, ZeroValue) { EXPECT_EQ(SafeCast(0), 0u); }
 
-TEST(SafeCastTest, SmallValue)
-{
-  EXPECT_EQ(SafeCast(100), 100u);
-}
+TEST(SafeCastTest, SmallValue) { EXPECT_EQ(SafeCast(100), 100u); }
 
 TEST(SafeCastTest, MaxUint32Value)
 {
@@ -58,9 +52,11 @@ TEST(SafeCastTest, MaxUint32Value)
 
 TEST(SafeCastTest, ValueAboveMax)
 {
-  ASSERT_GT(sizeof(std::size_t),sizeof(std::uint32_t));
+  ASSERT_GT(sizeof(std::size_t), sizeof(std::uint32_t));
   if (sizeof(std::size_t) > sizeof(std::uint32_t)) {
-    std::size_t too_large = static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()) + 1;
+    std::size_t too_large
+        = static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max())
+          + 1;
     EXPECT_THROW(SafeCast(too_large), std::invalid_argument);
   }
 }
@@ -179,10 +175,14 @@ TEST(ConfigSerializationTest, LongFilenames)
 {
   config original;
 
-  original.bfiles.push_back({"very_long_block_filename_for_testing_purposes.dat", 0, 0, 0});
-  original.pfiles.push_back({"very_long_part_filename_for_testing_purposes.dat", 0, 0, 0});
-  original.dfiles.push_back({"very_long_aligned_data_filename.dat", 0, 4096, 0, false});
-  original.dfiles.push_back({"very_long_unaligned_data_filename.dat", 0, 1, 1, false});
+  original.bfiles.push_back(
+      {"very_long_block_filename_for_testing_purposes.dat", 0, 0, 0});
+  original.pfiles.push_back(
+      {"very_long_part_filename_for_testing_purposes.dat", 0, 0, 0});
+  original.dfiles.push_back(
+      {"very_long_aligned_data_filename.dat", 0, 4096, 0, false});
+  original.dfiles.push_back(
+      {"very_long_unaligned_data_filename.dat", 0, 1, 1, false});
 
   std::vector<char> serialized = config::serialize(original);
   config restored = config::deserialize(serialized.data(), serialized.size());
@@ -275,18 +275,12 @@ TEST(UridTest, HashDistribution)
   urid_hash hasher;
 
   std::vector<urid> ids = {
-      {1, 0, 0, 0},
-      {0, 1, 0, 0},
-      {0, 0, 1, 0},
-      {0, 0, 0, 1},
-      {1, 1, 1, 1},
-      {2, 2, 2, 2},
+      {1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0},
+      {0, 0, 0, 1}, {1, 1, 1, 1}, {2, 2, 2, 2},
   };
 
   std::unordered_map<std::size_t, int> hash_counts;
-  for (const auto& id : ids) {
-    hash_counts[hasher(id)]++;
-  }
+  for (const auto& id : ids) { hash_counts[hasher(id)]++; }
 
   // All hashes should be unique for these test cases
   EXPECT_EQ(hash_counts.size(), ids.size());
