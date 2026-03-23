@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,6 +41,7 @@
 #include <atlsafe.h>
 #include <initguid.h>  // ask virtdisk.h to include guid definitions
 #include <virtdisk.h>
+#include <pathcch.h>
 
 #include <filesystem>
 
@@ -1686,19 +1687,19 @@ class VirtualSystemSnapshotService;
 
 struct Snapshot : ClassObject {
   static constexpr std::wstring_view class_name{
-      L"CIM_VirtualSystemSettingData"};
+      L"Msvm_VirtualSystemSettingData"};
+};
+
+enum class ConsistencyLevel : std::int32_t
+{
+  Unknown = 0,
+  ApplicationConsistent = 1,
+  CrashConsistent = 2,
 };
 
 struct VirtualSystemSnapshotSettingData {
   static constexpr std::wstring_view class_name{
       L"Msvm_VirtualSystemSnapshotSettingData"};
-
-  enum class ConsistencyLevel : std::int32_t
-  {
-    Unknown = 0,
-    ApplicationConsistent = 1,
-    CrashConsistent = 2,
-  };
 
   enum class GuestBackupType : std::int32_t
   {
@@ -1776,7 +1777,7 @@ class VirtualSystemSnapshotService : ClassObject {
   static constexpr std::wstring_view class_name{
       L"Msvm_VirtualSystemSnapshotService"};
 
-  enum class SnapshotType : std::int32_t
+  enum class SnapshotType : std::uint16_t
   {
     FullSnapshot = 2,
     DiskSnapshot = 3,
@@ -2271,7 +2272,6 @@ struct plugin_ctx {
       std::wstring vm_name;
       std::optional<analyzed_ref_point> refpoint;
       std::optional<WMI::ReferencePoint> created_ref_point;
-      std::wstring tmp_dir;
       WMI::Snapshot vm_snapshot;
       uint32_t delta_seq;
 
@@ -2313,7 +2313,18 @@ struct plugin_ctx {
 
     std::optional<HANDLE> hndl{};
 
-    std::vector<WMI::String> restored_definition_files{};
+    struct restored_config {
+      restored_config() = default;
+      restored_config(std::string vm_name_, WMI::String config_file_)
+          : vm_name{std::move(vm_name_)}, config_file{std::move(config_file_)}
+      {
+      }
+
+      std::string vm_name;
+      WMI::String config_file;
+    };
+
+    std::vector<restored_config> restored_configs{};
     std::vector<std::wstring> temporary_files{};
 
     std::wstring default_disk_loc{};
@@ -2340,8 +2351,6 @@ struct plugin_ctx {
   std::wstring directory;
 
   std::string current_path;
-
-  WMI::VirtualSystemSnapshotSettingData snapshot_settings;
 
   struct config {
     std::string vm_name;
@@ -2658,19 +2667,6 @@ static bRC free_current_state(PluginContext* ctx)
             if (prepared->disk_to_backup) {
               CloseHandle(prepared->disk_to_backup.value());
               prepared->disk_to_backup.reset();
-            }
-
-            if (!prepared->tmp_dir.empty()
-                && PathFileExistsW(prepared->tmp_dir.c_str())) {
-              std::error_code ec = {};
-              auto num_removed
-                  = std::filesystem::remove_all(prepared->tmp_dir.c_str(), ec);
-              DBGC(ctx, L"remove({}) deleted {} files", prepared->tmp_dir,
-                   num_removed);
-              if (num_removed == static_cast<std::uintmax_t>(-1)) {
-                JWARN(ctx, L"could not delete directory '{}': {}",
-                      prepared->tmp_dir, format_win32_error(ec.value()));
-              }
             }
 
             if (prepared->created_ref_point) {
@@ -3186,51 +3182,65 @@ static std::vector<WMI::String> get_disk_paths_of_snapshot(
   return paths;
 }
 
-static std::vector<std::wstring> get_files_in_dir(std::wstring_view dir)
+static std::vector<std::wstring> get_config_files(
+    std::wstring_view config_file_path)
 {
-  std::vector<std::wstring> files;
-  std::vector<std::wstring> directories;
+  // This _should_ use ExportSystemDefinition, but this is sadly not possible:
+  // There is no way to _just_ export the configuration from a snapshot
+  // without messing up the automerge process.
+  // If you do tell ExportSystemDefinition to not export any storage,
+  // then it locks the vhdx chain for some reason, meaning that the chain
+  // CANNOT be merged unless either VMMS or the vm is restarted.
 
-  directories.emplace_back(dir);
+  // This boggles my mind, but maybe there is a way around this.
+  // For now we do this, but if this turns out to be a problem,
+  // we could try telling export to export everything (including the storage)
+  // but also use ExcludeHardDiskPaths to simply exclude all disks of a vm.
+  // This is basically the only thing that I did not try yet.
 
-  while (directories.size() > 0) {
-    std::wstring current_dir = std::move(directories.back());
-    directories.pop_back();
 
-    TRC(L"entering directory '{}' ...", current_dir);
-
-    std::wstring search_path = current_dir + L"\\*";
-
-    WIN32_FIND_DATAW data;
-    HANDLE finder = FindFirstFileW(search_path.c_str(), &data);
-
-    if (finder == INVALID_HANDLE_VALUE) {
-      throw std::runtime_error(
-          std::format("could not enter generated directory {}",
-                      utf16_to_utf8(current_dir)));
-    }
-
-    do {
-      std::wstring_view entry = data.cFileName;
-      TRC(L"found '{}' ...", entry);
-
-      if (entry == L"." || entry == L"..") { continue; }
-
-      std::wstring full_path{current_dir};
-      full_path += L"\\";
-      full_path += entry;
-
-      if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-        directories.emplace_back(std::move(full_path));
-      } else {
-        files.emplace_back(std::move(full_path));
-      }
-    } while (FindNextFileW(finder, &data));
-
-    FindClose(finder);
+  if (!config_file_path.ends_with(L"vmcx")) {
+    throw std::runtime_error(
+        std::format("config file path '{}' does not end in 'vmcx'",
+                    utf16_to_utf8(config_file_path)));
   }
 
-  return files;
+  std::wstring root{config_file_path};
+
+  // remove vmcx
+  root.resize(root.size() - 4);
+  root += L"*";
+
+  std::wstring dir = root;
+  PathCchRemoveFileSpec(dir.data(), dir.size());
+
+  DBG(L"Searching for files like '{}'", root);
+
+  std::vector<std::wstring> paths;
+
+  WIN32_FIND_DATAW find_data = {};
+  HANDLE iter = FindFirstFileW(root.c_str(), &find_data);
+  if (iter == INVALID_HANDLE_VALUE) {
+    // something went wrong
+    throw std::runtime_error(
+        std::format("no file like '{}'", utf16_to_utf8(root)));
+  } else {
+    do {
+      if (!(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        paths.emplace_back(
+            std::format(L"{}\\{}", dir.c_str(), find_data.cFileName));
+      }
+    } while (FindNextFileW(iter, &find_data) != 0);
+    if (auto err = GetLastError(); err != ERROR_NO_MORE_FILES) {
+      throw std::runtime_error(
+          std::format("could not enumerate '{}'-like files: {}",
+                      utf16_to_utf8(root), format_win32_error_2(err)));
+    }
+    FindClose(iter);
+  }
+
+
+  return paths;
 }
 
 static restore_object get_info(PluginContext*,
@@ -3350,13 +3360,17 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   if (!vm) { return false; }
 
-  // do this first, so we do not create a snapshot for nothing
-  std::wstring dir = make_temp_dir(p_ctx->jobid);
-
   JINFO(ctx, "creating snapshot of VM '{}' ...", vm_name);
 
+  WMI::VirtualSystemSnapshotSettingData snapshot_settings = {
+      .consistency_level = WMI::ConsistencyLevel::CrashConsistent,
+      .guest_backup_type
+      = WMI::VirtualSystemSnapshotSettingData::GuestBackupType::Full,
+      .ignore_non_snapshottable_disks = true,
+  };
+
   auto snapshot = snapshot_srvc.create_snapshot(
-      srvc, vm.value(), p_ctx->snapshot_settings,
+      srvc, vm.value(), snapshot_settings,
       WMI::VirtualSystemSnapshotService::SnapshotType::RecoverySnapshot);
 
   auto snapshot_name = std::format(L"Bareos JobId {}", p_ctx->jobid);
@@ -3364,47 +3378,26 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   JINFO(ctx, L"created snapshot with name '{}'", snapshot_name);
 
-  JINFO(ctx, "exporting system definition for VM '{}' to {}", vm_name,
-        utf16_to_utf8(dir));
-
   std::optional<WMI::ReferencePoint> refpoint = std::nullopt;
   uint32_t delta_seq = 0;
-  if (p_ctx->is_full()) {
-    WMI::VirtualSystemExportSettingData export_settings = {
-        .snapshot_virtual_system_path = snapshot.path(),
-        .backup_intent = WMI::BackupIntent::Merge,
-        .copy_snapshot_configuration
-        = WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
-        .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
-        .copy_vm_runtime_information = true,
-        .copy_vm_storage = false,
-        .create_vm_export_subdirectory = false,
-    };
-
-    system_srvc.export_system_definition(srvc, vm.value(), dir,
-                                         export_settings);
-  } else {
+  if (!p_ctx->is_full()) {
     refpoint = ref_point_of_system(ctx, &delta_seq, p_ctx, srvc, vm_name,
                                    vm.value());
     delta_seq += 1;
-
-    WMI::VirtualSystemExportSettingData export_settings = {
-        .snapshot_virtual_system_path = snapshot.path(),
-        .differential_backup_base_path = refpoint->path(),
-        .backup_intent = WMI::BackupIntent::Merge,
-        .copy_snapshot_configuration
-        = WMI::CopySnapshotConfiguration::ExportOneSnapshotForBackup,
-        .capture_live_state = WMI::CaptureLiveState::CrashConsistent,
-        .copy_vm_runtime_information = true,
-        .copy_vm_storage = false,
-        .create_vm_export_subdirectory = false,
-    };
-
-    system_srvc.export_system_definition(srvc, vm.value(), dir,
-                                         export_settings);
   }
 
   JINFO(ctx, L"retrieving information from snapshot ...");
+
+  auto config_root
+      = snapshot.get<WMI::cim_type::string>(L"ConfigurationDataRoot");
+  // this _only_ gives us the path to the configuration file (vmcx), we also
+  // want all other files, so we need to backup all files that are the same
+  // except for the ending
+  auto config_rel_path
+      = snapshot.get<WMI::cim_type::string>(L"ConfigurationFile");
+
+  auto config_full_path = std::format(L"{}\\{}", config_root.as_view(),
+                                      config_rel_path.as_view());
 
   std::optional<analyzed_ref_point> analyzed;
   if (refpoint) {
@@ -3413,9 +3406,9 @@ static bool prepare_backup(PluginContext* ctx, std::string_view vm_name)
 
   auto& prepared = bstate.state.emplace<plugin_ctx::backup::prepared_backup>(
       std::move(vm.value()), utf8_to_utf16(vm_name), std::move(analyzed),
-      std::nullopt, dir, std::move(snapshot), delta_seq);
+      std::nullopt, std::move(snapshot), delta_seq);
 
-  prepared.files_to_backup = get_files_in_dir(dir);
+  prepared.files_to_backup = get_config_files(config_full_path);
   prepared.disks_to_backup
       = get_disk_paths_of_snapshot(srvc, prepared.vm_snapshot);
 
@@ -3484,9 +3477,8 @@ static void prepare_restore_object(PluginContext* ctx)
 }
 
 // maybe we should add the cluster name here somehow ?
-std::string create_vm_path(std::wstring_view vm_name,
-                           std::wstring_view sub_dir,
-                           std::wstring_view path)
+std::string create_vm_disk_path(std::wstring_view vm_name,
+                                std::wstring_view path)
 {
   auto last_slash = path.find_last_of(L"\\/");
   auto cutoff_point = [&] {
@@ -3500,8 +3492,48 @@ std::string create_vm_path(std::wstring_view vm_name,
     }
   }();
 
-  std::wstring new_path = std::format(L"@HYPER-V/{}/{}/{}", vm_name, sub_dir,
-                                      path.substr(cutoff_point));
+  auto filename = path.substr(cutoff_point);
+
+  std::wstring new_path
+      = std::format(L"@HYPER-V/{}/disks/{}", vm_name, filename);
+
+  std::replace(std::begin(new_path), std::end(new_path), L'\\', L'/');
+  return utf16_to_utf8(new_path);
+}
+
+std::string create_vm_config_path(std::wstring_view vm_name,
+                                  std::wstring_view path)
+{
+  auto last_slash = path.find_last_of(L"\\/");
+  auto cutoff_point = [&] {
+    if (last_slash == path.npos) {
+      // if there somehow is no slash in the path, then we just take
+      // everything.
+      return decltype(last_slash){0};
+    } else {
+      // skip the slash
+      return last_slash + 1;
+    }
+  }();
+
+  auto filename = path.substr(cutoff_point);
+  auto last_dot = filename.rfind(L".");
+
+  auto dot_cutoff_point = [&] {
+    if (last_dot == filename.npos) {
+      // if there somehow is no dot in the path, then we just take
+      // everything.
+      return decltype(last_dot){0};
+    } else {
+      // skip the dot
+      return last_dot + 1;
+    }
+  }();
+
+  auto ending = filename.substr(dot_cutoff_point);
+
+  std::wstring new_path
+      = std::format(L"@HYPER-V/{}/config/config.{}", vm_name, ending);
 
   std::replace(std::begin(new_path), std::end(new_path), L'\\', L'/');
   return utf16_to_utf8(new_path);
@@ -3720,33 +3752,6 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
     auto& prepared
         = std::get<plugin_ctx::backup::prepared_backup>(bstate.state);
 
-    if (prepared.files_to_backup.size() > 0) {
-      auto& path = prepared.files_to_backup.back();
-
-      JINFO(ctx, L"Starting backup of metadata {}", path);
-
-      DBGC(ctx, L"transforming {} ...", path);
-      p_ctx->current_path = create_vm_path(prepared.vm_name, L"config", path);
-      DBGC(ctx, "into {}!", p_ctx->current_path);
-      auto now = time(NULL);
-      sp->fname = p_ctx->current_path.data();
-      sp->type = FT_REG;
-      ClearAllBits(FO_MAX, sp->flags);
-
-      // todo: fix these
-      sp->statp.st_mode = 0700 | S_IFREG;
-      sp->statp.st_ctime = now;
-      sp->statp.st_mtime = now;
-      sp->statp.st_atime = now;
-      sp->statp.st_size = -1;
-      sp->statp.st_blksize = 4096;
-      sp->statp.st_blocks = 1;
-
-      return bRC_OK;
-    }
-
-    DBGC(ctx, L"All files were backed up");
-
     if (prepared.disks_to_backup.size() > 0) {
       auto& path = prepared.disks_to_backup.back();
 
@@ -3891,8 +3896,7 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
       auto disk_path = make_disk_path(vst, disk_id);
       DBGC(ctx, L"transforming {} ...", disk_path);
-      p_ctx->current_path
-          = create_vm_path(prepared.vm_name, L"disks", disk_path);
+      p_ctx->current_path = create_vm_disk_path(prepared.vm_name, disk_path);
       DBGC(ctx, "into {}!", p_ctx->current_path);
       TRCC(ctx, "delta seq = {}", prepared.delta_seq);
 
@@ -3939,8 +3943,34 @@ static bRC start_backup_file(PluginContext* ctx, save_pkt* sp)
 
       return bRC_OK;
     }
-
     DBGC(ctx, L"All disks were backed up");
+
+    if (prepared.files_to_backup.size() > 0) {
+      auto& path = prepared.files_to_backup.back();
+
+      JINFO(ctx, L"Starting backup of metadata {}", path);
+
+      DBGC(ctx, L"transforming {} ...", path);
+      p_ctx->current_path = create_vm_config_path(prepared.vm_name, path);
+      DBGC(ctx, "into {}!", p_ctx->current_path);
+      auto now = time(NULL);
+      sp->fname = p_ctx->current_path.data();
+      sp->type = FT_REG;
+      ClearAllBits(FO_MAX, sp->flags);
+
+      // todo: fix these
+      sp->statp.st_mode = 0700 | S_IFREG;
+      sp->statp.st_ctime = now;
+      sp->statp.st_mtime = now;
+      sp->statp.st_atime = now;
+      sp->statp.st_size = -1;
+      sp->statp.st_blksize = 4096;
+      sp->statp.st_blocks = 1;
+
+      return bRC_OK;
+    }
+    DBGC(ctx, L"All files were backed up");
+
 
     if (prepared.vm_snapshot.ptr.p) {
       // the snapshot still exists, so we need to create a reference point now
@@ -4016,13 +4046,13 @@ static bRC end_backup_file(PluginContext* ctx)
     }
 
     if (!prepared->finished()) {
-      if (prepared->files_to_backup.size() > 0) {
-        DBGC(ctx, L"finishing up {}", prepared->files_to_backup.back());
-        prepared->files_to_backup.pop_back();
-      } else if (prepared->disks_to_backup.size() > 0) {
+      if (prepared->disks_to_backup.size() > 0) {
         DBGC(ctx, L"finishing up {}",
              prepared->disks_to_backup.back().as_view());
         prepared->disks_to_backup.pop_back();
+      } else if (prepared->files_to_backup.size() > 0) {
+        DBGC(ctx, L"finishing up {}", prepared->files_to_backup.back());
+        prepared->files_to_backup.pop_back();
       }
       TRCC(ctx, "more work");
       return bRC_More;
@@ -4327,30 +4357,6 @@ static bRC pluginBackupIO(PluginContext* ctx,
 
   switch (io->func) {
     case filedaemon::IO_OPEN: {
-      if (prepared.files_to_backup.size() > 0) {
-        // we are backing up a normal file
-        auto& current_file = prepared.files_to_backup.back();
-
-        HANDLE h = [&] {
-          if (io->flags & O_WRONLY) {
-            return CreateFileW(current_file.c_str(), GENERIC_WRITE,
-                               FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
-                               FILE_ATTRIBUTE_NORMAL, NULL);
-          } else {
-            return CreateFileW(current_file.c_str(), GENERIC_READ,
-                               FILE_SHARE_READ, NULL, OPEN_EXISTING,
-                               FILE_ATTRIBUTE_NORMAL, NULL);
-          }
-        }();
-
-        io->hndl = h;
-        io->status = IoStatus::do_io_in_core;
-
-        JINFO(ctx, "doing io in core for {}", utf16_to_utf8(current_file));
-
-        return bRC_OK;
-      }
-
       if (prepared.disks_to_backup.size() > 0) {
         // we are backing up a disk
         if (!prepared.disk_to_backup) {
@@ -4378,6 +4384,37 @@ static bRC pluginBackupIO(PluginContext* ctx,
         io->status = 0;
         return bRC_OK;
       }
+
+      if (prepared.files_to_backup.size() > 0) {
+        // we are backing up a normal file
+        auto& current_file = prepared.files_to_backup.back();
+
+        HANDLE h = [&] {
+          if (io->flags & O_WRONLY) {
+            return CreateFileW(current_file.c_str(), GENERIC_WRITE,
+                               FILE_SHARE_WRITE, NULL, OPEN_ALWAYS,
+                               FILE_ATTRIBUTE_NORMAL, NULL);
+          } else {
+            return CreateFileW(current_file.c_str(), GENERIC_READ,
+                               FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+          }
+        }();
+
+        if (h == INVALID_HANDLE_VALUE) {
+          JFATAL(ctx, L"could not open file {} for backup", current_file);
+          io->win32 = true;
+          return bRC_Error;
+        }
+
+        io->hndl = h;
+        io->status = IoStatus::do_io_in_core;
+
+        JINFO(ctx, "doing io in core for {}", utf16_to_utf8(current_file));
+
+        return bRC_OK;
+      }
+
       return bRC_Error;
     } break;
     case filedaemon::IO_READ: {
@@ -4512,9 +4549,6 @@ static bRC pluginBackupIO(PluginContext* ctx,
         } else {
           io->status = 0;
         }
-
-        // we do not need these files anymore, so we just delete them
-        DeleteFileW(current_file.c_str());
 
         return bRC_OK;
       }
@@ -4757,7 +4791,9 @@ static bRC end_restore_job(PluginContext* ctx)
   const auto& srvc = p_ctx->virt_service;
   const auto& system_srvc = restore_ctx->system_srvc;
 
-  for (auto& definition_file : restore_ctx->restored_definition_files) {
+  for (auto& restored : restore_ctx->restored_configs) {
+    auto& definition_file = restored.config_file;
+    auto& vm_name = restored.vm_name;
     bool generate_new_id = true;
 
     JINFO(ctx, L"creating a new vm from the restored configuration file '{}'",
@@ -4785,9 +4821,7 @@ static bRC end_restore_job(PluginContext* ctx)
       SystemDestroyer destroyer{srvc, system_srvc, &planned_system};
 
       auto& backed_up_vm = [&]() -> const vm_info& {
-        auto external_name = utf16_to_utf8(
-            planned_system.get<WMI::cim_type::string>(L"ElementName")
-                .as_view());
+        auto external_name = vm_name;
         vm_info* info = nullptr;
         for (auto& vm : p_ctx->received_vms) {
           if (vm.external_name == external_name) {
@@ -4901,9 +4935,10 @@ static bRC end_restore_job(PluginContext* ctx)
       JINFO(ctx, L"realizing created vm");
       system_srvc.realize_planned_system(srvc, std::move(planned_system));
     } catch (const std::exception& ex) {
-      JERR(ctx, "plugin was not able to restore the vm (Err={})", ex.what());
+      JFATAL(ctx, "plugin was not able to restore the vm (Err={})", ex.what());
       return bRC_Error;
     } catch (...) {
+      JFATAL(ctx, "plugin was not able to restore the vm (unknown error)");
       return bRC_Error;
     }
   }
@@ -5193,8 +5228,8 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
 
     if (is_definition_file(actual_path)) {
       DBGC(ctx, L"found definitions file at {}", tmp_path);
-      restore_ctx->restored_definition_files.emplace_back(
-          WMI::String::copy(tmp_path));
+      restore_ctx->restored_configs.emplace_back(std::string{vm_name},
+                                                 WMI::String::copy(tmp_path));
     }
 
     restore_ctx->hndl = h;
@@ -5375,7 +5410,7 @@ static bRC create_file(PluginContext* ctx, restore_pkt* rp)
       TRCC(ctx, L"created hard disk {} at {}", created_path.c_str(),
            fmt_as_ptr(disk_handle));
 
-      JINFO(ctx, L"restoring disk  {} ('{}') to '{}'", wdisk_name, wactual_name,
+      JINFO(ctx, L"restoring disk {} ('{}') to '{}'", wdisk_name, wactual_name,
             created_path);
     }
 
