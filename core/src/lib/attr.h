@@ -37,7 +37,7 @@ struct Attributes {
   int32_t type;        /**< file type FT */
   int32_t file_index;  /**< file index */
   int32_t LinkFI;      /**< file index to data if hard link */
-  int32_t delta_seq;   /**< delta sequence numbr */
+  int32_t delta_seq;   /**< delta sequence number */
   uid_t uid;           /**< userid */
   struct stat statp;   /**< decoded stat packet */
   POOLMEM* attrEx;     /**< extended attributes if any */

@@ -262,7 +262,7 @@ TEST_F(AddressesAndPortsConfigurationSetup, OLD_STYLE_dir_v6address_set)
 }
 
 
-/*The next two tests are the same in terms of functionnality, but there is a
+/*The next two tests are the same in terms of functionality, but there is a
  slight difference in the order of directive setup (Address and Port).
  This comes because as per the current state of config parsing, behavior is
  different when Port comes before Address in the config file, and vice

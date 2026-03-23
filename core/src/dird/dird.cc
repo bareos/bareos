@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
   InitJobServer(me->MaxConcurrentJobs);
 
   DbgJcrAddHook(
-      DbDebugPrint); /* used to debug BareosDb connexion after fatal signal */
+      DbDebugPrint); /* used to debug BareosDb connection after fatal signal */
 
   StartStatisticsThread();
 

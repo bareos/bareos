@@ -104,7 +104,7 @@ NDMOS_OPTION_NO_TEST_AGENTS so one can disable them for a
 production shared library.
 
 Extra support for getaddrinfo() is added to the library
-which supercedes the old and by POSIX deprecated gethostbyname()
+which supersedes the old and by POSIX deprecated gethostbyname()
 interface. Also the implementation of poll() is completed and
 we now also check the return info from poll() and set the
 channel ready flag if we detect something on a channel. This
@@ -116,7 +116,7 @@ the ndmjob binary using the new shared library. Currently
 it is mostly for testing the new code in the shared library.
 
 The ndmjob program code is rewritten to also use linked list
-whereever possible without the need to completely rewrite the
+wherever possible without the need to completely rewrite the
 code.
 
 The NDMJOB header files are made C++ aware so we can compile

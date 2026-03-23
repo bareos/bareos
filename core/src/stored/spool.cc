@@ -760,7 +760,7 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
     if (jcr->is_JobStatus(JS_Incomplete)) {
       data_end = dir->get_data_end();
 
-      // Check and truncate to last valid data_end if necssary
+      // Check and truncate to last valid data_end if necessary
       if (size > data_end) {
         if (ftruncate(dir->spool_fd_, data_end) != 0) {
           BErrNo be;

@@ -496,7 +496,7 @@ bool BareosSocketTCP::send()
   /* Send msg (length: message_length).
    * As send() and recv() uses the same buffer (msg and message_length)
    * store the original message_length in an own variable,
-   * that will not be modifed by recv(). */
+   * that will not be modified by recv(). */
   const int32_t o_msglen = message_length;
   int32_t pktsiz;
   int32_t written = 0;

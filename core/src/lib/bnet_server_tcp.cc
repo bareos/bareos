@@ -260,7 +260,7 @@ std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list)
  * Become Threaded Network Server
  *
  * This function is able to handle multiple server ips in
- * ipv4 and ipv6 style. The Addresse are give in a comma
+ * ipv4 and ipv6 style. The Addresses are given in a comma
  * separated string in bind_addr
  *
  * At the moment it is impossible to bind to different ports.

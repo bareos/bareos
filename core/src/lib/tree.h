@@ -123,7 +123,7 @@ struct s_tree_root : public tree_node {
   int cached_path_len{};      /* length of cached path */
   char* cached_path{};        /* cached current path */
   tree_node* cached_parent{}; /* cached parent for above path */
-  HardlinkTable hardlinks;    /* references to first occurence of hardlinks */
+  HardlinkTable hardlinks;    /* references to first occurrence of hardlinks */
 };
 typedef struct s_tree_root TREE_ROOT;
 

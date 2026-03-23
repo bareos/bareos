@@ -232,7 +232,7 @@ bool show_cmd(UaContext* ua, const char*)
 
   ResLocker _{my_config};
 
-  // Without parameter, show all ressources.
+  // Without parameter, show all resources.
   if (ua->argc == 1 || FindArg(ua, "all") > 0) {
     ShowAll(ua, hide_sensitive_data, show_verbose);
     return true;

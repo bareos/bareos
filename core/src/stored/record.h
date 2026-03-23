@@ -135,7 +135,7 @@ enum : int32_t
 {
   PRE_LABEL = -1, /**< Vol label on unwritten tape */
   VOL_LABEL = -2, /**< Volume label first file */
-  EOM_LABEL = -3, /**< Writen at end of tape */
+  EOM_LABEL = -3, /**< Written at end of tape */
   SOS_LABEL = -4, /**< Start of Session */
   EOS_LABEL = -5, /**< End of Session */
   EOT_LABEL = -6, /**< End of physical tape (2 eofs) */

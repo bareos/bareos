@@ -181,7 +181,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   /* Restore original name so we can check the actual file when we check
    * the accurate options later on. This is mostly important for the
-   * CalculateAndCompareFileChksum() function as that needs to calulate
+   * CalculateAndCompareFileChksum() function as that needs to calculate
    * the checksum of the real file and not try to open the stripped pathname. */
   UnstripPath(ff_pkt);
 

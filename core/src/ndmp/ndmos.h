@@ -234,7 +234,7 @@
  * NDMOS_MACRO_TAPE_AGENT_ADDITIONS     -- struct ndm_tape_agent
  *
  * All NDMOS_OPTION_... parameters are either #define'd or #undef'ed.
- * They are solely interpretted in #ifdef's and #ifndef's, and the
+ * They are solely interpreted in #ifdef's and #ifndef's, and the
  * value of the definition means nothing. These _OPTIONS_'s can be set
  * on the command line (-D) in the Makefile, or in the O/S specific
  * header file.

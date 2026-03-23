@@ -573,7 +573,7 @@ static txnid_t mdb_debug_start;
 	 *	The string is printed literally, with no format processing.
 	 */
 #define DPUTS(arg)	DPRINTF(("%s", arg))
-	/** Debuging output value of a cursor DBI: Negative in a sub-cursor. */
+	/** Debugging output value of a cursor DBI: Negative in a sub-cursor. */
 #define DDBI(mc) \
 	(((mc)->mc_flags & C_SUB) ? -(int)(mc)->mc_dbi : (int)(mc)->mc_dbi)
 /** @} */
@@ -1500,10 +1500,10 @@ static int  mdb_env_write_meta(MDB_txn *txn);
 static void mdb_env_close0(MDB_env *env, int excl);
 
 static MDB_node *mdb_node_search(MDB_cursor *mc, MDB_val *key, int *exactp);
-static int  mdb_node_add(MDB_cursor *mc, indx_t indx,
+static int  mdb_node_add(MDB_cursor *mc, indx_t index,
 			    MDB_val *key, MDB_val *data, pgno_t pgno, unsigned int flags);
 static void mdb_node_del(MDB_cursor *mc, int ksize);
-static void mdb_node_shrink(MDB_page *mp, indx_t indx);
+static void mdb_node_shrink(MDB_page *mp, indx_t index);
 static int	mdb_node_move(MDB_cursor *csrc, MDB_cursor *cdst, int fromleft);
 static int  mdb_node_read(MDB_cursor *mc, MDB_node *leaf, MDB_val *data);
 static size_t	mdb_leaf_size(MDB_env *env, MDB_val *key, MDB_val *data);
@@ -6385,7 +6385,7 @@ static int
 mdb_cursor_sibling(MDB_cursor *mc, int move_right)
 {
 	int		 rc;
-	MDB_node	*indx;
+	MDB_node	*index;
 	MDB_page	*mp;
 #ifdef MDB_VL32
 	MDB_page	*op;
@@ -6424,8 +6424,8 @@ mdb_cursor_sibling(MDB_cursor *mc, int move_right)
 
 	MDB_PAGE_UNREF(mc->mc_txn, op);
 
-	indx = NODEPTR(mc->mc_pg[mc->mc_top], mc->mc_ki[mc->mc_top]);
-	if ((rc = mdb_page_get(mc, NODEPGNO(indx), &mp, NULL)) != 0) {
+	index = NODEPTR(mc->mc_pg[mc->mc_top], mc->mc_ki[mc->mc_top]);
+	if ((rc = mdb_page_get(mc, NODEPGNO(index), &mp, NULL)) != 0) {
 		/* mc will be inconsistent if caller does mc_snum++ as above */
 		mc->mc_flags &= ~(C_INITIALIZED|C_EOF);
 		return rc;
@@ -7848,7 +7848,7 @@ mdb_branch_size(MDB_env *env, MDB_val *key)
 
 /** Add a node to the page pointed to by the cursor.
  * @param[in] mc The cursor for this operation.
- * @param[in] indx The index on the page where the new node should be added.
+ * @param[in] index The index on the page where the new node should be added.
  * @param[in] key The key for the new node.
  * @param[in] data The data for the new node, if any.
  * @param[in] pgno The page number, if adding a branch node.
@@ -7862,7 +7862,7 @@ mdb_branch_size(MDB_env *env, MDB_val *key)
  * </ul>
  */
 static int
-mdb_node_add(MDB_cursor *mc, indx_t indx,
+mdb_node_add(MDB_cursor *mc, indx_t index,
     MDB_val *key, MDB_val *data, pgno_t pgno, unsigned int flags)
 {
 	unsigned int	 i;
@@ -7880,14 +7880,14 @@ mdb_node_add(MDB_cursor *mc, indx_t indx,
 	DPRINTF(("add to %s %spage %"Yu" index %i, data size %"Z"u key size %"Z"u [%s]",
 	    IS_LEAF(mp) ? "leaf" : "branch",
 		IS_SUBP(mp) ? "sub-" : "",
-		mdb_dbg_pgno(mp), indx, data ? data->mv_size : 0,
+		mdb_dbg_pgno(mp), index, data ? data->mv_size : 0,
 		key ? key->mv_size : 0, key ? DKEY(key) : "null"));
 
 	if (IS_LEAF2(mp)) {
 		/* Move higher keys up one slot. */
 		int ksize = mc->mc_db->md_pad, dif;
-		char *ptr = LEAF2KEY(mp, indx, ksize);
-		dif = NUMKEYS(mp) - indx;
+		char *ptr = LEAF2KEY(mp, index, ksize);
+		dif = NUMKEYS(mp) - index;
 		if (dif > 0)
 			memmove(ptr+ksize, ptr, dif*ksize);
 		/* insert new key */
@@ -7931,18 +7931,18 @@ mdb_node_add(MDB_cursor *mc, indx_t indx,
 
 update:
 	/* Move higher pointers up one slot. */
-	for (i = NUMKEYS(mp); i > indx; i--)
+	for (i = NUMKEYS(mp); i > index; i--)
 		mp->mp_ptrs[i] = mp->mp_ptrs[i - 1];
 
 	/* Adjust free space offsets. */
 	ofs = mp->mp_upper - node_size;
 	mdb_cassert(mc, ofs >= mp->mp_lower + sizeof(indx_t));
-	mp->mp_ptrs[indx] = ofs;
+	mp->mp_ptrs[index] = ofs;
 	mp->mp_upper = ofs;
 	mp->mp_lower += sizeof(indx_t);
 
 	/* Write the node data. */
-	node = NODEPTR(mp, indx);
+	node = NODEPTR(mp, index);
 	node->mn_ksize = (key == NULL) ? 0 : key->mv_size;
 	node->mn_flags = flags;
 	if (IS_LEAF(mp))
@@ -7992,20 +7992,20 @@ static void
 mdb_node_del(MDB_cursor *mc, int ksize)
 {
 	MDB_page *mp = mc->mc_pg[mc->mc_top];
-	indx_t	indx = mc->mc_ki[mc->mc_top];
+	indx_t	index = mc->mc_ki[mc->mc_top];
 	unsigned int	 sz;
 	indx_t		 i, j, numkeys, ptr;
 	MDB_node	*node;
 	char		*base;
 
-	DPRINTF(("delete node %u on %s page %"Yu, indx,
+	DPRINTF(("delete node %u on %s page %"Yu, index,
 	    IS_LEAF(mp) ? "leaf" : "branch", mdb_dbg_pgno(mp)));
 	numkeys = NUMKEYS(mp);
-	mdb_cassert(mc, indx < numkeys);
+	mdb_cassert(mc, index < numkeys);
 
 	if (IS_LEAF2(mp)) {
-		int x = numkeys - 1 - indx;
-		base = LEAF2KEY(mp, indx, ksize);
+		int x = numkeys - 1 - index;
+		base = LEAF2KEY(mp, index, ksize);
 		if (x)
 			memmove(base, base + ksize, x * ksize);
 		mp->mp_lower -= sizeof(indx_t);
@@ -8013,7 +8013,7 @@ mdb_node_del(MDB_cursor *mc, int ksize)
 		return;
 	}
 
-	node = NODEPTR(mp, indx);
+	node = NODEPTR(mp, index);
 	sz = NODESIZE + node->mn_ksize;
 	if (IS_LEAF(mp)) {
 		if (F_ISSET(node->mn_flags, F_BIGDATA))
@@ -8023,9 +8023,9 @@ mdb_node_del(MDB_cursor *mc, int ksize)
 	}
 	sz = EVEN(sz);
 
-	ptr = mp->mp_ptrs[indx];
+	ptr = mp->mp_ptrs[index];
 	for (i = j = 0; i < numkeys; i++) {
-		if (i != indx) {
+		if (i != index) {
 			mp->mp_ptrs[j] = mp->mp_ptrs[i];
 			if (mp->mp_ptrs[i] < ptr)
 				mp->mp_ptrs[j] += sz;
@@ -8042,10 +8042,10 @@ mdb_node_del(MDB_cursor *mc, int ksize)
 
 /** Compact the main page after deleting a node on a subpage.
  * @param[in] mp The main page to operate on.
- * @param[in] indx The index of the subpage on the main page.
+ * @param[in] index The index of the subpage on the main page.
  */
 static void
-mdb_node_shrink(MDB_page *mp, indx_t indx)
+mdb_node_shrink(MDB_page *mp, indx_t index)
 {
 	MDB_node *node;
 	MDB_page *sp, *xp;
@@ -8053,7 +8053,7 @@ mdb_node_shrink(MDB_page *mp, indx_t indx)
 	indx_t delta, nsize, len, ptr;
 	int i;
 
-	node = NODEPTR(mp, indx);
+	node = NODEPTR(mp, index);
 	sp = (MDB_page *)NODEDATA(node);
 	delta = SIZELEFT(sp);
 	nsize = NODEDSZ(node) - delta;
@@ -8077,7 +8077,7 @@ mdb_node_shrink(MDB_page *mp, indx_t indx)
 	base = (char *)mp + mp->mp_upper + PAGEBASE;
 	memmove(base + delta, base, (char *)sp + len - base);
 
-	ptr = mp->mp_ptrs[indx];
+	ptr = mp->mp_ptrs[index];
 	for (i = NUMKEYS(mp); --i >= 0; ) {
 		if (mp->mp_ptrs[i] <= ptr)
 			mp->mp_ptrs[i] += delta;
@@ -8350,13 +8350,13 @@ mdb_update_key(MDB_cursor *mc, MDB_val *key)
 	char			*base;
 	size_t			 len;
 	int				 delta, ksize, oksize;
-	indx_t			 ptr, i, numkeys, indx;
+	indx_t			 ptr, i, numkeys, index;
 	DKBUF;
 
-	indx = mc->mc_ki[mc->mc_top];
+	index = mc->mc_ki[mc->mc_top];
 	mp = mc->mc_pg[mc->mc_top];
-	node = NODEPTR(mp, indx);
-	ptr = mp->mp_ptrs[indx];
+	node = NODEPTR(mp, index);
+	ptr = mp->mp_ptrs[index];
 #if MDB_DEBUG
 	{
 		MDB_val	k2;
@@ -8364,7 +8364,7 @@ mdb_update_key(MDB_cursor *mc, MDB_val *key)
 		k2.mv_data = NODEKEY(node);
 		k2.mv_size = node->mn_ksize;
 		DPRINTF(("update key %u (ofs %u) [%s] to [%s] on page %"Yu,
-			indx, ptr,
+			index, ptr,
 			mdb_dkey(&k2, kbuf2),
 			DKEY(key),
 			mp->mp_pgno));
@@ -8398,7 +8398,7 @@ mdb_update_key(MDB_cursor *mc, MDB_val *key)
 		memmove(base - delta, base, len);
 		mp->mp_upper -= delta;
 
-		node = NODEPTR(mp, indx);
+		node = NODEPTR(mp, index);
 	}
 
 	/* But even if no shift was needed, update ksize */

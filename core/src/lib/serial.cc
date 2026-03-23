@@ -168,7 +168,7 @@ void SerialString(uint8_t** const ptr, const char* const str)
   for (i = 0; src[i] != 0; i++) { dest[i] = src[i]; }
   dest[i++] = 0; /* Terminate output string */
   *ptr += i;     /* update pointer */
-  // Dmsg2(000, "ser src=%s dest=%s\n", src, dest);
+  // Dmsg2(000, "set src=%s dest=%s\n", src, dest);
 }
 
 

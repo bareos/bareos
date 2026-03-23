@@ -92,7 +92,7 @@ TEST(CLI, HelpMessageDisplaysWithCorrectFormat)
 
   // cli output is not very stable
   // we try to make this test more stable by not required an exact match
-  // regarding trailing & preceeding whitespace
+  // regarding trailing & preceding whitespace
   EXPECT_EQ(trim(new_help), trim(expected_help)) << new_help << "\n---\n"
                                                  << help << "\n---\n"
                                                  << default_help << "\n---\n";

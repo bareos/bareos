@@ -565,7 +565,7 @@ static void DropTempTables(UaContext* ua)
 
 static bool CreateTempTables(UaContext* ua)
 {
-  /* Create temp tables and indicies */
+  /* Create temp tables and indices */
   if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::create_deltabs)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelTables table failed\n");
@@ -646,7 +646,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   // Drop any previous temporary tables still there
   DropTempTables(ua);
 
-  // Create temp tables and indicies
+  // Create temp tables and indices
   if (!CreateTempTables(ua)) {
     DropTempTables(ua);
     return true;

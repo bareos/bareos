@@ -432,7 +432,7 @@ char* bvfs_parent_dir(char* path)
     while (p > path && !IsPathSeparator(*p)) { p--; }
     if (IsPathSeparator(*p) and (len >= 1)) {
       /* Terminate the string after the "/".
-       * Do this instead of overwritting the "/"
+       * Do this instead of overwriting the "/"
        * to keep the root directory "/" as a separate path. */
       p[1] = '\0';
     } else {

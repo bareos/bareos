@@ -579,7 +579,7 @@ static void readlabelcmd()
 
 
 /**
- * Load the tape should have prevously been taken
+ * Load the tape should have previously been taken
  * off line, otherwise this command is not necessary.
  */
 static void loadcmd()
@@ -625,7 +625,7 @@ static void weofcmd()
 
 
 /* Go to the end of the medium -- raw command
- * The idea was orginally that the end of the Bareos
+ * The idea was originally that the end of the Bareos
  * medium would be flagged differently. This is not
  * currently the case. So, this is identical to the
  * eodcmd().
@@ -1164,7 +1164,7 @@ bail_out:
 
 /**
  * This test writes Bareos blocks to the tape in
- * several files. It then rewinds the tape and attepts
+ * several files. It then rewinds the tape and attempts
  * to read these blocks back checking the data.
  */
 static bool write_read_test()
@@ -1241,7 +1241,7 @@ bail_out:
 
 /**
  * This test writes Bareos blocks to the tape in
- * several files. It then rewinds the tape and attepts
+ * several files. It then rewinds the tape and attempts
  * to read these blocks back checking the data.
  */
 static bool position_test()
@@ -1373,7 +1373,7 @@ bail_out:
 
 /**
  * This test writes some records, then writes an end of file,
- *   rewinds the tape, moves to the end of the data and attepts
+ *   rewinds the tape, moves to the end of the data and attempts
  *   to append to the tape.  This function is essential for
  *   Bareos to be able to write multiple jobs to the tape.
  */
@@ -1746,7 +1746,7 @@ static void testcmd()
              "in your Storage daemon's Device definition.\n"
              "nnn must match your tape driver's block size, which\n"
              "can be determined by reading your tape manufacturers\n"
-             "information, and the information on your kernel dirver.\n"
+             "information, and the information on your kernel driver.\n"
              "Fixed block sizes, however, are not normally an ideal solution.\n"
              "\n"
              "Some systems, e.g. OpenBSD, require you to set\n"

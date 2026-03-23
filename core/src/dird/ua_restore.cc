@@ -1328,7 +1328,7 @@ static bool BuildDirectoryTree(UaContext* ua, RestoreContext* rx)
  * This routine is used to insert the current full backup into the temporary
  * table temp using another temporary table temp1.
  * Returns whether the operations succeeded without errors regardless of
- * wether a row was inserted or not!
+ * whether a row was inserted or not!
  */
 static bool InsertLastFullBackupOfType(UaContext* ua,
                                        RestoreContext* rx,

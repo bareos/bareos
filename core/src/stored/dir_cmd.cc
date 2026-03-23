@@ -600,9 +600,9 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   /* Determine the length of the temporary buffers.
    * If the total length of the incoming message is less
    * then MAX_NAME_LENGTH we can use that as the upper limit.
-   * If the incomming message is bigger then MAX_NAME_LENGTH
+   * If the incoming message is bigger then MAX_NAME_LENGTH
    * limit the temporary buffer to MAX_NAME_LENGTH bytes as
-   * we use a sscanf %127s for reading the temorary buffer. */
+   * we use a sscanf %127s for reading the temporary buffer. */
   len = dir->message_length + 1;
   if (len > MAX_NAME_LENGTH) { len = MAX_NAME_LENGTH; }
 

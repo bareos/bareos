@@ -65,7 +65,7 @@ void throw_if_junk(const std::string& str, size_t pos = 0)
   if (auto iter = std::find_if_not(str.begin() + pos, str.end(), b_isjunkchar);
       iter != str.end()) {
     throw std::invalid_argument{fmt::format(
-        FMT_STRING("unparseable character '{0}' (0x{0:x}) at pos {1}"), *iter,
+        FMT_STRING("unparsable character '{0}' (0x{0:x}) at pos {1}"), *iter,
         iter - str.begin())};
   }
 }

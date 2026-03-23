@@ -169,7 +169,7 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
   nis = (NIS*)log->ctx;
   if (!nis) { return; }
 
-  /* If the log level of this message is under our logging treshold we
+  /* If the log level of this message is under our logging threshold we
    * log it as part of the Job. */
   if (level <= (int)nis->LogLevel) {
     if (nis->jcr) {
@@ -538,7 +538,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   }
 
   /* When we found a JobControlRecord with the wanted security key it also
-   * implictly means the authentication succeeded as the connecting NDMP session
+   * implicitly means the authentication succeeded as the connecting NDMP session
    * only knows the exact security key as it was inserted by the director.  */
   jcr->authenticated = true;
 
@@ -548,7 +548,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   *jcr->sd_impl->client_available.lock() = true;
   jcr->sd_impl->job_start_wait.notify_one();
 
-  /* Save the JobControlRecord to ndm_session binding so everything furher
+  /* Save the JobControlRecord to ndm_session binding so everything further
    * knows which JobControlRecord belongs to which NDMP session. We have
    * a special ndmp_session_handle which we can use to track
    * session specific information.  */

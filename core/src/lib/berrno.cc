@@ -103,7 +103,7 @@ void BErrNo::FormatWin32Message()
           NULL, windows_error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
           (LPTSTR)&msg, 0, NULL);
       len != 0) {
-    // the formated message often ends in .\r\n
+    // the formatted message often ends in .\r\n
     // we want to trim this since our own error messages already append
     // '.\n' to the end.
     while (len > 0 && isspace(msg[len - 1])) { len -= 1; }

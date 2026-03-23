@@ -131,7 +131,7 @@ class data {
   data(open_context ctx, const config& conf);
 };
 
-struct urid  // universial record id
+struct urid  // universal record id
 {
   std::uint32_t VolSessionId;   /* Session Id for Job */
   std::uint32_t VolSessionTime; /* Session Time for Job */

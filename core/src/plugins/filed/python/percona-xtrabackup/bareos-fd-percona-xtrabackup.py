@@ -125,7 +125,7 @@ class BareosFdPercona(BareosFdPluginBaseclass):
         if "extradumpoptions" in self.options:
             self.dumpoptions += " " + self.options["extradumpoptions"]
 
-        # We need to call mysql to get the current Log Sequece Number (LSN)
+        # We need to call mysql to get the current Log Sequence Number (LSN)
         if "mysqlcmd" in self.options:
             self.mysqlcmd = self.options["mysqlcmd"]
         else:

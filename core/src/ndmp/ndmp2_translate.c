@@ -2158,7 +2158,7 @@ int ndmp_9to2_notify_data_read_request(void* input, void* output)
 
 /*
  * ndmp2_log_log and ndmp2_log_debug are not handled
- * by the ndmp9 translater. Like ndmp2_config_get_butype_attr,
+ * by the ndmp9 translator. Like ndmp2_config_get_butype_attr,
  * these NDMP2 log interfaces do not pair well with the
  * ndmp[349] interfaces. So they are handled directly
  * rather than by translation.

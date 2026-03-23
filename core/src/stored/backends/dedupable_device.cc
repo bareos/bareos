@@ -122,7 +122,7 @@ int dedup_device::d_open(const char* path, int, int mode)
       //       new volumes with OPEN_READ_ONLY twice before trying
       //       to open them with CREATE_READ_WRITE.  As such
       //       not doing this will lead to bareos outputting two error
-      //       messages everytime a job tries to write to a new volume!
+      //       messages every time a job tries to write to a new volume!
       //       Also sometimes bareos calls this with CREATE_READ_WRITE
       //       even though it knows that it already exists.
       //       E.g. when relabeling because of a truncate command.
@@ -229,7 +229,7 @@ ssize_t dedup_device::d_write(int dird, const void* data, size_t size)
 
       auto blocksize = sizeof(block);
 
-      // when save goes out of scope without being commited, it will get
+      // when save goes out of scope without being committed, it will get
       // aborted
       auto save = raii_save_state(openvol.value(), block);
 

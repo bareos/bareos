@@ -356,7 +356,7 @@ int cstrlen(const char* str)
       len++;
       continue;
     }
-    p++; /* Shouln't get here but must advance */
+    p++; /* Shouldn't get here but must advance */
   }
   return len;
 }
@@ -941,7 +941,7 @@ static bool PathMkdir(char* path, [[maybe_unused]] mode_t mode)
 
   if (mkdir(path, mode) != 0) {
     BErrNo be;
-    Emsg2(M_ERROR, 0, "Falied to create directory %s: ERR=%s\n", path,
+    Emsg2(M_ERROR, 0, "Failed to create directory %s: ERR=%s\n", path,
           be.bstrerror());
     return false;
   }

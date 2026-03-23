@@ -1755,7 +1755,7 @@ alist<JobId_t*>* select_jobs(UaContext* ua, const char* reason)
       char temp[256];
       char JobName[MAX_NAME_LENGTH];
 
-      // Interactivly select a Job.
+      // Interactively select a Job.
       StartPrompt(ua, T_("Select Job:\n"));
       foreach_jcr (jcr) {
         char ed1[50];

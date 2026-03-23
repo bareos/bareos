@@ -21,7 +21,7 @@
   THE SOFTWARE.
 
   Remarks/Bugs:
-  LZ4 compression library by Yann Collet (yann.collet.73@gmail.com)
+  LZ4 compression library by Yann Collect (yann.collect.73@gmail.com)
   FastLZ compression library by Ariya Hidayat (ariya@kde.org)
   Library encapsulation by Xavier Roche (fastlz@exalead.com)
 */
@@ -859,7 +859,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
     }
   }
 
-  /* new output buffer data to be processed ; same logic as begining */
+  /* new output buffer data to be processed ; same logic as beginning */
   if (ZFAST_HAS_BUFFERED_OUTPUT(s)) {
     /* maximum size that can be copied */
     uInt size = s->state->dec_size - s->state->outBuffOffs;

@@ -115,19 +115,19 @@ PRINTF_LIKE(1, 2) static void DeliveryError(const char* fmt, ...)
   bstrncat(dt, " ", sizeof(dt));
   Mmsg(pool_buf, "%s Message delivery ERROR: ", dt);
 
-  POOLMEM* formated = GetPoolMemory(PM_EMSG);
+  POOLMEM* formatted = GetPoolMemory(PM_EMSG);
 
   va_list ap;
   va_start(ap, fmt);
-  int len = PmVFormat(formated, fmt, ap);
+  int len = PmVFormat(formatted, fmt, ap);
   va_end(ap);
 
   if (len >= 0) {
-    PmStrcat(pool_buf, formated);
+    PmStrcat(pool_buf, formatted);
   } else {
     PmStrcat(pool_buf, "<formatting error>");
   }
-  FreeMemory(formated);
+  FreeMemory(formatted);
 
   fputs(pool_buf, stdout); /* print this here to INSURE that it is printed */
   fflush(stdout);
@@ -1466,7 +1466,7 @@ void q_msg(const char* file,
   Qmsg(jcr, type, mtime, "%s", buf.c_str());
 }
 
-// Set gobal date format used for log messages.
+// Set global date format used for log messages.
 void SetLogTimestampFormat(const char* format)
 {
   log_timestamp_format = format;

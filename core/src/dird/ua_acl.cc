@@ -54,7 +54,7 @@ constexpr bool is_regex(std::string_view string_to_check)
 
 /**
  * acl_list_value: value of the ACL definition.
- * acl_list_compare_value: value ot compare against. This is identical to
+ * acl_list_compare_value: value to compare against. This is identical to
  * acl_list_value or a modified acl_list_value to compare against.
  */
 static inline bool CompareAclListValueWithItem(

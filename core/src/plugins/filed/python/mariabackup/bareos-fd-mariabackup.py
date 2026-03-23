@@ -122,7 +122,7 @@ class BareosFdMariabackup(BareosFdPluginBaseclass):
         if "extradumpoptions" in self.options:
             self.dumpoptions += " " + self.options["extradumpoptions"]
 
-        # We need to call mariadb to get the current Log Sequece Number (LSN)
+        # We need to call mariadb to get the current Log Sequence Number (LSN)
         if "mysqlcmd" in self.options:
             DebugMessage(
                 100, f"self option mysqlcmd detected {self.options['mysqlcmd']}\n"

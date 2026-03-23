@@ -549,7 +549,7 @@ bool DecryptData(JobControlRecord* jcr,
   *data = cipher_ctx->buf;
 
   /* If one full preserved block is available, write it to disk,
-   * and then buffer any remaining data. This should be effecient
+   * and then buffer any remaining data. This should be efficient
    * as long as Bareos's block size is not significantly smaller than the
    * encryption block size (extremely unlikely!) */
   UnserCryptoPacketLen(cipher_ctx);

@@ -100,7 +100,7 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
   while (*p++ != ' ') /* skip type */
   {}
 
-  attr->fname = p;  /* set filname position */
+  attr->fname = p;  /* set filename position */
   while (*p++ != 0) /* skip filename */
   {}
   attr->attr = p;   /* set attributes position */

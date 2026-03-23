@@ -416,7 +416,7 @@ std::map<int, std::pair<std::string, std::string>> bnet_signal_to_text {
     {BNET_TERMINATE, {"BNET_TERMINATE", "Conversation terminated, doing close() "}},
     {BNET_POLL, {"BNET_POLL", "Poll request, I'm hanging on a read "}},
     {BNET_HEARTBEAT, {"BNET_HEARTBEAT", "Heartbeat Response requested "}},
-    {BNET_HB_RESPONSE, {"BNET_HB_RESPONSE", "Only response permited to HB "}},
+    {BNET_HB_RESPONSE, {"BNET_HB_RESPONSE", "Only response permitted to HB "}},
     {BNET_xxxxxxPROMPT, {"BNET_xxxxxxPROMPT", "No longer used -- Prompt for subcommand "}},
     {BNET_BTIME, {"BNET_BTIME", "Send UTC btime "}},
     {BNET_BREAK, {"BNET_BREAK", "Stop current command -- ctl-c "}},

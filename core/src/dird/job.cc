@@ -1844,7 +1844,7 @@ bail_out:
   return files;
 }
 
-/* TODO: redirect command ouput to job log */
+/* TODO: redirect command output to job log */
 bool RunConsoleCommand(JobControlRecord*, const char* cmd)
 {
   UaContext* ua;

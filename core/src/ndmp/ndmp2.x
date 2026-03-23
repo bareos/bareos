@@ -788,7 +788,7 @@ struct ndmp2_notify_data_halted_request
 /* NDMP2_NOTIFY_CONNECTED */
 enum ndmp2_connect_reason
 {
-        NDMP2_CONNECTED,        /* Connect sucessfully */
+        NDMP2_CONNECTED,        /* Connect successfully */
         NDMP2_SHUTDOWN,         /* Connection shutdown */
         NDMP2_REFUSED           /* reach the maximum number of connections */
 };
