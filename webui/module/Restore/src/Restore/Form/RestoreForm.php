@@ -329,12 +329,14 @@ class RestoreForm extends Form
      * Shows a text field when any backup in the selected set is a plugin job;
      * otherwise adds a disabled hidden field.
      */
-    private function addPluginOptionsElement(array $restore_params, array $backups): void
+    private function addPluginOptionsElement(array $restore_params, ?array $backups): void
     {
         $placeholder = _('e.g. <plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>');
         $showText    = false;
 
-        if ($restore_params['mergefilesets'] == 0) {
+        if ($backups === null) {
+            // No client selected yet; skip plugin-options detection.
+        } elseif ($restore_params['mergefilesets'] == 0) {
             foreach ($backups as $backup) {
                 if ($backup['pluginjob']) {
                     $showText = true;
