@@ -110,11 +110,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",  # Add a link to the Python source code for classes, functions etc.
-    "sphinxcontrib.actdiag",
-    "sphinxcontrib.blockdiag",
-    "sphinxcontrib.nwdiag",
     "sphinxcontrib.plantuml",
-    "sphinxcontrib.seqdiag",
     "crate.sphinx.csv",
     "m2r2",
     "sphinx_copybutton",
