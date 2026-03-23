@@ -36,11 +36,14 @@ case "$1" in
       if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
         OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
       fi
+
+      check_config fd ${BAREOS_FILEDAEMON_BINARY} $2 $3 ${OPTIONS} || exit $?
+
+      # this option does not make sense for the stuff above
       if [ -v BAREOS_PIDFILE ]; then
         OPTIONS="${OPTIONS} -p ${BAREOS_PIDFILE}"
       fi
 
-      check_config fd ${BAREOS_FILEDAEMON_BINARY} $2 $3 ${OPTIONS} || exit $?
       if [ "x${VALGRIND_FD}" = "x1" ]; then
         valgrind --leak-check=full ${BAREOS_FILEDAEMON_BINARY} -v $2 $3 ${OPTIONS}
       else
