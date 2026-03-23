@@ -1189,7 +1189,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %dir %{configtemplatedir}/bareos-dir.d/schedule
 %dir %{configtemplatedir}/bareos-dir.d/storage
 %dir %{configtemplatedir}/bareos-dir.d/user
-# tray monitor configure is installed by the target daemons
+# tray monitor configuration is installed by the target daemons
 %if 0%{?build_qt_monitor}
 %dir %{configtemplatedir}/tray-monitor.d
 %endif

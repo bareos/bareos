@@ -38,7 +38,7 @@ struct DelayedDataStream {
 struct RestoreCipherContext {
   CIPHER_CONTEXT* cipher;
   uint32_t block_size;
-  POOLMEM* buf;       /* Pointer to description buffer */
+  POOLMEM* buf;       /* Pointer to decryption buffer */
   int32_t buf_len;    /* Count of bytes currently in buf */
   int32_t packet_len; /* Total bytes in packet */
 };

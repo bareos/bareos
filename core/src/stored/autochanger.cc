@@ -558,7 +558,7 @@ static bool UnloadOtherDrive(DeviceControlRecord* dcr,
          dcr->VolumeName, dcr->dev->print_name(), dev->print_name());
     Dmsg4(100, "Vol %s for dev=%s is busy dev=%s slot=%hd\n", dcr->VolumeName,
           dcr->dev->print_name(), dev->print_name(), dev->GetSlot());
-    Dmsg2(100, "num_writ=%d reserve=%d\n", dev->num_writers, dev->NumReserved());
+    Dmsg2(100, "num_writ=%d reserved=%d\n", dev->num_writers, dev->NumReserved());
     VolumeUnused(dcr);
 
     return false;
