@@ -180,27 +180,30 @@ check_database()
 # Checks if the configuration outputs warnings
 check_config()
 {
+  if [ "${IGNORE_CONFIG_WARNINGS:-false}" == "true" ]; then
+    # if checks are not wanted, simply quit
+    return 0
+  fi
+
   echo "Checking Configuration for $1"
   log_file="${tmp}/bareos-$1-config-test.out"
   "$2" -t "${@:3}" &>"${log_file}"
 
   call_succeeded="$?"
-  config_warnings=false
-  if grep -q "There are configuration warnings" "${log_file}"; then
-    config_warnings=true
-  fi
 
-  if [ "${IGNORE_CONFIG_WARNINGS:-false}" != "true" ] && [ "${config_warnings}" = "true" ]; then
+  # We output the error both to stdout/stderr, so its visible in the shell / ci
+  # as well as to the command calling it (if tries to check the status)
+
+  if grep -q "There are configuration warnings" "${log_file}"; then
     echo "Fail: There are configuration warnings when running $2 -t ${*:3}, see below." >&2
+    cat "${log_file}" >&2
     cat "${log_file}"
     return 7
-  elif [ "${call_succeeded}" -ne 0 ] && ! [ "${config_warnings}" = "true" ]; then
-    # it is somewhat hard to correctly say when the call did not succeed
-    # vs it being a different issue.
-    # Its important to make sure that this branch is never taken, if there
-    # was a configuration issue & IGNORE_CONFIG_WARNINGS is set!
-    # Otherwise it would ruin the point of that variable!
+  elif [ "${call_succeeded}" -ne 0 ]; then
+    # if the call failed, but we did not find config warnings, then something
+    # else went wrong.
     echo "Fail: Could not run $2 -t ${*:3}, see below." >&2
+    cat "${log_file}" >&2
     cat "${log_file}"
     return 7
   else
