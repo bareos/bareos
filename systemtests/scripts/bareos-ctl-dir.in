@@ -36,12 +36,15 @@ case "$1" in
       if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
         OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
       fi
+
+      check_database dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
+      check_config dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
+
+      # this option does not make sense for the stuff above
       if [ -v BAREOS_PIDFILE ]; then
         OPTIONS="${OPTIONS} -p ${BAREOS_PIDFILE}"
       fi
 
-      check_database dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
-      check_config dir ${BAREOS_DIRECTOR_BINARY} $2 $3 ${OPTIONS} || exit $?
       "${BAREOS_DIRECTOR_BINARY}" -v $2 $3 ${OPTIONS}
     else
       echo "${BAREOS_DIRECTOR_BINARY} not executable. Did you forget to build?" >&2

@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - packaging: add missing DLLs to windows installer [PR #2569]
 - systemtests check runscript failed - improve media_vault [PR #2556]
 - Remove shell expansion during directory parsing; add select jobid=XXX support [PR #2509]
+- tests: fix disabling config checking because of newly used pid-file option [PR #2597]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2245,4 +2246,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2572]: https://github.com/bareos/bareos/pull/2572
 [PR #2588]: https://github.com/bareos/bareos/pull/2588
 [PR #2590]: https://github.com/bareos/bareos/pull/2590
+[PR #2597]: https://github.com/bareos/bareos/pull/2597
 [unreleased]: https://github.com/bareos/bareos/tree/master
