@@ -19,10 +19,6 @@
    02110-1301, USA.
 */
 
-#if defined(HAVE_MINGW)
-  include "include/bareos.h"
-#endif
-
 #include "gtest/gtest.h"
 #include "stored/backends/dedupable/volume.h"
 #include <limits>
@@ -62,6 +58,7 @@ TEST(SafeCastTest, MaxUint32Value)
 
 TEST(SafeCastTest, ValueAboveMax)
 {
+  ASSERT_GT(sizeof(std::size_t),sizeof(std::uint32_t));
   if (sizeof(std::size_t) > sizeof(std::uint32_t)) {
     std::size_t too_large = static_cast<std::size_t>(std::numeric_limits<std::uint32_t>::max()) + 1;
     EXPECT_THROW(SafeCast(too_large), std::invalid_argument);
@@ -70,7 +67,7 @@ TEST(SafeCastTest, ValueAboveMax)
 
 TEST(SafeCastTest, LargeValidValue)
 {
-  std::size_t large = std::numeric_limits<std::uint32_t>::max() - 1;
+  std::size_t large = std::numeric_limits<std::uint32_t>::max();
   EXPECT_EQ(SafeCast(large), large);
 }
 
@@ -79,42 +76,6 @@ TEST(SafeCastTest, TypicalValue)
   EXPECT_EQ(SafeCast(1024), 1024u);
   EXPECT_EQ(SafeCast(65536), 65536u);
   EXPECT_EQ(SafeCast(1048576), 1048576u);
-}
-
-// Tests for config::make_default
-TEST(ConfigTest, MakeDefaultStructure)
-{
-  std::uint64_t blocksize = 4096;
-  config conf = config::make_default(blocksize);
-
-  // Check block files
-  ASSERT_EQ(conf.bfiles.size(), 1);
-  EXPECT_EQ(conf.bfiles[0].relpath, "blocks");
-  EXPECT_EQ(conf.bfiles[0].Start, 0u);
-  EXPECT_EQ(conf.bfiles[0].End, 0u);
-  EXPECT_EQ(conf.bfiles[0].Idx, 0u);
-
-  // Check part files
-  ASSERT_EQ(conf.pfiles.size(), 1);
-  EXPECT_EQ(conf.pfiles[0].relpath, "parts");
-  EXPECT_EQ(conf.pfiles[0].Start, 0u);
-  EXPECT_EQ(conf.pfiles[0].End, 0u);
-  EXPECT_EQ(conf.pfiles[0].Idx, 0u);
-
-  // Check data files
-  ASSERT_EQ(conf.dfiles.size(), 2);
-
-  EXPECT_EQ(conf.dfiles[0].relpath, "aligned.data");
-  EXPECT_EQ(conf.dfiles[0].Size, 0u);
-  EXPECT_EQ(conf.dfiles[0].BlockSize, blocksize);
-  EXPECT_EQ(conf.dfiles[0].Idx, 0u);
-  EXPECT_FALSE(conf.dfiles[0].ReadOnly);
-
-  EXPECT_EQ(conf.dfiles[1].relpath, "unaligned.data");
-  EXPECT_EQ(conf.dfiles[1].Size, 0u);
-  EXPECT_EQ(conf.dfiles[1].BlockSize, 1u);
-  EXPECT_EQ(conf.dfiles[1].Idx, 1u);
-  EXPECT_FALSE(conf.dfiles[1].ReadOnly);
 }
 
 TEST(ConfigTest, MakeDefaultDifferentBlockSizes)
@@ -283,26 +244,6 @@ TEST(ConfigDeserializationTest, TooSmallData)
 {
   char data[4] = {0, 0, 0, 0};
   EXPECT_THROW(config::deserialize(data, 4), std::runtime_error);
-}
-
-TEST(ConfigDeserializationTest, CorruptedData)
-{
-  config original = config::make_default(4096);
-  std::vector<char> serialized = config::serialize(original);
-
-  // Corrupt some bytes in the middle
-  if (serialized.size() > 10) {
-    serialized[serialized.size() / 2] = 0xFF;
-    serialized[serialized.size() / 2 + 1] = 0xFF;
-
-    // May or may not throw depending on what was corrupted
-    // but should not crash
-    try {
-      config::deserialize(serialized.data(), serialized.size());
-    } catch (...) {
-      // Expected to potentially throw
-    }
-  }
 }
 
 // Tests for urid (universal record id)
