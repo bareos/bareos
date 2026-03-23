@@ -76,7 +76,7 @@ const PluginInformation my_info = {
     .plugin_license = "Bareos AGPLv3",
     .plugin_author = "Sebastian Sura",
     .plugin_date = "March 2026",
-    .plugin_version = "26.0.0",
+    .plugin_version = "25.0.3",
     .plugin_description
     = "This plugin allows you to backup your windows system for disaster "
       "recovery.",
