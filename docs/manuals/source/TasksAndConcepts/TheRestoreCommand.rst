@@ -222,7 +222,7 @@ like the following. Note, some of the columns are truncated here for presentatio
 ::
 
    +-------+------+----------+-------------+-------------+------+-------+------------+
-   | JobId | Level | JobFiles | StartTime   | VolumeName  | File | SesId |VolSesTime  |
+   | JobId | Levl | JobFiles | StartTime   | VolumeName  | File | SesId |VolSesTime  |
    +-------+------+----------+-------------+-------------+------+-------+------------+
    | 1,792 | F    |  128,374 | 08-03 01:58 | DLT-19Jul12 |   67 |    18 | 1028042998 |
    | 1,792 | F    |  128,374 | 08-03 01:58 | DLT-04Aug12 |    0 |    18 | 1028042998 |
