@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# webui-vue system test – setup fixture
+#
+# Cleans any previous run, starts Director/SD/FD, and verifies that all
+# daemons are ready before the individual testrunner-* scripts execute.
+#
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+"${BAREOS_SCRIPTS_DIR}"/cleanup
+"${BAREOS_SCRIPTS_DIR}"/setup
+
+# Populate the backup source directory with small test files.
+setup_data
+
+bin/bareos start
+bin/bareos status
+
+# Confirm the director is responsive before handing off to testrunner-*.
+print_debug "$(bin/bconsole <<<"status dir")"

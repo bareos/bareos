@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+#
+# webui-vue system test – WebSocket proxy protocol tests
+#
+# Starts the Python WS proxy against the live Director daemon and verifies
+# the full auth + command protocol without needing a browser.
+#
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+PROXY_PORT=18765  # non-default port to avoid conflicts with dev environments
+PROXY_PID=""
+
+cleanup_proxy() {
+  if [ -n "${PROXY_PID}" ]; then
+    kill "${PROXY_PID}" 2>/dev/null || true
+    wait "${PROXY_PID}" 2>/dev/null || true
+  fi
+}
+trap cleanup_proxy EXIT
+
+print_debug "Starting WS proxy on port ${PROXY_PORT} ..."
+WS_PORT="${PROXY_PORT}" \
+  "${PYTHON_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/webui-vue/proxy/director_ws_proxy.py" \
+  >"${tmp}/ws-proxy.log" 2>&1 &
+PROXY_PID=$!
+
+# Give the proxy a moment to bind its socket.
+sleep 2
+
+if ! kill -0 "${PROXY_PID}" 2>/dev/null; then
+  set_error "WS proxy failed to start – see ${tmp}/ws-proxy.log"
+  cat "${tmp}/ws-proxy.log"
+  end_test
+  exit 1
+fi
+
+print_debug "Running WS proxy protocol test suite ..."
+"${PYTHON_EXECUTABLE}" - <<PYEOF
+import asyncio, json, sys, traceback
+import websockets
+
+WS_URI = "ws://localhost:${PROXY_PORT}"
+DIRECTOR = "bareos-dir"
+DIR_HOST = "localhost"
+DIR_PORT = ${BAREOS_DIRECTOR_PORT}
+GOOD_USER = "admin"
+GOOD_PASS = "admin"
+BAD_PASS  = "wrongpassword"
+
+errors = []
+
+def fail(msg):
+    errors.append(msg)
+    print(f"FAIL: {msg}", file=sys.stderr)
+
+def ok(msg):
+    print(f"OK:   {msg}")
+
+async def recv_json(ws):
+    raw = await asyncio.wait_for(ws.recv(), timeout=15)
+    return json.loads(raw)
+
+async def authenticate(ws, password=GOOD_PASS):
+    await ws.send(json.dumps({
+        "type":     "auth",
+        "username": GOOD_USER,
+        "password": password,
+        "director": DIRECTOR,
+        "host":     DIR_HOST,
+        "port":     DIR_PORT,
+    }))
+    return await recv_json(ws)
+
+# ── Test 1: successful authentication ──────────────────────────────────────
+async def test_auth_ok():
+    async with websockets.connect(WS_URI) as ws:
+        msg = await authenticate(ws)
+        if msg.get("type") == "auth_ok":
+            ok("auth_ok received for valid credentials")
+        else:
+            fail(f"test_auth_ok: expected auth_ok, got {msg}")
+
+# ── Test 2: authentication failure ─────────────────────────────────────────
+async def test_auth_error():
+    async with websockets.connect(WS_URI) as ws:
+        msg = await authenticate(ws, password=BAD_PASS)
+        if msg.get("type") == "auth_error":
+            ok("auth_error received for wrong password")
+        else:
+            fail(f"test_auth_error: expected auth_error, got {msg}")
+
+# ── Test 3: list jobs ───────────────────────────────────────────────────────
+async def test_list_jobs():
+    async with websockets.connect(WS_URI) as ws:
+        msg = await authenticate(ws)
+        if msg.get("type") != "auth_ok":
+            fail(f"test_list_jobs: auth failed: {msg}")
+            return
+        await ws.send(json.dumps({"type": "command", "id": "1", "command": "list jobs"}))
+        resp = await recv_json(ws)
+        if resp.get("type") not in ("response", "error"):
+            fail(f"test_list_jobs: unexpected message type: {resp}")
+            return
+        if resp.get("type") == "error":
+            fail(f"test_list_jobs: director returned error: {resp}")
+            return
+        data = resp.get("data", {})
+        # Real director returns {"jobs": [...]} or similar; any non-error dict is acceptable
+        if not isinstance(data, dict):
+            fail(f"test_list_jobs: expected dict data, got: {type(data).__name__}")
+            return
+        ok(f"list jobs returned data with keys: {list(data.keys())}")
+
+# ── Test 4: list clients ────────────────────────────────────────────────────
+async def test_list_clients():
+    async with websockets.connect(WS_URI) as ws:
+        msg = await authenticate(ws)
+        if msg.get("type") != "auth_ok":
+            fail(f"test_list_clients: auth failed: {msg}")
+            return
+        await ws.send(json.dumps({"type": "command", "id": "2", "command": "list clients"}))
+        resp = await recv_json(ws)
+        if resp.get("type") == "error":
+            fail(f"test_list_clients: director returned error: {resp}")
+            return
+        data = resp.get("data", {})
+        if not isinstance(data, dict):
+            fail(f"test_list_clients: expected dict data, got: {type(data).__name__}")
+            return
+        ok(f"list clients returned data with keys: {list(data.keys())}")
+
+# ── Test 5: list storages ───────────────────────────────────────────────────
+async def test_list_storages():
+    async with websockets.connect(WS_URI) as ws:
+        msg = await authenticate(ws)
+        if msg.get("type") != "auth_ok":
+            fail(f"test_list_storages: auth failed: {msg}")
+            return
+        await ws.send(json.dumps({"type": "command", "id": "3", "command": "list storages"}))
+        resp = await recv_json(ws)
+        if resp.get("type") == "error":
+            fail(f"test_list_storages: director returned error: {resp}")
+            return
+        ok(f"list storages response type: {resp.get('type')}")
+
+# ── Test 6: command correlation by ID ──────────────────────────────────────
+async def test_response_id():
+    async with websockets.connect(WS_URI) as ws:
+        msg = await authenticate(ws)
+        if msg.get("type") != "auth_ok":
+            fail(f"test_response_id: auth failed: {msg}")
+            return
+        test_id = "correlation-test-42"
+        await ws.send(json.dumps({"type": "command", "id": test_id, "command": "list clients"}))
+        resp = await recv_json(ws)
+        if resp.get("id") == test_id:
+            ok(f"response ID matches request ID ({test_id})")
+        else:
+            fail(f"test_response_id: expected id={test_id}, got id={resp.get('id')!r}")
+
+# ── Test 7: command before auth is rejected ─────────────────────────────────
+async def test_command_before_auth():
+    async with websockets.connect(WS_URI) as ws:
+        await ws.send(json.dumps({"type": "command", "id": "x", "command": "list jobs"}))
+        resp = await recv_json(ws)
+        if resp.get("type") == "error":
+            ok("command before auth correctly rejected")
+        else:
+            fail(f"test_command_before_auth: expected error, got {resp}")
+
+async def main():
+    tests = [
+        test_auth_ok,
+        test_auth_error,
+        test_list_jobs,
+        test_list_clients,
+        test_list_storages,
+        test_response_id,
+        test_command_before_auth,
+    ]
+    for t in tests:
+        try:
+            await t()
+        except Exception:
+            fail(f"{t.__name__}: exception: {traceback.format_exc()}")
+
+    if errors:
+        print(f"\n{len(errors)} test(s) FAILED:", file=sys.stderr)
+        for e in errors:
+            print(f"  - {e}", file=sys.stderr)
+        sys.exit(1)
+    else:
+        print(f"\nAll {len(tests)} tests passed.")
+
+asyncio.run(main())
+PYEOF
+
+end_test

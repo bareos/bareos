@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+#
+# webui-vue system test – Playwright E2E browser tests
+#
+# Requires:  playwright-python ("python -m playwright install chromium")
+# Disabled:  automatically when playwright is not installed (see CMakeLists.txt)
+#
+# What we test:
+#   1. Login page renders and accepts credentials
+#   2. Dashboard shows job count statistics after successful login
+#   3. Jobs page shows the backup job created by testrunner-simple-backup
+#   4. Console page accepts a command and shows a JSON response
+#   5. Logout clears the session and returns to login page
+#
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+PROXY_PORT=18766   # separate port from testrunner-ws-proxy so both can coexist
+VITE_PORT=14173    # vite preview port
+PROXY_PID=""
+VITE_PID=""
+
+cleanup() {
+  [ -n "${VITE_PID}"  ] && { kill "${VITE_PID}"  2>/dev/null || true; wait "${VITE_PID}"  2>/dev/null || true; }
+  [ -n "${PROXY_PID}" ] && { kill "${PROXY_PID}" 2>/dev/null || true; wait "${PROXY_PID}" 2>/dev/null || true; }
+}
+trap cleanup EXIT
+
+# ── 1. Build the Vue app (production preview) ────────────────────────────────
+print_debug "Building Vue WebUI ..."
+cd "${PROJECT_SOURCE_DIR}/webui-vue"
+npm run build >"${tmp}/vite-build.log" 2>&1
+print_debug "Starting vite preview on port ${VITE_PORT} ..."
+npx vite preview --port "${VITE_PORT}" --host 127.0.0.1 >"${tmp}/vite-preview.log" 2>&1 &
+VITE_PID=$!
+cd -
+
+# ── 2. Start the WS proxy ────────────────────────────────────────────────────
+print_debug "Starting WS proxy on port ${PROXY_PORT} ..."
+WS_PORT="${PROXY_PORT}" \
+  "${PYTHON_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/webui-vue/proxy/director_ws_proxy.py" \
+  >"${tmp}/ws-proxy-playwright.log" 2>&1 &
+PROXY_PID=$!
+
+# Wait for both services to come up.
+sleep 4
+
+for pid in "${VITE_PID}" "${PROXY_PID}"; do
+  if ! kill -0 "${pid}" 2>/dev/null; then
+    set_error "A required service (PID ${pid}) failed to start"
+    cat "${tmp}/vite-build.log" "${tmp}/vite-preview.log" "${tmp}/ws-proxy-playwright.log" 2>/dev/null || true
+    end_test
+    exit 1
+  fi
+done
+
+# ── 3. Run Playwright tests ──────────────────────────────────────────────────
+print_debug "Running Playwright E2E tests ..."
+"${PYTHON_EXECUTABLE}" - <<PYEOF
+import asyncio, sys, traceback
+from playwright.async_api import async_playwright, expect
+
+WEBUI_URL  = "http://localhost:${VITE_PORT}"
+WS_HOST    = "localhost"
+WS_PORT    = "${PROXY_PORT}"
+DIR_HOST   = "localhost"
+DIR_PORT   = "${BAREOS_DIRECTOR_PORT}"
+USERNAME   = "admin"
+PASSWORD   = "admin"
+
+errors = []
+
+def fail(msg):
+    errors.append(msg)
+    print(f"FAIL: {msg}", file=sys.stderr)
+
+def ok(msg):
+    print(f"OK:   {msg}")
+
+async def login(page):
+    await page.goto(WEBUI_URL + "/login")
+    # Fill host/port for the WS proxy
+    await page.get_by_label("Proxy Host").fill(WS_HOST)
+    await page.get_by_label("Proxy Port").fill(WS_PORT)
+    await page.get_by_label("Director Host").fill(DIR_HOST)
+    await page.get_by_label("Director Port").fill(str(DIR_PORT))
+    await page.get_by_label("Username").fill(USERNAME)
+    await page.get_by_label("Password").fill(PASSWORD)
+    await page.get_by_role("button", name="Connect").click()
+    # Wait for redirect to dashboard (up to 10 s for director auth round-trip)
+    await page.wait_for_url("**/dashboard", timeout=10_000)
+
+# ── Test 1: login redirects to dashboard ─────────────────────────────────────
+async def test_login(page):
+    await login(page)
+    if "/dashboard" in page.url:
+        ok("login → redirected to /dashboard")
+    else:
+        fail(f"test_login: expected /dashboard, got {page.url}")
+
+# ── Test 2: dashboard shows stat cards ───────────────────────────────────────
+async def test_dashboard_stats(page):
+    await login(page)
+    # StatNumber components render an element with class "stat-number"
+    stat = page.locator(".stat-number").first
+    await expect(stat).to_be_visible(timeout=5_000)
+    ok("dashboard stat card is visible")
+
+# ── Test 3: jobs page shows the backup job ───────────────────────────────────
+async def test_jobs_page(page):
+    await login(page)
+    await page.goto(WEBUI_URL + "/jobs")
+    # Table should contain at least one row with "backup-bareos-fd"
+    row = page.get_by_text("backup-bareos-fd")
+    await expect(row).to_be_visible(timeout=8_000)
+    ok("jobs page shows backup-bareos-fd job")
+
+# ── Test 4: console page accepts a command ───────────────────────────────────
+async def test_console(page):
+    await login(page)
+    await page.goto(WEBUI_URL + "/console")
+    input_el = page.locator("input[placeholder*='command'], input[type='text']").last
+    await input_el.fill("list clients")
+    await input_el.press("Enter")
+    # Response area should contain something that looks like JSON
+    response_area = page.locator(".console-output, pre, .q-virtual-scroll__content")
+    await expect(response_area).to_contain_text("bareos-fd", timeout=10_000)
+    ok("console page returns output for 'list clients'")
+
+# ── Test 5: logout returns to login page ─────────────────────────────────────
+async def test_logout(page):
+    await login(page)
+    # Click the account/logout menu
+    logout_btn = page.get_by_role("button", name="Logout")
+    if not await logout_btn.is_visible():
+        # Might be inside a dropdown menu
+        await page.get_by_role("button", name="Account").click()
+        logout_btn = page.get_by_role("menuitem", name="Logout")
+    await logout_btn.click()
+    await page.wait_for_url("**/login", timeout=5_000)
+    ok("logout → redirected to /login")
+
+async def main():
+    tests = [
+        test_login,
+        test_dashboard_stats,
+        test_jobs_page,
+        test_console,
+        test_logout,
+    ]
+
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(headless=True)
+        for t in tests:
+            page = await browser.new_page()
+            try:
+                await t(page)
+            except Exception:
+                fail(f"{t.__name__}: {traceback.format_exc()}")
+            finally:
+                await page.close()
+        await browser.close()
+
+    if errors:
+        print(f"\n{len(errors)} test(s) FAILED:", file=sys.stderr)
+        for e in errors:
+            print(f"  - {e}", file=sys.stderr)
+        sys.exit(1)
+    else:
+        print(f"\nAll {len(tests)} E2E tests passed.")
+
+asyncio.run(main())
+PYEOF
+
+end_test

@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# webui-vue system test – run a simple backup job
+#
+# This testrunner is declared as FIXTURES_SETUP for the "backup-fixture" so
+# the playwright testrunner (which needs real data) can depend on it.
+#
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+TestJobName="backup-bareos-fd"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@${out} ${NULL_DEV}
+messages
+@${out} ${tmp}/log1.out
+label volume=TestVolume001 storage=File pool=Full
+run job=${TestJobName} level=Full yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+check_for_zombie_jobs storage=File
+check_log "${tmp}/log1.out" "Termination:.*Backup OK"
+
+end_test
+
