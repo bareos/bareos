@@ -81,11 +81,11 @@ const PluginInformation my_info = {
     = "This plugin allows you to backup your windows system for disaster "
       "recovery.",
     .plugin_usage = PLUGIN_NAME
-    R"(:save-unreferenced-disks=<yes|no>:save-unreferenced-partitions=<yes|no>:save-unreferenced-extents=<yes|no>:ignore-disks=<disks to ignore>
+    R"(:save-unreferenced-disks:save-unreferenced-partitions:save-unreferenced-extents:ignore-disks=<disks to ignore>
 
-  save-unreferenced-disks=<yes|no>: try to save disks that contain no snapshotted data, default=yes
-  save-unreferenced-partitions=<yes|no>: try to save partitions that contain no snapshotted data, default=yes
-  save-unreferenced-extents=<yes|no>: try to save even unsnapshotted parts of partitions, default=yes
+  save-unreferenced-disks: try to save disks that contain no snapshotted data
+  save-unreferenced-partitions: try to save partitions that contain no snapshotted data
+  save-unreferenced-extents: try to save even unsnapshotted parts of partitions
   disks to ignore: a comma-separated list of disk ids (i.e. '1,2,5') of disks
                    to not backup
 )"};
@@ -236,15 +236,30 @@ struct plugin_arguments {
   static std::optional<plugin_arguments> parse(PluginContext* ctx,
                                                std::string_view str)
   {
-    static constexpr std::string_view save_unreferenced_disks = "save-unreferenced-disks";
-    static constexpr std::string_view save_unreferenced_partitions = "save-unreferenced-partitions";
-    static constexpr std::string_view save_unreferenced_extents = "save-unreferenced-extents";
+    static constexpr std::string_view save_unreferenced_disks
+        = "save-unreferenced-disks";
+    static constexpr std::string_view save_unreferenced_partitions
+        = "save-unreferenced-partitions";
+    static constexpr std::string_view save_unreferenced_extents
+        = "save-unreferenced-extents";
     static constexpr std::string_view ignore_disks = "ignore-disks";
+
+    // deprecated but still allowed with the same meaning as above
+    static constexpr std::string_view unknowndisks = "unknown disks";
+    static constexpr std::string_view unknownpartitions = "unknown partitions";
+    static constexpr std::string_view unknownextents = "unknown extents";
+    static constexpr std::string_view ignoredisks = "ignore disks";
+
     static constexpr std::string_view keywords[] = {
         save_unreferenced_disks,
         save_unreferenced_partitions,
         save_unreferenced_extents,
         ignore_disks,
+
+        unknowndisks,
+        unknownpartitions,
+        unknownextents,
+        ignoredisks,
     };
 
     auto name = next_part(str, ':');
@@ -265,38 +280,38 @@ struct plugin_arguments {
 
       std::string_view value = {};
       switch (next_option(str, keywords, &value)) {
-
-        case index_of(keywords, save_unreferenced_disks): {
-          try {
-            args.save_unknown_disks = BoolString(std::string{value}).get<bool>();
-          } catch (std::out_of_range& e) {
+        case index_of(keywords, save_unreferenced_disks):
+        case index_of(keywords, unknowndisks): {
+          if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_disks);
             return std::nullopt;
           }
+          args.save_unknown_disks = true;
         } break;
 
-        case index_of(keywords, save_unreferenced_partitions): {
-          try {
-            args.save_unknown_partitions = BoolString(std::string{value}).get<bool>();
-          } catch (std::out_of_range& e) {
+        case index_of(keywords, save_unreferenced_partitions):
+        case index_of(keywords, unknownpartitions): {
+          if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_partitions);
             return std::nullopt;
           }
+          args.save_unknown_partitions = true;
         } break;
 
-        case index_of(keywords, save_unreferenced_extents): {
-          try {
-            args.save_unknown_extents = BoolString(std::string{value}).get<bool>();
-          } catch (std::out_of_range& e) {
+        case index_of(keywords, save_unreferenced_extents):
+        case index_of(keywords, unknownextents): {
+          if (!value.empty()) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
                       save_unreferenced_extents);
             return std::nullopt;
           }
+          args.save_unknown_extents = true;
         } break;
 
-        case index_of(keywords, ignore_disks): {
+        case index_of(keywords, ignore_disks):
+        case index_of(keywords, ignoredisks): {
           if (value.empty()) {
             fatal_msg(ctx, "unexpected empty value for {} option",
                       ignore_disks);
@@ -333,9 +348,9 @@ struct plugin_arguments {
 
  private:
   std::vector<size_t> ignored_disks;
-  bool save_unknown_disks{true};
-  bool save_unknown_partitions{true};
-  bool save_unknown_extents{true};
+  bool save_unknown_disks{false};
+  bool save_unknown_partitions{false};
+  bool save_unknown_extents{false};
 };
 
 struct plugin_logger : public GenericLogger {
@@ -593,10 +608,10 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
     /* one would imagine it would make the most sense to do this check
      * in handlePluginEvent(bEventLevel), but that does not work:
      * - the check is not reliable: other plugins can swallow the event
-     * - there is no good way to stop the backup: the return value is basically
-     *   ignored; a fatal error message stops the job in a very bad place,
-     *   leading to bad job logs and stuck jobs.
-     * This is why this check was moved here */
+     * - there is no good way to stop the backup: the return value is
+     * basically ignored; a fatal error message stops the job in a very bad
+     * place, leading to bad job logs and stuck jobs. This is why this check
+     * was moved here */
 
     auto level = bVar::Get<bVar::Level>(ctx);
     if (!level) {
@@ -607,10 +622,10 @@ bRC startBackupFile(PluginContext* ctx, filedaemon::save_pkt* sp)
     }
 
     if (level.value() != L_FULL) {
-      fatal_msg(
-          ctx,
-          "this plugin only supports full backups, but level={} was requested",
-          static_cast<char>(level.value()));
+      fatal_msg(ctx,
+                "this plugin only supports full backups, but level={} was "
+                "requested",
+                static_cast<char>(level.value()));
       return bRC_Stop;
     }
   }
