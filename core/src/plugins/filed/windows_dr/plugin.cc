@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,7 @@
 #include "parser.h"
 #include "dump.h"
 #include "plugin.h"
+#include "lib/bool_string.h"
 #include <comdef.h>
 #include <time.h>
 
@@ -74,17 +75,17 @@ const PluginInformation my_info = {
     .plugin_magic = FD_PLUGIN_MAGIC,
     .plugin_license = "Bareos AGPLv3",
     .plugin_author = "Sebastian Sura",
-    .plugin_date = "Juli 2025",
-    .plugin_version = "0.9.0",
+    .plugin_date = "March 2026",
+    .plugin_version = "26.0.0",
     .plugin_description
     = "This plugin allows you to backup your windows system for disaster "
       "recovery.",
     .plugin_usage = PLUGIN_NAME
-    R"(:unknown disks:unknown partitions:unknown extents:ignore disks=<disks to ignore>
+    R"(:save-unreferenced-disks=<yes|no>:save-unreferenced-partitions=<yes|no>:save-unreferenced-extents=<yes|no>:ignore-disks=<disks to ignore>
 
-  unknown disks: try to save disks, that contain no snapshotted data
-  unknown partitions: try to save partitions, that contain no snapshotted data
-  unknown extents: try to save even unsnapshotted parts of partitions
+  save-unreferenced-disks=<yes|no>: try to save disks that contain no snapshotted data, default=yes
+  save-unreferenced-partitions=<yes|no>: try to save partitions that contain no snapshotted data, default=yes
+  save-unreferenced-extents=<yes|no>: try to save even unsnapshotted parts of partitions, default=yes
   disks to ignore: a comma-separated list of disk ids (i.e. '1,2,5') of disks
                    to not backup
 )"};
@@ -235,11 +236,18 @@ struct plugin_arguments {
   static std::optional<plugin_arguments> parse(PluginContext* ctx,
                                                std::string_view str)
   {
+    static constexpr std::string_view save_unreferenced_disks
+        = "save-unreferenced-disks";
+    static constexpr std::string_view save_unreferenced_partitions
+        = "save-unreferenced-partitions";
+    static constexpr std::string_view save_unreferenced_extents
+        = "save-unreferenced-extents";
+    static constexpr std::string_view ignore_disks = "ignore-disks";
     static constexpr std::string_view keywords[] = {
-        "unknown disks",
-        "unknown partitions",
-        "unknown extents",
-        "ignore disks",
+        save_unreferenced_disks,
+        save_unreferenced_partitions,
+        save_unreferenced_extents,
+        ignore_disks,
     };
 
     auto name = next_part(str, ':');
@@ -260,39 +268,48 @@ struct plugin_arguments {
 
       std::string_view value = {};
       switch (next_option(str, keywords, &value)) {
-        case index_of(keywords, "unknown disks"): {
-          if (!value.empty()) {
+        case index_of(keywords, save_unreferenced_disks): {
+          try {
+            args.save_unknown_disks
+                = BoolString(std::string{value}).get<bool>();
+          } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      keywords[0]);
+                      save_unreferenced_disks);
             return std::nullopt;
           }
-          args.save_unknown_disks = true;
         } break;
-        case index_of(keywords, "unknown partitions"): {
-          if (!value.empty()) {
+
+        case index_of(keywords, save_unreferenced_partitions): {
+          try {
+            args.save_unknown_partitions
+                = BoolString(std::string{value}).get<bool>();
+          } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      "unknown partitions");
+                      save_unreferenced_partitions);
             return std::nullopt;
           }
-          args.save_unknown_partitions = true;
         } break;
-        case index_of(keywords, "unknown extents"): {
-          if (!value.empty()) {
+
+        case index_of(keywords, save_unreferenced_extents): {
+          try {
+            args.save_unknown_extents
+                = BoolString(std::string{value}).get<bool>();
+          } catch (std::out_of_range& e) {
             fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      "unknown extents");
+                      save_unreferenced_extents);
             return std::nullopt;
           }
-          args.save_unknown_extents = true;
         } break;
-        case index_of(keywords, "ignore disks"): {
+
+        case index_of(keywords, ignore_disks): {
           if (value.empty()) {
             fatal_msg(ctx, "unexpected empty value for {} option",
-                      "ignore disk");
+                      ignore_disks);
             return std::nullopt;
           }
           if (auto error = insert_numbers(args.ignored_disks, value)) {
             fatal_msg(ctx, "could not parse {} as a list of ints ({}): {}",
-                      value, "ignore disk", error.value());
+                      value, ignore_disks, error.value());
             return std::nullopt;
           }
         } break;
@@ -321,9 +338,9 @@ struct plugin_arguments {
 
  private:
   std::vector<size_t> ignored_disks;
-  bool save_unknown_disks{false};
-  bool save_unknown_partitions{false};
-  bool save_unknown_extents{false};
+  bool save_unknown_disks{true};
+  bool save_unknown_partitions{true};
+  bool save_unknown_extents{true};
 };
 
 struct plugin_logger : public GenericLogger {

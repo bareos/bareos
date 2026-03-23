@@ -44,7 +44,7 @@ STORAGE_DAEMON_GROUP=operator
 
 
 PLIST_SUB+=	LIBVERSION=${DISTVERSION:C/\..*//} # major version
-PLIST_SUB+=	DISTVERSION=${DISTVERSION:C/(.{6}).*/\1/} # full version
+PLIST_SUB+=	DISTVERSION=${DISTVERSION:C/(([0-9]+\.){2}[0-9]+).*/\1/} # full version
 
 USES+=ssl
 USES+=gettext-runtime
