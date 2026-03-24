@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -248,7 +248,7 @@ class BareosFdPluginBaseclass(object):
         """
         Check Plugin options
         Here we just verify that eventual mandatory options are set.
-        If you have more to veriy, just overwrite ths method in your class
+        If you have more to veriy, just overwrite this method in your class
         """
         if mandatory_options is None:
             return bRC_OK

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -169,7 +169,7 @@ void NdmpLoghandler(struct ndmlog* log, char* tag, int level, char* msg)
   nis = (NIS*)log->ctx;
   if (!nis) { return; }
 
-  /* If the log level of this message is under our logging treshold we
+  /* If the log level of this message is under our logging threshold we
    * log it as part of the Job. */
   if (level <= (int)nis->LogLevel) {
     if (nis->jcr) {
@@ -538,8 +538,9 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   }
 
   /* When we found a JobControlRecord with the wanted security key it also
-   * implictly means the authentication succeeded as the connecting NDMP session
-   * only knows the exact security key as it was inserted by the director.  */
+   * implicitly means the authentication succeeded as the connecting NDMP
+   * session only knows the exact security key as it was inserted by the
+   * director.  */
   jcr->authenticated = true;
 
   /* There is a native storage daemon session waiting for the FD to connect.
@@ -548,7 +549,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   *jcr->sd_impl->client_available.lock() = true;
   jcr->sd_impl->job_start_wait.notify_one();
 
-  /* Save the JobControlRecord to ndm_session binding so everything furher
+  /* Save the JobControlRecord to ndm_session binding so everything further
    * knows which JobControlRecord belongs to which NDMP session. We have
    * a special ndmp_session_handle which we can use to track
    * session specific information.  */

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -168,7 +168,7 @@ void SerialString(uint8_t** const ptr, const char* const str)
   for (i = 0; src[i] != 0; i++) { dest[i] = src[i]; }
   dest[i++] = 0; /* Terminate output string */
   *ptr += i;     /* update pointer */
-  // Dmsg2(000, "ser src=%s dest=%s\n", src, dest);
+  // Dmsg2(000, "set src=%s dest=%s\n", src, dest);
 }
 
 

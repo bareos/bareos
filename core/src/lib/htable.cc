@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -135,7 +135,7 @@ uint32_t htableImpl::size() { return num_items; }
  * Take each hash link and walk down the chain of items
  *  that hash there counting them (i.e. the hits),
  *  then report that number.
- * Obiously, the more hits in a chain, the more time
+ * Obviously, the more hits in a chain, the more time
  *  it takes to reference them. Empty chains are not so
  *  hot either -- as it means unused or wasted space.
  */
@@ -194,9 +194,9 @@ void htableImpl::grow_table()
   Dmsg1(100, "Before copy num_items=%d\n", num_items);
 
   /* We walk through the old smaller tree getting items,
-   * but since we are overwriting the colision links, we must
+   * but since we are overwriting the collision links, we must
    * explicitly save the item->next pointer and walk each
-   * colision chain ourselves. We do use next() for getting
+   * collision chain ourselves. We do use next() for getting
    * to the next bucket. */
   for (void* item = first(); item;) {
     cur = (hlink*)((char*)item + loffset);

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -484,7 +484,7 @@ class Parser {
     header.first_usable_lba = gpt.first_usable_lba;
     header.last_usable_lba = gpt.last_usable_lba;
     header.disk_guid = gpt.disk_guid;
-    // the table follows immediatly afterwards
+    // the table follows immediately afterwards
     header.table_lba_location = 2;
     header.partition_count = gpt.max_part_count;
     // the crc member is set to zero while computing the crc sum itself

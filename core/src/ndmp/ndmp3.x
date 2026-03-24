@@ -329,7 +329,7 @@ struct ndmp3_config_get_auth_attr_reply
 };
 
 /* NDMP3_CONFIG_GET_SERVER_INFO */
-/* no requset arguments */
+/* no request arguments */
 struct ndmp3_config_get_server_info_reply
 {
         ndmp3_error     error;
@@ -946,7 +946,7 @@ struct ndmp3_notify_data_halted_request
 /* NDMP3_NOTIFY_CONNECTED */
 enum ndmp3_connect_reason
 {
-        NDMP3_CONNECTED,        /* Connect sucessfully */
+        NDMP3_CONNECTED,        /* Connect successfully */
         NDMP3_SHUTDOWN,         /* Connection shutdown */
         NDMP3_REFUSED           /* reach the maximum number of connections */
 };

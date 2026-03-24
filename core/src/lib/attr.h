@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,7 +37,7 @@ struct Attributes {
   int32_t type;        /**< file type FT */
   int32_t file_index;  /**< file index */
   int32_t LinkFI;      /**< file index to data if hard link */
-  int32_t delta_seq;   /**< delta sequence numbr */
+  int32_t delta_seq;   /**< delta sequence number */
   uid_t uid;           /**< userid */
   struct stat statp;   /**< decoded stat packet */
   POOLMEM* attrEx;     /**< extended attributes if any */

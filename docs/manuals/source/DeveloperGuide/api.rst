@@ -15,7 +15,7 @@ Minimal Code in Console Program
 
 All the Catalog code is in the Directory (with the exception of
 ``dbcheck`` and ``bscan``). Therefore also user level security and
-access is implemented in this central place. If code would be spreaded
+access is implemented in this central place. If code would be spread
 everywhere such as in a GUI this will be more difficult. The other
 advantage is that any code you add to the Director is automatically
 available to all interface programs, like the tty console and other
@@ -52,7 +52,7 @@ dot commands
 Besides the normal commands (like list, status, run, mount, ...) the
 Director offers a number of so called *dot commands*. They all begin
 with a period, are all non-interactive, easily parseable and are
-indended to be used by other Bareos interface programs (GUIs).
+intended to be used by other Bareos interface programs (GUIs).
 
 The command :bcommand:`.help` shows a complete list of all dot commands.
 
@@ -97,7 +97,7 @@ The command :bcommand:`.help` shows a complete list of all dot commands.
 -  ``.messages``
 -  ``.media``
 
-   -  List all medias
+   -  List all media
 
 -  ``.mediatypes``
 
@@ -121,7 +121,7 @@ The command :bcommand:`.help` shows a complete list of all dot commands.
 
 -  ``.sql query=<sqlquery>``
 
-   -  Send an arbitary SQL command
+   -  Send an arbitrary SQL command
 
 -  ``.schedule``
 
@@ -190,7 +190,7 @@ or (from times when there was only one API flavour)
     .api
 
 This mode is intended to create output that is easier to parse.
-Internaly some commands vary their output for API mode 1.
+Internally some commands vary their output for API mode 1.
 
 In API mode 1 some output is only delimited by the end of a packet, not
 by a new line. bconsole does not display the end of packets (for good
@@ -231,7 +231,7 @@ The API mode 2 (or JSON mode) has been introduced in Bareos-15.2 and
 differs from API mode 1 in several aspects:
 
 -  JSON output
--  The JSON output is in the format of JSON-RPC 2.0 responce objects
+-  The JSON output is in the format of JSON-RPC 2.0 response objects
    (https://www.jsonrpc.org/specification#response_object). This should
    make it easier to implement a full JSON-RPC service later.
 -  No user interaction inside a command (meaning: if not all parameters
@@ -241,7 +241,7 @@ differs from API mode 1 in several aspects:
 Currently a subset of the available commands return their result in JSON
 format, while others still write plain text output.
 
-A successful responce should return
+A successful response should return
 
 .. code-block:: bconsole
 
@@ -716,7 +716,7 @@ file option.
 To include a directory (with ``dirid``), Bvfs needs to run a query to
 select all files. This query could be time consuming.
 
-``hardlink`` list is always composed of a serie of two numbers (jobid,
+``hardlink`` list is always composed of a series of two numbers (jobid,
 fileindex). This information can be found in the LinkFileIndex (LinkFI)
 field of the LStat packet.
 
@@ -782,7 +782,7 @@ Example for directory browsing using bvfs
 
     # the first really backed up path is /sbin/ (pathid=1)
     # as it has values other than 0 for FileId, JobId and LStat.
-    # Now we check, if it has futher subdirectories.
+    # Now we check, if it has further subdirectories.
     *.bvfs_lsdir jobid=1 pathid=1
     1   23  123 z GiuU EH9 C GHH GHH A BAA BAA I BWA5Px BaIDUN BaIDUN A A C .
     129 0   0   A A A A A A A A A A A A A A ..

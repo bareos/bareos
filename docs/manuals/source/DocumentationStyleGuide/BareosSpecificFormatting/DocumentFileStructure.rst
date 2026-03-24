@@ -1,7 +1,7 @@
 Document File Structure
 =======================
 
-The document is splitted chapter wise in different rst files.
+The document is split chapter wise in different rst files.
 The document is put together using the toctree directive.
 
   * _extensions/
@@ -46,7 +46,7 @@ All documents should only contain one highest level section (underlined by ``=``
 
 If there are more highest level headings required,
 the file should be replaced by a toctree document
-and the content should be splitted into multiple files
+and the content should be split into multiple files
 and placed in the matching subdirectory.
 
 .. A toctree file contains normally only a heading (to structure the document)

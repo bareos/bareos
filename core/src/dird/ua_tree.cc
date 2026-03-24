@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -181,7 +181,7 @@ bool UserSelectFilesFromTree(TreeContext* tree)
 
     if (!found) {
       if (*ua->argk[0] == '.') {
-        /* Some unknow dot command -- probably .messages, ignore it */
+        /* Some unknown dot command -- probably .messages, ignore it */
         continue;
       }
       ua->WarningMsg(T_("Invalid command \"%s\". Enter \"done\" to exit.\n"),
@@ -307,7 +307,7 @@ int InsertTreeHandler(void* ctx, int, char** row)
     if (statp.st_nlink > 1 && type != tree_node_type::Dir
         && type != tree_node_type::DirWin) {
       if (!LinkFI) {
-        // First occurence - file hardlinked to
+        // First occurrence - file hardlinked to
         entry = (HL_ENTRY*)tree->root->hardlinks.hash_malloc(sizeof(HL_ENTRY));
         entry->key = (((uint64_t)JobId) << 32) + FileIndex;
         entry->node = node;

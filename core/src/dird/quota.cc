@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU General Public
@@ -81,7 +81,7 @@ uint64_t FetchRemainingQuotas(JobControlRecord* jcr)
     remaining = jcr->dir_impl->res.client->HardQuota
                 - jcr->dir_impl->jr.JobSumTotalBytes;
   } else {
-    /* If just over quota return 0. This shouldnt happen because quotas
+    /* If just over quota return 0. This shouldn't happen because quotas
      * are checked properly prior to this code. */
     remaining = 0;
   }

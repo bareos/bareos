@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -202,7 +202,7 @@ int GetScsiDriveEncryptionStatus(int fd,
   PmStrcpy(status, "");
   IndentStatusMsg(status, T_("Drive encryption status:\n"), indent);
 
-  // See what encrption mode is enabled.
+  // See what encryption mode is enabled.
   switch (spd->encryptionMode) {
     case SPP_ENCR_MODE_DISABLE:
       IndentStatusMsg(status, T_("Encryption Mode: Disabled\n"), indent + 3);

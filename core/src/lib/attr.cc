@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -100,7 +100,7 @@ int UnpackAttributesRecord(JobControlRecord* jcr,
   while (*p++ != ' ') /* skip type */
   {}
 
-  attr->fname = p;  /* set filname position */
+  attr->fname = p;  /* set filename position */
   while (*p++ != 0) /* skip filename */
   {}
   attr->attr = p;   /* set attributes position */

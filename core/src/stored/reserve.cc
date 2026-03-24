@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -380,8 +380,8 @@ static bool IsVolInAutochanger(ReserveContext& rctx, VolumeReservationItem* vol)
  * Search for a device suitable for this job.
  *
  * Note, this routine sets sets rctx.suitable_device if any
- * device exists within the SD. The device may not be actually useable.
- * It also returns if it finds a useable device.
+ * device exists within the SD. The device may not be actually usable.
+ * It also returns if it finds a usable device.
  */
 bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
 {
@@ -476,7 +476,7 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
           rctx.VolumeName);
     return true;
   } else {
-    // no existing volume found; reseting volume name.
+    // no existing volume found; resetting volume name.
     dcr->VolumeName[0] = 0;
   }
 

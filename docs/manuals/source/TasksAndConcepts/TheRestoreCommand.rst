@@ -600,7 +600,7 @@ file to the same directory, but with a different name, or in an other directory 
 the full path.
 
 You can also do filename and path manipulations, such as adding a suffix to all your files, renaming
-files or directories, etc. Theses options will overwrite where= option.
+files or directories, etc. These options will overwrite where= option.
 
 For example, many users use OS snapshot features so that file ``/home/user1/mbox`` will be backed up
 from the directory ``/.snap/home/user1/mbox``, which can complicate restores.
@@ -645,7 +645,7 @@ A valid regexwhere expression has three fields :
 
 -  a search expression (with optional submatch)
 
--  a replacement expression (with optionnal back references $1 to $9)
+-  a replacement expression (with optional back references $1 to $9)
 
 -  a set of search options (only case-insensitive “i” at this time)
 
@@ -662,7 +662,7 @@ Examples
 ^^^^^^^^
 
 ==================== ===================== ================================= ==============================
-Orignal filename     New filename          RegexWhere                        Comments
+Original filename    New filename          RegexWhere                        Comments
 ==================== ===================== ================================= ==============================
 ``c:/system.ini``    ``c:/system.old.ini`` ``/.ini$/.old.ini/``              $ matches end of name
 ``/prod/u01/pdata/`` ``/rect/u01/rdata``   ``/prod/rect/,/pdata/rdata/``     uses two regexp
@@ -972,7 +972,7 @@ help
 ?
    :index:`\ <single: Console; File Selection; ?>`\  This command is the same as the help command.
 
-If your filename contains some weird caracters, you can use ``?``, ``*`` or \\\. For example, if
+If your filename contains some weird characters, you can use ``?``, ``*`` or \\\. For example, if
 your filename contains a \\, you can use \\\\\.
 
 ::

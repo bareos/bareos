@@ -36,7 +36,7 @@ storage space can be reused.
 As mentioned, the solution is to have multiple Volumes, or files on the disk. To do so, we need to limit the use and thus the size of a single Volume, by time, by number of jobs, or by size. Any of these would work, but we chose to limit the use of a single Volume by putting a single job in each Volume with the exception of Volumes containing Incremental backup where there will be 6 jobs (a week’s worth of data) per volume. The details of this will be discussed shortly. This is a single client
 backup, so if you have multiple clients you will need to multiply those numbers by the number of clients, or use a different system for switching volumes, such as limiting the volume size.
 
-.. TODO: This chapter will get rewritten. Instead of limiting a Volume to one job, we will utilize ``Max Use Duration = 24 hours``\ . This prevents problems when adding more clients, because otherwise each job has to run seperat.
+.. TODO: This chapter will get rewritten. Instead of limiting a Volume to one job, we will utilize ``Max Use Duration = 24 hours``\ . This prevents problems when adding more clients, because otherwise each job has to run separate.
 
 The next problem to resolve is recycling of Volumes. As you noted from above, the requirements are to be able to restore monthly for 6 months, weekly for a month, and daily for a week. So to simplify things, why not do a Full save once a month, a Differential save once a week, and Incremental saves daily. Now since each of these different kinds of saves needs to remain valid for differing periods, the simplest way to do this (and possibly the only) is to have a separate Pool for each backup
 type.
@@ -111,7 +111,7 @@ As you can see, the Differential Pool can grow to a maximum of 9 volumes, and th
 
 If a new volume is used every week, after 40 days, one will have used 7 volumes, and there should then always be 3 volumes that can be purged and recycled.
 
-See the discussion above concering the Full pool for how to handle multiple clients.
+See the discussion above concerning the Full pool for how to handle multiple clients.
 
 
 

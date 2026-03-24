@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1844,7 +1844,7 @@ bail_out:
   return files;
 }
 
-/* TODO: redirect command ouput to job log */
+/* TODO: redirect command output to job log */
 bool RunConsoleCommand(JobControlRecord*, const char* cmd)
 {
   UaContext* ua;

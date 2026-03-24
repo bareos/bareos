@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -109,7 +109,7 @@ class ClientResource
   crypto_cipher_t pki_cipher = CRYPTO_CIPHER_NONE;    /* PKI Cipher to use */
   bool always_use_lmdb = false; /* Use LMDB for accurate data */
   uint32_t lmdb_threshold = 0;  /* Switch to using LDMD when number of accurate
-                               entries exceeds treshold. */
+                               entries exceeds threshold. */
   X509_KEYPAIR* pki_keypair = nullptr; /* Shared PKI Public/Private Keypair */
 
   alist<X509_KEYPAIR*>* pki_signers = nullptr; /* Shared PKI Trusted Signers */

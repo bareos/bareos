@@ -89,7 +89,7 @@ Make sure to add or enable the following settings in your Windows |fd| configura
      ...
    }
 
-After a restart of the bareos service on windows, the ouput of the **status client** command shows that the plugin
+After a restart of the bareos service on windows, the output of the **status client** command shows that the plugin
 was successfully loaded:
 
 .. code-block:: bconsole
@@ -103,7 +103,7 @@ was successfully loaded:
    Plugin Info:
     Plugin     : barri-fd.dll
     Description: This plugin allows you to backup your windows system for disaster recovery.
-    Version    : 0.9.0 (Juli 2025)
+    Version    : 0.9.0 (July 2025)
     Author     : Sebastian Sura
     License    : Bareos AGPLv3
     Usage      : barri:save-unreferenced-disks=<yes|no>:save-unreferenced-partitionsi=<yes|no>:save-unreferenced-extents=<yes|no>:ignore-disks=<disks to ignore>
@@ -606,7 +606,7 @@ Restore with the Windows barri-cli.exe commandline tool
 If the linux live system approach is unsuitable, e.g. because the disks are not recognized because of missing
 drivers, it is possible to use the Windows Version of :command:`barri-cli` for recovery.
 
-One approch is to connect the disk that needs to be recovered to a second
+One approach is to connect the disk that needs to be recovered to a second
 Windows Machine and recover if from there.
 
 The second approach is to prepare a Windows PE live system and add the required
@@ -720,7 +720,7 @@ Recovery in Windows PE using barri-cli.exe
 ''''''''''''''''''''''''''''''''''''''''''
 
 Now use the just created USB Drive to boot the Computer that you want to
-restore. After successful bootup the computer show a cmd.exe commandline
+restore. After successful boot up the computer show a cmd.exe commandline
 window like below:
 
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -356,7 +356,7 @@ int cstrlen(const char* str)
       len++;
       continue;
     }
-    p++; /* Shouln't get here but must advance */
+    p++; /* Shouldn't get here but must advance */
   }
   return len;
 }
@@ -941,7 +941,7 @@ static bool PathMkdir(char* path, [[maybe_unused]] mode_t mode)
 
   if (mkdir(path, mode) != 0) {
     BErrNo be;
-    Emsg2(M_ERROR, 0, "Falied to create directory %s: ERR=%s\n", path,
+    Emsg2(M_ERROR, 0, "Failed to create directory %s: ERR=%s\n", path,
           be.bstrerror());
     return false;
   }

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -260,7 +260,7 @@ std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list)
  * Become Threaded Network Server
  *
  * This function is able to handle multiple server ips in
- * ipv4 and ipv6 style. The Addresse are give in a comma
+ * ipv4 and ipv6 style. The Addresses are given in a comma
  * separated string in bind_addr
  *
  * At the moment it is impossible to bind to different ports.

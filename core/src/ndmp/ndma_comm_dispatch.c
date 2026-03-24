@@ -270,7 +270,7 @@ int ndma_dispatch_raise_error(struct ndm_session* sess,
  ****************************************************************
  */
 
-/* incomming requests on a ndmconn connection */
+/* incoming requests on a ndmconn connection */
 int ndma_dispatch_conn(struct ndm_session* sess, struct ndmconn* conn)
 {
   struct ndmp_xa_buf xa;
@@ -572,7 +572,7 @@ int ndmp_sxa_connect_open(struct ndm_session* sess,
         break;
 
       default:
-        NDMADR_RAISE_ILLEGAL_ARGS("unsupport protocol version");
+        NDMADR_RAISE_ILLEGAL_ARGS("unsupported protocol version");
         break;
     }
   }
@@ -2243,7 +2243,7 @@ int ndmp_sxa_mover_set_window(struct ndm_session* sess,
   } else {
     /*
      * NDMP4 require the Mover be in IDLE state.
-     * This always preceeds both MOVER_LISTEN or
+     * This always precedes both MOVER_LISTEN or
      * MOVER_CONNECT.
      */
     if (ms->state != NDMP9_MOVER_STATE_IDLE &&

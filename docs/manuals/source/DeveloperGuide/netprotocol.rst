@@ -86,7 +86,7 @@ same as bnet_send.
 is_bnet_error
 ~~~~~~~~~~~~~
 
-Fro additional error information, you can call **is_bnet_error(BSOCK
+For additional error information, you can call **is_bnet_error(BSOCK
 \*bsock)** which will return 0 if there is no error or non-zero if there
 is an error on the last transmission.
 
@@ -140,7 +140,7 @@ int bnet_sig(BSOCK \*sock, SIGNAL) where SIGNAL is one of the following:
 bnet_strerror
 ~~~~~~~~~~~~~
 
-Returns a formated string corresponding to the last error that occurred.
+Returns a formatted string corresponding to the last error that occurred.
 
 bnet_close
 ~~~~~~~~~~

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -104,7 +104,7 @@ static bool MockVSSConvertW_OldApi(const wchar_t* path, wchar_t* buf, int len)
 // do the same thing as MockVSSConvert* except with the new required api
 static char* MockVSSConvert_NewApi(const char* path)
 {
-  // use a len thats big enough to fit path without
+  // use a len that's big enough to fit path without
   // relying on strlen(path) so as to not trigger
   // a false strncat 'bound depends on source' warning
   int len = 40000;
@@ -116,7 +116,7 @@ static char* MockVSSConvert_NewApi(const char* path)
 
 static wchar_t* MockVSSConvertW_NewApi(const wchar_t* path)
 {
-  // use a len thats big enough to fit path without
+  // use a len that's big enough to fit path without
   // relying on strlen(path) so as to not trigger
   // a false strncat 'bound depends on source' warning
   int len = 40000;

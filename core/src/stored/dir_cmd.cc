@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -600,9 +600,9 @@ static bool DoLabel(JobControlRecord* jcr, bool relabel)
   /* Determine the length of the temporary buffers.
    * If the total length of the incoming message is less
    * then MAX_NAME_LENGTH we can use that as the upper limit.
-   * If the incomming message is bigger then MAX_NAME_LENGTH
+   * If the incoming message is bigger then MAX_NAME_LENGTH
    * limit the temporary buffer to MAX_NAME_LENGTH bytes as
-   * we use a sscanf %127s for reading the temorary buffer. */
+   * we use a sscanf %127s for reading the temporary buffer. */
   len = dir->message_length + 1;
   if (len > MAX_NAME_LENGTH) { len = MAX_NAME_LENGTH; }
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -338,7 +338,7 @@ static inline bool DoNativeRestoreBootstrap(JobControlRecord* jcr)
       }
       WaitForStorageDaemonTermination(jcr);
     }
-  } /* the whole boostrap has been send */
+  } /* the whole bootstrap has been send */
 
   if (fd && jcr->dir_impl->FDVersion >= FD_VERSION_2) {
     fd->fsend("endrestore");

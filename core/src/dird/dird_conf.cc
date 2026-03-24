@@ -275,7 +275,7 @@ static const ResourceItem cat_items[] = {
   { "MinConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_min_connections), {config::DefaultValue{"1"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the minimum number of connections to a database to keep in this database pool."}}},
   { "MaxConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_max_connections), {config::DefaultValue{"5"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the maximum number of connections to a database to keep in this database pool."}}},
   { "IncConnections", CFG_TYPE_PINT32, ITEM(res_cat, pooling_increment_connections), {config::DefaultValue{"1"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the number of connections to add to a database pool when not enough connections are available on the pool anymore."}}},
-  { "IdleTimeout", CFG_TYPE_PINT32, ITEM(res_cat, pooling_idle_timeout), {config::DefaultValue{"30"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites.  This sets the idle time after which a database pool should be shrinked."}}},
+  { "IdleTimeout", CFG_TYPE_PINT32, ITEM(res_cat, pooling_idle_timeout), {config::DefaultValue{"30"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites.  This sets the idle time after which a database pool should be shrunk."}}},
   { "ValidateTimeout", CFG_TYPE_PINT32, ITEM(res_cat, pooling_validate_timeout), {config::DefaultValue{"120"}, config::Description{"This directive is used by the experimental database pooling functionality. Only use this for non production sites. This sets the validation timeout after which the database connection is polled to see if its still alive."}}},
   {}
 };
@@ -910,7 +910,7 @@ static bool CmdlineItems(PoolMem* buffer, const ResourceItem items[])
  * Get the usage string for the console "configure" command.
  *
  * This will be all available resource directives.
- * They are formated in a way to be usable for command line completion.
+ * They are formatted in a way to be usable for command line completion.
  */
 const char* GetUsageStringForConsoleConfigureCommand()
 {
@@ -1784,7 +1784,7 @@ static void PrintConfigRun(OutputFormatterResource& send,
 
 std::string FilesetResource::GetOptionValue(const char** option)
 {
-  /* Extract substring until next ":" chararcter.
+  /* Extract substring until next ":" character.
    * Modify the string pointer. Move it forward. */
   std::string value;
   (*option)++; /* skip option key */
@@ -1804,7 +1804,7 @@ void FilesetResource::PrintConfigIncludeExcludeOptions(
     switch (*p) {
       case '0': /* no option */
         break;
-      case 'a': /* alway replace */
+      case 'a': /* always replace */
         send.KeyQuotedString("Replace", "Always");
         break;
       case 'C': /* */
@@ -2915,7 +2915,7 @@ static void StoreShortRunscript(lexer* lc,
 }
 
 /**
- * Store a bool in a bit field without modifing hdr
+ * Store a bool in a bit field without modifying hdr
  * We can also add an option to StoreBool to skip hdr
  */
 static void StoreRunscriptBool(lexer* lc, const ResourceItem* item, int, int)

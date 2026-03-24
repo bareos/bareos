@@ -819,13 +819,13 @@ import
       3306 Issuing autochanger "listall" command.
       Connecting to Storage daemon TandbergT40 at bareos:9103 ...
       3306 Issuing autochanger transfer command.
-      3308 Successfully transfered volume from slot 37 to 20.
+      3308 Successfully transferred volume from slot 37 to 20.
       Connecting to Storage daemon TandbergT40 at bareos:9103 ...
       3306 Issuing autochanger transfer command.
-      3308 Successfully transfered volume from slot 38 to 21.
+      3308 Successfully transferred volume from slot 38 to 21.
       Connecting to Storage daemon TandbergT40 at bareos:9103 ...
       3306 Issuing autochanger transfer command.
-      3308 Successfully transfered volume from slot 39 to 25.
+      3308 Successfully transferred volume from slot 39 to 25.
 
    You can also import certain slots when you don’t have enough free slots in your autochanger to
    put all the import/export slots in.
@@ -843,7 +843,7 @@ import
       3306 Issuing autochanger "listall" command.
       Connecting to Storage daemon TandbergT40 at bareos:9103 ...
       3306 Issuing autochanger transfer command.
-      3308 Successfully transfered volume from slot 37 to 20.
+      3308 Successfully transferred volume from slot 37 to 20.
 
 label
    :index:`\ <single: Console; Command; label>`\  :index:`\ <single: Console; Command; relabel>`\  This
@@ -1106,7 +1106,7 @@ move
       3306 Issuing autochanger "listall" command.
       Connecting to Storage daemon TandbergT40 at bareos:9103 ...
       3306 Issuing autochanger transfer command.
-      3308 Successfully transfered volume from slot 32 to 33.
+      3308 Successfully transferred volume from slot 32 to 33.
 
 
 .. _ManualPruning:
@@ -1354,7 +1354,7 @@ run
    Then enter the desired start time in YYYY-MM-DD HH:MM:SS format.
 
    The spooldata argument of the run command cannot be modified through the menu and is only
-   accessible by setting its value on the intial command line. If no spooldata flag is set, the job,
+   accessible by setting its value on the initial command line. If no spooldata flag is set, the job,
    storage or schedule flag is used.
 
 setbandwidth

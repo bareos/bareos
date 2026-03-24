@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -668,7 +668,7 @@ static bacl_exit_code generic_get_acl_from_os(JobControlRecord* jcr,
      * defined, while IRIX's acl_to_text() returns NULL when presented
      * with such an ACL.
      *
-     * For all other implmentations we check if there are more then
+     * For all other implementations we check if there are more then
      * zero entries in the acl returned. */
     if (AclCountEntries(acl) <= 0) { goto bail_out; }
 
@@ -1233,13 +1233,13 @@ static bacl_exit_code (*os_parse_acl_streams)(JobControlRecord* jcr,
 /**
  * We define some internals of the Solaris acl libs here as those
  * are not exposed yet. Probably because they want us to see the
- * acls as opague data. But as we need to support different platforms
+ * acls as opaque data. But as we need to support different platforms
  * and versions of Solaris we need to expose some data to be able
  * to determine the type of acl used to stuff it into the correct
  * data stream. I know this is far from portable, but maybe the
  * proper interface is exposed later on and we can get ride of
  * this kludge. Newer versions of Solaris include sys/acl_impl.h
- * which has implementation details of acls, if thats included we
+ * which has implementation details of acls, if that's included we
  * don't have to define it ourself.
  */
 #        if !defined(_SYS_ACL_IMPL_H)

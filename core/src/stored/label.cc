@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -631,7 +631,7 @@ bool WriteSessionLabel(DeviceControlRecord* dcr, int label)
 
   /* We guarantee that the session record can totally fit
    *  into a block. If not, write the block, and put it in
-   *  the next block. Having the sesssion record totally in
+   *  the next block. Having the session record totally in
    *  one block makes reading them much easier (no need to
    *  read the next block). */
   if (!CanWriteRecordToBlock(block, rec)) {
@@ -1003,7 +1003,7 @@ void DumpLabelRecord(Device* dev, DeviceRecord* rec, bool verbose)
 
 /**
  * Write a volume label. This is ONLY called if we have a valid Bareos
- *   label of type PRE_LABEL or we are recyling an existing Volume.
+ *   label of type PRE_LABEL or we are recycling an existing Volume.
  *
  *  Returns: true if OK
  *           false if unable to write it

@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2019-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -39,7 +39,7 @@ from bareos_urls import BareosUrls
 # modifies the default rule for rendering
 # .. config::option:
 #
-# Also modifes the generated index.
+# Also modifies the generated index.
 # If this extension is not loaded,
 # index will be 'command line option' ...
 #
@@ -64,7 +64,7 @@ from bareos_urls import BareosUrls
 
 
 def uppercaseFirstLetter(text):
-    # Make sure, string starts with an upppercase letter.
+    # Make sure, string starts with an uppercase letter.
     if len(text) >= 1:
         if text[0] != text[0].upper():
             resulttext = text[0].upper() + text[1:]

@@ -68,7 +68,7 @@ else
 fi
 
 #
-# Try to run a debugger on the crashing program or the generated postmortem dump for getting a strack trace.
+# Try to run a debugger on the crashing program or the generated postmortem dump for getting a stack trace.
 #
 case ${DEBUGGER} in
   DBX)

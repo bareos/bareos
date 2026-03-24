@@ -3,7 +3,7 @@
 
    Copyright (C) 2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -440,9 +440,9 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
            p_ctx->database, dt);
       break;
     default:
-      Jmsg(ctx, M_FATAL, "Unsuported backup level (%c).\n",
+      Jmsg(ctx, M_FATAL, "Unsupported backup level (%c).\n",
            p_ctx->backup_level);
-      Dmsg(ctx, debuglevel, "Unsuported backup level (%c).\n",
+      Dmsg(ctx, debuglevel, "Unsupported backup level (%c).\n",
            p_ctx->backup_level);
       return bRC_Error;
   }
@@ -870,7 +870,7 @@ static void adoThreadSetError(PluginContext* ctx, _ADOConnection* adoConnection)
 
   if (p_ctx->ado_errorstr) { return; }
 
-  // Set the threads cancellation type to defered.
+  // Set the threads cancellation type to deferred.
   pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, &cancel_type);
 
   if (!adoGetErrors(ctx, adoConnection, ado_errorstr)) { goto bail_out; }
@@ -1012,7 +1012,7 @@ static void SetAdoConnectString(PluginContext* ctx)
 
 /**
  * Generate a valid connect string and the backup command we should execute
- * in the separate database controling thread.
+ * in the separate database controlling thread.
  */
 static inline void PerformAdoBackup(PluginContext* ctx)
 {

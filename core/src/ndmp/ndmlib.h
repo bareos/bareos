@@ -93,7 +93,7 @@ extern void ndmlogfv(struct ndmlog* log,
  ****************************************************************
  *
  * The ndmnmb routines are trivial aids for handling
- * NMB (NDMP Messsage Buffer). ndmp_msg_buf is defined in
+ * NMB (NDMP Message Buffer). ndmp_msg_buf is defined in
  * ndmp_msg_buf.h, and pretty much amounts to a huge
  * union of all NDMP request and reply types.
  */
@@ -120,7 +120,7 @@ extern int ndmnmb_set_reply_error(struct ndmp_msg_buf* nmb, ndmp9_error error);
  * to juggle (manage) multiple I/O activities at one time.
  * The data buffer is used linearly. beg_ix and end_ix
  * bracket the valid data. When the end of the buffer is reached,
- * the remaining valid data is moved to the begining.
+ * the remaining valid data is moved to the beginning.
  */
 struct ndmchan {
   char* name; /* short name, helps debugging */
@@ -715,7 +715,7 @@ extern int ndmcfg_loadfp(FILE* fp, ndmp9_config_info* config_info);
  * sort(1) command). For recovery the file history index is searched
  * using binary search (see NDMBSTF above). The fh_info, a 64-bit
  * cookie used by DATA to identify the region of the backup image
- * containing the corresponding object, is retreived from the index.
+ * containing the corresponding object, is retrieved from the index.
  */
 
 struct ndmfhdb {

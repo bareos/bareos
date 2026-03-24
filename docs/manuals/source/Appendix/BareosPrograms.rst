@@ -799,7 +799,7 @@ bcopy
 
 .. index::
    single: bcopy
-   singe: Command; bcopy
+   single: Command; bcopy
 
 The :command:`bcopy` program can be used to copy one Bareos archive file to another. For example, you may copy a tape to a file, a file to a tape, a file to a file, or a tape to a tape. For tape to tape, you will need two tape drives. In the process of making the copy, no record of the information written to the new Volume is stored in the catalog. This means that the new Volume, though it contains valid backup data, cannot be accessed directly from existing catalog entries. If you
 wish to be able to use the Volume with the Console restore command, for example, you must first command:`bscan` the new Volume into the catalog.

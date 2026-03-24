@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -26,7 +26,7 @@
  *
  */
 
-/* Concerning times. There are a number of differnt time standards
+/* Concerning times. There are a number of different time standards
  * in BAREOS (fdate_t, ftime_t, time_t (Unix standard), btime_t, and
  * utime_t).  fdate_t and ftime_t are deprecated and should no longer
  * be used, and in general, Unix time time_t should no longer be used,

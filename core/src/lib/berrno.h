@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2021 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,7 +34,7 @@
 #ifdef HAVE_WIN32
 #  define b_errno_win32 (1 << 29) /* user reserved bit */
 #else
-#  define b_errno_win32 0 /* On Unix/Linix system */
+#  define b_errno_win32 0 /* On Unix/Linux system */
 #endif
 #define b_errno_exit (1 << 28)   /* child exited, exit code returned */
 #define b_errno_signal (1 << 27) /* child died, signal code returned */

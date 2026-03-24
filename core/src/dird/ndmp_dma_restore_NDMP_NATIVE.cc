@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -171,7 +171,7 @@ int SetFilesToRestoreNdmpNative(JobControlRecord* jcr,
   node = FirstTreeNode(jcr->dir_impl->restore_tree_root);
   while (node) {
     /* node->extract_dir  means that only the directory should be selected for
-     * extraction itself, the subdirs and subfiles are not automaticaly marked
+     * extraction itself, the subdirs and subfiles are not automatically marked
      * for extraction ( i.e. set node->extract)
      *
      * We can use this to select a directory for DDAR.

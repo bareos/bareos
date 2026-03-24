@@ -31,7 +31,7 @@
  * Ident:    $Id: $
  *
  * Description:
- *      NDMPv0, represented here, is a ficticious version
+ *      NDMPv0, represented here, is a fictitious version
  *      used to negotiate NDMP protocol version for the
  *      remainder of the session. Early, as a connection is
  *      being set up, the version of the protocol is unknown.
@@ -151,7 +151,7 @@ struct ndmp0_connect_open_reply
 /* NDMP0_NOTIFY_CONNECTED */
 enum ndmp0_connect_reason
 {
-        NDMP0_CONNECTED,        /* Connect sucessfully */
+        NDMP0_CONNECTED,        /* Connect successfully */
         NDMP0_SHUTDOWN,         /* Connection shutdown */
         NDMP0_REFUSED           /* reach the maximum number of connections */
 };

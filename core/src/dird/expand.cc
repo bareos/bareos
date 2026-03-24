@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2006 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -330,7 +330,7 @@ static var_rc_t lookup_var(var_t* ctx,
     if (*p == '|') { count++; }
   }
 
-  Dmsg3(100, "For %s, reqest index=%d have=%d\n", buf.c_str(), var_index,
+  Dmsg3(100, "For %s, request index=%d have=%d\n", buf.c_str(), var_index,
         count);
 
   // -1 => return size of array

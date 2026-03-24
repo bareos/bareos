@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -92,7 +92,7 @@ TEST(CLI, HelpMessageDisplaysWithCorrectFormat)
 
   // cli output is not very stable
   // we try to make this test more stable by not required an exact match
-  // regarding trailing & preceeding whitespace
+  // regarding trailing & preceding whitespace
   EXPECT_EQ(trim(new_help), trim(expected_help)) << new_help << "\n---\n"
                                                  << help << "\n---\n"
                                                  << default_help << "\n---\n";

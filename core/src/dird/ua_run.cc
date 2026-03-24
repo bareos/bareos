@@ -2,7 +2,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -413,7 +413,7 @@ try_again:
    * later. We only want to do these overrides once so we use
    * a tracking boolean do_pool_overrides to see if we still
    * need to do this (e.g. we pass by here multiple times when
-   * the user interactivly changes options. */
+   * the user interactively changes options. */
   if (do_pool_overrides) {
     switch (jcr->getJobType()) {
       case JT_BACKUP:
@@ -475,7 +475,7 @@ try_again:
   }
 
   /* For interactive runs we set IgnoreLevelPoolOverrides as we already
-   * performed the actual overrrides. */
+   * performed the actual overrides. */
   jcr->dir_impl->IgnoreLevelPoolOverrides = true;
 
   if (ua->cmd[0] == 0 || bstrncasecmp(ua->cmd, NT_("yes"), strlen(ua->cmd))
@@ -2203,7 +2203,7 @@ static bool ScanCommandLineArguments(UaContext* ua, RunContext& rc)
       // Running backup jobs can only be performed on clients with a
       // configuration resource. However, a restore job should also work from
       // clients without configuration resource (client has been deleted from
-      // the configruation, but can still be found in the catalog database).
+      // the configuration, but can still be found in the catalog database).
       if (rc.job->JobType == JT_RESTORE) {
         ClientDbRecord cr;
         bstrncpy(cr.Name, rc.client_name, sizeof(cr.Name));

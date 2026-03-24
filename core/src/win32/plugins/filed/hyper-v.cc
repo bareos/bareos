@@ -2149,7 +2149,7 @@ struct ref_point {
 
 struct vm_info {
   std::string external_name;  // name shown to the user
-  std::string internal_name;  // guid identifiying the vm
+  std::string internal_name;  // guid identifying the vm
 
   std::vector<backed_up_disk> disks;
 
@@ -2690,7 +2690,7 @@ static bRC free_current_state(PluginContext* ctx)
                 } else {
                   if (prepared->delta_seq > 1 && prepared->refpoint) {
                     // the previous reference point is _not_ a full,
-                    // so we can delte
+                    // so we can delete
                     DBGC(ctx,
                          L"delta_seq {} > 1 => delete previous non-full ref "
                          L"point",
@@ -3281,12 +3281,12 @@ static std::optional<WMI::ComputerSystem> get_system_by_name(
     //  other found vms can still get backed up.
     //  Maybe this should always just be an error ?
     if (found_count > 1) {
-      JFATAL(ctx, "there are mulitple vms named {}.  Cannot continue.",
+      JFATAL(ctx, "there are multiple vms named {}.  Cannot continue.",
              vm_name);
     } else if (found_count == 0) {
       JFATAL(ctx, "there are no vms named {}.  Cannot continue.", vm_name);
     } else {
-      JFATAL(ctx, "internal error occured while searching for vm {}", vm_name);
+      JFATAL(ctx, "internal error occurred while searching for vm {}", vm_name);
     }
     return std::nullopt;
   }
@@ -3644,7 +3644,7 @@ static std::wstring make_disk_path(VIRTUAL_STORAGE_TYPE vst, GUID disk_guid)
       } break;
       default: {
         throw std::runtime_error(
-            std::format("unkown device type {}", vst.DeviceId));
+            std::format("unknown device type {}", vst.DeviceId));
       } break;
     }
   }();
@@ -4248,7 +4248,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     if (rest.size() == starting_size) {
       Jmsg(ctx, M_ERROR,
            "internal error while trying to parse the plugin definition "
-           "occured: %.*s\n",
+           "occurred: %.*s\n",
            static_cast<int>(rest.size()), rest.data());
       return bRC_Error;
     }
@@ -4304,7 +4304,7 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
     }
 
     CloseHandle(config_handle);
-    DBGC(ctx, "sucessfully loaded config file {} into memory at {}", *path,
+    DBGC(ctx, "successfully loaded config file {} into memory at {}", *path,
          fmt_as_ptr(file_content.get()));
 
     std::string_view config_content{file_content.get(), file_size};

@@ -69,7 +69,7 @@ TLS Handshake before Bareos 18.2
 
 TLS Configuration Implementation
 --------------------------------
-TLS configuration directives will be transfered from the configuration into dedicated classes as follows.
+TLS configuration directives will be transferred from the configuration into dedicated classes as follows.
 
 .. uml::
   :caption: Bareos TLS config internal class relations
@@ -124,7 +124,7 @@ TLS configuration directives will be transfered from the configuration into dedi
 
 TLS API Implementation
 ----------------------
-The following diagramm shows the interface of the *TlsOpenSsl* class and its aggregation in the *BareosSocket* class. During initialization and handshake of a TLS connection *tls_conn_init* will be used and *tls_conn* is invalid. As soon as the TLS connection is established the pointer from *tls_conn_init* will be moved to *tls_conn* and *tls_conn_init* will become invalid.
+The following diagram shows the interface of the *TlsOpenSsl* class and its aggregation in the *BareosSocket* class. During initialization and handshake of a TLS connection *tls_conn_init* will be used and *tls_conn* is invalid. As soon as the TLS connection is established the pointer from *tls_conn_init* will be moved to *tls_conn* and *tls_conn_init* will become invalid.
 
 .. uml::
   :caption: TLS OpenSSL Class overview (simplified)

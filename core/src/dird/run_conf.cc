@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -317,7 +317,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
       } /* end if Bstrcasecmp */
     } /* end for RunFields */
 
-    /* At this point, it is not a keyword. Check for old syle
+    /* At this point, it is not a keyword. Check for old style
      * Job Levels without keyword. This form is depreciated!!! */
     if (!found) {
       for (j = 0; joblevels[j].level_name; j++) {

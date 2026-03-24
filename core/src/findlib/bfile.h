@@ -32,7 +32,7 @@
 #define BAREOS_FINDLIB_BFILE_H_
 
 /* this should physically correspond to WIN32_STREAM_ID
- * from winbase.h on Win32. We didn't inlcude cStreamName
+ * from winbase.h on Win32. We didn't include cStreamName
  * as we don't use it and don't need it for a correct struct size.
  */
 #define WIN32_BACKUP_DATA 1

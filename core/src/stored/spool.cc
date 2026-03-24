@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -760,7 +760,7 @@ bool CommitAttributeSpool(JobControlRecord* jcr)
     if (jcr->is_JobStatus(JS_Incomplete)) {
       data_end = dir->get_data_end();
 
-      // Check and truncate to last valid data_end if necssary
+      // Check and truncate to last valid data_end if necessary
       if (size > data_end) {
         if (ftruncate(dir->spool_fd_, data_end) != 0) {
           BErrNo be;

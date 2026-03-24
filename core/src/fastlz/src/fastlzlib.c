@@ -859,7 +859,7 @@ static ZFASTINLINE int fastlzlibProcess(zfast_stream *const s, const int flush,
     }
   }
 
-  /* new output buffer data to be processed ; same logic as begining */
+  /* new output buffer data to be processed ; same logic as beginning */
   if (ZFAST_HAS_BUFFERED_OUTPUT(s)) {
     /* maximum size that can be copied */
     uInt size = s->state->dec_size - s->state->outBuffOffs;

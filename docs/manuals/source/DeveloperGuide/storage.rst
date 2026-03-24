@@ -177,8 +177,8 @@ SD Data Structures
 
 In the Storage daemon, there is a Device resource (i.e. from conf file)
 that describes each physical device. When the physical device is used it
-is controled by the DEVICE structure (defined in dev.h), and typically
-refered to as dev in the C++ code. Anyone writing or reading a physical
+is controlled by the DEVICE structure (defined in dev.h), and typically
+referred to as dev in the C++ code. Anyone writing or reading a physical
 device must ultimately get a lock on the DEVICE structure – this
 controls the device. However, multiple Jobs (defined by a JCR structure
 src/jcr.h) can be writing a physical DEVICE at the same time (of course
@@ -216,5 +216,5 @@ writing simultaneously to three devices:
       Job3 -> DCR3 -> DEVICE2
 
       Job = job control record
-      DCR = Job contorl data for a specific device
+      DCR = Job control data for a specific device
       DEVICE = Device only control data

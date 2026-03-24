@@ -318,7 +318,7 @@ If you wish to break your configuration file into smaller pieces, you can do so 
 
    @/etc/bareos/extra/clients.conf
 
-Since Bareos :sinceVersion:`16.2.1: Including configuration files by wildcard` wildcards in pathes are supported:
+Since Bareos :sinceVersion:`16.2.1: Including configuration files by wildcard` wildcards in paths are supported:
 
 .. code-block:: bareosconfig
    :caption: include multiple configuration files
@@ -508,8 +508,8 @@ When parsing the resource directives, Bareos classifies the data according to th
 
       Command ACL = !sqlquery
       Command ACL = !u.*
-      Comamnd ACL = !set(ip|debug)
-      Comamnd ACL = *all*
+      Command ACL = !set(ip|debug)
+      Command ACL = *all*
 
 
 
@@ -1107,7 +1107,7 @@ When labeling a new volume (see :config:option:`dir/pool/LabelFormat`\ ), follow
 **$MediaType**        Type of the media
 ===================== ========================================
 
-Additional, normal environment variables can be used, e.g. **$HOME** oder **$HOSTNAME**.
+Additional, normal environment variables can be used, e.g. **$HOME** or **$HOSTNAME**.
 
 With the exception of Job specific variables, you can trigger the variable expansion by using the :ref:`var command <var>`.
 

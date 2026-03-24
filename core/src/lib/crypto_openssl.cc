@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1157,7 +1157,7 @@ crypto_error_t CryptoSessionDecode(const uint8_t* data,
         /* RSA is required. */
         assert(EVP_PKEY_type(EVP_PKEY_id(keypair->privkey)) == EVP_PKEY_RSA);
 
-        /* If we recieve a RecipientInfo structure that does not use
+        /* If we receive a RecipientInfo structure that does not use
          * RSA, return an error */
         if (OBJ_obj2nid(ri->keyEncryptionAlgorithm) != NID_rsaEncryption) {
           retval = CRYPTO_ERROR_INVALID_CRYPTO;
@@ -1462,7 +1462,7 @@ int OpensslInitThreads(void)
   /* Set static locking callback */
   CRYPTO_set_locking_callback(openssl_update_static_mutex);
 
-  /* Initialize dyanmic locking */
+  /* Initialize dynamic locking */
   CRYPTO_set_dynlock_create_callback(openssl_create_dynamic_mutex);
   CRYPTO_set_dynlock_lock_callback(OpensslUpdateDynamicMutex);
   CRYPTO_set_dynlock_destroy_callback(OpensslDestroyDynamicMutex);

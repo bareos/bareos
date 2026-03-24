@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,7 @@ template <typename Interface> class ImplementationFactory {
   }
 
  public:
-  // this retuns a bool, so you can initialize a global static variable from it
+  // this returns a bool, so you can initialize a global static variable from it
   // to register your plugin when the program starts or during dl_open()
   static bool Add(const std::string& implementation_name, Factory factory)
   {

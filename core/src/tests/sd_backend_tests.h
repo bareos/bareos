@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,7 @@ void sd::SetUp()
   configfile = strdup("configs/" CONFIG_SUBDIR "/");
   my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
   ParseSdConfig(configfile, M_CONFIG_ERROR);
-  /* we do not run CheckResources() here, so take care the test configration
+  /* we do not run CheckResources() here, so take care the test configuration
    * is not broken. Also autochangers will not work. */
 }
 void sd::TearDown()

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,7 +45,7 @@ struct MYJCR {
 };
 
 /*
- * if a contructor is used without parameter,
+ * if a constructor is used without parameter,
  * dlink must be the first item in the used structure.
  * (otherwise loffset must be calculated)
  */
@@ -209,7 +209,7 @@ TEST(dlist, RemoveAndReplaceAppendedElement)
   MYJCR* next_jcr;
   int index = 0;
 
-  /* The following may seem a bit odd, but we create a chaing
+  /* The following may seem a bit odd, but we create a chain
    *  of jcr objects.  Within a jcr object, there is a buf
    *  that points to a malloced string containing data
    */

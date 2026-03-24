@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -181,7 +181,7 @@ static void SendInfoChosenCipher(JobControlRecord* jcr, UaContext* ua)
   std::string str = jcr->file_bsock->GetCipherMessageString();
   str += '\n';
   if (jcr->JobId != 0) { Jmsg(jcr, M_INFO, 0, "%s", str.c_str()); }
-  if (ua) { /* only whith console connection */
+  if (ua) { /* only with console connection */
     ua->SendRawMsg(str.c_str());
   }
 }
@@ -213,7 +213,7 @@ static void SendInfoSuccess(JobControlRecord* jcr, UaContext* ua)
     m1 += std::string("\n");
     Jmsg(jcr, M_INFO, 0, "%s", m1.c_str());
   }
-  if (ua) { /* only whith console connection */
+  if (ua) { /* only with console connection */
     ua->SendRawMsg(m.c_str());
   }
 }

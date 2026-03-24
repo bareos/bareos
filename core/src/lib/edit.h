@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,7 +29,7 @@
 namespace edit {
 /* The biggest 64 bit number -- 2^64-1 -- has 20 digits.
  * As such one needs 27 = 20 + 6 + 1 characters to safely format 64 bit numbers
- * with commata every 3 digits and a null terminator.
+ * with commas every 3 digits and a null terminator.
  * 64 bit signed integers have at most 19 digits so this also works for them. */
 inline constexpr int32_t min_buffer_size{27};
 };  // namespace edit

@@ -16,7 +16,7 @@ it is sufficient to only install the package **bareos-filedaemon**.
 
 After installing the client,
 please read the chapter :ref:`section-AddAClient`
-about how to configurre the client.
+about how to configure the client.
 
 Installing a Bareos Client on Linux Distributions
 -------------------------------------------------
@@ -238,7 +238,7 @@ After configuring the server-side you can either transfer the necessary configur
 The configuration path differs from a Linux installation.
 On Linux the configuration files are located under :file:`/etc/bareos/`.
 On macOS pkg installations, the configuration path is  :file:`/usr/local/bareos/etc/bareos/`.
-On macOS Homebrew installatons, the configuration path is :file:`/usr/local/etc/bareos/`.
+On macOS Homebrew installations, the configuration path is :file:`/usr/local/etc/bareos/`.
 
 
 Option 1: Copy the director resource from the Bareos Director to the Client

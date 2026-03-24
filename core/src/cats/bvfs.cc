@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -432,7 +432,7 @@ char* bvfs_parent_dir(char* path)
     while (p > path && !IsPathSeparator(*p)) { p--; }
     if (IsPathSeparator(*p) and (len >= 1)) {
       /* Terminate the string after the "/".
-       * Do this instead of overwritting the "/"
+       * Do this instead of overwriting the "/"
        * to keep the root directory "/" as a separate path. */
       p[1] = '\0';
     } else {

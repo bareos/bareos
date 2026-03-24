@@ -101,7 +101,7 @@ In order to check if your installation was done correctly, you can run :command:
    scsi-350223344ab000900      scsi-XYZZY_A2               scsi-XYZZY_B3
    scsi-350223344ab000900-nst  scsi-XYZZY_A2-nst           scsi-XYZZY_B3-nst
 
-Now that the installation is done, you will have to let bareos know that you are building tape and autochanger tests by adding the needed devices as cmake parameters to your exisiting cmake configuration:
+Now that the installation is done, you will have to let bareos know that you are building tape and autochanger tests by adding the needed devices as cmake parameters to your existing cmake configuration:
 
 .. code-block:: shell-session
 

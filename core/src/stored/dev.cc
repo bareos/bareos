@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -710,7 +710,7 @@ void Device::SetAteot()
 /**
  * Position device to end of medium (end of data)
  *
- * Returns: true  on succes
+ * Returns: true  on success
  *          false on error
  */
 bool Device::eod(DeviceControlRecord* dcr)
@@ -753,7 +753,7 @@ bool Device::eod(DeviceControlRecord* dcr)
 /**
  * Set the position of the device.
  *
- * Returns: true  on succes
+ * Returns: true  on success
  *          false on error
  */
 bool Device::UpdatePos(DeviceControlRecord* dcr)

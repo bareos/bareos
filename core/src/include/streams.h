@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -183,7 +183,7 @@
 #define STREAM_XATTR_SOLARIS_SYS             1994       /**< Solaris specific extensible attributes or
                                                          * otherwise named extended system attributes.
                                                          */
-#define STREAM_XATTR_SOLARIS                 1995       /**< Solaris specific extented attributes */
+#define STREAM_XATTR_SOLARIS                 1995       /**< Solaris specific extended attributes */
 #define STREAM_XATTR_DARWIN                  1996       /**< Darwin (OSX) specific extended attributes */
 #define STREAM_XATTR_FREEBSD                 1997       /**< FreeBSD specific extended attributes */
 #define STREAM_XATTR_LINUX                   1998       /**< Linux specific extended attributes */

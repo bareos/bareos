@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -221,7 +221,7 @@ When executed in a terminal, the progress will be displayed in a progress bar.)"
   save->add_flag("--dry", dry, "do not read/write actual disk data");
 
   save->add_flag("--save-unreferenced-disks", save_unreferenced_disks,
-                 "save completey unsnapshotted disks");
+                 "save completely unsnapshotted disks");
   save->add_flag("--save-unreferenced-partitions", save_unreferenced_partitions,
                  "save even unsnapshotted partitions from disks that contain "
                  "snapshotted partitions");

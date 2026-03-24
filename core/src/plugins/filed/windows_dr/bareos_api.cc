@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -91,7 +91,7 @@ bool checkChanges(PluginContext* ctx,
   if (fd.core) {
     filedaemon::save_pkt pkt{};
 
-    // depending on whether the paket is a file or a directory,
+    // depending on whether the packet is a file or a directory,
     // checkChanges uses either the link or fname field to get the file name.
     // We just set both to the correct name here and hope for the best!
 
@@ -117,7 +117,7 @@ bool AcceptFile(PluginContext* ctx,
   if (fd.core) {
     filedaemon::save_pkt pkt{};
 
-    // depending on whether the paket is a file or a directory,
+    // depending on whether the packet is a file or a directory,
     // checkChanges uses either the link or fname field to get the file name.
     // We just set both to the correct name here and hope for the best!
 

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -138,7 +138,7 @@ void generic_tape_device::OpenDevice(DeviceControlRecord* dcr, DeviceMode omode)
 /**
  * Position device to end of medium (end of data)
  *
- * Returns: true  on succes
+ * Returns: true  on success
  *          false on error
  */
 bool generic_tape_device::eod(DeviceControlRecord* dcr)

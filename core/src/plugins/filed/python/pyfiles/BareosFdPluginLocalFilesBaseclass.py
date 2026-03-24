@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -179,7 +179,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
             )
             os.makedirs(dirname)
         # open creates the file, if not yet existing, we close it again right
-        # aways it will be opened again in plugin_io.
+        # away it will be opened again in plugin_io.
         if restorepkt.type == bareosfd.FT_REG:
             open(FNAME, "wb").close()
             restorepkt.create_status = bareosfd.CF_EXTRACT
@@ -283,7 +283,7 @@ class BareosFdPluginLocalFilesBaseclass(BareosFdPluginBaseclass):  # noqa
                 (self.statp[self.FNAME].st_atime, self.statp[self.FNAME].st_mtime),
             )
             # del sometimes leads to no-key errors, it seams that end_restore_file is sometimes called
-            # multipl times.
+            # multiple times.
             # del self.statp[self.FNAME]
         except Exception as e:
             bareosfd.JobMessage(
