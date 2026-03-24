@@ -6,7 +6,7 @@
 SELECT
   plugin,
   count,
-  to_char(size_gb, '9999990.00') AS size_gb
+  size_gb::NUMERIC(20,2)
 FROM (
   SELECT
     plugin,

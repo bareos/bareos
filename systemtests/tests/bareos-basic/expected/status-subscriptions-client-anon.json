@@ -1,0 +1,50 @@
+status subscriptions clients anonymize
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "result": {
+    "unit-clients": [
+      {
+        "client": "Client 10000",
+        "count": "1",
+        "size_gb": "3.00"
+      },
+      {
+        "client": "Client 10001",
+        "count": "2",
+        "size_gb": "2.00"
+      },
+      {
+        "client": "Client 10002",
+        "count": "3",
+        "size_gb": "4.00"
+      },
+      {
+        "client": "Client 10003",
+        "count": "10",
+        "size_gb": "1234.00"
+      },
+      {
+        "client": "Client 10004",
+        "count": "9",
+        "size_gb": "1234567.89"
+      },
+      {
+        "client": "Client 10005",
+        "count": "5",
+        "size_gb": "5.00"
+      },
+      {
+        "client": "TOTAL",
+        "count": "30",
+        "size_gb": "1235815.89"
+      }
+    ],
+    "unit-summary": {
+      "accounting_mode": "volume-based (1236 volume-based units >= 30 count-based units)",
+      "used": "1236",
+      "configured": "1240",
+      "remaining": "4"
+    },
+  }
+}
