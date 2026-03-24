@@ -1,6 +1,5 @@
 <template>
   <q-page class="q-pa-md">
-    <!-- Sub-tabs -->
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="list"     label="Show"     no-caps />
       <q-tab name="actions"  label="Actions"  no-caps />
@@ -10,7 +9,8 @@
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated>
-      <!-- SHOW -->
+
+      <!-- ── SHOW ─────────────────────────────────────────────────────────── -->
       <q-tab-panel name="list" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
@@ -56,9 +56,12 @@
                 <q-td :props="props" class="text-right">{{ props.value.toLocaleString() }}</q-td>
               </template>
               <template #body-cell-actions="props">
-                <q-td :props="props" class="text-center">
-                  <q-btn flat round dense size="sm" icon="restart_alt" title="Rerun" class="q-mr-xs" />
-                  <q-btn v-if="props.row.status === 'R'" flat round dense size="sm" icon="cancel" color="negative" title="Cancel" />
+                <q-td :props="props" class="text-center" style="white-space:nowrap">
+                  <q-btn flat round dense size="sm" icon="restart_alt" title="Rerun"
+                         @click="confirmRerun(props.row)" class="q-mr-xs" />
+                  <q-btn v-if="isRunning(props.row.status)"
+                         flat round dense size="sm" icon="cancel" color="negative" title="Cancel"
+                         @click="confirmCancel(props.row)" class="q-mr-xs" />
                   <q-btn flat round dense size="sm" icon="info" title="Details"
                          :to="{ name: 'job-details', params: { id: props.row.id } }" />
                 </q-td>
@@ -68,57 +71,124 @@
         </q-card>
       </q-tab-panel>
 
-      <!-- ACTIONS -->
-      <q-tab-panel name="actions">
+      <!-- ── ACTIONS ───────────────────────────────────────────────────────── -->
+      <q-tab-panel name="actions" class="q-pa-none q-gutter-md">
+
+        <!-- Running jobs -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">Bulk Actions</q-card-section>
-          <q-card-section>
-            <div class="row q-col-gutter-md">
-              <div class="col-auto">
-                <q-btn color="warning" label="Cancel All Running Jobs" icon="cancel" />
-              </div>
-              <div class="col-auto">
-                <q-btn color="info" label="Disable Scheduled Jobs" icon="pause" />
-              </div>
-              <div class="col-auto">
-                <q-btn color="positive" label="Enable Scheduled Jobs" icon="play_arrow" />
-              </div>
-            </div>
+          <q-card-section class="panel-header row items-center">
+            <span>Running Jobs</span>
+            <q-space />
+            <q-btn v-if="runningJobs.length" flat dense no-caps
+                   icon="cancel" color="white" label="Cancel All"
+                   @click="cancelAll" class="q-mr-xs" />
+            <q-btn flat round dense icon="refresh" color="white" @click="refresh" />
+          </q-card-section>
+          <q-card-section class="q-pa-none">
+            <q-table
+              :rows="runningJobs"
+              :columns="runningColumns"
+              row-key="id"
+              dense flat
+              :pagination="{ rowsPerPage: 10 }"
+              no-data-label="No jobs currently running"
+            >
+              <template #body-cell-actions="props">
+                <q-td :props="props" class="text-center">
+                  <q-btn flat round dense size="sm" icon="cancel" color="negative" title="Cancel"
+                         @click="confirmCancel(props.row)" />
+                </q-td>
+              </template>
+            </q-table>
+          </q-card-section>
+        </q-card>
+
+        <!-- Enable / Disable jobs -->
+        <q-card flat bordered class="bareos-panel">
+          <q-card-section class="panel-header row items-center">
+            <span>Enable / Disable Jobs</span>
+            <q-space />
+            <q-btn flat round dense icon="refresh" color="white" @click="loadJobDefs" />
+          </q-card-section>
+          <q-card-section class="q-pa-none">
+            <q-table
+              :rows="jobDefs"
+              :columns="defsColumns"
+              row-key="name"
+              dense flat
+              :loading="loadingDefs"
+              :pagination="{ rowsPerPage: 15 }"
+            >
+              <template #body-cell-enabled="props">
+                <q-td :props="props" class="text-center">
+                  <q-chip dense square
+                    :color="props.value ? 'positive' : 'grey'"
+                    text-color="white"
+                    :label="props.value ? 'enabled' : 'disabled'"
+                    style="font-size:0.7rem" />
+                </q-td>
+              </template>
+              <template #body-cell-actions="props">
+                <q-td :props="props" class="text-center" style="white-space:nowrap">
+                  <q-btn flat dense no-caps size="sm" icon="play_arrow" color="positive"
+                         label="Enable"  class="q-mr-xs"
+                         :disable="props.row.enabled"
+                         @click="enableJob(props.row.name)" />
+                  <q-btn flat dense no-caps size="sm" icon="pause" color="warning"
+                         label="Disable"
+                         :disable="!props.row.enabled"
+                         @click="disableJob(props.row.name)" />
+                </q-td>
+              </template>
+            </q-table>
           </q-card-section>
         </q-card>
       </q-tab-panel>
 
-      <!-- RUN -->
+      <!-- ── RUN ───────────────────────────────────────────────────────────── -->
       <q-tab-panel name="run">
-        <q-card flat bordered class="bareos-panel" style="max-width:600px">
+        <q-card flat bordered class="bareos-panel" style="max-width:640px">
           <q-card-section class="panel-header">Run Job</q-card-section>
           <q-card-section>
-            <q-form class="q-gutter-md">
-              <q-select v-model="runForm.job"      :options="jobNames"    label="Job"      outlined dense />
-              <q-select v-model="runForm.client"   :options="clientNames" label="Client"   outlined dense />
-              <q-select v-model="runForm.level"    :options="levels"      label="Level"    outlined dense />
-              <q-select v-model="runForm.pool"     :options="pools"       label="Pool"     outlined dense />
-              <q-select v-model="runForm.storage"  :options="storages"    label="Storage"  outlined dense />
-              <q-input  v-model="runForm.when"                            label="When (optional)" outlined dense
+            <q-form @submit.prevent="runJob" class="q-gutter-md">
+              <q-select v-model="runForm.job"     :options="dotJobs"     label="Job *"     outlined dense
+                        @update:model-value="onJobSelected" />
+              <q-select v-model="runForm.client"  :options="dotClients"  label="Client"    outlined dense clearable />
+              <q-select v-model="runForm.fileset" :options="dotFilesets" label="Fileset"   outlined dense clearable />
+              <q-select v-model="runForm.pool"    :options="dotPools"    label="Pool"      outlined dense clearable />
+              <q-select v-model="runForm.storage" :options="dotStorages" label="Storage"   outlined dense clearable />
+              <q-select v-model="runForm.level"   :options="levels"      label="Level"     outlined dense />
+              <q-input  v-model="runForm.when"                           label="When (optional)" outlined dense
                         placeholder="YYYY-MM-DD HH:MM:SS" />
-              <q-btn color="primary" label="Run Job" icon="play_arrow" @click="runJob" />
+              <q-input  v-model.number="runForm.priority" type="number" label="Priority" outlined dense style="max-width:140px" />
+              <div>
+                <q-btn type="submit" color="primary" label="Run Job" icon="play_arrow"
+                       no-caps :loading="runLoading" :disable="!runForm.job" />
+              </div>
             </q-form>
           </q-card-section>
         </q-card>
       </q-tab-panel>
 
-      <!-- RERUN -->
+      <!-- ── RERUN ─────────────────────────────────────────────────────────── -->
       <q-tab-panel name="rerun">
-        <q-card flat bordered class="bareos-panel">
+        <q-card flat bordered class="bareos-panel" style="max-width:400px">
           <q-card-section class="panel-header">Rerun Job</q-card-section>
           <q-card-section>
-            <q-input v-model="rerunJobId" label="Job ID" outlined dense style="max-width:200px" class="q-mb-md" />
-            <q-btn color="primary" label="Rerun" icon="restart_alt" />
+            <q-form @submit.prevent="submitRerun" class="q-gutter-md">
+              <q-input v-model="rerunJobId" label="Job ID *" outlined dense
+                       type="number" style="max-width:180px"
+                       hint="Enter the ID of a completed job to rerun it" />
+              <div>
+                <q-btn type="submit" color="primary" label="Rerun" icon="restart_alt"
+                       no-caps :loading="rerunLoading" :disable="!rerunJobId" />
+              </div>
+            </q-form>
           </q-card-section>
         </q-card>
       </q-tab-panel>
 
-      <!-- TIMELINE -->
+      <!-- ── TIMELINE ──────────────────────────────────────────────────────── -->
       <q-tab-panel name="timeline">
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header">Job Timeline</q-card-section>
@@ -135,22 +205,29 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { jobTypeMap, jobLevelMap, formatBytes } from '../mock/index.js'
 import { useDirectorFetch, normaliseJob } from '../composables/useDirectorFetch.js'
+import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 
-const route = useRoute()
-const tab = ref(route.query.action || 'list')
-const search = ref('')
+const route    = useRoute()
+const $q       = useQuasar()
+const director = useDirectorStore()
+
+const tab       = ref(route.query.action || 'list')
+const search    = ref('')
 const typeMap   = jobTypeMap
 const levelMap  = jobLevelMap
 const fmtBytes  = formatBytes
 
+// ── job list ──────────────────────────────────────────────────────────────────
 const { data: rawJobs, loading, error, refresh } = useDirectorFetch('list jobs', 'jobs')
 
 const jobs = computed(() => (rawJobs.value ?? []).map(normaliseJob))
+
 const filteredJobs = computed(() => {
   if (!search.value) return jobs.value
   const q = search.value.toLowerCase()
@@ -161,6 +238,14 @@ const filteredJobs = computed(() => {
   )
 })
 
+const runningJobs = computed(() => jobs.value.filter(j => isRunning(j.status)))
+
+function isRunning(status) {
+  // R = Running, l = data saved (still active)
+  return status === 'R' || status === 'l'
+}
+
+// ── columns ───────────────────────────────────────────────────────────────────
 const columns = [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true, style: 'width:60px' },
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
@@ -174,16 +259,248 @@ const columns = [
   { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right',  sortable: true },
   { name: 'errors',    label: 'Errors',   field: 'errors',    align: 'center'  },
   { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
-  { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:80px' },
+  { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:100px' },
 ]
 
-const runForm = ref({ job: null, client: null, level: 'Incremental', pool: null, storage: null, when: '' })
-const rerunJobId = ref('')
-const jobNames    = computed(() => [...new Set(jobs.value.map(j => j.name))])
-const clientNames = computed(() => [...new Set(jobs.value.map(j => j.client).filter(Boolean))])
-const levels      = ['Full', 'Incremental', 'Differential']
-const pools       = ['Full', 'Incremental', 'Differential', 'Scratch']
-const storages    = ['File', 'Tape', 'Cloud']
+const runningColumns = [
+  { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true },
+  { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
+  { name: 'client',    label: 'Client',   field: 'client',    align: 'left'    },
+  { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left'    },
+  { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:60px' },
+]
 
-function runJob() {}
+const defsColumns = [
+  { name: 'name',    label: 'Job Name', field: 'name',    align: 'left',   sortable: true },
+  { name: 'type',    label: 'Type',     field: 'type',    align: 'center'  },
+  { name: 'enabled', label: 'Status',   field: 'enabled', align: 'center'  },
+  { name: 'actions', label: '',         field: 'actions', align: 'center', style: 'width:160px' },
+]
+
+// ── job definitions (for enable/disable) ──────────────────────────────────────
+const jobDefs       = ref([])
+const loadingDefs   = ref(false)
+
+async function loadJobDefs() {
+  if (!director.isConnected) return
+  loadingDefs.value = true
+  try {
+    const res = await director.call('show jobs')
+    // show jobs returns {jobs: [{name, type, enabled, ...}]}
+    const list = res?.jobs ?? []
+    jobDefs.value = list.map(j => ({
+      name:    j.name,
+      type:    j.type ?? '',
+      enabled: j.enabled !== false,   // treat undefined as enabled
+    })).sort((a, b) => a.name.localeCompare(b.name))
+  } catch (e) {
+    $q.notify({ type: 'negative', message: `Could not load job definitions: ${e.message}` })
+  } finally {
+    loadingDefs.value = false
+  }
+}
+
+// ── row-level actions ─────────────────────────────────────────────────────────
+function confirmCancel(job) {
+  $q.dialog({
+    title: 'Cancel Job',
+    message: `Cancel job <b>${job.name}</b> (ID&nbsp;${job.id})?`,
+    html: true,
+    ok:     { label: 'Cancel Job', color: 'negative', flat: true },
+    cancel: { label: 'Keep', flat: true },
+  }).onOk(() => doCancel(job))
+}
+
+async function doCancel(job) {
+  try {
+    await director.call(`cancel jobid=${job.id} yes`)
+    $q.notify({ type: 'positive', message: `Job ${job.id} cancelled.` })
+    refresh()
+  } catch (e) {
+    $q.notify({ type: 'negative', message: `Cancel failed: ${e.message}` })
+  }
+}
+
+function confirmRerun(job) {
+  $q.dialog({
+    title: 'Rerun Job',
+    message: `Rerun job <b>${job.name}</b> (ID&nbsp;${job.id})?`,
+    html: true,
+    ok:     { label: 'Rerun', color: 'primary', flat: true },
+    cancel: { label: 'Cancel', flat: true },
+  }).onOk(() => doRerun(job.id))
+}
+
+async function doRerun(jobId) {
+  try {
+    const res = await director.call(`rerun jobid=${jobId} yes`)
+    const newId = res?.run?.jobid ?? res?.jobid ?? '?'
+    $q.notify({ type: 'positive', message: `Job restarted as ID ${newId}.` })
+    refresh()
+  } catch (e) {
+    $q.notify({ type: 'negative', message: `Rerun failed: ${e.message}` })
+  }
+}
+
+// ── bulk cancel ───────────────────────────────────────────────────────────────
+function cancelAll() {
+  const n = runningJobs.value.length
+  $q.dialog({
+    title: 'Cancel All Running Jobs',
+    message: `Cancel all <b>${n}</b> running job${n === 1 ? '' : 's'}?`,
+    html: true,
+    ok:     { label: 'Cancel All', color: 'negative', flat: true },
+    cancel: { label: 'Keep', flat: true },
+  }).onOk(async () => {
+    const results = await Promise.allSettled(
+      runningJobs.value.map(j => director.call(`cancel jobid=${j.id} yes`))
+    )
+    const failed = results.filter(r => r.status === 'rejected').length
+    if (failed) {
+      $q.notify({ type: 'warning', message: `Cancelled ${n - failed} / ${n} jobs (${failed} failed).` })
+    } else {
+      $q.notify({ type: 'positive', message: `All ${n} running jobs cancelled.` })
+    }
+    refresh()
+  })
+}
+
+// ── enable / disable ──────────────────────────────────────────────────────────
+async function enableJob(name) {
+  try {
+    await director.call(`enable job="${name}" yes`)
+    $q.notify({ type: 'positive', message: `Job "${name}" enabled.` })
+    const j = jobDefs.value.find(d => d.name === name)
+    if (j) j.enabled = true
+  } catch (e) {
+    $q.notify({ type: 'negative', message: `Enable failed: ${e.message}` })
+  }
+}
+
+async function disableJob(name) {
+  try {
+    await director.call(`disable job="${name}" yes`)
+    $q.notify({ type: 'positive', message: `Job "${name}" disabled.` })
+    const j = jobDefs.value.find(d => d.name === name)
+    if (j) j.enabled = false
+  } catch (e) {
+    $q.notify({ type: 'negative', message: `Disable failed: ${e.message}` })
+  }
+}
+
+// ── run form ──────────────────────────────────────────────────────────────────
+const dotJobs     = ref([])
+const dotClients  = ref([])
+const dotFilesets = ref([])
+const dotPools    = ref([])
+const dotStorages = ref([])
+const levels      = ['Full', 'Incremental', 'Differential']
+const runLoading  = ref(false)
+
+const runForm = ref({ job: null, client: null, fileset: null, pool: null, storage: null, level: 'Incremental', when: '', priority: 10 })
+
+async function loadRunOptions() {
+  if (!director.isConnected) return
+  try {
+    const [j, c, f, p, s] = await Promise.all([
+      director.call('.jobs'),
+      director.call('.clients'),
+      director.call('.filesets'),
+      director.call('.pools'),
+      director.call('.storage'),
+    ])
+    dotJobs.value     = (j?.jobs     ?? []).map(x => x.name).sort()
+    dotClients.value  = (c?.clients  ?? []).map(x => x.name).sort()
+    dotFilesets.value = (f?.filesets ?? []).map(x => x.name).sort()
+    dotPools.value    = (p?.pools    ?? []).map(x => x.name).sort()
+    dotStorages.value = (s?.storage  ?? []).map(x => x.name).sort()
+  } catch (e) {
+    // non-fatal — user can still type values
+    console.warn('Could not load run form options:', e.message)
+  }
+}
+
+async function onJobSelected(name) {
+  if (!name) return
+  try {
+    const res = await director.call(`.defaults job="${name}"`)
+    const d   = res?.defaults ?? res ?? {}
+    if (d.client)   runForm.value.client   = d.client
+    if (d.fileset)  runForm.value.fileset  = d.fileset
+    if (d.pool)     runForm.value.pool     = d.pool
+    if (d.storage)  runForm.value.storage  = d.storage
+    if (d.level)    runForm.value.level    = d.level
+    if (d.priority) runForm.value.priority = Number(d.priority)
+  } catch { /* ignore */ }
+}
+
+async function runJob() {
+  const f = runForm.value
+  if (!f.job) return
+  let cmd = `run job="${f.job}"`
+  if (f.client)   cmd += ` client="${f.client}"`
+  if (f.fileset)  cmd += ` fileset="${f.fileset}"`
+  if (f.pool)     cmd += ` pool="${f.pool}"`
+  if (f.storage)  cmd += ` storage="${f.storage}"`
+  if (f.level)    cmd += ` level=${f.level}`
+  if (f.when)     cmd += ` when="${f.when}"`
+  if (f.priority) cmd += ` priority=${f.priority}`
+  cmd += ' yes'
+
+  runLoading.value = true
+  try {
+    const res   = await director.call(cmd)
+    const newId = res?.run?.jobid ?? res?.jobid ?? '?'
+    $q.notify({ type: 'positive', message: `Job started — ID ${newId}` })
+    tab.value = 'list'
+    refresh()
+  } catch (e) {
+    $q.notify({ type: 'negative', message: `Run failed: ${e.message}` })
+  } finally {
+    runLoading.value = false
+  }
+}
+
+// ── rerun tab ─────────────────────────────────────────────────────────────────
+const rerunJobId   = ref('')
+const rerunLoading = ref(false)
+
+async function submitRerun() {
+  if (!rerunJobId.value) return
+  rerunLoading.value = true
+  try {
+    const res   = await director.call(`rerun jobid=${rerunJobId.value} yes`)
+    const newId = res?.run?.jobid ?? res?.jobid ?? '?'
+    $q.notify({ type: 'positive', message: `Job restarted as ID ${newId}.` })
+    rerunJobId.value = ''
+    tab.value = 'list'
+    refresh()
+  } catch (e) {
+    $q.notify({ type: 'negative', message: `Rerun failed: ${e.message}` })
+  } finally {
+    rerunLoading.value = false
+  }
+}
+
+// ── lifecycle ─────────────────────────────────────────────────────────────────
+onMounted(() => {
+  if (director.isConnected) {
+    loadJobDefs()
+    loadRunOptions()
+  }
+})
+
+watch(() => director.isConnected, (connected) => {
+  if (connected) {
+    loadJobDefs()
+    loadRunOptions()
+  }
+})
+
+// Reload defs when switching to the Actions tab
+watch(tab, (t) => {
+  if (t === 'actions' && jobDefs.value.length === 0) loadJobDefs()
+  if (t === 'run'     && dotJobs.value.length === 0)  loadRunOptions()
+})
 </script>
+
