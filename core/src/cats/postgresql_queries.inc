@@ -1119,7 +1119,7 @@ FROM (
 
 /* 0082_subscription_units_3 */
 R"SQL(%s
-SELECT %s as client, plugin, count, to_char(size_gb, '9999990.00') AS size_gb FROM (
+SELECT %s as client, plugin, count, size_gb::NUMERIC(20,2) FROM (
   SELECT
     client_name,
     client_anon,
@@ -1146,7 +1146,7 @@ ORDER BY t.order, t.%s, t.plugin;
 
 /* 0083_subscription_units_client_total_3 */
 R"SQL(%s
-SELECT %s as client, count, to_char(size_gb, '9999990.00') AS size_gb FROM (
+SELECT %s as client, count, size_gb::NUMERIC(20,2) FROM (
   SELECT
     client_name,
     client_anon,
@@ -1174,7 +1174,7 @@ R"SQL(%s
 SELECT
   plugin,
   count,
-  to_char(size_gb, '9999990.00') AS size_gb
+  size_gb::NUMERIC(20,2)
 FROM (
   SELECT
     plugin,
@@ -1198,7 +1198,7 @@ R"SQL(%s
 SELECT
   fileset,
   COALESCE(plugin, 'none (file data)') as plugin,
-  to_char(size_gb, '9999990.00') AS size_gb
+  size_gb::NUMERIC(20,2)
 FROM
   client_detail
 WHERE

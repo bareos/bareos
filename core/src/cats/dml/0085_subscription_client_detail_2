@@ -8,7 +8,7 @@
 SELECT
   fileset,
   COALESCE(plugin, 'none (file data)') as plugin,
-  to_char(size_gb, '9999990.00') AS size_gb
+  size_gb::NUMERIC(20,2)
 FROM
   client_detail
 WHERE

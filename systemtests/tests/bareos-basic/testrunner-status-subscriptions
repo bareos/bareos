@@ -17,7 +17,7 @@ JobName=bconsole-status-client
 
 start_test
 
-rm -f "$tmp"/status-subscription*.txt
+rm -f "$tmp"/status-subscription*.txt "$tmp"/status-subscription*.json
 
 # Generate a set of test clients and filesets together with a bunch of jobs
 
@@ -114,8 +114,29 @@ status subscriptions clients anonymize
 status subscriptions plugins
 @$out $tmp/status-subscriptions-client-detail.txt
 status subscriptions client=file-and-plugins
+@$out ${NULL_DEV}
+.api 2
+@$out $tmp/status-subscriptions-default.json
+status subscriptions
+
+@$out $tmp/status-subscriptions-anon.json
+status subscriptions anonymize
+
+@$out $tmp/status-subscriptions-client.json
+status subscriptions clients
+
+@$out $tmp/status-subscriptions-client-anon.json
+status subscriptions clients anonymize
+
+@$out $tmp/status-subscriptions-plugin.json
+status subscriptions plugins
+
+@$out $tmp/status-subscriptions-client-detail.json
+status subscriptions client=file-and-plugins
 
 @$out ${NULL_DEV}
+.api 0
+
 sqlquery sharedsession
 UPDATE Job SET ReadBytes = 10^12 WHERE ReadBytes > 10^12;
 SELECT * FROM Job;
@@ -135,10 +156,11 @@ run_bconsole
 
 # remove lines starting with @ so output is comparable
 sed -i.bak -e '/^@/d' -e '/^Bareos version:/d' -e '/^Binary info:/d' -e '/^Report time:/d' -e '/^Checksum:/d' -e "/^Estimate only./d" "$tmp"/status-subscriptions-*.txt
+sed -i.bak -e '/^@/d' -e '/"os":/d' -e '/"version":/d' -e '/"binary-info":/d' -e '/"report-time":/d' -e '/"checksum":/d' "$tmp"/status-subscriptions-*.json
 
-for f in expected/status-subscriptions-*.txt; do
-  f="$(basename "$f" .txt)"
-  if ! diff --ignore-all-space --unified expected/$f.txt "$tmp/$f.txt"; then
+for f in expected/status-subscriptions-*.txt expected/status-subscriptions-*.json; do
+  f="$(basename "$f")"
+  if ! diff --ignore-all-space --unified "expected/$f" "$tmp/$f"; then
     echo "Output $f does not match expectation!" >&2
     estat=1
   fi

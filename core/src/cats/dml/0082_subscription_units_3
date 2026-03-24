@@ -7,7 +7,7 @@
 # - client sorting column
 #   set client_name for clear client names or client_id for anonymized client names
 %s
-SELECT %s as client, plugin, count, to_char(size_gb, '9999990.00') AS size_gb FROM (
+SELECT %s as client, plugin, count, size_gb::NUMERIC(20,2) FROM (
   SELECT
     client_name,
     client_anon,

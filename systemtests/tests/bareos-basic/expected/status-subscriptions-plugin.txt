@@ -1,30 +1,30 @@
 status subscriptions plugins
 
 Backup unit report aggregated by plugin:
-+---------------------+-------+-------------+
-| plugin              | count | size_gb     |
-+---------------------+-------+-------------+
-| barri               |     5 |       14.00 |
-| bpipe               |     2 |        2.00 |
-| bridged             |     1 |        1.00 |
-| custom-plugin       |     1 |        1.00 |
-| hyper-v             |     3 |      111.00 |
-| ldap                |     1 |        0.09 |
-| libcloud            |     1 |        0.80 |
-| mariabackup         |     1 |        7.00 |
-| mssqlvdi            |     4 |     1111.00 |
-| my-gprc-plugin      |     1 |        1.00 |
-| none (file data)    |     2 |        5.00 |
-| noprefix            |     1 |        1.00 |
-| other python plugin |     1 |        1.00 |
-| ovirt               |     1 |       60.00 |
-| percona             |     1 |      500.00 |
-| postgres            |     1 |     4000.00 |
-| proxmox             |     1 |    30000.00 |
-| qumulo              |     1 |   200000.00 |
-| vmware              |     1 |  1000000.00 |
-| TOTAL               |    30 |  1235815.89 |
-+---------------------+-------+-------------+
++---------------------+-------+---------------+
+| plugin              | count | size_gb       |
++---------------------+-------+---------------+
+| barri               |     5 |         14.00 |
+| bpipe               |     2 |          2.00 |
+| bridged             |     1 |          1.00 |
+| custom-plugin       |     1 |          1.00 |
+| hyper-v             |     3 |        111.00 |
+| ldap                |     1 |          0.09 |
+| libcloud            |     1 |          0.80 |
+| mariabackup         |     1 |          7.00 |
+| mssqlvdi            |     4 |       1111.00 |
+| my-gprc-plugin      |     1 |          1.00 |
+| none (file data)    |     2 |          5.00 |
+| noprefix            |     1 |          1.00 |
+| other python plugin |     1 |          1.00 |
+| ovirt               |     1 |         60.00 |
+| percona             |     1 |        500.00 |
+| postgres            |     1 |       4000.00 |
+| proxmox             |     1 |      30000.00 |
+| qumulo              |     1 |     200000.00 |
+| vmware              |     1 |    1000000.00 |
+| TOTAL               |    30 |    1235815.89 |
++---------------------+-------+---------------+
 
 Backup unit summary:
  accounting_mode: volume-based (1236 volume-based units >= 30 count-based units)

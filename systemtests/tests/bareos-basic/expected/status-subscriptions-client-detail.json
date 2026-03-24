@@ -1,0 +1,29 @@
+status subscriptions client=file-and-plugins
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "result": {
+    "unit-detail": [
+      {
+        "fileset": "barri1",
+        "plugin": "barri",
+        "size_gb": "1.00"
+      },
+      {
+        "fileset": "bpipe1",
+        "plugin": "bpipe",
+        "size_gb": "1.00"
+      },
+      {
+        "fileset": "file1",
+        "plugin": "none (file data)",
+        "size_gb": "1.00"
+      },
+      {
+        "fileset": "file2",
+        "plugin": "none (file data)",
+        "size_gb": "1.00"
+      }
+    ]
+  }
+}
