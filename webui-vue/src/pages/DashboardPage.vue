@@ -8,8 +8,9 @@
           <q-card-section class="panel-header row items-center">
             <span>Jobs started during the past 24 hours</span>
             <q-space />
+            <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ countdown }}s</span>
             <q-spinner v-if="loadingJobs" color="white" size="18px" class="q-mr-sm" />
-            <q-btn flat round dense icon="refresh" color="white" size="sm" @click="refresh" />
+            <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
           </q-card-section>
           <q-card-section>
             <div class="row q-col-gutter-md text-center">
@@ -27,7 +28,7 @@
           <q-card-section class="panel-header row items-center">
             <span>Most Recent Job Status</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white" size="sm" @click="refresh" />
+            <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table
@@ -89,7 +90,7 @@
           <q-card-section class="panel-header row items-center">
             <span>Running Jobs</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white" size="sm" @click="refresh" />
+            <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
           </q-card-section>
           <q-card-section style="max-height:320px; overflow-y:auto; padding:0">
             <q-list separator>
@@ -122,7 +123,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { formatBytes } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -174,8 +175,43 @@ function refresh() {
   fetchJobs(); fetchTotals(); fetchSidebar()
 }
 
+const REFRESH_INTERVAL = 30   // seconds
+
 onMounted(refresh)
 watch(() => director.isConnected, (connected) => { if (connected) refresh() })
+
+// ── auto-refresh ──────────────────────────────────────────────────────────────
+const countdown = ref(REFRESH_INTERVAL)
+let _countdownTimer = null
+let _refreshTimer   = null
+
+function startAutoRefresh() {
+  stopAutoRefresh()
+  countdown.value = REFRESH_INTERVAL
+  _countdownTimer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0) {
+      refresh()
+      countdown.value = REFRESH_INTERVAL
+    }
+  }, 1000)
+}
+
+function stopAutoRefresh() {
+  clearInterval(_countdownTimer)
+  clearInterval(_refreshTimer)
+  _countdownTimer = null
+  _refreshTimer   = null
+}
+
+function manualRefresh() {
+  refresh()
+  countdown.value = REFRESH_INTERVAL
+}
+
+onMounted(startAutoRefresh)
+onUnmounted(stopAutoRefresh)
+watch(() => director.isConnected, (connected) => { if (connected) startAutoRefresh() })
 
 // ── computed views ────────────────────────────────────────────────────────────
 const jobs = computed(() => rawJobs.value.map(normaliseJob))
