@@ -47,7 +47,8 @@
 
 #include "lib/thread_util.h"
 
-static std::mutex file_access_mutex_;
+namespace {
+std::mutex file_access_mutex_;
 
 class TlsOpenSsl : public Tls {
  public:
@@ -143,12 +144,12 @@ class TlsOpenSsl : public Tls {
 
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
  */
-static constexpr std::string_view tls_default_ciphers_{
+constexpr std::string_view tls_default_ciphers_{
     "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"};
 
 // report any errors that occurred
-static int OpensslVerifyPeer(int preverify_ok, X509_STORE_CTX* store)
-{ /* static */
+int OpensslVerifyPeer(int preverify_ok, X509_STORE_CTX* store)
+{
   if (!preverify_ok) {
     X509* cert = X509_STORE_CTX_get_current_cert(store);
     int depth = X509_STORE_CTX_get_error_depth(store);
@@ -398,12 +399,12 @@ unsigned int psk_server_cb(SSL* ssl,
   return result;
 }
 
-static unsigned int psk_client_cb(SSL* ssl,
-                                  const char* /*hint*/,
-                                  char* identity,
-                                  unsigned int max_identity_len,
-                                  unsigned char* psk,
-                                  unsigned int max_psk_len)
+unsigned int psk_client_cb(SSL* ssl,
+                           const char* /*hint*/,
+                           char* identity,
+                           unsigned int max_identity_len,
+                           unsigned char* psk,
+                           unsigned int max_psk_len)
 {
   const SSL_CTX* openssl_ctx = SSL_get_SSL_CTX(ssl);
 
@@ -1013,6 +1014,7 @@ bool TlsOpenSsl::KtlsRecvStatus()
   return false;
 #endif
 }
+};  // namespace
 
 int TlsOpenSsl::TlsPendingBytes()
 {
