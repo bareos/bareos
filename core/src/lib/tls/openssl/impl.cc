@@ -52,73 +52,6 @@ static synchronized<std::unordered_map<const SSL_CTX*, PskCredentials>>
     client_cred;
 static std::mutex file_access_mutex_;
 
-class TlsOpenSslPrivate {
- public:
-  TlsOpenSslPrivate();
-  ~TlsOpenSslPrivate();
-
-  bool init();
-
-  enum SslCtxExDataIndex : int
-  {
-    kConfigurationParserPtr = 0
-  };
-
-  int OpensslBsockReadwrite(BareosSocket* bsock,
-                            char* ptr,
-                            int nbytes,
-                            bool write);
-  bool OpensslBsockSessionStart(BareosSocket* bsock, bool server);
-
-  bool KtlsSendStatus();
-  bool KtlsRecvStatus();
-
-  void ClientContextInsertCredentials(const PskCredentials& cred);
-  void ServerContextInsertCredentials(const PskCredentials& cred);
-
-  /* callbacks */
-  static int tls_pem_callback_dispatch(char* buf,
-                                       int size,
-                                       int rwflag,
-                                       void* userdata);
-  static int OpensslVerifyPeer(int ok, X509_STORE_CTX* store);
-  static unsigned int psk_server_cb(SSL* ssl,
-                                    const char* identity,
-                                    unsigned char* psk,
-                                    unsigned int max_psk_len);
-  static unsigned int psk_client_cb(SSL* ssl,
-                                    const char* /*hint*/,
-                                    char* identity,
-                                    unsigned int max_identity_len,
-                                    unsigned char* psk,
-                                    unsigned int max_psk_len);
-
-  /* each TCP connection has its own SSL_CTX object and SSL object */
-  SSL* openssl_{};
-  SSL_CTX* openssl_ctx_{};
-  SSL_CONF_CTX* openssl_conf_ctx_{};
-
-  /* openssl protocol command */
-  std::string protocol_;
-
-  /* cert attributes */
-  int tcp_file_descriptor_{kInvalidFiledescriptor};
-  std::string ca_certfile_;
-  std::string ca_certdir_;
-  std::string crlfile_;
-  std::string certfile_;
-  std::string keyfile_;
-  CRYPTO_PEM_PASSWD_CB* pem_callback_{};
-  void* pem_userdata_{};
-  std::string dhfile_;
-  std::string cipherlist_;
-  std::string ciphersuites_;
-  bool verify_peer_{};
-  bool enable_ktls_{false};
-  std::shared_ptr<ConfigResourcesContainer>
-      config_table_{};  // config table being used
-};
-
 class TlsOpenSsl : public Tls {
  public:
   TlsOpenSsl();
@@ -152,9 +85,9 @@ class TlsOpenSsl : public Tls {
 
   void Setca_certfile_(const std::string& ca_certfile) override;
   void SetCaCertdir(const std::string& ca_certdir) override;
-  void SetCrlfile(const std::string& crlfile_) override;
-  void SetCertfile(const std::string& certfile_) override;
-  void SetKeyfile(const std::string& keyfile_) override;
+  void SetCrlfile(const std::string& crlfile) override;
+  void SetCertfile(const std::string& certfile) override;
+  void SetKeyfile(const std::string& keyfile) override;
   void SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback) override;
   void SetPemUserdata(void* pem_userdata) override;
   void SetDhFile(const std::string& dhfile_) override;
@@ -168,7 +101,45 @@ class TlsOpenSsl : public Tls {
   int TlsPendingBytes() override;
 
  private:
-  std::unique_ptr<TlsOpenSslPrivate> d_; /* private data */
+  friend int tls_pem_callback_dispatch(char* buf,
+                                       int size,
+                                       int,
+                                       void* userdata);
+
+  void ClientContextInsertCredentials(const PskCredentials& credentials);
+
+  bool OpensslBsockSessionStart(BareosSocket* bsock, bool server);
+
+  int OpensslBsockReadwrite(BareosSocket* bsock,
+                            char* ptr,
+                            int nbytes,
+                            bool write);
+
+ private:
+  /* each TCP connection has its own SSL_CTX object and SSL object */
+  SSL* openssl_{};
+  SSL_CTX* openssl_ctx_{};
+  SSL_CONF_CTX* openssl_conf_ctx_{};
+
+  /* openssl protocol command */
+  std::string protocol_;
+
+  /* cert attributes */
+  int tcp_file_descriptor_{kInvalidFiledescriptor};
+  std::string ca_certfile_;
+  std::string ca_certdir_;
+  std::string crlfile_;
+  std::string certfile_;
+  std::string keyfile_;
+  CRYPTO_PEM_PASSWD_CB* pem_callback_{};
+  void* pem_userdata_{};
+  std::string dhfile_;
+  std::string cipherlist_;
+  std::string ciphersuites_;
+  bool verify_peer_{};
+  bool enable_ktls_{false};
+  std::shared_ptr<ConfigResourcesContainer>
+      config_table_{};  // config table being used
 };
 
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
@@ -176,213 +147,8 @@ class TlsOpenSsl : public Tls {
 static constexpr std::string_view tls_default_ciphers_{
     "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"};
 
-TlsOpenSslPrivate::TlsOpenSslPrivate()
-{
-  Dmsg0(100, "Construct TlsOpenSslPrivate\n");
-
-  /* the SSL_CTX object is the factory that creates
-   * openssl objects, so initialize this first */
-  openssl_ctx_ = SSL_CTX_new(TLS_method());
-
-  if (!openssl_ctx_) {
-    OpensslPostErrors(M_FATAL, T_("Error initializing SSL context"));
-    return;
-  }
-
-  openssl_conf_ctx_ = SSL_CONF_CTX_new();
-
-  if (!openssl_conf_ctx_) {
-    OpensslPostErrors(M_FATAL, T_("Error initializing SSL conf context"));
-    return;
-  }
-
-  SSL_CONF_CTX_set_ssl_ctx(openssl_conf_ctx_, openssl_ctx_);
-}
-
-TlsOpenSslPrivate::~TlsOpenSslPrivate()
-{
-  Dmsg0(100, "Destruct TlsOpenSslPrivate\n");
-
-  if (openssl_conf_ctx_) {
-    SSL_CONF_CTX_free(openssl_conf_ctx_);
-    openssl_conf_ctx_ = nullptr;
-  }
-
-  /* Free in this order:
-   * 1. openssl object
-   * 2. openssl_ctx object */
-
-  if (openssl_) {
-    SSL_free(openssl_);
-    openssl_ = nullptr;
-  }
-
-  /* the openssl_ctx object is the factory that creates
-   * openssl objects, so delete this at the end */
-  if (openssl_ctx_) {
-    client_cred.lock()->erase(openssl_ctx_);
-    SSL_CTX_free(openssl_ctx_);
-    openssl_ctx_ = nullptr;
-  }
-};
-
-bool TlsOpenSslPrivate::init()
-{
-  if (!openssl_ctx_) {
-    OpensslPostErrors(M_FATAL,
-                      T_("Error initializing TlsOpenSsl (no SSL_CTX)\n"));
-    return false;
-  }
-
-  if (!protocol_.empty()) {
-    SSL_CONF_CTX_set_flags(openssl_conf_ctx_,
-                           SSL_CONF_FLAG_FILE | SSL_CONF_FLAG_SHOW_ERRORS
-                               | SSL_CONF_FLAG_CLIENT | SSL_CONF_FLAG_SERVER);
-
-    bool err
-        = SSL_CONF_cmd(openssl_conf_ctx_, "Protocol", protocol_.c_str()) != 2;
-
-    if (err) {
-      std::string err_str{T_("Error setting OpenSSL Protocol options:\n")};
-      std::array<char, 256> buffer;
-      ERR_error_string(ERR_get_error(), buffer.data());
-      err_str += buffer.data();
-      err_str += "\n";
-      Dmsg1(100, "%s", err_str.c_str());
-      return false;
-    }
-  }
-
-  SSL_CTX_set_options(openssl_ctx_, SSL_OP_ALL);
-
-  SSL_CTX_set_options(openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
-  SSL_CTX_set_read_ahead(openssl_ctx_, 1);
-
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-  if (enable_ktls_) { SSL_CTX_set_options(openssl_ctx_, SSL_OP_ENABLE_KTLS); }
-#endif
-
-  if (cipherlist_.empty()) { cipherlist_ = tls_default_ciphers_; }
-
-  if (SSL_CTX_set_cipher_list(openssl_ctx_, cipherlist_.c_str()) != 1) {
-    OpensslPostErrors(M_ERROR, "Error setting cipher list");
-    return false;
-  }
-
-  // use the default tls 1.3 cipher suites if nothing is set
-  if (!ciphersuites_.empty()
-      && SSL_CTX_set_ciphersuites(openssl_ctx_, ciphersuites_.c_str()) != 1) {
-    OpensslPostErrors(M_ERROR, "Error setting cipher suite");
-    return false;
-  }
-
-  if (pem_callback_ == nullptr) {
-    pem_callback_ = CryptoDefaultPemCallback;
-    pem_userdata_ = NULL;
-  }
-
-  SSL_CTX_set_default_passwd_cb(openssl_ctx_,
-                                TlsOpenSslPrivate::tls_pem_callback_dispatch);
-  SSL_CTX_set_default_passwd_cb_userdata(openssl_ctx_,
-                                         static_cast<void*>(this));
-
-  const char* ca_certfile
-      = ca_certfile_.empty() ? nullptr : ca_certfile_.c_str();
-  const char* ca_certdir = ca_certdir_.empty() ? nullptr : ca_certdir_.c_str();
-
-  if (ca_certfile || ca_certdir) { /* at least one should be set */
-    std::lock_guard<std::mutex> lg(file_access_mutex_);
-    if (!SSL_CTX_load_verify_locations(openssl_ctx_, ca_certfile, ca_certdir)) {
-      OpensslPostErrors(M_FATAL,
-                        T_("Error loading certificate verification stores"));
-      return false;
-    }
-  } else if (verify_peer_) {
-    /* At least one CA is required for peer verification */
-    Dmsg0(100, T_("Either a certificate file or a directory must be"
-                  " specified as a verification store\n"));
-  }
-
-  if (!certfile_.empty()) {
-    std::lock_guard<std::mutex> lg(file_access_mutex_);
-    if (!SSL_CTX_use_certificate_chain_file(openssl_ctx_, certfile_.c_str())) {
-      OpensslPostErrors(M_FATAL, T_("Error loading certificate file"));
-      return false;
-    }
-  }
-
-  if (!keyfile_.empty()) {
-    std::lock_guard<std::mutex> lg(file_access_mutex_);
-    if (!SSL_CTX_use_PrivateKey_file(openssl_ctx_, keyfile_.c_str(),
-                                     SSL_FILETYPE_PEM)) {
-      OpensslPostErrors(M_FATAL, T_("Error loading private key"));
-      return false;
-    }
-  }
-
-  if (!dhfile_.empty()) { /* Diffie-Hellman parameters */
-    BIO* bio;
-    std::lock_guard<std::mutex> lg(file_access_mutex_);
-    if (!(bio = BIO_new_file(dhfile_.c_str(), "r"))) {
-      OpensslPostErrors(M_FATAL, T_("Unable to open DH parameters file"));
-      return false;
-    }
-    IGNORE_DEPRECATED_ON;
-    DH* dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
-    IGNORE_DEPRECATED_OFF;
-    BIO_free(bio);
-    if (!dh) {
-      OpensslPostErrors(M_FATAL,
-                        T_("Unable to load DH parameters from specified file"));
-      return false;
-    }
-    if (!SSL_CTX_set_tmp_dh(openssl_ctx_, dh)) {
-      OpensslPostErrors(M_FATAL,
-                        T_("Failed to set TLS Diffie-Hellman parameters"));
-      IGNORE_DEPRECATED_ON;
-      DH_free(dh);
-      IGNORE_DEPRECATED_OFF;
-      return false;
-    }
-    SSL_CTX_set_options(openssl_ctx_, SSL_OP_SINGLE_DH_USE);
-  }
-
-  if (verify_peer_) {
-    // SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
-    SSL_CTX_set_verify(openssl_ctx_,
-                       SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
-                       TlsOpenSslPrivate::OpensslVerifyPeer);
-  } else {
-    SSL_CTX_set_verify(openssl_ctx_, SSL_VERIFY_NONE, NULL);
-  }
-
-  openssl_ = SSL_new(openssl_ctx_);
-  if (!openssl_) {
-    OpensslPostErrors(M_FATAL, T_("Error creating new SSL object"));
-    return false;
-  }
-
-  /* Non-blocking partial writes */
-  SSL_set_mode(openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE
-                             | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
-
-  BIO* bio = BIO_new(BIO_s_socket());
-  if (!bio) {
-    OpensslPostErrors(M_FATAL, T_("Error creating file descriptor-based BIO"));
-    return false;
-  }
-
-  ASSERT(tcp_file_descriptor_ >= 0);  // 0 is a good (socket-)fd
-  BIO_set_fd(bio, tcp_file_descriptor_, BIO_NOCLOSE);
-
-  SSL_set_bio(openssl_, bio, bio);
-
-  return true;
-}
-
 // report any errors that occurred
-int TlsOpenSslPrivate::OpensslVerifyPeer(int preverify_ok,
-                                         X509_STORE_CTX* store)
+static int OpensslVerifyPeer(int preverify_ok, X509_STORE_CTX* store)
 { /* static */
   if (!preverify_ok) {
     X509* cert = X509_STORE_CTX_get_current_cert(store);
@@ -403,10 +169,10 @@ int TlsOpenSslPrivate::OpensslVerifyPeer(int preverify_ok,
   return preverify_ok;
 }
 
-int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
-                                             char* ptr,
-                                             int nbytes,
-                                             bool write)
+int TlsOpenSsl::OpensslBsockReadwrite(BareosSocket* bsock,
+                                      char* ptr,
+                                      int nbytes,
+                                      bool write)
 {
   if (!openssl_) {
     Dmsg0(100, "Attempt to write on a non initialized tls connection\n");
@@ -485,8 +251,7 @@ cleanup:
   return nbytes - nleft;
 }
 
-bool TlsOpenSslPrivate::OpensslBsockSessionStart(BareosSocket* bsock,
-                                                 bool server)
+bool TlsOpenSsl::OpensslBsockSessionStart(BareosSocket* bsock, bool server)
 {
   bool status = true;
 
@@ -550,36 +315,13 @@ cleanup:
   return status;
 }
 
-bool TlsOpenSslPrivate::KtlsSendStatus()
+int tls_pem_callback_dispatch(char* buf, int size, int, void* userdata)
 {
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-  // old openssl versions might return -1 as well; so check for > 0 instead
-  return BIO_get_ktls_send(SSL_get_wbio(openssl_)) > 0;
-#else
-  return false;
-#endif
-}
-
-bool TlsOpenSslPrivate::KtlsRecvStatus()
-{
-#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
-  // old openssl versions might return -1 as well; so check for > 0 instead
-  return BIO_get_ktls_recv(SSL_get_rbio(openssl_)) > 0;
-#else
-  return false;
-#endif
-}
-
-int TlsOpenSslPrivate::tls_pem_callback_dispatch(char* buf,
-                                                 int size,
-                                                 int,
-                                                 void* userdata)
-{
-  TlsOpenSslPrivate* p = static_cast<TlsOpenSslPrivate*>(userdata);
+  TlsOpenSsl* p = static_cast<TlsOpenSsl*>(userdata);
   return (p->pem_callback_(buf, size, p->pem_userdata_));
 }
 
-void TlsOpenSslPrivate::ClientContextInsertCredentials(
+void TlsOpenSsl::ClientContextInsertCredentials(
     const PskCredentials& credentials)
 {
   if (!openssl_ctx_) { /* do not register nullptr */
@@ -589,10 +331,10 @@ void TlsOpenSslPrivate::ClientContextInsertCredentials(
   }
 }
 
-unsigned int TlsOpenSslPrivate::psk_server_cb(SSL* ssl,
-                                              const char* identity,
-                                              unsigned char* psk_output,
-                                              unsigned int max_psk_len)
+unsigned int psk_server_cb(SSL* ssl,
+                           const char* identity,
+                           unsigned char* psk_output,
+                           unsigned int max_psk_len)
 {
   unsigned int result = 0;
 
@@ -609,9 +351,7 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL* ssl,
   std::string configured_psk;
 
   ConfigurationParser* config
-      = static_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(
-          openssl_ctx,
-          TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr));
+      = static_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(openssl_ctx, 0));
 
   if (!config) {
     Dmsg0(100, "Config not set: kConfigurationParserPtr\n");
@@ -630,12 +370,12 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL* ssl,
   return result;
 }
 
-unsigned int TlsOpenSslPrivate::psk_client_cb(SSL* ssl,
-                                              const char* /*hint*/,
-                                              char* identity,
-                                              unsigned int max_identity_len,
-                                              unsigned char* psk,
-                                              unsigned int max_psk_len)
+static unsigned int psk_client_cb(SSL* ssl,
+                                  const char* /*hint*/,
+                                  char* identity,
+                                  unsigned int max_identity_len,
+                                  unsigned char* psk,
+                                  unsigned int max_psk_len)
 {
   const SSL_CTX* openssl_ctx = SSL_get_SSL_CTX(ssl);
 
@@ -681,133 +421,325 @@ unsigned int TlsOpenSslPrivate::psk_client_cb(SSL* ssl,
 void TlsOpenSsl::Setca_certfile_(const std::string& ca_certfile)
 {
   Dmsg1(100, "Set ca_certfile:\t<%s>\n", ca_certfile.c_str());
-  d_->ca_certfile_ = ca_certfile;
+  ca_certfile_ = ca_certfile;
 }
 
 void TlsOpenSsl::SetCaCertdir(const std::string& ca_certdir)
 {
   Dmsg1(100, "Set ca_certdir:\t<%s>\n", ca_certdir.c_str());
-  d_->ca_certdir_ = ca_certdir;
+  ca_certdir_ = ca_certdir;
 }
 
-void TlsOpenSsl::SetCrlfile(const std::string& crlfile_)
+void TlsOpenSsl::SetCrlfile(const std::string& crlfile)
 {
-  Dmsg1(100, "Set crlfile_:\t<%s>\n", crlfile_.c_str());
-  d_->crlfile_ = crlfile_;
+  Dmsg1(100, "Set crlfile_:\t<%s>\n", crlfile.c_str());
+  crlfile_ = crlfile;
 }
 
-void TlsOpenSsl::SetCertfile(const std::string& certfile_)
+void TlsOpenSsl::SetCertfile(const std::string& certfile)
 {
-  Dmsg1(100, "Set certfile_:\t<%s>\n", certfile_.c_str());
-  d_->certfile_ = certfile_;
+  Dmsg1(100, "Set certfile_:\t<%s>\n", certfile.c_str());
+  certfile_ = certfile;
 }
 
-void TlsOpenSsl::SetKeyfile(const std::string& keyfile_)
+void TlsOpenSsl::SetKeyfile(const std::string& keyfile)
 {
-  Dmsg1(100, "Set keyfile_:\t<%s>\n", keyfile_.c_str());
-  d_->keyfile_ = keyfile_;
+  Dmsg1(100, "Set keyfile_:\t<%s>\n", keyfile.c_str());
+  keyfile_ = keyfile;
 }
 
 void TlsOpenSsl::SetPemCallback(CRYPTO_PEM_PASSWD_CB pem_callback)
 {
   Dmsg1(100, "Set pem_callback to address: <%p>\n", pem_callback);
-  d_->pem_callback_ = pem_callback;
+  pem_callback_ = pem_callback;
 }
 
 void TlsOpenSsl::SetPemUserdata(void* pem_userdata)
 {
   Dmsg1(100, "Set pem_userdata to address: <%p>\n", pem_userdata);
-  d_->pem_userdata_ = pem_userdata;
+  pem_userdata_ = pem_userdata;
 }
 
-void TlsOpenSsl::SetDhFile(const std::string& dhfile_)
+void TlsOpenSsl::SetDhFile(const std::string& dhfile)
 {
-  Dmsg1(100, "Set dhfile_:\t<%s>\n", dhfile_.c_str());
-  d_->dhfile_ = dhfile_;
+  Dmsg1(100, "Set dhfile_:\t<%s>\n", dhfile.c_str());
+  dhfile_ = dhfile;
 }
 
 void TlsOpenSsl::SetVerifyPeer(const bool& verify_peer)
 {
   Dmsg1(100, "Set Verify Peer:\t<%s>\n", verify_peer ? "true" : "false");
-  d_->verify_peer_ = verify_peer;
+  verify_peer_ = verify_peer;
 }
 
 void TlsOpenSsl::SetEnableKtls(bool ktls)
 {
   Dmsg1(100, "Set ktls:\t<%s>\n", ktls ? "true" : "false");
-  d_->enable_ktls_ = ktls;
+  enable_ktls_ = ktls;
 }
 
 void TlsOpenSsl::SetTcpFileDescriptor(const int& fd)
 {
   Dmsg1(100, "Set tcp filedescriptor: <%d>\n", fd);
-  d_->tcp_file_descriptor_ = fd;
+  tcp_file_descriptor_ = fd;
 }
 
 void TlsOpenSsl::SetCipherList(const std::string& cipherlist)
 {
   Dmsg1(100, "Set cipherlist:\t<%s>\n", cipherlist.c_str());
-  d_->cipherlist_ = cipherlist;
+  cipherlist_ = cipherlist;
 }
 
 void TlsOpenSsl::SetCipherSuites(const std::string& ciphersuites)
 {
   Dmsg1(100, "Set ciphersuites:\t<%s>\n", ciphersuites.c_str());
-  d_->ciphersuites_ = ciphersuites;
+  ciphersuites_ = ciphersuites;
 }
 
 void TlsOpenSsl::SetProtocol(const std::string& protocol)
 {
   Dmsg1(100, "Set protocol:\t<%s>\n", protocol.c_str());
-  d_->protocol_ = protocol;
+  protocol_ = protocol;
 }
 
-TlsOpenSsl::TlsOpenSsl() : d_(std::make_unique<TlsOpenSslPrivate>()) {}
+TlsOpenSsl::TlsOpenSsl()
+{
+  Dmsg0(100, "Construct TlsOpenSsl\n");
 
-TlsOpenSsl::~TlsOpenSsl() = default;
+  /* the SSL_CTX object is the factory that creates
+   * openssl objects, so initialize this first */
+  openssl_ctx_ = SSL_CTX_new(TLS_method());
 
-bool TlsOpenSsl::init() { return d_->init(); }
+  if (!openssl_ctx_) {
+    OpensslPostErrors(M_FATAL, T_("Error initializing SSL context"));
+    return;
+  }
+
+  openssl_conf_ctx_ = SSL_CONF_CTX_new();
+
+  if (!openssl_conf_ctx_) {
+    OpensslPostErrors(M_FATAL, T_("Error initializing SSL conf context"));
+    return;
+  }
+
+  SSL_CONF_CTX_set_ssl_ctx(openssl_conf_ctx_, openssl_ctx_);
+}
+
+TlsOpenSsl::~TlsOpenSsl()
+{
+  Dmsg0(100, "Destruct TlsOpenSsl\n");
+
+  if (openssl_conf_ctx_) {
+    SSL_CONF_CTX_free(openssl_conf_ctx_);
+    openssl_conf_ctx_ = nullptr;
+  }
+
+  /* Free in this order:
+   * 1. openssl object
+   * 2. openssl_ctx object */
+
+  if (openssl_) {
+    SSL_free(openssl_);
+    openssl_ = nullptr;
+  }
+
+  /* the openssl_ctx object is the factory that creates
+   * openssl objects, so delete this at the end */
+  if (openssl_ctx_) {
+    client_cred.lock()->erase(openssl_ctx_);
+    SSL_CTX_free(openssl_ctx_);
+    openssl_ctx_ = nullptr;
+  }
+}
+
+bool TlsOpenSsl::init()
+{
+  if (!openssl_ctx_) {
+    OpensslPostErrors(M_FATAL,
+                      T_("Error initializing TlsOpenSsl (no SSL_CTX)\n"));
+    return false;
+  }
+
+  if (!protocol_.empty()) {
+    SSL_CONF_CTX_set_flags(openssl_conf_ctx_,
+                           SSL_CONF_FLAG_FILE | SSL_CONF_FLAG_SHOW_ERRORS
+                               | SSL_CONF_FLAG_CLIENT | SSL_CONF_FLAG_SERVER);
+
+    bool err
+        = SSL_CONF_cmd(openssl_conf_ctx_, "Protocol", protocol_.c_str()) != 2;
+
+    if (err) {
+      std::string err_str{T_("Error setting OpenSSL Protocol options:\n")};
+      std::array<char, 256> buffer;
+      ERR_error_string(ERR_get_error(), buffer.data());
+      err_str += buffer.data();
+      err_str += "\n";
+      Dmsg1(100, "%s", err_str.c_str());
+      return false;
+    }
+  }
+
+  SSL_CTX_set_options(openssl_ctx_, SSL_OP_ALL);
+
+  SSL_CTX_set_options(openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+  SSL_CTX_set_read_ahead(openssl_ctx_, 1);
+
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  if (enable_ktls_) { SSL_CTX_set_options(openssl_ctx_, SSL_OP_ENABLE_KTLS); }
+#endif
+
+  if (cipherlist_.empty()) { cipherlist_ = tls_default_ciphers_; }
+
+  if (SSL_CTX_set_cipher_list(openssl_ctx_, cipherlist_.c_str()) != 1) {
+    OpensslPostErrors(M_ERROR, "Error setting cipher list");
+    return false;
+  }
+
+  // use the default tls 1.3 cipher suites if nothing is set
+  if (!ciphersuites_.empty()
+      && SSL_CTX_set_ciphersuites(openssl_ctx_, ciphersuites_.c_str()) != 1) {
+    OpensslPostErrors(M_ERROR, "Error setting cipher suite");
+    return false;
+  }
+
+  if (pem_callback_ == nullptr) {
+    pem_callback_ = CryptoDefaultPemCallback;
+    pem_userdata_ = NULL;
+  }
+
+  SSL_CTX_set_default_passwd_cb(openssl_ctx_, tls_pem_callback_dispatch);
+  SSL_CTX_set_default_passwd_cb_userdata(openssl_ctx_,
+                                         static_cast<void*>(this));
+
+  const char* ca_certfile
+      = ca_certfile_.empty() ? nullptr : ca_certfile_.c_str();
+  const char* ca_certdir = ca_certdir_.empty() ? nullptr : ca_certdir_.c_str();
+
+  if (ca_certfile || ca_certdir) { /* at least one should be set */
+    std::lock_guard<std::mutex> lg(file_access_mutex_);
+    if (!SSL_CTX_load_verify_locations(openssl_ctx_, ca_certfile, ca_certdir)) {
+      OpensslPostErrors(M_FATAL,
+                        T_("Error loading certificate verification stores"));
+      return false;
+    }
+  } else if (verify_peer_) {
+    /* At least one CA is required for peer verification */
+    Dmsg0(100, T_("Either a certificate file or a directory must be"
+                  " specified as a verification store\n"));
+  }
+
+  if (!certfile_.empty()) {
+    std::lock_guard<std::mutex> lg(file_access_mutex_);
+    if (!SSL_CTX_use_certificate_chain_file(openssl_ctx_, certfile_.c_str())) {
+      OpensslPostErrors(M_FATAL, T_("Error loading certificate file"));
+      return false;
+    }
+  }
+
+  if (!keyfile_.empty()) {
+    std::lock_guard<std::mutex> lg(file_access_mutex_);
+    if (!SSL_CTX_use_PrivateKey_file(openssl_ctx_, keyfile_.c_str(),
+                                     SSL_FILETYPE_PEM)) {
+      OpensslPostErrors(M_FATAL, T_("Error loading private key"));
+      return false;
+    }
+  }
+
+  if (!dhfile_.empty()) { /* Diffie-Hellman parameters */
+    BIO* bio;
+    std::lock_guard<std::mutex> lg(file_access_mutex_);
+    if (!(bio = BIO_new_file(dhfile_.c_str(), "r"))) {
+      OpensslPostErrors(M_FATAL, T_("Unable to open DH parameters file"));
+      return false;
+    }
+    IGNORE_DEPRECATED_ON;
+    DH* dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+    IGNORE_DEPRECATED_OFF;
+    BIO_free(bio);
+    if (!dh) {
+      OpensslPostErrors(M_FATAL,
+                        T_("Unable to load DH parameters from specified file"));
+      return false;
+    }
+    if (!SSL_CTX_set_tmp_dh(openssl_ctx_, dh)) {
+      OpensslPostErrors(M_FATAL,
+                        T_("Failed to set TLS Diffie-Hellman parameters"));
+      IGNORE_DEPRECATED_ON;
+      DH_free(dh);
+      IGNORE_DEPRECATED_OFF;
+      return false;
+    }
+    SSL_CTX_set_options(openssl_ctx_, SSL_OP_SINGLE_DH_USE);
+  }
+
+  if (verify_peer_) {
+    // SSL_VERIFY_FAIL_IF_NO_PEER_CERT has no effect in client mode
+    SSL_CTX_set_verify(openssl_ctx_,
+                       SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT,
+                       OpensslVerifyPeer);
+  } else {
+    SSL_CTX_set_verify(openssl_ctx_, SSL_VERIFY_NONE, NULL);
+  }
+
+  openssl_ = SSL_new(openssl_ctx_);
+  if (!openssl_) {
+    OpensslPostErrors(M_FATAL, T_("Error creating new SSL object"));
+    return false;
+  }
+
+  /* Non-blocking partial writes */
+  SSL_set_mode(openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE
+                             | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+
+  BIO* bio = BIO_new(BIO_s_socket());
+  if (!bio) {
+    OpensslPostErrors(M_FATAL, T_("Error creating file descriptor-based BIO"));
+    return false;
+  }
+
+  ASSERT(tcp_file_descriptor_ >= 0);  // 0 is a good (socket-)fd
+  BIO_set_fd(bio, tcp_file_descriptor_, BIO_NOCLOSE);
+
+  SSL_set_bio(openssl_, bio, bio);
+
+  return true;
+}
 
 void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials& credentials)
 {
-  if (!d_->openssl_ctx_) {
+  if (!openssl_ctx_) {
     Dmsg0(50, "Could not set TLS_PSK CLIENT context (no SSL_CTX)\n");
   } else {
     BStringList ident(credentials.get_identity(),
                       AsciiControlCharacters::RecordSeparator());
     Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n",
           ident.JoinReadable().c_str());
-    d_->ClientContextInsertCredentials(credentials);
-    SSL_CTX_set_psk_client_callback(d_->openssl_ctx_,
-                                    TlsOpenSslPrivate::psk_client_cb);
+    ClientContextInsertCredentials(credentials);
+    SSL_CTX_set_psk_client_callback(openssl_ctx_, psk_client_cb);
   }
 }
 
 void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser* config)
 {
-  if (!d_->openssl_ctx_) {
+  if (!openssl_ctx_) {
     Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no SSL_CTX)\n");
   } else if (!config) {
     Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no config)\n");
   } else {
     // keep a shared_ptr to the current config, so a reload won't
     // free the memory we're going to use in the private context
-    d_->config_table_ = config->GetResourcesContainer();
-    SSL_CTX_set_ex_data(
-        d_->openssl_ctx_,
-        TlsOpenSslPrivate::SslCtxExDataIndex::kConfigurationParserPtr,
-        (void*)config);
+    config_table_ = config->GetResourcesContainer();
+    SSL_CTX_set_ex_data(openssl_ctx_, 0, (void*)config);
 
-    SSL_CTX_set_psk_server_callback(d_->openssl_ctx_,
-                                    TlsOpenSslPrivate::psk_server_cb);
+    SSL_CTX_set_psk_server_callback(openssl_ctx_, psk_server_cb);
   }
 }
 
 std::string TlsOpenSsl::TlsCipherGetName() const
 {
-  if (d_->openssl_) {
-    const SSL_CIPHER* cipher = SSL_get_current_cipher(d_->openssl_);
-    const char* protocol_name = SSL_get_version(d_->openssl_);
+  if (openssl_) {
+    const SSL_CIPHER* cipher = SSL_get_current_cipher(openssl_);
+    const char* protocol_name = SSL_get_version(openssl_);
     if (cipher) {
       return std::string(SSL_CIPHER_get_name(cipher)) + " " + protocol_name;
     }
@@ -820,7 +752,7 @@ void TlsOpenSsl::TlsLogConninfo(JobControlRecord* jcr,
                                 int port,
                                 const char* who) const
 {
-  if (!d_->openssl_) {
+  if (!openssl_) {
     Qmsg(jcr, M_INFO, 0, T_("No openssl to %s at %s:%d established\n"), who,
          host, port);
   } else {
@@ -845,7 +777,7 @@ bool TlsOpenSsl::TlsPostconnectVerifyCn(
   X509_NAME* subject;
   bool auth_success = false;
 
-  if (!(cert = SSL_get_peer_certificate(d_->openssl_))) {
+  if (!(cert = SSL_get_peer_certificate(openssl_))) {
     Qmsg0(jcr, M_ERROR, 0, T_("Peer failed to present a TLS certificate\n"));
     return false;
   }
@@ -886,7 +818,7 @@ bool TlsOpenSsl::TlsPostconnectVerifyHost(JobControlRecord* jcr,
   ASN1_STRING* asn1CN;
   bool auth_success = false;
 
-  if (!(cert = SSL_get_peer_certificate(d_->openssl_))) {
+  if (!(cert = SSL_get_peer_certificate(openssl_))) {
     Qmsg1(jcr, M_ERROR, 0, T_("Peer %s failed to present a TLS certificate\n"),
           host);
     return false;
@@ -965,12 +897,12 @@ success:
 
 bool TlsOpenSsl::TlsBsockConnect(BareosSocket* bsock)
 {
-  return d_->OpensslBsockSessionStart(bsock, false);
+  return OpensslBsockSessionStart(bsock, false);
 }
 
 bool TlsOpenSsl::TlsBsockAccept(BareosSocket* bsock)
 {
-  return d_->OpensslBsockSessionStart(bsock, true);
+  return OpensslBsockSessionStart(bsock, true);
 }
 
 void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
@@ -984,25 +916,25 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
    * completed or an error has occurred. By setting the socket blocking
    * we can avoid the ugly for()/switch()/select() loop. */
 
-  if (!d_->openssl_) { return; }
+  if (!openssl_) { return; }
 
   /* Set socket blocking for shutdown */
   bsock->SetBlocking();
 
   btimer_t* tid = StartBsockTimer(bsock, 60 * 2);
 
-  int err_shutdown = SSL_shutdown(d_->openssl_);
+  int err_shutdown = SSL_shutdown(openssl_);
 
   StopBsockTimer(tid);
 
   if (err_shutdown == 0) {
     /* Complete the shutdown with the second call */
     tid = StartBsockTimer(bsock, 2);
-    err_shutdown = SSL_shutdown(d_->openssl_);
+    err_shutdown = SSL_shutdown(openssl_);
     StopBsockTimer(tid);
   }
 
-  int ssl_error = SSL_get_error(d_->openssl_, err_shutdown);
+  int ssl_error = SSL_get_error(openssl_, err_shutdown);
   LogSSLError(ssl_error);
 
   /* There may be more errors on the thread-local error-queue.
@@ -1011,8 +943,8 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
    * that may have occurred here. */
   ERR_clear_error();  // empties the current thread's openssl error queue
 
-  SSL_free(d_->openssl_);
-  d_->openssl_ = nullptr;
+  SSL_free(openssl_);
+  openssl_ = nullptr;
 
 
   JobControlRecord* jcr = bsock->get_jcr();
@@ -1038,16 +970,33 @@ void TlsOpenSsl::TlsBsockShutdown(BareosSocket* bsock)
 
 int TlsOpenSsl::TlsBsockWriten(BareosSocket* bsock, char* ptr, int32_t nbytes)
 {
-  return d_->OpensslBsockReadwrite(bsock, ptr, nbytes, true);
+  return OpensslBsockReadwrite(bsock, ptr, nbytes, true);
 }
 
 int TlsOpenSsl::TlsBsockReadn(BareosSocket* bsock, char* ptr, int32_t nbytes)
 {
-  return d_->OpensslBsockReadwrite(bsock, ptr, nbytes, false);
+  return OpensslBsockReadwrite(bsock, ptr, nbytes, false);
 }
-bool TlsOpenSsl::KtlsSendStatus() { return d_->KtlsSendStatus(); }
 
-bool TlsOpenSsl::KtlsRecvStatus() { return d_->KtlsRecvStatus(); }
+bool TlsOpenSsl::KtlsSendStatus()
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  // old openssl versions might return -1 as well; so check for > 0 instead
+  return BIO_get_ktls_send(SSL_get_wbio(openssl_)) > 0;
+#else
+  return false;
+#endif
+}
+
+bool TlsOpenSsl::KtlsRecvStatus()
+{
+#if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
+  // old openssl versions might return -1 as well; so check for > 0 instead
+  return BIO_get_ktls_recv(SSL_get_rbio(openssl_)) > 0;
+#else
+  return false;
+#endif
+}
 
 int TlsOpenSsl::TlsPendingBytes()
 {
@@ -1058,7 +1007,7 @@ int TlsOpenSsl::TlsPendingBytes()
    * As such, we use SSL_has_pending() as that returns a truthy value if
    * any number of bytes are inside openssls buffer.
    * See https://docs.openssl.org/3.6/man3/SSL_pending for more information */
-  if (SSL_has_pending(d_->openssl_)) { return 1; }
+  if (SSL_has_pending(openssl_)) { return 1; }
 
   return 0;
 }
