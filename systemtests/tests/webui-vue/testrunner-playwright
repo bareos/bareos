@@ -168,19 +168,18 @@ async def test_jobs_page(page):
 # ── Test 4: console page accepts a command ───────────────────────────────────
 async def test_console(page):
     await login(page)
-    # Navigate within the SPA using hash change (no full reload) so the WS
-    # connection established during login is preserved.
+    # Navigate within the SPA using hash change (no full reload).
     await page.evaluate("window.location.hash = '/console'")
     await page.wait_for_url("**#/console", timeout=5_000)
-    await page.wait_for_load_state("networkidle")
-    # Wait for the raw console WS to authenticate; input is disabled until then.
-    input_el = page.locator("input[placeholder*='Enter command']")
-    await input_el.wait_for(state="visible", timeout=8_000)
-    await expect(input_el).to_be_enabled(timeout=12_000)
-    await input_el.fill("list clients")
-    await input_el.press("Enter")
+    # Wait for raw console WS to authenticate — status chip turns 'connected'.
+    console_el = page.locator(".console-output")
+    await expect(console_el).to_contain_text("Connected to", timeout=12_000)
+    # Click to focus the terminal, then type a command.
+    await console_el.click()
+    await page.keyboard.type("list clients")
+    await page.keyboard.press("Enter")
     # The response area renders "bareos-fd" from the live director.
-    await expect(page.locator(".console-output")).to_contain_text("bareos-fd", timeout=12_000)
+    await expect(console_el).to_contain_text("bareos-fd", timeout=12_000)
     ok("console page returns output for 'list clients'")
 
 # ── Test 5: page reload reconnects automatically ──────────────────────────────

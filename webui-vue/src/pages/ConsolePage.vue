@@ -8,39 +8,28 @@
         <q-btn flat round dense icon="delete_sweep" color="white" title="Clear" @click="clearOutput" />
       </q-card-section>
 
-      <!-- terminal output area -->
-      <q-card-section class="q-pa-none">
-        <div class="console-output" ref="outputEl">
-          <div v-for="(line, i) in output" :key="i" :class="['console-line', line.cls]">{{ line.text }}</div>
-          <div class="console-line console-cursor">█</div>
-        </div>
-      </q-card-section>
+      <!-- terminal area — click to focus, then type -->
+      <div
+        class="console-output"
+        ref="outputEl"
+        tabindex="0"
+        @keydown="onKeyDown"
+        @focus="focused = true"
+        @blur="focused = false"
+        @click="focusConsole"
+      >
+        <div v-for="(line, i) in output" :key="i" :class="['console-line', line.cls]">{{ line.text }}</div>
 
-      <!-- input row -->
-      <q-card-section class="q-pt-sm q-pb-sm">
-        <div class="row q-col-gutter-sm items-center">
-          <div class="col">
-            <q-input
-              v-model="cmd"
-              outlined dense
-              placeholder="Enter command…"
-              :disable="consoleStatus !== 'connected'"
-              @keydown="onKeyDown"
-              class="console-input"
-              ref="inputEl"
-            >
-              <template #prepend><span class="text-positive text-weight-bold" style="font-family:monospace">*</span></template>
-            </q-input>
-          </div>
-          <div class="col-auto">
-            <q-btn color="primary" label="Send" icon="send" no-caps
-              :disable="consoleStatus !== 'connected'"
-              @click="send" />
-          </div>
+        <!-- live input line -->
+        <div class="console-line console-input-line">
+          <span class="console-prompt">* </span>
+          <span>{{ cmd }}</span><span :class="['console-cursor', { blink: focused }]">█</span>
         </div>
+      </div>
 
-        <!-- quick commands -->
-        <div class="row q-gutter-xs q-mt-xs flex-wrap">
+      <!-- quick command chips -->
+      <q-card-section class="q-pt-xs q-pb-sm">
+        <div class="row q-gutter-xs flex-wrap">
           <q-chip v-for="c in quickCmds" :key="c" clickable
             @click="quickSend(c)"
             color="grey-3" text-color="dark" size="sm"
@@ -61,19 +50,19 @@ const director = useDirectorStore()
 
 // ── refs ─────────────────────────────────────────────────────────────────────
 const outputEl = ref(null)
-const inputEl  = ref(null)
 const cmd      = ref('')
+const focused  = ref(false)
 const output   = ref([])
 
 // ── command history ───────────────────────────────────────────────────────────
 const history    = ref([])
-let   historyIdx = -1            // -1 = not browsing history
+let   historyIdx = -1
 
 // ── raw WebSocket state ───────────────────────────────────────────────────────
 let   rawWs       = null
 let   cmdSeq      = 0
-const pendingCmds = new Map()    // id → { resolve, reject, timer }
-const consoleStatus = ref('disconnected')  // 'connecting'|'connected'|'error'|'disconnected'
+const pendingCmds = new Map()
+const consoleStatus = ref('disconnected')
 
 const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || 'ws://localhost:8765'
 
@@ -87,14 +76,12 @@ const quickCmds = ['status director', 'list jobs', 'list clients', 'list volumes
 // ── output helpers ────────────────────────────────────────────────────────────
 function appendLines(text, cls = '') {
   const lines = String(text ?? '').replace(/\r\n/g, '\n').split('\n')
-  // trim trailing blank line that most director responses end with
   while (lines.length && lines[lines.length - 1].trim() === '') lines.pop()
   lines.forEach(l => output.value.push({ text: l, cls }))
 }
 
-function appendInfo(text)  { appendLines(text, 'console-info') }
-function appendCmd(text)   { output.value.push({ text: `* ${text}`, cls: 'console-cmd' }) }
-function appendErr(text)   { appendLines(text, 'console-err') }
+function appendInfo(text) { appendLines(text, 'console-info') }
+function appendErr(text)  { appendLines(text, 'console-err') }
 
 async function scrollBottom() {
   await nextTick()
@@ -104,6 +91,10 @@ async function scrollBottom() {
 function clearOutput() {
   output.value = []
   appendInfo('Console cleared.')
+}
+
+function focusConsole() {
+  outputEl.value?.focus()
 }
 
 // ── raw WebSocket ─────────────────────────────────────────────────────────────
@@ -146,7 +137,7 @@ function connectRaw() {
 
     if (msg.type === 'auth_ok') {
       consoleStatus.value = 'connected'
-      appendInfo(`Connected to ${msg.director} — type 'help' for a list of commands.`)
+      appendInfo(`Connected to ${msg.director} — type 'help' for commands, click here to type.`)
       scrollBottom()
       return
     }
@@ -200,14 +191,14 @@ function send() {
   const c = cmd.value.trim()
   if (!c) return
 
-  // history dedup
   if (!history.value.length || history.value[history.value.length - 1] !== c) {
     history.value.push(c)
   }
-  historyIdx = history.value.length   // reset browsing position
-  cmd.value  = ''
+  historyIdx = history.value.length
 
-  appendCmd(c)
+  // echo the command as a completed line
+  output.value.push({ text: `* ${c}`, cls: 'console-cmd' })
+  cmd.value = ''
 
   if (!rawWs || rawWs.readyState !== WebSocket.OPEN) {
     appendErr('Not connected to director.')
@@ -228,12 +219,37 @@ function send() {
   scrollBottom()
 }
 
-function quickSend(c) { cmd.value = c; send() }
+function quickSend(c) {
+  output.value.push({ text: `* ${c}`, cls: 'console-cmd' })
+  cmd.value = ''
+  if (!rawWs || rawWs.readyState !== WebSocket.OPEN) {
+    appendErr('Not connected to director.')
+    scrollBottom()
+    return
+  }
+  const id = String(++cmdSeq)
+  const timer = setTimeout(() => {
+    pendingCmds.has(id) && (pendingCmds.delete(id), appendErr('Command timed out.'), scrollBottom())
+  }, 30_000)
+  pendingCmds.set(id, { timer })
+  rawWs.send(JSON.stringify({ type: 'command', id, command: c }))
+  scrollBottom()
+  focusConsole()
+}
 
 function onKeyDown(event) {
+  // Don't interfere with browser shortcuts (Ctrl+R, Ctrl+T, etc.)
+  if (event.ctrlKey && event.key !== 'c' && event.key !== 'l') return
+
   if (event.key === 'Enter') {
     event.preventDefault()
     send()
+  } else if (event.key === 'Backspace') {
+    event.preventDefault()
+    cmd.value = cmd.value.slice(0, -1)
+  } else if (event.key === 'Delete') {
+    event.preventDefault()
+    cmd.value = ''
   } else if (event.key === 'ArrowUp') {
     event.preventDefault()
     if (history.value.length === 0) return
@@ -248,18 +264,28 @@ function onKeyDown(event) {
       historyIdx = history.value.length
       cmd.value  = ''
     }
+  } else if (event.ctrlKey && event.key === 'c') {
+    event.preventDefault()
+    output.value.push({ text: `* ${cmd.value}^C`, cls: 'console-cmd' })
+    cmd.value = ''
+  } else if (event.ctrlKey && event.key === 'l') {
+    event.preventDefault()
+    clearOutput()
+  } else if (event.key.length === 1 && !event.altKey) {
+    // printable character
+    event.preventDefault()
+    cmd.value += event.key
   }
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────────────
 onMounted(() => {
-  appendInfo('Bareos WebUI Console  —  use ↑/↓ for command history')
+  appendInfo('Bareos WebUI Console  —  click here to type, ↑/↓ for history, Ctrl+L to clear')
   connectRaw()
 })
 
 onUnmounted(disconnectRaw)
 
-// reconnect when the main director reconnects (e.g. page reload)
 watch(() => director.isConnected, (connected) => {
   if (connected && consoleStatus.value === 'disconnected') connectRaw()
 })
@@ -271,25 +297,29 @@ watch(() => director.isConnected, (connected) => {
   color: #e0e0e0;
   font-family: 'Courier New', Courier, monospace;
   font-size: 0.82rem;
-  line-height: 1.45;
-  min-height: 360px;
-  max-height: 520px;
+  line-height: 1.5;
+  min-height: 420px;
+  max-height: 600px;
   overflow-y: auto;
-  padding: 12px 16px;
-  border-bottom: 1px solid #333;
+  padding: 12px 16px 12px;
   white-space: pre-wrap;
   word-break: break-all;
+  outline: none;
+  cursor: text;
 }
-.console-line { display: block; }
-.console-info  { color: #90caf9; }
-.console-cmd   { color: #80cbc4; }
-.console-err   { color: #ef9a9a; }
-.console-cursor { display: inline; animation: blink 1s step-end infinite; }
-@keyframes blink { 50% { opacity: 0; } }
-.console-input :deep(input) {
-  font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
+.console-output:focus {
+  box-shadow: inset 0 0 0 2px #1976d2;
 }
+.console-line         { display: block; }
+.console-input-line   { display: block; }
+.console-info         { color: #90caf9; }
+.console-cmd          { color: #80cbc4; }
+.console-err          { color: #ef9a9a; }
+.console-prompt       { color: #80cbc4; }
+.console-cursor       { opacity: 0.2; }
+.console-cursor.blink { animation: blink 1s step-end infinite; }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 </style>
+
 
 
