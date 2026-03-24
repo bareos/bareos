@@ -686,6 +686,11 @@ bool TlsOpenSsl::init()
       IGNORE_DEPRECATED_OFF;
       return false;
     }
+
+    // SSL_CTX_set_tmp_dh creates a copy, so we need to free the parameters
+    IGNORE_DEPRECATED_ON;
+    DH_free(dh);
+    IGNORE_DEPRECATED_OFF;
     SSL_CTX_set_options(openssl_ctx_, SSL_OP_SINGLE_DH_USE);
   }
 
@@ -726,30 +731,34 @@ void TlsOpenSsl::SetTlsPskClientContext(const PskCredentials& credentials)
 {
   if (!openssl_ctx_) {
     Dmsg0(50, "Could not set TLS_PSK CLIENT context (no SSL_CTX)\n");
-  } else {
-    BStringList ident(credentials.get_identity(),
-                      AsciiControlCharacters::RecordSeparator());
-    Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n",
-          ident.JoinReadable().c_str());
-    ClientContextInsertCredentials(credentials);
-    SSL_CTX_set_psk_client_callback(openssl_ctx_, psk_client_cb);
+    return;
   }
+  BStringList ident(credentials.get_identity(),
+                    AsciiControlCharacters::RecordSeparator());
+  Dmsg1(50, "Preparing TLS_PSK CLIENT context for identity %s\n",
+        ident.JoinReadable().c_str());
+  ClientContextInsertCredentials(credentials);
+  SSL_CTX_set_psk_client_callback(openssl_ctx_, psk_client_cb);
 }
 
 void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser* config)
 {
   if (!openssl_ctx_) {
     Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no SSL_CTX)\n");
-  } else if (!config) {
-    Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no config)\n");
-  } else {
-    // keep a shared_ptr to the current config, so a reload won't
-    // free the memory we're going to use in the private context
-    config_table_ = config->GetResourcesContainer();
-    SSL_CTX_setconfig(openssl_ctx_, config);
-
-    SSL_CTX_set_psk_server_callback(openssl_ctx_, psk_server_cb);
+    return;
   }
+
+  if (!config) {
+    Dmsg0(50, "Could not prepare TLS_PSK SERVER callback (no config)\n");
+    return;
+  }
+
+  // keep a shared_ptr to the current config, so a reload won't
+  // free the memory we're going to use in the private context
+  config_table_ = config->GetResourcesContainer();
+  SSL_CTX_setconfig(openssl_ctx_, config);
+
+  SSL_CTX_set_psk_server_callback(openssl_ctx_, psk_server_cb);
 }
 
 std::string TlsOpenSsl::TlsCipherGetName() const
@@ -1014,7 +1023,6 @@ bool TlsOpenSsl::KtlsRecvStatus()
   return false;
 #endif
 }
-};  // namespace
 
 int TlsOpenSsl::TlsPendingBytes()
 {
@@ -1029,6 +1037,7 @@ int TlsOpenSsl::TlsPendingBytes()
 
   return 0;
 }
+};  // namespace
 
 std::unique_ptr<Tls> make_openssl_tls()
 {

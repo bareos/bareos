@@ -26,9 +26,6 @@
 #include "include/bareos.h"
 #include <memory>
 
-class TlsOpenSslPrivate;
-class ConfigResourcesContainer;
-
 std::unique_ptr<Tls> make_openssl_tls();
 
 #endif  // BAREOS_LIB_TLS_OPENSSL_H_
