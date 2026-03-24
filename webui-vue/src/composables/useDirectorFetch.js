@@ -10,7 +10,7 @@
  *                            If omitted the full response dict is returned as data.
  * @param {*}       [init]    Initial value for data while loading (default: [])
  */
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 
 export function useDirectorFetch(command, key = null, init = []) {
@@ -28,7 +28,6 @@ export function useDirectorFetch(command, key = null, init = []) {
     error.value   = null
     try {
       const result = await director.call(command)
-      // Unwrap the requested key, or return the full dict
       data.value = key ? (result?.[key] ?? init) : (result ?? init)
     } catch (e) {
       error.value = e.message
@@ -37,7 +36,10 @@ export function useDirectorFetch(command, key = null, init = []) {
     }
   }
 
+  // Fetch immediately if already connected, otherwise wait for connection.
+  // The watch handles both the initial connect and reconnects after a reload.
   onMounted(refresh)
+  watch(() => director.isConnected, (connected) => { if (connected) refresh() })
 
   return { data, loading, error, refresh }
 }

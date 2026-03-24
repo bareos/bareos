@@ -38,14 +38,21 @@ done
 unset _port _pids _pid
 
 # ── 1. Build the Vue app with the test proxy WS URL baked in ─────────────────
-# Only rebuild if dist/ is missing or any baked env var has changed.
+# Only rebuild if dist/ is missing, env vars changed, or source is newer than dist.
 cd "${CMAKE_SOURCE_DIR}/webui-vue"
 EXPECTED_URL="ws://localhost:${PROXY_PORT}"
 BUILD_ENV="VITE_DIRECTOR_WS_URL=${EXPECTED_URL}
 VITE_DIRECTOR_HOST=localhost
 VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
 
+_needs_build=false
 if [ ! -d dist ] || [ "$(cat dist/.build-env 2>/dev/null)" != "${BUILD_ENV}" ]; then
+  _needs_build=true
+elif find src proxy index.html -newer dist/.build-env 2>/dev/null | grep -q .; then
+  _needs_build=true
+fi
+
+if [ "${_needs_build}" = true ]; then
   print_debug "Building Vue WebUI ..."
   VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" \
   VITE_DIRECTOR_HOST="localhost" \
@@ -55,6 +62,7 @@ if [ ! -d dist ] || [ "$(cat dist/.build-env 2>/dev/null)" != "${BUILD_ENV}" ]; 
 else
   print_debug "Reusing existing Vue WebUI build."
 fi
+unset _needs_build
 
 print_debug "Starting vite preview on port ${VITE_PORT} ..."
 npx vite preview --port "${VITE_PORT}" --strictPort --host 127.0.0.1 >"${tmp}/vite-preview.log" 2>&1 &
@@ -182,10 +190,13 @@ async def test_reload_reconnects(page):
     await page.wait_for_load_state("networkidle")
     # Should still be on dashboard (not redirected to login).
     await page.wait_for_url("**#/dashboard", timeout=8_000)
-    # Stat card must appear, which means data was fetched → WS reconnected.
-    stat = page.locator(".bareos-panel").first
-    await expect(stat).to_be_visible(timeout=12_000)
-    ok("page reload reconnects and stays on dashboard")
+    # Navigate to jobs page and wait for real job data — proves WS reconnected
+    # and data was actually fetched (not just the card skeleton).
+    await page.evaluate("window.location.hash = '/jobs'")
+    await page.wait_for_url("**#/jobs", timeout=5_000)
+    row = page.locator("td").filter(has_text="backup-bareos-fd").first
+    await expect(row).to_be_visible(timeout=15_000)
+    ok("page reload reconnects and fetches real data")
 
 # ── Test 6: logout returns to login page ─────────────────────────────────────
 async def test_logout(page):

@@ -56,15 +56,23 @@ do_start() {
 
   mkdir -p tmp
 
-  # Build Vue app if dist/ is absent or any baked env var has changed.
+  # Build Vue app if dist/ is absent, env vars changed, or source is newer than dist.
   EXPECTED_URL="ws://localhost:${WEBSOCKET_PROXY_PORT}"
   BUILD_ENV="VITE_DIRECTOR_WS_URL=${EXPECTED_URL}
 VITE_DIRECTOR_HOST=localhost
 VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
 
   DIST="${CMAKE_SOURCE_DIR}/webui-vue/dist"
+  _needs_build=false
   if [ ! -d "${DIST}" ] \
      || [ "$(cat "${DIST}/.build-env" 2>/dev/null)" != "${BUILD_ENV}" ]; then
+    _needs_build=true
+  elif ( cd "${CMAKE_SOURCE_DIR}/webui-vue" && \
+         find src proxy index.html -newer dist/.build-env 2>/dev/null | grep -q . ); then
+    _needs_build=true
+  fi
+
+  if [ "${_needs_build}" = true ]; then
     echo "Building Vue WebUI ..."
     ( cd "${CMAKE_SOURCE_DIR}/webui-vue"
       VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" \
@@ -76,6 +84,7 @@ VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
   else
     echo "Reusing existing build."
   fi
+  unset _needs_build
 
   # Start WS proxy.
   echo "Starting WS proxy on port ${WEBSOCKET_PROXY_PORT} ..."
