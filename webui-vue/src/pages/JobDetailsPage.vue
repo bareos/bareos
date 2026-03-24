@@ -1,6 +1,8 @@
 <template>
   <q-page class="q-pa-md">
-    <div v-if="job">
+    <q-inner-loading :showing="loading" label="Loading job…" />
+    <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
+    <div v-else-if="!loading && job">
       <div class="row items-center q-mb-md">
         <q-btn flat icon="arrow_back" label="Back to Jobs" :to="{ name: 'jobs' }" no-caps class="q-mr-md" />
         <div class="text-h6">Job #{{ job.id }} — {{ job.name }}</div>
@@ -44,21 +46,60 @@
         </div>
       </div>
     </div>
-    <div v-else class="text-center q-pa-xl text-grey">Job not found.</div>
+    <div v-else-if="!loading" class="text-center q-pa-xl text-grey">Job not found.</div>
   </q-page>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { mockJobs, jobStatusMap, jobTypeMap, jobLevelMap, formatBytes } from '../mock/index.js'
+import { jobStatusMap, jobTypeMap, jobLevelMap, formatBytes } from '../mock/index.js'
+import { normaliseJob } from '../composables/useDirectorFetch.js'
+import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 
-const route = useRoute()
-const $q = useQuasar()
-const job = computed(() => mockJobs.find(j => j.id === Number(route.params.id)))
+const route   = useRoute()
+const $q      = useQuasar()
+const director = useDirectorStore()
 const statusMap = jobStatusMap
+
+const loading  = ref(true)
+const jobData  = ref(null)
+const logLines = ref('')
+const error    = ref(null)
+
+onMounted(async () => {
+  try {
+    const jobid = route.params.id
+    const [jobRes, logRes] = await Promise.allSettled([
+      director.call(`list job jobid=${jobid}`),
+      director.call(`list joblog jobid=${jobid}`),
+    ])
+    if (jobRes.status === 'fulfilled') {
+      const raw = jobRes.value
+      // "list job jobid=X" may return {jobs:[...]} or a direct job dict
+      const entry = Array.isArray(raw?.jobs) ? raw.jobs[0] : raw
+      jobData.value = entry ? normaliseJob(entry) : null
+    }
+    if (logRes.status === 'fulfilled') {
+      const raw = logRes.value
+      if (Array.isArray(raw?.joblog)) {
+        logLines.value = raw.joblog.map(l => `${l.time ?? ''} ${l.logtext ?? ''}`.trim()).join('\n')
+      } else if (typeof raw === 'string') {
+        logLines.value = raw
+      } else {
+        logLines.value = JSON.stringify(raw, null, 2)
+      }
+    }
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    loading.value = false
+  }
+})
+
+const job = computed(() => jobData.value)
 
 const summaryRows = computed(() => job.value ? [
   { label: 'Job ID',     value: job.value.id },
@@ -74,14 +115,7 @@ const summaryRows = computed(() => job.value ? [
   { label: 'Errors',     value: job.value.errors },
 ] : [])
 
-const jobLog = computed(() => {
-  if (!job.value) return ''
-  return `23-Mar-26 ${job.value.starttime?.slice(11) || '00:00:00'} bareos-dir JobId ${job.value.id}: Start Backup JobId ${job.value.id}, Job=${job.value.name}.2026-03-23_080001_04
-23-Mar-26 ${job.value.starttime?.slice(11) || '00:00:00'} bareos-dir JobId ${job.value.id}: Using Device "FileStorage" to write.
-23-Mar-26 ${job.value.starttime?.slice(11) || '00:00:00'} bareos-fd  JobId ${job.value.id}: Connected to Storage daemon at bareos-sd:9103
-23-Mar-26 ${job.value.starttime?.slice(11) || '00:00:00'} bareos-fd  JobId ${job.value.id}: Starting ${jobLevelMap[job.value.level] || job.value.level} Backup of FileSet "Linux All"
-23-Mar-26 ${job.value.endtime?.slice(11) || '--:--:--'} bareos-dir JobId ${job.value.id}: Bareos bareos-dir ${job.value.status === 'T' ? 'OK' : 'Error'} -- ${job.value.client} ${jobTypeMap[job.value.type]} ${jobLevelMap[job.value.level] || ''} Backup -- Files: ${job.value.files.toLocaleString()}, Bytes: ${formatBytes(job.value.bytes)}, Termination: ${job.value.status === 'T' ? 'Backup OK' : 'Backup FAILED'}`
-})
+const jobLog = computed(() => logLines.value)
 
 function copyLog() {
   navigator.clipboard?.writeText(jobLog.value)

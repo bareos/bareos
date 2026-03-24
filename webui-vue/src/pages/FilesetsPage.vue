@@ -53,11 +53,25 @@
 </template>
 
 <script setup>
-import { mockFilesets } from '../mock/index.js'
+import { computed } from 'vue'
+import { useDirectorFetch } from '../composables/useDirectorFetch.js'
 
-const filesets = mockFilesets
+// "list filesets" returns {filesets:[{filesetid, fileset, md5, createtime}]}
+const { data: rawFilesets, loading, error, refresh } = useDirectorFetch('list filesets', 'filesets')
+
+const filesets = computed(() => (rawFilesets.value ?? []).map(f => ({
+  name:        f.fileset ?? f.name ?? '',
+  description: f.description ?? '',
+  createtime:  f.createtime  ?? '',
+  md5:         f.md5         ?? '',
+  include:     f.include     ?? [],
+  exclude:     f.exclude     ?? [],
+  options:     f.options     ?? '',
+})))
+
 const columns = [
-  { name: 'name',        label: 'Name',        field: 'name',        align: 'left', sortable: true },
-  { name: 'description', label: 'Description', field: 'description', align: 'left' },
+  { name: 'name',       label: 'Name',        field: 'name',       align: 'left', sortable: true },
+  { name: 'createtime', label: 'Created',      field: 'createtime', align: 'left' },
+  { name: 'md5',        label: 'Config Hash',  field: 'md5',        align: 'left' },
 ]
 </script>

@@ -662,6 +662,7 @@ macro(prepare_test test_name test_srcdir test_dir)
   math(EXPR test_db_port "${BASEPORT} + 6")
   math(EXPR minio_port "${BASEPORT} + 7")
   math(EXPR restapi_port "${BASEPORT} + 8")
+  math(EXPR ws_proxy_port "${BASEPORT} + 9")
 
   prepare_testdir_for_daemon_run()
 

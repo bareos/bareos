@@ -74,6 +74,12 @@
               <q-item>
                 <q-item-section><q-item-label caption>Total Bytes</q-item-label><q-item-label class="text-h6">{{ fmtBytes(totals.bytes) }}</q-item-label></q-item-section>
               </q-item>
+              <q-item>
+                <q-item-section><q-item-label caption>Clients</q-item-label><q-item-label class="text-h6">{{ clientCount }}</q-item-label></q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section><q-item-label caption>Storages</q-item-label><q-item-label class="text-h6">{{ storageCount }}</q-item-label></q-item-section>
+              </q-item>
             </q-list>
           </q-card-section>
         </q-card>
@@ -96,7 +102,7 @@
                     <span class="text-grey-6 text-caption q-ml-xs">({{ job.client }})</span>
                   </q-item-label>
                   <q-item-label caption>
-                    {{ (job.files ?? job.jobfiles ?? 0).toLocaleString() }} files &middot; {{ jobBytes(job) }}
+                    {{ (job.files ?? 0).toLocaleString() }} files &middot; {{ jobBytes(job) }}
                   </q-item-label>
                   <q-linear-progress :value="0.45" color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
                 </q-item-section>
@@ -117,7 +123,8 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { mockJobs, formatBytes } from '../mock/index.js'
+import { formatBytes } from '../mock/index.js'
+import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import StatNumber from '../components/StatNumber.vue'
@@ -125,18 +132,20 @@ import StatNumber from '../components/StatNumber.vue'
 const director = useDirectorStore()
 const fmtBytes = formatBytes
 
-// ── data (starts with mock, replaced by real when connected) ─────────────────
-const jobs        = ref([...mockJobs])
-const jobTotals   = ref(null)       // from "list jobs totals"
-const loadingJobs = ref(false)
+// ── data ─────────────────────────────────────────────────────────────────────
+const rawJobs       = ref([])
+const clientCount   = ref(0)
+const storageCount  = ref(0)
+const jobTotals     = ref(null)
+const loadingJobs   = ref(false)
 
 async function fetchJobs() {
   if (!director.isConnected) return
   loadingJobs.value = true
   try {
     const result = await director.call('list jobs')
-    if (result?.jobs?.length) jobs.value = result.jobs
-  } catch { /* keep mock */ } finally {
+    if (result?.jobs) rawJobs.value = result.jobs
+  } catch { /* keep empty */ } finally {
     loadingJobs.value = false
   }
 }
@@ -149,30 +158,43 @@ async function fetchTotals() {
   } catch { /* ignore */ }
 }
 
+async function fetchSidebar() {
+  if (!director.isConnected) return
+  try {
+    const [cr, sr] = await Promise.allSettled([
+      director.call('list clients'),
+      director.call('list storages'),
+    ])
+    if (cr.status === 'fulfilled') clientCount.value  = cr.value?.clients?.length  ?? 0
+    if (sr.status === 'fulfilled') storageCount.value = sr.value?.storages?.length ?? 0
+  } catch { /* ignore */ }
+}
+
 function refresh() {
-  fetchJobs()
-  fetchTotals()
+  fetchJobs(); fetchTotals(); fetchSidebar()
 }
 
 onMounted(refresh)
 watch(() => director.isConnected, (connected) => { if (connected) refresh() })
 
 // ── computed views ────────────────────────────────────────────────────────────
+const jobs = computed(() => rawJobs.value.map(normaliseJob))
+
 const recentCols = [
-  { name: 'id',        label: 'ID',       field: 'jobid',     align: 'right', sortable: true },
+  { name: 'id',        label: 'ID',       field: 'id',        align: 'right', sortable: true },
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',  sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',  sortable: true },
   { name: 'level',     label: 'Level',    field: 'level',     align: 'center' },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',  sortable: true },
-  { name: 'bytes',     label: 'Bytes',    field: 'jobbytes',  align: 'right'  },
-  { name: 'status',    label: 'Status',   field: 'jobstatus', align: 'center' },
+  { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right'  },
+  { name: 'status',    label: 'Status',   field: 'status',    align: 'center' },
 ]
 
 const recentJobs  = computed(() => jobs.value.slice(0, 8))
-const runningJobs = computed(() => jobs.value.filter(j => (j.status ?? j.jobstatus) === 'R'))
+const runningJobs = computed(() => jobs.value.filter(j => j.status === 'R'))
 
 const summaryStats = computed(() => {
-  const s = (code) => jobs.value.filter(j => (j.status ?? j.jobstatus) === code).length
+  const s = (code) => jobs.value.filter(j => j.status === code).length
   return [
     { label: 'Running',    status: 'R', color: 'info',     count: s('R') },
     { label: 'Waiting',    status: 'C', color: 'grey',     count: s('C') },
@@ -185,19 +207,17 @@ const summaryStats = computed(() => {
 const totals = computed(() => {
   if (jobTotals.value) return jobTotals.value
   return {
-    jobs:  jobs.value.length,
-    files: jobs.value.reduce((a, j) => a + (j.files ?? j.jobfiles ?? 0), 0),
-    bytes: jobs.value.reduce((a, j) => a + (j.bytes ?? j.jobbytes ?? 0), 0),
+    jobs:     jobs.value.length,
+    files:    jobs.value.reduce((a, j) => a + j.files, 0),
+    bytes:    jobs.value.reduce((a, j) => a + j.bytes, 0),
+    clients:  clientCount.value,
+    storages: storageCount.value,
   }
 })
 
-// helper: get status code regardless of field name (mock vs real)
-function jobStatus(row) {
-  return row.status ?? row.jobstatus ?? '?'
-}
-function jobBytes(row) {
-  return fmtBytes(row.bytes ?? row.jobbytes ?? 0)
-}
+// helper: keep status/bytes getters for template compatibility
+function jobStatus(row) { return row.status ?? '?' }
+function jobBytes(row)  { return fmtBytes(row.bytes ?? 0) }
 function jobId(row) {
   return row.id ?? row.jobid
 }

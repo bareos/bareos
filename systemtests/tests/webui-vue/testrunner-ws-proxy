@@ -17,7 +17,7 @@ export TestName
 
 start_test
 
-PROXY_PORT=18765  # non-default port to avoid conflicts with dev environments
+PROXY_PORT="${WEBSOCKET_PROXY_PORT}"  # from CMake-allocated environment
 PROXY_PID=""
 
 cleanup_proxy() {

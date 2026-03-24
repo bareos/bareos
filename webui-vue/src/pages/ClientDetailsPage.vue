@@ -1,5 +1,8 @@
 <template>
   <q-page class="q-pa-md">
+    <q-inner-loading :showing="loading" label="Loading client…" />
+    <div v-if="error" class="text-negative q-pa-md">{{ error }}</div>
+    <template v-else-if="!loading">
     <div class="row items-center q-mb-md">
       <q-btn flat icon="arrow_back" label="Back to Clients" :to="{ name: 'clients' }" no-caps class="q-mr-md" />
       <div class="text-h6">{{ client?.name }}</div>
@@ -11,7 +14,7 @@
           <q-card-section>
             <q-list dense separator>
               <q-item v-for="row in details" :key="row.label">
-                <q-item-section class="text-weight-medium" style="max-width:120px">{{ row.label }}</q-item-section>
+                <q-item-section class="text-weight-medium" style="max-width:140px">{{ row.label }}</q-item-section>
                 <q-item-section>{{ row.value }}</q-item-section>
               </q-item>
             </q-list>
@@ -38,25 +41,60 @@
       </div>
     </div>
     <div v-else class="text-grey text-center q-pa-xl">Client not found.</div>
+    </template>
   </q-page>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { mockClients, mockJobs, formatBytes } from '../mock/index.js'
+import { formatBytes } from '../mock/index.js'
+import { normaliseClient, normaliseJob } from '../composables/useDirectorFetch.js'
+import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 
-const route = useRoute()
-const client = computed(() => mockClients.find(c => c.name === route.params.name))
-const clientJobs = computed(() => mockJobs.filter(j => j.client === route.params.name))
+const route    = useRoute()
+const director = useDirectorStore()
 const fmtBytes = formatBytes
 
+const loading    = ref(true)
+const clientData = ref(null)
+const clientJobs = ref([])
+const error      = ref(null)
+
+onMounted(async () => {
+  const name = route.params.name
+  try {
+    const [clientRes, jobsRes] = await Promise.allSettled([
+      director.call(`list clients`),
+      director.call(`list jobs client=${name}`),
+    ])
+    if (clientRes.status === 'fulfilled') {
+      const list = clientRes.value?.clients ?? []
+      const found = list.find(c => c.name === name)
+      clientData.value = found ? normaliseClient(found) : null
+    }
+    if (jobsRes.status === 'fulfilled') {
+      clientJobs.value = (jobsRes.value?.jobs ?? []).map(normaliseJob)
+    }
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    loading.value = false
+  }
+})
+
+const client = computed(() => clientData.value)
+
 const details = computed(() => client.value ? [
-  { label: 'Name',    value: client.value.name },
-  { label: 'OS',      value: client.value.uname },
-  { label: 'Version', value: client.value.version },
-  { label: 'Status',  value: client.value.enabled ? 'Enabled' : 'Disabled' },
+  { label: 'Name',           value: client.value.name },
+  { label: 'OS/Arch',        value: client.value.uname },
+  { label: 'Version',        value: client.value.version },
+  { label: 'Address',        value: client.value.address || '—' },
+  { label: 'Port',           value: client.value.port || '—' },
+  { label: 'Status',         value: client.value.enabled ? 'Enabled' : 'Disabled' },
+  { label: 'File Retention', value: client.value.fileretention || '—' },
+  { label: 'Job Retention',  value: client.value.jobretention  || '—' },
 ] : [])
 
 const jobCols = [

@@ -40,17 +40,20 @@
 </template>
 
 <script setup>
-import { mockJobs, formatBytes } from '../mock/index.js'
+import { computed } from 'vue'
+import { formatBytes } from '../mock/index.js'
+import { useDirectorFetch, normaliseJob } from '../composables/useDirectorFetch.js'
 
-const totalBytes = mockJobs.reduce((a, j) => a + j.bytes, 0)
-const totalFiles = mockJobs.reduce((a, j) => a + j.files, 0)
+const { data: rawJobs } = useDirectorFetch('list jobs', 'jobs')
+const { data: rawClients } = useDirectorFetch('list clients', 'clients')
+const jobs = computed(() => (rawJobs.value ?? []).map(normaliseJob))
 
-const overallStats = [
-  { label: 'Total Jobs',   value: mockJobs.length },
-  { label: 'Total Bytes',  value: formatBytes(totalBytes) },
-  { label: 'Total Files',  value: totalFiles.toLocaleString() },
-  { label: 'Clients',      value: 7 },
-  { label: 'Successful',   value: mockJobs.filter(j => j.status === 'T').length },
-  { label: 'Failed',       value: mockJobs.filter(j => j.status === 'f').length },
-]
+const overallStats = computed(() => [
+  { label: 'Total Jobs',   value: jobs.value.length },
+  { label: 'Total Bytes',  value: formatBytes(jobs.value.reduce((a, j) => a + j.bytes, 0)) },
+  { label: 'Total Files',  value: jobs.value.reduce((a, j) => a + j.files, 0).toLocaleString() },
+  { label: 'Clients',      value: (rawClients.value ?? []).length },
+  { label: 'Successful',   value: jobs.value.filter(j => j.status === 'T').length },
+  { label: 'Failed',       value: jobs.value.filter(j => j.status === 'f' || j.status === 'E').length },
+])
 </script>

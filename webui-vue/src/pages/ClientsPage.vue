@@ -12,10 +12,11 @@
           <q-card-section class="panel-header row items-center">
             <span>Client List</span>
             <q-space />
-            <q-btn flat round dense icon="refresh" color="white" />
+            <q-btn flat round dense icon="refresh" color="white" @click="refresh" />
           </q-card-section>
           <q-card-section class="q-pa-none">
-            <q-table :rows="clients" :columns="columns" row-key="name" dense flat :pagination="{ rowsPerPage: 15 }">
+            <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
+            <q-table :rows="clients" :columns="columns" row-key="name" dense flat :loading="loading" :pagination="{ rowsPerPage: 15 }">
               <template #body-cell-name="props">
                 <q-td :props="props">
                   <router-link :to="{ name: 'client-details', params: { name: props.value } }" class="text-primary">
@@ -64,15 +65,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { mockClients } from '../mock/index.js'
+import { ref, computed } from 'vue'
+import { useDirectorFetch, normaliseClient } from '../composables/useDirectorFetch.js'
 
 const tab = ref('list')
-const clients = mockClients
+
+const { data: rawClients, loading, error, refresh } = useDirectorFetch('list clients', 'clients')
+const clients = computed(() => (rawClients.value ?? []).map(normaliseClient))
 
 const columns = [
   { name: 'name',    label: 'Name',    field: 'name',    align: 'left',   sortable: true },
-  { name: 'os',      label: 'OS',      field: 'os',      align: 'left'    },
+  { name: 'uname',   label: 'OS/Arch', field: 'uname',   align: 'left'    },
   { name: 'version', label: 'Version', field: 'version', align: 'left',   sortable: true },
   { name: 'enabled', label: 'Status',  field: 'enabled', align: 'center'  },
   { name: 'actions', label: '',        field: 'actions', align: 'center',  style: 'width:80px' },

@@ -81,9 +81,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { mockStorages, mockPools, mockVolumes } from '../mock/index.js'
+import { useDirectorFetch, normaliseVolume } from '../composables/useDirectorFetch.js'
 import BoolIcon from '../components/BoolIcon.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 
@@ -91,9 +91,37 @@ const route = useRoute()
 const tab = ref(route.query.tab || 'storages')
 const volSearch = ref('')
 
-const storages = mockStorages
-const pools    = mockPools
-const volumes  = mockVolumes
+const { data: rawStorages, loading: storagesLoading, error: storagesError, refresh: refreshStorages } =
+  useDirectorFetch('list storages', 'storages')
+const { data: rawPools,    loading: poolsLoading,    error: poolsError,    refresh: refreshPools } =
+  useDirectorFetch('list pools', 'pools')
+const { data: rawVolumes,  loading: volsLoading,     error: volsError,     refresh: refreshVols } =
+  useDirectorFetch('list volumes', 'volumes')
+
+const storages = computed(() => (rawStorages.value ?? []).map(s => ({
+  ...s,
+  autochanger: s.autochanger === '1' || s.autochanger === true,
+  enabled:     s.enabled !== '0' && s.enabled !== false,
+})))
+
+const pools = computed(() => (rawPools.value ?? []).map(p => ({
+  ...p,
+  numvols: Number(p.numvols ?? 0),
+  maxvols: Number(p.maxvols ?? 0),
+})))
+
+// "list volumes" returns a nested object keyed by pool type; flatten it.
+const volumes = computed(() => {
+  const raw = rawVolumes.value
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw.map(normaliseVolume)
+  // Nested by pool: { full: [...], incremental: [...], ... }
+  return Object.values(raw).flat().map(normaliseVolume)
+})
+
+function refresh() {
+  refreshStorages(); refreshPools(); refreshVols()
+}
 
 const storageCols = [
   { name: 'name',        label: 'Name',        field: 'name',        align: 'left',  sortable: true },

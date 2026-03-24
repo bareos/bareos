@@ -43,6 +43,15 @@ if(_playwright_missing)
   set_tests_properties(
     "${SYSTEMTEST_PREFIX}${BASENAME}:playwright" PROPERTIES DISABLED TRUE
   )
+else()
+  # Playwright and ws-proxy both start a Vite dev server + WS proxy before
+  # running their assertions.  The startup overhead pushes them past the default
+  # 300 s SYSTEMTEST_TIMEOUT, so give them extra headroom.
+  set_tests_properties(
+    "${SYSTEMTEST_PREFIX}${BASENAME}:playwright"
+    "${SYSTEMTEST_PREFIX}${BASENAME}:ws-proxy"
+    PROPERTIES TIMEOUT 600
+  )
 endif()
 
 # Pull in the shared Bareos daemon configuration from webui-common (director,

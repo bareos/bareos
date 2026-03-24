@@ -17,8 +17,8 @@ export TestName
 
 start_test
 
-PROXY_PORT=18766   # separate port from testrunner-ws-proxy so both can coexist
-VITE_PORT=14173    # vite preview port
+PROXY_PORT="${WEBSOCKET_PROXY_PORT}"  # from CMake-allocated environment
+VITE_PORT="${BAREOS_WEBUI_PORT}"      # reuse the webui port slot for Vite preview
 PROXY_PID=""
 VITE_PID=""
 
@@ -36,13 +36,19 @@ for _port in "${VITE_PORT}" "${PROXY_PORT}"; do
   done
 done
 unset _port _pids _pid
-sleep 1
 
 # ── 1. Build the Vue app with the test proxy WS URL baked in ─────────────────
-print_debug "Building Vue WebUI ..."
+# Only rebuild if no existing dist/, or if the baked WS URL has changed.
 cd "${CMAKE_SOURCE_DIR}/webui-vue"
-VITE_DIRECTOR_WS_URL="ws://localhost:${PROXY_PORT}" \
-  npm run build >"${tmp}/vite-build.log" 2>&1
+EXPECTED_URL="ws://localhost:${PROXY_PORT}"
+EXISTING_URL=$(grep -r 'ws://localhost:' dist/ 2>/dev/null | grep -oP 'ws://localhost:[0-9]+' | head -1 || true)
+if [ ! -d dist ] || [ "${EXISTING_URL}" != "${EXPECTED_URL}" ]; then
+  print_debug "Building Vue WebUI (WS URL: ${EXPECTED_URL}) ..."
+  VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" \
+    npm run build >"${tmp}/vite-build.log" 2>&1
+else
+  print_debug "Reusing existing Vue WebUI build (WS URL: ${EXISTING_URL})"
+fi
 
 print_debug "Starting vite preview on port ${VITE_PORT} ..."
 npx vite preview --port "${VITE_PORT}" --strictPort --host 127.0.0.1 >"${tmp}/vite-preview.log" 2>&1 &
@@ -56,8 +62,15 @@ WS_PORT="${PROXY_PORT}" \
   >"${tmp}/ws-proxy-playwright.log" 2>&1 &
 PROXY_PID=$!
 
-# Give both services time to bind their sockets.
-sleep 4
+# Wait for both services to be ready (poll instead of fixed sleep).
+for _check_port in "${VITE_PORT}" "${PROXY_PORT}"; do
+  _deadline=$(( $(date +%s) + 15 ))
+  until ss -Htlnp "sport = ${_check_port}" 2>/dev/null | grep -q "${_check_port}"; do
+    [ "$(date +%s)" -ge "${_deadline}" ] && { set_error "Service on port ${_check_port} did not start in time"; end_test; exit 1; }
+    sleep 0.2
+  done
+done
+unset _check_port _deadline
 
 for pid in "${VITE_PID}" "${PROXY_PID}"; do
   if ! kill -0 "${pid}" 2>/dev/null; then
@@ -127,16 +140,16 @@ async def test_dashboard_stats(page):
     await expect(stat).to_be_visible(timeout=8_000)
     ok("dashboard stat card is visible")
 
-# ── Test 3: jobs page shows mock job data ────────────────────────────────────
+# ── Test 3: jobs page shows real job data ────────────────────────────────────
 async def test_jobs_page(page):
     await login(page)
     # Navigate within the SPA (no full reload) so the WS connection is kept.
     await page.evaluate("window.location.hash = '/jobs'")
     await page.wait_for_url("**#/jobs", timeout=5_000)
-    # Job names are plain <td> cells on the jobs page (IDs are the links).
-    row = page.locator("td").filter(has_text="BackupClient1").first
-    await expect(row).to_be_visible(timeout=10_000)
-    ok("jobs page shows BackupClient1 job")
+    # Wait for jobs table to populate (real data from director catalog).
+    row = page.locator("td").filter(has_text="backup-bareos-fd").first
+    await expect(row).to_be_visible(timeout=15_000)
+    ok("jobs page shows backup-bareos-fd job")
 
 # ── Test 4: console page accepts a command ───────────────────────────────────
 async def test_console(page):

@@ -22,12 +22,13 @@
             <q-btn flat round dense icon="refresh" color="white" @click="refresh" />
           </q-card-section>
           <q-card-section class="q-pa-none">
+            <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
             <q-table
               :rows="filteredJobs"
               :columns="columns"
               row-key="id"
               dense flat
-              :filter="search"
+              :loading="loading"
               :pagination="{ rowsPerPage: 15 }"
             >
               <template #body-cell-id="props">
@@ -136,7 +137,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { mockJobs, jobTypeMap, jobLevelMap, formatBytes } from '../mock/index.js'
+import { jobTypeMap, jobLevelMap, formatBytes } from '../mock/index.js'
+import { useDirectorFetch, normaliseJob } from '../composables/useDirectorFetch.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 
 const route = useRoute()
@@ -145,6 +147,19 @@ const search = ref('')
 const typeMap   = jobTypeMap
 const levelMap  = jobLevelMap
 const fmtBytes  = formatBytes
+
+const { data: rawJobs, loading, error, refresh } = useDirectorFetch('list jobs', 'jobs')
+
+const jobs = computed(() => (rawJobs.value ?? []).map(normaliseJob))
+const filteredJobs = computed(() => {
+  if (!search.value) return jobs.value
+  const q = search.value.toLowerCase()
+  return jobs.value.filter(j =>
+    j.name.toLowerCase().includes(q) ||
+    j.client.toLowerCase().includes(q) ||
+    String(j.id).includes(q)
+  )
+})
 
 const columns = [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true, style: 'width:60px' },
@@ -162,16 +177,13 @@ const columns = [
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:80px' },
 ]
 
-const filteredJobs = computed(() => mockJobs)
-
 const runForm = ref({ job: null, client: null, level: 'Incremental', pool: null, storage: null, when: '' })
 const rerunJobId = ref('')
-const jobNames   = [...new Set(mockJobs.map(j => j.name))]
-const clientNames = ['bareos-fd', 'fileserver-fd', 'db-server-fd', 'mail-fd', 'web-fd']
-const levels     = ['Full', 'Incremental', 'Differential']
-const pools      = ['Full', 'Incremental', 'Differential', 'Scratch']
-const storages   = ['File', 'Tape', 'Cloud']
+const jobNames    = computed(() => [...new Set(jobs.value.map(j => j.name))])
+const clientNames = computed(() => [...new Set(jobs.value.map(j => j.client).filter(Boolean))])
+const levels      = ['Full', 'Incremental', 'Differential']
+const pools       = ['Full', 'Incremental', 'Differential', 'Scratch']
+const storages    = ['File', 'Tape', 'Cloud']
 
-function refresh() {}
 function runJob() {}
 </script>

@@ -62,6 +62,7 @@ export BAREOS_STORAGE_PORT=@sd_port@
 export BAREOS_STORAGE2_PORT=@sd2_port@
 export BAREOS_WEBUI_PORT=@php_port@
 export MINIO_PORT=@minio_port@
+export WEBSOCKET_PROXY_PORT=@ws_proxy_port@
 
 export CMAKE_BINARY_DIR
 

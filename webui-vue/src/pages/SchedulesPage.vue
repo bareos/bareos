@@ -28,15 +28,26 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
-import { mockSchedules } from '../mock/index.js'
+import { useDirectorFetch } from '../composables/useDirectorFetch.js'
 
-const schedules = mockSchedules
+// "list schedules" returns {schedules:[{name,...}]} or may be empty in some configs.
+// Fall back to .schedules dot command result if needed.
+const { data: rawSchedules, loading, error, refresh } = useDirectorFetch('list schedules', 'schedules')
+
+const schedules = computed(() => (rawSchedules.value ?? []).map(s => ({
+  name:    s.name    ?? '',
+  level:   s.level   ?? s.scheduletime ?? '',
+  runs:    s.runs    ?? s.runhour ?? '',
+  enabled: s.enabled !== '0' && s.enabled !== false,
+})))
+
 const columns = [
-  { name: 'name',    label: 'Name',     field: 'name',    align: 'left',  sortable: true },
-  { name: 'level',   label: 'Level',    field: 'level',   align: 'left'   },
-  { name: 'runs',    label: 'Run Times',field: 'runs',    align: 'left'   },
-  { name: 'enabled', label: 'Status',   field: 'enabled', align: 'center' },
-  { name: 'actions', label: '',         field: 'actions', align: 'center', style: 'width:80px' },
+  { name: 'name',    label: 'Name',      field: 'name',    align: 'left',  sortable: true },
+  { name: 'level',   label: 'Level',     field: 'level',   align: 'left'   },
+  { name: 'runs',    label: 'Run Times', field: 'runs',    align: 'left'   },
+  { name: 'enabled', label: 'Status',    field: 'enabled', align: 'center' },
+  { name: 'actions', label: '',          field: 'actions', align: 'center', style: 'width:80px' },
 ]
 </script>

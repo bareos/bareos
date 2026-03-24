@@ -15,10 +15,12 @@
               <q-card-section class="panel-header row items-center">
                 <span>Director Status</span>
                 <q-space />
-                <q-btn flat round dense icon="refresh" color="white" />
+                <q-btn flat round dense icon="refresh" color="white" @click="refreshStatus" :loading="statusLoading" />
               </q-card-section>
               <q-card-section>
-                <div class="console-output">{{ dirStatus }}</div>
+                <q-inner-loading :showing="statusLoading" />
+                <div v-if="statusError" class="text-negative">{{ statusError }}</div>
+                <div v-else class="console-output">{{ dirStatusText }}</div>
               </q-card-section>
             </q-card>
           </div>
@@ -26,9 +28,8 @@
             <q-card flat bordered class="bareos-panel">
               <q-card-section class="panel-header">Version</q-card-section>
               <q-card-section>
-                <q-badge color="positive" label="Up to date" class="q-mb-sm" />
                 <div class="text-h6">Bareos Director</div>
-                <div class="text-caption text-grey">Version 23.0.2 (01 March 2026)</div>
+                <div v-if="versionLine" class="text-caption text-grey">{{ versionLine }}</div>
               </q-card-section>
             </q-card>
           </div>
@@ -38,9 +39,15 @@
       <!-- MESSAGES -->
       <q-tab-panel name="messages" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">Director Messages</q-card-section>
+          <q-card-section class="panel-header row items-center">
+            <span>Director Messages</span>
+            <q-space />
+            <q-btn flat round dense icon="refresh" color="white" @click="refreshMessages" :loading="messagesLoading" />
+          </q-card-section>
           <q-card-section>
-            <div class="console-output">{{ messages }}</div>
+            <q-inner-loading :showing="messagesLoading" />
+            <div v-if="messagesError" class="text-negative">{{ messagesError }}</div>
+            <div v-else class="console-output">{{ messagesText || '(no messages)' }}</div>
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -52,8 +59,6 @@
           <q-card-section>
             <q-list dense separator>
               <q-item><q-item-section class="text-weight-medium" style="max-width:180px">Subscription Status</q-item-section><q-item-section><q-badge color="info" label="Community" /></q-item-section></q-item>
-              <q-item><q-item-section class="text-weight-medium" style="max-width:180px">Clients in use</q-item-section><q-item-section>7</q-item-section></q-item>
-              <q-item><q-item-section class="text-weight-medium" style="max-width:180px">Clients allowed</q-item-section><q-item-section>Unlimited (Community)</q-item-section></q-item>
             </q-list>
             <q-btn class="q-mt-md" color="primary" label="Get Official Support" icon="open_in_new"
                    href="https://www.bareos.com/subscription/" target="_blank" no-caps />
@@ -65,24 +70,67 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { directorStatus } from '../mock/index.js'
+import { ref, computed } from 'vue'
+import { useDirectorStore } from '../stores/director.js'
 
 const tab = ref('status')
-const dirStatus = directorStatus
-const messages = `23-Mar-26 14:00 bareos-dir JobId 7: Start Backup JobId 7, Job=BackupClient1.2026-03-23_14.00.00_04
-23-Mar-26 14:00 bareos-dir JobId 7: Using Device "FileStorage" to write.
-23-Mar-26 13:22 bareos-dir JobId 6: Bareos bareos-dir 23.0.2 (01Mar26):
-  Build OS:               x86_64-linux-gnu ubuntu focal
-  JobId:                  6
-  Job:                    BackupClient5.2026-03-23_13.00.00_03
-  Client:                 "web-fd" 23.0.2 (01Mar26) x86_64-linux-gnu,ubuntu,focal
-  Start time:             23-Mar-26 13:00:00
-  End time:               23-Mar-26 13:22:15
-  Elapsed time:           22 mins 15 secs
-  FD Files Written:       23,451
-  SD Files Written:       23,451
-  FD Bytes Written:       5,368,709,120 (5.368 GB)
-  SD Bytes Written:       5,368,709,120 (5.368 GB)
-  Termination:            Backup OK`
+const director = useDirectorStore()
+
+// ── Status ───────────────────────────────────────────────────────────────────
+const statusLoading = ref(false)
+const statusError   = ref(null)
+const rawStatus     = ref(null)
+
+async function refreshStatus() {
+  statusLoading.value = true
+  statusError.value = null
+  try {
+    rawStatus.value = await director.call('status director')
+  } catch (e) {
+    statusError.value = e.message
+  } finally {
+    statusLoading.value = false
+  }
+}
+
+// The director returns a dict; format it for display.
+const dirStatusText = computed(() => {
+  const d = rawStatus.value
+  if (!d) return ''
+  if (typeof d === 'string') return d
+  return JSON.stringify(d, null, 2)
+})
+
+const versionLine = computed(() => {
+  const text = dirStatusText.value
+  const m = text.match(/Version:\s+(.+)/)
+  return m ? m[1] : ''
+})
+
+// ── Messages ─────────────────────────────────────────────────────────────────
+const messagesLoading = ref(false)
+const messagesError   = ref(null)
+const rawMessages     = ref(null)
+
+async function refreshMessages() {
+  messagesLoading.value = true
+  messagesError.value = null
+  try {
+    rawMessages.value = await director.call('messages')
+  } catch (e) {
+    messagesError.value = e.message
+  } finally {
+    messagesLoading.value = false
+  }
+}
+
+const messagesText = computed(() => {
+  const d = rawMessages.value
+  if (!d) return ''
+  if (typeof d === 'string') return d
+  return JSON.stringify(d, null, 2)
+})
+
+refreshStatus()
+refreshMessages()
 </script>
