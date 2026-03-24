@@ -1,0 +1,150 @@
+#!/bin/bash
+#
+# Start or stop the Bareos Vue WebUI development stack:
+#   - Python WebSocket proxy  (bridges browser ↔ bareos-dir)
+#   - Vite preview server     (serves the built Vue SPA)
+#
+# Usage (run from the webui-vue systemtest directory):
+#   bin/webui-vue start   – build if needed, start both services, open browser
+#   bin/webui-vue stop    – stop both services
+#   bin/webui-vue status  – show whether the services are running
+#
+
+set -e
+set -o pipefail
+set -u
+
+#shellcheck source=../../environment.in
+. ./environment
+
+TESTDIR="$(pwd)"
+PROXY_PIDFILE="${TESTDIR}/tmp/ws-proxy.pid"
+VITE_PIDFILE="${TESTDIR}/tmp/vite-preview.pid"
+PROXY_LOG="${TESTDIR}/tmp/ws-proxy-manual.log"
+VITE_LOG="${TESTDIR}/tmp/vite-preview-manual.log"
+VITE_BUILD_LOG="${TESTDIR}/tmp/vite-build-manual.log"
+
+webui_url="http://127.0.0.1:${BAREOS_WEBUI_PORT}"
+proxy_ws_url="ws://127.0.0.1:${WEBSOCKET_PROXY_PORT}"
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+
+is_running() {
+  local pidfile="$1"
+  [ -f "${pidfile}" ] && kill -0 "$(cat "${pidfile}")" 2>/dev/null
+}
+
+wait_for_port() {
+  local port="$1" label="$2" deadline
+  deadline=$(( $(date +%s) + 15 ))
+  until ss -Htlnp "sport = ${port}" 2>/dev/null | grep -q "${port}"; do
+    if [ "$(date +%s)" -ge "${deadline}" ]; then
+      echo "ERROR: ${label} did not bind port ${port} within 15 s" >&2
+      return 1
+    fi
+    sleep 0.2
+  done
+}
+
+# ── start ─────────────────────────────────────────────────────────────────────
+
+do_start() {
+  if is_running "${PROXY_PIDFILE}" || is_running "${VITE_PIDFILE}"; then
+    echo "webui-vue is already running (use 'stop' first)."
+    exit 1
+  fi
+
+  mkdir -p tmp
+
+  # Build Vue app if dist/ is absent or baked WS URL doesn't match.
+  EXISTING_URL=$(grep -r 'ws://localhost:' "${CMAKE_SOURCE_DIR}/webui-vue/dist/" 2>/dev/null \
+    | grep -oP 'ws://localhost:[0-9]+' | head -1 || true)
+  EXPECTED_URL="ws://localhost:${WEBSOCKET_PROXY_PORT}"
+  if [ ! -d "${CMAKE_SOURCE_DIR}/webui-vue/dist" ] \
+     || [ "${EXISTING_URL}" != "${EXPECTED_URL}" ]; then
+    echo "Building Vue WebUI (WS URL: ${EXPECTED_URL}) ..."
+    ( cd "${CMAKE_SOURCE_DIR}/webui-vue"
+      VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" npm run build >"${VITE_BUILD_LOG}" 2>&1 )
+    echo "Build complete."
+  else
+    echo "Reusing existing build (WS URL: ${EXISTING_URL})."
+  fi
+
+  # Start WS proxy.
+  echo "Starting WS proxy on port ${WEBSOCKET_PROXY_PORT} ..."
+  WS_PORT="${WEBSOCKET_PROXY_PORT}" \
+    "${PYTHON_EXECUTABLE}" \
+    "${CMAKE_SOURCE_DIR}/webui-vue/proxy/director_ws_proxy.py" \
+    >"${PROXY_LOG}" 2>&1 &
+  echo $! >"${PROXY_PIDFILE}"
+  wait_for_port "${WEBSOCKET_PROXY_PORT}" "WS proxy"
+  echo "WS proxy running (PID $(cat "${PROXY_PIDFILE}"))."
+
+  # Start Vite preview.
+  echo "Starting Vite preview on port ${BAREOS_WEBUI_PORT} ..."
+  ( cd "${CMAKE_SOURCE_DIR}/webui-vue"
+    npx vite preview \
+      --port "${BAREOS_WEBUI_PORT}" --strictPort --host 127.0.0.1 \
+      >"${VITE_LOG}" 2>&1 ) &
+  echo $! >"${VITE_PIDFILE}"
+  wait_for_port "${BAREOS_WEBUI_PORT}" "Vite preview"
+  echo "Vite preview running (PID $(cat "${VITE_PIDFILE}"))."
+
+  echo ""
+  echo "Vue WebUI: ${webui_url}"
+  echo "WS proxy:  ${proxy_ws_url}"
+  echo ""
+  echo "Opening browser ..."
+  xdg-open "${webui_url}" >/dev/null 2>&1 &
+}
+
+# ── stop ──────────────────────────────────────────────────────────────────────
+
+do_stop() {
+  local stopped=0
+  for pidfile in "${PROXY_PIDFILE}" "${VITE_PIDFILE}"; do
+    if [ -f "${pidfile}" ]; then
+      pid=$(cat "${pidfile}")
+      if kill -0 "${pid}" 2>/dev/null; then
+        kill "${pid}" && echo "Stopped PID ${pid}."
+        stopped=$(( stopped + 1 ))
+      else
+        echo "PID ${pid} (from ${pidfile}) is not running."
+      fi
+      rm -f "${pidfile}"
+    fi
+  done
+  [ "${stopped}" -eq 0 ] && echo "Nothing was running." || true
+}
+
+# ── status ────────────────────────────────────────────────────────────────────
+
+do_status() {
+  local pairs=(
+    "${PROXY_PIDFILE}" "WS proxy"
+    "${VITE_PIDFILE}"  "Vite preview"
+  )
+  local i=0
+  while [ "${i}" -lt "${#pairs[@]}" ]; do
+    local pidfile="${pairs[${i}]}"
+    local label="${pairs[$(( i + 1 ))]}"
+    if is_running "${pidfile}"; then
+      echo "${label}: running (PID $(cat "${pidfile}"))"
+    else
+      echo "${label}: stopped"
+    fi
+    i=$(( i + 2 ))
+  done
+}
+
+# ── dispatch ──────────────────────────────────────────────────────────────────
+
+case "${1-}" in
+  start)  do_start  ;;
+  stop)   do_stop   ;;
+  status) do_status ;;
+  *)
+    echo "Usage: $0 {start|stop|status}"
+    exit 1
+    ;;
+esac
