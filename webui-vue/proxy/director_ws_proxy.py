@@ -90,9 +90,29 @@ def _director_connect(host, port, dirname, username, password):
     )
 
 
+def _director_connect_raw(host, port, dirname, username, password):
+    """Blocking: create and authenticate a raw-text DirectorConsole connection."""
+    return bareos.bsock.DirectorConsole(
+        address=host,
+        port=port,
+        dirname=dirname,
+        name=username,
+        password=bareos.bsock.Password(password),
+        protocolversion=None,
+    )
+
+
 def _director_call(director, command):
     """Blocking: execute a command and return the result dict."""
     return director.call(command)
+
+
+def _director_call_raw(director, command):
+    """Blocking: execute a command in raw text mode, return a string."""
+    result = director.call(command)
+    if isinstance(result, (bytes, bytearray)):
+        return result.decode("utf-8", errors="replace")
+    return str(result) if result is not None else ""
 
 
 async def handle_client(websocket):
@@ -124,13 +144,19 @@ async def handle_client(websocket):
         director_name = msg.get("director", DEFAULT_DIRECTOR_NAME)
         host = msg.get("host", DEFAULT_DIRECTOR_HOST)
         port = int(msg.get("port", DEFAULT_DIRECTOR_PORT))
+        mode = msg.get("mode", "json")   # "json" (default) or "raw"
 
-        log.info("Auth attempt: user=%s director=%s host=%s:%d", username, director_name, host, port)
+        log.info("Auth attempt: user=%s director=%s host=%s:%d mode=%s", username, director_name, host, port, mode)
 
         try:
-            director = await asyncio.to_thread(
-                _director_connect, host, port, director_name, username, password
-            )
+            if mode == "raw":
+                director = await asyncio.to_thread(
+                    _director_connect_raw, host, port, director_name, username, password
+                )
+            else:
+                director = await asyncio.to_thread(
+                    _director_connect, host, port, director_name, username, password
+                )
         except bareos.exceptions.AuthenticationError as exc:
             await websocket.send(json.dumps({"type": "auth_error", "message": f"Authentication failed: {exc}"}))
             log.warning("Auth failed for %s: %s", peer, exc)
@@ -140,8 +166,8 @@ async def handle_client(websocket):
             log.warning("Director connection error for %s: %s", peer, exc)
             return
 
-        await websocket.send(json.dumps({"type": "auth_ok", "director": director_name}))
-        log.info("Client %s authenticated as %s on %s", peer, username, director_name)
+        await websocket.send(json.dumps({"type": "auth_ok", "director": director_name, "mode": mode}))
+        log.info("Client %s authenticated as %s on %s (mode=%s)", peer, username, director_name, mode)
 
         # ── Step 2: command loop ────────────────────────────────────────────
         async for raw_msg in websocket:
@@ -164,13 +190,22 @@ async def handle_client(websocket):
             log.debug("Command from %s [id=%s]: %r", peer, req_id, command)
 
             try:
-                result = await asyncio.to_thread(_director_call, director, command)
-                await websocket.send(json.dumps({
-                    "type": "response",
-                    "id": req_id,
-                    "command": command,
-                    "data": result,
-                }))
+                if mode == "raw":
+                    text = await asyncio.to_thread(_director_call_raw, director, command)
+                    await websocket.send(json.dumps({
+                        "type": "raw_response",
+                        "id": req_id,
+                        "command": command,
+                        "text": text,
+                    }))
+                else:
+                    result = await asyncio.to_thread(_director_call, director, command)
+                    await websocket.send(json.dumps({
+                        "type": "response",
+                        "id": req_id,
+                        "command": command,
+                        "data": result,
+                    }))
             except bareos.exceptions.Error as exc:
                 await websocket.send(json.dumps({
                     "type": "error",
