@@ -189,14 +189,13 @@ function disconnectRaw() {
 // ── send / keyboard ───────────────────────────────────────────────────────────
 function send() {
   const c = cmd.value.trim()
-  if (!c) return
 
-  if (!history.value.length || history.value[history.value.length - 1] !== c) {
+  if (c && (!history.value.length || history.value[history.value.length - 1] !== c)) {
     history.value.push(c)
+    historyIdx = history.value.length
   }
-  historyIdx = history.value.length
 
-  // echo the command as a completed line
+  // echo the command as a completed line (even if empty — shows the prompt)
   output.value.push({ text: `* ${c}`, cls: 'console-cmd' })
   cmd.value = ''
 
