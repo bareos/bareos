@@ -47,9 +47,6 @@
 
 #include "lib/thread_util.h"
 
-/* PskCredentials lookup map for all connections */
-static synchronized<std::unordered_map<const SSL_CTX*, PskCredentials>>
-    client_cred;
 static std::mutex file_access_mutex_;
 
 class TlsOpenSsl : public Tls {
@@ -140,6 +137,8 @@ class TlsOpenSsl : public Tls {
   bool enable_ktls_{false};
   std::shared_ptr<ConfigResourcesContainer>
       config_table_{};  // config table being used
+
+  std::optional<PskCredentials> credentials_;
 };
 
 /* No anonymous ciphers, no <128 bit ciphers, no export ciphers, no MD5 ciphers
@@ -321,14 +320,44 @@ int tls_pem_callback_dispatch(char* buf, int size, int, void* userdata)
   return (p->pem_callback_(buf, size, p->pem_userdata_));
 }
 
+enum class CtxDataIndex : int
+{
+  Config = 0,
+  Cred = 1,
+};
+
 void TlsOpenSsl::ClientContextInsertCredentials(
     const PskCredentials& credentials)
 {
   if (!openssl_ctx_) { /* do not register nullptr */
     Dmsg0(100, "Psk Server Callback: No SSL_CTX\n");
-  } else {
-    client_cred.lock()->emplace(openssl_ctx_, credentials);
+    return;
   }
+
+  ASSERT(!credentials_.has_value());
+  credentials_ = credentials;
+  SSL_CTX_set_ex_data(openssl_ctx_, static_cast<int>(CtxDataIndex::Cred),
+                      &*credentials_);
+}
+
+const PskCredentials& SSL_CTX_getcred(const SSL_CTX* ctx)
+{
+  void* ptr = SSL_CTX_get_ex_data(ctx, static_cast<int>(CtxDataIndex::Cred));
+  ASSERT(ptr);
+  auto* creds = static_cast<const PskCredentials*>(ptr);
+  return *creds;
+}
+
+void SSL_CTX_setconfig(SSL_CTX* ctx, ConfigurationParser* parser)
+{
+  SSL_CTX_set_ex_data(ctx, static_cast<int>(CtxDataIndex::Config), parser);
+}
+
+ConfigurationParser* SSL_CTX_getconfig(SSL_CTX* ctx)
+{
+  void* ptr = SSL_CTX_get_ex_data(ctx, static_cast<int>(CtxDataIndex::Config));
+  auto* config = static_cast<ConfigurationParser*>(ptr);
+  return config;
 }
 
 unsigned int psk_server_cb(SSL* ssl,
@@ -350,8 +379,7 @@ unsigned int psk_server_cb(SSL* ssl,
 
   std::string configured_psk;
 
-  ConfigurationParser* config
-      = static_cast<ConfigurationParser*>(SSL_CTX_get_ex_data(openssl_ctx, 0));
+  auto* config = SSL_CTX_getconfig(openssl_ctx);
 
   if (!config) {
     Dmsg0(100, "Config not set: kConfigurationParserPtr\n");
@@ -384,18 +412,7 @@ static unsigned int psk_client_cb(SSL* ssl,
     return 0;
   }
 
-  PskCredentials credentials;
-  {
-    auto locked = client_cred.lock();
-    if (auto iter = locked->find(openssl_ctx); iter != locked->end()) {
-      credentials = iter->second;
-    } else {
-      Dmsg0(100,
-            "Error, TLS-PSK CALLBACK not set because SSL_CTX is not "
-            "registered.\n");
-      return 0;
-    }
-  }
+  const PskCredentials& credentials = SSL_CTX_getcred(openssl_ctx);
 
   int ret = Bsnprintf(identity, max_identity_len, "%s",
                       credentials.get_identity().c_str());
@@ -546,7 +563,6 @@ TlsOpenSsl::~TlsOpenSsl()
   /* the openssl_ctx object is the factory that creates
    * openssl objects, so delete this at the end */
   if (openssl_ctx_) {
-    client_cred.lock()->erase(openssl_ctx_);
     SSL_CTX_free(openssl_ctx_);
     openssl_ctx_ = nullptr;
   }
@@ -729,7 +745,7 @@ void TlsOpenSsl::SetTlsPskServerContext(ConfigurationParser* config)
     // keep a shared_ptr to the current config, so a reload won't
     // free the memory we're going to use in the private context
     config_table_ = config->GetResourcesContainer();
-    SSL_CTX_set_ex_data(openssl_ctx_, 0, (void*)config);
+    SSL_CTX_setconfig(openssl_ctx_, config);
 
     SSL_CTX_set_psk_server_callback(openssl_ctx_, psk_server_cb);
   }
