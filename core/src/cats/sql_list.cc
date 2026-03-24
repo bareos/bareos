@@ -219,18 +219,18 @@ void BareosDb::ListMediaRecords(JobControlRecord* jcr,
   if (count) {
     /* NOTE: ACLs are ignored. */
     if (mdbr->VolumeName[0] != 0) {
-      FillQuery(query, SQL_QUERY::list_volumes_by_name_count_1, esc);
+      FillQuery<SQL_QUERY::list_volumes_by_name_count_1>(query, esc);
     } else if (mdbr->PoolId > 0) {
-      FillQuery(query, SQL_QUERY::list_volumes_by_poolid_count_1,
-                edit_int64(mdbr->PoolId, ed1));
+      FillQuery<SQL_QUERY::list_volumes_by_poolid_count_1>(
+          query, edit_int64(mdbr->PoolId, ed1));
     } else {
-      FillQuery(query, SQL_QUERY::list_volumes_count_0);
+      FillQuery<SQL_QUERY::list_volumes_count_0>(query);
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(select, SQL_QUERY::list_volumes_select_long_0);
+      FillQuery<SQL_QUERY::list_volumes_select_long_0>(select);
     } else {
-      FillQuery(select, SQL_QUERY::list_volumes_select_0);
+      FillQuery<SQL_QUERY::list_volumes_select_0>(select);
     }
 
     if (mdbr->VolumeName[0] != 0) {
@@ -449,9 +449,9 @@ void BareosDb::ListJoblogRecords(JobControlRecord* jcr,
 
   DbLocker _{this};
   if (count) {
-    FillQuery(SQL_QUERY::list_joblog_count_1, edit_int64(JobId, ed1));
+    FillQuery<SQL_QUERY::list_joblog_count_1>(cmd, edit_int64(JobId, ed1));
   } else {
-    FillQuery(SQL_QUERY::list_joblog_2, edit_int64(JobId, ed1), range);
+    FillQuery<SQL_QUERY::list_joblog_2>(cmd, edit_int64(JobId, ed1), range);
     if (type != VERT_LIST) {
       /* When something else then a vertical list is requested set the list type
        * to RAW_LIST e.g. non formatted raw data as that makes the only sense
@@ -576,18 +576,18 @@ void BareosDb::ListJobRecords(JobControlRecord* jcr,
   DbLocker _{this};
 
   if (count) {
-    FillQuery(SQL_QUERY::list_jobs_count, selection.c_str(), range);
+    FillQuery<SQL_QUERY::list_jobs_count>(cmd, selection.c_str(), range);
   } else if (last) {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY::list_jobs_long_last, selection.c_str(), range);
+      FillQuery<SQL_QUERY::list_jobs_long_last>(cmd, selection.c_str(), range);
     } else {
-      FillQuery(SQL_QUERY::list_jobs_last, selection.c_str(), range);
+      FillQuery<SQL_QUERY::list_jobs_last>(cmd, selection.c_str(), range);
     }
   } else {
     if (type == VERT_LIST) {
-      FillQuery(SQL_QUERY::list_jobs_long, selection.c_str(), range);
+      FillQuery<SQL_QUERY::list_jobs_long>(cmd, selection.c_str(), range);
     } else {
-      FillQuery(SQL_QUERY::list_jobs, selection.c_str(), range);
+      FillQuery<SQL_QUERY::list_jobs>(cmd, selection.c_str(), range);
     }
   }
 

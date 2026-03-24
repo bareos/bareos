@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -636,8 +636,8 @@ bool BareosDb::CreateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   }
   EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
 
-  FillQuery(SQL_QUERY::insert_counter_values, esc, cr->MinValue, cr->MaxValue,
-            cr->CurrentValue, cr->WrapCounter);
+  FillQuery<SQL_QUERY::insert_counter_values>(
+      cmd, esc, cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter);
 
   if (InsertDb(jcr, cmd) != 1) {
     Mmsg2(errmsg, T_("Create DB Counters record %s failed. ERR=%s\n"), cmd,
@@ -794,18 +794,18 @@ bool BareosDb::WriteBatchFileRecords(JobControlRecord* jcr)
     goto bail_out;
   }
 
-  if (!jcr->db_batch->SqlQuery(SQL_QUERY::batch_lock_path_query)) {
+  if (!jcr->db_batch->SqlQuery<SQL_QUERY::batch_lock_path_query>()) {
     Jmsg1(jcr, M_FATAL, 0, "Lock Path table %s\n", errmsg);
     goto bail_out;
   }
 
-  if (!jcr->db_batch->SqlQuery(SQL_QUERY::batch_fill_path_query)) {
+  if (!jcr->db_batch->SqlQuery<SQL_QUERY::batch_fill_path_query>()) {
     Jmsg1(jcr, M_FATAL, 0, "Fill Path table %s\n", errmsg);
-    jcr->db_batch->SqlQuery(SQL_QUERY::batch_unlock_tables_query);
+    jcr->db_batch->SqlQuery<SQL_QUERY::batch_unlock_tables_query>();
     goto bail_out;
   }
 
-  if (!jcr->db_batch->SqlQuery(SQL_QUERY::batch_unlock_tables_query)) {
+  if (!jcr->db_batch->SqlQuery<SQL_QUERY::batch_unlock_tables_query>()) {
     Jmsg1(jcr, M_FATAL, 0, "Unlock Path table %s\n", errmsg);
     goto bail_out;
   }
@@ -1091,12 +1091,12 @@ bool BareosDb::CreateBaseFileList(JobControlRecord* jcr, const char* jobids)
 
   PoolMem buf(PM_MESSAGE);
 
-  FillQuery(SQL_QUERY::create_temp_basefile, (uint64_t)jcr->JobId);
+  FillQuery<SQL_QUERY::create_temp_basefile>(cmd, (uint64_t)jcr->JobId);
   if (!SqlQuery(cmd)) { return false; }
 
-  FillQuery(buf, SQL_QUERY::select_recent_version, jobids, jobids);
-  FillQuery(SQL_QUERY::create_temp_new_basefile, (uint64_t)jcr->JobId,
-            buf.c_str());
+  FillQuery<SQL_QUERY::select_recent_version>(buf, jobids);
+  FillQuery<SQL_QUERY::create_temp_new_basefile>(cmd, (uint64_t)jcr->JobId,
+                                                 buf.c_str());
 
   return SqlQuery(cmd);
 }

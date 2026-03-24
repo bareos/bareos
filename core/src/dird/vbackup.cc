@@ -464,11 +464,9 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
          "Replicating deleted files from jobids %s to jobid %d\n",
          jcr->dir_impl->vf_jobids, jcr->JobId);
     PoolMem inner_query(PM_MESSAGE);
-    jcr->db->FillQuery(
-        inner_query,
-        BareosDbQueryEnum::SQL_QUERY::select_recent_version_with_basejob,
-        jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids,
-        jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids);
+    jcr->db->FillQuery<
+        BareosDbQueryEnum::SQL_QUERY::select_recent_version_with_basejob>(
+        inner_query, jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids);
     std::string outer_query
         = "INSERT INTO File (FileIndex, JobId, PathId, LStat, MD5, Name) "s
           + "SELECT FileIndex, "s + std::to_string(jcr->JobId) + " AS JobId, "s

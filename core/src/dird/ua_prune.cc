@@ -560,19 +560,19 @@ bool PruneFiles(UaContext* ua, ClientResource* client, PoolResource* pool)
 
 static void DropTempTables(UaContext* ua)
 {
-  ua->db->SqlQuery(BareosDb::SQL_QUERY::drop_deltabs);
+  ua->db->SqlQuery<BareosDb::SQL_QUERY::drop_deltabs>();
 }
 
 static bool CreateTempTables(UaContext* ua)
 {
   /* Create temp tables and indices */
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::create_deltabs)) {
+  if (!ua->db->SqlQuery<BareosDb::SQL_QUERY::create_deltabs>()) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelTables table failed\n");
     return false;
   }
 
-  if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::create_delindex)) {
+  if (!ua->db->SqlQuery<BareosDb::SQL_QUERY::create_delindex>()) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelInx1 index failed\n");
     return false;
@@ -837,9 +837,8 @@ int GetPruneListForVolume(UaContext* ua,
   // Now add to the  list of JobIds for Jobs written to this Volume
   utime_t VolRetention = mr->VolRetention;
   now = (utime_t)time(NULL);
-  ua->db->FillQuery(query, BareosDb::SQL_QUERY::sel_JobMedia,
-                    edit_int64(mr->MediaId, ed1),
-                    edit_int64(now - VolRetention, ed2));
+  ua->db->FillQuery<BareosDb::SQL_QUERY::sel_JobMedia>(
+      query, edit_int64(mr->MediaId, ed1), edit_int64(now - VolRetention, ed2));
 
   Dmsg3(250, "Now=%d VolRetention=%d now-VolRetention=%s\n", (int)now,
         (int)VolRetention, ed2);

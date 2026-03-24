@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,30 +33,6 @@
 #  include "cats.h"
 
 static const int debuglevel = 100;
-
-const char* BareosDb::get_predefined_query_name(BareosDb::SQL_QUERY query)
-{
-  return query_names[static_cast<int>(query)];
-}
-
-const char* BareosDb::get_predefined_query(BareosDb::SQL_QUERY query)
-{
-  if (!queries) {
-    Emsg0(M_ERROR, 0, "No SQL queries defined. This should not happen.");
-    return NULL;
-  }
-
-  return queries[static_cast<int>(query)];
-}
-
-void BareosDb::FillQuery(BareosDb::SQL_QUERY predefined_query, ...)
-{
-  va_list arg_ptr;
-
-  va_start(arg_ptr, predefined_query);
-  FillQueryVaList(cmd, predefined_query, arg_ptr);
-  va_end(arg_ptr);
-}
 
 void BareosDb::FillQuery(PoolMem& query,
                          BareosDb::SQL_QUERY predefined_query,
@@ -110,19 +86,6 @@ void BareosDb::FillQueryVaList(PoolMem& query,
 
   Dmsg2(debuglevel, "called: %s query is now %s\n", __PRETTY_FUNCTION__,
         query.c_str());
-}
-
-
-bool BareosDb::SqlQuery(BareosDb::SQL_QUERY predefined_query, ...)
-{
-  va_list arg_ptr;
-  PoolMem query(PM_MESSAGE);
-
-  va_start(arg_ptr, predefined_query);
-  FillQueryVaList(query, predefined_query, arg_ptr);
-  va_end(arg_ptr);
-
-  return SqlQuery(query.c_str());
 }
 
 

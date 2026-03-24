@@ -781,17 +781,17 @@ static void SendGlobalRestoreObjects(JobControlRecord* jcr,
   if (!jcr->JobIds || !jcr->JobIds[0]) { return; }
 
   // Send restore objects for all jobs involved
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     jcr->JobIds, FT_RESTORE_FIRST);
+  jcr->db->FillQuery<BareosDb::SQL_QUERY::get_restore_objects>(
+      query, jcr->JobIds, FT_RESTORE_FIRST);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     jcr->JobIds, FT_PLUGIN_CONFIG);
+  jcr->db->FillQuery<BareosDb::SQL_QUERY::get_restore_objects>(
+      query, jcr->JobIds, FT_PLUGIN_CONFIG);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
   // Send config objects for the current restore job
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
+  jcr->db->FillQuery<BareosDb::SQL_QUERY::get_restore_objects>(
+      query, edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 }
 
@@ -803,12 +803,12 @@ static void SendJobSpecificRestoreObjects(JobControlRecord* jcr,
   PoolMem query(PM_MESSAGE);
 
   // Send restore objects for specific JobId.
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
+  jcr->db->FillQuery<BareosDb::SQL_QUERY::get_restore_objects>(
+      query, edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 
-  jcr->db->FillQuery(query, BareosDb::SQL_QUERY::get_restore_objects,
-                     edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
+  jcr->db->FillQuery<BareosDb::SQL_QUERY::get_restore_objects>(
+      query, edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
   jcr->db->SqlQuery(query.c_str(), RestoreObjectHandler, (void*)octx);
 }
 

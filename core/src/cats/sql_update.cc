@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -132,7 +132,7 @@ int BareosDb::UpdateStats(JobControlRecord* jcr, utime_t age)
   DbLocker _{this};
 
   edit_uint64(now - age, ed1);
-  FillQuery(SQL_QUERY::fill_jobhisto, ed1);
+  FillQuery<SQL_QUERY::fill_jobhisto>(cmd, ed1);
   if (QueryDb(jcr, cmd)) {
     rows = SqlAffectedRows();
   } else {
@@ -230,8 +230,8 @@ bool BareosDb::UpdateCounterRecord(JobControlRecord* jcr, CounterDbRecord* cr)
   DbLocker _{this};
 
   EscapeString(jcr, esc, cr->Counter, strlen(cr->Counter));
-  FillQuery(SQL_QUERY::update_counter_values, cr->MinValue, cr->MaxValue,
-            cr->CurrentValue, cr->WrapCounter, esc);
+  FillQuery<SQL_QUERY::update_counter_values>(
+      cmd, cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter, esc);
   retval = UpdateDb(jcr, cmd) > 0;
 
   return retval;
@@ -555,8 +555,8 @@ void BareosDb::UpgradeCopies(const char* jobids)
   DbLocker _{this};
 
   /* Do it in two times for mysql */
-  FillQuery(query, BareosDb::SQL_QUERY::uap_upgrade_copies_oldest_job,
-            JT_JOB_COPY, jobids, jobids);
+  FillQuery<BareosDb::SQL_QUERY::uap_upgrade_copies_oldest_job>(
+      query, JT_JOB_COPY, jobids, jobids);
 
   SqlQuery(query.c_str());
 

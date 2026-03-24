@@ -44,9 +44,6 @@
 #  include "lib/berrno.h"
 #  include "lib/dlist.h"
 
-/* pull in the generated queries definitions */
-#  include "postgresql_queries.inc"
-
 /* -----------------------------------------------------------------------
  *
  *   PostgreSQL dependent defines and subroutines
@@ -175,10 +172,6 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
   // Put the db in the list.
   if (db_list == NULL) { db_list = new dlist<BareosDbPostgresql>(); }
   db_list->append(this);
-
-  /* make the queries available using the queries variable from the parent class
-   */
-  queries = query_definitions;
 }
 
 BareosDbPostgresql::~BareosDbPostgresql() {}

@@ -1,5 +1,5 @@
 CREATE
-TEMPORARY TABLE new_basefile%lld AS
+TEMPORARY TABLE new_basefile%)SQL" PRId64 R"SQL( AS
 SELECT Path.Path AS Path,
        Temp.Name AS Name,
        Temp.FileIndex AS FileIndex,
