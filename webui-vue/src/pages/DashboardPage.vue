@@ -175,7 +175,7 @@ function refresh() {
   fetchJobs(); fetchTotals(); fetchSidebar()
 }
 
-const REFRESH_INTERVAL = 30   // seconds
+const REFRESH_INTERVAL = 5   // seconds
 
 onMounted(refresh)
 watch(() => director.isConnected, (connected) => { if (connected) refresh() })
