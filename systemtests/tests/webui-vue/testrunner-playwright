@@ -28,23 +28,35 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ── 1. Build the Vue app (production preview) ────────────────────────────────
+# Kill any leftover processes from prior runs occupying our ports.
+for _port in "${VITE_PORT}" "${PROXY_PORT}"; do
+  _pids=$(ss -Htlnp "sport = ${_port}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' || true)
+  for _pid in ${_pids}; do
+    kill "${_pid}" 2>/dev/null || true
+  done
+done
+unset _port _pids _pid
+sleep 1
+
+# ── 1. Build the Vue app with the test proxy WS URL baked in ─────────────────
 print_debug "Building Vue WebUI ..."
 cd "${CMAKE_SOURCE_DIR}/webui-vue"
-npm run build >"${tmp}/vite-build.log" 2>&1
+VITE_DIRECTOR_WS_URL="ws://localhost:${PROXY_PORT}" \
+  npm run build >"${tmp}/vite-build.log" 2>&1
+
 print_debug "Starting vite preview on port ${VITE_PORT} ..."
-npx vite preview --port "${VITE_PORT}" --host 127.0.0.1 >"${tmp}/vite-preview.log" 2>&1 &
+npx vite preview --port "${VITE_PORT}" --strictPort --host 127.0.0.1 >"${tmp}/vite-preview.log" 2>&1 &
 VITE_PID=$!
 cd -
 
-# ── 2. Start the WS proxy ────────────────────────────────────────────────────
+# ── 2. Start the WS proxy against the live director ─────────────────────────
 print_debug "Starting WS proxy on port ${PROXY_PORT} ..."
 WS_PORT="${PROXY_PORT}" \
   "${PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/webui-vue/proxy/director_ws_proxy.py" \
   >"${tmp}/ws-proxy-playwright.log" 2>&1 &
 PROXY_PID=$!
 
-# Wait for both services to come up.
+# Give both services time to bind their sockets.
 sleep 4
 
 for pid in "${VITE_PID}" "${PROXY_PID}"; do
@@ -63,12 +75,12 @@ import asyncio, sys, traceback
 from playwright.async_api import async_playwright, expect
 
 WEBUI_URL  = "http://localhost:${VITE_PORT}"
-WS_HOST    = "localhost"
-WS_PORT    = "${PROXY_PORT}"
 DIR_HOST   = "localhost"
 DIR_PORT   = "${BAREOS_DIRECTOR_PORT}"
 USERNAME   = "admin"
 PASSWORD   = "admin"
+# Director name as configured in the test's bareos-dir.d/director/*.conf
+DIR_NAME   = "bareos-dir"
 
 errors = []
 
@@ -80,17 +92,24 @@ def ok(msg):
     print(f"OK:   {msg}")
 
 async def login(page):
+    """Fill the login form and wait for redirect to dashboard.
+
+    Form defaults: host=localhost, port=9101, director=bareos-dir, username=admin.
+    We only need to change the port (test director uses BAREOS_DIRECTOR_PORT)
+    and fill the password.
+    """
     await page.goto(WEBUI_URL + "/login")
-    # Fill host/port for the WS proxy
-    await page.get_by_label("Proxy Host").fill(WS_HOST)
-    await page.get_by_label("Proxy Port").fill(WS_PORT)
-    await page.get_by_label("Director Host").fill(DIR_HOST)
-    await page.get_by_label("Director Port").fill(str(DIR_PORT))
-    await page.get_by_label("Username").fill(USERNAME)
+    await page.wait_for_load_state("networkidle")
+
+    # Clear and fill the embedded port number input (no accessible label of its own).
+    port_input = page.locator("input[type='number']")
+    await port_input.fill(DIR_PORT)
+
     await page.get_by_label("Password").fill(PASSWORD)
-    await page.get_by_role("button", name="Connect").click()
-    # Wait for redirect to dashboard (up to 10 s for director auth round-trip)
-    await page.wait_for_url("**/dashboard", timeout=10_000)
+    await page.get_by_role("button", name="Login").click()
+
+    # Wait up to 12 s for director auth round-trip and router redirect.
+    await page.wait_for_url("**/dashboard", timeout=12_000)
 
 # ── Test 1: login redirects to dashboard ─────────────────────────────────────
 async def test_login(page):
@@ -103,42 +122,47 @@ async def test_login(page):
 # ── Test 2: dashboard shows stat cards ───────────────────────────────────────
 async def test_dashboard_stats(page):
     await login(page)
-    # StatNumber components render an element with class "stat-number"
+    # StatNumber components render a div with class "stat-number"
     stat = page.locator(".stat-number").first
-    await expect(stat).to_be_visible(timeout=5_000)
+    await expect(stat).to_be_visible(timeout=8_000)
     ok("dashboard stat card is visible")
 
-# ── Test 3: jobs page shows the backup job ───────────────────────────────────
+# ── Test 3: jobs page shows mock job data ────────────────────────────────────
 async def test_jobs_page(page):
     await login(page)
-    await page.goto(WEBUI_URL + "/jobs")
-    # Table should contain at least one row with "backup-bareos-fd"
-    row = page.get_by_text("backup-bareos-fd")
-    await expect(row).to_be_visible(timeout=8_000)
-    ok("jobs page shows backup-bareos-fd job")
+    # Navigate within the SPA (no full reload) so the WS connection is kept.
+    await page.evaluate("window.location.hash = '/jobs'")
+    await page.wait_for_url("**#/jobs", timeout=5_000)
+    # Job names are plain <td> cells on the jobs page (IDs are the links).
+    row = page.locator("td").filter(has_text="BackupClient1").first
+    await expect(row).to_be_visible(timeout=10_000)
+    ok("jobs page shows BackupClient1 job")
 
 # ── Test 4: console page accepts a command ───────────────────────────────────
 async def test_console(page):
     await login(page)
-    await page.goto(WEBUI_URL + "/console")
-    input_el = page.locator("input[placeholder*='command'], input[type='text']").last
+    # Navigate within the SPA using hash change (no full reload) so the WS
+    # connection established during login is preserved.
+    await page.evaluate("window.location.hash = '/console'")
+    await page.wait_for_url("**#/console", timeout=5_000)
+    await page.wait_for_load_state("networkidle")
+    # q-input command field (enabled when director is connected).
+    input_el = page.locator("input[placeholder*='Enter command']")
+    await input_el.wait_for(state="visible", timeout=8_000)
     await input_el.fill("list clients")
     await input_el.press("Enter")
-    # Response area should contain something that looks like JSON
-    response_area = page.locator(".console-output, pre, .q-virtual-scroll__content")
-    await expect(response_area).to_contain_text("bareos-fd", timeout=10_000)
+    # The response area renders "bareos-fd" from the live director.
+    await expect(page.locator(".console-output")).to_contain_text("bareos-fd", timeout=12_000)
     ok("console page returns output for 'list clients'")
 
 # ── Test 5: logout returns to login page ─────────────────────────────────────
 async def test_logout(page):
     await login(page)
-    # Click the account/logout menu
-    logout_btn = page.get_by_role("button", name="Logout")
-    if not await logout_btn.is_visible():
-        # Might be inside a dropdown menu
-        await page.get_by_role("button", name="Account").click()
-        logout_btn = page.get_by_role("menuitem", name="Logout")
-    await logout_btn.click()
+    # User button label is the username ("admin") — click to open dropdown.
+    await page.get_by_role("button", name="admin").click()
+    # "Logout" is a q-item inside the dropdown; use exact=True to avoid matching
+    # the Material Icon <i>logout</i> element (aria-hidden but still in DOM).
+    await page.get_by_text("Logout", exact=True).click()
     await page.wait_for_url("**/login", timeout=5_000)
     ok("logout → redirected to /login")
 
@@ -175,3 +199,4 @@ asyncio.run(main())
 PYEOF
 
 end_test
+

@@ -19,6 +19,12 @@
 
 get_filename_component(BASENAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 
+# Remove any stale "testrunner" (no suffix) that may have been copied from
+# webui-common by a previous cmake run.  If it exists, add_systemtest_from_directory
+# would (wrongly) treat this as a single-test directory and skip the
+# testrunner-* discovery.  Our tests use the testrunner-* naming convention.
+file(REMOVE "${PROJECT_BINARY_DIR}/tests/webui-vue/testrunner")
+
 # Detect playwright-python.  The testrunner-playwright is disabled when the
 # package is not available so the remaining tests still run in plain CI.
 execute_process(

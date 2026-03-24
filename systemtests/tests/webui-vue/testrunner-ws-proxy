@@ -28,6 +28,12 @@ cleanup_proxy() {
 }
 trap cleanup_proxy EXIT
 
+# Kill any leftover process from a prior run holding this port.
+_pids=$(ss -Htlnp "sport = ${PROXY_PORT}" 2>/dev/null | grep -oP 'pid=\K[0-9]+' || true)
+for _pid in ${_pids}; do kill "${_pid}" 2>/dev/null || true; done
+unset _pids _pid
+sleep 1
+
 print_debug "Starting WS proxy on port ${PROXY_PORT} ..."
 WS_PORT="${PROXY_PORT}" \
   "${PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/webui-vue/proxy/director_ws_proxy.py" \

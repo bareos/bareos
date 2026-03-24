@@ -32,7 +32,7 @@
               </template>
             </q-input>
             <q-select
-              v-model="director"
+              v-model="directorRef"
               :options="directors"
               label="Director Name"
               outlined dense
