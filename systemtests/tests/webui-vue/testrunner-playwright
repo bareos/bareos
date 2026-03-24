@@ -174,7 +174,20 @@ async def test_console(page):
     await expect(page.locator(".console-output")).to_contain_text("bareos-fd", timeout=12_000)
     ok("console page returns output for 'list clients'")
 
-# ── Test 5: logout returns to login page ─────────────────────────────────────
+# ── Test 5: page reload reconnects automatically ──────────────────────────────
+async def test_reload_reconnects(page):
+    await login(page)
+    # Full page reload — WS is lost, credentials stay in sessionStorage.
+    await page.reload()
+    await page.wait_for_load_state("networkidle")
+    # Should still be on dashboard (not redirected to login).
+    await page.wait_for_url("**#/dashboard", timeout=8_000)
+    # Stat card must appear, which means data was fetched → WS reconnected.
+    stat = page.locator(".bareos-panel").first
+    await expect(stat).to_be_visible(timeout=12_000)
+    ok("page reload reconnects and stays on dashboard")
+
+# ── Test 6: logout returns to login page ─────────────────────────────────────
 async def test_logout(page):
     await login(page)
     # User button label is the username ("admin") — click to open dropdown.
@@ -191,6 +204,7 @@ async def main():
         test_dashboard_stats,
         test_jobs_page,
         test_console,
+        test_reload_reconnects,
         test_logout,
     ]
 
