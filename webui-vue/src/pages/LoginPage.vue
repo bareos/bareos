@@ -91,8 +91,8 @@ const auth     = useAuthStore()
 const director = useDirectorStore()
 const router   = useRouter()
 
-const host      = ref('localhost')
-const port      = ref(9101)
+const host      = ref(import.meta.env.VITE_DIRECTOR_HOST || 'localhost')
+const port      = ref(Number(import.meta.env.VITE_DIRECTOR_PORT) || 9101)
 const dirName   = 'bareos-dir'
 const directors = ref(['bareos-dir', 'backup-dir', 'dr-director'])
 const directorRef = ref(dirName)

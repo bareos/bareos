@@ -38,16 +38,22 @@ done
 unset _port _pids _pid
 
 # ── 1. Build the Vue app with the test proxy WS URL baked in ─────────────────
-# Only rebuild if no existing dist/, or if the baked WS URL has changed.
+# Only rebuild if dist/ is missing or any baked env var has changed.
 cd "${CMAKE_SOURCE_DIR}/webui-vue"
 EXPECTED_URL="ws://localhost:${PROXY_PORT}"
-EXISTING_URL=$(grep -r 'ws://localhost:' dist/ 2>/dev/null | grep -oP 'ws://localhost:[0-9]+' | head -1 || true)
-if [ ! -d dist ] || [ "${EXISTING_URL}" != "${EXPECTED_URL}" ]; then
-  print_debug "Building Vue WebUI (WS URL: ${EXPECTED_URL}) ..."
+BUILD_ENV="VITE_DIRECTOR_WS_URL=${EXPECTED_URL}
+VITE_DIRECTOR_HOST=localhost
+VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
+
+if [ ! -d dist ] || [ "$(cat dist/.build-env 2>/dev/null)" != "${BUILD_ENV}" ]; then
+  print_debug "Building Vue WebUI ..."
   VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" \
+  VITE_DIRECTOR_HOST="localhost" \
+  VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
     npm run build >"${tmp}/vite-build.log" 2>&1
+  printf '%s' "${BUILD_ENV}" > dist/.build-env
 else
-  print_debug "Reusing existing Vue WebUI build (WS URL: ${EXISTING_URL})"
+  print_debug "Reusing existing Vue WebUI build."
 fi
 
 print_debug "Starting vite preview on port ${VITE_PORT} ..."

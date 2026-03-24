@@ -56,18 +56,25 @@ do_start() {
 
   mkdir -p tmp
 
-  # Build Vue app if dist/ is absent or baked WS URL doesn't match.
-  EXISTING_URL=$(grep -r 'ws://localhost:' "${CMAKE_SOURCE_DIR}/webui-vue/dist/" 2>/dev/null \
-    | grep -oP 'ws://localhost:[0-9]+' | head -1 || true)
+  # Build Vue app if dist/ is absent or any baked env var has changed.
   EXPECTED_URL="ws://localhost:${WEBSOCKET_PROXY_PORT}"
-  if [ ! -d "${CMAKE_SOURCE_DIR}/webui-vue/dist" ] \
-     || [ "${EXISTING_URL}" != "${EXPECTED_URL}" ]; then
-    echo "Building Vue WebUI (WS URL: ${EXPECTED_URL}) ..."
+  BUILD_ENV="VITE_DIRECTOR_WS_URL=${EXPECTED_URL}
+VITE_DIRECTOR_HOST=localhost
+VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
+
+  DIST="${CMAKE_SOURCE_DIR}/webui-vue/dist"
+  if [ ! -d "${DIST}" ] \
+     || [ "$(cat "${DIST}/.build-env" 2>/dev/null)" != "${BUILD_ENV}" ]; then
+    echo "Building Vue WebUI ..."
     ( cd "${CMAKE_SOURCE_DIR}/webui-vue"
-      VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" npm run build >"${VITE_BUILD_LOG}" 2>&1 )
+      VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" \
+      VITE_DIRECTOR_HOST="localhost" \
+      VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
+        npm run build >"${VITE_BUILD_LOG}" 2>&1
+      printf '%s' "${BUILD_ENV}" > dist/.build-env )
     echo "Build complete."
   else
-    echo "Reusing existing build (WS URL: ${EXISTING_URL})."
+    echo "Reusing existing build."
   fi
 
   # Start WS proxy.
