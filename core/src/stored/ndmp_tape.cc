@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -538,8 +538,9 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session* sess,
   }
 
   /* When we found a JobControlRecord with the wanted security key it also
-   * implicitly means the authentication succeeded as the connecting NDMP session
-   * only knows the exact security key as it was inserted by the director.  */
+   * implicitly means the authentication succeeded as the connecting NDMP
+   * session only knows the exact security key as it was inserted by the
+   * director.  */
   jcr->authenticated = true;
 
   /* There is a native storage daemon session waiting for the FD to connect.
