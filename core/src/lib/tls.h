@@ -32,24 +32,25 @@
 #include "lib/get_tls_psk_by_fqname_callback.h"
 #include "lib/crypto.h"
 
+#include <memory>
+
 class BareosSocket;
 class JobControlRecord;
 class PskCredentials;
 
 class Tls {
  public:
-  Tls();
-  virtual ~Tls();
+  virtual ~Tls() = default;
   Tls(Tls& other) = delete;
 
   virtual bool init() = 0;
 
-  enum class TlsImplementationType
+  enum class ImplementationType
   {
-    kTlsUnknown,
-    kTlsOpenSsl
+    kUnknown,
+    kOpenSsl
   };
-  static Tls* CreateNewTlsContext(Tls::TlsImplementationType type);
+  static std::unique_ptr<Tls> CreateNewTlsContext(Tls::ImplementationType type);
 
   virtual void SetTlsPskClientContext(const PskCredentials& credentials) = 0;
   virtual void SetTlsPskServerContext(ConfigurationParser* config) = 0;
@@ -94,6 +95,9 @@ class Tls {
   virtual void SetVerifyPeer(const bool& verify_peer) = 0;
   virtual void SetEnableKtls(bool ktls) = 0;
   virtual void SetTcpFileDescriptor(const int& fd) = 0;
+
+ protected:
+  Tls() = default;
 };
 
 #endif  // BAREOS_LIB_TLS_H_

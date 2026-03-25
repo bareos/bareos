@@ -22,18 +22,14 @@
 #include "lib/tls.h"
 #include "lib/tls/openssl.h"
 
-Tls::Tls() { return; }
-
-Tls::~Tls() { return; }
-
-Tls* Tls::CreateNewTlsContext(Tls::TlsImplementationType type)
+std::unique_ptr<Tls> Tls::CreateNewTlsContext(Tls::ImplementationType type)
 {
   switch (type) {
-    case Tls::TlsImplementationType::kTlsOpenSsl:
-      return make_openssl_tls().release();
-
-    case Tls::TlsImplementationType::kTlsUnknown:
+    case ImplementationType::kOpenSsl:
+      return make_openssl_tls();
+    case ImplementationType::kUnknown:
+      [[fallthrough]];
     default:
-      return nullptr;
+      return {};
   }
 }
