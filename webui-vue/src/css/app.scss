@@ -83,6 +83,34 @@ $bareos-blue-dark: #005a96;
   font-family: 'Courier New', monospace;
 }
 
+// ── Timeline ──────────────────────────────────────────────────────────────────
+.tl-container {
+  position: relative;
+  overflow-x: auto;
+}
+
+.tl-tooltip {
+  position: absolute;
+  background: rgba(30, 30, 30, 0.92);
+  color: #eee;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  padding: 8px 12px;
+  border-radius: 6px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.tl-legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
 // ── Dark mode overrides ───────────────────────────────────────────────────────
 body.body--dark {
   .bareos-panel {

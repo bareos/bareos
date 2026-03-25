@@ -270,13 +270,98 @@
       </q-tab-panel>
 
       <!-- ── TIMELINE ──────────────────────────────────────────────────────── -->
-      <q-tab-panel name="timeline">
+      <q-tab-panel name="timeline" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">Job Timeline</q-card-section>
-          <q-card-section>
-            <div class="text-grey text-center q-py-xl">
-              <q-icon name="timeline" size="48px" class="q-mb-md" />
-              <div>Timeline chart will be rendered here (requires Chart.js integration)</div>
+          <q-card-section class="panel-header row items-center">
+            <span>Job Timeline</span>
+            <q-space />
+            <q-btn-toggle
+              v-model="tlDays"
+              dense unelevated no-caps
+              :options="[{label:'24h',value:1},{label:'7 days',value:7},{label:'30 days',value:30}]"
+              text-color="grey-8" toggle-color="primary" color="white"
+              class="q-mr-sm bg-white"
+              style="border-radius:4px"
+            />
+            <q-btn flat round dense icon="refresh" color="white" @click="tlRefresh" />
+          </q-card-section>
+
+          <!-- Status legend -->
+          <q-card-section class="q-py-sm row items-center q-gutter-md">
+            <div v-for="(info, key) in jobStatusMap" :key="key"
+                 class="row items-center" style="gap:5px">
+              <span class="tl-legend-dot" :style="{ background: tlColorOf(key) }" />
+              <span class="text-caption">{{ info.label }}</span>
+            </div>
+          </q-card-section>
+
+          <q-card-section class="q-pt-none">
+            <div v-if="tlLoading" class="text-center q-py-xl">
+              <q-spinner-dots color="primary" size="40px" />
+            </div>
+            <div v-else-if="tlError" class="text-negative q-py-md">{{ tlError }}</div>
+            <div v-else-if="!tlRows.length" class="text-grey text-center q-py-xl">
+              No jobs in this period.
+            </div>
+            <div v-else ref="svgContainer" class="tl-container" @mouseleave="hideTooltip">
+              <svg :width="svgW" :height="svgH">
+                <!-- Alternating row backgrounds -->
+                <rect v-for="(row, i) in tlRows" :key="'bg-' + row.id"
+                      x="0" :y="i * TL_ROW_H"
+                      :width="svgW" :height="TL_ROW_H"
+                      :fill="i % 2 === 0
+                        ? ($q.dark.isActive ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.025)')
+                        : 'transparent'" />
+
+                <!-- Vertical grid lines for time axis -->
+                <line v-for="t in tlTicks" :key="'grid-' + t.label"
+                      :x1="TL_LABEL_W + t.x" y1="0"
+                      :x2="TL_LABEL_W + t.x" :y2="svgH - TL_AXIS_H"
+                      :stroke="$q.dark.isActive ? '#3a3a3a' : '#ebebeb'"
+                      stroke-width="1" />
+
+                <!-- Axis tick labels -->
+                <text v-for="t in tlTicks" :key="'tick-' + t.label"
+                      :x="TL_LABEL_W + t.x" :y="svgH - 5"
+                      font-size="10" text-anchor="middle"
+                      :fill="$q.dark.isActive ? '#777' : '#bbb'"
+                      style="font-family:sans-serif; user-select:none">
+                  {{ t.label }}
+                </text>
+
+                <!-- Job name labels -->
+                <text v-for="(row, i) in tlRows" :key="'name-' + row.id"
+                      :x="TL_LABEL_W - 6" :y="i * TL_ROW_H + TL_ROW_H / 2 + 4"
+                      font-size="11" text-anchor="end"
+                      :fill="$q.dark.isActive ? '#ccc' : '#555'"
+                      style="font-family:sans-serif; user-select:none">
+                  {{ row.name.length > 20 ? row.name.slice(0, 19) + '\u2026' : row.name }}
+                </text>
+
+                <!-- Job bars -->
+                <rect v-for="(row, i) in tlRows" :key="'bar-' + row.id"
+                      :x="TL_LABEL_W + tlBarStart(row)"
+                      :y="i * TL_ROW_H + TL_BAR_PAD"
+                      :width="Math.max(2, tlBarWidth(row))"
+                      :height="TL_ROW_H - TL_BAR_PAD * 2"
+                      :fill="tlColorOf(row.status)"
+                      rx="3" style="cursor:pointer"
+                      @mouseenter="(e) => showTlTooltip(e, row)"
+                      @mousemove="moveTlTooltip" />
+              </svg>
+
+              <!-- Floating tooltip -->
+              <div v-if="tlTooltip.visible" class="tl-tooltip"
+                   :style="`left:${tlTooltip.x}px; top:${tlTooltip.y}px`">
+                <div class="text-weight-bold q-mb-xs">{{ tlTooltip.job.name }}</div>
+                <div>ID: {{ tlTooltip.job.id }}</div>
+                <div>Status: {{ jobStatusMap[tlTooltip.job.status]?.label ?? tlTooltip.job.status }}</div>
+                <div>Start: {{ tlTooltip.job.starttime }}</div>
+                <div v-if="tlTooltip.job.endtime">End: {{ tlTooltip.job.endtime }}</div>
+                <div>Duration: {{ tlTooltip.job.duration || '—' }}</div>
+                <div>Files: {{ (tlTooltip.job.files ?? 0).toLocaleString() }}</div>
+                <div>Bytes: {{ fmtBytes(tlTooltip.job.bytes ?? 0) }}</div>
+              </div>
             </div>
           </q-card-section>
         </q-card>
@@ -286,7 +371,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, reactive, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { jobTypeMap, jobLevelMap, jobStatusMap, formatBytes } from '../mock/index.js'
@@ -618,6 +703,121 @@ async function submitRerun() {
   }
 }
 
+// ── timeline ──────────────────────────────────────────────────────────────────
+const TL_LABEL_W = 150  // left column width for job name labels
+const TL_ROW_H   = 28   // height of each row
+const TL_BAR_PAD = 5    // vertical padding inside each row
+const TL_AXIS_H  = 24   // bottom strip for time-axis labels
+
+const tlDays       = ref(1)
+const tlRawJobs    = ref([])
+const tlLoading    = ref(false)
+const tlError      = ref('')
+const svgContainer = ref(null)
+const containerW   = ref(700)
+let _tlResizeObs   = null
+
+const tlStart  = computed(() => Date.now() - tlDays.value * 24 * 3600 * 1000)
+const tlRange  = computed(() => Date.now() - tlStart.value)
+const svgW     = computed(() => Math.max(containerW.value, 600))
+const tlChartW = computed(() => Math.max(svgW.value - TL_LABEL_W, 1))
+const svgH     = computed(() => tlRows.value.length * TL_ROW_H + TL_AXIS_H)
+
+function tlParseTS(str) {
+  if (!str || str.startsWith('0000')) return null
+  return new Date(str.replace(' ', 'T')).getTime()
+}
+
+const tlRows = computed(() => {
+  const now = Date.now()
+  return (tlRawJobs.value ?? [])
+    .map(normaliseJob)
+    .filter(j => {
+      const s = tlParseTS(j.starttime)
+      const e = tlParseTS(j.endtime) ?? now
+      return s !== null && e >= tlStart.value && s <= now
+    })
+    .sort((a, b) => (tlParseTS(b.starttime) ?? 0) - (tlParseTS(a.starttime) ?? 0))
+})
+
+const tlTicks = computed(() => {
+  const steps = 6
+  const w     = tlChartW.value
+  const start = tlStart.value
+  const range = tlRange.value
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const ratio = i / steps
+    const d     = new Date(start + ratio * range)
+    let label
+    if (tlDays.value === 1) {
+      label = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0')
+    } else if (tlDays.value === 7) {
+      label = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] + '\u00a0' + d.getDate()
+    } else {
+      label = (d.getMonth() + 1) + '/' + d.getDate()
+    }
+    return { x: Math.round(ratio * w), label }
+  })
+})
+
+function tlBarStart(job) {
+  const s = tlParseTS(job.starttime)
+  if (s === null) return 0
+  return Math.min(Math.max(0, ((s - tlStart.value) / tlRange.value) * tlChartW.value), tlChartW.value)
+}
+
+function tlBarWidth(job) {
+  const now  = Date.now()
+  const sRaw = tlParseTS(job.starttime) ?? tlStart.value
+  const eRaw = tlParseTS(job.endtime)   ?? now
+  const s    = Math.max(sRaw, tlStart.value)
+  const e    = Math.min(eRaw, now)
+  return Math.max(0, ((e - s) / tlRange.value) * tlChartW.value)
+}
+
+const tlStatusColors = {
+  T: '#21ba45', W: '#f2c037', f: '#c10015', E: '#c10015',
+  A: '#9e9e9e', R: '#31ccec', C: '#bdbdbd',
+}
+function tlColorOf(status) { return tlStatusColors[status] ?? '#9e9e9e' }
+
+const tlTooltip = reactive({ visible: false, x: 0, y: 0, job: null })
+
+function showTlTooltip(event, job) {
+  const rect = svgContainer.value?.getBoundingClientRect()
+  if (!rect) return
+  tlTooltip.x       = event.clientX - rect.left + 14
+  tlTooltip.y       = event.clientY - rect.top  + 14
+  tlTooltip.job     = job
+  tlTooltip.visible = true
+}
+
+function moveTlTooltip(event) {
+  if (!tlTooltip.visible) return
+  const rect = svgContainer.value?.getBoundingClientRect()
+  if (!rect) return
+  tlTooltip.x = event.clientX - rect.left + 14
+  tlTooltip.y = event.clientY - rect.top  + 14
+}
+
+function hideTooltip() { tlTooltip.visible = false }
+
+async function tlRefresh() {
+  if (!director.isConnected) return
+  tlLoading.value = true
+  tlError.value   = ''
+  try {
+    const res = await director.call(`llist jobs days=${tlDays.value}`)
+    tlRawJobs.value = res?.jobs ?? []
+  } catch (e) {
+    tlError.value = e.message
+  } finally {
+    tlLoading.value = false
+  }
+}
+
+watch(tlDays, () => { if (tab.value === 'timeline') tlRefresh() })
+
 // ── lifecycle ─────────────────────────────────────────────────────────────────
 const REFRESH_INTERVAL = 10
 const countdown = ref(REFRESH_INTERVAL)
@@ -653,20 +853,34 @@ onMounted(() => {
   startAutoRefresh()
 })
 
-onUnmounted(stopAutoRefresh)
+onUnmounted(() => {
+  stopAutoRefresh()
+  _tlResizeObs?.disconnect()
+})
 
 watch(() => director.isConnected, (connected) => {
   if (connected) {
     loadJobDefs()
     loadRunOptions()
     startAutoRefresh()
+    if (tab.value === 'timeline') tlRefresh()
   }
 })
 
-// Reload defs when switching to the Actions tab
-watch(tab, (t) => {
-  if (t === 'actions' && jobDefs.value.length === 0) loadJobDefs()
-  if (t === 'run'     && dotJobs.value.length === 0)  loadRunOptions()
+watch(tab, async (t) => {
+  if (t === 'actions'  && jobDefs.value.length === 0) loadJobDefs()
+  if (t === 'run'      && dotJobs.value.length === 0)  loadRunOptions()
+  if (t === 'timeline') {
+    await nextTick()
+    if (svgContainer.value) {
+      containerW.value = svgContainer.value.offsetWidth
+      if (!_tlResizeObs) {
+        _tlResizeObs = new ResizeObserver(([e]) => { containerW.value = e.contentRect.width })
+        _tlResizeObs.observe(svgContainer.value)
+      }
+    }
+    if (!tlRawJobs.value.length) tlRefresh()
+  }
 })
 </script>
 
