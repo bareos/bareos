@@ -26,7 +26,8 @@
           <q-card-section class="panel-header row items-center">
             <span>Stored Data per Job (treemap)</span>
             <q-space />
-            <q-btn-toggle v-model="treemapMode" flat no-caps dense color="white"
+            <q-btn-toggle v-model="treemapMode" flat no-caps dense
+              text-color="grey-4" toggle-color="white"
               :options="[{label:'Bytes',value:'bytes'},{label:'Files',value:'files'}]" />
           </q-card-section>
           <q-card-section class="q-pa-sm">
