@@ -39,6 +39,13 @@
           style="font-size:0.75rem"
         />
 
+        <!-- Dark mode toggle -->
+        <q-btn flat round dense color="white"
+               :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
+               :title="$q.dark.isActive ? 'Switch to light mode' : 'Switch to dark mode'"
+               class="q-mr-xs"
+               @click="toggleDark" />
+
         <!-- Right side: director + user dropdowns -->
         <q-btn flat color="white" :label="auth.user?.director || 'director'" icon="dns" no-caps>
           <q-menu>
@@ -80,16 +87,28 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 
+const $q       = useQuasar()
 const auth     = useAuthStore()
 const director = useDirectorStore()
 const router   = useRouter()
 const route    = useRoute()
 const activeTab = ref(null)
+
+onMounted(() => {
+  const saved = localStorage.getItem('darkMode')
+  if (saved !== null) $q.dark.set(saved === 'true')
+})
+
+function toggleDark() {
+  $q.dark.toggle()
+  localStorage.setItem('darkMode', String($q.dark.isActive))
+}
 
 const dirStatusColor = computed(() => ({
   connected:      'positive',

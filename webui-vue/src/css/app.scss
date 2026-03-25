@@ -1,4 +1,5 @@
 $bareos-blue: #0075be;
+$bareos-blue-dark: #005a96;
 
 .bareos-panel {
   .q-card__section.panel-header {
@@ -80,4 +81,30 @@ $bareos-blue: #0075be;
 
 .text-mono {
   font-family: 'Courier New', monospace;
+}
+
+// ── Dark mode overrides ───────────────────────────────────────────────────────
+body.body--dark {
+  .bareos-panel {
+    .q-card__section.panel-header {
+      background-color: $bareos-blue-dark;
+    }
+  }
+
+  .stat-label {
+    color: #aaa;
+  }
+
+  .q-table thead th {
+    background-color: $bareos-blue-dark;
+  }
+
+  .q-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+  }
+
+  .job-log {
+    background: #2a2a2a;
+    color: #ccc;
+  }
 }
