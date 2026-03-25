@@ -77,7 +77,10 @@
                      title="Copy log" @click="copyLog" />
             </q-card-section>
             <q-card-section class="q-pa-none">
-              <pre v-if="jobLog" class="job-log q-pa-md q-ma-none">{{ jobLog }}</pre>
+              <div v-if="highlightedLines.length" class="job-log q-pa-md">
+                <div v-for="(line, i) in highlightedLines" :key="i"
+                     :class="['log-line', `log-line--${line.type}`]">{{ line.text }}</div>
+              </div>
               <div v-else class="text-grey text-caption q-pa-md">No log entries found.</div>
             </q-card-section>
           </q-card>
@@ -178,6 +181,17 @@ const summaryRows = computed(() => {
 
 const jobLog = computed(() => logLines.value)
 
+const highlightedLines = computed(() => {
+  if (!logLines.value) return []
+  return logLines.value.split('\n').map(line => {
+    const l = line.toLowerCase()
+    if (/error|fatal|failed/.test(l))               return { text: line, type: 'error'   }
+    if (/warning|warn/.test(l))                      return { text: line, type: 'warning' }
+    if (/\bok\b|termination:.*ok|backup ok/.test(l)) return { text: line, type: 'ok'      }
+    return { text: line, type: 'normal' }
+  })
+})
+
 // ── auto-refresh for running jobs ─────────────────────────────────────────────
 const isRunning = computed(() => job.value?.status === 'R' || job.value?.status === 'l')
 
@@ -261,12 +275,22 @@ function copyLog() {
 .job-log {
   font-family: monospace;
   font-size: 0.8rem;
-  white-space: pre-wrap;
-  word-break: break-all;
   max-height: 500px;
   overflow-y: auto;
   background: #1e1e1e;
-  color: #d4d4d4;
   border-radius: 4px;
 }
+
+.log-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.55;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.log-line--normal  { color: #d4d4d4; }
+.log-line--ok      { color: #89d185; }
+.log-line--warning { color: #f2c037; }
+.log-line--error   { color: #f48771; font-weight: 600; background: rgba(244, 135, 113, 0.08); }
 </style>
