@@ -170,6 +170,7 @@ NDMP_DATA_AGENT_ADDRESS=@ndmp_data_agent_address@
 export IGNORE_CONFIG_WARNINGS=@IGNORE_CONFIG_WARNINGS@
 export SQLCMD="@SQLCMD@"
 export PERL="@PERL@"
+export AWK="@AWK@"
 
 if [ -f environment.local ]; then
   source environment.local
