@@ -28,6 +28,10 @@
           <q-card-section class="panel-header row items-center">
             <span>Most recent job status per job name</span>
             <q-space />
+            <q-btn flat round dense color="white" size="sm" class="q-mr-xs"
+                   :icon="relativeStart ? 'calendar_today' : 'schedule'"
+                   :title="relativeStart ? 'Show absolute start time' : 'Show relative start time'"
+                   @click="relativeStart = !relativeStart" />
             <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
           </q-card-section>
           <q-card-section class="q-pa-none">
@@ -48,6 +52,13 @@
               <template #body-cell-status="props">
                 <q-td :props="props">
                   <JobStatusBadge :status="jobStatus(props.row)" />
+                </q-td>
+              </template>
+              <template #body-cell-starttime="props">
+                <q-td :props="props">
+                  <span :title="relativeStart ? props.value : timeAgo(props.value)">
+                    {{ relativeStart ? timeAgo(props.value) : props.value }}
+                  </span>
                 </q-td>
               </template>
               <template #body-cell-name="props">
@@ -136,14 +147,15 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { formatBytes } from '../mock/index.js'
+import { formatBytes, timeAgo } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import StatNumber from '../components/StatNumber.vue'
 
 const director = useDirectorStore()
-const fmtBytes = formatBytes
+const fmtBytes      = formatBytes
+const relativeStart = ref(false)
 
 // ── data ─────────────────────────────────────────────────────────────────────
 const rawPast24hJobs = ref([])

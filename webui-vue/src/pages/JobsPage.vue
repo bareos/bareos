@@ -20,6 +20,10 @@
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ countdown }}s</span>
+            <q-btn flat round dense color="white" class="q-mr-xs"
+                   :icon="relativeStart ? 'calendar_today' : 'schedule'"
+                   :title="relativeStart ? 'Show absolute start time' : 'Show relative start time'"
+                   @click="relativeStart = !relativeStart" />
             <q-btn flat round dense icon="refresh" color="white" @click="manualRefresh" />
           </q-card-section>
           <q-card-section class="q-pa-none">
@@ -55,6 +59,13 @@
               </template>
               <template #body-cell-level="props">
                 <q-td :props="props">{{ levelMap[props.value] || props.value }}</q-td>
+              </template>
+              <template #body-cell-starttime="props">
+                <q-td :props="props">
+                  <span :title="relativeStart ? props.value : timeAgo(props.value)">
+                    {{ relativeStart ? timeAgo(props.value) : props.value }}
+                  </span>
+                </q-td>
               </template>
               <template #body-cell-bytes="props">
                 <q-td :props="props" class="text-right" style="min-width:90px">
@@ -376,7 +387,7 @@
 import { ref, computed, reactive, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { jobTypeMap, jobLevelMap, jobStatusMap, formatBytes } from '../mock/index.js'
+import { jobTypeMap, jobLevelMap, jobStatusMap, formatBytes, timeAgo } from '../mock/index.js'
 import { useDirectorFetch, normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -389,6 +400,7 @@ const director = useDirectorStore()
 const tab          = ref(route.query.action || 'list')
 const search       = ref('')
 const statusFilter = ref(route.query.status || '')
+const relativeStart = ref(false)
 const typeMap   = jobTypeMap
 const levelMap  = jobLevelMap
 const fmtBytes  = formatBytes
