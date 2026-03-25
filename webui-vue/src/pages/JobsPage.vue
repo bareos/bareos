@@ -306,7 +306,7 @@
             <div v-else ref="svgContainer" class="tl-container" @mouseleave="hideTooltip">
               <svg :width="svgW" :height="svgH">
                 <!-- Alternating row backgrounds -->
-                <rect v-for="(row, i) in tlRows" :key="'bg-' + row.id"
+                <rect v-for="(row, i) in tlRows" :key="'bg-' + row.name"
                       x="0" :y="i * TL_ROW_H"
                       :width="svgW" :height="TL_ROW_H"
                       :fill="i % 2 === 0
@@ -330,7 +330,7 @@
                 </text>
 
                 <!-- Job name labels -->
-                <text v-for="(row, i) in tlRows" :key="'name-' + row.id"
+                <text v-for="(row, i) in tlRows" :key="'name-' + row.name"
                       :x="TL_LABEL_W - 6" :y="i * TL_ROW_H + TL_ROW_H / 2 + 4"
                       font-size="11" text-anchor="end"
                       :fill="$q.dark.isActive ? '#ccc' : '#555'"
@@ -338,16 +338,18 @@
                   {{ row.name.length > 20 ? row.name.slice(0, 19) + '\u2026' : row.name }}
                 </text>
 
-                <!-- Job bars -->
-                <rect v-for="(row, i) in tlRows" :key="'bar-' + row.id"
-                      :x="TL_LABEL_W + tlBarStart(row)"
-                      :y="i * TL_ROW_H + TL_BAR_PAD"
-                      :width="Math.max(2, tlBarWidth(row))"
-                      :height="TL_ROW_H - TL_BAR_PAD * 2"
-                      :fill="tlColorOf(row.status)"
-                      rx="3" style="cursor:pointer"
-                      @mouseenter="(e) => showTlTooltip(e, row)"
-                      @mousemove="moveTlTooltip" />
+                <!-- Job bars — all runs for each job name in the same row -->
+                <g v-for="(row, i) in tlRows" :key="'grp-' + row.name">
+                  <rect v-for="run in row.runs" :key="'bar-' + run.id"
+                        :x="TL_LABEL_W + tlBarStart(run)"
+                        :y="i * TL_ROW_H + TL_BAR_PAD"
+                        :width="Math.max(2, tlBarWidth(run))"
+                        :height="TL_ROW_H - TL_BAR_PAD * 2"
+                        :fill="tlColorOf(run.status)"
+                        rx="3" style="cursor:pointer"
+                        @mouseenter="(e) => showTlTooltip(e, run)"
+                        @mousemove="moveTlTooltip" />
+                </g>
               </svg>
 
               <!-- Floating tooltip -->
@@ -729,15 +731,21 @@ function tlParseTS(str) {
 }
 
 const tlRows = computed(() => {
-  const now = Date.now()
-  return (tlRawJobs.value ?? [])
-    .map(normaliseJob)
-    .filter(j => {
-      const s = tlParseTS(j.starttime)
-      const e = tlParseTS(j.endtime) ?? now
-      return s !== null && e >= tlStart.value && s <= now
-    })
-    .sort((a, b) => (tlParseTS(b.starttime) ?? 0) - (tlParseTS(a.starttime) ?? 0))
+  const now    = Date.now()
+  const groups = new Map()
+  for (const raw of (tlRawJobs.value ?? [])) {
+    const j = normaliseJob(raw)
+    const s = tlParseTS(j.starttime)
+    const e = tlParseTS(j.endtime) ?? now
+    if (s === null || e < tlStart.value || s > now) continue
+    if (!groups.has(j.name)) groups.set(j.name, { name: j.name, runs: [] })
+    groups.get(j.name).runs.push(j)
+  }
+  // One row per unique job name, sorted alphabetically.
+  // Runs within each row are sorted by start time (oldest first).
+  return [...groups.values()]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(g => ({ ...g, runs: g.runs.sort((a, b) => (tlParseTS(a.starttime) ?? 0) - (tlParseTS(b.starttime) ?? 0)) }))
 })
 
 const tlTicks = computed(() => {
