@@ -120,17 +120,18 @@ export function normaliseClient(c) {
  */
 export function normaliseVolume(v) {
   return {
-    volumename:  v.volumename ?? v.volume ?? '',
-    pool:        v.pool ?? v.poolname ?? '',
-    storage:     v.storage ?? v.storagename ?? '',
-    mediatype:   v.mediatype ?? '',
-    volstatus:   v.volstatus ?? v.status ?? '',
-    volbytes:    Number(v.volbytes   ?? v.bytes ?? 0),
-    volfiles:    Number(v.volfiles   ?? 0),
-    lastwritten: v.lastwritten ?? '',
+    volumename:  v.volumename  ?? v.volume ?? '',
+    pool:        v.pool        ?? v.Pool   ?? v.poolname ?? '',
+    storage:     v.storage     ?? v.storagename ?? '',
+    mediatype:   v.mediatype   ?? v.MediaType ?? '',
+    volstatus:   v.volstatus   ?? v.VolStatus ?? v.status ?? '',
+    volbytes:    Number(v.volbytes   ?? v.VolBytes ?? v.bytes ?? 0),
+    volfiles:    Number(v.volfiles   ?? v.VolFiles ?? 0),
+    maxvolbytes: Number(v.maxvolbytes ?? v.MaxVolBytes ?? 0),
+    lastwritten: v.lastwritten ?? v.LastWritten ?? '',
     inchanger:   v.inchanger === '1' || v.inchanger === true,
-    retention:   v.volretention ?? '',
-    slot:        Number(v.slot ?? 0),
+    retention:   v.volretention ?? v.VolRetention ?? '',
+    slot:        Number(v.slot ?? v.Slot ?? 0),
     enabled:     v.enabled !== '0' && v.enabled !== false,
   }
 }

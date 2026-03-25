@@ -88,7 +88,7 @@ onMounted(async () => {
   try {
     const [poolRes, volRes] = await Promise.all([
       director.call(`llist pool=${poolName}`),
-      director.call(`list volumes pool=${poolName}`),
+      director.call(`llist volumes pool=${poolName}`),
     ])
     const pools = poolRes?.pools ?? []
     pool.value    = Array.isArray(pools) ? pools[0] : Object.values(pools)[0]

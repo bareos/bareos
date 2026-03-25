@@ -120,7 +120,7 @@ const { data: rawStorages, loading: storagesLoading, error: storagesError, refre
 const { data: rawPools,    loading: poolsLoading,    error: poolsError,    refresh: refreshPools } =
   useDirectorFetch('llist pools', 'pools')
 const { data: rawVolumes,  loading: volsLoading,     error: volsError,     refresh: refreshVols } =
-  useDirectorFetch('list volumes', 'volumes')
+  useDirectorFetch('llist volumes', 'volumes')
 
 const storages = computed(() => (rawStorages.value ?? []).map(s => ({
   ...s,
