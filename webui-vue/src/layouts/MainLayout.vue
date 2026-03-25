@@ -95,7 +95,7 @@
         </span>
 
         <!-- Main nav tabs (desktop only) -->
-        <q-tabs v-if="$q.screen.gte.md" v-model="activeTab" dense align="left"
+        <q-tabs v-if="!$q.screen.lt.md" v-model="activeTab" dense align="left"
                 class="q-ml-md" indicator-color="white"
                 active-color="white" active-bg-color="rgba(255,255,255,0.15)">
           <q-route-tab v-for="nav in navItems" :key="nav.to"
@@ -112,7 +112,7 @@
                 class="q-mr-sm" style="font-size:0.75rem" />
 
         <!-- Desktop-only: dark mode toggle, director menu, user menu -->
-        <template v-if="$q.screen.gte.md">
+        <template v-if="!$q.screen.lt.md">
           <q-btn flat round dense color="white"
                  :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
                  :title="$q.dark.isActive ? 'Switch to light mode' : 'Switch to dark mode'"
