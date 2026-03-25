@@ -347,6 +347,7 @@
                         :height="TL_ROW_H - TL_BAR_PAD * 2"
                         :fill="tlColorOf(run.status)"
                         rx="3" style="cursor:pointer"
+                        @click="router.push({ name: 'job-details', params: { id: run.id } })"
                         @mouseenter="(e) => showTlTooltip(e, run)"
                         @mousemove="moveTlTooltip" />
                 </g>
@@ -374,7 +375,7 @@
 
 <script setup>
 import { ref, computed, reactive, nextTick, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { jobTypeMap, jobLevelMap, jobStatusMap, formatBytes } from '../mock/index.js'
 import { useDirectorFetch, normaliseJob } from '../composables/useDirectorFetch.js'
@@ -382,6 +383,7 @@ import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 
 const route    = useRoute()
+const router   = useRouter()
 const $q       = useQuasar()
 const director = useDirectorStore()
 
