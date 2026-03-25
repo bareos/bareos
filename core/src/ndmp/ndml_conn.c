@@ -993,7 +993,7 @@ void ndmconn_hex_dump(struct ndmconn* conn, char* buf, unsigned len)
  * Possible errors for ndmconn are not enumerated.
  * Instead, errors are indicated by a -1 return, and
  * a simple string error message is available for details.
- * Appologies for the english-centric design, but it
+ * Apologies for the english-centric design, but it
  * is quick and easy, and better than using printf().
  */
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,7 +45,7 @@
 
 #include <sstream>
 
-// Set default indention e.g. 2 spaces.
+// Set default indentation e.g. 2 spaces.
 #define DEFAULT_INDENT_STRING "  "
 
 static int res_locked = 0; /* resource chain lock count -- for debug */
@@ -1195,7 +1195,7 @@ void ConfigurationParser::StoreLabel(lexer* lc,
  * Store network addresses.
  *
  *   my tests
- *   positiv
+ *   positive
  *   = { ip = { addr = 1.2.3.4; port = 1205; } ipv4 = { addr = 1.2.3.4; port =
  * http; } } = { ip = { addr = 1.2.3.4; port = 1205; } ipv4 = { addr = 1.2.3.4;
  * port = http; } ipv6 = { addr = 1.2.3.4; port = 1205;
@@ -1214,7 +1214,7 @@ void ConfigurationParser::StoreLabel(lexer* lc,
  *       addr = bluedot.thun.net
  *     }
  *   }
- *   negativ
+ *   negative
  *   = { ip = { } }
  *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
  *   = { ipv4 { port = 4711 } }

@@ -76,7 +76,7 @@ This will be displayed as:
 .. include:: /DocumentationStyleGuide/example/code-block-shell-session.rst.inc
 
 
-Unix Commmand Prompt
+Unix Command Prompt
 ~~~~~~~~~~~~~~~~~~~~
 
 Unix command prompts should look identical throughout the documentation.
@@ -114,7 +114,7 @@ The output should look like this:
 Environment Variable
 --------------------
 
-If you want to display an (Unix) environment variable name, the following formating should be followed:
+If you want to display an (Unix) environment variable name, the following formatting should be followed:
 
 
 ..   \newcommand{\variable}[1]{\path|#1|}
@@ -274,7 +274,7 @@ The output will look like this:
 
 .. include:: /DocumentationStyleGuide/example/os.rst.inc
 
-As an index is generated from the operation systems, the naming should be identical in all occurances.
+As an index is generated from the operation systems, the naming should be identical in all occurrences.
 The first space separates the platform from the version.
 
 

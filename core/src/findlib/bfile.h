@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,7 +32,7 @@
 #define BAREOS_FINDLIB_BFILE_H_
 
 /* this should physically correspond to WIN32_STREAM_ID
- * from winbase.h on Win32. We didn't inlcude cStreamName
+ * from winbase.h on Win32. We didn't include cStreamName
  * as we don't use it and don't need it for a correct struct size.
  */
 #define WIN32_BACKUP_DATA 1

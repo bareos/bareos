@@ -759,7 +759,7 @@ int ndmis_tcp_listen(struct ndm_session* sess, struct ndmp9_addr* listen_addr)
    * Get the IP address thru which the CONTROL agent connected
    * to this session. The CONTROL agent may influence the
    * network used for the image-stream on multi-homed hosts
-   * simply by connecting to the prefered IP address.
+   * simply by connecting to the preferred IP address.
    */
   what = "determine-conn";
   conn = sess->plumb.control;

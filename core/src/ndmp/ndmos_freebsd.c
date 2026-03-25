@@ -40,7 +40,7 @@
  *      There are four major portions:
  *      1) Misc support routines: password check, local info, etc
  *      2) Non-blocking I/O support routines
- *      3) Tape interfacs ndmos_tape_xxx()
+ *      3) Tape interfaces ndmos_tape_xxx()
  *      4) OS Specific NDMP request dispatcher which intercepts
  *         requests implemented here, such as SCSI operations
  *         and system configuration queries.

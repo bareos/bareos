@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -549,7 +549,7 @@ bool DecryptData(JobControlRecord* jcr,
   *data = cipher_ctx->buf;
 
   /* If one full preserved block is available, write it to disk,
-   * and then buffer any remaining data. This should be effecient
+   * and then buffer any remaining data. This should be efficient
    * as long as Bareos's block size is not significantly smaller than the
    * encryption block size (extremely unlikely!) */
   UnserCryptoPacketLen(cipher_ctx);

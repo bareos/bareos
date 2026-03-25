@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -565,7 +565,7 @@ static void DropTempTables(UaContext* ua)
 
 static bool CreateTempTables(UaContext* ua)
 {
-  /* Create temp tables and indicies */
+  /* Create temp tables and indices */
   if (!ua->db->SqlQuery(BareosDb::SQL_QUERY::create_deltabs)) {
     ua->ErrorMsg("%s", ua->db->strerror());
     Dmsg0(050, "create DelTables table failed\n");
@@ -646,7 +646,7 @@ bool PruneJobs(UaContext* ua, ClientResource* client, PoolResource* pool)
   // Drop any previous temporary tables still there
   DropTempTables(ua);
 
-  // Create temp tables and indicies
+  // Create temp tables and indices
   if (!CreateTempTables(ua)) {
     DropTempTables(ua);
     return true;

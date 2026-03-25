@@ -238,7 +238,7 @@ ZFASTEXTERN int fastlzlibCompress2(zfast_stream *s, int flush,
 ZFASTEXTERN int fastlzlibDecompressSync(zfast_stream *s);
 
 /**
- * Return the header size, that is, the fixed size of data at the begining of
+ * Return the header size, that is, the fixed size of data at the beginning of
  * a stream which contains details on the compression type..
  **/
 ZFASTEXTERN int fastlzlibGetHeaderSize(void);
@@ -250,7 +250,7 @@ ZFASTEXTERN int fastlzlibGetHeaderSize(void);
 ZFASTEXTERN int fastlzlibGetBlockSize(zfast_stream *s);
 
 /**
- * Return the block size of a compressed stream begining with "input".
+ * Return the block size of a compressed stream beginning with "input".
  * Returns 0 if the stream is invalid or too short.
  * You may use fastlzlibGetHeaderSize() to know how many bytes needs to be
  * read for identifying a stream.
@@ -264,8 +264,8 @@ ZFASTEXTERN int fastlzlibGetStreamBlockSize(const void* input, int length);
 ZFASTEXTERN const char* fastlzlibGetLastErrorMessage(zfast_stream *s);
 
 /**
- * Return the block size of a compressed stream begining with "input".
- * Returns Z_OK if the two members were successfully filles, Z_DATA_ERROR if
+ * Return the block size of a compressed stream beginning with "input".
+ * Returns Z_OK if the two members were successfully filled, Z_DATA_ERROR if
  * the stream is not a valid start of block, Z_BUF_ERROR if the buffer is too
  * small, and Z_STREAM_ERROR if arguments are invalid (NULL pointer).
  * You may use fastlzlibGetHeaderSize() to know how many bytes needs to be

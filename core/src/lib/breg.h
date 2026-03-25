@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,7 +43,7 @@
 
 #define BREG_NREGS 11
 
-// Structure for BareosRegex ressource
+// Structure for BareosRegex resource
 class BareosRegex {
  public:
   BareosRegex() = default;
@@ -55,7 +55,7 @@ class BareosRegex {
   char* replace(const char* fname); /**< return this.result */
 
   /* private */
-  POOLMEM* expr = nullptr;       /**< search epression */
+  POOLMEM* expr = nullptr;       /**< search expression */
   POOLMEM* subst = nullptr;      /**< substitution */
   regex_t preg{};                /**< regex_t result of regcomp() */
   regmatch_t regs[BREG_NREGS]{}; /**< contains match */

@@ -4,7 +4,7 @@ Releases
 Functional Changes
 ------------------
 
-If the documenation wants to point out,
+If the documentation wants to point out,
 that a feature has been added
 or some functionality changed in a specific version,
 use the following role:

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -232,7 +232,7 @@ bool show_cmd(UaContext* ua, const char*)
 
   ResLocker _{my_config};
 
-  // Without parameter, show all ressources.
+  // Without parameter, show all resources.
   if (ua->argc == 1 || FindArg(ua, "all") > 0) {
     ShowAll(ua, hide_sensitive_data, show_verbose);
     return true;

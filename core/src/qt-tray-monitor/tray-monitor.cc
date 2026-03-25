@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -283,7 +283,7 @@ void exit(int status)
   /* avoid to call the std::exit() cleanup handlers
    * via atexit() since exit() destroys objects that
    * are used by the QApplication class and this would
-   * lead to a sementation fault when QApplication
+   * lead to a segmentation fault when QApplication
    * in turn wants to destroy its child-objects. */
 
   // first do the Qt cleanup

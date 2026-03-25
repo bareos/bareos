@@ -44,7 +44,7 @@ However, when updating from bareos < 16.2, most of these changes are activated, 
     * modified resource names:
         * $HOSTNAME-dir => bareos-dir
         * $HOSTNAME-sd => bareos-sd
-            * make more sense when installing just the fd. Then probaly only the Address must be changed.
+            * make more sense when installing just the fd. Then probably only the Address must be changed.
             * fits better into configsubdirectory structure and packaging,
                 because otherwise the filename is only known at install time /and might change)
         * "Linux All" => "LinuxAll"
@@ -52,7 +52,7 @@ However, when updating from bareos < 16.2, most of these changes are activated, 
     * bareos-traymonitor
         * also single file per resource.
         * bareos-traymonitor package only contains $BAREOS_CONFIG_DIR/tray-monitor.d/monitor/bareos-mon.conf.
-            * The other resoures are part of the related packages:
+            * The other resources are part of the related packages:
                 * $BAREOS_CONFIG_DIR/tray-monitor.d/client/FileDaemon-local.conf is part of bareos-filedaemon
                 * $BAREOS_CONFIG_DIR/tray-monitor.d/storage/StorageDaemon-local.conf is part of bareos-storage
                 * $BAREOS_CONFIG_DIR/tray-monitor.d/director/Director-local.conf is part of bareos-director
@@ -67,13 +67,13 @@ How to use configsubdirectories
           from the $BAREOS_CONFIG_TEMPLATE_DIR to the $BAREOS_CONFIG_DIR.
           Necessary adjustments are done there (set hostname and random passwords).
         * Notice:
-          * Bareos sub-packages may add addional files to the $BAREOS_CONFIG_TEMPLATE_DIR, mostly *.example files.
+          * Bareos sub-packages may add additional files to the $BAREOS_CONFIG_TEMPLATE_DIR, mostly *.example files.
           When this happens after the initial installation,
           these files are only present in the $BAREOS_CONFIG_TEMPLATE_DIR.
           If required, they must be copied manually.
 
     * Update
         * When update to a Bareos version containing configsubdirectories (Bareos >= 16.2), the existing configuration will not be touched and is still the default configuration.
-        * Attention: Problems can occur, if you have already splitted your configuration to the same subdirectories as used by the new packages ($BAREOS_CONFIG_DIR/$COMPONENT.d/*/) and have implemented an own wildcard mechanism to load them. In this case, newly installed configuration resource files can alter your current configuration in adding additional resources.
+        * Attention: Problems can occur, if you have already split your configuration to the same subdirectories as used by the new packages ($BAREOS_CONFIG_DIR/$COMPONENT.d/*/) and have implemented an own wildcard mechanism to load them. In this case, newly installed configuration resource files can alter your current configuration in adding additional resources.
         * As long as the old configuration file ($BAREOS_CONFIG_DIR/$COMPONENT.conf) exists, it will be used.
         * The correct way to migrate to the new configuration scheme would be to split the configuration file into resources, store them in the resource directories and then remove the original configuration file.

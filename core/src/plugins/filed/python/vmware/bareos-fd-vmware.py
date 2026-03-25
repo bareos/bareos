@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -765,7 +765,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def plugin_io_open_nvram(self, IOP):
         """
-        Plugin IO funtion to open NVRAM file
+        Plugin IO function to open NVRAM file
         """
         # There is no real file to be opened here. For the backup case, the
         # NVRAM file content has already been downloaded from the datastore
@@ -802,7 +802,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def plugin_io_close_nvram(self, IOP):
         """
-        Plugin IO funtion to close NVRAM file
+        Plugin IO function to close NVRAM file
         """
         bareosfd.DebugMessage(
             100,
@@ -1825,7 +1825,7 @@ class BareosVADPWrapper(object):
         """
         Get resource pool by path
 
-        As resource pools can be nested, unique specfication requires a path-like
+        As resource pools can be nested, unique specification requires a path-like
         parameter.
         """
         resource_pools = self._get_resource_pools(cluster)
@@ -2385,7 +2385,7 @@ class BareosVADPWrapper(object):
 
     def get_vm_disk_root_filename(self, disk_device_backing):
         """
-        Get the disk name from the ende of the parents chain
+        Get the disk name from the end of the parents chain
         When snapshots exist, the original disk filename is
         needed. If no snapshots exist, the disk has no parent
         and the filename is the same.
@@ -2984,7 +2984,7 @@ class BareosVADPWrapper(object):
             )
 
         except Exception as e:
-            # kill children if they arent done
+            # kill children if they aren't done
             if bareos_vadp_dumper_process:
                 bareosfd.JobMessage(
                     bareosfd.M_WARNING,

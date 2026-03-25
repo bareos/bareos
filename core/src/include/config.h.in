@@ -3,7 +3,7 @@
 
    Copyright (C) 2012-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,7 +53,7 @@
 // Define to 1 for pthread_attr_get_np() instead of pthread_getattr_np()
 #cmakedefine HAVE_PTHREAD_ATTR_GET_NP @HAVE_PTHREAD_ATTR_GET_NP@
 
-// Define to 1 if pthread_*_np() are in a seperate header
+// Define to 1 if pthread_*_np() are in a separate header
 #cmakedefine HAVE_PTHREAD_NP_H @HAVE_PTHREAD_NP_H@
 
 // Define to 1 if you want Normal acl support

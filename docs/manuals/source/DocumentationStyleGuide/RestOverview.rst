@@ -191,7 +191,7 @@ Source code will be formatted by the directive ``code-block``.
 Example::
 
    .. code-block:: sh
-      :caption: Titel
+      :caption: Title
 
       Line 1
       Line 2
@@ -200,7 +200,7 @@ Example::
 Output:
 
 .. code-block:: sh
-   :caption: Titel
+   :caption: Title
 
    Line 1
    Line 2
@@ -237,7 +237,7 @@ If the text resides in a separate file, use::
 
 All included files should be located under :file:`/include`.
 
-The beginning :file:`/` means, root directory of the documenation source directory.
+The beginning :file:`/` means, root directory of the documentation source directory.
 Without it, the path is relative to the directory of the including file.
 
 Configuration files should be located under :file:`/include/config/`\ .
@@ -394,7 +394,7 @@ Therefore the specific names part, chapter, section ... might not match the actu
    If you write a chapter it is not possible to continue with a paragraph.
    Instead the next section must be of the type section.
 
-   If you try to do it overwise (chapter 1 ``=`` -> paragraph ``'``),
+   If you try to do it otherwise (chapter 1 ``=`` -> paragraph ``'``),
    the ''paragraph'' is treated as a section.
    And if you continue by another chapter (in the same file) (chapter 2 ``=`` -> section ``-``),
    :program:`sphinx-build` got confused and at least produces a warning (`Title level inconsistent`)
@@ -445,7 +445,7 @@ However, it must have some text in the ".. " line, otherwise it is ignored, and 
 File/Directory/Path
 -------------------
 
-File and directories (or generally paths) are formated by ``:file:`` inline markup.
+File and directories (or generally paths) are formatted by ``:file:`` inline markup.
 
 Backslashes (Windows paths) ``\`` have to written as ``\\``:
 

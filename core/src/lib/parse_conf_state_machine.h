@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,8 +39,8 @@ class ConfigParserStateMachine {
                            lexer::warning_handler* scan_warning,
                            ConfigurationParser& my_config);
   ~ConfigParserStateMachine();
-  ConfigParserStateMachine(ConfigParserStateMachine& ohter) = delete;
-  ConfigParserStateMachine(ConfigParserStateMachine&& ohter) = delete;
+  ConfigParserStateMachine(ConfigParserStateMachine& other) = delete;
+  ConfigParserStateMachine(ConfigParserStateMachine&& other) = delete;
   ConfigParserStateMachine& operator=(ConfigParserStateMachine& rhs) = delete;
   ConfigParserStateMachine& operator=(ConfigParserStateMachine&& rhs) = delete;
 

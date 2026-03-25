@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -682,7 +682,7 @@ bRC pluginIO_Dump(PluginContext* ctx, filedaemon::io_pkt* pkt)
         pkt->status = -1;
         return bRC_Error;
       } catch (...) {
-        err_msg(ctx, "could not start: unknown error occured");
+        err_msg(ctx, "could not start: unknown error occurred");
         pkt->status = -1;
         return bRC_Error;
       }

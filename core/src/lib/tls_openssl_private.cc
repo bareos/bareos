@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -332,7 +332,7 @@ int TlsOpenSslPrivate::OpensslBsockReadwrite(BareosSocket* bsock,
         /* TLS connection was cleanly shut down */
         /* Fall through wanted */
       default:
-        /* Socket Error Occured */
+        /* Socket Error Occurred */
         OpensslPostErrors(bsock->get_jcr(), M_FATAL,
                           T_("TLS read/write failure."));
         goto cleanup;
@@ -479,7 +479,7 @@ unsigned int TlsOpenSslPrivate::psk_server_cb(SSL* ssl,
   }
   BStringList lst(std::string(identity),
                   AsciiControlCharacters::RecordSeparator());
-  Dmsg1(100, "psk_server_cb. identitiy: %s.\n", lst.JoinReadable().c_str());
+  Dmsg1(100, "psk_server_cb. identity: %s.\n", lst.JoinReadable().c_str());
 
   std::string configured_psk;
 

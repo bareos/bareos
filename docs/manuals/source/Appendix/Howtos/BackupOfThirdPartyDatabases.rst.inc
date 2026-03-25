@@ -40,10 +40,10 @@ If you like to use the MSSQL-Plugin to backing up your Databases you need to con
    | For connections you can use a SQL-User or a integrated systemaccount (Windows NT user). Both connection types are supported.
 
    -  | Standard Security
-      | You have to provide user credentials within your options which do belong to user with the sufficent right performing restores and backups from the database. This way stands for an extra backup/restore user.
+      | You have to provide user credentials within your options which do belong to user with the sufficient right performing restores and backups from the database. This way stands for an extra backup/restore user.
 
    -  | Trusted Security
-      | You use a systemaccount which have the sufficent rights to performing backups and restores on a database. This systemaccount have to be same account like the bareos-filedeamon runs on.
+      | You use a systemaccount which have the sufficient rights to performing backups and restores on a database. This systemaccount have to be same account like the bareos-filedeamon runs on.
 
 -  Permissions and Roles
 
@@ -283,7 +283,7 @@ Incremental FileSet example:
 Restores
 ^^^^^^^^
 
-If you want to perform a restore of a full backup without differentials or incrementals you have some options which helps you to restore even the corrupted database still exist. But you have to specifiy the options like plugin, instance and database during every backup.
+If you want to perform a restore of a full backup without differentials or incrementals you have some options which helps you to restore even the corrupted database still exist. But you have to specify the options like plugin, instance and database during every backup.
 
 replace=<yes|no>
    With this option you can replace the database if it still exist.
@@ -457,7 +457,7 @@ Restore a Backup Chain
 If you like to restore a specific state or a whole chain consists of full, incremental and differential backups you need to use the "norecovery=yes" option. After this the database is in "recovery mode". You can also use a option which put the database right after the restore back into the right mode. If you like to restore certains point with protocols or "LSN" it it not recommend to work with this option.
 
 norecovery=<yes|no>
-   This option must be set to yes, if the database server should not do a automatic recovery after the backup. Instead, additional manual maintenace operations are possible.
+   This option must be set to yes, if the database server should not do a automatic recovery after the backup. Instead, additional manual maintenance operations are possible.
 
 recoverafterrestore=<yes|no>
    With this command the database is right after backup in the correct mode. If you not use this you have to use the followed tsql statement:
@@ -1206,7 +1206,7 @@ The plugin creates a pipe internally, thus no extra space on disk is needed. You
 List of supported options:
 
 db
-   comma separated list of databases to save, where each database will be stored in a separate file. If ommited, all databases will be saved.
+   comma separated list of databases to save, where each database will be stored in a separate file. If omitted, all databases will be saved.
 
 dumpbinary
    command (with or without full path) to create the dumps. Default: :strong:`mysqldump`

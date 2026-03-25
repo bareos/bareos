@@ -35,7 +35,7 @@ The |dir| knows about following resource types:
 
 -  :ref:`DirectorResourcePool` – to define the pool of Volumes that can be used for a particular Job. Most people use a single default Pool. However, if you have a large number of clients or volumes, you may want to have multiple Pools. Pools allow you to restrict a Job (or a Client) to use only a particular set of Volumes.
 
--  :ref:`DirectorResourceCatalog` – to define in what database to keep the list of files and the Volume names where they are backed up. Most people only use a single catalog. It is possible, however not adviced and not supported to use multiple catalogs, see :ref:`MultipleCatalogs`.
+-  :ref:`DirectorResourceCatalog` – to define in what database to keep the list of files and the Volume names where they are backed up. Most people only use a single catalog. It is possible, however not advised and not supported to use multiple catalogs, see :ref:`MultipleCatalogs`.
 
 -  :ref:`DirectorResourceMessages` – to define where error and information messages are to be sent or logged. You may define multiple different message resources and hence direct particular classes of messages to different users or locations (files, ...).
 
@@ -150,7 +150,7 @@ The Schedule resource provides a means of automatically scheduling a Job as well
 
 Note, the Week of Year specification wnn follows the ISO standard definition of the week of the year, where Week 1 is the week in which the first Thursday of the year occurs, or alternatively, the week which contains the 4th of January. Weeks are numbered w01 to w53. w00 for Bareos is the week that precedes the first ISO week (i.e. has the first few days of the year if any occur before Thursday). w00 is not defined by the ISO specification. A week starts with Monday and ends with Sunday.
 
-According to the NIST (US National Institute of Standards and Technology), 12am and 12pm are ambiguous and can be defined to anything. However, 12:01am is the same as 00:01 and 12:01pm is the same as 12:01, so Bareos defines 12am as 00:00 (midnight) and 12pm as 12:00 (noon). You can avoid this abiguity (confusion) by using 24 hour time specifications (i.e. no am/pm).
+According to the NIST (US National Institute of Standards and Technology), 12am and 12pm are ambiguous and can be defined to anything. However, 12:01am is the same as 00:01 and 12:01pm is the same as 12:01, so Bareos defines 12am as 00:00 (midnight) and 12pm as 12:00 (noon). You can avoid this ambiguity (confusion) by using 24 hour time specifications (i.e. no am/pm).
 
 An example schedule resource that is named WeeklyCycle and runs a job with level full each Sunday at 2:05am and an incremental job Monday through Saturday at 2:05am is:
 
@@ -383,7 +383,7 @@ Please take note of the following items in the FileSet syntax:
 
 
    ``File = "|command-server"``
-      Any name beginning with a vertical bar (|) is assumed to be the name of a program. This program will be executed on the Director’s machine at the time the Job starts (not when the Director reads the configuration file), and any output from that program will be assumed to be a list of files or directories, one per line, to be included. Before submitting the specified command Bareos will performe :ref:`character substitution <character substitution>`.
+      Any name beginning with a vertical bar (|) is assumed to be the name of a program. This program will be executed on the Director’s machine at the time the Job starts (not when the Director reads the configuration file), and any output from that program will be assumed to be a list of files or directories, one per line, to be included. Before submitting the specified command Bareos will perform :ref:`character substitution <character substitution>`.
 
       This allows you to have a job that, for example, includes all the local partitions even if you change the partitioning by adding a disk. The examples below show you how to do this. However, please note two things:
 
@@ -491,7 +491,7 @@ Please take note of the following items in the FileSet syntax:
    For example:
 
    .. code-block:: bareosconfig
-      :caption: Exlude Directories containing the file .nobackup
+      :caption: Exclude Directories containing the file .nobackup
 
       # List of files to be backed up
       FileSet {
@@ -829,7 +829,7 @@ The directives within an Options resource may be one of the following:
         report file size decreases
 
     1
-        compare the signature (independent of the signature algorithm). (The prevously allowed value  `5` is deprecated)
+        compare the signature (independent of the signature algorithm). (The previously allowed value  `5` is deprecated)
 
     A
         Only for Accurate option, it allows to always backup the file
@@ -928,7 +928,7 @@ The directives within an Options resource may be one of the following:
       File = /var
 
    where :file:`/var` is a separate filesystem.  In this example, you will get a
-   message saying that Bareos will not decend from :file:`/` into :file:`/var`.  But
+   message saying that Bareos will not descend from :file:`/` into :file:`/var`.  But
    it is important to realise that Bareos will descend into :file:`/var` from the
    second File directive shown above.  In effect, the warning is bogus,
    but it is supplied to alert you to possible omissions from your FileSet. In
@@ -1492,7 +1492,7 @@ The directives within an Options resource may be one of the following:
    the front of the full path/filename being backed up. This can
    be useful if you are migrating data from another vendor or if
    you have taken a snapshot into some subdirectory.  This directive
-   can cause your filenames to be overlayed with regular backup data,
+   can cause your filenames to be overlaid with regular backup data,
    so should be used only by experts and with great care.
 
 

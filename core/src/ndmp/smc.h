@@ -44,7 +44,7 @@ extern "C" {
 
 #define SMC_MAX_SENSE_DATA 127
 
-/* carefully layed out so that 16-byte/line hex dumps look nice */
+/* carefully laid out so that 16-byte/line hex dumps look nice */
 struct smc_scsi_req {
   unsigned char completion_status;
   unsigned char status_byte;

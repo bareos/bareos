@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -611,7 +611,7 @@ static void do_truncate_on_purge(UaContext* ua,
   bool ok = false;
   uint64_t VolBytes = 0;
 
-  // TODO: Return if not mr->Recyle ?
+  // TODO: Return if not mr->Recycle ?
   if (!mr->Recycle) { return; }
 
   // Do it only if action on purge = truncate is set

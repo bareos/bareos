@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -61,7 +61,7 @@ static tapealert_mapping tapealert_mappings[] = {
     {0x11, (const char*)"Read only media loaded"},
     {0x12, (const char*)"Tape directory corrupted on load"},
     {0x13, (const char*)"Media nearing end of life"},
-    {0x14, (const char*)"Tape drive neads cleaning NOW"},
+    {0x14, (const char*)"Tape drive needs cleaning NOW"},
     {0x15, (const char*)"Tape drive needs to be cleaned soon"},
     {0x16, (const char*)"Cleaning cartridge used up"},
     {0x17, (const char*)"Invalid cleaning cartidge used"},

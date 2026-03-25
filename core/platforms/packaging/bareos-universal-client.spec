@@ -1,5 +1,5 @@
 #
-# spec file for bareos univeral client
+# spec file for bareos universal client
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
 #               2013-2026 Bareos GmbH & Co KG
 #
@@ -442,7 +442,7 @@ then \
 %nil
 
 # With the introduction of config subdirectories (bareos-16.2)
-# some config files have been renamed (or even splitted into multiple files).
+# some config files have been renamed (or even split into multiple files).
 # However, bareos is still able to work with the old config files,
 # but rpm renames them to *.rpmsave.
 # To keep the bareos working after updating to bareos-16.2,

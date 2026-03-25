@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1023,7 +1023,7 @@ reread:
   Dmsg3(250, "Read device got %" PRIiz " bytes at %u:%u\n", status, dev->file,
         dev->block_num);
 
-  if (status == 0) { /* EOF (Berkley I/O Conventions) */
+  if (status == 0) { /* EOF (Berkeley I/O Conventions) */
     dev->block_num = 0;
     block->read_len = 0;
     Mmsg3(dev->errmsg, T_("Read zero bytes at %u:%u on device %s.\n"),

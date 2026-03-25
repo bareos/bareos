@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2018-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
    Copyright (C) 2009 Free Software Foundation Europe e.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -38,7 +38,7 @@ struct DelayedDataStream {
 struct RestoreCipherContext {
   CIPHER_CONTEXT* cipher;
   uint32_t block_size;
-  POOLMEM* buf;       /* Pointer to descryption buffer */
+  POOLMEM* buf;       /* Pointer to decryption buffer */
   int32_t buf_len;    /* Count of bytes currently in buf */
   int32_t packet_len; /* Total bytes in packet */
 };

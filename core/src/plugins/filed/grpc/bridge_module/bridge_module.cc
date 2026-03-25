@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -950,7 +950,7 @@ bRC Wrapper_checkChanges(PluginContext*, save_pkt* sp)
   }
   std::optional res = checkChanges(*ft, sp->fname, sp->save_time, sp->statp);
   if (!res) { return bRC_Error; }
-  // TODO: check changes can also change the delte seq
+  // TODO: check changes can also change the delete seq
   sp->accurate_found = *res;
 
   if (sp->accurate_found) { return bRC_Seen; }

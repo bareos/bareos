@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -181,7 +181,7 @@ bool AccurateCheckFile(JobControlRecord* jcr, FindFilesPacket* ff_pkt)
 
   /* Restore original name so we can check the actual file when we check
    * the accurate options later on. This is mostly important for the
-   * CalculateAndCompareFileChksum() function as that needs to calulate
+   * CalculateAndCompareFileChksum() function as that needs to calculate
    * the checksum of the real file and not try to open the stripped pathname. */
   UnstripPath(ff_pkt);
 

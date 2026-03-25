@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -477,7 +477,7 @@ bool SelectNextRstore(JobControlRecord* jcr, bootstrap_info& info)
   SetRstorage(jcr, &ustore);
   jcr->setJobStatusWithPriorityCheck(JS_WaitSD);
 
-  // Wait for up to 6 hours to increment read stoage counter
+  // Wait for up to 6 hours to increment read storage counter
   for (int i = 0; i < MAX_TRIES; i++) {
     // Try to get read storage counter incremented
     if (IncReadStore(jcr)) {

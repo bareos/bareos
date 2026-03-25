@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -698,7 +698,7 @@ std::wstring ReplaceSlashes(std::wstring_view path)
  *
  * With this trick, it is possible to have 32K characters long paths.
  *
- * If availalbe it also converts the path to a vss path.
+ * If available it also converts the path to a vss path.
  *
  * Created 02/27/2006 Thorsten Engel
  * Updated 05/03/2023 Sebastian Sura
@@ -1152,7 +1152,7 @@ static inline bool GetVolumeMountPointData(const char* filename,
     rdb->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
     ok = DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, NULL,
                          0,                              /* in buffer, bytes */
-                         (LPVOID)buf, (DWORD)buf_length, /* out buffer, btyes */
+                         (LPVOID)buf, (DWORD)buf_length, /* out buffer, bytes */
                          (LPDWORD)&bytes, (LPOVERLAPPED)0);
     if (ok) {
       wchar_2_UTF8(devicename,
@@ -1227,7 +1227,7 @@ static inline ssize_t GetSymlinkData(const char* filename,
     rdb->ReparseTag = IO_REPARSE_TAG_SYMLINK;
     ok = DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, NULL,
                          0,                              /* in buffer, bytes */
-                         (LPVOID)buf, (DWORD)buf_length, /* out buffer, btyes */
+                         (LPVOID)buf, (DWORD)buf_length, /* out buffer, bytes */
                          (LPDWORD)&bytes, (LPOVERLAPPED)0);
 
     Dmsg1(debuglevel, "Received %d bytes (op was %s)\n", bytes,

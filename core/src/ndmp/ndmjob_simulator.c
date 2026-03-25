@@ -640,7 +640,7 @@ static ndmp9_error ndmjob_tape_read(struct ndm_session* sess,
 
     *done_count = nb;
   } else {
-    /* all other record types are interpretted as EOF */
+    /* all other record types are interpreted as EOF */
     lseek(ta->tape_fd, cur_pos, 0);
     *done_count = 0;
     return NDMP9_EOF_ERR;

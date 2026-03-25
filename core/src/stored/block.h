@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,7 +76,7 @@ class Device; /* for forward reference */
 /**
  * DeviceBlock for reading and writing blocks.
  * This is the basic unit that is written to the device, and
- * it contains a Block Header followd by Records.  Note,
+ * it contains a Block Header followed by Records.  Note,
  * at times (when reading a file), this block may contain
  * multiple blocks.
  *

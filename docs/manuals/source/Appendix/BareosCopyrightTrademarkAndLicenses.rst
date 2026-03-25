@@ -88,7 +88,7 @@ GNU Free Documentation License
 
 .. _agpl:
 
-GNU Affero Gerneral Public License
+GNU Affero General Public License
 ----------------------------------
 
 
@@ -101,7 +101,7 @@ GNU Affero Gerneral Public License
 
 .. _lgpl:
 
-GNU Lesser Gerneral Public License
+GNU Lesser General Public License
 ----------------------------------
 
 

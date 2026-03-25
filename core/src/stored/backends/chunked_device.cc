@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2017 Planets Communications B.V.
-   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -422,7 +422,7 @@ bool ChunkedDevice::DequeueChunk()
       chunk_io_request* enqueued_request;
 
       /* See if we have a maximum number of retries to upload chunks to the
-       * backing store and if we have and execeeded those tries for this chunk
+       * backing store and if we have and exceeded those tries for this chunk
        * set the device to read-only so any next write to the device will error
        * out. This should prevent us from hanging the flushing to the backing
        * store on misconfigured devices. */

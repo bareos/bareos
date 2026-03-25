@@ -100,7 +100,7 @@ again:
     while ((c = getc(fp)) != EOF && c != '\n') continue;
   }
 
-  /* fp is left pointing to begining of first line */
+  /* fp is left pointing to beginning of first line */
 
   return p - buf;
 }

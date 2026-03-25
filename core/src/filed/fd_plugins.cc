@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -2366,7 +2366,7 @@ static bRC bareosRegisterEvents(PluginContext* ctx, int nr_events, ...)
   return bRC_OK;
 }
 
-// Get the number of instaces instantiated of a certain plugin.
+// Get the number of instances instantiated of a certain plugin.
 static bRC bareosGetInstanceCount(PluginContext* ctx, int* ret)
 {
   int cnt;
@@ -2487,7 +2487,7 @@ static bRC bareosAddExclude(PluginContext* ctx, const char* fname)
   // Save the include context
   old = get_incexe(jcr);
 
-  // Not right time to add exlude
+  // Not right time to add exclude
   if (!old) { return bRC_Error; }
 
   if (!bctx->exclude) {

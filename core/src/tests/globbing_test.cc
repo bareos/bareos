@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -151,7 +151,7 @@ TEST_F(Globbing, globbing_in_markcmd)
       "/testingwildcards/lonesubdirectory/whatever",
       // how we handle windows files is a bit weird.
       // since "C:" is a WinDir (because it has no leading slash)
-      // it _cannot_ also be a NewDir (i.e. a directory thats not backed up)
+      // it _cannot_ also be a NewDir (i.e. a directory that's not backed up)
       // For this to work correctly we have to add this as an actually
       // backed up file!
       "C:/",
@@ -286,7 +286,7 @@ TEST_F(Globbing, double_star_globbing_in_markcmd)
       "/testingwildcards/lonesubdirectory/whatever",
       // how we handle windows files is a bit weird.
       // since "C:" is a WinDir (because it has no leading slash)
-      // it _cannot_ also be a NewDir (i.e. a directory thats not backed up)
+      // it _cannot_ also be a NewDir (i.e. a directory that's not backed up)
       // For this to work correctly we have to add this as an actually
       // backed up file!
       "C:/",

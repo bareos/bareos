@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -125,7 +125,7 @@ class DirectorResource
   alist<const char*>* audit_events
       = nullptr;                  /* Specific audit events to enable */
   uint32_t ndmp_loglevel = 0;     /* NDMP Protocol specific loglevel to use */
-  uint32_t subscriptions = 0;     /* Number of subscribtions available */
+  uint32_t subscriptions = 0;     /* Number of subscriptions available */
   uint32_t jcr_watchdog_time = 0; /* Absolute time after which a Job gets
                                  terminated  regardless of its progress */
   uint32_t stats_collect_interval

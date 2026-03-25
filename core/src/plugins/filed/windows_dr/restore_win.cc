@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -418,7 +418,7 @@ class DiskHandles : public OutputHandleGenerator {
   std::vector<open_volume> GetAllVolumes(std::span<std::size_t> disk_ids)
   {
     /* we want to find all volumes on all disks.
-     * a volume consists of multiple extents, each of which is on exacly one
+     * a volume consists of multiple extents, each of which is on exactly one
      * disk. So what we basically need to do is return a list of all volumes
      * whose extents are all on the disks with the given disk ids.
      * If a volume has no extent on _any_ of the given disk ids, then we can

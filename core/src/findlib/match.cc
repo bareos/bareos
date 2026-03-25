@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -136,7 +136,7 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
         case 'A':
           SetBit(FO_ACL, inc->options);
           break;
-        case 'a': /* alway replace */
+        case 'a': /* always replace */
         case '0': /* no option */
           break;
         case 'c':
@@ -356,7 +356,7 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
                 = (struct s_sz_matching*)malloc(sizeof(struct s_sz_matching));
           }
           if (!ParseSizeMatch(size, inc->size_match)) {
-            Emsg1(M_ERROR, 0, T_("Unparseable size option: %s\n"), size);
+            Emsg1(M_ERROR, 0, T_("Unparsable size option: %s\n"), size);
           }
           break;
         default:
@@ -405,7 +405,7 @@ void AddFnameToIncludeList(FindFilesPacket* ff, int prefixed, const char* fname)
     for (next = ff->included_files_list; next->next; next = next->next) {}
     next->next = inc;
   }
-  Dmsg4(100, "add_fname_to_include prefix=%d compres=%d alg= %d fname=%s\n",
+  Dmsg4(100, "add_fname_to_include prefix=%d compress=%d alg= %d fname=%s\n",
         prefixed, BitIsSet(FO_COMPRESS, inc->options), inc->algo, inc->fname);
 }
 

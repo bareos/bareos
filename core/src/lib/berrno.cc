@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -103,7 +103,7 @@ void BErrNo::FormatWin32Message()
           NULL, windows_error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
           (LPTSTR)&msg, 0, NULL);
       len != 0) {
-    // the formated message often ends in .\r\n
+    // the formatted message often ends in .\r\n
     // we want to trim this since our own error messages already append
     // '.\n' to the end.
     while (len > 0 && isspace(msg[len - 1])) { len -= 1; }

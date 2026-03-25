@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -156,7 +156,7 @@ enum
   CFG_TYPE_BASE = 86,       /* Basejob Expression */
   CFG_TYPE_WILD = 87,       /* Wildcard Expression */
   CFG_TYPE_PLUGIN = 88,     /* Plugin definition */
-  CFG_TYPE_FSTYPE = 89,     /* FileSytem match criterium (UNIX)*/
+  CFG_TYPE_FSTYPE = 89,     /* FileSystem match criterium (UNIX)*/
   CFG_TYPE_DRIVETYPE = 90,  /* DriveType match criterium (Windows) */
   CFG_TYPE_META = 91,       /* Meta tag */
 

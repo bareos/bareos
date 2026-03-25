@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2021-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -154,7 +154,7 @@ BENCHMARK(BM_markallfiles)
 
 /*
  * Over ten million files requires quiet a bit a ram, so if you are going to
- * use the higher numbers, make sure you have enough ressources, otherwise the
+ * use the higher numbers, make sure you have enough resources, otherwise the
  * benchmark will crash
  */
 

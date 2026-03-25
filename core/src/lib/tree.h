@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -123,7 +123,7 @@ struct s_tree_root : public tree_node {
   int cached_path_len{};      /* length of cached path */
   char* cached_path{};        /* cached current path */
   tree_node* cached_parent{}; /* cached parent for above path */
-  HardlinkTable hardlinks;    /* references to first occurence of hardlinks */
+  HardlinkTable hardlinks;    /* references to first occurrence of hardlinks */
 };
 typedef struct s_tree_root TREE_ROOT;
 

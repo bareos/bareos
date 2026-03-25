@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -456,8 +456,8 @@ int BareosDb::ListResult(void* vctx, int, char** row)
   switch (type) {
     case NF_LIST:
     case RAW_LIST:
-      /* No need to calculate things like maximum field lenght for
-       * unformated or raw output. */
+      /* No need to calculate things like maximum field length for
+       * unformatted or raw output. */
       break;
     case HORZ_LIST:
     case VERT_LIST:

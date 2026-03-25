@@ -6,7 +6,7 @@ Pluggable Authentication Modules (PAM)
 Introduction
 ------------
 
-Before Bareos Version 18.2 authentication with a Bareos Director is done primarily by a named Console connection. Name and password are set in the regarding Bareos Console or |WebUI| configuration resource. Starting with Bareos Version 18.2 it is also possible to use Pluggable Authentication Modules (PAM) to authenticate a user indenpendently from the Console Resource.
+Before Bareos Version 18.2 authentication with a Bareos Director is done primarily by a named Console connection. Name and password are set in the regarding Bareos Console or |WebUI| configuration resource. Starting with Bareos Version 18.2 it is also possible to use Pluggable Authentication Modules (PAM) to authenticate a user independently from the Console Resource.
 
 As consequence a dedicated named Console or |WebUI| configuration must be used to establish a connection to a Bareos Director Daemon. This connection has name and password credentials, but only to establish an encrypted connection to the Director. To be able to authenticate users with PAM using this console, each user needs an additional User configuration that holds the regarding name and the Access Control List (ACL) or ACL profile. The ACL will be loaded as soon as the User is authenticated.
 
@@ -74,7 +74,7 @@ Fedora 28 example:
 
 .. warning::
 
-   The |dir| runs as user **bareos**. However, some PAM modules require more priviliges. E.g. **pam_unix** requires access to the file :file:`/etc/shadow`, which is normally not permitted. Make sure you verify your system accordingly.
+   The |dir| runs as user **bareos**. However, some PAM modules require more privileges. E.g. **pam_unix** requires access to the file :file:`/etc/shadow`, which is normally not permitted. Make sure you verify your system accordingly.
 
 
 Upgrading from previous versions

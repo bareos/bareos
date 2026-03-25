@@ -46,7 +46,7 @@
 #   exit code, Bareos will assume the request failed.
 #
 # How long we should wait the drive
-# can be overriden in configuration file
+# can be overridden in configuration file
 max_wait_drive=300
 
 # source our conf file
@@ -150,7 +150,7 @@ check_parm_count()
     echo "ERROR: usage: mtx-changer ctl-device command [slot archive-device drive-index]"
     echo "	Insufficient number of arguments given."
     if test ${pCount} -lt 2; then
-      echo "  Mimimum usage is first two arguments ..."
+      echo "  Minimum usage is first two arguments ..."
     else
       echo "  Command expected ${pCountNeed} arguments"
     fi

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -206,7 +206,7 @@ struct accurate_list_handler_args {
 };
 
 /*
- * Foreach files in currrent list, send "/path/fname\0LStat\0MD5\0Delta" to FD
+ * Foreach files in current list, send "/path/fname\0LStat\0MD5\0Delta" to FD
  *      row[0]=Path, row[1]=Filename, row[2]=FileIndex
  *      row[3]=JobId row[4]=LStat row[5]=DeltaSeq row[6]=MD5
  */
@@ -979,7 +979,7 @@ void GenerateBackupSummary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_ty
    }
 
    if (jcr->ReadBytes == 0 || !FindUsedCompressalgos(&compress_algo_list, jcr)) {
-     // compress_algo_list is guaranteed to be emtpy
+     // compress_algo_list is guaranteed to be empty
       bstrncpy(compress, "None", sizeof(compress));
    } else {
      double compression = 100.0 - 100.0 * ((double)jcr->JobBytes / (double)jcr->ReadBytes);

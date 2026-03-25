@@ -2,4 +2,4 @@ The Job name. This name can be specified on the Run command in the console progr
 
 When the job actually runs, the unique Job Name will consist of the name you specify here followed by the date and time the job was scheduled for execution.
 
-It is recommended to limit job names to 98 characters. Higher is always possible, but when the job is run, its name will be truncated to accomodate certain protocol limitations, as well as the above mentioned date and time.
+It is recommended to limit job names to 98 characters. Higher is always possible, but when the job is run, its name will be truncated to accommodate certain protocol limitations, as well as the above mentioned date and time.

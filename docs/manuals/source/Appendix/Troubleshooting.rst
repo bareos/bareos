@@ -428,7 +428,7 @@ is the update interval.
 sg_logs command
 ^^^^^^^^^^^^^^^
 
-You can output detailled status, performance or errors counters of you drive with
+You can output detailed status, performance or errors counters of you drive with
 :command:`sg_logs --all /dev/sgX`. Where :file:`/dev/sgX` is the SCSI generic device corresponding
 to your tape drive. (see :command:`lsscsi -g`)
 

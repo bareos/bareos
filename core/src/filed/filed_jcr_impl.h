@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -69,7 +69,7 @@ struct FiledJcrImpl {
   char* big_buf{};                /**< I/O buffer */
   int32_t replace{};              /**< Replace options */
   FindFilesPacket* ff{};          /**< Find Files packet */
-  char PrevJob[MAX_NAME_LENGTH]{};/**< Previous job name assiciated with since time */
+  char PrevJob[MAX_NAME_LENGTH]{};/**< Previous job name associated with since time */
   uint32_t ExpectedFiles{};       /**< Expected restore files */
   uint32_t StartFile{};
   uint32_t EndFile{};

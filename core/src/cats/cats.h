@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -172,7 +172,7 @@ struct VolumeParameters {
   char VolumeName[MAX_NAME_LENGTH]{0}; /**< Volume name */
   char MediaType[MAX_NAME_LENGTH]{0};  /**< Media Type */
   char Storage[MAX_NAME_LENGTH]{0};    /**< Storage name */
-  uint32_t VolIndex = 0;               /**< Volume seqence no. */
+  uint32_t VolIndex = 0;               /**< Volume sequence no. */
   uint32_t FirstIndex = 0;             /**< First index this Volume */
   uint32_t LastIndex = 0;              /**< Last index this Volume */
   int32_t Slot = 0;                    /**< Slot */

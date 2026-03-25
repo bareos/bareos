@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -685,7 +685,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
           VSS_CALL(pDepedency, GetComponentName, &bstrComponentName);
 
           char* name2 = BSTR_2_str(bstrComponentName);
-          Dmsg1(500, "Depedency: %s\n", name2);
+          Dmsg1(500, "Dependency: %s\n", name2);
           free(name2);
 
           SysFreeString(bstrComponentName);
@@ -764,7 +764,7 @@ void VSSClientGeneric::AddVolumeSnapshots(
 
     bool snapshot_success = false;
 
-    // Store uniquevolumname if it doesnt already exist
+    // Store uniquevolumname if it doesn't already exist
     if (auto found = snapshoted_volumes.find(unique_name);
         found == snapshoted_volumes.end()) {
       if (SUCCEEDED(pVssObj->AddToSnapshotSet(
@@ -995,7 +995,7 @@ bool VSSClientGeneric::CloseBackup()
   pVssObj->Release();
   pVssObject_ = NULL;
 
-  // Call CoUninitialize if the CoInitializeEx was performed sucesfully
+  // Call CoUninitialize if the CoInitializeEx was performed successfully
   if (bCoInitializeCalled_) {
     CoUninitialize();
     bCoInitializeCalled_ = false;

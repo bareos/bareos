@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -132,7 +132,7 @@ struct DirectorJcrImpl {
   JobControlRecord* mig_jcr{};    /**< JobControlRecord for migration/copy job */
   char FSCreateTime[MAX_TIME_LENGTH]{}; /**< FileSet CreateTime as returned from DB */
   char since[MAX_TIME_LENGTH]{};        /**< Since time */
-  char PrevJob[MAX_NAME_LENGTH]{};      /**< Previous job name assiciated with since time */
+  char PrevJob[MAX_NAME_LENGTH]{};      /**< Previous job name associated with since time */
   union {
     JobId_t RestoreJobId;               /**< Restore JobId specified by UA */
     JobId_t MigrateJobId;               /**< Migration JobId specified by UA */

@@ -722,7 +722,7 @@ Tape Drive Cleaning
 .. index:: CLN
 
 
-Bareos has no build-in functionality for tape drive cleaning. Fortunately this is not required as most modern tape libraries have build in auto-cleaning functionality. This functionality might require an empty tape drive, so the tape library gets aware, that it is currently not used. However, by default Bareos keeps tapes in the drives, in case the same tape is required again.
+Bareos has no built-in functionality for tape drive cleaning. Fortunately this is not required as most modern tape libraries have build in auto-cleaning functionality. This functionality might require an empty tape drive, so the tape library gets aware, that it is currently not used. However, by default Bareos keeps tapes in the drives, in case the same tape is required again.
 
 The directive :config:option:`dir/pool/CleaningPrefix`\  is only used for making sure that Bareos does not try to write backups on a cleaning tape.
 

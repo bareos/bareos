@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -358,7 +358,7 @@ int main(int argc, char* argv[])
   InitJobServer(me->MaxConcurrentJobs);
 
   DbgJcrAddHook(
-      DbDebugPrint); /* used to debug BareosDb connexion after fatal signal */
+      DbDebugPrint); /* used to debug BareosDb connection after fatal signal */
 
   StartStatisticsThread();
 

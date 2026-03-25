@@ -3,7 +3,7 @@
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -401,7 +401,7 @@ void FlushMntentCache(void)
 
 /**
  * Release a mntent mapping reference returned
- * by a successfull call to find_mntent_mapping.
+ * by a successful call to find_mntent_mapping.
  */
 void ReleaseMntentMapping(mntent_cache_entry_t* mce)
 {
@@ -464,7 +464,7 @@ mntent_cache_entry_t* find_mntent_mapping(uint32_t dev)
         &lookup, CompareMntentMapping);
   }
 
-  /* Store the last successfull lookup as the previous_cache_hit.
+  /* Store the last successful lookup as the previous_cache_hit.
    * And increment the reference count. */
   if (mce) {
     previous_cache_hit = mce;

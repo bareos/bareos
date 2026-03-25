@@ -3,7 +3,7 @@
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -346,7 +346,7 @@ bool WriteAnsiIbmLabels(DeviceControlRecord* dcr, int type, const char* VolName)
       SerBytes("BAREOS.DATA", 11); /* Filename field */
 
       SerBegin(&label[21], sizeof(label) - 21); /* fileset field */
-      SerBytes(ansi_volname, 6);                /* write Vol Ser No. */
+      SerBytes(ansi_volname, 6);                /* write Vol Serial No. */
       SerBegin(&label[27], sizeof(label) - 27);
       SerBytes("00010001000100",
                14); /* File section, File seq no, Generation no */

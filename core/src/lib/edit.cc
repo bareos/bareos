@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -291,7 +291,7 @@ static std::pair<std::uint64_t, const char*> parse_number_with_mod(
   return {total, str};
 }
 
-// returns wether the string only contains junk characters
+// returns whether the string only contains junk characters
 static bool IsJunk(const char* str)
 {
   for (auto* head = str; *head; ++head) {

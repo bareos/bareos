@@ -1430,7 +1430,7 @@ bail_out:
 /**
  * Send data read from an already open file descriptor.
  *
- * We return 1 on sucess and 0 on errors.
+ * We return 1 on success and 0 on errors.
  *
  * ***FIXME***
  * We use ff_pkt->statp.st_size when FO_SPARSE to know when to stop reading.
@@ -1715,7 +1715,7 @@ bool EncodeAndSendAttributes(JobControlRecord* jcr,
 
       // Note we send one extra byte so Dir can store zero after object
       sd->message_length += comp_len + 1;
-      // initalize the extra byte
+      // initialize the extra byte
       sd->msg[sd->message_length - 1] = '\0';
       status = sd->send();
       if (ff_pkt->object_compression) { FreeAndNullPoolMemory(ff_pkt->object); }

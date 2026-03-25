@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -385,7 +385,7 @@ int removeService()
       if (opt_debug) {
         MessageBox(NULL,
                    T_("Could not find registry entry.\nService probably not "
-                      "registerd - the Bareos service was not removed"),
+                      "registered - the Bareos service was not removed"),
                    APP_DESC, MB_ICONEXCLAMATION | MB_OK);
       }
     } else {

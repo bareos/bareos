@@ -31,7 +31,7 @@
  *                             tree/master/samples/features/sqlvdi
  * added MIT license header
  * added bareos-style include guards
- * reformated in bareos style */
+ * reformatted in bareos style */
 
 // original include guard.  Added here for safeties sake
 #ifndef VDIERROR_H_
