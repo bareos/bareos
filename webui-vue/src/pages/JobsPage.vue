@@ -304,8 +304,7 @@
               No jobs in this period.
             </div>
             <div v-else ref="svgContainer" class="tl-container" @mouseleave="hideTooltip">
-              <svg :width="svgW" :height="svgH">
-                <!-- Alternating row backgrounds -->
+              <svg :width="svgW" :height="svgH">                <!-- Alternating row backgrounds -->
                 <rect v-for="(row, i) in tlRows" :key="'bg-' + row.name"
                       x="0" :y="i * TL_ROW_H"
                       :width="svgW" :height="TL_ROW_H"
@@ -353,18 +352,18 @@
                 </g>
               </svg>
 
-              <!-- Floating tooltip -->
-              <div v-if="tlTooltip.visible" class="tl-tooltip"
-                   :style="`left:${tlTooltip.x}px; top:${tlTooltip.y}px`">
-                <div class="text-weight-bold q-mb-xs">{{ tlTooltip.job.name }}</div>
-                <div>ID: {{ tlTooltip.job.id }}</div>
-                <div>Status: {{ jobStatusMap[tlTooltip.job.status]?.label ?? tlTooltip.job.status }}</div>
-                <div>Start: {{ tlTooltip.job.starttime }}</div>
-                <div v-if="tlTooltip.job.endtime">End: {{ tlTooltip.job.endtime }}</div>
-                <div>Duration: {{ tlTooltip.job.duration || '—' }}</div>
-                <div>Files: {{ (tlTooltip.job.files ?? 0).toLocaleString() }}</div>
-                <div>Bytes: {{ fmtBytes(tlTooltip.job.bytes ?? 0) }}</div>
-              </div>
+              <!-- Floating tooltip — outside the scroll container, fixed to viewport -->
+            </div>
+            <div v-if="tlTooltip.visible" class="tl-tooltip"
+                 :style="`left:${tlTooltip.x}px; top:${tlTooltip.y}px`">
+              <div class="text-weight-bold q-mb-xs">{{ tlTooltip.job.name }}</div>
+              <div>ID: {{ tlTooltip.job.id }}</div>
+              <div>Status: {{ jobStatusMap[tlTooltip.job.status]?.label ?? tlTooltip.job.status }}</div>
+              <div>Start: {{ tlTooltip.job.starttime }}</div>
+              <div v-if="tlTooltip.job.endtime">End: {{ tlTooltip.job.endtime }}</div>
+              <div>Duration: {{ tlTooltip.job.duration || '—' }}</div>
+              <div>Files: {{ (tlTooltip.job.files ?? 0).toLocaleString() }}</div>
+              <div>Bytes: {{ fmtBytes(tlTooltip.job.bytes ?? 0) }}</div>
             </div>
           </q-card-section>
         </q-card>
@@ -794,20 +793,16 @@ function tlColorOf(status) { return tlStatusColors[status] ?? '#9e9e9e' }
 const tlTooltip = reactive({ visible: false, x: 0, y: 0, job: null })
 
 function showTlTooltip(event, job) {
-  const rect = svgContainer.value?.getBoundingClientRect()
-  if (!rect) return
-  tlTooltip.x       = event.clientX - rect.left + 14
-  tlTooltip.y       = event.clientY - rect.top  + 14
+  tlTooltip.x       = event.clientX + 14
+  tlTooltip.y       = event.clientY + 14
   tlTooltip.job     = job
   tlTooltip.visible = true
 }
 
 function moveTlTooltip(event) {
   if (!tlTooltip.visible) return
-  const rect = svgContainer.value?.getBoundingClientRect()
-  if (!rect) return
-  tlTooltip.x = event.clientX - rect.left + 14
-  tlTooltip.y = event.clientY - rect.top  + 14
+  tlTooltip.x = event.clientX + 14
+  tlTooltip.y = event.clientY + 14
 }
 
 function hideTooltip() { tlTooltip.visible = false }
