@@ -268,7 +268,6 @@ const recentCols = [
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',  sortable: true },
   { name: 'level',     label: 'Level',    field: 'level',     align: 'center' },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',  sortable: true },
-  { name: 'endtime',   label: 'End',      field: 'endtime',   align: 'left',  sortable: true },
   { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right', sortable: true,
     sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b) },
   { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right', sortable: true },
