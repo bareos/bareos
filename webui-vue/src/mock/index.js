@@ -109,6 +109,17 @@ export function formatBytes(bytes) {
   return (num / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i]
 }
 
+export function formatDuration(seconds) {
+  const s = typeof seconds === 'string' ? parseInt(seconds, 10) : seconds
+  if (!s || isNaN(s) || s === 0) return '0 s'
+  const d = Math.floor(s / 86400)
+  const h = Math.floor((s % 86400) / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  if (d > 0) return h > 0 ? `${d}d ${h}h` : `${d}d`
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`
+  return `${m}m`
+}
+
 export const directorStatus = `
 *status director
 Automatically selected Director: bareos-dir

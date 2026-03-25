@@ -135,9 +135,12 @@
                          :disable="props.row.enabled"
                          @click="enableJob(props.row.name)" />
                   <q-btn flat dense no-caps size="sm" icon="pause" color="warning"
-                         label="Disable"
+                         label="Disable" class="q-mr-xs"
                          :disable="!props.row.enabled"
                          @click="disableJob(props.row.name)" />
+                  <q-btn flat dense no-caps size="sm" icon="send" color="primary"
+                         label="Run"
+                         @click="runThisJob(props.row.name)" />
                 </q-td>
               </template>
             </q-table>
@@ -171,14 +174,60 @@
       </q-tab-panel>
 
       <!-- ── RERUN ─────────────────────────────────────────────────────────── -->
-      <q-tab-panel name="rerun">
+      <q-tab-panel name="rerun" class="q-pa-none q-gutter-md">
+
+        <!-- Completed jobs table -->
+        <q-card flat bordered class="bareos-panel">
+          <q-card-section class="panel-header row items-center">
+            <span>Completed Jobs</span>
+            <q-space />
+            <q-input v-model="rerunSearch" dense outlined placeholder="Search…" class="q-mr-sm"
+                     style="width:200px" clearable>
+              <template #prepend><q-icon name="search" /></template>
+            </q-input>
+            <q-btn flat round dense icon="refresh" color="white" @click="refresh" />
+          </q-card-section>
+          <q-card-section class="q-pa-none">
+            <q-table
+              :rows="rerunableJobs"
+              :columns="rerunColumns"
+              row-key="id"
+              dense flat
+              :pagination="{ rowsPerPage: 15, sortBy: 'id', descending: true }"
+            >
+              <template #body-cell-status="props">
+                <q-td :props="props" class="text-center">
+                  <JobStatusBadge :status="props.value" />
+                </q-td>
+              </template>
+              <template #body-cell-id="props">
+                <q-td :props="props">
+                  <router-link :to="{ name: 'job-details', params: { id: props.value } }" class="text-primary">
+                    {{ props.value }}
+                  </router-link>
+                </q-td>
+              </template>
+              <template #body-cell-bytes="props">
+                <q-td :props="props" class="text-right">{{ fmtBytes(props.row.bytes) }}</q-td>
+              </template>
+              <template #body-cell-actions="props">
+                <q-td :props="props" class="text-center">
+                  <q-btn flat round dense size="sm" icon="restart_alt" color="primary" title="Rerun"
+                         @click="confirmRerun(props.row)" />
+                </q-td>
+              </template>
+            </q-table>
+          </q-card-section>
+        </q-card>
+
+        <!-- Manual ID fallback -->
         <q-card flat bordered class="bareos-panel" style="max-width:400px">
-          <q-card-section class="panel-header">Rerun Job</q-card-section>
+          <q-card-section class="panel-header">Rerun by Job ID</q-card-section>
           <q-card-section>
             <q-form @submit.prevent="submitRerun" class="q-gutter-md">
               <q-input v-model="rerunJobId" label="Job ID *" outlined dense
                        type="number" style="max-width:180px"
-                       hint="Enter the ID of a completed job to rerun it" />
+                       hint="Enter the ID of any completed job" />
               <div>
                 <q-btn type="submit" color="primary" label="Rerun" icon="restart_alt"
                        no-caps :loading="rerunLoading" :disable="!rerunJobId" />
@@ -186,6 +235,7 @@
             </q-form>
           </q-card-section>
         </q-card>
+
       </q-tab-panel>
 
       <!-- ── TIMELINE ──────────────────────────────────────────────────────── -->
@@ -238,7 +288,20 @@ const filteredJobs = computed(() => {
   )
 })
 
-const runningJobs = computed(() => jobs.value.filter(j => isRunning(j.status)))
+const runningJobs  = computed(() => jobs.value.filter(j => isRunning(j.status)))
+
+// Rerunable = any finished job (not currently running)
+const rerunSearch  = ref('')
+const rerunableJobs = computed(() => {
+  const base = jobs.value.filter(j => !isRunning(j.status))
+  if (!rerunSearch.value) return base
+  const q = rerunSearch.value.toLowerCase()
+  return base.filter(j =>
+    j.name.toLowerCase().includes(q) ||
+    j.client.toLowerCase().includes(q) ||
+    String(j.id).includes(q)
+  )
+})
 
 function isRunning(status) {
   // R = Running, l = data saved (still active)
@@ -270,11 +333,22 @@ const runningColumns = [
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:60px' },
 ]
 
+const rerunColumns = [
+  { name: 'id',        label: 'ID',       field: 'id',        align: 'right',  sortable: true, style: 'width:60px' },
+  { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
+  { name: 'client',    label: 'Client',   field: 'client',    align: 'left',   sortable: true },
+  { name: 'level',     label: 'Level',    field: 'level',     align: 'center'  },
+  { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',   sortable: true },
+  { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right'   },
+  { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
+  { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:60px' },
+]
+
 const defsColumns = [
   { name: 'name',    label: 'Job Name', field: 'name',    align: 'left',   sortable: true },
   { name: 'type',    label: 'Type',     field: 'type',    align: 'center'  },
   { name: 'enabled', label: 'Status',   field: 'enabled', align: 'center'  },
-  { name: 'actions', label: '',         field: 'actions', align: 'center', style: 'width:160px' },
+  { name: 'actions', label: '',         field: 'actions', align: 'center', style: 'width:220px' },
 ]
 
 // ── job definitions (for enable/disable) ──────────────────────────────────────
@@ -286,8 +360,9 @@ async function loadJobDefs() {
   loadingDefs.value = true
   try {
     const res = await director.call('show jobs')
-    // show jobs returns {jobs: [{name, type, enabled, ...}]}
-    const list = res?.jobs ?? []
+    // show jobs returns {jobs: {"JobName": {name, type, enabled, ...}, ...}}
+    const raw = res?.jobs ?? {}
+    const list = Array.isArray(raw) ? raw : Object.values(raw)
     jobDefs.value = list.map(j => ({
       name:    j.name,
       type:    j.type ?? '',
@@ -336,6 +411,7 @@ async function doRerun(jobId) {
     const res = await director.call(`rerun jobid=${jobId} yes`)
     const newId = res?.run?.jobid ?? res?.jobid ?? '?'
     $q.notify({ type: 'positive', message: `Job restarted as ID ${newId}.` })
+    tab.value = 'list'
     refresh()
   } catch (e) {
     $q.notify({ type: 'negative', message: `Rerun failed: ${e.message}` })
@@ -388,6 +464,13 @@ async function disableJob(name) {
   }
 }
 
+function runThisJob(name) {
+  if (dotJobs.value.length === 0) loadRunOptions()
+  runForm.value = { job: name, client: null, fileset: null, pool: null, storage: null, level: 'Incremental', when: '', priority: 10 }
+  onJobSelected(name)
+  tab.value = 'run'
+}
+
 // ── run form ──────────────────────────────────────────────────────────────────
 const dotJobs     = ref([])
 const dotClients  = ref([])
@@ -413,7 +496,7 @@ async function loadRunOptions() {
     dotClients.value  = (c?.clients  ?? []).map(x => x.name).sort()
     dotFilesets.value = (f?.filesets ?? []).map(x => x.name).sort()
     dotPools.value    = (p?.pools    ?? []).map(x => x.name).sort()
-    dotStorages.value = (s?.storage  ?? []).map(x => x.name).sort()
+    dotStorages.value = (s?.storages ?? []).map(x => x.name).sort()
   } catch (e) {
     // non-fatal — user can still type values
     console.warn('Could not load run form options:', e.message)
@@ -469,14 +552,8 @@ async function submitRerun() {
   if (!rerunJobId.value) return
   rerunLoading.value = true
   try {
-    const res   = await director.call(`rerun jobid=${rerunJobId.value} yes`)
-    const newId = res?.run?.jobid ?? res?.jobid ?? '?'
-    $q.notify({ type: 'positive', message: `Job restarted as ID ${newId}.` })
+    await doRerun(rerunJobId.value)
     rerunJobId.value = ''
-    tab.value = 'list'
-    refresh()
-  } catch (e) {
-    $q.notify({ type: 'negative', message: `Rerun failed: ${e.message}` })
   } finally {
     rerunLoading.value = false
   }

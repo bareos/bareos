@@ -26,7 +26,7 @@
         <!-- Jobs Last Status table -->
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Most Recent Job Status</span>
+            <span>Most recent job status per job name</span>
             <q-space />
             <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
           </q-card-section>
@@ -36,8 +36,7 @@
               :columns="recentCols"
               row-key="id"
               dense flat
-              :pagination="{ rowsPerPage: 8 }"
-              hide-bottom
+              :pagination="{ rowsPerPage: 10, sortBy: 'id', descending: true }"
             >
               <template #body-cell-status="props">
                 <q-td :props="props">
@@ -135,6 +134,7 @@ const fmtBytes = formatBytes
 
 // ── data ─────────────────────────────────────────────────────────────────────
 const rawJobs       = ref([])
+const rawLastJobs   = ref([])
 const clientCount   = ref(0)
 const storageCount  = ref(0)
 const jobTotals     = ref(null)
@@ -144,8 +144,16 @@ async function fetchJobs() {
   if (!director.isConnected) return
   loadingJobs.value = true
   try {
-    const result = await director.call('list jobs')
-    if (result?.jobs) rawJobs.value = result.jobs
+    const [allRes, lastRes] = await Promise.allSettled([
+      director.call('list jobs'),
+      director.call('llist jobs last'),
+    ])
+    if (allRes.status === 'fulfilled' && allRes.value?.jobs)
+      rawJobs.value = allRes.value.jobs
+    if (lastRes.status === 'fulfilled' && lastRes.value?.jobs) {
+      const raw = lastRes.value.jobs
+      rawLastJobs.value = Array.isArray(raw) ? raw : Object.values(raw)
+    }
   } catch { /* keep empty */ } finally {
     loadingJobs.value = false
   }
@@ -154,8 +162,15 @@ async function fetchJobs() {
 async function fetchTotals() {
   if (!director.isConnected) return
   try {
-    const result = await director.call('list jobs totals')
-    if (result) jobTotals.value = result
+    const result = await director.call('list jobtotals')
+    const t = result?.jobtotals
+    if (t) {
+      jobTotals.value = {
+        jobs:  Number(t.jobs  ?? 0),
+        files: Number(t.files ?? 0),
+        bytes: Number(t.bytes ?? 0),
+      }
+    }
   } catch { /* ignore */ }
 }
 
@@ -214,7 +229,8 @@ onUnmounted(stopAutoRefresh)
 watch(() => director.isConnected, (connected) => { if (connected) startAutoRefresh() })
 
 // ── computed views ────────────────────────────────────────────────────────────
-const jobs = computed(() => rawJobs.value.map(normaliseJob))
+const jobs     = computed(() => rawJobs.value.map(normaliseJob))
+const lastJobs = computed(() => rawLastJobs.value.map(normaliseJob))
 
 const recentCols = [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right', sortable: true },
@@ -222,11 +238,13 @@ const recentCols = [
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left',  sortable: true },
   { name: 'level',     label: 'Level',    field: 'level',     align: 'center' },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',  sortable: true },
+  { name: 'endtime',   label: 'End',      field: 'endtime',   align: 'left',  sortable: true },
+  { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right' },
   { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right'  },
   { name: 'status',    label: 'Status',   field: 'status',    align: 'center' },
 ]
 
-const recentJobs  = computed(() => jobs.value.slice(0, 8))
+const recentJobs  = computed(() => lastJobs.value)
 const runningJobs = computed(() => jobs.value.filter(j => j.status === 'R'))
 
 const summaryStats = computed(() => {

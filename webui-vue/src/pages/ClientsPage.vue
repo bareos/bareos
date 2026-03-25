@@ -26,8 +26,27 @@
               </template>
               <template #body-cell-os="props">
                 <q-td :props="props">
-                  <q-icon :name="props.value === 'windows' ? 'computer' : 'terminal'" class="q-mr-xs" />
-                  {{ props.row.uname }}
+                  <div class="row items-center no-wrap q-gutter-xs">
+                    <q-icon :name="osIcon(props.row)" :color="osColor(props.row)" size="18px" />
+                    <div>
+                      <div>{{ osLabel(props.row.os) }}</div>
+                      <div v-if="props.row.osInfo" class="text-caption text-grey-6" style="line-height:1.2">
+                        {{ props.row.osInfo }}
+                      </div>
+                    </div>
+                  </div>
+                </q-td>
+              </template>
+              <template #body-cell-version="props">
+                <q-td :props="props">
+                  <span v-if="props.value" class="text-mono">{{ props.value }}</span>
+                  <span v-else class="text-grey-5">—</span>
+                  <div v-if="props.row.arch || props.row.buildDate" class="text-caption text-grey-6" style="line-height:1.2">
+                    <span v-if="props.row.arch">{{ props.row.arch }}</span>
+                    <span v-if="props.row.arch && props.row.buildDate"> · </span>
+                    <span v-if="props.row.buildDate">{{ props.row.buildDate }}</span>
+                  </div>
+                  <q-tooltip v-if="props.row.uname">{{ props.row.uname }}</q-tooltip>
                 </q-td>
               </template>
               <template #body-cell-enabled="props">
@@ -67,15 +86,19 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useDirectorFetch, normaliseClient } from '../composables/useDirectorFetch.js'
+import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 
 const tab = ref('list')
 
-const { data: rawClients, loading, error, refresh } = useDirectorFetch('list clients', 'clients')
+const { data: rawClients, loading, error, refresh } = useDirectorFetch('llist clients', 'clients')
 const clients = computed(() => (rawClients.value ?? []).map(normaliseClient))
+
+function osIcon(client)  { return osIconName(client)  }
+function osColor(client) { return osIconColor(client) }
 
 const columns = [
   { name: 'name',    label: 'Name',    field: 'name',    align: 'left',   sortable: true },
-  { name: 'uname',   label: 'OS/Arch', field: 'uname',   align: 'left'    },
+  { name: 'os',      label: 'OS',      field: 'os',      align: 'left'    },
   { name: 'version', label: 'Version', field: 'version', align: 'left',   sortable: true },
   { name: 'enabled', label: 'Status',  field: 'enabled', align: 'center'  },
   { name: 'actions', label: '',        field: 'actions', align: 'center',  style: 'width:80px' },

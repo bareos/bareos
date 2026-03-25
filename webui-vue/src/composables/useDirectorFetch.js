@@ -70,18 +70,47 @@ export function normaliseJob(j) {
 /**
  * Normalise a raw director client record (from "list clients").
  */
+// Parse the uname string sent by the file daemon during job handshake.
+// Format: "{bareos_version} ({date}) {os_info},{platform}"
+// e.g.  "23.0.0 (01Jan24) Debian GNU/Linux 12 (bookworm),x86_64-pc-linux-gnu"
+function parseUname(raw) {
+  if (!raw || !raw.trim()) return { version: '', buildDate: '', os: 'linux', osInfo: '', arch: '' }
+  const lower = raw.toLowerCase()
+  const os = lower.includes('windows') ? 'windows'
+           : lower.includes('darwin') || lower.includes('macos') || lower.includes('mac os') ? 'macos'
+           : 'linux'
+  // Version: first token, strip optional "bareos-fd-" prefix
+  const tokens = raw.trimStart().split(/\s+/)
+  const version = (tokens[0] ?? '').replace(/^bareos-fd-/i, '')
+  // Build date: second token if it matches "(DDMonYY)" pattern
+  const buildDate = /^\(\d{2}\w{3}\d{2,4}\)$/.test(tokens[1] ?? '') ? tokens[1].replace(/[()]/g, '') : ''
+  // OS info + arch: everything after version + date
+  const afterDate = buildDate ? raw.slice(raw.indexOf(tokens[1]) + tokens[1].length).trim() : ''
+  const commaIdx = afterDate.lastIndexOf(',')
+  const osInfo = commaIdx >= 0 ? afterDate.slice(0, commaIdx).trim() : afterDate
+  // Arch: first segment of platform string (e.g. "x86_64" from "x86_64-pc-linux-gnu")
+  const platform = commaIdx >= 0 ? afterDate.slice(commaIdx + 1).trim() : ''
+  const arch = platform.split('-')[0] ?? ''
+  return { version, buildDate, os, osInfo, arch }
+}
+
 export function normaliseClient(c) {
+  const uname = c.uname ?? c.uagent ?? ''
+  const { version, buildDate, os, osInfo, arch } = parseUname(uname)
   return {
     clientid:  c.clientid ?? '',
     name:      c.name ?? '',
-    uname:     c.uname ?? c.uagent ?? '',
-    version:   c.version ?? '',
+    uname,
+    version:   c.version || version,
+    buildDate,
     enabled:   c.enabled !== '0' && c.enabled !== false,
     address:   c.address ?? '',
-    port:      c.fdport ? Number(c.fdport) : 9102,
+    port:      c.fdport ? Number(c.fdport) : (c.port ? Number(c.port) : 9102),
     fileretention: c.fileretention ?? '',
     jobretention:  c.jobretention  ?? '',
-    os:        c.os ?? 'linux',
+    os,
+    osInfo,
+    arch,
   }
 }
 

@@ -17,24 +17,11 @@
         <q-tabs v-model="activeTab" dense align="left" class="q-ml-md" indicator-color="white"
                 active-color="white" active-bg-color="rgba(255,255,255,0.15)">
           <q-route-tab name="dashboard" to="/dashboard" label="Dashboard" no-caps />
-          <q-btn-dropdown flat color="white" label="Jobs" no-caps content-class="bareos-menu">
-            <q-list dense style="min-width:140px">
-              <q-item clickable v-close-popup :to="{ name: 'jobs' }"><q-item-section>Overview</q-item-section></q-item>
-              <q-item clickable v-close-popup :to="{ name: 'jobs', query: { action: 'run' } }"><q-item-section>Run</q-item-section></q-item>
-              <q-item clickable v-close-popup :to="{ name: 'jobs', query: { action: 'rerun' } }"><q-item-section>Rerun</q-item-section></q-item>
-              <q-item clickable v-close-popup :to="{ name: 'jobs', query: { action: 'timeline' } }"><q-item-section>Timeline</q-item-section></q-item>
-            </q-list>
-          </q-btn-dropdown>
+          <q-route-tab name="jobs"      to="/jobs"      label="Jobs"      no-caps />
           <q-route-tab name="restore"   to="/restore"   label="Restore"   no-caps />
           <q-route-tab name="clients"   to="/clients"   label="Clients"   no-caps />
           <q-route-tab name="schedules" to="/schedules" label="Schedules" no-caps />
-          <q-btn-dropdown flat color="white" label="Storages" no-caps content-class="bareos-menu">
-            <q-list dense style="min-width:140px">
-              <q-item clickable v-close-popup :to="{ name: 'storages', query: { tab: 'storages' } }"><q-item-section>Devices</q-item-section></q-item>
-              <q-item clickable v-close-popup :to="{ name: 'storages', query: { tab: 'pools' } }"><q-item-section>Pools</q-item-section></q-item>
-              <q-item clickable v-close-popup :to="{ name: 'storages', query: { tab: 'volumes' } }"><q-item-section>Volumes</q-item-section></q-item>
-            </q-list>
-          </q-btn-dropdown>
+          <q-route-tab name="storages"  to="/storages"  label="Storages"  no-caps />
           <q-route-tab name="director"  to="/director"  label="Director"  no-caps />
           <q-route-tab name="analytics" to="/analytics" label="Analytics" no-caps />
         </q-tabs>

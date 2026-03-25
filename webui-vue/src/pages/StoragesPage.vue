@@ -42,7 +42,19 @@
           <q-card-section class="q-pa-none">
             <q-table :rows="pools" :columns="poolCols" row-key="name" dense flat :pagination="{ rowsPerPage: 15 }">
               <template #body-cell-name="props">
-                <q-td :props="props"><span class="text-primary cursor-pointer">{{ props.value }}</span></q-td>
+                <q-td :props="props">
+                  <router-link :to="{ name: 'pool-details', params: { name: props.value } }" class="text-primary">
+                    {{ props.value }}
+                  </router-link>
+                </q-td>
+              </template>
+              <template #body-cell-volretention="props">
+                <q-td :props="props">{{ formatDuration(props.value) }}</q-td>
+              </template>
+              <template #body-cell-maxvolbytes="props">
+                <q-td :props="props" class="text-right">
+                  {{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}
+                </q-td>
               </template>
             </q-table>
           </q-card-section>
@@ -72,6 +84,17 @@
                   <q-badge :color="statusColor(props.value)" :label="props.value" />
                 </q-td>
               </template>
+              <template #body-cell-volbytes="props">
+                <q-td :props="props" class="text-right">{{ formatBytes(props.value) }}</q-td>
+              </template>
+              <template #body-cell-maxvolbytes="props">
+                <q-td :props="props" class="text-right">
+                  {{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}
+                </q-td>
+              </template>
+              <template #body-cell-retention="props">
+                <q-td :props="props">{{ formatDuration(props.value) }}</q-td>
+              </template>
             </q-table>
           </q-card-section>
         </q-card>
@@ -82,8 +105,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, RouterLink } from 'vue-router'
 import { useDirectorFetch, normaliseVolume } from '../composables/useDirectorFetch.js'
+import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 
@@ -94,7 +118,7 @@ const volSearch = ref('')
 const { data: rawStorages, loading: storagesLoading, error: storagesError, refresh: refreshStorages } =
   useDirectorFetch('list storages', 'storages')
 const { data: rawPools,    loading: poolsLoading,    error: poolsError,    refresh: refreshPools } =
-  useDirectorFetch('list pools', 'pools')
+  useDirectorFetch('llist pools', 'pools')
 const { data: rawVolumes,  loading: volsLoading,     error: volsError,     refresh: refreshVols } =
   useDirectorFetch('list volumes', 'volumes')
 
