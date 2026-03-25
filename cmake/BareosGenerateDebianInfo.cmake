@@ -94,9 +94,7 @@ else()
   endif()
 
   if(ENABLE_BARRI)
-    list(APPEND DEBIAN_CONTROL_SNIPPETS
-         "bareos-filedaemon-barri-python3-plugin"
-    )
+    list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-filedaemon-barri-plugin")
     list(APPEND DEBIAN_CONTROL_SNIPPETS "bareos-barri-cli")
   endif()
 
