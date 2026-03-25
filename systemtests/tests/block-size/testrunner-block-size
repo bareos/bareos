@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -53,26 +53,11 @@ JobName=backup-bareos-fd
 
 #shellcheck source=../../environment.in
 . ./environment
+#shellcheck source=test-config.in
+. ./test-config
 
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
-"${BAREOS_SCRIPTS_DIR}"/cleanup
-"${BAREOS_SCRIPTS_DIR}"/setup
-
-. ./tape-config
-
-if ! ./invalidate_tapes.sh ${1:-}; then
-  echo "Could not invalidate tapes"
-  exit 1
-fi
-
-if ! ./create_autochanger_configs.sh ${1:-}; then
-  echo "Could not create autochanger configs"
-  exit 1
-fi
-
-# Fill ${BackupDirectory} with data.
-setup_data
 
 VolumeName=TestVolume001
 # VolumePath=storage/${VolumeName}
@@ -130,10 +115,7 @@ messages
 quit
 END_OF_DATA
 
-# Start the bareos daemons
-# and run the bconsole commands from ${tmp}/bconcmds
-# Further bconsole commands can be executed by "run_bconsole".
-run_bareos
+run_bconsole
 
 # verify that all are terminated
 if ! check_for_zombie_jobs storage=File1 client=${Client}; then
@@ -143,9 +125,6 @@ fi
 if ! check_for_zombie_jobs storage=Tape-0 client=${Client}; then
   set_error "zombie jobs Tape-0"
 fi
-
-# stop bareos
-stop_bareos
 
 # check log files for common error messages
 check_log ${tmp}/log1.out
