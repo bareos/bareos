@@ -393,23 +393,23 @@ async function fetchDir(pathId) {
     director.call(`.bvfs_lsfiles jobid=${jids} ${pathArg} limit=2000`).catch(() => null),
   ])
   const dirs  = (dr?.directories ?? [])
-    .filter(d => d.Name && d.Name !== '.' && d.Name !== '..' && d.Name !== './' && d.Name !== '../')
+    .filter(d => d.name && d.name !== '.' && d.name !== '..' && d.name !== './' && d.name !== '../')
     .map(d => ({
-      key:    `d-${d.PathId}`,
+      key:    `d-${d.pathid}`,
       isDir:  true,
-      name:   d.Name.endsWith('/') ? d.Name : d.Name + '/',
-      pathId: d.PathId,
-      fileId: d.FileId,
+      name:   d.name.endsWith('/') ? d.name : d.name + '/',
+      pathId: d.pathid,
+      fileId: d.fileid,
       size:   0,
       mtime:  d.stat?.mtime ?? 0,
     }))
   const files = (fr?.files ?? [])
     .map(f => ({
-      key:    `f-${f.FileId}`,
+      key:    `f-${f.fileid}`,
       isDir:  false,
-      name:   f.Name,
-      pathId: f.PathId,
-      fileId: f.FileId,
+      name:   f.name,
+      pathId: f.pathid,
+      fileId: f.fileid,
       size:   f.stat?.size ?? 0,
       mtime:  f.stat?.mtime ?? 0,
     }))
