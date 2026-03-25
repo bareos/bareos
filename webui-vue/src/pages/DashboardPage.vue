@@ -38,6 +38,13 @@
               dense flat
               :pagination="{ rowsPerPage: 10, sortBy: 'id', descending: true }"
             >
+              <template #body-cell-id="props">
+                <q-td :props="props" class="text-right">
+                  <router-link :to="{ name: 'job-details', params: { id: props.value } }" class="text-primary">
+                    {{ props.value }}
+                  </router-link>
+                </q-td>
+              </template>
               <template #body-cell-status="props">
                 <q-td :props="props">
                   <JobStatusBadge :status="jobStatus(props.row)" />
@@ -51,7 +58,24 @@
                 </q-td>
               </template>
               <template #body-cell-bytes="props">
-                <q-td :props="props" class="text-right">{{ jobBytes(props.row) }}</q-td>
+                <q-td :props="props" class="text-right" style="min-width:90px">
+                  <div>{{ jobBytes(props.row) }}</div>
+                  <q-linear-progress
+                    :value="bytesGauge(props.row.bytes)"
+                    color="primary" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
+              </template>
+              <template #body-cell-duration="props">
+                <q-td :props="props" class="text-right" style="min-width:80px">
+                  <div>{{ props.value || '—' }}</div>
+                  <q-linear-progress
+                    :value="durationGauge(props.value)"
+                    color="orange" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
               </template>
             </q-table>
           </q-card-section>
@@ -239,13 +263,32 @@ const recentCols = [
   { name: 'level',     label: 'Level',    field: 'level',     align: 'center' },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',  sortable: true },
   { name: 'endtime',   label: 'End',      field: 'endtime',   align: 'left',  sortable: true },
-  { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right' },
-  { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right'  },
+  { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right', sortable: true,
+    sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b) },
+  { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right', sortable: true },
   { name: 'status',    label: 'Status',   field: 'status',    align: 'center' },
 ]
 
 const recentJobs  = computed(() => lastJobs.value)
 const runningJobs = computed(() => jobs.value.filter(j => j.status === 'R'))
+
+function parseDurationSecs(str) {
+  if (!str) return 0
+  const parts = String(str).split(':').map(Number)
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+  if (parts.length === 2) return parts[0] * 60 + parts[1]
+  return Number(str) || 0
+}
+
+const maxBytesLog = computed(() => Math.log(Math.max(1, ...recentJobs.value.map(j => j.bytes)) + 1))
+const maxDurationLog = computed(() => {
+  const max = Math.max(1, ...recentJobs.value.map(j => parseDurationSecs(j.duration)))
+  return Math.log(max + 1)
+})
+function bytesGauge(val) { return Math.log(val + 1) / maxBytesLog.value }
+function durationGauge(str) {
+  return Math.log(parseDurationSecs(str) + 1) / maxDurationLog.value
+}
 
 const summaryStats = computed(() => {
   const s = (code) => jobs.value.filter(j => j.status === code).length

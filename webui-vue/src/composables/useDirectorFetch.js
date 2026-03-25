@@ -51,6 +51,7 @@ export function useDirectorFetch(command, key = null, init = []) {
  * by the UI tables.
  */
 export function normaliseJob(j) {
+  const endtime = j.endtime ?? j.realendtime ?? ''
   return {
     id:        Number(j.jobid ?? j.id),
     name:      j.name       ?? '',
@@ -59,7 +60,7 @@ export function normaliseJob(j) {
     level:     j.joblevel   ?? j.level      ?? '',
     status:    j.jobstatus  ?? j.status     ?? '',
     starttime: j.starttime  ?? '',
-    endtime:   j.endtime    ?? '',
+    endtime:   endtime.startsWith('0000') ? '' : endtime,
     duration:  j.duration   ?? '',
     files:     Number(j.jobfiles   ?? j.files   ?? 0),
     bytes:     Number(j.jobbytes   ?? j.bytes   ?? 0),

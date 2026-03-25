@@ -118,7 +118,7 @@ const cancelLoading = ref(false)
 // ── data loading ──────────────────────────────────────────────────────────────
 async function loadJob() {
   const [jobRes, logRes, mediaRes] = await Promise.allSettled([
-    director.call(`list jobid=${jobid}`),
+    director.call(`llist jobid=${jobid}`),
     director.call(`list joblog jobid=${jobid}`),
     director.call(`list jobmedia jobid=${jobid}`),
   ])

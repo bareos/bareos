@@ -19,10 +19,17 @@
             <q-input v-model="search" dense outlined placeholder="Search…" class="q-mr-sm" style="width:200px" clearable>
               <template #prepend><q-icon name="search" /></template>
             </q-input>
-            <q-btn flat round dense icon="refresh" color="white" @click="refresh" />
+            <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ countdown }}s</span>
+            <q-btn flat round dense icon="refresh" color="white" @click="manualRefresh" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-banner v-if="error" dense class="bg-negative text-white">{{ error }}</q-banner>
+            <div v-if="statusFilter" class="q-px-md q-pt-sm">
+              <q-chip removable color="primary" text-color="white" icon="filter_list"
+                      @remove="statusFilter = ''" class="q-mb-xs">
+                Status: {{ jobStatusMap[statusFilter]?.label ?? statusFilter }}
+              </q-chip>
+            </div>
             <q-table
               :rows="filteredJobs"
               :columns="columns"
@@ -50,10 +57,34 @@
                 <q-td :props="props">{{ levelMap[props.value] || props.value }}</q-td>
               </template>
               <template #body-cell-bytes="props">
-                <q-td :props="props" class="text-right">{{ fmtBytes(props.row.bytes) }}</q-td>
+                <q-td :props="props" class="text-right" style="min-width:90px">
+                  <div>{{ fmtBytes(props.row.bytes) }}</div>
+                  <q-linear-progress
+                    :value="bytesGauge(props.row.bytes)"
+                    color="primary" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
               </template>
               <template #body-cell-files="props">
-                <q-td :props="props" class="text-right">{{ props.value.toLocaleString() }}</q-td>
+                <q-td :props="props" class="text-right" style="min-width:80px">
+                  <div>{{ props.value.toLocaleString() }}</div>
+                  <q-linear-progress
+                    :value="filesGauge(props.row.files)"
+                    color="teal" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
+              </template>
+              <template #body-cell-duration="props">
+                <q-td :props="props" class="text-right" style="min-width:80px">
+                  <div>{{ props.value || '—' }}</div>
+                  <q-linear-progress
+                    :value="durationGauge(props.value)"
+                    color="orange" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center" style="white-space:nowrap">
@@ -255,10 +286,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { jobTypeMap, jobLevelMap, formatBytes } from '../mock/index.js'
+import { jobTypeMap, jobLevelMap, jobStatusMap, formatBytes } from '../mock/index.js'
 import { useDirectorFetch, normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -267,8 +298,9 @@ const route    = useRoute()
 const $q       = useQuasar()
 const director = useDirectorStore()
 
-const tab       = ref(route.query.action || 'list')
-const search    = ref('')
+const tab          = ref(route.query.action || 'list')
+const search       = ref('')
+const statusFilter = ref(route.query.status || '')
 const typeMap   = jobTypeMap
 const levelMap  = jobLevelMap
 const fmtBytes  = formatBytes
@@ -279,14 +311,40 @@ const { data: rawJobs, loading, error, refresh } = useDirectorFetch('list jobs',
 const jobs = computed(() => (rawJobs.value ?? []).map(normaliseJob))
 
 const filteredJobs = computed(() => {
-  if (!search.value) return jobs.value
+  let list = jobs.value
+  if (statusFilter.value) list = list.filter(j => j.status === statusFilter.value)
+  if (!search.value) return list
   const q = search.value.toLowerCase()
-  return jobs.value.filter(j =>
+  return list.filter(j =>
     j.name.toLowerCase().includes(q) ||
     j.client.toLowerCase().includes(q) ||
     String(j.id).includes(q)
   )
 })
+
+const maxBytesLog = computed(() => Math.log(Math.max(1, ...filteredJobs.value.map(j => j.bytes)) + 1))
+const maxFilesLog = computed(() => Math.log(Math.max(1, ...filteredJobs.value.map(j => j.files)) + 1))
+
+function bytesGauge(val)  { return Math.log(val + 1) / maxBytesLog.value }
+function filesGauge(val)  { return Math.log(val + 1) / maxFilesLog.value }
+
+function parseDurationSecs(str) {
+  if (!str) return 0
+  const parts = String(str).split(':').map(Number)
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+  if (parts.length === 2) return parts[0] * 60 + parts[1]
+  return Number(str) || 0
+}
+
+const maxDurationLog = computed(() => {
+  const max = Math.max(1, ...filteredJobs.value.map(j => parseDurationSecs(j.duration)))
+  return Math.log(max + 1)
+})
+
+function durationGauge(str) {
+  const secs = parseDurationSecs(str)
+  return Math.log(secs + 1) / maxDurationLog.value
+}
 
 const runningJobs  = computed(() => jobs.value.filter(j => isRunning(j.status)))
 
@@ -317,7 +375,8 @@ const columns = [
   { name: 'level',     label: 'Level',    field: 'level',     align: 'center'  },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',   sortable: true },
   { name: 'endtime',   label: 'End',      field: 'endtime',   align: 'left'    },
-  { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right'   },
+  { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right',  sortable: true,
+    sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b) },
   { name: 'files',     label: 'Files',    field: 'files',     align: 'right',  sortable: true },
   { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right',  sortable: true },
   { name: 'errors',    label: 'Errors',   field: 'errors',    align: 'center'  },
@@ -560,17 +619,47 @@ async function submitRerun() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────────────
+const REFRESH_INTERVAL = 10
+const countdown = ref(REFRESH_INTERVAL)
+let _timer = null
+
+function startAutoRefresh() {
+  stopAutoRefresh()
+  countdown.value = REFRESH_INTERVAL
+  _timer = setInterval(() => {
+    countdown.value -= 1
+    if (countdown.value <= 0) {
+      refresh()
+      countdown.value = REFRESH_INTERVAL
+    }
+  }, 1000)
+}
+
+function stopAutoRefresh() {
+  clearInterval(_timer)
+  _timer = null
+}
+
+function manualRefresh() {
+  refresh()
+  countdown.value = REFRESH_INTERVAL
+}
+
 onMounted(() => {
   if (director.isConnected) {
     loadJobDefs()
     loadRunOptions()
   }
+  startAutoRefresh()
 })
+
+onUnmounted(stopAutoRefresh)
 
 watch(() => director.isConnected, (connected) => {
   if (connected) {
     loadJobDefs()
     loadRunOptions()
+    startAutoRefresh()
   }
 })
 
