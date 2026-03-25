@@ -444,7 +444,7 @@ Group:         Productivity/Archiving/Backup
 %endif
 
 %if 0%{?enable_incus}
-%package       filedaemon-incus-plugin
+%package       filedaemon-incus-python-plugin
 Summary:       Bareos Recovery Imager (Barri) plugin for Bareos File daemon
 Group:         Productivity/Archiving/Backup
 Requires:      bareos-filedaemon = %{version}
@@ -569,7 +569,7 @@ This package contains the Bareos Recovery Imager (barri) command line tool
 %endif
 
 %if 0%{?enable_incus}
-%description filedaemon-incus-plugin
+%description filedaemon-incus-python-plugin
 %{dscr}
 
 This package contains the incus plugin for the file daemon
@@ -1376,7 +1376,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %endif
 
 %if 0%{?enable_incus}
-%files filedaemon-incus-plugin
+%files filedaemon-incus-python-plugin
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-incus.py*
 

@@ -28,7 +28,7 @@ a Debian installation, it corresponds to at least Debian 13 (Trixie).
 Installation
 ^^^^^^^^^^^^
 
-Install the package **bareos-filedaemon-incus-plugin** (using :command:`apt`) on your machine. This
+Install the package **bareos-filedaemon-incus-python-plugin** (using :command:`apt`) on your machine. This
 will automatically also install the |fd| and other required packages.
 
 Configuration
