@@ -87,24 +87,13 @@
         <!-- Job Totals -->
         <q-card flat bordered class="q-mb-md bareos-panel">
           <q-card-section class="panel-header">Job Totals</q-card-section>
-          <q-card-section>
-            <q-list dense>
-              <q-item>
-                <q-item-section><q-item-label caption>Total Jobs</q-item-label><q-item-label class="text-h6">{{ totals.jobs }}</q-item-label></q-item-section>
-              </q-item>
-              <q-item>
-                <q-item-section><q-item-label caption>Total Files</q-item-label><q-item-label class="text-h6">{{ totals.files.toLocaleString() }}</q-item-label></q-item-section>
-              </q-item>
-              <q-item>
-                <q-item-section><q-item-label caption>Total Bytes</q-item-label><q-item-label class="text-h6">{{ fmtBytes(totals.bytes) }}</q-item-label></q-item-section>
-              </q-item>
-              <q-item>
-                <q-item-section><q-item-label caption>Clients</q-item-label><q-item-label class="text-h6">{{ clientCount }}</q-item-label></q-item-section>
-              </q-item>
-              <q-item>
-                <q-item-section><q-item-label caption>Storages</q-item-label><q-item-label class="text-h6">{{ storageCount }}</q-item-label></q-item-section>
-              </q-item>
-            </q-list>
+          <q-card-section class="q-pa-sm">
+            <div class="row q-gutter-sm">
+              <div v-for="stat in totalStats" :key="stat.label" class="col-auto">
+                <div class="text-caption text-grey-6" style="white-space:nowrap">{{ stat.label }}</div>
+                <div class="text-weight-bold" style="font-size:1rem; line-height:1.2">{{ stat.value }}</div>
+              </div>
+            </div>
           </q-card-section>
         </q-card>
 
@@ -316,6 +305,14 @@ const totals = computed(() => {
     storages: storageCount.value,
   }
 })
+
+const totalStats = computed(() => [
+  { label: 'Total Jobs',  value: totals.value.jobs },
+  { label: 'Total Files', value: (totals.value.files ?? 0).toLocaleString() },
+  { label: 'Total Bytes', value: fmtBytes(totals.value.bytes ?? 0) },
+  { label: 'Clients',     value: clientCount.value },
+  { label: 'Storages',    value: storageCount.value },
+])
 
 // helper: keep status/bytes getters for template compatibility
 function jobStatus(row) { return row.status ?? '?' }
