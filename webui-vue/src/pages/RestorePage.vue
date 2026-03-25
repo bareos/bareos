@@ -29,6 +29,7 @@
                   :disable="!form.client || loadingBackups"
                   no-error-icon
                   hint="Select a completed backup job"
+                  @update:model-value="initBrowser"
                 />
                 <q-checkbox
                   v-model="form.mergeJobsets"
@@ -90,13 +91,7 @@
                   @click="reloadCurrentDir"
                   :loading="loadingBrowser"
                 />
-                <q-btn
-                  v-if="!browserReady"
-                  flat dense color="primary" label="Load" icon="folder_open" size="sm"
-                  :disable="!form.jobid"
-                  :loading="loadingBrowser"
-                  @click="initBrowser"
-                />
+                <q-spinner v-if="loadingBrowser && !browserReady" size="20px" color="primary" />
               </div>
             </div>
           </q-card-section>
@@ -176,7 +171,7 @@
           <template v-else>
             <div class="text-center text-grey q-py-xl">
               <q-icon name="folder_open" size="48px" /><br />
-              <span class="text-caption q-mt-sm">Select a backup job above and click Load</span>
+              <span class="text-caption q-mt-sm">Select a client and backup job above to browse files</span>
             </div>
           </template>
         </q-card>
@@ -220,7 +215,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 import { formatBytes } from '../mock/index.js'
 
@@ -556,9 +551,14 @@ function fileIcon(name) {
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
-onMounted(async () => {
-  if (!director.isConnected) return
+async function init() {
   await Promise.all([loadClients(), loadRestoreJobs()])
-  if (form.value.client) await loadBackups(form.value.client)
-})
+  if (form.value.client) {
+    await loadBackups(form.value.client)
+    if (form.value.jobid) await initBrowser()
+  }
+}
+
+onMounted(() => { if (director.isConnected) init() })
+watch(() => director.isConnected, (connected) => { if (connected) init() })
 </script>
