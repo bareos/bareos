@@ -29,7 +29,7 @@
               row-key="id"
               dense flat
               :loading="loading"
-              :pagination="{ rowsPerPage: 15 }"
+              :pagination="{ rowsPerPage: 15, sortBy: 'id', descending: true }"
             >
               <template #body-cell-id="props">
                 <q-td :props="props">
