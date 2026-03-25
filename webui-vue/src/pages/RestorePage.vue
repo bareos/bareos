@@ -99,16 +99,16 @@
           <!-- Breadcrumbs -->
           <q-card-section v-if="browserReady" class="q-py-sm q-px-md">
             <div class="row items-center q-gutter-xs text-caption">
-              <q-icon name="storage" size="16px" color="grey-6" />
+              <q-icon name="storage" size="16px" color="grey-7" />
               <template v-for="(crumb, i) in navStack" :key="i">
                 <q-btn
                   flat dense no-caps size="sm"
                   :label="crumb.label"
-                  :class="i === navStack.length - 1 ? 'text-white' : 'text-grey-4'"
+                  :class="i === navStack.length - 1 ? 'text-dark text-weight-medium' : 'text-primary'"
                   class="q-px-xs"
                   @click="navigateTo(i)"
                 />
-                <q-icon v-if="i < navStack.length - 1" name="chevron_right" size="14px" color="grey-6" />
+                <q-icon v-if="i < navStack.length - 1" name="chevron_right" size="14px" color="grey-7" />
               </template>
             </div>
           </q-card-section>
