@@ -59,7 +59,7 @@
                      dense flat hide-bottom :pagination="{rowsPerPage:0}">
               <template #body-cell-bar="props">
                 <q-td :props="props" style="width:200px">
-                  <q-linear-progress :value="props.row.count / totalJobs || 0"
+                  <q-linear-progress :value="props.row.count / maxStatusCount || 0"
                     :color="props.row.color" track-color="grey-2" size="12px" rounded />
                 </q-td>
               </template>
@@ -156,6 +156,9 @@ const statusRows = computed(() => {
     { label: 'Running',    color: 'info',     count: count('R') },
   ]
 })
+const maxStatusCount = computed(() =>
+  Math.max(1, ...statusRows.value.map(r => r.count))
+)
 const statusCols = [
   { name: 'label', label: 'Status', field: 'label', align: 'left',  style: 'width:100px' },
   { name: 'bar',   label: '',       field: 'bar',   align: 'left'  },
@@ -175,10 +178,10 @@ const clientBytes = computed(() => {
     .slice(0, 12)
 })
 
-const maxBytesLog = computed(() =>
-  Math.log(Math.max(1, ...clientBytes.value.map(c => c.bytes)) + 1)
+const maxBytes = computed(() =>
+  Math.max(1, ...clientBytes.value.map(c => c.bytes))
 )
-function bytesGauge(val) { return Math.log(val + 1) / maxBytesLog.value }
+function bytesGauge(val) { return val / maxBytes.value }
 
 // ── level distribution ────────────────────────────────────────────────────────
 const levelDist = computed(() => {

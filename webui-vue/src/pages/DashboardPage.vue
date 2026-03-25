@@ -157,23 +157,29 @@ const director = useDirectorStore()
 const fmtBytes = formatBytes
 
 // ── data ─────────────────────────────────────────────────────────────────────
-const rawJobs       = ref([])
-const rawLastJobs   = ref([])
-const clientCount   = ref(0)
-const storageCount  = ref(0)
-const jobTotals     = ref(null)
-const loadingJobs   = ref(false)
+const rawPast24hJobs = ref([])
+const rawRunningJobs = ref([])
+const rawLastJobs    = ref([])
+const clientCount    = ref(0)
+const storageCount   = ref(0)
+const jobTotals      = ref(null)
+const loadingJobs    = ref(false)
 
 async function fetchJobs() {
   if (!director.isConnected) return
   loadingJobs.value = true
   try {
-    const [allRes, lastRes] = await Promise.allSettled([
-      director.call('list jobs'),
+    const [past24hRes, runningRes, lastRes] = await Promise.allSettled([
+      director.call('llist jobs days=1'),
+      director.call('list jobs jobstatus=R'),
       director.call('llist jobs last'),
     ])
-    if (allRes.status === 'fulfilled' && allRes.value?.jobs)
-      rawJobs.value = allRes.value.jobs
+    if (past24hRes.status === 'fulfilled' && past24hRes.value?.jobs)
+      rawPast24hJobs.value = past24hRes.value.jobs
+    if (runningRes.status === 'fulfilled' && runningRes.value?.jobs) {
+      const raw = runningRes.value.jobs
+      rawRunningJobs.value = Array.isArray(raw) ? raw : Object.values(raw)
+    }
     if (lastRes.status === 'fulfilled' && lastRes.value?.jobs) {
       const raw = lastRes.value.jobs
       rawLastJobs.value = Array.isArray(raw) ? raw : Object.values(raw)
@@ -253,8 +259,8 @@ onUnmounted(stopAutoRefresh)
 watch(() => director.isConnected, (connected) => { if (connected) startAutoRefresh() })
 
 // ── computed views ────────────────────────────────────────────────────────────
-const jobs     = computed(() => rawJobs.value.map(normaliseJob))
-const lastJobs = computed(() => rawLastJobs.value.map(normaliseJob))
+const past24hJobs = computed(() => rawPast24hJobs.value.map(normaliseJob))
+const lastJobs    = computed(() => rawLastJobs.value.map(normaliseJob))
 
 const recentCols = [
   { name: 'id',        label: 'ID',       field: 'id',        align: 'right', sortable: true },
@@ -270,7 +276,7 @@ const recentCols = [
 ]
 
 const recentJobs  = computed(() => lastJobs.value)
-const runningJobs = computed(() => jobs.value.filter(j => j.status === 'R'))
+const runningJobs = computed(() => rawRunningJobs.value.map(normaliseJob))
 
 function parseDurationSecs(str) {
   if (!str) return 0
@@ -291,7 +297,7 @@ function durationGauge(str) {
 }
 
 const summaryStats = computed(() => {
-  const s = (code) => jobs.value.filter(j => j.status === code).length
+  const s = (code) => past24hJobs.value.filter(j => j.status === code).length
   return [
     { label: 'Running',    status: 'R', color: 'info',     count: s('R') },
     { label: 'Waiting',    status: 'C', color: 'grey',     count: s('C') },
@@ -304,9 +310,9 @@ const summaryStats = computed(() => {
 const totals = computed(() => {
   if (jobTotals.value) return jobTotals.value
   return {
-    jobs:     jobs.value.length,
-    files:    jobs.value.reduce((a, j) => a + j.files, 0),
-    bytes:    jobs.value.reduce((a, j) => a + j.bytes, 0),
+    jobs:     past24hJobs.value.length,
+    files:    past24hJobs.value.reduce((a, j) => a + j.files, 0),
+    bytes:    past24hJobs.value.reduce((a, j) => a + j.bytes, 0),
     clients:  clientCount.value,
     storages: storageCount.value,
   }
