@@ -195,10 +195,11 @@ const levelDist = computed(() => {
 })
 
 // ── treemap ───────────────────────────────────────────────────────────────────
-// Group jobs by name, sum bytes and files
+// Group backup jobs by name, sum bytes and files (restore jobs excluded)
 const jobGroups = computed(() => {
   const map = {}
   for (const j of jobs.value) {
+    if (j.type === 'R') continue
     if (!map[j.name]) map[j.name] = { name: j.name, bytes: 0, files: 0 }
     map[j.name].bytes += j.bytes
     map[j.name].files += j.files
