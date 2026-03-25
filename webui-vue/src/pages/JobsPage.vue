@@ -89,7 +89,11 @@
               </template>
               <template #body-cell-duration="props">
                 <q-td :props="props" class="text-right" style="min-width:80px">
-                  <div>{{ props.value || '—' }}</div>
+                  <div>{{ props.value || '—' }}
+                    <q-tooltip v-if="props.row.endtime">
+                      Ended: {{ props.row.endtime }}
+                    </q-tooltip>
+                  </div>
                   <q-linear-progress
                     :value="durationGauge(props.value)"
                     color="orange" track-color="grey-3"
@@ -474,7 +478,6 @@ const columns = [
   { name: 'type',      label: 'Type',     field: 'type',      align: 'center'  },
   { name: 'level',     label: 'Level',    field: 'level',     align: 'center'  },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',   sortable: true },
-  { name: 'endtime',   label: 'End',      field: 'endtime',   align: 'left'    },
   { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right',  sortable: true,
     sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b) },
   { name: 'files',     label: 'Files',    field: 'files',     align: 'right',  sortable: true },
