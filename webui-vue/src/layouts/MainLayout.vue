@@ -1,8 +1,89 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <!-- Top Navbar -->
+
+    <!-- ── Side drawer (mobile / tablet) ──────────────────────────────────── -->
+    <q-drawer v-model="drawerOpen" side="left" overlay behavior="mobile"
+              :width="240" class="bareos-toolbar column no-wrap">
+      <q-scroll-area class="col">
+        <!-- Drawer header -->
+        <div class="q-pa-md row items-center">
+          <img src="/bareos-logo-small.png" alt="Bareos"
+               style="height:32px; margin-right:8px"
+               @error="e => e.target.style.display='none'" />
+          <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
+            BAREOS
+          </span>
+        </div>
+        <q-separator dark />
+
+        <!-- Navigation items -->
+        <q-list dark>
+          <q-item v-for="nav in navItems" :key="nav.to"
+                  clickable v-ripple :to="nav.to" exact
+                  active-class="bg-white text-primary"
+                  @click="drawerOpen = false">
+            <q-item-section avatar><q-icon :name="nav.icon" /></q-item-section>
+            <q-item-section>{{ nav.label }}</q-item-section>
+          </q-item>
+        </q-list>
+
+        <q-separator dark class="q-my-sm" />
+
+        <!-- Director status -->
+        <q-list dark>
+          <q-item>
+            <q-item-section avatar>
+              <q-icon :name="dirStatusIcon" :color="dirStatusColor" />
+            </q-item-section>
+            <q-item-section class="text-white text-caption">
+              {{ dirStatusLabel }}
+            </q-item-section>
+          </q-item>
+          <q-item clickable v-ripple :to="{ name: 'console' }" @click="drawerOpen = false">
+            <q-item-section avatar><q-icon name="terminal" /></q-item-section>
+            <q-item-section>Console</q-item-section>
+          </q-item>
+        </q-list>
+
+        <q-separator dark class="q-my-sm" />
+
+        <!-- Settings / account -->
+        <q-list dark>
+          <q-item clickable v-ripple @click="toggleDark">
+            <q-item-section avatar>
+              <q-icon :name="$q.dark.isActive ? 'light_mode' : 'dark_mode'" />
+            </q-item-section>
+            <q-item-section>{{ $q.dark.isActive ? 'Light mode' : 'Dark mode' }}</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple
+                  tag="a" href="https://docs.bareos.org" target="_blank"
+                  @click="drawerOpen = false">
+            <q-item-section avatar><q-icon name="menu_book" /></q-item-section>
+            <q-item-section>Documentation</q-item-section>
+          </q-item>
+          <q-item clickable v-ripple
+                  tag="a" href="https://github.com/bareos/bareos/issues/" target="_blank"
+                  @click="drawerOpen = false">
+            <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
+            <q-item-section>Issue Tracker</q-item-section>
+          </q-item>
+          <q-separator dark />
+          <q-item clickable v-ripple @click="logout">
+            <q-item-section avatar><q-icon name="logout" /></q-item-section>
+            <q-item-section>Logout</q-item-section>
+          </q-item>
+        </q-list>
+      </q-scroll-area>
+    </q-drawer>
+
+    <!-- ── Top Navbar ──────────────────────────────────────────────────────── -->
     <q-header class="bareos-toolbar">
       <q-toolbar>
+
+        <!-- Hamburger (mobile / tablet) -->
+        <q-btn v-if="$q.screen.lt.md" flat round dense icon="menu" color="white"
+               class="q-mr-sm" @click="drawerOpen = !drawerOpen" />
+
         <!-- Logo -->
         <router-link to="/dashboard">
           <img src="/bareos-logo-small.png" alt="Bareos"
@@ -13,70 +94,63 @@
           BAREOS
         </span>
 
-        <!-- Main Nav -->
-        <q-tabs v-model="activeTab" dense align="left" class="q-ml-md" indicator-color="white"
+        <!-- Main nav tabs (desktop only) -->
+        <q-tabs v-if="$q.screen.gte.md" v-model="activeTab" dense align="left"
+                class="q-ml-md" indicator-color="white"
                 active-color="white" active-bg-color="rgba(255,255,255,0.15)">
-          <q-route-tab name="dashboard" to="/dashboard" label="Dashboard" no-caps />
-          <q-route-tab name="jobs"      to="/jobs"      label="Jobs"      no-caps />
-          <q-route-tab name="restore"   to="/restore"   label="Restore"   no-caps />
-          <q-route-tab name="clients"   to="/clients"   label="Clients"   no-caps />
-          <q-route-tab name="schedules" to="/schedules" label="Schedules" no-caps />
-          <q-route-tab name="storages"  to="/storages"  label="Storages"  no-caps />
-          <q-route-tab name="director"  to="/director"  label="Director"  no-caps />
-          <q-route-tab name="analytics" to="/analytics" label="Analytics" no-caps />
+          <q-route-tab v-for="nav in navItems" :key="nav.to"
+                       :name="nav.label.toLowerCase()" :to="nav.to"
+                       :label="nav.label" no-caps />
         </q-tabs>
 
         <q-space />
 
-        <!-- Director connection status chip -->
-        <q-chip
-          dense square
-          :color="dirStatusColor"
-          text-color="white"
-          :icon="dirStatusIcon"
-          :label="dirStatusLabel"
-          class="q-mr-sm"
-          style="font-size:0.75rem"
-        />
+        <!-- Director status chip -->
+        <q-chip dense square :color="dirStatusColor" text-color="white"
+                :icon="dirStatusIcon"
+                :label="$q.screen.lt.md ? undefined : dirStatusLabel"
+                class="q-mr-sm" style="font-size:0.75rem" />
 
-        <!-- Dark mode toggle -->
-        <q-btn flat round dense color="white"
-               :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
-               :title="$q.dark.isActive ? 'Switch to light mode' : 'Switch to dark mode'"
-               class="q-mr-xs"
-               @click="toggleDark" />
+        <!-- Desktop-only: dark mode toggle, director menu, user menu -->
+        <template v-if="$q.screen.gte.md">
+          <q-btn flat round dense color="white"
+                 :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
+                 :title="$q.dark.isActive ? 'Switch to light mode' : 'Switch to dark mode'"
+                 class="q-mr-xs"
+                 @click="toggleDark" />
 
-        <!-- Right side: director + user dropdowns -->
-        <q-btn flat color="white" :label="auth.user?.director || 'director'" icon="dns" no-caps>
-          <q-menu>
-            <q-list dense style="min-width:160px">
-              <q-item clickable v-close-popup :to="{ name: 'console' }">
-                <q-item-section avatar><q-icon name="terminal" /></q-item-section>
-                <q-item-section>Console</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
+          <q-btn flat color="white" :label="auth.user?.director || 'director'" icon="dns" no-caps>
+            <q-menu>
+              <q-list dense style="min-width:160px">
+                <q-item clickable v-close-popup :to="{ name: 'console' }">
+                  <q-item-section avatar><q-icon name="terminal" /></q-item-section>
+                  <q-item-section>Console</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
 
-        <q-btn flat color="white" :label="auth.user?.username || 'admin'" icon="person" no-caps>
-          <q-menu>
-            <q-list dense style="min-width:180px">
-              <q-item clickable tag="a" href="https://docs.bareos.org" target="_blank" v-close-popup>
-                <q-item-section avatar><q-icon name="menu_book" /></q-item-section>
-                <q-item-section>Documentation</q-item-section>
-              </q-item>
-              <q-item clickable tag="a" href="https://github.com/bareos/bareos/issues/" target="_blank" v-close-popup>
-                <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
-                <q-item-section>Issue Tracker</q-item-section>
-              </q-item>
-              <q-separator />
-              <q-item clickable v-close-popup @click="logout">
-                <q-item-section avatar><q-icon name="logout" /></q-item-section>
-                <q-item-section>Logout</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
+          <q-btn flat color="white" :label="auth.user?.username || 'admin'" icon="person" no-caps>
+            <q-menu>
+              <q-list dense style="min-width:180px">
+                <q-item clickable tag="a" href="https://docs.bareos.org" target="_blank" v-close-popup>
+                  <q-item-section avatar><q-icon name="menu_book" /></q-item-section>
+                  <q-item-section>Documentation</q-item-section>
+                </q-item>
+                <q-item clickable tag="a" href="https://github.com/bareos/bareos/issues/" target="_blank" v-close-popup>
+                  <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
+                  <q-item-section>Issue Tracker</q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable v-close-popup @click="logout">
+                  <q-item-section avatar><q-icon name="logout" /></q-item-section>
+                  <q-item-section>Logout</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
+        </template>
+
       </q-toolbar>
     </q-header>
 
@@ -98,7 +172,19 @@ const auth     = useAuthStore()
 const director = useDirectorStore()
 const router   = useRouter()
 const route    = useRoute()
-const activeTab = ref(null)
+const activeTab  = ref(null)
+const drawerOpen = ref(false)
+
+const navItems = [
+  { label: 'Dashboard', to: '/dashboard', icon: 'dashboard'    },
+  { label: 'Jobs',      to: '/jobs',      icon: 'work'         },
+  { label: 'Restore',   to: '/restore',   icon: 'restore'      },
+  { label: 'Clients',   to: '/clients',   icon: 'devices'      },
+  { label: 'Schedules', to: '/schedules', icon: 'schedule'     },
+  { label: 'Storages',  to: '/storages',  icon: 'storage'      },
+  { label: 'Director',  to: '/director',  icon: 'settings'     },
+  { label: 'Analytics', to: '/analytics', icon: 'bar_chart'    },
+]
 
 onMounted(() => {
   const saved = localStorage.getItem('darkMode')
