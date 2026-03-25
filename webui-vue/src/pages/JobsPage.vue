@@ -394,7 +394,7 @@ const levelMap  = jobLevelMap
 const fmtBytes  = formatBytes
 
 // ── job list ──────────────────────────────────────────────────────────────────
-const { data: rawJobs, loading, error, refresh } = useDirectorFetch('list jobs', 'jobs')
+const { data: rawJobs, loading, error, refresh } = useDirectorFetch('llist jobs', 'jobs')
 
 const jobs = computed(() => (rawJobs.value ?? []).map(normaliseJob))
 
