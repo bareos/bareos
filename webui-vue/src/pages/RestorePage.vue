@@ -170,8 +170,15 @@
           </template>
           <template v-else>
             <div class="text-center text-grey q-py-xl">
-              <q-icon name="folder_open" size="48px" /><br />
-              <span class="text-caption q-mt-sm">Select a client and backup job above to browse files</span>
+              <template v-if="browserError">
+                <q-icon name="error_outline" size="48px" color="negative" /><br />
+                <div class="text-caption text-negative q-mt-sm q-mb-md">{{ browserError }}</div>
+                <q-btn flat dense color="primary" label="Retry" icon="refresh" @click="initBrowser" :loading="loadingBrowser" />
+              </template>
+              <template v-else>
+                <q-icon name="folder_open" size="48px" /><br />
+                <span class="text-caption q-mt-sm">Select a client and backup job above to browse files</span>
+              </template>
             </div>
           </template>
         </q-card>
@@ -323,6 +330,7 @@ async function loadBackups(clientName) {
 // ── BVFS browser ─────────────────────────────────────────────────────────────
 const browserReady    = ref(false)
 const loadingBrowser  = ref(false)
+const browserError    = ref('')
 const mergedJobids    = ref('')  // comma-separated job IDs for BVFS commands
 
 // Navigation breadcrumb stack:  [{ label, pathId }]  pathId=null means root (path='')
@@ -346,22 +354,32 @@ const browserCols = [
 async function initBrowser() {
   if (!form.value.jobid) return
   loadingBrowser.value = true
+  browserReady.value   = false
+  browserError.value   = ''
   try {
     // Step 1: get merged jobids
     const flag = form.value.mergeJobsets ? ' all' : ''
-    const gjr = await director.call(`.bvfs_get_jobids jobid=${form.value.jobid}${flag}`)
-    const ids = (gjr?.jobids ?? []).map(j => j.id).join(',')
+    let gjr
+    try {
+      gjr = await director.call(`.bvfs_get_jobids jobid=${form.value.jobid}${flag}`)
+    } catch (e) {
+      // If get_jobids fails, fall back to using only the selected jobid
+      gjr = null
+    }
+    const ids = (gjr?.jobids ?? []).map(j => j.id).filter(Boolean).join(',')
     mergedJobids.value = ids || String(form.value.jobid)
 
-    // Step 2: update BVFS cache
-    await director.call(`.bvfs_update jobid=${mergedJobids.value}`)
+    // Step 2: update BVFS cache (non-fatal — may be slow on large catalogs)
+    try {
+      await director.call(`.bvfs_update jobid=${mergedJobids.value}`)
+    } catch (_) { /* ignore */ }
 
     // Step 3: browse root
     navStack.value = [{ label: '/', pathId: null }]
     await fetchDir(null)
     browserReady.value = true
   } catch (e) {
-    console.error('BVFS init error', e)
+    browserError.value = e.message || 'Failed to load file tree'
   } finally {
     loadingBrowser.value = false
   }
@@ -369,17 +387,17 @@ async function initBrowser() {
 
 async function fetchDir(pathId) {
   const jids = mergedJobids.value
-  const pathArg = pathId != null ? `pathid=${pathId}` : 'path='
+  const pathArg = pathId != null ? `pathid=${pathId}` : 'path=/'
   const [dr, fr] = await Promise.all([
-    director.call(`.bvfs_lsdirs jobid=${jids} ${pathArg} limit=2000`),
-    director.call(`.bvfs_lsfiles jobid=${jids} ${pathArg} limit=2000`),
+    director.call(`.bvfs_lsdirs jobid=${jids} ${pathArg} limit=2000`).catch(() => null),
+    director.call(`.bvfs_lsfiles jobid=${jids} ${pathArg} limit=2000`).catch(() => null),
   ])
   const dirs  = (dr?.directories ?? [])
-    .filter(d => d.Name && d.Name !== '.' && d.Name !== '..' && d.Name !== './')
+    .filter(d => d.Name && d.Name !== '.' && d.Name !== '..' && d.Name !== './' && d.Name !== '../')
     .map(d => ({
       key:    `d-${d.PathId}`,
       isDir:  true,
-      name:   d.Name.replace(/\/$/, '') + '/',
+      name:   d.Name.endsWith('/') ? d.Name : d.Name + '/',
       pathId: d.PathId,
       fileId: d.FileId,
       size:   0,
@@ -515,6 +533,7 @@ function clearBrowserState() {
   selectedFiles.value  = new Map()
   selectedDirs.value   = new Map()
   mergedJobids.value   = ''
+  browserError.value   = ''
 }
 
 function resetAll() {
