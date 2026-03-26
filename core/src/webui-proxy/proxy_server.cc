@@ -25,20 +25,26 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 void ProxyServer::Stop()
 {
-  if (listen_fd_ >= 0) {
-    ::shutdown(listen_fd_, SHUT_RDWR);
-    ::close(listen_fd_);
-    listen_fd_ = -1;
+  for (int fd : listen_fds_) {
+    if (fd >= 0) {
+      ::shutdown(fd, SHUT_RDWR);
+      ::close(fd);
+    }
   }
+  // Do not clear listen_fds_ here: Stop() may be called from a signal handler
+  // and clearing the vector is not async-signal-safe.  Run() detects the
+  // closed sockets via poll() POLLHUP/POLLERR/POLLNVAL and exits on its own.
 }
 
 void ProxyServer::Run()
@@ -58,69 +64,90 @@ void ProxyServer::Run()
                              + gai_strerror(rc));
   }
 
-  for (auto* ai = res; ai != nullptr; ai = ai->ai_next) {
-    listen_fd_ = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-    if (listen_fd_ < 0) { continue; }
+  // Bind a listen socket for every address returned (both IPv4 and IPv6 when
+  // the host resolves to multiple addresses, e.g. "localhost" → 127.0.0.1 +
+  // ::1).  This matches the Python websockets library behaviour and ensures
+  // clients can always connect regardless of which protocol their browser uses.
+  for (const struct addrinfo* ai = res; ai != nullptr; ai = ai->ai_next) {
+    int fd = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+    if (fd < 0) { continue; }
 
     int opt = 1;
-    ::setsockopt(listen_fd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    ::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    if (::bind(listen_fd_, ai->ai_addr, ai->ai_addrlen) == 0) { break; }
-    ::close(listen_fd_);
-    listen_fd_ = -1;
+    if (::bind(fd, ai->ai_addr, ai->ai_addrlen) == 0 && ::listen(fd, 16) == 0) {
+      listen_fds_.push_back(fd);
+    } else {
+      ::close(fd);
+    }
   }
   freeaddrinfo(res);
 
-  if (listen_fd_ < 0) {
-    throw std::runtime_error("ProxyServer: could not bind to " + cfg_.bind_host
-                             + ":" + port_str);
+  if (listen_fds_.empty()) {
+    throw std::runtime_error("ProxyServer: could not bind to any address for "
+                             + cfg_.bind_host + ":" + port_str);
   }
 
-  if (::listen(listen_fd_, 16) < 0) {
-    ::close(listen_fd_);
-    listen_fd_ = -1;
-    throw std::runtime_error("ProxyServer: listen() failed");
-  }
-
-  fprintf(stderr, "[proxy] listening on ws://%s:%d\n", cfg_.bind_host.c_str(),
-          cfg_.port);
+  fprintf(stderr, "[proxy] listening on ws://%s:%d (%zu socket(s))\n",
+          cfg_.bind_host.c_str(), cfg_.port, listen_fds_.size());
   fprintf(stderr, "[proxy] default director: %s @ %s:%d\n",
           cfg_.director.name.c_str(), cfg_.director.host.c_str(),
           cfg_.director.port);
 
+  // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
-    struct sockaddr_storage client_addr{};
-    socklen_t addr_len = sizeof(client_addr);
-    int client_fd
-        = ::accept(listen_fd_, reinterpret_cast<struct sockaddr*>(&client_addr),
-                   &addr_len);
-    if (client_fd < 0) {
-      // listen_fd_ was closed by Stop()
-      break;
+    std::vector<struct pollfd> pfds;
+    pfds.reserve(listen_fds_.size());
+    for (int fd : listen_fds_) { pfds.push_back({fd, POLLIN, 0}); }
+
+    int nready = ::poll(pfds.data(), static_cast<nfds_t>(pfds.size()), 1000);
+    if (nready < 0) {
+      if (errno == EINTR) { continue; }
+      break;  // Unexpected poll error.
     }
 
-    // Build a human-readable peer string
-    char host_buf[NI_MAXHOST] = {};
-    char port_buf[NI_MAXSERV] = {};
-    getnameinfo(reinterpret_cast<struct sockaddr*>(&client_addr), addr_len,
-                host_buf, sizeof(host_buf), port_buf, sizeof(port_buf),
-                NI_NUMERICHOST | NI_NUMERICSERV);
-    std::string peer = std::string(host_buf) + ":" + port_buf;
-
-    // Move fd and defaults into a detached thread — thread owns the socket.
-    int cfd = client_fd;
-    DefaultDirectorConfig dir = cfg_.director;
-    std::thread([cfd, peer, dir]() {
-      try {
-        RunProxySession(cfd, peer, dir);
-      } catch (const std::exception& ex) {
-        fprintf(stderr, "[proxy] %s session aborted: %s\n", peer.c_str(),
-                ex.what());
-      } catch (...) {
-        fprintf(stderr, "[proxy] %s session aborted (unknown exception)\n",
-                peer.c_str());
+    bool any_closed = false;
+    for (const auto& pfd : pfds) {
+      if (pfd.revents & (POLLHUP | POLLERR | POLLNVAL)) {
+        any_closed = true;
+        continue;  // Socket was closed by Stop().
       }
-    }).detach();
+      if (!(pfd.revents & POLLIN)) { continue; }
+
+      struct sockaddr_storage client_addr{};
+      socklen_t addr_len = sizeof(client_addr);
+      int client_fd = ::accept(
+          pfd.fd, reinterpret_cast<struct sockaddr*>(&client_addr), &addr_len);
+      if (client_fd < 0) {
+        any_closed = true;
+        continue;
+      }
+
+      // Build a human-readable peer string
+      char host_buf[NI_MAXHOST] = {};
+      char port_buf[NI_MAXSERV] = {};
+      getnameinfo(reinterpret_cast<struct sockaddr*>(&client_addr), addr_len,
+                  host_buf, sizeof(host_buf), port_buf, sizeof(port_buf),
+                  NI_NUMERICHOST | NI_NUMERICSERV);
+      std::string peer = std::string(host_buf) + ":" + port_buf;
+
+      // Move fd and defaults into a detached thread — thread owns the socket.
+      int cfd = client_fd;
+      DefaultDirectorConfig dir = cfg_.director;
+      std::thread([cfd, peer, dir]() {
+        try {
+          RunProxySession(cfd, peer, dir);
+        } catch (const std::exception& ex) {
+          fprintf(stderr, "[proxy] %s session aborted: %s\n", peer.c_str(),
+                  ex.what());
+        } catch (...) {
+          fprintf(stderr, "[proxy] %s session aborted (unknown exception)\n",
+                  peer.c_str());
+        }
+      }).detach();
+    }
+
+    if (any_closed) { break; }  // Stop() was called.
   }
 
   fprintf(stderr, "[proxy] accept loop exited\n");

@@ -27,6 +27,7 @@
 
 #include "proxy_session.h"
 #include <string>
+#include <vector>
 
 struct ServerConfig {
   std::string bind_host{"localhost"};
@@ -51,7 +52,9 @@ class ProxyServer {
 
  private:
   ServerConfig cfg_;
-  int listen_fd_{-1};
+  // All listening sockets (one per address family for the bind host).
+  // Populated by Run(); closed by Stop().
+  std::vector<int> listen_fds_;
 };
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
