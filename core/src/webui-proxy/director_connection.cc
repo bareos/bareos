@@ -40,10 +40,14 @@
 // ---------------------------------------------------------------------------
 // Bareos signal codes (negative length-prefix values)
 // ---------------------------------------------------------------------------
-static constexpr int32_t kBnetEod = -1;    // End of data
-static constexpr int32_t kBnetEods = -2;   // End of data stream
-static constexpr int32_t kBnetEof = -3;    // End of file
-static constexpr int32_t kBnetError = -4;  // Error
+static constexpr int32_t kBnetEod = -1;          // End of data
+static constexpr int32_t kBnetEods = -2;         // End of data stream
+static constexpr int32_t kBnetEof = -3;          // End of file
+static constexpr int32_t kBnetError = -4;        // Error
+static constexpr int32_t kBnetCmdOk = -15;       // Command succeeded
+static constexpr int32_t kBnetCmdBegin = -16;    // Start command execution
+static constexpr int32_t kBnetMainPrompt = -18;  // Server ready and waiting
+static constexpr int32_t kBnetSubPrompt = -27;   // At a sub-prompt
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -97,7 +101,7 @@ static std::string Md5Hex(const std::string& text)
  * The key is the MD5 hex string of the plaintext password.
  */
 static std::array<uint8_t, 16> HmacMd5(const std::string& key,
-                                        const std::string& data)
+                                       const std::string& data)
 {
   std::array<uint8_t, 16> result{};
   unsigned int len = 16;
@@ -149,7 +153,7 @@ std::string DirectorConnection::RecvResponse()
       throw std::runtime_error("Director: received BNET_ERROR signal");
     }
     if (len < 0) {
-      continue;  // other signals — skip
+      continue;  // other signals (BNET_CMD_BEGIN, BNET_CMD_OK, …) — skip
     }
     if (len == 0) {
       continue;  // keep-alive — skip
@@ -172,8 +176,8 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   const std::string key = Md5Hex(cfg.password);
 
   // Step 1: send Hello with version so the director uses the >= 18.2 protocol.
-  const std::string hello = "Hello " + cfg.username
-                            + " calling version " BAREOS_FULL_VERSION "\n";
+  const std::string hello
+      = "Hello " + cfg.username + " calling version " BAREOS_FULL_VERSION "\n";
   SendFrame(hello);
 
   // Step 2: receive director's challenge
@@ -188,8 +192,8 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   if (sscanf(challenge_msg.c_str(), "auth cram-md5 %511s ssl=%d", token_buf,
              &ssl_val)
       < 1) {
-    throw std::runtime_error(
-        "Director: unexpected response to Hello: " + challenge_msg);
+    throw std::runtime_error("Director: unexpected response to Hello: "
+                             + challenge_msg);
   }
   std::string director_challenge(token_buf);
 
@@ -201,8 +205,7 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   // Step 4: receive director's "1000 OK auth\n"
   std::string auth_result = RecvFrame();
   if (auth_result.find("1000 OK auth") == std::string::npos) {
-    throw std::runtime_error(
-        "Director: authentication failed: " + auth_result);
+    throw std::runtime_error("Director: authentication failed: " + auth_result);
   }
 
   // Step 5: send our own challenge to verify the director
@@ -210,11 +213,9 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   std::uniform_int_distribution<uint32_t> dist(1000000000u, 4000000000u);
   uint32_t rand_val = dist(rng);
   uint32_t ts = static_cast<uint32_t>(std::time(nullptr));
-  std::string our_challenge
-      = "<" + std::to_string(rand_val) + "." + std::to_string(ts) + "@"
-        + cfg.username + ">";
-  std::string our_challenge_msg
-      = "auth cram-md5 " + our_challenge + " ssl=0\n";
+  std::string our_challenge = "<" + std::to_string(rand_val) + "."
+                              + std::to_string(ts) + "@" + cfg.username + ">";
+  std::string our_challenge_msg = "auth cram-md5 " + our_challenge + " ssl=0\n";
   SendFrame(our_challenge_msg);
 
   // Step 6: receive director's CRAM-MD5 response to our challenge.
@@ -225,13 +226,16 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
     dir_response.pop_back();
   }
 
-  // Step 7: verify director response (accept both compatible and non-compatible)
+  // Step 7: verify director response (accept both compatible and
+  // non-compatible)
   auto expected_hmac = HmacMd5(key, our_challenge);
-  std::string expected_compat = BareosBase64Encode(expected_hmac.data(), 16, true);
+  std::string expected_compat
+      = BareosBase64Encode(expected_hmac.data(), 16, true);
   std::string expected_noncompat
       = BareosBase64Encode(expected_hmac.data(), 16, false);
 
-  bool ok = (dir_response == expected_compat) || (dir_response == expected_noncompat);
+  bool ok = (dir_response == expected_compat)
+            || (dir_response == expected_noncompat);
 
   if (ok) {
     SendFrame("1000 OK auth\n");
@@ -300,8 +304,8 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
   freeaddrinfo(res);
 
   if (fd_ < 0) {
-    throw std::runtime_error("Director: could not connect to " + cfg.host
-                             + ":" + std::to_string(cfg.port));
+    throw std::runtime_error("Director: could not connect to " + cfg.host + ":"
+                             + std::to_string(cfg.port));
   }
 
   try {
@@ -316,14 +320,34 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
 std::string DirectorConnection::Call(const std::string& command)
 {
   SendFrame(command + "\n");
-  // In JSON mode the director sends a single data frame per command with no
-  // trailing BNET_EOD signal. Signal frames (e.g. BNET_MSGS_PENDING) may
-  // appear before the response; skip them until we get a real data frame.
   if (json_mode_) {
+    // JSON API mode: the director sends data in one or more frames then a
+    // terminal signal (BNET_MAIN_PROMPT, -18), with no trailing BNET_EOD.
+    // Large responses (> ~1 MB, e.g. thousands of jobs) arrive in multiple
+    // consecutive data frames.  Additionally, a stale BNET_MAIN_PROMPT from
+    // the previous command may sit at the front of the read buffer.
+    //
+    // Strategy: skip ALL leading signals until the first data frame arrives,
+    // then accumulate data frames and stop as soon as any signal appears.
+    // This handles both single-frame and multi-frame responses and correctly
+    // drains leftover signals from preceding commands.
+    std::string result;
     while (true) {
-      std::string frame = RecvFrame();
-      if (!frame.empty()) { return frame; }
+      int32_t hdr_net;
+      ReadAll(fd_, &hdr_net, 4);
+      int32_t len = ntohl(hdr_net);
+
+      if (len < 0) {
+        if (!result.empty()) { break; }  // signal after data → done
+        continue;                        // leading signal → skip
+      }
+      if (len == 0) { continue; }  // keep-alive
+
+      std::string chunk(static_cast<size_t>(len), '\0');
+      ReadAll(fd_, chunk.data(), static_cast<size_t>(len));
+      result += chunk;
     }
+    return result;
   }
   return RecvResponse();
 }
