@@ -6,6 +6,7 @@
         <q-space />
         <q-chip dense square :color="statusColor" text-color="white" :label="consoleStatus" class="q-mr-sm" style="font-size:0.72rem" />
         <q-btn v-if="!isPopup" flat round dense icon="open_in_new" color="white" title="Open in new window" @click="popOut" />
+        <q-btn v-if="isPopup"  flat round dense icon="close"       color="white" title="Close window"       @click="() => window.close()" />
         <q-btn flat round dense icon="delete_sweep" color="white" title="Clear" @click="clearOutput" />
       </q-card-section>
 
