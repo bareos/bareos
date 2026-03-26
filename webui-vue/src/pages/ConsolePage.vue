@@ -81,7 +81,8 @@ let   historyIdx = -1
 // ── raw WebSocket state ───────────────────────────────────────────────────────
 let   rawWs       = null
 let   cmdSeq      = 0
-const pendingCmds = new Map()
+const pendingCmds  = new Map()
+const completionIds = new Set()   // IDs of in-flight completion (Tab) requests
 const consoleStatus = ref('disconnected')
 const currentPrompt = ref('* ')  // updated from raw_response.prompt
 
@@ -171,10 +172,22 @@ function connectRaw() {
     if (msg.type === 'raw_response') {
       const entry = pendingCmds.get(msg.id)
       if (entry) { clearTimeout(entry.timer); pendingCmds.delete(msg.id) }
-      appendLines(msg.text)
-      currentPrompt.value = msg.prompt === 'select' ? 'Select: '
-                          : msg.prompt === 'sub'    ? '> '
-                          : '* '
+
+      if (completionIds.delete(msg.id)) {
+        // Tab-completion response: single line → update cmd; multiple → display
+        const lines = String(msg.text ?? '').replace(/\r\n/g, '\n').split('\n').filter(l => l.trim())
+        if (lines.length === 1) {
+          cmd.value = lines[0].trim()
+        } else if (lines.length > 1) {
+          appendLines(msg.text)
+        }
+        // empty → no completions, do nothing
+      } else {
+        appendLines(msg.text)
+        currentPrompt.value = msg.prompt === 'select' ? 'Select: '
+                            : msg.prompt === 'sub'    ? '> '
+                            : '* '
+      }
       scrollBottom()
       return
     }
@@ -260,11 +273,26 @@ function quickSend(c) {
   focusConsole()
 }
 
+function sendTab() {
+  if (!rawWs || rawWs.readyState !== WebSocket.OPEN) return
+  const id = String(++cmdSeq)
+  const timer = setTimeout(() => {
+    completionIds.delete(id)
+    pendingCmds.delete(id)
+  }, 5_000)
+  completionIds.add(id)
+  pendingCmds.set(id, { timer })
+  rawWs.send(JSON.stringify({ type: 'command', id, command: cmd.value + '\t' }))
+}
+
 function onKeyDown(event) {
   // Don't interfere with browser shortcuts (Ctrl+R, Ctrl+T, etc.)
   if (event.ctrlKey && event.key !== 'c' && event.key !== 'l') return
 
-  if (event.key === 'Enter') {
+  if (event.key === 'Tab') {
+    event.preventDefault()
+    sendTab()
+  } else if (event.key === 'Enter') {
     event.preventDefault()
     send()
   } else if (event.key === 'Backspace') {
