@@ -51,6 +51,18 @@ $bareos-blue-dark: #005a96;
   background-color: $bareos-blue !important;
 }
 
+.bareos-statusbar {
+  background-color: darken($bareos-blue, 10%) !important;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.72rem;
+  height: 22px;
+  min-height: 22px;
+  line-height: 22px;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  gap: 6px;
+}
+
 .nav-link-text {
   font-size: 0.875rem;
 }

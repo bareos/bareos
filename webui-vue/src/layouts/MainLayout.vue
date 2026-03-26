@@ -157,6 +157,27 @@
     <q-page-container>
       <router-view />
     </q-page-container>
+
+    <!-- ── Status bar ─────────────────────────────────────────────────────── -->
+    <q-footer class="bareos-statusbar row items-center no-wrap q-px-md q-gutter-x-sm">
+      <!-- connection indicator -->
+      <q-icon :name="dirStatusIcon" :color="dirStatusColor" size="13px" />
+      <span>{{ dirStatusLabel }}</span>
+      <span v-if="director.errorMsg" class="text-negative q-ml-xs">— {{ director.errorMsg }}</span>
+
+      <q-space />
+
+      <!-- director / host info -->
+      <template v-if="auth.user">
+        <q-icon name="dns" size="13px" style="opacity:.7" />
+        <span>{{ auth.user.director }}
+          <span style="opacity:.6">({{ auth.user.host }}:{{ auth.user.port }})</span>
+        </span>
+        <span style="opacity:.4">|</span>
+        <q-icon name="person" size="13px" style="opacity:.7" />
+        <span>{{ auth.user.username }}</span>
+      </template>
+    </q-footer>
   </q-layout>
 </template>
 
