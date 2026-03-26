@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2020-2022 Bareos GmbH & Co. KG
+#   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -18,10 +18,37 @@
 #   02110-1301, USA.
 
 import logging
+import subprocess
 import gitdb.exc
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+
+def _get_untracked_files(repo):
+    """Return untracked (and unignored) files as Paths.
+
+    gitpython's ``repo.untracked_files`` property decodes filenames with the
+    default locale codec and crashes when the repository working tree contains
+    files whose names are not valid UTF-8 (e.g. test fixtures intentionally
+    using non-UTF-8 byte sequences).  This helper calls ``git ls-files -z``
+    directly so filenames arrive as raw bytes separated by NUL; each entry is
+    then decoded safely, skipping any name that is not valid UTF-8.
+    """
+    result = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard", "-z"],
+        cwd=repo.working_tree_dir,
+        capture_output=True,
+    )
+    paths = []
+    for raw in result.stdout.split(b"\x00"):
+        if not raw:
+            continue
+        try:
+            paths.append(Path(raw.decode("utf-8")))
+        except UnicodeDecodeError:
+            logger.debug("Skipping untracked file with non-UTF-8 name: %r", raw)
+    return paths
 
 
 class NoCommonAncestor(Exception):
@@ -49,7 +76,7 @@ class FileHistory:
             (
                 [Path(i.b_path) for i in self.repo.index.diff(None)]
                 + [Path(i.b_path) for i in self.repo.index.diff(self.repo.head.commit)]
-                + [Path(f) for f in self.repo.untracked_files]
+                + _get_untracked_files(self.repo)
             )
         )
 
@@ -158,7 +185,7 @@ def get_filelist(repo, *, all=False, since=None, changed=True, untracked=False):
         files.update([Path(item.a_path) for item in repo.index.diff(None)])
 
     if untracked:
-        files.update([Path(f) for f in repo.untracked_files])
+        files.update(_get_untracked_files(repo))
 
     file_list = list(files)
     file_list.sort()
