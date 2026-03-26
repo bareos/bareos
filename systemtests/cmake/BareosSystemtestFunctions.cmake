@@ -854,6 +854,110 @@ function(init_systemtest_properties test_basename test testfile
   endif()
 endfunction()
 
+function(validate_systemtest_fixtures_in_dir test_dir)
+  # cmake-format: off
+  # Validate that test-suites are closed under fixtures:
+  # - Every fixture in FIXTURES_CLEANUP must also be in FIXTURES_SETUP
+  # - Every fixture in FIXTURES_REQUIRED must also be in FIXTURES_SETUP
+  # This prevents typos from silently breaking fixture dependencies
+  # cmake-format: on
+
+  # Collect all fixtures from all tests in this test suite
+  set(all_setups "")
+  set(all_requires "")
+  set(all_cleanups "")
+
+  # Get all tests in this suite
+  get_property(
+    all_tests
+    DIRECTORY ${test_dir}
+    PROPERTY TESTS
+  )
+
+  foreach(test ${all_tests})
+    get_test_property(${test} FIXTURES_SETUP fixtures_setup)
+    get_test_property(${test} FIXTURES_REQUIRED fixtures_required)
+    get_test_property(${test} FIXTURES_CLEANUP fixtures_cleanedup)
+
+    if(fixtures_setup)
+      list(APPEND all_setups ${fixtures_setup})
+    endif()
+    if(fixtures_required)
+      foreach(required ${fixtures_required})
+        set(var_name "require_${required}")
+        list(APPEND ${var_name} ${test})
+      endforeach()
+
+      list(APPEND all_requires ${fixtures_required})
+    endif()
+    if(fixtures_cleanedup)
+      foreach(cleanup ${fixtures_cleanedup})
+        set(var_name "cleanup_${cleanup}")
+        list(APPEND ${var_name} ${test})
+      endforeach()
+
+      list(APPEND all_cleanups ${fixtures_cleanedup})
+    endif()
+  endforeach()
+
+  # Remove duplicates
+  if(all_setups)
+    list(REMOVE_DUPLICATES all_setups)
+  endif()
+  if(all_requires)
+    list(REMOVE_DUPLICATES all_requires)
+  endif()
+  if(all_cleanups)
+    list(REMOVE_DUPLICATES all_cleanups)
+  endif()
+
+  # Validate FIXTURES_CLEANUP - all cleanup fixtures must be in setup fixtures
+  foreach(cleanup_fixture ${all_cleanups})
+    if(NOT cleanup_fixture IN_LIST all_setups)
+      set(err_msg
+          "The fixture '${cleanup_fixture}' is never setup. The tests\n"
+      )
+      foreach(test ${cleanup_${cleanup_fixture}})
+        string(APPEND err_msg "- ${test}\n")
+      endforeach()
+      string(
+        APPEND
+        err_msg
+        " are trying to cleanup this fixture.\nThe available fixtures in this suite are\n"
+      )
+
+      foreach(fixture ${all_setups})
+        string(APPEND err_msg "- ${fixture}\n")
+      endforeach()
+
+      message(FATAL_ERROR ${err_msg})
+    endif()
+  endforeach()
+
+  # Validate FIXTURES_REQUIRED - all required fixtures must be in setup fixtures
+  foreach(required_fixture ${all_requires})
+    if(NOT required_fixture IN_LIST all_setups)
+      set(err_msg
+          "The fixture '${required_fixture}' is never setup. The tests\n"
+      )
+      foreach(test ${require_${required_fixture}})
+        string(APPEND err_msg "- ${test}\n")
+      endforeach()
+      string(APPEND err_msg
+             "are requiring it. The available fixtures in this suite are\n"
+      )
+
+      foreach(fixture ${all_setups})
+        string(APPEND err_msg "- ${fixture}\n")
+      endforeach()
+
+      string(APPEND err_msg "Check the tests for typos.")
+
+      message(FATAL_ERROR ${err_msg})
+    endif()
+  endforeach()
+endfunction()
+
 function(add_systemtest_from_directory test_dir test_basename)
   if(EXISTS ${test_dir}/testrunner)
     # single test directory
@@ -936,6 +1040,13 @@ function(add_systemtest_from_directory test_dir test_basename)
       ${test_basename}:cleanup PROPERTIES FIXTURES_CLEANUP
                                           "${test_basename}-fixture"
     )
+  endif()
+
+  # Validate that all fixtures are properly closed under requirements
+  if(NOT test_basename MATCHES ".*py3.?grpc.*")
+    # grpc tests are actually setup in the non-grpc directory, so this will not
+    # work for them
+    validate_systemtest_fixtures_in_dir(${test_dir})
   endif()
 endfunction()
 
