@@ -30,6 +30,14 @@ const routes = [
       { path: 'filesets', name: 'filesets', component: () => import('../pages/FilesetsPage.vue') },
     ]
   },
+  {
+    path: '/console-popup',
+    component: () => import('../layouts/ConsolePopupLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      { path: '', name: 'console-popup', component: () => import('../pages/ConsolePage.vue') }
+    ]
+  },
   { path: '/:pathMatch(.*)*', redirect: '/dashboard' }
 ]
 

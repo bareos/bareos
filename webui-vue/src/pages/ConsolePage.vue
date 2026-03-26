@@ -1,16 +1,18 @@
 <template>
   <q-page class="q-pa-md">
-    <q-card flat bordered class="bareos-panel" style="max-width:960px">
+    <q-card flat bordered class="bareos-panel" :style="isPopup ? 'max-width:100%' : 'max-width:960px'">
       <q-card-section class="panel-header row items-center">
         <span>Bareos Console</span>
         <q-space />
         <q-chip dense square :color="statusColor" text-color="white" :label="consoleStatus" class="q-mr-sm" style="font-size:0.72rem" />
+        <q-btn v-if="!isPopup" flat round dense icon="open_in_new" color="white" title="Open in new window" @click="popOut" />
         <q-btn flat round dense icon="delete_sweep" color="white" title="Clear" @click="clearOutput" />
       </q-card-section>
 
       <!-- terminal area — click to focus, then type -->
       <div
         class="console-output"
+        :class="{ 'console-output-popup': isPopup }"
         ref="outputEl"
         tabindex="0"
         @keydown="onKeyDown"
@@ -42,11 +44,24 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { useRoute }          from 'vue-router'
 import { useAuthStore }     from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 
 const auth     = useAuthStore()
 const director = useDirectorStore()
+const route    = useRoute()
+
+const isPopup = computed(() => route.name === 'console-popup')
+
+function popOut() {
+  const base = window.location.href.replace(/#.*$/, '')
+  window.open(
+    base + '#/console-popup',
+    'bareos-console',
+    'width=960,height=720,resizable=yes,scrollbars=no'
+  )
+}
 
 // ── refs ─────────────────────────────────────────────────────────────────────
 const outputEl = ref(null)
@@ -309,6 +324,10 @@ watch(() => director.isConnected, (connected) => {
   word-break: break-all;
   outline: none;
   cursor: text;
+}
+.console-output-popup {
+  min-height: calc(100vh - 140px);
+  max-height: calc(100vh - 140px);
 }
 .console-output:focus {
   box-shadow: inset 0 0 0 2px #1976d2;
