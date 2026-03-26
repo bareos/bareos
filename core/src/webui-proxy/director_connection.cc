@@ -320,36 +320,38 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
 std::string DirectorConnection::Call(const std::string& command)
 {
   SendFrame(command + "\n");
-  if (json_mode_) {
-    // JSON API mode: the director sends data in one or more frames then a
-    // terminal signal (BNET_MAIN_PROMPT, -18), with no trailing BNET_EOD.
-    // Large responses (> ~1 MB, e.g. thousands of jobs) arrive in multiple
-    // consecutive data frames.  Additionally, a stale BNET_MAIN_PROMPT from
-    // the previous command may sit at the front of the read buffer.
-    //
-    // Strategy: skip ALL leading signals until the first data frame arrives,
-    // then accumulate data frames and stop as soon as any signal appears.
-    // This handles both single-frame and multi-frame responses and correctly
-    // drains leftover signals from preceding commands.
-    std::string result;
-    while (true) {
-      int32_t hdr_net;
-      ReadAll(fd_, &hdr_net, 4);
-      int32_t len = ntohl(hdr_net);
+  // Unified receive strategy for both JSON and raw (text) mode:
+  //
+  // Skip all *leading* signals before any data arrives.  This handles:
+  //   - Stale BNET_MAIN_PROMPT left by JSON mode's RecvDataFrame() after auth
+  //   - BNET_CMD_BEGIN / BNET_CMD_OK preamble signals in JSON mode
+  //   - BNET_MSGS_PENDING before the response in text mode
+  //
+  // Once data starts arriving, accumulate all consecutive data frames and
+  // stop as soon as any signal is received.  This handles:
+  //   JSON mode: data chunk(s) terminated by BNET_MAIN_PROMPT (no BNET_EOD)
+  //   Text mode: data terminated by BNET_EOD or BNET_MAIN_PROMPT
+  //   Interactive: menu text terminated by BNET_SELECT_INPUT / BNET_YESNO
+  //
+  // Large responses (> ~1 MB) arrive as multiple consecutive data frames with
+  // no signals between them; the loop accumulates them all correctly.
+  std::string result;
+  while (true) {
+    int32_t hdr_net;
+    ReadAll(fd_, &hdr_net, 4);
+    int32_t len = ntohl(hdr_net);
 
-      if (len < 0) {
-        if (!result.empty()) { break; }  // signal after data → done
-        continue;                        // leading signal → skip
-      }
-      if (len == 0) { continue; }  // keep-alive
-
-      std::string chunk(static_cast<size_t>(len), '\0');
-      ReadAll(fd_, chunk.data(), static_cast<size_t>(len));
-      result += chunk;
+    if (len < 0) {
+      if (!result.empty()) { break; }  // signal after data → done
+      continue;                        // leading signal before data → skip
     }
-    return result;
+    if (len == 0) { continue; }  // keep-alive
+
+    std::string chunk(static_cast<size_t>(len), '\0');
+    ReadAll(fd_, chunk.data(), static_cast<size_t>(len));
+    result += chunk;
   }
-  return RecvResponse();
+  return result;
 }
 
 void DirectorConnection::Disconnect()

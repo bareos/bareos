@@ -184,6 +184,34 @@ async def test_command_before_auth():
         else:
             fail(f"test_command_before_auth: expected error, got {resp}")
 
+# ── Test 8: raw console mode (list clients in text format) ──────────────────
+async def test_raw_console():
+    async with websockets.connect(WS_URI) as ws:
+        await ws.send(json.dumps({
+            "type":     "auth",
+            "username": GOOD_USER,
+            "password": GOOD_PASS,
+            "director": DIRECTOR,
+            "host":     DIR_HOST,
+            "port":     DIR_PORT,
+            "mode":     "raw",
+        }))
+        msg = await recv_json(ws)
+        if msg.get("type") != "auth_ok":
+            fail(f"test_raw_console: auth failed: {msg}")
+            return
+        await ws.send(json.dumps({"type": "command", "id": "raw1", "command": "list clients"}))
+        resp = await asyncio.wait_for(ws.recv(), timeout=15)
+        parsed = json.loads(resp)
+        if parsed.get("type") == "raw_response":
+            text = parsed.get("text", "")
+            if text:
+                ok(f"raw console returned {len(text)} bytes of text output")
+            else:
+                fail("test_raw_console: raw_response has empty text")
+        else:
+            fail(f"test_raw_console: expected raw_response, got {parsed}")
+
 async def main():
     tests = [
         test_auth_ok,
@@ -193,6 +221,7 @@ async def main():
         test_list_storages,
         test_response_id,
         test_command_before_auth,
+        test_raw_console,
     ]
     for t in tests:
         try:
