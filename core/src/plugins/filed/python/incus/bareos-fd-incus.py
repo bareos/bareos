@@ -21,8 +21,8 @@ import threading
 import time
 
 from BareosFdWrapper import * # pylint: disable=import-error,wildcard-import
-import bareosfd  # pylint: disable=import-error
-import BareosFdPluginBaseclass  # pylint: disable=import-error
+import bareosfd # pylint: disable=import-error
+import BareosFdPluginBaseclass # pylint: disable=import-error
 
 
 SIZE_MULTIPLIERS = {'k': 1_000, 'm': 1_000_000, 'g': 1_000_000_000, 't': 1_000_000_000_000,
@@ -118,6 +118,27 @@ def populate_pkt(pkt, tarinfo):
         header.extend(value_b)
     pkt.statp.st_ino = len(xattrs)
     return header
+
+
+# pylint: disable=import-outside-toplevel
+def open_archive(f, compression):
+    """
+    Open an archive so that tarfile only handles pure TAR operations. This fixes tarfile’s unsafe
+    memory usage, as tarfile only bounds compressed buffer sizes, not their decompressed results.
+    """
+    if compression == 'bzip2':
+        import bz2
+        return bz2.open(f)
+    if compression == 'gzip':
+        import gzip
+        return gzip.open(f)
+    if compression in ('lzma', 'xz'):
+        import lzma
+        return lzma.open(f)
+    if compression == 'zstd':
+        import compression.zstd # pylint: disable=import-error
+        return compression.zstd.open(f)
+    return f
 
 
 class LogQueue:
@@ -563,7 +584,7 @@ def please_open_an_issue(cond):
     )
 
 
-@BareosPlugin  # pylint: disable=undefined-variable
+@BareosPlugin # pylint: disable=undefined-variable
 class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     """Plugin main class"""
     def __init__(self, plugindef):
@@ -596,7 +617,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.zero_digest = None
         ## We keep an open handle to /dev/null to pass to the core when handling zero chunks. We
         ## never close it, but there is no strong need to.
-        self.devnull = open('/dev/null', 'rb')  # pylint: disable=consider-using-with
+        self.devnull = open('/dev/null', 'rb') # pylint: disable=consider-using-with
 
         # Restore-specific variables
         ## The running chunk collectors
@@ -922,7 +943,8 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         """Parse the incus export tar stream continuously"""
         try:
             # pylint: disable=consider-using-with
-            tar = tarfile.open(fileobj=stdout, mode="r|*", bufsize=1_048_576)
+            archive = open_archive(stdout, self.options.compression)
+            tar = tarfile.open(fileobj=archive, mode="r|", bufsize=1_048_576)
         except Exception as e: # pylint: disable=broad-exception-caught
             self.queue.put(ErrorEntry(f"Cannot open export stream as a tar: {e}"))
             return
