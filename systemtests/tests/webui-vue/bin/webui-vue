@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Start or stop the Bareos Vue WebUI development stack:
-#   - Python WebSocket proxy  (bridges browser ↔ bareos-dir)
+#   - WebSocket proxy  (bridges browser ↔ bareos-dir; C++ bareos-webui-proxy)
 #   - Vite preview server     (serves the built Vue SPA)
 #
 # Usage (run from the webui-vue systemtest directory):
@@ -89,8 +89,7 @@ VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
   # Start WS proxy.
   echo "Starting WS proxy on port ${WEBSOCKET_PROXY_PORT} ..."
   WS_PORT="${WEBSOCKET_PROXY_PORT}" \
-    "${PYTHON_EXECUTABLE}" \
-    "${CMAKE_SOURCE_DIR}/webui-vue/proxy/director_ws_proxy.py" \
+    "${BAREOS_WEBUI_PROXY_BINARY}" \
     >"${PROXY_LOG}" 2>&1 &
   echo $! >"${PROXY_PIDFILE}"
   wait_for_port "${WEBSOCKET_PROXY_PORT}" "WS proxy"

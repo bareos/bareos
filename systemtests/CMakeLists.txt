@@ -188,6 +188,7 @@ set(ALL_BINARIES_BEING_USED_BY_SYSTEMTESTS
     bdedupestimate
     gentestdata
     random-commands
+    bareos-webui-proxy
 )
 
 if(TARGET bareos_vadp_dumper)

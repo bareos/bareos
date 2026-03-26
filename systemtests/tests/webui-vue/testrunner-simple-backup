@@ -27,6 +27,9 @@ label volume=TestVolume001 storage=File pool=Full
 run job=${TestJobName} level=Full yes
 wait
 messages
+run job=${TestJobName} level=Incremental yes
+wait
+messages
 quit
 END_OF_DATA
 

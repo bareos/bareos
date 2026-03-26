@@ -36,7 +36,7 @@ sleep 1
 
 print_debug "Starting WS proxy on port ${PROXY_PORT} ..."
 WS_PORT="${PROXY_PORT}" \
-  "${PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/webui-vue/proxy/director_ws_proxy.py" \
+  "${BAREOS_WEBUI_PROXY_BINARY}" \
   >"${tmp}/ws-proxy.log" 2>&1 &
 PROXY_PID=$!
 

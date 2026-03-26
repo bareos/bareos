@@ -72,7 +72,7 @@ cd -
 # ── 2. Start the WS proxy against the live director ─────────────────────────
 print_debug "Starting WS proxy on port ${PROXY_PORT} ..."
 WS_PORT="${PROXY_PORT}" \
-  "${PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/webui-vue/proxy/director_ws_proxy.py" \
+  "${BAREOS_WEBUI_PROXY_BINARY}" \
   >"${tmp}/ws-proxy-playwright.log" 2>&1 &
 PROXY_PID=$!
 
@@ -203,9 +203,9 @@ async def test_logout(page):
     await login(page)
     # User button label is the username ("admin") — click to open dropdown.
     await page.get_by_role("button", name="admin").click()
-    # "Logout" is a q-item inside the dropdown; use exact=True to avoid matching
-    # the Material Icon <i>logout</i> element (aria-hidden but still in DOM).
-    await page.get_by_text("Logout", exact=True).click()
+    # Quasar teleports the dropdown into a portal div (#q-portal--menu--N).
+    # Restrict to .q-menu to avoid hitting the original placeholder in #app.
+    await page.locator(".q-menu").get_by_text("Logout", exact=True).click()
     await page.wait_for_url("**/login", timeout=5_000)
     ok("logout → redirected to /login")
 
