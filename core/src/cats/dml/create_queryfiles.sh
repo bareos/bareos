@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -86,10 +86,10 @@ for query in `ls ????_* | sed 's#\..*##g' | sort | uniq`; do
         if  [ -e "$query.$db" ]; then
             queryfile="$query.$db"
         fi
-        printf "/* %s */\n" "$queryfile" >> $queryincludefile
-        # remove comments and empty lines, add quotes on each line
-        cat "$queryfile" | sed -r -e "/^#/d" -e "/^$/d" -e 's/^(\s*)/\1"/' -e 's/\s*$/ "/' >> $queryincludefile
-        printf ',\n\n' >> $queryincludefile
+        printf '/* %s */\nR"SQL(' "$queryfile" >> $queryincludefile
+        # remove comments and empty lines
+        sed -r -e "/^#/d" -e "/^$/d" <"$queryfile" >>"$queryincludefile"
+        printf ')SQL",\n\n' >> $queryincludefile
     done
 done
 

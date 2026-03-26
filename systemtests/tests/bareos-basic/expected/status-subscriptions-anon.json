@@ -1,0 +1,159 @@
+status subscriptions anonymize
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "result": {
+    "unit-detail": [
+      {
+        "client": "Client 10000",
+        "plugin": "none (file data)",
+        "count": "1",
+        "size_gb": "3.00"
+      },
+      {
+        "client": "Client 10001",
+        "plugin": "barri",
+        "count": "2",
+        "size_gb": "2.00"
+      },
+      {
+        "client": "Client 10002",
+        "plugin": "barri",
+        "count": "1",
+        "size_gb": "1.00"
+      },
+      {
+        "client": "Client 10002",
+        "plugin": "bpipe",
+        "count": "1",
+        "size_gb": "1.00"
+      },
+      {
+        "client": "Client 10002",
+        "plugin": "none (file data)",
+        "count": "1",
+        "size_gb": "2.00"
+      },
+      {
+        "client": "Client 10003",
+        "plugin": "barri",
+        "count": "2",
+        "size_gb": "11.00"
+      },
+      {
+        "client": "Client 10003",
+        "plugin": "bpipe",
+        "count": "1",
+        "size_gb": "1.00"
+      },
+      {
+        "client": "Client 10003",
+        "plugin": "hyper-v",
+        "count": "3",
+        "size_gb": "111.00"
+      },
+      {
+        "client": "Client 10003",
+        "plugin": "mssqlvdi",
+        "count": "4",
+        "size_gb": "1111.00"
+      },
+      {
+        "client": "Client 10004",
+        "plugin": "ldap",
+        "count": "1",
+        "size_gb": "0.09"
+      },
+      {
+        "client": "Client 10004",
+        "plugin": "libcloud",
+        "count": "1",
+        "size_gb": "0.80"
+      },
+      {
+        "client": "Client 10004",
+        "plugin": "mariabackup",
+        "count": "1",
+        "size_gb": "7.00"
+      },
+      {
+        "client": "Client 10004",
+        "plugin": "ovirt",
+        "count": "1",
+        "size_gb": "60.00"
+      },
+      {
+        "client": "Client 10004",
+        "plugin": "percona",
+        "count": "1",
+        "size_gb": "500.00"
+      },
+      {
+        "client": "Client 10004",
+        "plugin": "postgres",
+        "count": "1",
+        "size_gb": "4000.00"
+      },
+      {
+        "client": "Client 10004",
+        "plugin": "proxmox",
+        "count": "1",
+        "size_gb": "30000.00"
+      },
+      {
+        "client": "Client 10004",
+        "plugin": "qumulo",
+        "count": "1",
+        "size_gb": "200000.00"
+      },
+      {
+        "client": "Client 10004",
+        "plugin": "vmware",
+        "count": "1",
+        "size_gb": "1000000.00"
+      },
+      {
+        "client": "Client 10005",
+        "plugin": "bridged",
+        "count": "1",
+        "size_gb": "1.00"
+      },
+      {
+        "client": "Client 10005",
+        "plugin": "custom-plugin",
+        "count": "1",
+        "size_gb": "1.00"
+      },
+      {
+        "client": "Client 10005",
+        "plugin": "my-gprc-plugin",
+        "count": "1",
+        "size_gb": "1.00"
+      },
+      {
+        "client": "Client 10005",
+        "plugin": "noprefix",
+        "count": "1",
+        "size_gb": "1.00"
+      },
+      {
+        "client": "Client 10005",
+        "plugin": "other python plugin",
+        "count": "1",
+        "size_gb": "1.00"
+      },
+      {
+        "client": "TOTAL",
+        "plugin": "",
+        "count": "30",
+        "size_gb": "1235815.89"
+      }
+    ],
+    "unit-summary": {
+      "accounting_mode": "volume-based (1236 volume-based units >= 30 count-based units)",
+      "used": "1236",
+      "configured": "1240",
+      "remaining": "4"
+    },
+  }
+}

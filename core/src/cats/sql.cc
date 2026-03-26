@@ -570,10 +570,12 @@ int BareosDb::ListResult(void* vctx, int, char** row)
         max_len = MaxLength(field->max_length);
         if (row[i] == NULL) {
           value.bsprintf(" %-*s |", max_len, "NULL");
-        } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
-                   && IsAnInteger(row[i])
-                   && strcmp(field->name, "jobid") != 0) {
-          value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
+        } else if (SqlFieldIsNumeric(field->type) && !jcr->gui) {
+          if (IsAnInteger(row[i]) && strcmp(field->name, "jobid") != 0) {
+            value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
+          } else {
+            value.bsprintf(" %*s |", max_len, row[i]);
+          }
         } else {
           value.bsprintf(" %-*s |", max_len, row[i]);
         }
@@ -598,10 +600,9 @@ int BareosDb::ListResult(void* vctx, int, char** row)
         if (row[i] == NULL) {
           key.bsprintf(" %*s: ", max_len, field->name);
           value.bsprintf("%s\n", "NULL");
-        } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
-                   && IsAnInteger(row[i])) {
+        } else if (SqlFieldIsNumeric(field->type) && !jcr->gui) {
           key.bsprintf(" %*s: ", max_len, field->name);
-          if (strcmp(field->name, "jobid") != 0) {
+          if (IsAnInteger(row[i]) && strcmp(field->name, "jobid") != 0) {
             value.bsprintf("%s\n", add_commas(row[i], ewc));
           } else {
             value.bsprintf("%s\n", row[i]);
@@ -789,9 +790,8 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           max_len = MaxLength(field->max_length);
           if (row[i] == NULL) {
             value.bsprintf(" %-*s |", max_len, "NULL");
-          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
-                     && IsAnInteger(row[i])) {
-            if (strcmp(field->name, "jobid") != 0) {
+          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui) {
+            if (IsAnInteger(row[i]) && strcmp(field->name, "jobid") != 0) {
               value.bsprintf(" %*s |", max_len, add_commas(row[i], ewc));
             } else {
               value.bsprintf(" %*s |", max_len, row[i]);
@@ -830,10 +830,9 @@ int BareosDb::ListResult(JobControlRecord* jcr,
           if (row[i] == NULL) {
             key.bsprintf(" %*s: ", max_len, field->name);
             value.bsprintf("%s\n", "NULL");
-          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui
-                     && IsAnInteger(row[i])) {
+          } else if (SqlFieldIsNumeric(field->type) && !jcr->gui) {
             key.bsprintf(" %*s: ", max_len, field->name);
-            if (strcmp(field->name, "jobid") != 0) {
+            if (IsAnInteger(row[i]) && strcmp(field->name, "jobid") != 0) {
               value.bsprintf("%s\n", add_commas(row[i], ewc));
             } else {
               value.bsprintf("%s\n", row[i]);

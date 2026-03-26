@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2021-2023 Bareos GmbH & Co. KG
+#   Copyright (C) 2021-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,12 +23,6 @@ create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 set_tests_properties(
   system:bareos-basic:simple-backup-and-restore
   PROPERTIES FIXTURES_SETUP "system:bareos-basic:backup-job-fixture"
-)
-set_tests_properties(
-  system:bareos-basic:status-subscriptions
-  PROPERTIES
-    FIXTURES_REQUIRED
-    "system:bareos-basic:backup-job-fixture;system:bareos-basic-fixture"
 )
 set_tests_properties(
   system:bareos-basic:bls-autoxflate
