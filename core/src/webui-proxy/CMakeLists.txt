@@ -24,6 +24,11 @@ add_executable(bareos-webui-proxy ${PROXY_SOURCES})
 
 target_compile_features(bareos-webui-proxy PRIVATE cxx_std_20)
 
+target_compile_definitions(
+    bareos-webui-proxy PRIVATE
+    BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
+)
+
 target_include_directories(bareos-webui-proxy PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )

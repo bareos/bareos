@@ -171,8 +171,9 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   // The CRAM-MD5 key is MD5(plaintext_password) as a hex string.
   const std::string key = Md5Hex(cfg.password);
 
-  // Step 1: send Hello
-  const std::string hello = "Hello " + cfg.username + " calling\n";
+  // Step 1: send Hello with version so the director uses the >= 18.2 protocol.
+  const std::string hello = "Hello " + cfg.username
+                            + " calling version " BAREOS_FULL_VERSION "\n";
   SendFrame(hello);
 
   // Step 2: receive director's challenge
@@ -192,9 +193,9 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   }
   std::string director_challenge(token_buf);
 
-  // Step 3: compute and send our CRAM-MD5 response
+  // Step 3: compute and send our CRAM-MD5 response (no trailing newline)
   auto hmac = HmacMd5(key, director_challenge);
-  std::string response = BareosBase64Encode(hmac.data(), 16) + "\n";
+  std::string response = BareosBase64Encode(hmac.data(), 16, true);
   SendFrame(response);
 
   // Step 4: receive director's "1000 OK auth\n"
@@ -216,20 +217,21 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
       = "auth cram-md5 " + our_challenge + " ssl=0\n";
   SendFrame(our_challenge_msg);
 
-  // Step 6: receive director's CRAM-MD5 response to our challenge
+  // Step 6: receive director's CRAM-MD5 response to our challenge.
+  // The director includes a null terminator in the frame length, so strip it.
   std::string dir_response = RecvFrame();
-  if (!dir_response.empty() && dir_response.back() == '\n') {
+  while (!dir_response.empty()
+         && (dir_response.back() == '\n' || dir_response.back() == '\0')) {
     dir_response.pop_back();
   }
 
-  // Step 7: verify director response
+  // Step 7: verify director response (accept both compatible and non-compatible)
   auto expected_hmac = HmacMd5(key, our_challenge);
-  std::string expected_b64_compat
-      = BareosBase64Encode(expected_hmac.data(), 16);
+  std::string expected_compat = BareosBase64Encode(expected_hmac.data(), 16, true);
+  std::string expected_noncompat
+      = BareosBase64Encode(expected_hmac.data(), 16, false);
 
-  // The director may use either compatible or non-compatible base64.
-  // We accept both (like python-bareos does).
-  bool ok = (dir_response == expected_b64_compat);
+  bool ok = (dir_response == expected_compat) || (dir_response == expected_noncompat);
 
   if (ok) {
     SendFrame("1000 OK auth\n");
@@ -240,20 +242,30 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
         "response)");
   }
 
-  // Step 8: receive welcome (1000 OK: <director_name> Version: ...)
+  // Step 8: receive welcome (>= 18.2: "1000\x1eOK: <name> Version: ...").
+  // The director also sends a second info frame (1002\x1e...) that we discard.
   std::string welcome = RecvFrame();
-  if (welcome.find("1000 OK") == std::string::npos) {
+  if (welcome.find("1000") == std::string::npos) {
     throw std::runtime_error("Director: unexpected welcome: " + welcome);
   }
+  // Consume the info message frame (1002).
+  RecvFrame();
 
-  // Step 9: activate JSON API if requested
+  // Step 9: activate JSON API if requested.
+  // Signal frames (e.g. BNET_MSGS_PENDING) may appear between commands;
+  // loop until we receive the actual data frame for each .api response.
   if (cfg.json_mode) {
+    auto RecvDataFrame = [this]() {
+      while (true) {
+        std::string f = RecvFrame();
+        if (!f.empty()) { return f; }
+      }
+    };
     SendFrame(".api json\n");
-    // Consume the response (a small JSON or text acknowledgement)
-    RecvResponse();
+    RecvDataFrame();
 
     SendFrame(".api json compact=yes\n");
-    RecvResponse();
+    RecvDataFrame();
   }
 }
 
@@ -304,6 +316,15 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
 std::string DirectorConnection::Call(const std::string& command)
 {
   SendFrame(command + "\n");
+  // In JSON mode the director sends a single data frame per command with no
+  // trailing BNET_EOD signal. Signal frames (e.g. BNET_MSGS_PENDING) may
+  // appear before the response; skip them until we get a real data frame.
+  if (json_mode_) {
+    while (true) {
+      std::string frame = RecvFrame();
+      if (!frame.empty()) { return frame; }
+    }
+  }
   return RecvResponse();
 }
 
