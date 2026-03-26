@@ -253,7 +253,7 @@ slot=$(mtx -f $changer status | awk -F ":" "/VolumeTag=${volume}/ {gsub(\"Storag
 /usr/sbin/mtx -f "${changer}" load ${slot} 0 || :
 /usr/bin/mt -f "${ltodrive}" rewind || :
 bls_lj_log=$tmp/bls-label_job_output.log
-tape_device=$(awk -F '=' '/^ .*Name.*=.*tapedrive-0.*/ {gsub(" ","",$2);gsub("\"","",$2);print $2}' etc/bareos/bareos-sd.d/device/tape_devices.conf)
+tape_device=$(awk -F '=' '/^ .*Name.*=.*tapedrive.-0.*/ {gsub(" ","",$2);gsub("\"","",$2);print $2}' etc/bareos/bareos-sd.d/device/tape_devices.conf)
 sbin/bls-"${TestName}" -d10 -v -c "$(pwd)/etc/bareos" --director "bareos-dir" -L -j -V ${volume} ${tape_device} >"${bls_lj_log}"
 
 expect_grep "Crypto cache read 1 entries" \
