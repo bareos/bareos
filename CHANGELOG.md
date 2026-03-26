@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - grpc-fd: fix not freeing memory of backed up filenames [PR #2591]
 - hyper-v: fix automerging AVHDX differencing disks after RCT backup [PR #2596]
 - docs and comments: fix typos [PR #2598]
+- barri: sync parameter names between plugin and cli [PR #2570]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2573]
@@ -2239,6 +2240,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2555]: https://github.com/bareos/bareos/pull/2555
 [PR #2560]: https://github.com/bareos/bareos/pull/2560
 [PR #2568]: https://github.com/bareos/bareos/pull/2568
+[PR #2570]: https://github.com/bareos/bareos/pull/2570
 [PR #2573]: https://github.com/bareos/bareos/pull/2573
 [PR #2574]: https://github.com/bareos/bareos/pull/2574
 [PR #2582]: https://github.com/bareos/bareos/pull/2582
