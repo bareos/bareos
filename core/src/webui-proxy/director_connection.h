@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,6 +44,21 @@
 
 #include <string>
 
+/** Prompt state signalled by the director at the end of a raw-mode response. */
+enum class DirectorPrompt
+{
+  Main,    ///< BNET_MAIN_PROMPT: ready for next command  ("* ")
+  Sub,     ///< BNET_SUB_PROMPT: waiting for sub-command  ("> ")
+  Select,  ///< BNET_SELECT_INPUT: waiting for a numeric selection
+  Other,   ///< any other signal (BNET_EOD etc.)
+};
+
+/** Return value of DirectorConnection::Call(). */
+struct CallResult {
+  std::string text;
+  DirectorPrompt prompt{DirectorPrompt::Main};
+};
+
 struct DirectorConfig {
   std::string host;
   int port{9101};
@@ -55,20 +70,18 @@ struct DirectorConfig {
 
 class DirectorConnection {
  public:
-  /**
-   * Connect to the director and perform full authentication.
+  /* Connect to the director and perform full authentication.
    * After return the connection is ready for Call() / CallRaw().
-   * Throws std::runtime_error on any failure.
-   */
+   * Throws std::runtime_error on any failure. */
   void Connect(const DirectorConfig& cfg);
 
-  /**
-   * Send a command and receive the complete response string.
+  /* Send a command and receive the complete response string.
    * In json_mode=true, the response is a JSON object.
    * In json_mode=false, the response is a raw text string.
-   * Throws std::runtime_error on I/O error.
-   */
-  std::string Call(const std::string& command);
+   * The returned CallResult also carries the prompt type that terminated the
+   * response so callers can update the UI prompt indicator.
+   * Throws std::runtime_error on I/O error. */
+  CallResult Call(const std::string& command);
 
   /** Cleanly disconnect from the director. */
   void Disconnect();

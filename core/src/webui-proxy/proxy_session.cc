@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -222,7 +222,7 @@ void RunProxySession(int fd,
             req_id.c_str(), command.c_str());
 
     try {
-      std::string result = director.Call(command);
+      CallResult result = director.Call(command);
 
       if (cfg.json_mode) {
         // Parse and re-emit as
@@ -231,8 +231,8 @@ void RunProxySession(int fd,
         // it so callers receive {"key": value} directly, matching the behaviour
         // of the python-bareos director.call() method.
         json_error_t jerr3{};
-        json_t* data = json_loads(result.c_str(), 0, &jerr3);
-        if (!data) { data = json_string(result.c_str()); }
+        json_t* data = json_loads(result.text.c_str(), 0, &jerr3);
+        if (!data) { data = json_string(result.text.c_str()); }
 
         // Unwrap jsonrpc envelope when present.
         if (json_is_object(data) && json_object_get(data, "jsonrpc")) {
@@ -257,14 +257,26 @@ void RunProxySession(int fd,
         ws.SendText(std::string(resp_str));
         free(resp_str);
       } else {
-        // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"..."}
+        // Raw mode: {"type":"raw_response","id":...,"command":...,"text":"...",
+        //            "prompt":"main"|"sub"|"select"}
+        const char* prompt_str = [&]() {
+          switch (result.prompt) {
+            case DirectorPrompt::Select:
+              return "select";
+            case DirectorPrompt::Sub:
+              return "sub";
+            default:
+              return "main";
+          }
+        }();
         json_t* resp = json_object();
         json_object_set_new(resp, "type", json_string("raw_response"));
         if (!req_id.empty()) {
           json_object_set_new(resp, "id", json_string(req_id.c_str()));
         }
         json_object_set_new(resp, "command", json_string(command.c_str()));
-        json_object_set_new(resp, "text", json_string(result.c_str()));
+        json_object_set_new(resp, "text", json_string(result.text.c_str()));
+        json_object_set_new(resp, "prompt", json_string(prompt_str));
         char* resp_str = json_dumps(resp, JSON_COMPACT);
         json_decref(resp);
         ws.SendText(std::string(resp_str));

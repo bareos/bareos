@@ -22,7 +22,7 @@
 
         <!-- live input line -->
         <div class="console-line console-input-line">
-          <span class="console-prompt">* </span>
+          <span class="console-prompt">{{ currentPrompt }}</span>
           <span>{{ cmd }}</span><span :class="['console-cursor', { blink: focused }]">█</span>
         </div>
       </div>
@@ -63,6 +63,7 @@ let   rawWs       = null
 let   cmdSeq      = 0
 const pendingCmds = new Map()
 const consoleStatus = ref('disconnected')
+const currentPrompt = ref('* ')  // updated from raw_response.prompt
 
 const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || 'ws://localhost:8765'
 
@@ -151,6 +152,9 @@ function connectRaw() {
       const entry = pendingCmds.get(msg.id)
       if (entry) { clearTimeout(entry.timer); pendingCmds.delete(msg.id) }
       appendLines(msg.text)
+      currentPrompt.value = msg.prompt === 'select' ? 'Select: '
+                          : msg.prompt === 'sub'    ? '> '
+                          : '* '
       scrollBottom()
       return
     }
@@ -196,7 +200,7 @@ function send() {
   }
 
   // echo the command as a completed line (even if empty — shows the prompt)
-  output.value.push({ text: `* ${c}`, cls: 'console-cmd' })
+  output.value.push({ text: `${currentPrompt.value}${c}`, cls: 'console-cmd' })
   cmd.value = ''
 
   if (!rawWs || rawWs.readyState !== WebSocket.OPEN) {
@@ -219,7 +223,7 @@ function send() {
 }
 
 function quickSend(c) {
-  output.value.push({ text: `* ${c}`, cls: 'console-cmd' })
+  output.value.push({ text: `${currentPrompt.value}${c}`, cls: 'console-cmd' })
   cmd.value = ''
   if (!rawWs || rawWs.readyState !== WebSocket.OPEN) {
     appendErr('Not connected to director.')
@@ -265,7 +269,7 @@ function onKeyDown(event) {
     }
   } else if (event.ctrlKey && event.key === 'c') {
     event.preventDefault()
-    output.value.push({ text: `* ${cmd.value}^C`, cls: 'console-cmd' })
+    output.value.push({ text: `${currentPrompt.value}${cmd.value}^C`, cls: 'console-cmd' })
     cmd.value = ''
   } else if (event.ctrlKey && event.key === 'l') {
     event.preventDefault()
@@ -319,6 +323,3 @@ watch(() => director.isConnected, (connected) => {
 .console-cursor.blink { animation: blink 1s step-end infinite; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 </style>
-
-
-

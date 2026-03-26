@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,7 +47,9 @@ static constexpr int32_t kBnetError = -4;        // Error
 static constexpr int32_t kBnetCmdOk = -15;       // Command succeeded
 static constexpr int32_t kBnetCmdBegin = -16;    // Start command execution
 static constexpr int32_t kBnetMainPrompt = -18;  // Server ready and waiting
-static constexpr int32_t kBnetSubPrompt = -27;   // At a sub-prompt
+static constexpr int32_t kBnetSelectInput
+    = -19;                                      // Waiting for numeric selection
+static constexpr int32_t kBnetSubPrompt = -27;  // At a sub-prompt
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -317,7 +319,7 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
   }
 }
 
-std::string DirectorConnection::Call(const std::string& command)
+CallResult DirectorConnection::Call(const std::string& command)
 {
   SendFrame(command + "\n");
   // Unified receive strategy for both JSON and raw (text) mode:
@@ -331,25 +333,37 @@ std::string DirectorConnection::Call(const std::string& command)
   // stop as soon as any signal is received.  This handles:
   //   JSON mode: data chunk(s) terminated by BNET_MAIN_PROMPT (no BNET_EOD)
   //   Text mode: data terminated by BNET_EOD or BNET_MAIN_PROMPT
-  //   Interactive: menu text terminated by BNET_SELECT_INPUT / BNET_YESNO
+  //   Interactive: menu text terminated by BNET_SELECT_INPUT / BNET_SUB_PROMPT
   //
   // Large responses (> ~1 MB) arrive as multiple consecutive data frames with
   // no signals between them; the loop accumulates them all correctly.
-  std::string result;
+  CallResult result;
   while (true) {
     int32_t hdr_net;
     ReadAll(fd_, &hdr_net, 4);
     int32_t len = ntohl(hdr_net);
 
     if (len < 0) {
-      if (!result.empty()) { break; }  // signal after data → done
-      continue;                        // leading signal before data → skip
+      if (!result.text.empty()) {
+        // Signal after data: determine prompt type and stop.
+        if (len == kBnetMainPrompt) {
+          result.prompt = DirectorPrompt::Main;
+        } else if (len == kBnetSubPrompt) {
+          result.prompt = DirectorPrompt::Sub;
+        } else if (len == kBnetSelectInput) {
+          result.prompt = DirectorPrompt::Select;
+        } else {
+          result.prompt = DirectorPrompt::Other;
+        }
+        break;
+      }
+      continue;  // leading signal before data → skip
     }
     if (len == 0) { continue; }  // keep-alive
 
     std::string chunk(static_cast<size_t>(len), '\0');
     ReadAll(fd_, chunk.data(), static_cast<size_t>(len));
-    result += chunk;
+    result.text += chunk;
   }
   return result;
 }
