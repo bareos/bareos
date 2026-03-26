@@ -26,7 +26,6 @@ const routes = [
       { path: 'storages/pools/:name', name: 'pool-details', component: () => import('../pages/PoolDetailsPage.vue') },
       { path: 'director', name: 'director', component: () => import('../pages/DirectorPage.vue') },
       { path: 'analytics', name: 'analytics', component: () => import('../pages/AnalyticsPage.vue') },
-      { path: 'console', name: 'console', component: () => import('../pages/ConsolePage.vue') },
       { path: 'filesets', name: 'filesets', component: () => import('../pages/FilesetsPage.vue') },
     ]
   },

@@ -39,7 +39,7 @@
               {{ dirStatusLabel }}
             </q-item-section>
           </q-item>
-          <q-item clickable v-ripple :to="{ name: 'console' }" @click="drawerOpen = false">
+          <q-item clickable v-ripple @click="openConsole(); drawerOpen = false">
             <q-item-section avatar><q-icon name="terminal" /></q-item-section>
             <q-item-section>Console</q-item-section>
           </q-item>
@@ -122,7 +122,7 @@
           <q-btn flat color="white" :label="auth.user?.director || 'director'" icon="dns" no-caps>
             <q-menu>
               <q-list dense style="min-width:160px">
-                <q-item clickable v-close-popup :to="{ name: 'console' }">
+                <q-item clickable v-close-popup @click="openConsole">
                   <q-item-section avatar><q-icon name="terminal" /></q-item-section>
                   <q-item-section>Console</q-item-section>
                 </q-item>
@@ -174,6 +174,15 @@ const router   = useRouter()
 const route    = useRoute()
 const activeTab  = ref(null)
 const drawerOpen = ref(false)
+
+function openConsole() {
+  const base = window.location.href.replace(/#.*$/, '')
+  window.open(
+    base + '#/console-popup',
+    'bareos-console',
+    'width=960,height=720,resizable=yes,scrollbars=no'
+  )
+}
 
 const navItems = [
   { label: 'Dashboard', to: '/dashboard', icon: 'dashboard'    },

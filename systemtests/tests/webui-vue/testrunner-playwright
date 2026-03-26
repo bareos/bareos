@@ -168,9 +168,9 @@ async def test_jobs_page(page):
 # ── Test 4: console page accepts a command ───────────────────────────────────
 async def test_console(page):
     await login(page)
-    # Navigate within the SPA using hash change (no full reload).
-    await page.evaluate("window.location.hash = '/console'")
-    await page.wait_for_url("**#/console", timeout=5_000)
+    # Navigate directly to the standalone console route.
+    await page.evaluate("window.location.hash = '/console-popup'")
+    await page.wait_for_url("**#/console-popup", timeout=5_000)
     # Wait for raw console WS to authenticate — status chip turns 'connected'.
     console_el = page.locator(".console-output")
     await expect(console_el).to_contain_text("Connected to", timeout=12_000)
