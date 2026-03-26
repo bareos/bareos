@@ -30,7 +30,7 @@ static const char kBase64Digits[64] = {
 };
 // clang-format on
 
-std::string BareosBase64Encode(const uint8_t* data, int len)
+std::string BareosBase64Encode(const uint8_t* data, int len, bool compatible)
 {
   std::string result;
   result.reserve((len * 4 + 2) / 3);
@@ -41,9 +41,12 @@ std::string BareosBase64Encode(const uint8_t* data, int len)
   for (int i = 0; i < len;) {
     if (rem < 6) {
       reg <<= 8;
-      // compatible=false: treat bytes >= 128 as signed (two's complement),
-      // which sign-extends into the 32-bit register.
-      reg |= static_cast<uint32_t>(static_cast<int8_t>(data[i++]));
+      if (compatible) {
+        reg |= static_cast<uint32_t>(static_cast<uint8_t>(data[i++]));
+      } else {
+        // compatible=false: signed sign-extension into the 32-bit register
+        reg |= static_cast<uint32_t>(static_cast<int8_t>(data[i++]));
+      }
       rem += 8;
     }
     uint32_t save = reg;
@@ -54,8 +57,12 @@ std::string BareosBase64Encode(const uint8_t* data, int len)
   }
 
   if (rem) {
-    // compatible=false: no left-shift of the final partial group.
-    result += kBase64Digits[reg & ((1u << rem) - 1u)];
+    uint32_t mask = (1u << rem) - 1u;
+    if (compatible) {
+      result += kBase64Digits[(reg & mask) << (6 - rem)];
+    } else {
+      result += kBase64Digits[reg & mask];
+    }
   }
 
   return result;

@@ -50,9 +50,9 @@ void ProxyServer::Run()
 
   struct addrinfo* res = nullptr;
   const std::string port_str = std::to_string(cfg_.port);
-  int rc = getaddrinfo(cfg_.bind_host.empty() ? nullptr
-                                              : cfg_.bind_host.c_str(),
-                       port_str.c_str(), &hints, &res);
+  int rc
+      = getaddrinfo(cfg_.bind_host.empty() ? nullptr : cfg_.bind_host.c_str(),
+                    port_str.c_str(), &hints, &res);
   if (rc != 0) {
     throw std::runtime_error(std::string("ProxyServer: getaddrinfo: ")
                              + gai_strerror(rc));
@@ -72,8 +72,8 @@ void ProxyServer::Run()
   freeaddrinfo(res);
 
   if (listen_fd_ < 0) {
-    throw std::runtime_error("ProxyServer: could not bind to "
-                             + cfg_.bind_host + ":" + port_str);
+    throw std::runtime_error("ProxyServer: could not bind to " + cfg_.bind_host
+                             + ":" + port_str);
   }
 
   if (::listen(listen_fd_, 16) < 0) {
@@ -82,8 +82,8 @@ void ProxyServer::Run()
     throw std::runtime_error("ProxyServer: listen() failed");
   }
 
-  fprintf(stderr, "[proxy] listening on ws://%s:%d\n",
-          cfg_.bind_host.c_str(), cfg_.port);
+  fprintf(stderr, "[proxy] listening on ws://%s:%d\n", cfg_.bind_host.c_str(),
+          cfg_.port);
   fprintf(stderr, "[proxy] default director: %s @ %s:%d\n",
           cfg_.director.name.c_str(), cfg_.director.host.c_str(),
           cfg_.director.port);
@@ -92,8 +92,8 @@ void ProxyServer::Run()
     struct sockaddr_storage client_addr{};
     socklen_t addr_len = sizeof(client_addr);
     int client_fd
-        = ::accept(listen_fd_,
-                   reinterpret_cast<struct sockaddr*>(&client_addr), &addr_len);
+        = ::accept(listen_fd_, reinterpret_cast<struct sockaddr*>(&client_addr),
+                   &addr_len);
     if (client_fd < 0) {
       // listen_fd_ was closed by Stop()
       break;
@@ -111,7 +111,15 @@ void ProxyServer::Run()
     int cfd = client_fd;
     DefaultDirectorConfig dir = cfg_.director;
     std::thread([cfd, peer, dir]() {
-      RunProxySession(cfd, peer, dir);
+      try {
+        RunProxySession(cfd, peer, dir);
+      } catch (const std::exception& ex) {
+        fprintf(stderr, "[proxy] %s session aborted: %s\n", peer.c_str(),
+                ex.what());
+      } catch (...) {
+        fprintf(stderr, "[proxy] %s session aborted (unknown exception)\n",
+                peer.c_str());
+      }
     }).detach();
   }
 

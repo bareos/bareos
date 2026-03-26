@@ -100,8 +100,7 @@ void RunProxySession(int fd,
   const char* type = json_string_value(json_object_get(auth_msg, "type"));
   if (!type || std::string(type) != "auth") {
     ws.SendText(JsonObject(
-        {{"type", "error"},
-         {"message", "First message must be type=auth"}}));
+        {{"type", "error"}, {"message", "First message must be type=auth"}}));
     json_decref(auth_msg);
     return;
   }
@@ -136,17 +135,21 @@ void RunProxySession(int fd,
     director.Connect(cfg);
   } catch (const std::exception& ex) {
     std::string msg = ex.what();
-    if (msg.find("authentication failed") != std::string::npos
-        || msg.find("Authorization failed") != std::string::npos) {
-      ws.SendText(JsonObject(
-          {{"type", "auth_error"},
-           {"message", std::string("Authentication failed: ") + ex.what()}}));
-    } else {
-      ws.SendText(JsonObject(
-          {{"type", "auth_error"},
-           {"message", std::string("Connection error: ") + ex.what()}}));
-    }
     fprintf(stderr, "[proxy] %s auth failed: %s\n", peer.c_str(), ex.what());
+    try {
+      if (msg.find("authentication failed") != std::string::npos
+          || msg.find("Authorization failed") != std::string::npos) {
+        ws.SendText(JsonObject(
+            {{"type", "auth_error"},
+             {"message", std::string("Authentication failed: ") + ex.what()}}));
+      } else {
+        ws.SendText(JsonObject(
+            {{"type", "auth_error"},
+             {"message", std::string("Connection error: ") + ex.what()}}));
+      }
+    } catch (...) {
+      // Client disconnected before we could report the failure.
+    }
     return;
   }
 
@@ -158,7 +161,12 @@ void RunProxySession(int fd,
     json_object_set_new(ok, "mode", json_string(mode.c_str()));
     char* ok_str = json_dumps(ok, JSON_COMPACT);
     json_decref(ok);
-    ws.SendText(std::string(ok_str));
+    try {
+      ws.SendText(std::string(ok_str));
+    } catch (...) {
+      free(ok_str);
+      return;  // Client disconnected right after authentication succeeded.
+    }
     free(ok_str);
   }
 
@@ -181,13 +189,11 @@ void RunProxySession(int fd,
     json_error_t jerr2{};
     json_t* req = json_loads(raw_msg.c_str(), 0, &jerr2);
     if (!req) {
-      ws.SendText(
-          JsonObject({{"type", "error"}, {"message", "Invalid JSON"}}));
+      ws.SendText(JsonObject({{"type", "error"}, {"message", "Invalid JSON"}}));
       continue;
     }
 
-    const char* req_type
-        = json_string_value(json_object_get(req, "type"));
+    const char* req_type = json_string_value(json_object_get(req, "type"));
     if (!req_type || std::string(req_type) != "command") {
       ws.SendText(JsonObject(
           {{"type", "error"}, {"message", "Expected type=command"}}));
@@ -219,10 +225,24 @@ void RunProxySession(int fd,
       std::string result = director.Call(command);
 
       if (cfg.json_mode) {
-        // Parse and re-emit as {"type":"response","id":...,"command":...,"data":{...}}
+        // Parse and re-emit as
+        // {"type":"response","id":...,"command":...,"data":{...}} The director
+        // returns a jsonrpc envelope: {"jsonrpc":"2.0","result":{...}}. Unwrap
+        // it so callers receive {"key": value} directly, matching the behaviour
+        // of the python-bareos director.call() method.
         json_error_t jerr3{};
         json_t* data = json_loads(result.c_str(), 0, &jerr3);
         if (!data) { data = json_string(result.c_str()); }
+
+        // Unwrap jsonrpc envelope when present.
+        if (json_is_object(data) && json_object_get(data, "jsonrpc")) {
+          json_t* inner = json_object_get(data, "result");
+          if (inner) {
+            json_incref(inner);
+            json_decref(data);
+            data = inner;
+          }
+        }
 
         json_t* resp = json_object();
         json_object_set_new(resp, "type", json_string("response"));
@@ -260,11 +280,15 @@ void RunProxySession(int fd,
       json_object_set_new(err, "message", json_string(ex.what()));
       char* err_str = json_dumps(err, JSON_COMPACT);
       json_decref(err);
-      ws.SendText(std::string(err_str));
-      free(err_str);
-
       fprintf(stderr, "[proxy] %s director error: %s\n", peer.c_str(),
               ex.what());
+      try {
+        ws.SendText(std::string(err_str));
+      } catch (...) {
+        free(err_str);
+        break;  // Client disconnected — end session.
+      }
+      free(err_str);
     }
   }
 

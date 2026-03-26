@@ -53,8 +53,8 @@ TEST(BareosBase64, AllZeros)
   }
 }
 
-// Single byte 0xFF: as int8_t this is -1 (sign-extended to 0xFFFFFFFF in
-// the 32-bit accumulator).
+// Single byte 0xFF with compatible=false: as int8_t this is -1 (sign-extended
+// to 0xFFFFFFFF in the 32-bit accumulator).
 //   group 1: reg>>2 = 0x3FFFFFE0 (with saved all-ones), & 0x3F = 63 → '/'
 //   rem=2 left, mask=3, 0xFFFFFFFF & 3 = 3 → 'D'
 // Cross-checked against python-bareos BareosBase64.string_to_base64([0xFF],
@@ -62,7 +62,7 @@ TEST(BareosBase64, AllZeros)
 TEST(BareosBase64, SingleByteFF)
 {
   const uint8_t data[] = {0xFF};
-  std::string result = BareosBase64Encode(data, 1);
+  std::string result = BareosBase64Encode(data, 1, false);
   EXPECT_EQ(result, "/D");
 }
 
@@ -96,12 +96,12 @@ TEST(BareosBase64, RoundTripConsistency)
 TEST(BareosBase64, HighByteDiffersFromCompatible)
 {
   const uint8_t data[] = {0x80, 0x80};
-  std::string not_compat = BareosBase64Encode(data, 2);
+  std::string not_compat = BareosBase64Encode(data, 2, false);
+  std::string compat = BareosBase64Encode(data, 2, true);
 
   // Reference from python-bareos BareosBase64.string_to_base64(..., False/True)
   EXPECT_EQ(not_compat, "g4A");
-  EXPECT_NE(not_compat, "gIA")
-      << "compatible=false must differ from compatible=true for {0x80,0x80}";
+  EXPECT_EQ(compat, "gIA");
 }
 
 // ---------------------------------------------------------------------------
@@ -146,12 +146,12 @@ TEST(CramMd5, ResponseIsReproducible)
   EXPECT_EQ(key, "5ebe2294ecd0e0f08eab7690d2a6ee69");
 
   auto hmac = HmacMd5(key, challenge);
-  std::string response = BareosBase64Encode(hmac.data(), 16);
+  std::string response = BareosBase64Encode(hmac.data(), 16, true);
 
   EXPECT_FALSE(response.empty());
 
   // Response must be the same every time (deterministic)
   auto hmac2 = HmacMd5(key, challenge);
-  std::string response2 = BareosBase64Encode(hmac2.data(), 16);
+  std::string response2 = BareosBase64Encode(hmac2.data(), 16, true);
   EXPECT_EQ(response, response2);
 }
