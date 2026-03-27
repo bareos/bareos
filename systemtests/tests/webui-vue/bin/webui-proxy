@@ -60,8 +60,8 @@ do_start()
   WS_PORT="${WEBSOCKET_PROXY_PORT}" \
     BAREOS_DIRECTOR_HOST="${BAREOS_DIRECTOR_ADDRESS:-localhost}" \
     BAREOS_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
-    "${BAREOS_WEBUI_PROXY_BINARY}"
-  #    >"${PROXY_LOG}" 2>&1 &
+    "${BAREOS_WEBUI_PROXY_BINARY}" \
+    >"${PROXY_LOG}" 2>&1 &
   echo $! >"${PROXY_PIDFILE}"
   wait_for_port "${WEBSOCKET_PROXY_PORT}"
   echo "WS proxy running (PID $(cat "${PROXY_PIDFILE}"))."
