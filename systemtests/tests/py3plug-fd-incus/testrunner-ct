@@ -115,7 +115,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @$out $tmp/log3.out
 wait
-restore client=bareos-fd fileset=IncusTestCT where=/ select all done pluginoptions=python:restore_instance=$NEWINSTANCE
+restore client=bareos-fd fileset=IncusTestCT select all done pluginoptions=python:restore_instance=$NEWINSTANCE
 yes
 wait
 messages
