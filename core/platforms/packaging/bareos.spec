@@ -644,6 +644,23 @@ Conflicts: mod_php_any
 %{dscr}
 
 This package contains the webui (Bareos Web User Interface).
+
+%package webui-vue
+Summary:       Bareos WebUI Vue (new Vue/Quasar web interface)
+Group:         Productivity/Archiving/Backup
+Requires:      %{name}-webui-proxy = %{version}
+Requires:      httpd
+%if 0%{?rhel} || 0%{?fedora}
+Requires:      mod_proxy
+%endif
+
+%description webui-vue
+%{dscr}
+
+This package contains bareos-webui-vue, the new Bareos Web User
+Interface built with Vue and Quasar. It serves a single-page
+application and proxies WebSocket connections through
+bareos-webui-proxy to the Bareos Director.
 %endif
 
 %if 0%{?contrib}
@@ -998,6 +1015,11 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %config(noreplace) /etc/bareos-webui/directors.ini
 %config(noreplace) /etc/bareos-webui/configuration.ini
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
+
+%files webui-vue
+%defattr(-,root,root,-)
+%{_datadir}/%{name}-webui-vue/
+%config(noreplace) %{_apache_conf_dir}/bareos-webui-vue.conf
 %endif
 
 %files client
