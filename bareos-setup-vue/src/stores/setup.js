@@ -10,7 +10,7 @@ export const useSetupStore = defineStore('setup', () => {
     director: true,
     storage:  true,
     filedaemon: true,
-    webui:    false,
+    webui:    true,
   })
 
   // Repo type: 'community' | 'subscription'
