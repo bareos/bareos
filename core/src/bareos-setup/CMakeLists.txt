@@ -17,6 +17,16 @@ find_package(Jansson REQUIRED)
 set(SETUP_VUE_SRC "${CMAKE_SOURCE_DIR}/bareos-setup-vue")
 set(SETUP_VUE_DIST "${SETUP_VUE_SRC}/dist")
 
+# Collect Vue source files so CMake knows when to retrigger the build
+file(GLOB_RECURSE SETUP_VUE_SOURCES
+    "${SETUP_VUE_SRC}/src/*.vue"
+    "${SETUP_VUE_SRC}/src/*.js"
+    "${SETUP_VUE_SRC}/src/*.scss"
+    "${SETUP_VUE_SRC}/index.html"
+    "${SETUP_VUE_SRC}/package.json"
+    "${SETUP_VUE_SRC}/vite.config.js"
+)
+
 # Stamp file tracks when dist/ was last rebuilt
 set(SETUP_VUE_STAMP "${CMAKE_CURRENT_BINARY_DIR}/bareos-setup-vue.stamp")
 
@@ -26,6 +36,7 @@ add_custom_command(
     COMMAND npm run build
     COMMAND ${CMAKE_COMMAND} -E touch "${SETUP_VUE_STAMP}"
     WORKING_DIRECTORY "${SETUP_VUE_SRC}"
+    DEPENDS ${SETUP_VUE_SOURCES}
     COMMENT "Building bareos-setup-vue frontend"
     VERBATIM
 )
