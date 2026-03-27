@@ -69,8 +69,10 @@ set(SETUP_SOURCES
     main.cc
     http_server.cc
     setup_session.cc
+    setup_steps.cc
     command_runner.cc
     os_detector.cc
+    tui_wizard.cc
     "${EMBEDDED_ASSETS_CC}"
     # Reuse WsCodec + base64 from bareos-webui-proxy
     "${CMAKE_CURRENT_SOURCE_DIR}/../webui-proxy/ws_codec.cc"

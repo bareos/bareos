@@ -22,7 +22,7 @@
  * @file
  * bareos-setup: single-binary installation wizard.
  *
- * Usage: bareos-setup [--port PORT] [--no-browser]
+ * Usage: bareos-setup [--port PORT] [--no-browser] [--tui] [--dry]
  */
 #include <cstdlib>
 #include <iostream>
@@ -34,6 +34,7 @@
 
 #include "http_server.h"
 #include "setup_session.h"
+#include "tui_wizard.h"
 
 static void OpenBrowser(int port)
 {
@@ -62,11 +63,17 @@ int main(int argc, char* argv[])
   app.add_flag("--dry", dry_run,
                "Dry-run mode: print commands instead of executing them");
 
+  bool tui = false;
+  app.add_flag("--tui", tui, "Run as interactive terminal wizard instead of web UI");
+
   CLI11_PARSE(app, argc, argv);
 
   std::cout << "Bareos Setup Wizard " << BAREOS_FULL_VERSION;
   if (dry_run) std::cout << " [dry-run]";
   std::cout << "\n";
+
+  // TUI mode: run interactively in the terminal, no HTTP server.
+  if (tui) return RunTuiWizard(dry_run);
 
   // Fork before starting the server so the child opens the browser
   // after the parent has started listening.
