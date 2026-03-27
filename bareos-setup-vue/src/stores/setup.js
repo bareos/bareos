@@ -14,9 +14,15 @@ export const useSetupStore = defineStore('setup', () => {
   })
 
   // Repo type: 'community' | 'subscription'
-  const repoType     = ref('community')
+  const repoType     = ref('subscription')
   const repoAdded    = ref(false)
   const packagesInstalled = ref(false)
+
+  // Subscription credentials (only used when repoType === 'subscription')
+  const repoCredentials = reactive({
+    login:    '',
+    password: '',
+  })
 
   // DB config
   const dbConfig = reactive({
@@ -55,7 +61,7 @@ export const useSetupStore = defineStore('setup', () => {
   }
 
   return {
-    osInfo, components, repoType, repoAdded,
+    osInfo, components, repoType, repoCredentials, repoAdded,
     packagesInstalled, dbConfig, passwords, setupDone,
     stepIndex, steps, nextStep, prevStep, goTo,
   }

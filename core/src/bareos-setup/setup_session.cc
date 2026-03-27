@@ -113,7 +113,9 @@ static std::string CapFirst(std::string s)
 /** Build the command to add the Bareos repository. */
 static std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
                                                 const std::string& version,
-                                                const std::string& repo_type)
+                                                const std::string& repo_type,
+                                                const std::string& login,
+                                                const std::string& password)
 {
   const std::string base = (repo_type == "subscription")
       ? "https://download.bareos.com/bareos/release/latest"
@@ -123,9 +125,16 @@ static std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
       = base + "/" + CapFirst(distro) + "_" + version
         + "/add_bareos_repositories.sh";
 
+  // For subscription repos, pass credentials via curl -u
+  std::string curl_auth;
+  if (repo_type == "subscription" && !login.empty()) {
+    // Shell-quote the credentials to handle special characters
+    curl_auth = " -u '" + login + ":" + password + "'";
+  }
+
   return {
       "bash", "-c",
-      "curl -fsSL " + script_url + " | bash"
+      "curl -fsSL" + curl_auth + " " + script_url + " | bash"
   };
 }
 
@@ -165,7 +174,9 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
     cmd = BuildAddRepoCmd(
         JStr(msg, "distro"),
         JStr(msg, "version"),
-        JStr(msg, "repo_type"));
+        JStr(msg, "repo_type"),
+        JStr(msg, "repo_login"),
+        JStr(msg, "repo_password"));
 
   } else if (step_id == "install_packages") {
     std::vector<std::string> pkgs;

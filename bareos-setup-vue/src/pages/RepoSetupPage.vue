@@ -9,6 +9,23 @@
       <q-card-section>
         <q-option-group v-model="store.repoType" :options="repoOptions" color="primary" />
       </q-card-section>
+
+      <!-- Subscription credentials -->
+      <q-card-section v-if="store.repoType === 'subscription'" class="q-pt-none q-gutter-md">
+        <q-input
+          v-model="store.repoCredentials.login"
+          label="Subscription login"
+          dense outlined
+          :rules="[v => !!v || 'Login is required']"
+        />
+        <q-input
+          v-model="store.repoCredentials.password"
+          label="Subscription password"
+          type="password"
+          dense outlined
+          :rules="[v => !!v || 'Password is required']"
+        />
+      </q-card-section>
     </q-card>
 
     <q-banner class="bg-info text-white q-mb-lg" rounded>
@@ -17,7 +34,7 @@
     </q-banner>
 
     <!-- Live output -->
-    <div v-if="lines.length" class="output-console q-mb-md" ref="console">
+    <div v-if="lines.length" class="output-console q-mb-md" ref="console_">
       <div v-for="(l, i) in lines" :key="i" :class="l.cls">{{ l.text }}</div>
     </div>
 
@@ -31,6 +48,7 @@
       <div class="row q-gutter-sm">
         <q-btn v-if="!store.repoAdded" label="Add Repository"
                color="secondary" icon="source" :loading="running"
+               :disable="!canProceed"
                @click="addRepo" />
         <q-btn v-else label="Continue" color="primary" icon-right="arrow_forward"
                @click="next" />
@@ -56,8 +74,8 @@ const lines    = ref([])
 const console_ = ref(null)
 
 const repoOptions = [
-  { label: 'Community (free)',        value: 'community' },
   { label: 'Subscription (requires Bareos subscription)', value: 'subscription' },
+  { label: 'Community (free)',                            value: 'community' },
 ]
 
 const repoUrl = computed(() => {
@@ -69,6 +87,13 @@ const repoUrl = computed(() => {
     ? store.osInfo.distro.charAt(0).toUpperCase() + store.osInfo.distro.slice(1)
     : ''
   return `${base}/${distro}_${store.osInfo.version}/`
+})
+
+const canProceed = computed(() => {
+  if (store.repoType === 'subscription') {
+    return !!store.repoCredentials.login && !!store.repoCredentials.password
+  }
+  return true
 })
 
 watch(messages, (msgs) => {
@@ -103,6 +128,9 @@ function addRepo() {
     repo_type: store.repoType,
     distro:    store.osInfo?.distro,
     version:   store.osInfo?.version,
+    // only set for subscription
+    repo_login:    store.repoType === 'subscription' ? store.repoCredentials.login    : '',
+    repo_password: store.repoType === 'subscription' ? store.repoCredentials.password : '',
   })
 }
 
