@@ -1060,12 +1060,10 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 
 %files setup
 %defattr(-, root, root)
-%{_bindir}/bareos-setup
 %{_sbindir}/bareos-setup
 
 %files webui-proxy
 %defattr(-, root, root)
-%{_bindir}/bareos-webui-proxy
 %{_sbindir}/bareos-webui-proxy
 
 
