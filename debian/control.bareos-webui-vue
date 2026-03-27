@@ -1,0 +1,13 @@
+Package: bareos-webui-vue
+Architecture: all
+Depends: apache2 | httpd,
+   bareos-webui-proxy (= ${binary:Version}),
+   ${misc:Depends}
+Description: Backup Archiving Recovery Open Sourced - Vue/Quasar web interface
+ Bareos is a set of programs to manage backup, recovery and verification of
+ data across a network of computers of different kinds.
+ .
+ This package contains bareos-webui-vue, the new Bareos web interface
+ built with Vue 3 and Quasar. It serves a single-page application and
+ proxies WebSocket connections through bareos-webui-proxy to the
+ Bareos Director.
