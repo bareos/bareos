@@ -90,7 +90,7 @@ int RunCommand(const std::vector<std::string>& argv,
     execvp(cargv[0], const_cast<char* const*>(cargv.data()));
     // execvp failed — write error to stderr and exit
     const char* msg = strerror(errno);
-    write(STDERR_FILENO, msg, strlen(msg));
+    [[maybe_unused]] auto _ = write(STDERR_FILENO, msg, strlen(msg));
     _exit(127);
   }
 
