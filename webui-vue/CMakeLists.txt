@@ -42,20 +42,22 @@ file(
   "${WEBUI_VUE_SRC}/vite.config.js"
 )
 
-set(WEBUI_VUE_STAMP "${CMAKE_CURRENT_BINARY_DIR}/bareos-webui-vue.stamp")
+set(WEBUI_VUE_DIST_INDEX "${WEBUI_VUE_DIST}/index.html")
 
+# Use dist/index.html as the build output so CMake's dependency tracking
+# skips the npm build when the checked-in dist is already up-to-date.
+# Run `npm run build` (not `npm ci`) so no network access is required;
+# run `npm ci` manually once when updating dependencies.
 add_custom_command(
-  OUTPUT "${WEBUI_VUE_STAMP}"
-  COMMAND npm ci --silent
+  OUTPUT "${WEBUI_VUE_DIST_INDEX}"
   COMMAND npm run build
-  COMMAND ${CMAKE_COMMAND} -E touch "${WEBUI_VUE_STAMP}"
   WORKING_DIRECTORY "${WEBUI_VUE_SRC}"
   DEPENDS ${WEBUI_VUE_SOURCES}
   COMMENT "Building bareos-webui-vue frontend"
   VERBATIM
 )
 
-add_custom_target(bareos-webui-vue-build ALL DEPENDS "${WEBUI_VUE_STAMP}")
+add_custom_target(bareos-webui-vue-build ALL DEPENDS "${WEBUI_VUE_DIST_INDEX}")
 
 install(
   DIRECTORY ${WEBUI_VUE_DIST}/

@@ -27,14 +27,15 @@ file(GLOB_RECURSE SETUP_VUE_SOURCES
     "${SETUP_VUE_SRC}/vite.config.js"
 )
 
-# Stamp file tracks when dist/ was last rebuilt
-set(SETUP_VUE_STAMP "${CMAKE_CURRENT_BINARY_DIR}/bareos-setup-vue.stamp")
+set(SETUP_VUE_DIST_INDEX "${SETUP_VUE_DIST}/index.html")
 
+# Use dist/index.html as the build output so CMake's dependency tracking
+# skips the npm build when the checked-in dist is already up-to-date.
+# Run `npm run build` (not `npm ci`) so no network access is required;
+# run `npm ci` manually once when updating dependencies.
 add_custom_command(
-    OUTPUT "${SETUP_VUE_STAMP}"
-    COMMAND npm ci --silent
+    OUTPUT "${SETUP_VUE_DIST_INDEX}"
     COMMAND npm run build
-    COMMAND ${CMAKE_COMMAND} -E touch "${SETUP_VUE_STAMP}"
     WORKING_DIRECTORY "${SETUP_VUE_SRC}"
     DEPENDS ${SETUP_VUE_SOURCES}
     COMMENT "Building bareos-setup-vue frontend"
@@ -42,7 +43,7 @@ add_custom_command(
 )
 
 add_custom_target(bareos-setup-vue-build
-    DEPENDS "${SETUP_VUE_STAMP}"
+    DEPENDS "${SETUP_VUE_DIST_INDEX}"
 )
 
 # ---------------------------------------------------------------------------
@@ -56,7 +57,7 @@ add_custom_command(
             "${CMAKE_CURRENT_SOURCE_DIR}/embed_assets.py"
             "${SETUP_VUE_DIST}"
             "${EMBEDDED_ASSETS_CC}"
-    DEPENDS "${SETUP_VUE_STAMP}"
+    DEPENDS "${SETUP_VUE_DIST_INDEX}"
             "${CMAKE_CURRENT_SOURCE_DIR}/embed_assets.py"
     COMMENT "Embedding bareos-setup-vue assets"
     VERBATIM
