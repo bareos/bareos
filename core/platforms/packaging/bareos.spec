@@ -984,6 +984,7 @@ install -d -m 755 %{buildroot}%{_unitdir}
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-dir.service %{buildroot}%{_unitdir}
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-fd.service %{buildroot}%{_unitdir}
 install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-sd.service %{buildroot}%{_unitdir}
+install -m 644 %{CMAKE_BUILDDIR}/core/platforms/systemd/bareos-webui-proxy.service %{buildroot}%{_unitdir}
 %if 0%{?suse_version}
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-dir
 ln -sf service %{buildroot}%{_sbindir}/rcbareos-fd
@@ -1065,6 +1066,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %files webui-proxy
 %defattr(-, root, root)
 %{_sbindir}/bareos-webui-proxy
+%{_unitdir}/bareos-webui-proxy.service
 
 
 %if !0%{?client_only}

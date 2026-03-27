@@ -37,4 +37,7 @@ if(NOT client-only)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-dir.service"
           DESTINATION ${SYSTEMD_UNITDIR}
   )
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-webui-proxy.service"
+          DESTINATION ${SYSTEMD_UNITDIR}
+  )
 endif()
