@@ -170,7 +170,7 @@ static std::vector<std::string> BuildInstallCmd(
   return {"echo", "Unsupported package manager: " + pkg_mgr};
 }
 
-static void HandleRunStep(WsCodec& ws, json_t* msg)
+static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
 {
   std::string step_id = JStr(msg, "id");
   bool use_sudo       = JBool(msg, "sudo");
@@ -219,19 +219,40 @@ static void HandleRunStep(WsCodec& ws, json_t* msg)
   }
 
   int exit_code = 0;
-  try {
-    exit_code = RunCommand(
-        cmd, use_sudo,
-        [&ws, &step_id](const std::string& line, const std::string& stream) {
-          json_t* obj = json_pack("{s:s, s:s, s:s}",
-                                  "type",   "output",
-                                  "line",   line.c_str(),
-                                  "stream", stream.c_str());
-          ws.SendText(Dump(obj));
-        });
-  } catch (const std::exception& e) {
-    SendError(ws, step_id, e.what());
-    return;
+
+  if (dry_run) {
+    // Build the full command line as it would be executed and print it.
+    std::string line = "[dry-run] ";
+    if (use_sudo) line += "sudo ";
+    for (size_t i = 0; i < cmd.size(); ++i) {
+      if (i > 0) line += ' ';
+      // Quote arguments that contain spaces
+      if (cmd[i].find(' ') != std::string::npos) {
+        line += '\'' + cmd[i] + '\'';
+      } else {
+        line += cmd[i];
+      }
+    }
+    json_t* obj = json_pack("{s:s, s:s, s:s}",
+                             "type",   "output",
+                             "line",   line.c_str(),
+                             "stream", "stdout");
+    ws.SendText(Dump(obj));
+  } else {
+    try {
+      exit_code = RunCommand(
+          cmd, use_sudo,
+          [&ws, &step_id](const std::string& line, const std::string& stream) {
+            json_t* obj = json_pack("{s:s, s:s, s:s}",
+                                    "type",   "output",
+                                    "line",   line.c_str(),
+                                    "stream", stream.c_str());
+            ws.SendText(Dump(obj));
+          });
+    } catch (const std::exception& e) {
+      SendError(ws, step_id, e.what());
+      return;
+    }
   }
 
   json_t* done = json_pack("{s:s, s:s, s:i}",
@@ -267,7 +288,7 @@ static void HandleGenerateScript(WsCodec& ws)
 // Session entry point
 // ---------------------------------------------------------------------------
 
-void RunSetupSession(int fd)
+void RunSetupSession(int fd, bool dry_run)
 {
   WsCodec ws(fd);
   try {
@@ -287,7 +308,7 @@ void RunSetupSession(int fd)
       if (action == "detect_os") {
         HandleDetectOs(ws);
       } else if (action == "run_step") {
-        HandleRunStep(ws, msg);
+        HandleRunStep(ws, msg, dry_run);
       } else if (action == "generate_script") {
         HandleGenerateScript(ws);
       } else {

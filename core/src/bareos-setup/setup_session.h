@@ -30,7 +30,10 @@
  * Handle one WebSocket connection (fd is already upgraded).
  * Reads JSON messages from the browser, executes actions, and sends
  * JSON responses.  Returns when the connection is closed.
+ *
+ * When dry_run is true, commands are printed to the output stream
+ * instead of being executed; exit_code is always reported as 0.
  */
-void RunSetupSession(int fd);
+void RunSetupSession(int fd, bool dry_run = false);
 
 #endif  // BAREOS_BAREOS_SETUP_SETUP_SESSION_H_

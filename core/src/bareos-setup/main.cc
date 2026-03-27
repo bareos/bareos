@@ -58,9 +58,15 @@ int main(int argc, char* argv[])
   bool no_browser = false;
   app.add_flag("--no-browser", no_browser, "Do not open the browser automatically");
 
+  bool dry_run = false;
+  app.add_flag("--dry", dry_run,
+               "Dry-run mode: print commands instead of executing them");
+
   CLI11_PARSE(app, argc, argv);
 
-  std::cout << "Bareos Setup Wizard " << BAREOS_FULL_VERSION << "\n";
+  std::cout << "Bareos Setup Wizard " << BAREOS_FULL_VERSION;
+  if (dry_run) std::cout << " [dry-run]";
+  std::cout << "\n";
 
   // Fork before starting the server so the child opens the browser
   // after the parent has started listening.
@@ -76,7 +82,7 @@ int main(int argc, char* argv[])
   }
 
   try {
-    RunHttpServer(port, [](int fd) { RunSetupSession(fd); });
+    RunHttpServer(port, [dry_run](int fd) { RunSetupSession(fd, dry_run); });
   } catch (const std::exception& e) {
     std::cerr << "Fatal: " << e.what() << "\n";
     return 1;
