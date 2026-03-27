@@ -191,16 +191,8 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
     cmd = BuildInstallCmd(JStr(msg, "pkg_mgr"), pkgs);
 
   } else if (step_id == "setup_db") {
-    std::string db_name = JStr(msg, "db_name");
-    std::string db_user = JStr(msg, "db_user");
-    if (db_name.empty()) db_name = "bareos";
-    if (db_user.empty()) db_user = "bareos";
     cmd = {
         "bash", "-c",
-        "su - postgres -c \"createuser --no-superuser --no-createrole "
-        "--no-createdb " + db_user + " 2>/dev/null || true\" && "
-        "su - postgres -c \"createdb --owner=" + db_user + " " + db_name
-        + " 2>/dev/null || true\" && "
         "/usr/lib/bareos/scripts/create_bareos_database && "
         "/usr/lib/bareos/scripts/make_bareos_tables && "
         "/usr/lib/bareos/scripts/grant_bareos_privileges"

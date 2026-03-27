@@ -7,13 +7,11 @@
 
     <q-card flat bordered class="q-mb-md">
       <q-card-section>
-        <q-toggle v-model="store.dbConfig.createDb" label="Create database and initialize schema" />
-        <div v-if="store.dbConfig.createDb" class="q-mt-md q-gutter-md">
-          <q-input v-model="store.dbConfig.dbName" label="Database name"
-                   dense outlined />
-          <q-input v-model="store.dbConfig.dbUser" label="Database user"
-                   dense outlined />
-        </div>
+        <q-toggle v-model="store.dbConfig.createDb" label="Initialize Bareos catalog database" />
+        <p v-if="store.dbConfig.createDb" class="text-caption text-grey q-mt-sm q-mb-none">
+          Runs <code>create_bareos_database</code>, <code>make_bareos_tables</code>
+          and <code>grant_bareos_privileges</code> as root.
+        </p>
       </q-card-section>
     </q-card>
 
@@ -88,11 +86,9 @@ function setupDb() {
   dbDone.value = false
   running.value = true
   send({
-    action:  'run_step',
-    id:      'setup_db',
-    sudo:    true,
-    db_name: store.dbConfig.dbName,
-    db_user: store.dbConfig.dbUser,
+    action: 'run_step',
+    id:     'setup_db',
+    sudo:   true,
   })
 }
 
