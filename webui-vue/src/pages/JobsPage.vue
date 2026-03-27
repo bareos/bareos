@@ -41,7 +41,6 @@
               dense flat
               :loading="loading"
               v-model:pagination="pagination"
-              :rows-number="totalJobs"
               @request="onRequest"
             >
               <template #body-cell-id="props">
@@ -416,7 +415,9 @@ const jobs       = ref([])
 const totalJobs  = ref(0)
 const loading    = ref(false)
 const error      = ref(null)
-const pagination = ref({ page: 1, rowsPerPage: 25, sortBy: 'id', descending: true })
+// rowsNumber must live inside the pagination object for Quasar's server-side
+// pagination controls to render correctly.
+const pagination = ref({ page: 1, rowsPerPage: 25, sortBy: 'id', descending: true, rowsNumber: 0 })
 
 async function fetchPage() {
   if (!director.isConnected) return
@@ -432,14 +433,14 @@ async function fetchPage() {
     ])
     if (pageResult.status === 'rejected') throw pageResult.reason
     jobs.value = (pageResult.value?.jobs ?? []).map(normaliseJob)
-    if (countResult.status === 'fulfilled') {
-      totalJobs.value = Number(countResult.value?.count ?? 0)
-    } else {
+    const count = countResult.status === 'fulfilled'
+      ? Number(countResult.value?.count ?? 0)
       // Estimate total when count query is unsupported
-      totalJobs.value = jobs.value.length < rowsPerPage
-        ? offset + jobs.value.length
-        : offset + jobs.value.length + rowsPerPage
-    }
+      : (jobs.value.length < rowsPerPage
+          ? offset + jobs.value.length
+          : offset + jobs.value.length + rowsPerPage)
+    totalJobs.value = count
+    pagination.value = { ...pagination.value, rowsNumber: count }
   } catch (e) {
     error.value = e.message
   } finally {
