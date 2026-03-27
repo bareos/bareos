@@ -110,47 +110,23 @@ static std::string CapFirst(std::string s)
   return s;
 }
 
-/** Build the apt/dnf/zypper commands to add the Bareos repo. */
-static std::vector<std::string> BuildAddRepoCmd(const std::string& pkg_mgr,
-                                                const std::string& distro,
+/** Build the command to add the Bareos repository. */
+static std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
                                                 const std::string& version,
-                                                const std::string& codename,
                                                 const std::string& repo_type)
 {
   const std::string base = (repo_type == "subscription")
       ? "https://download.bareos.com/bareos/release/latest"
       : "https://download.bareos.org/current";
 
-  // Bareos repo paths use capitalized distro names, e.g. "Fedora_43"
-  const std::string dir = CapFirst(distro) + "_" + version;
+  const std::string script_url
+      = base + "/" + CapFirst(distro) + "_" + version
+        + "/add_bareos_repositories.sh";
 
-  if (pkg_mgr == "apt") {
-    std::string repo_url = base + "/" + dir + "/";
-    std::string code = codename.empty() ? version : codename;
-    return {
-        "bash", "-c",
-        "curl -fsSL " + repo_url + "Release.key | gpg --dearmor "
-        "-o /etc/apt/keyrings/bareos.gpg && "
-        "echo 'deb [signed-by=/etc/apt/keyrings/bareos.gpg] "
-        + repo_url + " " + code + " main' "
-        "> /etc/apt/sources.list.d/bareos.list && "
-        "apt-get update -qq"
-    };
-  } else if (pkg_mgr == "dnf" || pkg_mgr == "yum") {
-    std::string repo_url = base + "/" + dir + "/";
-    return {
-        "bash", "-c",
-        pkg_mgr + " config-manager --add-repo " + repo_url
-        + "bareos.repo"
-    };
-  } else if (pkg_mgr == "zypper") {
-    std::string repo_url = base + "/" + dir + "/";
-    return {
-        "bash", "-c",
-        "zypper addrepo -f " + repo_url + " bareos && zypper refresh"
-    };
-  }
-  return {"echo", "Unsupported package manager: " + pkg_mgr};
+  return {
+      "bash", "-c",
+      "curl -fsSL " + script_url + " | bash"
+  };
 }
 
 /** Build the install command for a list of packages. */
@@ -187,10 +163,8 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
 
   if (step_id == "add_repo") {
     cmd = BuildAddRepoCmd(
-        JStr(msg, "pkg_mgr"),
         JStr(msg, "distro"),
         JStr(msg, "version"),
-        JStr(msg, "codename"),
         JStr(msg, "repo_type"));
 
   } else if (step_id == "install_packages") {
