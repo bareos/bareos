@@ -2,6 +2,7 @@
   "name": "bareos-setup-vue",
   "version": "1.0.0",
   "description": "Bareos Setup Wizard - Vue/Quasar frontend",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

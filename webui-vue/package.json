@@ -2,6 +2,7 @@
   "name": "bareos-webui-vue",
   "version": "1.0.0",
   "description": "Bareos WebUI - Vue/Quasar frontend",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
