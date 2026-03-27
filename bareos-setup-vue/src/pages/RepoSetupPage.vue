@@ -6,25 +6,36 @@
     </p>
 
     <q-card flat bordered class="q-mb-md">
+      <!-- Subscription option + credentials -->
       <q-card-section>
-        <q-option-group v-model="store.repoType" :options="repoOptions" color="primary" />
+        <q-radio v-model="store.repoType" val="subscription"
+                 label="Subscription (requires Bareos subscription)"
+                 color="primary" />
+        <div v-if="store.repoType === 'subscription'"
+             class="q-mt-md q-ml-lg q-gutter-md">
+          <q-input
+            v-model="store.repoCredentials.login"
+            label="Subscription login"
+            dense outlined
+            :rules="[v => !!v || 'Login is required']"
+          />
+          <q-input
+            v-model="store.repoCredentials.password"
+            label="Subscription password"
+            type="password"
+            dense outlined
+            :rules="[v => !!v || 'Password is required']"
+          />
+        </div>
       </q-card-section>
 
-      <!-- Subscription credentials -->
-      <q-card-section v-if="store.repoType === 'subscription'" class="q-pt-none q-gutter-md">
-        <q-input
-          v-model="store.repoCredentials.login"
-          label="Subscription login"
-          dense outlined
-          :rules="[v => !!v || 'Login is required']"
-        />
-        <q-input
-          v-model="store.repoCredentials.password"
-          label="Subscription password"
-          type="password"
-          dense outlined
-          :rules="[v => !!v || 'Password is required']"
-        />
+      <q-separator />
+
+      <!-- Community option -->
+      <q-card-section>
+        <q-radio v-model="store.repoType" val="community"
+                 label="Community (free)"
+                 color="primary" />
       </q-card-section>
     </q-card>
 
@@ -72,11 +83,6 @@ const done     = ref(false)
 const exitCode = ref(0)
 const lines    = ref([])
 const console_ = ref(null)
-
-const repoOptions = [
-  { label: 'Subscription (requires Bareos subscription)', value: 'subscription' },
-  { label: 'Community (free)',                            value: 'community' },
-]
 
 const repoUrl = computed(() => {
   if (!store.osInfo) return '(OS not yet detected)'
