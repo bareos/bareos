@@ -103,6 +103,13 @@ static void HandleDetectOs(WsCodec& ws)
   }
 }
 
+/** Capitalize the first letter of s (Bareos repo paths use e.g. "Fedora_43"). */
+static std::string CapFirst(std::string s)
+{
+  if (!s.empty()) s[0] = static_cast<char>(std::toupper(s[0]));
+  return s;
+}
+
 /** Build the apt/dnf/zypper commands to add the Bareos repo. */
 static std::vector<std::string> BuildAddRepoCmd(const std::string& pkg_mgr,
                                                 const std::string& distro,
@@ -114,11 +121,12 @@ static std::vector<std::string> BuildAddRepoCmd(const std::string& pkg_mgr,
       ? "https://download.bareos.com/bareos/release/latest"
       : "https://download.bareos.org/current";
 
+  // Bareos repo paths use capitalized distro names, e.g. "Fedora_43"
+  const std::string dir = CapFirst(distro) + "_" + version;
+
   if (pkg_mgr == "apt") {
-    // Use the Bareos script or direct approach
-    std::string repo_url = base + "/" + distro + "_" + version + "/";
+    std::string repo_url = base + "/" + dir + "/";
     std::string code = codename.empty() ? version : codename;
-    // Write a .list file
     return {
         "bash", "-c",
         "curl -fsSL " + repo_url + "Release.key | gpg --dearmor "
@@ -129,14 +137,14 @@ static std::vector<std::string> BuildAddRepoCmd(const std::string& pkg_mgr,
         "apt-get update -qq"
     };
   } else if (pkg_mgr == "dnf" || pkg_mgr == "yum") {
-    std::string repo_url = base + "/" + distro + "_" + version + "/";
+    std::string repo_url = base + "/" + dir + "/";
     return {
         "bash", "-c",
         pkg_mgr + " config-manager --add-repo " + repo_url
         + "bareos.repo"
     };
   } else if (pkg_mgr == "zypper") {
-    std::string repo_url = base + "/" + distro + "_" + version + "/";
+    std::string repo_url = base + "/" + dir + "/";
     return {
         "bash", "-c",
         "zypper addrepo -f " + repo_url + " bareos && zypper refresh"

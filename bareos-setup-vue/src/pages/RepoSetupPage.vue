@@ -65,7 +65,10 @@ const repoUrl = computed(() => {
   const base = store.repoType === 'subscription'
     ? 'https://download.bareos.com/bareos/release/latest'
     : 'https://download.bareos.org/current'
-  return `${base}/${store.osInfo.distro}_${store.osInfo.version}/`
+  const distro = store.osInfo.distro
+    ? store.osInfo.distro.charAt(0).toUpperCase() + store.osInfo.distro.slice(1)
+    : ''
+  return `${base}/${distro}_${store.osInfo.version}/`
 })
 
 watch(messages, (msgs) => {
