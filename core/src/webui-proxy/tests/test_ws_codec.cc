@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -115,7 +115,7 @@ TEST(WsCodec, SendTextFrame)
   uint8_t b0 = static_cast<uint8_t>(header[0]);
   uint8_t b1 = static_cast<uint8_t>(header[1]);
 
-  EXPECT_EQ(b0, 0x81u);  // FIN=1, opcode=text
+  EXPECT_EQ(b0, 0x81u);       // FIN=1, opcode=text
   EXPECT_EQ(b1 & 0x80u, 0u);  // server must NOT mask
   EXPECT_EQ(b1 & 0x7Fu, payload.size());
 

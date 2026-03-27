@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,17 +54,20 @@ int main(int argc, char* argv[])
   app.set_version_flag("--version", BAREOS_FULL_VERSION);
 
   int port = 19101;
-  app.add_option("--port,-p", port, "TCP port to listen on")->default_val(19101);
+  app.add_option("--port,-p", port, "TCP port to listen on")
+      ->default_val(19101);
 
   bool no_browser = false;
-  app.add_flag("--no-browser", no_browser, "Do not open the browser automatically");
+  app.add_flag("--no-browser", no_browser,
+               "Do not open the browser automatically");
 
   bool dry_run = false;
   app.add_flag("--dry", dry_run,
                "Dry-run mode: print commands instead of executing them");
 
   bool tui = false;
-  app.add_flag("--tui", tui, "Run as interactive terminal wizard instead of web UI");
+  app.add_flag("--tui", tui,
+               "Run as interactive terminal wizard instead of web UI");
 
   CLI11_PARSE(app, argc, argv);
 

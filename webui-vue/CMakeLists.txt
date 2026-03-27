@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,8 @@ set(WEBUI_VUE_SRC "${CMAKE_CURRENT_SOURCE_DIR}")
 set(WEBUI_VUE_DIST "${WEBUI_VUE_SRC}/dist")
 
 file(
-  GLOB_RECURSE WEBUI_VUE_SOURCES
+  GLOB_RECURSE
+  WEBUI_VUE_SOURCES
   "${WEBUI_VUE_SRC}/src/*.vue"
   "${WEBUI_VUE_SRC}/src/*.js"
   "${WEBUI_VUE_SRC}/src/*.scss"
@@ -44,10 +45,10 @@ file(
 
 set(WEBUI_VUE_DIST_INDEX "${WEBUI_VUE_DIST}/index.html")
 
-# Use dist/index.html as the build output so CMake's dependency tracking
-# skips the npm build when the checked-in dist is already up-to-date.
-# Run `npm run build` (not `npm ci`) so no network access is required;
-# run `npm ci` manually once when updating dependencies.
+# Use dist/index.html as the build output so CMake's dependency tracking skips
+# the npm build when the checked-in dist is already up-to-date. Run `npm run
+# build` (not `npm ci`) so no network access is required; run `npm ci` manually
+# once when updating dependencies.
 add_custom_command(
   OUTPUT "${WEBUI_VUE_DIST_INDEX}"
   COMMAND npm run build

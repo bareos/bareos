@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,8 +34,7 @@
 #include <openssl/buffer.h>
 
 // RFC 6455 magic GUID appended to Sec-WebSocket-Key before SHA-1
-static constexpr const char kWsMagic[]
-    = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+static constexpr const char kWsMagic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 // WebSocket opcodes
 static constexpr uint8_t kOpContinuation = 0x0;
@@ -161,11 +160,12 @@ void WsCodec::Handshake()
 
   std::string accept = ComputeAcceptKey(key);
 
-  std::string response = "HTTP/1.1 101 Switching Protocols\r\n"
-                         "Upgrade: websocket\r\n"
-                         "Connection: Upgrade\r\n"
-                         "Sec-WebSocket-Accept: "
-                       + accept + "\r\n\r\n";
+  std::string response
+      = "HTTP/1.1 101 Switching Protocols\r\n"
+        "Upgrade: websocket\r\n"
+        "Connection: Upgrade\r\n"
+        "Sec-WebSocket-Accept: "
+        + accept + "\r\n\r\n";
 
   WriteAll(response.data(), response.size());
 }
@@ -198,9 +198,7 @@ WsCodec::Frame WsCodec::RecvFrame()
     uint8_t ext[8];
     ReadAll(ext, 8);
     payload_len = 0;
-    for (int i = 0; i < 8; ++i) {
-      payload_len = (payload_len << 8) | ext[i];
-    }
+    for (int i = 0; i < 8; ++i) { payload_len = (payload_len << 8) | ext[i]; }
   }
 
   // Masking key (clients always send masked frames per RFC 6455)

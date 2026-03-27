@@ -1,4 +1,22 @@
 #!/usr/bin/env python3
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
 """
 Bareos Director WebSocket Proxy
 ================================
@@ -132,11 +150,17 @@ async def handle_client(websocket):
         try:
             msg = json.loads(raw)
         except json.JSONDecodeError:
-            await websocket.send(json.dumps({"type": "error", "message": "Expected JSON auth message"}))
+            await websocket.send(
+                json.dumps({"type": "error", "message": "Expected JSON auth message"})
+            )
             return
 
         if msg.get("type") != "auth":
-            await websocket.send(json.dumps({"type": "error", "message": "First message must be type=auth"}))
+            await websocket.send(
+                json.dumps(
+                    {"type": "error", "message": "First message must be type=auth"}
+                )
+            )
             return
 
         username = msg.get("username", "admin")
@@ -144,9 +168,16 @@ async def handle_client(websocket):
         director_name = msg.get("director", DEFAULT_DIRECTOR_NAME)
         host = msg.get("host", DEFAULT_DIRECTOR_HOST)
         port = int(msg.get("port", DEFAULT_DIRECTOR_PORT))
-        mode = msg.get("mode", "json")   # "json" (default) or "raw"
+        mode = msg.get("mode", "json")  # "json" (default) or "raw"
 
-        log.info("Auth attempt: user=%s director=%s host=%s:%d mode=%s", username, director_name, host, port, mode)
+        log.info(
+            "Auth attempt: user=%s director=%s host=%s:%d mode=%s",
+            username,
+            director_name,
+            host,
+            port,
+            mode,
+        )
 
         try:
             if mode == "raw":
@@ -158,27 +189,47 @@ async def handle_client(websocket):
                     _director_connect, host, port, director_name, username, password
                 )
         except bareos.exceptions.AuthenticationError as exc:
-            await websocket.send(json.dumps({"type": "auth_error", "message": f"Authentication failed: {exc}"}))
+            await websocket.send(
+                json.dumps(
+                    {"type": "auth_error", "message": f"Authentication failed: {exc}"}
+                )
+            )
             log.warning("Auth failed for %s: %s", peer, exc)
             return
         except Exception as exc:
-            await websocket.send(json.dumps({"type": "auth_error", "message": f"Connection error: {exc}"}))
+            await websocket.send(
+                json.dumps(
+                    {"type": "auth_error", "message": f"Connection error: {exc}"}
+                )
+            )
             log.warning("Director connection error for %s: %s", peer, exc)
             return
 
-        await websocket.send(json.dumps({"type": "auth_ok", "director": director_name, "mode": mode}))
-        log.info("Client %s authenticated as %s on %s (mode=%s)", peer, username, director_name, mode)
+        await websocket.send(
+            json.dumps({"type": "auth_ok", "director": director_name, "mode": mode})
+        )
+        log.info(
+            "Client %s authenticated as %s on %s (mode=%s)",
+            peer,
+            username,
+            director_name,
+            mode,
+        )
 
         # ── Step 2: command loop ────────────────────────────────────────────
         async for raw_msg in websocket:
             try:
                 req = json.loads(raw_msg)
             except json.JSONDecodeError:
-                await websocket.send(json.dumps({"type": "error", "message": "Invalid JSON"}))
+                await websocket.send(
+                    json.dumps({"type": "error", "message": "Invalid JSON"})
+                )
                 continue
 
             if req.get("type") != "command":
-                await websocket.send(json.dumps({"type": "error", "message": "Expected type=command"}))
+                await websocket.send(
+                    json.dumps({"type": "error", "message": "Expected type=command"})
+                )
                 continue
 
             command = str(req.get("command", "")).strip()
@@ -191,36 +242,54 @@ async def handle_client(websocket):
 
             try:
                 if mode == "raw":
-                    text = await asyncio.to_thread(_director_call_raw, director, command)
-                    await websocket.send(json.dumps({
-                        "type": "raw_response",
-                        "id": req_id,
-                        "command": command,
-                        "text": text,
-                    }))
+                    text = await asyncio.to_thread(
+                        _director_call_raw, director, command
+                    )
+                    await websocket.send(
+                        json.dumps(
+                            {
+                                "type": "raw_response",
+                                "id": req_id,
+                                "command": command,
+                                "text": text,
+                            }
+                        )
+                    )
                 else:
                     result = await asyncio.to_thread(_director_call, director, command)
-                    await websocket.send(json.dumps({
-                        "type": "response",
-                        "id": req_id,
-                        "command": command,
-                        "data": result,
-                    }))
+                    await websocket.send(
+                        json.dumps(
+                            {
+                                "type": "response",
+                                "id": req_id,
+                                "command": command,
+                                "data": result,
+                            }
+                        )
+                    )
             except bareos.exceptions.Error as exc:
-                await websocket.send(json.dumps({
-                    "type": "error",
-                    "id": req_id,
-                    "command": command,
-                    "message": str(exc),
-                }))
+                await websocket.send(
+                    json.dumps(
+                        {
+                            "type": "error",
+                            "id": req_id,
+                            "command": command,
+                            "message": str(exc),
+                        }
+                    )
+                )
                 log.debug("Director error for %s: %s", peer, exc)
             except Exception as exc:
-                await websocket.send(json.dumps({
-                    "type": "error",
-                    "id": req_id,
-                    "command": command,
-                    "message": f"Proxy error: {exc}",
-                }))
+                await websocket.send(
+                    json.dumps(
+                        {
+                            "type": "error",
+                            "id": req_id,
+                            "command": command,
+                            "message": f"Proxy error: {exc}",
+                        }
+                    )
+                )
                 log.warning("Unexpected error for %s: %s", peer, exc)
 
     except websockets.exceptions.ConnectionClosed:
@@ -239,7 +308,12 @@ async def handle_client(websocket):
 async def main():
     log.info("Bareos Director WebSocket Proxy starting")
     log.info("  Listening on ws://%s:%d", WS_HOST, WS_PORT)
-    log.info("  Default director: %s @ %s:%d", DEFAULT_DIRECTOR_NAME, DEFAULT_DIRECTOR_HOST, DEFAULT_DIRECTOR_PORT)
+    log.info(
+        "  Default director: %s @ %s:%d",
+        DEFAULT_DIRECTOR_NAME,
+        DEFAULT_DIRECTOR_HOST,
+        DEFAULT_DIRECTOR_PORT,
+    )
 
     async with websockets.serve(handle_client, WS_HOST, WS_PORT):
         await asyncio.Future()  # run forever

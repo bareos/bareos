@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 include(BareosConfigureFile)
 bareos_configure_file(
   FILES bareos-fd.service.in bareos-sd.service.in bareos-dir.service.in
+        bareos-webui-proxy.service.in
 )
 
 message(STATUS "CMAKE_CURRENT_LIST_FILE: " ${CMAKE_CURRENT_LIST_FILE})

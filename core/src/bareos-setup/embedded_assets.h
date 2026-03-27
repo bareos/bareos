@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,11 +30,11 @@
 #include <cstdint>
 
 struct EmbeddedFile {
-  const char* path;       // URL path, e.g. "/index.html"
-  const uint8_t* data;   // gzip-compressed content
-  size_t size;           // byte length of data
-  const char* mime;      // MIME type string
-  bool gzipped;          // true if data is gzip-compressed
+  const char* path;     // URL path, e.g. "/index.html"
+  const uint8_t* data;  // gzip-compressed content
+  size_t size;          // byte length of data
+  const char* mime;     // MIME type string
+  bool gzipped;         // true if data is gzip-compressed
 };
 
 // Defined in the auto-generated embedded_assets.cc

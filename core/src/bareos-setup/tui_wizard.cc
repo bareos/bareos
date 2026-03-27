@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -39,14 +39,14 @@
 // ANSI helpers
 // ---------------------------------------------------------------------------
 namespace ansi {
-static const char* const reset  = "\033[0m";
-static const char* const bold   = "\033[1m";
-static const char* const dim    = "\033[2m";
-static const char* const blue   = "\033[34m";
-static const char* const cyan   = "\033[36m";
-static const char* const green  = "\033[32m";
+static const char* const reset = "\033[0m";
+static const char* const bold = "\033[1m";
+static const char* const dim = "\033[2m";
+static const char* const blue = "\033[34m";
+static const char* const cyan = "\033[36m";
+static const char* const green = "\033[32m";
 static const char* const yellow = "\033[33m";
-static const char* const red    = "\033[31m";
+static const char* const red = "\033[31m";
 }  // namespace ansi
 
 static void PrintHeader(const std::string& title)
@@ -55,14 +55,14 @@ static void PrintHeader(const std::string& title)
             << ansi::bold << ansi::blue
             << "══════════════════════════════════════════════\n"
             << "  " << title << "\n"
-            << "══════════════════════════════════════════════"
-            << ansi::reset << "\n\n";
+            << "══════════════════════════════════════════════" << ansi::reset
+            << "\n\n";
 }
 
 static void PrintStep(int n, int total, const std::string& label)
 {
-  std::cout << ansi::dim << "[" << n << "/" << total << "] "
-            << ansi::reset << ansi::bold << label << ansi::reset << "\n\n";
+  std::cout << ansi::dim << "[" << n << "/" << total << "] " << ansi::reset
+            << ansi::bold << label << ansi::reset << "\n\n";
 }
 
 static void PrintOk(const std::string& msg)
@@ -180,8 +180,7 @@ static int RunStep(const std::vector<std::string>& cmd,
   }
 
   int exit_code = RunCommand(
-      cmd, use_sudo,
-      [](const std::string& line, const std::string& stream) {
+      cmd, use_sudo, [](const std::string& line, const std::string& stream) {
         if (stream == "stderr")
           std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
         else
@@ -198,13 +197,13 @@ struct WizardState {
   OsInfo os_info;
 
   // Components
-  bool comp_director   = true;
-  bool comp_storage    = true;
+  bool comp_director = true;
+  bool comp_storage = true;
   bool comp_filedaemon = true;
-  bool comp_webui      = true;
+  bool comp_webui = true;
 
   // Repository
-  std::string repo_type     = "subscription";
+  std::string repo_type = "subscription";
   std::string repo_login;
   std::string repo_password;
 
@@ -223,17 +222,16 @@ struct WizardState {
 static void StepWelcome()
 {
   PrintHeader("Welcome to Bareos Setup");
-  std::cout
-      << "  This wizard will guide you through the installation and\n"
-      << "  initial configuration of Bareos.\n\n"
-      << "  Steps:\n"
-      << "    1. Detect operating system\n"
-      << "    2. Select components\n"
-      << "    3. Configure repository\n"
-      << "    4. Install packages\n"
-      << "    5. Initialize database\n"
-      << "    6. Create admin user\n"
-      << "    7. Summary\n\n";
+  std::cout << "  This wizard will guide you through the installation and\n"
+            << "  initial configuration of Bareos.\n\n"
+            << "  Steps:\n"
+            << "    1. Detect operating system\n"
+            << "    2. Select components\n"
+            << "    3. Configure repository\n"
+            << "    4. Install packages\n"
+            << "    5. Initialize database\n"
+            << "    6. Create admin user\n"
+            << "    7. Summary\n\n";
   PressEnter();
 }
 
@@ -267,18 +265,23 @@ static void StepComponents(WizardState& state)
   PrintHeader("Select Components");
   PrintStep(2, 7, "Choose which Bareos components to install");
 
-  struct Comp { bool& flag; const char* label; const char* desc; };
+  struct Comp {
+    bool& flag;
+    const char* label;
+    const char* desc;
+  };
   std::array<Comp, 4> comps = {{
-      { state.comp_director,   "Director",       "Controls backup and restore operations" },
-      { state.comp_storage,    "Storage Daemon", "Manages physical media and storage volumes" },
-      { state.comp_filedaemon, "File Daemon",    "Client agent on machines to be backed up" },
-      { state.comp_webui,      "WebUI",          "Web-based management interface" },
+      {state.comp_director, "Director",
+       "Controls backup and restore operations"},
+      {state.comp_storage, "Storage Daemon",
+       "Manages physical media and storage volumes"},
+      {state.comp_filedaemon, "File Daemon",
+       "Client agent on machines to be backed up"},
+      {state.comp_webui, "WebUI", "Web-based management interface"},
   }};
 
   for (auto& c : comps) {
-    c.flag = PromptYN(
-        std::string(c.label) + " (" + c.desc + ")",
-        c.flag);
+    c.flag = PromptYN(std::string(c.label) + " (" + c.desc + ")", c.flag);
   }
   std::cout << "\n";
 }
@@ -300,7 +303,7 @@ static bool StepRepo(WizardState& state)
     state.repo_type = "subscription";
     PrintOk("Using subscription repository");
 
-    state.repo_login    = Prompt("Subscription login");
+    state.repo_login = Prompt("Subscription login");
     state.repo_password = PromptPassword("Subscription password");
 
     if (state.repo_login.empty()) {
@@ -308,13 +311,13 @@ static bool StepRepo(WizardState& state)
     }
   }
 
-  const std::string base = (state.repo_type == "subscription")
-      ? "https://download.bareos.com/bareos/release/latest"
-      : "https://download.bareos.org/current";
-  std::cout << "\n  Repository URL: " << ansi::cyan
-            << base << "/" << CapFirst(state.os_info.distro)
-            << "_" << state.os_info.version << "/"
-            << ansi::reset << "\n\n";
+  const std::string base
+      = (state.repo_type == "subscription")
+            ? "https://download.bareos.com/bareos/release/latest"
+            : "https://download.bareos.org/current";
+  std::cout << "\n  Repository URL: " << ansi::cyan << base << "/"
+            << CapFirst(state.os_info.distro) << "_" << state.os_info.version
+            << "/" << ansi::reset << "\n\n";
 
   return true;
 }
@@ -324,12 +327,9 @@ static bool StepAddRepo(WizardState& state, bool dry_run)
   std::cout << "\n";
   PrintOk("Adding repository...\n");
 
-  auto cmd = BuildAddRepoCmd(
-      state.os_info.distro,
-      state.os_info.version,
-      state.repo_type,
-      state.repo_login,
-      state.repo_password);
+  auto cmd
+      = BuildAddRepoCmd(state.os_info.distro, state.os_info.version,
+                        state.repo_type, state.repo_login, state.repo_password);
 
   int rc = RunStep(cmd, true, dry_run);
   if (rc != 0) {
@@ -347,14 +347,16 @@ static bool StepInstall(WizardState& state, bool dry_run)
   PrintStep(4, 7, "Installing selected Bareos packages");
 
   // Build package list
-  static const struct { bool WizardState::*flag; const char* pkg; }
-      pkg_map[] = {
-          { &WizardState::comp_director,   "bareos-director"  },
-          { &WizardState::comp_director,   "bareos-bconsole"  },
-          { &WizardState::comp_storage,    "bareos-storage"   },
-          { &WizardState::comp_filedaemon, "bareos-filedaemon"},
-          { &WizardState::comp_webui,      "bareos-webui"     },
-      };
+  static const struct {
+    bool WizardState::* flag;
+    const char* pkg;
+  } pkg_map[] = {
+      {&WizardState::comp_director, "bareos-director"},
+      {&WizardState::comp_director, "bareos-bconsole"},
+      {&WizardState::comp_storage, "bareos-storage"},
+      {&WizardState::comp_filedaemon, "bareos-filedaemon"},
+      {&WizardState::comp_webui, "bareos-webui"},
+  };
 
   std::vector<std::string> packages;
   for (const auto& m : pkg_map)
@@ -386,7 +388,8 @@ static bool StepDatabase(WizardState& state, bool dry_run)
   PrintStep(5, 7, "Initialize Bareos catalog database");
 
   state.setup_db = PromptYN(
-      "Run create_bareos_database / make_bareos_tables / grant_bareos_privileges",
+      "Run create_bareos_database / make_bareos_tables / "
+      "grant_bareos_privileges",
       true);
 
   if (!state.setup_db) {
@@ -420,8 +423,8 @@ static bool StepAdminUser(WizardState& state, bool dry_run)
       state.admin_password = GeneratePassword();
       std::cout << "  Generated password: " << ansi::yellow
                 << state.admin_password << ansi::reset << "\n"
-                << "  " << ansi::bold << "Save this password!"
-                << ansi::reset << "\n\n";
+                << "  " << ansi::bold << "Save this password!" << ansi::reset
+                << "\n\n";
       break;
     }
     if (state.admin_password.size() < 8) {
@@ -439,7 +442,8 @@ static bool StepAdminUser(WizardState& state, bool dry_run)
   auto cmd = BuildAdminUserCmd(state.admin_username, state.admin_password);
   int rc = RunStep(cmd, true, dry_run);
   if (rc != 0) {
-    PrintErr("Failed to create admin user (exit code " + std::to_string(rc) + ").");
+    PrintErr("Failed to create admin user (exit code " + std::to_string(rc)
+             + ").");
     return false;
   }
   PrintOk("Admin user '" + state.admin_username + "' created.");
@@ -455,22 +459,21 @@ static void StepSummary(const WizardState& state)
   PrintOk("Operating System : " + state.os_info.pretty_name);
 
   std::string comps;
-  if (state.comp_director)   comps += "Director ";
-  if (state.comp_storage)    comps += "Storage ";
+  if (state.comp_director) comps += "Director ";
+  if (state.comp_storage) comps += "Storage ";
   if (state.comp_filedaemon) comps += "FileDaemon ";
-  if (state.comp_webui)      comps += "WebUI";
+  if (state.comp_webui) comps += "WebUI";
   PrintOk("Components       : " + comps);
 
   PrintOk("Repository       : " + state.repo_type);
-  if (state.setup_db)
-    PrintOk("Database         : initialized");
+  if (state.setup_db) PrintOk("Database         : initialized");
   PrintOk("Admin user       : " + state.admin_username);
 
   if (state.comp_webui)
     std::cout << "\n  Open the WebUI at: " << ansi::cyan
               << "http://localhost:9100" << ansi::reset << "\n"
-              << "  Log in with user: " << ansi::bold
-              << state.admin_username << ansi::reset << "\n\n";
+              << "  Log in with user: " << ansi::bold << state.admin_username
+              << ansi::reset << "\n\n";
 }
 
 // ---------------------------------------------------------------------------

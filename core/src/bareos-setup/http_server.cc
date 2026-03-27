@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,7 +45,8 @@
 
 // ---- helpers ---------------------------------------------------------------
 
-/** Read bytes from fd until we see "\r\n\r\n". Returns the full header block. */
+/** Read bytes from fd until we see "\r\n\r\n". Returns the full header block.
+ */
 static std::string ReadHttpHeaders(int fd)
 {
   std::string buf;
@@ -55,8 +56,7 @@ static std::string ReadHttpHeaders(int fd)
     ssize_t n = recv(fd, &c, 1, 0);
     if (n <= 0) return buf;
     buf += c;
-    if (buf.size() >= 4 &&
-        buf.compare(buf.size() - 4, 4, "\r\n\r\n") == 0)
+    if (buf.size() >= 4 && buf.compare(buf.size() - 4, 4, "\r\n\r\n") == 0)
       break;
     if (buf.size() > 65536) break;  // safety limit
   }
@@ -69,19 +69,16 @@ static std::string GetHeader(const std::string& headers,
 {
   // Search for "name:" (case-insensitive)
   std::string search = name + ":";
-  auto it = std::search(headers.begin(), headers.end(),
-                        search.begin(), search.end(),
-                        [](char a, char b) {
-                          return std::tolower(a) == std::tolower(b);
-                        });
+  auto it = std::search(
+      headers.begin(), headers.end(), search.begin(), search.end(),
+      [](char a, char b) { return std::tolower(a) == std::tolower(b); });
   if (it == headers.end()) return {};
   it += static_cast<std::ptrdiff_t>(search.size());
   // skip leading whitespace
   while (it != headers.end() && (*it == ' ' || *it == '\t')) ++it;
   // collect until \r\n
   std::string val;
-  while (it != headers.end() && *it != '\r' && *it != '\n')
-    val += *it++;
+  while (it != headers.end() && *it != '\r' && *it != '\n') val += *it++;
   return val;
 }
 
@@ -101,12 +98,11 @@ static std::string GetRequestPath(const std::string& headers)
 
 // ---- WebSocket upgrade key computation ------------------------------------
 
-static constexpr const char kWsMagic[]
-    = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+static constexpr const char kWsMagic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 static std::string Base64Encode(const unsigned char* data, size_t len)
 {
-  BIO* b64  = BIO_new(BIO_f_base64());
+  BIO* b64 = BIO_new(BIO_f_base64());
   BIO* bmem = BIO_new(BIO_s_mem());
   b64 = BIO_push(b64, bmem);
   BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
@@ -123,8 +119,8 @@ static std::string ComputeAcceptKey(const std::string& client_key)
 {
   std::string combined = client_key + kWsMagic;
   unsigned char sha1[SHA_DIGEST_LENGTH];
-  SHA1(reinterpret_cast<const unsigned char*>(combined.data()),
-       combined.size(), sha1);
+  SHA1(reinterpret_cast<const unsigned char*>(combined.data()), combined.size(),
+       sha1);
   return Base64Encode(sha1, SHA_DIGEST_LENGTH);
 }
 
@@ -151,18 +147,16 @@ static const EmbeddedFile* FindAsset(const std::string& path)
 }
 
 /** Find /index.html (SPA fallback). */
-static const EmbeddedFile* FindIndexHtml()
-{
-  return FindAsset("/index.html");
-}
+static const EmbeddedFile* FindIndexHtml() { return FindAsset("/index.html"); }
 
 static void ServeStaticFile(int fd, const std::string& path)
 {
   const EmbeddedFile* ef = FindAsset(path);
   if (!ef) ef = FindIndexHtml();  // SPA fallback
   if (!ef) {
-    const char* r404 = "HTTP/1.1 404 Not Found\r\n"
-                       "Content-Length: 9\r\n\r\nNot Found";
+    const char* r404
+        = "HTTP/1.1 404 Not Found\r\n"
+          "Content-Length: 9\r\n\r\nNot Found";
     WriteAll(fd, r404, strlen(r404));
     return;
   }
@@ -190,18 +184,16 @@ void RunHttpServer(int port, WsHandler ws_handler)
   setsockopt(srv, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
   sockaddr_in addr{};
-  addr.sin_family      = AF_INET;
-  addr.sin_port        = htons(static_cast<uint16_t>(port));
+  addr.sin_family = AF_INET;
+  addr.sin_port = htons(static_cast<uint16_t>(port));
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  // localhost only
 
   if (bind(srv, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0)
-    throw std::runtime_error("bind() failed on port "
-                             + std::to_string(port));
-  if (listen(srv, 16) < 0)
-    throw std::runtime_error("listen() failed");
+    throw std::runtime_error("bind() failed on port " + std::to_string(port));
+  if (listen(srv, 16) < 0) throw std::runtime_error("listen() failed");
 
-  std::cout << "bareos-setup listening on http://localhost:"
-            << port << "/\n" << std::flush;
+  std::cout << "bareos-setup listening on http://localhost:" << port << "/\n"
+            << std::flush;
 
   while (true) {
     int fd = accept(srv, nullptr, nullptr);
@@ -210,15 +202,18 @@ void RunHttpServer(int port, WsHandler ws_handler)
     // Handle each connection in its own thread
     std::thread([fd, ws_handler]() {
       std::string headers = ReadHttpHeaders(fd);
-      if (headers.empty()) { close(fd); return; }
+      if (headers.empty()) {
+        close(fd);
+        return;
+      }
 
       std::string upgrade = GetHeader(headers, "Upgrade");
-      bool is_ws = (upgrade.find("websocket") != std::string::npos ||
-                    upgrade.find("WebSocket") != std::string::npos);
+      bool is_ws = (upgrade.find("websocket") != std::string::npos
+                    || upgrade.find("WebSocket") != std::string::npos);
 
       if (is_ws) {
         // Send 101 Switching Protocols
-        std::string key    = GetHeader(headers, "Sec-WebSocket-Key");
+        std::string key = GetHeader(headers, "Sec-WebSocket-Key");
         std::string accept = ComputeAcceptKey(key);
 
         std::string resp =

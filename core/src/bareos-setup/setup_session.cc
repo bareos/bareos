@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,19 +51,15 @@ static std::string Dump(json_t* obj)
 }
 
 /** Send a JSON text frame. */
-static void SendJson(WsCodec& ws, json_t* obj)
-{
-  ws.SendText(Dump(obj));
-}
+static void SendJson(WsCodec& ws, json_t* obj) { ws.SendText(Dump(obj)); }
 
 /** Send {"type":"error","message":"..."} */
-static void SendError(WsCodec& ws, const std::string& step,
+static void SendError(WsCodec& ws,
+                      const std::string& step,
                       const std::string& msg)
 {
-  json_t* obj = json_pack("{s:s, s:s, s:s}",
-                           "type", "error",
-                           "step", step.c_str(),
-                           "message", msg.c_str());
+  json_t* obj = json_pack("{s:s, s:s, s:s}", "type", "error", "step",
+                          step.c_str(), "message", msg.c_str());
   SendJson(ws, obj);
 }
 
@@ -90,36 +86,30 @@ static void HandleDetectOs(WsCodec& ws)
   try {
     OsInfo info = DetectOs();
     json_t* obj = json_pack(
-        "{s:s, s:s, s:s, s:s, s:s, s:s, s:s}",
-        "type",        "os_info",
-        "distro",      info.distro.c_str(),
-        "version",     info.version.c_str(),
-        "codename",    info.codename.c_str(),
-        "pretty_name", info.pretty_name.c_str(),
-        "arch",        info.arch.c_str(),
-        "pkg_mgr",     info.pkg_mgr.c_str());
+        "{s:s, s:s, s:s, s:s, s:s, s:s, s:s}", "type", "os_info", "distro",
+        info.distro.c_str(), "version", info.version.c_str(), "codename",
+        info.codename.c_str(), "pretty_name", info.pretty_name.c_str(), "arch",
+        info.arch.c_str(), "pkg_mgr", info.pkg_mgr.c_str());
     SendJson(ws, obj);
   } catch (const std::exception& e) {
     SendError(ws, "detect_os", e.what());
   }
 }
 
-/** Capitalize the first letter of s (Bareos repo paths use e.g. "Fedora_43"). */
+/** Capitalize the first letter of s (Bareos repo paths use e.g. "Fedora_43").
+ */
 
 static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
 {
   std::string step_id = JStr(msg, "id");
-  bool use_sudo       = JBool(msg, "sudo");
+  bool use_sudo = JBool(msg, "sudo");
 
   std::vector<std::string> cmd;
 
   if (step_id == "add_repo") {
-    cmd = BuildAddRepoCmd(
-        JStr(msg, "distro"),
-        JStr(msg, "version"),
-        JStr(msg, "repo_type"),
-        JStr(msg, "repo_login"),
-        JStr(msg, "repo_password"));
+    cmd = BuildAddRepoCmd(JStr(msg, "distro"), JStr(msg, "version"),
+                          JStr(msg, "repo_type"), JStr(msg, "repo_login"),
+                          JStr(msg, "repo_password"));
 
   } else if (step_id == "install_packages") {
     std::vector<std::string> pkgs;
@@ -127,7 +117,8 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
     if (jarr && json_is_array(jarr)) {
       size_t i;
       json_t* v;
-      json_array_foreach(jarr, i, v) {
+      json_array_foreach(jarr, i, v)
+      {
         if (json_is_string(v)) pkgs.push_back(json_string_value(v));
       }
     }
@@ -162,20 +153,16 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
         line += cmd[i];
       }
     }
-    json_t* obj = json_pack("{s:s, s:s, s:s}",
-                             "type",   "output",
-                             "line",   line.c_str(),
-                             "stream", "stdout");
+    json_t* obj = json_pack("{s:s, s:s, s:s}", "type", "output", "line",
+                            line.c_str(), "stream", "stdout");
     ws.SendText(Dump(obj));
   } else {
     try {
       exit_code = RunCommand(
           cmd, use_sudo,
           [&ws, &step_id](const std::string& line, const std::string& stream) {
-            json_t* obj = json_pack("{s:s, s:s, s:s}",
-                                    "type",   "output",
-                                    "line",   line.c_str(),
-                                    "stream", stream.c_str());
+            json_t* obj = json_pack("{s:s, s:s, s:s}", "type", "output", "line",
+                                    line.c_str(), "stream", stream.c_str());
             ws.SendText(Dump(obj));
           });
     } catch (const std::exception& e) {
@@ -184,10 +171,8 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
     }
   }
 
-  json_t* done = json_pack("{s:s, s:s, s:i}",
-                            "type",      "done",
-                            "step",      step_id.c_str(),
-                            "exit_code", exit_code);
+  json_t* done = json_pack("{s:s, s:s, s:i}", "type", "done", "step",
+                           step_id.c_str(), "exit_code", exit_code);
   SendJson(ws, done);
 }
 
@@ -207,9 +192,8 @@ static void HandleGenerateScript(WsCodec& ws)
          << "# /usr/lib/bareos/scripts/make_bareos_tables\n"
          << "# /usr/lib/bareos/scripts/grant_bareos_privileges\n";
 
-  json_t* obj = json_pack("{s:s, s:s}",
-                           "type",    "script",
-                           "content", script.str().c_str());
+  json_t* obj = json_pack("{s:s, s:s}", "type", "script", "content",
+                          script.str().c_str());
   SendJson(ws, obj);
 }
 

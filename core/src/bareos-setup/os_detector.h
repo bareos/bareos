@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,12 +28,12 @@
 #include <string>
 
 struct OsInfo {
-  std::string distro;      // ID from os-release, e.g. "ubuntu"
-  std::string version;     // VERSION_ID, e.g. "24.04"
-  std::string codename;    // VERSION_CODENAME, e.g. "noble"
-  std::string pretty_name; // PRETTY_NAME
-  std::string arch;        // uname machine, e.g. "x86_64"
-  std::string pkg_mgr;     // "apt" | "dnf" | "yum" | "zypper" | "unknown"
+  std::string distro;       // ID from os-release, e.g. "ubuntu"
+  std::string version;      // VERSION_ID, e.g. "24.04"
+  std::string codename;     // VERSION_CODENAME, e.g. "noble"
+  std::string pretty_name;  // PRETTY_NAME
+  std::string arch;         // uname machine, e.g. "x86_64"
+  std::string pkg_mgr;      // "apt" | "dnf" | "yum" | "zypper" | "unknown"
 };
 
 /** Detect the host OS.  Returns populated OsInfo; throws on fatal errors. */

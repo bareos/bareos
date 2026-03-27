@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,22 +36,20 @@ std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
                                          const std::string& login,
                                          const std::string& password)
 {
-  const std::string base = (repo_type == "subscription")
-      ? "https://download.bareos.com/bareos/release/latest"
-      : "https://download.bareos.org/current";
+  const std::string base
+      = (repo_type == "subscription")
+            ? "https://download.bareos.com/bareos/release/latest"
+            : "https://download.bareos.org/current";
 
-  const std::string script_url
-      = base + "/" + CapFirst(distro) + "_" + version
-        + "/add_bareos_repositories.sh";
+  const std::string script_url = base + "/" + CapFirst(distro) + "_" + version
+                                 + "/add_bareos_repositories.sh";
 
   std::string curl_auth;
   if (repo_type == "subscription" && !login.empty())
     curl_auth = " -u '" + login + ":" + password + "'";
 
-  return {
-      "bash", "-c",
-      "curl -fsSL" + curl_auth + " " + script_url + " | bash"
-  };
+  return {"bash", "-c",
+          "curl -fsSL" + curl_auth + " " + script_url + " | bash"};
 }
 
 std::vector<std::string> BuildInstallCmd(
@@ -80,12 +78,10 @@ std::vector<std::string> BuildInstallCmd(
 
 std::vector<std::string> BuildDbCmd()
 {
-  return {
-      "bash", "-c",
-      "/usr/lib/bareos/scripts/create_bareos_database && "
-      "/usr/lib/bareos/scripts/make_bareos_tables && "
-      "/usr/lib/bareos/scripts/grant_bareos_privileges"
-  };
+  return {"bash", "-c",
+          "/usr/lib/bareos/scripts/create_bareos_database && "
+          "/usr/lib/bareos/scripts/make_bareos_tables && "
+          "/usr/lib/bareos/scripts/grant_bareos_privileges"};
 }
 
 std::vector<std::string> BuildAdminUserCmd(const std::string& username,

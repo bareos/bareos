@@ -29,14 +29,16 @@ proxy_ws_url="ws://127.0.0.1:${WEBSOCKET_PROXY_PORT}"
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
-is_running() {
+is_running()
+{
   local pidfile="$1"
   [ -f "${pidfile}" ] && kill -0 "$(cat "${pidfile}")" 2>/dev/null
 }
 
-wait_for_port() {
+wait_for_port()
+{
   local port="$1" label="$2" deadline
-  deadline=$(( $(date +%s) + 15 ))
+  deadline=$(($(date +%s) + 15))
   until ss -Htlnp "sport = ${port}" 2>/dev/null | grep -q "${port}"; do
     if [ "$(date +%s)" -ge "${deadline}" ]; then
       echo "ERROR: ${label} did not bind port ${port} within 15 s" >&2
@@ -48,7 +50,8 @@ wait_for_port() {
 
 # ── start ─────────────────────────────────────────────────────────────────────
 
-do_start() {
+do_start()
+{
   if is_running "${PROXY_PIDFILE}" || is_running "${VITE_PIDFILE}"; then
     echo "webui-vue is already running (use 'stop' first)."
     exit 1
@@ -65,21 +68,23 @@ VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
   DIST="${CMAKE_SOURCE_DIR}/webui-vue/dist"
   _needs_build=false
   if [ ! -d "${DIST}" ] \
-     || [ "$(cat "${DIST}/.build-env" 2>/dev/null)" != "${BUILD_ENV}" ]; then
+    || [ "$(cat "${DIST}/.build-env" 2>/dev/null)" != "${BUILD_ENV}" ]; then
     _needs_build=true
-  elif ( cd "${CMAKE_SOURCE_DIR}/webui-vue" && \
-         find src proxy index.html -newer dist/.build-env 2>/dev/null | grep -q . ); then
+  elif (cd "${CMAKE_SOURCE_DIR}/webui-vue" \
+    && find src proxy index.html -newer dist/.build-env 2>/dev/null | grep -q .); then
     _needs_build=true
   fi
 
   if [ "${_needs_build}" = true ]; then
     echo "Building Vue WebUI ..."
-    ( cd "${CMAKE_SOURCE_DIR}/webui-vue"
+    (
+      cd "${CMAKE_SOURCE_DIR}/webui-vue"
       VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" \
-      VITE_DIRECTOR_HOST="localhost" \
-      VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
+        VITE_DIRECTOR_HOST="localhost" \
+        VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
         npm run build >"${VITE_BUILD_LOG}" 2>&1
-      printf '%s' "${BUILD_ENV}" > dist/.build-env )
+      printf '%s' "${BUILD_ENV}" >dist/.build-env
+    )
     echo "Build complete."
   else
     echo "Reusing existing build."
@@ -97,10 +102,12 @@ VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
 
   # Start Vite preview.
   echo "Starting Vite preview on port ${BAREOS_WEBUI_PORT} ..."
-  ( cd "${CMAKE_SOURCE_DIR}/webui-vue"
+  (
+    cd "${CMAKE_SOURCE_DIR}/webui-vue"
     npx vite preview \
       --port "${BAREOS_WEBUI_PORT}" --strictPort --host 127.0.0.1 \
-      >"${VITE_LOG}" 2>&1 ) &
+      >"${VITE_LOG}" 2>&1
+  ) &
   echo $! >"${VITE_PIDFILE}"
   wait_for_port "${BAREOS_WEBUI_PORT}" "Vite preview"
   echo "Vite preview running (PID $(cat "${VITE_PIDFILE}"))."
@@ -115,14 +122,15 @@ VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
 
 # ── stop ──────────────────────────────────────────────────────────────────────
 
-do_stop() {
+do_stop()
+{
   local stopped=0
   for pidfile in "${PROXY_PIDFILE}" "${VITE_PIDFILE}"; do
     if [ -f "${pidfile}" ]; then
       pid=$(cat "${pidfile}")
       if kill -0 "${pid}" 2>/dev/null; then
         kill "${pid}" && echo "Stopped PID ${pid}."
-        stopped=$(( stopped + 1 ))
+        stopped=$((stopped + 1))
       else
         echo "PID ${pid} (from ${pidfile}) is not running."
       fi
@@ -134,29 +142,30 @@ do_stop() {
 
 # ── status ────────────────────────────────────────────────────────────────────
 
-do_status() {
+do_status()
+{
   local pairs=(
     "${PROXY_PIDFILE}" "WS proxy"
-    "${VITE_PIDFILE}"  "Vite preview"
+    "${VITE_PIDFILE}" "Vite preview"
   )
   local i=0
   while [ "${i}" -lt "${#pairs[@]}" ]; do
     local pidfile="${pairs[${i}]}"
-    local label="${pairs[$(( i + 1 ))]}"
+    local label="${pairs[$((i + 1))]}"
     if is_running "${pidfile}"; then
       echo "${label}: running (PID $(cat "${pidfile}"))"
     else
       echo "${label}: stopped"
     fi
-    i=$(( i + 2 ))
+    i=$((i + 2))
   done
 }
 
 # ── dispatch ──────────────────────────────────────────────────────────────────
 
 case "${1-}" in
-  start)  do_start  ;;
-  stop)   do_stop   ;;
+  start) do_start ;;
+  stop) do_stop ;;
   status) do_status ;;
   *)
     echo "Usage: $0 {start|stop|status}"

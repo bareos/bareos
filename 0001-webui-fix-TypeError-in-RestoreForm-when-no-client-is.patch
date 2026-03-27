@@ -1,0 +1,40 @@
+From 2c3d963d802ae22f131f9868ef82f89b96653e95 Mon Sep 17 00:00:00 2001
+From: Philipp Storz <philipp.storz@bareos.com>
+Date: Mon, 23 Mar 2026 16:59:39 +0100
+Subject: [PATCH] webui: fix TypeError in RestoreForm when no client is
+ selected
+
+addPluginOptionsElement() had a strict array type declaration but the
+controller passes null for $backups when no client is selected yet.
+Make the parameter nullable (?array) and skip plugin-options detection
+when null is received.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+---
+ webui/module/Restore/src/Restore/Form/RestoreForm.php | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/webui/module/Restore/src/Restore/Form/RestoreForm.php b/webui/module/Restore/src/Restore/Form/RestoreForm.php
+index 52b102edd..f8868eef6 100644
+--- a/webui/module/Restore/src/Restore/Form/RestoreForm.php
++++ b/webui/module/Restore/src/Restore/Form/RestoreForm.php
+@@ -329,12 +329,14 @@ class RestoreForm extends Form
+      * Shows a text field when any backup in the selected set is a plugin job;
+      * otherwise adds a disabled hidden field.
+      */
+-    private function addPluginOptionsElement(array $restore_params, array $backups): void
++    private function addPluginOptionsElement(array $restore_params, ?array $backups): void
+     {
+         $placeholder = _('e.g. <plugin>:file=<filepath>:reader=<readprogram>:writer=<writeprogram>');
+         $showText    = false;
+ 
+-        if ($restore_params['mergefilesets'] == 0) {
++        if ($backups === null) {
++            // No client selected yet; skip plugin-options detection.
++        } elseif ($restore_params['mergefilesets'] == 0) {
+             foreach ($backups as $backup) {
+                 if ($backup['pluginjob']) {
+                     $showText = true;
+-- 
+2.53.0
+

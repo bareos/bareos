@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -56,22 +56,26 @@ OsInfo DetectOs()
     if (eq == std::string::npos) continue;
     auto key = line.substr(0, eq);
     auto val = Unquote(line.substr(eq + 1));
-    if (key == "ID")                info.distro      = val;
-    else if (key == "VERSION_ID")   info.version     = val;
-    else if (key == "VERSION_CODENAME") info.codename = val;
-    else if (key == "PRETTY_NAME")  info.pretty_name = val;
+    if (key == "ID")
+      info.distro = val;
+    else if (key == "VERSION_ID")
+      info.version = val;
+    else if (key == "VERSION_CODENAME")
+      info.codename = val;
+    else if (key == "PRETTY_NAME")
+      info.pretty_name = val;
   }
 
   // Fallback: derive codename from PRETTY_NAME for Ubuntu-like ("24.04 LTS")
   // Leave it empty if not found; the frontend handles that.
 
   // Architecture via uname
-  struct utsname uts {};
+  struct utsname uts{};
   if (uname(&uts) == 0) info.arch = uts.machine;
 
   // Detect package manager
-  if (access("/usr/bin/apt-get", X_OK) == 0 ||
-      access("/bin/apt-get", X_OK) == 0) {
+  if (access("/usr/bin/apt-get", X_OK) == 0
+      || access("/bin/apt-get", X_OK) == 0) {
     info.pkg_mgr = "apt";
   } else if (access("/usr/bin/dnf", X_OK) == 0) {
     info.pkg_mgr = "dnf";

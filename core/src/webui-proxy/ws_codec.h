@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,30 +42,22 @@ class WsCodec {
  public:
   explicit WsCodec(int fd) : fd_(fd) {}
 
-  /**
-   * Perform the HTTP/WebSocket upgrade handshake.
+  /* Perform the HTTP/WebSocket upgrade handshake.
    * Reads the HTTP GET request and sends the 101 Switching Protocols reply.
-   * Throws std::runtime_error on failure.
-   */
+   * Throws std::runtime_error on failure. */
   void Handshake();
 
-  /**
-   * Read one complete WebSocket message (text frame, possibly fragmented).
+  /* Read one complete WebSocket message (text frame, possibly fragmented).
    * Transparently handles ping/pong and close frames.
    * Returns the text payload, or an empty string on clean close.
-   * Throws std::runtime_error on I/O error or protocol violation.
-   */
+   * Throws std::runtime_error on I/O error or protocol violation. */
   std::string RecvMessage();
 
-  /**
-   * Send a text frame (opcode 0x1, FIN=1, unmasked).
-   * Throws std::runtime_error on I/O error.
-   */
+  /* Send a text frame (opcode 0x1, FIN=1, unmasked).
+   * Throws std::runtime_error on I/O error. */
   void SendText(const std::string& payload);
 
-  /**
-   * Send a close frame and mark the connection as closed.
-   */
+  /* Send a close frame and mark the connection as closed. */
   void SendClose();
 
   bool IsClosed() const { return closed_; }

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -42,21 +42,15 @@ std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
                                          const std::string& login,
                                          const std::string& password);
 
-/**
- * Build the package install command for the detected package manager.
- */
+// Build the package install command for the detected package manager.
 std::vector<std::string> BuildInstallCmd(
     const std::string& pkg_mgr,
     const std::vector<std::string>& packages);
 
-/**
- * Build the database initialization command (three Bareos scripts).
- */
+// Build the database initialization command (three Bareos scripts).
 std::vector<std::string> BuildDbCmd();
 
-/**
- * Build the command to create a Bareos WebUI admin console user.
- */
+// Build the command to create a Bareos WebUI admin console user.
 std::vector<std::string> BuildAdminUserCmd(const std::string& username,
                                            const std::string& password);
 

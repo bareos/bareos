@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -127,7 +127,7 @@ static std::string Md5Hex(const std::string& text)
 }
 
 static std::array<uint8_t, 16> HmacMd5(const std::string& key,
-                                        const std::string& data)
+                                       const std::string& data)
 {
   std::array<uint8_t, 16> out{};
   unsigned int len = 16;

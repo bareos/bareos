@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -44,7 +44,8 @@
  * When @p compatible is false, use the non-compatible variant (signed int8_t
  * byte loads, raw final bits) — this matches BinToBase64(compatible=false).
  */
-std::string BareosBase64Encode(const uint8_t* data, int len,
+std::string BareosBase64Encode(const uint8_t* data,
+                               int len,
                                bool compatible = true);
 
 #endif  // BAREOS_WEBUI_PROXY_BAREOS_BASE64_H_

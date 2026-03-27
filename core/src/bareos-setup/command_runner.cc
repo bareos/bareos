@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -86,7 +86,10 @@ int RunCommand(const std::vector<std::string>& argv,
     close(pipe_err[1]);
     // Redirect stdin from /dev/null so sudo doesn't hang asking for password
     int devnull = open("/dev/null", O_RDONLY);
-    if (devnull >= 0) { dup2(devnull, STDIN_FILENO); close(devnull); }
+    if (devnull >= 0) {
+      dup2(devnull, STDIN_FILENO);
+      close(devnull);
+    }
     execvp(cargv[0], const_cast<char* const*>(cargv.data()));
     // execvp failed — write error to stderr and exit
     const char* msg = strerror(errno);
@@ -115,8 +118,8 @@ int RunCommand(const std::vector<std::string>& argv,
       if (errno == EINTR) continue;
       break;
     }
-    if (fds[0].revents & POLLIN)  DrainFd(pipe_out[0], buf_out, "stdout", cb);
-    if (fds[1].revents & POLLIN)  DrainFd(pipe_err[0], buf_err, "stderr", cb);
+    if (fds[0].revents & POLLIN) DrainFd(pipe_out[0], buf_out, "stdout", cb);
+    if (fds[1].revents & POLLIN) DrainFd(pipe_err[0], buf_err, "stderr", cb);
     if (fds[0].revents & POLLHUP) {
       DrainFd(pipe_out[0], buf_out, "stdout", cb);
       out_open = false;
