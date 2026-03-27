@@ -44,8 +44,8 @@ static constexpr int32_t kBnetEod = -1;          // End of data
 static constexpr int32_t kBnetEods = -2;         // End of data stream
 static constexpr int32_t kBnetEof = -3;          // End of file
 static constexpr int32_t kBnetError = -4;        // Error
-static constexpr int32_t kBnetCmdOk = -15;       // Command succeeded
-static constexpr int32_t kBnetCmdBegin = -16;    // Start command execution
+[[maybe_unused]] static constexpr int32_t kBnetCmdOk = -15;     // Command succeeded
+[[maybe_unused]] static constexpr int32_t kBnetCmdBegin = -16;  // Start command execution
 static constexpr int32_t kBnetMainPrompt = -18;  // Server ready and waiting
 static constexpr int32_t kBnetSelectInput
     = -19;                                      // Waiting for numeric selection
