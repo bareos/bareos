@@ -434,7 +434,7 @@ async function fetchPage() {
     if (pageResult.status === 'rejected') throw pageResult.reason
     jobs.value = (pageResult.value?.jobs ?? []).map(normaliseJob)
     const count = countResult.status === 'fulfilled'
-      ? Number(countResult.value?.count ?? 0)
+      ? Number(countResult.value?.jobs?.[0]?.count ?? 0)
       // Estimate total when count query is unsupported
       : (jobs.value.length < rowsPerPage
           ? offset + jobs.value.length
