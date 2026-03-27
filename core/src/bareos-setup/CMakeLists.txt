@@ -111,6 +111,6 @@ target_link_libraries(
 
 install(
     TARGETS bareos-setup
-    DESTINATION ${CMAKE_INSTALL_SBINDIR}
+    DESTINATION "${sbindir}"
     COMPONENT setup
 )

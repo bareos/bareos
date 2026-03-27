@@ -45,7 +45,7 @@ target_link_libraries(
 
 install(
     TARGETS bareos-webui-proxy
-    DESTINATION ${CMAKE_INSTALL_SBINDIR}
+    DESTINATION "${sbindir}"
     COMPONENT webui
 )
 
