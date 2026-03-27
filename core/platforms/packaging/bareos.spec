@@ -219,6 +219,27 @@ Summary:       Bareos administration console (CLI)
 Group:         Productivity/Archiving/Backup
 Requires:      %{name}-common = %{version}
 
+%package       setup
+Summary:       Bareos setup wizard
+Group:         Productivity/Archiving/Backup
+
+%description setup
+%{dscr}
+
+This package contains the bareos-setup wizard for initial
+Bareos configuration.
+
+%package       webui-proxy
+Summary:       Bareos WebUI proxy daemon
+Group:         Productivity/Archiving/Backup
+
+%description webui-proxy
+%{dscr}
+
+This package contains the bareos-webui-proxy daemon that
+proxies WebSocket connections between the Bareos WebUI and
+the Director.
+
 %package       client
 Summary:       Bareos client Meta-All-In-One package
 Group:         Productivity/Archiving/Backup
@@ -1014,6 +1035,14 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{_sbindir}/bconsole
 %{_mandir}/man1/bconsole.1.gz
 %{configtemplatedir}/bconsole.conf
+
+%files setup
+%defattr(-, root, root)
+%{_sbindir}/bareos-setup
+
+%files webui-proxy
+%defattr(-, root, root)
+%{_sbindir}/bareos-webui-proxy
 
 
 %if !0%{?client_only}
