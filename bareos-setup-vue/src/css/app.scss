@@ -1,0 +1,30 @@
+// Bareos Setup global styles
+
+.setup-page {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.step-header {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: $primary;
+  margin-bottom: 0.5rem;
+}
+
+.output-console {
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  border-radius: 4px;
+  padding: 12px;
+  max-height: 340px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.output-line-err  { color: #ff6b6b; }
+.output-line-out  { color: #e0e0e0; }
+.output-line-info { color: #74c7ec; }
