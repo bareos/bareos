@@ -40,7 +40,9 @@
               row-key="id"
               dense flat
               :loading="loading"
-              :pagination="{ rowsPerPage: 15, sortBy: 'id', descending: true }"
+              v-model:pagination="pagination"
+              :rows-number="totalJobs"
+              @request="onRequest"
             >
               <template #body-cell-id="props">
                 <q-td :props="props">
@@ -392,7 +394,7 @@ import { ref, computed, reactive, nextTick, onMounted, onUnmounted, watch } from
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { jobTypeMap, jobLevelMap, jobStatusMap, formatBytes, timeAgo } from '../mock/index.js'
-import { useDirectorFetch, normaliseJob } from '../composables/useDirectorFetch.js'
+import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 
@@ -409,17 +411,53 @@ const typeMap   = jobTypeMap
 const levelMap  = jobLevelMap
 const fmtBytes  = formatBytes
 
-// ── job list ──────────────────────────────────────────────────────────────────
-const { data: rawJobs, loading, error, refresh } = useDirectorFetch('llist jobs', 'jobs')
+// ── paginated job list ────────────────────────────────────────────────────────
+const jobs       = ref([])
+const totalJobs  = ref(0)
+const loading    = ref(false)
+const error      = ref(null)
+const pagination = ref({ page: 1, rowsPerPage: 25, sortBy: 'id', descending: true })
 
-const jobs = computed(() => (rawJobs.value ?? []).map(normaliseJob))
+async function fetchPage() {
+  if (!director.isConnected) return
+  loading.value = true
+  error.value   = null
+  const { page, rowsPerPage } = pagination.value
+  const offset = (page - 1) * rowsPerPage
+  const filter = statusFilter.value ? ` jobstatus=${statusFilter.value}` : ''
+  try {
+    const [pageResult, countResult] = await Promise.allSettled([
+      director.call(`llist jobs limit=${rowsPerPage} offset=${offset}${filter}`),
+      director.call(`list jobs count${filter}`),
+    ])
+    if (pageResult.status === 'rejected') throw pageResult.reason
+    jobs.value = (pageResult.value?.jobs ?? []).map(normaliseJob)
+    if (countResult.status === 'fulfilled') {
+      totalJobs.value = Number(countResult.value?.count ?? 0)
+    } else {
+      // Estimate total when count query is unsupported
+      totalJobs.value = jobs.value.length < rowsPerPage
+        ? offset + jobs.value.length
+        : offset + jobs.value.length + rowsPerPage
+    }
+  } catch (e) {
+    error.value = e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+function refresh() { fetchPage() }
+
+function onRequest(props) {
+  pagination.value = { ...pagination.value, ...props.pagination }
+  fetchPage()
+}
 
 const filteredJobs = computed(() => {
-  let list = jobs.value
-  if (statusFilter.value) list = list.filter(j => j.status === statusFilter.value)
-  if (!search.value) return list
+  if (!search.value) return jobs.value
   const q = search.value.toLowerCase()
-  return list.filter(j =>
+  return jobs.value.filter(j =>
     j.name.toLowerCase().includes(q) ||
     j.client.toLowerCase().includes(q) ||
     String(j.id).includes(q)
@@ -867,6 +905,7 @@ function manualRefresh() {
 
 onMounted(() => {
   if (director.isConnected) {
+    fetchPage()
     loadJobDefs()
     loadRunOptions()
   }
@@ -880,11 +919,17 @@ onUnmounted(() => {
 
 watch(() => director.isConnected, (connected) => {
   if (connected) {
+    fetchPage()
     loadJobDefs()
     loadRunOptions()
     startAutoRefresh()
     if (tab.value === 'timeline') tlRefresh()
   }
+})
+
+watch(statusFilter, () => {
+  pagination.value = { ...pagination.value, page: 1 }
+  fetchPage()
 })
 
 watch(tab, async (t) => {
