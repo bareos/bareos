@@ -867,7 +867,8 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if self.tar is None:
             self.start_restore_job()
         restorepkt.create_status = bareosfd.CF_EXTRACT
-        fname = f'backup{restorepkt.ofname.removeprefix(self.prefix)}'
+        relpath = os.path.relpath(restorepkt.ofname, restorepkt.where)
+        fname = f'backup{relpath.removeprefix(self.prefix)}'
         if self.is_chunk(fname):
             # Here, we initialize the chunk collector
             fname, chunk_str = fname.removesuffix('.chunk').rsplit('-', 1)
