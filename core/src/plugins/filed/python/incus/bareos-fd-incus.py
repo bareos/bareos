@@ -79,9 +79,9 @@ def restore_tarinfo(tarinfo, pkt, data):
     header_len = 0
     while n:
         name_len = int.from_bytes(data.read(1))
-        name = data.read(name_len).decode('utf-8')
+        name = data.read(name_len).decode('utf-8', 'surrogateescape')
         value_len = int.from_bytes(data.read(2))
-        value = data.read(value_len).decode('utf-8')
+        value = data.read(value_len).decode('utf-8', 'surrogateescape')
         xattrs[name] = value
         header_len += name_len + value_len + 3
         n -= 1
@@ -110,10 +110,10 @@ def populate_pkt(pkt, tarinfo):
                                                        if k.startswith(XATTR_PREFIX)])
     header = bytearray()
     for name, value in xattrs:
-        name_b = name.encode('utf-8')[:255]
+        name_b = name.encode('utf-8', 'surrogateescape')[:255]
         header.extend(len(name_b).to_bytes())
         header.extend(name_b)
-        value_b = value.encode('utf-8')[:65535]
+        value_b = value.encode('utf-8', 'surrogateescape')[:65535]
         header.extend(len(value_b).to_bytes(2))
         header.extend(value_b)
     pkt.statp.st_ino = len(xattrs)
