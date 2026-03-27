@@ -34,6 +34,7 @@
 
 #include "command_runner.h"
 #include "os_detector.h"
+#include "setup_steps.h"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -104,64 +105,6 @@ static void HandleDetectOs(WsCodec& ws)
 }
 
 /** Capitalize the first letter of s (Bareos repo paths use e.g. "Fedora_43"). */
-static std::string CapFirst(std::string s)
-{
-  if (!s.empty()) s[0] = static_cast<char>(std::toupper(s[0]));
-  return s;
-}
-
-/** Build the command to add the Bareos repository. */
-static std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
-                                                const std::string& version,
-                                                const std::string& repo_type,
-                                                const std::string& login,
-                                                const std::string& password)
-{
-  const std::string base = (repo_type == "subscription")
-      ? "https://download.bareos.com/bareos/release/latest"
-      : "https://download.bareos.org/current";
-
-  const std::string script_url
-      = base + "/" + CapFirst(distro) + "_" + version
-        + "/add_bareos_repositories.sh";
-
-  // For subscription repos, pass credentials via curl -u
-  std::string curl_auth;
-  if (repo_type == "subscription" && !login.empty()) {
-    // Shell-quote the credentials to handle special characters
-    curl_auth = " -u '" + login + ":" + password + "'";
-  }
-
-  return {
-      "bash", "-c",
-      "curl -fsSL" + curl_auth + " " + script_url + " | bash"
-  };
-}
-
-/** Build the install command for a list of packages. */
-static std::vector<std::string> BuildInstallCmd(
-    const std::string& pkg_mgr,
-    const std::vector<std::string>& packages)
-{
-  if (pkg_mgr == "apt") {
-    std::vector<std::string> cmd = {"apt-get", "install", "-y"};
-    cmd.insert(cmd.end(), packages.begin(), packages.end());
-    return cmd;
-  } else if (pkg_mgr == "dnf") {
-    std::vector<std::string> cmd = {"dnf", "install", "-y"};
-    cmd.insert(cmd.end(), packages.begin(), packages.end());
-    return cmd;
-  } else if (pkg_mgr == "yum") {
-    std::vector<std::string> cmd = {"yum", "install", "-y"};
-    cmd.insert(cmd.end(), packages.begin(), packages.end());
-    return cmd;
-  } else if (pkg_mgr == "zypper") {
-    std::vector<std::string> cmd = {"zypper", "--non-interactive", "install"};
-    cmd.insert(cmd.end(), packages.begin(), packages.end());
-    return cmd;
-  }
-  return {"echo", "Unsupported package manager: " + pkg_mgr};
-}
 
 static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
 {
@@ -191,42 +134,13 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
     cmd = BuildInstallCmd(JStr(msg, "pkg_mgr"), pkgs);
 
   } else if (step_id == "setup_db") {
-    cmd = {
-        "bash", "-c",
-        "/usr/lib/bareos/scripts/create_bareos_database && "
-        "/usr/lib/bareos/scripts/make_bareos_tables && "
-        "/usr/lib/bareos/scripts/grant_bareos_privileges"
-    };
+    cmd = BuildDbCmd();
 
   } else if (step_id == "create_admin_user") {
     std::string username = JStr(msg, "username");
     std::string password = JStr(msg, "password");
     if (username.empty()) username = "admin";
-    // Use bconsole-style console resource: write a console config file
-    // and reload the director.
-    std::string console_conf =
-        "/etc/bareos/bareos-dir.d/console/" + username + ".conf";
-    // Escape single quotes in password for the shell heredoc
-    std::string pw_escaped = password;
-    size_t pos = 0;
-    while ((pos = pw_escaped.find('\'', pos)) != std::string::npos) {
-      pw_escaped.replace(pos, 1, "'\\''");
-      pos += 4;
-    }
-    cmd = {
-        "bash", "-c",
-        "cat > " + console_conf + " << 'BAREOS_EOF'\n"
-        "Console {\n"
-        "  Name = " + username + "\n"
-        "  Password = \"" + password + "\"\n"
-        "  Profile = \"webui-admin\"\n"
-        "  TLS Enable = No\n"
-        "}\n"
-        "BAREOS_EOF\n"
-        "chmod 640 " + console_conf + " && "
-        "chown root:bareos " + console_conf + " && "
-        "systemctl reload bareos-dir 2>/dev/null || true"
-    };
+    cmd = BuildAdminUserCmd(username, password);
 
   } else {
     SendError(ws, step_id, "Unknown step id: " + step_id);
