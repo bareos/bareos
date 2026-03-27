@@ -198,6 +198,36 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
         "/usr/lib/bareos/scripts/grant_bareos_privileges"
     };
 
+  } else if (step_id == "create_admin_user") {
+    std::string username = JStr(msg, "username");
+    std::string password = JStr(msg, "password");
+    if (username.empty()) username = "admin";
+    // Use bconsole-style console resource: write a console config file
+    // and reload the director.
+    std::string console_conf =
+        "/etc/bareos/bareos-dir.d/console/" + username + ".conf";
+    // Escape single quotes in password for the shell heredoc
+    std::string pw_escaped = password;
+    size_t pos = 0;
+    while ((pos = pw_escaped.find('\'', pos)) != std::string::npos) {
+      pw_escaped.replace(pos, 1, "'\\''");
+      pos += 4;
+    }
+    cmd = {
+        "bash", "-c",
+        "cat > " + console_conf + " << 'BAREOS_EOF'\n"
+        "Console {\n"
+        "  Name = " + username + "\n"
+        "  Password = \"" + password + "\"\n"
+        "  Profile = \"webui-admin\"\n"
+        "  TLS Enable = No\n"
+        "}\n"
+        "BAREOS_EOF\n"
+        "chmod 640 " + console_conf + " && "
+        "chown root:bareos " + console_conf + " && "
+        "systemctl reload bareos-dir 2>/dev/null || true"
+    };
+
   } else {
     SendError(ws, step_id, "Unknown step id: " + step_id);
     return;

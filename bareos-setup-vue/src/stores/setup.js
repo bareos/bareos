@@ -31,12 +31,10 @@ export const useSetupStore = defineStore('setup', () => {
     dbUser:   'bareos',
   })
 
-  // Passwords (generated or user-entered)
-  const passwords = reactive({
-    director: '',
-    storage:  '',
-    filedaemon: '',
-    webui:    '',
+  // Administrative user for WebUI / bconsole access
+  const adminUser = reactive({
+    username: 'admin',
+    password: '',
   })
 
   // Whether setup is complete
@@ -62,7 +60,7 @@ export const useSetupStore = defineStore('setup', () => {
 
   return {
     osInfo, components, repoType, repoCredentials, repoAdded,
-    packagesInstalled, dbConfig, passwords, setupDone,
+    packagesInstalled, dbConfig, adminUser, setupDone,
     stepIndex, steps, nextStep, prevStep, goTo,
   }
 })
