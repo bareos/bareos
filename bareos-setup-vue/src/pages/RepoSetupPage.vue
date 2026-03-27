@@ -68,7 +68,7 @@ const repoUrl = computed(() => {
   const distro = store.osInfo.distro
     ? store.osInfo.distro.charAt(0).toUpperCase() + store.osInfo.distro.slice(1)
     : ''
-  return `${base}/${distro}_${store.osInfo.version}/add_bareos_repositories.sh`
+  return `${base}/${distro}_${store.osInfo.version}/`
 })
 
 watch(messages, (msgs) => {
