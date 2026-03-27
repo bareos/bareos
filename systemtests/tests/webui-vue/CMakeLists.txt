@@ -28,11 +28,8 @@ file(REMOVE "${PROJECT_BINARY_DIR}/tests/webui-vue/testrunner")
 
 # Detect playwright-python.  The testrunner-playwright is disabled when the
 # package is not available so the remaining tests still run in plain CI.
-execute_process(
-  COMMAND "${PYTHON_EXECUTABLE}" -c "import playwright"
-  RESULT_VARIABLE _playwright_missing
-  OUTPUT_QUIET ERROR_QUIET
-)
+check_pymodule_available(3 playwright)
+check_pymodule_available(3 websockets)
 
 # Register the test (and its testrunner-* files) from our source directory. This
 # MUST happen before the webui-common configurefilestosystemtest call below so
@@ -40,16 +37,32 @@ execute_process(
 # testrunner) when it calls add_systemtest_from_directory.
 create_systemtest(${SYSTEMTEST_PREFIX} ${BASENAME})
 
-if(_playwright_missing)
+if(NOT PYMODULE_3_WEBSOCKETS_FOUND)
+  set_tests_properties(
+    "${SYSTEMTEST_PREFIX}${BASENAME}:ws-proxy" PROPERTIES DISABLED TRUE
+  )
+endif()
+
+if(NOT PYMODULE_3_PLAYWRIGHT_FOUND)
   set_tests_properties(
     "${SYSTEMTEST_PREFIX}${BASENAME}:playwright" PROPERTIES DISABLED TRUE
   )
-else()
+endif()
+
+if(PYMODULE_3_PLAYWRIGHT_FOUND AND PYMODULE_3_WEBSOCKETS_FOUND)
   # Playwright and ws-proxy both start a Vite dev server + WS proxy before
   # running their assertions.  The startup overhead pushes them past the default
   # 300 s SYSTEMTEST_TIMEOUT, so give them extra headroom.
   set_tests_properties(
     "${SYSTEMTEST_PREFIX}${BASENAME}:playwright"
+    "${SYSTEMTEST_PREFIX}${BASENAME}:ws-proxy" PROPERTIES TIMEOUT 600
+  )
+elseif(PYMODULE_3_PLAYWRIGHT_FOUND)
+  set_tests_properties(
+    "${SYSTEMTEST_PREFIX}${BASENAME}:playwright" PROPERTIES TIMEOUT 600
+  )
+elseif(PYMODULE_3_WEBSOCKETS_FOUND)
+  set_tests_properties(
     "${SYSTEMTEST_PREFIX}${BASENAME}:ws-proxy" PROPERTIES TIMEOUT 600
   )
 endif()
@@ -65,6 +78,6 @@ configurefilestosystemtest(
 # The playwright testrunner also requires the backup job to have completed, so
 # it has data to display.  Use systemtest_requires() to append to – not replace
 # – the FIXTURES_REQUIRED property set by create_systemtest().
-if(NOT _playwright_missing)
+if(PYMODULE_3_PLAYWRIGHT_FOUND)
   systemtest_requires(playwright simple-backup)
 endif()
