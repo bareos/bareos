@@ -22,6 +22,7 @@ aarch64/bareos-filedaemon-percona-xtrabackup-python-plugin
 aarch64/bareos-filedaemon-postgresql-python-plugin
 aarch64/bareos-filedaemon-python-plugins-common
 aarch64/bareos-filedaemon-python3-plugin
+aarch64/bareos-setup
 aarch64/bareos-storage
 aarch64/bareos-storage-dedupable
 aarch64/bareos-storage-dplcompat
@@ -32,6 +33,8 @@ aarch64/bareos-storage-tape
 aarch64/bareos-tools
 aarch64/bareos-traymonitor
 aarch64/bareos-webui
+aarch64/bareos-webui-proxy
+aarch64/bareos-webui-vue
 debug/aarch64/bareos-barri-cli-debuginfo
 debug/aarch64/bareos-bconsole-debuginfo
 debug/aarch64/bareos-common-debuginfo
@@ -45,6 +48,7 @@ debug/aarch64/bareos-filedaemon-barri-plugin-debuginfo
 debug/aarch64/bareos-filedaemon-debuginfo
 debug/aarch64/bareos-filedaemon-grpc-python3-plugin-debuginfo
 debug/aarch64/bareos-filedaemon-python3-plugin-debuginfo
+debug/aarch64/bareos-setup-debuginfo
 debug/aarch64/bareos-storage-debuginfo
 debug/aarch64/bareos-storage-dedupable-debuginfo
 debug/aarch64/bareos-storage-dplcompat-debuginfo
@@ -53,6 +57,7 @@ debug/aarch64/bareos-storage-python3-plugin-debuginfo
 debug/aarch64/bareos-storage-tape-debuginfo
 debug/aarch64/bareos-tools-debuginfo
 debug/aarch64/bareos-traymonitor-debuginfo
+debug/aarch64/bareos-webui-proxy-debuginfo
 noarch/python3-bareos
 src/bareos
 src/python-bareos

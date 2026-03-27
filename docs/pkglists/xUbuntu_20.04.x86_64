@@ -1,4 +1,5 @@
 all/bareos-webui
+all/bareos-webui-vue
 all/python3-bareos
 amd64/bareos
 amd64/bareos-bconsole
@@ -22,6 +23,7 @@ amd64/bareos-filedaemon-percona-xtrabackup-python-plugin
 amd64/bareos-filedaemon-postgresql-python-plugin
 amd64/bareos-filedaemon-python-plugins-common
 amd64/bareos-filedaemon-python3-plugin
+amd64/bareos-setup
 amd64/bareos-storage
 amd64/bareos-storage-dedupable
 amd64/bareos-storage-dplcompat
@@ -34,3 +36,4 @@ amd64/bareos-traymonitor
 amd64/bareos-vadp-dumper
 amd64/bareos-vmware-plugin
 amd64/bareos-vmware-vix-disklib
+amd64/bareos-webui-proxy

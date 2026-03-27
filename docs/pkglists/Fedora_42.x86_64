@@ -11,6 +11,7 @@ debug/x86_64/bareos-director-python3-plugin-debuginfo
 debug/x86_64/bareos-filedaemon-debuginfo
 debug/x86_64/bareos-filedaemon-grpc-python3-plugin-debuginfo
 debug/x86_64/bareos-filedaemon-python3-plugin-debuginfo
+debug/x86_64/bareos-setup-debuginfo
 debug/x86_64/bareos-storage-debuginfo
 debug/x86_64/bareos-storage-dedupable-debuginfo
 debug/x86_64/bareos-storage-dplcompat-debuginfo
@@ -20,6 +21,7 @@ debug/x86_64/bareos-storage-tape-debuginfo
 debug/x86_64/bareos-tools-debuginfo
 debug/x86_64/bareos-traymonitor-debuginfo
 debug/x86_64/bareos-vadp-dumper-debuginfo
+debug/x86_64/bareos-webui-proxy-debuginfo
 noarch/python3-bareos
 src/bareos
 src/bareos-vmware-vix-disklib
@@ -48,6 +50,7 @@ x86_64/bareos-filedaemon-percona-xtrabackup-python-plugin
 x86_64/bareos-filedaemon-postgresql-python-plugin
 x86_64/bareos-filedaemon-python-plugins-common
 x86_64/bareos-filedaemon-python3-plugin
+x86_64/bareos-setup
 x86_64/bareos-storage
 x86_64/bareos-storage-dedupable
 x86_64/bareos-storage-dplcompat
@@ -62,3 +65,5 @@ x86_64/bareos-vmware-plugin
 x86_64/bareos-vmware-plugin-compat
 x86_64/bareos-vmware-vix-disklib
 x86_64/bareos-webui
+x86_64/bareos-webui-proxy
+x86_64/bareos-webui-vue

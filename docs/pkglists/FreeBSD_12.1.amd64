@@ -10,3 +10,6 @@ bareos.com-storage
 bareos.com-storage-dedup
 bareos.com-storage-tape
 bareos.com-tools
+bareos.com-setup
+bareos.com-webui-proxy
+bareos.com-webui-vue
