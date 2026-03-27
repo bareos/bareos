@@ -428,14 +428,13 @@ async function fetchPage() {
   const filter = statusFilter.value ? ` jobstatus=${statusFilter.value}` : ''
   try {
     const [pageResult, countResult] = await Promise.allSettled([
-      director.call(`llist jobs limit=${rowsPerPage} offset=${offset}${filter}`),
+      director.call(`llist jobs reverse limit=${rowsPerPage} offset=${offset}${filter}`),
       director.call(`list jobs count${filter}`),
     ])
     if (pageResult.status === 'rejected') throw pageResult.reason
     jobs.value = (pageResult.value?.jobs ?? []).map(normaliseJob)
     const count = countResult.status === 'fulfilled'
       ? Number(countResult.value?.jobs?.[0]?.count ?? 0)
-      // Estimate total when count query is unsupported
       : (jobs.value.length < rowsPerPage
           ? offset + jobs.value.length
           : offset + jobs.value.length + rowsPerPage)
