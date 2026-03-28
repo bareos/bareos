@@ -32,16 +32,13 @@ configure_file(
 set(WEBUI_VUE_SRC "${CMAKE_CURRENT_SOURCE_DIR}")
 set(WEBUI_VUE_DIST "${WEBUI_VUE_SRC}/dist")
 
-file(
-  GLOB_RECURSE
-  WEBUI_VUE_SOURCES
-  "${WEBUI_VUE_SRC}/src/*.vue"
-  "${WEBUI_VUE_SRC}/src/*.js"
-  "${WEBUI_VUE_SRC}/src/*.scss"
-  "${WEBUI_VUE_SRC}/index.html"
-  "${WEBUI_VUE_SRC}/package.json"
-  "${WEBUI_VUE_SRC}/vite.config.js"
+file(GLOB_RECURSE WEBUI_VUE_SOURCES "${WEBUI_VUE_SRC}/src/*.vue"
+     "${WEBUI_VUE_SRC}/src/*.js" "${WEBUI_VUE_SRC}/src/*.scss"
 )
+file(GLOB WEBUI_VUE_SOURCES_ROOT "${WEBUI_VUE_SRC}/index.html"
+     "${WEBUI_VUE_SRC}/package.json" "${WEBUI_VUE_SRC}/vite.config.js"
+)
+list(APPEND WEBUI_VUE_SOURCES ${WEBUI_VUE_SOURCES_ROOT})
 
 set(WEBUI_VUE_DIST_INDEX "${WEBUI_VUE_DIST}/index.html")
 

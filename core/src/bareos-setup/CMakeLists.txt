@@ -17,17 +17,17 @@ find_package(Jansson REQUIRED)
 set(SETUP_VUE_SRC "${CMAKE_SOURCE_DIR}/bareos-setup-vue")
 set(SETUP_VUE_DIST "${SETUP_VUE_SRC}/dist")
 
-# Collect Vue source files so CMake knows when to retrigger the build
-file(
-  GLOB_RECURSE
-  SETUP_VUE_SOURCES
-  "${SETUP_VUE_SRC}/src/*.vue"
-  "${SETUP_VUE_SRC}/src/*.js"
-  "${SETUP_VUE_SRC}/src/*.scss"
-  "${SETUP_VUE_SRC}/index.html"
-  "${SETUP_VUE_SRC}/package.json"
-  "${SETUP_VUE_SRC}/vite.config.js"
+# Collect Vue source files so CMake knows when to retrigger the build. Use
+# GLOB_RECURSE only for src/ sub-trees; use plain GLOB for root-level files so
+# that dist/index.html (which is a build OUTPUT) is not picked up recursively
+# and does not create a dependency cycle in Ninja.
+file(GLOB_RECURSE SETUP_VUE_SOURCES "${SETUP_VUE_SRC}/src/*.vue"
+     "${SETUP_VUE_SRC}/src/*.js" "${SETUP_VUE_SRC}/src/*.scss"
 )
+file(GLOB SETUP_VUE_SOURCES_ROOT "${SETUP_VUE_SRC}/index.html"
+     "${SETUP_VUE_SRC}/package.json" "${SETUP_VUE_SRC}/vite.config.js"
+)
+list(APPEND SETUP_VUE_SOURCES ${SETUP_VUE_SOURCES_ROOT})
 
 set(SETUP_VUE_DIST_INDEX "${SETUP_VUE_DIST}/index.html")
 
