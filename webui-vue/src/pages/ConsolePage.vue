@@ -86,7 +86,11 @@ const completionIds = new Set()   // IDs of in-flight completion (Tab) requests
 const consoleStatus = ref('disconnected')
 const currentPrompt = ref('* ')  // updated from raw_response.prompt
 
-const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || 'ws://localhost:8765'
+function defaultWsUrl() {
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${proto}//${window.location.host}/ws`
+}
+const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
 
 const statusColor = computed(() => ({
   connected: 'positive', connecting: 'warning',

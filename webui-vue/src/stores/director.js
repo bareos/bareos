@@ -7,13 +7,19 @@
  *      director responds.  Rejects on timeout (30 s) or WS error.
  *   3. Call disconnect() on logout.
  *
- * The WebSocket URL is read from VITE_DIRECTOR_WS_URL (default ws://localhost:8765).
+ * The WebSocket URL is read from VITE_DIRECTOR_WS_URL.  When not set the URL
+ * is derived from the current page location so that the connection goes
+ * through the Apache reverse-proxy at /ws.
  */
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || 'ws://localhost:8765'
+function defaultWsUrl() {
+  const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${proto}//${window.location.host}/ws`
+}
+const WS_URL = import.meta.env.VITE_DIRECTOR_WS_URL || defaultWsUrl()
 const CMD_TIMEOUT_MS = 30_000
 
 export const useDirectorStore = defineStore('director', () => {

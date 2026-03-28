@@ -40,7 +40,7 @@ AliasMatch "^/favicon\.ico$" "@WEBUI_VUE_DIR@/favicon.ico"
 # Proxy WebSocket connections to bareos-webui-proxy
 <IfModule mod_proxy.c>
     <IfModule mod_proxy_wstunnel.c>
-        ProxyPass /bareos-webui-vue/ws ws://localhost:8765/
-        ProxyPassReverse /bareos-webui-vue/ws ws://localhost:8765/
+        ProxyPass /ws ws://localhost:8765/
+        ProxyPassReverse /ws ws://localhost:8765/
     </IfModule>
 </IfModule>
