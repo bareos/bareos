@@ -650,7 +650,7 @@ Summary:       Bareos WebUI Vue (new Vue/Quasar web interface)
 Group:         Productivity/Archiving/Backup
 Requires:      %{name}-webui-proxy = %{version}
 Requires:      httpd
-%if 0%{?rhel} || 0%{?fedora}
+%if 0%{?rhel} >= 9 || 0%{?fedora}
 Requires:      mod_proxy
 %endif
 
