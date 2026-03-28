@@ -4,6 +4,14 @@
 
 Alias /bareos-webui-vue @WEBUI_VUE_DIR@
 
+# Vite builds asset URLs relative to /, so rewrite /assets/ and /favicon.ico
+# internally to the /bareos-webui-vue/ sub-path where they actually live.
+<IfModule mod_rewrite.c>
+    RewriteEngine on
+    RewriteRule ^/assets/(.*)$ /bareos-webui-vue/assets/$1 [L]
+    RewriteRule ^/favicon\.ico$ /bareos-webui-vue/favicon.ico [L]
+</IfModule>
+
 <Directory @WEBUI_VUE_DIR@>
     Options FollowSymLinks
     AllowOverride None
