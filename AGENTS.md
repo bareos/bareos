@@ -91,6 +91,23 @@ Before any PR is merged, these checks must pass locally:
 2. `ctest` – all tests pass including systemtests
 3. `bareos-check-sources --since-merge` – no formatting or copyright violations
 
+## Vue WebUI (webui-vue)
+
+The `webui-vue/` directory contains a Vite/Vue SPA. Its compiled output is
+committed under `webui-vue/dist/` and served directly by Apache.
+
+**Always rebuild `dist/` before committing any change to `webui-vue/src/`
+or `webui-vue/vite.config.js`**, otherwise the deployed app will not reflect
+your changes:
+
+```bash
+cd webui-vue
+npm install   # only needed the first time or after package.json changes
+npm run build
+cd ..
+git add webui-vue/dist/
+```
+
 ## Important Notes
 - **Warnings are errors**: The build uses `-Werror -Wall -Wextra`. Fix all compiler warnings.
 - **Never build inside `core/`**: CMake will abort with a fatal error. Always `cmake -S . -B cmake-build` from the repo root.
