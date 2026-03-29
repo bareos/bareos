@@ -7,9 +7,8 @@
       <q-scroll-area class="col">
         <!-- Drawer header -->
         <div class="q-pa-md row items-center">
-          <img src="/bareos-logo-small.png" alt="Bareos"
-               style="height:32px; margin-right:8px"
-               @error="e => e.target.style.display='none'" />
+          <img :src="bareosLogo" alt="Bareos"
+               style="height:32px; margin-right:8px" />
           <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
             BAREOS
           </span>
@@ -86,9 +85,8 @@
 
         <!-- Logo -->
         <router-link to="/dashboard">
-          <img src="/bareos-logo-small.png" alt="Bareos"
-               style="height:36px; margin-right:8px;"
-               @error="e => e.target.style.display='none'" />
+          <img :src="bareosLogo" alt="Bareos"
+               style="height:36px; margin-right:8px;" />
         </router-link>
         <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
           BAREOS
@@ -185,6 +183,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
+import bareosLogo from '../assets/bareos-logo-small.png'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 
