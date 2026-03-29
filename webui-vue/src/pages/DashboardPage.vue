@@ -110,7 +110,14 @@
               <template #body-cell-speed="props">
                 <q-td :props="props" class="text-right" style="min-width:80px">
                   <span v-if="props.row.status === 'R'" class="text-grey-5">—</span>
-                  <span v-else>{{ fmtSpeed(props.row.bytes, props.row.duration) }}</span>
+                  <template v-else>
+                    <div>{{ fmtSpeed(props.row.bytes, props.row.duration) }}</div>
+                    <q-linear-progress
+                      :value="speedGauge(props.row)"
+                      color="cyan-7" track-color="grey-3"
+                      size="4px" class="q-mt-xs" rounded
+                    />
+                  </template>
                 </q-td>
               </template>
             </q-table>
@@ -308,8 +315,18 @@ const runningJobs = computed(() => rawRunningJobs.value.map(normaliseJob))
 
 const maxBytes = computed(() => Math.max(1, ...recentJobs.value.map(j => j.bytes)))
 const maxDurationSecs = computed(() => Math.max(1, ...recentJobs.value.map(j => parseDurationSecs(j.duration))))
+function jobSpeedBps(row) {
+  const secs = parseDurationSecs(row.duration)
+  if (!secs) return 0
+  const bytes = typeof row.bytes === 'string' ? parseFloat(row.bytes) : (row.bytes || 0)
+  return bytes / secs
+}
+const maxSpeedBps = computed(() => Math.max(1, ...recentJobs.value
+  .filter(j => j.status !== 'R')
+  .map(j => jobSpeedBps(j))))
 function bytesGauge(val) { return val / maxBytes.value }
 function durationGauge(str) { return parseDurationSecs(str) / maxDurationSecs.value }
+function speedGauge(row) { return jobSpeedBps(row) / maxSpeedBps.value }
 
 const summaryStats = computed(() => {
   const s = (code) => past24hJobs.value.filter(j => j.status === code).length

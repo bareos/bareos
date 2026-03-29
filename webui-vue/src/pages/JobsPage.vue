@@ -130,8 +130,15 @@
               </template>
               <template #body-cell-speed="props">
                 <q-td :props="props" class="text-right" style="min-width:80px">
-                  <span v-if="isRunning(props.row.status)" class="text-grey-5">—</span>
-                  <span v-else>{{ fmtSpeed(props.row.bytes, props.row.duration) }}</span>
+                  <div v-if="isRunning(props.row.status)" class="text-grey-5">—</div>
+                  <template v-else>
+                    <div>{{ fmtSpeed(props.row.bytes, props.row.duration) }}</div>
+                    <q-linear-progress
+                      :value="speedGauge(props.row)"
+                      color="cyan-7" track-color="grey-3"
+                      size="4px" class="q-mt-xs" rounded
+                    />
+                  </template>
                 </q-td>
               </template>
               <template #body-cell-actions="props">
@@ -310,8 +317,13 @@
                 <q-td :props="props" class="text-right">{{ fmtBytes(props.row.bytes) }}</q-td>
               </template>
               <template #body-cell-speed="props">
-                <q-td :props="props" class="text-right">
-                  {{ fmtSpeed(props.row.bytes, props.row.duration) }}
+                <q-td :props="props" class="text-right" style="min-width:80px">
+                  <div>{{ fmtSpeed(props.row.bytes, props.row.duration) }}</div>
+                  <q-linear-progress
+                    :value="speedGauge(props.row)"
+                    color="cyan-7" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
                 </q-td>
               </template>
               <template #body-cell-actions="props">
@@ -536,6 +548,19 @@ function durationGauge(str) {
   return Math.log(secs + 1) / maxDurationLog.value
 }
 
+function jobSpeedBps(row) {
+  const secs = parseDurationSecs(row.duration)
+  if (!secs) return 0
+  const bytes = typeof row.bytes === 'string' ? parseFloat(row.bytes) : (row.bytes || 0)
+  return bytes / secs
+}
+const maxSpeedLog = computed(() => {
+  const max = Math.max(1, ...filteredJobs.value
+    .filter(j => !isRunning(j.status))
+    .map(j => jobSpeedBps(j)))
+  return Math.log(max + 1)
+})
+function speedGauge(row) { return Math.log(jobSpeedBps(row) + 1) / maxSpeedLog.value }
 
 const runningJobs  = computed(() => jobs.value.filter(j => isRunning(j.status)))
 
