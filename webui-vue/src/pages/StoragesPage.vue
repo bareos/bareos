@@ -56,6 +56,16 @@
                   {{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}
                 </q-td>
               </template>
+              <template #body-cell-totalbytes="props">
+                <q-td :props="props" class="text-right" style="min-width:110px">
+                  <div>{{ formatBytes(props.value) }}</div>
+                  <q-linear-progress
+                    :value="poolBytesGauge(props.value)"
+                    color="teal" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
+              </template>
             </q-table>
           </q-card-section>
         </q-card>
@@ -95,9 +105,43 @@
               <template #body-cell-retention="props">
                 <q-td :props="props">{{ formatDuration(props.value) }}</q-td>
               </template>
+              <template #body-cell-actions="props">
+                <q-td :props="props" class="text-center">
+                  <q-btn flat round dense size="sm" icon="edit" title="Change status">
+                    <q-menu anchor="bottom right" self="top right" auto-close>
+                      <q-list dense style="min-width:130px">
+                        <q-item-label header class="text-caption">Set status</q-item-label>
+                        <q-item
+                          v-for="s in volStatuses" :key="s"
+                          clickable
+                          :active="props.row.volstatus === s"
+                          @click="setVolStatus(props.row, s)"
+                        >
+                          <q-item-section>
+                            <q-badge :color="statusColor(s)" :label="s" />
+                          </q-item-section>
+                        </q-item>
+                      </q-list>
+                    </q-menu>
+                  </q-btn>
+                </q-td>
+              </template>
             </q-table>
           </q-card-section>
         </q-card>
+
+        <!-- Status-change result snackbar -->
+        <q-dialog v-model="statusMsg.show" position="bottom">
+          <q-card :class="statusMsg.ok ? 'bg-positive text-white' : 'bg-negative text-white'"
+                  style="min-width:300px">
+            <q-card-section class="row items-center q-py-sm">
+              <q-icon :name="statusMsg.ok ? 'check_circle' : 'error'" class="q-mr-sm" />
+              <span>{{ statusMsg.text }}</span>
+              <q-space />
+              <q-btn flat round dense icon="close" v-close-popup />
+            </q-card-section>
+          </q-card>
+        </q-dialog>
       </q-tab-panel>
     </q-tab-panels>
   </q-page>
@@ -107,12 +151,14 @@
 import { ref, computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { useDirectorFetch, normaliseVolume } from '../composables/useDirectorFetch.js'
+import { useDirectorStore } from '../stores/director.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
 
-const route = useRoute()
-const tab = ref(route.query.tab || 'storages')
+const route    = useRoute()
+const director = useDirectorStore()
+const tab      = ref(route.query.tab || 'storages')
 const volSearch = ref('')
 
 const { data: rawStorages, loading: storagesLoading, error: storagesError, refresh: refreshStorages } =
@@ -128,11 +174,24 @@ const storages = computed(() => (rawStorages.value ?? []).map(s => ({
   enabled:     s.enabled !== '0' && s.enabled !== false,
 })))
 
-const pools = computed(() => (rawPools.value ?? []).map(p => ({
-  ...p,
-  numvols: Number(p.numvols ?? 0),
-  maxvols: Number(p.maxvols ?? 0),
-})))
+const pools = computed(() => {
+  const bytesByPool = {}
+  for (const v of volumes.value) {
+    const key = v.pool ?? ''
+    bytesByPool[key] = (bytesByPool[key] ?? 0) + (Number(v.volbytes) || 0)
+  }
+  return (rawPools.value ?? []).map(p => ({
+    ...p,
+    numvols:    Number(p.numvols ?? 0),
+    maxvols:    Number(p.maxvols ?? 0),
+    totalbytes: bytesByPool[p.name] ?? 0,
+  }))
+})
+
+const maxPoolBytes = computed(() =>
+  Math.max(1, ...pools.value.map(p => p.totalbytes))
+)
+function poolBytesGauge(val) { return (Number(val) || 0) / maxPoolBytes.value }
 
 // "list volumes" returns a nested object keyed by pool type; flatten it.
 const volumes = computed(() => {
@@ -147,6 +206,48 @@ function refresh() {
   refreshStorages(); refreshPools(); refreshVols()
 }
 
+const poolCols = [
+  { name: 'name',         label: 'Name',          field: 'name',         align: 'left',  sortable: true },
+  { name: 'pooltype',     label: 'Type',          field: 'pooltype',     align: 'left'   },
+  { name: 'numvols',      label: 'Volumes',       field: 'numvols',      align: 'right', sortable: true },
+  { name: 'maxvols',      label: 'Max Volumes',   field: 'maxvols',      align: 'right'  },
+  { name: 'totalbytes',   label: 'Total Data',    field: 'totalbytes',   align: 'right', sortable: true },
+  { name: 'volretention', label: 'Retention',     field: 'volretention', align: 'left'   },
+  { name: 'maxvoljobs',   label: 'Max Jobs/Vol',  field: 'maxvoljobs',   align: 'right'  },
+  { name: 'maxvolbytes',  label: 'Max Bytes/Vol', field: 'maxvolbytes',  align: 'right'  },
+]
+const volumeCols = [
+  { name: 'volumename',  label: 'Volume Name',  field: 'volumename',  align: 'left',  sortable: true },
+  { name: 'pool',        label: 'Pool',         field: 'pool',        align: 'left',  sortable: true },
+  { name: 'storage',     label: 'Storage',      field: 'storage',     align: 'left'   },
+  { name: 'mediatype',   label: 'Media Type',   field: 'mediatype',   align: 'left'   },
+  { name: 'lastwritten', label: 'Last Written', field: 'lastwritten', align: 'left',  sortable: true },
+  { name: 'volstatus',   label: 'Status',       field: 'volstatus',   align: 'center', sortable: true },
+  { name: 'inchanger',   label: 'In Changer',   field: 'inchanger',   align: 'center' },
+  { name: 'retention',   label: 'Retention',    field: 'retention',   align: 'left'   },
+  { name: 'maxvolbytes', label: 'Max Bytes',    field: 'maxvolbytes', align: 'right'  },
+  { name: 'volbytes',    label: 'Used Bytes',   field: 'volbytes',    align: 'right'  },
+  { name: 'actions',     label: '',             field: 'actions',     align: 'center', style: 'width:40px' },
+]
+
+const volStatuses = ['Append', 'Full', 'Used', 'Purged', 'Recycled', 'Read-Only', 'Error', 'Cleaning']
+
+const statusMsg = ref({ show: false, ok: true, text: '' })
+
+async function setVolStatus(vol, newStatus) {
+  try {
+    await director.call(
+      `update volume=${vol.volumename} volstatus=${newStatus}`
+    )
+    vol.volstatus = newStatus
+    statusMsg.value = {
+      show: true, ok: true,
+      text: `${vol.volumename} → ${newStatus}`,
+    }
+  } catch (e) {
+    statusMsg.value = { show: true, ok: false, text: e.message }
+  }
+}
 const storageCols = [
   { name: 'name',        label: 'Name',        field: 'name',        align: 'left',  sortable: true },
   { name: 'address',     label: 'Address',     field: 'address',     align: 'left'   },
@@ -155,29 +256,9 @@ const storageCols = [
   { name: 'enabled',     label: 'Status',      field: 'enabled',     align: 'center' },
   { name: 'actions',     label: '',            field: 'actions',     align: 'center', style: 'width:80px' },
 ]
-const poolCols = [
-  { name: 'name',         label: 'Name',         field: 'name',         align: 'left',  sortable: true },
-  { name: 'pooltype',     label: 'Type',         field: 'pooltype',     align: 'left'   },
-  { name: 'numvols',      label: 'Volumes',      field: 'numvols',      align: 'right', sortable: true },
-  { name: 'maxvols',      label: 'Max Volumes',  field: 'maxvols',      align: 'right'  },
-  { name: 'volretention', label: 'Retention',    field: 'volretention', align: 'left'   },
-  { name: 'maxvoljobs',   label: 'Max Jobs/Vol', field: 'maxvoljobs',   align: 'right'  },
-  { name: 'maxvolbytes',  label: 'Max Bytes/Vol',field: 'maxvolbytes',  align: 'right'  },
-]
-const volumeCols = [
-  { name: 'volumename',  label: 'Volume Name',   field: 'volumename',  align: 'left',  sortable: true },
-  { name: 'pool',        label: 'Pool',          field: 'pool',        align: 'left',  sortable: true },
-  { name: 'storage',     label: 'Storage',       field: 'storage',     align: 'left'   },
-  { name: 'mediatype',   label: 'Media Type',    field: 'mediatype',   align: 'left'   },
-  { name: 'lastwritten', label: 'Last Written',  field: 'lastwritten', align: 'left',  sortable: true },
-  { name: 'volstatus',   label: 'Status',        field: 'volstatus',   align: 'center', sortable: true },
-  { name: 'inchanger',   label: 'In Changer',    field: 'inchanger',   align: 'center' },
-  { name: 'retention',   label: 'Retention',     field: 'retention',   align: 'left'   },
-  { name: 'maxvolbytes', label: 'Max Bytes',     field: 'maxvolbytes', align: 'right'  },
-  { name: 'volbytes',    label: 'Used Bytes',    field: 'volbytes',    align: 'right'  },
-]
 
 function statusColor(s) {
-  return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative', Purged: 'grey' }[s] || 'info'
+  return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative',
+           Purged: 'grey', Used: 'orange', 'Read-Only': 'blue-grey', Cleaning: 'teal' }[s] || 'info'
 }
 </script>
