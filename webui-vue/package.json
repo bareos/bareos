@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "env -u VITE_DIRECTOR_PORT -u VITE_DIRECTOR_HOST vite build",
+    "build": "env -u VITE_DIRECTOR_PORT -u VITE_DIRECTOR_HOST -u VITE_DIRECTOR_WS_URL vite build",
     "preview": "vite preview"
   },
   "dependencies": {
