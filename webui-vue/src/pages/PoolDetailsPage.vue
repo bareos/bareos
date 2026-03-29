@@ -52,7 +52,34 @@
                   </q-td>
                 </template>
                 <template #body-cell-volbytes="props">
-                  <q-td :props="props" class="text-right">{{ formatBytes(props.value) }}</q-td>
+                  <q-td :props="props" class="text-right" style="min-width:100px">
+                    <div>{{ formatBytes(props.value) }}</div>
+                    <q-linear-progress
+                      :value="volBytesGauge(props.value)"
+                      color="primary" track-color="grey-3"
+                      size="4px" class="q-mt-xs" rounded
+                    />
+                  </q-td>
+                </template>
+                <template #body-cell-maxvolbytes="props">
+                  <q-td :props="props" class="text-right" style="min-width:100px">
+                    <div>{{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}</div>
+                    <q-linear-progress v-if="Number(props.value) > 0"
+                      :value="volMaxBytesGauge(props.value)"
+                      color="teal" track-color="grey-3"
+                      size="4px" class="q-mt-xs" rounded
+                    />
+                  </q-td>
+                </template>
+                <template #body-cell-volretention="props">
+                  <q-td :props="props" style="min-width:90px">
+                    <div>{{ formatDuration(props.value) }}</div>
+                    <q-linear-progress
+                      :value="retentionGauge(props.value)"
+                      color="orange" track-color="grey-3"
+                      size="4px" class="q-mt-xs" rounded
+                    />
+                  </q-td>
                 </template>
                 <template #body-cell-inchanger="props">
                   <q-td :props="props" class="text-center">
@@ -122,13 +149,30 @@ const detailRows = computed(() => {
 })
 
 const volumeCols = [
-  { name: 'volumename', label: 'Volume',       field: 'volumename', align: 'left',   sortable: true },
-  { name: 'volstatus',  label: 'Status',       field: 'volstatus',  align: 'center', sortable: true },
-  { name: 'volbytes',   label: 'Used',         field: 'volbytes',   align: 'right',  sortable: true },
-  { name: 'lastwritten',label: 'Last Written', field: 'lastwritten',align: 'left',   sortable: true },
-  { name: 'inchanger',  label: 'In Changer',   field: 'inchanger',  align: 'center' },
-  { name: 'storage',    label: 'Storage',      field: 'storage',    align: 'left'   },
+  { name: 'volumename',  label: 'Volume',       field: 'volumename',  align: 'left',   sortable: true },
+  { name: 'volstatus',   label: 'Status',        field: 'volstatus',   align: 'center', sortable: true },
+  { name: 'volbytes',    label: 'Used',          field: 'volbytes',    align: 'right',  sortable: true },
+  { name: 'maxvolbytes', label: 'Max Bytes',     field: 'maxvolbytes', align: 'right',  sortable: true },
+  { name: 'volretention',label: 'Retention',     field: 'volretention',align: 'left',   sortable: true },
+  { name: 'lastwritten', label: 'Last Written',  field: 'lastwritten', align: 'left',   sortable: true },
+  { name: 'inchanger',   label: 'In Changer',    field: 'inchanger',   align: 'center' },
+  { name: 'storage',     label: 'Storage',       field: 'storage',     align: 'left'   },
 ]
+
+const maxVolBytes = computed(() =>
+  Math.max(1, ...volumes.value.map(v => Number(v.volbytes) || 0))
+)
+const maxVolMaxBytes = computed(() =>
+  Math.max(1, ...volumes.value
+    .filter(v => Number(v.maxvolbytes) > 0)
+    .map(v => Number(v.maxvolbytes)))
+)
+const maxVolRetention = computed(() =>
+  Math.max(1, ...volumes.value.map(v => Number(v.volretention) || 0))
+)
+function volBytesGauge(val)    { return (Number(val) || 0) / maxVolBytes.value }
+function volMaxBytesGauge(val) { return (Number(val) || 0) / maxVolMaxBytes.value }
+function retentionGauge(val)   { return (Number(val) || 0) / maxVolRetention.value }
 
 function statusColor(s) {
   return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative', Purged: 'grey', Used: 'info' }[s] || 'info'

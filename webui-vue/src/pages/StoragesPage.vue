@@ -48,12 +48,62 @@
                   </router-link>
                 </q-td>
               </template>
+              <template #body-cell-pooltype="props">
+                <q-td :props="props">
+                  <div class="row items-center no-wrap q-gutter-xs">
+                    <PoolTypeBadge :type="props.value" />
+                    <span>{{ props.value }}</span>
+                  </div>
+                </q-td>
+              </template>
+              <template #body-cell-numvols="props">
+                <q-td :props="props" class="text-right" style="min-width:80px">
+                  <div>{{ props.value }}</div>
+                  <q-linear-progress
+                    :value="poolGauge(props.value, maxNumVols)"
+                    color="primary" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
+              </template>
+              <template #body-cell-maxvols="props">
+                <q-td :props="props" class="text-right" style="min-width:80px">
+                  <div>{{ Number(props.value) > 0 ? props.value : '∞' }}</div>
+                  <q-linear-progress v-if="Number(props.value) > 0"
+                    :value="poolGauge(props.value, maxMaxVols)"
+                    color="grey-6" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
+              </template>
               <template #body-cell-volretention="props">
-                <q-td :props="props">{{ formatDuration(props.value) }}</q-td>
+                <q-td :props="props" style="min-width:90px">
+                  <div>{{ formatDuration(props.value) }}</div>
+                  <q-linear-progress
+                    :value="poolGauge(Number(props.value), maxRetentionSecs)"
+                    color="orange" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
+              </template>
+              <template #body-cell-maxvoljobs="props">
+                <q-td :props="props" class="text-right" style="min-width:80px">
+                  <div>{{ Number(props.value) > 0 ? props.value : '∞' }}</div>
+                  <q-linear-progress v-if="Number(props.value) > 0"
+                    :value="poolGauge(props.value, maxMaxVolJobs)"
+                    color="deep-purple" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
               </template>
               <template #body-cell-maxvolbytes="props">
-                <q-td :props="props" class="text-right">
-                  {{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}
+                <q-td :props="props" class="text-right" style="min-width:100px">
+                  <div>{{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}</div>
+                  <q-linear-progress v-if="Number(props.value) > 0"
+                    :value="poolGauge(props.value, maxMaxVolBytes)"
+                    color="teal" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
                 </q-td>
               </template>
               <template #body-cell-totalbytes="props">
@@ -61,7 +111,7 @@
                   <div>{{ formatBytes(props.value) }}</div>
                   <q-linear-progress
                     :value="poolBytesGauge(props.value)"
-                    color="teal" track-color="grey-3"
+                    color="cyan-7" track-color="grey-3"
                     size="4px" class="q-mt-xs" rounded
                   />
                 </q-td>
@@ -89,21 +139,47 @@
                   <BoolIcon :value="props.value" />
                 </q-td>
               </template>
+              <template #body-cell-pool="props">
+                <q-td :props="props">
+                  <router-link :to="{ name: 'pool-details', params: { name: props.value } }" class="text-primary">
+                    {{ props.value }}
+                  </router-link>
+                </q-td>
+              </template>
               <template #body-cell-volstatus="props">
                 <q-td :props="props">
                   <q-badge :color="statusColor(props.value)" :label="props.value" />
                 </q-td>
               </template>
               <template #body-cell-volbytes="props">
-                <q-td :props="props" class="text-right">{{ formatBytes(props.value) }}</q-td>
+                <q-td :props="props" class="text-right" style="min-width:100px">
+                  <div>{{ formatBytes(props.value) }}</div>
+                  <q-linear-progress
+                    :value="volBytesGauge(props.value)"
+                    color="primary" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
               </template>
               <template #body-cell-maxvolbytes="props">
-                <q-td :props="props" class="text-right">
-                  {{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}
+                <q-td :props="props" class="text-right" style="min-width:100px">
+                  <div>{{ Number(props.value) > 0 ? formatBytes(props.value) : '∞' }}</div>
+                  <q-linear-progress v-if="Number(props.value) > 0"
+                    :value="volGauge(props.value, maxVolMaxBytes)"
+                    color="teal" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
                 </q-td>
               </template>
               <template #body-cell-retention="props">
-                <q-td :props="props">{{ formatDuration(props.value) }}</q-td>
+                <q-td :props="props" style="min-width:90px">
+                  <div>{{ formatDuration(props.value) }}</div>
+                  <q-linear-progress
+                    :value="volGauge(Number(props.value), maxVolRetention)"
+                    color="orange" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
@@ -155,6 +231,7 @@ import { useDirectorStore } from '../stores/director.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
 import EnabledBadge from '../components/EnabledBadge.vue'
+import PoolTypeBadge from '../components/PoolTypeBadge.vue'
 
 const route    = useRoute()
 const director = useDirectorStore()
@@ -205,6 +282,24 @@ const volumes = computed(() => {
 function refresh() {
   refreshStorages(); refreshPools(); refreshVols()
 }
+
+// ── Pool gauge helpers ────────────────────────────────────────────────────────
+function maxOf(arr, field) {
+  return Math.max(1, ...arr.map(p => Number(p[field]) || 0))
+}
+const maxNumVols      = computed(() => maxOf(pools.value, 'numvols'))
+const maxMaxVols      = computed(() => maxOf(pools.value.filter(p => Number(p.maxvols) > 0), 'maxvols'))
+const maxRetentionSecs= computed(() => maxOf(pools.value, 'volretention'))
+const maxMaxVolJobs   = computed(() => maxOf(pools.value.filter(p => Number(p.maxvoljobs) > 0), 'maxvoljobs'))
+const maxMaxVolBytes  = computed(() => maxOf(pools.value.filter(p => Number(p.maxvolbytes) > 0), 'maxvolbytes'))
+function poolGauge(val, max) { return (Number(val) || 0) / (max || 1) }
+
+// ── Volume gauge helpers ──────────────────────────────────────────────────────
+const maxVolBytes     = computed(() => maxOf(volumes.value, 'volbytes'))
+const maxVolMaxBytes  = computed(() => maxOf(volumes.value.filter(v => Number(v.maxvolbytes) > 0), 'maxvolbytes'))
+const maxVolRetention = computed(() => maxOf(volumes.value, 'retention'))
+function volBytesGauge(val) { return (Number(val) || 0) / maxVolBytes.value }
+function volGauge(val, max)  { return (Number(val) || 0) / (max || 1) }
 
 const poolCols = [
   { name: 'name',         label: 'Name',          field: 'name',         align: 'left',  sortable: true },

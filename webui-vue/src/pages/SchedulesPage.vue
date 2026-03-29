@@ -175,5 +175,5 @@ const statusCols = [
 
 // Load show tab immediately; load status tab lazily on first visit
 refreshSchedules()
-watch(tab, t => { if (t === 'status' && !scheduledJobs.value.length) refreshStatus() })
+watch(tab, t => { if (t === 'status') refreshStatus() })
 </script>
