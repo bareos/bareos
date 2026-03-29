@@ -108,6 +108,12 @@ cd ..
 git add webui-vue/dist/
 ```
 
+**Never run `npm run build` with `VITE_*` environment variables set**
+when producing the committed dist. The system tests temporarily
+rebuild dist/ with test-specific ports; always rebuild clean
+(no env overrides) before committing. `dist/.build-env` is a
+test-runner artefact and is listed in `.gitignore`.
+
 ## Important Notes
 - **Warnings are errors**: The build uses `-Werror -Wall -Wextra`. Fix all compiler warnings.
 - **Never build inside `core/`**: CMake will abort with a fatal error. Always `cmake -S . -B cmake-build` from the repo root.
