@@ -640,6 +640,19 @@ static void DoConfigurationStatus(UaContext* ua)
   }
 }
 
+/* Scheduling packet */
+struct sched_pkt {
+  JobResource* job;
+  int level;
+  int priority;
+  utime_t runtime;
+  PoolResource* pool;
+  StorageResource* store;
+};
+
+static int CompareByRuntimePriority(const sched_pkt& p1, const sched_pkt& p2);
+static void PrtRuntime(UaContext* ua, sched_pkt* sp);
+
 static void DoSchedulerStatus(UaContext* ua)
 {
   int i;
@@ -686,6 +699,47 @@ static void DoSchedulerStatus(UaContext* ua)
 
     // If a bogus jobname was given ask for it interactively.
     if (!job) { job = select_job_resource(ua); }
+  }
+
+  // In JSON mode: emit a structured "scheduled" array respecting filters.
+  if (ua->api == API_MODE_JSON) {
+    std::vector<sched_pkt> json_sched;
+    time_t json_now = time(nullptr);
+    auto collect_job = [&](JobResource* j) {
+      if (!ua->AclAccessOk(Job_ACL, j->resource_name_)) return;
+      if (!j->enabled || (j->client && !j->client->enabled)) return;
+      if (!j->schedule) return;
+      if (client && j->client != client) return;
+      if (schedule_given_by_cmdline_args
+          && !bstrcmp(j->schedule->resource_name_, schedulename)) {
+        return;
+      }
+      for (RunResource* run = j->schedule->run; run; run = run->next) {
+        std::optional<time_t> next = run->NextScheduleTime(json_now, days);
+        if (!next.has_value()) { continue; }
+        UnifiedStorageResource storage_res;
+        GetJobStorage(&storage_res, j, run);
+        json_sched.push_back(
+            {.job = j,
+             .level = int(run->level ? run->level : j->JobLevel),
+             .priority = (run->Priority ? run->Priority : j->Priority),
+             .runtime = next.value(),
+             .pool = run->pool,
+             .store = storage_res.store});
+      }
+    };
+    if (job) {
+      collect_job(job);
+    } else {
+      foreach_res (job, R_JOB) { collect_job(job); }
+    }
+    std::sort(json_sched.begin(), json_sched.end(), [](auto& l, auto& r) {
+      return CompareByRuntimePriority(l, r) < 0;
+    });
+    ua->send->ArrayStart("scheduled");
+    for (sched_pkt& sp : json_sched) { PrtRuntime(ua, &sp); }
+    ua->send->ArrayEnd("scheduled");
+    return;
   }
 
   ua->SendMsg("Scheduler Jobs:\n\n");
@@ -836,16 +890,6 @@ static void PrtRunhdr(UaContext* ua)
   }
 }
 
-/* Scheduling packet */
-struct sched_pkt {
-  JobResource* job;
-  int level;
-  int priority;
-  utime_t runtime;
-  PoolResource* pool;
-  StorageResource* store;
-};
-
 static void PrtRuntime(UaContext* ua, sched_pkt* sp)
 {
   char dt[MAX_TIME_LENGTH];
@@ -884,7 +928,22 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
       level_ptr = JobLevelToString(sp->level);
       break;
   }
-  if (ua->api) {
+  if (ua->api == API_MODE_JSON) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("name", sp->job->resource_name_, "%s\n");
+    ua->send->ObjectKeyValue("type", job_type_to_str(sp->job->JobType), "%s\n");
+    ua->send->ObjectKeyValue("level", level_ptr, "%s\n");
+    ua->send->ObjectKeyValueSignedInt("priority", sp->priority, "%d\n");
+    ua->send->ObjectKeyValue("scheduled", dt, "%s\n");
+    ua->send->ObjectKeyValue("volume", mr.VolumeName, "%s\n");
+    if (sp->pool) {
+      ua->send->ObjectKeyValue("pool", sp->pool->resource_name_, "%s\n");
+    }
+    if (sp->store) {
+      ua->send->ObjectKeyValue("storage", sp->store->resource_name_, "%s\n");
+    }
+    ua->send->ObjectEnd();
+  } else if (ua->api) {
     ua->SendMsg(T_("%-14s\t%-8s\t%3d\t%-18s\t%-18s\t%s\n"), level_ptr,
                 job_type_to_str(sp->job->JobType), sp->priority, dt,
                 sp->job->resource_name_, mr.VolumeName);
@@ -968,7 +1027,9 @@ static void ListScheduledJobs(UaContext* ua)
   std::sort(sched.begin(), sched.end(), [](auto& l, auto& r) -> bool {
     return CompareByRuntimePriority(l, r) < 0;
   });
+  if (ua->api == API_MODE_JSON) { ua->send->ArrayStart("scheduled"); }
   for (sched_pkt& sp : sched) { PrtRuntime(ua, &sp); }
+  if (ua->api == API_MODE_JSON) { ua->send->ArrayEnd("scheduled"); }
   if (sched.empty() && !ua->api) { ua->SendMsg(T_("No Scheduled Jobs.\n")); }
   if (!ua->api) ua->SendMsg("====\n");
   Dmsg0(200, "Leave list_sched_jobs_runs()\n");
