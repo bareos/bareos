@@ -701,44 +701,213 @@ static void DoSchedulerStatus(UaContext* ua)
     if (!job) { job = select_job_resource(ua); }
   }
 
-  // In JSON mode: emit a structured "scheduled" array respecting filters.
+  // JSON mode: emit the same three sections as the text output but as
+  // structured data:
+  //   "scheduled" – per-job upcoming runs (mirrors "Scheduled Jobs")
+  //   "schedules" – schedule → jobs mapping (mirrors "Scheduler Jobs")
+  //   "preview"   – hour-by-hour timeline with overrides
   if (ua->api == API_MODE_JSON) {
-    std::vector<sched_pkt> json_sched;
     time_t json_now = time(nullptr);
-    auto collect_job = [&](JobResource* j) {
-      if (!ua->AclAccessOk(Job_ACL, j->resource_name_)) return;
-      if (!j->enabled || (j->client && !j->client->enabled)) return;
-      if (!j->schedule) return;
-      if (client && j->client != client) return;
-      if (schedule_given_by_cmdline_args
-          && !bstrcmp(j->schedule->resource_name_, schedulename)) {
-        return;
+
+    // ── "scheduled": per-job upcoming runs sorted by runtime/priority ────
+    {
+      std::vector<sched_pkt> json_sched;
+      auto collect_job = [&](JobResource* j) {
+        if (!ua->AclAccessOk(Job_ACL, j->resource_name_)) return;
+        if (!j->enabled || (j->client && !j->client->enabled)) return;
+        if (!j->schedule) return;
+        if (client && j->client != client) return;
+        if (schedule_given_by_cmdline_args
+            && !bstrcmp(j->schedule->resource_name_, schedulename)) {
+          return;
+        }
+        for (RunResource* run = j->schedule->run; run; run = run->next) {
+          std::optional<time_t> next = run->NextScheduleTime(json_now, days);
+          if (!next.has_value()) { continue; }
+          UnifiedStorageResource storage_res;
+          GetJobStorage(&storage_res, j, run);
+          json_sched.push_back(
+              {.job = j,
+               .level = int(run->level ? run->level : j->JobLevel),
+               .priority = (run->Priority ? run->Priority : j->Priority),
+               .runtime = next.value(),
+               .pool = run->pool,
+               .store = storage_res.store});
+        }
+      };
+      if (job) {
+        collect_job(job);
+      } else {
+        JobResource* json_job;
+        foreach_res (json_job, R_JOB) { collect_job(json_job); }
       }
-      for (RunResource* run = j->schedule->run; run; run = run->next) {
-        std::optional<time_t> next = run->NextScheduleTime(json_now, days);
-        if (!next.has_value()) { continue; }
-        UnifiedStorageResource storage_res;
-        GetJobStorage(&storage_res, j, run);
-        json_sched.push_back(
-            {.job = j,
-             .level = int(run->level ? run->level : j->JobLevel),
-             .priority = (run->Priority ? run->Priority : j->Priority),
-             .runtime = next.value(),
-             .pool = run->pool,
-             .store = storage_res.store});
-      }
-    };
-    if (job) {
-      collect_job(job);
-    } else {
-      foreach_res (job, R_JOB) { collect_job(job); }
+      std::sort(json_sched.begin(), json_sched.end(), [](auto& l, auto& r) {
+        return CompareByRuntimePriority(l, r) < 0;
+      });
+      ua->send->ArrayStart("scheduled");
+      for (sched_pkt& sp : json_sched) { PrtRuntime(ua, &sp); }
+      ua->send->ArrayEnd("scheduled");
     }
-    std::sort(json_sched.begin(), json_sched.end(), [](auto& l, auto& r) {
-      return CompareByRuntimePriority(l, r) < 0;
-    });
-    ua->send->ArrayStart("scheduled");
-    for (sched_pkt& sp : json_sched) { PrtRuntime(ua, &sp); }
-    ua->send->ArrayEnd("scheduled");
+
+    // ── "schedules": which schedule triggers which jobs ───────────────────
+    {
+      ScheduleResource* json_sr;
+      ua->send->ArrayStart("schedules");
+      foreach_res (json_sr, R_SCHEDULE) {
+        if (!json_sr->enabled) { continue; }
+        if (!ua->AclAccessOk(Schedule_ACL, json_sr->resource_name_)) {
+          continue;
+        }
+        if (schedule_given_by_cmdline_args
+            && !bstrcmp(json_sr->resource_name_, schedulename)) {
+          continue;
+        }
+        // Collect matching jobs for this schedule.
+        std::vector<std::pair<const char*, bool>> sched_jobs;
+        if (job) {
+          if (job->schedule
+              && bstrcmp(json_sr->resource_name_,
+                         job->schedule->resource_name_)) {
+            bool enabled
+                = job->enabled && !(job->client && !job->client->enabled);
+            sched_jobs.push_back({job->resource_name_, enabled});
+          }
+        } else {
+          JobResource* json_job;
+          foreach_res (json_job, R_JOB) {
+            if (!ua->AclAccessOk(Job_ACL, json_job->resource_name_)) {
+              continue;
+            }
+            if (client && json_job->client != client) { continue; }
+            if (json_job->schedule
+                && bstrcmp(json_sr->resource_name_,
+                           json_job->schedule->resource_name_)) {
+              bool enabled
+                  = json_job->enabled
+                    && !(json_job->client && !json_job->client->enabled);
+              sched_jobs.push_back({json_job->resource_name_, enabled});
+            }
+          }
+        }
+        if (sched_jobs.empty()) { continue; }
+        ua->send->ObjectStart();
+        ua->send->ObjectKeyValue("name", json_sr->resource_name_, "%s\n");
+        ua->send->ObjectKeyValueBool("enabled", json_sr->enabled);
+        ua->send->ArrayStart("jobs");
+        for (auto& [jname, jenabled] : sched_jobs) {
+          ua->send->ObjectStart();
+          ua->send->ObjectKeyValue("name", jname, "%s\n");
+          ua->send->ObjectKeyValueBool("enabled", jenabled);
+          ua->send->ObjectEnd();
+        }
+        ua->send->ArrayEnd("jobs");
+        ua->send->ObjectEnd();
+      }
+      ua->send->ArrayEnd("schedules");
+    }
+
+    // ── "preview": hour-by-hour run timeline with per-run overrides ───────
+    {
+      time_t preview_start, preview_stop;
+      if (days > 0) {
+        preview_start = json_now;
+        preview_stop = json_now + (days * seconds_per_day);
+      } else {
+        preview_start = json_now + (days * seconds_per_day);
+        preview_stop = json_now;
+      }
+      ua->send->ArrayStart("preview");
+      for (time_t t = preview_start; t < preview_stop; t += seconds_per_hour) {
+        auto emit_run = [&](ScheduleResource* s, RunResource* run) {
+          if (!run->date_time_mask.TriggersOnDayAndHour(t)) { return; }
+          struct tm tm_s;
+          Blocaltime(&t, &tm_s);
+          tm_s.tm_min = run->minute;
+          tm_s.tm_sec = 0;
+          time_t runtime = mktime(&tm_s);
+          char dt[MAX_TIME_LENGTH];
+          bstrftime_wd(dt, sizeof(dt), runtime);
+          ua->send->ObjectStart();
+          ua->send->ObjectKeyValue("datetime", dt, "%s\n");
+          ua->send->ObjectKeyValueSignedInt(
+              "runtime", static_cast<int64_t>(runtime), "%" PRId64 "\n");
+          ua->send->ObjectKeyValue("schedule", s->resource_name_, "%s\n");
+          if (run->level) {
+            ua->send->ObjectKeyValue("level", JobLevelToString(run->level),
+                                     "%s\n");
+          }
+          if (run->Priority) {
+            ua->send->ObjectKeyValueSignedInt("priority", run->Priority,
+                                              "%d\n");
+          }
+          if (run->pool) {
+            ua->send->ObjectKeyValue("pool", run->pool->resource_name_, "%s\n");
+          }
+          if (run->storage) {
+            ua->send->ObjectKeyValue("storage", run->storage->resource_name_,
+                                     "%s\n");
+          }
+          if (run->msgs) {
+            ua->send->ObjectKeyValue("messages", run->msgs->resource_name_,
+                                     "%s\n");
+          }
+          if (run->spool_data_set) {
+            ua->send->ObjectKeyValueBool("spool_data", run->spool_data);
+          }
+          if (run->accurate_set) {
+            ua->send->ObjectKeyValueBool("accurate", run->accurate);
+          }
+          ua->send->ObjectEnd();
+        };
+        if (job) {
+          if (job->schedule && job->schedule->enabled && job->enabled) {
+            if (!(job->client && !job->client->enabled)) {
+              for (RunResource* run = job->schedule->run; run;
+                   run = run->next) {
+                emit_run(job->schedule, run);
+              }
+            }
+          }
+        } else if (client) {
+          JobResource* json_job;
+          foreach_res (json_job, R_JOB) {
+            if (!ua->AclAccessOk(Job_ACL, json_job->resource_name_)) {
+              continue;
+            }
+            if (!json_job->schedule || !json_job->schedule->enabled
+                || !json_job->enabled) {
+              continue;
+            }
+            if (!json_job->client || json_job->client != client) { continue; }
+            if (schedule_given_by_cmdline_args
+                && !bstrcmp(json_job->schedule->resource_name_, schedulename)) {
+              continue;
+            }
+            for (RunResource* run = json_job->schedule->run; run;
+                 run = run->next) {
+              emit_run(json_job->schedule, run);
+            }
+          }
+        } else {
+          ScheduleResource* json_sr;
+          foreach_res (json_sr, R_SCHEDULE) {
+            if (!json_sr->enabled) { continue; }
+            if (!ua->AclAccessOk(Schedule_ACL, json_sr->resource_name_)) {
+              continue;
+            }
+            if (schedule_given_by_cmdline_args
+                && !bstrcmp(json_sr->resource_name_, schedulename)) {
+              continue;
+            }
+            for (RunResource* run = json_sr->run; run; run = run->next) {
+              emit_run(json_sr, run);
+            }
+          }
+        }
+      }
+      ua->send->ArrayEnd("preview");
+    }
+
     return;
   }
 
