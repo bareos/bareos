@@ -54,6 +54,13 @@
                   <JobStatusBadge :status="jobStatus(props.row)" />
                 </q-td>
               </template>
+              <template #body-cell-client="props">
+                <q-td :props="props">
+                  <router-link :to="{ name: 'client-details', params: { name: props.value } }" class="text-primary">
+                    {{ props.value }}
+                  </router-link>
+                </q-td>
+              </template>
               <template #body-cell-starttime="props">
                 <q-td :props="props">
                   <span :title="relativeStart ? props.value : timeAgo(props.value)">

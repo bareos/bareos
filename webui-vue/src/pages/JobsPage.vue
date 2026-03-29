@@ -55,6 +55,13 @@
                   <JobStatusBadge :status="props.value" />
                 </q-td>
               </template>
+              <template #body-cell-client="props">
+                <q-td :props="props">
+                  <router-link :to="{ name: 'client-details', params: { name: props.value } }" class="text-primary">
+                    {{ props.value }}
+                  </router-link>
+                </q-td>
+              </template>
               <template #body-cell-type="props">
                 <q-td :props="props">{{ typeMap[props.value] || props.value }}</q-td>
               </template>
@@ -140,6 +147,13 @@
               :pagination="{ rowsPerPage: 10 }"
               no-data-label="No jobs currently running"
             >
+              <template #body-cell-client="props">
+                <q-td :props="props">
+                  <router-link :to="{ name: 'client-details', params: { name: props.value } }" class="text-primary">
+                    {{ props.value }}
+                  </router-link>
+                </q-td>
+              </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
                   <q-btn flat round dense size="sm" icon="cancel" color="negative" title="Cancel"
@@ -245,6 +259,13 @@
               <template #body-cell-status="props">
                 <q-td :props="props" class="text-center">
                   <JobStatusBadge :status="props.value" />
+                </q-td>
+              </template>
+              <template #body-cell-client="props">
+                <q-td :props="props">
+                  <router-link :to="{ name: 'client-details', params: { name: props.value } }" class="text-primary">
+                    {{ props.value }}
+                  </router-link>
                 </q-td>
               </template>
               <template #body-cell-id="props">
