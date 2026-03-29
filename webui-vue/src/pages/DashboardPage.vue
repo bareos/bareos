@@ -72,6 +72,12 @@
                 <q-td :props="props" class="text-right" style="min-width:90px">
                   <div>{{ jobBytes(props.row) }}</div>
                   <q-linear-progress
+                    v-if="props.row.status === 'R'"
+                    indeterminate color="primary" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                  <q-linear-progress
+                    v-else
                     :value="bytesGauge(props.row.bytes)"
                     color="primary" track-color="grey-3"
                     size="4px" class="q-mt-xs" rounded
