@@ -701,53 +701,12 @@ static void DoSchedulerStatus(UaContext* ua)
     if (!job) { job = select_job_resource(ua); }
   }
 
-  // JSON mode: emit the same three sections as the text output but as
+  // JSON mode: emit the same two sections as the text output but as
   // structured data:
-  //   "scheduled" – per-job upcoming runs (mirrors "Scheduled Jobs")
   //   "schedules" – schedule → jobs mapping (mirrors "Scheduler Jobs")
   //   "preview"   – hour-by-hour timeline with overrides
   if (ua->api == API_MODE_JSON) {
     time_t json_now = time(nullptr);
-
-    // ── "scheduled": per-job upcoming runs sorted by runtime/priority ────
-    {
-      std::vector<sched_pkt> json_sched;
-      auto collect_job = [&](JobResource* j) {
-        if (!ua->AclAccessOk(Job_ACL, j->resource_name_)) return;
-        if (!j->enabled || (j->client && !j->client->enabled)) return;
-        if (!j->schedule) return;
-        if (client && j->client != client) return;
-        if (schedule_given_by_cmdline_args
-            && !bstrcmp(j->schedule->resource_name_, schedulename)) {
-          return;
-        }
-        for (RunResource* run = j->schedule->run; run; run = run->next) {
-          std::optional<time_t> next = run->NextScheduleTime(json_now, days);
-          if (!next.has_value()) { continue; }
-          UnifiedStorageResource storage_res;
-          GetJobStorage(&storage_res, j, run);
-          json_sched.push_back(
-              {.job = j,
-               .level = int(run->level ? run->level : j->JobLevel),
-               .priority = (run->Priority ? run->Priority : j->Priority),
-               .runtime = next.value(),
-               .pool = run->pool,
-               .store = storage_res.store});
-        }
-      };
-      if (job) {
-        collect_job(job);
-      } else {
-        JobResource* json_job;
-        foreach_res (json_job, R_JOB) { collect_job(json_job); }
-      }
-      std::sort(json_sched.begin(), json_sched.end(), [](auto& l, auto& r) {
-        return CompareByRuntimePriority(l, r) < 0;
-      });
-      ua->send->ArrayStart("scheduled");
-      for (sched_pkt& sp : json_sched) { PrtRuntime(ua, &sp); }
-      ua->send->ArrayEnd("scheduled");
-    }
 
     // ── "schedules": which schedule triggers which jobs ───────────────────
     {
