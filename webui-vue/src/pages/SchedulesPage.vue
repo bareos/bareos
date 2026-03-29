@@ -255,14 +255,16 @@ function nextMonth() {
 }
 
 // Group previewData entries by ISO date string "YYYY-MM-DD".
-// datetime field looks like "Mon 2026-03-30 02:05:00".
+// Use the runtime Unix timestamp (seconds) — avoids locale-specific parsing
+// of the bstrftime_wd formatted datetime string.
 const runsByDate = computed(() => {
   const map = {}
   for (const r of previewData.value) {
-    const parts = (r.datetime ?? '').split(' ')
-    const date  = parts[1] ?? ''           // "2026-03-30"
-    const time  = (parts[2] ?? '').slice(0, 5)  // "02:05"
-    if (!date) continue
+    const ts = r.runtime
+    if (!ts) continue
+    const d    = new Date(ts * 1000)
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
     if (!map[date]) map[date] = []
     map[date].push({ ...r, time })
   }
