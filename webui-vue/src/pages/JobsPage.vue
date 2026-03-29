@@ -82,6 +82,13 @@
                 <q-td :props="props" class="text-right" style="min-width:90px">
                   <div>{{ fmtBytes(props.row.bytes) }}</div>
                   <q-linear-progress
+                    v-if="isRunning(props.row.status)"
+                    indeterminate
+                    color="primary" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                  <q-linear-progress
+                    v-else
                     :value="bytesGauge(props.row.bytes)"
                     color="primary" track-color="grey-3"
                     size="4px" class="q-mt-xs" rounded
@@ -92,6 +99,13 @@
                 <q-td :props="props" class="text-right" style="min-width:80px">
                   <div>{{ props.value.toLocaleString() }}</div>
                   <q-linear-progress
+                    v-if="isRunning(props.row.status)"
+                    indeterminate
+                    color="teal" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                  <q-linear-progress
+                    v-else
                     :value="filesGauge(props.row.files)"
                     color="teal" track-color="grey-3"
                     size="4px" class="q-mt-xs" rounded
