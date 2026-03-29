@@ -128,6 +128,12 @@
                   />
                 </q-td>
               </template>
+              <template #body-cell-speed="props">
+                <q-td :props="props" class="text-right" style="min-width:80px">
+                  <span v-if="isRunning(props.row.status)" class="text-grey-5">—</span>
+                  <span v-else>{{ fmtSpeed(props.row.bytes, props.row.duration) }}</span>
+                </q-td>
+              </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center" style="white-space:nowrap">
                   <q-btn flat round dense size="sm" icon="restart_alt" title="Rerun"
@@ -303,6 +309,11 @@
               <template #body-cell-bytes="props">
                 <q-td :props="props" class="text-right">{{ fmtBytes(props.row.bytes) }}</q-td>
               </template>
+              <template #body-cell-speed="props">
+                <q-td :props="props" class="text-right">
+                  {{ fmtSpeed(props.row.bytes, props.row.duration) }}
+                </q-td>
+              </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
                   <q-btn flat round dense size="sm" icon="restart_alt" color="primary" title="Rerun"
@@ -438,7 +449,7 @@
 import { ref, computed, reactive, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { jobStatusMap, formatBytes, timeAgo } from '../mock/index.js'
+import { jobStatusMap, formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -455,6 +466,7 @@ const search       = ref('')
 const statusFilter = ref(route.query.status || '')
 const relativeStart = ref(false)
 const fmtBytes  = formatBytes
+const fmtSpeed  = formatSpeed
 
 // ── paginated job list ────────────────────────────────────────────────────────
 const jobs       = ref([])
@@ -512,27 +524,18 @@ const filteredJobs = computed(() => {
 
 const maxBytesLog = computed(() => Math.log(Math.max(1, ...filteredJobs.value.map(j => j.bytes)) + 1))
 const maxFilesLog = computed(() => Math.log(Math.max(1, ...filteredJobs.value.map(j => j.files)) + 1))
-
-function bytesGauge(val)  { return Math.log(val + 1) / maxBytesLog.value }
-function filesGauge(val)  { return Math.log(val + 1) / maxFilesLog.value }
-
-function parseDurationSecs(str) {
-  if (!str) return 0
-  const parts = String(str).split(':').map(Number)
-  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
-  if (parts.length === 2) return parts[0] * 60 + parts[1]
-  return Number(str) || 0
-}
-
 const maxDurationLog = computed(() => {
   const max = Math.max(1, ...filteredJobs.value.map(j => parseDurationSecs(j.duration)))
   return Math.log(max + 1)
 })
 
+function bytesGauge(val)  { return Math.log(val + 1) / maxBytesLog.value }
+function filesGauge(val)  { return Math.log(val + 1) / maxFilesLog.value }
 function durationGauge(str) {
   const secs = parseDurationSecs(str)
   return Math.log(secs + 1) / maxDurationLog.value
 }
+
 
 const runningJobs  = computed(() => jobs.value.filter(j => isRunning(j.status)))
 
@@ -566,6 +569,7 @@ const columns = [
     sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b) },
   { name: 'files',     label: 'Files',    field: 'files',     align: 'right',  sortable: true },
   { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right',  sortable: true },
+  { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right'   },
   { name: 'errors',    label: 'Errors',   field: 'errors',    align: 'center'  },
   { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:100px' },
@@ -586,6 +590,7 @@ const rerunColumns = [
   { name: 'level',     label: 'Level',    field: 'level',     align: 'center'  },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',   sortable: true },
   { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right'   },
+  { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right'   },
   { name: 'status',    label: 'Status',   field: 'status',    align: 'center', sortable: true },
   { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:60px' },
 ]

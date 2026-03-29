@@ -107,6 +107,12 @@
                   />
                 </q-td>
               </template>
+              <template #body-cell-speed="props">
+                <q-td :props="props" class="text-right" style="min-width:80px">
+                  <span v-if="props.row.status === 'R'" class="text-grey-5">—</span>
+                  <span v-else>{{ fmtSpeed(props.row.bytes, props.row.duration) }}</span>
+                </q-td>
+              </template>
             </q-table>
           </q-card-section>
         </q-card>
@@ -166,7 +172,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { formatBytes, timeAgo } from '../mock/index.js'
+import { formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -175,6 +181,7 @@ import StatNumber from '../components/StatNumber.vue'
 
 const director = useDirectorStore()
 const fmtBytes      = formatBytes
+const fmtSpeed      = formatSpeed
 const relativeStart = ref(false)
 
 // ── data ─────────────────────────────────────────────────────────────────────
@@ -292,19 +299,12 @@ const recentCols = [
   { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right', sortable: true,
     sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b) },
   { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right', sortable: true },
+  { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right'  },
   { name: 'status',    label: 'Status',   field: 'status',    align: 'center' },
 ]
 
 const recentJobs  = computed(() => lastJobs.value)
 const runningJobs = computed(() => rawRunningJobs.value.map(normaliseJob))
-
-function parseDurationSecs(str) {
-  if (!str) return 0
-  const parts = String(str).split(':').map(Number)
-  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
-  if (parts.length === 2) return parts[0] * 60 + parts[1]
-  return Number(str) || 0
-}
 
 const maxBytes = computed(() => Math.max(1, ...recentJobs.value.map(j => j.bytes)))
 const maxDurationSecs = computed(() => Math.max(1, ...recentJobs.value.map(j => parseDurationSecs(j.duration))))

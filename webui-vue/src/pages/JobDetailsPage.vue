@@ -107,7 +107,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { jobLevelMap, formatBytes } from '../mock/index.js'
+import { jobLevelMap, formatBytes, formatSpeed } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -187,6 +187,7 @@ const summaryRows = computed(() => {
     { label: 'Duration',   value: j.duration  || '—' },
     { label: 'Files',      value: Number(j.files).toLocaleString() },
     { label: 'Bytes',      value: formatBytes(j.bytes) },
+    { label: 'Speed',      value: formatSpeed(j.bytes, j.duration) },
     { label: 'Errors',     value: j.errors },
   ]
 })

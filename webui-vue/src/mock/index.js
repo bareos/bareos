@@ -109,6 +109,25 @@ export function formatBytes(bytes) {
   return (num / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i]
 }
 
+export function parseDurationSecs(str) {
+  if (!str) return 0
+  const parts = String(str).split(':').map(Number)
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2]
+  if (parts.length === 2) return parts[0] * 60 + parts[1]
+  return Number(str) || 0
+}
+
+export function formatSpeed(bytes, durationStr) {
+  const secs = parseDurationSecs(durationStr)
+  if (!secs || secs <= 0) return '—'
+  const num = typeof bytes === 'string' ? parseFloat(bytes) : (bytes || 0)
+  if (isNaN(num) || num <= 0) return '—'
+  const bps = num / secs
+  const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s']
+  const i = Math.floor(Math.log(bps) / Math.log(1024))
+  return (bps / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i]
+}
+
 export function timeAgo(str) {
   if (!str) return '—'
   const ms = Date.now() - new Date(str.replace(' ', 'T')).getTime()
