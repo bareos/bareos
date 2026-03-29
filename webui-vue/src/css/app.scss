@@ -95,6 +95,70 @@ $bareos-blue-dark: #005a96;
   font-family: 'Courier New', monospace;
 }
 
+// ── Scheduler Calendar ────────────────────────────────────────────────────────
+.sched-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.sched-cal-header {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 2px;
+  color: #555;
+}
+
+.sched-cal-cell {
+  min-height: 72px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.sched-cal-empty {
+  background: #fafafa;
+  border-color: transparent;
+}
+
+.sched-cal-today {
+  border-color: var(--q-primary) !important;
+  border-width: 2px;
+}
+
+.sched-cal-day-num {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.sched-cal-run {
+  font-size: 0.62rem;
+  color: #fff;
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-bottom: 2px;
+  display: flex;
+  gap: 3px;
+  overflow: hidden;
+  cursor: default;
+}
+
+.sched-cal-run-time {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.sched-cal-run-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 // ── Timeline ──────────────────────────────────────────────────────────────────
 .tl-container {
   position: relative;
