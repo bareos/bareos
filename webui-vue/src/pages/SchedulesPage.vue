@@ -145,8 +145,8 @@ async function refreshStatus() {
   statusLoading.value = true
   statusError.value   = null
   try {
-    // status director returns scheduled jobs in "scheduled" key
-    const res = await director.call(`status director days=${statusDays.value}`)
+    // status scheduler returns scheduled jobs in "scheduled" key
+    const res = await director.call(`status scheduler days=${statusDays.value}`)
     const raw = res?.scheduled ?? res?.['scheduled-jobs'] ?? []
     scheduledJobs.value = (Array.isArray(raw) ? raw : []).map((r, idx) => ({
       idx,
