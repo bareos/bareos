@@ -292,15 +292,10 @@ function parseDurationSecs(str) {
   return Number(str) || 0
 }
 
-const maxBytesLog = computed(() => Math.log(Math.max(1, ...recentJobs.value.map(j => j.bytes)) + 1))
-const maxDurationLog = computed(() => {
-  const max = Math.max(1, ...recentJobs.value.map(j => parseDurationSecs(j.duration)))
-  return Math.log(max + 1)
-})
-function bytesGauge(val) { return Math.log(val + 1) / maxBytesLog.value }
-function durationGauge(str) {
-  return Math.log(parseDurationSecs(str) + 1) / maxDurationLog.value
-}
+const maxBytes = computed(() => Math.max(1, ...recentJobs.value.map(j => j.bytes)))
+const maxDurationSecs = computed(() => Math.max(1, ...recentJobs.value.map(j => parseDurationSecs(j.duration))))
+function bytesGauge(val) { return val / maxBytes.value }
+function durationGauge(str) { return parseDurationSecs(str) / maxDurationSecs.value }
 
 const summaryStats = computed(() => {
   const s = (code) => past24hJobs.value.filter(j => j.status === code).length
