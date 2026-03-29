@@ -1,7 +1,14 @@
 <template>
-  <q-icon :name="info.icon" :color="info.color" size="18px">
+  <q-avatar
+    :color="info.color"
+    text-color="white"
+    size="24px"
+    font-size="12px"
+    style="font-weight:700; cursor:default"
+  >
+    {{ props.level }}
     <q-tooltip>{{ info.label }}</q-tooltip>
-  </q-icon>
+  </q-avatar>
 </template>
 
 <script setup>
@@ -12,14 +19,14 @@ const props = defineProps({
 })
 
 const levelMap = {
-  F: { icon: 'save',       color: 'primary', label: 'Full'         },
-  I: { icon: 'add',        color: 'teal',    label: 'Incremental'  },
-  D: { icon: 'difference', color: 'orange',  label: 'Differential' },
-  V: { icon: 'sync',       color: 'purple',  label: 'Virtual Full' },
-  B: { icon: 'hub',        color: 'grey',    label: 'Base'         },
+  F: { color: 'primary', label: 'Full'         },
+  I: { color: 'teal',    label: 'Incremental'  },
+  D: { color: 'orange',  label: 'Differential' },
+  V: { color: 'purple',  label: 'Virtual Full' },
+  B: { color: 'grey',    label: 'Base'         },
 }
 
 const info = computed(() =>
-  levelMap[props.level] ?? { icon: 'help_outline', color: 'grey', label: props.level }
+  levelMap[props.level] ?? { color: 'grey', label: props.level }
 )
 </script>

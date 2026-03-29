@@ -63,7 +63,9 @@
                 </q-td>
               </template>
               <template #body-cell-type="props">
-                <q-td :props="props">{{ typeMap[props.value] || props.value }}</q-td>
+                <q-td :props="props" class="text-center">
+                  <JobTypeBadge v-if="props.value" :type="props.value" />
+                </q-td>
               </template>
               <template #body-cell-level="props">
                 <q-td :props="props" class="text-center">
@@ -436,11 +438,12 @@
 import { ref, computed, reactive, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { jobTypeMap, jobStatusMap, formatBytes, timeAgo } from '../mock/index.js'
+import { jobStatusMap, formatBytes, timeAgo } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
+import JobTypeBadge from '../components/JobTypeBadge.vue'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -451,7 +454,6 @@ const tab          = ref(route.query.action || 'list')
 const search       = ref('')
 const statusFilter = ref(route.query.status || '')
 const relativeStart = ref(false)
-const typeMap   = jobTypeMap
 const fmtBytes  = formatBytes
 
 // ── paginated job list ────────────────────────────────────────────────────────

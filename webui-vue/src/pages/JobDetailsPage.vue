@@ -28,6 +28,10 @@
                       <JobLevelBadge :level="row.level" />
                       <span class="q-ml-xs text-grey-7">{{ row.value }}</span>
                     </span>
+                    <span v-else-if="row.type">
+                      <JobTypeBadge :type="row.type" />
+                      <span class="q-ml-xs text-grey-7">{{ row.value }}</span>
+                    </span>
                     <span v-else>{{ row.value }}</span>
                   </q-item-section>
                 </q-item>
@@ -103,11 +107,12 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { jobTypeMap, jobLevelMap, formatBytes } from '../mock/index.js'
+import { jobLevelMap, formatBytes } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
+import JobTypeBadge from '../components/JobTypeBadge.vue'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -175,7 +180,7 @@ const summaryRows = computed(() => {
     { label: 'Job ID',     value: j.id },
     { label: 'Job Name',   value: j.name },
     { label: 'Client',     value: j.client },
-    { label: 'Type',       value: jobTypeMap[j.type]  || j.type  || '—' },
+    { label: 'Type',       value: j.type  || '—', type: j.type  || null },
     { label: 'Level',      value: jobLevelMap[j.level] || j.level || '—', level: j.level || null },
     { label: 'Start Time', value: j.starttime || '—' },
     { label: 'End Time',   value: j.endtime   || '—' },
