@@ -134,6 +134,13 @@
           <q-card-section class="q-pa-none">
             <q-table :rows="volumes" :columns="volumeCols" row-key="volumename" dense flat
                      :filter="volSearch" :pagination="{ rowsPerPage: 15 }">
+              <template #body-cell-volumename="props">
+                <q-td :props="props">
+                  <router-link :to="{ name: 'volume-details', params: { name: props.value } }" class="text-primary">
+                    {{ props.value }}
+                  </router-link>
+                </q-td>
+              </template>
               <template #body-cell-inchanger="props">
                 <q-td :props="props" class="text-center">
                   <BoolIcon :value="props.value" />

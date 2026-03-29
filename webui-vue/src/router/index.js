@@ -24,6 +24,7 @@ const routes = [
       { path: 'schedules', name: 'schedules', component: () => import('../pages/SchedulesPage.vue') },
       { path: 'storages', name: 'storages', component: () => import('../pages/StoragesPage.vue') },
       { path: 'storages/pools/:name', name: 'pool-details', component: () => import('../pages/PoolDetailsPage.vue') },
+      { path: 'storages/volumes/:name', name: 'volume-details', component: () => import('../pages/VolumeDetailsPage.vue') },
       { path: 'director', name: 'director', component: () => import('../pages/DirectorPage.vue') },
       { path: 'analytics', name: 'analytics', component: () => import('../pages/AnalyticsPage.vue') },
       { path: 'filesets', name: 'filesets', component: () => import('../pages/FilesetsPage.vue') },
