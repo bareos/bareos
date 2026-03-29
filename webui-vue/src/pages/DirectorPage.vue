@@ -3,6 +3,7 @@
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="status"       label="Status"       no-caps />
       <q-tab name="messages"     label="Messages"     no-caps />
+      <q-tab name="catalog"      label="Catalog Maintenance" no-caps />
       <q-tab name="subscription" label="Subscription" no-caps />
     </q-tabs>
 
@@ -52,6 +53,106 @@
         </q-card>
       </q-tab-panel>
 
+      <!-- CATALOG MAINTENANCE -->
+      <q-tab-panel name="catalog" class="q-pa-none">
+        <div class="row q-col-gutter-md">
+
+          <!-- Empty Jobs -->
+          <div class="col-12">
+            <q-card flat bordered class="bareos-panel">
+              <q-card-section class="panel-header row items-center">
+                <span>Jobs With No Data</span>
+                <q-space />
+                <q-btn flat round dense icon="refresh" color="white"
+                       @click="loadEmptyJobs" :loading="emptyJobsLoading" />
+              </q-card-section>
+              <q-card-section class="q-pa-none">
+                <q-inner-loading :showing="emptyJobsLoading" />
+                <div v-if="emptyJobsError" class="text-negative q-pa-md">{{ emptyJobsError }}</div>
+                <template v-else>
+                  <div class="q-pa-sm row items-center q-gutter-sm">
+                    <span class="text-caption text-grey-6">
+                      {{ emptyJobs.length }} job{{ emptyJobs.length !== 1 ? 's' : '' }} with
+                      0 files and 0 bytes found
+                    </span>
+                    <q-space />
+                    <q-btn
+                      v-if="selectedEmptyJobs.length"
+                      color="negative" size="sm" no-caps unelevated
+                      :label="`Delete ${selectedEmptyJobs.length} selected`"
+                      icon="delete"
+                      :loading="deleteLoading"
+                      @click="deleteSelected"
+                    />
+                  </div>
+                  <q-table
+                    :rows="emptyJobs"
+                    :columns="emptyJobCols"
+                    row-key="id"
+                    dense flat
+                    selection="multiple"
+                    v-model:selected="selectedEmptyJobs"
+                    :pagination="{ rowsPerPage: 20 }"
+                    no-data-label="No empty jobs found"
+                  >
+                    <template #body-cell-id="props">
+                      <q-td :props="props">
+                        <router-link
+                          :to="{ name: 'job-details', params: { id: props.value } }"
+                          class="text-primary"
+                        >{{ props.value }}</router-link>
+                      </q-td>
+                    </template>
+                    <template #body-cell-status="props">
+                      <q-td :props="props">
+                        <JobStatusBadge :status="props.value" />
+                      </q-td>
+                    </template>
+                  </q-table>
+                  <div v-if="deleteResult" class="q-pa-sm">
+                    <q-banner
+                      :class="deleteResult.ok ? 'bg-positive text-white' : 'bg-negative text-white'"
+                      dense rounded
+                    >{{ deleteResult.msg }}</q-banner>
+                  </div>
+                </template>
+              </q-card-section>
+            </q-card>
+          </div>
+
+          <!-- Prune -->
+          <div class="col-12 col-md-6">
+            <q-card flat bordered class="bareos-panel">
+              <q-card-section class="panel-header">Prune Expired Records</q-card-section>
+              <q-card-section>
+                <p class="text-body2 q-mb-md">
+                  Remove catalog records that have exceeded their retention period.
+                  This does not delete any data from storage volumes.
+                </p>
+                <div class="row q-gutter-sm">
+                  <q-btn
+                    v-for="prune in pruneActions" :key="prune.cmd"
+                    :label="prune.label" :icon="prune.icon"
+                    color="warning" text-color="black"
+                    size="sm" no-caps unelevated
+                    :loading="pruneLoading[prune.cmd]"
+                    @click="runPrune(prune.cmd)"
+                  />
+                </div>
+                <div v-if="pruneResults.length" class="q-mt-md column q-gutter-xs">
+                  <q-banner
+                    v-for="(r, i) in pruneResults" :key="i"
+                    :class="r.ok ? 'bg-positive text-white' : 'bg-negative text-white'"
+                    dense rounded
+                  >{{ r.msg }}</q-banner>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+
+        </div>
+      </q-tab-panel>
+
       <!-- SUBSCRIPTION -->
       <q-tab-panel name="subscription">
         <q-card flat bordered class="bareos-panel" style="max-width:600px">
@@ -70,8 +171,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
+import { normaliseJob } from '../composables/useDirectorFetch.js'
+import JobStatusBadge from '../components/JobStatusBadge.vue'
 
 const tab = ref('status')
 const director = useDirectorStore()
@@ -133,4 +236,92 @@ const messagesText = computed(() => {
 
 refreshStatus()
 refreshMessages()
+watch(tab, (t) => { if (t === 'catalog') loadEmptyJobs() })
+
+// ── Catalog Maintenance ───────────────────────────────────────────────────────
+const emptyJobsLoading  = ref(false)
+const emptyJobsError    = ref(null)
+const emptyJobs         = ref([])
+const selectedEmptyJobs = ref([])
+const deleteLoading     = ref(false)
+const deleteResult      = ref(null)
+
+const emptyJobCols = [
+  { name: 'id',        label: 'ID',       field: 'id',
+    align: 'right', sortable: true },
+  { name: 'name',      label: 'Job Name', field: 'name',
+    align: 'left',  sortable: true },
+  { name: 'client',    label: 'Client',   field: 'client',
+    align: 'left',  sortable: true },
+  { name: 'type',      label: 'Type',     field: 'type',
+    align: 'center' },
+  { name: 'starttime', label: 'Start',    field: 'starttime',
+    align: 'left',  sortable: true },
+  { name: 'status',    label: 'Status',   field: 'status',
+    align: 'center' },
+]
+
+async function loadEmptyJobs() {
+  emptyJobsLoading.value  = true
+  emptyJobsError.value    = null
+  deleteResult.value      = null
+  selectedEmptyJobs.value = []
+  try {
+    const res  = await director.call('list jobs')
+    const jobs = (res?.jobs ?? []).map(normaliseJob)
+    emptyJobs.value = jobs.filter(j =>
+      !Number(j.bytes) && !Number(j.files) && j.status !== 'R'
+    )
+  } catch (e) {
+    emptyJobsError.value = e.message
+  } finally {
+    emptyJobsLoading.value = false
+  }
+}
+
+async function deleteSelected() {
+  if (!selectedEmptyJobs.value.length) return
+  deleteLoading.value = true
+  deleteResult.value  = null
+  const ids = selectedEmptyJobs.value.map(j => j.id).join(',')
+  try {
+    await director.call(`delete jobid=${ids}`)
+    deleteResult.value = { ok: true, msg: `Deleted job(s) ${ids}.` }
+    const deleted = new Set(selectedEmptyJobs.value.map(j => j.id))
+    emptyJobs.value         = emptyJobs.value.filter(j => !deleted.has(j.id))
+    selectedEmptyJobs.value = []
+  } catch (e) {
+    deleteResult.value = { ok: false, msg: e.message }
+  } finally {
+    deleteLoading.value = false
+  }
+}
+
+// ── Prune ─────────────────────────────────────────────────────────────────────
+const pruneActions = [
+  { cmd: 'prune jobs yes',   label: 'Prune Jobs',
+    icon: 'work_off' },
+  { cmd: 'prune files yes',  label: 'Prune File Records',
+    icon: 'folder_off' },
+  { cmd: 'prune stats yes',  label: 'Prune Statistics',
+    icon: 'bar_chart_off' },
+]
+const pruneLoading = ref(
+  Object.fromEntries(pruneActions.map(p => [p.cmd, false]))
+)
+const pruneResults = ref([])
+
+async function runPrune(cmd) {
+  pruneLoading.value[cmd] = true
+  try {
+    await director.call(cmd)
+    pruneResults.value.push({ ok: true,
+      msg: `✓ "${cmd}" completed.` })
+  } catch (e) {
+    pruneResults.value.push({ ok: false,
+      msg: `✗ "${cmd}": ${e.message}` })
+  } finally {
+    pruneLoading.value[cmd] = false
+  }
+}
 </script>
