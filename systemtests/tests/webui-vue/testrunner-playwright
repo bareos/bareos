@@ -61,10 +61,14 @@ fi
 
 if [ "${_needs_build}" = true ]; then
   print_debug "Building Vue WebUI ..."
+  # Call vite build directly instead of npm run build so that the
+  # VITE_* variables set here are not stripped by the env -u wrapper
+  # in the npm "build" script (which exists to prevent test vars from
+  # leaking into production builds run by developers).
   VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" \
     VITE_DIRECTOR_HOST="localhost" \
     VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
-    npm run build >"${tmp}/vite-build.log" 2>&1
+    npx vite build >"${tmp}/vite-build.log" 2>&1
   printf '%s' "${BUILD_ENV}" >dist/.build-env
 else
   print_debug "Reusing existing Vue WebUI build."
