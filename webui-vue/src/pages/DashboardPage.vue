@@ -128,7 +128,7 @@
                   <q-item-label caption>
                     {{ (job.files ?? 0).toLocaleString() }} files &middot; {{ jobBytes(job) }}
                   </q-item-label>
-                  <q-linear-progress :value="0.45" color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
+                  <q-linear-progress indeterminate color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
                 </q-item-section>
                 <q-item-section side>
                   <q-btn flat round dense icon="cancel" color="negative" size="sm" title="Cancel job" />
