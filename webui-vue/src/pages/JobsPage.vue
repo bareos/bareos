@@ -66,7 +66,10 @@
                 <q-td :props="props">{{ typeMap[props.value] || props.value }}</q-td>
               </template>
               <template #body-cell-level="props">
-                <q-td :props="props">{{ levelMap[props.value] || props.value }}</q-td>
+                <q-td :props="props" class="text-center">
+                  <JobLevelBadge v-if="props.value" :level="props.value" />
+                  <span v-else>—</span>
+                </q-td>
               </template>
               <template #body-cell-starttime="props">
                 <q-td :props="props">
@@ -268,6 +271,12 @@
                   </router-link>
                 </q-td>
               </template>
+              <template #body-cell-level="props">
+                <q-td :props="props" class="text-center">
+                  <JobLevelBadge v-if="props.value" :level="props.value" />
+                  <span v-else>—</span>
+                </q-td>
+              </template>
               <template #body-cell-id="props">
                 <q-td :props="props">
                   <router-link :to="{ name: 'job-details', params: { id: props.value } }" class="text-primary">
@@ -413,10 +422,11 @@
 import { ref, computed, reactive, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { jobTypeMap, jobLevelMap, jobStatusMap, formatBytes, timeAgo } from '../mock/index.js'
+import { jobTypeMap, jobStatusMap, formatBytes, timeAgo } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
+import JobLevelBadge from '../components/JobLevelBadge.vue'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -428,7 +438,6 @@ const search       = ref('')
 const statusFilter = ref(route.query.status || '')
 const relativeStart = ref(false)
 const typeMap   = jobTypeMap
-const levelMap  = jobLevelMap
 const fmtBytes  = formatBytes
 
 // ── paginated job list ────────────────────────────────────────────────────────

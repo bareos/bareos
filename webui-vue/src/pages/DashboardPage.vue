@@ -75,6 +75,12 @@
                   </router-link>
                 </q-td>
               </template>
+              <template #body-cell-level="props">
+                <q-td :props="props" class="text-center">
+                  <JobLevelBadge v-if="props.value" :level="props.value" />
+                  <span v-else>—</span>
+                </q-td>
+              </template>
               <template #body-cell-bytes="props">
                 <q-td :props="props" class="text-right" style="min-width:90px">
                   <div>{{ jobBytes(props.row) }}</div>
@@ -164,6 +170,7 @@ import { formatBytes, timeAgo } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
+import JobLevelBadge from '../components/JobLevelBadge.vue'
 import StatNumber from '../components/StatNumber.vue'
 
 const director = useDirectorStore()

@@ -23,7 +23,13 @@
               <q-list dense separator>
                 <q-item v-for="row in summaryRows" :key="row.label">
                   <q-item-section class="text-weight-medium" style="max-width:140px">{{ row.label }}</q-item-section>
-                  <q-item-section>{{ row.value }}</q-item-section>
+                  <q-item-section>
+                    <span v-if="row.level">
+                      <JobLevelBadge :level="row.level" />
+                      <span class="q-ml-xs text-grey-7">{{ row.value }}</span>
+                    </span>
+                    <span v-else>{{ row.value }}</span>
+                  </q-item-section>
                 </q-item>
               </q-list>
             </q-card-section>
@@ -101,6 +107,7 @@ import { jobTypeMap, jobLevelMap, formatBytes } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
+import JobLevelBadge from '../components/JobLevelBadge.vue'
 
 const route    = useRoute()
 const router   = useRouter()
@@ -169,7 +176,7 @@ const summaryRows = computed(() => {
     { label: 'Job Name',   value: j.name },
     { label: 'Client',     value: j.client },
     { label: 'Type',       value: jobTypeMap[j.type]  || j.type  || '—' },
-    { label: 'Level',      value: jobLevelMap[j.level] || j.level || '—' },
+    { label: 'Level',      value: jobLevelMap[j.level] || j.level || '—', level: j.level || null },
     { label: 'Start Time', value: j.starttime || '—' },
     { label: 'End Time',   value: j.endtime   || '—' },
     { label: 'Duration',   value: j.duration  || '—' },
