@@ -320,8 +320,8 @@ async function refreshStatus() {
   }
 }
 
-// Auto-refresh whenever the visible window changes.
-watch(apiDaysRange, refreshStatus, { deep: true })
+// Auto-refresh whenever the visible window changes (immediate: true loads on mount).
+watch(apiDaysRange, refreshStatus, { deep: true, immediate: true })
 
 // Flatten schedules→jobs into table rows
 const scheduleJobRows = computed(() => {
