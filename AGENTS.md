@@ -119,4 +119,5 @@ git add webui-vue/dist/
 - If possible, create constexpression compile-time tests for functions
 - All new functions need to have a test. Either a constexrpession compile-time test or a unit test.
 - Use c++20 when creating c++ code
+- Git commit header (subject line) must not exceed 60 chars
 - Git commit body should not have lines longer than 72 chars
