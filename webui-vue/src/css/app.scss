@@ -119,6 +119,10 @@ $bareos-blue-dark: #005a96;
   position: relative;
 }
 
+.sched-cal-cell--week {
+  min-height: 200px;
+}
+
 .sched-cal-empty {
   background: #fafafa;
   border-color: transparent;

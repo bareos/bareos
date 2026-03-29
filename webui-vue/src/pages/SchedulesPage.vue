@@ -1,8 +1,8 @@
 <template>
   <q-page class="q-pa-md">
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-tab name="show"   label="Show"    no-caps />
       <q-tab name="status" label="Status"  no-caps />
+      <q-tab name="show"   label="Show"    no-caps />
     </q-tabs>
 
     <q-tab-panels v-model="tab" animated>
@@ -46,7 +46,7 @@
         </q-card>
       </q-tab-panel>
 
-      <!-- STATUS: schedule→jobs mapping + hour-by-hour preview -->
+      <!-- STATUS: schedule→jobs mapping + calendar preview -->
       <q-tab-panel name="status" class="q-pa-none">
 
         <!-- header / controls -->
@@ -54,9 +54,15 @@
           <q-card-section class="panel-header row items-center">
             <span>Scheduler Status</span>
             <q-space />
-            <q-select v-model="statusDays" :options="[1,3,7,14,30]" dense outlined
-                      prefix="Next " suffix=" days" color="white" dark
-                      style="min-width:130px" @update:model-value="refreshStatus" />
+            <q-btn-toggle v-model="viewMode" dense flat unelevated
+                          :options="[{label:'Month',value:'month'},{label:'Week',value:'week'}]"
+                          color="white" text-color="white"
+                          toggle-color="primary" toggle-text-color="white"
+                          class="q-mr-sm" />
+            <q-btn flat round dense icon="chevron_left"  color="white" @click="prevPeriod" />
+            <span class="text-white q-mx-sm" style="min-width:160px;text-align:center">{{ periodLabel }}</span>
+            <q-btn flat round dense icon="chevron_right" color="white" @click="nextPeriod" />
+            <q-btn flat round dense icon="today" color="white" class="q-ml-sm" title="Go to today" @click="goToday" />
             <q-btn flat round dense icon="refresh" color="white" class="q-ml-sm" @click="refreshStatus" />
           </q-card-section>
           <q-card-section v-if="statusError" class="q-pa-none">
@@ -89,21 +95,20 @@
           </q-card-section>
         </q-card>
 
-        <!-- Scheduler Preview: Calendar -->
+        <!-- Scheduler Preview: Calendar (month or week view) -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center">
+          <q-card-section class="panel-header">
             <span>Scheduler Preview</span>
-            <q-space />
-            <q-btn flat round dense icon="chevron_left"  color="white" @click="prevMonth" />
-            <span class="text-white q-mx-sm" style="min-width:140px;text-align:center">{{ calendarMonthLabel }}</span>
-            <q-btn flat round dense icon="chevron_right" color="white" @click="nextMonth" />
           </q-card-section>
-          <q-card-section class="q-pa-sm">
+          <q-card-section class="q-pa-sm" style="position:relative">
             <q-inner-loading :showing="statusLoading" />
-            <div class="sched-calendar">
-              <div v-for="d in weekDays" :key="d" class="sched-cal-header">{{ d }}</div>
+            <div class="sched-calendar" :class="viewMode === 'week' ? 'sched-calendar--week' : ''">
+              <div v-for="(h, hi) in calendarHeaders" :key="hi" class="sched-cal-header">{{ h }}</div>
               <div v-for="(cell, i) in calendarCells" :key="i"
-                   :class="['sched-cal-cell', cell.isToday && 'sched-cal-today', !cell.day && 'sched-cal-empty']">
+                   :class="['sched-cal-cell',
+                            cell.isToday && 'sched-cal-today',
+                            !cell.day && 'sched-cal-empty',
+                            viewMode === 'week' && 'sched-cal-cell--week']">
                 <div v-if="cell.day" class="sched-cal-day-num">{{ cell.day }}</div>
                 <div v-for="(run, j) in cell.runs" :key="j" class="sched-cal-run"
                      :style="{ background: scheduleColor(run.schedule) }">
@@ -137,7 +142,7 @@ import { useQuasar } from 'quasar'
 const director = useDirectorStore()
 const $q = useQuasar()
 
-const tab = ref('show')
+const tab = ref('status')
 
 // ── Show tab ──────────────────────────────────────────────────────────────────
 const schedLoading  = ref(false)
@@ -192,15 +197,120 @@ async function toggleSchedule(row) {
 // ── Status tab ────────────────────────────────────────────────────────────────
 const statusLoading  = ref(false)
 const statusError    = ref(null)
-const statusDays     = ref(30)
 const schedulesData  = ref([])   // from "schedules" key
 const previewData    = ref([])   // from "preview" key
+
+// ── View state ────────────────────────────────────────────────────────────────
+const viewMode  = ref('month')  // 'month' | 'week'
+
+// viewAnchor: a Date set to the first day of the visible month or week (Mon).
+// We always store it as midnight local time.
+function startOfToday() {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+function mondayOf(date) {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+  const dow = d.getDay()                    // 0=Sun
+  d.setDate(d.getDate() - ((dow + 6) % 7)) // back to Monday
+  return d
+}
+function firstOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+
+const viewAnchor = ref(firstOfMonth(new Date()))
+
+// Compute the days-from-today offsets for the API call.
+const apiDaysRange = computed(() => {
+  const today  = startOfToday()
+  const MS_DAY = 86400_000
+  let from, to
+  if (viewMode.value === 'month') {
+    const y = viewAnchor.value.getFullYear()
+    const m = viewAnchor.value.getMonth()
+    const first = new Date(y, m, 1)
+    const last  = new Date(y, m + 1, 0)          // last day of month
+    from = Math.floor((first - today) / MS_DAY)
+    to   = Math.floor((last  - today) / MS_DAY) + 1
+  } else {
+    // week: anchor is the Monday
+    const mon = new Date(viewAnchor.value)
+    const sun = new Date(mon)
+    sun.setDate(sun.getDate() + 6)
+    from = Math.floor((mon - today) / MS_DAY)
+    to   = Math.floor((sun - today) / MS_DAY) + 1
+  }
+  return { from, to }
+})
+
+const MONTH_NAMES = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December']
+const DAY_ABBR = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+
+const periodLabel = computed(() => {
+  if (viewMode.value === 'month') {
+    const y = viewAnchor.value.getFullYear()
+    const m = viewAnchor.value.getMonth()
+    return `${MONTH_NAMES[m]} ${y}`
+  } else {
+    const mon = new Date(viewAnchor.value)
+    const sun = new Date(mon)
+    sun.setDate(sun.getDate() + 6)
+    const fmt = d => `${String(d.getDate()).padStart(2,'0')} ${MONTH_NAMES[d.getMonth()].slice(0,3)}`
+    return `${fmt(mon)} – ${fmt(sun)} ${sun.getFullYear()}`
+  }
+})
+
+// Column headers: for month view just Mon–Sun; for week view include the date.
+const calendarHeaders = computed(() => {
+  if (viewMode.value === 'month') return DAY_ABBR
+  return DAY_ABBR.map((d, i) => {
+    const day = new Date(viewAnchor.value)
+    day.setDate(day.getDate() + i)
+    return `${d} ${day.getDate()}`
+  })
+})
+
+function prevPeriod() {
+  const a = new Date(viewAnchor.value)
+  if (viewMode.value === 'month') {
+    a.setMonth(a.getMonth() - 1)
+    viewAnchor.value = firstOfMonth(a)
+  } else {
+    a.setDate(a.getDate() - 7)
+    viewAnchor.value = a
+  }
+}
+function nextPeriod() {
+  const a = new Date(viewAnchor.value)
+  if (viewMode.value === 'month') {
+    a.setMonth(a.getMonth() + 1)
+    viewAnchor.value = firstOfMonth(a)
+  } else {
+    a.setDate(a.getDate() + 7)
+    viewAnchor.value = a
+  }
+}
+function goToday() {
+  viewAnchor.value = viewMode.value === 'month'
+    ? firstOfMonth(new Date())
+    : mondayOf(new Date())
+}
+
+// When view mode changes, reset anchor to current period.
+watch(viewMode, m => {
+  viewAnchor.value = m === 'month' ? firstOfMonth(new Date()) : mondayOf(new Date())
+})
 
 async function refreshStatus() {
   statusLoading.value = true
   statusError.value   = null
   try {
-    const res = await director.call(`status scheduler days=${statusDays.value}`)
+    const { from, to } = apiDaysRange.value
+    const res = await director.call(`status scheduler days=${from},${to}`)
     schedulesData.value = Array.isArray(res?.schedules) ? res.schedules : []
     previewData.value   = Array.isArray(res?.preview)   ? res.preview   : []
   } catch (e) {
@@ -209,6 +319,9 @@ async function refreshStatus() {
     statusLoading.value = false
   }
 }
+
+// Auto-refresh whenever the visible window changes.
+watch(apiDaysRange, refreshStatus, { deep: true })
 
 // Flatten schedules→jobs into table rows
 const scheduleJobRows = computed(() => {
@@ -234,29 +347,7 @@ const scheduleJobCols = [
 ]
 
 // ── Calendar ──────────────────────────────────────────────────────────────────
-const MONTH_NAMES = ['January','February','March','April','May','June',
-                     'July','August','September','October','November','December']
-const weekDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
-
-const calendarYear  = ref(new Date().getFullYear())
-const calendarMonth = ref(new Date().getMonth())  // 0-based
-
-const calendarMonthLabel = computed(
-  () => `${MONTH_NAMES[calendarMonth.value]} ${calendarYear.value}`
-)
-
-function prevMonth() {
-  if (calendarMonth.value === 0) { calendarMonth.value = 11; calendarYear.value-- }
-  else calendarMonth.value--
-}
-function nextMonth() {
-  if (calendarMonth.value === 11) { calendarMonth.value = 0; calendarYear.value++ }
-  else calendarMonth.value++
-}
-
-// Group previewData entries by ISO date string "YYYY-MM-DD".
-// Use the runtime Unix timestamp (seconds) — avoids locale-specific parsing
-// of the bstrftime_wd formatted datetime string.
+// Group previewData entries by ISO date "YYYY-MM-DD" using the runtime timestamp.
 const runsByDate = computed(() => {
   const map = {}
   for (const r of previewData.value) {
@@ -271,20 +362,34 @@ const runsByDate = computed(() => {
   return map
 })
 
+function makeDateStr(y, m, d) {
+  return `${y}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+}
+
 const calendarCells = computed(() => {
-  const y = calendarYear.value
-  const m = calendarMonth.value
-  const firstWeekday  = new Date(y, m, 1).getDay()  // 0=Sun
-  const daysInMonth   = new Date(y, m + 1, 0).getDate()
-  const today         = new Date()
-  const todayStr      = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  // Monday-first: Sunday (0) becomes offset 6, Mon (1) becomes 0, etc.
-  const startOffset   = (firstWeekday + 6) % 7
+  const today     = startOfToday()
+  const todayStr  = makeDateStr(today.getFullYear(), today.getMonth(), today.getDate())
+
+  if (viewMode.value === 'week') {
+    return DAY_ABBR.map((_, i) => {
+      const day = new Date(viewAnchor.value)
+      day.setDate(day.getDate() + i)
+      const dateStr = makeDateStr(day.getFullYear(), day.getMonth(), day.getDate())
+      return { day: day.getDate(), dateStr, isToday: dateStr === todayStr, runs: runsByDate.value[dateStr] ?? [] }
+    })
+  }
+
+  // Month view
+  const y = viewAnchor.value.getFullYear()
+  const m = viewAnchor.value.getMonth()
+  const firstWeekday = new Date(y, m, 1).getDay()
+  const daysInMonth  = new Date(y, m + 1, 0).getDate()
+  const startOffset  = (firstWeekday + 6) % 7  // Monday-first
 
   const cells = []
   for (let i = 0; i < startOffset; i++) cells.push({ day: 0, runs: [] })
   for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    const dateStr = makeDateStr(y, m, d)
     cells.push({ day: d, dateStr, isToday: dateStr === todayStr, runs: runsByDate.value[dateStr] ?? [] })
   }
   while (cells.length % 7 !== 0) cells.push({ day: 0, runs: [] })
@@ -299,7 +404,6 @@ function scheduleColor(name) {
   return SCHED_COLORS[Math.abs(h) % SCHED_COLORS.length]
 }
 
-// Load show tab immediately; load status tab lazily on first visit
-refreshSchedules()
-watch(tab, t => { if (t === 'status') refreshStatus() })
+// Status tab loads immediately (default); Show tab loads lazily on first visit.
+watch(tab, t => { if (t === 'show') refreshSchedules() })
 </script>

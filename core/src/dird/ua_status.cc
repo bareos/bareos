@@ -657,7 +657,11 @@ static void DoSchedulerStatus(UaContext* ua)
 {
   int i;
   int max_date_len = 0;
-  int days = DEFAULT_STATUS_SCHED_DAYS; /* Default days for preview */
+  int days
+      = DEFAULT_STATUS_SCHED_DAYS; /* Default days for preview (text mode) */
+  int json_days_from = 0;          /* Days offset for JSON preview start */
+  int json_days_to
+      = DEFAULT_STATUS_SCHED_DAYS; /* Days offset for JSON preview end */
   bool schedule_given_by_cmdline_args = false;
   time_t time_to_check, now, start, stop;
   char schedulename[MAX_NAME_LENGTH];
@@ -673,11 +677,40 @@ static void DoSchedulerStatus(UaContext* ua)
 
   i = FindArgWithValue(ua, NT_("days"));
   if (i >= 0) {
-    days = atoi(ua->argv[i]);
-    if (((days < -366) || (days > 366)) && !ua->api) {
-      ua->SendMsg(T_(
-          "Ignoring invalid value for days. Allowed is -366 < days < 366.\n"));
-      days = DEFAULT_STATUS_SCHED_DAYS;
+    const char* val = ua->argv[i];
+    const char* comma = strchr(val, ',');
+    if (comma) {
+      // Range format: days=FROM,TO (both relative to now, e.g. days=-7,7)
+      json_days_from = atoi(val);
+      json_days_to = atoi(comma + 1);
+      if (json_days_from > json_days_to) {
+        std::swap(json_days_from, json_days_to);
+      }
+      if (!ua->api) {
+        if (json_days_from < -366 || json_days_to > 366) {
+          ua->SendMsg(T_("Ignoring invalid days range. Allowed: -366..366.\n"));
+          json_days_from = 0;
+          json_days_to = DEFAULT_STATUS_SCHED_DAYS;
+        }
+      }
+      // For text mode use the larger absolute value.
+      days = std::max(std::abs(json_days_from), std::abs(json_days_to));
+    } else {
+      days = atoi(val);
+      if (((days < -366) || (days > 366)) && !ua->api) {
+        ua->SendMsg(
+            T_("Ignoring invalid value for days. Allowed is -366 < days < "
+               "366.\n"));
+        days = DEFAULT_STATUS_SCHED_DAYS;
+      }
+      // Convert single value to a from/to range.
+      if (days >= 0) {
+        json_days_from = 0;
+        json_days_to = days;
+      } else {
+        json_days_from = days;
+        json_days_to = 0;
+      }
     }
   }
 
@@ -767,14 +800,10 @@ static void DoSchedulerStatus(UaContext* ua)
 
     // ── "preview": hour-by-hour run timeline with per-run overrides ───────
     {
-      time_t preview_start, preview_stop;
-      if (days > 0) {
-        preview_start = json_now;
-        preview_stop = json_now + (days * seconds_per_day);
-      } else {
-        preview_start = json_now + (days * seconds_per_day);
-        preview_stop = json_now;
-      }
+      time_t preview_start
+          = json_now + (static_cast<time_t>(json_days_from) * seconds_per_day);
+      time_t preview_stop
+          = json_now + (static_cast<time_t>(json_days_to) * seconds_per_day);
       ua->send->ArrayStart("preview");
       for (time_t t = preview_start; t < preview_stop; t += seconds_per_hour) {
         auto emit_run = [&](ScheduleResource* s, RunResource* run) {
