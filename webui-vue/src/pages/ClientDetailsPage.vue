@@ -42,13 +42,26 @@
                   </router-link>
                 </q-td>
               </template>
+              <template #body-cell-level="props">
+                <q-td :props="props" class="text-center">
+                  <JobLevelBadge v-if="props.value" :level="props.value" />
+                  <span v-else>—</span>
+                </q-td>
+              </template>
               <template #body-cell-status="props">
                 <q-td :props="props">
                   <JobStatusBadge :status="props.value" />
                 </q-td>
               </template>
               <template #body-cell-bytes="props">
-                <q-td :props="props">{{ fmtBytes(props.row.bytes) }}</q-td>
+                <q-td :props="props" class="text-right" style="min-width:90px">
+                  <div>{{ fmtBytes(props.row.bytes) }}</div>
+                  <q-linear-progress
+                    :value="bytesGauge(props.row.bytes)"
+                    color="primary" track-color="grey-3"
+                    size="4px" class="q-mt-xs" rounded
+                  />
+                </q-td>
               </template>
             </q-table>
           </q-card-section>
@@ -68,6 +81,7 @@ import { normaliseClient, normaliseJob } from '../composables/useDirectorFetch.j
 import { useDirectorStore } from '../stores/director.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
+import JobLevelBadge from '../components/JobLevelBadge.vue'
 
 const route    = useRoute()
 const director = useDirectorStore()
@@ -86,14 +100,13 @@ onMounted(async () => {
   try {
     const [clientRes, jobsRes, defaultsRes] = await Promise.allSettled([
       director.call(`llist clients`),
-      director.call(`list jobs client=${name}`),
+      director.call(`list jobs client=${name} reverse`),
       director.call(`.defaults client=${name}`),
     ])
     if (clientRes.status === 'fulfilled') {
       const list  = clientRes.value?.clients ?? []
       const found = list.find(c => c.name === name)
       if (found) {
-        // Merge .defaults (address, port, enabled, catalog) into the catalog record
         const defaults = defaultsRes.status === 'fulfilled' ? (defaultsRes.value ?? {}) : {}
         clientData.value = normaliseClient({ ...found, ...defaults })
       } else {
@@ -111,6 +124,14 @@ onMounted(async () => {
 })
 
 const client = computed(() => clientData.value)
+
+const maxBytes = computed(() =>
+  Math.max(1, ...clientJobs.value.map(j => Number(j.bytes) || 0))
+)
+function bytesGauge(val) {
+  const n = Number(val) || 0
+  return Math.log(n + 1) / Math.log(maxBytes.value + 1)
+}
 
 const details = computed(() => {
   if (!client.value) return []
