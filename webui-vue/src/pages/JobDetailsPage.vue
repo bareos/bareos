@@ -87,7 +87,7 @@
                      title="Copy log" @click="copyLog" />
             </q-card-section>
             <q-card-section class="q-pa-none">
-              <div v-if="highlightedLines.length" class="job-log q-pa-md">
+              <div v-if="highlightedLines.length" class="job-log q-pa-md" ref="logContainer">
                 <div v-for="(line, i) in highlightedLines" :key="i"
                      :class="['log-line', `log-line--${line.type}`]">{{ line.text }}</div>
               </div>
@@ -104,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { jobLevelMap, formatBytes, formatSpeed } from '../mock/index.js'
@@ -125,10 +125,18 @@ const jobid = route.params.id
 const loading       = ref(true)
 const jobData       = ref(null)
 const logLines      = ref('')
+const logContainer  = ref(null)
 const volumes       = ref([])
 const error         = ref(null)
 const rerunLoading  = ref(false)
 const cancelLoading = ref(false)
+
+// Scroll the log panel to the bottom whenever new log content arrives.
+watch(logLines, () => {
+  nextTick(() => {
+    if (logContainer.value) logContainer.value.scrollTop = logContainer.value.scrollHeight
+  })
+})
 
 // ── data loading ──────────────────────────────────────────────────────────────
 async function loadJob() {
