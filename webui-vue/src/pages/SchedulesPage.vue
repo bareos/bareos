@@ -46,29 +46,74 @@
         </q-card>
       </q-tab-panel>
 
-      <!-- STATUS: upcoming scheduled jobs -->
+      <!-- STATUS: schedule→jobs mapping + hour-by-hour preview -->
       <q-tab-panel name="status" class="q-pa-none">
-        <q-card flat bordered class="bareos-panel">
+
+        <!-- header / controls -->
+        <q-card flat bordered class="bareos-panel q-mb-md">
           <q-card-section class="panel-header row items-center">
-            <span>Upcoming Scheduled Jobs</span>
+            <span>Scheduler Status</span>
             <q-space />
             <q-select v-model="statusDays" :options="[1,3,7,14,30]" dense outlined
                       prefix="Next " suffix=" days" color="white" dark
                       style="min-width:130px" @update:model-value="refreshStatus" />
             <q-btn flat round dense icon="refresh" color="white" class="q-ml-sm" @click="refreshStatus" />
           </q-card-section>
+          <q-card-section v-if="statusError" class="q-pa-none">
+            <q-banner dense class="bg-negative text-white">{{ statusError }}</q-banner>
+          </q-card-section>
+        </q-card>
+
+        <!-- Scheduler Jobs: which schedules trigger which jobs -->
+        <q-card flat bordered class="bareos-panel q-mb-md">
+          <q-card-section class="panel-header">
+            <span>Scheduler Jobs</span>
+          </q-card-section>
           <q-card-section class="q-pa-none">
-            <q-banner v-if="statusError" dense class="bg-negative text-white">{{ statusError }}</q-banner>
-            <q-table :rows="scheduledJobs" :columns="statusCols" row-key="idx" dense flat
-                     :loading="statusLoading" :pagination="{ rowsPerPage: 25 }">
-              <template #body-cell-level="props">
-                <q-td :props="props">
-                  <q-badge color="blue-grey" :label="props.value" />
+            <q-table :rows="scheduleJobRows" :columns="scheduleJobCols"
+                     row-key="idx" dense flat :loading="statusLoading"
+                     :pagination="{ rowsPerPage: 20 }">
+              <template #body-cell-schedEnabled="props">
+                <q-td :props="props" class="text-center">
+                  <q-badge :color="props.value ? 'positive' : 'negative'"
+                           :label="props.value ? 'Enabled' : 'Disabled'" />
+                </q-td>
+              </template>
+              <template #body-cell-jobEnabled="props">
+                <q-td :props="props" class="text-center">
+                  <q-badge :color="props.value ? 'positive' : 'negative'"
+                           :label="props.value ? 'Enabled' : 'Disabled'" />
                 </q-td>
               </template>
             </q-table>
           </q-card-section>
         </q-card>
+
+        <!-- Scheduler Preview: hour-by-hour run timeline -->
+        <q-card flat bordered class="bareos-panel">
+          <q-card-section class="panel-header">
+            <span>Scheduler Preview</span>
+          </q-card-section>
+          <q-card-section class="q-pa-none">
+            <q-table :rows="previewRows" :columns="previewCols"
+                     row-key="idx" dense flat :loading="statusLoading"
+                     :pagination="{ rowsPerPage: 50 }">
+              <template #body-cell-level="props">
+                <q-td :props="props">
+                  <q-badge v-if="props.value" color="blue-grey" :label="props.value" />
+                  <span v-else class="text-grey-5">—</span>
+                </q-td>
+              </template>
+              <template #body-cell-pool="props">
+                <q-td :props="props">{{ props.value || '—' }}</q-td>
+              </template>
+              <template #body-cell-storage="props">
+                <q-td :props="props">{{ props.value || '—' }}</q-td>
+              </template>
+            </q-table>
+          </q-card-section>
+        </q-card>
+
       </q-tab-panel>
 
     </q-tab-panels>
@@ -138,25 +183,17 @@ async function toggleSchedule(row) {
 // ── Status tab ────────────────────────────────────────────────────────────────
 const statusLoading  = ref(false)
 const statusError    = ref(null)
-const scheduledJobs  = ref([])
 const statusDays     = ref(1)
+const schedulesData  = ref([])   // from "schedules" key
+const previewData    = ref([])   // from "preview" key
 
 async function refreshStatus() {
   statusLoading.value = true
   statusError.value   = null
   try {
-    // status scheduler returns scheduled jobs in "scheduled" key
     const res = await director.call(`status scheduler days=${statusDays.value}`)
-    const raw = res?.scheduled ?? res?.['scheduled-jobs'] ?? []
-    scheduledJobs.value = (Array.isArray(raw) ? raw : []).map((r, idx) => ({
-      idx,
-      level:    r.level    ?? r.Level    ?? '',
-      type:     r.type     ?? r.Type     ?? r.jobtype ?? '',
-      priority: r.priority ?? r.Priority ?? '',
-      runtime:  r.scheduled ?? r.runtime ?? r.Runtime ?? '',
-      name:     r.name     ?? r.Job      ?? r.job     ?? '',
-      volume:   r.volume   ?? r.Volume   ?? '',
-    }))
+    schedulesData.value = Array.isArray(res?.schedules) ? res.schedules : []
+    previewData.value   = Array.isArray(res?.preview)   ? res.preview   : []
   } catch (e) {
     statusError.value = e.message
   } finally {
@@ -164,13 +201,49 @@ async function refreshStatus() {
   }
 }
 
-const statusCols = [
-  { name: 'runtime',  label: 'Scheduled',  field: 'runtime',  align: 'left',   sortable: true },
-  { name: 'name',     label: 'Job',        field: 'name',     align: 'left',   sortable: true },
-  { name: 'level',    label: 'Level',      field: 'level',    align: 'center'  },
-  { name: 'type',     label: 'Type',       field: 'type',     align: 'center'  },
-  { name: 'priority', label: 'Pri',        field: 'priority', align: 'center'  },
-  { name: 'volume',   label: 'Volume',     field: 'volume',   align: 'left'    },
+// Flatten schedules→jobs into table rows
+const scheduleJobRows = computed(() => {
+  const rows = []
+  for (const sched of schedulesData.value) {
+    const jobs = Array.isArray(sched.jobs) ? sched.jobs : []
+    if (!jobs.length) {
+      rows.push({ idx: rows.length, schedule: sched.name, schedEnabled: sched.enabled, job: '—', jobEnabled: null })
+    } else {
+      for (const j of jobs) {
+        rows.push({ idx: rows.length, schedule: sched.name, schedEnabled: sched.enabled, job: j.name, jobEnabled: j.enabled })
+      }
+    }
+  }
+  return rows
+})
+
+const scheduleJobCols = [
+  { name: 'schedule',    label: 'Schedule', field: 'schedule',    align: 'left',   sortable: true },
+  { name: 'schedEnabled',label: 'Status',   field: 'schedEnabled',align: 'center'               },
+  { name: 'job',         label: 'Job',      field: 'job',         align: 'left',   sortable: true },
+  { name: 'jobEnabled',  label: 'Job Status',field: 'jobEnabled', align: 'center'               },
+]
+
+// Map preview array into table rows
+const previewRows = computed(() =>
+  previewData.value.map((r, idx) => ({
+    idx,
+    datetime: r.datetime ?? '',
+    schedule: r.schedule ?? '',
+    level:    r.level    ?? '',
+    priority: r.priority ?? '',
+    pool:     r.pool     ?? '',
+    storage:  r.storage  ?? '',
+  }))
+)
+
+const previewCols = [
+  { name: 'datetime', label: 'Date/Time', field: 'datetime', align: 'left',   sortable: true },
+  { name: 'schedule', label: 'Schedule',  field: 'schedule', align: 'left',   sortable: true },
+  { name: 'level',    label: 'Level',     field: 'level',    align: 'center'                 },
+  { name: 'priority', label: 'Pri',       field: 'priority', align: 'center', sortable: true },
+  { name: 'pool',     label: 'Pool',      field: 'pool',     align: 'left'                   },
+  { name: 'storage',  label: 'Storage',   field: 'storage',  align: 'left'                   },
 ]
 
 // Load show tab immediately; load status tab lazily on first visit
