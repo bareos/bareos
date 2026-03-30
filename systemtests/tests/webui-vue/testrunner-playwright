@@ -45,22 +45,24 @@ done
 unset _port _pids _pid
 
 # ── 1. Build the Vue app with the test proxy WS URL baked in ─────────────────
-# Only rebuild if dist/ is missing, env vars changed, or source is newer than dist.
+# Build into a separate test-dist/ directory so the committed dist/ (production
+# build) is never overwritten by test builds that have the test WS URL baked in.
 cd "${CMAKE_SOURCE_DIR}/webui-vue"
+TEST_DIST="test-dist"
 EXPECTED_URL="ws://localhost:${PROXY_PORT}"
 BUILD_ENV="VITE_DIRECTOR_WS_URL=${EXPECTED_URL}
 VITE_DIRECTOR_HOST=localhost
 VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
 
 _needs_build=false
-if [ ! -d dist ] || [ "$(cat dist/.build-env 2>/dev/null)" != "${BUILD_ENV}" ]; then
+if [ ! -d "${TEST_DIST}" ] || [ "$(cat "${TEST_DIST}/.build-env" 2>/dev/null)" != "${BUILD_ENV}" ]; then
   _needs_build=true
-elif find src proxy index.html -newer dist/.build-env 2>/dev/null | grep -q .; then
+elif find src index.html -newer "${TEST_DIST}/.build-env" 2>/dev/null | grep -q .; then
   _needs_build=true
 fi
 
 if [ "${_needs_build}" = true ]; then
-  print_debug "Building Vue WebUI ..."
+  print_debug "Building Vue WebUI into ${TEST_DIST}/ ..."
   # Call vite build directly instead of npm run build so that the
   # VITE_* variables set here are not stripped by the env -u wrapper
   # in the npm "build" script (which exists to prevent test vars from
@@ -68,15 +70,15 @@ if [ "${_needs_build}" = true ]; then
   VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" \
     VITE_DIRECTOR_HOST="localhost" \
     VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
-    npx vite build >"${tmp}/vite-build.log" 2>&1
-  printf '%s' "${BUILD_ENV}" >dist/.build-env
+    npx vite build --outDir "${TEST_DIST}" >"${tmp}/vite-build.log" 2>&1
+  printf '%s' "${BUILD_ENV}" >"${TEST_DIST}/.build-env"
 else
-  print_debug "Reusing existing Vue WebUI build."
+  print_debug "Reusing existing Vue WebUI test build."
 fi
 unset _needs_build
 
 print_debug "Starting vite preview on port ${VITE_PORT} ..."
-npx vite preview --port "${VITE_PORT}" --strictPort --host 127.0.0.1 >"${tmp}/vite-preview.log" 2>&1 &
+npx vite preview --outDir "${TEST_DIST}" --port "${VITE_PORT}" --strictPort --host 127.0.0.1 >"${tmp}/vite-preview.log" 2>&1 &
 VITE_PID=$!
 cd -
 
