@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,26 +37,33 @@ void err_msg(libbareos::format_string<T...> fmt, T&&... args)
 
 std::string guid_to_string(guid id)
 {
-  std::uint64_t First = {};
-  std::uint32_t Second = {};
-  std::uint32_t Third = {};
-  std::uint64_t Fourth = {};
+  // format a guid in a similar way to how windows does it
+
+  std::uint32_t First = {};
+  std::uint16_t Second = {};
+  std::uint16_t Third = {};
+  std::uint16_t Fourth = {};
   std::uint32_t Fifth = {};
+  std::uint16_t Sixth = {};
 
-  std::size_t offset = 0;
-  std::memcpy(&First, id.Data, sizeof(First));
-  offset += sizeof(First);
-  std::memcpy(&Second, id.Data, sizeof(Second));
-  offset += sizeof(Second);
-  std::memcpy(&Third, id.Data, sizeof(Third));
-  offset += sizeof(Third);
-  std::memcpy(&Fourth, id.Data, sizeof(Fourth));
-  offset += sizeof(Fourth);
-  std::memcpy(&Fifth, id.Data, sizeof(Fifth));
-  offset += sizeof(Fifth);
+  constexpr std::size_t offset0 = 0;
+  std::memcpy(&First, id.Data + offset0, sizeof(First));
+  constexpr std::size_t offset1 = offset0 + sizeof(First);
+  std::memcpy(&Second, id.Data + offset1, sizeof(Second));
+  constexpr std::size_t offset2 = offset1 + sizeof(Second);
+  std::memcpy(&Third, id.Data + offset2, sizeof(Third));
+  constexpr std::size_t offset3 = offset2 + sizeof(Third);
+  std::memcpy(&Fourth, id.Data + offset3, sizeof(Fourth));
+  constexpr std::size_t offset4 = offset3 + sizeof(Fourth);
+  std::memcpy(&Fifth, id.Data + offset4, sizeof(Fifth));
+  constexpr std::size_t offset5 = offset4 + sizeof(Fifth);
+  std::memcpy(&Sixth, id.Data + offset5, sizeof(Sixth));
+  constexpr std::size_t offset6 = offset5 + sizeof(Sixth);
 
-  return libbareos::format("{:08X}-{:04X}-{:04X}-{:08X}{:04X}", First, Second,
-                           Third, Fourth, Fifth);
+  static_assert(sizeof(id.Data) == offset6);
+
+  return libbareos::format("{:08X}-{:04X}-{:04X}-{:04X}-{:08X}{:04X}", First,
+                           Second, Third, Fourth, Fifth, Sixth);
 }
 
 std::string utf16_to_utf8(std::span<const char16_t> str)
