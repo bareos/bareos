@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -125,7 +125,7 @@ class DirectorController extends AbstractActionController
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 0, "detail");
+            $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 0, "");
             $this->bsock->disconnect();
         } catch (Exception $e) {
             echo $e->getMessage();
@@ -170,17 +170,17 @@ class DirectorController extends AbstractActionController
             );
         }
 
-        $reportDetail = "";
+        $reportOptions = "";
 
-        if ($this->params()->fromQuery('detail') == true) {
-            $reportDetail = "all";
+        if ($this->params()->fromQuery('anonymize') == true) {
+            $reportOptions = "anonymize";
         }
 
         $result = null;
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 2, $reportDetail);
+            $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 2, $reportOptions);
             $this->bsock->disconnect();
         } catch (Exception $e) {
             echo $e->getMessage();

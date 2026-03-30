@@ -1,0 +1,50 @@
+status subscriptions clients
+{
+  "jsonrpc": "2.0",
+  "id": null,
+  "result": {
+    "unit-clients": [
+      {
+        "client": "file-and-plugins",
+        "count": "3",
+        "size_gb": "4.00"
+      },
+      {
+        "client": "file-only",
+        "count": "1",
+        "size_gb": "3.00"
+      },
+      {
+        "client": "native-plugins",
+        "count": "10",
+        "size_gb": "1234.00"
+      },
+      {
+        "client": "python-plugins",
+        "count": "9",
+        "size_gb": "1234567.89"
+      },
+      {
+        "client": "special-syntax",
+        "count": "5",
+        "size_gb": "5.00"
+      },
+      {
+        "client": "two-barri-jobs",
+        "count": "2",
+        "size_gb": "2.00"
+      },
+      {
+        "client": "TOTAL",
+        "count": "30",
+        "size_gb": "1235815.89"
+      }
+    ],
+    "unit-summary": {
+      "accounting_mode": "volume-based (1236 volume-based units >= 30 count-based units)",
+      "used": "1236",
+      "configured": "1240",
+      "remaining": "4"
+    },
+  }
+}

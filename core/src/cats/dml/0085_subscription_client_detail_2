@@ -1,0 +1,17 @@
+# List filesets with plugin and amount of data for a specific client.
+# Parameters:
+# - placeholder for WITH clause
+#   inject the snippet from subscription_with_clause_0 here
+# - client_name
+#   name of the client to report on
+%s
+SELECT
+  fileset,
+  COALESCE(plugin, 'none (file data)') as plugin,
+  size_gb::NUMERIC(20,2)
+FROM
+  client_detail
+WHERE
+  client_name = '%s'
+ORDER BY
+  fileset;

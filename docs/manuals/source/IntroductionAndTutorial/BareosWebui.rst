@@ -1031,27 +1031,29 @@ Limitations
 Subscriptions
 -------------
 
-If you have (or want) a service contract for Bareos, the Backup Unit Report can help you keep track
-of the subscriptions in use. It will compute how many Bareos backup units are needed including
-optional component like database, virtual machine and filer units.
+If you have (or want) a service contract for Bareos, the Backup Unit Report can
+help you keep track of the subscriptions in use.
+It will compute how many Bareos backup units are consumed by your installation,
+including plugins for databases, virtual machines, etc.
 
-This paragraph describes how to generate a Backup Unit Report and what do do with it.
+This paragraph describes how to generate a Backup Unit Report and what to do
+with it.
 
-Once logged into your Bareos WebUI, navigate to **Director -> Subscription**. This will show you
-the output of the :bcommand:`status subscriptions` command. You can than click on the button
-**Download Summary Backup Unit Report (JSON)**\  to download a anonymised and synthetic report in
-JSON format (filename: bareos-backup-unit-report.json).
-
-To obtain a detailed Backup Unit Report you can use the button
-**Download Detailed Backup Unit Report (JSON)**\ .
-
+Once logged into your Bareos WebUI, navigate to **Director -> Subscription**.
+This will show you the output of the :bcommand:`status subscriptions` command.
+You can then click **Download Backup Unit Report (JSON)** at the bottom of the
+page to download the report in JSON format.
+If you do not want to disclose the names of your clients, you can click on
+**Download Anonymized Backup Unit Report (JSON)** to download a report without
+client names.
 
 .. image:: /include/images/webui-status-subscription-report.png
    :alt: Bareos WebUI: Subscription Status Overview
    :width: 100.0%
 
-Alternatively you can download it directly via the URL
-
-https://<YOUR_BAREOS_WEBUI_SERVER>/bareos-webui/director/backupunitreport
-
-However, a login is still required. Also the WebUI user must have the permission to see all clients.
+| Alternatively you can download the report directly via the following URL:
+| ``https://<YOUR_BAREOS_WEBUI_SERVER>/bareos-webui/director/backupunitreport``
+| Or for the anonymized report:
+| ``https://<YOUR_BAREOS_WEBUI_SERVER>/bareos-webui/director/backupunitreport?anonymize=1``
+| However, a login is still required and the WebUI user must have permission to
+  see all clients.

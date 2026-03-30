@@ -81,10 +81,11 @@ const char *BareosDb::query_names[] = {
 "list_volumes_select_long_0",
 "bvfs_lock_pathhierarchy_0",
 "bvfs_unlock_tables_0",
-"subscription_select_backup_unit_overview_1",
-"subscription_select_backup_unit_total_2",
-"subscription_select_unclassified_client_fileset_1",
-"subscription_select_unclassified_amount_data_1",
 "subscription_with_clause_0",
+"subscription_units_total_2",
+"subscription_units_3",
+"subscription_units_client_total_3",
+"subscription_units_plugin_total_1",
+"subscription_client_detail_2",
 NULL
 };

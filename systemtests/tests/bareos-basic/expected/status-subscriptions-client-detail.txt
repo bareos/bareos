@@ -1,0 +1,12 @@
+status subscriptions client=file-and-plugins
+
+Detailed backup unit report for client 'file-and-plugins':
++---------+------------------+---------+
+| fileset | plugin           | size_gb |
++---------+------------------+---------+
+| barri1  | barri            |    1.00 |
+| bpipe1  | bpipe            |    1.00 |
+| file1   | none (file data) |    1.00 |
+| file2   | none (file data) |    1.00 |
++---------+------------------+---------+
+All plugin jobs and the first non-plugin job are counted.

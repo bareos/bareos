@@ -1,0 +1,90 @@
+# used for the other subscription queries instead of the views
+#
+# fileset_plugin:
+#   resolves fileset_id to the used plugin (or NULL if no plugin used)
+# client_detail:
+#   lists latest full for every client/fileset combination + the plugin used
+# client_aggregated:
+#   lists all clients and the plugins used
+# plugin_aggregated:
+#   lists all plugins used
+WITH
+fileset_plugin AS (
+  SELECT
+    filesetid,
+    fileset, 
+    LOWER(
+      COALESCE(
+        SUBSTRING(filesettext FROM '(?i)plugin = python3?:(?:.*:)*module_name=bareos-fd-([^:\s]+)'),
+        SUBSTRING(filesettext FROM '(?i)plugin = python3?:(?:.*:)?module_name=bareos-([^:\s]+)'),
+        SUBSTRING(filesettext FROM '(?i)plugin = python3?:(?:.*:)?module_name=([^:\s]+)'),
+        CASE
+          WHEN filesettext ~* '(?i)plugin = python3?(:|$)' THEN 'other python plugin'
+        END,
+        SUBSTRING(filesettext FROM '(?i)plugin = grpc:([^:\s]+)'),
+        SUBSTRING(filesettext FROM '(?i)Plugin = ([^:\s]+)')
+      )
+    ) AS plugin
+  FROM (
+    SELECT
+      filesetid,
+      fileset,
+      regexp_replace(
+        regexp_replace(
+          regexp_replace(filesettext, '\\.', '§', 'g'), -- replace escaped characters
+          '"', '', 'g' -- remove quotes
+        ),
+      '(?i)plugin = grpc:bareos-grpc-fd-plugin-bridge:', 'plugin = ', 'g' -- strip grpc prefixes
+      ) AS filesettext
+    FROM fileset
+  ) bashed_fileset
+),
+client_detail AS (
+  SELECT
+    c.name AS client_name,
+    'Client ' || c.clientid AS client_anon,
+    c.clientid AS client_id,
+    f.fileset AS fileset,
+    GREATEST(j.readbytes::bigint, j.jobbytes::bigint) / 10^9 AS size_gb,
+    f.plugin AS plugin
+  FROM job j
+  INNER JOIN client c
+    ON c.clientid = j.clientid
+  INNER JOIN fileset_plugin f
+    ON j.filesetid = f.filesetid
+  WHERE jobid IN (
+    SELECT
+      MAX(j.jobid) AS jobid
+    FROM job j
+    INNER JOIN fileset f
+      ON j.filesetid = f.filesetid
+    WHERE level = 'F'
+      AND j.jobstatus IN ('T','W')
+      AND j.type = 'B'
+      AND j.jobbytes > 0
+    GROUP BY j.clientid, f.fileset
+  )
+),
+client_aggregated AS (
+  SELECT
+    client_name,
+    client_anon,
+    client_id,
+    CASE
+      WHEN plugin IS NULL THEN 1
+      ELSE COUNT(fileset)
+    END as count,
+    SUM(size_gb) as size_gb,
+    COALESCE(plugin, 'none (file data)') as plugin
+  FROM client_detail
+  GROUP BY client_name, client_anon, client_id, plugin
+),
+plugin_aggregated AS (
+  SELECT
+    COALESCE(plugin, 'none (file data)') as plugin,
+    SUM(count) as count,
+    SUM(size_gb) as size_gb
+  FROM client_aggregated
+  GROUP BY plugin
+  ORDER BY plugin
+)

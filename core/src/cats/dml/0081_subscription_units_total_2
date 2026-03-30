@@ -1,0 +1,22 @@
+# Get the summary of used/configured/remaining units.
+# Parameters:
+# - placeholder for WITH clause
+#   inject the snippet from subscription_with_clause_0 here
+# - configured units
+#   provide the number of configured units
+%s
+SELECT
+  CASE
+    WHEN t.size_units >= t.count_units THEN 'volume-based (' || t.size_units || ' volume-based units >= ' || t.count_units || ' count-based units)'
+    ELSE 'count-based (' || t.size_units || ' volume-based < ' || t.count_units || ' count-based)'
+  END AS accounting_mode,
+  GREATEST(t.count_units, t.size_units) AS used,
+  configured_units as configured,
+  configured_units - GREATEST(t.count_units, t.size_units) as remaining
+FROM (
+  SELECT
+    COALESCE(SUM(count), 0) AS count_units,
+    CEIL(COALESCE(SUM(size_gb)/1000, 0.0)) AS size_units,
+    %d AS configured_units
+  FROM client_aggregated
+) t
