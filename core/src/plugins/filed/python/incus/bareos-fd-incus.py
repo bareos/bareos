@@ -25,32 +25,43 @@ import bareosfd # pylint: disable=import-error
 import BareosFdPluginBaseclass # pylint: disable=import-error
 
 
+# Size suffixes to use when processing plugin options that expect a size in bytes.
 SIZE_MULTIPLIERS = {'k': 1_000, 'm': 1_000_000, 'g': 1_000_000_000, 't': 1_000_000_000_000,
                     'ki': 1_024, 'mi': 1_048_576, 'gi': 1_073_741_824, 'ti': 1_099_511_627_776}
 
+# Time suffixes to use when processing plugin options that expect a time in seconds.
 TIME_MULTIPLIERS = {'s': 1, 'min': 60, 'h': 3_600, 'd': 86_400}
 
+# Conversion map between tarfile and Bareos types. Note that DIRTYPE is mapped to FT_REG. This is
+# not a mistake: Bareos doesn’t allow storing raw data within directory entries; as we store
+# extended attributes directly in the file stream, we need to use a Bareos type that allows that.
 TAR_BOS = {tarfile.AREGTYPE: bareosfd.FT_REG,      tarfile.REGTYPE:  bareosfd.FT_REG,
            tarfile.LNKTYPE:  bareosfd.FT_LNKSAVED, tarfile.SYMTYPE:  bareosfd.FT_LNK,
            tarfile.CHRTYPE:  bareosfd.FT_SPEC,     tarfile.BLKTYPE:  bareosfd.FT_SPEC,
            tarfile.DIRTYPE:  bareosfd.FT_REG,      tarfile.FIFOTYPE: bareosfd.FT_SPEC,
            tarfile.CONTTYPE: bareosfd.FT_REG,      tarfile.GNUTYPE_SPARSE: bareosfd.FT_REG}
 
+# Reverse map converting from Bareos to tarfile types. The map is incomplete, as we need to inspect
+# the stat struct to disambiguate types mapped to FT_REG and FT_SPEC.
 BOS_TAR = {bareosfd.FT_LNKSAVED: tarfile.LNKTYPE, bareosfd.FT_REGE: tarfile.REGTYPE,
            bareosfd.FT_REG:      tarfile.REGTYPE, bareosfd.FT_LNK:  tarfile.SYMTYPE}
 
+# Conversion map between mode_t and Bareos types.
 STAT_TAR = {stat.S_IFIFO: tarfile.FIFOTYPE, stat.S_IFCHR: tarfile.CHRTYPE,
             stat.S_IFDIR: tarfile.DIRTYPE,  stat.S_IFBLK: tarfile.BLKTYPE,
             stat.S_IFREG: tarfile.REGTYPE,  stat.S_IFLNK: tarfile.SYMTYPE}
 
+# Conversion map between tarfile types and mode_t.
 TAR_STAT = {tarfile.AREGTYPE: stat.S_IFREG, tarfile.REGTYPE:  stat.S_IFREG,
             tarfile.LNKTYPE:  stat.S_IFREG, tarfile.SYMTYPE:  stat.S_IFLNK,
             tarfile.CHRTYPE:  stat.S_IFCHR, tarfile.BLKTYPE:  stat.S_IFBLK,
             tarfile.DIRTYPE:  stat.S_IFDIR, tarfile.FIFOTYPE: stat.S_IFIFO,
             tarfile.CONTTYPE: stat.S_IFREG, tarfile.GNUTYPE_SPARSE: stat.S_IFREG}
 
+# Conversion map between Incus and tarfile compression names.
 TARFILE_MODES = {'bzip2': 'bz2', 'gzip': 'gz', 'lzma': 'xz', 'xz': 'xz', 'zstd': 'zst', 'none': ''}
 
+# Incus uses SCHILY extended attributes.
 XATTR_PREFIX = 'SCHILY.xattr.'
 
 
