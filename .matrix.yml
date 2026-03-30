@@ -1,4 +1,11 @@
 OS:
+  SUSE:
+    "16":
+      TYPE: rpm
+      IMAGE: sle160
+      CUSTOM_TEST_IMAGES: [ SLE-16.0, openSUSE-Leap_16.0 ]
+      ARCH:
+      - x86_64
   EL:
     "8":
       TYPE: rpm
