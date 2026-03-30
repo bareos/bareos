@@ -136,6 +136,53 @@
                   size="10px" rounded
                 />
               </div>
+
+              <!-- Job usage breakdown -->
+              <div v-if="jobUsageSegments.length" class="q-mt-md">
+                <div class="row justify-between text-caption text-grey-6 q-mb-xs">
+                  <span>Space by Job</span>
+                  <span>{{ jobUsageSegments.length }} job{{ jobUsageSegments.length !== 1 ? 's' : '' }}</span>
+                </div>
+                <!-- stacked bar -->
+                <div style="height:14px; display:flex; overflow:hidden; background:#e0e0e0; border-radius:4px">
+                  <q-tooltip>
+                    <div v-for="seg in jobUsageSegments" :key="seg.jobid" class="text-caption">
+                      #{{ seg.jobid }} {{ seg.name }}: {{ formatBytes(seg.jobbytes) }} ({{ seg.pct.toFixed(1) }}%)
+                    </div>
+                  </q-tooltip>
+                  <div
+                    v-for="seg in jobUsageSegments"
+                    :key="seg.jobid"
+                    :style="{ width: seg.width + '%', background: seg.color, flexShrink: 0 }"
+                  />
+                </div>
+                <!-- legend: top 8 jobs -->
+                <div class="q-mt-sm">
+                  <div
+                    v-for="seg in jobUsageSegments.slice(0, 8)"
+                    :key="seg.jobid"
+                    class="row items-center q-mb-xs text-caption"
+                  >
+                    <div
+                      :style="{ background: seg.color, width: '10px', height: '10px', borderRadius: '2px', flexShrink: 0 }"
+                      class="q-mr-sm"
+                    />
+                    <router-link
+                      :to="{ name: 'job-details', params: { id: seg.jobid } }"
+                      class="text-primary q-mr-xs"
+                      style="white-space:nowrap"
+                    >#{{ seg.jobid }}</router-link>
+                    <span class="text-grey-7 ellipsis">{{ seg.name }}</span>
+                    <q-space />
+                    <span class="text-grey-6 q-ml-sm" style="white-space:nowrap">
+                      {{ formatBytes(seg.jobbytes) }} ({{ seg.pct.toFixed(1) }}%)
+                    </span>
+                  </div>
+                  <div v-if="jobUsageSegments.length > 8" class="text-caption text-grey-5">
+                    + {{ jobUsageSegments.length - 8 }} more jobs
+                  </div>
+                </div>
+              </div>
             </q-card-section>
           </q-card>
         </div>
@@ -303,6 +350,36 @@ async function setVolStatus(newStatus) {
 }
 
 // ── Jobs table ────────────────────────────────────────────────────────────────
+
+const JOB_COLORS = [
+  '#1976D2', '#388E3C', '#F57C00', '#7B1FA2', '#C62828',
+  '#00838F', '#558B2F', '#EF6C00', '#6A1B9A', '#AD1457',
+  '#00695C', '#283593', '#E65100', '#4527A0', '#2E7D32',
+]
+
+const jobUsageSegments = computed(() => {
+  if (!jobs.value.length || !vol.value) return []
+  const totalBytes = Number(vol.value.volbytes) || 1
+  const sorted = [...jobs.value]
+    .filter(j => Number(j.jobbytes) > 0)
+    .sort((a, b) => Number(b.jobbytes) - Number(a.jobbytes))
+  // Normalize widths: each segment is its share of the total volume bytes,
+  // capped so the sum never exceeds 100 % in the bar.
+  let remaining = 100
+  return sorted.map((j, i) => {
+    const pct = (Number(j.jobbytes) / totalBytes) * 100
+    const width = Math.min(pct, remaining)
+    remaining = Math.max(0, remaining - width)
+    return {
+      jobid:    j.jobid,
+      name:     j.name,
+      jobbytes: Number(j.jobbytes),
+      pct,
+      width,
+      color: JOB_COLORS[i % JOB_COLORS.length],
+    }
+  })
+})
 
 const jobCols = [
   { name: 'jobid',      label: 'ID',        field: 'jobid',      align: 'right',  sortable: true },

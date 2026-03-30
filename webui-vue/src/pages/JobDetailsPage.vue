@@ -58,20 +58,41 @@
           <q-card flat bordered class="bareos-panel">
             <q-card-section class="panel-header">Volumes Used</q-card-section>
             <q-card-section class="q-pa-none">
-              <q-list dense separator>
-                <q-item v-for="vol in volumes" :key="vol.volumename">
-                  <q-item-section avatar>
-                    <q-icon name="album" color="primary" />
-                  </q-item-section>
-                  <q-item-section>{{ vol.volumename }}</q-item-section>
-                  <q-item-section side class="text-caption text-grey">
-                    {{ vol.firstindex }} – {{ vol.lastindex }}
-                  </q-item-section>
-                </q-item>
-                <q-item v-if="!volumes.length">
-                  <q-item-section class="text-grey text-caption q-py-sm">No volumes recorded.</q-item-section>
-                </q-item>
-              </q-list>
+              <q-table
+                :rows="volumes"
+                :columns="volumeCols"
+                row-key="volumename"
+                dense flat
+                hide-bottom
+                :pagination="{ rowsPerPage: 0 }"
+                no-data-label="No volumes recorded."
+              >
+                <template #body-cell-volumename="props">
+                  <q-td :props="props">
+                    <q-icon name="album" color="primary" size="xs" class="q-mr-xs" />
+                    <router-link
+                      :to="{ name: 'volume-details', params: { name: props.value } }"
+                      class="text-primary"
+                    >{{ props.value }}</router-link>
+                  </q-td>
+                </template>
+                <template #header-cell-firstindex="props">
+                  <q-th :props="props">
+                    {{ props.col.label }}
+                    <q-icon name="help_outline" size="xs" class="q-ml-xs text-grey-5">
+                      <q-tooltip>Catalog index of the first file written to this volume for this job. Used internally by Bareos to locate and restore files.</q-tooltip>
+                    </q-icon>
+                  </q-th>
+                </template>
+                <template #header-cell-lastindex="props">
+                  <q-th :props="props">
+                    {{ props.col.label }}
+                    <q-icon name="help_outline" size="xs" class="q-ml-xs text-grey-5">
+                      <q-tooltip>Catalog index of the last file written to this volume for this job. The range first–last covers all files stored on this volume for this job.</q-tooltip>
+                    </q-icon>
+                  </q-th>
+                </template>
+              </q-table>
             </q-card-section>
           </q-card>
 
@@ -180,6 +201,18 @@ onMounted(async () => {
 
 // ── computed ──────────────────────────────────────────────────────────────────
 const job = computed(() => jobData.value)
+
+const volumeCols = [
+  { name: 'volumename', label: 'Volume',
+    field: 'volumename', align: 'left', sortable: true,
+    headerClasses: 'text-weight-bold' },
+  { name: 'firstindex', label: 'First File Index',
+    field: 'firstindex', align: 'right', sortable: true,
+    headerTitle: 'Catalog index of the first file written to this volume for this job' },
+  { name: 'lastindex',  label: 'Last File Index',
+    field: 'lastindex',  align: 'right', sortable: true,
+    headerTitle: 'Catalog index of the last file written to this volume for this job' },
+]
 
 const summaryRows = computed(() => {
   if (!job.value) return []
