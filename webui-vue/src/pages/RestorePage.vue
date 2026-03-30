@@ -18,6 +18,7 @@
                   label="Backup Client"
                   outlined dense emit-value map-options
                   :loading="loadingClients"
+                  hint="Select a client to browse its backups"
                   @update:model-value="onClientChange"
                 />
                 <q-select
@@ -259,10 +260,6 @@ async function loadClients() {
   try {
     const r = await director.call('list clients')
     clients.value = r?.clients ?? []
-    if (clients.value.length && !form.value.client) {
-      form.value.client        = clients.value[0].name
-      form.value.restoreclient = clients.value[0].name
-    }
   } catch (_) {
     clients.value = []
   } finally {
@@ -319,7 +316,6 @@ async function loadBackups(clientName) {
   try {
     const r = await director.call(`llist backups client="${clientName}"`)
     backups.value = (r?.backups ?? []).sort((a, b) => Number(b.jobid) - Number(a.jobid))
-    if (backups.value.length) form.value.jobid = backups.value[0].jobid
   } catch (_) {
     backups.value = []
   } finally {
@@ -572,10 +568,6 @@ function fileIcon(name) {
 // ── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   await Promise.all([loadClients(), loadRestoreJobs()])
-  if (form.value.client) {
-    await loadBackups(form.value.client)
-    if (form.value.jobid) await initBrowser()
-  }
 }
 
 onMounted(() => { if (director.isConnected) init() })

@@ -114,8 +114,9 @@ done
 
 # ── 3. Run Playwright tests ──────────────────────────────────────────────────
 print_debug "Running Playwright E2E tests ..."
+
 "${PYTHON_EXECUTABLE}" - <<PYEOF
-import asyncio, sys, traceback
+import asyncio, re, sys, time, traceback
 from playwright.async_api import async_playwright, expect
 
 WEBUI_URL  = "http://localhost:${VITE_PORT}"
@@ -226,6 +227,124 @@ async def test_logout(page):
     await page.wait_for_url("**/login", timeout=5_000)
     ok("logout → redirected to /login")
 
+
+async def _select_option(page, label_text, option_text, timeout_ms=30_000):
+    """Open a Quasar q-select by its label and pick an option by exact text.
+
+    Retries until the option is visible, to handle lists still loading via WS.
+    """
+    sel = page.locator(".q-select").filter(
+        has=page.locator(f"text={label_text}")
+    )
+    deadline = time.monotonic() + timeout_ms / 1000
+    while True:
+        await sel.locator(".q-field__control").click()
+        try:
+            await page.locator(".q-menu").get_by_text(
+                option_text, exact=True
+            ).wait_for(state="visible", timeout=1_500)
+            break
+        except Exception:
+            # Close the empty/wrong menu and retry
+            await page.keyboard.press("Escape")
+            if time.monotonic() > deadline:
+                raise TimeoutError(
+                    f"Option '{option_text}' in '{label_text}' never appeared"
+                )
+            await asyncio.sleep(0.5)
+    await page.locator(".q-menu").get_by_text(
+        option_text, exact=True
+    ).click(timeout=5_000)
+
+
+async def _pick_full_job(page, job_name, timeout_ms=60_000):
+    """From the Backup Job dropdown pick the Full-level entry for job_name.
+
+    The dropdown label format is:
+      #<id>  <job_name>  [Full]  <starttime>  (<bytes>, <files> files)
+    Retries until such an entry is visible (the list loads asynchronously).
+    """
+    job_sel = page.locator(".q-select").filter(
+        has=page.locator("text=Backup Job")
+    )
+    # Wait for the select to become enabled (data has loaded).
+    await expect(job_sel).not_to_have_class(
+        re.compile(r"q-field--disabled"), timeout=timeout_ms
+    )
+
+    deadline = time.monotonic() + timeout_ms / 1000
+    while True:
+        await job_sel.locator(".q-field__control").click()
+        # Allow Quasar one render tick to paint menu items.
+        await asyncio.sleep(0.4)
+        items = page.locator(".q-menu .q-item")
+        count = await items.count()
+        for i in range(count):
+            item = items.nth(i)
+            txt = await item.inner_text()
+            if job_name in txt and "[Full]" in txt:
+                await item.click()
+                return
+        await page.keyboard.press("Escape")
+        if time.monotonic() > deadline:
+            raise TimeoutError(
+                f"No Full job for '{job_name}' appeared in the Backup Job dropdown"
+            )
+        await asyncio.sleep(0.5)
+
+
+async def _browse_restore(page, client_name, job_name, timeout_ms=90_000):
+    """Navigate to restore page, select client and Full backup job, verify
+    the BVFS file browser populates with at least one entry.
+
+    Both backup jobs store data under /tmp/... so the root of the BVFS tree
+    will contain at least a 'tmp' directory entry, proving real data was indexed.
+    """
+    await login(page)
+    await page.evaluate("window.location.hash = '/restore'")
+    await page.wait_for_url("**#/restore", timeout=10_000)
+
+    # Select the client (retry until client list arrives via WS).
+    await _select_option(page, "Backup Client", client_name, timeout_ms)
+
+    # Pick the Full backup job for the requested job name.
+    await _pick_full_job(page, job_name, timeout_ms)
+
+    # After the job is selected, initBrowser() runs bvfs_update + bvfs_lsdirs.
+    # Wait for the browser table to appear and contain at least one row.
+    # bvfs_update can take tens of seconds on a cold catalog, so allow timeout_ms.
+    browser_table = page.locator(".q-table")
+    await expect(browser_table).to_be_visible(timeout=timeout_ms)
+
+    # Verify the table has at least one data row.
+    row_count = await page.locator(".q-table tbody .q-tr").count()
+    if row_count == 0:
+        await page.screenshot(
+            path=f"/tmp/bvfs-empty-{job_name[:20]}.png"
+        )
+        fail(
+            f"restore browser for '{client_name}' / '{job_name}' "
+            "shows 0 entries (BVFS returned no data)"
+        )
+    else:
+        ok(
+            f"restore browser for '{client_name}' / '{job_name}' "
+            f"shows {row_count} entries"
+        )
+
+
+# ── Test 7: BVFS browser works for backup-bareos-fd ──────────────────────────
+async def test_restore_browser_job1(page):
+    """Select backup-bareos-fd Full job -- browser must show BVFS data."""
+    await _browse_restore(page, "bareos-fd", "backup-bareos-fd")
+
+
+# ── Test 8: BVFS browser works for backup-bareos-fd-2 ────────────────────────
+async def test_restore_browser_job2(page):
+    """Select backup-bareos-fd-2 Full job -- browser must show BVFS data."""
+    await _browse_restore(page, "bareos-fd", "backup-bareos-fd-2")
+
+
 async def main():
     tests = [
         test_login,
@@ -234,6 +353,8 @@ async def main():
         test_console,
         test_reload_reconnects,
         test_logout,
+        test_restore_browser_job1,
+        test_restore_browser_job2,
     ]
 
     async with async_playwright() as pw:

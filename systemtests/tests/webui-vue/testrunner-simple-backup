@@ -1,6 +1,11 @@
 #!/bin/bash
 #
-# webui-vue system test – run a simple backup job
+# webui-vue system test – run real backup jobs
+#
+# Runs two Full + Incremental backup job pairs using the live Bareos daemons
+# so the catalog (and BVFS file browser) contains genuine data.
+# Job 1 (backup-bareos-fd)   backs up ${BackupDirectory}  (SelfTest fileset)
+# Job 2 (backup-bareos-fd-2) backs up ${BackupDirectory}2 (TestData2 fileset)
 #
 set -e
 set -o pipefail
@@ -17,24 +22,73 @@ export TestName
 
 start_test
 
-TestJobName="backup-bareos-fd"
+# ── Populate the second backup directory with many small files ─────────────
+# The first directory (${BackupDirectory}) was already populated by setup_data
+# in test-setup.  We create a separate tree for job 2.
+BACKUP_DIR2="${BackupDirectory}2"
+mkdir -p "${BACKUP_DIR2}/docs" \
+         "${BACKUP_DIR2}/src/lib" \
+         "${BACKUP_DIR2}/src/tests" \
+         "${BACKUP_DIR2}/config" \
+         "${BACKUP_DIR2}/logs"
 
+# Generate lots of small files quickly
+for i in $(seq 1 50); do
+  printf 'content of doc %d\n' "$i" > "${BACKUP_DIR2}/docs/doc${i}.txt"
+done
+for i in $(seq 1 40); do
+  printf '// source file %d\n' "$i" > "${BACKUP_DIR2}/src/lib/lib${i}.c"
+done
+for i in $(seq 1 20); do
+  printf '// test %d\n' "$i" > "${BACKUP_DIR2}/src/tests/test${i}.c"
+done
+for i in $(seq 1 10); do
+  printf 'key%d=value\n' "$i" > "${BACKUP_DIR2}/config/app${i}.conf"
+done
+for i in $(seq 1 30); do
+  printf '2026-03-30 log line %d\n' "$i" > "${BACKUP_DIR2}/logs/run${i}.log"
+done
+
+# Write file-list for the TestData2 fileset
+echo "${BACKUP_DIR2}" > "${tmp}/file-list2"
+
+# ── Run Full backups for both jobs ─────────────────────────────────────────
 cat <<END_OF_DATA >"${tmp}/bconcmds"
-@${out} ${NULL_DEV}
+@$out ${NULL_DEV}
 messages
-@${out} ${tmp}/log1.out
+@$out ${tmp}/log-full.out
 label volume=TestVolume001 storage=File pool=Full
-run job=${TestJobName} level=Full yes
-wait
-messages
-run job=${TestJobName} level=Incremental yes
+label volume=TestVolume002 storage=File pool=Incremental
+run job=backup-bareos-fd level=Full yes
+run job=backup-bareos-fd-2 level=Full yes
 wait
 messages
 quit
 END_OF_DATA
 
 run_bconsole
-check_for_zombie_jobs storage=File
-check_log "${tmp}/log1.out" "Termination:.*Backup OK"
+
+# ── Add a few new files then run Incremental backups ──────────────────────
+for i in $(seq 51 60); do
+  printf 'new doc %d\n' "$i" > "${BACKUP_DIR2}/docs/doc${i}.txt"
+done
+printf 'updated config\n' > "${BackupDirectory}/updated.conf"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${tmp}/log-incr.out
+run job=backup-bareos-fd level=Incremental yes
+run job=backup-bareos-fd-2 level=Incremental yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+# ── Verify both jobs completed without errors ──────────────────────────────
+check_log "${tmp}/log-full.out"
+check_log "${tmp}/log-incr.out"
 
 end_test

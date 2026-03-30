@@ -1,0 +1,11 @@
+FileSet {
+  Name = "TestData2"
+  Description = "Second test fileset pointing to a separate data directory"
+  Enable VSS = No
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    File = <@tmpdir@/file-list2
+  }
+}
