@@ -7,8 +7,10 @@
       <q-scroll-area class="col">
         <!-- Drawer header -->
         <div class="q-pa-md row items-center">
-          <img :src="bareosLogo" alt="Bareos"
-               style="height:32px; margin-right:8px" />
+          <span style="height:32px; margin-right:8px; display:inline-flex; align-items:center">
+            <img :src="bareosLogo" alt="Bareos" style="height:32px" />
+            <q-tooltip>Bareos WebUI v{{ appVersion }}</q-tooltip>
+          </span>
           <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
             BAREOS
           </span>
@@ -84,9 +86,10 @@
                class="q-mr-sm" @click="drawerOpen = !drawerOpen" />
 
         <!-- Logo -->
-        <router-link to="/dashboard">
+        <router-link to="/dashboard" style="display:inline-flex; align-items:center">
           <img :src="bareosLogo" alt="Bareos"
                style="height:36px; margin-right:8px;" />
+          <q-tooltip>Bareos WebUI v{{ appVersion }}</q-tooltip>
         </router-link>
         <span class="text-white text-weight-bold text-h6" style="letter-spacing:0.02em">
           BAREOS
@@ -174,6 +177,8 @@
         <span style="opacity:.4">|</span>
         <q-icon name="person" size="13px" style="opacity:.7" />
         <span>{{ auth.user.username }}</span>
+        <span style="opacity:.4">|</span>
+        <span style="opacity:.7">WebUI v{{ appVersion }}</span>
       </template>
     </q-footer>
   </q-layout>
@@ -184,6 +189,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import bareosLogo from '../assets/bareos-logo-small.png'
+import { version as appVersion } from '../../package.json'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 
