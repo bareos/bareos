@@ -188,6 +188,8 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
+                  <q-btn flat round dense size="sm" icon="article" color="primary" title="View log"
+                         :to="{ name: 'job-details', params: { id: props.row.id } }" />
                   <q-btn flat round dense size="sm" icon="cancel" color="negative" title="Cancel"
                          @click="confirmCancel(props.row)" />
                 </q-td>
@@ -605,7 +607,7 @@ const runningColumns = [
   { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',   sortable: true },
   { name: 'client',    label: 'Client',   field: 'client',    align: 'left'    },
   { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left'    },
-  { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:60px' },
+  { name: 'actions',   label: '',         field: 'actions',   align: 'center', style: 'width:90px' },
 ]
 
 const rerunColumns = [

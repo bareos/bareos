@@ -158,7 +158,7 @@
                     <span class="text-grey-6 text-caption q-ml-xs">({{ job.client }})</span>
                   </q-item-label>
                   <q-item-label caption>
-                    {{ (job.files ?? 0).toLocaleString() }} files &middot; {{ jobBytes(job) }}
+                    {{ (job.files ?? 0).toLocaleString() }} files &middot; {{ jobBytes(job) }} &middot; {{ formatDuration(elapsedSecs(job)) }}
                   </q-item-label>
                   <q-linear-progress indeterminate color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
                 </q-item-section>
@@ -179,7 +179,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../mock/index.js'
+import { formatBytes, formatSpeed, parseDurationSecs, timeAgo, formatDuration } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -256,6 +256,7 @@ function refresh() {
 }
 
 const REFRESH_INTERVAL = 5   // seconds
+const now = ref(Date.now())
 
 onMounted(refresh)
 watch(() => director.isConnected, (connected) => { if (connected) refresh() })
@@ -269,6 +270,7 @@ function startAutoRefresh() {
   stopAutoRefresh()
   countdown.value = REFRESH_INTERVAL
   _countdownTimer = setInterval(() => {
+    now.value = Date.now()
     countdown.value -= 1
     if (countdown.value <= 0) {
       refresh()
@@ -312,6 +314,13 @@ const recentCols = [
 
 const recentJobs  = computed(() => lastJobs.value)
 const runningJobs = computed(() => rawRunningJobs.value.map(normaliseJob))
+
+function elapsedSecs(job) {
+  if (!job.starttime) return 0
+  const start = new Date(job.starttime.replace(' ', 'T')).getTime()
+  if (isNaN(start)) return 0
+  return Math.max(0, Math.floor((now.value - start) / 1000))
+}
 
 const maxBytes = computed(() => Math.max(1, ...recentJobs.value.map(j => j.bytes)))
 const maxDurationSecs = computed(() => Math.max(1, ...recentJobs.value.map(j => parseDurationSecs(j.duration))))
