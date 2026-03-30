@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - hyper-v: fix automerging AVHDX differencing disks after RCT backup [PR #2596]
 - docs and comments: fix typos [PR #2598]
 - barri: sync parameter names between plugin and cli [PR #2570]
+- `status subscription` command: adapt to new price-list [PR #2602]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2573]
@@ -2247,4 +2248,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2591]: https://github.com/bareos/bareos/pull/2591
 [PR #2596]: https://github.com/bareos/bareos/pull/2596
 [PR #2598]: https://github.com/bareos/bareos/pull/2598
+[PR #2602]: https://github.com/bareos/bareos/pull/2602
 [unreleased]: https://github.com/bareos/bareos/tree/master
