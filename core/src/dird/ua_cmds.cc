@@ -1549,10 +1549,8 @@ auto SetDeviceCommand::ScanCommandLine(UaContext* ua)
       arguments->autoselect = false;
     } break;
     case parse_bool_result::Error: {
-      ua->ErrorMsg(
-          "Bad value for argument %s: %s (expect one of YES, NO, TRUE, "
-          "FALSE)\n",
-          argument_name[2], argument_value[2]);
+      ua->ErrorMsg("Bad value for argument %s: %s (expected YES or NO)\n",
+                   argument_name[2], argument_value[2]);
       return std::nullopt;
     } break;
   }
@@ -1821,8 +1819,7 @@ static bool EstimateCmd(UaContext* ua, const char*)
           } break;
           case parse_bool_result::Error: {
             ua->ErrorMsg(
-                T_("Invalid value for accurate. "
-                   "It must be yes, no, true, or false.\n"));
+                T_("Invalid value for accurate.  It must be YES or NO.\n"));
             return false;
           } break;
         }

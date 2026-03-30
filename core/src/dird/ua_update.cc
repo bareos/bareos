@@ -258,7 +258,7 @@ static void UpdateVolrecycle(UaContext* ua, char* val, MediaDbRecord* mr)
       recycle = false;
     } break;
     case parse_bool_result::Error: {
-      ua->ErrorMsg(T_("Invalid value. It must be yes, no, true, or false.\n"));
+      ua->ErrorMsg(T_("Invalid value. It must be YES or NO.\n"));
       return;
     } break;
   }
@@ -288,7 +288,7 @@ static void UpdateVolinchanger(UaContext* ua, char* val, MediaDbRecord* mr)
       InChanger = false;
     } break;
     case parse_bool_result::Error: {
-      ua->ErrorMsg(T_("Invalid value. It must be yes, no, true, or false.\n"));
+      ua->ErrorMsg(T_("Invalid value. It must be YES or NO.\n"));
       return;
     } break;
   }

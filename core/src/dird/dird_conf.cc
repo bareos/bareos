@@ -2930,7 +2930,7 @@ static void StoreRunscriptBool(lexer* lc, const ResourceItem* item, int, int)
       SetItemVariable<bool>(*item, false);
     } break;
     case parse_bool_result::Error: {
-      scan_err2(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
+      scan_err2(lc, T_("Expect %s, got: %s"), "YES or NO",
                 lc->str); /* YES and NO must not be translated */
       return;
     } break;

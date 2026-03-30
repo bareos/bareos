@@ -156,8 +156,7 @@ bool GetYesno(UaContext* ua, const char* prompt)
         return true;
       } break;
       case parse_bool_result::Error: {
-        ua->WarningMsg(
-            T_("Invalid response. You must answer yes, no, true, or false.\n"));
+        ua->WarningMsg(T_("Invalid response. You must answer YES or NO.\n"));
       } break;
     }
   }
@@ -202,8 +201,7 @@ int GetEnabled(UaContext* ua, const char* val)
         Enabled = VOL_ARCHIVED;
       } else {
         ua->ErrorMsg(
-            T_("Invalid Enabled value, it must be yes, no, true, false, "
-               "archived\n"));
+            T_("Invalid Enabled value, it must be yes, no, or archived\n"));
         return -1;
       }
     } break;

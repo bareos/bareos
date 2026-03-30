@@ -203,8 +203,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
                 res_run.spool_data_set = true;
               } break;
               case parse_bool_result::Error: {
-                scan_err1(lc, T_("Expect a YES, NO, TRUE, or FALSE; got: %s"),
-                          lc->str);
+                scan_err1(lc, T_("Expect a YES or NO; got: %s"), lc->str);
                 return;
               } break;
             }
@@ -312,8 +311,7 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
                 res_run.accurate_set = true;
               } break;
               case parse_bool_result::Error: {
-                scan_err1(lc, T_("Expect YES, NO, TRUE, or FALSE, got: %s"),
-                          lc->str);
+                scan_err1(lc, T_("Expect YES or NO, got: %s"), lc->str);
                 return;
               } break;
             }
