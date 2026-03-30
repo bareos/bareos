@@ -260,7 +260,7 @@ onMounted(async () => {
       fetchJobs(),
     ])
     const vols = volRes?.volumes ?? volRes?.volume ?? []
-    vol.value = Array.isArray(vols) ? vols[0] : Object.values(vols)[0] ?? vols
+    vol.value = Array.isArray(vols) ? vols[0] : Object.values(vols).flat()[0] ?? null
     jobs.value = jobRes
   } catch (e) {
     error.value = e.message
