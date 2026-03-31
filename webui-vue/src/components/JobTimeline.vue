@@ -219,7 +219,7 @@ const tlTicks = computed(() => {
     const ratio = i / steps
     const d     = new Date(start + ratio * range)
     let label
-    const yy = d.getFullYear().toString().slice(-2)
+    const yy = d.getFullYear().toString()
     const mm = (d.getMonth() + 1).toString().padStart(2, '0')
     const dd = d.getDate().toString().padStart(2, '0')
     if (tlDays.value === 1) {
