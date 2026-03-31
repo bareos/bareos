@@ -428,8 +428,9 @@
                   <text :x="TL_CLIENT_W / 2"
                         :y="span.startRow * TL_ROW_H + span.rowCount * TL_ROW_H / 2 + 4"
                         font-size="11" text-anchor="middle" font-weight="600"
-                        :fill="$q.dark.isActive ? '#aaa' : '#444'"
-                        style="font-family:sans-serif; user-select:none">
+                        :fill="$q.dark.isActive ? '#90caf9' : '#1565c0'"
+                        style="font-family:sans-serif; user-select:none; cursor:pointer"
+                        @click="router.push({ name: 'client-details', params: { name: span.client } })">
                     {{ span.client.length > 14 ? span.client.slice(0, 13) + '\u2026' : span.client }}
                   </text>
                 </g>
@@ -450,8 +451,9 @@
                 <text v-for="(row, i) in tlRows" :key="'name-' + row.client + row.name"
                       :x="tlColsW - 6" :y="i * TL_ROW_H + TL_ROW_H / 2 + 4"
                       font-size="11" text-anchor="end"
-                      :fill="$q.dark.isActive ? '#ccc' : '#555'"
-                      style="font-family:sans-serif; user-select:none">
+                      :fill="$q.dark.isActive ? '#90caf9' : '#1565c0'"
+                      style="font-family:sans-serif; user-select:none; cursor:pointer"
+                      @click="router.push({ name: 'jobs', query: { search: row.name } })">
                   {{ row.name.length > 18 ? row.name.slice(0, 17) + '\u2026' : row.name }}
                 </text>
 
@@ -508,7 +510,7 @@ const $q       = useQuasar()
 const director = useDirectorStore()
 
 const tab          = ref(route.query.action || 'list')
-const search       = ref('')
+const search       = ref(route.query.search || '')
 const statusFilter = ref(route.query.status || '')
 const relativeStart = ref(false)
 const fmtBytes  = formatBytes
