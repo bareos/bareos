@@ -225,7 +225,7 @@ const tlTicks = computed(() => {
     if (tlDays.value === 1) {
       label = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0')
     } else {
-      label = dd + '-' + mm + '-' + yy
+      label = dd + '.' + mm + '.' + yy
     }
     return { x: Math.round(ratio * w), label }
   })
