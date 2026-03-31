@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - systemtests check runscript failed - improve media_vault [PR #2556]
 - Remove shell expansion during directory parsing; add select jobid=XXX support [PR #2509]
 - tests: fix disabling config checking because of newly used pid-file option [PR #2597]
+- Fix gcc 16 build for Fedora 44 and newer [PR #2595]
 
 ### Documentation
 - update bareos-github-banner.png to 13th anniversary [PR #2483]
@@ -2252,5 +2253,6 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2585]: https://github.com/bareos/bareos/pull/2585
 [PR #2588]: https://github.com/bareos/bareos/pull/2588
 [PR #2590]: https://github.com/bareos/bareos/pull/2590
+[PR #2595]: https://github.com/bareos/bareos/pull/2595
 [PR #2597]: https://github.com/bareos/bareos/pull/2597
 [unreleased]: https://github.com/bareos/bareos/tree/master
