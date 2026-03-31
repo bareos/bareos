@@ -157,6 +157,25 @@ static PyThreadState* mainThreadState{nullptr};
 #include "plugins/include/python_plugins_common.inc"
 #include "plugins/include/python_plugin_modules_common.inc"
 
+void wait_for_thread_end()
+{
+  for (;;) {
+    std::unique_lock lock{priv_ctx->execute_mut};
+    priv_ctx->execution_requested.wait(
+        lock, [&] { return priv_ctx->to_execute.has_value(); });
+
+    ASSERT(priv_ctx->to_execute.has_value());
+
+    python_execution_request req = priv_ctx->to_execute.value();
+    priv_ctx->to_execute.reset();
+
+    priv_ctx->request_empty.notify_one();
+    lock.unlock();
+
+    if (req == REQUEST_THREAD_STOP) { break; }
+  }
+}
+
 void run_python_thread(PluginContext* plugin_ctx,
                        PyInterpreterState* main_interp,
                        std::promise<bool>* ready)
@@ -167,20 +186,31 @@ void run_python_thread(PluginContext* plugin_ctx,
   // the main interpreter gil.  To do this correctly, we need to
   // create a new threadstate for that interpreter
   auto* ts_maininterp = PyThreadState_New(main_interp);
+  if (!ts_maininterp) {
+    ready->set_value(false);
+    return wait_for_thread_end();
+  }
   PyEval_RestoreThread(ts_maininterp);
 
   bool ok = true;
 
   PyThreadState* ts = Py_NewInterpreter();
   if (!ts) {
-    ok = false;
-  } else {
-    /* set bareos_core_functions inside of barosdir module */
-    Bareosdir_set_plugin_context(plugin_ctx);
+    ready->set_value(false);
+    PyThreadState_Clear(ts_maininterp);
+
+    // delete the threadstate and release the gil
+    PyThreadState_DeleteCurrent();
+    return wait_for_thread_end();
   }
 
+  /* set bareos_core_functions inside of barosdir module */
+  Bareosdir_set_plugin_context(plugin_ctx);
 
   ready->set_value(ok);
+
+  // release the (shared) gil, so that other plugins can also continue
+  PyEval_SaveThread();
 
   auto* priv_ctx = get_private_context(plugin_ctx);
 
@@ -202,11 +232,16 @@ void run_python_thread(PluginContext* plugin_ctx,
     if (ok) {
       ASSERT(req.first != nullptr);
 
+      // get the gil for the python call
+      PyEval_RestoreThread(ts);
       (*req.first)(req.second);
+      PyEval_SaveThread();
     }
   }
 
   if (ts) {
+    PyEval_RestoreThread(ts);
+
     if (priv_ctx->pModule) { Py_DECREF(priv_ctx->pModule); }
 
     Py_EndInterpreter(ts);
