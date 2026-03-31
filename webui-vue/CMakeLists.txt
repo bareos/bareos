@@ -48,7 +48,8 @@ set(WEBUI_VUE_DIST_INDEX "${WEBUI_VUE_DIST}/index.html")
 # once when updating dependencies.
 add_custom_command(
   OUTPUT "${WEBUI_VUE_DIST_INDEX}"
-  COMMAND npm run build
+  COMMAND ${CMAKE_COMMAND} -E env BAREOS_VERSION=${BAREOS_FULL_VERSION} npm run
+          build
   WORKING_DIRECTORY "${WEBUI_VUE_SRC}"
   DEPENDS ${WEBUI_VUE_SOURCES}
   COMMENT "Building bareos-webui-vue frontend"
