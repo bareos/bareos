@@ -1797,7 +1797,6 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
 
     uint64 NumChunks = Capacity / ChunkSize;
     uint64 BlocksAllocated = 0;
-    uint64 NumBlocks = 0;
 
     if (verbose) {
       fprintf(stderr, "ChunkSize: %lu, NumChunks: %lu\n", ChunkSize, NumChunks);
@@ -1824,7 +1823,6 @@ static inline bool dump_vmdk_stream(const char* json_work_file)
 
       for (uint32 i = 0; i < blocklist->numBlocks; ++i) {
         blocks.push_back(blocklist->blocks[i]);
-        NumBlocks += 1;
         BlocksAllocated += blocklist->blocks[i].length;
       }
 

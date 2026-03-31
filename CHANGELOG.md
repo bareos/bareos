@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Increase read timeout in Proxmox plugin [PR #2545]
 - systemtests check runscript failed - improve media_vault [PR #2568]
 - packaging: add missing DLLs to windows installer [PR #2574]
+- Fix gcc 16 build for Fedora 44 and newer [PR #2604]
 
 ### Documentation
 - docs: add tape speed test, tapestat & sg_logs in troubleshooting [PR #2555]
@@ -2249,4 +2250,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2596]: https://github.com/bareos/bareos/pull/2596
 [PR #2598]: https://github.com/bareos/bareos/pull/2598
 [PR #2602]: https://github.com/bareos/bareos/pull/2602
+[PR #2604]: https://github.com/bareos/bareos/pull/2604
 [unreleased]: https://github.com/bareos/bareos/tree/master
