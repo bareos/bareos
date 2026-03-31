@@ -148,6 +148,10 @@
                   <q-btn v-if="isRunning(props.row.status)"
                          flat round dense size="sm" icon="cancel" color="negative" title="Cancel"
                          @click="confirmCancel(props.row)" class="q-mr-xs" />
+                  <q-btn flat round dense size="sm" icon="restore" color="teal"
+                         title="Restore this job"
+                         :to="{ name: 'restore', query: { client: props.row.client, jobid: props.row.id } }"
+                         class="q-mr-xs" />
                   <q-btn flat round dense size="sm" icon="info" title="Details"
                          :to="{ name: 'job-details', params: { id: props.row.id } }" />
                 </q-td>
@@ -159,44 +163,6 @@
 
       <!-- ── ACTIONS ───────────────────────────────────────────────────────── -->
       <q-tab-panel name="actions" class="q-pa-none q-gutter-md">
-
-        <!-- Running jobs -->
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header row items-center">
-            <span>Running Jobs</span>
-            <q-space />
-            <q-btn v-if="runningJobs.length" flat dense no-caps
-                   icon="cancel" color="white" label="Cancel All"
-                   @click="cancelAll" class="q-mr-xs" />
-            <q-btn flat round dense icon="refresh" color="white" @click="refresh" />
-          </q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-table
-              :rows="runningJobs"
-              :columns="runningColumns"
-              row-key="id"
-              dense flat
-              :pagination="{ rowsPerPage: 10 }"
-              no-data-label="No jobs currently running"
-            >
-              <template #body-cell-client="props">
-                <q-td :props="props">
-                  <router-link :to="{ name: 'client-details', params: { name: props.value } }" class="text-primary">
-                    {{ props.value }}
-                  </router-link>
-                </q-td>
-              </template>
-              <template #body-cell-actions="props">
-                <q-td :props="props" class="text-center">
-                  <q-btn flat round dense size="sm" icon="article" color="primary" title="View log"
-                         :to="{ name: 'job-details', params: { id: props.row.id } }" />
-                  <q-btn flat round dense size="sm" icon="cancel" color="negative" title="Cancel"
-                         @click="confirmCancel(props.row)" />
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
 
         <!-- Enable / Disable jobs -->
         <q-card flat bordered class="bareos-panel">

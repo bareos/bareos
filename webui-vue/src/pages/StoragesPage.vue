@@ -26,8 +26,9 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
-                  <q-btn flat round dense size="sm" icon="info" title="Details" />
-                  <q-btn flat round dense size="sm" icon="monitor_heart" title="Status" />
+                  <q-btn flat round dense size="sm" icon="monitor_heart"
+                         title="Storage Status"
+                         @click="showStorageStatus(props.row.name)" />
                 </q-td>
               </template>
             </q-table>
@@ -227,6 +228,25 @@
         </q-dialog>
       </q-tab-panel>
     </q-tab-panels>
+
+    <!-- Storage Status Dialog -->
+    <q-dialog v-model="storageStatusDlg.open">
+      <q-card style="min-width:600px;max-width:90vw">
+        <q-card-section class="panel-header row items-center">
+          <span>Status: {{ storageStatusDlg.name }}</span>
+          <q-space />
+          <q-btn flat round dense icon="refresh" color="white"
+                 @click="reloadStorageStatus(storageStatusDlg.name)"
+                 :loading="storageStatusDlg.loading" />
+          <q-btn flat round dense icon="close" color="white" v-close-popup class="q-ml-xs" />
+        </q-card-section>
+        <q-card-section>
+          <q-inner-loading :showing="storageStatusDlg.loading" />
+          <div v-if="storageStatusDlg.error" class="text-negative">{{ storageStatusDlg.error }}</div>
+          <div v-else class="console-output">{{ storageStatusDlg.text }}</div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -362,5 +382,26 @@ const storageCols = [
 function statusColor(s) {
   return { Full: 'warning', Append: 'positive', Recycled: 'grey', Error: 'negative',
            Purged: 'grey', Used: 'orange', 'Read-Only': 'blue-grey', Cleaning: 'teal' }[s] || 'info'
+}
+
+// ── Storage Status Dialog ─────────────────────────────────────────────────────
+const storageStatusDlg = ref({ open: false, name: '', loading: false, error: null, text: '' })
+
+async function showStorageStatus(name) {
+  storageStatusDlg.value = { open: true, name, loading: true, error: null, text: '' }
+  await reloadStorageStatus(name)
+}
+
+async function reloadStorageStatus(name) {
+  storageStatusDlg.value.loading = true
+  storageStatusDlg.value.error   = null
+  try {
+    const r = await director.call(`status storage=${name}`)
+    storageStatusDlg.value.text = typeof r === 'string' ? r : JSON.stringify(r, null, 2)
+  } catch (e) {
+    storageStatusDlg.value.error = e.message
+  } finally {
+    storageStatusDlg.value.loading = false
+  }
 }
 </script>

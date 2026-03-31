@@ -99,12 +99,6 @@
                       : 'Version check disabled – click to enable'
                   }}</q-tooltip>
                 </q-btn>
-                <q-btn
-                  v-if="browserReady"
-                  flat dense icon="refresh" size="sm" color="grey-4"
-                  @click="reloadCurrentDir"
-                  :loading="loadingBrowser"
-                />
                 <q-spinner v-if="loadingBrowser && !browserReady" size="20px" color="primary" />
               </div>
             </div>
@@ -309,10 +303,12 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useDirectorStore } from '../stores/director.js'
 import { formatBytes } from '../mock/index.js'
 
 const director = useDirectorStore()
+const route    = useRoute()
 
 // ── Form state ──────────────────────────────────────────────────────────────
 const form = ref({
@@ -795,6 +791,16 @@ function applyVersion() {
 // ── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   await Promise.all([loadClients(), loadRestoreJobs()])
+  // Pre-fill from query params when navigating from the jobs list
+  const qClient = route.query.client
+  const qJobid  = route.query.jobid
+  if (qClient) {
+    form.value.client = qClient
+    await onClientChange(qClient)
+    if (qJobid) {
+      form.value.jobid = Number(qJobid)
+    }
+  }
 }
 
 onMounted(() => { if (director.isConnected) init() })

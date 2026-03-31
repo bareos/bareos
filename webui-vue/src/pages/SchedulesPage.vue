@@ -78,18 +78,30 @@
           <q-card-section class="q-pa-none">
             <q-table :rows="scheduleJobRows" :columns="scheduleJobCols"
                      row-key="idx" dense flat :loading="statusLoading"
-                     :pagination="{ rowsPerPage: 20 }">
-              <template #body-cell-schedEnabled="props">
-                <q-td :props="props" class="text-center">
-                  <q-badge :color="props.value ? 'positive' : 'negative'"
-                           :label="props.value ? 'Enabled' : 'Disabled'" />
-                </q-td>
-              </template>
-              <template #body-cell-jobEnabled="props">
-                <q-td :props="props" class="text-center">
-                  <q-badge :color="props.value ? 'positive' : 'negative'"
-                           :label="props.value ? 'Enabled' : 'Disabled'" />
-                </q-td>
+                     :pagination="{ rowsPerPage: 50 }">
+              <template #body="props">
+                <!-- Group header row when schedule name changes -->
+                <q-tr v-if="props.row._firstInGroup"
+                      class="sched-group-header">
+                  <q-td colspan="4" class="text-weight-bold q-pl-md">
+                    <q-icon :name="props.row.schedEnabled ? 'event' : 'event_busy'"
+                            :color="props.row.schedEnabled ? 'positive' : 'negative'"
+                            size="16px" class="q-mr-xs" />
+                    {{ props.row.schedule }}
+                    <q-badge :color="props.row.schedEnabled ? 'positive' : 'negative'"
+                             :label="props.row.schedEnabled ? 'Enabled' : 'Disabled'"
+                             class="q-ml-sm" />
+                  </q-td>
+                </q-tr>
+                <q-tr :props="props">
+                  <q-td key="job" class="q-pl-lg">{{ props.row.job }}</q-td>
+                  <q-td key="jobEnabled" class="text-center">
+                    <q-badge v-if="props.row.jobEnabled !== null"
+                             :color="props.row.jobEnabled ? 'positive' : 'negative'"
+                             :label="props.row.jobEnabled ? 'Enabled' : 'Disabled'" />
+                    <span v-else>—</span>
+                  </q-td>
+                </q-tr>
               </template>
             </q-table>
           </q-card-section>
@@ -99,6 +111,23 @@
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header">
             <span>Scheduler Preview</span>
+          </q-card-section>
+          <!-- Schedule filter checkboxes -->
+          <q-card-section v-if="allScheduleNames.length" class="q-pb-none">
+            <div class="row items-center q-gutter-sm">
+              <span class="text-caption text-grey-7">Show schedules:</span>
+              <q-checkbox
+                v-for="name in allScheduleNames" :key="name"
+                v-model="visibleScheduleNames"
+                :val="name" :label="name" dense
+                :color="scheduleColor(name) ? undefined : 'primary'"
+              >
+                <template #default>
+                  <span class="q-ml-xs text-caption"
+                        :style="{ color: scheduleColor(name) }">{{ name }}</span>
+                </template>
+              </q-checkbox>
+            </div>
           </q-card-section>
           <q-card-section class="q-pa-sm" style="position:relative">
             <q-inner-loading :showing="statusLoading" />
@@ -323,34 +352,68 @@ async function refreshStatus() {
 // Auto-refresh whenever the visible window changes (immediate: true loads on mount).
 watch(apiDaysRange, refreshStatus, { deep: true, immediate: true })
 
-// Flatten schedules→jobs into table rows
+// Flatten schedules→jobs into table rows with group markers
 const scheduleJobRows = computed(() => {
   const rows = []
+  let lastSched = null
   for (const sched of schedulesData.value) {
     const jobs = Array.isArray(sched.jobs) ? sched.jobs : []
     if (!jobs.length) {
-      rows.push({ idx: rows.length, schedule: sched.name, schedEnabled: sched.enabled, job: '—', jobEnabled: null })
+      rows.push({
+        idx: rows.length,
+        schedule: sched.name,
+        schedEnabled: sched.enabled,
+        job: '—',
+        jobEnabled: null,
+        _firstInGroup: sched.name !== lastSched,
+      })
     } else {
       for (const j of jobs) {
-        rows.push({ idx: rows.length, schedule: sched.name, schedEnabled: sched.enabled, job: j.name, jobEnabled: j.enabled })
+        rows.push({
+          idx: rows.length,
+          schedule: sched.name,
+          schedEnabled: sched.enabled,
+          job: j.name,
+          jobEnabled: j.enabled,
+          _firstInGroup: sched.name !== lastSched,
+        })
       }
     }
+    lastSched = sched.name
   }
   return rows
 })
 
 const scheduleJobCols = [
-  { name: 'schedule',    label: 'Schedule', field: 'schedule',    align: 'left',   sortable: true },
-  { name: 'schedEnabled',label: 'Status',   field: 'schedEnabled',align: 'center'               },
-  { name: 'job',         label: 'Job',      field: 'job',         align: 'left',   sortable: true },
-  { name: 'jobEnabled',  label: 'Job Status',field: 'jobEnabled', align: 'center'               },
+  { name: 'job',        label: 'Job',        field: 'job',        align: 'left',   sortable: false },
+  { name: 'jobEnabled', label: 'Job Status', field: 'jobEnabled', align: 'center'               },
 ]
 
-// ── Calendar ──────────────────────────────────────────────────────────────────
+// ── Schedule visibility filter for calendar ────────────────────────────────
+const allScheduleNames = computed(() =>
+  [...new Set(schedulesData.value.map(s => s.name))]
+)
+
+// visibleScheduleNames: array of schedule names to show in the calendar.
+// Initialised to all schedules when data loads.
+const visibleScheduleNames = ref([])
+
+watch(allScheduleNames, names => {
+  // Add newly discovered schedule names to the visible set
+  for (const n of names) {
+    if (!visibleScheduleNames.value.includes(n)) {
+      visibleScheduleNames.value.push(n)
+    }
+  }
+})
+
 // Group previewData entries by ISO date "YYYY-MM-DD" using the runtime timestamp.
+// Only include entries for currently visible schedules.
 const runsByDate = computed(() => {
+  const visible = visibleScheduleNames.value
   const map = {}
   for (const r of previewData.value) {
+    if (visible.length && !visible.includes(r.schedule)) continue
     const ts = r.runtime
     if (!ts) continue
     const d    = new Date(ts * 1000)
