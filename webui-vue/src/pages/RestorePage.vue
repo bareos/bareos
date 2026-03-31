@@ -89,7 +89,8 @@
                 <q-btn
                   flat dense round size="sm"
                   :icon="versionCheckEnabled ? 'history' : 'history_toggle_off'"
-                  :color="versionCheckEnabled ? 'primary' : 'grey-5'"
+                  color="white"
+                  :style="versionCheckEnabled ? '' : 'opacity:0.45'"
                   @click="toggleVersionCheck"
                 >
                   <q-tooltip>{{
