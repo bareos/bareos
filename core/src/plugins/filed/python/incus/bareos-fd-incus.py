@@ -796,6 +796,8 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         threading.Thread(target=self.process_stderr, args=(self.incus_process.stderr,),
                          daemon=True).start()
         self.zero_digest = self.hash(bytes(self.options.chunk_size))
+
+        bareosfd.JobMessage(bareosfd.M_INFO, "Waiting for Incus to start exporting data\n")
         return bareosfd.bRC_OK
 
     def start_restore_job(self):
@@ -895,6 +897,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         savepkt.fname = entry.name
 
         if isinstance(entry, ChunkEntry):
+            bareosfd.JobMessage(bareosfd.M_DEBUG, f"Backing up {entry.name}\n")
             savepkt.type = bareosfd.FT_REG
             savepkt.statp.st_size = entry.size
             for (offset, field) in enumerate(self.options.hijacked_stat_fields):
@@ -902,6 +905,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         ctypes.c_int64(int.from_bytes(entry.digest[8*offset:8*(offset+1)])).value)
             header = None
         else:
+            bareosfd.JobMessage(bareosfd.M_INFO, f"Backing up {entry.name}\n")
             header = io.BytesIO(populate_pkt(savepkt, entry.tarinfo))
 
         self.current_record = (entry, header)
@@ -1022,6 +1026,10 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         if not data:
                             break
                         name = f"{dst}-{chunk_id:0{self.options.chunk_id_length}d}.chunk"
+                        done = chunk_id * self.options.chunk_size
+                        total = tarinfo.size
+                        self.log_queue.put(f'{dst}: {format_size(done)} / {format_size(total)} '
+                                           f'({done / total:.1%}) done\n')
                         if data.count(0) == len(data):
                             if len(data) == self.options.chunk_size:
                                 digest = self.zero_digest
