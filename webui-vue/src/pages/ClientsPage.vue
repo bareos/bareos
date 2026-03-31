@@ -70,14 +70,8 @@
       </q-tab-panel>
 
       <!-- TIMELINE -->
-      <q-tab-panel name="timeline">
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">Client Timeline</q-card-section>
-          <q-card-section class="text-center text-grey q-py-xl">
-            <q-icon name="timeline" size="48px" class="q-mb-md" />
-            <div>Timeline chart will be rendered here</div>
-          </q-card-section>
-        </q-card>
+      <q-tab-panel name="timeline" class="q-pa-none">
+        <JobTimeline />
       </q-tab-panel>
     </q-tab-panels>
   </q-page>
@@ -87,6 +81,7 @@
 import { ref, computed } from 'vue'
 import { useDirectorFetch, normaliseClient } from '../composables/useDirectorFetch.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
+import JobTimeline from '../components/JobTimeline.vue'
 
 const tab = ref('list')
 
