@@ -160,6 +160,7 @@
                     <span v-else>{{ props.row.name }}</span>
                     <template v-if="!props.row.isDir">
                       <q-btn
+                        v-if="hasMultipleVersions(props.row.fileId)"
                         flat dense round size="xs"
                         :color="hasVersionOverride(props.row.fileId) ? 'orange' : 'grey-5'"
                         icon="history"
@@ -481,6 +482,12 @@ async function fetchDir(pathId) {
       mtime:  f.stat?.mtime ?? 0,
     }))
   currentEntries.value = [...dirs, ...files]
+
+  // Reset version counts for the new directory and check in background.
+  versionCheckDirKey++
+  fileHasVersions.value = new Map()
+  const dirKey = versionCheckDirKey
+  checkVersionsInBackground(files, dirKey)
 }
 
 async function navigateInto(row) {
@@ -603,6 +610,8 @@ function clearBrowserState() {
   selectedFiles.value  = new Map()
   selectedDirs.value   = new Map()
   fileVersionOverrides.value = new Map()
+  fileHasVersions.value = new Map()
+  versionCheckDirKey++
   mergedJobids.value   = ''
   browserError.value   = ''
 }
@@ -664,6 +673,37 @@ const fileVersionOverrides = ref(new Map())
 // Computed for template reactivity (Vue unwraps the ref but Map mutations
 // don't trigger updates — we always replace the Map to force reactivity)
 const hasVersionOverride = (fileId) => fileVersionOverrides.value.has(fileId)
+
+// Tracks which files have multiple versions: Map<fileId, true>
+// Populated in background after each directory load.
+const fileHasVersions = ref(new Map())
+let versionCheckDirKey = 0  // incremented on each directory change to cancel stale checks
+
+function hasMultipleVersions(fileId) {
+  return fileHasVersions.value.has(fileId) || hasVersionOverride(fileId)
+}
+
+async function checkVersionsInBackground(files, dirKey) {
+  if (!files.length) return
+  const jids = mergedJobids.value
+  const client = form.value.client
+  await Promise.allSettled(
+    files.map(async (f) => {
+      if (dirKey !== versionCheckDirKey) return
+      try {
+        const r = await director.call(
+          `.bvfs_versions jobid=${jids} client="${client}" pathid=${f.pathId} fname=${f.name}`
+        )
+        if (dirKey !== versionCheckDirKey) return
+        if ((r?.versions?.length ?? 0) > 1) {
+          const next = new Map(fileHasVersions.value)
+          next.set(f.fileId, true)
+          fileHasVersions.value = next
+        }
+      } catch { /* ignore */ }
+    })
+  )
+}
 
 const versionsCols = [
   { name: 'sel',    label: '',        field: 'sel',                  align: 'center', style: 'width:36px' },
