@@ -157,18 +157,22 @@
                       class="cursor-pointer text-primary"
                       @click="navigateInto(props.row)"
                     >{{ props.row.name }}</span>
-                    <span
-                      v-else
-                      class="cursor-pointer text-primary"
-                      style="text-decoration:underline dotted"
-                      @click="openVersions(props.row)"
-                    >{{ props.row.name }}</span>
-                    <q-badge
-                      v-if="!props.row.isDir && hasVersionOverride(props.row.fileId)"
-                      color="orange" label="v" class="q-ml-xs"
-                    >
-                      <q-tooltip>Specific version selected</q-tooltip>
-                    </q-badge>
+                    <span v-else>{{ props.row.name }}</span>
+                    <template v-if="!props.row.isDir">
+                      <q-btn
+                        flat dense round size="xs"
+                        :color="hasVersionOverride(props.row.fileId) ? 'orange' : 'grey-5'"
+                        icon="history"
+                        class="q-ml-xs"
+                        @click.stop="openVersions(props.row)"
+                      >
+                        <q-tooltip>{{
+                          hasVersionOverride(props.row.fileId)
+                            ? 'Specific version selected – click to change'
+                            : 'Browse file versions'
+                        }}</q-tooltip>
+                      </q-btn>
+                    </template>
                   </q-td>
                   <q-td class="text-right text-caption text-grey-6" style="width:90px">
                     {{ props.row.isDir ? '' : formatBytes(props.row.size) }}
@@ -619,7 +623,14 @@ function levelLabel(l) {
 
 function formatMtime(ts) {
   if (!ts) return ''
-  return new Date(ts * 1000).toLocaleString()
+  const d = new Date(ts * 1000)
+  const yyyy = d.getFullYear()
+  const mm   = (d.getMonth() + 1).toString().padStart(2, '0')
+  const dd   = d.getDate().toString().padStart(2, '0')
+  const hh   = d.getHours().toString().padStart(2, '0')
+  const min  = d.getMinutes().toString().padStart(2, '0')
+  const ss   = d.getSeconds().toString().padStart(2, '0')
+  return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`
 }
 
 function fileIcon(name) {

@@ -55,6 +55,9 @@ done
 # Write file-list for the TestData2 fileset
 echo "${BACKUP_DIR2}" > "${tmp}/file-list2"
 
+# Create updated.conf in the primary backup dir so it is captured in Full
+printf 'version=1.0\n' > "${BackupDirectory}/updated.conf"
+
 # ── Run Full backups for all four jobs (both clients) ─────────────────────
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
@@ -77,7 +80,9 @@ run_bconsole
 for i in $(seq 51 60); do
   printf 'new doc %d\n' "$i" > "${BACKUP_DIR2}/docs/doc${i}.txt"
 done
-printf 'updated config\n' > "${BackupDirectory}/updated.conf"
+# Modify updated.conf so it is captured again in the Incremental backup,
+# giving us two distinct versions to test the version restore feature.
+printf 'version=2.0\nupdated=yes\n' > "${BackupDirectory}/updated.conf"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
