@@ -259,8 +259,14 @@ onMounted(async () => {
       director.call(`llist volume=${volumeName}`),
       fetchJobs(),
     ])
-    const vols = volRes?.volumes ?? volRes?.volume ?? []
-    vol.value = Array.isArray(vols) ? vols[0] : Object.values(vols).flat()[0] ?? null
+    // `llist volume=xxx` returns { volume: { <fields> } } (flat object, not
+    // array). `llist volumes` would return { volumes: [ ... ] }.
+    const raw = volRes?.volumes ?? volRes?.volume ?? null
+    if (Array.isArray(raw)) {
+      vol.value = raw[0] ?? null
+    } else {
+      vol.value = raw  // flat object – is the volume record itself
+    }
     jobs.value = jobRes
   } catch (e) {
     error.value = e.message
