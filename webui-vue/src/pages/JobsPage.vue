@@ -536,19 +536,13 @@ const filteredJobs = computed(() => {
   )
 })
 
-const maxBytesLog = computed(() => Math.log(Math.max(1, ...filteredJobs.value.map(j => j.bytes)) + 1))
-const maxFilesLog = computed(() => Math.log(Math.max(1, ...filteredJobs.value.map(j => j.files)) + 1))
-const maxDurationLog = computed(() => {
-  const max = Math.max(1, ...filteredJobs.value.map(j => parseDurationSecs(j.duration)))
-  return Math.log(max + 1)
-})
+const maxBytes    = computed(() => Math.max(1, ...filteredJobs.value.map(j => j.bytes)))
+const maxFiles    = computed(() => Math.max(1, ...filteredJobs.value.map(j => j.files)))
+const maxDuration = computed(() => Math.max(1, ...filteredJobs.value.map(j => parseDurationSecs(j.duration))))
 
-function bytesGauge(val)  { return Math.log(val + 1) / maxBytesLog.value }
-function filesGauge(val)  { return Math.log(val + 1) / maxFilesLog.value }
-function durationGauge(str) {
-  const secs = parseDurationSecs(str)
-  return Math.log(secs + 1) / maxDurationLog.value
-}
+function bytesGauge(val)    { return (val || 0) / maxBytes.value }
+function filesGauge(val)    { return (val || 0) / maxFiles.value }
+function durationGauge(str) { return parseDurationSecs(str) / maxDuration.value }
 
 function jobSpeedBps(row) {
   const secs = parseDurationSecs(row.duration)
@@ -556,13 +550,10 @@ function jobSpeedBps(row) {
   const bytes = typeof row.bytes === 'string' ? parseFloat(row.bytes) : (row.bytes || 0)
   return bytes / secs
 }
-const maxSpeedLog = computed(() => {
-  const max = Math.max(1, ...filteredJobs.value
-    .filter(j => !isRunning(j.status))
-    .map(j => jobSpeedBps(j)))
-  return Math.log(max + 1)
-})
-function speedGauge(row) { return Math.log(jobSpeedBps(row) + 1) / maxSpeedLog.value }
+const maxSpeed = computed(() => Math.max(1, ...filteredJobs.value
+  .filter(j => !isRunning(j.status))
+  .map(j => jobSpeedBps(j))))
+function speedGauge(row) { return jobSpeedBps(row) / maxSpeed.value }
 
 const runningJobs  = computed(() => jobs.value.filter(j => isRunning(j.status)))
 
