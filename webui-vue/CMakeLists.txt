@@ -45,35 +45,12 @@ execute_process(
 set(WEBUI_VUE_SRC "${CMAKE_CURRENT_SOURCE_DIR}")
 set(WEBUI_VUE_DIST "${WEBUI_VUE_SRC}/dist")
 
-file(GLOB_RECURSE WEBUI_VUE_SOURCES "${WEBUI_VUE_SRC}/src/*.vue"
-     "${WEBUI_VUE_SRC}/src/*.js" "${WEBUI_VUE_SRC}/src/*.scss"
-)
-# Exclude the generated version file: it is updated by configure_file and
-# should not trigger a dist rebuild on its own (the dist is committed and
-# rebuilt manually before each release commit).
-list(FILTER WEBUI_VUE_SOURCES EXCLUDE REGEX
-     "src/generated/bareos-version\\.js$"
-)
-file(GLOB WEBUI_VUE_SOURCES_ROOT "${WEBUI_VUE_SRC}/index.html"
-     "${WEBUI_VUE_SRC}/package.json" "${WEBUI_VUE_SRC}/vite.config.js"
-)
-list(APPEND WEBUI_VUE_SOURCES ${WEBUI_VUE_SOURCES_ROOT})
-
-set(WEBUI_VUE_DIST_INDEX "${WEBUI_VUE_DIST}/index.html")
-
-# Install node_modules if needed, then build the frontend.
-# dist/index.html is committed so CMake skips this when sources are unchanged.
-add_custom_command(
-  OUTPUT "${WEBUI_VUE_DIST_INDEX}"
-  COMMAND npm install
-  COMMAND npm run build
-  WORKING_DIRECTORY "${WEBUI_VUE_SRC}"
-  DEPENDS ${WEBUI_VUE_SOURCES}
-  COMMENT "Building bareos-webui-vue frontend"
-  VERBATIM
-)
-
-add_custom_target(bareos-webui-vue-build ALL DEPENDS "${WEBUI_VUE_DIST_INDEX}")
+# dist/ is pre-built by developers and committed to the repository.
+# CMake does not run npm — just installs the committed dist/ files.
+# To update the frontend, run:
+#   cd webui-vue && npm install && npm run build
+# then commit the updated dist/.
+add_custom_target(bareos-webui-vue-build ALL)
 
 install(
   DIRECTORY ${WEBUI_VUE_DIST}/
