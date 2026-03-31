@@ -31,7 +31,15 @@ configure_file(
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/generated/bareos-version.js.in
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/generated/bareos-version.js @ONLY
+  ${CMAKE_CURRENT_BINARY_DIR}/bareos-version.js.tmp @ONLY
+)
+# Only overwrite bareos-version.js when the content changes, to avoid
+# making dist/index.html appear stale on every cmake run.
+execute_process(
+  COMMAND
+    ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_CURRENT_BINARY_DIR}/bareos-version.js.tmp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/generated/bareos-version.js
 )
 
 set(WEBUI_VUE_SRC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -40,6 +48,12 @@ set(WEBUI_VUE_DIST "${WEBUI_VUE_SRC}/dist")
 file(GLOB_RECURSE WEBUI_VUE_SOURCES "${WEBUI_VUE_SRC}/src/*.vue"
      "${WEBUI_VUE_SRC}/src/*.js" "${WEBUI_VUE_SRC}/src/*.scss"
 )
+# Exclude the generated version file: it is updated by configure_file and
+# should not trigger a dist rebuild on its own (the dist is committed and
+# rebuilt manually before each release commit).
+list(FILTER WEBUI_VUE_SOURCES EXCLUDE REGEX
+     "src/generated/bareos-version\\.js$"
+)
 file(GLOB WEBUI_VUE_SOURCES_ROOT "${WEBUI_VUE_SRC}/index.html"
      "${WEBUI_VUE_SRC}/package.json" "${WEBUI_VUE_SRC}/vite.config.js"
 )
@@ -47,12 +61,11 @@ list(APPEND WEBUI_VUE_SOURCES ${WEBUI_VUE_SOURCES_ROOT})
 
 set(WEBUI_VUE_DIST_INDEX "${WEBUI_VUE_DIST}/index.html")
 
-# Use dist/index.html as the build output so CMake's dependency tracking skips
-# the npm build when the checked-in dist is already up-to-date. Run `npm run
-# build` (not `npm ci`) so no network access is required; run `npm ci` manually
-# once when updating dependencies.
+# Install node_modules if needed, then build the frontend.
+# dist/index.html is committed so CMake skips this when sources are unchanged.
 add_custom_command(
   OUTPUT "${WEBUI_VUE_DIST_INDEX}"
+  COMMAND npm install
   COMMAND npm run build
   WORKING_DIRECTORY "${WEBUI_VUE_SRC}"
   DEPENDS ${WEBUI_VUE_SOURCES}
