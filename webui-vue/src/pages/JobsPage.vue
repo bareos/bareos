@@ -451,9 +451,8 @@
                 <text v-for="(row, i) in tlRows" :key="'name-' + row.client + row.name"
                       :x="tlColsW - 6" :y="i * TL_ROW_H + TL_ROW_H / 2 + 4"
                       font-size="11" text-anchor="end"
-                      :fill="$q.dark.isActive ? '#90caf9' : '#1565c0'"
-                      style="font-family:sans-serif; user-select:none; cursor:pointer"
-                      @click="router.push({ name: 'jobs', query: { search: row.name } })">
+                      :fill="$q.dark.isActive ? '#ccc' : '#555'"
+                      style="font-family:sans-serif; user-select:none">
                   {{ row.name.length > 18 ? row.name.slice(0, 17) + '\u2026' : row.name }}
                 </text>
 
