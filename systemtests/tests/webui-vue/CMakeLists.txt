@@ -79,5 +79,5 @@ configurefilestosystemtest(
 # it has data to display.  Use systemtest_requires() to append to – not replace
 # – the FIXTURES_REQUIRED property set by create_systemtest().
 if(PYMODULE_3_PLAYWRIGHT_FOUND)
-  systemtest_requires(playwright simple-backup)
+  systemtest_requires(playwright create-backups)
 endif()
