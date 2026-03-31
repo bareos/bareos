@@ -391,8 +391,9 @@
               No jobs in this period.
             </div>
             <div v-else ref="svgContainer" class="tl-container" @mouseleave="hideTooltip">
-              <svg :width="svgW" :height="svgH">                <!-- Alternating row backgrounds -->
-                <rect v-for="(row, i) in tlRows" :key="'bg-' + row.name"
+              <svg :width="svgW" :height="svgH">
+                <!-- Alternating row backgrounds -->
+                <rect v-for="(row, i) in tlRows" :key="'bg-' + row.client + row.name"
                       x="0" :y="i * TL_ROW_H"
                       :width="svgW" :height="TL_ROW_H"
                       :fill="i % 2 === 0
@@ -401,33 +402,63 @@
 
                 <!-- Vertical grid lines for time axis -->
                 <line v-for="t in tlTicks" :key="'grid-' + t.label"
-                      :x1="TL_LABEL_W + t.x" y1="0"
-                      :x2="TL_LABEL_W + t.x" :y2="svgH - TL_AXIS_H"
+                      :x1="tlColsW + t.x" y1="0"
+                      :x2="tlColsW + t.x" :y2="svgH - TL_AXIS_H"
                       :stroke="$q.dark.isActive ? '#3a3a3a' : '#ebebeb'"
                       stroke-width="1" />
 
                 <!-- Axis tick labels -->
                 <text v-for="t in tlTicks" :key="'tick-' + t.label"
-                      :x="TL_LABEL_W + t.x" :y="svgH - 5"
+                      :x="tlColsW + t.x" :y="svgH - 5"
                       font-size="10" text-anchor="middle"
                       :fill="$q.dark.isActive ? '#777' : '#bbb'"
                       style="font-family:sans-serif; user-select:none">
                   {{ t.label }}
                 </text>
 
+                <!-- Client column: label centered over all rows for that client -->
+                <g v-for="span in tlClientSpans" :key="'client-' + span.client">
+                  <!-- Separator line above each client group (except the first) -->
+                  <line v-if="span.startRow > 0"
+                        x1="0" :y1="span.startRow * TL_ROW_H"
+                        :x2="svgW" :y2="span.startRow * TL_ROW_H"
+                        :stroke="$q.dark.isActive ? '#444' : '#ccc'"
+                        stroke-width="1" />
+                  <!-- Client name, vertically centered across its rows -->
+                  <text :x="TL_CLIENT_W / 2"
+                        :y="span.startRow * TL_ROW_H + span.rowCount * TL_ROW_H / 2 + 4"
+                        font-size="11" text-anchor="middle" font-weight="600"
+                        :fill="$q.dark.isActive ? '#aaa' : '#444'"
+                        style="font-family:sans-serif; user-select:none">
+                    {{ span.client.length > 14 ? span.client.slice(0, 13) + '\u2026' : span.client }}
+                  </text>
+                </g>
+
+                <!-- Vertical divider between client column and job name column -->
+                <line :x1="TL_CLIENT_W" y1="0"
+                      :x2="TL_CLIENT_W" :y2="svgH - TL_AXIS_H"
+                      :stroke="$q.dark.isActive ? '#444' : '#ccc'"
+                      stroke-width="1" />
+
+                <!-- Vertical divider between job name column and chart area -->
+                <line :x1="tlColsW" y1="0"
+                      :x2="tlColsW" :y2="svgH - TL_AXIS_H"
+                      :stroke="$q.dark.isActive ? '#444' : '#ccc'"
+                      stroke-width="1" />
+
                 <!-- Job name labels -->
-                <text v-for="(row, i) in tlRows" :key="'name-' + row.name"
-                      :x="TL_LABEL_W - 6" :y="i * TL_ROW_H + TL_ROW_H / 2 + 4"
+                <text v-for="(row, i) in tlRows" :key="'name-' + row.client + row.name"
+                      :x="tlColsW - 6" :y="i * TL_ROW_H + TL_ROW_H / 2 + 4"
                       font-size="11" text-anchor="end"
                       :fill="$q.dark.isActive ? '#ccc' : '#555'"
                       style="font-family:sans-serif; user-select:none">
-                  {{ row.name.length > 20 ? row.name.slice(0, 19) + '\u2026' : row.name }}
+                  {{ row.name.length > 18 ? row.name.slice(0, 17) + '\u2026' : row.name }}
                 </text>
 
                 <!-- Job bars — all runs for each job name in the same row -->
-                <g v-for="(row, i) in tlRows" :key="'grp-' + row.name">
+                <g v-for="(row, i) in tlRows" :key="'grp-' + row.client + row.name">
                   <rect v-for="run in row.runs" :key="'bar-' + run.id"
-                        :x="TL_LABEL_W + tlBarStart(run)"
+                        :x="tlColsW + tlBarStart(run)"
                         :y="i * TL_ROW_H + TL_BAR_PAD"
                         :width="Math.max(2, tlBarWidth(run))"
                         :height="TL_ROW_H - TL_BAR_PAD * 2"
@@ -444,6 +475,7 @@
             <div v-if="tlTooltip.visible" class="tl-tooltip"
                  :style="`left:${tlTooltip.x}px; top:${tlTooltip.y}px`">
               <div class="text-weight-bold q-mb-xs">{{ tlTooltip.job.name }}</div>
+              <div>Client: {{ tlTooltip.job.client }}</div>
               <div>ID: {{ tlTooltip.job.id }}</div>
               <div>Status: {{ jobStatusMap[tlTooltip.job.status]?.label ?? tlTooltip.job.status }}</div>
               <div>Start: {{ tlTooltip.job.starttime }}</div>
@@ -829,10 +861,11 @@ async function submitRerun() {
 }
 
 // ── timeline ──────────────────────────────────────────────────────────────────
-const TL_LABEL_W = 150  // left column width for job name labels
-const TL_ROW_H   = 28   // height of each row
-const TL_BAR_PAD = 5    // vertical padding inside each row
-const TL_AXIS_H  = 24   // bottom strip for time-axis labels
+const TL_CLIENT_W = 110  // width of the client name column
+const TL_LABEL_W  = 140  // width of the job name column
+const TL_ROW_H    = 28   // height of each row
+const TL_BAR_PAD  = 5    // vertical padding inside each row
+const TL_AXIS_H   = 24   // bottom strip for time-axis labels
 
 const tlDays       = ref(1)
 const tlRawJobs    = ref([])
@@ -845,7 +878,8 @@ let _tlResizeObs   = null
 const tlStart  = computed(() => Date.now() - tlDays.value * 24 * 3600 * 1000)
 const tlRange  = computed(() => Date.now() - tlStart.value)
 const svgW     = computed(() => Math.max(containerW.value, 600))
-const tlChartW = computed(() => Math.max(svgW.value - TL_LABEL_W, 1))
+const tlColsW  = computed(() => TL_CLIENT_W + TL_LABEL_W)
+const tlChartW = computed(() => Math.max(svgW.value - tlColsW.value, 1))
 const svgH     = computed(() => tlRows.value.length * TL_ROW_H + TL_AXIS_H)
 
 function tlParseTS(str) {
@@ -853,22 +887,42 @@ function tlParseTS(str) {
   return new Date(str.replace(' ', 'T')).getTime()
 }
 
+// Flat list of { name, client, runs } rows, sorted by client then job name.
 const tlRows = computed(() => {
-  const now    = Date.now()
-  const groups = new Map()
+  const now = Date.now()
+  // client → (jobName → { name, client, runs })
+  const clientGroups = new Map()
   for (const raw of (tlRawJobs.value ?? [])) {
     const j = normaliseJob(raw)
     const s = tlParseTS(j.starttime)
     const e = tlParseTS(j.endtime) ?? now
     if (s === null || e < tlStart.value || s > now) continue
-    if (!groups.has(j.name)) groups.set(j.name, { name: j.name, runs: [] })
-    groups.get(j.name).runs.push(j)
+    if (!clientGroups.has(j.client)) clientGroups.set(j.client, new Map())
+    const jobMap = clientGroups.get(j.client)
+    if (!jobMap.has(j.name)) jobMap.set(j.name, { name: j.name, client: j.client, runs: [] })
+    jobMap.get(j.name).runs.push(j)
   }
-  // One row per unique job name, sorted alphabetically.
-  // Runs within each row are sorted by start time (oldest first).
-  return [...groups.values()]
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(g => ({ ...g, runs: g.runs.sort((a, b) => (tlParseTS(a.starttime) ?? 0) - (tlParseTS(b.starttime) ?? 0)) }))
+  const rows = []
+  for (const [, jobMap] of [...clientGroups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    for (const g of [...jobMap.values()].sort((a, b) => a.name.localeCompare(b.name))) {
+      rows.push({ ...g, runs: g.runs.sort((a, b) => (tlParseTS(a.starttime) ?? 0) - (tlParseTS(b.starttime) ?? 0)) })
+    }
+  }
+  return rows
+})
+
+// One entry per client: which rows it spans, for drawing the client column.
+const tlClientSpans = computed(() => {
+  const spans = []
+  let i = 0
+  while (i < tlRows.value.length) {
+    const client = tlRows.value[i].client
+    let count = 0
+    while (i + count < tlRows.value.length && tlRows.value[i + count].client === client) count++
+    spans.push({ client, startRow: i, rowCount: count })
+    i += count
+  }
+  return spans
 })
 
 const tlTicks = computed(() => {
