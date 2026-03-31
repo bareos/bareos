@@ -152,6 +152,19 @@ def open_archive(f, compression):
     return f
 
 
+def format_size(size):
+    """Make a size in bytes human-readable (base 1000)"""
+    units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB']
+    size = float(size)
+    for unit in units[:-1]:
+        if size < 1000:
+            if unit == 'B':
+                return f'{int(size)} B'
+            return f'{size:.2f} {unit}'
+        size /= 1000
+    return f'{size:.2f} {unit[-1]}'
+
+
 class LogQueue:
     """
     Log queue formatting job messages. This works in two times, as sending job messages to the core
@@ -167,6 +180,8 @@ class LogQueue:
             self.queue.put((bareosfd.M_FATAL, line))
         elif line_lower.startswith('warn'):
             self.queue.put((bareosfd.M_WARNING, line))
+        elif line_lower.startswith('debug'):
+            self.queue.put((bareosfd.M_DEBUG, line))
         else:
             self.queue.put((bareosfd.M_INFO, line))
 
@@ -230,17 +245,24 @@ class DataPipe:
         return os.close(self.r)
 
 
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes, too-many-arguments, too-many-positional-arguments
 class ChunkCollector:
     """
     Image chunk collector. This reorders unordered chunks, tries to fit them in RAM as much as
     possible, and dumps data to disk in case too many non-consecutive chunks are received.
+    :param fname: The file name
     :param chunk_size: The size in bytes of a full chunk
+    :param st_size: The stat size
     :param max_ram_chunks: The amount of chunks to store in RAM
+    :param log_queue: The log queue
     :param tmpdir: The optional directory in which to store temporary chunks
     """
-    def __init__(self, chunk_size, max_ram_chunks, tmpdir=None):
+    def __init__(self, fname, chunk_size, st_size, max_ram_chunks, log_queue, tmpdir=None):
+        self.fname = fname
+        self.chunk_size = chunk_size
+        self.st_size = st_size
         self.max_ram_chunks = max_ram_chunks
+        self.log_queue = log_queue
         self.dir = tmpdir
         # This class performs concurrent data access to mutable structures, so we use a reentrant
         # lock with a wake-up condition
@@ -292,6 +314,7 @@ class ChunkCollector:
 
     def write_to_disk(self, chunk_id, data):
         """Write a chunk to disk"""
+        self.log_queue.put(f'DEBUG: evacuating chunk {chunk_id} to disk\n')
         with self.lock:
             heapq.heappush(self.disk_chunk_ids, chunk_id)
             f = tempfile.TemporaryFile(dir=self.dir)
@@ -312,6 +335,7 @@ class ChunkCollector:
             # Refresh from disk. If we are lucky, it is still cached.
             if self.disk_chunk_ids:
                 chunk_id = heapq.heappop(self.disk_chunk_ids)
+                self.log_queue.put(f'DEBUG: refreshing chunk {chunk_id} from disk\n')
                 f = self.disk_chunk_fds[chunk_id]
                 self.add(chunk_id, f.read())
                 f.close()
@@ -338,6 +362,10 @@ class ChunkCollector:
             # much as possible.
             with self.lock:
                 self.lock.wait_for(self.ready)
+                done = self.next_chunk * self.chunk_size
+                total = self.st_size
+                self.log_queue.put(f'{self.fname}: {format_size(done)} / {format_size(total)} '
+                                   f'({done / total:.1%}) restored\n')
                 if self.next_chunk in self.zero_chunk_ids:
                     data.extend(self.zero_chunk)
                 else:
@@ -815,15 +843,26 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def end_restore_job(self):
         """End a restore job"""
-        if self.chunk_io_thread is not None:
-            self.chunk_io_thread.join()
+        # Because self.chunk_io_thread can become None while the loop is running, and because it’s
+        # difficult to ensure atomicity here, we rather catch AttributeErrors.
+        try:
+            while self.chunk_io_thread.is_alive():
+                # Wait at most 5 seconds before flushing the log queue
+                self.chunk_io_thread.join(5)
+                rc = self.log_queue.flush()
+                if rc != bareosfd.bRC_OK:
+                    return rc
+        except AttributeError:
+            pass
         self.queue.shutdown()
         try:
             while True:
                 entry = self.queue.get()
+                bareosfd.JobMessage(bareosfd.M_INFO, f"Restoring {entry.tarinfo.name}\n")
                 self.tar.addfile(entry.tarinfo, entry.reader)
         except queue.ShutDown:
             pass
+        bareosfd.JobMessage(bareosfd.M_INFO, "Waiting for Incus to complete\n")
         self.tar.close()
         if self.incus_process is not None:
             # Incus reacts to EOF, the zero-blocks are not enough so we need to close the pipe
@@ -875,12 +914,17 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
     def create_file(self, restorepkt):
         """Process a Bareos restore packet"""
+        # For good measure, flush the log queue, as it’s the only place where we can.
+        rc = self.log_queue.flush()
+        if rc != bareosfd.bRC_OK:
+            return rc
         if self.tar is None:
             self.start_restore_job()
         restorepkt.create_status = bareosfd.CF_EXTRACT
         relpath = os.path.relpath(restorepkt.ofname, restorepkt.where)
         fname = f'backup{relpath.removeprefix(self.prefix)}'
         if self.is_chunk(fname):
+            bareosfd.JobMessage(bareosfd.M_DEBUG, f"Restoring {fname}\n")
             # Here, we initialize the chunk collector
             fname, chunk_str = fname.removesuffix('.chunk').rsplit('-', 1)
             chunk_id = int(chunk_str)
@@ -892,9 +936,10 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     # still, if the behavior were to change, we wouldn't have to dramatically change
                     # the code structure.
                     return please_open_an_issue(1)
-                self.collectors[fname] = ChunkCollector(self.options.chunk_size,
+                self.collectors[fname] = ChunkCollector(fname, self.options.chunk_size,
+                                                        restorepkt.statp.st_size,
                                                         self.options.restore_buffer_depth,
-                                                        self.options.temp_dir)
+                                                        self.log_queue, self.options.temp_dir)
             if chunk_id == 0:
                 # We consider that receiving the first chunk of data should be the trigger to switch
                 # to chunk streaming. This may not be the wisest heuristic, but it certainly is the
@@ -923,12 +968,14 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         if self.current_image is not None:
             # The collector is currently streaming into our TAR, so we have to buffer the data.
             # pylint: disable=function-redefined
+            bareosfd.JobMessage(bareosfd.M_DEBUG, f"Buffering {fname}\n")
             def writer():
                 with open(self.data_pipe.r, 'rb') as r:
                     restore_tarinfo(tarinfo, restorepkt, r)
                     self.queue.put(RegularEntry(fname, io.BytesIO(r.read()), tarinfo))
             self.current_writer = writer
             return bareosfd.bRC_OK
+        bareosfd.JobMessage(bareosfd.M_INFO, f"Restoring {fname}\n")
         # Here, we can bypass the DataPipe buffering and directly connect to the read pipe
         # pylint: disable=function-redefined
         def writer():
