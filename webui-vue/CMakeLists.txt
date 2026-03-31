@@ -29,6 +29,11 @@ configure_file(
   ${CMAKE_CURRENT_BINARY_DIR}/install/apache/bareos-webui-vue.conf @ONLY
 )
 
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/generated/bareos-version.js.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/generated/bareos-version.js @ONLY
+)
+
 set(WEBUI_VUE_SRC "${CMAKE_CURRENT_SOURCE_DIR}")
 set(WEBUI_VUE_DIST "${WEBUI_VUE_SRC}/dist")
 
@@ -48,8 +53,7 @@ set(WEBUI_VUE_DIST_INDEX "${WEBUI_VUE_DIST}/index.html")
 # once when updating dependencies.
 add_custom_command(
   OUTPUT "${WEBUI_VUE_DIST_INDEX}"
-  COMMAND ${CMAKE_COMMAND} -E env BAREOS_VERSION=${BAREOS_FULL_VERSION} npm run
-          build
+  COMMAND npm run build
   WORKING_DIRECTORY "${WEBUI_VUE_SRC}"
   DEPENDS ${WEBUI_VUE_SOURCES}
   COMMENT "Building bareos-webui-vue frontend"

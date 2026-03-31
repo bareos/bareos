@@ -189,11 +189,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import bareosLogo from '../assets/bareos-logo-small.png'
+import { bareosVersion as appVersion } from '../generated/bareos-version.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
-
-/* global __BAREOS_VERSION__ */
-const appVersion = __BAREOS_VERSION__
 
 const $q       = useQuasar()
 const auth     = useAuthStore()
