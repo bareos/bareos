@@ -219,12 +219,12 @@ const tlTicks = computed(() => {
     const ratio = i / steps
     const d     = new Date(start + ratio * range)
     let label
+    const mm = (d.getMonth() + 1).toString().padStart(2, '0')
+    const dd = d.getDate().toString().padStart(2, '0')
     if (tlDays.value === 1) {
       label = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0')
-    } else if (tlDays.value === 7) {
-      label = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()] + '\u00a0' + d.getDate()
     } else {
-      label = (d.getMonth() + 1) + '/' + d.getDate()
+      label = mm + '-' + dd
     }
     return { x: Math.round(ratio * w), label }
   })

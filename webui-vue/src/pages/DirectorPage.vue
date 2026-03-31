@@ -154,15 +154,82 @@
       </q-tab-panel>
 
       <!-- SUBSCRIPTION -->
-      <q-tab-panel name="subscription">
-        <q-card flat bordered class="bareos-panel" style="max-width:600px">
-          <q-card-section class="panel-header">Subscription</q-card-section>
+      <q-tab-panel name="subscription" class="q-pa-none">
+        <q-card flat bordered class="bareos-panel" style="max-width:800px">
+          <q-card-section class="panel-header row items-center">
+            <span>Subscription</span>
+            <q-space />
+            <q-btn flat round dense icon="refresh" color="white"
+                   @click="refreshSubscription" :loading="subscriptionLoading" />
+          </q-card-section>
           <q-card-section>
-            <q-list dense separator>
-              <q-item><q-item-section class="text-weight-medium" style="max-width:180px">Subscription Status</q-item-section><q-item-section><q-badge color="info" label="Community" /></q-item-section></q-item>
-            </q-list>
-            <q-btn class="q-mt-md" color="primary" label="Get Official Support" icon="open_in_new"
-                   href="https://www.bareos.com/subscription/" target="_blank" no-caps />
+            <q-inner-loading :showing="subscriptionLoading" />
+            <div v-if="subscriptionError" class="text-negative">{{ subscriptionError }}</div>
+            <template v-else-if="subscriptionData">
+              <!-- Meta info -->
+              <q-list dense separator class="q-mb-md">
+                <q-item>
+                  <q-item-section class="text-weight-medium" style="max-width:160px">Version</q-item-section>
+                  <q-item-section>{{ subscriptionData.version }}</q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section class="text-weight-medium" style="max-width:160px">OS</q-item-section>
+                  <q-item-section>{{ subscriptionData.os }}</q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section class="text-weight-medium" style="max-width:160px">Binary Info</q-item-section>
+                  <q-item-section>{{ subscriptionData['binary-info'] }}</q-item-section>
+                </q-item>
+                <q-item>
+                  <q-item-section class="text-weight-medium" style="max-width:160px">Report Time</q-item-section>
+                  <q-item-section>{{ subscriptionData['report-time'] }}</q-item-section>
+                </q-item>
+              </q-list>
+
+              <!-- Backup unit totals -->
+              <div class="text-subtitle2 q-mb-xs">Backup Unit Totals</div>
+              <q-list dense separator class="q-mb-md">
+                <q-item v-for="(val, key) in subscriptionData['total-units-required']" :key="key">
+                  <q-item-section class="text-weight-medium text-capitalize" style="max-width:160px">{{ key }}</q-item-section>
+                  <q-item-section>
+                    <q-badge :color="key === 'remaining' && Number(val) < 0 ? 'negative' : 'primary'" :label="val" />
+                  </q-item-section>
+                </q-item>
+              </q-list>
+
+              <!-- Per-client backup unit detail -->
+              <div class="text-subtitle2 q-mb-xs">Backup Unit Detail</div>
+              <q-table
+                flat bordered dense
+                :rows="subscriptionData['unit-detail']"
+                :columns="subscriptionUnitCols"
+                row-key="client"
+                hide-pagination
+                :rows-per-page-options="[0]"
+                class="q-mb-md"
+              />
+
+              <!-- Uncategorized clients/filesets -->
+              <template v-if="subscriptionData['filesets-not-catogorized'] && subscriptionData['filesets-not-catogorized'].length">
+                <div class="text-subtitle2 q-mb-xs">Clients/Filesets Not Yet Categorized</div>
+                <q-table
+                  flat bordered dense
+                  :rows="subscriptionData['filesets-not-catogorized']"
+                  row-key="client"
+                  hide-pagination
+                  :rows-per-page-options="[0]"
+                  class="q-mb-md"
+                />
+              </template>
+
+              <!-- Checksum -->
+              <div class="text-caption text-grey q-mb-md">
+                Checksum: {{ subscriptionData.checksum }}
+              </div>
+
+              <q-btn color="primary" label="Get Official Support" icon="open_in_new"
+                     href="https://www.bareos.com/subscription/" target="_blank" no-caps />
+            </template>
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -236,7 +303,36 @@ const messagesText = computed(() => {
 
 refreshStatus()
 refreshMessages()
-watch(tab, (t) => { if (t === 'catalog') loadEmptyJobs() })
+watch(tab, (t) => {
+  if (t === 'catalog') loadEmptyJobs()
+  if (t === 'subscription') refreshSubscription()
+})
+
+// ── Subscription ──────────────────────────────────────────────────────────────
+const subscriptionLoading = ref(false)
+const subscriptionError   = ref(null)
+const subscriptionData    = ref(null)
+
+const subscriptionUnitCols = [
+  { name: 'client',       label: 'Client',        field: 'client',       align: 'left' },
+  { name: 'fileset',      label: 'Fileset',        field: 'fileset',      align: 'left' },
+  { name: 'normal_units', label: 'Normal Units',   field: 'normal_units', align: 'right' },
+  { name: 'db_units',     label: 'DB Units',       field: 'db_units',     align: 'right' },
+  { name: 'vm_units',     label: 'VM Units',       field: 'vm_units',     align: 'right' },
+  { name: 'filer_units',  label: 'Filer Units',    field: 'filer_units',  align: 'right' },
+]
+
+async function refreshSubscription() {
+  subscriptionLoading.value = true
+  subscriptionError.value   = null
+  try {
+    subscriptionData.value = await director.call('status subscription all')
+  } catch (e) {
+    subscriptionError.value = e.message
+  } finally {
+    subscriptionLoading.value = false
+  }
+}
 
 // ── Catalog Maintenance ───────────────────────────────────────────────────────
 const emptyJobsLoading  = ref(false)
