@@ -87,6 +87,18 @@
                   {{ selectedFiles.size }} file(s), {{ selectedDirs.size }} folder(s) selected
                 </span>
                 <q-btn
+                  flat dense round size="sm"
+                  :icon="versionCheckEnabled ? 'history' : 'history_toggle_off'"
+                  :color="versionCheckEnabled ? 'primary' : 'grey-5'"
+                  @click="toggleVersionCheck"
+                >
+                  <q-tooltip>{{
+                    versionCheckEnabled
+                      ? 'Version check enabled – click to disable (improves performance)'
+                      : 'Version check disabled – click to enable'
+                  }}</q-tooltip>
+                </q-btn>
+                <q-btn
                   v-if="browserReady"
                   flat dense icon="refresh" size="sm" color="grey-4"
                   @click="reloadCurrentDir"
@@ -170,7 +182,7 @@
                         <q-tooltip>{{
                           hasVersionOverride(props.row.fileId)
                             ? 'Specific version selected – click to change'
-                            : 'Browse file versions'
+                            : `Browse file versions – ${versionCount(props.row.fileId)} available`
                         }}</q-tooltip>
                       </q-btn>
                     </template>
@@ -674,30 +686,50 @@ const fileVersionOverrides = ref(new Map())
 // don't trigger updates — we always replace the Map to force reactivity)
 const hasVersionOverride = (fileId) => fileVersionOverrides.value.has(fileId)
 
-// Tracks which files have multiple versions: Map<fileId, true>
+// ── Version check toggle (persisted) ──────────────────────────────────────────
+const PREF_KEY = 'bareos.restorePage.versionCheckEnabled'
+const versionCheckEnabled = ref(
+  localStorage.getItem(PREF_KEY) !== 'false'
+)
+function toggleVersionCheck() {
+  versionCheckEnabled.value = !versionCheckEnabled.value
+  localStorage.setItem(PREF_KEY, String(versionCheckEnabled.value))
+  if (!versionCheckEnabled.value) {
+    // Clear cached counts when disabling
+    versionCheckDirKey++
+    fileHasVersions.value = new Map()
+  }
+}
+
+// Tracks version counts per file: Map<fileId, number>
 // Populated in background after each directory load.
 const fileHasVersions = ref(new Map())
 let versionCheckDirKey = 0  // incremented on each directory change to cancel stale checks
 
 function hasMultipleVersions(fileId) {
-  return fileHasVersions.value.has(fileId) || hasVersionOverride(fileId)
+  return (fileHasVersions.value.get(fileId) ?? 0) > 1 || hasVersionOverride(fileId)
+}
+
+function versionCount(fileId) {
+  return fileHasVersions.value.get(fileId) ?? 0
 }
 
 async function checkVersionsInBackground(files, dirKey) {
-  if (!files.length) return
+  if (!files.length || !versionCheckEnabled.value) return
   const jids = mergedJobids.value
   const client = form.value.client
   await Promise.allSettled(
     files.map(async (f) => {
-      if (dirKey !== versionCheckDirKey) return
+      if (dirKey !== versionCheckDirKey || !versionCheckEnabled.value) return
       try {
         const r = await director.call(
           `.bvfs_versions jobid=${jids} client="${client}" pathid=${f.pathId} fname=${f.name}`
         )
         if (dirKey !== versionCheckDirKey) return
-        if ((r?.versions?.length ?? 0) > 1) {
+        const count = r?.versions?.length ?? 0
+        if (count > 1) {
           const next = new Map(fileHasVersions.value)
-          next.set(f.fileId, true)
+          next.set(f.fileId, count)
           fileHasVersions.value = next
         }
       } catch { /* ignore */ }
