@@ -227,6 +227,15 @@
                 Checksum: {{ subscriptionData.checksum }}
               </div>
 
+              <div class="row q-gutter-sm q-mb-md">
+                <q-btn color="secondary" label="Download Report" icon="download"
+                       no-caps :loading="downloadLoading"
+                       @click="downloadSubscription(false)" />
+                <q-btn color="secondary" label="Download Anonymized Report" icon="download"
+                       no-caps :loading="downloadAnonLoading"
+                       @click="downloadSubscription(true)" />
+              </div>
+
               <q-btn color="primary" label="Get Official Support" icon="open_in_new"
                      href="https://www.bareos.com/subscription/" target="_blank" no-caps />
             </template>
@@ -326,11 +335,34 @@ async function refreshSubscription() {
   subscriptionLoading.value = true
   subscriptionError.value   = null
   try {
-    subscriptionData.value = await director.call('status subscription all')
+    subscriptionData.value = await director.call('status subscriptions all')
   } catch (e) {
     subscriptionError.value = e.message
   } finally {
     subscriptionLoading.value = false
+  }
+}
+
+const downloadLoading     = ref(false)
+const downloadAnonLoading = ref(false)
+
+async function downloadSubscription(anonymize) {
+  const loadingRef = anonymize ? downloadAnonLoading : downloadLoading
+  loadingRef.value = true
+  try {
+    const cmd  = anonymize ? 'status subscriptions all anonymize' : 'status subscriptions all'
+    const data = await director.call(cmd)
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = anonymize ? 'bareos-subscription-anonymized.json' : 'bareos-subscription.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    subscriptionError.value = e.message
+  } finally {
+    loadingRef.value = false
   }
 }
 
