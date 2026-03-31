@@ -56,6 +56,7 @@ done
 echo "${BACKUP_DIR2}" > "${tmp}/file-list2"
 
 # Create updated.conf in the primary backup dir so it is captured in Full
+mkdir -p "${BackupDirectory}"
 printf 'version=1.0\n' > "${BackupDirectory}/updated.conf"
 
 # ── Run Full backups for all four jobs (both clients) ─────────────────────
