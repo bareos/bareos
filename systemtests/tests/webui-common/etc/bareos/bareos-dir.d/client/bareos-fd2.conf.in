@@ -1,0 +1,7 @@
+Client {
+  Name = bareos-fd2
+  Description = "Second file daemon for webui-vue system tests."
+  Address = @hostname@
+  Password = "@fd_password@"
+  Port = @fd2_port@
+}

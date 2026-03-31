@@ -2,10 +2,13 @@
 #
 # webui-vue system test – run real backup jobs
 #
-# Runs two Full + Incremental backup job pairs using the live Bareos daemons
-# so the catalog (and BVFS file browser) contains genuine data.
-# Job 1 (backup-bareos-fd)   backs up ${BackupDirectory}  (SelfTest fileset)
-# Job 2 (backup-bareos-fd-2) backs up ${BackupDirectory}2 (TestData2 fileset)
+# Runs Full + Incremental backup job pairs for two clients (bareos-fd and
+# bareos-fd2) and two filesets each, so the catalog contains genuine data
+# for multiple clients:
+#   Job backup-bareos-fd   – bareos-fd  client, SelfTest fileset
+#   Job backup-bareos-fd-2 – bareos-fd  client, TestData2 fileset
+#   Job backup-bareos-fd2  – bareos-fd2 client, SelfTest fileset
+#   Job backup-bareos-fd2-2– bareos-fd2 client, TestData2 fileset
 #
 set -e
 set -o pipefail
@@ -52,7 +55,7 @@ done
 # Write file-list for the TestData2 fileset
 echo "${BACKUP_DIR2}" > "${tmp}/file-list2"
 
-# ── Run Full backups for both jobs ─────────────────────────────────────────
+# ── Run Full backups for all four jobs (both clients) ─────────────────────
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
 messages
@@ -61,6 +64,8 @@ label volume=TestVolume001 storage=File pool=Full
 label volume=TestVolume002 storage=File pool=Incremental
 run job=backup-bareos-fd level=Full yes
 run job=backup-bareos-fd-2 level=Full yes
+run job=backup-bareos-fd2 level=Full yes
+run job=backup-bareos-fd2-2 level=Full yes
 wait
 messages
 quit
@@ -80,6 +85,8 @@ messages
 @$out ${tmp}/log-incr.out
 run job=backup-bareos-fd level=Incremental yes
 run job=backup-bareos-fd-2 level=Incremental yes
+run job=backup-bareos-fd2 level=Incremental yes
+run job=backup-bareos-fd2-2 level=Incremental yes
 wait
 messages
 quit
@@ -87,7 +94,7 @@ END_OF_DATA
 
 run_bconsole
 
-# ── Verify both jobs completed without errors ──────────────────────────────
+# ── Verify all jobs completed without errors ──────────────────────────────
 check_log "${tmp}/log-full.out"
 check_log "${tmp}/log-incr.out"
 
