@@ -157,7 +157,18 @@
                       class="cursor-pointer text-primary"
                       @click="navigateInto(props.row)"
                     >{{ props.row.name }}</span>
-                    <span v-else>{{ props.row.name }}</span>
+                    <span
+                      v-else
+                      class="cursor-pointer text-primary"
+                      style="text-decoration:underline dotted"
+                      @click="openVersions(props.row)"
+                    >{{ props.row.name }}</span>
+                    <q-badge
+                      v-if="!props.row.isDir && hasVersionOverride(props.row.fileId)"
+                      color="orange" label="v" class="q-ml-xs"
+                    >
+                      <q-tooltip>Specific version selected</q-tooltip>
+                    </q-badge>
                   </q-td>
                   <q-td class="text-right text-caption text-grey-6" style="width:90px">
                     {{ props.row.isDir ? '' : formatBytes(props.row.size) }}
@@ -220,6 +231,62 @@
       </q-card-section>
     </q-card>
   </q-page>
+
+  <!-- File Versions Dialog -->
+  <q-dialog v-model="versionsDialog.open" max-width="700px">
+    <q-card style="min-width:500px;max-width:700px">
+      <q-card-section class="panel-header row items-center">
+        <span>Versions of {{ versionsDialog.fname }}</span>
+        <q-space />
+        <q-btn flat round dense icon="close" color="white" v-close-popup />
+      </q-card-section>
+      <q-card-section>
+        <q-inner-loading :showing="versionsDialog.loading" />
+        <div v-if="versionsDialog.error" class="text-negative">{{ versionsDialog.error }}</div>
+        <q-table
+          v-else
+          flat dense
+          :rows="versionsDialog.versions"
+          :columns="versionsCols"
+          row-key="fileid"
+          hide-pagination
+          :rows-per-page-options="[0]"
+        >
+          <template #body="props">
+            <q-tr
+              :props="props"
+              :class="versionsDialog.selectedFileId === props.row.fileid ? 'bg-blue-1' : ''"
+              class="cursor-pointer"
+              @click="selectVersion(props.row)"
+            >
+              <q-td>
+                <q-radio
+                  dense
+                  :model-value="versionsDialog.selectedFileId"
+                  :val="props.row.fileid"
+                  @update:model-value="selectVersion(props.row)"
+                />
+              </q-td>
+              <q-td>{{ props.row.jobid }}</q-td>
+              <q-td>{{ formatMtime(props.row.stat?.mtime) }}</q-td>
+              <q-td class="text-right">{{ formatBytes(props.row.stat?.size ?? 0) }}</q-td>
+              <q-td>{{ props.row.volumename }}</q-td>
+              <q-td>{{ props.row.md5 }}</q-td>
+            </q-tr>
+          </template>
+        </q-table>
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn flat label="Cancel" v-close-popup />
+        <q-btn
+          color="primary" label="Use this version"
+          :disable="versionsDialog.selectedFileId === null"
+          @click="applyVersion"
+          v-close-popup
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
@@ -480,7 +547,10 @@ async function doRestore() {
   restoreResult.value  = null
   const rnd     = Math.floor(Math.random() * 1000000)
   const bvfsPath = `b2000${rnd}`
-  const fileids  = [...selectedFiles.value.keys()].join(',')
+  // Apply per-file version overrides
+  const fileids  = [...selectedFiles.value.keys()]
+    .map(fid => fileVersionOverrides.value.get(fid) ?? fid)
+    .join(',')
   const dirids   = [...selectedDirs.value.keys()].join(',')
   const jids     = mergedJobids.value
 
@@ -528,6 +598,7 @@ function clearBrowserState() {
   currentEntries.value = []
   selectedFiles.value  = new Map()
   selectedDirs.value   = new Map()
+  fileVersionOverrides.value = new Map()
   mergedJobids.value   = ''
   browserError.value   = ''
 }
@@ -563,6 +634,78 @@ function fileIcon(name) {
   if (['sh','py','js','ts','php','c','cpp','h','go','rs'].includes(ext)) return 'code'
   if (['conf','cfg','ini','yaml','yml','toml','json'].includes(ext)) return 'settings'
   return 'insert_drive_file'
+}
+
+// ── File Version Browser ──────────────────────────────────────────────────────
+const versionsDialog = ref({
+  open:           false,
+  loading:        false,
+  error:          '',
+  fname:          '',
+  pathId:         null,
+  fileId:         null,   // original fileId (latest)
+  versions:       [],
+  selectedFileId: null,
+})
+
+// Tracks per-file overrides: Map<originalFileId, overrideFileId>
+const fileVersionOverrides = ref(new Map())
+// Computed for template reactivity (Vue unwraps the ref but Map mutations
+// don't trigger updates — we always replace the Map to force reactivity)
+const hasVersionOverride = (fileId) => fileVersionOverrides.value.has(fileId)
+
+const versionsCols = [
+  { name: 'sel',    label: '',        field: 'sel',                  align: 'center', style: 'width:36px' },
+  { name: 'jobid',  label: 'Job ID',  field: 'jobid',                align: 'right',  style: 'width:70px' },
+  { name: 'mtime',  label: 'Date',    field: row => row.stat?.mtime, align: 'left' },
+  { name: 'size',   label: 'Size',    field: row => row.stat?.size,  align: 'right',  style: 'width:90px' },
+  { name: 'volume', label: 'Volume',  field: 'volumename',           align: 'left' },
+  { name: 'md5',    label: 'MD5',     field: 'md5',                  align: 'left' },
+]
+
+async function openVersions(row) {
+  versionsDialog.value = {
+    open:           true,
+    loading:        true,
+    error:          '',
+    fname:          row.name,
+    pathId:         row.pathId,
+    fileId:         row.fileId,
+    versions:       [],
+    selectedFileId: fileVersionOverrides.value.get(row.fileId) ?? row.fileId,
+  }
+  try {
+    const r = await director.call(
+      `.bvfs_versions jobid=${mergedJobids.value} client="${form.value.client}" pathid=${row.pathId} fname=${row.name}`
+    )
+    versionsDialog.value.versions = r?.versions ?? []
+  } catch (e) {
+    versionsDialog.value.error = e.message
+  } finally {
+    versionsDialog.value.loading = false
+  }
+}
+
+function selectVersion(ver) {
+  versionsDialog.value.selectedFileId = ver.fileid
+}
+
+function applyVersion() {
+  const orig     = versionsDialog.value.fileId
+  const selected = versionsDialog.value.selectedFileId
+  if (selected === null) return
+  const overrides = new Map(fileVersionOverrides.value)
+  if (selected === orig) {
+    overrides.delete(orig)
+  } else {
+    overrides.set(orig, selected)
+  }
+  fileVersionOverrides.value = overrides
+  // Keep the file selected for restore using the chosen version
+  if (!selectedFiles.value.has(orig)) {
+    selectedFiles.value = new Map(selectedFiles.value)
+    selectedFiles.value.set(orig, versionsDialog.value.fname)
+  }
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
