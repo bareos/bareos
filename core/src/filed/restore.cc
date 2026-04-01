@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -366,9 +366,6 @@ bail_out:
 // Restore the requested files.
 void DoRestore(JobControlRecord* jcr)
 {
-  Jmsg(jcr, M_INFO, 0, T_("Version: %s (%s) %s\n"), kBareosVersionStrings.Full,
-       kBareosVersionStrings.Date, kBareosVersionStrings.GetOsInfo());
-
   BareosSocket* sd;
   uint32_t VolSessionId, VolSessionTime;
   int32_t file_index;
@@ -396,6 +393,15 @@ void DoRestore(JobControlRecord* jcr)
 
   sd = jcr->store_bsock;
   jcr->setJobStatusWithPriorityCheck(JS_Running);
+
+  Jmsg(jcr, M_INFO, 0, T_("Version: %s (%s) %s\n"), kBareosVersionStrings.Full,
+       kBareosVersionStrings.Date, kBareosVersionStrings.GetOsInfo());
+  if (me->enable_ktls) {
+    bool ktls_enabled = sd->KtlsForRecv();
+    Jmsg(jcr, M_INFO, 0, "Receiving via kTLS: %s\n",
+         ktls_enabled ? "yes" : "no");
+  }
+
 
   ClientResource* client = nullptr;
   {

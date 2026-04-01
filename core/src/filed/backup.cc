@@ -115,10 +115,15 @@ static void CloseVssBackupSession(JobControlRecord* jcr);
  */
 bool BlastDataToStorageDaemon(JobControlRecord* jcr, crypto_cipher_t cipher)
 {
-  BareosSocket* sd;
   bool ok = true;
 
-  sd = jcr->store_bsock;
+  auto* sd = jcr->store_bsock;
+
+  if (me->enable_ktls) {
+    bool ktls_enabled = sd->KtlsForSend();
+    Jmsg(jcr, M_INFO, 0, "Sending via kTLS: %s\n", ktls_enabled ? "yes" : "no");
+  }
+
 
   jcr->setJobStatusWithPriorityCheck(JS_Running);
   Jmsg(jcr, M_INFO, 0, T_("Version: %s (%s) %s\n"), kBareosVersionStrings.Full,

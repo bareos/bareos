@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -67,6 +67,8 @@ void* HandleConnectionRequest(ConfigurationParser* config, void* arg)
   BareosSocket* bs = (BareosSocket*)arg;
   char name[MAX_NAME_LENGTH];
   char tbuf[MAX_TIME_LENGTH];
+
+  bs->SetEnableKtls(me->enable_ktls);
 
   if (!TryTlsHandshakeAsAServer(bs, config)) {
     bs->signal(BNET_TERMINATE);

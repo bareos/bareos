@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2019-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -95,6 +95,8 @@ class BareosSocketMock : public BareosSocket {
                     int,
                     utime_t,
                     int*));
+  MOCK_METHOD0(KtlsForSend, bool());
+  MOCK_METHOD0(KtlsForRecv, bool());
 };
 /* define a gmock action that fills bsock->msg so we can recv() a message */
 ACTION_P2(BareosSocket_Recv, bsock, msg)

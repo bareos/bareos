@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -337,6 +337,12 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   bool ok = true;
   char buf1[100];
   char ec[50];
+
+  if (me->enable_ktls) {
+    bool ktls_enabled = bs->KtlsForRecv();
+    Jmsg(jcr, M_INFO, 0, "Receiving via kTLS: %s\n",
+         ktls_enabled ? "yes" : "no");
+  }
 
   int64_t current_volumeid = 0;
   uint32_t current_block_number = 0;
