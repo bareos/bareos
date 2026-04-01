@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2014-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2014-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -244,7 +244,7 @@ class BareosFdPluginLocalFilesetWithRestoreObjects(
             % (str(restorepkt)),
         )
 
-        orig_fname = "/" + os.path.relpath(restorepkt.ofname, restorepkt.where)
+        orig_fname = restorepkt.original_file_name
         bareosfd.DebugMessage(
             100, "set_file_attributes() orig_fname: {} \n".format(orig_fname)
         )
