@@ -286,6 +286,8 @@ class ChunkCollector:
         self.current_blob = bytearray()
         # Finally, we track how many bytes from the current blob have already been read
         self.cur = 0
+        # The collector can lock in very specific cases, which can be solved with an exception
+        self.exception = None
 
     def add(self, chunk_id, data):
         """
@@ -356,6 +358,11 @@ class ChunkCollector:
         data = bytearray(self.current_blob[self.cur:])
         self.cur = 0
         while len(data) < n:
+            # Fail the collector if something went wrong
+            if self.exception is not None:
+                message = ('The collector has been instructed to fail because of the following '
+                           f'error: {self.exception}')
+                raise type(self.exception)(message) from self.exception
             # In most cases, the loop should only refresh a single already-aligned chunk, but we
             # have no strong guarantee of it and can only hope the costly code paths are not too
             # frequently taken. To minimize memmoves, we defer allocations to self.current_blob as
@@ -375,6 +382,10 @@ class ChunkCollector:
                 self.next_chunk += 1
         self.current_blob = data[n:]
         return data[:n]
+
+    def fail(self, exception):
+        """Fail the collector with an exception"""
+        self.exception = exception
 
 
 def _str(value):
@@ -856,16 +867,20 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     return rc
         except AttributeError:
             pass
-        self.queue.shutdown()
-        try:
-            while True:
-                entry = self.queue.get()
-                bareosfd.JobMessage(bareosfd.M_INFO, f"Restoring {entry.tarinfo.name}\n")
-                self.tar.addfile(entry.tarinfo, entry.reader)
-        except queue.ShutDown:
-            pass
-        bareosfd.JobMessage(bareosfd.M_INFO, "Waiting for Incus to complete\n")
-        self.tar.close()
+        # Guard here in case the plugin failed before initializing the queue.
+        if self.queue is not None:
+            self.queue.shutdown()
+            try:
+                while True:
+                    entry = self.queue.get()
+                    bareosfd.JobMessage(bareosfd.M_INFO, f"Restoring {entry.tarinfo.name}\n")
+                    self.tar.addfile(entry.tarinfo, entry.reader)
+            except queue.ShutDown:
+                pass
+            except Exception as e: # pylint: disable=broad-exception-caught
+                return fail(f"Failed adding file to TAR: {e}")
+            bareosfd.JobMessage(bareosfd.M_INFO, "Waiting for Incus to complete\n")
+            self.tar.close()
         if self.incus_process is not None:
             # Incus reacts to EOF, the zero-blocks are not enough so we need to close the pipe
             self.incus_process.stdin.close()
@@ -916,12 +931,8 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         path = os.path.split(fname)
         return len(path) == 2 and path[1].endswith('.chunk')
 
-    def create_file(self, restorepkt):
+    def create_file(self, restorepkt): # pylint: disable=too-many-statements
         """Process a Bareos restore packet"""
-        # For good measure, flush the log queue, as it’s the only place where we can.
-        rc = self.log_queue.flush()
-        if rc != bareosfd.bRC_OK:
-            return rc
         if self.tar is None:
             self.start_restore_job()
         restorepkt.create_status = bareosfd.CF_EXTRACT
@@ -959,13 +970,23 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 tarinfo.uid = 0
                 tarinfo.gid = 0
                 def collect():
-                    self.tar.addfile(tarinfo, self.collectors[fname])
+                    try:
+                        self.tar.addfile(tarinfo, self.collectors[fname])
+                    except Exception as e: # pylint: disable=broad-exception-caught
+                        self.log_queue.put(f"ERROR: Failed adding file to TAR: {e}\n")
                     self.current_image = None
                     self.chunk_io_thread = None
                 self.chunk_io_thread = threading.Thread(target=collect, daemon=True)
                 self.chunk_io_thread.start()
             def writer():
-                self.collectors[fname].add(chunk_id, self.data_pipe.read(close=True))
+                try:
+                    self.collectors[fname].add(chunk_id, self.data_pipe.read(close=True))
+                except Exception as e: # pylint: disable=broad-exception-caught
+                    # This case is a bit tricky to handle, as we must fail both the writer and the
+                    # collector to avoid a deadlock.
+                    self.collectors[fname].fail(e)
+                    self.log_queue.put(f"ERROR: Failed processing data chunk: {e}\n")
+                    self.data_pipe.close_r()
             self.current_writer = writer
             return bareosfd.bRC_OK
         tarinfo = tarfile.TarInfo(fname)
@@ -985,7 +1006,10 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         def writer():
             with open(self.data_pipe.r, 'rb') as r:
                 restore_tarinfo(tarinfo, restorepkt, r)
-                self.tar.addfile(tarinfo, r)
+                try:
+                    self.tar.addfile(tarinfo, r)
+                except Exception as e: # pylint: disable=broad-exception-caught
+                    self.log_queue.put(f"ERROR: Failed adding file to TAR: {e}\n")
         self.current_writer = writer
         return bareosfd.bRC_OK
 
@@ -1114,7 +1138,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.data_pipe.close_w()
             # We need to wait for the IO thread to finish, else this can get dangerously racy.
             self.restore_io_thread.join()
-        return bareosfd.bRC_OK
+        return self.log_queue.flush()
 
     def plugin_io_seek(self, iop):
         """Handled by the core"""
