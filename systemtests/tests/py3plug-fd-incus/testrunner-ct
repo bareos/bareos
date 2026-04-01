@@ -73,6 +73,9 @@ incus exec "$INSTANCE" -- setfattr -n user.barqux -v foobar /etc
 incus exec "$INSTANCE" ln /new-file /hlinked-file
 sync_fs
 
+# This is needed to later allow overriding the device
+incus config device override "$INSTANCE" root
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# Then, perform an incremental backup to get the new file
@@ -115,7 +118,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @$out $tmp/log3.out
 wait
-restore client=bareos-fd fileset=IncusTestCT select all done pluginoptions=python:restore_instance=$NEWINSTANCE
+restore client=bareos-fd fileset=IncusTestCT select all done pluginoptions=python:restore_instance=$NEWINSTANCE:restore_config_override=user.foo=bar:restore_config_override=user.baz=qux:restore_device_override=root,user.foo=bar
 yes
 wait
 messages
@@ -161,6 +164,17 @@ if (("$(incus exec "$NEWINSTANCE" -- stat -c%h /new-file)" == 2)); then
     echo "Hard links preserved"
 else
     echo "Hard links broken"
+    dstat=1
+    exit 1
+fi
+
+# We check that configuration overrides work
+if [ "$(incus config get "$NEWINSTANCE" user.foo)" = "bar" ] &&
+   [ "$(incus config get "$NEWINSTANCE" user.baz)" = "qux" ] &&
+   [ "$(incus config device get "$NEWINSTANCE" root user.foo)" = "bar" ]; then
+    echo "Configuration override applied"
+else
+    echo "Configuration override not applied"
     dstat=1
     exit 1
 fi
