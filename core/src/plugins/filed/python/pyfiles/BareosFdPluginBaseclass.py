@@ -228,11 +228,9 @@ class BareosFdPluginBaseclass(object):
         if multi_value_options is None:
             multi_value_options = []
 
-        if "defaults_file" in multi_value_options:
-            del multi_value_options["defaults_file"]
-
-        if "overrides_file" in multi_value_options:
-            del multi_value_options["overrides_file"]
+        # builtin options that we handle differently cannot be multi value
+        builtins = ["defaults_file", "overrides_file"]
+        multi_value_options = [x for x in multi_value_options if x not in builtins]
 
         plugindef_options = parse_plugindef_string(plugindef, multi_value_options)
         try:
