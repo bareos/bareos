@@ -50,11 +50,9 @@
 
         <!-- Settings / account -->
         <q-list dark>
-          <q-item clickable v-ripple @click="toggleDark">
-            <q-item-section avatar>
-              <q-icon :name="$q.dark.isActive ? 'light_mode' : 'dark_mode'" />
-            </q-item-section>
-            <q-item-section>{{ $q.dark.isActive ? 'Light mode' : 'Dark mode' }}</q-item-section>
+          <q-item clickable v-ripple :to="{ name: 'settings' }" @click="drawerOpen = false">
+            <q-item-section avatar><q-icon name="tune" /></q-item-section>
+            <q-item-section>Settings</q-item-section>
           </q-item>
           <q-item clickable v-ripple
                   tag="a" href="https://docs.bareos.org" target="_blank"
@@ -106,19 +104,8 @@
 
         <q-space />
 
-        <!-- Director status chip -->
-        <q-chip dense square :color="dirStatusColor" text-color="white"
-                :icon="dirStatusIcon"
-                :label="$q.screen.lt.md ? undefined : dirStatusLabel"
-                class="q-mr-sm" style="font-size:0.75rem" />
-
-        <!-- Desktop-only: dark mode toggle, director menu, user menu -->
+        <!-- Desktop-only: director menu, user menu -->
         <template v-if="!$q.screen.lt.md">
-          <q-btn flat round dense color="white"
-                 :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
-                 :title="$q.dark.isActive ? 'Switch to light mode' : 'Switch to dark mode'"
-                 class="q-mr-xs"
-                 @click="toggleDark" />
 
           <q-btn flat color="white" :label="auth.user?.director || 'director'" icon="dns" no-caps>
             <q-menu>
@@ -134,6 +121,11 @@
           <q-btn flat color="white" :label="auth.user?.username || 'admin'" icon="person" no-caps>
             <q-menu>
               <q-list dense style="min-width:180px">
+                <q-item clickable v-close-popup :to="{ name: 'settings' }">
+                  <q-item-section avatar><q-icon name="tune" /></q-item-section>
+                  <q-item-section>Settings</q-item-section>
+                </q-item>
+                <q-separator />
                 <q-item clickable tag="a" href="https://docs.bareos.org" target="_blank" v-close-popup>
                   <q-item-section avatar><q-icon name="menu_book" /></q-item-section>
                   <q-item-section>Documentation</q-item-section>
@@ -192,6 +184,7 @@ import bareosLogo from '../assets/bareos-logo-small.png'
 import { bareosVersion as appVersion } from '../generated/bareos-version.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 
 const $q       = useQuasar()
 const auth     = useAuthStore()
@@ -221,14 +214,15 @@ const navItems = [
   { label: 'Analytics', to: '/analytics', icon: 'bar_chart'    },
 ]
 
+const settings = useSettingsStore()
+
 onMounted(() => {
-  const saved = localStorage.getItem('darkMode')
-  if (saved !== null) $q.dark.set(saved === 'true')
+  $q.dark.set(settings.darkMode)
 })
 
 function toggleDark() {
   $q.dark.toggle()
-  localStorage.setItem('darkMode', String($q.dark.isActive))
+  settings.darkMode = $q.dark.isActive
 }
 
 const dirStatusColor = computed(() => ({
