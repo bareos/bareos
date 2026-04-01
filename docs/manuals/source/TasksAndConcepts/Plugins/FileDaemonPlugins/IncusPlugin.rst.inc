@@ -249,7 +249,7 @@ Restoring to another remote can be similarly done using either ``remote`` or ``r
 
 Note that if your workflow often restores instances to a specific name or to a specific remote,
 you can set the ``restore_instance`` or the ``restore_remote`` parameters in
-:config:option:`dir/fileset/plugin`.
+:config:option:`dir/fileset/include/plugin`.
 
 
 Restore to an Incus-ready tarball
