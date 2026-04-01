@@ -99,28 +99,28 @@ echo "==> Running backup jobs ..."
 
 BACKUP_DIR2="${BackupDirectory}2"
 mkdir -p "${BACKUP_DIR2}/docs" \
-         "${BACKUP_DIR2}/src/lib" \
-         "${BACKUP_DIR2}/src/tests" \
-         "${BACKUP_DIR2}/config" \
-         "${BACKUP_DIR2}/logs"
+  "${BACKUP_DIR2}/src/lib" \
+  "${BACKUP_DIR2}/src/tests" \
+  "${BACKUP_DIR2}/config" \
+  "${BACKUP_DIR2}/logs"
 
 for i in $(seq 1 50); do
-  printf 'content of doc %d\n' "$i" > "${BACKUP_DIR2}/docs/doc${i}.txt"
+  printf 'content of doc %d\n' "$i" >"${BACKUP_DIR2}/docs/doc${i}.txt"
 done
 for i in $(seq 1 40); do
-  printf '// source file %d\n' "$i" > "${BACKUP_DIR2}/src/lib/lib${i}.c"
+  printf '// source file %d\n' "$i" >"${BACKUP_DIR2}/src/lib/lib${i}.c"
 done
 for i in $(seq 1 20); do
-  printf '// test %d\n' "$i" > "${BACKUP_DIR2}/src/tests/test${i}.c"
+  printf '// test %d\n' "$i" >"${BACKUP_DIR2}/src/tests/test${i}.c"
 done
 for i in $(seq 1 10); do
-  printf 'key%d=value\n' "$i" > "${BACKUP_DIR2}/config/app${i}.conf"
+  printf 'key%d=value\n' "$i" >"${BACKUP_DIR2}/config/app${i}.conf"
 done
 for i in $(seq 1 30); do
-  printf '2026-03-30 log line %d\n' "$i" > "${BACKUP_DIR2}/logs/run${i}.log"
+  printf '2026-03-30 log line %d\n' "$i" >"${BACKUP_DIR2}/logs/run${i}.log"
 done
-printf 'version=1.0\n' > "${BackupDirectory}/updated.conf"
-echo "${BACKUP_DIR2}" > "${tmp}/file-list2"
+printf 'version=1.0\n' >"${BackupDirectory}/updated.conf"
+echo "${BACKUP_DIR2}" >"${tmp}/file-list2"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @\$out ${NULL_DEV}
@@ -137,9 +137,9 @@ END_OF_DATA
 run_bconsole
 
 for i in $(seq 51 60); do
-  printf 'new doc %d\n' "$i" > "${BACKUP_DIR2}/docs/doc${i}.txt"
+  printf 'new doc %d\n' "$i" >"${BACKUP_DIR2}/docs/doc${i}.txt"
 done
-printf 'version=2.0\nupdated=yes\n' > "${BackupDirectory}/updated.conf"
+printf 'version=2.0\nupdated=yes\n' >"${BackupDirectory}/updated.conf"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @\$out ${NULL_DEV}
@@ -155,7 +155,13 @@ run_bconsole
 
 echo "==> Backup jobs complete."
 
-# ── 3. Build Vue test app ─────────────────────────────────────────────────────
+# ── 3. Load subscription test data ───────────────────────────────────────────
+
+echo "==> Loading subscription test data ..."
+"${TESTDIR}/testrunner-load-subscriptiontestdata"
+echo "==> Subscription test data loaded."
+
+# ── 4. Build Vue test app ─────────────────────────────────────────────────────
 
 cd "${CMAKE_SOURCE_DIR}/webui-vue"
 TEST_DIST="test-dist"
@@ -187,7 +193,7 @@ fi
 unset _needs_build
 cd "${TESTDIR}"
 
-# ── 4. Start WS proxy ─────────────────────────────────────────────────────────
+# ── 5. Start WS proxy ─────────────────────────────────────────────────────────
 
 echo "==> Starting WS proxy on port ${WEBSOCKET_PROXY_PORT} ..."
 WS_PORT="${WEBSOCKET_PROXY_PORT}" \
@@ -206,7 +212,7 @@ until ss -Htlnp "sport = ${WEBSOCKET_PROXY_PORT}" 2>/dev/null \
 done
 unset _deadline
 
-# ── 5. Start Vite preview ─────────────────────────────────────────────────────
+# ── 6. Start Vite preview ─────────────────────────────────────────────────────
 
 echo "==> Starting Vite preview on port ${BAREOS_WEBUI_PORT} ..."
 (
@@ -230,7 +236,7 @@ until ss -Htlnp "sport = ${BAREOS_WEBUI_PORT}" 2>/dev/null \
 done
 unset _deadline
 
-# ── 6. Open browser and wait ──────────────────────────────────────────────────
+# ── 7. Open browser and wait ──────────────────────────────────────────────────
 
 WEBUI_URL="http://127.0.0.1:${BAREOS_WEBUI_PORT}"
 
