@@ -20,10 +20,6 @@
               <template #prepend><q-icon name="search" /></template>
             </q-input>
             <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ countdown }}s</span>
-            <q-btn flat round dense color="white" class="q-mr-xs"
-                   :icon="relativeStart ? 'calendar_today' : 'schedule'"
-                   :title="relativeStart ? 'Show absolute start time' : 'Show relative start time'"
-                   @click="relativeStart = !relativeStart" />
             <q-btn flat round dense icon="refresh" color="white" @click="manualRefresh" />
           </q-card-section>
           <q-card-section class="q-pa-none">
@@ -75,8 +71,8 @@
               </template>
               <template #body-cell-starttime="props">
                 <q-td :props="props">
-                  <span :title="relativeStart ? props.value : timeAgo(props.value)">
-                    {{ relativeStart ? timeAgo(props.value) : props.value }}
+                  <span :title="settings.relativeTime ? props.value : timeAgo(props.value)">
+                    {{ settings.relativeTime ? timeAgo(props.value) : props.value }}
                   </span>
                 </q-td>
               </template>
@@ -337,6 +333,7 @@ import { useQuasar } from 'quasar'
 import { jobStatusMap, formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
@@ -346,11 +343,10 @@ const route    = useRoute()
 const router   = useRouter()
 const $q       = useQuasar()
 const director = useDirectorStore()
-
+const settings = useSettingsStore()
 const tab          = ref(route.query.action || 'list')
 const search       = ref(route.query.search || '')
 const statusFilter = ref(route.query.status || '')
-const relativeStart = ref(false)
 const fmtBytes  = formatBytes
 const fmtSpeed  = formatSpeed
 
@@ -701,18 +697,17 @@ async function submitRerun() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────────────
-const REFRESH_INTERVAL = 10
-const countdown = ref(REFRESH_INTERVAL)
+const countdown = ref(settings.refreshInterval)
 let _timer = null
 
 function startAutoRefresh() {
   stopAutoRefresh()
-  countdown.value = REFRESH_INTERVAL
+  countdown.value = settings.refreshInterval
   _timer = setInterval(() => {
     countdown.value -= 1
     if (countdown.value <= 0) {
       refresh()
-      countdown.value = REFRESH_INTERVAL
+      countdown.value = settings.refreshInterval
     }
   }, 1000)
 }
@@ -724,7 +719,7 @@ function stopAutoRefresh() {
 
 function manualRefresh() {
   refresh()
-  countdown.value = REFRESH_INTERVAL
+  countdown.value = settings.refreshInterval
 }
 
 onMounted(() => {

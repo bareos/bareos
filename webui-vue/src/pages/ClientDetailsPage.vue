@@ -34,10 +34,6 @@
           <q-card-section class="panel-header row items-center">
             <span>Recent Jobs</span>
             <q-space />
-            <q-btn flat round dense color="white" size="sm" class="q-mr-xs"
-                   :icon="relativeStart ? 'calendar_today' : 'schedule'"
-                   :title="relativeStart ? 'Show absolute start time' : 'Show relative start time'"
-                   @click="relativeStart = !relativeStart" />
           </q-card-section>
           <q-card-section class="q-pa-none">
             <q-table :rows="clientJobs" :columns="jobCols" row-key="id" dense flat hide-bottom
@@ -62,8 +58,8 @@
               </template>
               <template #body-cell-starttime="props">
                 <q-td :props="props">
-                  <span :title="relativeStart ? props.value : timeAgo(props.value)">
-                    {{ relativeStart ? timeAgo(props.value) : props.value }}
+                  <span :title="settings.relativeTime ? props.value : timeAgo(props.value)">
+                    {{ settings.relativeTime ? timeAgo(props.value) : props.value }}
                   </span>
                 </q-td>
               </template>
@@ -93,14 +89,15 @@ import { useRoute } from 'vue-router'
 import { formatBytes, timeAgo } from '../mock/index.js'
 import { normaliseClient, normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 
 const route         = useRoute()
 const director      = useDirectorStore()
+const settings      = useSettingsStore()
 const fmtBytes      = formatBytes
-const relativeStart = ref(false)
 
 const loading    = ref(true)
 const clientData = ref(null)

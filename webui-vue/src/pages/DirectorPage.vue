@@ -21,70 +21,63 @@
                 <q-card-section class="panel-header row items-center">
                   <span>Director Info</span>
                   <q-space />
+                  <q-chip v-if="statusHeader.config_warnings != null"
+                          dense square clickable
+                          :color="statusHeader.config_warnings ? 'negative' : 'positive'"
+                          :icon="statusHeader.config_warnings ? 'error' : 'check_circle'"
+                          text-color="white"
+                          class="q-mr-sm"
+                          @click="showConfigStatus">
+                    {{ statusHeader.config_warnings ? 'Config Warning' : 'Config OK' }}
+                    <q-tooltip>Click to show configuration status</q-tooltip>
+                  </q-chip>
                   <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ statusCountdown }}s</span>
-                  <q-btn flat round dense color="white" class="q-mr-xs"
-                         :icon="relativeTime ? 'calendar_today' : 'schedule'"
-                         :title="relativeTime ? 'Show absolute times' : 'Show relative times'"
-                         @click="relativeTime = !relativeTime" />
                   <q-btn flat round dense icon="refresh" color="white"
                          @click="manualRefreshStatus" :loading="statusLoading" />
                 </q-card-section>
                 <q-card-section class="q-py-sm">
                   <div class="row items-center q-gutter-sm text-body2 flex-wrap">
                     <q-chip v-if="statusHeader.director"
-                            dense square color="primary" text-color="white" icon="dns" class="q-ma-none">
+                            dense square color="primary" text-color="white" icon="dns">
                       {{ statusHeader.director }}
                       <q-tooltip>Director: {{ statusHeader.director }}</q-tooltip>
                     </q-chip>
                     <q-chip v-if="statusHeader.version"
-                            dense square color="blue-7" text-color="white" icon="info" class="q-ma-none">
+                            dense square color="blue-7" text-color="white" icon="info">
                       {{ statusHeader.version }}
                       <q-tooltip>Version: {{ statusHeader.version }}</q-tooltip>
                     </q-chip>
                     <q-chip v-if="statusHeader.release_date"
-                            dense square color="blue-grey-6" text-color="white" icon="event" class="q-ma-none">
+                            dense square color="blue-grey-6" text-color="white" icon="event">
                       {{ statusHeader.release_date }}
                       <q-tooltip>Released: {{ statusHeader.release_date }}</q-tooltip>
                     </q-chip>
                     <q-chip v-if="statusHeader.binary_info"
-                            dense square color="blue-grey-7" text-color="white" icon="build" class="q-ma-none">
+                            dense square color="blue-grey-7" text-color="white" icon="build">
                       {{ statusHeader.binary_info }}
                       <q-tooltip>Build: {{ statusHeader.binary_info }}</q-tooltip>
                     </q-chip>
                     <q-chip v-if="statusHeader.os"
                             dense square :color="directorOsIcon.color" text-color="white"
-                            :icon="directorOsIcon.icon" class="q-ma-none">
+                            :icon="directorOsIcon.icon">
                       {{ statusHeader.os }}
                       <q-tooltip>OS: {{ statusHeader.os }}</q-tooltip>
                     </q-chip>
                     <q-chip v-if="statusHeader.daemon_started"
-                            dense square color="teal-7" text-color="white" icon="schedule" class="q-ma-none">
-                      {{ relativeTime ? dirTimeAgo(statusHeader.daemon_started) : statusHeader.daemon_started }}
+                            dense square color="teal-7" text-color="white" icon="schedule">
+                      {{ settings.relativeTime ? dirTimeAgo(statusHeader.daemon_started) : statusHeader.daemon_started }}
                       <q-tooltip>Started: {{ statusHeader.daemon_started }}</q-tooltip>
                     </q-chip>
                     <q-chip v-if="statusHeader.jobs_run != null"
-                            dense square color="purple-7" text-color="white" icon="check" class="q-ma-none">
+                            dense square color="purple-7" text-color="white" icon="check">
                       {{ statusHeader.jobs_run }}
                       <q-tooltip>Jobs Run: {{ statusHeader.jobs_run }}</q-tooltip>
                     </q-chip>
                     <q-chip v-if="statusHeader.jobs_running != null"
-                            dense square color="orange-7" text-color="white" icon="play_arrow" class="q-ma-none">
+                            dense square color="orange-7" text-color="white" icon="play_arrow">
                       {{ statusHeader.jobs_running }}
                       <q-tooltip>Running: {{ statusHeader.jobs_running }}</q-tooltip>
                     </q-chip>
-                    <span v-if="statusHeader.config_warnings != null"
-                          class="row items-center no-wrap q-gutter-x-xs">
-                      <q-icon
-                        :name="statusHeader.config_warnings ? 'error' : 'check_circle'"
-                        :color="statusHeader.config_warnings ? 'negative' : 'positive'"
-                        size="20px"
-                      >
-                        <q-tooltip>Config warnings: {{ statusHeader.config_warnings ? 'Yes' : 'None' }}</q-tooltip>
-                      </q-icon>
-                      <span :class="statusHeader.config_warnings ? 'text-negative' : 'text-positive'">
-                        {{ statusHeader.config_warnings ? 'Configuration warnings' : 'Config OK' }}
-                      </span>
-                    </span>
                   </div>
                 </q-card-section>
               </q-card>
@@ -123,8 +116,8 @@
                     </template>
                     <template #body-cell-scheduled="props">
                       <td>
-                        <span :title="relativeTime ? props.value : undefined">
-                          {{ relativeTime ? dirTimeAgo(props.value) : props.value }}
+                        <span :title="settings.relativeTime ? props.value : undefined">
+                          {{ settings.relativeTime ? dirTimeAgo(props.value) : props.value }}
                         </span>
                       </td>
                     </template>
@@ -184,8 +177,8 @@
                     </template>
                     <template #body-cell-start_time="props">
                       <td>
-                        <span :title="relativeTime ? props.value : undefined">
-                          {{ relativeTime ? dirTimeAgo(props.value) : props.value }}
+                        <span :title="settings.relativeTime ? props.value : undefined">
+                          {{ settings.relativeTime ? dirTimeAgo(props.value) : props.value }}
                         </span>
                       </td>
                     </template>
@@ -262,8 +255,8 @@
                     </template>
                     <template #body-cell-finished="props">
                       <td>
-                        <span :title="relativeTime ? props.value : undefined">
-                          {{ relativeTime ? dirTimeAgo(props.value) : props.value }}
+                        <span :title="settings.relativeTime ? props.value : undefined">
+                          {{ settings.relativeTime ? dirTimeAgo(props.value) : props.value }}
                         </span>
                       </td>
                     </template>
@@ -462,6 +455,22 @@
     </q-tab-panels>
   </q-page>
 
+  <!-- Config status dialog -->
+  <q-dialog v-model="configStatusDlg.open">
+    <q-card style="min-width:640px; max-width:90vw">
+      <q-card-section class="panel-header row items-center q-py-sm">
+        <span>Configuration Status</span>
+        <q-space />
+        <q-btn flat round dense icon="close" color="white" v-close-popup />
+      </q-card-section>
+      <q-card-section class="q-pa-none">
+        <q-inner-loading :showing="configStatusDlg.loading" />
+        <pre v-if="configStatusDlg.text" class="config-status-output">{{ configStatusDlg.text }}</pre>
+        <div v-else-if="!configStatusDlg.loading" class="text-grey q-pa-md text-center">No output</div>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
+
   <!-- Hidden print root — rendered into DOM, visible only during window.print() -->
   <teleport to="body">
     <div id="subscription-print-root" style="display:none">
@@ -473,6 +482,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { formatBytes } from '../mock/index.js'
 import { resolveOsIcon } from '../utils/osIcon.js'
@@ -483,6 +493,7 @@ import SubscriptionReport from '../components/SubscriptionReport.vue'
 
 const tab = ref('status')
 const director = useDirectorStore()
+const settings  = useSettingsStore()
 
 // ── Status ───────────────────────────────────────────────────────────────────
 const statusLoading = ref(false)
@@ -501,25 +512,24 @@ async function refreshStatus() {
   }
 }
 
-const STATUS_INTERVAL = 10
-const statusCountdown = ref(STATUS_INTERVAL)
+const statusCountdown = ref(settings.refreshInterval)
 let _statusTimer = null
 
 function startStatusAutoRefresh() {
   clearInterval(_statusTimer)
-  statusCountdown.value = STATUS_INTERVAL
+  statusCountdown.value = settings.refreshInterval
   _statusTimer = setInterval(() => {
     statusCountdown.value -= 1
     if (statusCountdown.value <= 0) {
       refreshStatus()
-      statusCountdown.value = STATUS_INTERVAL
+      statusCountdown.value = settings.refreshInterval
     }
   }, 1000)
 }
 
 function manualRefreshStatus() {
   refreshStatus()
-  statusCountdown.value = STATUS_INTERVAL
+  statusCountdown.value = settings.refreshInterval
 }
 
 // The director now returns a structured JSON object with header, scheduled,
@@ -536,8 +546,7 @@ const terminatedJobs = computed(() => rawStatus.value?.terminated ?? [])
 const maxTermBytes = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.bytes) || 0)))
 const maxTermFiles = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.files) || 0)))
 
-// Relative-time toggle
-const relativeTime = ref(false)
+// Relative-time toggle handled by global settings store
 
 // OS icon: pass the full os string as osInfo so distro detection works
 // (e.g. "Fedora Linux 43" → mdi-fedora)
@@ -821,9 +830,36 @@ async function runPrune(cmd) {
     pruneLoading.value[cmd] = false
   }
 }
+
+// ── Config status dialog ──────────────────────────────────────────────────────
+
+const configStatusDlg = ref({ open: false, loading: false, text: '' })
+
+async function showConfigStatus() {
+  configStatusDlg.value = { open: true, loading: true, text: '' }
+  try {
+    configStatusDlg.value.text = await director.rawCall('status configuration')
+  } catch (e) {
+    configStatusDlg.value.text = `Error: ${e.message ?? e}`
+  } finally {
+    configStatusDlg.value.loading = false
+  }
+}
 </script>
 
 <style scoped>
+.config-status-output {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  padding: 12px 16px;
+  margin: 0;
+  white-space: pre-wrap;
+  max-height: 70vh;
+  overflow-y: auto;
+}
 .terminal-output {
   background: #0d1117;
   color: #c9d1d9;

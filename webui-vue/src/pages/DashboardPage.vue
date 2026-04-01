@@ -28,10 +28,6 @@
           <q-card-section class="panel-header row items-center">
             <span>Most recent job status per job name</span>
             <q-space />
-            <q-btn flat round dense color="white" size="sm" class="q-mr-xs"
-                   :icon="relativeStart ? 'calendar_today' : 'schedule'"
-                   :title="relativeStart ? 'Show absolute start time' : 'Show relative start time'"
-                   @click="relativeStart = !relativeStart" />
             <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
           </q-card-section>
           <q-card-section class="q-pa-none">
@@ -63,8 +59,8 @@
               </template>
               <template #body-cell-starttime="props">
                 <q-td :props="props">
-                  <span :title="relativeStart ? props.value : timeAgo(props.value)">
-                    {{ relativeStart ? timeAgo(props.value) : props.value }}
+                  <span :title="settings.relativeTime ? props.value : timeAgo(props.value)">
+                    {{ settings.relativeTime ? timeAgo(props.value) : props.value }}
                   </span>
                 </q-td>
               </template>
@@ -182,14 +178,15 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { formatBytes, formatSpeed, parseDurationSecs, timeAgo, formatDuration } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import StatNumber from '../components/StatNumber.vue'
 
 const director = useDirectorStore()
+const settings = useSettingsStore()
 const fmtBytes      = formatBytes
 const fmtSpeed      = formatSpeed
-const relativeStart = ref(false)
 
 // ── data ─────────────────────────────────────────────────────────────────────
 const rawPast24hJobs = ref([])
@@ -255,26 +252,25 @@ function refresh() {
   fetchJobs(); fetchTotals(); fetchSidebar()
 }
 
-const REFRESH_INTERVAL = 5   // seconds
 const now = ref(Date.now())
 
 onMounted(refresh)
 watch(() => director.isConnected, (connected) => { if (connected) refresh() })
 
 // ── auto-refresh ──────────────────────────────────────────────────────────────
-const countdown = ref(REFRESH_INTERVAL)
+const countdown = ref(settings.refreshInterval)
 let _countdownTimer = null
 let _refreshTimer   = null
 
 function startAutoRefresh() {
   stopAutoRefresh()
-  countdown.value = REFRESH_INTERVAL
+  countdown.value = settings.refreshInterval
   _countdownTimer = setInterval(() => {
     now.value = Date.now()
     countdown.value -= 1
     if (countdown.value <= 0) {
       refresh()
-      countdown.value = REFRESH_INTERVAL
+      countdown.value = settings.refreshInterval
     }
   }, 1000)
 }
@@ -288,7 +284,7 @@ function stopAutoRefresh() {
 
 function manualRefresh() {
   refresh()
-  countdown.value = REFRESH_INTERVAL
+  countdown.value = settings.refreshInterval
 }
 
 onMounted(startAutoRefresh)
