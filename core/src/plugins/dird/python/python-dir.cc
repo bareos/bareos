@@ -57,7 +57,7 @@
 #include "plugin_private_context.h"
 
 namespace {
-using python_execution_request = std::pair<void (*)(void*, void*), void*>;
+using python_execution_request = std::pair<void (*)(void*), void*>;
 static inline constexpr python_execution_request REQUEST_THREAD_STOP
     = {nullptr, nullptr};
 
@@ -157,8 +157,10 @@ static PyThreadState* mainThreadState{nullptr};
 #include "plugins/include/python_plugins_common.inc"
 #include "plugins/include/python_plugin_modules_common.inc"
 
-void wait_for_thread_end()
+void wait_for_thread_end(PluginContext* plugin_ctx)
 {
+  auto* priv_ctx = get_private_context(plugin_ctx);
+
   for (;;) {
     std::unique_lock lock{priv_ctx->execute_mut};
     priv_ctx->execution_requested.wait(
@@ -188,7 +190,7 @@ void run_python_thread(PluginContext* plugin_ctx,
   auto* ts_maininterp = PyThreadState_New(main_interp);
   if (!ts_maininterp) {
     ready->set_value(false);
-    return wait_for_thread_end();
+    return wait_for_thread_end(plugin_ctx);
   }
   PyEval_RestoreThread(ts_maininterp);
 
@@ -201,7 +203,7 @@ void run_python_thread(PluginContext* plugin_ctx,
 
     // delete the threadstate and release the gil
     PyThreadState_DeleteCurrent();
-    return wait_for_thread_end();
+    return wait_for_thread_end(plugin_ctx);
   }
 
   /* set bareos_core_functions inside of barosdir module */
