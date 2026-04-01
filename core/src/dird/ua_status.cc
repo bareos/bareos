@@ -347,28 +347,47 @@ void ListDirStatusHeader(UaContext* ua)
   char dt[MAX_TIME_LENGTH];
   PoolMem msg(PM_FNAME);
 
-  ua->SendMsg(T_("%s Version: %s (%s) %s\n"), my_name,
-              kBareosVersionStrings.Full, kBareosVersionStrings.Date,
-              kBareosVersionStrings.GetOsInfo());
   bstrftime_nc(dt, sizeof(dt), daemon_start_time);
-  ua->SendMsg(T_("Daemon started %s. Jobs: run=%" PRIuz
-                 ", running=%d db:postgresql, %s "
-                 "binary\n"),
-              dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
 
-  if (me->secure_erase_cmdline) {
-    ua->SendMsg(T_(" secure erase command='%s'\n"), me->secure_erase_cmdline);
-  }
+  if (ua->api == API_MODE_JSON) {
+    ua->send->ObjectStart("header");
+    ua->send->ObjectKeyValue("director", my_name, "%s\n");
+    ua->send->ObjectKeyValue("version", kBareosVersionStrings.Full, "%s\n");
+    ua->send->ObjectKeyValue("release_date", kBareosVersionStrings.Date,
+                             "%s\n");
+    ua->send->ObjectKeyValue("os", kBareosVersionStrings.GetOsInfo(), "%s\n");
+    ua->send->ObjectKeyValue("binary_info",
+                             kBareosVersionStrings.BinaryInfo, "%s\n");
+    ua->send->ObjectKeyValue("daemon_started", dt, "%s\n");
+    ua->send->ObjectKeyValue("jobs_run", (uint64_t)NumJobsRun(), "%" PRIuz "\n");
+    ua->send->ObjectKeyValueSignedInt("jobs_running", (int64_t)JobCount(),
+                                     "%d\n");
+    ua->send->ObjectKeyValueBool("config_warnings", my_config->HasWarnings());
+    ua->send->ObjectEnd("header");
+  } else {
+    ua->SendMsg(T_("%s Version: %s (%s) %s\n"), my_name,
+                kBareosVersionStrings.Full, kBareosVersionStrings.Date,
+                kBareosVersionStrings.GetOsInfo());
+    ua->SendMsg(T_("Daemon started %s. Jobs: run=%" PRIuz
+                   ", running=%d db:postgresql, %s "
+                   "binary\n"),
+                dt, NumJobsRun(), JobCount(), kBareosVersionStrings.BinaryInfo);
 
-  len = ListDirPlugins(msg);
-  if (len > 0) { ua->SendMsg("%s\n", msg.c_str()); }
+    if (me->secure_erase_cmdline) {
+      ua->SendMsg(T_(" secure erase command='%s'\n"),
+                  me->secure_erase_cmdline);
+    }
 
-  if (my_config->HasWarnings()) {
-    ua->SendMsg(
-        T_("\n"
-           "There are WARNINGS for the director configuration!\n"
-           "See 'status configuration' for details.\n"
-           "\n"));
+    len = ListDirPlugins(msg);
+    if (len > 0) { ua->SendMsg("%s\n", msg.c_str()); }
+
+    if (my_config->HasWarnings()) {
+      ua->SendMsg(
+          T_("\n"
+             "There are WARNINGS for the director configuration!\n"
+             "See 'status configuration' for details.\n"
+             "\n"));
+    }
   }
 }
 
@@ -1203,6 +1222,7 @@ static void ListRunningJobs(UaContext* ua)
 
   Dmsg0(200, "enter list_run_jobs()\n");
   if (!ua->api) ua->SendMsg(T_("\nRunning Jobs:\n"));
+  if (ua->api == API_MODE_JSON) { ua->send->ArrayStart("running"); }
   foreach_jcr (jcr) {
     if (jcr->JobId == 0) { /* this is us */
       /* this is a console or other control job. We only show console
@@ -1222,6 +1242,7 @@ static void ListRunningJobs(UaContext* ua)
   if (njobs == 0) {
     // Note the following message is used by external programs -- don't change
     if (!ua->api) ua->SendMsg(T_("No Jobs running.\n====\n"));
+    if (ua->api == API_MODE_JSON) { ua->send->ArrayEnd("running"); }
     Dmsg0(200, "leave list_run_jobs()\n");
     return;
   }
@@ -1401,13 +1422,33 @@ static void ListRunningJobs(UaContext* ua)
         break;
     }
 
-    if (ua->api) {
+    if (ua->api == API_MODE_JSON) {
+      char dt[MAX_TIME_LENGTH];
+      bstrftime_nc(dt, sizeof(dt), jcr->start_time);
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("jobid", (uint64_t)jcr->JobId, "%llu\n");
+      ua->send->ObjectKeyValue("name", jcr->Job, "%s\n");
+      ua->send->ObjectKeyValue("level", level, "%s\n");
+      ua->send->ObjectKeyValue("type",
+                               job_type_to_str(jcr->getJobType()), "%s\n");
+      ua->send->ObjectKeyValue("status", msg, "%s\n");
+      ua->send->ObjectKeyValue("start_time", dt, "%s\n");
+      ua->send->ObjectKeyValue("files",
+                               (uint64_t)jcr->JobFiles, "%llu\n");
+      ua->send->ObjectKeyValue("bytes",
+                               (uint64_t)jcr->JobBytes, "%llu\n");
+      if (*jcr->comment) {
+        ua->send->ObjectKeyValue("comment", jcr->comment, "%s\n");
+      }
+      ua->send->ObjectEnd();
+    } else if (ua->api) {
       BashSpaces(jcr->comment);
-      ua->SendMsg(T_("%6d\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level, jcr->Job,
-                  msg, jcr->comment);
+      ua->SendMsg(T_("%6d\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level,
+                  jcr->Job, msg, jcr->comment);
       UnbashSpaces(jcr->comment);
     } else {
-      ua->SendMsg(T_("%6d %-6s  %-20s %s\n"), jcr->JobId, level, jcr->Job, msg);
+      ua->SendMsg(T_("%6d %-6s  %-20s %s\n"), jcr->JobId, level, jcr->Job,
+                  msg);
       /* Display comments if any */
       if (*jcr->comment) {
         ua->SendMsg(T_("               %-30s\n"), jcr->comment);
@@ -1420,7 +1461,11 @@ static void ListRunningJobs(UaContext* ua)
     }
   }
   endeach_jcr(jcr);
-  if (!ua->api) ua->SendMsg("====\n");
+  if (ua->api == API_MODE_JSON) {
+    ua->send->ArrayEnd("running");
+  } else if (!ua->api) {
+    ua->SendMsg("====\n");
+  }
   Dmsg0(200, "leave list_run_jobs()\n");
 }
 
@@ -1431,6 +1476,7 @@ static void ListTerminatedJobs(UaContext* ua)
 
   if (RecentJobResultsList::IsEmpty()) {
     if (!ua->api) ua->SendMsg(T_("No Terminated Jobs.\n"));
+    if (ua->api == API_MODE_JSON) { ua->send->ArrayStart("terminated"); ua->send->ArrayEnd("terminated"); }
     return;
   }
   if (!ua->api) {
@@ -1442,6 +1488,7 @@ static void ListTerminatedJobs(UaContext* ua)
         "===================================================================="
         "\n"));
   }
+  if (ua->api == API_MODE_JSON) { ua->send->ArrayStart("terminated"); }
 
   for (const RecentJobResultsList::JobResult& je :
        RecentJobResultsList::Get()) {
@@ -1493,9 +1540,20 @@ static void ListTerminatedJobs(UaContext* ua)
         termstat = T_("Other");
         break;
     }
-    if (ua->api) {
-      ua->SendMsg(T_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId, level,
-                  edit_uint64_with_commas(je.JobFiles, b1),
+    if (ua->api == API_MODE_JSON) {
+      ua->send->ObjectStart();
+      ua->send->ObjectKeyValue("jobid", (uint64_t)je.JobId, "%llu\n");
+      ua->send->ObjectKeyValue("name", JobName, "%s\n");
+      ua->send->ObjectKeyValue("level", level, "%s\n");
+      ua->send->ObjectKeyValue("type", job_type_to_str(je.JobType), "%s\n");
+      ua->send->ObjectKeyValue("status", termstat, "%s\n");
+      ua->send->ObjectKeyValue("files", (uint64_t)je.JobFiles, "%llu\n");
+      ua->send->ObjectKeyValue("bytes", (uint64_t)je.JobBytes, "%llu\n");
+      ua->send->ObjectKeyValue("finished", dt, "%s\n");
+      ua->send->ObjectEnd();
+    } else if (ua->api) {
+      ua->SendMsg(T_("%6d\t%-6s\t%8s\t%10s\t%-7s\t%-8s\t%s\n"), je.JobId,
+                  level, edit_uint64_with_commas(je.JobFiles, b1),
                   edit_uint64_with_suffix(je.JobBytes, b2), termstat, dt,
                   JobName);
     } else {
@@ -1505,7 +1563,11 @@ static void ListTerminatedJobs(UaContext* ua)
                   JobName);
     }
   }
-  if (!ua->api) ua->SendMsg(T_("\n"));
+  if (ua->api == API_MODE_JSON) {
+    ua->send->ArrayEnd("terminated");
+  } else if (!ua->api) {
+    ua->SendMsg(T_("\n"));
+  }
 }
 
 

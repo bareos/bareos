@@ -10,31 +10,119 @@
     <q-tab-panels v-model="tab" animated>
       <!-- STATUS -->
       <q-tab-panel name="status" class="q-pa-none">
-        <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-8">
-            <q-card flat bordered class="bareos-panel">
-              <q-card-section class="panel-header row items-center">
-                <span>Director Status</span>
-                <q-space />
-                <q-btn flat round dense icon="refresh" color="white" @click="refreshStatus" :loading="statusLoading" />
-              </q-card-section>
-              <q-card-section>
-                <q-inner-loading :showing="statusLoading" />
-                <div v-if="statusError" class="text-negative">{{ statusError }}</div>
-                <div v-else class="console-output">{{ dirStatusText }}</div>
-              </q-card-section>
-            </q-card>
+        <q-inner-loading :showing="statusLoading" />
+        <div v-if="statusError" class="text-negative q-pa-md">{{ statusError }}</div>
+        <template v-else-if="rawStatus">
+          <div class="row q-col-gutter-md">
+
+            <!-- Header info card -->
+            <div class="col-12 col-md-6">
+              <q-card flat bordered class="bareos-panel">
+                <q-card-section class="panel-header row items-center">
+                  <span>Director Info</span>
+                  <q-space />
+                  <q-btn flat round dense icon="refresh" color="white"
+                         @click="refreshStatus" :loading="statusLoading" />
+                </q-card-section>
+                <q-card-section>
+                  <q-list dense separator>
+                    <q-item>
+                      <q-item-section class="text-weight-medium col-5">Director</q-item-section>
+                      <q-item-section>{{ statusHeader.director }}</q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section class="text-weight-medium col-5">Version</q-item-section>
+                      <q-item-section>{{ statusHeader.version }}</q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section class="text-weight-medium col-5">OS</q-item-section>
+                      <q-item-section>{{ statusHeader.os }}</q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section class="text-weight-medium col-5">Daemon Started</q-item-section>
+                      <q-item-section>{{ statusHeader.daemon_started }}</q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section class="text-weight-medium col-5">Jobs Run</q-item-section>
+                      <q-item-section>{{ statusHeader.jobs_run }}</q-item-section>
+                    </q-item>
+                    <q-item>
+                      <q-item-section class="text-weight-medium col-5">Jobs Running</q-item-section>
+                      <q-item-section>{{ statusHeader.jobs_running }}</q-item-section>
+                    </q-item>
+                    <q-item v-if="statusHeader.config_warnings">
+                      <q-item-section class="text-weight-medium col-5">Warnings</q-item-section>
+                      <q-item-section>
+                        <q-badge color="warning" label="Configuration warnings" />
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-card-section>
+              </q-card>
+            </div>
+
+            <!-- Running Jobs card -->
+            <div class="col-12 col-md-6">
+              <q-card flat bordered class="bareos-panel">
+                <q-card-section class="panel-header">Running Jobs</q-card-section>
+                <q-card-section class="q-pa-none">
+                  <div v-if="!runningJobs.length" class="q-pa-md text-grey">
+                    No jobs running.
+                  </div>
+                  <q-table v-else
+                    flat dense
+                    :rows="runningJobs"
+                    :columns="runningJobCols"
+                    row-key="jobid"
+                    hide-pagination
+                    :rows-per-page-options="[0]"
+                  />
+                </q-card-section>
+              </q-card>
+            </div>
+
+            <!-- Scheduled Jobs card -->
+            <div class="col-12">
+              <q-card flat bordered class="bareos-panel">
+                <q-card-section class="panel-header">Scheduled Jobs</q-card-section>
+                <q-card-section class="q-pa-none">
+                  <div v-if="!scheduledJobs.length" class="q-pa-md text-grey">
+                    No scheduled jobs.
+                  </div>
+                  <q-table v-else
+                    flat dense
+                    :rows="scheduledJobs"
+                    :columns="scheduledJobCols"
+                    row-key="name"
+                    hide-pagination
+                    :rows-per-page-options="[0]"
+                  />
+                </q-card-section>
+              </q-card>
+            </div>
+
+            <!-- Terminated Jobs card -->
+            <div class="col-12">
+              <q-card flat bordered class="bareos-panel">
+                <q-card-section class="panel-header">Terminated Jobs</q-card-section>
+                <q-card-section class="q-pa-none">
+                  <div v-if="!terminatedJobs.length" class="q-pa-md text-grey">
+                    No terminated jobs.
+                  </div>
+                  <q-table v-else
+                    flat dense
+                    :rows="terminatedJobs"
+                    :columns="terminatedJobCols"
+                    row-key="jobid"
+                    hide-pagination
+                    :rows-per-page-options="[0]"
+                  />
+                </q-card-section>
+              </q-card>
+            </div>
+
           </div>
-          <div class="col-12 col-md-4">
-            <q-card flat bordered class="bareos-panel">
-              <q-card-section class="panel-header">Version</q-card-section>
-              <q-card-section>
-                <div class="text-h6">Bareos Director</div>
-                <div v-if="versionLine" class="text-caption text-grey">{{ versionLine }}</div>
-              </q-card-section>
-            </q-card>
-          </div>
-        </div>
+        </template>
       </q-tab-panel>
 
       <!-- MESSAGES -->
@@ -207,6 +295,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
+import { formatBytes } from '../mock/index.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import SubscriptionReport from '../components/SubscriptionReport.vue'
 
@@ -230,19 +319,49 @@ async function refreshStatus() {
   }
 }
 
-// The director returns a dict; format it for display.
-const dirStatusText = computed(() => {
+// The director now returns a structured JSON object with header, scheduled,
+// running and terminated arrays.  Fall back gracefully for older directors.
+const statusHeader = computed(() => {
   const d = rawStatus.value
-  if (!d) return ''
-  if (typeof d === 'string') return d
-  return JSON.stringify(d, null, 2)
+  if (!d || typeof d !== 'object') return {}
+  return d.header || {}
 })
+const scheduledJobs  = computed(() => rawStatus.value?.scheduled  ?? [])
+const runningJobs    = computed(() => rawStatus.value?.running    ?? [])
+const terminatedJobs = computed(() => rawStatus.value?.terminated ?? [])
 
-const versionLine = computed(() => {
-  const text = dirStatusText.value
-  const m = text.match(/Version:\s+(.+)/)
-  return m ? m[1] : ''
-})
+const scheduledJobCols = [
+  { name: 'name',      label: 'Job',       field: 'name',      align: 'left' },
+  { name: 'level',     label: 'Level',     field: 'level',     align: 'left' },
+  { name: 'type',      label: 'Type',      field: 'type',      align: 'left' },
+  { name: 'priority',  label: 'Pri',       field: 'priority',  align: 'right' },
+  { name: 'scheduled', label: 'Scheduled', field: 'scheduled', align: 'left' },
+  { name: 'volume',    label: 'Volume',    field: 'volume',    align: 'left' },
+  { name: 'pool',      label: 'Pool',      field: 'pool',      align: 'left' },
+  { name: 'storage',   label: 'Storage',   field: 'storage',   align: 'left' },
+]
+const runningJobCols = [
+  { name: 'jobid',      label: 'JobId',      field: 'jobid',      align: 'right' },
+  { name: 'name',       label: 'Job',        field: 'name',       align: 'left' },
+  { name: 'level',      label: 'Level',      field: 'level',      align: 'left' },
+  { name: 'type',       label: 'Type',       field: 'type',       align: 'left' },
+  { name: 'start_time', label: 'Started',    field: 'start_time', align: 'left' },
+  { name: 'files',      label: 'Files',      field: 'files',      align: 'right' },
+  { name: 'bytes',      label: 'Bytes',      field: 'bytes',      align: 'right',
+    format: v => v ? formatBytes(Number(v)) : '0 B' },
+  { name: 'status',     label: 'Status',     field: 'status',     align: 'left' },
+]
+const terminatedJobCols = [
+  { name: 'jobid',    label: 'JobId',    field: 'jobid',    align: 'right' },
+  { name: 'name',     label: 'Job',      field: 'name',     align: 'left' },
+  { name: 'level',    label: 'Level',    field: 'level',    align: 'left' },
+  { name: 'type',     label: 'Type',     field: 'type',     align: 'left' },
+  { name: 'finished', label: 'Finished', field: 'finished', align: 'left' },
+  { name: 'files',    label: 'Files',    field: 'files',    align: 'right' },
+  { name: 'bytes',    label: 'Bytes',    field: 'bytes',    align: 'right',
+    format: v => v ? formatBytes(Number(v)) : '0 B' },
+  { name: 'status',   label: 'Status',   field: 'status',   align: 'left' },
+]
 
 // ── Messages ─────────────────────────────────────────────────────────────────
 const messagesLoading = ref(false)
