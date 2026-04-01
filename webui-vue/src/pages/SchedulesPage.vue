@@ -49,27 +49,6 @@
       <!-- STATUS: schedule→jobs mapping + calendar preview -->
       <q-tab-panel name="status" class="q-pa-none">
 
-        <!-- header / controls -->
-        <q-card flat bordered class="bareos-panel q-mb-md">
-          <q-card-section class="panel-header row items-center">
-            <span>Scheduler Status</span>
-            <q-space />
-            <q-btn-toggle v-model="viewMode" dense flat unelevated
-                          :options="[{label:'Month',value:'month'},{label:'Week',value:'week'}]"
-                          color="white" text-color="white"
-                          toggle-color="primary" toggle-text-color="white"
-                          class="q-mr-sm" />
-            <q-btn flat round dense icon="chevron_left"  color="white" @click="prevPeriod" />
-            <span class="text-white q-mx-sm" style="min-width:160px;text-align:center">{{ periodLabel }}</span>
-            <q-btn flat round dense icon="chevron_right" color="white" @click="nextPeriod" />
-            <q-btn flat round dense icon="today" color="white" class="q-ml-sm" title="Go to today" @click="goToday" />
-            <q-btn flat round dense icon="refresh" color="white" class="q-ml-sm" @click="refreshStatus" />
-          </q-card-section>
-          <q-card-section v-if="statusError" class="q-pa-none">
-            <q-banner dense class="bg-negative text-white">{{ statusError }}</q-banner>
-          </q-card-section>
-        </q-card>
-
         <!-- Scheduler Jobs: which schedules trigger which jobs -->
         <q-card flat bordered class="bareos-panel q-mb-md">
           <q-card-section class="panel-header">
@@ -80,26 +59,38 @@
                      row-key="idx" dense flat :loading="statusLoading"
                      :pagination="{ rowsPerPage: 50 }">
               <template #body="props">
-                <!-- Group header row when schedule name changes -->
-                <q-tr v-if="props.row._firstInGroup"
-                      class="sched-group-header">
-                  <q-td colspan="4" class="text-weight-bold q-pl-md">
-                    <q-icon :name="props.row.schedEnabled ? 'event' : 'event_busy'"
-                            :color="props.row.schedEnabled ? 'positive' : 'negative'"
-                            size="16px" class="q-mr-xs" />
-                    {{ props.row.schedule }}
-                    <q-badge :color="props.row.schedEnabled ? 'positive' : 'negative'"
-                             :label="props.row.schedEnabled ? 'Enabled' : 'Disabled'"
-                             class="q-ml-sm" />
+                <!-- Group header row: schedule name + toggle, shown once per schedule -->
+                <q-tr v-if="props.row._firstInGroup" class="sched-group-header">
+                  <q-td colspan="1" class="q-pl-sm">
+                    <div class="row items-center no-wrap q-gutter-xs">
+                      <q-btn flat round dense size="sm"
+                             :icon="props.row.schedEnabled ? 'pause' : 'play_arrow'"
+                             :color="props.row.schedEnabled ? 'warning' : 'positive'"
+                             :title="props.row.schedEnabled ? 'Disable schedule' : 'Enable schedule'"
+                             :loading="togglingName === props.row.schedule"
+                             @click="toggleSchedule({ name: props.row.schedule, enabled: props.row.schedEnabled })" />
+                      <span class="text-weight-bold">{{ props.row.schedule }}</span>
+                      <q-badge :color="props.row.schedEnabled ? 'positive' : 'negative'"
+                               :label="props.row.schedEnabled ? 'Enabled' : 'Disabled'" />
+                    </div>
                   </q-td>
                 </q-tr>
+                <!-- Job row -->
                 <q-tr :props="props">
-                  <q-td key="job" class="q-pl-lg">{{ props.row.job }}</q-td>
-                  <q-td key="jobEnabled" class="text-center">
-                    <q-badge v-if="props.row.jobEnabled !== null"
-                             :color="props.row.jobEnabled ? 'positive' : 'negative'"
-                             :label="props.row.jobEnabled ? 'Enabled' : 'Disabled'" />
-                    <span v-else>—</span>
+                  <q-td key="job" style="padding-left: 48px">
+                    <div v-if="props.row.job !== '—'" class="row items-center no-wrap q-gutter-xs">
+                      <q-btn flat round dense size="sm"
+                             :icon="props.row.jobEnabled ? 'pause' : 'play_arrow'"
+                             :color="props.row.jobEnabled ? 'warning' : 'positive'"
+                             :title="props.row.jobEnabled ? 'Disable job' : 'Enable job'"
+                             :loading="togglingJob === props.row.job"
+                             @click="toggleJob(props.row)" />
+                      <span>{{ props.row.job }}</span>
+                      <q-badge v-if="props.row.jobEnabled !== null"
+                               :color="props.row.jobEnabled ? 'positive' : 'negative'"
+                               :label="props.row.jobEnabled ? 'Enabled' : 'Disabled'" />
+                    </div>
+                    <span v-else class="text-grey-5">no jobs configured</span>
                   </q-td>
                 </q-tr>
               </template>
@@ -109,8 +100,21 @@
 
         <!-- Scheduler Preview: Calendar (month or week view) -->
         <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">
+          <q-card-section class="panel-header row items-center">
             <span>Scheduler Preview</span>
+            <q-space />
+            <q-btn-toggle v-model="viewMode" dense flat unelevated
+                          :options="[{label:'Month',value:'month'},{label:'Week',value:'week'}]"
+                          color="white" text-color="white"
+                          toggle-color="primary" toggle-text-color="white"
+                          class="q-mr-sm" />
+            <q-btn flat round dense icon="chevron_left"  color="white" @click="prevPeriod" />
+            <span class="text-white q-mx-sm" style="min-width:160px;text-align:center">{{ periodLabel }}</span>
+            <q-btn flat round dense icon="chevron_right" color="white" @click="nextPeriod" />
+            <q-btn flat round dense icon="today" color="white" class="q-ml-sm" title="Go to today" @click="goToday" />
+          </q-card-section>
+          <q-card-section v-if="statusError" class="q-pa-none">
+            <q-banner dense class="bg-negative text-white">{{ statusError }}</q-banner>
           </q-card-section>
           <!-- Schedule filter checkboxes -->
           <q-card-section v-if="allScheduleNames.length" class="q-pb-none">
@@ -215,11 +219,27 @@ async function toggleSchedule(row) {
   try {
     await director.call(`${action} schedule=${row.name}`)
     $q.notify({ type: 'positive', message: `Schedule "${row.name}" ${action}d` })
-    await refreshSchedules()
+    await Promise.all([refreshSchedules(), refreshStatus()])
   } catch (e) {
     $q.notify({ type: 'negative', message: e.message })
   } finally {
     togglingName.value = null
+  }
+}
+
+const togglingJob = ref(null)
+
+async function toggleJob(row) {
+  const action = row.jobEnabled ? 'disable' : 'enable'
+  togglingJob.value = row.job
+  try {
+    await director.call(`${action} job=${row.job}`)
+    $q.notify({ type: 'positive', message: `Job "${row.job}" ${action}d` })
+    await refreshStatus()
+  } catch (e) {
+    $q.notify({ type: 'negative', message: e.message })
+  } finally {
+    togglingJob.value = null
   }
 }
 
@@ -339,9 +359,21 @@ async function refreshStatus() {
   statusError.value   = null
   try {
     const { from, to } = apiDaysRange.value
-    const res = await director.call(`status scheduler days=${from},${to}`)
-    schedulesData.value = Array.isArray(res?.schedules) ? res.schedules : []
-    previewData.value   = Array.isArray(res?.preview)   ? res.preview   : []
+    const [res, showRes] = await Promise.all([
+      director.call(`status scheduler days=${from},${to}`),
+      director.call('show schedules'),
+    ])
+    const active = Array.isArray(res?.schedules) ? res.schedules : []
+    previewData.value = Array.isArray(res?.preview) ? res.preview : []
+
+    // Merge in disabled schedules from "show schedules" so they remain visible
+    const activeNames = new Set(active.map(s => s.name))
+    const allShown = Object.values(showRes?.schedules ?? {})
+    const disabled = allShown
+      .filter(s => !activeNames.has(s.name))
+      .map(s => ({ name: s.name, enabled: false, jobs: [] }))
+
+    schedulesData.value = [...active, ...disabled]
   } catch (e) {
     statusError.value = e.message
   } finally {
@@ -355,7 +387,6 @@ watch(apiDaysRange, refreshStatus, { deep: true, immediate: true })
 // Flatten schedules→jobs into table rows with group markers
 const scheduleJobRows = computed(() => {
   const rows = []
-  let lastSched = null
   for (const sched of schedulesData.value) {
     const jobs = Array.isArray(sched.jobs) ? sched.jobs : []
     if (!jobs.length) {
@@ -365,28 +396,26 @@ const scheduleJobRows = computed(() => {
         schedEnabled: sched.enabled,
         job: '—',
         jobEnabled: null,
-        _firstInGroup: sched.name !== lastSched,
+        _firstInGroup: true,
       })
     } else {
-      for (const j of jobs) {
+      jobs.forEach((j, i) => {
         rows.push({
           idx: rows.length,
           schedule: sched.name,
           schedEnabled: sched.enabled,
           job: j.name,
           jobEnabled: j.enabled,
-          _firstInGroup: sched.name !== lastSched,
+          _firstInGroup: i === 0,
         })
-      }
+      })
     }
-    lastSched = sched.name
   }
   return rows
 })
 
 const scheduleJobCols = [
-  { name: 'job',        label: 'Job',        field: 'job',        align: 'left',   sortable: false },
-  { name: 'jobEnabled', label: 'Job Status', field: 'jobEnabled', align: 'center'               },
+  { name: 'job', label: 'Job', field: 'job', align: 'left', headerStyle: 'padding-left: 48px' },
 ]
 
 // ── Schedule visibility filter for calendar ────────────────────────────────
@@ -470,3 +499,12 @@ function scheduleColor(name) {
 // Status tab loads immediately (default); Show tab loads lazily on first visit.
 watch(tab, t => { if (t === 'show') refreshSchedules() })
 </script>
+
+<style scoped>
+.sched-group-header td {
+  background: rgba(0, 0, 0, 0.04);
+  border-top: 2px solid rgba(0, 0, 0, 0.15) !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+</style>

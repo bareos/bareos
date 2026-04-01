@@ -59,9 +59,11 @@
                   <q-btn flat round dense size="sm"
                          :icon="props.row.enabled ? 'pause' : 'play_arrow'"
                          :color="props.row.enabled ? 'warning' : 'positive'"
-                         :title="props.row.enabled ? 'Disable' : 'Enable'" />
-                  <q-btn flat round dense size="sm" icon="info" title="Details"
-                         :to="{ name: 'client-details', params: { name: props.row.name } }" />
+                         :title="props.row.enabled ? 'Disable' : 'Enable'"
+                         :loading="toggling === props.row.name"
+                         @click="toggleEnabled(props.row)" />
+                  <q-btn flat round dense size="sm" icon="info" title="Status"
+                         @click="showStatus(props.row.name)" />
                 </q-td>
               </template>
             </q-table>
@@ -74,18 +76,67 @@
         <JobTimeline />
       </q-tab-panel>
     </q-tab-panels>
+
+    <!-- Client status dialog -->
+    <q-dialog v-model="statusDialog.open">
+      <q-card style="min-width:600px; max-width:90vw">
+        <q-card-section class="panel-header row items-center q-py-sm">
+          <span>Status: {{ statusDialog.client }}</span>
+          <q-space />
+          <q-btn flat round dense icon="close" color="white" v-close-popup />
+        </q-card-section>
+        <q-card-section class="q-pa-none">
+          <q-inner-loading :showing="statusDialog.loading" />
+          <pre v-if="statusDialog.text" class="client-status-output">{{ statusDialog.text }}</pre>
+          <div v-else-if="!statusDialog.loading" class="text-grey q-pa-md text-center">No output</div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useDirectorFetch, normaliseClient } from '../composables/useDirectorFetch.js'
+import { ref, computed, onMounted } from 'vue'
+import { normaliseClient } from '../composables/useDirectorFetch.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
+import { useDirectorStore } from '../stores/director.js'
 import JobTimeline from '../components/JobTimeline.vue'
 
 const tab = ref('list')
+const director = useDirectorStore()
 
-const { data: rawClients, loading, error, refresh } = useDirectorFetch('llist clients', 'clients')
+const rawClients = ref([])
+const loading    = ref(false)
+const error      = ref(null)
+
+async function refresh() {
+  if (!director.isConnected) {
+    error.value = 'Not connected to director'
+    return
+  }
+  loading.value = true
+  error.value   = null
+  try {
+    const [listResult, dotResult] = await Promise.all([
+      director.call('llist clients'),
+      director.call('.clients'),
+    ])
+    const list = listResult?.clients ?? []
+    const dot  = dotResult?.clients  ?? []
+    const enabledMap = Object.fromEntries(dot.map(c => [c.name, c.enabled]))
+    rawClients.value = list.map(c => ({
+      ...c,
+      enabled: enabledMap[c.name] ?? true,
+    }))
+  } catch (e) {
+    error.value = e.message ?? String(e)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(refresh)
+
 const clients = computed(() => (rawClients.value ?? []).map(normaliseClient))
 
 function osIcon(client)  { return osIconName(client)  }
@@ -98,4 +149,53 @@ const columns = [
   { name: 'enabled', label: 'Status',  field: 'enabled', align: 'center'  },
   { name: 'actions', label: '',        field: 'actions', align: 'center',  style: 'width:80px' },
 ]
+
+// ── Enable / Disable toggle ───────────────────────────────────────────────────
+
+const toggling = ref(null)
+
+async function toggleEnabled(client) {
+  toggling.value = client.name
+  try {
+    const cmd = client.enabled
+      ? `disable client=${client.name}`
+      : `enable client=${client.name}`
+    await director.call(cmd)
+    await refresh()
+  } finally {
+    toggling.value = null
+  }
+}
+
+// ── Client status dialog ──────────────────────────────────────────────────────
+
+const statusDialog = ref({ open: false, client: '', loading: false, text: '' })
+
+async function showStatus(name) {
+  statusDialog.value = { open: true, client: name, loading: true, text: '' }
+  try {
+    const result = await director.rawCall(`status client=${name}`)
+    statusDialog.value.text = result
+  } catch (e) {
+    statusDialog.value.text = `Error: ${e.message ?? e}`
+  } finally {
+    statusDialog.value.loading = false
+  }
+}
 </script>
+
+<style scoped>
+.client-status-output {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  padding: 12px 16px;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+</style>

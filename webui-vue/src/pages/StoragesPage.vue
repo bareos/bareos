@@ -396,8 +396,8 @@ async function reloadStorageStatus(name) {
   storageStatusDlg.value.loading = true
   storageStatusDlg.value.error   = null
   try {
-    const r = await director.call(`status storage=${name}`)
-    storageStatusDlg.value.text = typeof r === 'string' ? r : JSON.stringify(r, null, 2)
+    const r = await director.rawCall(`status storage=${name}`)
+    storageStatusDlg.value.text = r
   } catch (e) {
     storageStatusDlg.value.error = e.message
   } finally {

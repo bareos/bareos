@@ -182,6 +182,15 @@
                       </q-btn>
                     </template>
                   </q-td>
+                  <q-td class="text-caption text-grey-6 text-mono" style="width:90px">
+                    {{ props.row.mode }}
+                  </q-td>
+                  <q-td class="text-caption text-grey-6" style="width:80px">
+                    {{ props.row.user }}
+                  </q-td>
+                  <q-td class="text-caption text-grey-6" style="width:80px">
+                    {{ props.row.group }}
+                  </q-td>
                   <q-td class="text-right text-caption text-grey-6" style="width:90px">
                     {{ props.row.isDir ? '' : formatBytes(props.row.size) }}
                   </q-td>
@@ -421,11 +430,14 @@ const selectedFiles = ref(new Map())  // key = FileId
 const selectedDirs  = ref(new Map())  // key = PathId
 
 const browserCols = [
-  { name: 'sel',   label: '',       field: 'sel',   align: 'center', style: 'width:36px' },
-  { name: 'icon',  label: '',       field: 'isDir', align: 'center', style: 'width:28px' },
-  { name: 'name',  label: 'Name',   field: 'name',  align: 'left',   sortable: true },
-  { name: 'size',  label: 'Size',   field: 'size',  align: 'right',  style: 'width:90px' },
-  { name: 'mtime', label: 'Modified', field: 'mtime', align: 'left', style: 'width:160px' },
+  { name: 'sel',   label: '',         field: 'sel',   align: 'center', style: 'width:36px' },
+  { name: 'icon',  label: '',         field: 'isDir', align: 'center', style: 'width:28px' },
+  { name: 'name',  label: 'Name',     field: 'name',  align: 'left',   sortable: true },
+  { name: 'mode',  label: 'Mode',     field: 'mode',  align: 'left',   style: 'width:90px' },
+  { name: 'user',  label: 'User',     field: 'user',  align: 'left',   style: 'width:80px' },
+  { name: 'group', label: 'Group',    field: 'group', align: 'left',   style: 'width:80px' },
+  { name: 'size',  label: 'Size',     field: 'size',  align: 'right',  style: 'width:90px' },
+  { name: 'mtime', label: 'Modified', field: 'mtime', align: 'left',   style: 'width:160px' },
 ]
 
 async function initBrowser() {
@@ -477,6 +489,9 @@ async function fetchDir(pathId) {
       name:   d.name.endsWith('/') ? d.name : d.name + '/',
       pathId: d.pathid,
       fileId: d.fileid,
+      mode:   formatMode(d.stat?.mode ?? 0),
+      user:   d.stat?.user ?? '',
+      group:  d.stat?.group ?? '',
       size:   0,
       mtime:  d.stat?.mtime ?? 0,
     }))
@@ -487,6 +502,9 @@ async function fetchDir(pathId) {
       name:   f.name,
       pathId: f.pathid,
       fileId: f.fileid,
+      mode:   formatMode(f.stat?.mode ?? 0),
+      user:   f.stat?.user ?? '',
+      group:  f.stat?.group ?? '',
       size:   f.stat?.size ?? 0,
       mtime:  f.stat?.mtime ?? 0,
     }))
@@ -649,6 +667,26 @@ function formatMtime(ts) {
   const min  = d.getMinutes().toString().padStart(2, '0')
   const ss   = d.getSeconds().toString().padStart(2, '0')
   return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`
+}
+
+function formatMode(mode) {
+  if (!mode) return ''
+  const types = { 0o040000: 'd', 0o120000: 'l', 0o060000: 'b',
+                  0o020000: 'c', 0o010000: 'p', 0o140000: 's' }
+  let type = '-'
+  for (const [mask, ch] of Object.entries(types)) {
+    if ((mode & 0o170000) === Number(mask)) { type = ch; break }
+  }
+  const bits = 'rwxrwxrwx'
+  let perms = ''
+  for (let i = 8; i >= 0; i--) {
+    perms += (mode >> i) & 1 ? bits[8 - i] : '-'
+  }
+  // setuid/setgid/sticky
+  if (mode & 0o4000) perms = perms.slice(0, 2) + (perms[2] === 'x' ? 's' : 'S') + perms.slice(3)
+  if (mode & 0o2000) perms = perms.slice(0, 5) + (perms[5] === 'x' ? 's' : 'S') + perms.slice(6)
+  if (mode & 0o1000) perms = perms.slice(0, 8) + (perms[8] === 'x' ? 't' : 'T')
+  return type + perms
 }
 
 function fileIcon(name) {
