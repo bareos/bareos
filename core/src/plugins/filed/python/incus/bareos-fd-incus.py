@@ -730,7 +730,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                                              for k in ['instance', 'project', 'remote', 'storage']):
             return fail(
                 '"restore_path" is incompatible with either "restore_instance", "restore_project", '
-                '"restore_remote", or "remote_storage"'
+                '"restore_remote", or "restore_storage"'
             )
         return self.options.check()
 
@@ -799,8 +799,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.incus_process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                                   stderr=subprocess.PIPE)
         except Exception as e: # pylint: disable=broad-exception-caught
-            bareosfd.JobMessage(bareosfd.M_FATAL, f"Command {' '.join(cmd)} failed: {e}")
-            return bareosfd.bRC_Error
+            return fail(f"Command {' '.join(cmd)} failed: {e}")
 
         threading.Thread(target=self.process_stdout, args=(self.incus_process.stdout,),
                          daemon=True).start()
@@ -843,8 +842,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             self.incus_process = subprocess.Popen(cmd, stdin=subprocess.PIPE,
                                                   stderr=subprocess.PIPE)
         except Exception as e: # pylint: disable=broad-exception-caught
-            bareosfd.JobMessage(bareosfd.M_FATAL, f"Command {' '.join(cmd)} failed: {e}")
-            return bareosfd.bRC_Error
+            return fail(f"Command {' '.join(cmd)} failed: {e}")
 
         # pylint: disable=consider-using-with
         self.tar = tarfile.open(fileobj=self.incus_process.stdin,
