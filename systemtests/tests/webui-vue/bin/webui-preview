@@ -158,7 +158,7 @@ echo "==> Backup jobs complete."
 # ── 3. Load subscription test data ───────────────────────────────────────────
 
 echo "==> Loading subscription test data ..."
-"${TESTDIR}/testrunner-load-subscriptiontestdata"
+"${CMAKE_SOURCE_DIR}/systemtests/tests/webui-vue/testrunner-load-subscriptiontestdata"
 echo "==> Subscription test data loaded."
 
 # ── 4. Build Vue test app ─────────────────────────────────────────────────────
