@@ -348,6 +348,14 @@ restore_buffer_depth (optional)
    memory usage of the restore buffer to be around ``(restore_buffer_depth + 2) * chunk_size``.
    Defaults to ``8``.
 
+restore_config_override (optional, repeatable)
+   The configuration override (`<key>=<value>`) to apply on restore. Can be specified multiple times
+   to apply multiple overrides.
+
+restore_device_override (optional, repeatable)
+   The device override (`<device>,<key>=<value>`) to apply on restore. Can be specified multiple
+   times to apply multiple overrides.
+
 restore_instance (optional)
    The name of the instance in which the restore will be done. Defaults to using the instance
    defined in ``instance``.
