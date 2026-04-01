@@ -20,49 +20,87 @@ import tempfile
 import threading
 import time
 
-from BareosFdWrapper import * # pylint: disable=import-error,wildcard-import
-import bareosfd # pylint: disable=import-error
-import BareosFdPluginBaseclass # pylint: disable=import-error
+from BareosFdWrapper import *  # pylint: disable=import-error,wildcard-import
+import bareosfd  # pylint: disable=import-error
+import BareosFdPluginBaseclass  # pylint: disable=import-error
 
 
 # Size suffixes to use when processing plugin options that expect a size in bytes.
-SIZE_MULTIPLIERS = {'k': 1_000, 'm': 1_000_000, 'g': 1_000_000_000, 't': 1_000_000_000_000,
-                    'ki': 1_024, 'mi': 1_048_576, 'gi': 1_073_741_824, 'ti': 1_099_511_627_776}
+SIZE_MULTIPLIERS = {
+    "k": 1_000,
+    "m": 1_000_000,
+    "g": 1_000_000_000,
+    "t": 1_000_000_000_000,
+    "ki": 1_024,
+    "mi": 1_048_576,
+    "gi": 1_073_741_824,
+    "ti": 1_099_511_627_776,
+}
 
 # Time suffixes to use when processing plugin options that expect a time in seconds.
-TIME_MULTIPLIERS = {'s': 1, 'min': 60, 'h': 3_600, 'd': 86_400}
+TIME_MULTIPLIERS = {"s": 1, "min": 60, "h": 3_600, "d": 86_400}
 
 # Conversion map between tarfile and Bareos types. Note that DIRTYPE is mapped to FT_REG. This is
 # not a mistake: Bareos doesn’t allow storing raw data within directory entries; as we store
 # extended attributes directly in the file stream, we need to use a Bareos type that allows that.
-TAR_BOS = {tarfile.AREGTYPE: bareosfd.FT_REG,      tarfile.REGTYPE:  bareosfd.FT_REG,
-           tarfile.LNKTYPE:  bareosfd.FT_LNKSAVED, tarfile.SYMTYPE:  bareosfd.FT_LNK,
-           tarfile.CHRTYPE:  bareosfd.FT_SPEC,     tarfile.BLKTYPE:  bareosfd.FT_SPEC,
-           tarfile.DIRTYPE:  bareosfd.FT_REG,      tarfile.FIFOTYPE: bareosfd.FT_SPEC,
-           tarfile.CONTTYPE: bareosfd.FT_REG,      tarfile.GNUTYPE_SPARSE: bareosfd.FT_REG}
+TAR_BOS = {
+    tarfile.AREGTYPE: bareosfd.FT_REG,
+    tarfile.REGTYPE: bareosfd.FT_REG,
+    tarfile.LNKTYPE: bareosfd.FT_LNKSAVED,
+    tarfile.SYMTYPE: bareosfd.FT_LNK,
+    tarfile.CHRTYPE: bareosfd.FT_SPEC,
+    tarfile.BLKTYPE: bareosfd.FT_SPEC,
+    tarfile.DIRTYPE: bareosfd.FT_REG,
+    tarfile.FIFOTYPE: bareosfd.FT_SPEC,
+    tarfile.CONTTYPE: bareosfd.FT_REG,
+    tarfile.GNUTYPE_SPARSE: bareosfd.FT_REG,
+}
 
 # Reverse map converting from Bareos to tarfile types. The map is incomplete, as we need to inspect
 # the stat struct to disambiguate types mapped to FT_REG and FT_SPEC.
-BOS_TAR = {bareosfd.FT_LNKSAVED: tarfile.LNKTYPE, bareosfd.FT_REGE: tarfile.REGTYPE,
-           bareosfd.FT_REG:      tarfile.REGTYPE, bareosfd.FT_LNK:  tarfile.SYMTYPE}
+BOS_TAR = {
+    bareosfd.FT_LNKSAVED: tarfile.LNKTYPE,
+    bareosfd.FT_REGE: tarfile.REGTYPE,
+    bareosfd.FT_REG: tarfile.REGTYPE,
+    bareosfd.FT_LNK: tarfile.SYMTYPE,
+}
 
 # Conversion map between mode_t and Bareos types.
-STAT_TAR = {stat.S_IFIFO: tarfile.FIFOTYPE, stat.S_IFCHR: tarfile.CHRTYPE,
-            stat.S_IFDIR: tarfile.DIRTYPE,  stat.S_IFBLK: tarfile.BLKTYPE,
-            stat.S_IFREG: tarfile.REGTYPE,  stat.S_IFLNK: tarfile.SYMTYPE}
+STAT_TAR = {
+    stat.S_IFIFO: tarfile.FIFOTYPE,
+    stat.S_IFCHR: tarfile.CHRTYPE,
+    stat.S_IFDIR: tarfile.DIRTYPE,
+    stat.S_IFBLK: tarfile.BLKTYPE,
+    stat.S_IFREG: tarfile.REGTYPE,
+    stat.S_IFLNK: tarfile.SYMTYPE,
+}
 
 # Conversion map between tarfile types and mode_t.
-TAR_STAT = {tarfile.AREGTYPE: stat.S_IFREG, tarfile.REGTYPE:  stat.S_IFREG,
-            tarfile.LNKTYPE:  stat.S_IFREG, tarfile.SYMTYPE:  stat.S_IFLNK,
-            tarfile.CHRTYPE:  stat.S_IFCHR, tarfile.BLKTYPE:  stat.S_IFBLK,
-            tarfile.DIRTYPE:  stat.S_IFDIR, tarfile.FIFOTYPE: stat.S_IFIFO,
-            tarfile.CONTTYPE: stat.S_IFREG, tarfile.GNUTYPE_SPARSE: stat.S_IFREG}
+TAR_STAT = {
+    tarfile.AREGTYPE: stat.S_IFREG,
+    tarfile.REGTYPE: stat.S_IFREG,
+    tarfile.LNKTYPE: stat.S_IFREG,
+    tarfile.SYMTYPE: stat.S_IFLNK,
+    tarfile.CHRTYPE: stat.S_IFCHR,
+    tarfile.BLKTYPE: stat.S_IFBLK,
+    tarfile.DIRTYPE: stat.S_IFDIR,
+    tarfile.FIFOTYPE: stat.S_IFIFO,
+    tarfile.CONTTYPE: stat.S_IFREG,
+    tarfile.GNUTYPE_SPARSE: stat.S_IFREG,
+}
 
 # Conversion map between Incus and tarfile compression names.
-TARFILE_MODES = {'bzip2': 'bz2', 'gzip': 'gz', 'lzma': 'xz', 'xz': 'xz', 'zstd': 'zst', 'none': ''}
+TARFILE_MODES = {
+    "bzip2": "bz2",
+    "gzip": "gz",
+    "lzma": "xz",
+    "xz": "xz",
+    "zstd": "zst",
+    "none": "",
+}
 
 # Incus uses SCHILY extended attributes.
-XATTR_PREFIX = 'SCHILY.xattr.'
+XATTR_PREFIX = "SCHILY.xattr."
 
 
 def populate_tarinfo(tarinfo, pkt, xattrs):
@@ -81,7 +119,8 @@ def populate_tarinfo(tarinfo, pkt, xattrs):
         tarinfo.linkname = pkt.olname
     tarinfo.uid = pkt.statp.st_uid
     tarinfo.gid = pkt.statp.st_gid
-    tarinfo.pax_headers = {f'{XATTR_PREFIX}{k}': v for k, v in xattrs.items()}
+    tarinfo.pax_headers = {f"{XATTR_PREFIX}{k}": v for k, v in xattrs.items()}
+
 
 def restore_tarinfo(tarinfo, pkt, data):
     """Restore a tarinfo from a Bareos packet and an open data file"""
@@ -90,13 +129,14 @@ def restore_tarinfo(tarinfo, pkt, data):
     header_len = 0
     while n:
         name_len = int.from_bytes(data.read(1))
-        name = data.read(name_len).decode('utf-8', 'surrogateescape')
+        name = data.read(name_len).decode("utf-8", "surrogateescape")
         value_len = int.from_bytes(data.read(2))
-        value = data.read(value_len).decode('utf-8', 'surrogateescape')
+        value = data.read(value_len).decode("utf-8", "surrogateescape")
         xattrs[name] = value
         header_len += name_len + value_len + 3
         n -= 1
     populate_tarinfo(tarinfo, pkt, xattrs)
+
 
 def populate_pkt(pkt, tarinfo):
     """
@@ -117,14 +157,19 @@ def populate_pkt(pkt, tarinfo):
     pkt.statp.st_uid = tarinfo.uid
     pkt.statp.st_gid = tarinfo.gid
     # To be extra sure, we filter out non-SCHILY xattrs
-    xattrs = sorted([(k.removeprefix(XATTR_PREFIX), v) for k, v in tarinfo.pax_headers.items()
-                                                       if k.startswith(XATTR_PREFIX)])
+    xattrs = sorted(
+        [
+            (k.removeprefix(XATTR_PREFIX), v)
+            for k, v in tarinfo.pax_headers.items()
+            if k.startswith(XATTR_PREFIX)
+        ]
+    )
     header = bytearray()
     for name, value in xattrs:
-        name_b = name.encode('utf-8', 'surrogateescape')[:255]
+        name_b = name.encode("utf-8", "surrogateescape")[:255]
         header.extend(len(name_b).to_bytes())
         header.extend(name_b)
-        value_b = value.encode('utf-8', 'surrogateescape')[:65535]
+        value_b = value.encode("utf-8", "surrogateescape")[:65535]
         header.extend(len(value_b).to_bytes(2))
         header.extend(value_b)
     pkt.statp.st_ino = len(xattrs)
@@ -137,32 +182,36 @@ def open_archive(f, compression):
     Open an archive so that tarfile only handles pure TAR operations. This fixes tarfile’s unsafe
     memory usage, as tarfile only bounds compressed buffer sizes, not their decompressed results.
     """
-    if compression == 'bzip2':
+    if compression == "bzip2":
         import bz2
+
         return bz2.open(f)
-    if compression == 'gzip':
+    if compression == "gzip":
         import gzip
+
         return gzip.open(f)
-    if compression in ('lzma', 'xz'):
+    if compression in ("lzma", "xz"):
         import lzma
+
         return lzma.open(f)
-    if compression == 'zstd':
-        import compression.zstd # pylint: disable=import-error
+    if compression == "zstd":
+        import compression.zstd  # pylint: disable=import-error
+
         return compression.zstd.open(f)
     return f
 
 
 def format_size(size):
     """Make a size in bytes human-readable (base 1000)"""
-    units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB']
+    units = ["B", "kB", "MB", "GB", "TB", "PB"]
     size = float(size)
     for unit in units[:-1]:
         if size < 1000:
-            if unit == 'B':
-                return f'{int(size)} B'
-            return f'{size:.2f} {unit}'
+            if unit == "B":
+                return f"{int(size)} B"
+            return f"{size:.2f} {unit}"
         size /= 1000
-    return f'{size:.2f} {unit[-1]}'
+    return f"{size:.2f} {unit[-1]}"
 
 
 class LogQueue:
@@ -170,17 +219,18 @@ class LogQueue:
     Log queue formatting job messages. This works in two times, as sending job messages to the core
     needs to be done from the main thread.
     """
+
     def __init__(self):
         self.queue = queue.Queue()
 
     def put(self, line):
         """Put a new log line into the queue"""
         line_lower = line.lower()
-        if line_lower.startswith('error'):
+        if line_lower.startswith("error"):
             self.queue.put((bareosfd.M_FATAL, line))
-        elif line_lower.startswith('warn'):
+        elif line_lower.startswith("warn"):
             self.queue.put((bareosfd.M_WARNING, line))
-        elif line_lower.startswith('debug'):
+        elif line_lower.startswith("debug"):
             self.queue.put((bareosfd.M_DEBUG, line))
         else:
             self.queue.put((bareosfd.M_INFO, line))
@@ -203,6 +253,7 @@ class DataPipe:
     to the file API as it handles buffering and all read operations are full, but all the call sites
     expect this precise behavior.
     """
+
     def __init__(self):
         # The read side of the pipe
         self.r = None
@@ -215,10 +266,10 @@ class DataPipe:
         """Open and tune the pipe"""
         self.r, self.w = os.pipe()
         try:
-            with open('/proc/sys/fs/pipe-max-size', 'r', encoding='ascii') as file:
+            with open("/proc/sys/fs/pipe-max-size", "r", encoding="ascii") as file:
                 self.size = int(file.read())
             fcntl.fcntl(self.w, fcntl.F_SETPIPE_SZ, self.size)
-        except: # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except
             pass
 
     def write(self, r):
@@ -233,7 +284,7 @@ class DataPipe:
 
     def read(self, close=False):
         """Read the data from the pipe"""
-        with open(self.r, 'rb', closefd=close) as r:
+        with open(self.r, "rb", closefd=close) as r:
             return r.read()
 
     def close_w(self):
@@ -257,7 +308,10 @@ class ChunkCollector:
     :param log_queue: The log queue
     :param tmpdir: The optional directory in which to store temporary chunks
     """
-    def __init__(self, fname, chunk_size, st_size, max_ram_chunks, log_queue, tmpdir=None):
+
+    def __init__(
+        self, fname, chunk_size, st_size, max_ram_chunks, log_queue, tmpdir=None
+    ):
         self.fname = fname
         self.chunk_size = chunk_size
         self.st_size = st_size
@@ -298,7 +352,7 @@ class ChunkCollector:
         with self.lock:
             if chunk_id == self.next_chunk:
                 self.lock.notify()
-            if data == b'':
+            if data == b"":
                 self.zero_chunk_ids.add(chunk_id)
             elif len(self.ram_chunks) < self.max_ram_chunks:
                 # When the element fits in RAM
@@ -316,7 +370,7 @@ class ChunkCollector:
 
     def write_to_disk(self, chunk_id, data):
         """Write a chunk to disk"""
-        self.log_queue.put(f'DEBUG: evacuating chunk {chunk_id} to disk\n')
+        self.log_queue.put(f"DEBUG: evacuating chunk {chunk_id} to disk\n")
         with self.lock:
             heapq.heappush(self.disk_chunk_ids, chunk_id)
             f = tempfile.TemporaryFile(dir=self.dir)
@@ -327,7 +381,10 @@ class ChunkCollector:
     def ready(self):
         """Return whether the next chunk is ready for processing"""
         with self.lock:
-            return self.next_chunk in self.zero_chunk_ids or self.next_chunk in self.ram_chunks
+            return (
+                self.next_chunk in self.zero_chunk_ids
+                or self.next_chunk in self.ram_chunks
+            )
 
     def rebalance(self):
         """Fix and rebalance the internal data structures"""
@@ -337,7 +394,7 @@ class ChunkCollector:
             # Refresh from disk. If we are lucky, it is still cached.
             if self.disk_chunk_ids:
                 chunk_id = heapq.heappop(self.disk_chunk_ids)
-                self.log_queue.put(f'DEBUG: refreshing chunk {chunk_id} from disk\n')
+                self.log_queue.put(f"DEBUG: refreshing chunk {chunk_id} from disk\n")
                 f = self.disk_chunk_fds[chunk_id]
                 self.add(chunk_id, f.read())
                 f.close()
@@ -354,14 +411,16 @@ class ChunkCollector:
             # track and move the current cursor position in this buffer.
             old_cur = self.cur
             self.cur = old_cur + n
-            return self.current_blob[old_cur:self.cur]
-        data = bytearray(self.current_blob[self.cur:])
+            return self.current_blob[old_cur : self.cur]
+        data = bytearray(self.current_blob[self.cur :])
         self.cur = 0
         while len(data) < n:
             # Fail the collector if something went wrong
             if self.exception is not None:
-                message = ('The collector has been instructed to fail because of the following '
-                           f'error: {self.exception}')
+                message = (
+                    "The collector has been instructed to fail because of the following "
+                    f"error: {self.exception}"
+                )
                 raise type(self.exception)(message) from self.exception
             # In most cases, the loop should only refresh a single already-aligned chunk, but we
             # have no strong guarantee of it and can only hope the costly code paths are not too
@@ -371,8 +430,10 @@ class ChunkCollector:
                 self.lock.wait_for(self.ready)
                 done = self.next_chunk * self.chunk_size
                 total = self.st_size
-                self.log_queue.put(f'{self.fname}: {format_size(done)} / {format_size(total)} '
-                                   f'({done / total:.1%}) restored\n')
+                self.log_queue.put(
+                    f"{self.fname}: {format_size(done)} / {format_size(total)} "
+                    f"({done / total:.1%}) restored\n"
+                )
                 if self.next_chunk in self.zero_chunk_ids:
                     data.extend(self.zero_chunk)
                 else:
@@ -392,38 +453,43 @@ def _str(value):
     """No-op string option converter"""
     return value.strip()
 
+
 def _enum(*values):
     """Enum option converter"""
     _values = [value.lower() for value in values]
+
     def f(value):
         value_lower = value.strip().lower()
         if value_lower in _values:
             return value_lower
         raise ValueError(f'one of "{'", "'.join(_values)}"')
+
     return f
+
 
 def _bool(value):
     """Boolean option converter"""
     s = value.strip().lower()
-    if s in ['yes', 'y', 'on', 'true', '1']:
+    if s in ["yes", "y", "on", "true", "1"]:
         return True
-    if s in ['no', 'n', 'off', 'false', '0']:
+    if s in ["no", "n", "off", "false", "0"]:
         return False
     raise ValueError("a valid boolean")
+
 
 def _size(value):
     """Size option converter"""
     s = value.strip().lower()
-    if s == 'auto':
+    if s == "auto":
         return -1
-    if s.endswith('b'):
+    if s.endswith("b"):
         s = s[:-1]
     suffix = s[-2:]
-    if suffix in ['ki', 'mi', 'gi', 'ti']:
+    if suffix in ["ki", "mi", "gi", "ti"]:
         s = s[:-2]
     else:
         suffix = s[-1:]
-        if suffix in ['k', 'm', 'g', 't']:
+        if suffix in ["k", "m", "g", "t"]:
             s = s[:-1]
         else:
             suffix = None
@@ -436,6 +502,7 @@ def _size(value):
     except ValueError as e:
         raise ValueError("a valid size in bytes") from e
 
+
 def _int(value):
     """Integer option converter"""
     try:
@@ -443,14 +510,15 @@ def _int(value):
     except ValueError as e:
         raise ValueError("a valid integer") from e
 
+
 def _time(value):
     """Time option converter"""
     s = value.strip().lower()
     suffix = s[-1:]
-    if suffix in ['s', 'h', 'd']:
+    if suffix in ["s", "h", "d"]:
         s = s[:-1]
-    elif s.endswith('min'):
-        suffix = 'min'
+    elif s.endswith("min"):
+        suffix = "min"
         s = s[:-3]
     else:
         suffix = None
@@ -463,19 +531,23 @@ def _time(value):
     except ValueError as e:
         raise ValueError("a valid time in seconds") from e
 
+
 def _set(type_):
     """Set option converter"""
+
     def f(value):
         result = []
         seen = set()
-        for v in value.split(','):
+        for v in value.split(","):
             parsed = type_(v)
             if parsed in seen:
                 raise ValueError("a list without duplicates values")
             seen.add(parsed)
             result.append(parsed)
         return result
+
     return f
+
 
 def _no_op(value):
     """No-op converter"""
@@ -488,50 +560,49 @@ class UnknownOptionException(Exception):
 
 class BareosFdIncusOptions:
     """Incus plugin options"""
+
     def __init__(self):
         self._options = {
             # Common options
             ## Required instance selector
-            'instance': self.make_opt(_str),
+            "instance": self.make_opt(_str),
             ## Optional instance selectors
-            'project': self.make_opt(_str, ''),
-            'remote': self.make_opt(_str, ''),
+            "project": self.make_opt(_str, ""),
+            "remote": self.make_opt(_str, ""),
             ## Image chunking
-            'allow_disk_resize': self.make_opt(_bool, 'no'),
-            'chunk_size': self.make_opt(_size, '64MiB'),
-            'chunk_id_length': self.make_opt(_int, '8'),
+            "allow_disk_resize": self.make_opt(_bool, "no"),
+            "chunk_size": self.make_opt(_size, "64MiB"),
+            "chunk_id_length": self.make_opt(_int, "8"),
             ## Data compression (lz4 is supported by Incus but not tarfile, zstd is only supported
             ## on Python 3.14+)
-            'compression': self.make_opt(_enum(*TARFILE_MODES), 'none'),
+            "compression": self.make_opt(_enum(*TARFILE_MODES), "none"),
             ## Bareos storage path prefix (default = [remote:][project])
-            'path_prefix': self.make_opt(_str, ''),
-
+            "path_prefix": self.make_opt(_str, ""),
             # RAM tuning
             ## Buffering queue depth (the queue takes at most
             ## queue_depth * [chunk_size + a few metadata] when dealing with chunked images)
-            'queue_depth': self.make_opt(_int, '8'),
+            "queue_depth": self.make_opt(_int, "8"),
             ## When dealing with regular files, the queue doesn’t buffer files bigger than
             ## max_file_size (default = chunk_size * max(queue_depth / 2, 1)) and blocks until those
             ## are processed
-            'max_file_size': self.make_opt(_size, 'auto'),
-
+            "max_file_size": self.make_opt(_size, "auto"),
             # Backup options
-            'backup_poll_timeout': self.make_opt(_time, '1h'),
-            'hash': self.make_opt(_enum(*hashlib.algorithms_guaranteed), 'sha256'),
-            'hijacked_stat_fields': self.make_opt(_set(_enum('st_ino', 'st_atime', 'st_mtime',
-                                                             'st_ctime')),
-                                                  'st_ino,st_atime,st_mtime,st_ctime'),
-
+            "backup_poll_timeout": self.make_opt(_time, "1h"),
+            "hash": self.make_opt(_enum(*hashlib.algorithms_guaranteed), "sha256"),
+            "hijacked_stat_fields": self.make_opt(
+                _set(_enum("st_ino", "st_atime", "st_mtime", "st_ctime")),
+                "st_ino,st_atime,st_mtime,st_ctime",
+            ),
             # Restore options
-            'restore_buffer_depth': self.make_opt(_int, '8'),
-            'restore_config_override': self.make_opt(_no_op, []),
-            'restore_device_override': self.make_opt(_no_op, []),
-            'restore_instance': self.make_opt(_str, ''),
-            'restore_path': self.make_opt(_str, ''),
-            'restore_project': self.make_opt(_str, ''),
-            'restore_remote': self.make_opt(_str, ''),
-            'restore_storage': self.make_opt(_str, ''),
-            'temp_dir': self.make_opt(_str, ''),
+            "restore_buffer_depth": self.make_opt(_int, "8"),
+            "restore_config_override": self.make_opt(_no_op, []),
+            "restore_device_override": self.make_opt(_no_op, []),
+            "restore_instance": self.make_opt(_str, ""),
+            "restore_path": self.make_opt(_str, ""),
+            "restore_project": self.make_opt(_str, ""),
+            "restore_remote": self.make_opt(_str, ""),
+            "restore_storage": self.make_opt(_str, ""),
+            "temp_dir": self.make_opt(_str, ""),
         }
 
     @staticmethod
@@ -539,21 +610,23 @@ class BareosFdIncusOptions:
         """Initialize a plugin option"""
         if default is not None:
             default = type_(default)
-        return {'type': type_, 'value': default, 'value_set': False}
+        return {"type": type_, "value": default, "value_set": False}
 
     def check(self):
         """Check required options"""
         rc = bareosfd.bRC_OK
         for name, option in self._options.items():
-            if option['value'] is None:
+            if option["value"] is None:
                 rc = bareosfd.bRC_Error
-                bareosfd.JobMessage(bareosfd.M_FATAL, f'Mandatory option "{name}" not defined.\n')
+                bareosfd.JobMessage(
+                    bareosfd.M_FATAL, f'Mandatory option "{name}" not defined.\n'
+                )
         return rc
 
     def __contains__(self, key):
         """Check if the given option is set"""
         try:
-            return self._options[key]['value_set']
+            return self._options[key]["value_set"]
         except KeyError as e:
             raise UnknownOptionException(key) from e
 
@@ -561,8 +634,8 @@ class BareosFdIncusOptions:
         """Set the given option"""
         try:
             opt = self._options[key]
-            opt['value'] = opt['type'](value)
-            opt['value_set'] = True
+            opt["value"] = opt["type"](value)
+            opt["value_set"] = True
         except KeyError as e:
             raise UnknownOptionException(key) from e
         except ValueError as e:
@@ -572,14 +645,14 @@ class BareosFdIncusOptions:
     def __getitem__(self, key):
         """Get the given option"""
         try:
-            return self._options[key]['value']
+            return self._options[key]["value"]
         except KeyError as e:
             raise UnknownOptionException(key) from e
 
     def __getattr__(self, key):
         """Get the given option"""
         try:
-            return self._options[key]['value']
+            return self._options[key]["value"]
         except KeyError as e:
             raise UnknownOptionException(key) from e
 
@@ -587,11 +660,14 @@ class BareosFdIncusOptions:
 @dataclasses.dataclass(frozen=True, slots=True)
 class ErrorEntry:
     """Error queue entry"""
+
     err: str
+
 
 @dataclasses.dataclass(slots=True)
 class DataEntry:
     """Data queue entry"""
+
     name: str
     reader: io.BufferedIOBase
 
@@ -602,32 +678,40 @@ class DataEntry:
         finally:
             data_pipe.close_w()
 
+
 @dataclasses.dataclass(slots=True)
 class BlockingEntry(DataEntry):
     """File queue entry locking the processing queue"""
+
     tarinfo: tarfile.TarInfo
-    done: threading.Event = dataclasses.field(default_factory=threading.Event, init=False)
+    done: threading.Event = dataclasses.field(
+        default_factory=threading.Event, init=False
+    )
 
     def read_to_pipe(self, data_pipe):
         """Read data to the given data pipe"""
         DataEntry.read_to_pipe(self, data_pipe)
         self.done.set()
 
+
 @dataclasses.dataclass(slots=True)
 class RegularEntry(DataEntry):
     """Regular file queue entry"""
+
     tarinfo: tarfile.TarInfo
+
 
 @dataclasses.dataclass(slots=True)
 class ChunkEntry(DataEntry):
     """Image chunk queue entry"""
+
     digest: bytes
     size: int
 
 
 def fail(msg):
     """Fail with the given message"""
-    bareosfd.JobMessage(bareosfd.M_FATAL, f'{msg}\n')
+    bareosfd.JobMessage(bareosfd.M_FATAL, f"{msg}\n")
     return bareosfd.bRC_Error
 
 
@@ -640,9 +724,10 @@ def please_open_an_issue(cond):
     )
 
 
-@BareosPlugin # pylint: disable=undefined-variable
+@BareosPlugin  # pylint: disable=undefined-variable
 class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     """Plugin main class"""
+
     def __init__(self, plugindef):
         self.options = BareosFdIncusOptions()
         super().__init__(plugindef)
@@ -650,7 +735,9 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # This is needed in order to receive restore end events, to properly cleanup and join
         # running threads and processes. In case it ever gets implemented, we also ask to receive
         # restore start events.
-        bareosfd.RegisterEvents([bareosfd.bEventStartRestoreJob, bareosfd.bEventEndRestoreJob])
+        bareosfd.RegisterEvents(
+            [bareosfd.bEventStartRestoreJob, bareosfd.bEventEndRestoreJob]
+        )
 
         self.is_backup = False
         self.is_full = False
@@ -673,7 +760,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.zero_digest = None
         ## We keep an open handle to /dev/null to pass to the core when handling zero chunks. We
         ## never close it, but there is no strong need to.
-        self.devnull = open('/dev/null', 'rb') # pylint: disable=consider-using-with
+        self.devnull = open("/dev/null", "rb")  # pylint: disable=consider-using-with
 
         # Restore-specific variables
         ## The running chunk collectors
@@ -692,12 +779,14 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.device_overrides = []
         self.config_overrides = []
 
-    def check_options(self, mandatory_options=None): # pylint: disable=too-many-return-statements
+    def check_options(
+        self, mandatory_options=None
+    ):  # pylint: disable=too-many-return-statements
         """Check the options provided by the core"""
         del mandatory_options
         # First, check the minimal Python version. We only support Python ⩾ 3.13.
         if sys.version_info < (3, 13):
-            return fail('Python version 3.13 or above is required to run this plugin')
+            return fail("Python version 3.13 or above is required to run this plugin")
         # Prevent the user from doing very unoptimized tuning
         if self.options.chunk_size % (256 << 10):
             return fail('"chunk_size" must be a multiple of 256kiB')
@@ -710,8 +799,9 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # Check whether the maximum file size in the queue makes sense, or recompute one if needed
         if self.options.max_file_size == -1:
             # pylint: disable=attribute-defined-outside-init
-            self.options.max_file_size = (self.options.chunk_size *
-                                          max(self.options.queue_depth / 2, 1))
+            self.options.max_file_size = self.options.chunk_size * max(
+                self.options.queue_depth / 2, 1
+            )
         elif self.options.max_file_size < self.options.chunk_size:
             return fail('"max_file_size" must be greater than or equal to chunk_size')
         # Check whether the restore buffer depth makes sense
@@ -720,23 +810,29 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # This option does absolutely nothing, but is a good reminder that this feature would be
         # nice to have if enough users ask for it
         if self.options.allow_disk_resize:
-            return fail('Clever handling of disk resize is currently not supported by this plugin')
+            return fail(
+                "Clever handling of disk resize is currently not supported by this plugin"
+            )
         # Support for zstd only appeared in Python 3.14
-        if sys.version_info < (3, 14) and self.options.compression == 'zstd':
-            return fail('ZSTD compression is only supported starting with Python 3.14')
+        if sys.version_info < (3, 14) and self.options.compression == "zstd":
+            return fail("ZSTD compression is only supported starting with Python 3.14")
         # Alert the user if the chosen hash algorithm takes more bits than available in the hijacked
         # stat fields
-        digest_bits = hashlib.new(self.options.hash, usedforsecurity=False).digest_size * 8
+        digest_bits = (
+            hashlib.new(self.options.hash, usedforsecurity=False).digest_size * 8
+        )
         stat_bits = len(self.options.hijacked_stat_fields) * 64
         if digest_bits > stat_bits:
             bareosfd.JobMessage(
                 bareosfd.M_WARNING,
                 f'The chosen hash "{self.options.hash}" will be truncated from {digest_bits} to '
-                f'{stat_bits} bits to fit the stat struct\n'
+                f"{stat_bits} bits to fit the stat struct\n",
             )
         # Restoring on disk is mutually incompatible with setting a restore override
-        if self.options.restore_path and any(self.options[f'restore_{k}']
-                                             for k in ['instance', 'project', 'remote', 'storage']):
+        if self.options.restore_path and any(
+            self.options[f"restore_{k}"]
+            for k in ["instance", "project", "remote", "storage"]
+        ):
             return fail(
                 '"restore_path" is incompatible with either "restore_instance", "restore_project", '
                 '"restore_remote", or "restore_storage"'
@@ -749,7 +845,9 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         try:
             if multi_value_options is None:
                 multi_value_options = []
-            multi_value_options.extend(["restore_config_override", "restore_device_override"])
+            multi_value_options.extend(
+                ["restore_config_override", "restore_device_override"]
+            )
             rc = super().parse_plugin_definition(plugindef, multi_value_options)
             if rc != bareosfd.bRC_OK:
                 return rc
@@ -759,34 +857,42 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             return fail(f"{e}\n")
 
         # Compute the backup files’ prefix
-        if self.options.path_prefix == '':
-            if self.options.remote == '':
-                if self.options.project == '':
-                    self.prefix = f'@INCUS/instances/{self.options.instance}'
+        if self.options.path_prefix == "":
+            if self.options.remote == "":
+                if self.options.project == "":
+                    self.prefix = f"@INCUS/instances/{self.options.instance}"
                 else:
-                    self.prefix = f'@INCUS/instances/{self.options.project}/{self.options.instance}'
+                    self.prefix = f"@INCUS/instances/{self.options.project}/{self.options.instance}"
             else:
-                self.prefix = (f'@INCUS/{self.options.remote}:{self.options.project}/instances/'
-                               f'{self.options.instance}')
+                self.prefix = (
+                    f"@INCUS/{self.options.remote}:{self.options.project}/instances/"
+                    f"{self.options.instance}"
+                )
         else:
-            self.prefix = f'@INCUS/{self.options.path_prefix}/instances/{self.options.instance}'
+            self.prefix = (
+                f"@INCUS/{self.options.path_prefix}/instances/{self.options.instance}"
+            )
 
         level = chr(self.level)
-        if level == 'F':
+        if level == "F":
             self.is_backup = True
             self.is_full = True
             return bareosfd.bRC_OK
 
-        if level == ' ':
+        if level == " ":
             return bareosfd.bRC_OK
 
-        if level in ['I', 'D']:
+        if level in ["I", "D"]:
             self.is_backup = True
             if bareosfd.GetValue(bareosfd.bVarAccurate):
                 return bareosfd.bRC_OK
-            return fail("Accurate mode is required for Incremental and Differential backups")
+            return fail(
+                "Accurate mode is required for Incremental and Differential backups"
+            )
 
-        return fail("Only Full/Incremental/Differential backups and Restore are supported")
+        return fail(
+            "Only Full/Incremental/Differential backups and Restore are supported"
+        )
 
     def hash(self, data):
         """Compute the digest of the given data"""
@@ -797,29 +903,42 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.queue = queue.Queue(maxsize=int(self.options.queue_depth))
 
         if self.options.remote:
-            instance = f'{self.options.remote}:{self.options.instance}'
+            instance = f"{self.options.remote}:{self.options.instance}"
         else:
             instance = self.options.instance
-        cmd = ['incus', 'export', instance, '-', '--instance-only', '--quiet', '--compression',
-               self.options.compression]
+        cmd = [
+            "incus",
+            "export",
+            instance,
+            "-",
+            "--instance-only",
+            "--quiet",
+            "--compression",
+            self.options.compression,
+        ]
         if self.options.project:
-            cmd.extend(['--project', self.options.project])
+            cmd.extend(["--project", self.options.project])
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(cmd)}\n")
 
         try:
             # pylint: disable=consider-using-with
-            self.incus_process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                                  stderr=subprocess.PIPE)
-        except Exception as e: # pylint: disable=broad-exception-caught
+            self.incus_process = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+        except Exception as e:  # pylint: disable=broad-exception-caught
             return fail(f"Command {' '.join(cmd)} failed: {e}")
 
-        threading.Thread(target=self.process_stdout, args=(self.incus_process.stdout,),
-                         daemon=True).start()
-        threading.Thread(target=self.process_stderr, args=(self.incus_process.stderr,),
-                         daemon=True).start()
+        threading.Thread(
+            target=self.process_stdout, args=(self.incus_process.stdout,), daemon=True
+        ).start()
+        threading.Thread(
+            target=self.process_stderr, args=(self.incus_process.stderr,), daemon=True
+        ).start()
         self.zero_digest = self.hash(bytes(self.options.chunk_size))
 
-        bareosfd.JobMessage(bareosfd.M_INFO, "Waiting for Incus to start exporting data\n")
+        bareosfd.JobMessage(
+            bareosfd.M_INFO, "Waiting for Incus to start exporting data\n"
+        )
         return bareosfd.bRC_OK
 
     def start_restore_job(self):
@@ -829,24 +948,28 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # be an interesting safety mechanism.
         self.queue = queue.Queue()
         if self.options.restore_path:
-            bareosfd.JobMessage(bareosfd.M_INFO, f"Restoring into {self.options.restore_path}\n")
+            bareosfd.JobMessage(
+                bareosfd.M_INFO, f"Restoring into {self.options.restore_path}\n"
+            )
             # pylint: disable=consider-using-with
-            self.tar = tarfile.open(fileobj=open(self.options.restore_path, 'wb'),
-                                    mode=f'w|{TARFILE_MODES[self.options.compression]}',
-                                    bufsize=1_048_576)
+            self.tar = tarfile.open(
+                fileobj=open(self.options.restore_path, "wb"),
+                mode=f"w|{TARFILE_MODES[self.options.compression]}",
+                bufsize=1_048_576,
+            )
             return bareosfd.bRC_OK
 
         remote = self.options.restore_remote or self.options.remote
         instance = self.options.restore_instance or self.options.instance
         project = self.options.restore_project or self.options.project
-        cmd = ['incus', 'import']
+        cmd = ["incus", "import"]
         if remote:
-            cmd.append(f'{remote}:')
-        cmd.extend(['-', instance])
+            cmd.append(f"{remote}:")
+        cmd.extend(["-", instance])
         if project:
-            cmd.extend(['--project', project])
+            cmd.extend(["--project", project])
         if self.options.restore_storage:
-            cmd.extend(['--storage', self.options.restore_storage])
+            cmd.extend(["--storage", self.options.restore_storage])
 
         # Overrides passed as command-line arguments aren’t supported before Incus 6.17; to ensure
         # they work with this plugin, we track whether overrides are provided, and manually perform
@@ -856,21 +979,26 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # device.
         override_args = []
         for override in self.options.restore_config_override:
-            override_args.extend(['--config', override])
+            override_args.extend(["--config", override])
         for override in self.options.restore_device_override:
-            override_args.extend(['--device', override])
+            override_args.extend(["--device", override])
         if override_args:
             try:
-                result = subprocess.run(['incus', 'version'], capture_output=True, text=True,
-                                        check=True)
-                version = tuple(map(int, result.stdout.splitlines()[0].split(':')[1].strip()
-                                                                      .split('.')))
+                result = subprocess.run(
+                    ["incus", "version"], capture_output=True, text=True, check=True
+                )
+                version = tuple(
+                    map(
+                        int,
+                        result.stdout.splitlines()[0].split(":")[1].strip().split("."),
+                    )
+                )
                 if version >= (6, 17):
                     cmd.extend(override_args)
                 else:
                     # Fallback to the exception handler
-                    raise Exception # pylint: disable=broad-exception-raised
-            except: # pylint: disable=bare-except
+                    raise Exception  # pylint: disable=broad-exception-raised
+            except:  # pylint: disable=bare-except
                 # Let’s not try to be clever here; if anything fails, we switch back to legacy
                 # mode.
                 self.config_overrides = self.options.restore_config_override
@@ -880,17 +1008,21 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
 
         try:
             # pylint: disable=consider-using-with
-            self.incus_process = subprocess.Popen(cmd, stdin=subprocess.PIPE,
-                                                  stderr=subprocess.PIPE)
-        except Exception as e: # pylint: disable=broad-exception-caught
+            self.incus_process = subprocess.Popen(
+                cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+        except Exception as e:  # pylint: disable=broad-exception-caught
             return fail(f"Command {' '.join(cmd)} failed: {e}")
 
         # pylint: disable=consider-using-with
-        self.tar = tarfile.open(fileobj=self.incus_process.stdin,
-                                mode=f'w|{TARFILE_MODES[self.options.compression]}',
-                                bufsize=1_048_576)
-        threading.Thread(target=self.process_stderr, args=(self.incus_process.stderr,),
-                         daemon=True).start()
+        self.tar = tarfile.open(
+            fileobj=self.incus_process.stdin,
+            mode=f"w|{TARFILE_MODES[self.options.compression]}",
+            bufsize=1_048_576,
+        )
+        threading.Thread(
+            target=self.process_stderr, args=(self.incus_process.stderr,), daemon=True
+        ).start()
         return bareosfd.bRC_OK
 
     def end_restore_job(self):
@@ -912,11 +1044,13 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             try:
                 while True:
                     entry = self.queue.get()
-                    bareosfd.JobMessage(bareosfd.M_INFO, f"Restoring {entry.tarinfo.name}\n")
+                    bareosfd.JobMessage(
+                        bareosfd.M_INFO, f"Restoring {entry.tarinfo.name}\n"
+                    )
                     self.tar.addfile(entry.tarinfo, entry.reader)
             except queue.ShutDown:
                 pass
-            except Exception as e: # pylint: disable=broad-exception-caught
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 return fail(f"Failed adding file to TAR: {e}")
             bareosfd.JobMessage(bareosfd.M_INFO, "Waiting for Incus to complete\n")
             self.tar.close()
@@ -927,21 +1061,27 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             remote = self.options.restore_remote or self.options.remote
             instance = self.options.restore_instance or self.options.instance
             if remote:
-                instance = f'{remote}:{instance}'
+                instance = f"{remote}:{instance}"
             project = self.options.restore_project or self.options.project
             if self.config_overrides:
-                cmd = ['incus', 'config', 'set', instance]
+                cmd = ["incus", "config", "set", instance]
                 if project:
-                    cmd.extend(['--project', project])
+                    cmd.extend(["--project", project])
                 for override in self.config_overrides:
                     cmd.append(override)
                 subprocess.run(cmd, check=True)
             if self.device_overrides:
                 for override in self.device_overrides:
-                    cmd = ['incus', 'config', 'device', 'set', instance,
-                           *override.split(',', 2)]
+                    cmd = [
+                        "incus",
+                        "config",
+                        "device",
+                        "set",
+                        instance,
+                        *override.split(",", 2),
+                    ]
                     if project:
-                        cmd.extend(['--project', project])
+                        cmd.extend(["--project", project])
                     subprocess.run(cmd, check=True)
         # We are waiting up to the end to be extra sure we catch everything
         return self.log_queue.flush()
@@ -951,13 +1091,17 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         # If the previous record hasn’t been cleaned up, it means that the core skipped it. If it is
         # a locking entry, we have to release its lock, to make the producer continue processing
         # Incus’ stream.
-        if self.current_record is not None and isinstance(self.current_record[0], BlockingEntry):
+        if self.current_record is not None and isinstance(
+            self.current_record[0], BlockingEntry
+        ):
             self.current_record[0].done.set()
         # Pull the next entry
         try:
             entry = self.queue.get(timeout=self.options.backup_poll_timeout)
         except queue.Empty:
-            return fail(f"No data received from Incus after {self.options.backup_poll_timeout}s")
+            return fail(
+                f"No data received from Incus after {self.options.backup_poll_timeout}s"
+            )
         except queue.ShutDown:
             return bareosfd.bRC_Stop
 
@@ -973,9 +1117,14 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             bareosfd.JobMessage(bareosfd.M_DEBUG, f"Backing up {entry.name}\n")
             savepkt.type = bareosfd.FT_REG
             savepkt.statp.st_size = entry.size
-            for (offset, field) in enumerate(self.options.hijacked_stat_fields):
-                setattr(savepkt.statp, field,
-                        ctypes.c_int64(int.from_bytes(entry.digest[8*offset:8*(offset+1)])).value)
+            for offset, field in enumerate(self.options.hijacked_stat_fields):
+                setattr(
+                    savepkt.statp,
+                    field,
+                    ctypes.c_int64(
+                        int.from_bytes(entry.digest[8 * offset : 8 * (offset + 1)])
+                    ).value,
+                )
             header = None
         else:
             bareosfd.JobMessage(bareosfd.M_INFO, f"Backing up {entry.name}\n")
@@ -987,19 +1136,19 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def is_chunk(self, fname):
         """Return whether the currently processed file is a chunk"""
         path = os.path.split(fname)
-        return len(path) == 2 and path[1].endswith('.chunk')
+        return len(path) == 2 and path[1].endswith(".chunk")
 
-    def create_file(self, restorepkt): # pylint: disable=too-many-statements
+    def create_file(self, restorepkt):  # pylint: disable=too-many-statements
         """Process a Bareos restore packet"""
         if self.tar is None:
             self.start_restore_job()
         restorepkt.create_status = bareosfd.CF_EXTRACT
-        relpath = os.path.relpath(restorepkt.ofname, restorepkt.where)
-        fname = f'backup{relpath.removeprefix(self.prefix)}'
+        relpath = restorepkt.original_file_name
+        fname = f"backup{relpath.removeprefix(self.prefix)}"
         if self.is_chunk(fname):
             bareosfd.JobMessage(bareosfd.M_DEBUG, f"Restoring {fname}\n")
             # Here, we initialize the chunk collector
-            fname, chunk_str = fname.removesuffix('.chunk').rsplit('-', 1)
+            fname, chunk_str = fname.removesuffix(".chunk").rsplit("-", 1)
             chunk_id = int(chunk_str)
             if fname not in self.collectors:
                 if self.collectors:
@@ -1009,10 +1158,14 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     # still, if the behavior were to change, we wouldn't have to dramatically change
                     # the code structure.
                     return please_open_an_issue(1)
-                self.collectors[fname] = ChunkCollector(fname, self.options.chunk_size,
-                                                        restorepkt.statp.st_size,
-                                                        self.options.restore_buffer_depth,
-                                                        self.log_queue, self.options.temp_dir)
+                self.collectors[fname] = ChunkCollector(
+                    fname,
+                    self.options.chunk_size,
+                    restorepkt.statp.st_size,
+                    self.options.restore_buffer_depth,
+                    self.log_queue,
+                    self.options.temp_dir,
+                )
             if chunk_id == 0:
                 # We consider that receiving the first chunk of data should be the trigger to switch
                 # to chunk streaming. This may not be the wisest heuristic, but it certainly is the
@@ -1027,24 +1180,30 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 tarinfo.type = tarfile.REGTYPE
                 tarinfo.uid = 0
                 tarinfo.gid = 0
+
                 def collect():
                     try:
                         self.tar.addfile(tarinfo, self.collectors[fname])
-                    except Exception as e: # pylint: disable=broad-exception-caught
+                    except Exception as e:  # pylint: disable=broad-exception-caught
                         self.log_queue.put(f"ERROR: Failed adding file to TAR: {e}\n")
                     self.current_image = None
                     self.chunk_io_thread = None
+
                 self.chunk_io_thread = threading.Thread(target=collect, daemon=True)
                 self.chunk_io_thread.start()
+
             def writer():
                 try:
-                    self.collectors[fname].add(chunk_id, self.data_pipe.read(close=True))
-                except Exception as e: # pylint: disable=broad-exception-caught
+                    self.collectors[fname].add(
+                        chunk_id, self.data_pipe.read(close=True)
+                    )
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     # This case is a bit tricky to handle, as we must fail both the writer and the
                     # collector to avoid a deadlock.
                     self.collectors[fname].fail(e)
                     self.log_queue.put(f"ERROR: Failed processing data chunk: {e}\n")
                     self.data_pipe.close_r()
+
             self.current_writer = writer
             return bareosfd.bRC_OK
         tarinfo = tarfile.TarInfo(fname)
@@ -1052,22 +1211,26 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # The collector is currently streaming into our TAR, so we have to buffer the data.
             # pylint: disable=function-redefined
             bareosfd.JobMessage(bareosfd.M_DEBUG, f"Buffering {fname}\n")
+
             def writer():
-                with open(self.data_pipe.r, 'rb') as r:
+                with open(self.data_pipe.r, "rb") as r:
                     restore_tarinfo(tarinfo, restorepkt, r)
                     self.queue.put(RegularEntry(fname, io.BytesIO(r.read()), tarinfo))
+
             self.current_writer = writer
             return bareosfd.bRC_OK
         bareosfd.JobMessage(bareosfd.M_INFO, f"Restoring {fname}\n")
+
         # Here, we can bypass the DataPipe buffering and directly connect to the read pipe
         # pylint: disable=function-redefined
         def writer():
-            with open(self.data_pipe.r, 'rb') as r:
+            with open(self.data_pipe.r, "rb") as r:
                 restore_tarinfo(tarinfo, restorepkt, r)
                 try:
                     self.tar.addfile(tarinfo, r)
-                except Exception as e: # pylint: disable=broad-exception-caught
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     self.log_queue.put(f"ERROR: Failed adding file to TAR: {e}\n")
+
         self.current_writer = writer
         return bareosfd.bRC_OK
 
@@ -1081,22 +1244,26 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
     def should_chunk(self, tarinfo):
         """Return whether the currently processed TAR member should be chunked"""
         path = os.path.split(tarinfo.name)
-        return (len(path) == 2 and path[0] == 'backup' and path[1].endswith('.img') and
-                tarinfo.size > self.options.chunk_size)
+        return (
+            len(path) == 2
+            and path[0] == "backup"
+            and path[1].endswith(".img")
+            and tarinfo.size > self.options.chunk_size
+        )
 
-    def process_stdout(self, stdout): # pylint: disable=too-many-branches
+    def process_stdout(self, stdout):  # pylint: disable=too-many-branches
         """Parse the incus export tar stream continuously"""
         try:
             # pylint: disable=consider-using-with
             archive = open_archive(stdout, self.options.compression)
             tar = tarfile.open(fileobj=archive, mode="r|", bufsize=1_048_576)
-        except Exception as e: # pylint: disable=broad-exception-caught
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self.queue.put(ErrorEntry(f"Cannot open export stream as a tar: {e}"))
             return
         # Iterate over all members and chunk disk images
-        try: # pylint: disable=too-many-nested-blocks
+        try:  # pylint: disable=too-many-nested-blocks
             for tarinfo in tar:
-                dst = f'{self.prefix}{tarinfo.name.removeprefix('backup')}'
+                dst = f"{self.prefix}{tarinfo.name.removeprefix('backup')}"
                 if not tarinfo.isreg():
                     self.queue.put(RegularEntry(dst, None, tarinfo))
                     continue
@@ -1107,11 +1274,15 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                         data = f.read(self.options.chunk_size)
                         if not data:
                             break
-                        name = f"{dst}-{chunk_id:0{self.options.chunk_id_length}d}.chunk"
+                        name = (
+                            f"{dst}-{chunk_id:0{self.options.chunk_id_length}d}.chunk"
+                        )
                         done = chunk_id * self.options.chunk_size
                         total = tarinfo.size
-                        self.log_queue.put(f'{dst}: {format_size(done)} / {format_size(total)} '
-                                           f'({done / total:.1%}) done\n')
+                        self.log_queue.put(
+                            f"{dst}: {format_size(done)} / {format_size(total)} "
+                            f"({done / total:.1%}) done\n"
+                        )
                         if data.count(0) == len(data):
                             if len(data) == self.options.chunk_size:
                                 digest = self.zero_digest
@@ -1119,8 +1290,14 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                                 digest = self.hash(data)
                             self.queue.put(ChunkEntry(name, None, digest, tarinfo.size))
                         else:
-                            self.queue.put(ChunkEntry(name, io.BytesIO(data), self.hash(data),
-                                                      tarinfo.size))
+                            self.queue.put(
+                                ChunkEntry(
+                                    name,
+                                    io.BytesIO(data),
+                                    self.hash(data),
+                                    tarinfo.size,
+                                )
+                            )
                         chunk_id += 1
                     continue
                 if tarinfo.size > self.options.max_file_size:
@@ -1129,14 +1306,14 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                     entry.done.wait()
                 else:
                     self.queue.put(RegularEntry(dst, io.BytesIO(f.read()), tarinfo))
-        except Exception as e: # pylint: disable=broad-exception-caught
+        except Exception as e:  # pylint: disable=broad-exception-caught
             self.queue.put(ErrorEntry(e))
         self.queue.shutdown()
 
     def process_stderr(self, stderr):
         """Process Incus commands' stderr"""
-        for line in iter(stderr.readline, b''):
-            self.log_queue.put(line.decode('utf-8'))
+        for line in iter(stderr.readline, b""):
+            self.log_queue.put(line.decode("utf-8"))
 
     def handle_plugin_event(self, event):
         """Add hooks to specific events"""
@@ -1144,7 +1321,7 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             if self.incus_process and self.incus_process.poll() is None:
                 try:
                     self.incus_process.terminate()
-                except: # pylint: disable=bare-except
+                except:  # pylint: disable=bare-except
                     pass
             if self.queue is not None:
                 self.queue.put(ErrorEntry("job cancelled"))
@@ -1170,10 +1347,12 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 return bareosfd.bRC_OK
             self.data_pipe.open()
             iop.filedes = self.data_pipe.r
+
             def writer():
                 if self.current_record[1] is not None:
                     self.data_pipe.write(self.current_record[1])
                 self.current_record[0].read_to_pipe(self.data_pipe)
+
             threading.Thread(target=writer, daemon=True).start()
             return bareosfd.bRC_OK
 
