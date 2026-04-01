@@ -80,4 +80,5 @@ configurefilestosystemtest(
 # – the FIXTURES_REQUIRED property set by create_systemtest().
 if(PYMODULE_3_PLAYWRIGHT_FOUND)
   systemtest_requires(playwright create-backups)
+  systemtest_requires(playwright load-subscriptiontestdata)
 endif()
