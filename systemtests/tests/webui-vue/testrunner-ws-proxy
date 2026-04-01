@@ -229,11 +229,11 @@ async def main():
             await t()
         except Exception:
             fail(f"{t.__name__}: exception: {traceback.format_exc()}")
-        # Brief pause between tests so the director can release the
-        # previous connection before we open a new one.  Slow systems
-        # (e.g. Debian 13 / Ubuntu 24 CI) otherwise get
-        # "Director: send failed" on the 5th+ connection.
-        await asyncio.sleep(0.3)
+        # Pause between tests so the director can release the
+        # previous connection before we open a new one.  Under high
+        # system load the director needs more time; 1 s is sufficient
+        # for both fast and slow (CI) systems.
+        await asyncio.sleep(1.0)
 
     if errors:
         print(f"\n{len(errors)} test(s) FAILED:", file=sys.stderr)
