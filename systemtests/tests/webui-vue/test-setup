@@ -29,24 +29,27 @@ print_debug "$(bin/bconsole <<<"status dir")"
 
 # ── Ensure the production dist/ is up to date ────────────────────────────────
 # dist/ contains the committed production build (no VITE_* env vars).
-# Rebuild it here if any source file is newer so the committed artifact stays
-# current.  Tests never use dist/ directly; they build and serve test-dist/.
+# Rebuild only when npm is available and sources are newer than the build.
+# On CI machines without npm the committed dist/ is used as-is.
 _vue_src="${CMAKE_SOURCE_DIR}/webui-vue"
-_needs_prod_build=false
-if [ ! -d "${_vue_src}/dist" ]; then
-  _needs_prod_build=true
-elif (cd "${_vue_src}" \
-  && find src index.html vite.config.js -newer dist/index.html 2>/dev/null \
-  | grep -q .); then
-  _needs_prod_build=true
-fi
+if command -v npm >/dev/null 2>&1 && [ -d "${_vue_src}" ]; then
+  _needs_prod_build=false
+  if [ ! -d "${_vue_src}/dist" ]; then
+    _needs_prod_build=true
+  elif (cd "${_vue_src}" \
+    && find src index.html vite.config.js -newer dist/index.html 2>/dev/null \
+    | grep -q .); then
+    _needs_prod_build=true
+  fi
 
-if [ "${_needs_prod_build}" = true ]; then
-  print_debug "Rebuilding production dist/ ..."
-  (
-    cd "${_vue_src}"
-    npm run build >"${tmp}/vite-build-prod.log" 2>&1
-  )
-  print_debug "Production dist/ rebuild complete."
+  if [ "${_needs_prod_build}" = true ]; then
+    print_debug "Rebuilding production dist/ ..."
+    (
+      cd "${_vue_src}"
+      npm run build >"${tmp}/vite-build-prod.log" 2>&1
+    )
+    print_debug "Production dist/ rebuild complete."
+  fi
+  unset _needs_prod_build
 fi
-unset _vue_src _needs_prod_build
+unset _vue_src
