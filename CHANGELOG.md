@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [24.0.10] - 2026-04-01
 
 ### Changed
 - dedup backend: Fix leaking filedescriptor [PR #2550]
@@ -1163,6 +1163,7 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [24.0.7]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.7
 [24.0.8]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.8
 [24.0.9]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.9
+[24.0.10]: https://github.com/bareos/bareos/releases/tag/Release%2F24.0.10
 [Issue #579]: https://bugs.bareos.org/view.php?id=579
 [Issue #847]: https://bugs.bareos.org/view.php?id=847
 [Issue #871]: https://bugs.bareos.org/view.php?id=871
@@ -2023,4 +2024,3 @@ It is therefore strongly suggested to immediately schedule a full backup of your
 [PR #2575]: https://github.com/bareos/bareos/pull/2575
 [PR #2583]: https://github.com/bareos/bareos/pull/2583
 [PR #2592]: https://github.com/bareos/bareos/pull/2592
-[unreleased]: https://github.com/bareos/bareos/tree/master
