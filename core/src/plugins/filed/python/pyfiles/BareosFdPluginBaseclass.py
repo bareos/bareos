@@ -82,12 +82,13 @@ def parse_options_file(path, multi_value_options):
                 val = val[:-1] + lines.pop(0).strip()
             if key in multi_value_options:
                 options.setdefault(key, []).append(val)
-            elif key in options:
-                bareosfd.JobMessage(
-                    M_WARNING,
-                    "duplicate option '%s' overriding previous value!\n" % (key),
-                )
-            options[key] = val
+            else:
+                if key in options:
+                    bareosfd.JobMessage(
+                        M_WARNING,
+                        "duplicate option '%s' overriding previous value!\n" % (key),
+                    )
+                options[key] = val
     return options
 
 
