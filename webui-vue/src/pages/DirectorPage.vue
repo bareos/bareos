@@ -855,4 +855,33 @@ async function runPrune(cmd) {
   55%  { transform: rotate(180deg); }
   100% { transform: rotate(180deg); }
 }
+
+@media print {
+  /* Hide everything, then reveal only the print root */
+  body * {
+    visibility: hidden;
+  }
+  #subscription-print-root,
+  #subscription-print-root * {
+    visibility: visible;
+  }
+
+  /* Position at top-left so content flows naturally across pages */
+  #subscription-print-root {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    overflow: visible !important;
+  }
+
+  /* Allow tables to break across pages */
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+  }
+}
 </style>

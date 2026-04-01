@@ -19,40 +19,40 @@
 
     <!-- Unit Summary -->
     <template v-if="data['unit-summary']">
-      <div class="text-subtitle2 q-mb-xs">Unit Summary</div>
-      <table class="sub-table q-mb-md">
-        <tbody>
-          <tr>
-            <th>Accounting Mode</th>
-            <td>{{ data['unit-summary'].accounting_mode }}</td>
-          </tr>
-          <tr>
-            <th>Used</th>
-            <td>{{ data['unit-summary'].used }}</td>
-          </tr>
-          <tr>
-            <th>Configured</th>
-            <td>{{ data['unit-summary'].configured }}</td>
-          </tr>
-          <tr>
-            <th>Remaining</th>
-            <td :class="Number(data['unit-summary'].remaining) < 0 ? 'text-negative' : 'text-positive'">
+      <div class="text-h6 q-mb-sm q-mt-sm">Unit Summary</div>
+      <div class="sub-summary-card q-mb-md">
+        <div class="sub-summary-stats">
+          <div class="sub-summary-stat">
+            <div class="sub-summary-value">{{ data['unit-summary'].used }}</div>
+            <div class="sub-summary-label">Used</div>
+          </div>
+          <div class="sub-summary-stat">
+            <div class="sub-summary-value">{{ data['unit-summary'].configured }}</div>
+            <div class="sub-summary-label">Configured</div>
+          </div>
+          <div class="sub-summary-stat">
+            <div class="sub-summary-value"
+                 :class="Number(data['unit-summary'].remaining) < 0 ? 'text-negative' : 'text-positive'">
               {{ data['unit-summary'].remaining }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+            <div class="sub-summary-label">Remaining</div>
+          </div>
+        </div>
+        <div class="sub-summary-mode">
+          {{ data['unit-summary'].accounting_mode }}
+        </div>
+      </div>
     </template>
 
     <!-- Per-client detail -->
     <template v-if="data['unit-clients']?.length">
-      <div class="text-subtitle2 q-mb-xs">Units by Client</div>
+      <div class="text-h6 q-mb-xs q-mt-sm">Units by Client</div>
       <table class="sub-table sub-table--full q-mb-md">
         <thead>
           <tr>
             <th>Client</th>
             <th class="text-right">Count</th>
-            <th class="text-right">Size (TB)</th>
+            <th class="text-right">Size (GB)</th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +60,7 @@
               :class="row.client === 'TOTAL' ? 'sub-row--total' : ''">
             <td>{{ row.client }}</td>
             <td class="text-right">{{ row.count }}</td>
-            <td class="text-right">{{ fmtTB(row.size_gb) }}</td>
+            <td class="text-right">{{ fmtGB(row.size_gb) }}</td>
           </tr>
         </tbody>
       </table>
@@ -68,13 +68,13 @@
 
     <!-- Per-plugin detail -->
     <template v-if="data['unit-plugins']?.length">
-      <div class="text-subtitle2 q-mb-xs">Units by Plugin</div>
+      <div class="text-h6 q-mb-xs q-mt-sm">Units by Plugin</div>
       <table class="sub-table sub-table--full q-mb-md">
         <thead>
           <tr>
             <th>Plugin</th>
             <th class="text-right">Count</th>
-            <th class="text-right">Size (TB)</th>
+            <th class="text-right">Size (GB)</th>
           </tr>
         </thead>
         <tbody>
@@ -82,7 +82,7 @@
               :class="row.plugin === 'TOTAL' ? 'sub-row--total' : ''">
             <td>{{ row.plugin }}</td>
             <td class="text-right">{{ row.count }}</td>
-            <td class="text-right">{{ fmtTB(row.size_gb) }}</td>
+            <td class="text-right">{{ fmtGB(row.size_gb) }}</td>
           </tr>
         </tbody>
       </table>
@@ -90,14 +90,14 @@
 
     <!-- Full detail -->
     <template v-if="data['unit-detail']?.length">
-      <div class="text-subtitle2 q-mb-xs">Full Detail</div>
+      <div class="text-h6 q-mb-xs q-mt-sm">Full Detail</div>
       <table class="sub-table sub-table--full q-mb-md">
         <thead>
           <tr>
             <th>Client</th>
             <th>Plugin</th>
             <th class="text-right">Count</th>
-            <th class="text-right">Size (TB)</th>
+            <th class="text-right">Size (GB)</th>
           </tr>
         </thead>
         <tbody>
@@ -106,7 +106,7 @@
             <td>{{ row.client }}</td>
             <td>{{ row.plugin }}</td>
             <td class="text-right">{{ row.count }}</td>
-            <td class="text-right">{{ fmtTB(row.size_gb) }}</td>
+            <td class="text-right">{{ fmtGB(row.size_gb) }}</td>
           </tr>
         </tbody>
       </table>
@@ -127,9 +127,8 @@ const props = defineProps({
 
 const generatedAt = new Date().toLocaleString()
 
-function fmtTB(gbStr) {
-  const tb = parseFloat(gbStr) / 1000
-  return tb.toLocaleString(undefined, {
+function fmtGB(gbStr) {
+  return parseFloat(gbStr).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
@@ -152,6 +151,40 @@ function fmtTB(gbStr) {
   padding: 4px 0;
 }
 
+/* Unit Summary card */
+.sub-summary-card {
+  border: 2px solid #0075be;
+  border-radius: 8px;
+  padding: 16px 20px;
+  background: #f0f7ff;
+}
+.sub-summary-stats {
+  display: flex;
+  gap: 40px;
+  margin-bottom: 12px;
+}
+.sub-summary-stat {
+  text-align: center;
+}
+.sub-summary-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.sub-summary-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #555;
+  margin-top: 2px;
+}
+.sub-summary-mode {
+  font-size: 0.85rem;
+  color: #444;
+  border-top: 1px solid #c0d8ee;
+  padding-top: 8px;
+}
+
 .sub-table {
   border-collapse: collapse;
   font-size: 0.85rem;
@@ -161,6 +194,10 @@ function fmtTB(gbStr) {
   border: 1px solid #ddd;
   padding: 4px 10px;
   text-align: left;
+}
+.sub-table th.text-right,
+.sub-table td.text-right {
+  text-align: right;
 }
 .sub-table thead th {
   background: #f0f0f0;
@@ -197,6 +234,20 @@ function fmtTB(gbStr) {
     font-size: 0.8rem;
     color: #555;
     margin-top: 2px;
+  }
+
+  /* Let content flow across multiple pages */
+  .subscription-report {
+    overflow: visible !important;
+  }
+  .sub-summary-card {
+    break-inside: avoid;
+  }
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
   }
 }
 </style>
