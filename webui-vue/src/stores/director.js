@@ -14,6 +14,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useAuthStore } from './auth.js'
 
 function defaultWsUrl() {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -163,5 +164,69 @@ export const useDirectorStore = defineStore('director', () => {
     })
   }
 
-  return { status, errorMsg, isConnected, connect, disconnect, call }
+  /**
+   * Run a single command in raw (non-JSON) mode and return the text output.
+   * Opens a temporary WebSocket connection, sends the command, and closes.
+   *
+   * @param {string} command  e.g. "messages"
+   * @returns {Promise<string>}
+   */
+  function rawCall(command) {
+    return new Promise((resolve, reject) => {
+      const auth = useAuthStore()
+      const creds = auth.getCredentials()
+      if (!creds) { return reject(new Error('Not logged in')) }
+
+      const sock = new WebSocket(WS_URL)
+      let cmdId = 1
+      const timer = setTimeout(() => {
+        sock.close()
+        reject(new Error(`Raw command timed out: ${command}`))
+      }, CMD_TIMEOUT_MS)
+
+      sock.onopen = () => {
+        sock.send(JSON.stringify({
+          type: 'auth', mode: 'raw',
+          username: creds.username,
+          password: creds.password,
+          director: creds.director,
+          host:     creds.host ?? 'localhost',
+          port:     creds.port ?? 9101,
+        }))
+      }
+
+      let accumulated = ''
+
+      sock.onmessage = (event) => {
+        let msg
+        try { msg = JSON.parse(event.data) } catch { return }
+        if (msg.type === 'auth_ok') {
+          sock.send(JSON.stringify({
+            type: 'command', id: String(cmdId), command,
+          }))
+        } else if (msg.type === 'auth_error') {
+          clearTimeout(timer)
+          sock.close()
+          reject(new Error(msg.message ?? 'Auth failed'))
+        } else if (msg.type === 'raw_response' && msg.id === String(cmdId)) {
+          accumulated += msg.text ?? ''
+          // Accumulate until back at the main prompt
+          if (!msg.prompt || msg.prompt === 'main') {
+            clearTimeout(timer)
+            sock.close()
+            resolve(accumulated)
+          }
+        } else if (msg.type === 'error' && msg.id === String(cmdId)) {
+          clearTimeout(timer)
+          sock.close()
+          reject(new Error(msg.message ?? 'Director error'))
+        }
+      }
+
+      sock.onerror = () => { clearTimeout(timer); reject(new Error(`WS error`)) }
+      sock.onclose = () => { clearTimeout(timer) }
+    })
+  }
+
+  return { status, errorMsg, isConnected, connect, disconnect, call, rawCall }
 })

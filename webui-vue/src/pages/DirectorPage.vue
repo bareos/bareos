@@ -15,68 +15,77 @@
         <template v-else-if="rawStatus">
           <div class="row q-col-gutter-md">
 
-            <!-- Header info card -->
-            <div class="col-12 col-md-6">
+            <!-- Director Info – single summary line -->
+            <div class="col-12">
               <q-card flat bordered class="bareos-panel">
                 <q-card-section class="panel-header row items-center">
                   <span>Director Info</span>
                   <q-space />
+                  <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ statusCountdown }}s</span>
+                  <q-btn flat round dense color="white" class="q-mr-xs"
+                         :icon="relativeTime ? 'calendar_today' : 'schedule'"
+                         :title="relativeTime ? 'Show absolute times' : 'Show relative times'"
+                         @click="relativeTime = !relativeTime" />
                   <q-btn flat round dense icon="refresh" color="white"
-                         @click="refreshStatus" :loading="statusLoading" />
+                         @click="manualRefreshStatus" :loading="statusLoading" />
                 </q-card-section>
-                <q-card-section>
-                  <q-list dense separator>
-                    <q-item>
-                      <q-item-section class="text-weight-medium col-5">Director</q-item-section>
-                      <q-item-section>{{ statusHeader.director }}</q-item-section>
-                    </q-item>
-                    <q-item>
-                      <q-item-section class="text-weight-medium col-5">Version</q-item-section>
-                      <q-item-section>{{ statusHeader.version }}</q-item-section>
-                    </q-item>
-                    <q-item>
-                      <q-item-section class="text-weight-medium col-5">OS</q-item-section>
-                      <q-item-section>{{ statusHeader.os }}</q-item-section>
-                    </q-item>
-                    <q-item>
-                      <q-item-section class="text-weight-medium col-5">Daemon Started</q-item-section>
-                      <q-item-section>{{ statusHeader.daemon_started }}</q-item-section>
-                    </q-item>
-                    <q-item>
-                      <q-item-section class="text-weight-medium col-5">Jobs Run</q-item-section>
-                      <q-item-section>{{ statusHeader.jobs_run }}</q-item-section>
-                    </q-item>
-                    <q-item>
-                      <q-item-section class="text-weight-medium col-5">Jobs Running</q-item-section>
-                      <q-item-section>{{ statusHeader.jobs_running }}</q-item-section>
-                    </q-item>
-                    <q-item v-if="statusHeader.config_warnings">
-                      <q-item-section class="text-weight-medium col-5">Warnings</q-item-section>
-                      <q-item-section>
-                        <q-badge color="warning" label="Configuration warnings" />
-                      </q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-card-section>
-              </q-card>
-            </div>
-
-            <!-- Running Jobs card -->
-            <div class="col-12 col-md-6">
-              <q-card flat bordered class="bareos-panel">
-                <q-card-section class="panel-header">Running Jobs</q-card-section>
-                <q-card-section class="q-pa-none">
-                  <div v-if="!runningJobs.length" class="q-pa-md text-grey">
-                    No jobs running.
+                <q-card-section class="q-py-sm">
+                  <div class="row items-center q-gutter-sm text-body2 flex-wrap">
+                    <q-chip v-if="statusHeader.director"
+                            dense square color="primary" text-color="white" icon="dns" class="q-ma-none">
+                      {{ statusHeader.director }}
+                      <q-tooltip>Director: {{ statusHeader.director }}</q-tooltip>
+                    </q-chip>
+                    <q-chip v-if="statusHeader.version"
+                            dense square color="blue-7" text-color="white" icon="info" class="q-ma-none">
+                      {{ statusHeader.version }}
+                      <q-tooltip>Version: {{ statusHeader.version }}</q-tooltip>
+                    </q-chip>
+                    <q-chip v-if="statusHeader.release_date"
+                            dense square color="blue-grey-6" text-color="white" icon="event" class="q-ma-none">
+                      {{ statusHeader.release_date }}
+                      <q-tooltip>Released: {{ statusHeader.release_date }}</q-tooltip>
+                    </q-chip>
+                    <q-chip v-if="statusHeader.binary_info"
+                            dense square color="blue-grey-7" text-color="white" icon="build" class="q-ma-none">
+                      {{ statusHeader.binary_info }}
+                      <q-tooltip>Build: {{ statusHeader.binary_info }}</q-tooltip>
+                    </q-chip>
+                    <q-chip v-if="statusHeader.os"
+                            dense square :color="directorOsIcon.color" text-color="white"
+                            :icon="directorOsIcon.icon" class="q-ma-none">
+                      {{ statusHeader.os }}
+                      <q-tooltip>OS: {{ statusHeader.os }}</q-tooltip>
+                    </q-chip>
+                    <q-chip v-if="statusHeader.daemon_started"
+                            dense square color="teal-7" text-color="white" icon="schedule" class="q-ma-none">
+                      {{ relativeTime ? dirTimeAgo(statusHeader.daemon_started) : statusHeader.daemon_started }}
+                      <q-tooltip>Started: {{ statusHeader.daemon_started }}</q-tooltip>
+                    </q-chip>
+                    <q-chip v-if="statusHeader.jobs_run != null"
+                            dense square color="purple-7" text-color="white" icon="check" class="q-ma-none">
+                      {{ statusHeader.jobs_run }}
+                      <q-tooltip>Jobs Run: {{ statusHeader.jobs_run }}</q-tooltip>
+                    </q-chip>
+                    <q-chip v-if="statusHeader.jobs_running != null"
+                            dense square color="orange-7" text-color="white" icon="play_arrow" class="q-ma-none">
+                      {{ statusHeader.jobs_running }}
+                      <q-tooltip>Running: {{ statusHeader.jobs_running }}</q-tooltip>
+                    </q-chip>
+                    <span v-if="statusHeader.config_warnings != null"
+                          class="row items-center no-wrap q-gutter-x-xs">
+                      <q-icon
+                        :name="statusHeader.config_warnings ? 'error' : 'check_circle'"
+                        :color="statusHeader.config_warnings ? 'negative' : 'positive'"
+                        size="20px"
+                      >
+                        <q-tooltip>Config warnings: {{ statusHeader.config_warnings ? 'Yes' : 'None' }}</q-tooltip>
+                      </q-icon>
+                      <span :class="statusHeader.config_warnings ? 'text-negative' : 'text-positive'">
+                        {{ statusHeader.config_warnings ? 'Configuration warnings' : 'Config OK' }}
+                      </span>
+                    </span>
                   </div>
-                  <q-table v-else
-                    flat dense
-                    :rows="runningJobs"
-                    :columns="runningJobCols"
-                    row-key="jobid"
-                    hide-pagination
-                    :rows-per-page-options="[0]"
-                  />
                 </q-card-section>
               </q-card>
             </div>
@@ -89,14 +98,125 @@
                   <div v-if="!scheduledJobs.length" class="q-pa-md text-grey">
                     No scheduled jobs.
                   </div>
-                  <q-table v-else
-                    flat dense
+                  <q-table v-else flat dense
                     :rows="scheduledJobs"
                     :columns="scheduledJobCols"
                     row-key="name"
                     hide-pagination
                     :rows-per-page-options="[0]"
-                  />
+                  >
+                    <template #body-cell-name="props">
+                      <td>
+                        <router-link :to="{ name: 'jobs', query: { name: props.value } }"
+                                     class="text-primary">
+                          {{ props.value }}
+                        </router-link>
+                      </td>
+                    </template>
+                    <template #body-cell-level="props">
+                      <td><JobLevelBadge v-if="levelCode(props.value)" :level="levelCode(props.value)" />
+                          <span v-else>{{ props.value }}</span></td>
+                    </template>
+                    <template #body-cell-type="props">
+                      <td><JobTypeBadge v-if="typeCode(props.value)" :type="typeCode(props.value)" />
+                          <span v-else>{{ props.value }}</span></td>
+                    </template>
+                    <template #body-cell-scheduled="props">
+                      <td>
+                        <span :title="relativeTime ? props.value : undefined">
+                          {{ relativeTime ? dirTimeAgo(props.value) : props.value }}
+                        </span>
+                      </td>
+                    </template>
+                    <template #body-cell-volume="props">
+                      <td>
+                        <router-link v-if="props.value"
+                                     :to="{ name: 'volume-details', params: { name: props.value } }"
+                                     class="text-primary">
+                          {{ props.value }}
+                        </router-link>
+                        <span v-else>—</span>
+                      </td>
+                    </template>
+                  </q-table>
+                </q-card-section>
+              </q-card>
+            </div>
+
+            <!-- Running Jobs card -->
+            <div class="col-12">
+              <q-card flat bordered class="bareos-panel">
+                <q-card-section class="panel-header">Running Jobs</q-card-section>
+                <q-card-section class="q-pa-none">
+                  <div v-if="!runningJobs.length" class="q-pa-md text-grey">
+                    No jobs running.
+                  </div>
+                  <q-table v-else flat dense
+                    :rows="runningJobs"
+                    :columns="runningJobCols"
+                    row-key="jobid"
+                    hide-pagination
+                    :rows-per-page-options="[0]"
+                  >
+                    <template #body-cell-jobid="props">
+                      <td>
+                        <router-link :to="{ name: 'job-details', params: { id: props.value } }"
+                                     class="text-primary">
+                          {{ props.value }}
+                        </router-link>
+                      </td>
+                    </template>
+                    <template #body-cell-name="props">
+                      <td>
+                        <router-link :to="{ name: 'jobs', query: { name: props.value } }"
+                                     class="text-primary">
+                          {{ props.value }}
+                        </router-link>
+                      </td>
+                    </template>
+                    <template #body-cell-level="props">
+                      <td><JobLevelBadge v-if="levelCode(props.value)" :level="levelCode(props.value)" />
+                          <span v-else>{{ props.value }}</span></td>
+                    </template>
+                    <template #body-cell-type="props">
+                      <td><JobTypeBadge v-if="typeCode(props.value)" :type="typeCode(props.value)" />
+                          <span v-else>{{ props.value }}</span></td>
+                    </template>
+                    <template #body-cell-start_time="props">
+                      <td>
+                        <span :title="relativeTime ? props.value : undefined">
+                          {{ relativeTime ? dirTimeAgo(props.value) : props.value }}
+                        </span>
+                      </td>
+                    </template>
+                    <template #body-cell-files="props">
+                      <td class="text-right" style="min-width:80px">
+                        <div>{{ (props.value ?? 0).toLocaleString() }}</div>
+                        <q-linear-progress v-if="!isWaiting(props.row.status)" indeterminate
+                          color="teal" track-color="grey-3"
+                          size="4px" class="q-mt-xs" rounded />
+                      </td>
+                    </template>
+                    <template #body-cell-bytes="props">
+                      <td class="text-right" style="min-width:90px">
+                        <div>{{ formatBytes(Number(props.value) || 0) }}</div>
+                        <q-linear-progress v-if="!isWaiting(props.row.status)" indeterminate
+                          color="primary" track-color="grey-3"
+                          size="4px" class="q-mt-xs" rounded />
+                      </td>
+                    </template>
+                    <template #body-cell-status="props">
+                      <td>
+                        <span v-if="isWaiting(props.value)"
+                              class="row items-center no-wrap q-gutter-x-xs">
+                          <q-icon name="hourglass_empty" color="orange-7" size="16px"
+                                  class="animated-spin" />
+                          <span class="text-orange-7 text-caption">{{ props.value }}</span>
+                        </span>
+                        <JobStatusBadge v-else :status="props.value" />
+                      </td>
+                    </template>
+                  </q-table>
                 </q-card-section>
               </q-card>
             </div>
@@ -109,14 +229,66 @@
                   <div v-if="!terminatedJobs.length" class="q-pa-md text-grey">
                     No terminated jobs.
                   </div>
-                  <q-table v-else
-                    flat dense
+                  <q-table v-else flat dense
                     :rows="terminatedJobs"
                     :columns="terminatedJobCols"
                     row-key="jobid"
                     hide-pagination
                     :rows-per-page-options="[0]"
-                  />
+                  >
+                    <template #body-cell-jobid="props">
+                      <td>
+                        <router-link :to="{ name: 'job-details', params: { id: props.value } }"
+                                     class="text-primary">
+                          {{ props.value }}
+                        </router-link>
+                      </td>
+                    </template>
+                    <template #body-cell-name="props">
+                      <td>
+                        <router-link :to="{ name: 'jobs', query: { name: props.value } }"
+                                     class="text-primary">
+                          {{ props.value }}
+                        </router-link>
+                      </td>
+                    </template>
+                    <template #body-cell-level="props">
+                      <td><JobLevelBadge v-if="levelCode(props.value)" :level="levelCode(props.value)" />
+                          <span v-else>{{ props.value }}</span></td>
+                    </template>
+                    <template #body-cell-type="props">
+                      <td><JobTypeBadge v-if="typeCode(props.value)" :type="typeCode(props.value)" />
+                          <span v-else>{{ props.value }}</span></td>
+                    </template>
+                    <template #body-cell-finished="props">
+                      <td>
+                        <span :title="relativeTime ? props.value : undefined">
+                          {{ relativeTime ? dirTimeAgo(props.value) : props.value }}
+                        </span>
+                      </td>
+                    </template>
+                    <template #body-cell-files="props">
+                      <td class="text-right" style="min-width:80px">
+                        <div>{{ (props.value ?? 0).toLocaleString() }}</div>
+                        <q-linear-progress
+                          :value="(Number(props.value) || 0) / maxTermFiles"
+                          color="teal" track-color="grey-3"
+                          size="4px" class="q-mt-xs" rounded />
+                      </td>
+                    </template>
+                    <template #body-cell-bytes="props">
+                      <td class="text-right" style="min-width:90px">
+                        <div>{{ formatBytes(Number(props.value) || 0) }}</div>
+                        <q-linear-progress
+                          :value="(Number(props.value) || 0) / maxTermBytes"
+                          color="primary" track-color="grey-3"
+                          size="4px" class="q-mt-xs" rounded />
+                      </td>
+                    </template>
+                    <template #body-cell-status="props">
+                      <td><JobStatusBadge :status="props.value" /></td>
+                    </template>
+                  </q-table>
                 </q-card-section>
               </q-card>
             </div>
@@ -131,12 +303,19 @@
           <q-card-section class="panel-header row items-center">
             <span>Director Messages</span>
             <q-space />
+            <q-select v-model="messagesLimit" :options="[50,100,250,500]" dense outlined dark
+                      style="width:80px" class="q-mr-sm" />
             <q-btn flat round dense icon="refresh" color="white" @click="refreshMessages" :loading="messagesLoading" />
           </q-card-section>
-          <q-card-section>
+          <q-card-section class="q-pa-none">
             <q-inner-loading :showing="messagesLoading" />
-            <div v-if="messagesError" class="text-negative">{{ messagesError }}</div>
-            <div v-else class="console-output">{{ messagesText || '(no messages)' }}</div>
+            <div v-if="messagesError" class="q-pa-md text-negative">{{ messagesError }}</div>
+            <div v-else-if="!logEntries.length && !messagesLoading" class="q-pa-md text-grey">(no messages)</div>
+            <div v-else class="terminal-output">
+              <template v-for="item in logEntries" :key="item.logid">
+                <span class="terminal-line">{{ item.time }} {{ item.logtext }}</span>
+              </template>
+            </div>
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -292,11 +471,14 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { formatBytes } from '../mock/index.js'
+import { resolveOsIcon } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
+import JobLevelBadge  from '../components/JobLevelBadge.vue'
+import JobTypeBadge   from '../components/JobTypeBadge.vue'
 import SubscriptionReport from '../components/SubscriptionReport.vue'
 
 const tab = ref('status')
@@ -319,6 +501,27 @@ async function refreshStatus() {
   }
 }
 
+const STATUS_INTERVAL = 10
+const statusCountdown = ref(STATUS_INTERVAL)
+let _statusTimer = null
+
+function startStatusAutoRefresh() {
+  clearInterval(_statusTimer)
+  statusCountdown.value = STATUS_INTERVAL
+  _statusTimer = setInterval(() => {
+    statusCountdown.value -= 1
+    if (statusCountdown.value <= 0) {
+      refreshStatus()
+      statusCountdown.value = STATUS_INTERVAL
+    }
+  }, 1000)
+}
+
+function manualRefreshStatus() {
+  refreshStatus()
+  statusCountdown.value = STATUS_INTERVAL
+}
+
 // The director now returns a structured JSON object with header, scheduled,
 // running and terminated arrays.  Fall back gracefully for older directors.
 const statusHeader = computed(() => {
@@ -329,6 +532,79 @@ const statusHeader = computed(() => {
 const scheduledJobs  = computed(() => rawStatus.value?.scheduled  ?? [])
 const runningJobs    = computed(() => rawStatus.value?.running    ?? [])
 const terminatedJobs = computed(() => rawStatus.value?.terminated ?? [])
+
+const maxTermBytes = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.bytes) || 0)))
+const maxTermFiles = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.files) || 0)))
+
+// Relative-time toggle
+const relativeTime = ref(false)
+
+// OS icon: pass the full os string as osInfo so distro detection works
+// (e.g. "Fedora Linux 43" → mdi-fedora)
+const directorOsIcon = computed(() => {
+  const full = statusHeader.value.os ?? ''
+  const lower = full.toLowerCase()
+  if (lower.includes('windows') || lower.includes('win'))
+    return resolveOsIcon({ os: 'windows', osInfo: full })
+  if (lower.includes('darwin') || lower.includes('apple') || lower.includes('macos'))
+    return resolveOsIcon({ os: 'macos', osInfo: full })
+  return resolveOsIcon({ os: 'linux', osInfo: full })
+})
+
+// Map full-word level/type strings emitted by the director to single-letter
+// codes expected by JobLevelBadge / JobTypeBadge.
+// The director truncates levels differently per section:
+//   scheduled: full string ("Incremental", "Differential")
+//   running:   level[7]=0  ("Incremen", "Differen")
+//   terminated: level[4]=0 ("Incr", "Diff", "VFul")
+const LEVEL_CODE = {
+  Full: 'F', Incremental: 'I', Differential: 'D', 'Virtual Full': 'V', Base: 'B',
+  Incremen: 'I', Differen: 'D',
+  Incr: 'I', Diff: 'D', VFul: 'V',
+}
+const TYPE_CODE  = { Backup: 'B', Restore: 'R', Verify: 'V', Admin: 'A', Diagnostic: 'D', Copy: 'C', Migration: 'M' }
+function levelCode(v) { return LEVEL_CODE[v] ?? null }
+function typeCode(v)  { return TYPE_CODE[v]  ?? null }
+function isWaiting(status) { return typeof status === 'string' && status.includes('is waiting') }
+
+// Parse the director's "DD-Mon-YY HH:MM" date format into a JS Date.
+const _MON = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+function parseDirectorDate(str) {
+  if (!str) return null
+  const m = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2})\s+(\d{2}):(\d{2})/)
+  if (!m) return null
+  const month = _MON[m[2]]
+  if (month === undefined) return null
+  return new Date(2000 + parseInt(m[3]), month, parseInt(m[1]), parseInt(m[4]), parseInt(m[5]))
+}
+
+// Relative time for past and future Bareos director timestamps.
+function dirTimeAgo(str) {
+  if (!str) return '—'
+  const d = parseDirectorDate(str)
+  if (!d) return str
+  const ms = Date.now() - d.getTime()
+  if (ms < 0) {
+    // Future (scheduled jobs)
+    const abs = -ms
+    const m = Math.floor(abs / 60000)
+    if (m < 60) return `in ${m}m`
+    const h = Math.floor(m / 60)
+    if (h < 24) return `in ${h}h`
+    return `in ${Math.floor(h / 24)}d`
+  }
+  const s = Math.floor(ms / 1000)
+  if (s < 60)  return `${s}s ago`
+  const m = Math.floor(s / 60)
+  if (m < 60)  return `${m}m ago`
+  const h = Math.floor(m / 60)
+  if (h < 24)  return `${h}h ago`
+  const dy = Math.floor(h / 24)
+  if (dy < 30) return `${dy}d ago`
+  const mo = Math.floor(dy / 30)
+  if (mo < 12) return `${mo}mo ago`
+  return `${Math.floor(mo / 12)}y ago`
+}
 
 const scheduledJobCols = [
   { name: 'name',      label: 'Job',       field: 'name',      align: 'left' },
@@ -347,8 +623,7 @@ const runningJobCols = [
   { name: 'type',       label: 'Type',       field: 'type',       align: 'left' },
   { name: 'start_time', label: 'Started',    field: 'start_time', align: 'left' },
   { name: 'files',      label: 'Files',      field: 'files',      align: 'right' },
-  { name: 'bytes',      label: 'Bytes',      field: 'bytes',      align: 'right',
-    format: v => v ? formatBytes(Number(v)) : '0 B' },
+  { name: 'bytes',      label: 'Bytes',      field: 'bytes',      align: 'right' },
   { name: 'status',     label: 'Status',     field: 'status',     align: 'left' },
 ]
 const terminatedJobCols = [
@@ -358,21 +633,22 @@ const terminatedJobCols = [
   { name: 'type',     label: 'Type',     field: 'type',     align: 'left' },
   { name: 'finished', label: 'Finished', field: 'finished', align: 'left' },
   { name: 'files',    label: 'Files',    field: 'files',    align: 'right' },
-  { name: 'bytes',    label: 'Bytes',    field: 'bytes',    align: 'right',
-    format: v => v ? formatBytes(Number(v)) : '0 B' },
+  { name: 'bytes',    label: 'Bytes',    field: 'bytes',    align: 'right' },
   { name: 'status',   label: 'Status',   field: 'status',   align: 'left' },
 ]
 
 // ── Messages ─────────────────────────────────────────────────────────────────
 const messagesLoading = ref(false)
 const messagesError   = ref(null)
-const rawMessages     = ref(null)
+const messagesLimit   = ref(100)
+const logEntries      = ref([])
 
 async function refreshMessages() {
   messagesLoading.value = true
   messagesError.value = null
   try {
-    rawMessages.value = await director.call('messages')
+    const data = await director.call(`list log limit=${messagesLimit.value}`)
+    logEntries.value = data?.log ?? []
   } catch (e) {
     messagesError.value = e.message
   } finally {
@@ -380,19 +656,18 @@ async function refreshMessages() {
   }
 }
 
-const messagesText = computed(() => {
-  const d = rawMessages.value
-  if (!d) return ''
-  if (typeof d === 'string') return d
-  return JSON.stringify(d, null, 2)
-})
+watch(messagesLimit, () => refreshMessages())
 
 refreshStatus()
 refreshMessages()
 watch(tab, (t) => {
+  if (t === 'messages') refreshMessages()
   if (t === 'catalog') loadEmptyJobs()
   if (t === 'subscription') refreshSubscription()
 })
+
+onMounted(() => { startStatusAutoRefresh() })
+onUnmounted(() => { clearInterval(_statusTimer) })
 
 // ── Subscription ──────────────────────────────────────────────────────────────
 const subscriptionLoading = ref(false)
@@ -547,3 +822,37 @@ async function runPrune(cmd) {
   }
 }
 </script>
+
+<style scoped>
+.terminal-output {
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: 'Fira Mono', 'Cascadia Code', 'Consolas', 'DejaVu Sans Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  padding: 12px 16px;
+  max-height: 600px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  display: flex;
+  flex-direction: column;
+}
+.terminal-line {
+  display: block;
+  border-bottom: 1px solid #21262d;
+  padding: 1px 0;
+}
+.terminal-line:last-child {
+  border-bottom: none;
+}
+.animated-spin {
+  animation: hourglass-spin 1.4s ease-in-out infinite;
+}
+@keyframes hourglass-spin {
+  0%   { transform: rotate(0deg);   }
+  45%  { transform: rotate(0deg);   }
+  55%  { transform: rotate(180deg); }
+  100% { transform: rotate(180deg); }
+}
+</style>
