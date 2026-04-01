@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -748,6 +748,9 @@ static inline PyRestorePacket* NativeToPyRestorePacket(restore_pkt* rp)
 #else
     pRestorePacket->filedes = rp->filedes;
 #endif
+
+    pRestorePacket->original_file_name = rp->original_file_name;
+    pRestorePacket->original_link_name = rp->original_link_name;
   }
 
   return pRestorePacket;
@@ -2135,11 +2138,12 @@ static PyObject* PyRestorePacket_repr(PyRestorePacket* self)
        ", file_index=%" PRId32 ", linkFI=%" PRId32 ", uid=%" PRIu32
        ", statp=\"%s\", attrEx=\"%s\", ofname=\"%s\""
        ", olname=\"%s\", where=\"%s\", RegexWhere=\"%s\", replace=%d"
-       ", create_status=%d)",
+       ", create_status=%d, original_file_name=\"%s\""
+       ", original_link_name=\"%s\")",
        self->stream, self->data_stream, self->type, self->file_index,
        self->LinkFI, self->uid, PyGetStringValue(stat_repr), self->attrEx,
        self->ofname, self->olname, self->where, self->RegexWhere, self->replace,
-       self->create_status);
+       self->create_status, self->original_file_name, self->original_link_name);
 
   s = PyUnicode_FromString(buf.c_str());
   Py_DECREF(stat_repr);
@@ -2159,20 +2163,7 @@ static int PyRestorePacket_init(PyRestorePacket* self,
          (char*)"olname",     (char*)"where",         (char*)"regexwhere",
          (char*)"replace",    (char*)"create_status", NULL};
 
-  self->stream = 0;
-  self->data_stream = 0;
-  self->type = 0;
-  self->file_index = 0;
-  self->LinkFI = 0;
-  self->uid = 0;
-  self->statp = NULL;
-  self->attrEx = NULL;
-  self->ofname = NULL;
-  self->olname = NULL;
-  self->where = NULL;
-  self->RegexWhere = NULL;
-  self->replace = 0;
-  self->create_status = 0;
+  *self = {};
 
   if (!PyArg_ParseTupleAndKeywords(
           args, kwds, "|iiiiiIosssssii", kwlist, &self->stream,

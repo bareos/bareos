@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -297,6 +297,9 @@ typedef struct {
   int replace;                  /* Replace flag */
   int create_status;            /* Status from createFile() */
   int filedes;                  /* filedescriptor for read/write in core */
+
+  const char* original_file_name;
+  const char* original_link_name;
 } PyRestorePacket;
 
 // Forward declarations of type specific functions.
@@ -311,36 +314,38 @@ static PyMethodDef PyRestorePacket_methods[] = {
 };
 
 static PyMemberDef PyRestorePacket_members[] = {
-    {(char*)"stream", T_INT, offsetof(PyRestorePacket, stream), 0,
-     (char*)"Attribute stream id"},
-    {(char*)"data_stream", T_INT, offsetof(PyRestorePacket, data_stream), 0,
-     (char*)"Id of data stream to follow"},
-    {(char*)"type", T_INT, offsetof(PyRestorePacket, type), 0,
-     (char*)"File type FT"},
-    {(char*)"file_index", T_INT, offsetof(PyRestorePacket, file_index), 0,
-     (char*)"File index"},
-    {(char*)"linkFI", T_INT, offsetof(PyRestorePacket, LinkFI), 0,
-     (char*)"File index to data if hard link"},
-    {(char*)"uid", T_UINT, offsetof(PyRestorePacket, uid), 0, (char*)"User Id"},
-    {(char*)"statp", T_OBJECT, offsetof(PyRestorePacket, statp), 0,
-     (char*)"Stat Packet"},
-    {(char*)"attrEX", T_STRING, offsetof(PyRestorePacket, attrEx), 0,
-     (char*)"Extended attributes"},
-    {(char*)"ofname", T_STRING, offsetof(PyRestorePacket, ofname), 0,
-     (char*)"Output filename"},
-    {(char*)"olname", T_STRING, offsetof(PyRestorePacket, olname), 0,
-     (char*)"Output link name"},
-    {(char*)"where", T_STRING, offsetof(PyRestorePacket, where), 0,
-     (char*)"Where"},
-    {(char*)"regexwhere", T_STRING, offsetof(PyRestorePacket, RegexWhere), 0,
-     (char*)"Regex where"},
-    {(char*)"replace", T_INT, offsetof(PyRestorePacket, replace), 0,
-     (char*)"Replace flag"},
-    {(char*)"create_status", T_INT, offsetof(PyRestorePacket, create_status), 0,
-     (char*)"Status from createFile()"},
-    {(char*)"filedes", T_INT, offsetof(PyRestorePacket, filedes), 0,
-     (char*)"file descriptor of current file"},
-    {NULL, 0, 0, 0, NULL}};
+    {"stream", T_INT, offsetof(PyRestorePacket, stream), 0,
+     "Attribute stream id"},
+    {"data_stream", T_INT, offsetof(PyRestorePacket, data_stream), 0,
+     "Id of data stream to follow"},
+    {"type", T_INT, offsetof(PyRestorePacket, type), 0, "File type FT"},
+    {"file_index", T_INT, offsetof(PyRestorePacket, file_index), 0,
+     "File index"},
+    {"linkFI", T_INT, offsetof(PyRestorePacket, LinkFI), 0,
+     "File index to data if hard link"},
+    {"uid", T_UINT, offsetof(PyRestorePacket, uid), 0, "User Id"},
+    {"statp", T_OBJECT, offsetof(PyRestorePacket, statp), 0, "Stat Packet"},
+    {"attrEX", T_STRING, offsetof(PyRestorePacket, attrEx), 0,
+     "Extended attributes"},
+    {"ofname", T_STRING, offsetof(PyRestorePacket, ofname), 0,
+     "Output filename"},
+    {"olname", T_STRING, offsetof(PyRestorePacket, olname), 0,
+     "Output link name"},
+    {"where", T_STRING, offsetof(PyRestorePacket, where), 0, "Where"},
+    {"regexwhere", T_STRING, offsetof(PyRestorePacket, RegexWhere), 0,
+     "Regex where"},
+    {"replace", T_INT, offsetof(PyRestorePacket, replace), 0, "Replace flag"},
+    {"create_status", T_INT, offsetof(PyRestorePacket, create_status), 0,
+     "Status from createFile()"},
+    {"filedes", T_INT, offsetof(PyRestorePacket, filedes), 0,
+     "file descriptor of current file"},
+    {"original_file_name", T_STRING,
+     offsetof(PyRestorePacket, original_file_name), 0,
+     "filename at backup time"},
+    {"original_link_name", T_STRING,
+     offsetof(PyRestorePacket, original_link_name), 0,
+     "link name at backup time"},
+    {}};
 
 IGNORE_MISSING_INITIALIZERS_ON
 /* clang-format off */
