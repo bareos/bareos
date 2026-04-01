@@ -166,72 +166,22 @@
             <q-inner-loading :showing="subscriptionLoading" />
             <div v-if="subscriptionError" class="text-negative">{{ subscriptionError }}</div>
             <template v-else-if="subscriptionData">
-              <!-- Meta info -->
-              <q-list dense separator class="q-mb-md">
-                <q-item>
-                  <q-item-section class="text-weight-medium" style="max-width:160px">Version</q-item-section>
-                  <q-item-section>{{ subscriptionData.version }}</q-item-section>
-                </q-item>
-                <q-item>
-                  <q-item-section class="text-weight-medium" style="max-width:160px">OS</q-item-section>
-                  <q-item-section>{{ subscriptionData.os }}</q-item-section>
-                </q-item>
-                <q-item>
-                  <q-item-section class="text-weight-medium" style="max-width:160px">Binary Info</q-item-section>
-                  <q-item-section>{{ subscriptionData['binary-info'] }}</q-item-section>
-                </q-item>
-                <q-item>
-                  <q-item-section class="text-weight-medium" style="max-width:160px">Report Time</q-item-section>
-                  <q-item-section>{{ subscriptionData['report-time'] }}</q-item-section>
-                </q-item>
-              </q-list>
+              <SubscriptionReport :data="subscriptionData" />
 
-              <!-- Backup unit totals -->
-              <div class="text-subtitle2 q-mb-xs">Backup Unit Totals</div>
-              <q-list dense separator class="q-mb-md">
-                <q-item v-for="(val, key) in subscriptionData['total-units-required']" :key="key">
-                  <q-item-section class="text-weight-medium text-capitalize" style="max-width:160px">{{ key }}</q-item-section>
-                  <q-item-section>
-                    <q-badge :color="key === 'remaining' && Number(val) < 0 ? 'negative' : 'primary'" :label="val" />
-                  </q-item-section>
-                </q-item>
-              </q-list>
-
-              <!-- Per-client backup unit detail -->
-              <div class="text-subtitle2 q-mb-xs">Backup Unit Detail</div>
-              <q-table
-                flat bordered dense
-                :rows="subscriptionData['unit-detail']"
-                :columns="subscriptionUnitCols"
-                row-key="client"
-                hide-pagination
-                :rows-per-page-options="[0]"
-                class="q-mb-md"
-              />
-
-              <!-- Uncategorized clients/filesets -->
-              <template v-if="subscriptionData['filesets-not-catogorized'] && subscriptionData['filesets-not-catogorized'].length">
-                <div class="text-subtitle2 q-mb-xs">Clients/Filesets Not Yet Categorized</div>
-                <q-table
-                  flat bordered dense
-                  :rows="subscriptionData['filesets-not-catogorized']"
-                  row-key="client"
-                  hide-pagination
-                  :rows-per-page-options="[0]"
-                  class="q-mb-md"
-                />
-              </template>
-
-              <!-- Checksum -->
-              <div class="text-caption text-grey q-mb-md">
-                Checksum: {{ subscriptionData.checksum }}
-              </div>
-
-              <div class="row q-gutter-sm q-mb-md">
-                <q-btn color="secondary" label="Download Report" icon="download"
+              <!-- Download buttons: 2×2 grid (normal / anonymized) × (PDF / JSON) -->
+              <div class="row q-gutter-sm q-mb-md q-mt-md">
+                <q-btn color="primary" label="Download PDF" icon="picture_as_pdf"
+                       no-caps :loading="pdfLoading"
+                       @click="printSubscription(false)" />
+                <q-btn color="secondary" label="Download JSON" icon="download"
                        no-caps :loading="downloadLoading"
                        @click="downloadSubscription(false)" />
-                <q-btn color="secondary" label="Download Anonymized Report" icon="download"
+                <q-btn color="primary" label="Download Anonymized PDF"
+                       icon="picture_as_pdf"
+                       no-caps :loading="pdfAnonLoading"
+                       @click="printSubscription(true)" />
+                <q-btn color="secondary" label="Download Anonymized JSON"
+                       icon="download"
                        no-caps :loading="downloadAnonLoading"
                        @click="downloadSubscription(true)" />
               </div>
@@ -244,13 +194,21 @@
       </q-tab-panel>
     </q-tab-panels>
   </q-page>
+
+  <!-- Hidden print root — rendered into DOM, visible only during window.print() -->
+  <teleport to="body">
+    <div id="subscription-print-root" style="display:none">
+      <SubscriptionReport v-if="printData" :data="printData" :anonymized="printAnonymized" />
+    </div>
+  </teleport>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
+import SubscriptionReport from '../components/SubscriptionReport.vue'
 
 const tab = ref('status')
 const director = useDirectorStore()
@@ -322,15 +280,6 @@ const subscriptionLoading = ref(false)
 const subscriptionError   = ref(null)
 const subscriptionData    = ref(null)
 
-const subscriptionUnitCols = [
-  { name: 'client',       label: 'Client',        field: 'client',       align: 'left' },
-  { name: 'fileset',      label: 'Fileset',        field: 'fileset',      align: 'left' },
-  { name: 'normal_units', label: 'Normal Units',   field: 'normal_units', align: 'right' },
-  { name: 'db_units',     label: 'DB Units',       field: 'db_units',     align: 'right' },
-  { name: 'vm_units',     label: 'VM Units',       field: 'vm_units',     align: 'right' },
-  { name: 'filer_units',  label: 'Filer Units',    field: 'filer_units',  align: 'right' },
-]
-
 async function refreshSubscription() {
   subscriptionLoading.value = true
   subscriptionError.value   = null
@@ -345,6 +294,32 @@ async function refreshSubscription() {
 
 const downloadLoading     = ref(false)
 const downloadAnonLoading = ref(false)
+const pdfLoading          = ref(false)
+const pdfAnonLoading      = ref(false)
+
+// Print state: when set, the hidden #subscription-print-root becomes populated
+// and window.print() renders it to PDF via @media print CSS.
+const printData       = ref(null)
+const printAnonymized = ref(false)
+
+async function printSubscription(anonymize) {
+  const loadingRef = anonymize ? pdfAnonLoading : pdfLoading
+  loadingRef.value = true
+  try {
+    const cmd = anonymize
+      ? 'status subscriptions all anonymize'
+      : 'status subscriptions all'
+    printData.value       = await director.call(cmd)
+    printAnonymized.value = anonymize
+    await nextTick()
+    window.print()
+  } catch (e) {
+    subscriptionError.value = e.message
+  } finally {
+    printData.value  = null
+    loadingRef.value = false
+  }
+}
 
 async function downloadSubscription(anonymize) {
   const loadingRef = anonymize ? downloadAnonLoading : downloadLoading
