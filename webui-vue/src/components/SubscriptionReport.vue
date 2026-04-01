@@ -52,7 +52,7 @@
           <tr>
             <th>Client</th>
             <th class="text-right">Count</th>
-            <th class="text-right">Size (GB)</th>
+            <th class="text-right">Size (TB)</th>
           </tr>
         </thead>
         <tbody>
@@ -60,7 +60,7 @@
               :class="row.client === 'TOTAL' ? 'sub-row--total' : ''">
             <td>{{ row.client }}</td>
             <td class="text-right">{{ row.count }}</td>
-            <td class="text-right">{{ row.size_gb }}</td>
+            <td class="text-right">{{ fmtTB(row.size_gb) }}</td>
           </tr>
         </tbody>
       </table>
@@ -74,7 +74,7 @@
           <tr>
             <th>Plugin</th>
             <th class="text-right">Count</th>
-            <th class="text-right">Size (GB)</th>
+            <th class="text-right">Size (TB)</th>
           </tr>
         </thead>
         <tbody>
@@ -82,7 +82,7 @@
               :class="row.plugin === 'TOTAL' ? 'sub-row--total' : ''">
             <td>{{ row.plugin }}</td>
             <td class="text-right">{{ row.count }}</td>
-            <td class="text-right">{{ row.size_gb }}</td>
+            <td class="text-right">{{ fmtTB(row.size_gb) }}</td>
           </tr>
         </tbody>
       </table>
@@ -97,7 +97,7 @@
             <th>Client</th>
             <th>Plugin</th>
             <th class="text-right">Count</th>
-            <th class="text-right">Size (GB)</th>
+            <th class="text-right">Size (TB)</th>
           </tr>
         </thead>
         <tbody>
@@ -106,7 +106,7 @@
             <td>{{ row.client }}</td>
             <td>{{ row.plugin }}</td>
             <td class="text-right">{{ row.count }}</td>
-            <td class="text-right">{{ row.size_gb }}</td>
+            <td class="text-right">{{ fmtTB(row.size_gb) }}</td>
           </tr>
         </tbody>
       </table>
@@ -126,6 +126,14 @@ const props = defineProps({
 })
 
 const generatedAt = new Date().toLocaleString()
+
+function fmtTB(gbStr) {
+  const tb = parseFloat(gbStr) / 1000
+  return tb.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
 </script>
 
 <style scoped>
