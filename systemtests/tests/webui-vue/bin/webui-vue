@@ -59,35 +59,36 @@ do_start()
 
   mkdir -p tmp
 
-  # Build Vue app if dist/ is absent, env vars changed, or source is newer than dist.
+  # Build into test-dist/ with test port env vars baked in.
+  # Never touch dist/ here; that is the committed production build.
   EXPECTED_URL="ws://localhost:${WEBSOCKET_PROXY_PORT}"
   BUILD_ENV="VITE_DIRECTOR_WS_URL=${EXPECTED_URL}
 VITE_DIRECTOR_HOST=localhost
 VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
 
-  DIST="${CMAKE_SOURCE_DIR}/webui-vue/dist"
+  TEST_DIST="${CMAKE_SOURCE_DIR}/webui-vue/test-dist"
   _needs_build=false
-  if [ ! -d "${DIST}" ] \
-    || [ "$(cat "${DIST}/.build-env" 2>/dev/null)" != "${BUILD_ENV}" ]; then
+  if [ ! -d "${TEST_DIST}" ] \
+    || [ "$(cat "${TEST_DIST}/.build-env" 2>/dev/null)" != "${BUILD_ENV}" ]; then
     _needs_build=true
   elif (cd "${CMAKE_SOURCE_DIR}/webui-vue" \
-    && find src proxy index.html -newer dist/.build-env 2>/dev/null | grep -q .); then
+    && find src index.html -newer test-dist/.build-env 2>/dev/null | grep -q .); then
     _needs_build=true
   fi
 
   if [ "${_needs_build}" = true ]; then
-    echo "Building Vue WebUI ..."
+    echo "Building Vue WebUI into test-dist/ ..."
     (
       cd "${CMAKE_SOURCE_DIR}/webui-vue"
       VITE_DIRECTOR_WS_URL="${EXPECTED_URL}" \
         VITE_DIRECTOR_HOST="localhost" \
         VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
-        npm run build >"${VITE_BUILD_LOG}" 2>&1
-      printf '%s' "${BUILD_ENV}" >dist/.build-env
+        npx vite build --outDir test-dist >"${VITE_BUILD_LOG}" 2>&1
+      printf '%s' "${BUILD_ENV}" >test-dist/.build-env
     )
     echo "Build complete."
   else
-    echo "Reusing existing build."
+    echo "Reusing existing test build."
   fi
   unset _needs_build
 
@@ -105,6 +106,7 @@ VITE_DIRECTOR_PORT=${BAREOS_DIRECTOR_PORT}"
   (
     cd "${CMAKE_SOURCE_DIR}/webui-vue"
     npx vite preview \
+      --outDir test-dist \
       --port "${BAREOS_WEBUI_PORT}" --strictPort --host 127.0.0.1 \
       >"${VITE_LOG}" 2>&1
   ) &
