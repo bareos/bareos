@@ -477,6 +477,10 @@ def _set(type_):
         return result
     return f
 
+def _no_op(value):
+    """No-op converter"""
+    return value
+
 
 class UnknownOptionException(Exception):
     """Raised when using an unknown option"""
@@ -520,6 +524,8 @@ class BareosFdIncusOptions:
 
             # Restore options
             'restore_buffer_depth': self.make_opt(_int, '8'),
+            'restore_config_override': self.make_opt(_no_op, []),
+            'restore_device_override': self.make_opt(_no_op, []),
             'restore_instance': self.make_opt(_str, ''),
             'restore_path': self.make_opt(_str, ''),
             'restore_project': self.make_opt(_str, ''),
@@ -682,6 +688,9 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.current_writer = None
         ## The thread reading the data pipe into current_writer
         self.restore_io_thread = None
+        ## The overrides to apply after the import process
+        self.device_overrides = []
+        self.config_overrides = []
 
     def check_options(self, mandatory_options=None): # pylint: disable=too-many-return-statements
         """Check the options provided by the core"""
@@ -735,10 +744,13 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         return self.options.check()
 
     # pylint: disable=too-many-branches,too-many-return-statements
-    def parse_plugin_definition(self, plugindef):
+    def parse_plugin_definition(self, plugindef, multi_value_options=None):
         """Parse the plugin arguments"""
         try:
-            rc = super().parse_plugin_definition(plugindef)
+            if multi_value_options is None:
+                multi_value_options = []
+            multi_value_options.extend(["restore_config_override", "restore_device_override"])
+            rc = super().parse_plugin_definition(plugindef, multi_value_options)
             if rc != bareosfd.bRC_OK:
                 return rc
         except UnknownOptionException as e:
@@ -835,6 +847,35 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             cmd.extend(['--project', project])
         if self.options.restore_storage:
             cmd.extend(['--storage', self.options.restore_storage])
+
+        # Overrides passed as command-line arguments aren’t supported before Incus 6.17; to ensure
+        # they work with this plugin, we track whether overrides are provided, and manually perform
+        # them if the client does not support the feature.
+        # NOTE: we can only emulate a subset of the feature, as `--device` supports creating new
+        # devices, while our implementation only supports setting properties to an already-existing
+        # device.
+        override_args = []
+        for override in self.options.restore_config_override:
+            override_args.extend(['--config', override])
+        for override in self.options.restore_device_override:
+            override_args.extend(['--device', override])
+        if override_args:
+            try:
+                result = subprocess.run(['incus', 'version'], capture_output=True, text=True,
+                                        check=True)
+                version = tuple(map(int, result.stdout.splitlines()[0].split(':')[1].strip()
+                                                                      .split('.')))
+                if version >= (6, 17):
+                    cmd.extend(override_args)
+                else:
+                    # Fallback to the exception handler
+                    raise Exception # pylint: disable=broad-exception-raised
+            except: # pylint: disable=bare-except
+                # Let’s not try to be clever here; if anything fails, we switch back to legacy
+                # mode.
+                self.config_overrides = self.options.restore_config_override
+                self.device_overrides = self.options.restore_device_override
+
         bareosfd.JobMessage(bareosfd.M_INFO, f"Executing {' '.join(cmd)}\n")
 
         try:
@@ -883,6 +924,25 @@ class BareosFdIncus(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
             # Incus reacts to EOF, the zero-blocks are not enough so we need to close the pipe
             self.incus_process.stdin.close()
             self.incus_process.wait()
+            remote = self.options.restore_remote or self.options.remote
+            instance = self.options.restore_instance or self.options.instance
+            if remote:
+                instance = f'{remote}:{instance}'
+            project = self.options.restore_project or self.options.project
+            if self.config_overrides:
+                cmd = ['incus', 'config', 'set', instance]
+                if project:
+                    cmd.extend(['--project', project])
+                for override in self.config_overrides:
+                    cmd.append(override)
+                subprocess.run(cmd, check=True)
+            if self.device_overrides:
+                for override in self.device_overrides:
+                    cmd = ['incus', 'config', 'device', 'set', instance,
+                           *override.split(',', 2)]
+                    if project:
+                        cmd.extend(['--project', project])
+                    subprocess.run(cmd, check=True)
         # We are waiting up to the end to be extra sure we catch everything
         return self.log_queue.flush()
 
