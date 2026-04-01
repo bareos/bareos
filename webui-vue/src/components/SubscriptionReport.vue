@@ -10,78 +10,103 @@
     <!-- Meta info -->
     <table class="sub-meta-table q-mb-md">
       <tbody>
-        <tr>
-          <th>Version</th>
-          <td>{{ data.version }}</td>
-        </tr>
-        <tr>
-          <th>OS</th>
-          <td>{{ data.os }}</td>
-        </tr>
-        <tr>
-          <th>Binary Info</th>
-          <td>{{ data['binary-info'] }}</td>
-        </tr>
-        <tr>
-          <th>Report Time</th>
-          <td>{{ data['report-time'] }}</td>
-        </tr>
+        <tr><th>Version</th>     <td>{{ data.version }}</td></tr>
+        <tr><th>OS</th>          <td>{{ data.os }}</td></tr>
+        <tr><th>Binary Info</th> <td>{{ data['binary-info'] }}</td></tr>
+        <tr><th>Report Time</th> <td>{{ data['report-time'] }}</td></tr>
       </tbody>
     </table>
 
-    <!-- Backup unit totals -->
-    <div class="text-subtitle2 q-mb-xs">Backup Unit Totals</div>
-    <table class="sub-table q-mb-md">
-      <tbody>
-        <tr v-for="(val, key) in data['total-units-required']" :key="key">
-          <th class="text-capitalize">{{ key }}</th>
-          <td :class="key === 'remaining' && Number(val) < 0 ? 'text-negative' : ''">
-            {{ val }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- Unit Summary -->
+    <template v-if="data['unit-summary']">
+      <div class="text-subtitle2 q-mb-xs">Unit Summary</div>
+      <table class="sub-table q-mb-md">
+        <tbody>
+          <tr>
+            <th>Accounting Mode</th>
+            <td>{{ data['unit-summary'].accounting_mode }}</td>
+          </tr>
+          <tr>
+            <th>Used</th>
+            <td>{{ data['unit-summary'].used }}</td>
+          </tr>
+          <tr>
+            <th>Configured</th>
+            <td>{{ data['unit-summary'].configured }}</td>
+          </tr>
+          <tr>
+            <th>Remaining</th>
+            <td :class="Number(data['unit-summary'].remaining) < 0 ? 'text-negative' : 'text-positive'">
+              {{ data['unit-summary'].remaining }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </template>
 
-    <!-- Per-client backup unit detail -->
-    <div class="text-subtitle2 q-mb-xs">Backup Unit Detail</div>
-    <table class="sub-table sub-table--full q-mb-md">
-      <thead>
-        <tr>
-          <th>Client</th>
-          <th>Fileset</th>
-          <th class="text-right">Normal Units</th>
-          <th class="text-right">DB Units</th>
-          <th class="text-right">VM Units</th>
-          <th class="text-right">Filer Units</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(row, i) in (data['unit-detail'] ?? [])" :key="i">
-          <td>{{ row.client }}</td>
-          <td>{{ row.fileset }}</td>
-          <td class="text-right">{{ row.normal_units }}</td>
-          <td class="text-right">{{ row.db_units }}</td>
-          <td class="text-right">{{ row.vm_units }}</td>
-          <td class="text-right">{{ row.filer_units }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Uncategorized clients/filesets -->
-    <template v-if="data['filesets-not-catogorized']?.length">
-      <div class="text-subtitle2 q-mb-xs">
-        Clients/Filesets Not Yet Categorized
-      </div>
+    <!-- Per-client detail -->
+    <template v-if="data['unit-clients']?.length">
+      <div class="text-subtitle2 q-mb-xs">Units by Client</div>
       <table class="sub-table sub-table--full q-mb-md">
         <thead>
           <tr>
-            <th v-for="key in Object.keys(data['filesets-not-catogorized'][0])"
-                :key="key">{{ key }}</th>
+            <th>Client</th>
+            <th class="text-right">Count</th>
+            <th class="text-right">Size (GB)</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(row, i) in data['filesets-not-catogorized']" :key="i">
-            <td v-for="key in Object.keys(row)" :key="key">{{ row[key] }}</td>
+          <tr v-for="(row, i) in data['unit-clients']" :key="i"
+              :class="row.client === 'TOTAL' ? 'sub-row--total' : ''">
+            <td>{{ row.client }}</td>
+            <td class="text-right">{{ row.count }}</td>
+            <td class="text-right">{{ row.size_gb }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </template>
+
+    <!-- Per-plugin detail -->
+    <template v-if="data['unit-plugins']?.length">
+      <div class="text-subtitle2 q-mb-xs">Units by Plugin</div>
+      <table class="sub-table sub-table--full q-mb-md">
+        <thead>
+          <tr>
+            <th>Plugin</th>
+            <th class="text-right">Count</th>
+            <th class="text-right">Size (GB)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(row, i) in data['unit-plugins']" :key="i"
+              :class="row.plugin === 'TOTAL' ? 'sub-row--total' : ''">
+            <td>{{ row.plugin }}</td>
+            <td class="text-right">{{ row.count }}</td>
+            <td class="text-right">{{ row.size_gb }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </template>
+
+    <!-- Full detail -->
+    <template v-if="data['unit-detail']?.length">
+      <div class="text-subtitle2 q-mb-xs">Full Detail</div>
+      <table class="sub-table sub-table--full q-mb-md">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Plugin</th>
+            <th class="text-right">Count</th>
+            <th class="text-right">Size (GB)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(row, i) in data['unit-detail']" :key="i"
+              :class="row.client === 'TOTAL' ? 'sub-row--total' : ''">
+            <td>{{ row.client }}</td>
+            <td>{{ row.plugin }}</td>
+            <td class="text-right">{{ row.count }}</td>
+            <td class="text-right">{{ row.size_gb }}</td>
           </tr>
         </tbody>
       </table>
@@ -135,6 +160,10 @@ const generatedAt = new Date().toLocaleString()
 }
 .sub-table--full {
   width: 100%;
+}
+.sub-row--total td {
+  font-weight: 600;
+  border-top: 2px solid #bbb;
 }
 
 @media print {
