@@ -227,6 +227,11 @@ int BgetDirmsg(BareosSocket* bs, bool allow_any_message)
       CatalogRequest(jcr, bs);
       continue;
     }
+    if (bs->msg[0] == 'P' || bs->msg[0] == 'D') { /* Progress update (no response needed) */
+      Dmsg2(200, "Progress update jcr %p: %s", jcr, bs->msg);
+      CatalogRequest(jcr, bs);
+      continue;
+    }
     if (bs->msg[0] == 'U') { /* SD sending attributes */
       Dmsg2(900, "Catalog upd jcr %p: %s", jcr, bs->msg);
       CatalogUpdate(jcr, bs);

@@ -13,16 +13,16 @@ set -u
 TestName="$(basename "$(pwd)")"
 export TestName
 
-slowjob="slow-backup-bareos-fd"
-backup_log="$tmp/job-progress-backup.out"
-status_log="$tmp/job-progress-status.out"
-status_json_log="$tmp/job-progress-status.json"
-
 #shellcheck source=../../environment.in
 . ./environment
 
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
+
+slowjob="slow-backup-bareos-fd"
+backup_log="$tmp/job-progress-backup.out"
+status_log="$tmp/job-progress-status.out"
+status_json_log="$tmp/job-progress-status.json"
 
 start_test
 
