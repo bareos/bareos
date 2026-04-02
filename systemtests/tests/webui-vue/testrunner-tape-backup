@@ -56,7 +56,7 @@ for changer_index in {0..9}; do
 @$out ${NULL_DEV}
 messages
 @$out ${log_out}
-label barcodes storage=Tape-${changer_index} pool=TapeFull-${changer_index} slots=1-10 drive=0 yes
+label barcodes storage=Tape-${changer_index} pool=TapeFull-${changer_index} slots=1-4 drive=0 yes
 run job=backup-tape-${changer_index} level=Full yes
 wait
 messages

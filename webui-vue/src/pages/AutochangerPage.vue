@@ -162,6 +162,31 @@
                            :label="props.value" />
                 </q-td>
               </template>
+              <template #body-cell-mr_volname="props">
+                <q-td :props="props">
+                  <router-link
+                    v-if="props.value && props.value !== '?'"
+                    :to="{ name: 'volume-details', params: { name: props.value } }"
+                    class="text-primary"
+                  >{{ props.value }}</router-link>
+                </q-td>
+              </template>
+              <template #body-cell-mr_volstatus="props">
+                <q-td :props="props">
+                  <span v-if="props.value && props.value !== '?'">
+                    {{ props.value }}
+                  </span>
+                </q-td>
+              </template>
+              <template #body-cell-pr_name="props">
+                <q-td :props="props">
+                  <router-link
+                    v-if="props.value && props.value !== '?'"
+                    :to="{ name: 'pool-details', params: { name: props.value } }"
+                    class="text-primary"
+                  >{{ props.value }}</router-link>
+                </q-td>
+              </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-right">
                   <q-btn v-if="props.row.content === 'full'"
@@ -366,27 +391,36 @@ async function loadSlots() {
 
 // ── Actions ───────────────────────────────────────────────────
 
+async function runCmd(title, cmd) {
+  try {
+    const result = await director.rawCall(cmd)
+    showResult(title, result)
+  } catch (e) {
+    showResult(title, `Error: ${e.message}`)
+  }
+}
+
 async function doUpdateSlots() {
-  const result = await director.rawCall(
+  await runCmd(
+    'Update Slots',
     `update slots storage="${selectedStorage.value}"`
   )
-  showResult('Update Slots', result)
   await loadSlots()
 }
 
 async function doImportAll() {
-  const result = await director.rawCall(
+  await runCmd(
+    'Import All',
     `import storage="${selectedStorage.value}"`
   )
-  showResult('Import All', result)
   await loadSlots()
 }
 
 async function doImport(slotNr) {
-  const result = await director.rawCall(
+  await runCmd(
+    `Import Slot ${slotNr}`,
     `import storage="${selectedStorage.value}" srcslots=${slotNr}`
   )
-  showResult('Import Slot ' + slotNr, result)
   await loadSlots()
 }
 
@@ -397,10 +431,10 @@ async function doExport(slotNr) {
     ok: { color: 'primary', label: 'Export' },
     cancel: true,
   }).onOk(async () => {
-    const result = await director.rawCall(
+    await runCmd(
+      `Export Slot ${slotNr}`,
       `export storage="${selectedStorage.value}" srcslots=${slotNr}`
     )
-    showResult('Export Slot ' + slotNr, result)
     await loadSlots()
   })
 }
@@ -413,27 +447,27 @@ function openMountDialog(driveNr) {
 
 async function doMount() {
   mountDialog.value = false
-  const result = await director.rawCall(
+  await runCmd(
+    'Mount',
     `mount storage="${selectedStorage.value}"` +
     ` slot=${mountForm.value.slot} drive=${mountDrive.value}`
   )
-  showResult('Mount', result)
   await loadSlots()
 }
 
 async function doUnmount(driveNr) {
-  const result = await director.rawCall(
+  await runCmd(
+    `Unmount Drive ${driveNr}`,
     `unmount storage="${selectedStorage.value}" drive=${driveNr}`
   )
-  showResult('Unmount Drive ' + driveNr, result)
   await loadSlots()
 }
 
 async function doRelease(driveNr) {
-  const result = await director.rawCall(
+  await runCmd(
+    `Release Drive ${driveNr}`,
     `release storage="${selectedStorage.value}" drive=${driveNr}`
   )
-  showResult('Release Drive ' + driveNr, result)
   await loadSlots()
 }
 
@@ -445,16 +479,15 @@ async function doLabelBarcodes() {
   cmd += ` drive=${drive ?? 0}`
   if (slots) cmd += ` slots=${slots}`
   cmd += ' yes'
-  const result = await director.rawCall(cmd)
-  showResult('Label Barcodes', result)
+  await runCmd('Label Barcodes', cmd)
   await loadSlots()
 }
 
 async function showStatus() {
-  const result = await director.rawCall(
+  await runCmd(
+    `Status: ${selectedStorage.value}`,
     `status storage="${selectedStorage.value}"`
   )
-  showResult(`Status: ${selectedStorage.value}`, result)
 }
 
 function showResult(title, text) {
