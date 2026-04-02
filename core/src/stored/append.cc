@@ -37,6 +37,7 @@
 #include "stored/spool.h"
 #include "lib/bget_msg.h"
 #include "lib/edit.h"
+#include "lib/attr.h"
 #include "include/jcr.h"
 #include "include/streams.h"
 #include "lib/berrno.h"
@@ -392,7 +393,9 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
   jcr->run_time = time(NULL); /* start counting time for rates */
 
   const bool checkpoints_enabled = me->checkpoint_interval > 0;
-  CheckpointHandler checkpoint_handler(me->checkpoint_interval);
+  CheckpointHandler checkpoint_handler(me->checkpoint_interval,
+                                       me->progress_interval);
+  const bool progress_enabled = me->progress_interval > 0;
 
   std::vector<ProcessedFile> processed_files{};
 
@@ -565,6 +568,17 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
 
       if (IsAttribute(jcr->sd_impl->dcr->rec)) {
         file_currently_processed.AddAttribute(jcr->sd_impl->dcr->rec);
+
+        if (progress_enabled) {
+          DeviceRecord* rec = jcr->sd_impl->dcr->rec;
+          Attributes* attr = new_attr(jcr);
+          if (UnpackAttributesRecord(jcr, rec->Stream, rec->data,
+                                     rec->data_len, attr)) {
+            jcr->sd_impl->last_fname = attr->fname;
+            jcr->ReadBytes += static_cast<uint64_t>(attr->statp.st_size);
+          }
+          FreeAttr(attr);
+        }
       }
 
       const bool block_changed
@@ -591,6 +605,10 @@ bool DoAppendData(JobControlRecord* jcr, BareosSocket* bs, const char* what)
           } else {
             checkpoint_handler.DoTimedCheckpoint(jcr);
           }
+        }
+
+        if (progress_enabled) {
+          checkpoint_handler.DoTimedProgressUpdate(jcr);
         }
       }
 

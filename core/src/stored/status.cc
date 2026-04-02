@@ -698,6 +698,25 @@ static void ListRunningJobs(StatusPacket* sp)
                  edit_uint64_with_commas(jcr->LastRate, b4));
       sp->send(msg, len);
 
+      /* Live progress: uncompressed bytes, compression ratio, current file */
+      if (jcr->ReadBytes > 0) {
+        char b5[50];
+        edit_uint64_with_suffix(jcr->ReadBytes, b5);
+        if (jcr->JobBytes > 0) {
+          double ratio = static_cast<double>(jcr->ReadBytes) / jcr->JobBytes;
+          len = Mmsg(msg, T_("    ReadBytes=%s CompressionRatio=%.2f:1\n"),
+                     b5, ratio);
+        } else {
+          len = Mmsg(msg, T_("    ReadBytes=%s\n"), b5);
+        }
+        sp->send(msg, len);
+      }
+      if (!jcr->sd_impl->last_fname.empty()) {
+        len = Mmsg(msg, T_("    CurrentFile=%s\n"),
+                   jcr->sd_impl->last_fname.c_str());
+        sp->send(msg, len);
+      }
+
       found = true;
       if (jcr->file_bsock) {
         len = Mmsg(msg, T_("    FDReadSeqNo=%s in_msg=%u out_msg=%d fd=%d\n\n"),

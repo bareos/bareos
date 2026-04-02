@@ -45,6 +45,7 @@
 #include "lib/edit.h"
 #include "lib/util.h"
 #include "lib/serial.h"
+#include <cinttypes>
 
 namespace directordaemon {
 
@@ -72,6 +73,14 @@ inline constexpr const char Update_jobrecord[]
       "\n";
 inline constexpr const char Delete_nulljobmediarecord[]
     = "CatReq Job=%127s DeleteNullJobmediaRecords jobid=%u\n";
+
+/* In-memory only progress messages from the SD (no DB write) */
+inline constexpr const char JobProgress[]
+    = "Progress Job=%127s JobFiles=%" PRIu32 " JobBytes=%" PRIu64
+      " ReadBytes=%" PRIu64 " CurrentFile=%1023s\n";
+inline constexpr const char DeviceProgressFmt[]
+    = "DeviceProgress Job=%127s Device=%127s WriteRate=%" PRIu64
+      " ReadRate=%" PRIu64 " VolBytes=%" PRIu64 " SpoolSize=%" PRIu64 "\n";
 
 // Responses sent to Storage daemon
 inline constexpr const char OK_media[]
@@ -144,6 +153,9 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
 
   uint32_t update_jobfiles = 0;
   uint64_t update_jobbytes = 0;
+  uint64_t progress_read_bytes = 0;
+  char progress_current_file[1024]{};
+  char progress_devname[128]{};
 
   // Find next appendable medium for SD
   unwanted_volumes.check_size(bs->message_length);
@@ -403,6 +415,33 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     } else {
       bs->fsend(OK_delete);
     }
+  } else if (sscanf(bs->msg, JobProgress, &Job, &update_jobfiles,
+                    &update_jobbytes, &progress_read_bytes,
+                    progress_current_file)
+             == 5) {
+    /* In-memory only — no DB write.  Update Director JCR fields so that
+     * "status director" and dot-status show live data. */
+    jcr->JobFiles = update_jobfiles;
+    jcr->JobBytes = update_jobbytes;
+    jcr->dir_impl->SDReadBytes = progress_read_bytes;
+    UnbashSpaces(progress_current_file);
+    jcr->dir_impl->sd_last_fname = progress_current_file;
+    Dmsg3(200, "Progress Job=%s Files=%u Bytes=%" PRIu64 "\n", Job,
+          update_jobfiles, update_jobbytes);
+  } else if (uint64_t dev_write_rate = 0, dev_read_rate = 0, dev_vol_bytes = 0,
+             dev_spool_size = 0;
+             sscanf(bs->msg, DeviceProgressFmt, &Job, progress_devname,
+                    &dev_write_rate, &dev_read_rate, &dev_vol_bytes,
+                    &dev_spool_size)
+             == 6) {
+    UnbashSpaces(progress_devname);
+    auto& info = jcr->dir_impl->sd_device_progress[progress_devname];
+    info.write_rate_bps = dev_write_rate;
+    info.read_rate_bps  = dev_read_rate;
+    info.vol_bytes      = dev_vol_bytes;
+    info.spool_size     = dev_spool_size;
+    Dmsg3(200, "DeviceProgress Job=%s Dev=%s WriteRate=%" PRIu64 "\n", Job,
+          progress_devname, dev_write_rate);
   } else {
     omsg = GetMemory(bs->message_length + 1);
     PmStrcpy(omsg, bs->msg);

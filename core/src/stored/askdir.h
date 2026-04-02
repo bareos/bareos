@@ -27,6 +27,19 @@ namespace storagedaemon {
 // deletes all null jobmedia records from the current job (jcr->job)
 // a null jobmedia record is a record with firstindex = 0 and lastindex = 0
 bool DeleteNullJobmediaRecords(JobControlRecord* jcr);
+
+/** Send a lightweight in-memory progress update to the Director.
+ *  Contains JobFiles, JobBytes, ReadBytes (uncompressed), and the last
+ *  filename seen in the attribute stream.  No DB write on the Dir side. */
+bool DirSendProgressUpdate(JobControlRecord* jcr);
+
+/** Send per-device throughput/volume info to the Director (in-memory only). */
+bool DirSendDeviceProgressUpdate(JobControlRecord* jcr,
+                                 const char* devname,
+                                 uint64_t write_rate,
+                                 uint64_t read_rate,
+                                 uint64_t vol_bytes,
+                                 uint64_t spool_size);
 }  // namespace storagedaemon
 
 #endif  // BAREOS_STORED_ASKDIR_H_

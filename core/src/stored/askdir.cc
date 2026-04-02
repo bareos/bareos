@@ -39,6 +39,7 @@
 #include "lib/crypto_cache.h"
 #include "stored/device_control_record.h"
 #include "stored/sd_device_control_record.h"
+#include "stored/stored_jcr_impl.h"
 #include "stored/wait.h"
 #include "stored/dev.h"
 #include "lib/edit.h"
@@ -719,4 +720,46 @@ DeviceControlRecord* DeviceControlRecord::get_new_spooling_dcr()
 {
   return new StorageDaemonDeviceControlRecord;
 }
+
+/* Message formats for real-time progress updates (SD → Director).
+ * These are in-memory only — the Director does NOT write them to the DB. */
+inline constexpr const char JobProgress[]
+    = "Progress Job=%s JobFiles=%" PRIu32 " JobBytes=%" PRIu64
+      " ReadBytes=%" PRIu64 " CurrentFile=%s\n";
+
+inline constexpr const char DeviceProgressFmt[]
+    = "DeviceProgress Job=%s Device=%s WriteRate=%" PRIu64 " ReadRate=%" PRIu64
+      " VolBytes=%" PRIu64 " SpoolSize=%" PRIu64 "\n";
+
+bool DirSendProgressUpdate(JobControlRecord* jcr)
+{
+  BareosSocket* dir = jcr->dir_bsock;
+  if (!dir) { return false; }
+
+  PoolMem fname_buf(PM_FNAME);
+  PmStrcpy(fname_buf, jcr->sd_impl->last_fname.c_str());
+  BashSpaces(fname_buf.c_str());
+
+  return dir->fsend(JobProgress, jcr->Job, jcr->JobFiles, jcr->JobBytes,
+                    jcr->ReadBytes, fname_buf.c_str());
+}
+
+bool DirSendDeviceProgressUpdate(JobControlRecord* jcr,
+                                 const char* devname,
+                                 uint64_t write_rate,
+                                 uint64_t read_rate,
+                                 uint64_t vol_bytes,
+                                 uint64_t spool_size)
+{
+  BareosSocket* dir = jcr->dir_bsock;
+  if (!dir) { return false; }
+
+  PoolMem dev_buf(PM_FNAME);
+  PmStrcpy(dev_buf, devname);
+  BashSpaces(dev_buf.c_str());
+
+  return dir->fsend(DeviceProgressFmt, jcr->Job, dev_buf.c_str(), write_rate,
+                    read_rate, vol_bytes, spool_size);
+}
+
 } /* namespace storagedaemon */

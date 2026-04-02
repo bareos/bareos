@@ -100,6 +100,8 @@ struct StoredJcrImpl {
 
   storagedaemon::ReadSession read_session;
   storagedaemon::DeviceWaitTimes device_wait_times;
+
+  std::string last_fname; /**< Last filename received from FD (for progress) */
 };
 /* clang-format on */
 

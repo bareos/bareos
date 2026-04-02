@@ -54,6 +54,8 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <cinttypes>
+#include <string>
 
 #define DEFAULT_STATUS_SCHED_DAYS 7
 
@@ -1193,6 +1195,60 @@ static void ListRunningJobs(UaContext* ua)
       /* Display comments if any */
       if (*jcr->comment) {
         ua->SendMsg(T_("               %-30s\n"), jcr->comment);
+      }
+    }
+
+    /* Show live progress info if the SD has sent at least one Progress message */
+    if (jcr->getJobStatus() == JS_Running
+        && (jcr->JobFiles > 0 || jcr->JobBytes > 0)) {
+      char b1[50], b2[50], b3[50];
+      edit_uint64_with_commas(jcr->JobFiles, b1);
+      edit_uint64_with_suffix(jcr->JobBytes, b2);
+
+      /* Compression ratio from uncompressed sum (ReadBytes) vs stored bytes */
+      const uint64_t read_bytes = jcr->dir_impl->SDReadBytes;
+      if (!ua->api) {
+        if (read_bytes > 0 && jcr->JobBytes > 0) {
+          double ratio
+              = static_cast<double>(read_bytes) / jcr->JobBytes;
+          ua->SendMsg(T_("        Files: %-10s  Bytes: %-10s  Ratio: %.1f:1\n"),
+                      b1, b2, ratio);
+        } else {
+          ua->SendMsg(T_("        Files: %-10s  Bytes: %-10s\n"), b1, b2);
+        }
+
+        /* Current file — show rightmost 60 chars to stay within a terminal */
+        const std::string& fname = jcr->dir_impl->sd_last_fname;
+        if (!fname.empty()) {
+          const char* display = fname.c_str();
+          if (fname.size() > 60) { display = fname.c_str() + fname.size() - 60; }
+          ua->SendMsg(T_("        File:  ...%s\n"), display);
+        }
+
+        /* Per-device throughput */
+        for (const auto& [devname, info] :
+             jcr->dir_impl->sd_device_progress) {
+          edit_uint64_with_suffix(info.write_rate_bps, b1);
+          edit_uint64_with_suffix(info.read_rate_bps, b2);
+          edit_uint64_with_suffix(info.vol_bytes, b3);
+          ua->SendMsg(
+              T_("        Device: %-20s  Write: %s/s  Read: %s/s  "
+                 "Vol: %s\n"),
+              devname.c_str(), b1, b2, b3);
+        }
+      } else {
+        /* API mode: tab-separated extra line */
+        ua->SendMsg(T_("progress\t%d\t%s\t%s\t%" PRIu64 "\t%s\n"),
+                    jcr->JobId, b1, b2, read_bytes,
+                    jcr->dir_impl->sd_last_fname.c_str());
+        for (const auto& [devname, info] :
+             jcr->dir_impl->sd_device_progress) {
+          ua->SendMsg(
+              T_("devprogress\t%d\t%s\t%" PRIu64 "\t%" PRIu64 "\t%" PRIu64
+                 "\n"),
+              jcr->JobId, devname.c_str(), info.write_rate_bps,
+              info.read_rate_bps, info.vol_bytes);
+        }
       }
     }
 

@@ -25,6 +25,8 @@
 #define BAREOS_DIRD_DIRECTOR_JCR_IMPL_H_
 
 #include <optional>
+#include <map>
+#include <string>
 
 #include "cats/cats.h"
 #include "lib/mem_pool.h"
@@ -103,6 +105,15 @@ struct Resources {
   bool run_next_pool_override{};  /**< Next pool override was given on run cmdline */
 };
 
+/** Per-device progress info received from the Storage Daemon via DeviceProgress
+ *  messages. Updated in-memory only (no DB write). */
+struct DeviceProgressInfo {
+  uint64_t write_rate_bps{0}; /**< Bytes/sec written to device */
+  uint64_t read_rate_bps{0};  /**< Bytes/sec read from device */
+  uint64_t vol_bytes{0};      /**< Bytes on current volume */
+  uint64_t spool_size{0};     /**< Current spool size */
+};
+
 struct DirectorJcrImpl {
   DirectorJcrImpl( std::shared_ptr<ConfigResourcesContainer> configuration_resources_container) : job_config_resources_container_(configuration_resources_container) {
     RestoreJobId = 0; MigrateJobId = 0; VerifyJobId = 0;
@@ -122,6 +133,9 @@ struct DirectorJcrImpl {
   uint32_t SDErrors{};            /**< Number of non-fatal errors */
   std::atomic<int32_t> SDJobStatus{}; /**< Storage Job Status */
   std::atomic<int32_t> FDJobStatus{}; /**< File daemon Job Status */
+  uint64_t SDReadBytes{};         /**< Uncompressed bytes (sum of attr st_size) */
+  std::string sd_last_fname;      /**< Last filename reported by SD (progress) */
+  std::map<std::string, DeviceProgressInfo> sd_device_progress; /**< Per-device progress */
   uint32_t DumpLevel{};           /**< Dump level when doing a NDMP backup */
   uint32_t ExpectedFiles{};       /**< Expected restore files */
   uint32_t MediaId{};             /**< DB record IDs associated with this job */
