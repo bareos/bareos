@@ -42,7 +42,7 @@ install(
 # ---------------------------------------------------------------------------
 # Unit tests
 # ---------------------------------------------------------------------------
-if(BUILD_TESTING)
+if(BUILD_TESTING AND GTest_FOUND)
   include(GoogleTest)
 
   set(PROXY_LIB_SOURCES bareos_base64.cc ws_codec.cc)
