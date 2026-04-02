@@ -5,6 +5,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- ktls: fix daemons getting stuck on reading [PR #2606]
+
 ## [25.0.3] - 2026-04-01
 
 ### Changed
@@ -2254,4 +2257,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2598]: https://github.com/bareos/bareos/pull/2598
 [PR #2602]: https://github.com/bareos/bareos/pull/2602
 [PR #2604]: https://github.com/bareos/bareos/pull/2604
+[PR #2606]: https://github.com/bareos/bareos/pull/2606
 [unreleased]: https://github.com/bareos/bareos/tree/master
