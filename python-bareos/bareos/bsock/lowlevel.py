@@ -291,7 +291,7 @@ class LowLevel(object):
             if "sslpsk3" in sys.modules:
                 context = sslpsk3.SSLPSKContext(ssl.PROTOCOL_TLS_CLIENT)
                 # TLS1.3 only works using Python >= 3.13
-                context.maximum_version = TLSVersion.TLSv1_2
+                context.maximum_version = ssl.TLSVersion.TLSv1_2
                 context.check_hostname = False
                 context.set_ciphers(ciphers)
                 context.set_psk_client_callback(lambda hint: (identity, password))
