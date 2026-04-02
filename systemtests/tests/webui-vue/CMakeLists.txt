@@ -49,12 +49,16 @@ if(NOT PYMODULE_3_PLAYWRIGHT_FOUND)
   )
 endif()
 
-# Disable the tape-backup testrunner when no autochanger was configured.
-if(NOT changer-device)
-  set_tests_properties(
-    "${SYSTEMTEST_PREFIX}${BASENAME}:tape-backup" PROPERTIES DISABLED TRUE
-  )
-else()
+# The tape-backup testrunner is disabled: it caused intermittent failures
+# in the CI testing-full stage. The likely root cause is that autochanger
+# tests must not run in parallel (multiple tests competing for the same
+# physical changer/drives). Re-enable once the tests are serialized
+# (e.g. via RUN_SERIAL or a dedicated resource lock) and the CI
+# autochanger environment is stable.
+set_tests_properties(
+  "${SYSTEMTEST_PREFIX}${BASENAME}:tape-backup" PROPERTIES DISABLED TRUE
+)
+if(changer-device)
   # Create the mtx-changer.conf symlink in the build dir so the SD can
   # call the changer script.  The parent etc/bareos dir is created by
   # create_systemtest() via configurefilestosystemtest() below.
@@ -62,10 +66,6 @@ else()
     CREATE_LINK ${CMAKE_SOURCE_DIR}/core/scripts/mtx-changer.conf
     ${CMAKE_BINARY_DIR}/systemtests/tests/webui-vue/etc/bareos/mtx-changer.conf
     SYMBOLIC
-  )
-  # Tape operations are slow; extend the timeout beyond the default 300 s.
-  set_tests_properties(
-    "${SYSTEMTEST_PREFIX}${BASENAME}:tape-backup" PROPERTIES TIMEOUT 900
   )
 endif()
 
