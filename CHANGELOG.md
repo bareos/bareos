@@ -54,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update README.md [PR #2519]
 - README.md: fix video links [PR #2521]
 - docs: add tape speed test, tapestat & sg_logs in troubleshooting [PR #2537]
+- Add documentation for the barri image file format [PR #2607]
 
 ## [25.0.0] - 2025-12-01
 
@@ -2257,4 +2258,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2590]: https://github.com/bareos/bareos/pull/2590
 [PR #2595]: https://github.com/bareos/bareos/pull/2595
 [PR #2597]: https://github.com/bareos/bareos/pull/2597
+[PR #2607]: https://github.com/bareos/bareos/pull/2607
 [unreleased]: https://github.com/bareos/bareos/tree/master
