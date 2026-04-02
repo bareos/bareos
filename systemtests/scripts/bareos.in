@@ -16,16 +16,16 @@ export MALLOC_CHECK_
 
 case "$1" in
   start)
-    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd $1 $2
-    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd ] && ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd $1 $2
-    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir $1 $2
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd ] && [ -n "${BAREOS_STORAGEDAEMON_BINARY}" ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd $1 $2
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd ] && [ -n "${BAREOS_FILEDAEMON_BINARY}" ] && ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd $1 $2
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir ] && [ -n "${BAREOS_DIRECTOR_BINARY}" ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir $1 $2
     ;;
 
   stop)
     # Stop the FD first so that SD will fail jobs and update catalog
-    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd ] && ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd $1 $2
-    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd $1 $2
-    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir $1 $2
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd ] && [ -n "${BAREOS_FILEDAEMON_BINARY}" ] && ${BAREOS_CTL_FD_RUNNER:-} ${BAREOS_SCRIPTS_DIR}/bareos-ctl-fd $1 $2
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd ] && [ -n "${BAREOS_STORAGEDAEMON_BINARY}" ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-sd $1 $2
+    [ -x ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir ] && [ -n "${BAREOS_DIRECTOR_BINARY}" ] && ${BAREOS_SCRIPTS_DIR}/bareos-ctl-dir $1 $2
     ;;
 
   restart)
