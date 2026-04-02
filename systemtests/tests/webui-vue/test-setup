@@ -21,6 +21,14 @@ set -u
 # Populate the backup source directory with small test files.
 setup_data
 
+# FreeBSD does not support xattrs on FIFOs (extattr_list_link returns
+# EOPNOTSUPP) which causes the backup job to fail with an error message.
+# Remove them just like auto-grpc and grpc-fd tests do.
+if on_freebsd_host; then
+  rm -f "${tmp}/data/weird-files/fifo" \
+        "${tmp}/data/weird-files/fifo-file"
+fi
+
 # source test-config so we can check CHANGER_DEVICE0..9 below
 #shellcheck source=test-config.in
 . ./test-config
