@@ -514,6 +514,38 @@ else()
   set(DO_STATIC_CODE_CHECKS OFF)
 endif()
 
+# autodetect-changer: when set to yes/on/true (and changer-device /
+# tape-devices are not already provided manually), scan the local system
+# for a connected SCSI tape changer and its drives via the Linux sysfs
+# interface and use those as the default values.
+if(DEFINED autodetect-changer AND ${autodetect-changer})
+  if(NOT DEFINED changer-device AND NOT DEFINED tape-devices)
+    include(BareosAutodetectAutochanger)
+    bareos_autodetect_autochanger()
+    if(DETECTED_CHANGER_DEVICE AND DETECTED_TAPE_DEVICES)
+      set(changer-device "${DETECTED_CHANGER_DEVICE}")
+      set(tape-devices "${DETECTED_TAPE_DEVICES}")
+      message(
+        STATUS
+          "autodetect-changer: found changer \"${changer-device}\""
+      )
+      message(
+        STATUS "autodetect-changer: found drives \"${tape-devices}\""
+      )
+    else()
+      message(
+        STATUS "autodetect-changer: no SCSI tape changer detected"
+      )
+    endif()
+  else()
+    message(
+      STATUS
+        "autodetect-changer: changer-device/tape-devices already set,"
+        " skipping autodetection"
+    )
+  endif()
+endif()
+
 if(DEFINED changer-device AND NOT DEFINED tape-devices)
   message(STATUS "Error: Changer device defined but no tape device defined")
   set(error_odd_devices TRUE)

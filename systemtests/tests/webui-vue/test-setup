@@ -21,6 +21,10 @@ set -u
 # Populate the backup source directory with small test files.
 setup_data
 
+# Configure a SCSI autochanger in the Storage Daemon when one was detected
+# at cmake time.  The script is a no-op when no changer was configured.
+"${BAREOS_SCRIPTS_DIR}"/create_autochanger_configs.sh
+
 bin/bareos start
 bin/bareos status
 
