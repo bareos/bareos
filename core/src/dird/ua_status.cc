@@ -1016,6 +1016,7 @@ static void ListRunningJobs(UaContext* ua)
         "===================================================================="
         "==\n"));
   }
+  ua->send->ArrayStart("running-jobs");
   foreach_jcr (jcr) {
     if (jcr->JobId == 0
         || !ua->AclAccessOk(Job_ACL, jcr->dir_impl->res.job->resource_name_)) {
@@ -1185,6 +1186,7 @@ static void ListRunningJobs(UaContext* ua)
         break;
     }
 
+    ua->send->ObjectStart();
     if (ua->api) {
       BashSpaces(jcr->comment);
       ua->SendMsg(T_("%6d\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level, jcr->Job,
@@ -1197,60 +1199,95 @@ static void ListRunningJobs(UaContext* ua)
         ua->SendMsg(T_("               %-30s\n"), jcr->comment);
       }
     }
+    /* Always emit structured fields for JSON consumers */
+    ua->send->ObjectKeyValue("jobid", (uint64_t)jcr->JobId, "%6d");
+    ua->send->ObjectKeyValue("level", level, "%-6s");
+    ua->send->ObjectKeyValue("name", jcr->Job, "%-20s");
+    ua->send->ObjectKeyValue("status", msg, "%s\n");
 
     /* Show live progress info if the SD has sent at least one Progress message */
     if (jcr->getJobStatus() == JS_Running
         && (jcr->JobFiles > 0 || jcr->JobBytes > 0)) {
       char b1[50], b2[50], b3[50];
-      edit_uint64_with_commas(jcr->JobFiles, b1);
-      edit_uint64_with_suffix(jcr->JobBytes, b2);
-
-      /* Compression ratio from uncompressed sum (ReadBytes) vs stored bytes */
       const uint64_t read_bytes = jcr->dir_impl->SDReadBytes;
-      if (!ua->api) {
-        if (read_bytes > 0 && jcr->JobBytes > 0) {
-          double ratio
-              = static_cast<double>(read_bytes) / jcr->JobBytes;
-          ua->SendMsg(T_("        Files: %-10s  Bytes: %-10s  Ratio: %.1f:1\n"),
-                      b1, b2, ratio);
+      const double ratio = (read_bytes > 0 && jcr->JobBytes > 0)
+                               ? static_cast<double>(read_bytes) / jcr->JobBytes
+                               : 0.0;
+
+      if (ua->api == API_MODE_JSON) {
+        ua->send->ObjectStart("progress");
+        ua->send->ObjectKeyValue("job_files", (uint64_t)jcr->JobFiles);
+        ua->send->ObjectKeyValue("job_bytes", jcr->JobBytes);
+        ua->send->ObjectKeyValue("read_bytes", read_bytes);
+        if (ratio > 0.0) {
+          /* JSON has no native float formatter in ObjectKeyValue; use string */
+          char ratiobuf[20];
+          snprintf(ratiobuf, sizeof(ratiobuf), "%.2f", ratio);
+          ua->send->ObjectKeyValue("compression_ratio", ratiobuf, "%s\n");
+        }
+        ua->send->ObjectKeyValue("current_file",
+                                 jcr->dir_impl->sd_last_fname.c_str(), "%s\n");
+
+        ua->send->ArrayStart("devices");
+        for (const auto& [devname, info] : jcr->dir_impl->sd_device_progress) {
+          ua->send->ObjectStart();
+          ua->send->ObjectKeyValue("name", devname.c_str(), "%s\n");
+          ua->send->ObjectKeyValue("write_rate_bps", info.write_rate_bps);
+          ua->send->ObjectKeyValue("read_rate_bps", info.read_rate_bps);
+          ua->send->ObjectKeyValue("vol_bytes", info.vol_bytes);
+          ua->send->ObjectKeyValue("spool_size", info.spool_size);
+          ua->send->ObjectEnd();
+        }
+        ua->send->ArrayEnd("devices");
+        ua->send->ObjectEnd("progress");
+
+      } else if (ua->api == API_MODE_ON) {
+        /* Legacy API: tab-separated lines */
+        edit_uint64_with_commas(jcr->JobFiles, b1);
+        edit_uint64_with_suffix(jcr->JobBytes, b2);
+        ua->SendMsg(T_("progress\t%d\t%s\t%s\t%" PRIu64 "\t%s\n"),
+                    jcr->JobId, b1, b2, read_bytes,
+                    jcr->dir_impl->sd_last_fname.c_str());
+        for (const auto& [devname, info] : jcr->dir_impl->sd_device_progress) {
+          ua->SendMsg(T_("devprogress\t%d\t%s\t%" PRIu64 "\t%" PRIu64
+                         "\t%" PRIu64 "\n"),
+                      jcr->JobId, devname.c_str(), info.write_rate_bps,
+                      info.read_rate_bps, info.vol_bytes);
+        }
+
+      } else {
+        /* Human-readable text */
+        edit_uint64_with_commas(jcr->JobFiles, b1);
+        edit_uint64_with_suffix(jcr->JobBytes, b2);
+        if (ratio > 0.0) {
+          ua->SendMsg(
+              T_("        Files: %-10s  Bytes: %-10s  Ratio: %.1f:1\n"), b1,
+              b2, ratio);
         } else {
           ua->SendMsg(T_("        Files: %-10s  Bytes: %-10s\n"), b1, b2);
         }
 
-        /* Current file — show rightmost 60 chars to stay within a terminal */
         const std::string& fname = jcr->dir_impl->sd_last_fname;
         if (!fname.empty()) {
           const char* display = fname.c_str();
-          if (fname.size() > 60) { display = fname.c_str() + fname.size() - 60; }
+          if (fname.size() > 60) {
+            display = fname.c_str() + fname.size() - 60;
+          }
           ua->SendMsg(T_("        File:  ...%s\n"), display);
         }
 
-        /* Per-device throughput */
-        for (const auto& [devname, info] :
-             jcr->dir_impl->sd_device_progress) {
+        for (const auto& [devname, info] : jcr->dir_impl->sd_device_progress) {
           edit_uint64_with_suffix(info.write_rate_bps, b1);
           edit_uint64_with_suffix(info.read_rate_bps, b2);
           edit_uint64_with_suffix(info.vol_bytes, b3);
-          ua->SendMsg(
-              T_("        Device: %-20s  Write: %s/s  Read: %s/s  "
-                 "Vol: %s\n"),
-              devname.c_str(), b1, b2, b3);
-        }
-      } else {
-        /* API mode: tab-separated extra line */
-        ua->SendMsg(T_("progress\t%d\t%s\t%s\t%" PRIu64 "\t%s\n"),
-                    jcr->JobId, b1, b2, read_bytes,
-                    jcr->dir_impl->sd_last_fname.c_str());
-        for (const auto& [devname, info] :
-             jcr->dir_impl->sd_device_progress) {
-          ua->SendMsg(
-              T_("devprogress\t%d\t%s\t%" PRIu64 "\t%" PRIu64 "\t%" PRIu64
-                 "\n"),
-              jcr->JobId, devname.c_str(), info.write_rate_bps,
-              info.read_rate_bps, info.vol_bytes);
+          ua->SendMsg(T_("        Device: %-20s  Write: %s/s  Read: %s/s"
+                         "  Vol: %s\n"),
+                      devname.c_str(), b1, b2, b3);
         }
       }
     }
+
+    ua->send->ObjectEnd();
 
     if (pool_mem) {
       FreePoolMemory(emsg);
@@ -1258,6 +1295,7 @@ static void ListRunningJobs(UaContext* ua)
     }
   }
   endeach_jcr(jcr);
+  ua->send->ArrayEnd("running-jobs");
   if (!ua->api) ua->SendMsg("====\n");
   Dmsg0(200, "leave list_run_jobs()\n");
 }
