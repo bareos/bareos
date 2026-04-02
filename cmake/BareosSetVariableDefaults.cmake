@@ -518,7 +518,7 @@ endif()
 # tape-devices are not already provided manually), scan the local system
 # for a connected SCSI tape changer and its drives via the Linux sysfs
 # interface and use those as the default values.
-if(DEFINED autodetect-changer AND ${autodetect-changer})
+if(DEFINED autodetect-changer AND "${autodetect-changer}")
   if(NOT DEFINED changer-device AND NOT DEFINED tape-devices)
     include(BareosAutodetectAutochanger)
     bareos_autodetect_autochanger()
