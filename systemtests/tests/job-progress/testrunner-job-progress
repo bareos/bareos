@@ -51,8 +51,8 @@ END_OF_DATA
   run_bconsole
 
   # The progress block appears only while the job is Running and the SD
-  # has already sent at least one Progress message (JobFiles > 0).
-  if grep -qE "Files: +[0-9]" "$status_log"; then
+  # has already sent at least one Progress message (JobFiles > 0 or JobBytes > 0).
+  if grep -qE "Files:|File:  \.\.\." "$status_log"; then
     progress_found=1
     break
   fi
@@ -82,6 +82,10 @@ expect_grep "Files:" \
 expect_grep "Bytes:" \
   "$status_log" \
   "Bytes field missing from 'status director' progress output"
+
+expect_grep "File:" \
+  "$status_log" \
+  "Current filename missing from 'status director' progress output"
 
 expect_grep "Device:" \
   "$status_log" \
