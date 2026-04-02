@@ -23,15 +23,17 @@ set -e
 set -o pipefail
 set -u
 
+TestName="$(basename "$(pwd)")"
+export TestName
+
 #
 # Requirements:
-# * This tests is implemented for a Isilon NDMP storage.
+# * This tests is implemented for a NDMP storage.
 # * To create and delete backup data,
-#   password-less SSH root access to the Isilon storage is required.
+#   password-less SSH root access to the NDMP storage is required.
 # * run cmake with parameter matching your environment:
-#     -Dndmp_data_agent_address=<ip.of.data.agent> \
-#     -Dndmp_data_agent_user=<user> \
-#     -Dndmp_data_agent_password=<password>
+#     -Dndmp_config=<path/to/you/ndmp/ctest.conf>
+#     see CTestNDMPConfig.cmake.template in source tree
 #
 
 #shellcheck source=../../environment.in
@@ -45,15 +47,11 @@ set -u
 bin/bareos start
 bin/bareos status
 
-# make sure the director is up and running.
-print_debug "$(bin/bconsole <<<"status dir")"
+# make sure, daemons are up and running.
+print_debug "$(bin/bconsole <<<"status director")"
+print_debug "$(bin/bconsole <<<"status client=ndmp-fd")"
+print_debug "$(bin/bconsole <<<"status storage=ndmpfile")"
 
-cleanup_isilon
+cleanup_remote
 
-${SSH} mkdir -p "/ifs/home/regress/${NDMP_FILESYSTEM}"
-${SSH} dd if=/dev/zero of="/ifs/home/regress/${NDMP_FILESYSTEM}/full" bs=1M count=20
-${SSH} "echo ${NDMP_FILESYSTEM} >> /ifs/home/regress/${NDMP_FILESYSTEM}/full"
-${SSH} "cat - > /ifs/home/regress/${NDMP_FILESYSTEM}/testfile" <sbin/bareos_dir-ndmp-bareos
-# we need an additional file, so the restore doesn't pick the last file of the volume and
-# data stream
-${SSH} "cat - > /ifs/home/regress/${NDMP_FILESYSTEM}/testfile2" <sbin/bareos_sd-ndmp-bareos
+make_remote_data_full

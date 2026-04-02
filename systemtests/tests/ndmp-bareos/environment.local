@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,10 +19,9 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-export NDMPCLIENT=isilon
-export SSH="ssh root@${NDMP_DATA_AGENT_ADDRESS} -o StrictHostKeyChecking=no"
-export NDMP_FILESYSTEM=$IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT
-
 runner_name="$(basename "$0")"
 export log_home="${tmp}/${runner_name}"
 mkdir -p "${log_home}"
+
+# Rexport the testing path with defined testname
+export NDMP_TEST_PATH=${NDMP_TEST_PATH}/${TestName}

@@ -1,0 +1,111 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# make sure we can copy ndmp jobs, and also restore them afterwards
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+# remove files
+cleanup_remote
+
+# first run the copy jobs
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/copy.out
+run job=ndmp-copy fileset=${NDMP_CLIENT}-fileset yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+check_log "${log_home}/copy.out"
+
+# restore copy force correct fileset to be used and not the one in jobdefs.
+# restore a full copy of jobid 1
+copy_full_jobid=$(
+  bin/bconsole <<<".api 2
+.sql query=\"select jobid from job where type='C' and level='F' and priorjobid=1 order by starttime limit 1;\"
+" | "${AWK}" '/"jobid":/ {gsub("\"","",$2);gsub(",","",$2); print $2}'
+)
+if [ -z "${copy_full_jobid}" ]; then
+  echo "copy_full_jobid not found; aborting restore" >&2
+  exit 1
+fi
+echo "restore first copy full ${copy_full_jobid}"
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore-full.out
+restore client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump jobid=${copy_full_jobid}
+mark *
+done
+yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+check_log "${log_home}/restore-full.out"
+${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/full\" | xargs | head -n 1 | grep \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}\""
+
+cleanup_remote
+# afterwards restore last incremental copy
+copy_inc_jobid=$(
+  bin/bconsole <<<".api 2
+.sql query=\"select jobid from job where type='C' and level='I' order by starttime desc limit 1;\"
+" | "${AWK}" '/"jobid":/ {gsub("\"","",$2);gsub(",","",$2); print $2}'
+)
+if [ -z "${copy_inc_jobid}" ]; then
+  echo "copy_inc_jobid not found; aborting restore" >&2
+  exit 1
+fi
+echo "restore last copy incremental ${copy_inc_jobid}"
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore-incr.out
+restore jobid=${copy_inc_jobid} client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump all done yes
+wait
+messages
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+check_log "${log_home}/restore-incr.out"
+
+# we deterministically use one jobid and look that we found the corresponding incremental
+# here the restore use the copy of 9th incremental
+${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | xargs | tail -n 1 | grep -F -- \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-9\""
+
+#uncomment when fixed
+#check_for_zombie_jobs storage=isilonfile client=bareos-fd
+
+end_test

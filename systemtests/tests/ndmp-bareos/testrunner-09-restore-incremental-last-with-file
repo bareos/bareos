@@ -1,0 +1,63 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+#
+# make sure we can restore an incremental backup with file
+#
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+# remove files
+cleanup_remote
+
+echo "################ restore incremental by file #####################"
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${log_home}/restore-file.out
+restore jobid=10 client=ndmp-fd fileset=${NDMP_CLIENT}-fileset restorejob=NDMPRestoreDump file="${NDMP_TEST_PATH}/incremental" yes
+wait
+END_OF_DATA
+
+run_bconsole "${tmp}/bconcmds"
+
+check_log "${log_home}/restore-file.out"
+# check which incremental has been restored, here we expected to have the last increment job done.
+if ! ${SSH} "tail -c 200 \"${NDMP_TEST_PATH}/incremental\" | tail -n 1 | grep -F -- \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-9\""; then
+  echo "Restored file is not the expected last Incremental"
+  estat=1
+fi
+
+#uncomment once fixed
+#check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
+
+end_test

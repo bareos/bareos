@@ -1,0 +1,180 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+# This testrunner performs a large backup which span at least over 2 volumes
+# the second volume when labeled will be blanked, then imported, when
+# bareos will try to write or read it will failed with
+# bareos-sd Error: stored/block.cc:1004 Read error on fd=392 at file:blk 0:0 on device "IBM-LTO8-25" ERR=Input/output error.
+# bareos-sd Warning: Could not check volume label: ERR=Requested Volume "123456L8" on "IBM-LTO8-25" is not a Bareos labeled Volume, because: ERR=stored/block.cc:1004 Read error on fd=392 at file:blk 0:0 on device "IBM-LTO8-25". ERR=Input/output error.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+#shellcheck source=../../environment.in
+. ./environment
+#shellcheck source=test-config.in
+. ./test-config
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+on_error()
+{
+  local lc="${BASH_COMMAND}"
+  echo "Error occurred in testrunner script [${lc}]"
+  export estat=1
+  exit 1
+}
+trap 'on_error' ERR
+
+# Create more data
+
+for i in $(seq 1 6); do
+  dd if=/dev/urandom of="${tmp}/data/fs${i}.bin" count=10 bs=100k
+done
+
+# remove jobs from previous runs in pool Full-0
+volumes=$(bin/bconsole <<<".api 2
+list volumes pool=Full
+" | awk '/volumename/ {gsub("\"","",$2);gsub(",","",$2);print $2}')
+
+cat <<END_OF_DATA >"${runner_tmp}/bconcmds"
+@$out ${runner_tmp}/purge-volume.out
+END_OF_DATA
+for V in ${volumes}; do
+  echo "purge volume=${V} yes" >>"${runner_tmp}/bconcmds"
+done
+cat <<END_OF_DATA >>"${runner_tmp}/bconcmds"
+wait
+messages
+quit
+END_OF_DATA
+echo "purging $volumes"
+run_bconsole "${runner_tmp}/bconcmds"
+
+echo "Set debug on the Tape-Storage daemon and dir"
+tracefile="$(bin/bconsole <<<"setdebug level=250 trace=1 storage=Tape-0" | awk -F"tracefile=" '/^3000/ {print $2}')"
+: >"${tracefile}" # clear tracefile
+
+tracefile="$(bin/bconsole <<<"setdebug level=250 trace=1 dir" | awk -F"tracefilename=" '/tracefilename=/ {print $2}')"
+: >"${tracefile}" # clear tracefile
+
+pool=Scratch
+slot_start="$((FIRST_SLOT_NUMBER))"
+slot_end="$((LAST_SLOT_NUMBER))"
+slot_broken="$((FIRST_SLOT_NUMBER + 1))"
+echo "label barcodes slots start: ${slot_start}, end: ${slot_end}, broken: ${slot_broken}"
+cat <<END_OF_DATA >"${runner_tmp}/bconcmds"
+@$out ${runner_tmp}/label-broken-volumes.out
+update slots storage=Tape-0
+label barcodes storage=Tape-0 drive=1 slot=${slot_start}-${slot_end} pool=${pool} yes
+wait
+messages
+release storage=Tape-0 drive=1 yes
+quit
+END_OF_DATA
+run_bconsole "${runner_tmp}/bconcmds"
+grep -E "(OK label|already exists)" "${runner_tmp}/label-broken-volumes.out"
+
+echo "destroy label on the second tape of 3"
+mtx -f ${CHANGER_DEVICE0} load ${slot_broken} 0
+mt -f ${TAPE_DEVICES0} rewind
+mt -f ${TAPE_DEVICES0} weof
+mtx -f ${CHANGER_DEVICE0} unload ${slot_broken} 0
+
+rm -f "${runner_tmp}/bconsole_list_scratch_volumes"
+cat <<EOF >"${runner_tmp}/bconsole_list_scratch_volumes"
+@out "${runner_tmp}/list_scratch_volumes.out"
+.api 2
+list volumes pool=${pool}
+EOF
+
+echo "list volumes"
+run_bconsole "${runner_tmp}/bconsole_list_scratch_volumes"
+broken_volume=$(awk '/volumename/ {gsub("\"","",$2);gsub(",","",$2);print $2}' "${runner_tmp}/list_scratch_volumes.out" | tail -n2 | head -n1)
+if [ -z "${broken_volume}" ]; then
+  echo "broken volume not defined something goes wrong"
+  exit 1
+fi
+echo "defined broken volume ${broken_volume}"
+
+# create the test backup jobs
+rm -f "${runner_tmp}/bconsole_broken_label_job"
+
+cat <<EOF >"${runner_tmp}/bconsole_broken_label_job"
+@out "${runner_tmp}/broken_label_job.out"
+run job=backup-bareos-fd level=Full storage=Tape-0 pool=Full yes
+status dir
+messages
+EOF
+# start the job
+run_bconsole "${runner_tmp}/bconsole_broken_label_job"
+
+# Wait broken label volume
+last_jobid=$(awk -F"=" '/Job queued. JobId=/ {print $2}' "${runner_tmp}/broken_label_job.out")
+
+# Wait the error to pop up and the mount request
+# Unfortunately this might take some times
+export BCONSOLE_TIMEOUT=1010
+
+is_mount_requested=0
+max_runs=500
+while [ ${is_mount_requested} -eq 0 ]; do
+  sleep 2
+  echo "check mount request message"
+  if [ $(bin/bconsole <<<".status dir running" | grep -c "is waiting for a mount request") -eq 1 ]; then
+    echo "check mount request found"
+    bin/bconsole <<<"list joblog jobid=${last_jobid}" >"${runner_tmp}/jobid-${last_jobid}.log"
+    broken_volume_found=$(awk '/Warning: Could not check volume label: ERR=Requested Volume/ {gsub("\"","",$14);print $14}' "${runner_tmp}/jobid-${last_jobid}.log")
+    is_mount_requested=1
+  fi
+  # Safety exit in case something unexpected happens
+  max_runs=$((max_runs - 1))
+  if [ ${max_runs} -le 0 ]; then
+    echo "Timeout waiting for mount request" >&2
+    exit 1
+  fi
+done
+
+echo "Run update volstatus on volume ${broken_volume} versus ${broken_volume_found}"
+cat <<END_OF_DATA >"${runner_tmp}/bconcmds"
+@$out ${runner_tmp}/broken_label_job.out
+update volstatus=Error volume=${broken_volume_found} yes
+wait jobid=${last_jobid}
+messages
+@out "${runner_tmp}/jobid-${last_jobid}.log"
+list joblog jobid=${last_jobid}
+quit
+END_OF_DATA
+run_bconsole "${runner_tmp}/bconcmds"
+
+# control job ok
+expect_grep "Backup OK" \
+  "${runner_tmp}/jobid-${last_jobid}.log" \
+  "Backup OK not found in log"
+
+end_test

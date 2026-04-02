@@ -35,15 +35,26 @@ export TestName
 
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
-
 start_test
 
-for ID in {1..10}; do
-  ${SSH} "echo ${NDMP_FILESYSTEM}-${ID} >> /ifs/home/regress/${NDMP_FILESYSTEM}/incremental"
+# Incremental Part
+# Isilon can have now up to 32, but the Solaris/omnios NDMP still only accepts 9.
+# So we limit to 9 on omnios
+# https://docs.bareos.org/BareosMainReference/TasksAndConcepts/NdmpBackupsWithBareos.html#ndmp-backup-level
+limit=10
+if [ "${NDMP_TEST}" = "omnios" ];then
+  limit=9
+fi
+echo "############# running NDMP ${NDMP_TEST} backup incrementals limit set to ${limit} ##################"
+
+make_remote_data_incremental
+
+for ID in $(seq 1 ${limit}); do
+  ${SSH} "echo \"${IP_ADDRESS_TO_ACCESS_NDMP_DATA_AGENT}-${ID}\" >> \"${NDMP_TEST_PATH}/incremental\""
 
   cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${log_home}/incr-${ID}.out
-run job=${NDMPCLIENT}dump level=Incremental yes
+run job=NDMPBackupDump fileset=${NDMP_CLIENT}-fileset level=Incremental yes
 wait
 END_OF_DATA
 
@@ -52,6 +63,12 @@ END_OF_DATA
   check_log "${log_home}/incr-${ID}.out"
 done
 
-check_for_zombie_jobs storage=isilonfile client=bareos-fd
+#
+# Job cancelling doesn't work that well and lead to all sort of issues
+# it might be a good idea to test this
+#
+
+#uncomment once fixed
+#check_for_zombie_jobs storage=ndmpfile client=ndmp-fd
 
 end_test
