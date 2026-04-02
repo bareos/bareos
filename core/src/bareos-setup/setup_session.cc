@@ -160,7 +160,7 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
     try {
       exit_code = RunCommand(
           cmd, use_sudo,
-          [&ws, &step_id](const std::string& line, const std::string& stream) {
+          [&ws](const std::string& line, const std::string& stream) {
             json_t* obj = json_pack("{s:s, s:s, s:s}", "type", "output", "line",
                                     line.c_str(), "stream", stream.c_str());
             ws.SendText(Dump(obj));
