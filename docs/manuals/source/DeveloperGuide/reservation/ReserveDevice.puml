@@ -139,7 +139,7 @@ if (device matches requested media_type?) then (yes) <<#limegreen>>
       endif
     endif
 if (have_device?) then (yes)
-  :OK device message>
+  :OK device message; <<output>>
 else (no)
   (F)
   :clear have_volume; <<task>> <<#aqua>>
