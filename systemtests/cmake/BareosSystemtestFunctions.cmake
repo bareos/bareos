@@ -762,6 +762,202 @@ function(add_systemtest name file)
   endif()
 endfunction()
 
+function(init_systemtest_properties test_basename test testfile
+         setup_wanted_var
+)
+  # add a SETUP fixture, so we can express ordering requirements
+  set_tests_properties(
+    "${test_basename}:${test}" PROPERTIES FIXTURES_SETUP
+                                          "${test_basename}/${test}-fixture"
+  )
+
+  # read "#CTEST"-lines from testrunner header
+  file(
+    STRINGS "${testfile}" conf_lines
+    REGEX "^#CTEST"
+    ENCODING UTF-8
+    LENGTH_MINIMUM 6
+    LENGTH_MAXIMUM 80
+    LIMIT_COUNT 100
+    LIMIT_INPUT 4096
+  )
+  # set defaults
+  set(dependencies "")
+  set(lock ON)
+  set(requires "")
+  set(cleanups "")
+  set(setup ON)
+  set(timeout 0)
+
+  # extract expressions from lines and handle them
+  foreach(conf_line IN LISTS conf_lines)
+    # remove leading "#CTEST[: ]"
+    string(SUBSTRING "${conf_line}" 7 -1 conf_stanza)
+    # remove leading/trailing whitespace
+    string(STRIP "${conf_stanza}" conf_expr)
+
+    if(conf_expr STREQUAL "nolock")
+      set(lock OFF)
+    elseif(conf_expr STREQUAL "nosetup")
+      set(setup OFF)
+    elseif(conf_expr MATCHES "requires?=(.*)")
+      list(APPEND requires "${test_basename}/${CMAKE_MATCH_1}-fixture")
+    elseif(conf_expr MATCHES "after=(.*)")
+      list(APPEND dependencies "${test_basename}:${CMAKE_MATCH_1}")
+    elseif(conf_expr MATCHES "cleanup=(.*)")
+      list(APPEND cleanups "${test_basename}/${CMAKE_MATCH_1}-fixture")
+    elseif(conf_expr MATCHES "timeout=(.*)")
+      set(timeout "${CMAKE_MATCH_1}")
+    else()
+      message(
+        WARNING "Ignoring unknown systemtest config expression ${conf_expr}"
+      )
+    endif()
+  endforeach()
+
+  if(setup)
+    list(PREPEND requires "${test_basename}-fixture")
+    set("${setup_wanted_var}"
+        ON
+        PARENT_SCOPE
+    )
+  endif()
+  if(requires)
+    # add required fixtures, if any
+    set_tests_properties(
+      "${test_basename}:${test}" PROPERTIES FIXTURES_REQUIRED "${requires}"
+    )
+  endif()
+  if(cleanups)
+    # add cleaned up fixtures, if any
+    set_tests_properties(
+      "${test_basename}:${test}" PROPERTIES FIXTURES_CLEANUP "${cleanups}"
+    )
+  endif()
+  if(dependencies)
+    # add dependencies, if any
+    set_tests_properties(
+      "${test_basename}:${test}" PROPERTIES DEPENDS "${dependencies}"
+    )
+  endif()
+  if(lock)
+    # use RESOURCE_LOCK to run tests sequential
+    set_tests_properties(
+      "${test_basename}:${test}" PROPERTIES RESOURCE_LOCK
+                                            "${test_basename}-lock"
+    )
+  endif()
+  if(timeout)
+    set_tests_properties(
+      "${test_basename}:${test}" PROPERTIES TIMEOUT "${timeout}"
+    )
+  endif()
+endfunction()
+
+function(validate_systemtest_fixtures_in_dir test_dir)
+  # cmake-format: off
+  # Validate that test-suites are closed under fixtures:
+  # - Every fixture in FIXTURES_CLEANUP must also be in FIXTURES_SETUP
+  # - Every fixture in FIXTURES_REQUIRED must also be in FIXTURES_SETUP
+  # This prevents typos from silently breaking fixture dependencies
+  # cmake-format: on
+
+  # Collect all fixtures from all tests in this test suite
+  set(all_setups "")
+  set(all_requires "")
+  set(all_cleanups "")
+
+  # Get all tests in this suite
+  get_property(
+    all_tests
+    DIRECTORY ${test_dir}
+    PROPERTY TESTS
+  )
+
+  foreach(test ${all_tests})
+    get_test_property(${test} FIXTURES_SETUP fixtures_setup)
+    get_test_property(${test} FIXTURES_REQUIRED fixtures_required)
+    get_test_property(${test} FIXTURES_CLEANUP fixtures_cleanedup)
+
+    if(fixtures_setup)
+      list(APPEND all_setups ${fixtures_setup})
+    endif()
+    if(fixtures_required)
+      foreach(required ${fixtures_required})
+        set(var_name "require_${required}")
+        list(APPEND ${var_name} ${test})
+      endforeach()
+
+      list(APPEND all_requires ${fixtures_required})
+    endif()
+    if(fixtures_cleanedup)
+      foreach(cleanup ${fixtures_cleanedup})
+        set(var_name "cleanup_${cleanup}")
+        list(APPEND ${var_name} ${test})
+      endforeach()
+
+      list(APPEND all_cleanups ${fixtures_cleanedup})
+    endif()
+  endforeach()
+
+  # Remove duplicates
+  if(all_setups)
+    list(REMOVE_DUPLICATES all_setups)
+  endif()
+  if(all_requires)
+    list(REMOVE_DUPLICATES all_requires)
+  endif()
+  if(all_cleanups)
+    list(REMOVE_DUPLICATES all_cleanups)
+  endif()
+
+  # Validate FIXTURES_CLEANUP - all cleanup fixtures must be in setup fixtures
+  foreach(cleanup_fixture ${all_cleanups})
+    if(NOT cleanup_fixture IN_LIST all_setups)
+      set(err_msg
+          "The fixture '${cleanup_fixture}' is never setup. The tests\n"
+      )
+      foreach(test ${cleanup_${cleanup_fixture}})
+        string(APPEND err_msg "- ${test}\n")
+      endforeach()
+      string(
+        APPEND
+        err_msg
+        " are trying to cleanup this fixture.\nThe available fixtures in this suite are\n"
+      )
+
+      foreach(fixture ${all_setups})
+        string(APPEND err_msg "- ${fixture}\n")
+      endforeach()
+
+      message(FATAL_ERROR ${err_msg})
+    endif()
+  endforeach()
+
+  # Validate FIXTURES_REQUIRED - all required fixtures must be in setup fixtures
+  foreach(required_fixture ${all_requires})
+    if(NOT required_fixture IN_LIST all_setups)
+      set(err_msg
+          "The fixture '${required_fixture}' is never setup. The tests\n"
+      )
+      foreach(test ${require_${required_fixture}})
+        string(APPEND err_msg "- ${test}\n")
+      endforeach()
+      string(APPEND err_msg
+             "are requiring it. The available fixtures in this suite are\n"
+      )
+
+      foreach(fixture ${all_setups})
+        string(APPEND err_msg "- ${fixture}\n")
+      endforeach()
+
+      string(APPEND err_msg "Check the tests for typos.")
+
+      message(FATAL_ERROR ${err_msg})
+    endif()
+  endforeach()
+endfunction()
+
 function(add_systemtest_from_directory test_dir test_basename)
   if(EXISTS ${test_dir}/testrunner)
     # single test directory
@@ -772,17 +968,8 @@ function(add_systemtest_from_directory test_dir test_basename)
   #
   # Multiple tests in this directory.
   #
-  if(NOT EXISTS "${test_dir}/test-setup")
-    file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/start_bareos.sh"
-         "${test_dir}/test-setup" SYMBOLIC
-    )
-  endif()
-  add_systemtest("${test_basename}:setup" "${test_dir}/test-setup")
 
-  set_tests_properties(
-    "${test_basename}:setup" PROPERTIES FIXTURES_SETUP
-                                        "${test_basename}-fixture"
-  )
+  set(setup_fixture_required OFF)
 
   # add all scripts named "testrunner-*" as tests.
   file(
@@ -794,17 +981,14 @@ function(add_systemtest_from_directory test_dir test_basename)
   foreach(testfilename ${all_tests})
     string(REPLACE "testrunner-" "" test ${testfilename})
     add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename})
-    set_tests_properties(
-      "${test_basename}:${test}"
-      PROPERTIES FIXTURES_REQUIRED
-                 "${test_basename}-fixture"
-                 # add a SETUP fixture, so we can express ordering requirements
-                 FIXTURES_SETUP
-                 "${test_basename}/${test}-fixture"
-                 # use RESOURCE_LOCK to run tests sequential
-                 RESOURCE_LOCK
-                 "${test_basename}-lock"
+
+    init_systemtest_properties(
+      ${test_basename} ${test} ${test_dir}/${testfilename}
+      test_wants_setup_fixture
     )
+    if(test_wants_setup_fixture)
+      set(setup_fixture_required ON)
+    endif()
   endforeach()
 
   # add all Python unittests named "test_*.py*" as tests.
@@ -815,6 +999,8 @@ function(add_systemtest_from_directory test_dir test_basename)
     CONFIGURE_DEPENDS "${test_dir}/test_*.py"
   )
   foreach(testfilename ${all_tests})
+    # python test currently cannot disable the setup fixture, so we will add it
+    set(setup_fixture_required ON)
     string(REPLACE ".py" "" test0 ${testfilename})
     string(REPLACE "test_" "" test ${test0})
     add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename} PYTHON)
@@ -831,18 +1017,37 @@ function(add_systemtest_from_directory test_dir test_basename)
     )
   endforeach()
 
-  if(NOT EXISTS ${test_dir}/test-cleanup)
-    file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/cleanup"
-         "${test_dir}/test-cleanup" SYMBOLIC
+  if(setup_fixture_required)
+    if(NOT EXISTS "${test_dir}/test-setup")
+      file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/start_bareos.sh"
+           "${test_dir}/test-setup" SYMBOLIC
+      )
+    endif()
+    add_systemtest("${test_basename}:setup" "${test_dir}/test-setup")
+
+    set_tests_properties(
+      "${test_basename}:setup" PROPERTIES FIXTURES_SETUP
+                                          "${test_basename}-fixture"
+    )
+
+    if(NOT EXISTS ${test_dir}/test-cleanup)
+      file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/cleanup"
+           "${test_dir}/test-cleanup" SYMBOLIC
+      )
+    endif()
+    add_systemtest(${test_basename}:cleanup "${test_dir}/test-cleanup")
+    set_tests_properties(
+      ${test_basename}:cleanup PROPERTIES FIXTURES_CLEANUP
+                                          "${test_basename}-fixture"
     )
   endif()
-  add_systemtest(${test_basename}:cleanup "${test_dir}/test-cleanup")
 
-  set_tests_properties(
-    ${test_basename}:cleanup PROPERTIES FIXTURES_CLEANUP
-                                        "${test_basename}-fixture"
-  )
-
+  # Validate that all fixtures are properly closed under requirements
+  if(NOT test_basename MATCHES ".*py3.?grpc.*")
+    # grpc tests are actually setup in the non-grpc directory, so this will not
+    # work for them
+    validate_systemtest_fixtures_in_dir(${test_dir})
+  endif()
 endfunction()
 
 macro(create_enabled_systemtest prefix test_name test_srcdir test_dir

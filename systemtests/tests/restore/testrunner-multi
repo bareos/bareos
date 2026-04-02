@@ -2,7 +2,7 @@
 
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2023-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,8 @@
 # Check whether multiple file=/dir= are handled
 # correctly during restore.
 #
+
+#CTEST requires=create-backup
 
 set -e
 set -o pipefail
