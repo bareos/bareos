@@ -21,9 +21,93 @@ set -u
 # Populate the backup source directory with small test files.
 setup_data
 
+# source test-config so we can check CHANGER_DEVICE0..9 below
+#shellcheck source=test-config.in
+. ./test-config
+
+# Configure a SCSI autochanger in the Storage Daemon when one was detected
+# at cmake time.  Before configuring, invalidate existing tape labels so
+# that "label barcodes" can write fresh Bareos labels (mirrors what the
+# standalone autochanger systemtest does with invalidate_tapes.sh).
+invalidate_tape_labels() {
+  local changer_device="$1"
+  local tape_device="$2"
+
+  # Unload any tape currently in a drive back to its slot
+  while IFS= read -r line; do
+    local status
+    status=$(echo "$line" \
+      | sed -e 's/Data Transfer Element \([0-9]\):Full (Storage Element \([0-9]*\).*/\1:\2/')
+    if [[ -n "$status" ]]; then
+      local dte se
+      dte=$(echo "$status" | awk -F: '{print $1}')
+      se=$(echo "$status"  | awk -F: '{print $2}')
+      mtx -f "$changer_device" unload "$se" "$dte"
+    fi
+  done <<<"$(mtx -f "$changer_device" status | grep "Full (Storage")"
+
+  # For each slot in range: load → rewind → weof → unload to clear label
+  local i="$FIRST_SLOT_NUMBER"
+  while IFS= read -r line; do
+    [[ "$i" -gt "$LAST_SLOT_NUMBER" ]] && break
+    if echo "$line" | grep -q "$(printf 'Storage Element %d:Full' "$i")"; then
+      mtx -f "$changer_device" load   "$i" "$USE_TAPE_DEVICE"
+      mt  -f "$tape_device"    rewind
+      mt  -f "$tape_device"    weof
+      mtx -f "$changer_device" unload "$i" "$USE_TAPE_DEVICE"
+      (( i++ ))
+    fi
+  done <<<"$(mtx -f "$changer_device" status)"
+
+  print_debug "Invalidated $(( i - FIRST_SLOT_NUMBER )) tape(s) in ${changer_device}."
+}
+
+for changer_index in {0..9}; do
+  changer_var="CHANGER_DEVICE${changer_index}"
+  changer_device="${!changer_var:-}"
+  [[ -z "$changer_device" ]] && break
+  tape_var="TAPE_DEVICES${changer_index}"
+  tape_device="${!tape_var[$USE_TAPE_DEVICE]}"
+  print_debug "Invalidating tapes for autochanger ${changer_index}: ${changer_device}"
+  invalidate_tape_labels "$changer_device" "$tape_device"
+done
+
 # Configure a SCSI autochanger in the Storage Daemon when one was detected
 # at cmake time.  The script is a no-op when no changer was configured.
 "${BAREOS_SCRIPTS_DIR}"/create_autochanger_configs.sh
+
+# When one or more autochangers are configured, add per-changer tape pools
+# and backup jobs to the director config for testrunner-tape-backup to use.
+for changer_index in {0..9}; do
+  changer_var="CHANGER_DEVICE${changer_index}"
+  changer_device="${!changer_var:-}"
+  [[ -z "${changer_device}" ]] && break
+
+  cat >"${BAREOS_CONFIG_DIR}/bareos-dir.d/pool/TapeFull-${changer_index}.conf" <<EOF
+Pool {
+  Name = TapeFull-${changer_index}
+  Pool Type = Backup
+  Recycle = yes
+  AutoPrune = yes
+  Volume Retention = 365 days
+  Maximum Volume Bytes = 50G
+  Maximum Volumes = 100
+  Label Format = "Tape-${changer_index}-"
+  Storage = Tape-${changer_index}
+}
+EOF
+
+  cat >"${BAREOS_CONFIG_DIR}/bareos-dir.d/job/backup-tape-${changer_index}.conf" <<EOF
+Job {
+  Name = "backup-tape-${changer_index}"
+  JobDefs = "DefaultJob"
+  Client = "bareos-fd"
+  Pool = TapeFull-${changer_index}
+  Full Backup Pool = TapeFull-${changer_index}
+  Storage = Tape-${changer_index}
+}
+EOF
+done
 
 bin/bareos start
 bin/bareos status

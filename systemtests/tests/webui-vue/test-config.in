@@ -26,5 +26,14 @@
 # autochanger was configured, in which case create_autochanger_configs.sh
 # becomes a no-op and the test runs without tape storage.
 
+# verbose=1 enables tee-logging in redirect_output; 0 redirects to logfile only
+verbose=0
+
+# Drive index used for tape invalidation (labelling uses drive 0)
+readonly USE_TAPE_DEVICE=0
+# Slot range to scan when invalidating / labelling tapes
+readonly FIRST_SLOT_NUMBER=1
+readonly LAST_SLOT_NUMBER=10
+
 readonly CHANGER_DEVICE0="@CHANGER_DEVICE0@"
 readonly TAPE_DEVICES0=(@TAPE_DEVICES0@)
