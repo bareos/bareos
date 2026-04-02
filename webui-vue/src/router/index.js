@@ -23,6 +23,7 @@ const routes = [
       { path: 'clients/:name', name: 'client-details', component: () => import('../pages/ClientDetailsPage.vue') },
       { path: 'schedules', name: 'schedules', component: () => import('../pages/SchedulesPage.vue') },
       { path: 'storages', name: 'storages', component: () => import('../pages/StoragesPage.vue') },
+      { path: 'autochangers', name: 'autochangers', component: () => import('../pages/AutochangerPage.vue') },
       { path: 'storages/pools/:name', name: 'pool-details', component: () => import('../pages/PoolDetailsPage.vue') },
       { path: 'storages/volumes/:name', name: 'volume-details', component: () => import('../pages/VolumeDetailsPage.vue') },
       { path: 'director',  name: 'director',  component: () => import('../pages/DirectorPage.vue') },

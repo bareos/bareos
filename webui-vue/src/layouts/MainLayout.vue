@@ -209,8 +209,9 @@ const navItems = [
   { label: 'Restore',   to: '/restore',   icon: 'restore'      },
   { label: 'Clients',   to: '/clients',   icon: 'devices'      },
   { label: 'Schedules', to: '/schedules', icon: 'schedule'     },
-  { label: 'Storages',  to: '/storages',  icon: 'storage'      },
-  { label: 'Director',  to: '/director',  icon: 'settings'     },
+  { label: 'Storages',      to: '/storages',      icon: 'storage'      },
+  { label: 'Autochangers',  to: '/autochangers',  icon: 'swap_horiz'   },
+  { label: 'Director',      to: '/director',      icon: 'settings'     },
   { label: 'Analytics', to: '/analytics', icon: 'bar_chart'    },
 ]
 
