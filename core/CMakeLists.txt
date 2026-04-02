@@ -644,6 +644,7 @@ else()
   message(STATUS "installing ${logdir}")
 
   install(DIRECTORY DESTINATION ${workingdir})
+  install(DIRECTORY DESTINATION ${workingdir}/rrd)
   message(STATUS "installing ${woringdir}")
 endif()
 
