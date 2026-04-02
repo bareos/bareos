@@ -1,0 +1,10 @@
+Storage {
+  Name = bareos-sd
+
+  Working Directory =  "@working_dir@"
+  Port = @sd_port@
+  @sd_backend_config@
+  # Fire progress updates every 2 seconds so the test can capture
+  # them while the slow backup job (Maximum Bandwidth = 300K) runs.
+  Progress Interval = 2
+}

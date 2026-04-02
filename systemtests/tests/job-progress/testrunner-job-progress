@@ -1,0 +1,123 @@
+#!/bin/bash
+set -e
+set -o pipefail
+set -u
+#
+# Verify that the SD sends real-time progress updates to the Director
+# while a backup job is running, and that those updates appear in
+# "status director" output (text and JSON).
+#
+# A slow job (Maximum Bandwidth = 300K) with ProgressInterval = 2s
+# ensures the progress update fires while the backup is still running.
+#
+TestName="$(basename "$(pwd)")"
+export TestName
+
+slowjob="slow-backup-bareos-fd"
+backup_log="$tmp/job-progress-backup.out"
+status_log="$tmp/job-progress-status.out"
+status_json_log="$tmp/job-progress-status.json"
+
+#shellcheck source=../../environment.in
+. ./environment
+
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
+
+start_test
+
+# Start the slow backup job (don't wait for it to finish yet).
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out $backup_log
+label volume=TestVolume001 storage=File pool=SmallFull
+run job=$slowjob yes
+quit
+END_OF_DATA
+
+run_bconsole
+
+# Poll "status director" until progress info appears (Progress Interval = 2s)
+# or until the job finishes before we catch it (30 attempts × 2s = 60s max).
+progress_found=0
+for i in $(seq 1 30); do
+  cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $status_log
+status director
+quit
+END_OF_DATA
+
+  run_bconsole
+
+  # The progress block appears only while the job is Running and the SD
+  # has already sent at least one Progress message (JobFiles > 0).
+  if grep -qE "Files: +[0-9]" "$status_log"; then
+    progress_found=1
+    break
+  fi
+
+  # If no job is running at all, there is no point waiting further.
+  if ! grep -q "is running" "$status_log" \
+    && ! grep -q "backup-bareos-fd" "$status_log" \
+    && ! grep -q "$slowjob" "$status_log"; then
+    break
+  fi
+
+  sleep 2
+done
+
+if [ "$progress_found" -eq 0 ]; then
+  echo "ERROR: no progress info found in 'status director' output" >&2
+  echo "Last status output:" >&2
+  cat "$status_log" >&2
+  estat=1
+fi
+
+# Verify individual progress fields are present.
+expect_grep "Files:" \
+  "$status_log" \
+  "Files field missing from 'status director' progress output"
+
+expect_grep "Bytes:" \
+  "$status_log" \
+  "Bytes field missing from 'status director' progress output"
+
+expect_grep "Device:" \
+  "$status_log" \
+  "Device field missing from 'status director' progress output"
+
+# Also capture JSON output to verify structured progress fields.
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out ${NULL_DEV}
+.api 2
+@$out $status_json_log
+status director
+@$out ${NULL_DEV}
+.api 0
+quit
+END_OF_DATA
+
+run_bconsole
+
+expect_grep '"running-jobs"' \
+  "$status_json_log" \
+  '"running-jobs" key missing from JSON status director output'
+
+# Wait for the backup to finish and verify it succeeded.
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $backup_log
+wait
+messages
+quit
+END_OF_DATA
+
+run_bconsole
+
+check_for_zombie_jobs storage=File
+
+expect_grep "Backup OK" \
+  "$backup_log" \
+  "Backup job did not complete successfully"
+
+end_test
