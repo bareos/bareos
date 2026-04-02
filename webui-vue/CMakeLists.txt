@@ -12,7 +12,10 @@ cmake_minimum_required(VERSION 3.17)
 set(WEBUI_VUE_DIR ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bareos-webui-vue)
 
 # Detect Apache configuration directory
-if(EXISTS ${sysconfdir}/httpd/conf.d)
+if(HAVE_FREEBSD_OS)
+  # FreeBSD apache24 stores extra configs in ${PREFIX}/etc/apache24/Includes
+  set(HTTPD_CONF ${sysconfdir}/apache24/Includes)
+elseif(EXISTS ${sysconfdir}/httpd/conf.d)
   set(HTTPD_CONF ${sysconfdir}/httpd/conf.d)
 elseif(EXISTS ${sysconfdir}/apache2/conf.d)
   set(HTTPD_CONF ${sysconfdir}/apache2/conf.d)
