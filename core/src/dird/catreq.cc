@@ -37,6 +37,8 @@
 #include "include/filetypes.h"
 #include "include/streams.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
+#include "dird/job_rrd.h"
 #include "dird/next_vol.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/sd_cmds.h"
@@ -428,6 +430,10 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     jcr->dir_impl->sd_last_fname = progress_current_file;
     Dmsg3(200, "Progress Job=%s Files=%u Bytes=%" PRIu64 "\n", Job,
           update_jobfiles, update_jobbytes);
+    if (me && me->rrd_dir) {
+      RrdUpdateJobProgress(me->rrd_dir, jcr->JobId, update_jobfiles,
+                           update_jobbytes, progress_read_bytes);
+    }
   } else if (uint64_t dev_write_rate = 0, dev_read_rate = 0, dev_vol_bytes = 0,
              dev_spool_size = 0;
              sscanf(bs->msg, DeviceProgressFmt, &Job, progress_devname,
@@ -442,6 +448,10 @@ void CatalogRequest(JobControlRecord* jcr, BareosSocket* bs)
     info.spool_size     = dev_spool_size;
     Dmsg3(200, "DeviceProgress Job=%s Dev=%s WriteRate=%" PRIu64 "\n", Job,
           progress_devname, dev_write_rate);
+    if (me && me->rrd_dir) {
+      RrdUpdateDeviceProgress(me->rrd_dir, progress_devname, dev_write_rate,
+                              dev_read_rate, dev_vol_bytes, dev_spool_size);
+    }
   } else {
     omsg = GetMemory(bs->message_length + 1);
     PmStrcpy(omsg, bs->msg);

@@ -33,7 +33,9 @@
 #include "include/bareos.h"
 #include "cats/sql.h"
 #include "dird.h"
+#include "dird/dird_globals.h"
 #include "dird/director_jcr_impl.h"
+#include "dird/job_rrd.h"
 #include "dird/next_vol.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_db.h"
@@ -472,6 +474,7 @@ static bool PurgeQuotaFromClient(UaContext* ua, ClientResource* client)
 // Remove all records from catalog for a list of JobIds
 void PurgeJobsFromCatalog(UaContext* ua, const char* jobs)
 {
+  if (me && me->rrd_dir) { RrdDeleteJobFiles(me->rrd_dir, jobs); }
   ua->db->PurgeJobs(jobs);
 }
 

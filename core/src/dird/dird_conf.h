@@ -134,6 +134,7 @@ class DirectorResource
                                  erase of file */
   char* log_timestamp_format = nullptr; /* Timestamp format to use in generic
                                  logging messages */
+  char* rrd_dir = nullptr; /* Directory for RRD time-series databases */
   s_password keyencrkey;                /* Key Encryption Key */
 
   bool enable_ktls{false};

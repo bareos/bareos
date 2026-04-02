@@ -25,6 +25,7 @@ if(NOT ENABLE_JANSSON)
   message(FATAL_ERROR "Bareos Director requires Jansson support")
 endif()
 find_package(Jansson REQUIRED)
+find_package(RRD REQUIRED)
 
 if(HAVE_WIN32)
   include_directories(
@@ -61,6 +62,7 @@ target_sources(
           getmsg.cc
           inc_conf.cc
           job.cc
+          job_rrd.cc
           jcr_util.cc
           jobq.cc
           job_trigger.cc
@@ -125,7 +127,7 @@ if(HAVE_PAM)
   target_sources(dird_objects PRIVATE auth_pam.cc)
 endif()
 
-target_link_libraries(dird_objects PRIVATE Bareos::Lib OpenSSL::SSL)
+target_link_libraries(dird_objects PRIVATE Bareos::Lib OpenSSL::SSL RRD::RRD)
 
 add_executable(bareos-dir)
 target_sources(bareos-dir PRIVATE dird.cc)

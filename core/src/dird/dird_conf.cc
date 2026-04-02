@@ -147,6 +147,7 @@ static const ResourceItem dir_items[] = {
   { "AuditEvents", CFG_TYPE_AUDIT, ITEM(res_dir, audit_events), {config::IntroducedIn{14, 2, 0}}},
   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir, secure_erase_cmdline), {config::IntroducedIn{15, 2, 1}, config::Description{"Specify command that will be called when bareos unlinks files."}}},
   { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir, log_timestamp_format), {config::IntroducedIn{15, 2, 3}, config::DefaultValue{"%d-%b %H:%M"}}},
+  { "RrdDir", CFG_TYPE_DIR, ITEM(res_dir, rrd_dir), {config::Description{"Directory for RRD time-series job and device progress databases. Leave empty to disable RRD recording."}}},
   { "EnableKtls", CFG_TYPE_BOOL, ITEM(res_dir, enable_ktls), {config::DefaultValue{"false"}, config::Description{"If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."}, config::IntroducedIn{23, 0, 0}}},
    TLS_COMMON_CONFIG(res_dir),
    TLS_CERT_CONFIG(res_dir),
@@ -3768,6 +3769,7 @@ static void FreeResource(BareosResource* res, int type)
       if (p->audit_events) { delete p->audit_events; }
       if (p->secure_erase_cmdline) { free(p->secure_erase_cmdline); }
       if (p->log_timestamp_format) { free(p->log_timestamp_format); }
+      if (p->rrd_dir) { free(p->rrd_dir); }
       delete p;
       break;
     }
