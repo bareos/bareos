@@ -10,6 +10,12 @@ set -u
 # A slow job (Maximum Bandwidth = 300K) with ProgressInterval = 2s
 # ensures the progress update fires while the backup is still running.
 #
+# Additionally verifies:
+#   - per-job RRD database is created under working_dir/rrd/jobs/
+#   - per-device RRD database is created under working_dir/rrd/devices/
+#   - RRD files contain non-NaN data after the job completes
+#   - job RRD file is removed when the job is purged from the catalog
+#
 TestName="$(basename "$(pwd)")"
 export TestName
 
@@ -23,23 +29,36 @@ slowjob="slow-backup-bareos-fd"
 backup_log="$tmp/job-progress-backup.out"
 status_log="$tmp/job-progress-status.out"
 status_json_log="$tmp/job-progress-status.json"
+rrd_dir="${working_dir}/rrd"
 
 start_test
 
-# Start the slow backup job (don't wait for it to finish yet).
+# ── Phase 1: start the slow backup and capture its JobId ──────────────
+
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 messages
 @$out $backup_log
 label volume=TestVolume001 storage=File pool=SmallFull
+.api 2
 run job=$slowjob yes
+.api 0
 quit
 END_OF_DATA
 
 run_bconsole
 
-# Poll "status director" until progress info appears (Progress Interval = 2s)
-# or until the job finishes before we catch it (30 attempts × 2s = 60s max).
+# Extract the JobId from the JSON "run" response.
+jobid=$(grep '"jobid"' "$backup_log" | tail -n1 | cut -d':' -f2 | tr -d ' ",')
+
+if [ -z "$jobid" ] || [ "$jobid" -eq 0 ] 2>/dev/null; then
+  echo "ERROR: could not extract JobId from run output" >&2
+  cat "$backup_log" >&2
+  estat=1
+fi
+
+# ── Phase 2: poll "status director" for live progress fields ──────────
+
 progress_found=0
 for i in $(seq 1 30); do
   cat <<END_OF_DATA >"$tmp/bconcmds"
@@ -50,14 +69,11 @@ END_OF_DATA
 
   run_bconsole
 
-  # The progress block appears only while the job is Running and the SD
-  # has already sent at least one Progress message (JobFiles > 0 or JobBytes > 0).
   if grep -qE "Files:|File:  \.\.\." "$status_log"; then
     progress_found=1
     break
   fi
 
-  # If no job is running at all, there is no point waiting further.
   if ! grep -q "is running" "$status_log" \
     && ! grep -q "backup-bareos-fd" "$status_log" \
     && ! grep -q "$slowjob" "$status_log"; then
@@ -74,7 +90,6 @@ if [ "$progress_found" -eq 0 ]; then
   estat=1
 fi
 
-# Verify individual progress fields are present.
 expect_grep "Files:" \
   "$status_log" \
   "Files field missing from 'status director' progress output"
@@ -91,7 +106,7 @@ expect_grep "Device:" \
   "$status_log" \
   "Device field missing from 'status director' progress output"
 
-# Also capture JSON output to verify structured progress fields.
+# JSON status check.
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out ${NULL_DEV}
 .api 2
@@ -108,7 +123,8 @@ expect_grep '"running-jobs"' \
   "$status_json_log" \
   '"running-jobs" key missing from JSON status director output'
 
-# Wait for the backup to finish and verify it succeeded.
+# ── Phase 3: wait for backup to complete ──────────────────────────────
+
 cat <<END_OF_DATA >"$tmp/bconcmds"
 @$out $backup_log
 wait
@@ -123,5 +139,70 @@ check_for_zombie_jobs storage=File
 expect_grep "Backup OK" \
   "$backup_log" \
   "Backup job did not complete successfully"
+
+# ── Phase 4: verify RRD files were created ────────────────────────────
+
+job_rrd="${rrd_dir}/jobs/job_${jobid}.rrd"
+
+if [ ! -f "$job_rrd" ]; then
+  echo "ERROR: per-job RRD not found: $job_rrd" >&2
+  echo "Contents of ${rrd_dir}/jobs/ (if it exists):" >&2
+  ls "${rrd_dir}/jobs/" 2>&1 >&2 || true
+  estat=1
+fi
+
+# Verify the job RRD contains at least one non-NaN data point.
+rrd_last=$(rrdtool lastupdate "$job_rrd" 2>/dev/null || true)
+if [ -z "$rrd_last" ]; then
+  echo "ERROR: rrdtool lastupdate failed for $job_rrd" >&2
+  estat=1
+fi
+
+# Fetch recent data; at least one row must not be all NaN.
+rrd_fetch_out=$(rrdtool fetch "$job_rrd" AVERAGE --start "end-1h" 2>/dev/null || true)
+if ! echo "$rrd_fetch_out" | grep -qvE "^[[:space:]]*$|^[a-z_]+|nan.*nan.*nan"; then
+  echo "ERROR: job RRD $job_rrd has no non-NaN data points" >&2
+  echo "rrdtool fetch output:" >&2
+  echo "$rrd_fetch_out" >&2
+  estat=1
+fi
+
+# Verify at least one device RRD was created.
+dev_rrd_count=$(find "${rrd_dir}/devices/" -name "dev_*.rrd" 2>/dev/null | wc -l)
+if [ "$dev_rrd_count" -eq 0 ]; then
+  echo "ERROR: no per-device RRD files found under ${rrd_dir}/devices/" >&2
+  estat=1
+fi
+
+# Verify a device RRD also has non-NaN data.
+dev_rrd=$(find "${rrd_dir}/devices/" -name "dev_*.rrd" | head -1)
+dev_rrd_fetch=$(rrdtool fetch "$dev_rrd" AVERAGE --start "end-1h" 2>/dev/null || true)
+if ! echo "$dev_rrd_fetch" | grep -qvE "^[[:space:]]*$|^[a-z_]+|nan.*nan.*nan.*nan"; then
+  echo "ERROR: device RRD $dev_rrd has no non-NaN data points" >&2
+  echo "rrdtool fetch output:" >&2
+  echo "$dev_rrd_fetch" >&2
+  estat=1
+fi
+
+# ── Phase 5: purge the job and verify the job RRD is deleted ──────────
+
+cat <<END_OF_DATA >"$tmp/bconcmds"
+@$out $tmp/purge.out
+delete jobid=$jobid yes
+quit
+END_OF_DATA
+
+run_bconsole
+
+if [ -f "$job_rrd" ]; then
+  echo "ERROR: job RRD still exists after purge: $job_rrd" >&2
+  estat=1
+fi
+
+# Device RRDs are long-lived and must NOT be deleted on purge.
+if [ "$dev_rrd_count" -gt 0 ] && [ ! -f "$dev_rrd" ]; then
+  echo "ERROR: device RRD was incorrectly deleted on job purge: $dev_rrd" >&2
+  estat=1
+fi
 
 end_test

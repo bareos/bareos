@@ -30,12 +30,12 @@
 #include <cstdio>
 #include <cstring>
 #include <cerrno>
+#include <ctime>
 #include <string>
 #include <vector>
 #include <sys/stat.h>
 
-#include "lib/bsys.h"   /* SecureErase / Dmsg / Jmsg */
-#include "lib/message.h"
+#include "include/bareos.h"
 
 namespace directordaemon {
 
@@ -112,29 +112,13 @@ static bool CreateJobRrd(const std::string& path)
   char hb[32];
   snprintf(hb, sizeof(hb), "%u", kHeartbeat);
 
-  char step_s[16];
-  snprintf(step_s, sizeof(step_s), "%u", kStep);
-
-  /* rrd_create_r args: filename, step, start_time, argc, argv */
-  const char* argv[] = {
-      "DS:job_files:GAUGE:" ,  hb, ":0:U",
-      "DS:job_bytes:GAUGE:" ,  hb, ":0:U",
-      "DS:read_bytes:GAUGE:",  hb, ":0:U",
-      /* 48h at 30s */
-      "RRA:AVERAGE:0.5:1:5760",
-      /* 2 weeks at 5min */
-      "RRA:AVERAGE:0.5:10:4032",
-      nullptr
-  };
-
-  /* Build a flat argv array (rrd_create_r takes const char**). */
-  std::vector<const char*> flat;
-  flat.push_back("DS:job_files:GAUGE:" + std::string(hb) + ":0:U");
-  flat.push_back("DS:job_bytes:GAUGE:" + std::string(hb) + ":0:U");
-  flat.push_back("DS:read_bytes:GAUGE:" + std::string(hb) + ":0:U");
-  flat.push_back("RRA:AVERAGE:0.5:1:5760");
-  flat.push_back("RRA:AVERAGE:0.5:10:4032");
-  (void)argv; /* suppress unused-variable warning */
+  /* Build argument strings (rrd_create_r takes const char**). */
+  std::vector<std::string> flat;
+  flat.push_back(std::string("DS:job_files:GAUGE:") + hb + ":0:U");
+  flat.push_back(std::string("DS:job_bytes:GAUGE:") + hb + ":0:U");
+  flat.push_back(std::string("DS:read_bytes:GAUGE:") + hb + ":0:U");
+  flat.emplace_back("RRA:AVERAGE:0.5:1:5760");
+  flat.emplace_back("RRA:AVERAGE:0.5:10:4032");
 
   std::vector<const char*> raw;
   for (const auto& s : flat) { raw.push_back(s.c_str()); }
@@ -196,14 +180,14 @@ static bool CreateDeviceRrd(const std::string& path)
   char hb[32];
   snprintf(hb, sizeof(hb), "%u", kHeartbeat);
 
-  std::vector<const char*> flat;
-  flat.push_back("DS:write_rate:GAUGE:" + std::string(hb) + ":0:U");
-  flat.push_back("DS:read_rate:GAUGE:"  + std::string(hb) + ":0:U");
-  flat.push_back("DS:vol_bytes:GAUGE:"  + std::string(hb) + ":0:U");
-  flat.push_back("DS:spool_size:GAUGE:" + std::string(hb) + ":0:U");
-  flat.push_back("RRA:AVERAGE:0.5:1:5760");
-  flat.push_back("RRA:AVERAGE:0.5:10:8928");
-  flat.push_back("RRA:AVERAGE:0.5:120:17520");
+  std::vector<std::string> flat;
+  flat.push_back(std::string("DS:write_rate:GAUGE:") + hb + ":0:U");
+  flat.push_back(std::string("DS:read_rate:GAUGE:")  + hb + ":0:U");
+  flat.push_back(std::string("DS:vol_bytes:GAUGE:")  + hb + ":0:U");
+  flat.push_back(std::string("DS:spool_size:GAUGE:") + hb + ":0:U");
+  flat.emplace_back("RRA:AVERAGE:0.5:1:5760");
+  flat.emplace_back("RRA:AVERAGE:0.5:10:8928");
+  flat.emplace_back("RRA:AVERAGE:0.5:120:17520");
 
   std::vector<const char*> raw;
   for (const auto& s : flat) { raw.push_back(s.c_str()); }
