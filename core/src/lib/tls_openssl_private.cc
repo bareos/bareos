@@ -132,6 +132,7 @@ bool TlsOpenSslPrivate::init()
   SSL_CTX_set_options(openssl_ctx_, SSL_OP_ALL);
 
   SSL_CTX_set_options(openssl_ctx_, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+  SSL_CTX_set_read_ahead(openssl_ctx_, 1);
 
 #if (OPENSSL_VERSION_NUMBER >= 0x30000000L)
   if (enable_ktls_) { SSL_CTX_set_options(openssl_ctx_, SSL_OP_ENABLE_KTLS); }

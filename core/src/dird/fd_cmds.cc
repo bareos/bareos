@@ -158,22 +158,20 @@ static bool connect_outbound_to_file_daemon(JobControlRecord* jcr,
 
 static void OutputMessageForConnectionTry(JobControlRecord* jcr, UaContext* ua)
 {
-  std::string m;
+  ASSERT(jcr);
 
-  if (jcr->dir_impl->res.client->connection_successful_handshake_
-          == ClientConnectionHandshakeMode::kUndefined
-      || jcr->dir_impl->res.client->connection_successful_handshake_
-             == ClientConnectionHandshakeMode::kFailed) {
-    m = "Probing client protocol... (result will be saved until config reload)";
-  } else {
-    return;
-  }
+  bool handshake_failed_or_undefined
+      = jcr->dir_impl->res.client->connection_successful_handshake_
+            == ClientConnectionHandshakeMode::kUndefined
+        || jcr->dir_impl->res.client->connection_successful_handshake_
+               == ClientConnectionHandshakeMode::kFailed;
 
-  if (jcr && jcr->JobId != 0) {
-    std::string m1 = m + "\n";
-    Jmsg(jcr, M_INFO, 0, "%s", m1.c_str());
-  }
-  if (ua) { ua->SendMsg("%s", m.c_str()); }
+  if (!handshake_failed_or_undefined) { return; }
+
+  const char* message
+      = "Probing client protocol... (result will be saved until config reload)";
+  if (jcr->JobId != 0) { Jmsg(jcr, M_INFO, 0, "%s\n", message); }
+  if (ua) { ua->SendMsg("%s", message); }
 }
 
 static void SendInfoChosenCipher(JobControlRecord* jcr, UaContext* ua)
@@ -252,6 +250,8 @@ void UpdateFailedConnectionHandshakeMode(JobControlRecord* jcr)
  * fall back to cleartext md5-handshake */
 void SetConnectionHandshakeMode(JobControlRecord* jcr, UaContext* ua)
 {
+  ASSERT(jcr);
+
   OutputMessageForConnectionTry(jcr, ua);
   if (jcr->dir_impl->res.client->connection_successful_handshake_
           == ClientConnectionHandshakeMode::kUndefined

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -92,6 +92,9 @@ class BareosSocketTCP : public BareosSocket {
   bool ConnectionReceivedTerminateSignal() override;
   int WaitData(int sec, int usec = 0) override;
   int WaitDataIntr(int sec, int usec = 0) override;
+
+  bool KtlsForSend() override;
+  bool KtlsForRecv() override;
 };
 
 #endif  // BAREOS_LIB_BSOCK_TCP_H_

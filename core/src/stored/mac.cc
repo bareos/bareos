@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -555,6 +555,12 @@ bool DoMacRun(JobControlRecord* jcr)
     // Update the initial Job Statistics.
     now = (utime_t)time(NULL);
     UpdateJobStatistics(jcr, now);
+
+    if (me->enable_ktls) {
+      bool ktls_enabled = sd->KtlsForSend();
+      Jmsg(jcr, M_INFO, 0, "Sending via kTLS: %s\n",
+           ktls_enabled ? "yes" : "no");
+    }
 
     cb_data data{};
     // Read all data and send it to remote SD.
