@@ -106,7 +106,7 @@ class StorageResource
   utime_t FDConnectTimeout = {0};       /**< Timeout in seconds */
   utime_t heartbeat_interval = {0};     /**< Interval to send hb to FD */
   utime_t checkpoint_interval = {0};    /**< Interval to save */
-  utime_t progress_interval = {0};      /**< Interval to send progress to Dir */
+  utime_t progress_interval = {30};     /**< Interval to send progress to Dir */
   utime_t client_wait = {0};            /**< Time to wait for FD to connect */
   uint32_t max_network_buffer_size = 0; /**< Max network buf size */
   bool autoxflateonreplication

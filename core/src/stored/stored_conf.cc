@@ -96,7 +96,7 @@ static const ResourceItem store_items[] = {
   { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_store, FDConnectTimeout), {config::DefaultValue{"1800"}}},
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_store, heartbeat_interval), {config::DefaultValue{"0"}}},
   { "CheckpointInterval", CFG_TYPE_TIME, ITEM(res_store, checkpoint_interval), {config::DefaultValue{"0"}}},
-  { "ProgressInterval", CFG_TYPE_TIME, ITEM(res_store, progress_interval), {config::DefaultValue{"0"}}},
+  { "ProgressInterval", CFG_TYPE_TIME, ITEM(res_store, progress_interval), {config::DefaultValue{"30"}}},
   { "MaximumNetworkBufferSize", CFG_TYPE_PINT32, ITEM(res_store, max_network_buffer_size), {}},
   { "ClientConnectWait", CFG_TYPE_TIME, ITEM(res_store, client_wait), {config::DefaultValue{"1800"}}},
   { "VerId", CFG_TYPE_STR, ITEM(res_store, verid), {}},
