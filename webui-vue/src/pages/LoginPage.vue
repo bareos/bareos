@@ -2,7 +2,7 @@
   <q-page class="flex flex-center">
     <div style="width: 380px; padding: 24px">
       <div class="text-center q-mb-lg">
-        <q-icon name="shield" size="48px" color="white" />
+        <img :src="bareosLogo" alt="Bareos" style="height:48px" />
         <div class="text-h5 text-white text-weight-bold q-mt-sm">BAREOS</div>
         <div class="text-subtitle2 text-white">Backup Archiving Recovery Open Sourced</div>
       </div>
@@ -86,6 +86,7 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import bareosLogo from '../assets/bareos-logo-small.png'
 
 const auth     = useAuthStore()
 const director = useDirectorStore()
