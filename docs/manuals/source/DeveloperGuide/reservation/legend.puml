@@ -10,7 +10,7 @@ note right
   goto or jump-mark
 end note
 detach
-:Read read data from the network; <<input>>
+:Read data from the network; <<input>>
 detach
 :Send data to the network; <<output>>
 detach
