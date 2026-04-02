@@ -26,7 +26,7 @@ if (device matches requested media_type?) then (yes) <<#limegreen>>
               if (PreferMountedVols set?) then (no) <<#aqua>>
                 if (isBusy()) then (yes)
                   if (dev.num_writers + NumReserved() < num_writers) then (yes) <<#aqua>>
-                    :set num_writers := dev.numwriters + NumReserved(); <<task>> <<#aqua>>
+                    :set num_writers := dev.num_writers + NumReserved(); <<task>> <<#aqua>>
                     :set low_use_drive := dev; <<task>> <<#aqua>>
                   endif
                   (X)
@@ -139,7 +139,7 @@ if (device matches requested media_type?) then (yes) <<#limegreen>>
       endif
     endif
 if (have_device?) then (yes)
-  :OK device message>
+  :OK device message; <<output>>
 else (no)
   (F)
   :clear have_volume; <<task>> <<#aqua>>
