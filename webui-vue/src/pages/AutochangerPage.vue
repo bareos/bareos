@@ -62,11 +62,185 @@
     <!-- ── Slot Tables ────────────────────────────────────── -->
     <div v-if="selectedStorage" class="row q-col-gutter-md">
 
-      <!-- Import/Export Slots -->
-      <div class="col-12 col-md-4">
+      <!-- Storage Slots (left, wide) -->
+      <div class="col-12 col-md-8">
+        <q-card flat bordered class="bareos-panel">
+          <q-card-section class="panel-header">{{ storageSlots.length }} Storage Slots</q-card-section>
+          <q-card-section class="q-pa-none">
+            <q-table
+              :rows="storageSlots"
+              :columns="slotCols"
+              row-key="slotnr"
+              dense flat
+              :loading="slotsLoading"
+              :pagination="{ rowsPerPage: 0 }"
+              hide-pagination
+              virtual-scroll
+              style="max-height: 70vh"
+            >
+              <template #body-cell-slotnr="props">
+                <q-td :props="props">
+                  <q-icon
+                    :name="props.row.content === 'full' ? 'inventory_2' : 'inbox'"
+                    :color="props.row.content === 'full' ? 'brown-6' : 'grey-5'"
+                    size="18px" class="q-mr-xs" />
+                  {{ props.value }}
+                </q-td>
+              </template>
+              <template #body-cell-drag="props">
+                <q-td :props="props"
+                      v-if="props.row.content === 'full' && slotInDriveMap[props.row.slotnr] == null"
+                      draggable="true"
+                      style="cursor:grab"
+                      @dragstart="onSlotDragStart($event, props.row)">
+                  <q-icon name="drag_indicator" color="grey-6" />
+                  <q-tooltip>Drag to a drive to mount</q-tooltip>
+                </q-td>
+                <q-td v-else :props="props" />
+              </template>
+              <template #body-cell-content="props">
+                <q-td :props="props"
+                      @dragover="onDragOverSlot($event, props.row)"
+                      @dragleave="onDragLeaveSlot"
+                      @drop="onDropToSlot($event, props.row)"
+                      :class="{ 'dnd-drop-target': dragOverSlot === props.row.slotnr }">
+                  <q-badge
+                    v-if="slotInDriveMap[props.row.slotnr] != null"
+                    color="blue"
+                    :label="`in Drive ${slotInDriveMap[props.row.slotnr]}`" />
+                  <q-badge v-else
+                           :color="props.value === 'full' ? 'green' : 'grey'"
+                           :label="props.value" />
+                  <span v-if="dragOverSlot === props.row.slotnr"
+                        class="q-ml-sm text-caption text-grey-6">drop to move</span>
+                </q-td>
+              </template>
+              <template #body-cell-mr_volname="props">
+                <q-td :props="props">
+                  <template v-if="props.value && props.value !== '?'">
+                    <router-link
+                      :to="{ name: 'volume-details', params: { name: props.value } }"
+                      class="text-primary"
+                    >{{ props.value }}</router-link>
+                    <q-btn flat round dense size="xs" icon="content_copy"
+                           class="q-ml-xs" title="Copy volume name"
+                           @click.stop="copyName(props.value)" />
+                  </template>
+                </q-td>
+              </template>
+              <template #body-cell-mr_volstatus="props">
+                <q-td :props="props">
+                  <span v-if="props.row.content === 'full'">
+                    <q-badge v-if="props.value && props.value !== '?'"
+                             :color="volStatusColor(props.value)"
+                             :label="props.value" />
+                    <q-badge v-else color="grey" label="not in catalog" />
+                  </span>
+                </q-td>
+              </template>
+              <template #body-cell-pr_name="props">
+                <q-td :props="props">
+                  <router-link
+                    v-if="props.value && props.value !== '?'"
+                    :to="{ name: 'pool-details', params: { name: props.value } }"
+                    class="text-primary"
+                  >{{ props.value }}</router-link>
+                  <q-btn v-else-if="props.row.content === 'full'"
+                         flat dense size="sm" icon="label" label="Label"
+                         color="primary" no-caps
+                         title="Label this volume into a pool"
+                         @click="openSlotLabelDialog(props.row.slotnr)" />
+                </q-td>
+              </template>
+              <template #body-cell-actions="props">
+                <q-td :props="props" class="text-right">
+                  <template v-if="props.row.content === 'full' && slotInDriveMap[props.row.slotnr] == null">
+                    <q-btn flat round dense size="sm" icon="play_circle"
+                           title="Mount to drive"
+                           @click="openSlotMountDialog(props.row.slotnr)" />
+                    <q-btn flat round dense size="sm" icon="swap_horiz"
+                           title="Transfer to slot"
+                           @click="openTransferDialog(props.row.slotnr)" />
+                    <q-btn flat round dense size="sm" icon="upload"
+                           title="Export"
+                           @click="doExport(props.row.slotnr)" />
+                  </template>
+                </q-td>
+              </template>
+            </q-table>
+          </q-card-section>
+        </q-card>
+      </div>
+
+      <!-- Right column: Drives (top) + Import/Export Slots (bottom) -->
+      <div class="col-12 col-md-4 column q-gutter-md">
+
+        <!-- Drives -->
+        <q-card flat bordered class="bareos-panel">
+          <q-card-section class="panel-header">{{ drives.length }} Drives</q-card-section>
+          <q-card-section class="q-pa-none">
+            <q-table
+              :rows="drives"
+              :columns="driveCols"
+              row-key="slotnr"
+              dense flat
+              :loading="slotsLoading"
+              :pagination="{ rowsPerPage: 0 }"
+              hide-pagination
+            >
+              <template #body-cell-slotnr="props">
+                <q-td :props="props">
+                  <q-icon name="dns"
+                          :color="props.row.content === 'full' ? 'primary' : 'grey-5'"
+                          size="18px" class="q-mr-xs" />
+                  {{ props.value }}
+                </q-td>
+              </template>
+              <template #body-cell-content="props">
+                <q-td :props="props"
+                      @dragover="onDragOverDrive($event, props.row)"
+                      @dragleave="onDragLeaveDrive"
+                      @drop="onDropToDrive($event, props.row)"
+                      :class="{ 'dnd-drop-target': dragOverDrive === props.row.slotnr && props.row.content === 'empty' }">
+                  <q-badge :color="props.value === 'full' ? 'green' : 'grey'"
+                           :label="props.value" />
+                  <span v-if="dragOverDrive === props.row.slotnr && props.row.content === 'empty'"
+                        class="q-ml-sm text-caption text-grey-6">drop to mount</span>
+                </q-td>
+              </template>
+              <template #body-cell-volname="props">
+                <q-td :props="props">
+                  <template v-if="props.value">
+                    <router-link
+                      :to="{ name: 'volume-details', params: { name: props.value } }"
+                      class="text-primary"
+                    >{{ props.value }}</router-link>
+                    <q-btn flat round dense size="xs" icon="content_copy"
+                           class="q-ml-xs" title="Copy volume name"
+                           @click.stop="copyName(props.value)" />
+                  </template>
+                </q-td>
+              </template>
+              <template #body-cell-actions="props">
+                <q-td :props="props" class="text-right">
+                  <q-btn v-if="props.row.content === 'full'"
+                         flat round dense size="sm" icon="eject"
+                         title="Release"
+                         @click="doRelease(props.row.slotnr)" />
+                  <q-btn v-else
+                         flat round dense size="sm" icon="play_circle"
+                         title="Mount"
+                         @click="openMountDialog(props.row.slotnr)" />
+                </q-td>
+              </template>
+            </q-table>
+          </q-card-section>
+        </q-card>
+
+        <!-- Import/Export Slots -->
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center no-wrap">
-            <span class="col">Import/Export Slots</span>
+            <span class="col">{{ importSlots.length }} Import/Export Slots</span>
             <q-btn flat round dense size="sm" icon="download"
                    title="Import all" @click="doImportAll" />
           </q-card-section>
@@ -80,10 +254,31 @@
               :pagination="{ rowsPerPage: 0 }"
               hide-pagination
             >
+              <template #body-cell-slotnr="props">
+                <q-td :props="props">
+                  <q-icon name="move_to_inbox"
+                          :color="props.row.content === 'full' ? 'teal-6' : 'grey-5'"
+                          size="18px" class="q-mr-xs" />
+                  {{ props.value }}
+                </q-td>
+              </template>
               <template #body-cell-content="props">
                 <q-td :props="props">
                   <q-badge :color="props.value === 'full' ? 'green' : 'grey'"
                            :label="props.value" />
+                </q-td>
+              </template>
+              <template #body-cell-volname="props">
+                <q-td :props="props">
+                  <template v-if="props.value">
+                    <router-link
+                      :to="{ name: 'volume-details', params: { name: props.value } }"
+                      class="text-primary"
+                    >{{ props.value }}</router-link>
+                    <q-btn flat round dense size="xs" icon="content_copy"
+                           class="q-ml-xs" title="Copy volume name"
+                           @click.stop="copyName(props.value)" />
+                  </template>
                 </q-td>
               </template>
               <template #body-cell-actions="props">
@@ -97,107 +292,7 @@
             </q-table>
           </q-card-section>
         </q-card>
-      </div>
 
-      <!-- Drives -->
-      <div class="col-12 col-md-4">
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">Drives</q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-table
-              :rows="drives"
-              :columns="driveCols"
-              row-key="slotnr"
-              dense flat
-              :loading="slotsLoading"
-              :pagination="{ rowsPerPage: 0 }"
-              hide-pagination
-            >
-              <template #body-cell-content="props">
-                <q-td :props="props">
-                  <q-badge :color="props.value === 'full' ? 'green' : 'grey'"
-                           :label="props.value" />
-                </q-td>
-              </template>
-              <template #body-cell-actions="props">
-                <q-td :props="props" class="text-right">
-                  <template v-if="props.row.content === 'full'">
-                    <q-btn flat round dense size="sm" icon="eject"
-                           title="Unmount"
-                           @click="doUnmount(props.row.slotnr)" />
-                    <q-btn flat round dense size="sm" icon="stop_circle"
-                           title="Release"
-                           @click="doRelease(props.row.slotnr)" />
-                  </template>
-                  <q-btn v-else
-                         flat round dense size="sm" icon="play_circle"
-                         title="Mount"
-                         @click="openMountDialog(props.row.slotnr)" />
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
-      </div>
-
-      <!-- Storage Slots -->
-      <div class="col-12 col-md-4">
-        <q-card flat bordered class="bareos-panel">
-          <q-card-section class="panel-header">Storage Slots</q-card-section>
-          <q-card-section class="q-pa-none">
-            <q-table
-              :rows="storageSlots"
-              :columns="slotCols"
-              row-key="slotnr"
-              dense flat
-              :loading="slotsLoading"
-              :pagination="{ rowsPerPage: 0 }"
-              hide-pagination
-              virtual-scroll
-              style="max-height: 60vh"
-            >
-              <template #body-cell-content="props">
-                <q-td :props="props">
-                  <q-badge :color="props.value === 'full' ? 'green' : 'grey'"
-                           :label="props.value" />
-                </q-td>
-              </template>
-              <template #body-cell-mr_volname="props">
-                <q-td :props="props">
-                  <router-link
-                    v-if="props.value && props.value !== '?'"
-                    :to="{ name: 'volume-details', params: { name: props.value } }"
-                    class="text-primary"
-                  >{{ props.value }}</router-link>
-                </q-td>
-              </template>
-              <template #body-cell-mr_volstatus="props">
-                <q-td :props="props">
-                  <span v-if="props.value && props.value !== '?'">
-                    {{ props.value }}
-                  </span>
-                </q-td>
-              </template>
-              <template #body-cell-pr_name="props">
-                <q-td :props="props">
-                  <router-link
-                    v-if="props.value && props.value !== '?'"
-                    :to="{ name: 'pool-details', params: { name: props.value } }"
-                    class="text-primary"
-                  >{{ props.value }}</router-link>
-                </q-td>
-              </template>
-              <template #body-cell-actions="props">
-                <q-td :props="props" class="text-right">
-                  <q-btn v-if="props.row.content === 'full'"
-                         flat round dense size="sm" icon="upload"
-                         title="Export"
-                         @click="doExport(props.row.slotnr)" />
-                </q-td>
-              </template>
-            </q-table>
-          </q-card-section>
-        </q-card>
       </div>
 
     </div>
@@ -223,7 +318,7 @@
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" v-close-popup />
-          <q-btn color="primary" label="Label" @click="doLabelBarcodes" />
+          <q-btn color="primary" label="Label" :disable="!labelForm.pool" @click="doLabelBarcodes" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -239,11 +334,61 @@
         <q-card-section class="q-gutter-sm">
           <q-input v-model="mountForm.slot"
                    label="Slot number" outlined dense type="number"
-                   :min="1" />
+                   :min="1" :readonly="mountForm.slotFixed" />
+          <q-input v-model="mountForm.drive"
+                   label="Drive number" outlined dense type="number"
+                   :min="0" :readonly="mountForm.driveFixed" />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" v-close-popup />
           <q-btn color="primary" label="Mount" @click="doMount" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- ── Transfer Dialog ──────────────────────────────────── -->
+    <q-dialog v-model="transferDialog">
+      <q-card style="min-width:320px">
+        <q-card-section class="row items-center q-pb-none">
+          <span class="text-h6">Transfer from Slot {{ transferForm.srcSlot }}</span>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <q-card-section class="q-gutter-sm">
+          <q-select v-model="transferForm.dstSlot"
+                    :options="emptySlotOptions"
+                    label="Destination Slot" outlined dense
+                    emit-value map-options />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn color="primary" label="Transfer"
+                 :disable="transferForm.dstSlot == null"
+                 @click="doTransfer" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- ── Slot Label Dialog ──────────────────────────────── -->
+    <q-dialog v-model="slotLabelDialog">
+      <q-card style="min-width:360px">
+        <q-card-section class="row items-center q-pb-none">
+          <span class="text-h6">Label Slot {{ slotLabelForm.slot }}</span>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <q-card-section class="q-gutter-sm">
+          <q-select v-model="slotLabelForm.pool"
+                    :options="poolNames"
+                    label="Pool" outlined dense />
+          <q-input v-model="slotLabelForm.drive"
+                   label="Drive (number)" outlined dense type="number"
+                   :min="0" />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn color="primary" label="Label" :disable="!slotLabelForm.pool"
+                 @click="doSlotLabel" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -291,13 +436,23 @@ const pools = ref([])
 const labelDialog = ref(false)
 const labelForm = ref({ pool: '', drive: 0, slots: '' })
 
+const slotLabelDialog = ref(false)
+const slotLabelForm = ref({ slot: null, pool: '', drive: 0 })
+
 const mountDialog = ref(false)
-const mountForm = ref({ drive: 0, slot: '' })
-const mountDrive = ref(0)
+const mountForm = ref({ drive: 0, slot: '', slotFixed: false, driveFixed: false })
+
+const transferDialog = ref(false)
+const transferForm = ref({ srcSlot: null, dstSlot: null })
 
 const resultDialog = ref(false)
 const resultTitle = ref('')
 const resultText = ref('')
+
+// drag-and-drop state
+const dragSlot = ref(null)      // slot row being dragged
+const dragOverDrive = ref(null) // drive number being hovered during drag
+const dragOverSlot = ref(null)  // slot number being hovered during drag
 
 // ── Computed ─────────────────────────────────────────────────
 
@@ -318,6 +473,23 @@ const storageSlots = computed(() =>
 
 const poolNames = computed(() => pools.value.map(p => p.name))
 
+const emptySlotOptions = computed(() =>
+  storageSlots.value
+    .filter(s => s.content === 'empty')
+    .map(s => ({ label: `Slot ${s.slotnr}`, value: s.slotnr }))
+)
+
+// Map from slot number → drive number for tapes currently in a drive
+const slotInDriveMap = computed(() => {
+  const map = {}
+  for (const d of drives.value) {
+    if (d.content === 'full' && d.loaded != null) {
+      map[d.loaded] = d.slotnr
+    }
+  }
+  return map
+})
+
 // ── Column definitions ────────────────────────────────────────
 
 const ieSlotCols = [
@@ -336,13 +508,34 @@ const driveCols = [
 ]
 
 const slotCols = [
-  { name: 'slotnr',      label: 'Slot',    field: 'slotnr',      align: 'left',  sortable: true },
-  { name: 'content',     label: 'Status',  field: 'content',     align: 'left' },
-  { name: 'mr_volname',  label: 'Volume',  field: 'mr_volname',  align: 'left' },
-  { name: 'mr_volstatus',label: 'Vol Status', field: 'mr_volstatus', align: 'left' },
-  { name: 'pr_name',     label: 'Pool',    field: 'pr_name',     align: 'left' },
-  { name: 'actions',     label: '',        field: 'actions',     align: 'right' },
+  { name: 'drag',        label: '',          field: 'drag',        align: 'left',  style: 'width:32px; padding:0 4px' },
+  { name: 'slotnr',      label: 'Slot',      field: 'slotnr',      align: 'left',  sortable: true },
+  { name: 'content',     label: 'Status',    field: 'content',     align: 'left' },
+  { name: 'mr_volname',  label: 'Volume',    field: 'mr_volname',  align: 'left' },
+  { name: 'mr_volstatus',label: 'Vol Status',field: 'mr_volstatus',align: 'left' },
+  { name: 'pr_name',     label: 'Pool',      field: 'pr_name',     align: 'left' },
+  { name: 'actions',     label: '',          field: 'actions',     align: 'right' },
 ]
+
+// ── Helpers ───────────────────────────────────────────────────
+
+function copyName(name) {
+  $q.copyToClipboard(name).then(() => {
+    $q.notify({ type: 'positive', message: `Copied: ${name}`, timeout: 1500 })
+  })
+}
+
+function volStatusColor(status) {
+  switch ((status ?? '').toLowerCase()) {
+    case 'append':  return 'green'
+    case 'full':    return 'blue'
+    case 'used':    return 'orange'
+    case 'error':   return 'red'
+    case 'purged':  return 'deep-orange'
+    case 'recycle': return 'teal'
+    default:        return 'primary'
+  }
+}
 
 // ── Data Loading ──────────────────────────────────────────────
 
@@ -439,10 +632,38 @@ async function doExport(slotNr) {
   })
 }
 
+// Open mount dialog from an empty drive (slot is free-input)
 function openMountDialog(driveNr) {
-  mountDrive.value = driveNr
-  mountForm.value = { slot: '' }
+  mountForm.value = { slot: '', drive: driveNr, slotFixed: false, driveFixed: true }
   mountDialog.value = true
+}
+
+// Open mount dialog from a storage slot (drive is free-input)
+function openSlotMountDialog(slotNr) {
+  const firstEmptyDrive = drives.value.find(d => d.content === 'empty')
+  mountForm.value = {
+    slot: slotNr,
+    drive: firstEmptyDrive?.slotnr ?? 0,
+    slotFixed: true,
+    driveFixed: false,
+  }
+  mountDialog.value = true
+}
+
+function openTransferDialog(slotNr) {
+  transferForm.value = { srcSlot: slotNr, dstSlot: null }
+  transferDialog.value = true
+}
+
+async function doTransfer() {
+  transferDialog.value = false
+  const { srcSlot, dstSlot } = transferForm.value
+  await runCmd(
+    `Transfer Slot ${srcSlot} → Slot ${dstSlot}`,
+    `move storage="${selectedStorage.value}"` +
+    ` srcslots=${srcSlot} dstslots=${dstSlot}`
+  )
+  await loadSlots()
 }
 
 async function doMount() {
@@ -450,7 +671,7 @@ async function doMount() {
   await runCmd(
     'Mount',
     `mount storage="${selectedStorage.value}"` +
-    ` slot=${mountForm.value.slot} drive=${mountDrive.value}`
+    ` slot=${mountForm.value.slot} drive=${mountForm.value.drive}`
   )
   await loadSlots()
 }
@@ -480,6 +701,80 @@ async function doLabelBarcodes() {
   if (slots) cmd += ` slots=${slots}`
   cmd += ' yes'
   await runCmd('Label Barcodes', cmd)
+  await loadSlots()
+}
+
+function openSlotLabelDialog(slotNr) {
+  slotLabelForm.value = { slot: slotNr, pool: poolNames.value[0] ?? '', drive: 0 }
+  slotLabelDialog.value = true
+}
+
+async function doSlotLabel() {
+  slotLabelDialog.value = false
+  const { slot, pool, drive } = slotLabelForm.value
+  const cmd = `label barcodes storage="${selectedStorage.value}"` +
+    ` pool="${pool}" drive=${drive ?? 0} slots=${slot} yes`
+  await runCmd(`Label Slot ${slot}`, cmd)
+  await loadSlots()
+}
+
+// ── Drag-and-drop ─────────────────────────────────────────────
+
+function onSlotDragStart(event, row) {
+  dragSlot.value = row
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', String(row.slotnr))
+}
+
+function onDragOverDrive(event, drive) {
+  if (drive.content !== 'empty') return
+  event.preventDefault()
+  event.dataTransfer.dropEffect = 'move'
+  dragOverDrive.value = drive.slotnr
+}
+
+function onDragLeaveDrive() {
+  dragOverDrive.value = null
+}
+
+async function onDropToDrive(event, drive) {
+  event.preventDefault()
+  dragOverDrive.value = null
+  const slot = dragSlot.value
+  dragSlot.value = null
+  if (!slot || drive.content !== 'empty') return
+  await runCmd(
+    `Mount Slot ${slot.slotnr} → Drive ${drive.slotnr}`,
+    `mount storage="${selectedStorage.value}"` +
+    ` slot=${slot.slotnr} drive=${drive.slotnr}`
+  )
+  await loadSlots()
+}
+
+function onDragOverSlot(event, row) {
+  if (!dragSlot.value) return
+  if (row.slotnr === dragSlot.value.slotnr) return // same slot
+  if (row.content !== 'empty') return
+  event.preventDefault()
+  event.dataTransfer.dropEffect = 'move'
+  dragOverSlot.value = row.slotnr
+}
+
+function onDragLeaveSlot() {
+  dragOverSlot.value = null
+}
+
+async function onDropToSlot(event, row) {
+  event.preventDefault()
+  dragOverSlot.value = null
+  const src = dragSlot.value
+  dragSlot.value = null
+  if (!src || row.content !== 'empty' || row.slotnr === src.slotnr) return
+  await runCmd(
+    `Move Slot ${src.slotnr} → Slot ${row.slotnr}`,
+    `move storage="${selectedStorage.value}"` +
+    ` srcslots=${src.slotnr} dstslots=${row.slotnr}`
+  )
   await loadSlots()
 }
 
@@ -514,3 +809,11 @@ watch(() => director.status, async (s) => {
   }
 })
 </script>
+
+<style scoped>
+.dnd-drop-target {
+  background: rgba(var(--q-primary), 0.12);
+  outline: 2px dashed var(--q-primary);
+  outline-offset: -2px;
+}
+</style>
