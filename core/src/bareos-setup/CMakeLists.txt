@@ -9,6 +9,7 @@
 
 cmake_minimum_required(VERSION 3.17)
 
+find_package(Threads REQUIRED)
 find_package(Jansson REQUIRED)
 
 # ---------------------------------------------------------------------------
@@ -16,35 +17,47 @@ find_package(Jansson REQUIRED)
 # ---------------------------------------------------------------------------
 set(SETUP_VUE_SRC "${CMAKE_SOURCE_DIR}/bareos-setup-vue")
 set(SETUP_VUE_DIST "${SETUP_VUE_SRC}/dist")
-
-# Collect Vue source files so CMake knows when to retrigger the build. Use
-# GLOB_RECURSE only for src/ sub-trees; use plain GLOB for root-level files so
-# that dist/index.html (which is a build OUTPUT) is not picked up recursively
-# and does not create a dependency cycle in Ninja.
-file(GLOB_RECURSE SETUP_VUE_SOURCES "${SETUP_VUE_SRC}/src/*.vue"
-     "${SETUP_VUE_SRC}/src/*.js" "${SETUP_VUE_SRC}/src/*.scss"
-)
-file(GLOB SETUP_VUE_SOURCES_ROOT "${SETUP_VUE_SRC}/index.html"
-     "${SETUP_VUE_SRC}/package.json" "${SETUP_VUE_SRC}/vite.config.js"
-)
-list(APPEND SETUP_VUE_SOURCES ${SETUP_VUE_SOURCES_ROOT})
-
 set(SETUP_VUE_DIST_INDEX "${SETUP_VUE_DIST}/index.html")
 
-# Use dist/index.html as the build output so CMake's dependency tracking skips
-# the npm build when the checked-in dist is already up-to-date. Run `npm run
-# build` (not `npm ci`) so no network access is required; run `npm ci` manually
-# once when updating dependencies.
-add_custom_command(
-  OUTPUT "${SETUP_VUE_DIST_INDEX}"
-  COMMAND npm run build
-  WORKING_DIRECTORY "${SETUP_VUE_SRC}"
-  DEPENDS ${SETUP_VUE_SOURCES}
-  COMMENT "Building bareos-setup-vue frontend"
-  VERBATIM
-)
+find_program(NPM_EXECUTABLE npm)
 
-add_custom_target(bareos-setup-vue-build DEPENDS "${SETUP_VUE_DIST_INDEX}")
+if(NPM_EXECUTABLE)
+  # Collect Vue source files so CMake knows when to retrigger the build. Use
+  # GLOB_RECURSE only for src/ sub-trees; use plain GLOB for root-level files
+  # so that dist/index.html (which is a build OUTPUT) is not picked up
+  # recursively and does not create a dependency cycle in Ninja.
+  file(GLOB_RECURSE SETUP_VUE_SOURCES "${SETUP_VUE_SRC}/src/*.vue"
+       "${SETUP_VUE_SRC}/src/*.js" "${SETUP_VUE_SRC}/src/*.scss"
+  )
+  file(GLOB SETUP_VUE_SOURCES_ROOT "${SETUP_VUE_SRC}/index.html"
+       "${SETUP_VUE_SRC}/package.json" "${SETUP_VUE_SRC}/vite.config.js"
+  )
+  list(APPEND SETUP_VUE_SOURCES ${SETUP_VUE_SOURCES_ROOT})
+
+  # Use dist/index.html as the build output so CMake's dependency tracking
+  # skips the npm build when the checked-in dist is already up-to-date. Run
+  # `npm run build` (not `npm ci`) so no network access is required; run
+  # `npm ci` manually once when updating dependencies.
+  add_custom_command(
+    OUTPUT "${SETUP_VUE_DIST_INDEX}"
+    COMMAND "${NPM_EXECUTABLE}" run build
+    WORKING_DIRECTORY "${SETUP_VUE_SRC}"
+    DEPENDS ${SETUP_VUE_SOURCES}
+    COMMENT "Building bareos-setup-vue frontend"
+    VERBATIM
+  )
+
+  add_custom_target(bareos-setup-vue-build DEPENDS "${SETUP_VUE_DIST_INDEX}")
+else()
+  # npm not found — use the committed dist/ as-is (same approach as
+  # webui-vue). To rebuild, run: cd bareos-setup-vue && npm install &&
+  # npm run build, then commit the updated dist/.
+  message(
+    STATUS
+    "npm not found — using committed bareos-setup-vue dist/ without rebuild"
+  )
+  add_custom_target(bareos-setup-vue-build)
+endif()
 
 # ---------------------------------------------------------------------------
 # Asset embedding

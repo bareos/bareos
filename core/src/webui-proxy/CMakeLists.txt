@@ -9,6 +9,7 @@
 
 cmake_minimum_required(VERSION 3.17)
 
+find_package(Threads REQUIRED)
 find_package(Jansson REQUIRED)
 
 set(PROXY_SOURCES main.cc bareos_base64.cc director_connection.cc ws_codec.cc
