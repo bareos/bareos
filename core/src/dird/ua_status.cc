@@ -1187,7 +1187,12 @@ static void ListRunningJobs(UaContext* ua)
     }
 
     ua->send->ObjectStart();
-    if (ua->api) {
+    if (ua->api == API_MODE_JSON) {
+      ua->send->ObjectKeyValue("jobid", (uint64_t)jcr->JobId, "");
+      ua->send->ObjectKeyValue("level", level, "");
+      ua->send->ObjectKeyValue("name", jcr->Job, "");
+      ua->send->ObjectKeyValue("status", msg, "");
+    } else if (ua->api == API_MODE_ON) {
       BashSpaces(jcr->comment);
       ua->SendMsg(T_("%6d\t%-6s\t%-20s\t%s\t%s\n"), jcr->JobId, level, jcr->Job,
                   msg, jcr->comment);
@@ -1199,11 +1204,6 @@ static void ListRunningJobs(UaContext* ua)
         ua->SendMsg(T_("               %-30s\n"), jcr->comment);
       }
     }
-    /* Always emit structured fields for JSON consumers */
-    ua->send->ObjectKeyValue("jobid", (uint64_t)jcr->JobId, "%6d");
-    ua->send->ObjectKeyValue("level", level, "%-6s");
-    ua->send->ObjectKeyValue("name", jcr->Job, "%-20s");
-    ua->send->ObjectKeyValue("status", msg, "%s\n");
 
     /* Show live progress info if the SD has sent at least one Progress message */
     if (jcr->getJobStatus() == JS_Running
