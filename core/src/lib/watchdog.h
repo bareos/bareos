@@ -28,7 +28,6 @@
 #define BAREOS_LIB_WATCHDOG_H_
 
 #include <signal.h>
-#include "lib/dlink.h"
 #include "include/bc_types.h"
 #include "include/dll_import_export.h"
 
@@ -48,7 +47,6 @@ struct s_watchdog_t {
   void (*destructor)(struct s_watchdog_t* wd);
   void* data;
   /* Private data below - don't touch outside of watchdog.c */
-  dlink<s_watchdog_t> link;
   utime_t next_fire;
 };
 typedef struct s_watchdog_t watchdog_t;

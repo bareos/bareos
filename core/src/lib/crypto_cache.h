@@ -28,8 +28,6 @@
 #ifndef BAREOS_LIB_CRYPTO_CACHE_H_
 #define BAREOS_LIB_CRYPTO_CACHE_H_
 
-#include "lib/dlink.h"
-
 #define CRYPTO_CACHE_MAX_AGE 60 * 60 * 24 * 60 /* 60 Days */
 
 struct s_crypto_cache_hdr {
@@ -39,7 +37,6 @@ struct s_crypto_cache_hdr {
 };
 
 struct crypto_cache_entry_t {
-  dlink<crypto_cache_entry_t> link;
   char VolumeName[MAX_NAME_LENGTH];
   char EncryptionKey[MAX_NAME_LENGTH];
   utime_t added;

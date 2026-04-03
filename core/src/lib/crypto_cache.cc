@@ -32,10 +32,10 @@
 #include "include/bareos.h"
 #include "crypto_cache.h"
 #include "lib/berrno.h"
-#include "lib/dlist.h"
+#include <list>
 
 static pthread_mutex_t crypto_cache_lock = PTHREAD_MUTEX_INITIALIZER;
-static dlist<crypto_cache_entry_t>* cached_crypto_keys = NULL;
+static std::list<crypto_cache_entry_t*>* cached_crypto_keys = nullptr;
 
 static s_crypto_cache_hdr crypto_cache_hdr = {"BAREOS Crypto Cache\n", 1, 0};
 
@@ -79,7 +79,7 @@ void ReadCryptoCache(const char* cache_file)
   }
 
   if (!cached_crypto_keys) {
-    cached_crypto_keys = new dlist<crypto_cache_entry_t>();
+    cached_crypto_keys = new std::list<crypto_cache_entry_t*>();
   }
 
   // Read as many crypto cache entries as available.
@@ -88,7 +88,7 @@ void ReadCryptoCache(const char* cache_file)
   while (read(fd, cce, sizeof(crypto_cache_entry_t))
          == sizeof(crypto_cache_entry_t)) {
     cnt++;
-    cached_crypto_keys->append(cce);
+    cached_crypto_keys->push_back(cce);
     cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
   }
 
@@ -114,9 +114,9 @@ bail_out:
   if (!ok) {
     SecureErase(NULL, cache_file);
     if (cached_crypto_keys) {
-      cached_crypto_keys->destroy();
+      for (auto* entry : *cached_crypto_keys) { free(entry); }
       delete cached_crypto_keys;
-      cached_crypto_keys = NULL;
+      cached_crypto_keys = nullptr;
     }
   }
 }
@@ -135,7 +135,6 @@ void WriteCryptoCache(const char* cache_file)
 {
   int fd;
   bool ok = false;
-  crypto_cache_entry_t* cce;
 
   if (!cached_crypto_keys) { return; }
 
@@ -160,7 +159,7 @@ void WriteCryptoCache(const char* cache_file)
     goto bail_out;
   }
 
-  foreach_dlist (cce, cached_crypto_keys) {
+  for (auto* cce : *cached_crypto_keys) {
     if (write(fd, cce, sizeof(crypto_cache_entry_t))
         != sizeof(crypto_cache_entry_t)) {
       BErrNo be;
@@ -201,28 +200,27 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
   time_t now;
   bool found;
   bool retval = false;
-  crypto_cache_entry_t* cce = NULL;
-  crypto_cache_entry_t* next_cce;
+  crypto_cache_entry_t* cce = nullptr;
 
   // Lock the cache.
   lock_mutex(crypto_cache_lock);
 
   // See if there are any cached encryption keys.
   if (!cached_crypto_keys) {
-    cached_crypto_keys = new dlist<crypto_cache_entry_t>();
+    cached_crypto_keys = new std::list<crypto_cache_entry_t*>();
 
     cce = (crypto_cache_entry_t*)malloc(sizeof(crypto_cache_entry_t));
     bstrncpy(cce->VolumeName, VolumeName, sizeof(cce->VolumeName));
     bstrncpy(cce->EncryptionKey, EncryptionKey, sizeof(cce->EncryptionKey));
     cce->added = time(NULL);
-    cached_crypto_keys->append(cce);
+    cached_crypto_keys->push_back(cce);
     retval = true;
   } else {
     found = false;
     now = time(NULL);
-    cce = (crypto_cache_entry_t*)cached_crypto_keys->first();
-    while (cce) {
-      next_cce = (crypto_cache_entry_t*)cached_crypto_keys->next(cce);
+    for (auto it = cached_crypto_keys->begin();
+         it != cached_crypto_keys->end();) {
+      cce = *it;
       if (bstrcmp(cce->VolumeName, VolumeName)) {
         found = true;
 
@@ -234,17 +232,18 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
         }
 
         cce->added = time(NULL);
-        cce = next_cce;
+        ++it;
         continue;
       }
 
       /* Validate the entry.
        * Any entry older the CRYPTO_CACHE_MAX_AGE seconds is removed. */
       if ((cce->added + CRYPTO_CACHE_MAX_AGE) < now) {
-        cached_crypto_keys->remove(cce);
+        it = cached_crypto_keys->erase(it);
         retval = true;
+      } else {
+        ++it;
       }
-      cce = next_cce;
     }
 
     // New entry.
@@ -253,7 +252,7 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
       bstrncpy(cce->VolumeName, VolumeName, sizeof(cce->VolumeName));
       bstrncpy(cce->EncryptionKey, EncryptionKey, sizeof(cce->EncryptionKey));
       cce->added = time(NULL);
-      cached_crypto_keys->append(cce);
+      cached_crypto_keys->push_back(cce);
       retval = true;
     }
   }
@@ -268,14 +267,12 @@ bool UpdateCryptoCache(const char* VolumeName, const char* EncryptionKey)
  */
 char* lookup_crypto_cache_entry(const char* VolumeName)
 {
-  crypto_cache_entry_t* cce;
-
   if (!cached_crypto_keys) { return NULL; }
 
   // Lock the cache.
   lock_mutex(crypto_cache_lock);
 
-  foreach_dlist (cce, cached_crypto_keys) {
+  for (auto* cce : *cached_crypto_keys) {
     if (bstrcmp(cce->VolumeName, VolumeName)) {
       unlock_mutex(crypto_cache_lock);
       return strdup(cce->EncryptionKey);
@@ -291,7 +288,6 @@ void DumpCryptoCache(int fd)
 {
   int len;
   PoolMem msg(PM_MESSAGE);
-  crypto_cache_entry_t* cce;
   char dt1[MAX_TIME_LENGTH], dt2[MAX_TIME_LENGTH];
   unsigned int max_vol_length, max_key_length;
 
@@ -303,7 +299,7 @@ void DumpCryptoCache(int fd)
   // See how long the biggest volumename and key are.
   max_vol_length = strlen(T_("Volumename"));
   max_key_length = strlen(T_("EncryptionKey"));
-  foreach_dlist (cce, cached_crypto_keys) {
+  for (auto* cce : *cached_crypto_keys) {
     if (strlen(cce->VolumeName) > max_vol_length) {
       max_vol_length = strlen(cce->VolumeName);
     }
@@ -320,7 +316,7 @@ void DumpCryptoCache(int fd)
     BErrNo be;
     Dmsg1(000, "write error: ERR=%s\n", be.bstrerror());
   }
-  foreach_dlist (cce, cached_crypto_keys) {
+  for (auto* cce : *cached_crypto_keys) {
     bstrutime(dt1, sizeof(dt1), cce->added);
     bstrutime(dt2, sizeof(dt2), cce->added + CRYPTO_CACHE_MAX_AGE);
     len = Mmsg(msg, "%-*s %-*s %-20s %-20s\n", max_vol_length, cce->VolumeName,
@@ -339,7 +335,6 @@ void DumpCryptoCache(int fd)
 void ResetCryptoCache(void)
 {
   time_t now;
-  crypto_cache_entry_t* cce;
 
   if (!cached_crypto_keys) { return; }
 
@@ -348,7 +343,7 @@ void ResetCryptoCache(void)
   // Lock the cache.
   lock_mutex(crypto_cache_lock);
 
-  foreach_dlist (cce, cached_crypto_keys) { cce->added = now; }
+  for (auto* cce : *cached_crypto_keys) { cce->added = now; }
 
   unlock_mutex(crypto_cache_lock);
 }
@@ -361,9 +356,9 @@ void FlushCryptoCache(void)
   // Lock the cache.
   lock_mutex(crypto_cache_lock);
 
-  cached_crypto_keys->destroy();
+  for (auto* entry : *cached_crypto_keys) { free(entry); }
   delete cached_crypto_keys;
-  cached_crypto_keys = NULL;
+  cached_crypto_keys = nullptr;
 
   unlock_mutex(crypto_cache_lock);
 }

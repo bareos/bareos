@@ -30,9 +30,9 @@
 #include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/berrno.h"
-#include "lib/dlist.h"
 #include "lib/thread_specific_data.h"
 #include "lib/watchdog.h"
+#include <list>
 
 
 /* Exported globals */
@@ -55,8 +55,8 @@ static bool wd_is_init = false;
 static brwlock_t lock; /* watchdog lock */
 
 static pthread_t wd_tid;
-static dlist<watchdog_t>* wd_queue;
-static dlist<watchdog_t>* wd_inactive;
+static std::list<watchdog_t*>* wd_queue;
+static std::list<watchdog_t*>* wd_inactive;
 
 /*
  * Returns: 0 if the current thread is NOT the watchdog
@@ -91,8 +91,8 @@ int StartWatchdog(void)
     Jmsg1(NULL, M_ABORT, 0, T_("Unable to initialize watchdog lock. ERR=%s\n"),
           be.bstrerror(errstat));
   }
-  wd_queue = new dlist<watchdog_t>();
-  wd_inactive = new dlist<watchdog_t>();
+  wd_queue = new std::list<watchdog_t*>();
+  wd_inactive = new std::list<watchdog_t*>();
   wd_is_init = true;
 
   if ((status = pthread_create(&wd_tid, NULL, watchdog_thread, NULL)) != 0) {
@@ -132,7 +132,7 @@ int StopWatchdog(void)
   status = pthread_join(wd_tid, NULL);
 
   while (!wd_queue->empty()) {
-    watchdog_t* item = wd_queue->first();
+    watchdog_t* item = wd_queue->front();
     wd_queue->remove(item);
     p = item;
     if (p->destructor != NULL) { p->destructor(p); }
@@ -142,7 +142,7 @@ int StopWatchdog(void)
   wd_queue = NULL;
 
   while (!wd_inactive->empty()) {
-    watchdog_t* item = wd_inactive->first();
+    watchdog_t* item = wd_inactive->front();
     wd_inactive->remove(item);
     p = item;
     if (p->destructor != NULL) { p->destructor(p); }
@@ -187,7 +187,7 @@ bool RegisterWatchdog(watchdog_t* wd)
 
   wd_lock();
   wd->next_fire = watchdog_time + wd->interval;
-  wd_queue->append(wd);
+  wd_queue->push_back(wd);
   Dmsg3(800, "Registered watchdog %p, interval %" PRId64 "%s\n", wd,
         wd->interval, wd->one_shot ? " one shot" : "");
   wd_unlock();
@@ -198,7 +198,6 @@ bool RegisterWatchdog(watchdog_t* wd)
 
 bool UnregisterWatchdog(watchdog_t* wd)
 {
-  watchdog_t* p;
   bool ok = false;
 
   if (!wd_is_init) {
@@ -208,7 +207,7 @@ bool UnregisterWatchdog(watchdog_t* wd)
   }
 
   wd_lock();
-  foreach_dlist (p, wd_queue) {
+  for (auto* p : *wd_queue) {
     if (wd == p) {
       wd_queue->remove(wd);
       Dmsg1(800, "Unregistered watchdog %p\n", wd);
@@ -217,7 +216,7 @@ bool UnregisterWatchdog(watchdog_t* wd)
     }
   }
 
-  foreach_dlist (p, wd_inactive) {
+  for (auto* p : *wd_inactive) {
     if (wd == p) {
       wd_inactive->remove(wd);
       Dmsg1(800, "Unregistered inactive watchdog %p\n", wd);
@@ -250,8 +249,6 @@ extern "C" void* watchdog_thread(void*)
   Dmsg0(800, "NicB-reworked watchdog thread entered\n");
 
   while (!quit) {
-    watchdog_t* p;
-
     /*  NOTE. lock_jcr_chain removed, but the message below
      *   was left until we are sure there are no deadlocks.
      *
@@ -267,7 +264,7 @@ extern "C" void* watchdog_thread(void*)
   walk_list:
     watchdog_time = time(NULL);
     next_time = watchdog_time + watchdog_sleep_time;
-    foreach_dlist (p, wd_queue) {
+    for (auto* p : *wd_queue) {
       if (p->next_fire <= watchdog_time) {
         /* Run the callback */
         Dmsg2(3400, "Watchdog callback p=0x%p fire=%" PRId64 "\n", p,
@@ -277,7 +274,7 @@ extern "C" void* watchdog_thread(void*)
         /* Reschedule (or move to inactive list if it's a one-shot timer) */
         if (p->one_shot) {
           wd_queue->remove(p);
-          wd_inactive->append(p);
+          wd_inactive->push_back(p);
           goto walk_list;
         } else {
           p->next_fire = watchdog_time + p->interval;
