@@ -95,10 +95,10 @@ static void append_file(JobControlRecord* jcr,
 {
   if (IsFile) {
     // Sanity check never append empty file patterns.
-    if (strlen(buf) > 0) { incexe->name_list.append(new_dlistString(buf)); }
+    if (strlen(buf) > 0) { incexe->name_list.push_back(buf); }
   } else if (me->plugin_directory) {
     GeneratePluginEvent(jcr, bEventPluginCommand, (void*)buf);
-    incexe->plugin_list.append(new_dlistString(buf));
+    incexe->plugin_list.push_back(buf);
   } else {
     Jmsg(jcr, M_FATAL, 0,
          T_("Plugin Directory not defined. Cannot use plugin: \"%s\"\n"), buf);

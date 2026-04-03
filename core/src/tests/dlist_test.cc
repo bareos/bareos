@@ -291,31 +291,3 @@ TEST(dlist, BinaryInsert)
   }
   delete jcr_chain;
 }
-
-TEST(dlist, dlistString)
-{
-  /* Finally, do a test using the dlistString string helper, which
-   *  allocates a dlist node and stores the string directly in
-   *  it.
-   */
-  char buf[30];
-  auto chain = std::make_unique<dlist<dlistString>>();
-  chain->append(new_dlistString("This is a long test line"));
-#define CNT 6
-  strcpy(buf, "ZZZ");
-  for (int i = 0; i < CNT; i++) {
-    for (int j = 0; j < CNT; j++) {
-      for (int k = 0; k < CNT; k++) {
-        chain->append(new_dlistString(buf));
-        buf[1]--;
-      }
-      buf[1] = 'Z';
-      buf[2]--;
-    }
-    buf[2] = 'Z';
-    buf[0]--;
-  }
-  dlistString* node;
-  foreach_dlist (node, chain) {}
-  chain->destroy();
-}

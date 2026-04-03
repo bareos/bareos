@@ -94,7 +94,6 @@ static std::string fopts_as_str(char (&flags)[FOPTS_BYTES])
 /* the MacOS linker wants symbols for the destructors of these two types, so we
  * have to force template instantiation. */
 template class alist<findFOPTS*>;
-template class dlist<dlistString>;
 #endif
 
 static const int debuglevel = 450;
@@ -178,7 +177,6 @@ int FindFiles(JobControlRecord* jcr,
      * (not only Options{} blocks inside a Include{}) */
     ClearAllBits(FO_MAX, ff->flags);
     for (int i = 0; i < fileset->include_list.size(); i++) {
-      dlistString* node;
       findIncludeExcludeItem* incexe
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
       fileset->incexe = incexe;
@@ -219,8 +217,8 @@ int FindFiles(JobControlRecord* jcr,
             ff->VerifyOpts, ff->AccurateOpts, ff->BaseJobOpts,
             fopts_as_str(ff->flags).c_str());
 
-      foreach_dlist (node, &incexe->name_list) {
-        char* fname = node->c_str();
+      for (const auto& entry : incexe->name_list) {
+        char* fname = const_cast<char*>(entry.c_str());
 
         Dmsg1(debuglevel, "F %s\n", fname);
         ff->top_fname = fname;
@@ -231,8 +229,8 @@ int FindFiles(JobControlRecord* jcr,
         if (jcr->IsJobCanceled()) { return 0; }
       }
 
-      foreach_dlist (node, &incexe->plugin_list) {
-        char* fname = node->c_str();
+      for (const auto& entry : incexe->plugin_list) {
+        char* fname = const_cast<char*>(entry.c_str());
 
         if (!PluginSave) {
           Jmsg(jcr, M_FATAL, 0, T_("Plugin: \"%s\" not found.\n"), fname);
@@ -257,24 +255,22 @@ int FindFiles(JobControlRecord* jcr,
 bool IsInFileset(FindFilesPacket* ff)
 {
   int i;
-  char* fname;
-  dlistString* node;
   findIncludeExcludeItem* incexe;
   findFILESET* fileset = ff->fileset;
 
   if (fileset) {
     for (i = 0; i < fileset->include_list.size(); i++) {
       incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
-      foreach_dlist (node, &incexe->name_list) {
-        fname = node->c_str();
+      for (const auto& entry : incexe->name_list) {
+        const char* fname = entry.c_str();
         Dmsg2(debuglevel, "Inc fname=%s ff->fname=%s\n", fname, ff->fname);
         if (bstrcmp(fname, ff->fname)) { return true; }
       }
     }
     for (i = 0; i < fileset->exclude_list.size(); i++) {
       incexe = (findIncludeExcludeItem*)fileset->exclude_list.get(i);
-      foreach_dlist (node, &incexe->name_list) {
-        fname = node->c_str();
+      for (const auto& entry : incexe->name_list) {
+        const char* fname = entry.c_str();
         Dmsg2(debuglevel, "Exc fname=%s ff->fname=%s\n", fname, ff->fname);
         if (bstrcmp(fname, ff->fname)) { return true; }
       }
@@ -410,7 +406,6 @@ bool AcceptFile(FindFilesPacket* ff)
 
   // Now apply the Exclude { } directive
   for (i = 0; i < fileset->exclude_list.size(); i++) {
-    dlistString* node;
     findIncludeExcludeItem* exclude_item
         = (findIncludeExcludeItem*)fileset->exclude_list.get(i);
 
@@ -429,8 +424,8 @@ bool AcceptFile(FindFilesPacket* ff)
                  && BitIsSet(FO_IGNORECASE, exclude_item->current_opts->flags))
                     ? FNM_CASEFOLD
                     : 0;
-    foreach_dlist (node, &exclude_item->name_list) {
-      char* fname = node->c_str();
+    for (const auto& entry : exclude_item->name_list) {
+      const char* fname = entry.c_str();
 
       if (fnmatch(fname, ff->fname, fnmode | fnm_flags) == 0) {
         Dmsg1(debuglevel, "Reject wild2: %s\n", ff->fname);

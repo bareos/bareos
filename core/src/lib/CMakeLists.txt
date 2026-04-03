@@ -55,7 +55,6 @@ target_sources(
           crypto_wrap.cc
           daemon.cc
           devlock.cc
-          dlist_string.cc
           edit.cc
           fnmatch.cc
           guid_to_name.cc

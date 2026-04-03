@@ -30,7 +30,6 @@
 
 #include "include/bareos.h"
 #include "lib/dlink.h"
-#include "lib/dlist_string.h"
 #include "lib/message.h"
 #include "lib/message_severity.h"
 

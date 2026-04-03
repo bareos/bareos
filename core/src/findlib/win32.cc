@@ -62,8 +62,6 @@ bool win32_onefs_is_disabled(findFILESET* fileset)
  */
 std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
 {
-  dlistString* node;
-
   std::vector<std::wstring> volumes{};
 
   if (fileset) {
@@ -72,8 +70,8 @@ std::vector<std::wstring> get_win32_volumes(findFILESET* fileset)
           = (findIncludeExcludeItem*)fileset->include_list.get(i);
 
       // Look through all files and check
-      foreach_dlist (node, &incexe->name_list) {
-        char* fname = node->c_str();
+      for (const auto& entry : incexe->name_list) {
+        const char* fname = entry.c_str();
 
         std::wstring wname = FromUtf8(fname);
         std::wstring mountpoint(256, L'\0');
@@ -148,15 +146,14 @@ bool expand_win32_fileset(findFILESET* fileset)
 {
   int i;
   char* bp;
-  dlistString* node;
   findIncludeExcludeItem* incexe;
   char drives[MAX_NAME_LENGTH];
 
   for (i = 0; i < fileset->include_list.size(); i++) {
     incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
-    foreach_dlist (node, &incexe->name_list) {
-      Dmsg1(100, "Checking %s\n", node->c_str());
-      if (bstrcmp(node->c_str(), "/")) {
+    for (size_t k = 0; k < incexe->name_list.size(); k++) {
+      Dmsg1(100, "Checking %s\n", incexe->name_list[k].c_str());
+      if (bstrcmp(incexe->name_list[k].c_str(), "/")) {
         // Request for auto expansion but no support for it.
         if (!p_GetLogicalDriveStringsA) { return false; }
 
@@ -164,7 +161,7 @@ bool expand_win32_fileset(findFILESET* fileset)
          * if we have "/" specified in the fileset. We want to remove
          * the "/" pattern itself that gets expanded into all
          * available drives. */
-        incexe->name_list.remove(node);
+        incexe->name_list.erase(incexe->name_list.begin() + k);
         if (p_GetLogicalDriveStringsA(sizeof(drives), drives) != 0) {
           bp = drives;
           while (bp && strlen(bp) > 0) {
@@ -173,7 +170,7 @@ bool expand_win32_fileset(findFILESET* fileset)
             if (WantedDriveType(bp, incexe)) {
               if (*(bp + 2) == '\\') { *(bp + 2) = '/'; /* 'x:\' -> 'x:/' */ }
               Dmsg1(100, "adding drive %s\n", bp);
-              incexe->name_list.append(new_dlistString(bp));
+              incexe->name_list.emplace_back(bp);
             }
             if ((bp = strchr(bp, '\0'))) { bp++; }
           }
