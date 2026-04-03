@@ -123,6 +123,7 @@ int RunScripts(JobControlRecord* jcr,
     return 0;
   }
 
+  bool any_script_ran = false;
   for (auto* script : runscripts) {
     Dmsg5(200,
           "runscript: try to run (Target=%s, OnSuccess=%i, OnFailure=%i, "
@@ -179,6 +180,10 @@ int RunScripts(JobControlRecord* jcr,
 
     // We execute it
     if (runit) {
+      if (!any_script_ran) {
+        Jmsg(jcr, M_INFO, 0, T_("Start executing RunScripts \"%s\"\n"), label);
+        any_script_ran = true;
+      }
       if (!ScriptDirAllowed(jcr, script, allowed_script_dirs)) {
         Dmsg1(200,
               "runscript: Not running script %s because its not in one of the "
@@ -197,6 +202,9 @@ int RunScripts(JobControlRecord* jcr,
   }
 
 bail_out:
+  if (any_script_ran) {
+    Jmsg(jcr, M_INFO, 0, T_("Done executing RunScripts \"%s\"\n"), label);
+  }
   return 1;
 }
 
