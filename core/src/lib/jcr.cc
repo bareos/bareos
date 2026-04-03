@@ -50,6 +50,7 @@
 #include "lib/bsignal.h"
 #include "lib/breg.h"
 #include "lib/edit.h"
+#include "lib/util.h"
 #include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
 #include "lib/bsock.h"
@@ -769,6 +770,10 @@ void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
     Dmsg2(800, "leave setJobStatus old=%c new=%c\n", oldJobStatus,
           newJobStatus);
     //    GeneratePluginEvent(this, bEventStatusChange, nullptr);
+    if (JobId != 0) {
+      Jmsg(this, M_INFO, 0, T_("Job status: %s\n"),
+           JobStatusToString(JobStatus_));
+    }
   }
 }
 

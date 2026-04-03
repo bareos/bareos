@@ -481,6 +481,67 @@ const char* job_status_to_str(int stat)
   return str;
 }
 
+// Convert any Job Status (including running/waiting states) into a string
+const char* JobStatusToString(int stat)
+{
+  switch (stat) {
+    case JS_Created:
+      return T_("Created");
+    case JS_Running:
+      return T_("Running");
+    case JS_Blocked:
+      return T_("Blocked");
+    case JS_Terminated:
+      return T_("Terminated");
+    case JS_Warnings:
+      return T_("Terminated with warnings");
+    case JS_ErrorTerminated:
+      return T_("Error terminated");
+    case JS_Error:
+      return T_("Error");
+    case JS_FatalError:
+      return T_("Fatal error");
+    case JS_Canceled:
+      return T_("Canceled");
+    case JS_Differences:
+      return T_("Verify differences");
+    case JS_Incomplete:
+      return T_("Incomplete");
+    case JS_WaitFD:
+      return T_("Waiting for File Daemon");
+    case JS_WaitSD:
+      return T_("Waiting for Storage Daemon");
+    case JS_WaitMount:
+      return T_("Waiting for mount");
+    case JS_WaitMedia:
+      return T_("Waiting for new media");
+    case JS_WaitPriority:
+      return T_("Waiting for higher priority jobs");
+    case JS_WaitDevice:
+      return T_("Waiting for device");
+    case JS_WaitStartTime:
+      return T_("Waiting for start time");
+    case JS_WaitStoreRes:
+      return T_("Waiting for Storage resource");
+    case JS_WaitClientRes:
+      return T_("Waiting for Client resource");
+    case JS_WaitJobRes:
+      return T_("Waiting for job resource");
+    case JS_WaitMaxJobs:
+      return T_("Waiting for maximum jobs");
+    case JS_AttrDespooling:
+      return T_("Despooling attributes");
+    case JS_DataDespooling:
+      return T_("Despooling data");
+    case JS_DataCommitting:
+      return T_("Committing data");
+    case JS_AttrInserting:
+      return T_("Inserting file records");
+    default:
+      return T_("Unknown status");
+  }
+}
+
 // Convert Job Type into a string
 const char* job_type_to_str(int type)
 {
