@@ -84,7 +84,7 @@ while read -a nums; do
   for num in "${nums[@]}"; do
     ((NumberOfBackedUpFiles += num))
   done
-done <<<"$(grep "entries start" "$backup_log" | cut -d" " -f12)"
+done <<<"$(grep "entries start" "$backup_log" | cut -d" " -f11)"
 
 # Check that part of the files were written despite the cancel
 if [ "$NumberOfBackedUpFiles" -le 0 ]; then
