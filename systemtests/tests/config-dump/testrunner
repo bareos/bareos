@@ -15,6 +15,7 @@ strip_config()
 {
   # removes files that are known to differ.
   # Password: will be shown as MD5
+  # RrdDir: platform-specific path, ordering differs between config and show
   source="$1"
 
   if ! [ -e "${configfile}" ]; then
@@ -22,7 +23,7 @@ strip_config()
     exit 1
   fi
 
-  grep -v -e "Password = " "${source}"
+  grep -v -e "Password = " -e "RrdDir = " "${source}"
 }
 
 dump_config()
