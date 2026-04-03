@@ -50,7 +50,6 @@
 #include "lib/bsignal.h"
 #include "lib/breg.h"
 #include "lib/edit.h"
-#include "lib/btime.h"
 #include "lib/util.h"
 #include "lib/thread_specific_data.h"
 #include "lib/tls_conf.h"
@@ -772,17 +771,8 @@ void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
           newJobStatus);
     //    GeneratePluginEvent(this, bEventStatusChange, nullptr);
     if (JobId != 0) {
-      btime_t now = GetCurrentBtime();
-      time_t sec = (time_t)(now / 1000000);
-      int usec = (int)(now % 1000000);
-      struct tm tm_buf;
-      Blocaltime(&sec, &tm_buf);
-      Jmsg(this, M_INFO, 0,
-           T_("Job status change: %s -> %s "
-              "(%04d-%02d-%02d %02d:%02d:%02d.%06d)\n"),
-           JobStatusToString(oldJobStatus), JobStatusToString(JobStatus_),
-           tm_buf.tm_year + 1900, tm_buf.tm_mon + 1, tm_buf.tm_mday,
-           tm_buf.tm_hour, tm_buf.tm_min, tm_buf.tm_sec, usec);
+      Jmsg(this, M_INFO, 0, T_("Job status change: %s -> %s\n"),
+           JobStatusToString(oldJobStatus), JobStatusToString(JobStatus_));
     }
   }
 }
