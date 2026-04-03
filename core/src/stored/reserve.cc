@@ -401,13 +401,12 @@ bool FindSuitableDeviceForJob(JobControlRecord* jcr, ReserveContext& rctx)
    * force try a mounted drive because they are all busy), we
    * start by looking at all the Volumes in the volume list. */
   if (!IsVolListEmpty() && rctx.append && rctx.PreferMountedVols) {
-    dlist<VolumeReservationItem>* temp_vol_list;
-    VolumeReservationItem* vol = NULL;
+    std::list<VolumeReservationItem*>* temp_vol_list;
     temp_vol_list = dup_vol_list(jcr);
 
     // Look through reserved volumes for one we can use
     Dmsg0(debuglevel, "look for vol in vol list\n");
-    foreach_dlist (vol, temp_vol_list) {
+    for (auto* vol : *temp_vol_list) {
       if (!vol->dev) {
         Dmsg1(debuglevel, "vol=%s no dev\n", vol->vol_name);
         continue;

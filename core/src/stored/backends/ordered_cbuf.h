@@ -27,9 +27,8 @@
 #define BAREOS_STORED_BACKENDS_ORDERED_CBUF_H_
 
 #include <cstdint>
+#include <list>
 #include <pthread.h>
-#include <lib/dlink.h>
-template <typename T> class dlist;
 
 #define OQSIZE 10 /* # of pointers in the queue */
 
@@ -44,7 +43,6 @@ enum oc_peek_types
 };
 
 struct ocbuf_item {
-  dlink<ocbuf_item> link;
   uint32_t data_size = 0;
   void* data = nullptr;
 };
@@ -60,7 +58,7 @@ class ordered_circbuf {
       = PTHREAD_COND_INITIALIZER; /* Full -> not full condition */
   pthread_cond_t notempty_
       = PTHREAD_COND_INITIALIZER;     /* Empty -> not empty condition */
-  dlist<ocbuf_item>* data_ = nullptr; /* Circular buffer of pointers */
+  std::list<ocbuf_item*>* data_ = nullptr; /* Circular buffer of pointers */
 
  public:
   ordered_circbuf(int capacity = OQSIZE);

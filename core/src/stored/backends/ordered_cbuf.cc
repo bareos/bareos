@@ -23,8 +23,9 @@
 
 // Ordered Circular buffer used for producer/consumer problem with pthreads.
 #include "include/bareos.h"
-#include "lib/dlist.h"
 #include "ordered_cbuf.h"
+#include <algorithm>
+#include <list>
 namespace storagedaemon {
 
 
@@ -48,11 +49,10 @@ int ordered_circbuf::init(int capacity)
   capacity_ = capacity;
   reserved_ = 0;
   if (data_) {
-    data_->destroy();
+    for (auto* item : *data_) { free(item); }
     delete data_;
   }
-  static_assert(offsetof(ocbuf_item, link) == 0);
-  data_ = new dlist<ocbuf_item>();
+  data_ = new std::list<ocbuf_item*>();
 
   return 0;
 }
@@ -64,8 +64,9 @@ void ordered_circbuf::destroy()
   pthread_cond_destroy(&notfull_);
   pthread_mutex_destroy(&lock_);
   if (data_) {
-    data_->destroy();
+    for (auto* item : *data_) { free(item); }
     delete data_;
+    data_ = nullptr;
   }
 }
 
@@ -103,7 +104,16 @@ void* ordered_circbuf::enqueue(void* data,
   new_item->data = data;
   new_item->data_size = data_size;
 
-  item = (struct ocbuf_item*)data_->binary_insert(new_item, compare);
+  auto ins_it = std::lower_bound(data_->begin(), data_->end(), new_item,
+                                 [compare](ocbuf_item* a, ocbuf_item* b) {
+                                   return compare(a, b) < 0;
+                                 });
+  if (ins_it != data_->end() && compare(*ins_it, new_item) == 0) {
+    item = *ins_it;
+  } else {
+    data_->insert(ins_it, new_item);
+    item = new_item;
+  }
   if (item == new_item) {
     size_++;
   } else {
@@ -190,11 +200,10 @@ void* ordered_circbuf::dequeue(bool reserve_slot,
   // When we are requested to flush and there is no data left return NULL.
   if (empty() && flush_) { goto bail_out; }
 
-  // Get the first item from the dlist and remove it.
-  item = (struct ocbuf_item*)data_->first();
-  if (!item) { goto bail_out; }
-
-  data_->remove(item);
+  // Get the first item from the list and remove it.
+  if (data_->empty()) { goto bail_out; }
+  item = data_->front();
+  data_->pop_front();
   if (reserve_slot) { reserved_++; }
   size_--;
 
@@ -233,44 +242,34 @@ void* ordered_circbuf::peek(enum oc_peek_types type,
    * walk forward or back. */
   switch (type) {
     case PEEK_FIRST:
-      item = (struct ocbuf_item*)data_->first();
-      while (item) {
+      for (auto it = data_->begin(); it != data_->end(); ++it) {
+        item = *it;
         if (callback(item->data, data) == 0) {
           retval = malloc(item->data_size);
           memcpy(retval, item->data, item->data_size);
           goto bail_out;
         }
-
-        item = (struct ocbuf_item*)data_->next(item);
       }
       break;
     case PEEK_LAST:
-      item = (struct ocbuf_item*)data_->last();
-      while (item) {
+      for (auto it = data_->rbegin(); it != data_->rend(); ++it) {
+        item = *it;
         if (callback(item->data, data) == 0) {
           retval = malloc(item->data_size);
           memcpy(retval, item->data, item->data_size);
           goto bail_out;
         }
-
-        item = (struct ocbuf_item*)data_->prev(item);
       }
       break;
     case PEEK_LIST:
-      item = (struct ocbuf_item*)data_->first();
-      while (item) {
-        callback(item->data, data);
-        item = (struct ocbuf_item*)data_->next(item);
-      }
+      for (auto* list_item : *data_) { callback(list_item->data, data); }
       break;
     case PEEK_CLONE:
-      item = (struct ocbuf_item*)data_->first();
-      while (item) {
-        if (callback(item->data, data) == 0) {
+      for (auto* list_item : *data_) {
+        if (callback(list_item->data, data) == 0) {
           retval = data;
-          break;
+          goto bail_out;
         }
-        item = (struct ocbuf_item*)data_->next(item);
       }
       break;
     default:

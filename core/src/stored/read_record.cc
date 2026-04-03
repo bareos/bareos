@@ -126,7 +126,7 @@ READ_CTX* new_read_context(void)
   READ_CTX empty_READ_CTX;
   *rctx = empty_READ_CTX;
 
-  rctx->recs = new dlist<DeviceRecord>();
+  rctx->recs = new std::list<DeviceRecord*>();
   return rctx;
 }
 
@@ -137,8 +137,8 @@ void FreeReadContext(READ_CTX* rctx)
 
   // Walk down list and free all remaining allocated recs
   while (!rctx->recs->empty()) {
-    rec = (DeviceRecord*)rctx->recs->first();
-    rctx->recs->remove(rec);
+    rec = rctx->recs->front();
+    rctx->recs->pop_front();
     FreeRecord(rec);
   }
   delete rctx->recs;
@@ -156,9 +156,10 @@ void ReadContextSetRecord(DeviceControlRecord* dcr, READ_CTX* rctx)
   DeviceRecord* rec;
   bool found = false;
 
-  foreach_dlist (rec, rctx->recs) {
-    if (rec->VolSessionId == dcr->block->VolSessionId
-        && rec->VolSessionTime == dcr->block->VolSessionTime) {
+  for (auto* r : *rctx->recs) {
+    if (r->VolSessionId == dcr->block->VolSessionId
+        && r->VolSessionTime == dcr->block->VolSessionTime) {
+      rec = r;
       found = true;
       break;
     }
@@ -166,7 +167,7 @@ void ReadContextSetRecord(DeviceControlRecord* dcr, READ_CTX* rctx)
 
   if (!found) {
     rec = new_record();
-    rctx->recs->prepend(rec);
+    rctx->recs->push_front(rec);
     Dmsg3(debuglevel, "New record for state=%s SI=%d ST=%d\n",
           rec_state_bits_to_str(rec), dcr->block->VolSessionId,
           dcr->block->VolSessionTime);

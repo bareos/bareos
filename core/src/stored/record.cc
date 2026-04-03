@@ -496,8 +496,6 @@ void DumpRecord(const char* tag, const DeviceRecord* rec)
   char findex[128];
 
   Dmsg2(100, "%s: rec %p\n", tag, rec);
-
-  Dmsg3(100, "%-14s next %p prev %p\n", "link", rec->link.next, rec->link.prev);
   Dmsg2(100, "%-14s %u\n", "File", rec->File);
   Dmsg2(100, "%-14s %u\n", "Block", rec->Block);
   Dmsg2(100, "%-14s %u\n", "VolSessionId", rec->VolSessionId);

@@ -47,9 +47,8 @@
 #define BAREOS_STORED_VOL_MGR_H_
 
 #include <atomic>
+#include <list>
 #include "stored/reserve.h"
-
-template <typename T> class dlist;
 
 namespace storagedaemon {
 
@@ -63,7 +62,6 @@ class VolumeReservationItem {
   std::atomic<int32_t> use_count_{0}; /**< Use count */
   pthread_mutex_t mutex_ = PTHREAD_MUTEX_INITIALIZER; /**< Vol muntex */
  public:
-  dlink<VolumeReservationItem> link;
   char* vol_name{nullptr}; /**< Volume name */
   Device* dev{nullptr};    /**< Pointer to device to which we are attached */
 
@@ -128,8 +126,8 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
                                       const char* VolumeName);
 bool FreeVolume(Device* dev);
 bool IsVolListEmpty();
-dlist<VolumeReservationItem>* dup_vol_list(JobControlRecord* jcr);
-void FreeTempVolList(dlist<VolumeReservationItem>* temp_vol_list);
+std::list<VolumeReservationItem*>* dup_vol_list(JobControlRecord* jcr);
+void FreeTempVolList(std::list<VolumeReservationItem*>* temp_vol_list);
 bool VolumeUnused(DeviceControlRecord* dcr);
 void CreateVolumeLists();
 void FreeVolumeLists();

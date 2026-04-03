@@ -29,10 +29,6 @@
 #ifndef BAREOS_STORED_RECORD_H_
 #define BAREOS_STORED_RECORD_H_
 
-#include "lib/dlist.h"
-
-template <typename T> class dlist;
-
 namespace storagedaemon {
 
 // Return codes from read_device_volume_label()
@@ -105,7 +101,6 @@ enum
  */
 struct BootStrapRecord; /* satisfy forward reference */
 struct DeviceRecord {
-  dlink<DeviceRecord> link; /**< link for chaining in read_record.c */
   /**<
    * File and Block are always returned during reading and writing records.
    */

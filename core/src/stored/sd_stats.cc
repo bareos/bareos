@@ -30,6 +30,7 @@
 #include "stored/stored_globals.h"
 #include "stored/device_control_record.h"
 #include "stored/stored_jcr_impl.h"
+#include "lib/dlist.h"
 #include "lib/util.h"
 #include "include/jcr.h"
 #include "lib/parse_conf.h"

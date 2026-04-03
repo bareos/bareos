@@ -36,14 +36,16 @@
 #include "include/jcr.h"
 #include "lib/berrno.h"
 #include "stored/reserve.h"
+#include <algorithm>
+#include <list>
 
 namespace storagedaemon {
 
 const int debuglevel = 150;
 
 static brwlock_t vol_list_lock;
-static dlist<VolumeReservationItem>* vol_list = NULL;
-static dlist<VolumeReservationItem>* read_vol_list = NULL;
+static std::list<VolumeReservationItem*>* vol_list = NULL;
+static std::list<VolumeReservationItem*>* read_vol_list = NULL;
 static pthread_mutex_t read_vol_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* Global static variables */
@@ -163,8 +165,15 @@ void AddReadVolume(JobControlRecord* jcr, const char* VolumeName)
   nvol->SetJobid(jcr->JobId);
   nvol->SetReading();
   with_read_volume_lock([&] {
-    vol = (VolumeReservationItem*)read_vol_list->binary_insert(nvol,
-                                                               ReadCompare);
+    auto it = std::lower_bound(
+        read_vol_list->begin(), read_vol_list->end(), nvol,
+        [](auto* a, auto* b) { return ReadCompare(a, b) < 0; });
+    if (it != read_vol_list->end() && ReadCompare(*it, nvol) == 0) {
+      vol = *it;
+    } else {
+      read_vol_list->insert(it, nvol);
+      vol = nvol;
+    }
   });
   if (vol != nvol) {
     FreeVolItem(nvol);
@@ -184,8 +193,11 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
     vol.vol_name = strdup(VolumeName);
     vol.SetJobid(jcr->JobId);
 
-    fvol = (VolumeReservationItem*)read_vol_list->binary_search(&vol,
-                                                                ReadCompare);
+    auto it = std::lower_bound(
+        read_vol_list->begin(), read_vol_list->end(), &vol,
+        [](auto* a, auto* b) { return ReadCompare(a, b) < 0; });
+    fvol = (it != read_vol_list->end() && ReadCompare(*it, &vol) == 0) ? *it
+                                                                        : nullptr;
     free(vol.vol_name);
 
     if (fvol) {
@@ -208,7 +220,7 @@ void RemoveReadVolume(JobControlRecord* jcr, const char* VolumeName)
  */
 static VolumeReservationItem* find_read_volume(const char* VolumeName)
 {
-  VolumeReservationItem vol, *fvol = nullptr;
+  VolumeReservationItem* fvol = nullptr;
 
   // Do not lock reservations here
   with_read_volume_lock([&] {
@@ -216,12 +228,13 @@ static VolumeReservationItem* find_read_volume(const char* VolumeName)
       Dmsg0(debuglevel, "find_read_vol: read_vol_list empty.\n");
       return;
     }
-    vol.vol_name = strdup(VolumeName);
 
-    // Note, we do want a simple CompareByVolumename on volume name only here
-    fvol = (VolumeReservationItem*)read_vol_list->binary_search(
-        &vol, CompareByVolumename);
-    free(vol.vol_name);
+    for (auto* v : *read_vol_list) {
+      if (strcmp(v->vol_name, VolumeName) == 0) {
+        fvol = v;
+        break;
+      }
+    }
 
     Dmsg2(debuglevel, "find_read_vol=%s found=%d\n", VolumeName, fvol != NULL);
   });
@@ -424,8 +437,16 @@ VolumeReservationItem* reserve_volume(DeviceControlRecord* dcr,
       goto get_out;
     } else {
       // Now try to insert the new Volume
-      vol = (VolumeReservationItem*)vol_list->binary_insert(
-          nvol, CompareByVolumename);
+      auto ins_it = std::lower_bound(
+          vol_list->begin(), vol_list->end(), nvol,
+          [](auto* a, auto* b) { return CompareByVolumename(a, b) < 0; });
+      if (ins_it != vol_list->end()
+          && CompareByVolumename(*ins_it, nvol) == 0) {
+        vol = *ins_it;
+      } else {
+        vol_list->insert(ins_it, nvol);
+        vol = nvol;
+      }
     }
 
     if (vol != nvol) {
@@ -528,57 +549,59 @@ namespace private_functions {
 // Start walk of vol chain
 VolumeReservationItem* vol_walk_start()
 {
-  VolumeReservationItem* vol;
-  vol = (VolumeReservationItem*)vol_list->first();
-  if (vol) {
-    vol->IncUseCount();
-    Dmsg2(debuglevel, "Inc walk_start UseCount=%d volname=%s\n",
-          vol->UseCount(), vol->vol_name);
-  }
-
+  if (vol_list->empty()) { return nullptr; }
+  VolumeReservationItem* vol = vol_list->front();
+  vol->IncUseCount();
+  Dmsg2(debuglevel, "Inc walk_start UseCount=%d volname=%s\n", vol->UseCount(),
+        vol->vol_name);
   return vol;
 }
 
 // Get next vol from chain, and release current one
 VolumeReservationItem* VolWalkNext(VolumeReservationItem* prev_vol)
 {
-  VolumeReservationItem* vol;
+  VolumeReservationItem* vol = nullptr;
 
-  vol = (VolumeReservationItem*)vol_list->next(prev_vol);
-  if (vol) {
-    vol->IncUseCount();
-    Dmsg2(debuglevel, "Inc walk_next UseCount=%d volname=%s\n", vol->UseCount(),
-          vol->vol_name);
+  auto it = std::find(vol_list->begin(), vol_list->end(), prev_vol);
+  if (it != vol_list->end()) {
+    ++it;
+    if (it != vol_list->end()) {
+      vol = *it;
+      vol->IncUseCount();
+      Dmsg2(debuglevel, "Inc walk_next UseCount=%d volname=%s\n",
+            vol->UseCount(), vol->vol_name);
+    }
   }
   if (prev_vol) { FreeVolItem(prev_vol); }
 
   return vol;
 }
 
-// Start walk of vol chain
+// Start walk of read vol chain
 VolumeReservationItem* read_vol_walk_start()
 {
-  VolumeReservationItem* vol;
-  vol = (VolumeReservationItem*)read_vol_list->first();
-  if (vol) {
-    vol->IncUseCount();
-    Dmsg2(debuglevel, "Inc walk_start UseCount=%d volname=%s\n",
-          vol->UseCount(), vol->vol_name);
-  }
-
+  if (read_vol_list->empty()) { return nullptr; }
+  VolumeReservationItem* vol = read_vol_list->front();
+  vol->IncUseCount();
+  Dmsg2(debuglevel, "Inc walk_start UseCount=%d volname=%s\n", vol->UseCount(),
+        vol->vol_name);
   return vol;
 }
 
 // Get next vol from chain, and release current one
 VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol)
 {
-  VolumeReservationItem* vol;
+  VolumeReservationItem* vol = nullptr;
 
-  vol = (VolumeReservationItem*)read_vol_list->next(prev_vol);
-  if (vol) {
-    vol->IncUseCount();
-    Dmsg2(debuglevel, "Inc walk_next UseCount=%d volname=%s\n", vol->UseCount(),
-          vol->vol_name);
+  auto it = std::find(read_vol_list->begin(), read_vol_list->end(), prev_vol);
+  if (it != read_vol_list->end()) {
+    ++it;
+    if (it != read_vol_list->end()) {
+      vol = *it;
+      vol->IncUseCount();
+      Dmsg2(debuglevel, "Inc walk_next UseCount=%d volname=%s\n",
+            vol->UseCount(), vol->vol_name);
+    }
   }
   if (prev_vol) { FreeVolItem(prev_vol); }
 
@@ -594,15 +617,18 @@ VolumeReservationItem* ReadVolWalkNext(VolumeReservationItem* prev_vol)
  */
 static VolumeReservationItem* find_volume(const char* VolumeName)
 {
-  VolumeReservationItem vol, *fvol = nullptr;
+  VolumeReservationItem* fvol = nullptr;
 
   /* Do not lock reservations here */
   with_volume_lock([&] {
     if (vol_list->empty()) { return; }
-    vol.vol_name = strdup(VolumeName);
-    fvol = (VolumeReservationItem*)vol_list->binary_search(&vol,
-                                                           CompareByVolumename);
-    free(vol.vol_name);
+
+    for (auto* v : *vol_list) {
+      if (strcmp(v->vol_name, VolumeName) == 0) {
+        fvol = v;
+        break;
+      }
+    }
     Dmsg2(debuglevel, "find_vol=%s found=%d\n", VolumeName, fvol != NULL);
 
     if (debug_level >= debuglevel) { DebugListVolumes("find_volume"); }
@@ -686,15 +712,12 @@ bool FreeVolume(Device* dev)
       bool is_on_list = false;
 
       // this is ok, since we locked the volume list
-      for (VolumeReservationItem* other_vol = vol_list->first(); other_vol;
-           other_vol = vol_list->next(other_vol)) {
-        if (other_vol == vol) {
-          vol_list->remove(vol);
-          is_on_list = true;
-          Dmsg2(debuglevel, "=== remove volume %s dev=%s\n", vol->vol_name,
-                dev->print_name());
-          break;
-        }
+      auto it = std::find(vol_list->begin(), vol_list->end(), vol);
+      if (it != vol_list->end()) {
+        vol_list->erase(it);
+        is_on_list = true;
+        Dmsg2(debuglevel, "=== remove volume %s dev=%s\n", vol->vol_name,
+              dev->print_name());
       }
 
       /* Volume is on write volume list if one of the following is applicable:
@@ -736,19 +759,17 @@ bool FreeVolume(Device* dev)
 // Create the Volume list
 void CreateVolumeLists()
 {
-  if (vol_list == NULL) { vol_list = new dlist<VolumeReservationItem>(); }
+  if (vol_list == NULL) { vol_list = new std::list<VolumeReservationItem*>(); }
   if (read_vol_list == NULL) {
-    read_vol_list = new dlist<VolumeReservationItem>();
+    read_vol_list = new std::list<VolumeReservationItem*>();
   }
 }
 
 // Free normal append volumes list
 static inline void FreeVolumeList(const char* what,
-                                  dlist<VolumeReservationItem>* vollist)
+                                  std::list<VolumeReservationItem*>* vollist)
 {
-  VolumeReservationItem* vol;
-
-  foreach_dlist (vol, vollist) {
+  for (auto* vol : *vollist) {
     if (vol->dev) {
       Dmsg3(debuglevel, "free %s Volume=%s dev=%s\n", what, vol->vol_name,
             vol->dev->print_name());
@@ -758,6 +779,7 @@ static inline void FreeVolumeList(const char* what,
     free(vol->vol_name);
     vol->vol_name = NULL;
     vol->DestroyMutex();
+    free(vol);
   }
 }
 
@@ -843,21 +865,29 @@ bool DeviceControlRecord::Can_i_use_volume()
  * we can take note and act accordingly (probably redo the
  * search at least a few times).
  */
-dlist<VolumeReservationItem>* dup_vol_list(JobControlRecord* jcr)
+std::list<VolumeReservationItem*>* dup_vol_list(JobControlRecord* jcr)
 {
-  dlist<VolumeReservationItem>* temp_vol_list;
+  std::list<VolumeReservationItem*>* temp_vol_list;
 
   Dmsg0(debuglevel, "lock volumes\n");
 
   Dmsg0(debuglevel, "duplicate vol list\n");
-  temp_vol_list = new dlist<VolumeReservationItem>();
+  temp_vol_list = new std::list<VolumeReservationItem*>();
   foreach_vol ([&](auto* vol) {
     VolumeReservationItem *nvol, *tvol;
 
     tvol = new_vol_item(NULL, vol->vol_name);
     tvol->dev = vol->dev;
-    nvol = (VolumeReservationItem*)temp_vol_list->binary_insert(
-        tvol, CompareByVolumename);
+    auto it = std::lower_bound(
+        temp_vol_list->begin(), temp_vol_list->end(), tvol,
+        [](auto* a, auto* b) { return CompareByVolumename(a, b) < 0; });
+    if (it != temp_vol_list->end()
+        && CompareByVolumename(*it, tvol) == 0) {
+      nvol = *it;
+    } else {
+      temp_vol_list->insert(it, tvol);
+      nvol = tvol;
+    }
     if (tvol != nvol) {
       tvol->dev = NULL; /* don't zap dev entry */
       FreeVolItem(tvol);
@@ -872,7 +902,7 @@ dlist<VolumeReservationItem>* dup_vol_list(JobControlRecord* jcr)
 }
 
 // Free the specified temp list.
-void FreeTempVolList(dlist<VolumeReservationItem>* temp_vol_list)
+void FreeTempVolList(std::list<VolumeReservationItem*>* temp_vol_list)
 {
   FreeVolumeList("temp_vol_list", temp_vol_list);
   delete temp_vol_list;
