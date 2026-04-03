@@ -28,12 +28,12 @@
 
 #ifndef BAREOS_LIB_GUID_TO_NAME_H_
 #define BAREOS_LIB_GUID_TO_NAME_H_
-template <typename T> class dlist;
+#include <vector>
 struct guitem;
 class guid_list {
  public:
-  dlist<guitem>* uid_list;
-  dlist<guitem>* gid_list;
+  std::vector<guitem*>* uid_list;
+  std::vector<guitem*>* gid_list;
 
   char* uid_to_name(uid_t uid, char* name, int maxlen);
   char* gid_to_name(gid_t gid, char* name, int maxlen);

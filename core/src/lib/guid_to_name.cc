@@ -31,14 +31,14 @@
 #include "include/bareos.h"
 #include "lib/guid_to_name.h"
 #include "lib/edit.h"
-#include "lib/dlist.h"
+#include <algorithm>
+#include <vector>
 
 #ifndef WIN32
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 struct guitem {
-  dlink<guitem> link;
   char* name;
   union {
     uid_t uid;
@@ -51,16 +51,21 @@ guid_list* new_guid_list()
 {
   guid_list* list;
   list = (guid_list*)malloc(sizeof(guid_list));
-  list->uid_list = new dlist<guitem>();
-  list->gid_list = new dlist<guitem>();
+  list->uid_list = new std::vector<guitem*>();
+  list->gid_list = new std::vector<guitem*>();
   return list;
 }
 
 void FreeGuidList(guid_list* list)
 {
-  guitem* item;
-  foreach_dlist (item, list->uid_list) { free(item->name); }
-  foreach_dlist (item, list->gid_list) { free(item->name); }
+  for (auto* item : *list->uid_list) {
+    free(item->name);
+    free(item);
+  }
+  for (auto* item : *list->gid_list) {
+    free(item->name);
+    free(item);
+  }
   delete list->uid_list;
   delete list->gid_list;
   free(list);
@@ -126,7 +131,11 @@ char* guid_list::uid_to_name(uid_t uid, char* name, int maxlen)
   sitem.uid = uid;
   char buf[50];
 
-  item = (guitem*)uid_list->binary_search(&sitem, UidCompare);
+  {
+    auto it = std::lower_bound(uid_list->begin(), uid_list->end(), &sitem,
+        [](guitem* a, guitem* b) { return UidCompare(a, b) < 0; });
+    item = (it != uid_list->end() && UidCompare(*it, &sitem) == 0) ? *it : nullptr;
+  }
   Dmsg2(900, "uid=%d item=%p\n", uid, item);
   if (!item) {
     item = (guitem*)malloc(sizeof(guitem));
@@ -137,7 +146,14 @@ char* guid_list::uid_to_name(uid_t uid, char* name, int maxlen)
       item->name = strdup(edit_int64(uid, buf));
       Dmsg2(900, "set uid=%d name=%s\n", uid, item->name);
     }
-    fitem = (guitem*)uid_list->binary_insert(item, UidCompare);
+    auto it = std::lower_bound(uid_list->begin(), uid_list->end(), item,
+        [](guitem* a, guitem* b) { return UidCompare(a, b) < 0; });
+    if (it != uid_list->end() && UidCompare(*it, item) == 0) {
+      fitem = *it;
+    } else {
+      uid_list->insert(it, item);
+      fitem = item;
+    }
     if (fitem != item) { /* item already there this shouldn't happen */
       free(item->name);
       free(item);
@@ -154,14 +170,25 @@ char* guid_list::gid_to_name(gid_t gid, char* name, int maxlen)
   sitem.gid = gid;
   char buf[50];
 
-  item = (guitem*)gid_list->binary_search(&sitem, GidCompare);
+  {
+    auto it = std::lower_bound(gid_list->begin(), gid_list->end(), &sitem,
+        [](guitem* a, guitem* b) { return GidCompare(a, b) < 0; });
+    item = (it != gid_list->end() && GidCompare(*it, &sitem) == 0) ? *it : nullptr;
+  }
   if (!item) {
     item = (guitem*)malloc(sizeof(guitem));
     item->gid = gid;
     item->name = NULL;
     GetGidname(gid, item);
     if (!item->name) { item->name = strdup(edit_int64(gid, buf)); }
-    fitem = (guitem*)gid_list->binary_insert(item, GidCompare);
+    auto it = std::lower_bound(gid_list->begin(), gid_list->end(), item,
+        [](guitem* a, guitem* b) { return GidCompare(a, b) < 0; });
+    if (it != gid_list->end() && GidCompare(*it, item) == 0) {
+      fitem = *it;
+    } else {
+      gid_list->insert(it, item);
+      fitem = item;
+    }
     if (fitem != item) { /* item already there this shouldn't happen */
       free(item->name);
       free(item);

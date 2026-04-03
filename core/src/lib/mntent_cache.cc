@@ -56,7 +56,8 @@
 
 #include "include/bareos.h"
 #include "mntent_cache.h"
-#include "lib/dlist.h"
+#include <algorithm>
+#include <vector>
 
 #include <errno.h>
 #include <stdlib.h>
@@ -82,7 +83,7 @@
 // Protected data by mutex lock.
 static pthread_mutex_t mntent_cache_lock = PTHREAD_MUTEX_INITIALIZER;
 static mntent_cache_entry_t* previous_cache_hit = NULL;
-static dlist<mntent_cache_entry_t>* mntent_cache_entries = NULL;
+static std::vector<mntent_cache_entry_t*>* mntent_cache_entries = NULL;
 
 // Last time a rescan of the mountlist took place.
 static time_t last_rescan = 0;
@@ -140,7 +141,19 @@ static mntent_cache_entry_t* add_mntent_mapping(uint32_t dev,
   if (mntopts) { mce->mntopts = strdup(mntopts); }
 
 
-  auto retval = mntent_cache_entries->binary_insert(mce, CompareMntentMapping);
+  auto retval_it = std::lower_bound(mntent_cache_entries->begin(),
+      mntent_cache_entries->end(), mce,
+      [](mntent_cache_entry_t* a, mntent_cache_entry_t* b) {
+        return CompareMntentMapping(a, b) < 0;
+      });
+  mntent_cache_entry_t* retval;
+  if (retval_it != mntent_cache_entries->end()
+      && CompareMntentMapping(*retval_it, mce) == 0) {
+    retval = *retval_it;
+  } else {
+    mntent_cache_entries->insert(retval_it, mce);
+    retval = mce;
+  }
   if (retval != mce) {
     if (retval) {
       Dmsg4(200, "failed to insert: %s (%s), already exists as %s (%s)!\n",
@@ -171,8 +184,17 @@ static mntent_cache_entry_t* update_mntent_mapping(uint32_t dev,
   mntent_cache_entry_t lookup, *mce;
 
   lookup.dev = dev;
-  mce = (mntent_cache_entry_t*)mntent_cache_entries->binary_search(
-      &lookup, CompareMntentMapping);
+  {
+    auto it = std::lower_bound(mntent_cache_entries->begin(),
+        mntent_cache_entries->end(), &lookup,
+        [](mntent_cache_entry_t* a, mntent_cache_entry_t* b) {
+          return CompareMntentMapping(a, b) < 0;
+        });
+    mce = (it != mntent_cache_entries->end()
+           && CompareMntentMapping(*it, &lookup) == 0)
+              ? *it
+              : nullptr;
+  }
   if (mce) {
     // See if the info changed.
     if (!bstrcmp(mce->special, special)) {
@@ -332,7 +354,7 @@ static void refresh_mount_cache([[maybe_unused]] mntent_cache_entry_t*
  */
 static inline void InitializeMntentCache(void)
 {
-  mntent_cache_entries = new dlist<mntent_cache_entry_t>();
+  mntent_cache_entries = new std::vector<mntent_cache_entry_t*>();
 
   // Refresh the cache.
   refresh_mount_cache(add_mntent_mapping);
@@ -344,19 +366,19 @@ static inline void InitializeMntentCache(void)
  */
 static void RepopulateMntentCache(void)
 {
-  mntent_cache_entry_t *mce, *next_mce;
+  mntent_cache_entry_t* mce;
 
   // Reset validated flag on all entries in the cache.
-  foreach_dlist (mce, mntent_cache_entries) { mce->validated = false; }
+  for (auto* entry : *mntent_cache_entries) { entry->validated = false; }
 
   // Refresh the cache.
   refresh_mount_cache(update_mntent_mapping);
 
   /* Remove any entry that is not validated in
    * the previous refresh run. */
-  mce = (mntent_cache_entry_t*)mntent_cache_entries->first();
-  while (mce) {
-    next_mce = (mntent_cache_entry_t*)mntent_cache_entries->next(mce);
+  auto it = mntent_cache_entries->begin();
+  while (it != mntent_cache_entries->end()) {
+    mce = *it;
     if (!mce->validated) {
       // Invalidate the previous cache hit if we are removing it.
       if (previous_cache_hit == mce) { previous_cache_hit = NULL; }
@@ -368,30 +390,31 @@ static void RepopulateMntentCache(void)
        * yet. The put_mntent_mapping function will
        * handle these dangling entries. */
       if (mce->reference_count == 0) {
-        mntent_cache_entries->remove(mce);
+        it = mntent_cache_entries->erase(it);
         DestroyMntentCacheEntry(mce);
         free(mce);
       } else {
         mce->destroyed = true;
-        mntent_cache_entries->remove(mce);
+        it = mntent_cache_entries->erase(it);
       }
+    } else {
+      ++it;
     }
-    mce = next_mce;
   }
 }
 
 // Flush the current content from the cache.
 void FlushMntentCache(void)
 {
-  mntent_cache_entry_t* mce;
-
   // Lock the cache.
   lock_mutex(mntent_cache_lock);
 
   if (mntent_cache_entries) {
     previous_cache_hit = NULL;
-    foreach_dlist (mce, mntent_cache_entries) { DestroyMntentCacheEntry(mce); }
-    mntent_cache_entries->destroy();
+    for (auto* mce : *mntent_cache_entries) {
+      DestroyMntentCacheEntry(mce);
+      free(mce);
+    }
     delete mntent_cache_entries;
     mntent_cache_entries = NULL;
   }
@@ -452,16 +475,32 @@ mntent_cache_entry_t* find_mntent_mapping(uint32_t dev)
   }
 
   lookup.dev = dev;
-  mce = (mntent_cache_entry_t*)mntent_cache_entries->binary_search(
-      &lookup, CompareMntentMapping);
+  {
+    auto it = std::lower_bound(mntent_cache_entries->begin(),
+        mntent_cache_entries->end(), &lookup,
+        [](mntent_cache_entry_t* a, mntent_cache_entry_t* b) {
+          return CompareMntentMapping(a, b) < 0;
+        });
+    mce = (it != mntent_cache_entries->end()
+           && CompareMntentMapping(*it, &lookup) == 0)
+              ? *it
+              : nullptr;
+  }
 
   /* If we fail to lookup the mountpoint its probably a mountpoint added
    * after we did our initial scan. Lets rescan the mountlist and try
    * the lookup again. */
   if (!mce) {
     RepopulateMntentCache();
-    mce = (mntent_cache_entry_t*)mntent_cache_entries->binary_search(
-        &lookup, CompareMntentMapping);
+    auto it = std::lower_bound(mntent_cache_entries->begin(),
+        mntent_cache_entries->end(), &lookup,
+        [](mntent_cache_entry_t* a, mntent_cache_entry_t* b) {
+          return CompareMntentMapping(a, b) < 0;
+        });
+    mce = (it != mntent_cache_entries->end()
+           && CompareMntentMapping(*it, &lookup) == 0)
+              ? *it
+              : nullptr;
   }
 
   /* Store the last successful lookup as the previous_cache_hit.
