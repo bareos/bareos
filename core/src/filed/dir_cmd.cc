@@ -329,8 +329,8 @@ void CleanupFileset(JobControlRecord* jcr)
         fo->Drivetype.destroy();
       }
       incexe->opts_list.destroy();
-      incexe->name_list.destroy();
-      incexe->plugin_list.destroy();
+      incexe->name_list.clear();
+      incexe->plugin_list.clear();
       incexe->ignoredir.destroy();
     }
     fileset->include_list.destroy();
@@ -352,8 +352,8 @@ void CleanupFileset(JobControlRecord* jcr)
         fo->Drivetype.destroy();
       }
       incexe->opts_list.destroy();
-      incexe->name_list.destroy();
-      incexe->plugin_list.destroy();
+      incexe->name_list.clear();
+      incexe->plugin_list.clear();
       incexe->ignoredir.destroy();
     }
     fileset->exclude_list.destroy();
@@ -716,7 +716,7 @@ bool StopConnectToDirectorThreads(bool wait)
 static bool ResolveCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
-  dlist<IPADDR>* addr_list;
+  std::list<IPADDR*>* addr_list;
   const char* errstr;
   char addresses[2048];
   char hostname[2048];
