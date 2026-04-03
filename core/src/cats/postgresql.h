@@ -55,7 +55,7 @@ class BareosDbPostgresql : public BareosDb {
                      bool need_private);
   ~BareosDbPostgresql();
 
-  dlink<BareosDbPostgresql> link; /**< Queue control */
+
 
  private:
   void SqlFieldSeek(int field) override { field_number_ = field; }

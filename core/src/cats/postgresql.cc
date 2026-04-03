@@ -42,7 +42,7 @@
 #  include "postgresql.h"
 #  include "lib/edit.h"
 #  include "lib/berrno.h"
-#  include "lib/dlist.h"
+#  include <list>
 
 /* pull in the generated queries definitions */
 #  include "postgresql_queries.inc"
@@ -55,7 +55,7 @@
  */
 
 static pthread_mutex_t db_list_mutex = PTHREAD_MUTEX_INITIALIZER;
-static dlist<BareosDbPostgresql>* db_list = NULL;
+static std::list<BareosDbPostgresql*>* db_list = NULL;
 
 namespace postgres {
 
@@ -173,8 +173,8 @@ BareosDbPostgresql::BareosDbPostgresql(JobControlRecord*,
   result_ = NULL;
 
   // Put the db in the list.
-  if (db_list == NULL) { db_list = new dlist<BareosDbPostgresql>(); }
-  db_list->append(this);
+  if (db_list == NULL) { db_list = new std::list<BareosDbPostgresql*>(); }
+  db_list->push_back(this);
 
   /* make the queries available using the queries variable from the parent class
    */
@@ -925,12 +925,13 @@ BareosDb* db_init_database(JobControlRecord* jcr,
 
   // Look to see if DB already open
   if (db_list && !mult_db_connections && !need_private) {
-    foreach_dlist (mdb, db_list) {
-      if (mdb->IsPrivate()) { continue; }
+    for (auto* entry : *db_list) {
+      if (entry->IsPrivate()) { continue; }
 
-      if (mdb->MatchDatabase(db_driver, db_name, db_address, db_port)) {
+      if (entry->MatchDatabase(db_driver, db_name, db_address, db_port)) {
         Dmsg1(100, "DB REopen %s\n", db_name);
-        mdb->IncrementRefcount();
+        entry->IncrementRefcount();
+        mdb = entry;
         goto bail_out;
       }
     }

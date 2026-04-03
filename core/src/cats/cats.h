@@ -1092,7 +1092,7 @@ struct SqlPoolEntry {
   time_t last_update = 0;  /**< When was this connection last updated either
                           used  or put back on the pool */
   BareosDb* db_handle = nullptr; /**< Connection handle to the database */
-  dlink<SqlPoolEntry> link;      /**< list management */
+
 };
 
 // Pooled backend list descriptor (one defined per backend defined in config)
@@ -1113,7 +1113,7 @@ struct SqlPoolDescriptor {
   int validate_timeout = 0; /**< Number of seconds after which an idle
                            connection should be validated */
   int nr_connections = 0;   /**< Number of active connections in the pool */
-  dlink<SqlPoolDescriptor> link; /**< list management */
+
 };
 
 #include "include/jcr.h"
