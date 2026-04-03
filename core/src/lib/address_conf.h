@@ -29,9 +29,8 @@
 #define BAREOS_LIB_ADDRESS_CONF_H_
 
 #include <arpa/inet.h>
+#include <list>
 #include <netinet/in.h>
-
-#include "lib/dlist.h"
 
 class OutputFormatterResource;
 
@@ -84,18 +83,16 @@ class IPADDR {
                                       bool inherited);
   const char* build_address_str(char* buf, int blen, bool print_port = true);
 
-  /* private */
-  dlink<IPADDR> link;
 };
 /* clang-format on */
 
-void InitDefaultAddresses(dlist<IPADDR>** addr, const char* port);
-void EmptyAddressList(dlist<IPADDR>* addrs);
-void FreeAddresses(dlist<IPADDR>* addrs);
+void InitDefaultAddresses(std::list<IPADDR*>** addr, const char* port);
+void EmptyAddressList(std::list<IPADDR*>* addrs);
+void FreeAddresses(std::list<IPADDR*>* addrs);
 
-int GetFirstPortHostOrder(dlist<IPADDR>* addrs);
+int GetFirstPortHostOrder(std::list<IPADDR*>* addrs);
 
-int AddAddress(dlist<IPADDR>** out,
+int AddAddress(std::list<IPADDR*>** out,
                IPADDR::i_type type,
                unsigned short defaultport,
                int family,
@@ -106,7 +103,7 @@ int AddAddress(dlist<IPADDR>** out,
 bool CheckIfFamilyEnabled(IpFamily family);
 
 bool IsSameIpAddress(IPADDR* first, IPADDR* second);
-const char* BuildAddressesString(dlist<IPADDR>* addrs,
+const char* BuildAddressesString(std::list<IPADDR*>* addrs,
                                  char* buf,
                                  int blen,
                                  bool print_port = true);

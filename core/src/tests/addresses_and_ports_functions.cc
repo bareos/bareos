@@ -35,19 +35,20 @@ std::vector<std::string> CreateAddressesFromAddAddress(
 {
   std::vector<std::string> newaddresses{};
   char buf[1024];
-  dlist<IPADDR>* addresses = nullptr;
+  std::list<IPADDR*>* addresses = nullptr;
 
   AddAddress(&addresses, type, htons(t_default_port), family, hostname_str,
              port_str, buf, sizeof(buf));
 
-  IPADDR* addr = nullptr;
-  foreach_dlist (addr, addresses) {
-    addr->build_address_str(buf, sizeof(buf), true);
+  if (addresses) {
+    for (auto* addr : *addresses) {
+      addr->build_address_str(buf, sizeof(buf), true);
 
-    std::string theaddress(buf);
-    theaddress.pop_back();
+      std::string theaddress(buf);
+      theaddress.pop_back();
 
-    newaddresses.emplace_back(std::move(theaddress));
+      newaddresses.emplace_back(std::move(theaddress));
+    }
   }
   FreeAddresses(addresses);
   return newaddresses;

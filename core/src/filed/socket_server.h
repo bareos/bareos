@@ -23,12 +23,12 @@
 #ifndef BAREOS_FILED_SOCKET_SERVER_H_
 #define BAREOS_FILED_SOCKET_SERVER_H_
 
-template <typename T> class dlist;
+#include <list>
 class IPADDR;
 
 namespace filedaemon {
 
-void StartSocketServer(dlist<IPADDR>* addrs);
+void StartSocketServer(std::list<IPADDR*>* addrs);
 void StopSocketServer();
 
 } /* namespace filedaemon */

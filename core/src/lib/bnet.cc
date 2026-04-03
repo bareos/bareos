@@ -232,7 +232,7 @@ int BnetWaitDataIntr(BareosSocket* bsock, int sec)
 #  define NO_DATA 4 /* Valid name, no data record of requested type. */
 #endif
 
-const char* resolv_host(int family, const char* host, dlist<IPADDR>* addr_list)
+const char* resolv_host(int family, const char* host, std::list<IPADDR*>* addr_list)
 {
   int res;
   struct addrinfo hints;
@@ -275,7 +275,7 @@ const char* resolv_host(int family, const char* host, dlist<IPADDR>* addr_list)
       default:
         continue;
     }
-    addr_list->append(addr);
+    addr_list->push_back(addr);
   }
   freeaddrinfo(ai);
   return NULL;
@@ -290,7 +290,7 @@ static IPADDR* add_any(int family)
 }
 
 // i host = 0 mean INADDR_ANY only ipv4
-dlist<IPADDR>* BnetHost2IpAddrs(const char* host,
+std::list<IPADDR*>* BnetHost2IpAddrs(const char* host,
                                 int family,
                                 const char** errstr)
 {
@@ -298,24 +298,24 @@ dlist<IPADDR>* BnetHost2IpAddrs(const char* host,
   const char* errmsg;
   struct in6_addr inaddr6;
 
-  dlist<IPADDR>* addr_list = new dlist<IPADDR>();
+  std::list<IPADDR*>* addr_list = new std::list<IPADDR*>();
   if (!host || host[0] == '\0') {
     if (family != 0) {
-      addr_list->append(add_any(family));
+      addr_list->push_back(add_any(family));
     } else {
-      addr_list->append(add_any(AF_INET));
-      addr_list->append(add_any(AF_INET6));
+      addr_list->push_back(add_any(AF_INET));
+      addr_list->push_back(add_any(AF_INET6));
     }
   } else if (inet_aton(host, &inaddr)) { /* MA Bug 4 */
     IPADDR* addr = new IPADDR(AF_INET);
     addr->SetType(IPADDR::R_MULTIPLE);
     addr->SetAddr4(&inaddr);
-    addr_list->append(addr);
+    addr_list->push_back(addr);
   } else if (inet_pton(AF_INET6, host, &inaddr6) == 1) {
     IPADDR* addr = new IPADDR(AF_INET6);
     addr->SetType(IPADDR::R_MULTIPLE);
     addr->SetAddr6(&inaddr6);
-    addr_list->append(addr);
+    addr_list->push_back(addr);
   } else {
     if (family != 0) {
       errmsg = resolv_host(family, host, addr_list);

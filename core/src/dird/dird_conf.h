@@ -38,8 +38,8 @@
 #include "lib/messages_resource.h"
 #include "lib/resource_item.h"
 #include "lib/tls_conf.h"
+#include <list>
 
-template <typename T> class dlist;
 struct json_t;
 class RunScript;
 class IPADDR;
@@ -102,8 +102,8 @@ class DirectorResource
  public:
   DirectorResource() = default;
   virtual ~DirectorResource() = default;
-  dlist<IPADDR>* DIRaddrs = nullptr;
-  dlist<IPADDR>* DIRsrc_addr = nullptr; /* Address to source connections from */
+  std::list<IPADDR*>* DIRaddrs = nullptr;
+  std::list<IPADDR*>* DIRsrc_addr = nullptr; /* Address to source connections from */
   char* query_file = nullptr;           /* SQL query file */
   char* working_directory = nullptr;    /* WorkingDirectory */
   char* scripts_directory = nullptr;    /* ScriptsDirectory */

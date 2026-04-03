@@ -121,8 +121,9 @@ static bool do_connection_test(const char* path_to_config,
   if (!director_config) { return false; }
 
   {
-    IPADDR* addr;
-    foreach_dlist (addr, directordaemon::me->DIRaddrs) { addr->SetPortNet(0); }
+    if (directordaemon::me->DIRaddrs) {
+      for (auto* addr : *directordaemon::me->DIRaddrs) { addr->SetPortNet(0); }
+    }
   }
 
   auto bound_sockets = OpenAndBindSockets(directordaemon::me->DIRaddrs);

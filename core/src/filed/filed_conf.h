@@ -32,8 +32,8 @@
 #include "lib/messages_resource.h"
 #include "lib/tls_conf.h"
 #include "lib/crypto.h"
+#include <list>
 template <typename T> class alist;
-template <typename T> class dlist;
 class IPADDR;
 
 typedef struct X509_Keypair X509_KEYPAIR;
@@ -84,8 +84,8 @@ class ClientResource
   ClientResource() = default;
   virtual ~ClientResource() = default;
 
-  dlist<IPADDR>* FDaddrs = nullptr;
-  dlist<IPADDR>* FDsrc_addr = nullptr; /* Address to source connections from */
+  std::list<IPADDR*>* FDaddrs = nullptr;
+  std::list<IPADDR*>* FDsrc_addr = nullptr; /* Address to source connections from */
   char* working_directory = nullptr;
   char* plugin_directory = nullptr; /* Plugin directory */
   alist<const char*>* plugin_names = nullptr;

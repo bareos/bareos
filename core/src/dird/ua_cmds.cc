@@ -1661,7 +1661,7 @@ static bool ResolveCmd(UaContext* ua, const char*)
   if (storage) { DoStorageResolve(ua, storage); }
 
   if (!client && !storage) {
-    dlist<IPADDR>* addr_list;
+    std::list<IPADDR*>* addr_list;
     const char* errstr;
     char addresses[2048];
 

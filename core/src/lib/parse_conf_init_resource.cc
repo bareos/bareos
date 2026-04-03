@@ -103,8 +103,8 @@ void ConfigurationParser::SetResourceDefaultsParserPass1(
         break;
       }
       case CFG_TYPE_ADDRESSES: {
-        dlist<IPADDR>** dlistvalue
-            = GetItemVariablePointer<dlist<IPADDR>**>(*item);
+        std::list<IPADDR*>** dlistvalue
+            = GetItemVariablePointer<std::list<IPADDR*>**>(*item);
         InitDefaultAddresses(dlistvalue, item->default_value);
         break;
       }

@@ -111,30 +111,23 @@ class BNetThreadServerCleanupObject {
   ThreadList& thread_list_;
 };
 
-void RemoveDuplicateAddresses(dlist<IPADDR>* addr_list)
+void RemoveDuplicateAddresses(std::list<IPADDR*>* addr_list)
 {
-  IPADDR* ipaddr = nullptr;
-  IPADDR* next = nullptr;
-  IPADDR* to_free = nullptr;
-
-  for (ipaddr = (IPADDR*)addr_list->first(); ipaddr;
-       ipaddr = (IPADDR*)addr_list->next(ipaddr)) {
-    next = (IPADDR*)addr_list->next(ipaddr);
-    while (next) {
-      // See if the addresses match.
-      if (IsSameIpAddress(ipaddr, next)) {
-        to_free = next;
-        next = (IPADDR*)addr_list->next(next);
-        addr_list->remove(to_free);
+  for (auto it = addr_list->begin(); it != addr_list->end(); ++it) {
+    auto jt = std::next(it);
+    while (jt != addr_list->end()) {
+      if (IsSameIpAddress(*it, *jt)) {
+        IPADDR* to_free = *jt;
+        jt = addr_list->erase(jt);
         delete to_free;
       } else {
-        next = (IPADDR*)addr_list->next(next);
+        ++jt;
       }
     }
   }
 }
 
-static void LogAllAddresses(dlist<IPADDR>* addr_list)
+static void LogAllAddresses(std::list<IPADDR*>* addr_list)
 {
   std::vector<char> buf(256 * addr_list->size());
 
@@ -143,7 +136,7 @@ static void LogAllAddresses(dlist<IPADDR>* addr_list)
 }
 
 int OpenSocketAndBind(IPADDR* ipaddr,
-                      dlist<IPADDR>* addr_list,
+                      std::list<IPADDR*>* addr_list,
                       uint16_t port_number)
 {
   int fd = -1;
@@ -222,15 +215,14 @@ int OpenSocketAndBind(IPADDR* ipaddr,
   return -3;
 }
 
-std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list)
+std::vector<s_sockfd> OpenAndBindSockets(std::list<IPADDR*>* addr_list)
 {
   RemoveDuplicateAddresses(addr_list);
   LogAllAddresses(addr_list);
 
   std::vector<s_sockfd> bound_sockets;
-  IPADDR* ipaddr = nullptr;
 
-  foreach_dlist (ipaddr, addr_list) {
+  for (auto* ipaddr : *addr_list) {
     s_sockfd sock;
     sock.port = ipaddr->GetPortNetOrder();
     sock.fd = OpenSocketAndBind(ipaddr, addr_list, sock.port);

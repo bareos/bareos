@@ -21,13 +21,13 @@
 #ifndef BAREOS_STORED_SOCKET_SERVER_H_
 #define BAREOS_STORED_SOCKET_SERVER_H_
 
-template <typename T> class dlist;
+#include <list>
 class ConfigurationParser;
 class IPADDR;
 
 namespace storagedaemon {
 
-void StartSocketServer(dlist<IPADDR>* addrs);
+void StartSocketServer(std::list<IPADDR*>* addrs);
 void StopSocketServer();
 void* HandleConnectionRequest(ConfigurationParser* config, void* arg);
 

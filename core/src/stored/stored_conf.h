@@ -33,9 +33,9 @@
 #include "stored/device_resource.h"
 #include "lib/messages_resource.h"
 #include "lib/tls_conf.h"
+#include <list>
 
 template <typename T> class alist;
-template <typename T> class dlist;
 
 class IPADDR;
 
@@ -87,10 +87,10 @@ class StorageResource
     : public BareosResource
     , public TlsResource {
  public:
-  dlist<IPADDR>* SDaddrs = nullptr;
-  dlist<IPADDR>* SDsrc_addr
+  std::list<IPADDR*>* SDaddrs = nullptr;
+  std::list<IPADDR*>* SDsrc_addr
       = nullptr; /**< Address to source connections from */
-  dlist<IPADDR>* NDMPaddrs = nullptr;
+  std::list<IPADDR*>* NDMPaddrs = nullptr;
   char* working_directory = nullptr; /**< Working directory for checkpoints */
   char* plugin_directory = nullptr;  /**< Plugin directory */
   alist<const char*>* plugin_names = nullptr;

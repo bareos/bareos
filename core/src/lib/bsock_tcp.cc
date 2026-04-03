@@ -33,6 +33,7 @@
 #include <netdb.h>
 #include <netinet/tcp.h>
 #include "lib/bnet.h"
+#include "lib/bnet_server_tcp.h"
 #include "lib/bpoll.h"
 #include "lib/btimers.h"
 #include "lib/tls_openssl.h"
@@ -223,8 +224,8 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
                            int* fatal)
 {
   int sockfd = -1;
-  dlist<IPADDR>* addr_list;
-  IPADDR *ipaddr, *next, *to_free;
+  std::list<IPADDR*>* addr_list;
+  IPADDR* connected_ipaddr = nullptr;
   bool connected = false;
   int value;
   const char* errstr;
@@ -243,20 +244,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
   }
 
   // Remove any duplicate addresses.
-  for (ipaddr = (IPADDR*)addr_list->first(); ipaddr;
-       ipaddr = (IPADDR*)addr_list->next(ipaddr)) {
-    next = (IPADDR*)addr_list->next(ipaddr);
-    while (next) {
-      if (IsSameIpAddress(ipaddr, next)) {
-        to_free = next;
-        next = (IPADDR*)addr_list->next(next);
-        addr_list->remove(to_free);
-        delete to_free;
-      } else {
-        next = (IPADDR*)addr_list->next(next);
-      }
-    }
-  }
+  RemoveDuplicateAddresses(addr_list);
 
   if (use_keepalive_) {
     value = 1;
@@ -264,7 +252,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
     value = 0;
   }
 
-  foreach_dlist (ipaddr, addr_list) {
+  for (auto* ipaddr : *addr_list) {
     ipaddr->SetPortNet(htons(port));
     char allbuf[256 * 10];
     char curbuf[256];
@@ -331,6 +319,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
     }
     *fatal = 0;
     connected = true;
+    connected_ipaddr = ipaddr;
     break;
   }
 
@@ -367,7 +356,7 @@ bool BareosSocketTCP::open(JobControlRecord* jcr,
           be.bstrerror());
   }
 
-  FinInit(jcr, sockfd, name, host, port, ipaddr->get_sockaddr());
+  FinInit(jcr, sockfd, name, host, port, connected_ipaddr->get_sockaddr());
   FreeAddresses(addr_list);
   fd_ = sockfd;
   return true;

@@ -1327,7 +1327,7 @@ void ConfigurationParser::StoreAddresses(lexer* lc,
       scan_err1(lc, T_("Expected a end of block }, got: %s"), lc->str);
     }
     if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+        && !AddAddress(GetItemVariablePointer<std::list<IPADDR*>**>(*item),
                        IPADDR::R_MULTIPLE, htons(port), family, hostname_str,
                        port_str, errmsg, sizeof(errmsg))) {
       scan_err3(lc, T_("Can't add hostname(%s) and port(%s) to addrlist (%s)"),
@@ -1358,7 +1358,7 @@ void ConfigurationParser::StoreAddressesAddress(lexer* lc,
   }
 
   if (pass == 1
-      && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+      && !AddAddress(GetItemVariablePointer<std::list<IPADDR*>**>(*item),
                      IPADDR::R_SINGLE_ADDR, htons(port),
                      strchr(lc->str, ':') ? AF_INET6 : AF_INET, lc->str, 0,
                      errmsg, sizeof(errmsg))) {
@@ -1382,23 +1382,24 @@ void ConfigurationParser::StoreAddressesPort(lexer* lc,
   }
 
   bool has_address = false;
-  IPADDR* iaddr;
-  dlist<IPADDR>* addrs
-      = (dlist<IPADDR>*)(*(GetItemVariablePointer<dlist<IPADDR>**>(*item)));
-  foreach_dlist (iaddr, addrs) {
-    if (iaddr->GetType() == IPADDR::R_SINGLE) { has_address = true; }
+  std::list<IPADDR*>* addrs
+      = *(GetItemVariablePointer<std::list<IPADDR*>**>(*item));
+  if (addrs) {
+    for (auto* iaddr : *addrs) {
+      if (iaddr->GetType() == IPADDR::R_SINGLE) { has_address = true; }
+    }
   }
 
   if (has_address) {
     if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+        && !AddAddress(GetItemVariablePointer<std::list<IPADDR*>**>(*item),
                        IPADDR::R_SINGLE_PORT, htons(port), AF_INET, 0, lc->str,
                        errmsg, sizeof(errmsg))) {
       scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
     }
   } else {
     if (pass == 1
-        && !AddAddress(GetItemVariablePointer<dlist<IPADDR>**>(*item),
+        && !AddAddress(GetItemVariablePointer<std::list<IPADDR*>**>(*item),
                        IPADDR::R_SINGLE, htons(port), 0, 0, lc->str, errmsg,
                        sizeof(errmsg))) {
       scan_err2(lc, T_("can't add port (%s) to (%s)"), lc->str, errmsg);
@@ -2019,13 +2020,14 @@ void BareosResource::PrintResourceItem(const ResourceItem& item,
        * MessagesResource::PrintConfig() */
       break;
     case CFG_TYPE_ADDRESSES: {
-      dlist<IPADDR>* addrs = GetItemVariable<dlist<IPADDR>*>(item);
-      IPADDR* adr;
+      std::list<IPADDR*>* addrs = GetItemVariable<std::list<IPADDR*>*>(item);
       send.ArrayStart(item.name, inherited, "%s = {\n");
-      foreach_dlist (adr, addrs) {
-        send.SubResourceStart(NULL, inherited, "");
-        adr->BuildConfigString(send, inherited);
-        send.SubResourceEnd(NULL, inherited, "");
+      if (addrs) {
+        for (auto* adr : *addrs) {
+          send.SubResourceStart(NULL, inherited, "");
+          adr->BuildConfigString(send, inherited);
+          send.SubResourceEnd(NULL, inherited, "");
+        }
       }
       send.ArrayEnd(item.name, inherited, "}\n");
       break;

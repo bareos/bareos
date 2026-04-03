@@ -21,13 +21,14 @@
 #ifndef BAREOS_STORED_NDMP_TAPE_H_
 #define BAREOS_STORED_NDMP_TAPE_H_
 
-template <typename T> class dlist;
+#include <list>
+class IPADDR;
 
 namespace storagedaemon {
 
 void EndOfNdmpBackup(JobControlRecord* jcr);
 void EndOfNdmpRestore(JobControlRecord* jcr);
-int StartNdmpThreadServer(dlist<IPADDR>* addr_list);
+int StartNdmpThreadServer(std::list<IPADDR*>* addr_list);
 void StopNdmpThreadServer();
 
 } /* namespace storagedaemon */

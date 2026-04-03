@@ -25,8 +25,6 @@
 #include "lib/address_conf.h"
 #include "include/compiler_macro.h"
 
-template <typename T> class dlist;
-
 int32_t BnetRecv(BareosSocket* bsock);
 bool BnetSend(BareosSocket* bsock);
 bool BnetFsend(BareosSocket* bs, const char* fmt, ...) PRINTF_LIKE(2, 3);
@@ -48,7 +46,7 @@ int BnetWaitDataIntr(BareosSocket* bsock, int sec);
 bool IsBnetStop(BareosSocket* bsock);
 int IsBnetError(BareosSocket* bsock);
 void BnetSuppressErrorMessages(BareosSocket* bsock, bool flag);
-dlist<IPADDR>* BnetHost2IpAddrs(const char* host,
+std::list<IPADDR*>* BnetHost2IpAddrs(const char* host,
                                 int family,
                                 const char** errstr);
 int BnetSetBlocking(BareosSocket* sock);

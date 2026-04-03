@@ -557,7 +557,7 @@ bail_out:
 static bool ResolveCmd(JobControlRecord* jcr)
 {
   BareosSocket* dir = jcr->dir_bsock;
-  dlist<IPADDR>* addr_list;
+  std::list<IPADDR*>* addr_list;
   const char* errstr;
   char addresses[2048];
   char hostname[2048];

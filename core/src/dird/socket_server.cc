@@ -191,7 +191,7 @@ bool StartSocketServer(std::vector<s_sockfd>&& bound_sockets)
   return true;
 }
 
-bool StartSocketServer(dlist<IPADDR>* addrs)
+bool StartSocketServer(std::list<IPADDR*>* addrs)
 {
   auto bound_sockets = OpenAndBindSockets(addrs);
 

@@ -23,6 +23,7 @@
 
 #include <atomic>
 #include <functional>
+#include <list>
 #include <vector>
 
 constexpr int kListenBacklog = 50;
@@ -30,7 +31,6 @@ constexpr int kListenBacklog = 50;
 class ConfigurationParser;
 class ThreadList;
 class IPADDR;
-
 enum class BnetServerState
 {
   kUndefined = 0,
@@ -39,8 +39,6 @@ enum class BnetServerState
   kStarted,
   kEnded
 };
-
-template <typename T> class dlist;
 
 void close_socket(int fd);
 
@@ -69,7 +67,7 @@ struct s_sockfd {
   }
 };
 
-std::vector<s_sockfd> OpenAndBindSockets(dlist<IPADDR>* addr_list);
+std::vector<s_sockfd> OpenAndBindSockets(std::list<IPADDR*>* addr_list);
 
 void BnetThreadServerTcp(
     std::vector<s_sockfd> bound_sockets,
@@ -81,10 +79,10 @@ void BnetThreadServerTcp(
     std::function<void*(void* bsock)> UserAgentShutdownCallback = nullptr,
     std::function<void()> CustomCallback = nullptr);
 
-void RemoveDuplicateAddresses(dlist<IPADDR>* addr_list);
+void RemoveDuplicateAddresses(std::list<IPADDR*>* addr_list);
 
 int OpenSocketAndBind(IPADDR* ipaddr,
-                      dlist<IPADDR>* addr_list,
+                      std::list<IPADDR*>* addr_list,
                       uint16_t port_number);
 
 void BnetStopAndWaitForThreadServerTcp(pthread_t tid);

@@ -154,8 +154,8 @@ void BareosSocket::CloseTlsConnectionAndFreeMemory()
   }
 }
 
-// Copy the address from the configuration dlist that gets passed in
-void BareosSocket::SetSourceAddress(dlist<IPADDR>* src_addr_list)
+// Copy the address from the configuration std::list that gets passed in
+void BareosSocket::SetSourceAddress(std::list<IPADDR*>* src_addr_list)
 {
   char allbuf[256 * 10];
   IPADDR* addr = nullptr;
@@ -170,7 +170,7 @@ void BareosSocket::SetSourceAddress(dlist<IPADDR>* src_addr_list)
   }
 
   if (src_addr_list) {
-    addr = src_addr_list->first();
+    addr = src_addr_list->front();
     src_addr = new IPADDR(*addr);
   }
 }

@@ -113,14 +113,12 @@ static void* UserAgentShutdownCallback(void* bsock)
   return nullptr;
 }
 
-void StartSocketServer(dlist<IPADDR>* addrs)
+void StartSocketServer(std::list<IPADDR*>* addrs)
 {
-  IPADDR* p;
-
   tcp_server_tid = pthread_self();
 
   // Become server, and handle requests
-  foreach_dlist (p, addrs) {
+  for (auto* p : *addrs) {
     Dmsg1(10, "filed: listening on port %d\n", p->GetPortHostOrder());
   }
 

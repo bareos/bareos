@@ -25,12 +25,11 @@
 #include <vector>
 #include "lib/bnet_server_tcp.h"
 
-template <typename T> class dlist;
 class IPADDR;
 
 namespace directordaemon {
 
-bool StartSocketServer(dlist<IPADDR>* addrs);
+bool StartSocketServer(std::list<IPADDR*>* addrs);
 bool StartSocketServer(std::vector<s_sockfd>&& bound_sockets);
 void StopSocketServer();
 

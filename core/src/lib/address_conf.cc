@@ -232,7 +232,7 @@ bool IsSameIpAddress(IPADDR* first, IPADDR* second)
 }
 
 
-const char* BuildAddressesString(dlist<IPADDR>* addrs,
+const char* BuildAddressesString(std::list<IPADDR*>* addrs,
                                  char* buf,
                                  int blen,
                                  bool print_port /*=true*/)
@@ -242,8 +242,7 @@ const char* BuildAddressesString(dlist<IPADDR>* addrs,
     return buf;
   }
   char* work = buf;
-  IPADDR* p;
-  foreach_dlist (p, addrs) {
+  for (auto* p : *addrs) {
     char tmp[1024];
     int len = Bsnprintf(work, blen, "%s",
                         p->build_address_str(tmp, sizeof(tmp), print_port));
@@ -254,44 +253,33 @@ const char* BuildAddressesString(dlist<IPADDR>* addrs,
   return buf;
 }
 
-int GetFirstPortHostOrder(dlist<IPADDR>* addrs)
+int GetFirstPortHostOrder(std::list<IPADDR*>* addrs)
 {
   if (!addrs) {
     return 0;
   } else {
-    return ((IPADDR*)(addrs->first()))->GetPortHostOrder();
+    return addrs->front()->GetPortHostOrder();
   }
 }
 
-bool RemoveDefaultAddresses(dlist<IPADDR>* addrs,
+bool RemoveDefaultAddresses(std::list<IPADDR*>* addrs,
                             IPADDR::i_type type,
                             char* buf,
                             int buflen)
 {
-  IPADDR* iaddr;
-  IPADDR* default_address = nullptr;
-  IPADDR* todelete = nullptr;
-
-  foreach_dlist (iaddr, addrs) {
-    if (todelete) {
-      delete (todelete);
-      todelete = nullptr;
-    }
+  auto it = addrs->begin();
+  while (it != addrs->end()) {
+    IPADDR* iaddr = *it;
     if (iaddr->GetType() == IPADDR::R_DEFAULT) {
-      default_address = iaddr;
-      if (default_address) {
-        addrs->remove(default_address);
-        todelete = default_address;
-      }
+      it = addrs->erase(it);
+      delete iaddr;
     } else if (iaddr->GetType() != type) {
       Bsnprintf(buf, buflen,
                 T_("the old style addresses cannot be mixed with new style"));
       return false;
+    } else {
+      ++it;
     }
-  }
-  if (todelete) {
-    delete (todelete);
-    todelete = nullptr;
   }
   return true;
 }
@@ -379,7 +367,7 @@ bool CheckIfFamilyEnabled(IpFamily family)
   return true;
 }
 
-int AddAddress(dlist<IPADDR>** out,
+int AddAddress(std::list<IPADDR*>** out,
                IPADDR::i_type type,
                unsigned short defaultport,
                int family,
@@ -388,15 +376,13 @@ int AddAddress(dlist<IPADDR>** out,
                char* buf,
                int buflen)
 {
-  IPADDR* iaddr = nullptr;
-  IPADDR* jaddr = nullptr;
-  dlist<IPADDR>* hostaddrs = nullptr;
+  std::list<IPADDR*>* hostaddrs = nullptr;
   unsigned short port;
   IPADDR::i_type intype = type;
 
   buf[0] = 0;
-  dlist<IPADDR>* addrs = *(out);
-  if (!addrs) { addrs = *out = new dlist<IPADDR>(); }
+  std::list<IPADDR*>* addrs = *(out);
+  if (!addrs) { addrs = *out = new std::list<IPADDR*>(); }
 
   type = (type == IPADDR::R_SINGLE_PORT || type == IPADDR::R_SINGLE_ADDR)
              ? IPADDR::R_SINGLE
@@ -436,13 +422,13 @@ int AddAddress(dlist<IPADDR>** out,
   if (intype == IPADDR::R_SINGLE_PORT) {
     IPADDR* addr;
     if (addrs->size()) {
-      addr = (IPADDR*)addrs->first();
+      addr = addrs->front();
     } else {
       addr = new IPADDR(family);
       addr->SetType(type);
       addr->SetPortNet(defaultport);
       addr->SetAddrAny();
-      addrs->append(addr);
+      addrs->push_back(addr);
     }
     addr->SetPortNet(port);
 
@@ -451,7 +437,7 @@ int AddAddress(dlist<IPADDR>** out,
     int addr_port = defaultport;
 
     if (addrs->size()) {
-      addr = (IPADDR*)addrs->first();
+      addr = addrs->front();
       addr_port = addr->GetPortNetOrder();
       EmptyAddressList(addrs);
     }
@@ -459,14 +445,14 @@ int AddAddress(dlist<IPADDR>** out,
     addr = new IPADDR(family);
     addr->SetType(type);
     addr->SetPortNet(addr_port);
-    addr->CopyAddr((IPADDR*)(hostaddrs->first()));
-    addrs->append(addr);
+    addr->CopyAddr(hostaddrs->front());
+    addrs->push_back(addr);
 
   } else {
-    foreach_dlist (iaddr, hostaddrs) {
+    for (auto* iaddr : *hostaddrs) {
       bool sameaddress = false;
       /* for duplicates */
-      foreach_dlist (jaddr, addrs) {
+      for (auto* jaddr : *addrs) {
         if (IsSameIpAddress(iaddr, jaddr)) {
           sameaddress = true;
           break;
@@ -477,7 +463,7 @@ int AddAddress(dlist<IPADDR>** out,
         clone = new IPADDR(*iaddr);
         clone->SetType(type);
         clone->SetPortNet(port);
-        addrs->append(clone);
+        addrs->push_back(clone);
       }
     }
   }
@@ -485,7 +471,7 @@ int AddAddress(dlist<IPADDR>** out,
   return 1;
 }
 
-void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
+void InitDefaultAddresses(std::list<IPADDR*>** out, const char* port)
 {
   char buf[1024];
   unsigned short sport = str_to_int32(port);
@@ -510,33 +496,15 @@ void InitDefaultAddresses(dlist<IPADDR>** out, const char* port)
   }
 }
 
-void EmptyAddressList(dlist<IPADDR>* addrs)
+void EmptyAddressList(std::list<IPADDR*>* addrs)
 {
-  IPADDR* iaddr = nullptr;
-  IPADDR* addrtodelete = nullptr;
-  foreach_dlist (iaddr, addrs) {
-    if (addrtodelete) {
-      delete (addrtodelete);
-      addrtodelete = nullptr;
-    }
-    if (iaddr) {
-      addrtodelete = iaddr;
-      addrs->remove(iaddr);
-    }
-  }
-  if (addrtodelete) {
-    delete (addrtodelete);
-    addrtodelete = nullptr;
-  }
+  for (IPADDR* iaddr : *addrs) { delete iaddr; }
+  addrs->clear();
 }
 
-void FreeAddresses(dlist<IPADDR>* addrs)
+void FreeAddresses(std::list<IPADDR*>* addrs)
 {
-  while (!addrs->empty()) {
-    IPADDR* ptr = (IPADDR*)addrs->first();
-    addrs->remove(ptr);
-    delete ptr;
-  }
+  for (IPADDR* ptr : *addrs) { delete ptr; }
   delete addrs;
 }
 

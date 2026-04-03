@@ -90,7 +90,7 @@ namespace storagedaemon {
  * structure.
  */
 struct ndmp_thread_server_args {
-  dlist<IPADDR>* addr_list;
+  std::list<IPADDR*>* addr_list;
   ThreadList* thread_list;
 };
 
@@ -1125,7 +1125,6 @@ extern "C" void* ndmp_thread_server(void* arg)
   struct sockaddr_storage cli_addr; /* client's address */
   int tlog, tmax;
   int turnon = 1;
-  IPADDR *ipaddr, *next;
   struct s_sockfd {
     dlink<s_sockfd> link; /* this MUST be the first item */
     int fd;
@@ -1150,7 +1149,7 @@ extern "C" void* ndmp_thread_server(void* arg)
 #  ifdef HAVE_POLL
   nfds = 0;
 #  endif
-  foreach_dlist (ipaddr, ntsa->addr_list) {
+  for (auto* ipaddr : *ntsa->addr_list) {
     // Allocate on stack from -- no need to free
     sockfd_ptr = (s_sockfd*)alloca(sizeof(s_sockfd));
     sockfd_ptr->port = ipaddr->GetPortNetOrder();
@@ -1283,7 +1282,7 @@ extern "C" void* ndmp_thread_server(void* arg)
   return NULL;
 }
 
-int StartNdmpThreadServer(dlist<IPADDR>* addr_list)
+int StartNdmpThreadServer(std::list<IPADDR*>* addr_list)
 {
   int status;
 

@@ -40,6 +40,7 @@
 #include "include/fcntl_def.h"
 #include "include/bareos.h"
 #include "include/jcr.h"
+#include "lib/dlist.h"
 #include "include/exit_codes.h"
 #include "lib/berrno.h"
 #include "lib/bsock.h"

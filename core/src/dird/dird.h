@@ -30,6 +30,7 @@
 #include "dird/dird_conf.h"
 #include "include/bareos.h"
 #include "lib/connection_pool.h"
+#include "lib/dlist.h"
 #include "lib/runscript.h"
 #include "stored/bsr.h"
 #include "ndmp/smc.h"

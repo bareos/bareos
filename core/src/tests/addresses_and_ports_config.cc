@@ -190,21 +190,21 @@ static bool try_binding_director_port(std::string path_to_config,
 static void check_addresses_list(std::string path_to_config,
                                  std::vector<std::string> expected_addresses)
 {
-  char buff[1024];
-  IPADDR* addr;
-
   std::vector<std::string> director_addresses;
 
   PConfigParser director_config(DirectorPrepareResources(path_to_config));
   EXPECT_TRUE(director_config);
 
-  foreach_dlist (addr, directordaemon::me->DIRaddrs) {
-    addr->build_address_str(buff, sizeof(buff), true);
+  if (directordaemon::me->DIRaddrs) {
+    char buff[1024];
+    for (auto* addr : *directordaemon::me->DIRaddrs) {
+      addr->build_address_str(buff, sizeof(buff), true);
 
-    std::string theaddress = std::string(buff);
-    theaddress.pop_back();
+      std::string theaddress = std::string(buff);
+      theaddress.pop_back();
 
-    director_addresses.push_back(theaddress);
+      director_addresses.push_back(theaddress);
+    }
   }
 
   std::sort(director_addresses.begin(), director_addresses.end());
