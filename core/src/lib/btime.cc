@@ -43,6 +43,8 @@
 #include "include/bareos.h"
 #include "lib/btime.h"
 #include <math.h>
+#include <string>
+#include <sys/time.h>
 
 #if defined(HAVE_LOCALTIME_R)
 void Blocaltime(const time_t* time, struct tm* tm)
@@ -74,10 +76,49 @@ char* bstrftime(char* dt, int maxlen, utime_t utime, const char* fmt)
   struct tm tm;
 
   Blocaltime(&time, &tm);
-  if (fmt) {
-    strftime(dt, maxlen, fmt, &tm);
-  } else {
-    strftime(dt, maxlen, "%d-%b-%Y %H:%M", &tm);
+
+  const char* effective_fmt = fmt ? fmt : "%d-%b-%Y %H:%M";
+
+  /* Fast path: no custom extensions, delegate directly to strftime. */
+  if (!strstr(effective_fmt, "%f") && !strstr(effective_fmt, "%z")) {
+    strftime(dt, maxlen, effective_fmt, &tm);
+    return dt;
+  }
+
+  /* Build a working copy of the format string, replacing %f with the
+   * current microseconds (6-digit zero-padded). */
+  std::string fmt_work(effective_fmt);
+
+  if (fmt_work.find("%f") != std::string::npos) {
+    struct timeval tv;
+    gettimeofday(&tv, nullptr);
+    char usec_str[8];
+    snprintf(usec_str, sizeof(usec_str), "%06d", (int)tv.tv_usec);
+    size_t pos;
+    while ((pos = fmt_work.find("%f")) != std::string::npos) {
+      fmt_work.replace(pos, 2, usec_str);
+    }
+  }
+
+  strftime(dt, maxlen, fmt_work.c_str(), &tm);
+
+  /* Post-process: strftime's %z produces "+HHMM"; ISO 8601 requires "+HH:MM".
+   * Scan the output for a sign followed by exactly four digits and insert
+   * the colon between the hour and minute parts. */
+  if (fmt_work.find("%z") != std::string::npos) {
+    for (char* p = dt; *p; ++p) {
+      if ((*p == '+' || *p == '-') && isdigit((unsigned char)p[1])
+          && isdigit((unsigned char)p[2]) && isdigit((unsigned char)p[3])
+          && isdigit((unsigned char)p[4])
+          && !isdigit((unsigned char)p[5])) {
+        /* Insert ':' between hours and minutes (+HH:MM). */
+        if (dt + maxlen - p > 6) {
+          memmove(p + 4, p + 3, strlen(p + 3) + 1);
+          p[3] = ':';
+        }
+        break;
+      }
+    }
   }
 
   return dt;

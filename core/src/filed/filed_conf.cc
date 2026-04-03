@@ -110,7 +110,7 @@ static const ResourceItem cli_items[] = {
   { "AlwaysUseLmdb", CFG_TYPE_BOOL, ITEM(res_client, always_use_lmdb), {config::DeprecatedSince{24, 0, 0}, config::DefaultValue{"false"}, config::Description{"Ensure that bareos always chooses the lmdb backend for accurate information regardless of the file list size.  Use LmdbThreshold = 0 instead."}}},
   { "LmdbThreshold", CFG_TYPE_PINT32, ITEM(res_client, lmdb_threshold), {config::Description{"File count threshold after which bareos will use the lmdb backend to store accurate information."}}},
   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client, secure_erase_cmdline), {config::IntroducedIn{15, 2, 1}, config::Description{"Specify command that will be called when bareos unlinks files."}}},
-  { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format), {config::IntroducedIn{15, 2, 3}, config::DefaultValue{"%d-%b %H:%M"}}},
+  { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client, log_timestamp_format), {config::IntroducedIn{15, 2, 3}, config::DefaultValue{"%Y-%m-%dT%H:%M:%S.%f%z"}}},
   { "GrpcModule", CFG_TYPE_STDSTR, ITEM(res_client, grpc_module),
    {config::IntroducedIn{25, 0, 0},
     config::Description{"The grpc module to use for grpc fallback."},

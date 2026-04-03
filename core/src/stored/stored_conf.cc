@@ -116,7 +116,7 @@ static const ResourceItem store_items[] = {
   { "DeviceReserveByMediaType", CFG_TYPE_BOOL, ITEM(res_store, device_reserve_by_mediatype), {config::DefaultValue{"false"}}},
   { "FileDeviceConcurrentRead", CFG_TYPE_BOOL, ITEM(res_store, filedevice_concurrent_read), {config::DefaultValue{"false"}}},
   { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_store, secure_erase_cmdline), {config::IntroducedIn{15, 2, 1}, config::Description{"Specify command that will be called when bareos unlinks files."}}},
-  { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store, log_timestamp_format), {config::IntroducedIn{15, 2, 3}, config::DefaultValue{"%d-%b %H:%M"}}},
+  { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store, log_timestamp_format), {config::IntroducedIn{15, 2, 3}, config::DefaultValue{"%Y-%m-%dT%H:%M:%S.%f%z"}}},
   { "EnableKtls", CFG_TYPE_BOOL, ITEM(res_store, enable_ktls), {config::DefaultValue{"false"}, config::Description{"If set to \"yes\", Bareos will allow the SSL implementation to use Kernel TLS."}, config::IntroducedIn{23, 0, 0}}},
     TLS_COMMON_CONFIG(res_store),
     TLS_CERT_CONFIG(res_store),
