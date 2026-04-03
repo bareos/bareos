@@ -771,8 +771,8 @@ void JobControlRecord::setJobStatusWithPriorityCheck(int newJobStatus)
           newJobStatus);
     //    GeneratePluginEvent(this, bEventStatusChange, nullptr);
     if (JobId != 0) {
-      Jmsg(this, M_INFO, 0, T_("Job status: %s\n"),
-           JobStatusToString(JobStatus_));
+      Jmsg(this, M_INFO, 0, T_("Job status change: %s -> %s\n"),
+           JobStatusToString(oldJobStatus), JobStatusToString(JobStatus_));
     }
   }
 }
