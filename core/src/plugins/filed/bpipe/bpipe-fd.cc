@@ -34,6 +34,7 @@
 #include "include/filetypes.h"
 #include "filed/fd_plugins.h"
 #include "plugins/include/common.h"
+#include "lib/bool_string.h"
 #include "lib/bpipe.h"
 
 namespace filedaemon {
@@ -106,6 +107,7 @@ struct plugin_ctx {
   char* fname;          /* Filename to "backup/restore" */
   char* reader;         /* Reader program for backup */
   char* writer;         /* Writer program for backup */
+  char* autosuffix;     /* append unique suffix to fname */
 
   char where[512];
   int replace;
@@ -117,7 +119,8 @@ enum plugin_argument_type
   argument_none = 0,
   argument_file,
   argument_reader,
-  argument_writer
+  argument_writer,
+  argument_auto,
 };
 
 struct plugin_argument {
@@ -129,6 +132,7 @@ struct plugin_argument {
 static plugin_argument plugin_arguments[] = {{"file=", argument_file, 4},
                                              {"reader=", argument_reader, 6},
                                              {"writer=", argument_writer, 6},
+                                             {"autosuffix=", argument_auto, 10},
                                              {NULL, argument_none, 0}};
 
 #ifdef __cplusplus
@@ -264,7 +268,8 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
   p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
 
-  set_unique_name(ctx);
+  if(p_ctx->autosuffix != NULL
+    && BoolString(std::string(p_ctx->autosuffix)).get<bool>()) { set_unique_name(ctx); }
 
   now = time(NULL);
   sp->fname = p_ctx->fname;
@@ -767,6 +772,8 @@ static bRC parse_plugin_definition(PluginContext* ctx, void* value)
             case argument_writer:
               str_destination = &p_ctx->writer;
               break;
+            case argument_auto:
+              str_destination = &p_ctx->autosuffix;
             default:
               break;
           }
