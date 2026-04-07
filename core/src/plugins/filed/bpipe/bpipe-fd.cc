@@ -73,6 +73,7 @@ static bRC setXattr(PluginContext* ctx, xattr_pkt* xp);
 static std::string apply_rp_codes(PluginContext* ctx, const char* fmt);
 static bRC parse_plugin_definition(PluginContext* ctx, void* value);
 static bRC plugin_has_all_arguments(PluginContext* ctx);
+static void set_unique_name(PluginContext* ctx);
 
 /* Pointers to Bareos functions */
 static CoreFunctions* bareos_core_functions = NULL;
@@ -262,6 +263,8 @@ static bRC startBackupFile(PluginContext* ctx, save_pkt* sp)
 
   p_ctx = (struct plugin_ctx*)ctx->plugin_private_context;
   if (!p_ctx) { return bRC_Error; }
+
+  set_unique_name(ctx);
 
   now = time(NULL);
   sp->fname = p_ctx->fname;
@@ -565,6 +568,40 @@ static inline void SetString(char** destination, char* value)
 
   *destination = strdup(value);
   StripBackSlashes(*destination);
+}
+
+static char get_level_letter(int level) {
+     switch (level) {
+        case L_FULL: return 'F';
+        case L_DIFFERENTIAL: return 'D';
+        case L_INCREMENTAL: return 'I';
+        case L_NONE: return 'N';
+        default: return 'E';
+      }
+}
+
+static void set_unique_name(PluginContext* ctx) {
+  plugin_ctx* p_ctx = (plugin_ctx*)ctx->plugin_private_context;
+
+  int job_id;
+  char* job_name;
+  int job_level;
+
+  char new_fname[1024];
+
+  bareos_core_functions->getBareosValue(ctx, bVarJobId, &job_id);
+  bareos_core_functions->getBareosValue(ctx, bVarJobName, &job_name);
+  bareos_core_functions->getBareosValue(ctx, bVarLevel, &job_level);
+
+  snprintf(new_fname, sizeof(new_fname),
+    "%s.%s.%c.%d",
+    p_ctx->fname,
+    job_name,
+    get_level_letter(job_level),
+    job_id);
+
+  free(p_ctx->fname);
+  p_ctx->fname = strdup(new_fname);
 }
 
 /**
