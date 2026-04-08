@@ -18,22 +18,17 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+#ifndef BAREOS_LIB_TLS_OPENSSL_H_
+#define BAREOS_LIB_TLS_OPENSSL_H_
 
 #include "lib/tls.h"
-#include "lib/tls/openssl.h"
 
-Tls::Tls() { return; }
+#include "include/bareos.h"
+#include <memory>
 
-Tls::~Tls() { return; }
+class TlsOpenSslPrivate;
+class ConfigResourcesContainer;
 
-Tls* Tls::CreateNewTlsContext(Tls::TlsImplementationType type)
-{
-  switch (type) {
-    case Tls::TlsImplementationType::kTlsOpenSsl:
-      return make_openssl_tls().release();
+std::unique_ptr<Tls> make_openssl_tls();
 
-    case Tls::TlsImplementationType::kTlsUnknown:
-    default:
-      return nullptr;
-  }
-}
+#endif  // BAREOS_LIB_TLS_OPENSSL_H_
