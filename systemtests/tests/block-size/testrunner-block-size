@@ -20,20 +20,6 @@
 #   02110-1301, USA.
 
 #
-# Run a full backup, followed by 3 accurate incrementals
-# then do a consolidation. The first 3 jobs will got consolidated
-# the last incremental is kept
-# (job->AlwaysIncrementalKeepNumber default is 1)
-#
-# Run a batch of 3 incrementals with no files
-# Run consolidation : jobid with no files will get purged
-#
-# Run a batch of 3 incrementals the second with no files
-# Then a consolidation: VF and last incremental of first run
-# plus first incremental of 3rd run are consolidated when
-# 2nd increment with no files is purged
-# Last incremental is kept as is.
-#
 set -e
 set -o pipefail
 set -u
@@ -41,7 +27,7 @@ set -u
 #
 # Check if the volume blocks really use the configured block sizes.
 # Runs backups to File and Tape,
-# but only Tape has MaximumBlockSize larger than the  Default Block Size.
+# but only Tape has MaximumBlockSize larger than the Default Block Size.
 #
 
 TestName="$(basename "$(pwd)")"
@@ -53,9 +39,6 @@ JobName=backup-bareos-fd
 
 #shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=test-config.in
-. ./test-config
-
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
 
@@ -92,7 +75,6 @@ get_data_size()
 
 # start the test
 start_test
-
 cat <<END_OF_DATA >tmp/bconcmds
 @$out tmp/log1.out
 label storage=File1 pool=File volume=${VolumeName} yes
@@ -111,6 +93,7 @@ mark *
 done
 yes
 wait
+release storage=Tape-0 drive=0
 messages
 quit
 END_OF_DATA
@@ -154,8 +137,10 @@ if [ "$blocksize_data" != $DEFAULT_BLOCK_SIZE ]; then
   set_error "Wrong data block size (block 3): expected: $DEFAULT_BLOCK_SIZE, got: $blocksize_data"
 fi
 
+mtx -f ${CHANGER_DEVICE0} load 1 ${USE_TAPE_DEVICE}
 tape_out=$(bls_blocks tapedrive0-0 "*")
 blocksize_label=$(get_block_size "${tape_out}" 1)
+mtx -f ${CHANGER_DEVICE0} unload 1 ${USE_TAPE_DEVICE}
 if [[ -z "$blocksize_data" ]]; then
   set_error "Could not read the label blocksize"
 fi
