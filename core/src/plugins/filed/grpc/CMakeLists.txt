@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2024-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2024-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -156,6 +156,7 @@ if(ENABLE_GRPC)
     "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_types.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_type_conv.py"
     "${CMAKE_CURRENT_SOURCE_DIR}/bareos-fd-local-fileset-acl-xattr.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/bareos-fd-local-fileset-with-restoreobjects.py"
     COPY
   )
   bareos_configure_file(FILES "${CMAKE_CURRENT_SOURCE_DIR}/xattr-upb.sh.in")
