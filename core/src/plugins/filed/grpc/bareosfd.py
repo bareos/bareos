@@ -3,7 +3,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+# Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -136,6 +136,11 @@ class BareosConnection:
         self.core_events = socket.socket(fileno=3)
         self.plugin_requests = socket.socket(fileno=4)
         self.data_transfer = socket.socket(fileno=5)
+
+    def close(self):
+        self.data_transfer.close()
+        self.core_events.close()
+        self.plugin_requests.close()
 
     def read_event(self) -> plugin_pb2.PluginRequest:
         req = plugin_pb2.PluginRequest()
@@ -1405,3 +1410,8 @@ def run():
     except:
         error = traceback.format_exc()
         log(f"error = {error}")
+        if con is not None:
+            log(f"closing the connection")
+            con.close()
+        log(f"waiting for the handler thread to finish")
+        handler_thread.join()
