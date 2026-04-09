@@ -2698,12 +2698,12 @@ struct grpc_connection_builder {
 
 #if defined(HAVE_FCNTL_F_CLOSEM)
       // fcntl(fd, F_CLOSEM) needs the lowest filedescriptor to close.
-      fcntl(7, F_CLOSEM);
+      fcntl(6, F_CLOSEM);
 #elif defined(HAVE_CLOSEFROM)
       // closefrom needs the lowest filedescriptor to close.
-      closefrom(7);
+      closefrom(6);
 #else
-      for (int i = 7; i <= 32; i++) { /* close any open file descriptors */
+      for (int i = 6; i <= 32; i++) { /* close any open file descriptors */
         close(i);
       }
 #endif
