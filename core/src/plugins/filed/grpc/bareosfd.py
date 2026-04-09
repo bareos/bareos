@@ -75,6 +75,9 @@ def log(msg):
 def readnbyte(sock, n):
     buff = bytearray(n)
     pos = 0
+
+    log(f"reading {n} bytes from {sock}")
+
     while pos < n:
         cr = sock.recv_into(memoryview(buff)[pos:])
         if cr == 0:
@@ -138,12 +141,16 @@ class BareosConnection:
         self.data_transfer = socket.socket(fileno=5)
 
     def close(self):
-        self.data_transfer.close()
-        self.core_events.close()
-        self.plugin_requests.close()
+        how = socket.SHUT_RDWR
+        self.data_transfer.shutdown(how)
+        self.core_events.shutdown(how)
+        self.plugin_requests.shutdown(how)
+
+        log(f"closed everything, including {self.core_events}")
 
     def read_event(self) -> plugin_pb2.PluginRequest:
         req = plugin_pb2.PluginRequest()
+        log(f"reading event from {self.core_events}")
         readmsg(self.core_events, req)
         return req
 
@@ -1284,7 +1291,9 @@ class CoreEventHandler:
     def run(self):
         try:
             while not self.quit:
+                log(f"[handler] waiting for event")
                 event = self.con.read_event()
+                log(f"[handler] got event")
                 if not self.handle_event(event):
                     self.unhandled_events.put(event)
         except:
@@ -1410,6 +1419,7 @@ def run():
     except:
         error = traceback.format_exc()
         log(f"error = {error}")
+        handler.quit = True
         if con is not None:
             log(f"closing the connection")
             con.close()
