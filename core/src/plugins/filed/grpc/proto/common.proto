@@ -48,14 +48,14 @@ message OsStat {
   uint64 uid = 5;
   uint64 gid = 6;
   uint64 rdev = 7;
-  uint64 size = 8;
+  int64 size = 8;
 
   google.protobuf.Timestamp atime = 9;
   google.protobuf.Timestamp mtime = 10;
   google.protobuf.Timestamp ctime = 11;
 
-  uint64 blksize = 12;
-  uint64 blocks = 13;
+  int64 blksize = 12;
+  int64 blocks = 13;
 }
 
 message PluginObject {
