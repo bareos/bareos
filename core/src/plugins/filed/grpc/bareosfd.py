@@ -361,7 +361,7 @@ def handle_plugin_event(
             # the plugin does not get to see this for some reason ...
             result = bRC_OK
         case "restore_object":
-            rop = event.rop
+            rop = event.restore_object.rop
 
             if not plugin_loaded:
                 result = handle_plugin_options(rop.used_cmd_string)
@@ -373,9 +373,10 @@ def handle_plugin_event(
                 pyrop.plugin_name = rop.used_cmd_string
                 pyrop.object_len = len(rop.sent.data)
                 pyrop.object = rop.sent.data
+                pyrop.object_name = rop.sent.name.decode()
                 pyrop.object_index = rop.sent.index
                 pyrop.JobId = rop.jobid
-                result = BareosFdWrapper.restore_object_data()
+                result = BareosFdWrapper.restore_object_data(pyrop)
 
         case "handle_backup_file":
             # this is currently unsupported
@@ -825,14 +826,14 @@ class Restore:
         con.send_file_resp(answer)
 
         if do_core:
-            if not have("core_creation_done"):
+            if not self.have("core_creation_done"):
                 JobMessage(
                     bJobMessageType.M_FATAL,
                     "plugin requested the core to do the file creation, but core did not do so",
                 )
             else:
-                creation_done = pop()
-                cd = creation_done.creation_done
+                creation_done = self.pop()
+                cd = creation_done.core_creation_done
                 if cd.success:
                     DebugMessage(200, "core created file, we can continue with restore")
                 else:
