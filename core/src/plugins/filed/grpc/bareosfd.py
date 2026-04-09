@@ -1185,6 +1185,10 @@ class Backup:
                 # FIXME
                 raise ValueError
 
+            if xp.name is None:
+                # this is how plugins signal that there is no xattr data
+                break
+
             xattr.name = bytes(xp.name)
             xattr.content = bytes(xp.value)
             con.send_data(resp)
