@@ -385,7 +385,12 @@ bool dedup_device::d_truncate(DeviceControlRecord* dcr)
 
   try {
     auto parsed = dedup::device_option_parser::parse(dev_options ?: "");
-    dedup::volume::create_new(s.st_mode, path.c_str(),
+
+    // directories always have the exectutable bit set.   We do not want
+    // to create the volumes files with it set (as there is not reason for
+    // them to be executable), so we always remove the executable bit
+
+    dedup::volume::create_new(s.st_mode & ~S_IXUSR, path.c_str(),
                               parsed.options.blocksize);
     auto& opened_volume
         = openvol.emplace(dedup::volume::open_type::ReadWrite, path.c_str());
