@@ -11,3 +11,17 @@ FileSet {
              ":filename=@tmpdir@/file-list"
   }
 }
+
+
+FileSet {
+  Name = "PluginNative"
+  Description = "Test the Plugin functionality with a Python Plugin."
+  Include {
+    Options {
+      Signature = XXH128
+    }
+    Plugin = "grpc:bareos-fd-local-fileset-with-restoreobjects.py"
+             ":module_path=@python_plugin_module_src_test_dir@"
+             ":filename=@tmpdir@/file-list"
+  }
+}
