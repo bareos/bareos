@@ -2527,7 +2527,7 @@ struct grpc_connection_builder {
     OSFile std_err;
 
     Socket grpc_parent;  // parent = server
-    Socket grpc_child;   // child = server
+    Socket grpc_child;   // child = client
     Socket grpc_io;
   };
 
@@ -2681,16 +2681,19 @@ struct grpc_connection_builder {
           || !FixupBadFD(std_in, dummy_fd)
           || !FixupBadFD(io.std_out.get(), dummy_fd)
           || !FixupBadFD(io.std_err.get(), dummy_fd)) {
-        return std::nullopt;
+        fprintf(stderr, "could free special fds: Err=%s\n\n\n",
+                strerror(errno));
+        exit(99);
       }
 
       if (!move_fd(std_in, (int)predefined_fd::In)
-          || !move_fd(io.std_out.get(), (int)predefined_fd::Out)
-          || !move_fd(io.std_err.get(), (int)predefined_fd::Err)
+          || !move_fd(io.std_out.release(), (int)predefined_fd::Out)
+          || !move_fd(io.std_err.release(), (int)predefined_fd::Err)
           || !move_fd(io.grpc_parent.release(), (int)predefined_fd::GrpcOut)
           || !move_fd(io.grpc_child.release(), (int)predefined_fd::GrpcIn)
           || !move_fd(io.grpc_io.release(), (int)predefined_fd::GrpcIo)) {
-        return std::nullopt;
+        fprintf(stderr, "could not move fds: Err=%s\n\n\n", strerror(errno));
+        exit(99);
       }
 
 #if defined(HAVE_FCNTL_F_CLOSEM)
