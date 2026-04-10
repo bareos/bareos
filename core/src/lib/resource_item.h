@@ -53,7 +53,7 @@ struct IntroducedIn {
 };
 
 struct Code {
-  size_t value;
+  int value;
 };
 
 struct Required {};
@@ -93,10 +93,13 @@ template <typename What, typename... Args> struct is_present {
 };
 
 
-template <typename T, typename... Ts> T* get_if(std::tuple<Ts...>& tuple)
+template <typename T, typename... Ts>
+constexpr const T* get_if(std::tuple<Ts...>& tuple)
 {
   if constexpr (is_present<T, Ts...>::value) {
     return &std::get<T>(tuple);
+  } else if constexpr (is_present<const T, Ts...>::value) {
+    return &std::get<const T>(tuple);
   } else {
     return nullptr;
   }
@@ -106,14 +109,15 @@ struct ResourceItemFlags {
   std::optional<config::Version> introduced_in{};
   std::optional<config::Version> deprecated_since{};
   const char* default_value{};
-  std::optional<int> extra{};
+  std::optional<int> extra = std::nullopt;
   bool required{};
   std::vector<std::string> aliases{};
   bool platform_specific{};
   bool no_equals{};
   const char* description{};
 
-  template <typename... Types> ResourceItemFlags(Types&&... values)
+  template <typename... Types>
+  constexpr ResourceItemFlags(const Types&... values)
   {
     static_assert(
         (is_present<Types, config::DefaultValue, config::IntroducedIn,
@@ -142,7 +146,7 @@ struct ResourceItemFlags {
     static_assert(occurrences<config::UsesNoEquals, Types...>::value <= 1,
                   "flag may only be specified once");
 
-    std::tuple<Types...> tup{std::forward<Types>(values)...};
+    std::tuple<const Types...> tup{values...};
 
     if (auto* defval = get_if<config::DefaultValue>(tup)) {
       default_value = defval->value;
@@ -175,7 +179,7 @@ struct ResourceItem {
                const int type_,
                std::size_t offset_,
                BareosResource** allocated_resource_,
-               ResourceItemFlags&& resource_flags)
+               ResourceItemFlags resource_flags)
       : name{name_}
       , type{type_}
       , offset{offset_}
