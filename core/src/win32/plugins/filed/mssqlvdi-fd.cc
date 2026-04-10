@@ -1309,7 +1309,7 @@ static inline bool SetupVdiDevice(PluginContext* ctx, io_pkt* io)
                            ? VDI_DEFAULT_WAIT
                            : p_ctx->get_configuration_timeout * 1000;  // ms
 
-    Jmsg(ctx, M_INFO, "Calling GetConfiguration with a timeout of %d sec\n.",
+    Jmsg(ctx, M_INFO, "Calling GetConfiguration with a timeout of %d sec\n",
          timeout / 1000);
 
     hr = p_ctx->VDIDeviceSet->GetConfiguration(timeout, &p_ctx->VDIConfig);
