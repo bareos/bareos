@@ -269,35 +269,50 @@ struct plugin_arguments {
       std::string_view value = {};
       switch (next_option(str, keywords, &value)) {
         case index_of(keywords, save_unreferenced_disks): {
-          try {
-            args.save_unknown_disks
-                = BoolString(std::string{value}).get<bool>();
-          } catch (std::out_of_range& e) {
-            fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      save_unreferenced_disks);
-            return std::nullopt;
+          switch (parse_user_bool(value)) {
+            case parse_bool_result::True: {
+              args.save_unknown_disks = true;
+            } break;
+            case parse_bool_result::False: {
+              args.save_unknown_disks = false;
+            } break;
+            case parse_bool_result::Error: {
+              fatal_msg(ctx, "unexpected value {} for {} flag", value,
+                        save_unreferenced_disks);
+              return std::nullopt;
+            } break;
           }
         } break;
 
         case index_of(keywords, save_unreferenced_partitions): {
-          try {
-            args.save_unknown_partitions
-                = BoolString(std::string{value}).get<bool>();
-          } catch (std::out_of_range& e) {
-            fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      save_unreferenced_partitions);
-            return std::nullopt;
+          switch (parse_user_bool(value)) {
+            case parse_bool_result::True: {
+              args.save_unknown_partitions = true;
+            } break;
+            case parse_bool_result::False: {
+              args.save_unknown_partitions = false;
+            } break;
+            case parse_bool_result::Error: {
+              fatal_msg(ctx, "unexpected value {} for {} flag", value,
+                        save_unreferenced_partitions);
+              return std::nullopt;
+            } break;
           }
         } break;
 
         case index_of(keywords, save_unreferenced_extents): {
-          try {
-            args.save_unknown_extents
-                = BoolString(std::string{value}).get<bool>();
-          } catch (std::out_of_range& e) {
-            fatal_msg(ctx, "unexpected value {} for {} flag", value,
-                      save_unreferenced_extents);
-            return std::nullopt;
+          switch (parse_user_bool(value)) {
+            case parse_bool_result::True: {
+              args.save_unknown_extents = true;
+            } break;
+            case parse_bool_result::False: {
+              args.save_unknown_extents = false;
+            } break;
+            case parse_bool_result::Error: {
+              fatal_msg(ctx, "unexpected value {} for {} flag", value,
+                        save_unreferenced_extents);
+              return std::nullopt;
+            } break;
           }
         } break;
 
@@ -314,8 +329,7 @@ struct plugin_arguments {
           }
         } break;
         default: {
-          fatal_msg(ctx, "could not parse plugin options string '{}'", str,
-                    str.size());
+          fatal_msg(ctx, "could not parse plugin options string '{}'", str);
 
           return std::nullopt;
         } break;
