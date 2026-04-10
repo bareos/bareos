@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2020-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2020-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -344,44 +344,42 @@ static inline bool PySavePacketToNative(
       if (pSavePkt->object_len > 0) {
         /* As this has to linger as long as the backup is running we save it
          * in our plugin context. */
-        bool object_name_exists = pSavePkt->object_name;
-        bool object_name_is_unicode = PyUnicode_Check(pSavePkt->object_name);
-        bool object_exists = pSavePkt->object;
-        bool object_is_bytearray = PyByteArray_Check(pSavePkt->object);
-        if (object_name_exists && object_name_is_unicode && object_exists
-            && object_is_bytearray) {
-          char* buf;
 
-          if (plugin_priv_ctx->object_name) {
-            free(plugin_priv_ctx->object_name);
-          }
-          plugin_priv_ctx->object_name
-              = strdup(PyUnicode_AsUTF8(pSavePkt->object_name));
-          sp->object_name = plugin_priv_ctx->object_name;
+        if (!pSavePkt->object_name) {
+          PyErr_SetString(PyExc_RuntimeError, "object name missing");
+          return false;
+        }
+        if (!PyUnicode_Check(pSavePkt->object_name)) {
+          PyErr_SetString(PyExc_RuntimeError,
+                          "object name must be unicode type");
+          return false;
+        }
+        if (!pSavePkt->object) {
+          PyErr_SetString(PyExc_RuntimeError, "object missing");
+          return false;
+        }
+        if (!PyByteArray_Check(pSavePkt->object)) {
+          PyErr_SetString(PyExc_RuntimeError,
+                          "object needs to be of type bytearray");
+          return false;
+        }
 
-          sp->object_len = pSavePkt->object_len;
-          sp->index = pSavePkt->object_index;
+        if (plugin_priv_ctx->object_name) {
+          free(plugin_priv_ctx->object_name);
+        }
+        plugin_priv_ctx->object_name
+            = strdup(PyUnicode_AsUTF8(pSavePkt->object_name));
+        sp->object_name = plugin_priv_ctx->object_name;
 
-          if ((buf = PyByteArray_AsString(pSavePkt->object))) {
-            if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
-            plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
-            memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
-            sp->object = plugin_priv_ctx->object;
-          } else {
-            return false;
-          }
+        sp->object_len = pSavePkt->object_len;
+        sp->index = pSavePkt->object_index;
+
+        if (char* buf = PyByteArray_AsString(pSavePkt->object)) {
+          if (plugin_priv_ctx->object) { free(plugin_priv_ctx->object); }
+          plugin_priv_ctx->object = (char*)malloc(pSavePkt->object_len);
+          memcpy(plugin_priv_ctx->object, buf, pSavePkt->object_len);
+          sp->object = plugin_priv_ctx->object;
         } else {
-          std::string err_string{};
-          if (!object_name_exists) { err_string = "object name missing"; };
-          if (!object_name_is_unicode) {
-            err_string = "object name must be unicode type";
-          };
-          if (!object_exists) { err_string = "object missing"; };
-          if (!object_is_bytearray) {
-            err_string = "object needs to be of type bytearray";
-          };
-
-          PyErr_SetString(PyExc_RuntimeError, err_string.c_str());
           return false;
         }
       } else {
