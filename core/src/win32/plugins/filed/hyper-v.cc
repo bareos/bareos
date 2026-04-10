@@ -730,7 +730,7 @@ struct variant_type {
 struct cim_type {
 #define DEFINE_CIM_TYPE(name, vtype, ctype)        \
   struct name {                                    \
-    using v_type = variant_type::##vtype;          \
+    using v_type = variant_type::vtype;            \
     static constexpr CIMTYPE c_type = CIM_##ctype; \
   }
 
