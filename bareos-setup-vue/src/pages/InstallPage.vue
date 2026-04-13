@@ -2,7 +2,7 @@
   <div>
     <div class="step-header">Install Packages</div>
     <p class="text-body2 q-mb-md">
-      The following packages will be installed based on your component selection.
+      The following Bareos packages are always installed by the setup wizard.
     </p>
 
     <q-card flat bordered class="q-mb-md">
@@ -57,20 +57,16 @@ const exitCode  = ref(0)
 const lines     = ref([])
 const consoleEl = ref(null)
 
-const PKG_MAP = {
-  director:   ['bareos-director', 'bareos-bconsole'],
-  storage:    ['bareos-storage'],
-  filedaemon: ['bareos-filedaemon'],
-  webui:      ['bareos-webui'],
-}
-
-const packages = computed(() => {
-  const pkgs = []
-  for (const [key, list] of Object.entries(PKG_MAP)) {
-    if (store.components[key]) pkgs.push(...list)
-  }
-  return pkgs
-})
+const packages = computed(() => [
+  'bareos-filedaemon',
+  'bareos-director',
+  'bareos-storage',
+  'bareos-storage-tape',
+  'bareos-storage-dedupable',
+  'bareos-database-tools',
+  'bareos-tools',
+  'bareos-webui-vue',
+])
 
 watch(messages, (msgs) => {
   const last = msgs[msgs.length - 1]
@@ -101,11 +97,10 @@ function install() {
     action:   'run_step',
     id:       'install_packages',
     sudo:     true,
-    packages: packages.value,
     pkg_mgr:  store.osInfo?.pkg_mgr,
   })
 }
 
 function back() { store.prevStep(); router.push('/repo') }
-function next() { store.nextStep(); router.push('/database') }
+function next() { store.nextStep(); router.push('/targets') }
 </script>

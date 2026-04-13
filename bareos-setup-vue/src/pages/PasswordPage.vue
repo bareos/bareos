@@ -21,6 +21,8 @@
           :rules="[v => v.length >= 8 || 'Minimum 8 characters']"
         >
           <template #append>
+            <q-btn flat round dense icon="content_copy" size="sm"
+                   @click="copyPassword" title="Copy password" />
             <q-icon
               :name="showPwd ? 'visibility_off' : 'visibility'"
               class="cursor-pointer"
@@ -64,10 +66,12 @@
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
+import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useSetupStore } from '../stores/setup.js'
 import { useSetupWs } from '../composables/useSetupWs.js'
 
+const $q = useQuasar()
 const router = useRouter()
 const store  = useSetupStore()
 const { send, messages, clearMessages } = useSetupWs()
@@ -89,6 +93,16 @@ function generate() {
   const arr = new Uint8Array(24)
   crypto.getRandomValues(arr)
   store.adminUser.password = Array.from(arr, b => chars[b % chars.length]).join('')
+}
+
+async function copyPassword() {
+  if (!store.adminUser.password) return
+
+  await navigator.clipboard.writeText(store.adminUser.password)
+  $q.notify({
+    type: 'positive',
+    message: 'Password copied to clipboard.',
+  })
 }
 
 watch(messages, (msgs) => {

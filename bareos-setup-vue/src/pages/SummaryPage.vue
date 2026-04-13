@@ -18,8 +18,8 @@
           <q-item>
             <q-item-section avatar><q-icon name="tune" color="primary" /></q-item-section>
             <q-item-section>
-              <q-item-label>Installed Components</q-item-label>
-              <q-item-label caption>{{ installedComponents }}</q-item-label>
+              <q-item-label>Storage Targets</q-item-label>
+              <q-item-label caption>{{ storageTargets }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item>
@@ -33,7 +33,23 @@
             <q-item-section avatar><q-icon name="storage" color="primary" /></q-item-section>
             <q-item-section>
               <q-item-label>Database</q-item-label>
-              <q-item-label caption>{{ store.dbConfig.dbName }} (user: {{ store.dbConfig.dbUser }})</q-item-label>
+              <q-item-label caption>Catalog database will be initialized.</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item v-if="store.storageTargets.disk">
+            <q-item-section avatar><q-icon name="save" color="primary" /></q-item-section>
+            <q-item-section>
+              <q-item-label>Disk Storage</q-item-label>
+              <q-item-label caption>
+                {{ store.diskConfig.path }} · {{ store.diskConfig.concurrentJobs }} jobs{{ store.diskConfig.dedupable ? ' · dedupable' : '' }}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item v-if="store.storageTargets.tape">
+            <q-item-section avatar><q-icon name="inventory_2" color="primary" /></q-item-section>
+            <q-item-section>
+              <q-item-label>Tape Storage</q-item-label>
+              <q-item-label caption>{{ tapeAssignmentsSummary }}</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -46,7 +62,7 @@
     <div class="row q-gutter-sm q-mb-lg">
       <q-btn label="Download Script" icon="download" color="secondary"
              :loading="generatingScript" @click="generateScript" />
-      <q-btn v-if="store.components.webui" label="Open WebUI"
+      <q-btn label="Open WebUI"
              icon="open_in_browser" color="primary"
              href="http://localhost:9100" target="_blank" />
     </div>
@@ -71,15 +87,18 @@ const { send, messages } = useSetupWs()
 const generatingScript = ref(false)
 const scriptContent    = ref('')
 
-const LABELS = {
-  director: 'Director', storage: 'Storage Daemon',
-  filedaemon: 'File Daemon', webui: 'WebUI',
-}
-const installedComponents = computed(() =>
-  Object.entries(store.components)
-    .filter(([, v]) => v)
-    .map(([k]) => LABELS[k] || k)
-    .join(', ') || 'None'
+const storageTargets = computed(() => {
+  const labels = []
+  if (store.storageTargets.disk) labels.push('disk')
+  if (store.storageTargets.tape) labels.push('tape changer')
+  return labels.join(', ') || 'None'
+})
+
+const tapeAssignmentsSummary = computed(() =>
+  store.tapeAssignments
+    .filter((assignment) => assignment.drive_paths.length > 0)
+    .map((assignment) => `${assignment.changer_path} (${assignment.drive_paths.length} drives)`)
+    .join('; ') || 'No changer assignments'
 )
 
 watch(messages, (msgs) => {
@@ -101,7 +120,24 @@ watch(messages, (msgs) => {
 
 function generateScript() {
   generatingScript.value = true
-  send({ action: 'generate_script' })
+  send({
+    action: 'generate_script',
+    distro: store.osInfo?.distro,
+    version: store.osInfo?.version,
+    repo_type: store.repoType,
+    repo_login: store.repoCredentials.login,
+    repo_password: store.repoCredentials.password,
+    pkg_mgr: store.osInfo?.pkg_mgr,
+    disk_enabled: store.storageTargets.disk,
+    disk_path: store.diskConfig.path,
+    disk_dedupable: store.diskConfig.dedupable,
+    disk_concurrent_jobs: Number(store.diskConfig.concurrentJobs),
+    tape_enabled: store.storageTargets.tape,
+    tape_assignments: store.tapeAssignments.filter((assignment) => assignment.drive_paths.length > 0),
+    setup_db: store.dbConfig.createDb,
+    admin_username: store.adminUser.username,
+    admin_password: store.adminUser.password,
+  })
 }
 
 function back() { store.prevStep(); router.push('/passwords') }

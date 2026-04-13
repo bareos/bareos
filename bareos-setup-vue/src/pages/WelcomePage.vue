@@ -1,8 +1,6 @@
 <template>
   <div>
-    <div class="text-h4 text-primary q-mb-md">
-      <q-icon name="storage" class="q-mr-sm" />Welcome to Bareos Setup
-    </div>
+    <div class="step-header q-mb-md">Welcome to Bareos Setup</div>
     <p class="text-body1 q-mb-lg">
       This wizard will guide you through the installation and initial
       configuration of Bareos — an open-source network backup solution.
@@ -45,11 +43,12 @@ const { connected } = useSetupWs()
 
 const steps = [
   { icon: 'search',       label: 'Detect your operating system' },
-  { icon: 'tune',        label: 'Select Bareos components to install' },
   { icon: 'source',      label: 'Configure the package repository' },
-  { icon: 'download',    label: 'Install selected packages' },
+  { icon: 'download',    label: 'Install the fixed Bareos package set' },
+  { icon: 'tune',        label: 'Choose disk and tape storage targets' },
+  { icon: 'save',        label: 'Scan and assign tape changers and drives' },
   { icon: 'storage',     label: 'Set up the catalog database (PostgreSQL)' },
-  { icon: 'lock',        label: 'Configure passwords' },
+  { icon: 'lock',        label: 'Create the administrative user' },
   { icon: 'check_circle',label: 'Review and finish' },
 ]
 

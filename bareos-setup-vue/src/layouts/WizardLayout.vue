@@ -36,8 +36,9 @@ import { useSetupStore } from '../stores/setup.js'
 const store = useSetupStore()
 
 const stepLabels = [
-  'Welcome', 'OS Detection', 'Components', 'Repository',
-  'Installation', 'Database', 'Passwords', 'Summary'
+  'Welcome', 'OS Detection', 'Repository', 'Installation',
+  'Storage Targets', 'Disk Storage', 'Tape Storage', 'Database',
+  'Passwords', 'Summary'
 ]
 
 const stepLabel   = computed(() => stepLabels[store.stepIndex] ?? '')

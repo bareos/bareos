@@ -64,7 +64,21 @@ const { send, messages } = useSetupWs()
 const detecting = ref(true)
 const error     = ref('')
 
-const SUPPORTED = ['ubuntu', 'debian', 'centos', 'rhel', 'fedora', 'opensuse', 'sles']
+const SUPPORTED = [
+  'ubuntu',
+  'debian',
+  'centos',
+  'rhel',
+  'almalinux',
+  'alma',
+  'rocky',
+  'openela',
+  'ol',
+  'oracle',
+  'fedora',
+  'opensuse',
+  'sles',
+]
 const supported = computed(() =>
   store.osInfo ? SUPPORTED.some(d => store.osInfo.distro?.toLowerCase().includes(d)) : false
 )
@@ -85,5 +99,5 @@ onMounted(() => {
 })
 
 function back() { store.prevStep(); router.push('/welcome') }
-function next() { store.nextStep(); router.push('/components') }
+function next() { store.nextStep(); router.push('/repo') }
 </script>

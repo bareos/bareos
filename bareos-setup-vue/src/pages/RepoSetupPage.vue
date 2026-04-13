@@ -140,6 +140,6 @@ function addRepo() {
   })
 }
 
-function back() { store.prevStep(); router.push('/components') }
+function back() { store.prevStep(); router.push('/os') }
 function next() { store.nextStep(); router.push('/install') }
 </script>

@@ -6,10 +6,22 @@
 }
 
 .step-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   font-size: 1.4rem;
   font-weight: 600;
   color: $primary;
   margin-bottom: 0.5rem;
+
+  &::before {
+    content: '';
+    width: 126px;
+    height: 126px;
+    flex: 0 0 126px;
+    background: url('../../../core/src/images/boris.png') center / contain
+      no-repeat;
+  }
 }
 
 .output-console {
