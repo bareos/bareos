@@ -127,3 +127,4 @@ test-runner artefact and is listed in `.gitignore`.
 - Use c++20 when creating c++ code
 - Git commit header (subject line) must not exceed 60 chars
 - Git commit body should not have lines longer than 72 chars
+- Git commit body should never contain github copilot information
