@@ -1,3 +1,6 @@
 @plugindir@/grpc-fd.so
 @plugindir@/grpc/bareos-grpc-fd-plugin-bridge
+@plugindir@/grpc/bareosfd.py
+@plugindir@/grpc/bareosfd_types.py
+@plugindir@/grpc/bareosfd_type_conv.py
 @plugindir@/grpc/grpc-test-module

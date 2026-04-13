@@ -150,6 +150,14 @@ if(ENABLE_GRPC)
       protobuf_socket_test LINK_LIBRARIES GTest::gtest_main grpc-proto
     )
   endif()
+  install(
+    FILES "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"
+          "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_types.py"
+          "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd_type_conv.py"
+    DESTINATION ${plugindir}/grpc
+    COMPONENT filedaemon
+  )
+
   bareos_configure_file(
     FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"

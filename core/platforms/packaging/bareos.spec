@@ -1307,6 +1307,9 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %defattr(-, root, root)
 %{plugin_dir}/grpc-fd.so
 %{plugin_dir}/grpc/bareos-grpc-fd-plugin-bridge
+%{plugin_dir}/grpc/bareosfd.py
+%{plugin_dir}/grpc/bareosfd_types.py
+%{plugin_dir}/grpc/bareosfd_type_conv.py
 %{plugin_dir}/grpc/grpc-test-module
 %endif
 
