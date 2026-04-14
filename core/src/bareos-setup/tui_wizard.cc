@@ -17,27 +17,26 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-*/
+ */
 #include "tui_wizard.h"
 
+#include <algorithm>
 #include <array>
 #include <cctype>
 #include <iostream>
 #include <random>
+#include <set>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include <termios.h>
 #include <unistd.h>
 
-#include "command_runner.h"
 #include "os_detector.h"
 #include "setup_steps.h"
 
-// ---------------------------------------------------------------------------
-// ANSI helpers
-// ---------------------------------------------------------------------------
 namespace ansi {
 static const char* const reset = "\033[0m";
 static const char* const bold = "\033[1m";
@@ -49,6 +48,8 @@ static const char* const yellow = "\033[33m";
 static const char* const red = "\033[31m";
 }  // namespace ansi
 
+static constexpr int kTotalSteps = 9;
+
 static void PrintHeader(const std::string& title)
 {
   std::cout << "\n"
@@ -59,10 +60,10 @@ static void PrintHeader(const std::string& title)
             << "\n\n";
 }
 
-static void PrintStep(int n, int total, const std::string& label)
+static void PrintStep(int n, const std::string& label)
 {
-  std::cout << ansi::dim << "[" << n << "/" << total << "] " << ansi::reset
-            << ansi::bold << label << ansi::reset << "\n\n";
+  std::cout << ansi::dim << "[" << n << "/" << kTotalSteps << "] "
+            << ansi::reset << ansi::bold << label << ansi::reset << "\n\n";
 }
 
 static void PrintOk(const std::string& msg)
@@ -80,48 +81,39 @@ static void PrintErr(const std::string& msg)
   std::cout << ansi::red << "  ✗ " << ansi::reset << msg << "\n";
 }
 
-// ---------------------------------------------------------------------------
-// Input helpers
-// ---------------------------------------------------------------------------
-
-/** Prompt and read a line; use default_val if the user just presses Enter. */
 static std::string Prompt(const std::string& question,
                           const std::string& default_val = "")
 {
-  if (default_val.empty())
+  if (default_val.empty()) {
     std::cout << ansi::cyan << "  " << question << ": " << ansi::reset;
-  else
+  } else {
     std::cout << ansi::cyan << "  " << question << " [" << default_val
               << "]: " << ansi::reset;
+  }
 
   std::string line;
   if (!std::getline(std::cin, line)) return default_val;
-  if (line.empty()) return default_val;
-  return line;
+  return line.empty() ? default_val : line;
 }
 
-/** Prompt for a yes/no question. Returns true for yes. */
 static bool PromptYN(const std::string& question, bool default_yes = true)
 {
-  std::string hint = default_yes ? "[Y/n]" : "[y/N]";
+  const std::string hint = default_yes ? "[Y/n]" : "[y/N]";
   std::cout << ansi::cyan << "  " << question << " " << hint << ": "
             << ansi::reset;
   std::string line;
   if (!std::getline(std::cin, line)) return default_yes;
   if (line.empty()) return default_yes;
-  char c = static_cast<char>(std::tolower(line[0]));
-  return c == 'y';
+  return static_cast<char>(std::tolower(line[0])) == 'y';
 }
 
-/** Read a password without echo. */
 static std::string PromptPassword(const std::string& question)
 {
   std::cout << ansi::cyan << "  " << question << ": " << ansi::reset
             << std::flush;
 
-  // Disable echo
   struct termios oldt{}, newt{};
-  bool tty = (tcgetattr(STDIN_FILENO, &oldt) == 0);
+  const bool tty = (tcgetattr(STDIN_FILENO, &oldt) == 0);
   if (tty) {
     newt = oldt;
     newt.c_lflag &= ~static_cast<tcflag_t>(ECHO);
@@ -136,7 +128,6 @@ static std::string PromptPassword(const std::string& question)
   return pw;
 }
 
-/** Generate a random password. */
 static std::string GeneratePassword(size_t len = 24)
 {
   static const char chars[]
@@ -149,7 +140,6 @@ static std::string GeneratePassword(size_t len = 24)
   return pw;
 }
 
-/** Press enter to continue. */
 static void PressEnter()
 {
   std::cout << ansi::dim << "  Press Enter to continue..." << ansi::reset;
@@ -157,88 +147,201 @@ static void PressEnter()
   std::getline(std::cin, dummy);
 }
 
-// ---------------------------------------------------------------------------
-// Command execution
-// ---------------------------------------------------------------------------
-
-static int RunStep(const std::vector<std::string>& cmd,
-                   bool use_sudo,
-                   bool dry_run)
+static int PromptInt(const std::string& question, int default_val, int min_val)
 {
-  if (dry_run) {
-    std::cout << ansi::yellow << "  [dry-run] ";
-    if (use_sudo) std::cout << "sudo ";
-    for (size_t i = 0; i < cmd.size(); ++i) {
-      if (i > 0) std::cout << ' ';
-      if (cmd[i].find(' ') != std::string::npos)
-        std::cout << '\'' << cmd[i] << '\'';
-      else
-        std::cout << cmd[i];
+  while (true) {
+    const auto input = Prompt(question, std::to_string(default_val));
+    try {
+      const int value = std::stoi(input);
+      if (value >= min_val) return value;
+    } catch (...) {
     }
-    std::cout << ansi::reset << "\n";
-    return 0;
+    PrintWarn("Please enter a number >= " + std::to_string(min_val) + ".");
   }
-
-  int exit_code = RunCommand(
-      cmd, use_sudo, [](const std::string& line, const std::string& stream) {
-        if (stream == "stderr")
-          std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
-        else
-          std::cout << "  " << line << "\n";
-      });
-  return exit_code;
 }
-
-// ---------------------------------------------------------------------------
-// Wizard state
-// ---------------------------------------------------------------------------
 
 struct WizardState {
   OsInfo os_info;
 
-  // Components
-  bool comp_director = true;
-  bool comp_storage = true;
-  bool comp_filedaemon = true;
-  bool comp_webui = true;
-
-  // Repository
   std::string repo_type = "subscription";
   std::string repo_login;
   std::string repo_password;
 
-  // Admin user
+  bool disk_enabled = true;
+  bool tape_enabled = false;
+  bool storage_configured = false;
+  DiskStorageConfig disk_config{
+      true, "/var/lib/bareos/storage", false, 15,
+  };
+  TapeStorageConfig tape_config;
+  std::vector<TapeChangerInfo> tape_changers;
+  std::vector<TapeDriveInfo> tape_drives;
+
   std::string admin_username = "admin";
   std::string admin_password;
-
-  // DB
   bool setup_db = true;
 };
 
-// ---------------------------------------------------------------------------
-// Wizard steps
-// ---------------------------------------------------------------------------
+static std::string FormatTapeDeviceLabel(const TapeDriveInfo& device)
+{
+  std::ostringstream label;
+  label << (device.identifier.empty() ? device.display_name : device.identifier);
+  if (!device.serial_number.empty()) label << " / " << device.serial_number;
+  label << " (" << device.path << ")";
+  return label.str();
+}
+
+static std::string FormatTapeChangerLabel(const TapeChangerInfo& changer)
+{
+  std::ostringstream label;
+  label << (changer.identifier.empty() ? changer.display_name : changer.identifier);
+  if (!changer.serial_number.empty()) label << " / " << changer.serial_number;
+  label << " (" << changer.path << ")";
+  return label.str();
+}
+
+static std::string FormatChangerDriveIdentifiers(const TapeChangerInfo& changer)
+{
+  if (changer.drive_identifiers.empty()) return "(none)";
+
+  std::ostringstream output;
+  for (size_t i = 0; i < changer.drive_identifiers.size(); ++i) {
+    const auto& drive = changer.drive_identifiers[i];
+    if (i > 0) output << "; ";
+    output << "Elem " << drive.element_address << ": ";
+    for (size_t j = 0; j < drive.device_identifiers.size(); ++j) {
+      if (j > 0) output << " | ";
+      output << DescribeDeviceIdentifier(drive.device_identifiers[j]);
+    }
+  }
+  return output.str();
+}
+
+static std::string JoinDriveNumbers(const std::vector<int>& numbers)
+{
+  std::ostringstream joined;
+  for (size_t i = 0; i < numbers.size(); ++i) {
+    if (i > 0) joined << ",";
+    joined << numbers[i];
+  }
+  return joined.str();
+}
+
+static std::vector<int> DriveNumbersForAssignment(
+    const TapeAssignment& assignment,
+    const std::vector<TapeDriveInfo>& drives)
+{
+  std::vector<int> numbers;
+  for (const auto& drive_path : assignment.drive_paths) {
+    for (size_t i = 0; i < drives.size(); ++i) {
+      if (drives[i].path == drive_path) {
+        numbers.push_back(static_cast<int>(i + 1));
+        break;
+      }
+    }
+  }
+  return numbers;
+}
+
+static std::vector<int> ParseDriveNumbers(const std::string& input)
+{
+  std::vector<int> numbers;
+  std::set<int> seen;
+  std::stringstream stream(input);
+  std::string token;
+  while (std::getline(stream, token, ',')) {
+    token = Trim(token);
+    if (token.empty()) continue;
+    int value = 0;
+    try {
+      value = std::stoi(token);
+    } catch (...) {
+      throw std::runtime_error(
+          "Enter comma-separated drive numbers such as 1,2.");
+    }
+    if (value < 1 || !seen.insert(value).second) {
+      throw std::runtime_error("Invalid or duplicate drive number: " + token);
+    }
+    numbers.push_back(value);
+  }
+  return numbers;
+}
+
+static bool ApplyStorageConfiguration(WizardState& state, bool dry_run)
+{
+  state.disk_config.enabled = state.disk_enabled;
+  state.tape_config.enabled = state.tape_enabled;
+
+  std::string error;
+  if (!ValidateStorageConfig(state.disk_config, state.tape_config, error)) {
+    PrintErr(error);
+    return false;
+  }
+
+  const auto defaults = ReadDirectorStorageDefaults();
+  const auto script
+      = BuildConfigureStorageScript(state.disk_config, state.tape_config,
+                                    defaults);
+
+  if (dry_run) {
+    std::istringstream stream(script);
+    std::string line;
+    while (std::getline(stream, line)) {
+      std::cout << ansi::yellow << "  [dry-run] " << line << ansi::reset
+                << "\n";
+    }
+    state.storage_configured = true;
+    return true;
+  }
+
+  int rc = 0;
+  try {
+    rc = RunGeneratedScript(
+        script, true,
+        [](const std::string& line, const std::string& stream) {
+          if (stream == "stderr") {
+            std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
+          } else {
+            std::cout << "  " << line << "\n";
+          }
+        });
+  } catch (const std::exception& e) {
+    PrintErr(e.what());
+    return false;
+  }
+  if (rc != 0) {
+    PrintErr("Storage configuration failed (exit code " + std::to_string(rc)
+             + ").");
+    return false;
+  }
+
+  PrintOk("Storage configuration applied successfully.");
+  state.storage_configured = true;
+  return true;
+}
 
 static void StepWelcome()
 {
   PrintHeader("Welcome to Bareos Setup");
-  std::cout << "  This wizard will guide you through the installation and\n"
-            << "  initial configuration of Bareos.\n\n"
+  std::cout << "  This wizard follows the same setup flow as the graphical\n"
+            << "  Bareos web wizard.\n\n"
             << "  Steps:\n"
             << "    1. Detect operating system\n"
-            << "    2. Select components\n"
-            << "    3. Configure repository\n"
-            << "    4. Install packages\n"
-            << "    5. Initialize database\n"
-            << "    6. Create admin user\n"
-            << "    7. Summary\n\n";
+            << "    2. Configure repository\n"
+            << "    3. Install the fixed Bareos package set\n"
+            << "    4. Choose storage targets\n"
+            << "    5. Configure disk storage\n"
+            << "    6. Scan and assign tape changers and drives\n"
+            << "    7. Initialize database\n"
+            << "    8. Create admin user\n"
+            << "    9. Summary\n\n";
   PressEnter();
 }
 
 static bool StepDetectOs(WizardState& state)
 {
   PrintHeader("OS Detection");
-  PrintStep(1, 7, "Detecting operating system");
+  PrintStep(1, "Detecting operating system");
 
   try {
     state.os_info = DetectOs();
@@ -252,60 +355,28 @@ static bool StepDetectOs(WizardState& state)
             << "  Version    : " << state.os_info.version << "\n"
             << "  Arch       : " << state.os_info.arch << "\n"
             << "  Pkg manager: " << state.os_info.pkg_mgr << "\n\n";
-
-  if (state.os_info.pkg_mgr == "unknown")
-    PrintWarn("Package manager not recognized — commands may need adjustment.");
-
   PressEnter();
   return true;
-}
-
-static void StepComponents(WizardState& state)
-{
-  PrintHeader("Select Components");
-  PrintStep(2, 7, "Choose which Bareos components to install");
-
-  struct Comp {
-    bool& flag;
-    const char* label;
-    const char* desc;
-  };
-  std::array<Comp, 4> comps = {{
-      {state.comp_director, "Director",
-       "Controls backup and restore operations"},
-      {state.comp_storage, "Storage Daemon",
-       "Manages physical media and storage volumes"},
-      {state.comp_filedaemon, "File Daemon",
-       "Client agent on machines to be backed up"},
-      {state.comp_webui, "WebUI", "Web-based management interface"},
-  }};
-
-  for (auto& c : comps) {
-    c.flag = PromptYN(std::string(c.label) + " (" + c.desc + ")", c.flag);
-  }
-  std::cout << "\n";
 }
 
 static bool StepRepo(WizardState& state)
 {
   PrintHeader("Configure Repository");
-  PrintStep(3, 7, "Choose the Bareos package repository");
+  PrintStep(2, "Choose the Bareos package repository");
 
   std::cout << "  Repository type:\n"
             << "    1) Subscription (requires Bareos subscription)\n"
             << "    2) Community (free)\n\n";
 
-  std::string choice = Prompt("Choice", "1");
+  const std::string choice = Prompt("Choice", "1");
   if (choice == "2") {
     state.repo_type = "community";
     PrintOk("Using community repository");
   } else {
     state.repo_type = "subscription";
     PrintOk("Using subscription repository");
-
     state.repo_login = Prompt("Subscription login");
     state.repo_password = PromptPassword("Subscription password");
-
     if (state.repo_login.empty()) {
       PrintWarn("No login provided — repository access may fail.");
     }
@@ -316,7 +387,7 @@ static bool StepRepo(WizardState& state)
             ? "https://download.bareos.com/bareos/release/latest"
             : "https://download.bareos.org/current";
   std::cout << "\n  Repository URL: " << ansi::cyan << base << "/"
-            << CapFirst(state.os_info.distro) << "_" << state.os_info.version
+            << BuildRepoOsPath(state.os_info.distro, state.os_info.version)
             << "/" << ansi::reset << "\n\n";
 
   return true;
@@ -324,14 +395,34 @@ static bool StepRepo(WizardState& state)
 
 static bool StepAddRepo(WizardState& state, bool dry_run)
 {
-  std::cout << "\n";
-  PrintOk("Adding repository...\n");
-
-  auto cmd
+  const auto cmd
       = BuildAddRepoCmd(state.os_info.distro, state.os_info.version,
                         state.repo_type, state.repo_login, state.repo_password);
 
-  int rc = RunStep(cmd, true, dry_run);
+  if (dry_run) {
+    std::cout << ansi::yellow << "  [dry-run] sudo ";
+    for (size_t i = 0; i < cmd.size(); ++i) {
+      if (i > 0) std::cout << ' ';
+      if (cmd[i].find(' ') != std::string::npos) {
+        std::cout << '\'' << cmd[i] << '\'';
+      } else {
+        std::cout << cmd[i];
+      }
+    }
+    std::cout << ansi::reset << "\n";
+    PressEnter();
+    return true;
+  }
+
+  const int rc = RunCommand(
+      cmd, true,
+      [](const std::string& line, const std::string& stream) {
+        if (stream == "stderr") {
+          std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
+        } else {
+          std::cout << "  " << line << "\n";
+        }
+      });
   if (rc != 0) {
     PrintErr("Repository setup failed (exit code " + std::to_string(rc) + ").");
     return false;
@@ -344,35 +435,40 @@ static bool StepAddRepo(WizardState& state, bool dry_run)
 static bool StepInstall(WizardState& state, bool dry_run)
 {
   PrintHeader("Install Packages");
-  PrintStep(4, 7, "Installing selected Bareos packages");
+  PrintStep(3, "Installing the fixed Bareos package set");
 
-  // Build package list
-  static const struct {
-    bool WizardState::* flag;
-    const char* pkg;
-  } pkg_map[] = {
-      {&WizardState::comp_director, "bareos-director"},
-      {&WizardState::comp_director, "bareos-bconsole"},
-      {&WizardState::comp_storage, "bareos-storage"},
-      {&WizardState::comp_filedaemon, "bareos-filedaemon"},
-      {&WizardState::comp_webui, "bareos-webui"},
-  };
+  const auto packages = BuildDefaultPackageList();
+  std::cout << "  Packages:\n";
+  for (const auto& package : packages) {
+    std::cout << "    - " << package << "\n";
+  }
+  std::cout << "\n";
 
-  std::vector<std::string> packages;
-  for (const auto& m : pkg_map)
-    if (state.*m.flag) packages.push_back(m.pkg);
-
-  if (packages.empty()) {
-    PrintWarn("No components selected — skipping installation.");
+  const auto cmd = BuildInstallCmd(state.os_info.pkg_mgr, packages);
+  if (dry_run) {
+    std::cout << ansi::yellow << "  [dry-run] sudo ";
+    for (size_t i = 0; i < cmd.size(); ++i) {
+      if (i > 0) std::cout << ' ';
+      if (cmd[i].find(' ') != std::string::npos) {
+        std::cout << '\'' << cmd[i] << '\'';
+      } else {
+        std::cout << cmd[i];
+      }
+    }
+    std::cout << ansi::reset << "\n";
+    PressEnter();
     return true;
   }
 
-  std::cout << "  Packages: ";
-  for (const auto& p : packages) std::cout << p << " ";
-  std::cout << "\n\n";
-
-  auto cmd = BuildInstallCmd(state.os_info.pkg_mgr, packages);
-  int rc = RunStep(cmd, true, dry_run);
+  const int rc = RunCommand(
+      cmd, true,
+      [](const std::string& line, const std::string& stream) {
+        if (stream == "stderr") {
+          std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
+        } else {
+          std::cout << "  " << line << "\n";
+        }
+      });
   if (rc != 0) {
     PrintErr("Installation failed (exit code " + std::to_string(rc) + ").");
     return false;
@@ -382,10 +478,214 @@ static bool StepInstall(WizardState& state, bool dry_run)
   return true;
 }
 
+static bool StepStorageTargets(WizardState& state)
+{
+  PrintHeader("Storage Targets");
+  PrintStep(4, "Choose disk and tape storage targets");
+
+  const auto inventory = DiscoverTapeStorageInventory();
+  state.tape_changers = inventory.changers;
+  state.tape_drives = inventory.drives;
+
+  if (!state.tape_changers.empty()) {
+    PrintOk("Detected " + std::to_string(state.tape_changers.size())
+            + " tape changer(s) and " + std::to_string(state.tape_drives.size())
+            + " tape drive(s).");
+    if (!state.tape_enabled) {
+      state.tape_enabled = true;
+      PrintOk("Tape storage was preselected because a changer was found.");
+    }
+  } else {
+    PrintWarn("No tape changers were detected during the initial scan.");
+  }
+
+  do {
+    state.disk_enabled = PromptYN("Store to disk", state.disk_enabled);
+    state.tape_enabled = PromptYN("Store to tape changer", state.tape_enabled);
+    if (!state.disk_enabled && !state.tape_enabled) {
+      PrintWarn("Select at least one storage target.");
+    }
+  } while (!state.disk_enabled && !state.tape_enabled);
+
+  state.disk_config.enabled = state.disk_enabled;
+  state.tape_config.enabled = state.tape_enabled;
+  return true;
+}
+
+static bool StepDiskStorage(WizardState& state, bool dry_run)
+{
+  PrintHeader("Disk Storage");
+  PrintStep(5, "Configure disk-backed storage");
+
+  if (!state.disk_enabled) {
+    PrintWarn("Disk storage was not selected.");
+    PressEnter();
+    return true;
+  }
+
+  state.disk_config.storage_path
+      = Prompt("Disk storage path", state.disk_config.storage_path);
+  state.disk_config.dedupable
+      = PromptYN("Use dedupable storage", state.disk_config.dedupable);
+  state.disk_config.concurrent_jobs
+      = PromptInt("Parallel backup operations",
+                  state.disk_config.concurrent_jobs, 1);
+
+  if (state.tape_enabled) return true;
+
+  std::cout << "\n";
+  return ApplyStorageConfiguration(state, dry_run);
+}
+
+static void PrintTapeInventory(const WizardState& state)
+{
+  std::cout << "  Detected tape changers:\n";
+  if (state.tape_changers.empty()) {
+    std::cout << "    (none)\n";
+  } else {
+    for (size_t i = 0; i < state.tape_changers.size(); ++i) {
+      const auto& changer = state.tape_changers[i];
+      std::cout << "    " << (i + 1) << ") "
+                << FormatTapeChangerLabel(changer) << "\n";
+      std::cout << "       Drives: " << changer.status.drives
+                << ", Slots: " << changer.status.slots
+                << ", I/E Slots: " << changer.status.ie_slots << "\n";
+      std::cout << "       Tape identifiers: "
+                << FormatChangerDriveIdentifiers(changer) << "\n";
+      if (!changer.status.error.empty()) {
+        std::cout << "       Status: " << Trim(changer.status.error) << "\n";
+      }
+    }
+  }
+
+  std::cout << "\n  Detected tape drives:\n";
+  if (state.tape_drives.empty()) {
+    std::cout << "    (none)\n";
+  } else {
+    for (size_t i = 0; i < state.tape_drives.size(); ++i) {
+      std::cout << "    " << (i + 1) << ") "
+                << FormatTapeDeviceLabel(state.tape_drives[i]) << "\n";
+    }
+  }
+  std::cout << "\n";
+}
+
+static TapeAssignment CurrentAssignmentFor(
+    const WizardState& state,
+    const std::string& changer_path)
+{
+  for (const auto& assignment : state.tape_config.assignments) {
+    if (assignment.changer_path == changer_path) return assignment;
+  }
+  return {changer_path, {}};
+}
+
+static bool CollectTapeAssignments(WizardState& state)
+{
+  if (state.tape_changers.empty()) {
+    PrintErr("No tape changers were detected.");
+    return false;
+  }
+  if (state.tape_drives.empty()) {
+    PrintErr("No tape drives were detected.");
+    return false;
+  }
+
+  if (state.tape_config.assignments.empty()) {
+    state.tape_config.assignments
+        = SuggestTapeAssignments(state.tape_changers, state.tape_drives);
+    if (!state.tape_config.assignments.empty()) {
+      PrintOk("Assigned all tape drives automatically because only one "
+              "changer was found.");
+    }
+  }
+
+  while (true) {
+    std::vector<TapeAssignment> assignments;
+    for (const auto& changer : state.tape_changers) {
+      const auto current = CurrentAssignmentFor(state, changer.path);
+      const auto current_numbers
+          = DriveNumbersForAssignment(current, state.tape_drives);
+
+      std::cout << "  Assign drives to " << FormatTapeChangerLabel(changer)
+                << "\n";
+      std::cout << "    Enter comma-separated drive numbers in the order "
+                   "Bareos should use them.\n";
+
+      const std::string input = Prompt(
+          "Drive numbers", JoinDriveNumbers(current_numbers));
+
+      if (Trim(input).empty()) continue;
+
+      try {
+        const auto selected_numbers = ParseDriveNumbers(input);
+        TapeAssignment assignment;
+        assignment.changer_path = changer.path;
+        for (const auto number : selected_numbers) {
+          if (number < 1
+              || number > static_cast<int>(state.tape_drives.size())) {
+            throw std::runtime_error("Drive number out of range: "
+                                     + std::to_string(number));
+          }
+          assignment.drive_paths.push_back(
+              state.tape_drives[static_cast<size_t>(number - 1)].path);
+        }
+        assignments.push_back(std::move(assignment));
+      } catch (const std::exception& e) {
+        PrintWarn(e.what());
+        assignments.clear();
+        break;
+      }
+      std::cout << "\n";
+    }
+
+    if (assignments.empty()) continue;
+
+    TapeStorageConfig tape_config;
+    tape_config.enabled = true;
+    tape_config.assignments = assignments;
+
+    DiskStorageConfig disk_config = state.disk_config;
+    disk_config.enabled = state.disk_enabled;
+
+    std::string error;
+    if (!ValidateStorageConfig(disk_config, tape_config, error)) {
+      PrintWarn(error);
+      continue;
+    }
+
+    state.tape_config = std::move(tape_config);
+    return true;
+  }
+}
+
+static bool StepTapeStorage(WizardState& state, bool dry_run)
+{
+  PrintHeader("Tape Storage");
+  PrintStep(6, "Scan and assign tape changers and drives");
+
+  if (!state.tape_enabled) {
+    PrintWarn("Tape storage was not selected.");
+    PressEnter();
+    return true;
+  }
+
+  PrintWarn("Make sure the tape changer is attached before scanning.");
+  const auto inventory = DiscoverTapeStorageInventory();
+  state.tape_changers = inventory.changers;
+  state.tape_drives = inventory.drives;
+
+  PrintTapeInventory(state);
+  if (!CollectTapeAssignments(state)) return false;
+
+  std::cout << "\n";
+  return ApplyStorageConfiguration(state, dry_run);
+}
+
 static bool StepDatabase(WizardState& state, bool dry_run)
 {
   PrintHeader("Database Configuration");
-  PrintStep(5, 7, "Initialize Bareos catalog database");
+  PrintStep(7, "Initialize the Bareos catalog database");
 
   state.setup_db = PromptYN(
       "Run create_bareos_database / make_bareos_tables / "
@@ -397,13 +697,36 @@ static bool StepDatabase(WizardState& state, bool dry_run)
     return true;
   }
 
-  std::cout << "\n";
-  auto cmd = BuildDbCmd();
-  int rc = RunStep(cmd, true, dry_run);
+  const auto cmd = BuildDbCmd();
+  if (dry_run) {
+    std::cout << ansi::yellow << "  [dry-run] sudo ";
+    for (size_t i = 0; i < cmd.size(); ++i) {
+      if (i > 0) std::cout << ' ';
+      if (cmd[i].find(' ') != std::string::npos) {
+        std::cout << '\'' << cmd[i] << '\'';
+      } else {
+        std::cout << cmd[i];
+      }
+    }
+    std::cout << ansi::reset << "\n";
+    PressEnter();
+    return true;
+  }
+
+  const int rc = RunCommand(
+      cmd, true,
+      [](const std::string& line, const std::string& stream) {
+        if (stream == "stderr") {
+          std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
+        } else {
+          std::cout << "  " << line << "\n";
+        }
+      });
   if (rc != 0) {
     PrintErr("Database setup failed (exit code " + std::to_string(rc) + ").");
     return false;
   }
+
   PrintOk("Database initialized successfully.");
   PressEnter();
   return true;
@@ -412,10 +735,9 @@ static bool StepDatabase(WizardState& state, bool dry_run)
 static bool StepAdminUser(WizardState& state, bool dry_run)
 {
   PrintHeader("Administrative User");
-  PrintStep(6, 7, "Create Bareos WebUI admin user");
+  PrintStep(8, "Create the Bareos WebUI admin user");
 
-  state.admin_username = Prompt("Username", "admin");
-
+  state.admin_username = Prompt("Username", state.admin_username);
   while (true) {
     std::cout << "  (leave blank to generate a random password)\n";
     state.admin_password = PromptPassword("Password");
@@ -431,7 +753,7 @@ static bool StepAdminUser(WizardState& state, bool dry_run)
       PrintWarn("Password must be at least 8 characters. Try again.");
       continue;
     }
-    std::string confirm = PromptPassword("Confirm password");
+    const std::string confirm = PromptPassword("Confirm password");
     if (confirm != state.admin_password) {
       PrintWarn("Passwords do not match. Try again.");
       continue;
@@ -439,13 +761,37 @@ static bool StepAdminUser(WizardState& state, bool dry_run)
     break;
   }
 
-  auto cmd = BuildAdminUserCmd(state.admin_username, state.admin_password);
-  int rc = RunStep(cmd, true, dry_run);
+  const auto cmd = BuildAdminUserCmd(state.admin_username, state.admin_password);
+  if (dry_run) {
+    std::cout << ansi::yellow << "  [dry-run] sudo ";
+    for (size_t i = 0; i < cmd.size(); ++i) {
+      if (i > 0) std::cout << ' ';
+      if (cmd[i].find(' ') != std::string::npos) {
+        std::cout << '\'' << cmd[i] << '\'';
+      } else {
+        std::cout << cmd[i];
+      }
+    }
+    std::cout << ansi::reset << "\n";
+    PressEnter();
+    return true;
+  }
+
+  const int rc = RunCommand(
+      cmd, true,
+      [](const std::string& line, const std::string& stream) {
+        if (stream == "stderr") {
+          std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
+        } else {
+          std::cout << "  " << line << "\n";
+        }
+      });
   if (rc != 0) {
     PrintErr("Failed to create admin user (exit code " + std::to_string(rc)
              + ").");
     return false;
   }
+
   PrintOk("Admin user '" + state.admin_username + "' created.");
   PressEnter();
   return true;
@@ -454,50 +800,52 @@ static bool StepAdminUser(WizardState& state, bool dry_run)
 static void StepSummary(const WizardState& state)
 {
   PrintHeader("Summary");
-  PrintStep(7, 7, "Setup complete");
+  PrintStep(9, "Setup complete");
 
   PrintOk("Operating System : " + state.os_info.pretty_name);
-
-  std::string comps;
-  if (state.comp_director) comps += "Director ";
-  if (state.comp_storage) comps += "Storage ";
-  if (state.comp_filedaemon) comps += "FileDaemon ";
-  if (state.comp_webui) comps += "WebUI";
-  PrintOk("Components       : " + comps);
-
   PrintOk("Repository       : " + state.repo_type);
+
+  std::string targets;
+  if (state.disk_enabled) targets += "disk ";
+  if (state.tape_enabled) targets += "tape";
+  PrintOk("Storage Targets  : " + targets);
+
+  if (state.disk_enabled) {
+    PrintOk("Disk Storage     : " + state.disk_config.storage_path);
+  }
+  if (state.tape_enabled) {
+    PrintOk("Tape Changers    : "
+            + std::to_string(state.tape_config.assignments.size()));
+  }
   if (state.setup_db) PrintOk("Database         : initialized");
   PrintOk("Admin user       : " + state.admin_username);
 
-  if (state.comp_webui)
-    std::cout << "\n  Open the WebUI at: " << ansi::cyan
-              << "http://localhost:9100" << ansi::reset << "\n"
-              << "  Log in with user: " << ansi::bold << state.admin_username
-              << ansi::reset << "\n\n";
+  std::cout << "\n  Open the WebUI at: " << ansi::cyan
+            << "http://localhost:9100" << ansi::reset << "\n"
+            << "  Log in with user: " << ansi::bold << state.admin_username
+            << ansi::reset << "\n\n";
 }
-
-// ---------------------------------------------------------------------------
-// Entry point
-// ---------------------------------------------------------------------------
 
 int RunTuiWizard(bool dry_run)
 {
-  if (dry_run)
-    std::cout << ansi::yellow << "[dry-run mode — no commands will be executed]"
+  if (dry_run) {
+    std::cout << ansi::yellow
+              << "[dry-run mode — no commands will be executed]"
               << ansi::reset << "\n";
+  }
 
   WizardState state;
-
   StepWelcome();
 
   if (!StepDetectOs(state)) return 1;
-  StepComponents(state);
   if (!StepRepo(state)) return 1;
   if (!StepAddRepo(state, dry_run)) return 1;
   if (!StepInstall(state, dry_run)) return 1;
+  if (!StepStorageTargets(state)) return 1;
+  if (!StepDiskStorage(state, dry_run)) return 1;
+  if (!StepTapeStorage(state, dry_run)) return 1;
   if (!StepDatabase(state, dry_run)) return 1;
   if (!StepAdminUser(state, dry_run)) return 1;
   StepSummary(state);
-
   return 0;
 }

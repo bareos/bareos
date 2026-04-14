@@ -44,6 +44,7 @@
               <th class="text-left">Type</th>
               <th class="text-left">Firmware</th>
               <th class="text-left">Selected Path</th>
+              <th class="text-left">Tape Identifiers</th>
             </tr>
           </thead>
           <tbody>
@@ -54,6 +55,15 @@
               <td>{{ changer.model || '-' }}</td>
               <td>{{ changer.firmware_version || '-' }}</td>
               <td>{{ changer.path }}</td>
+              <td>
+                <div v-if="changer.drive_identifiers?.length">
+                  <div v-for="drive in changer.drive_identifiers" :key="`${changer.path}-${drive.element_address}`">
+                    Element {{ drive.element_address }}:
+                    {{ (drive.identifiers || []).join(' | ') || '-' }}
+                  </div>
+                </div>
+                <span v-else>-</span>
+              </td>
             </tr>
           </tbody>
         </q-markup-table>

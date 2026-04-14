@@ -119,3 +119,20 @@ install(
   DESTINATION "${sbindir}"
   COMPONENT setup
 )
+
+if(BUILD_TESTING AND GTest_FOUND)
+  include(GoogleTest)
+
+  add_executable(
+    test_bareos_setup_steps tests/test_setup_steps_shared.cc setup_steps.cc
+                            command_runner.cc
+  )
+  target_compile_features(test_bareos_setup_steps PRIVATE cxx_std_20)
+  target_include_directories(
+    test_bareos_setup_steps PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+  )
+  target_link_libraries(
+    test_bareos_setup_steps PRIVATE GTest::gtest_main Threads::Threads
+  )
+  gtest_discover_tests(test_bareos_setup_steps)
+endif()

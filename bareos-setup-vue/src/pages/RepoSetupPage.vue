@@ -89,11 +89,16 @@ const repoUrl = computed(() => {
   const base = store.repoType === 'subscription'
     ? 'https://download.bareos.com/bareos/release/latest'
     : 'https://download.bareos.org/current'
-  const distro = store.osInfo.distro
-    ? store.osInfo.distro.charAt(0).toUpperCase() + store.osInfo.distro.slice(1)
-    : ''
-  return `${base}/${distro}_${store.osInfo.version}/`
+  return `${base}/${repoOsPath(store.osInfo.distro, store.osInfo.version)}/`
 })
+
+function repoOsPath(distro, version) {
+  if (['almalinux', 'centos', 'ol', 'openela', 'oracle', 'rocky'].includes(distro)) {
+    return `EL_${String(version).split('.')[0]}`
+  }
+  const label = distro ? distro.charAt(0).toUpperCase() + distro.slice(1) : ''
+  return `${label}_${version}`
+}
 
 const canProceed = computed(() => {
   if (store.repoType === 'subscription') {

@@ -77,7 +77,8 @@ std::string Trim(std::string value)
   return value;
 }
 
-std::string ReadUdevProperty(const std::string& output, const std::string& key)
+[[maybe_unused]] std::string ReadUdevProperty(const std::string& output,
+                                              const std::string& key)
 {
   std::istringstream stream(output);
   std::string line;
@@ -97,13 +98,14 @@ std::string StableTapePath(const std::filesystem::path& path)
   }
 }
 
-bool IsTapeByIdPath(const std::string& path)
+[[maybe_unused]] bool IsTapeByIdPath(const std::string& path)
 {
   return path.rfind("/dev/tape/by-id/", 0) == 0;
 }
 
-std::string SelectShortestTapeByIdPath(const std::vector<std::string>& devlinks,
-                                       const std::string& fallback)
+[[maybe_unused]] std::string SelectShortestTapeByIdPath(
+    const std::vector<std::string>& devlinks,
+    const std::string& fallback)
 {
   std::string selected;
   for (const auto& link : devlinks) {
@@ -116,7 +118,8 @@ std::string SelectShortestTapeByIdPath(const std::vector<std::string>& devlinks,
   return selected.empty() ? fallback : selected;
 }
 
-std::string ExtractSerialFromDevlinks(const std::vector<std::string>& devlinks)
+[[maybe_unused]] std::string ExtractSerialFromDevlinks(
+    const std::vector<std::string>& devlinks)
 {
   std::string serial;
   const std::regex by_id_re(
@@ -200,7 +203,8 @@ struct DirectorStorageDefaults {
   std::string port = "9103";
 };
 
-TapeDeviceInfo ReadTapeDeviceInfo(const std::filesystem::directory_entry& entry)
+[[maybe_unused]] TapeDeviceInfo ReadTapeDeviceInfo(
+    const std::filesystem::directory_entry& entry)
 {
   const auto name = entry.path().filename().string();
   const std::string path = entry.path().string();
@@ -265,7 +269,8 @@ TapeDeviceInfo ReadTapeDeviceInfo(const std::filesystem::directory_entry& entry)
   return info;
 }
 
-TapeChangerStatus QueryTapeChangerStatus(const std::string& changer_path)
+[[maybe_unused]] TapeChangerStatus QueryTapeChangerStatus(
+    const std::string& changer_path)
 {
   TapeChangerStatus status;
   auto result
@@ -293,7 +298,8 @@ TapeChangerStatus QueryTapeChangerStatus(const std::string& changer_path)
   return status;
 }
 
-TapeChangerInventory ParseTapeChangerInventoryStatus(const std::string& status_text)
+[[maybe_unused]] TapeChangerInventory ParseTapeChangerInventoryStatus(
+    const std::string& status_text)
 {
   TapeChangerInventory inventory;
 
@@ -428,7 +434,7 @@ std::string Unquote(std::string value)
   return value;
 }
 
-DirectorStorageDefaults ReadDirectorStorageDefaults()
+[[maybe_unused]] DirectorStorageDefaults ReadDirectorStorageDefaults()
 {
   DirectorStorageDefaults defaults;
   std::ifstream input("/etc/bareos/bareos-dir.d/storage/File.conf");
@@ -592,9 +598,9 @@ std::string BuildTapeStorageDirConfig(const TapeStorageRequest& tape,
   return conf.str();
 }
 
-bool ValidateStorageConfig(const DiskStorageRequest& disk,
-                           const TapeStorageRequest& tape,
-                           std::string& error)
+[[maybe_unused]] bool ValidateStorageConfig(const DiskStorageRequest& disk,
+                                            const TapeStorageRequest& tape,
+                                            std::string& error)
 {
   if (!disk.enabled && !tape.enabled) {
     error = "Select at least one storage target.";
@@ -637,9 +643,10 @@ bool ValidateStorageConfig(const DiskStorageRequest& disk,
   return true;
 }
 
-std::string BuildConfigureStorageScript(const DiskStorageRequest& disk,
-                                        const TapeStorageRequest& tape,
-                                        const DirectorStorageDefaults& defaults)
+[[maybe_unused]] std::string BuildConfigureStorageScript(
+    const DiskStorageRequest& disk,
+    const TapeStorageRequest& tape,
+    const DirectorStorageDefaults& defaults)
 {
   std::ostringstream script;
   script << "#!/bin/bash\n"
@@ -712,10 +719,11 @@ std::string BuildConfigureStorageScript(const DiskStorageRequest& disk,
   return script.str();
 }
 
-int RunGeneratedScript(WsCodec& ws,
-                       [[maybe_unused]] const std::string& step_id,
-                       const std::string& script,
-                       bool use_sudo)
+[[maybe_unused]] int RunGeneratedScript(
+    WsCodec& ws,
+    [[maybe_unused]] const std::string& step_id,
+    const std::string& script,
+    bool use_sudo)
 {
   char path_template[] = "/tmp/bareos-setup-storage-XXXXXX";
   const int fd = mkstemp(path_template);
@@ -819,68 +827,46 @@ json_t* DiscoverDiskInventoryJson()
 
 json_t* BuildStorageInventoryJson()
 {
-  std::vector<TapeChangerInfo> changers;
-  std::vector<TapeDeviceInfo> drives;
-
-  if (std::filesystem::exists("/dev/tape/by-id")) {
-    std::map<std::string, TapeDeviceInfo> drive_map;
-    for (const auto& entry : std::filesystem::directory_iterator("/dev/tape/by-id")) {
-      if (!entry.is_symlink()) continue;
-      const auto name = entry.path().filename().string();
-      if (name.ends_with("-changer")) {
-        TapeChangerInfo changer;
-        changer.device = ReadTapeDeviceInfo(entry);
-        changer.status = QueryTapeChangerStatus(changer.device.path);
-        changers.push_back(std::move(changer));
-      } else if (name.ends_with("-nst") || name.ends_with("-st")) {
-        auto info = ReadTapeDeviceInfo(entry);
-        auto& drive = drive_map[info.canonical_path];
-        if (drive.canonical_path.empty()) {
-          drive = info;
-        } else {
-          for (const auto& alias : info.aliases) drive.aliases.push_back(alias);
-        }
-      }
-    }
-
-    for (auto& [_, drive] : drive_map) {
-      std::sort(drive.aliases.begin(), drive.aliases.end());
-      drive.aliases.erase(std::unique(drive.aliases.begin(), drive.aliases.end()),
-                          drive.aliases.end());
-      drive.aliases.erase(std::remove(drive.aliases.begin(), drive.aliases.end(),
-                                      drive.path),
-                          drive.aliases.end());
-      drives.push_back(std::move(drive));
-    }
-  }
+  const auto inventory = ::DiscoverTapeStorageInventory();
 
   json_t* changers_json = json_array();
-  for (const auto& changer : changers) {
+  for (const auto& changer : inventory.changers) {
     json_t* aliases = json_array();
-    for (const auto& alias : changer.device.aliases) {
+    for (const auto& alias : changer.aliases) {
       json_array_append_new(aliases, json_string(alias.c_str()));
     }
     json_t* status = json_pack(
-        "{s:i, s:i, s:i, s:i, s:s}", "drives", changer.status.drives,
-        "robot_arms", changer.status.robot_arms, "slots", changer.status.slots,
-        "ie_slots", changer.status.ie_slots, "error",
-        changer.status.error.c_str());
+        "{s:i, s:i, s:i, s:i, s:s}", "drives", changer.status.drives, "robot_arms",
+        changer.status.robot_arms, "slots", changer.status.slots, "ie_slots",
+        changer.status.ie_slots, "error", changer.status.error.c_str());
+    json_t* drive_identifiers = json_array();
+    for (const auto& drive : changer.drive_identifiers) {
+      json_t* identifiers = json_array();
+      for (const auto& identifier : drive.device_identifiers) {
+        json_array_append_new(
+            identifiers,
+            json_string(::DescribeDeviceIdentifier(identifier).c_str()));
+      }
+      json_array_append_new(
+          drive_identifiers,
+          json_pack("{s:i, s:o}", "element_address", drive.element_address,
+                    "identifiers", identifiers));
+    }
     json_array_append_new(
         changers_json,
         json_pack(
-            "{s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:o, s:o}",
-            "path", changer.device.path.c_str(), "canonical_path",
-            changer.device.canonical_path.c_str(), "display_name",
-            changer.device.display_name.c_str(), "identifier",
-            changer.device.identifier.c_str(), "serial_number",
-            changer.device.serial_number.c_str(), "vendor",
-            changer.device.vendor.c_str(), "model", changer.device.model.c_str(),
-            "firmware_version", changer.device.firmware_version.c_str(),
-            "aliases", aliases, "status", status));
+            "{s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:o, s:o, s:o}",
+            "path", changer.path.c_str(), "canonical_path",
+            changer.canonical_path.c_str(), "display_name", changer.display_name.c_str(),
+            "identifier", changer.identifier.c_str(), "serial_number",
+            changer.serial_number.c_str(), "vendor", changer.vendor.c_str(), "model",
+            changer.model.c_str(), "firmware_version",
+            changer.firmware_version.c_str(), "aliases", aliases, "status", status,
+            "drive_identifiers", drive_identifiers));
   }
 
   json_t* drives_json = json_array();
-  for (const auto& drive : drives) {
+  for (const auto& drive : inventory.drives) {
     json_t* aliases = json_array();
     for (const auto& alias : drive.aliases) {
       json_array_append_new(aliases, json_string(alias.c_str()));
@@ -894,19 +880,19 @@ json_t* BuildStorageInventoryJson()
             drive.identifier.c_str(), "serial_number",
             drive.serial_number.c_str(), "vendor", drive.vendor.c_str(),
             "model", drive.model.c_str(), "firmware_version",
-            drive.firmware_version.c_str(), "aliases", aliases));
+             drive.firmware_version.c_str(), "aliases", aliases));
   }
 
   json_t* assignments = json_array();
-  if (changers.size() == 1 && !drives.empty()) {
+  for (const auto& assignment : inventory.suggested_assignments) {
     json_t* drive_paths = json_array();
-    for (const auto& drive : drives) {
-      json_array_append_new(drive_paths, json_string(drive.path.c_str()));
+    for (const auto& drive_path : assignment.drive_paths) {
+      json_array_append_new(drive_paths, json_string(drive_path.c_str()));
     }
     json_array_append_new(
         assignments,
-        json_pack("{s:s, s:o}", "changer_path", changers.front().device.path.c_str(),
-                  "drive_paths", drive_paths));
+        json_pack("{s:s, s:o}", "changer_path",
+                  assignment.changer_path.c_str(), "drive_paths", drive_paths));
   }
 
   return json_pack("{s:s, s:o, s:o, s:o, s:o}", "type", "storage_inventory",
@@ -1028,13 +1014,14 @@ static void HandleTestTapeAssignment(WsCodec& ws, json_t* msg)
         SendError(ws, "test_tape_assignment",
                   "Failed to query changer status for " + assignment.changer_path
                       + ": "
-                      + Trim(!changer_status.stderr_text.empty()
-                                 ? changer_status.stderr_text
-                                 : changer_status.stdout_text));
+                      + ::Trim(!changer_status.stderr_text.empty()
+                                   ? changer_status.stderr_text
+                                   : changer_status.stdout_text));
         return;
       }
 
-      const auto inventory = ParseTapeChangerInventoryStatus(changer_status.stdout_text);
+      const auto inventory
+          = ::ParseTapeChangerInventoryStatus(changer_status.stdout_text);
       auto full_slot_it
           = std::find_if(inventory.slots.begin(), inventory.slots.end(),
                          [](const auto& slot) { return slot.full; });
@@ -1053,19 +1040,21 @@ static void HandleTestTapeAssignment(WsCodec& ws, json_t* msg)
         SendOutputLine(
             ws, "Loading a tape from slot " + std::to_string(full_slot_it->number)
                     + " into drive " + std::to_string(changer_drive_number) + "...");
-        auto load_result
-            = RunCommandCapture({"mtx", "-f", StableTapePath(assignment.changer_path),
-                                 "load", std::to_string(full_slot_it->number),
-                                 std::to_string(changer_drive_number)},
-                                use_sudo);
+        auto load_result = RunCommandCapture(
+            std::vector<std::string>{"mtx", "-f",
+                                     StableTapePath(assignment.changer_path),
+                                     "load",
+                                     std::to_string(full_slot_it->number),
+                                     std::to_string(changer_drive_number)},
+            use_sudo);
         if (load_result.exit_code != 0) {
           SendError(ws, "test_tape_assignment",
                     "Failed to load a tape into drive "
                         + std::to_string(changer_drive_number) + " of changer "
                         + assignment.changer_path + ": "
-                        + Trim(!load_result.stderr_text.empty()
-                                   ? load_result.stderr_text
-                                   : load_result.stdout_text));
+                        + ::Trim(!load_result.stderr_text.empty()
+                                     ? load_result.stderr_text
+                                     : load_result.stdout_text));
           return;
         }
 
@@ -1079,10 +1068,13 @@ static void HandleTestTapeAssignment(WsCodec& ws, json_t* msg)
         }
 
         if (loaded_drives.size() != 1 || loaded_drives.front() != expected_drive) {
-          RunCommandCapture({"mtx", "-f", StableTapePath(assignment.changer_path),
-                             "unload", std::to_string(full_slot_it->number),
-                             std::to_string(changer_drive_number)},
-                            use_sudo);
+          RunCommandCapture(
+              std::vector<std::string>{"mtx", "-f",
+                                       StableTapePath(assignment.changer_path),
+                                       "unload",
+                                       std::to_string(full_slot_it->number),
+                                       std::to_string(changer_drive_number)},
+              use_sudo);
           std::ostringstream message;
           message << "Expected tape to load into " << expected_drive;
           if (loaded_drives.empty()) {
@@ -1102,17 +1094,20 @@ static void HandleTestTapeAssignment(WsCodec& ws, json_t* msg)
 
         SendOutputLine(ws, "Unloading the tape again...");
         auto unload_result = RunCommandCapture(
-            {"mtx", "-f", StableTapePath(assignment.changer_path), "unload",
-             std::to_string(full_slot_it->number), std::to_string(changer_drive_number)},
+            std::vector<std::string>{"mtx", "-f",
+                                     StableTapePath(assignment.changer_path),
+                                     "unload",
+                                     std::to_string(full_slot_it->number),
+                                     std::to_string(changer_drive_number)},
             use_sudo);
         if (unload_result.exit_code != 0) {
           SendError(ws, "test_tape_assignment",
                     "Failed to unload drive "
                         + std::to_string(changer_drive_number) + " of changer "
                         + assignment.changer_path + ": "
-                        + Trim(!unload_result.stderr_text.empty()
-                                   ? unload_result.stderr_text
-                                   : unload_result.stdout_text));
+                        + ::Trim(!unload_result.stderr_text.empty()
+                                     ? unload_result.stderr_text
+                                     : unload_result.stdout_text));
           return;
         }
 
@@ -1144,15 +1139,18 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
   bool use_sudo = JBool(msg, "sudo");
 
   if (step_id == "configure_storage") {
-    DiskStorageRequest disk;
+    ::DiskStorageConfig disk;
     disk.enabled = JBool(msg, "disk_enabled");
-    disk.storage_path = Trim(JStr(msg, "disk_path"));
+    disk.storage_path = ::Trim(JStr(msg, "disk_path"));
     disk.dedupable = JBool(msg, "disk_dedupable");
     disk.concurrent_jobs = JsonInt(msg, "disk_concurrent_jobs", 1);
 
-    TapeStorageRequest tape;
+    ::TapeStorageConfig tape;
     tape.enabled = JBool(msg, "tape_enabled");
-    tape.assignments = ParseTapeAssignments(msg);
+    for (const auto& assignment : ParseTapeAssignments(msg)) {
+      tape.assignments.push_back(
+          {assignment.changer_path, assignment.drive_paths});
+    }
 
     std::string error;
     if (!ValidateStorageConfig(disk, tape, error)) {
@@ -1160,7 +1158,7 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
       return;
     }
 
-    const auto defaults = ReadDirectorStorageDefaults();
+    const auto defaults = ::ReadDirectorStorageDefaults();
     const auto script = BuildConfigureStorageScript(disk, tape, defaults);
     int exit_code = 0;
 
@@ -1202,6 +1200,7 @@ static void HandleRunStep(WsCodec& ws, json_t* msg, bool dry_run)
         if (json_is_string(v)) pkgs.push_back(json_string_value(v));
       }
     }
+    if (pkgs.empty()) pkgs = BuildDefaultPackageList();
     cmd = BuildInstallCmd(JStr(msg, "pkg_mgr"), pkgs);
 
   } else if (step_id == "setup_db") {

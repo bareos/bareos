@@ -44,6 +44,7 @@
                 <th class="text-left">Robot Arms</th>
                 <th class="text-left">Slots</th>
                 <th class="text-left">I/E Slots</th>
+                <th class="text-left">Tape Identifiers</th>
               </tr>
             </thead>
             <tbody>
@@ -67,6 +68,15 @@
                 <td>{{ changer.status?.robot_arms ?? '-' }}</td>
                 <td>{{ changer.status?.slots ?? '-' }}</td>
                 <td>{{ changer.status?.ie_slots ?? '-' }}</td>
+                <td>
+                  <div v-if="changer.drive_identifiers?.length">
+                    <div v-for="drive in changer.drive_identifiers" :key="`${changer.path}-${drive.element_address}`">
+                      Element {{ drive.element_address }}:
+                      {{ (drive.identifiers || []).join(' | ') || '-' }}
+                    </div>
+                  </div>
+                  <span v-else>-</span>
+                </td>
               </tr>
             </tbody>
           </q-markup-table>
