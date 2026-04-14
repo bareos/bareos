@@ -126,10 +126,14 @@ BuildRequires: libqt5-qtbase-devel
 
 %else
 
-%if 0%{?rhel} > 7 || 0%{?fedora} >= 29
+%if 0%{?fedora} >= 43
+BuildRequires: qt6-qtbase-devel
+%else
+%if 0%{?centos_version} > 700 || 0%{?rhel_version} > 700 || 0%{?fedora} >= 29
 BuildRequires: qt5-qtbase-devel
 %else
 BuildRequires: qt-devel
+%endif
 %endif
 
 %endif
