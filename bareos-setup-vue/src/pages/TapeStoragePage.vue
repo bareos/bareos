@@ -16,11 +16,10 @@
         <template #avatar><q-icon name="warning" /></template>
         Make sure the tape changer is attached to the system before scanning.
       </q-banner>
-      <q-banner v-if="store.tapeChangers.length === 1 && store.tapeAssignments.length"
+      <q-banner v-if="store.tapeAssignments.length"
                 class="bg-info text-white q-mb-md" rounded>
         <template #avatar><q-icon name="info" /></template>
-        The detected tape drives were assigned automatically because only one
-        tape changer was found.
+        Tape drives were assigned automatically for each detected library.
       </q-banner>
 
       <div class="row justify-end q-mb-md">
@@ -29,114 +28,75 @@
 
       <q-card flat bordered class="q-mb-md">
         <q-card-section>
-          <div class="text-subtitle2 q-mb-sm">Detected tape changers</div>
-          <q-markup-table flat dense>
-            <thead>
-              <tr>
-                <th class="text-left">Identification</th>
-                <th class="text-left">Serial</th>
-                <th class="text-left">Manufacturer</th>
-                <th class="text-left">Type</th>
-                <th class="text-left">Firmware</th>
-                <th class="text-left">Selected Path</th>
-                <th class="text-left">Additional Paths</th>
-                <th class="text-left">Drives</th>
-                <th class="text-left">Robot Arms</th>
-                <th class="text-left">Slots</th>
-                <th class="text-left">I/E Slots</th>
-                <th class="text-left">Tape Identifiers</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="changer in store.tapeChangers" :key="changer.path">
-                <td>{{ changer.identifier || changer.display_name }}</td>
-                <td>{{ changer.serial_number || '-' }}</td>
-                <td>{{ changer.vendor || '-' }}</td>
-                <td>{{ changer.model || '-' }}</td>
-                <td>{{ changer.firmware_version || '-' }}</td>
-                <td>{{ changer.path }}</td>
-                <td>
-                  <div v-if="changer.canonical_path && changer.canonical_path !== changer.path">
-                    {{ changer.canonical_path }}
-                  </div>
-                  <div v-for="alias in changer.aliases || []" :key="alias">
-                    {{ alias }}
-                  </div>
-                  <span v-if="!changer.aliases?.length && (!changer.canonical_path || changer.canonical_path === changer.path)">-</span>
-                </td>
-                <td>{{ changer.status?.drives ?? '-' }}</td>
-                <td>{{ changer.status?.robot_arms ?? '-' }}</td>
-                <td>{{ changer.status?.slots ?? '-' }}</td>
-                <td>{{ changer.status?.ie_slots ?? '-' }}</td>
-                <td>
-                  <div v-if="changer.drive_identifiers?.length">
+          <div class="text-subtitle2">Library and drive assignment</div>
+          <div class="text-caption text-grey q-mt-xs">
+            Library details are shown on the left and the assigned tape drives on the right.
+          </div>
+        </q-card-section>
+      </q-card>
+
+      <q-card v-for="changer in store.tapeChangers" :key="changer.path"
+               flat bordered class="q-mb-md">
+        <q-card-section>
+          <div class="row q-col-gutter-lg items-start">
+            <div class="col-12 col-md-6">
+              <div class="text-subtitle2 q-mb-sm">
+                {{ changerLabel(changer) }}
+              </div>
+              <div class="q-gutter-y-xs">
+                <div><strong>Path:</strong> {{ changer.path }}</div>
+                <div><strong>Manufacturer:</strong> {{ changer.vendor || '-' }}</div>
+                <div><strong>Type:</strong> {{ changer.model || '-' }}</div>
+                <div><strong>Firmware:</strong> {{ changer.firmware_version || '-' }}</div>
+                <div>
+                  <strong>Slots:</strong> {{ changer.status?.slots ?? '-' }},
+                  <strong>Drives:</strong> {{ changer.status?.drives ?? '-' }},
+                  <strong>Robot Arms:</strong> {{ changer.status?.robot_arms ?? '-' }},
+                  <strong>I/E Slots:</strong> {{ changer.status?.ie_slots ?? '-' }}
+                </div>
+                <div>
+                  <strong>Tape Identifiers:</strong>
+                  <div v-if="changer.drive_identifiers?.length" class="q-mt-xs">
                     <div v-for="drive in changer.drive_identifiers" :key="`${changer.path}-${drive.element_address}`">
                       Element {{ drive.element_address }}:
                       {{ (drive.identifiers || []).join(' | ') || '-' }}
                     </div>
                   </div>
-                  <span v-else>-</span>
-                </td>
-              </tr>
-            </tbody>
-          </q-markup-table>
-        </q-card-section>
-      </q-card>
-
-      <q-card flat bordered class="q-mb-md">
-        <q-card-section>
-          <div class="text-subtitle2 q-mb-sm">Detected tape drives</div>
-          <q-markup-table flat dense>
-            <thead>
-              <tr>
-                <th class="text-left">Identification</th>
-                <th class="text-left">Serial</th>
-                <th class="text-left">Manufacturer</th>
-                <th class="text-left">Type</th>
-                <th class="text-left">Firmware</th>
-                <th class="text-left">Selected Path</th>
-                <th class="text-left">Additional Paths</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="drive in store.tapeDrives" :key="drive.path">
-                <td>{{ drive.identifier || drive.display_name }}</td>
-                <td>{{ drive.serial_number || '-' }}</td>
-                <td>{{ drive.vendor || '-' }}</td>
-                <td>{{ drive.model || '-' }}</td>
-                <td>{{ drive.firmware_version || '-' }}</td>
-                <td>{{ drive.path }}</td>
-                <td>
-                  <div v-for="alias in drive.aliases || []" :key="alias">
-                    {{ alias }}
-                  </div>
-                  <span v-if="!drive.aliases?.length">-</span>
-                </td>
-              </tr>
-            </tbody>
-          </q-markup-table>
-        </q-card-section>
-      </q-card>
-
-      <q-card v-for="changer in store.tapeChangers" :key="changer.path"
-              flat bordered class="q-mb-md">
-        <q-card-section>
-          <div class="text-subtitle2 q-mb-sm">
-            Assign drives to {{ changer.identifier || changer.display_name }}{{ changer.serial_number ? ` / ${changer.serial_number}` : '' }}
-          </div>
-          <q-select
-            :model-value="drivePathsFor(changer.path)"
-            multiple
-            use-chips
-            outlined
-            dense
-            emit-value
-            map-options
-            :options="availableDriveOptions(changer.path)"
-            @update:model-value="updateAssignment(changer.path, $event)"
-          />
-          <div class="text-caption text-grey q-mt-sm">
-            The selected order becomes the drive order for this changer.
+                  <span v-else> - </span>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <div class="text-subtitle2 q-mb-sm">Assigned tape drives</div>
+              <q-select
+                :model-value="drivePathsFor(changer.path)"
+                multiple
+                use-chips
+                outlined
+                dense
+                emit-value
+                map-options
+                :options="availableDriveOptions(changer.path)"
+                @update:model-value="updateAssignment(changer.path, $event)"
+              />
+              <div class="text-caption text-grey q-mt-sm">
+                The selected order becomes the drive order for this changer.
+              </div>
+              <q-list v-if="selectedDrivesFor(changer.path).length"
+                      bordered separator class="q-mt-md">
+                <q-item v-for="drive in selectedDrivesFor(changer.path)" :key="drive.path">
+                  <q-item-section>
+                    <q-item-label>{{ driveLabel(drive) }}</q-item-label>
+                    <q-item-label caption>
+                      {{ drive.vendor || '-' }} / {{ drive.model || '-' }} / {{ drive.firmware_version || '-' }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+              <div v-else class="text-caption text-grey q-mt-md">
+                No tape drives are currently assigned to this library.
+              </div>
+            </div>
           </div>
         </q-card-section>
       </q-card>
@@ -270,6 +230,22 @@ function drivePathsFor(changerPath) {
   return store.tapeAssignments.find((assignment) => assignment.changer_path === changerPath)?.drive_paths ?? []
 }
 
+function changerLabel(changer) {
+  return `${changer.identifier || changer.display_name}${changer.serial_number ? ` / ${changer.serial_number}` : ''}`
+}
+
+function driveLabel(drive) {
+  return `${drive.identifier || drive.display_name}${drive.serial_number ? ` / ${drive.serial_number}` : ''} (${drive.path})`
+}
+
+function selectedDrivesFor(changerPath) {
+  const assignedPaths = drivePathsFor(changerPath)
+  const driveMap = new Map(store.tapeDrives.map((drive) => [drive.path, drive]))
+  return assignedPaths
+    .map((drivePath) => driveMap.get(drivePath))
+    .filter((drive) => Boolean(drive))
+}
+
 function updateAssignment(changerPath, drivePaths) {
   const nextAssignments = store.tapeAssignments.filter(
     (assignment) => assignment.changer_path !== changerPath
@@ -300,16 +276,9 @@ function applyAssignments(suggestedAssignments) {
 }
 
 function availableDriveOptions(changerPath) {
-  const claimed = new Set(
-    store.tapeAssignments
-      .filter((assignment) => assignment.changer_path !== changerPath)
-      .flatMap((assignment) => assignment.drive_paths)
-  )
-
   return store.tapeDrives
-    .filter((drive) => !claimed.has(drive.path) || drivePathsFor(changerPath).includes(drive.path))
     .map((drive) => ({
-      label: `${drive.identifier || drive.display_name}${drive.serial_number ? ` / ${drive.serial_number}` : ''} (${drive.path})`,
+      label: driveLabel(drive),
       value: drive.path,
     }))
 }

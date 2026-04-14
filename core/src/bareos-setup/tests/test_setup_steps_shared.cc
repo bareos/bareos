@@ -57,6 +57,32 @@ TEST(BareosSetupStepsShared, SuggestsSingleChangerAssignments)
                                       "/dev/tape/by-id/drive-1-nst"}));
 }
 
+TEST(BareosSetupStepsShared, SuggestsAllDrivesForEveryChangerWithoutMatches)
+{
+  const std::vector<TapeChangerInfo> changers = {
+      {"/dev/tape/by-id/changer-0", "/dev/sg4", "Changer0", "", "", "", "", "",
+       {}, {}, {}},
+      {"/dev/tape/by-id/changer-1", "/dev/sg5", "Changer1", "", "", "", "", "",
+       {}, {}, {}},
+  };
+  const std::vector<TapeDriveInfo> drives = {
+      {"/dev/tape/by-id/drive-0-nst", "/dev/nst0", "Drive0", "", "", "", "", "",
+       {}, {}},
+      {"/dev/tape/by-id/drive-1-nst", "/dev/nst1", "Drive1", "", "", "", "", "",
+       {}, {}},
+  };
+
+  const auto assignments = SuggestTapeAssignments(changers, drives);
+
+  ASSERT_EQ(assignments.size(), 2U);
+  EXPECT_EQ(assignments[0].drive_paths,
+            (std::vector<std::string>{"/dev/tape/by-id/drive-0-nst",
+                                      "/dev/tape/by-id/drive-1-nst"}));
+  EXPECT_EQ(assignments[1].drive_paths,
+            (std::vector<std::string>{"/dev/tape/by-id/drive-0-nst",
+                                      "/dev/tape/by-id/drive-1-nst"}));
+}
+
 TEST(BareosSetupStepsShared, ParsesVpdPageDeviceIdentifiers)
 {
   const std::vector<uint8_t> page = {
@@ -164,7 +190,7 @@ TEST(BareosSetupStepsShared, MatchesLibraryDrivesByIdentifier)
             (std::vector<std::string>{"/dev/tape/by-id/drive-0-nst"}));
 }
 
-TEST(BareosSetupStepsShared, RejectsReusedTapeDrive)
+TEST(BareosSetupStepsShared, AllowsReusedTapeDriveAcrossLibraries)
 {
   DiskStorageConfig disk_config;
   TapeStorageConfig tape_config;
@@ -175,8 +201,8 @@ TEST(BareosSetupStepsShared, RejectsReusedTapeDrive)
   };
 
   std::string error;
-  EXPECT_FALSE(ValidateStorageConfig(disk_config, tape_config, error));
-  EXPECT_EQ(error, "A tape drive can only be assigned to one changer.");
+  EXPECT_TRUE(ValidateStorageConfig(disk_config, tape_config, error));
+  EXPECT_TRUE(error.empty());
 }
 
 TEST(BareosSetupStepsShared, BuildsTapeStorageScript)

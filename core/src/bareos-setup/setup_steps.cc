@@ -696,17 +696,14 @@ std::vector<TapeAssignment> SuggestTapeAssignments(
   if (changers.empty() || drives.empty()) return {};
 
   std::vector<TapeAssignment> assignments;
-  std::set<std::string> claimed_drives;
-  bool matched_any_identifier = false;
 
   for (const auto& changer : changers) {
     TapeAssignment assignment;
     assignment.changer_path = changer.path;
+    bool matched_identifier_for_changer = false;
 
     for (const auto& changer_drive : changer.drive_identifiers) {
       for (const auto& drive : drives) {
-        if (claimed_drives.contains(drive.path)) continue;
-
         const auto matches = std::any_of(
             changer_drive.device_identifiers.begin(),
             changer_drive.device_identifiers.end(),
@@ -720,25 +717,19 @@ std::vector<TapeAssignment> SuggestTapeAssignments(
         if (!matches) continue;
 
         assignment.drive_paths.push_back(drive.path);
-        claimed_drives.insert(drive.path);
-        matched_any_identifier = true;
+        matched_identifier_for_changer = true;
         break;
       }
+    }
+
+    if (!matched_identifier_for_changer) {
+      for (const auto& drive : drives) assignment.drive_paths.push_back(drive.path);
     }
 
     if (!assignment.drive_paths.empty()) assignments.push_back(std::move(assignment));
   }
 
-  if (matched_any_identifier) return assignments;
-
-  if (changers.size() == 1) {
-    TapeAssignment assignment;
-    assignment.changer_path = changers.front().path;
-    for (const auto& drive : drives) assignment.drive_paths.push_back(drive.path);
-    return {assignment};
-  }
-
-  return {};
+  return assignments;
 }
 
 TapeStorageInventory DiscoverTapeStorageInventory()
@@ -889,18 +880,10 @@ bool ValidateStorageConfig(const DiskStorageConfig& disk,
       return false;
     }
 
-    std::set<std::string> seen_drives;
     for (const auto& assignment : tape.assignments) {
       if (assignment.changer_path.empty() || assignment.drive_paths.empty()) {
         error = "Each tape changer needs at least one assigned drive.";
         return false;
-      }
-
-      for (const auto& drive_path : assignment.drive_paths) {
-        if (!seen_drives.insert(drive_path).second) {
-          error = "A tape drive can only be assigned to one changer.";
-          return false;
-        }
       }
     }
   }

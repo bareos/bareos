@@ -595,8 +595,7 @@ static bool CollectTapeAssignments(WizardState& state)
     state.tape_config.assignments
         = SuggestTapeAssignments(state.tape_changers, state.tape_drives);
     if (!state.tape_config.assignments.empty()) {
-      PrintOk("Assigned all tape drives automatically because only one "
-              "changer was found.");
+      PrintOk("Assigned tape drives automatically for each detected library.");
     }
   }
 

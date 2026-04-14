@@ -35,38 +35,36 @@
     <q-card v-if="store.tapeChangers.length" flat bordered class="q-mb-lg">
       <q-card-section>
         <div class="text-subtitle2 q-mb-sm">Detected tape changers</div>
-        <q-markup-table flat dense>
-          <thead>
-            <tr>
-              <th class="text-left">Identification</th>
-              <th class="text-left">Serial</th>
-              <th class="text-left">Manufacturer</th>
-              <th class="text-left">Type</th>
-              <th class="text-left">Firmware</th>
-              <th class="text-left">Selected Path</th>
-              <th class="text-left">Tape Identifiers</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="changer in store.tapeChangers" :key="changer.path">
-              <td>{{ changer.identifier || changer.display_name }}</td>
-              <td>{{ changer.serial_number || '-' }}</td>
-              <td>{{ changer.vendor || '-' }}</td>
-              <td>{{ changer.model || '-' }}</td>
-              <td>{{ changer.firmware_version || '-' }}</td>
-              <td>{{ changer.path }}</td>
-              <td>
-                <div v-if="changer.drive_identifiers?.length">
-                  <div v-for="drive in changer.drive_identifiers" :key="`${changer.path}-${drive.element_address}`">
-                    Element {{ drive.element_address }}:
-                    {{ (drive.identifiers || []).join(' | ') || '-' }}
-                  </div>
+        <q-list bordered separator>
+          <q-item v-for="changer in store.tapeChangers" :key="changer.path" class="q-py-md">
+            <q-item-section>
+              <q-item-label class="text-subtitle2">
+                {{ changerLabel(changer) }}
+              </q-item-label>
+              <q-item-label caption class="q-mt-xs">
+                {{ changer.vendor || '-' }} / {{ changer.model || '-' }} / {{ changer.firmware_version || '-' }}
+              </q-item-label>
+              <q-item-label class="q-mt-sm">
+                <strong>Path:</strong> {{ changer.path }}
+              </q-item-label>
+              <q-item-label class="q-mt-xs">
+                <strong>Slots:</strong> {{ changer.status?.slots ?? '-' }},
+                <strong>Drives:</strong> {{ changer.status?.drives ?? '-' }},
+                <strong>I/E Slots:</strong> {{ changer.status?.ie_slots ?? '-' }}
+              </q-item-label>
+              <q-item-label class="q-mt-xs">
+                <strong>Tape Identifiers:</strong>
+              </q-item-label>
+              <div v-if="changer.drive_identifiers?.length" class="text-caption q-mt-xs">
+                <div v-for="drive in changer.drive_identifiers" :key="`${changer.path}-${drive.element_address}`">
+                  Element {{ drive.element_address }}:
+                  {{ (drive.identifiers || []).join(' | ') || '-' }}
                 </div>
-                <span v-else>-</span>
-              </td>
-            </tr>
-          </tbody>
-        </q-markup-table>
+              </div>
+              <q-item-label v-else caption class="q-mt-xs">-</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
       </q-card-section>
     </q-card>
 
@@ -122,6 +120,10 @@ watch(messages, (msgs) => {
 onMounted(() => {
   send({ action: 'scan_storage' })
 })
+
+function changerLabel(changer) {
+  return `${changer.identifier || changer.display_name}${changer.serial_number ? ` / ${changer.serial_number}` : ''}`
+}
 
 function back() {
   store.prevStep()
