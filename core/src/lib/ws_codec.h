@@ -17,10 +17,10 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-*/
+ */
 /**
  * @file
- * Minimal RFC 6455 WebSocket server codec.
+ * Minimal RFC 6455 WebSocket server codec shared by multiple frontends.
  *
  * Handles:
  *  - HTTP upgrade handshake (SHA-1 accept key via OpenSSL)
@@ -31,8 +31,8 @@
  *  - Unmasked outbound frames (server never masks per RFC 6455)
  *  - 7-bit, 16-bit, and 64-bit payload length encoding
  */
-#ifndef BAREOS_WEBUI_PROXY_WS_CODEC_H_
-#define BAREOS_WEBUI_PROXY_WS_CODEC_H_
+#ifndef BAREOS_LIB_WS_CODEC_H_
+#define BAREOS_LIB_WS_CODEC_H_
 
 #include <cstdint>
 #include <string>
@@ -81,4 +81,4 @@ class WsCodec {
   void SendFrame(uint8_t opcode, const std::string& payload, bool fin = true);
 };
 
-#endif  // BAREOS_WEBUI_PROXY_WS_CODEC_H_
+#endif  // BAREOS_LIB_WS_CODEC_H_

@@ -17,21 +17,21 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-*/
+ */
 #include "ws_codec.h"
 
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <stdexcept>
 #include <string>
-#include <cstring>
 
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <openssl/evp.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
+#include <openssl/evp.h>
 
 // RFC 6455 magic GUID appended to Sec-WebSocket-Key before SHA-1
 static constexpr const char kWsMagic[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -150,7 +150,6 @@ void WsCodec::Handshake()
     throw std::runtime_error("WebSocket: malformed Sec-WebSocket-Key header");
   }
   key = headers.substr(pos, end - pos);
-  // Trim whitespace
   while (!key.empty() && (key.front() == ' ' || key.front() == '\t')) {
     key.erase(key.begin());
   }
@@ -178,13 +177,11 @@ WsCodec::Frame WsCodec::RecvFrame()
 {
   Frame f;
 
-  // Byte 0: FIN + opcode
   uint8_t b0;
   ReadAll(&b0, 1);
   f.fin = (b0 & 0x80u) != 0;
   f.opcode = b0 & 0x0Fu;
 
-  // Byte 1: MASK + payload length
   uint8_t b1;
   ReadAll(&b1, 1);
   bool masked = (b1 & 0x80u) != 0;
@@ -201,11 +198,9 @@ WsCodec::Frame WsCodec::RecvFrame()
     for (int i = 0; i < 8; ++i) { payload_len = (payload_len << 8) | ext[i]; }
   }
 
-  // Masking key (clients always send masked frames per RFC 6455)
   uint8_t mask[4] = {};
   if (masked) { ReadAll(mask, 4); }
 
-  // Payload
   if (payload_len > 0) {
     f.payload.resize(static_cast<size_t>(payload_len));
     ReadAll(f.payload.data(), static_cast<size_t>(payload_len));
@@ -224,10 +219,8 @@ void WsCodec::SendFrame(uint8_t opcode, const std::string& payload, bool fin)
   std::string frame;
   frame.reserve(10 + payload.size());
 
-  // Byte 0
   frame += static_cast<char>((fin ? 0x80u : 0u) | (opcode & 0x0Fu));
 
-  // Byte 1+ (no masking from server)
   size_t len = payload.size();
   if (len <= 125) {
     frame += static_cast<char>(len);
@@ -263,7 +256,6 @@ std::string WsCodec::RecvMessage()
         break;
 
       case kOpPong:
-        // Unsolicited pong — ignore.
         break;
 
       case kOpClose:

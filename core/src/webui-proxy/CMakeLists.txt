@@ -12,7 +12,8 @@ cmake_minimum_required(VERSION 3.17)
 find_package(Threads REQUIRED)
 find_package(Jansson REQUIRED)
 
-set(PROXY_SOURCES main.cc bareos_base64.cc director_connection.cc ws_codec.cc
+set(PROXY_SOURCES main.cc bareos_base64.cc director_connection.cc
+                  "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
                   proxy_session.cc proxy_server.cc
 )
 
@@ -26,6 +27,7 @@ target_compile_definitions(
 
 target_include_directories(
   bareos-webui-proxy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                             "${CMAKE_CURRENT_SOURCE_DIR}/../lib"
 )
 
 target_link_libraries(
@@ -45,11 +47,10 @@ install(
 if(BUILD_TESTING AND GTest_FOUND)
   include(GoogleTest)
 
-  set(PROXY_LIB_SOURCES bareos_base64.cc ws_codec.cc)
+  set(PROXY_LIB_SOURCES bareos_base64.cc)
 
   add_executable(
-    test_webui_proxy tests/test_bareos_base64.cc tests/test_ws_codec.cc
-                     ${PROXY_LIB_SOURCES}
+    test_webui_proxy tests/test_bareos_base64.cc ${PROXY_LIB_SOURCES}
   )
   target_compile_features(test_webui_proxy PRIVATE cxx_std_20)
   target_include_directories(

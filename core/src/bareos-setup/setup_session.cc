@@ -36,8 +36,7 @@
 
 #include <unistd.h>
 
-// Reuse the WsCodec from bareos-webui-proxy via a local copy included via
-// the include path configured in CMakeLists.txt.
+// Shared WebSocket codec used by bareos-setup and bareos-webui-proxy.
 #include "ws_codec.h"
 
 #include <jansson.h>

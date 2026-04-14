@@ -86,9 +86,7 @@ set(SETUP_SOURCES
     os_detector.cc
     tui_wizard.cc
     "${EMBEDDED_ASSETS_CC}"
-    # Reuse WsCodec + base64 from bareos-webui-proxy
-    "${CMAKE_CURRENT_SOURCE_DIR}/../webui-proxy/ws_codec.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../webui-proxy/bareos_base64.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../lib/ws_codec.cc"
 )
 
 add_executable(bareos-setup ${SETUP_SOURCES})
@@ -105,8 +103,7 @@ target_compile_definitions(
 target_include_directories(
   bareos-setup
   PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}"
-          # For ws_codec.h and bareos_base64.h
-          "${CMAKE_CURRENT_SOURCE_DIR}/../webui-proxy"
+          "${CMAKE_CURRENT_SOURCE_DIR}/../lib"
 )
 
 target_link_libraries(

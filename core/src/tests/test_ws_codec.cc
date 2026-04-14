@@ -17,14 +17,14 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
-*/
+ */
 /**
  * @file
  * Unit tests for WsCodec frame encode/decode.
  *
  * Uses a socketpair() to exercise the real I/O paths without a network.
  */
-#include "../ws_codec.h"
+#include "ws_codec.h"
 
 #include <array>
 #include <cstring>
@@ -36,18 +36,15 @@
 
 #include <gtest/gtest.h>
 
-// Helper: write a raw WebSocket frame into a socket (simulating a browser).
-// browser always sends masked frames.
 static void SendMaskedTextFrame(int fd,
                                 const std::string& payload,
                                 bool fin = true)
 {
   std::string frame;
-  uint8_t b0 = static_cast<uint8_t>((fin ? 0x80u : 0u) | 0x01u);  // text
+  uint8_t b0 = static_cast<uint8_t>((fin ? 0x80u : 0u) | 0x01u);
   frame += static_cast<char>(b0);
 
   size_t len = payload.size();
-  // MASK bit set
   if (len <= 125) {
     frame += static_cast<char>(0x80u | len);
   } else if (len <= 65535) {
@@ -61,7 +58,6 @@ static void SendMaskedTextFrame(int fd,
     }
   }
 
-  // Masking key (fixed for test)
   const uint8_t mask[4] = {0x12, 0x34, 0x56, 0x78};
   frame += static_cast<char>(mask[0]);
   frame += static_cast<char>(mask[1]);
@@ -82,7 +78,6 @@ static void SendMaskedTextFrame(int fd,
   }
 }
 
-// Helper: read raw bytes from a socket into a string.
 static std::string ReadBytes(int fd, size_t n)
 {
   std::string buf(n, '\0');
@@ -95,10 +90,6 @@ static std::string ReadBytes(int fd, size_t n)
   return buf;
 }
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
 TEST(WsCodec, SendTextFrame)
 {
   int sv[2];
@@ -108,15 +99,14 @@ TEST(WsCodec, SendTextFrame)
   const std::string payload = "hello, world";
   server.SendText(payload);
 
-  // Read raw frame from sv[1]
   std::string header = ReadBytes(sv[1], 2);
   ASSERT_EQ(header.size(), 2u);
 
   uint8_t b0 = static_cast<uint8_t>(header[0]);
   uint8_t b1 = static_cast<uint8_t>(header[1]);
 
-  EXPECT_EQ(b0, 0x81u);       // FIN=1, opcode=text
-  EXPECT_EQ(b1 & 0x80u, 0u);  // server must NOT mask
+  EXPECT_EQ(b0, 0x81u);
+  EXPECT_EQ(b1 & 0x80u, 0u);
   EXPECT_EQ(b1 & 0x7Fu, payload.size());
 
   std::string recv_payload = ReadBytes(sv[1], payload.size());
@@ -132,8 +122,6 @@ TEST(WsCodec, RecvMaskedTextFrame)
   ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
 
   const std::string payload = "test message";
-
-  // Write masked frame into sv[1] (simulating browser)
   SendMaskedTextFrame(sv[1], payload);
 
   WsCodec server(sv[0]);
@@ -149,12 +137,9 @@ TEST(WsCodec, PingPong)
   int sv[2];
   ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
 
-  // Send ping frame followed by a text frame
   {
-    // Ping (opcode 0x9), unmasked for simplicity (sv[1] is not a real browser)
     const std::string ping_data = "ping!";
-    // Build masked ping frame
-    uint8_t b0 = 0x80u | 0x09u;  // FIN + ping
+    uint8_t b0 = 0x80u | 0x09u;
     uint8_t b1 = 0x80u | static_cast<uint8_t>(ping_data.size());
     const uint8_t mask[4] = {0x01, 0x02, 0x03, 0x04};
     std::string frame;
@@ -170,18 +155,12 @@ TEST(WsCodec, PingPong)
     ::send(sv[1], frame.data(), frame.size(), MSG_NOSIGNAL);
   }
 
-  // Now send a text frame
   SendMaskedTextFrame(sv[1], "after ping");
 
   WsCodec server(sv[0]);
-
-  // RecvMessage should handle the ping internally and return the text message.
-  // We also need to consume the pong that the server sends.
   std::thread reader([&] {
-    // Read the pong from sv[1]
-    // pong header: 0x8A (FIN+pong), length byte, payload
     std::string pong_hdr = ReadBytes(sv[1], 2);
-    EXPECT_EQ(static_cast<uint8_t>(pong_hdr[0]), 0x8Au);  // FIN+pong
+    EXPECT_EQ(static_cast<uint8_t>(pong_hdr[0]), 0x8Au);
     uint8_t pong_len = static_cast<uint8_t>(pong_hdr[1]) & 0x7Fu;
     if (pong_len > 0) { ReadBytes(sv[1], pong_len); }
   });
@@ -200,7 +179,6 @@ TEST(WsCodec, LargePayload)
   int sv[2];
   ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
 
-  // Build a 1000-byte payload (requires 16-bit length encoding)
   std::string payload(1000, 'X');
   SendMaskedTextFrame(sv[1], payload);
 
