@@ -1,0 +1,24 @@
+{
+  "name": "bareos-webui-vue",
+  "version": "1.0.0",
+  "description": "Bareos WebUI - Vue/Quasar frontend",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "env -u VITE_DIRECTOR_PORT -u VITE_DIRECTOR_HOST -u VITE_DIRECTOR_WS_URL vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.16.0",
+    "pinia": "^2.1.0",
+    "quasar": "^2.16.0",
+    "vue": "^3.4.0",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@quasar/vite-plugin": "^1.7.0",
+    "@vitejs/plugin-vue": "^5.0.0",
+    "sass-embedded": "^1.98.0",
+    "vite": "^6.2.0"
+  }
+}
