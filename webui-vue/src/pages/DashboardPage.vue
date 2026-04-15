@@ -179,7 +179,8 @@
                   <q-linear-progress indeterminate color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
                 </q-item-section>
                 <q-item-section side>
-                  <q-btn flat round dense icon="cancel" color="negative" size="sm" title="Cancel job" />
+                  <q-btn flat round dense icon="cancel" color="negative" size="sm"
+                         title="Cancel job" @click="confirmCancel(job)" />
                 </q-item-section>
               </q-item>
               <q-item v-if="!runningJobs.length">
@@ -195,6 +196,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useQuasar } from 'quasar'
 import { formatBytes, formatSpeed, parseDurationSecs, timeAgo, formatDuration } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -205,6 +207,7 @@ import StatNumber from '../components/StatNumber.vue'
 
 const director = useDirectorStore()
 const settings = useSettingsStore()
+const $q = useQuasar()
 const fmtBytes      = formatBytes
 const fmtSpeed      = formatSpeed
 
@@ -270,6 +273,25 @@ async function fetchSidebar() {
 
 function refresh() {
   fetchJobs(); fetchTotals(); fetchSidebar()
+}
+
+function confirmCancel(job) {
+  $q.dialog({
+    title: 'Cancel Job',
+    message: `Cancel job ${job.name} (ID ${jobId(job)})?`,
+    ok: { label: 'Cancel Job', color: 'negative', flat: true },
+    cancel: { label: 'Keep Running', flat: true },
+  }).onOk(() => doCancel(job))
+}
+
+async function doCancel(job) {
+  try {
+    await director.call(`cancel jobid=${jobId(job)} yes`)
+    $q.notify({ type: 'positive', message: `Job ${jobId(job)} cancelled.` })
+    refresh()
+  } catch (e) {
+    $q.notify({ type: 'negative', message: `Cancel failed: ${e.message}` })
+  }
 }
 
 const now = ref(Date.now())
