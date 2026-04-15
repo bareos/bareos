@@ -98,11 +98,20 @@ function generate() {
 async function copyPassword() {
   if (!store.adminUser.password) return
 
-  await navigator.clipboard.writeText(store.adminUser.password)
-  $q.notify({
-    type: 'positive',
-    message: 'Password copied to clipboard.',
-  })
+  try {
+    await navigator.clipboard.writeText(store.adminUser.password)
+    $q.notify({
+      type: 'positive',
+      message: 'Password copied to clipboard.',
+    })
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: error instanceof Error
+        ? `Failed to copy password: ${error.message}`
+        : 'Failed to copy password to the clipboard.',
+    })
+  }
 }
 
 watch(messages, (msgs) => {
