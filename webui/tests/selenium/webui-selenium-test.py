@@ -286,6 +286,9 @@ class SeleniumTest(unittest.TestCase):
                     self.base_url + "/client/index?action=disable&client=" + self.client
                 )
                 self.wait_and_click(By.LINK_TEXT, "Back")
+                self.driver.get(self.base_url + "/client")
+                self.wait_for_spinner_absence()
+                self.assertEqual(self.client_status(self.client), "Enabled")
             else:
                 # Disables client
                 self.wait_and_click(
@@ -309,6 +312,9 @@ class SeleniumTest(unittest.TestCase):
                     self.base_url + "/client/index?action=enable&client=" + self.client
                 )
                 self.wait_and_click(By.LINK_TEXT, "Back")
+                self.driver.get(self.base_url + "/client")
+                self.wait_for_spinner_absence()
+                self.assertEqual(self.client_status(self.client), "Disabled")
             else:
                 # Enables client
                 self.wait_and_click(
