@@ -258,13 +258,35 @@ function updateAssignment(changerPath, drivePaths) {
 }
 
 function applyAssignments(suggestedAssignments) {
-  if (Array.isArray(suggestedAssignments) && suggestedAssignments.length > 0) {
-    store.tapeAssignments = suggestedAssignments
-    return
-  }
-
   const validChangerPaths = new Set(store.tapeChangers.map((changer) => changer.path))
   const validDrivePaths = new Set(store.tapeDrives.map((drive) => drive.path))
+  const existingAssignments = new Map(
+    store.tapeAssignments
+      .filter((assignment) => validChangerPaths.has(assignment.changer_path))
+      .map((assignment) => [
+        assignment.changer_path,
+        assignment.drive_paths.filter((drivePath) => validDrivePaths.has(drivePath)),
+      ])
+  )
+
+  if (Array.isArray(suggestedAssignments) && suggestedAssignments.length > 0) {
+    const mergedAssignments = suggestedAssignments
+      .filter((assignment) => validChangerPaths.has(assignment.changer_path))
+      .map((assignment) => {
+        const existingDrivePaths = existingAssignments.get(assignment.changer_path)
+        return {
+          changer_path: assignment.changer_path,
+          drive_paths: existingDrivePaths ?? assignment.drive_paths.filter(
+            (drivePath) => validDrivePaths.has(drivePath)
+          ),
+        }
+      })
+
+    store.tapeAssignments = mergedAssignments.filter(
+      (assignment) => assignment.drive_paths.length > 0
+    )
+    return
+  }
 
   store.tapeAssignments = store.tapeAssignments
     .filter((assignment) => validChangerPaths.has(assignment.changer_path))
