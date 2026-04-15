@@ -278,5 +278,6 @@ class Restore implements InputFilterAwareInterface
             $this->inputFilter = $inputFilter;
         }
 
-        return $inputFilter;    }
+        return $this->inputFilter;
+    }
 }
