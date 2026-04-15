@@ -34,7 +34,7 @@
 #                              changer (semicolon-separated)
 #
 function(bareos_autodetect_autochanger)
-  if(NOT UNIX)
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(DETECTED_CHANGER_COUNT
         0
         PARENT_SCOPE
@@ -53,6 +53,26 @@ function(bareos_autodetect_autochanger)
   set(_detect_script
       "${CMAKE_SOURCE_DIR}/core/scripts/bareos-detect-autochanger"
   )
+
+  if(NOT EXISTS "${_detect_script}")
+    message(
+      WARNING
+      "Skipping tape autochanger detection because ${_detect_script} is missing."
+    )
+    set(DETECTED_CHANGER_COUNT
+        0
+        PARENT_SCOPE
+    )
+    set(DETECTED_CHANGER_DEVICE
+        ""
+        PARENT_SCOPE
+    )
+    set(DETECTED_TAPE_DEVICES
+        ""
+        PARENT_SCOPE
+    )
+    return()
+  endif()
 
   execute_process(
     COMMAND bash "${_detect_script}"
