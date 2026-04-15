@@ -109,10 +109,6 @@ void RunProxySession(int fd,
     const char* v = json_string_value(json_object_get(auth_msg, key));
     return v ? v : def;
   };
-  auto jint = [&](const char* key, int def) -> int {
-    json_t* v = json_object_get(auth_msg, key);
-    return json_is_integer(v) ? static_cast<int>(json_integer_value(v)) : def;
-  };
 
   DirectorConfig cfg;
   cfg.username = jstr("username", "admin");

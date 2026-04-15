@@ -42,7 +42,9 @@ bool IsTransientAcceptError(int err)
   switch (err) {
     case EINTR:
     case EAGAIN:
+#if EWOULDBLOCK != EAGAIN
     case EWOULDBLOCK:
+#endif
     case ECONNABORTED:
     case ENETDOWN:
     case ENOPROTOOPT:
