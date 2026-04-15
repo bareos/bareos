@@ -392,71 +392,47 @@ R"SQL(SELECT JobId, FileIndex
 )SQL",
 
 /* 0034_select_recent_version_with_basejob.postgresql */
-R"SQL(SELECT DISTINCT ON (Name,
-                    PathId) JobTDate,
-                   JobId,
-                   FileId,
-                   FileIndex,
-                   PathId,
-                   FileName AS Name,
-                   LStat,
-                   MD5,
-                   DeltaSeq,
-                   Fhinfo,
-                   Fhnode
-FROM
-  (SELECT FileId,
-          JobId,
-          PathId,
-          Name AS FileName,
-          FileIndex,
-          LStat,
-          MD5,
-          DeltaSeq,
-          Fhinfo,
-          Fhnode
-   FROM File
-   WHERE JobId IN (%s)
-   ) AS T
+R"SQL(SELECT DISTINCT ON (File.Name,
+                    File.PathId) Job.JobTDate,
+                                   File.JobId,
+                                   File.FileId,
+                                   File.FileIndex,
+                                   File.PathId,
+                                   File.Name,
+                                   File.LStat,
+                                   File.MD5,
+                                   File.DeltaSeq,
+                                   File.Fhinfo,
+                                   File.Fhnode
+FROM File
 JOIN Job USING (JobId)
-ORDER BY Name,
-         PathId,
-         JobTDate DESC
+WHERE File.JobId IN (%s)
+ORDER BY File.Name,
+         File.PathId,
+         Job.JobTDate DESC
 )SQL",
 
 /* 0035_select_recent_version_with_basejob_and_delta.postgresql */
-R"SQL(SELECT DISTINCT ON (Name,
-                    PathId,
-                    DeltaSeq) JobTDate,
-                   JobId,
-                   FileId,
-                   FileIndex,
-                   PathId,
-                   Filename AS Name,
-                   LStat,
-                   MD5,
-                   DeltaSeq,
-                   Fhinfo,
-                   Fhnode
-FROM
-  (SELECT FileId,
-          JobId,
-          PathId,
-          Name AS FileName,
-          FileIndex,
-          LStat,
-          MD5,
-          DeltaSeq,
-          Fhinfo,
-          Fhnode
-   FROM File
-   WHERE JobId IN (%s)
-   ) AS T
+R"SQL(SELECT DISTINCT ON (File.Name,
+                    File.PathId,
+                    File.DeltaSeq) Job.JobTDate,
+                                      File.JobId,
+                                      File.FileId,
+                                      File.FileIndex,
+                                      File.PathId,
+                                      File.Name,
+                                      File.LStat,
+                                      File.MD5,
+                                      File.DeltaSeq,
+                                      File.Fhinfo,
+                                      File.Fhnode
+FROM File
 JOIN Job USING (JobId)
-ORDER BY Name,
-         PathId,
-         DeltaSeq,
-         JobTDate DESC
+WHERE File.JobId IN (%s)
+ORDER BY File.Name,
+         File.PathId,
+         File.DeltaSeq,
+         Job.JobTDate DESC
 )SQL",
 
 /* 0036_select_recent_version.postgresql */
@@ -620,31 +596,22 @@ R"SQL(SELECT TYPE,
        LStat,
        FileId
 FROM (
-   SELECT DISTINCT ON (Name) 'F' AS TYPE,
-                       PathId,
-                       FileName AS Name,
-                       JobId,
-                       LStat,
-                       FileId,
-                       FileIndex
-   FROM (
-      SELECT FileId,
-             JobId,
-             PathId,
-             Name AS FileName,
-             FileIndex,
-             LStat,
-             MD5
-      FROM File
-      WHERE JobId IN (%s)
-        AND PathId = %s
-   ) AS T
+   SELECT DISTINCT ON (File.Name) 'F' AS TYPE,
+                                  File.PathId,
+                                  File.Name,
+                                  File.JobId,
+                                  File.LStat,
+                                  File.FileId,
+                                  File.FileIndex
+   FROM File
    JOIN Job USING (JobId)
    WHERE
-      FileName != ''
+      File.JobId IN (%s)
+      AND File.PathId = %s
+      AND File.Name != ''
       %s
-   ORDER BY FileName,
-            StartTime DESC
+   ORDER BY File.Name,
+            Job.StartTime DESC
 ) AS A
 WHERE A.FileIndex > 0
 LIMIT %lld

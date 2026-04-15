@@ -5,31 +5,22 @@ SELECT TYPE,
        LStat,
        FileId
 FROM (
-   SELECT DISTINCT ON (Name) 'F' AS TYPE,
-                       PathId,
-                       FileName AS Name,
-                       JobId,
-                       LStat,
-                       FileId,
-                       FileIndex
-   FROM (
-      SELECT FileId,
-             JobId,
-             PathId,
-             Name AS FileName,
-             FileIndex,
-             LStat,
-             MD5
-      FROM File
-      WHERE JobId IN (%s)
-        AND PathId = %s
-   ) AS T
+   SELECT DISTINCT ON (File.Name) 'F' AS TYPE,
+                                  File.PathId,
+                                  File.Name,
+                                  File.JobId,
+                                  File.LStat,
+                                  File.FileId,
+                                  File.FileIndex
+   FROM File
    JOIN Job USING (JobId)
    WHERE
-      FileName != ''
+      File.JobId IN (%s)
+      AND File.PathId = %s
+      AND File.Name != ''
       %s
-   ORDER BY FileName,
-            StartTime DESC
+   ORDER BY File.Name,
+            Job.StartTime DESC
 ) AS A
 WHERE A.FileIndex > 0
 LIMIT %lld
