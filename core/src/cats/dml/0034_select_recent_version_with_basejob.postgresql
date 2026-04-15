@@ -1,30 +1,18 @@
-SELECT DISTINCT ON (Name,
-                    PathId) JobTDate,
-                   JobId,
-                   FileId,
-                   FileIndex,
-                   PathId,
-                   FileName AS Name,
-                   LStat,
-                   MD5,
-                   DeltaSeq,
-                   Fhinfo,
-                   Fhnode
-FROM
-  (SELECT FileId,
-          JobId,
-          PathId,
-          Name AS FileName,
-          FileIndex,
-          LStat,
-          MD5,
-          DeltaSeq,
-          Fhinfo,
-          Fhnode
-   FROM File
-   WHERE JobId IN (%s)
-   ) AS T
+SELECT DISTINCT ON (File.Name,
+                    File.PathId) Job.JobTDate,
+                                   File.JobId,
+                                   File.FileId,
+                                   File.FileIndex,
+                                   File.PathId,
+                                   File.Name,
+                                   File.LStat,
+                                   File.MD5,
+                                   File.DeltaSeq,
+                                   File.Fhinfo,
+                                   File.Fhnode
+FROM File
 JOIN Job USING (JobId)
-ORDER BY Name,
-         PathId,
-         JobTDate DESC
+WHERE File.JobId IN (%s)
+ORDER BY File.Name,
+         File.PathId,
+         Job.JobTDate DESC
