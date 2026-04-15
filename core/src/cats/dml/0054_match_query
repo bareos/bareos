@@ -1,1 +1,1 @@
- AND Path2.Path LIKE '%s'
+ AND Path2.Path ~ '%s'

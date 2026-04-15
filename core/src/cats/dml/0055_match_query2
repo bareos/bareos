@@ -1,1 +1,1 @@
- AND Filename.Name LIKE '%s'
+ AND Filename.Name ~ '%s'
