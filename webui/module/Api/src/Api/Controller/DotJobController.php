@@ -28,6 +28,7 @@ namespace Api\Controller;
 use Laminas\Mvc\Controller\AbstractRestfulController;
 use Laminas\View\Model\JsonModel;
 use Exception;
+use Throwable;
 
 class DotJobController extends AbstractRestfulController
 {
@@ -77,8 +78,21 @@ class DotJobController extends AbstractRestfulController
                 $jobs[] = $this->getJobModel()->getJobsByType($this->bsock, $type_char);
             }
 
-            $this->result = array_merge(...$jobs);
-        } catch(Exception $e) {
+            $jobs = array_values(
+                array_filter(
+                    $jobs,
+                    function ($jobs_by_type) {
+                        return is_array($jobs_by_type);
+                    }
+                )
+            );
+
+            if (!empty($jobs)) {
+                $this->result = array_merge(...$jobs);
+            } else {
+                $this->result = [];
+            }
+        } catch (Throwable $e) {
             $this->getResponse()->setStatusCode(500);
             error_log($e->getMessage());
         } finally {
