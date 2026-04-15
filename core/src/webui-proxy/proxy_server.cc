@@ -49,7 +49,9 @@ bool IsTransientAcceptError(int err)
     case ENETDOWN:
     case ENOPROTOOPT:
     case EHOSTDOWN:
+#ifdef ENONET
     case ENONET:
+#endif
     case EHOSTUNREACH:
     case EOPNOTSUPP:
     case ENETUNREACH:
