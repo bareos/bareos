@@ -172,7 +172,12 @@ $this->headTitle($title);
 
 <script type="text/javascript">
 
-   let pool_nextpool_mapping = JSON.parse('<?php echo json_encode($form->getPoolNextPoolMapping()); ?>');
+   const pool_nextpool_mapping = <?php
+      echo json_encode(
+         $form->getPoolNextPoolMapping(),
+         JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+      );
+   ?>;
 
    function updateQueryParams(k, v) {
       var p = [];
