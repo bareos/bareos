@@ -77,26 +77,15 @@ for query in $(ls ????_* | sed 's#\..*##g' | sort | uniq); do
   printf '"%s",\n' "$queryname" >>"${QUERY_NAMES_FILE}"
   printf "    %s = %s,\n" "$queryname" "$i" >>"${QUERY_ENUM_FILE}"
 
-  if ((i != 0)); then
-    # split queries by a single empty line, to make it easier to
-    # visually seperate them
-    echo "" >>"${queryincludefile}"
-  fi
-
   ((i++))
 
   for db in $DATABASES; do
     queryincludefile=$(get_query_include_filename $db)
     queryfile="$query"
-    if [ -e "$query.$db" ]; then
-      queryfile="$query.$db"
-    fi
-    {
-      printf '/* %s */\nR"SQL(' "${queryfile}"
-      # remove comments and empty lines
-      sed -r -e "/^#/d" -e "/^$/d" <"${queryfile}"
-      printf ')SQL",\n'
-    } >>"${queryincludefile}"
+    printf '/* %s */\nR"SQL(' "$queryfile" >>$queryincludefile
+    # remove comments and empty lines
+    sed -r -e "/^#/d" -e "/^$/d" <"$queryfile" >>$queryincludefile
+    printf ')SQL",\n\n' >>$queryincludefile
   done
 done
 
