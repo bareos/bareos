@@ -22,6 +22,7 @@
 #include "proxy_session.h"
 
 #include <cstdio>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -33,6 +34,35 @@
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+namespace {
+
+bool IsTransientAcceptError(int err)
+{
+  switch (err) {
+    case EINTR:
+    case EAGAIN:
+    case EWOULDBLOCK:
+    case ECONNABORTED:
+    case ENETDOWN:
+    case ENOPROTOOPT:
+    case EHOSTDOWN:
+    case ENONET:
+    case EHOSTUNREACH:
+    case EOPNOTSUPP:
+    case ENETUNREACH:
+    case ENOBUFS:
+    case ENOMEM:
+    case EMFILE:
+    case ENFILE:
+    case EPROTO:
+      return true;
+    default:
+      return false;
+  }
+}
+
+}  // namespace
 
 void ProxyServer::Stop()
 {
@@ -123,6 +153,12 @@ void ProxyServer::Run()
       int client_fd = ::accept(
           pfd.fd, reinterpret_cast<struct sockaddr*>(&client_addr), &addr_len);
       if (client_fd < 0) {
+        if (stop_requested_) {
+          any_closed = true;
+          continue;
+        }
+        if (IsTransientAcceptError(errno)) { continue; }
+        fprintf(stderr, "[proxy] accept failed: %s\n", std::strerror(errno));
         any_closed = true;
         continue;
       }
