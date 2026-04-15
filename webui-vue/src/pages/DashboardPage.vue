@@ -271,8 +271,29 @@ async function fetchSidebar() {
   } catch { /* ignore */ }
 }
 
+let refreshPromise = null
+let refreshQueued = false
+
+async function runRefreshBatch() {
+  await Promise.allSettled([fetchJobs(), fetchTotals(), fetchSidebar()])
+}
+
 function refresh() {
-  fetchJobs(); fetchTotals(); fetchSidebar()
+  if (refreshPromise) {
+    refreshQueued = true
+    return refreshPromise
+  }
+
+  refreshPromise = (async () => {
+    do {
+      refreshQueued = false
+      await runRefreshBatch()
+    } while (refreshQueued)
+  })().finally(() => {
+    refreshPromise = null
+  })
+
+  return refreshPromise
 }
 
 function confirmCancel(job) {
