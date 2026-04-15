@@ -107,7 +107,7 @@ TEST(BareosBase64, HighByteDiffersFromCompatible)
 // ---------------------------------------------------------------------------
 // CRAM-MD5 full vector test
 // This uses the same computation as DirectorConnection::Authenticate()
-// to produce a CRAM-MD5 response and verifies the encoding is stable.
+// and checks the final protocol response against a known-good vector.
 // ---------------------------------------------------------------------------
 
 static std::string Md5Hex(const std::string& text)
@@ -137,7 +137,7 @@ static std::array<uint8_t, 16> HmacMd5(const std::string& key,
   return out;
 }
 
-TEST(CramMd5, ResponseIsReproducible)
+TEST(CramMd5, ResponseMatchesKnownVector)
 {
   const std::string password = "secret";
   const std::string challenge = "<1234567890.1609459200@bareos-dir>";
@@ -148,10 +148,5 @@ TEST(CramMd5, ResponseIsReproducible)
   auto hmac = HmacMd5(key, challenge);
   std::string response = BareosBase64Encode(hmac.data(), 16, true);
 
-  EXPECT_FALSE(response.empty());
-
-  // Response must be the same every time (deterministic)
-  auto hmac2 = HmacMd5(key, challenge);
-  std::string response2 = BareosBase64Encode(hmac2.data(), 16, true);
-  EXPECT_EQ(response, response2);
+  EXPECT_EQ(response, "bQVIkYLtKkU2li6JcCLWaA");
 }
