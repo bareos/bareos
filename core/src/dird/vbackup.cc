@@ -466,7 +466,7 @@ void NativeVbackupCleanup(JobControlRecord* jcr, int TermCode, int JobLevel)
     PoolMem inner_query(PM_MESSAGE);
     jcr->db->FillQuery(
         inner_query,
-        BareosDbQueryEnum::SQL_QUERY::select_recent_version_with_basejob,
+        BareosDbQueryEnum::SQL_QUERY::select_recent_version_from_jobids,
         jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids,
         jcr->dir_impl->vf_jobids, jcr->dir_impl->vf_jobids);
     std::string outer_query
