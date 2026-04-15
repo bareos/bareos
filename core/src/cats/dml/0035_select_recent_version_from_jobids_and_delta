@@ -1,4 +1,4 @@
-# We do the same thing than the query "select_recent_version_with_basejob",
+# We do the same thing as the query "select_recent_version_from_jobids",
 # but we include all delta parts.
 # If the file has been deleted, we can have irrelevant parts.
 #

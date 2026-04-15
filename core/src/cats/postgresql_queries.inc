@@ -391,7 +391,7 @@ R"SQL(SELECT JobId, FileIndex
  ORDER BY JobId, FileIndex ASC
 )SQL",
 
-/* 0034_select_recent_version_with_basejob.postgresql */
+/* 0034_select_recent_version_from_jobids.postgresql */
 R"SQL(SELECT DISTINCT ON (File.Name,
                     File.PathId) Job.JobTDate,
                                    File.JobId,
@@ -412,7 +412,7 @@ ORDER BY File.Name,
          Job.JobTDate DESC
 )SQL",
 
-/* 0035_select_recent_version_with_basejob_and_delta.postgresql */
+/* 0035_select_recent_version_from_jobids_and_delta.postgresql */
 R"SQL(SELECT DISTINCT ON (File.Name,
                     File.PathId,
                     File.DeltaSeq) Job.JobTDate,
