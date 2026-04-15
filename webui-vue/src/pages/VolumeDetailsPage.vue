@@ -242,6 +242,10 @@ const jobsLoading = ref(false)
 const error       = ref(null)
 const statusMsg   = ref({ show: false, ok: true, text: '' })
 
+function quoteDirectorString(value) {
+  return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
 // Retention reference scale: 1 year in seconds
 const ONE_YEAR_S = 365 * 24 * 3600
 
@@ -256,7 +260,7 @@ const RETENTION_STEPS = [
 onMounted(async () => {
   try {
     const [volRes, jobRes] = await Promise.all([
-      director.call(`llist volume=${volumeName}`),
+      director.call(`llist volume=${quoteDirectorString(volumeName)}`),
       fetchJobs(),
     ])
     // `llist volume=xxx` returns { volume: { <fields> } } (flat object, not
@@ -278,7 +282,7 @@ onMounted(async () => {
 async function fetchJobs() {
   jobsLoading.value = true
   try {
-    const res = await director.call(`llist jobs volume=${volumeName}`)
+    const res = await director.call(`llist jobs volume=${quoteDirectorString(volumeName)}`)
     const raw = res?.jobs ?? []
     return Array.isArray(raw) ? raw : Object.values(raw).flat()
   } catch {
@@ -346,7 +350,9 @@ const volStatuses = ['Append', 'Full', 'Used', 'Purged', 'Recycled', 'Read-Only'
 
 async function setVolStatus(newStatus) {
   try {
-    await director.call(`update volume=${volumeName} volstatus=${newStatus}`)
+    await director.call(
+      `update volume=${quoteDirectorString(volumeName)} volstatus=${quoteDirectorString(newStatus)}`
+    )
     if (vol.value) vol.value.volstatus = newStatus
     statusMsg.value = { show: true, ok: true, text: `Status set to ${newStatus}` }
     setTimeout(() => { statusMsg.value.show = false }, 4000)
