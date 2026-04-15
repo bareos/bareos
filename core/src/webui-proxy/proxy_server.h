@@ -26,6 +26,7 @@
 #define BAREOS_WEBUI_PROXY_PROXY_SERVER_H_
 
 #include "proxy_session.h"
+#include <csignal>
 #include <string>
 #include <vector>
 
@@ -53,8 +54,11 @@ class ProxyServer {
  private:
   ServerConfig cfg_;
   // All listening sockets (one per address family for the bind host).
-  // Populated by Run(); closed by Stop().
+  // Populated by Run(); closed during Run() shutdown.
   std::vector<int> listen_fds_;
+  volatile std::sig_atomic_t stop_requested_{0};
+
+  void CleanupSockets();
 };
 
 #endif  // BAREOS_WEBUI_PROXY_PROXY_SERVER_H_

@@ -36,15 +36,15 @@
 
 void ProxyServer::Stop()
 {
+  stop_requested_ = 1;
+}
+
+void ProxyServer::CleanupSockets()
+{
   for (int fd : listen_fds_) {
-    if (fd >= 0) {
-      ::shutdown(fd, SHUT_RDWR);
-      ::close(fd);
-    }
+    if (fd >= 0) { ::close(fd); }
   }
-  // Do not clear listen_fds_ here: Stop() may be called from a signal handler
-  // and clearing the vector is not async-signal-safe.  Run() detects the
-  // closed sockets via poll() POLLHUP/POLLERR/POLLNVAL and exits on its own.
+  listen_fds_.clear();
 }
 
 void ProxyServer::Run()
@@ -96,21 +96,25 @@ void ProxyServer::Run()
 
   // Accept loop: poll all listen sockets, accept on whichever is ready.
   while (true) {
+    if (stop_requested_) { break; }
+
     std::vector<struct pollfd> pfds;
     pfds.reserve(listen_fds_.size());
     for (int fd : listen_fds_) { pfds.push_back({fd, POLLIN, 0}); }
 
     int nready = ::poll(pfds.data(), static_cast<nfds_t>(pfds.size()), 1000);
     if (nready < 0) {
-      if (errno == EINTR) { continue; }
+      if (errno == EINTR && !stop_requested_) { continue; }
       break;  // Unexpected poll error.
     }
+
+    if (stop_requested_) { break; }
 
     bool any_closed = false;
     for (const auto& pfd : pfds) {
       if (pfd.revents & (POLLHUP | POLLERR | POLLNVAL)) {
         any_closed = true;
-        continue;  // Socket was closed by Stop().
+        continue;
       }
       if (!(pfd.revents & POLLIN)) { continue; }
 
@@ -150,5 +154,6 @@ void ProxyServer::Run()
     if (any_closed) { break; }  // Stop() was called.
   }
 
+  CleanupSockets();
   fprintf(stderr, "[proxy] accept loop exited\n");
 }
