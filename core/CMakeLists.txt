@@ -48,6 +48,27 @@ include(CheckPIESupported)
 check_pie_supported()
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# setting Wall last basically makes it impossible to turn off certain things as
+# often the last option wins, so Wall turns on everything you tried to turn off,
+# as such we set these right at the start
+if(MSVC)
+  set(BAREOS_WARNING_FLAGS
+      /W4 # enable all reasonable warnings, but disable the following
+      /wd4273 # inconsistent dll linkage
+      /wd4127 # conditional expression is constant
+      /wd4244 # conversion warning
+      /wd4245 # conversion warning
+      /wd4267 # conversion warning
+      /wd4389 # sign mismatch
+      /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
+  )
+else()
+  set(BAREOS_WARNING_FLAGS -Werror -Wall -Wextra -Wshadow)
+endif()
+list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
+
 option(ENABLE_SANITIZERS "Build with ASan/LSan/UBSan enabled" OFF)
 if(ENABLE_SANITIZERS)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -149,16 +170,27 @@ if(${compiler_will_suggest_override})
 endif()
 
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
-  # make format-security issues a compiler-error
-  check_cxx_compiler_flag(-Wformat compiler_format_security)
-  if(${compiler_format_security})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat")
-  endif()
-  check_cxx_compiler_flag(
-    -Werror=format-security compiler_error_format_security
-  )
-  if(${compiler_error_format_security})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=format-security")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # we want to allow non-literal (but constant) strings Wformat-security
+    # always generates warnings when non-literals are used even if they are
+    # known at compile time ... Wformat-type-confusion is not turned on by
+    # Wformat so we add it
+    set(CMAKE_CXX_FLAGS
+        "${CMAKE_CXX_FLAGS} -Wformat -Wno-format-security -Wformat-type-confusion"
+    )
+  else()
+    check_cxx_compiler_flag(-Wformat compiler_format_security)
+    if(${compiler_format_security})
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wformat")
+    endif()
+
+    # make format-security issues a compiler-error
+    check_cxx_compiler_flag(
+      -Werror=format-security compiler_error_format_security
+    )
+    if(${compiler_error_format_security})
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=format-security")
+    endif()
   endif()
 endif()
 
@@ -306,24 +338,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 else()
   add_compile_definitions("_FILE_OFFSET_BITS=64")
 endif()
-
-if(MSVC)
-  set(BAREOS_WARNING_FLAGS
-      /W4 # enable all reasonable warnings, but disable the following
-      /wd4273 # inconsistent dll linkage
-      /wd4127 # conditional expression is constant
-      /wd4244 # conversion warning
-      /wd4245 # conversion warning
-      /wd4267 # conversion warning
-      /wd4389 # sign mismatch
-      /D_CRT_SECURE_NO_DEPRECATE # deprecation warning for stdlib functions
-  )
-else()
-  set(BAREOS_WARNING_FLAGS -Werror -Wall -Wextra -Wshadow)
-endif()
-list(JOIN BAREOS_WARNING_FLAGS " " BAREOS_WARNING_FLAGS_STRING)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${BAREOS_WARNING_FLAGS_STRING}")
 
 option(ENABLE_BCONSOLE "Build bconsole binary" ON)
 
