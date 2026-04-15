@@ -109,6 +109,8 @@ class AuthController extends AbstractActionController
         try {
             $authenticated = $this->bsock->connect_and_authenticate();
         } catch (\Exception $e) {
+            error_log($e->getMessage());
+            error_log($e->getTraceAsString());
             $authenticated = false;
         }
 
