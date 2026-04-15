@@ -125,7 +125,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { jobLevelMap, formatBytes, formatSpeed } from '../mock/index.js'
@@ -140,7 +140,7 @@ const router   = useRouter()
 const $q       = useQuasar()
 const director = useDirectorStore()
 
-const jobid = route.params.id
+const currentJobId = computed(() => route.params.id)
 
 // ── state ─────────────────────────────────────────────────────────────────────
 const loading       = ref(true)
@@ -162,9 +162,9 @@ watch(logLines, () => {
 // ── data loading ──────────────────────────────────────────────────────────────
 async function loadJob() {
   const [jobRes, logRes, mediaRes] = await Promise.allSettled([
-    director.call(`llist jobid=${jobid}`),
-    director.call(`list joblog jobid=${jobid}`),
-    director.call(`list jobmedia jobid=${jobid}`),
+    director.call(`llist jobid=${currentJobId.value}`),
+    director.call(`list joblog jobid=${currentJobId.value}`),
+    director.call(`list jobmedia jobid=${currentJobId.value}`),
   ])
 
   if (jobRes.status === 'fulfilled') {
@@ -191,13 +191,18 @@ async function loadJob() {
   }
 }
 
-onMounted(async () => {
+watch(currentJobId, async () => {
+  loading.value = true
+  error.value = null
+  jobData.value = null
+  logLines.value = ''
+  volumes.value = []
   try {
     await loadJob()
   } finally {
     loading.value = false
   }
-})
+}, { immediate: true })
 
 // ── computed ──────────────────────────────────────────────────────────────────
 const job = computed(() => jobData.value)
@@ -285,7 +290,7 @@ function confirmRerun() {
 async function doRerun() {
   rerunLoading.value = true
   try {
-    const res   = await director.call(`rerun jobid=${jobid} yes`)
+    const res   = await director.call(`rerun jobid=${currentJobId.value} yes`)
     const newId = res?.run?.jobid ?? res?.jobid ?? null
     $q.notify({ type: 'positive', message: `Job restarted${newId ? ` as ID ${newId}` : ''}.` })
     if (newId) router.push({ name: 'job-details', params: { id: newId } })
@@ -309,8 +314,8 @@ function confirmCancel() {
 async function doCancel() {
   cancelLoading.value = true
   try {
-    await director.call(`cancel jobid=${jobid} yes`)
-    $q.notify({ type: 'positive', message: `Job ${jobid} cancelled.` })
+    await director.call(`cancel jobid=${currentJobId.value} yes`)
+    $q.notify({ type: 'positive', message: `Job ${currentJobId.value} cancelled.` })
     await loadJob()
   } catch (e) {
     $q.notify({ type: 'negative', message: `Cancel failed: ${e.message}` })
