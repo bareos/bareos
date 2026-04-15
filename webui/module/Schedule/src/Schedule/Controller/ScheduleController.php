@@ -93,12 +93,21 @@ class ScheduleController extends AbstractActionController
             return new ViewModel(['error' => 'Failed to connect to director']);
         }
 
+        $schedules = array();
+
         if (empty($action)) {
             try {
                 $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
-                $this->bsock->disconnect();
             } catch (Exception $e) {
                 error_log($e->getMessage());
+            } finally {
+                if ($this->bsock) {
+                    try {
+                        $this->bsock->disconnect();
+                    } catch (Exception $e) {
+                        error_log($e->getMessage());
+                    }
+                }
             }
             return new ViewModel(
                 array(
@@ -106,8 +115,8 @@ class ScheduleController extends AbstractActionController
                 )
             );
         } else {
-            if ($action == "enable") {
-                try {
+            try {
+                if ($action == "enable") {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
                         $module_config['console_commands']['Schedule']['optional']
@@ -124,11 +133,7 @@ class ScheduleController extends AbstractActionController
                         $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
                         $result = $this->getScheduleModel()->enableSchedule($this->bsock, $schedulename);
                     }
-                } catch (Exception $e) {
-                    error_log($e->getMessage());
-                }
-            } elseif ($action == "disable") {
-                try {
+                } elseif ($action == "disable") {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
                         $module_config['console_commands']['Schedule']['optional']
@@ -145,16 +150,16 @@ class ScheduleController extends AbstractActionController
                         $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
                         $result = $this->getScheduleModel()->disableSchedule($this->bsock, $schedulename);
                     }
-                } catch (Exception $e) {
-                    error_log($e->getMessage());
                 }
-            }
-
-            if ($this->bsock) {
-                try {
-                    $this->bsock->disconnect();
-                } catch (Exception $e) {
-                    error_log($e->getMessage());
+            } catch (Exception $e) {
+                error_log($e->getMessage());
+            } finally {
+                if ($this->bsock) {
+                    try {
+                        $this->bsock->disconnect();
+                    } catch (Exception $e) {
+                        error_log($e->getMessage());
+                    }
                 }
             }
 
@@ -207,9 +212,18 @@ class ScheduleController extends AbstractActionController
                     )
                 );
             } else {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getScheduleModel()->showSchedules($this->bsock);
-                $this->bsock->disconnect();
+                try {
+                    $this->bsock = $this->getServiceLocator()->get('director');
+                    $result = $this->getScheduleModel()->showSchedules($this->bsock);
+                } finally {
+                    if ($this->bsock) {
+                        try {
+                            $this->bsock->disconnect();
+                        } catch (Exception $e) {
+                            error_log($e->getMessage());
+                        }
+                    }
+                }
             }
         } catch (Exception $e) {
             error_log($e->getMessage());
@@ -262,9 +276,18 @@ class ScheduleController extends AbstractActionController
                     )
                 );
             } else {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getScheduleModel()->getFullScheduleStatus($this->bsock);
-                $this->bsock->disconnect();
+                try {
+                    $this->bsock = $this->getServiceLocator()->get('director');
+                    $result = $this->getScheduleModel()->getFullScheduleStatus($this->bsock);
+                } finally {
+                    if ($this->bsock) {
+                        try {
+                            $this->bsock->disconnect();
+                        } catch (Exception $e) {
+                            error_log($e->getMessage());
+                        }
+                    }
+                }
             }
         } catch (Exception $e) {
             error_log($e->getMessage());
@@ -319,9 +342,18 @@ class ScheduleController extends AbstractActionController
                     )
                 );
             } else {
-                $this->bsock = $this->getServiceLocator()->get('director');
-                $result = $this->getScheduleModel()->getScheduleStatus($this->bsock, $schedulename);
-                $this->bsock->disconnect();
+                try {
+                    $this->bsock = $this->getServiceLocator()->get('director');
+                    $result = $this->getScheduleModel()->getScheduleStatus($this->bsock, $schedulename);
+                } finally {
+                    if ($this->bsock) {
+                        try {
+                            $this->bsock->disconnect();
+                        } catch (Exception $e) {
+                            error_log($e->getMessage());
+                        }
+                    }
+                }
             }
         } catch (Exception $e) {
             error_log($e->getMessage());
