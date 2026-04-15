@@ -122,6 +122,12 @@ watch(messages, (msgs) => {
     a.download = 'bareos-setup.sh'
     a.click()
     URL.revokeObjectURL(url)
+  } else if (last.type === 'error') {
+    generatingScript.value = false
+    $q.notify({
+      type: 'negative',
+      message: last.message || 'Failed to generate the setup script.',
+    })
   }
 }, { deep: true })
 
