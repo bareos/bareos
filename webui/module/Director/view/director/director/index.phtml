@@ -49,6 +49,12 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
+<?php if (!empty($this->error)) : ?>
+<div class="alert alert-danger">
+   <?php echo $this->escapeHtml($this->error); ?>
+</div>
+<?php endif; ?>
+
 <pre class="dird-messages" style="height: 500px; font-size: 8pt;">
 <code>
 <?php echo $this->directorOutput; ?>

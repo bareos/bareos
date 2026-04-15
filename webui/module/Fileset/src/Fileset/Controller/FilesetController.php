@@ -118,13 +118,21 @@ class FilesetController extends AbstractActionController
         }
 
         $filesetid = $this->params()->fromRoute('id', 0);
+        $fileset = null;
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
             $fileset = $this->getFilesetModel()->getFileset($this->bsock, $filesetid);
-            $this->bsock->disconnect();
         } catch (Exception $e) {
             error_log($e->getMessage());
+        } finally {
+            if ($this->bsock) {
+                try {
+                    $this->bsock->disconnect();
+                } catch (Exception $e) {
+                    error_log($e->getMessage());
+                }
+            }
         }
 
         return new ViewModel(

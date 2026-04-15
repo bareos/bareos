@@ -43,8 +43,16 @@ echo $this->doctype();
       <!-- Styles -->
       <?php
          $theme = $_SESSION['bareos']['theme'] ?? 'sunflower';
+         $themeRoot = dirname(__DIR__, 4) . '/public/themes';
+         if (
+            !preg_match('/^[A-Za-z0-9_-]+$/', $theme)
+            || !is_dir($themeRoot . '/' . $theme)
+         ) {
+            $theme = 'sunflower';
+         }
+         $themeBase = $this->basePath() . '/themes/' . $theme;
          echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/themes/'.$theme.'/img/favicon.ico'))
-            ->prependStylesheet($this->basePath() . '/themes/'.$theme.'/css/login.css')
+            ->prependStylesheet($themeBase . '/css/login.css')
             ->prependStylesheet($this->basePath() . '/css/login.css')
             ->prependStylesheet($this->basePath() . '/css/main.css')
             ->prependStylesheet($this->basePath() . '/css/bootstrap-select.min.css')
@@ -71,7 +79,7 @@ echo $this->doctype();
    ?>
 
    <div class="container text-center">
-      <img src="<?php echo $this->basePath() . '/themes/'.($theme ?? 'sunflower').'/img/bareos.png'; ?>" />
+      <img src="<?php echo $this->escapeHtmlAttr($themeBase . '/img/bareos.png'); ?>" />
       <br /><br /><br />
       <?php echo $this->content; ?>
       <br />

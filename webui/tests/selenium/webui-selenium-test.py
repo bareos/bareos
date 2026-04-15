@@ -273,8 +273,8 @@ class SeleniumTest(unittest.TestCase):
         try:
             self.wait_and_click(By.LINK_TEXT, self.client)
         # Raises exception if client not found
-        except ElementTimeoutException:
-            raise ClientNotFoundException(self.client)
+        except ElementTimeoutException as err:
+            raise ClientNotFoundException(self.client) from err
         self.driver.get(self.base_url + "/client")
         self.wait_for_spinner_absence()
 

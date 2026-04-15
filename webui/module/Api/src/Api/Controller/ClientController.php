@@ -58,7 +58,7 @@ class ClientController extends AbstractRestfulController
 
         try {
             if (isset($client)) {
-                $this->result = $this->getClientModel()->getClient($this->bsock, $client);
+                $this->result = $this->getClientModel()->getClient($client, $this->bsock);
             } else {
                 # $_SESSION['bareos']['product-updates'] is
                 # a sorted list of Bareos release versions.

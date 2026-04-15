@@ -86,9 +86,9 @@ class ClientModel
      *
      * @return array
      */
-    public function getClient(&$bsock = null, $client): array
+    public function getClient($client, &$bsock = null): array
     {
-        if (!isset($bsock)) {
+        if (!isset($bsock, $client)) {
             throw new \Exception('Missing argument.');
         }
 
@@ -137,7 +137,19 @@ class ClientModel
                 }
 
                 foreach ($backups['result']['backups'] as $key => $backup) {
-                    $backups['result']['backups'][$key]['pluginjob'] = $fileset_plugin_map[$backup['fileset']] ?? false;
+                    if (
+                        isset($backup['fileset'])
+                        && array_key_exists($backup['fileset'], $fileset_plugin_map)
+                    ) {
+                        $backups['result']['backups'][$key]['pluginjob']
+                            = $fileset_plugin_map[$backup['fileset']];
+                    } elseif (isset($backup['fileset'])) {
+                        error_log(
+                            'getClientBackups: missing fileset metadata for "'
+                            . $backup['fileset']
+                            . '"'
+                        );
+                    }
                 }
             }
             return $backups['result']['backups'];
@@ -189,7 +201,7 @@ class ClientModel
     public function statusClient(&$bsock = null, $name = null): string
     {
         if (isset($bsock, $name)) {
-            $cmd = 'status client="' . $name;
+            $cmd = 'status client="' . $name . '"';
             $result = $bsock->send_command($cmd, 0);
             return $result;
         } else {
