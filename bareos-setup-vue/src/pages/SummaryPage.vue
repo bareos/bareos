@@ -76,10 +76,12 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useSetupStore } from '../stores/setup.js'
 import { useSetupWs } from '../composables/useSetupWs.js'
 
+const $q = useQuasar()
 const router = useRouter()
 const store  = useSetupStore()
 const { send, messages } = useSetupWs()
@@ -149,5 +151,13 @@ function back() { store.prevStep(); router.push('/passwords') }
 function finish() {
   store.setupDone = true
   window.close()
+  window.setTimeout(() => {
+    if (!window.closed) {
+      $q.notify({
+        type: 'info',
+        message: 'This tab cannot be closed automatically. You can close it manually and open the WebUI link above.',
+      })
+    }
+  }, 100)
 }
 </script>
