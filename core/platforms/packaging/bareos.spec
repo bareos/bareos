@@ -1219,6 +1219,7 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %if "%{_libdir}" != "/usr/lib/"
 %dir %{_libdir}/%{name}/
 %endif
+%{_sbindir}/bareos-setup
 %if !0%{?client_only}
 %{_bindir}/bsmtp
 %{_sbindir}/bsmtp
