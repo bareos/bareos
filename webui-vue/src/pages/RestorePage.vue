@@ -391,6 +391,10 @@ const backupOptions = computed(() =>
   }))
 )
 
+function quoteDirectorString(value) {
+  return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
 async function onClientChange(clientName) {
   form.value.jobid = null
   browserReady.value = false
@@ -404,7 +408,7 @@ async function onClientChange(clientName) {
 async function loadBackups(clientName) {
   loadingBackups.value = true
   try {
-    const r = await director.call(`llist backups client="${clientName}"`)
+    const r = await director.call(`llist backups client=${quoteDirectorString(clientName)}`)
     backups.value = (r?.backups ?? []).sort((a, b) => Number(b.jobid) - Number(a.jobid))
   } catch (_) {
     backups.value = []
@@ -476,7 +480,7 @@ async function initBrowser() {
 
 async function fetchDir(pathId) {
   const jids = mergedJobids.value
-  const pathArg = pathId != null ? `pathid=${pathId}` : 'path=/'
+  const pathArg = pathId != null ? `pathid=${pathId}` : `path=${quoteDirectorString('/')}`
   const [dr, fr] = await Promise.all([
     director.call(`.bvfs_lsdirs jobid=${jids} ${pathArg} limit=2000`).catch(() => null),
     director.call(`.bvfs_lsfiles jobid=${jids} ${pathArg} limit=2000`).catch(() => null),
@@ -595,18 +599,18 @@ async function doRestore() {
   try {
     // Step 1: build restore list in BVFS
     await director.call(
-      `.bvfs_restore jobid=${jids} fileid=${fileids} dirid=${dirids} path=${bvfsPath}`
+      `.bvfs_restore jobid=${jids} fileid=${fileids} dirid=${dirids} path=${quoteDirectorString(bvfsPath)}`
     )
 
     // Step 2: run restore job
     const src = form.value.client
     const dst = form.value.restoreclient || src
     const cmd = `restore file=?${bvfsPath}` +
-      ` client="${src}"` +
-      ` restoreclient="${dst}"` +
-      ` restorejob="${form.value.restorejob}"` +
-      ` where="${form.value.where}"` +
-      ` replace="${form.value.replace}"` +
+      ` client=${quoteDirectorString(src)}` +
+      ` restoreclient=${quoteDirectorString(dst)}` +
+      ` restorejob=${quoteDirectorString(form.value.restorejob)}` +
+      ` where=${quoteDirectorString(form.value.where)}` +
+      ` replace=${quoteDirectorString(form.value.replace)}` +
       ` yes`
     const result = await director.call(cmd)
 
@@ -622,7 +626,7 @@ async function doRestore() {
     }
 
     // Step 3: clean up BVFS restore path
-    await director.call(`.bvfs_cleanup path=${bvfsPath}`)
+    await director.call(`.bvfs_cleanup path=${quoteDirectorString(bvfsPath)}`)
   } catch (e) {
     restoreResult.value = { ok: false, message: `Restore failed: ${e.message}`, jobid: null }
   } finally {
