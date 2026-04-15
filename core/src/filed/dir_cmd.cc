@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -292,74 +292,6 @@ static bool ValidateCommand(JobControlRecord* jcr,
   }
 
   return allowed;
-}
-
-void CleanupFileset(JobControlRecord* jcr)
-{
-  findFILESET* fileset;
-  findIncludeExcludeItem* incexe;
-  findFOPTS* fo;
-
-  fileset = jcr->fd_impl->ff->fileset;
-  if (fileset) {
-    // Delete FileSet Include lists
-    for (int i = 0; i < fileset->include_list.size(); i++) {
-      incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
-      for (int j = 0; j < incexe->opts_list.size(); j++) {
-        fo = (findFOPTS*)incexe->opts_list.get(j);
-        if (fo->plugin) { free(fo->plugin); }
-        for (int k = 0; k < fo->regex.size(); k++) {
-          regfree((regex_t*)fo->regex.get(k));
-        }
-        for (int k = 0; k < fo->regexdir.size(); k++) {
-          regfree((regex_t*)fo->regexdir.get(k));
-        }
-        for (int k = 0; k < fo->regexfile.size(); k++) {
-          regfree((regex_t*)fo->regexfile.get(k));
-        }
-        if (fo->size_match) { free(fo->size_match); }
-        fo->regex.destroy();
-        fo->regexdir.destroy();
-        fo->regexfile.destroy();
-        fo->wild.destroy();
-        fo->wilddir.destroy();
-        fo->wildfile.destroy();
-        fo->wildbase.destroy();
-        fo->fstype.destroy();
-        fo->Drivetype.destroy();
-      }
-      incexe->opts_list.destroy();
-      incexe->name_list.destroy();
-      incexe->plugin_list.destroy();
-      incexe->ignoredir.destroy();
-    }
-    fileset->include_list.destroy();
-
-    // Delete FileSet Exclude lists
-    for (int i = 0; i < fileset->exclude_list.size(); i++) {
-      incexe = (findIncludeExcludeItem*)fileset->exclude_list.get(i);
-      for (int j = 0; j < incexe->opts_list.size(); j++) {
-        fo = (findFOPTS*)incexe->opts_list.get(j);
-        if (fo->size_match) { free(fo->size_match); }
-        fo->regex.destroy();
-        fo->regexdir.destroy();
-        fo->regexfile.destroy();
-        fo->wild.destroy();
-        fo->wilddir.destroy();
-        fo->wildfile.destroy();
-        fo->wildbase.destroy();
-        fo->fstype.destroy();
-        fo->Drivetype.destroy();
-      }
-      incexe->opts_list.destroy();
-      incexe->name_list.destroy();
-      incexe->plugin_list.destroy();
-      incexe->ignoredir.destroy();
-    }
-    fileset->exclude_list.destroy();
-    free(fileset);
-  }
-  jcr->fd_impl->ff->fileset = nullptr;
 }
 
 static inline bool AreMaxConcurrentJobsExceeded()
