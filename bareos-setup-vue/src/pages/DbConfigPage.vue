@@ -100,6 +100,6 @@ function setupDb() {
   })
 }
 
-function back() { store.prevStep(); router.push('/install') }
+function back() { store.prevStep(); router.push('/tape') }
 function next() { store.nextStep(); router.push('/passwords') }
 </script>
