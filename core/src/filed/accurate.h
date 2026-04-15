@@ -68,9 +68,7 @@ class BareosAccurateFilelist {
  public:
   BareosAccurateFilelist(JobControlRecord* jcr, std::size_t initial_capacity)
       : jcr_{jcr}, initial_capacity_{initial_capacity}
-  {
-    seen_bitmap_.reserve(initial_capacity);
-  }
+  { seen_bitmap_.reserve(initial_capacity); }
 
   virtual ~BareosAccurateFilelist() {}
 
@@ -81,12 +79,10 @@ class BareosAccurateFilelist {
                        int lstat_length,
                        char* chksum,
                        int checksum_length,
-                       int32_t delta_seq)
-      = 0;
+                       int32_t delta_seq) = 0;
   virtual bool EndLoad() = 0;
   virtual accurate_payload* lookup_payload(char* fname) = 0;
   virtual bool UpdatePayload(char* fname, accurate_payload* payload) = 0;
-  virtual bool SendBaseFileList() = 0;
   virtual bool SendDeletedList() = 0;
   void MarkFileAsSeen(accurate_payload* payload)
   {
@@ -107,14 +103,10 @@ class BareosAccurateFilelist {
   }
 
   void MarkAllFilesAsSeen()
-  {
-    std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 1);
-  }
+  { std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 1); }
 
   void UnmarkAllFilesAsSeen()
-  {
-    std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 0);
-  }
+  { std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 0); }
 };
 
 /*
@@ -153,7 +145,6 @@ class BareosAccurateFilelistHtable : public BareosAccurateFilelist {
   bool EndLoad() override;
   accurate_payload* lookup_payload(char* fname) override;
   bool UpdatePayload(char* fname, accurate_payload* payload) override;
-  bool SendBaseFileList() override;
   bool SendDeletedList() override;
 };
 
@@ -195,7 +186,6 @@ class BareosAccurateFilelistLmdb : public BareosAccurateFilelist {
   bool EndLoad() override;
   accurate_payload* lookup_payload(char* fname) override;
   bool UpdatePayload(char* fname, accurate_payload* payload) override;
-  bool SendBaseFileList() override;
   bool SendDeletedList() override;
 };
 #endif /* HAVE_LMDB */
