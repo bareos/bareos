@@ -127,7 +127,9 @@ function focusConsole() {
 function rejectAll(reason) {
   for (const { timer, reject } of pendingCmds.values()) {
     clearTimeout(timer)
-    reject(new Error(reason))
+    if (typeof reject === 'function') {
+      reject(new Error(reason))
+    }
   }
   pendingCmds.clear()
 }
