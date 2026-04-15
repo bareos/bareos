@@ -83,9 +83,6 @@ for query in `ls ????_* | sed 's#\..*##g' | sort | uniq`; do
     for db in $DATABASES; do
         queryincludefile=`get_query_include_filename $db`
         queryfile="$query"
-        if  [ -e "$query.$db" ]; then
-            queryfile="$query.$db"
-        fi
         printf '/* %s */\nR"SQL(' "$queryfile" >> $queryincludefile
         # remove comments and empty lines
         sed -r -e "/^#/d" -e "/^$/d" <"$queryfile" >>"$queryincludefile"

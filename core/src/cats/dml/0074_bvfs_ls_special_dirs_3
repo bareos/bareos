@@ -10,8 +10,8 @@
 #   %s PathId
 #   %s JobIds ("1,2,...")
 #
-# row  0    1                  2                3      4      5
-SELECT 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
+# row                       0    1                  2                3      4      5
+SELECT DISTINCT ON (PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
 FROM (
     SELECT %s AS PathId, '.' AS Path
 
@@ -26,5 +26,6 @@ LEFT JOIN (
     FROM File
     WHERE File.Name = ''
       AND File.JobId IN (%s)
+    ORDER BY PathId ASC, JobId DESC
 ) AS DirAttribute
 ON (SpecialDir.PathId = DirAttribute.PathId)

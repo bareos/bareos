@@ -172,11 +172,11 @@ R"SQL(SELECT DISTINCT JobMedia.JobId
    ORDER BY JobId
 )SQL",
 
-/* 0012_drop_deltabs.postgresql */
+/* 0012_drop_deltabs */
 R"SQL(DROP TABLE IF EXISTS DelCandidates
 )SQL",
 
-/* 0013_create_deltabs.postgresql */
+/* 0013_create_deltabs */
 R"SQL(CREATE TEMPORARY TABLE
        DelCandidates ( JobId INTEGER NOT NULL, PurgedFiles SMALLINT, FileSetId INTEGER, JobFiles INTEGER, JobStatus char(1))
 )SQL",
@@ -391,7 +391,7 @@ R"SQL(SELECT JobId, FileIndex
  ORDER BY JobId, FileIndex ASC
 )SQL",
 
-/* 0034_select_recent_version_from_jobids.postgresql */
+/* 0034_select_recent_version_from_jobids */
 R"SQL(SELECT DISTINCT ON (File.Name,
                     File.PathId) Job.JobTDate,
                                    File.JobId,
@@ -412,7 +412,7 @@ ORDER BY File.Name,
          Job.JobTDate DESC
 )SQL",
 
-/* 0035_select_recent_version_from_jobids_and_delta.postgresql */
+/* 0035_select_recent_version_from_jobids_and_delta */
 R"SQL(SELECT DISTINCT ON (File.Name,
                     File.PathId,
                     File.DeltaSeq) Job.JobTDate,
@@ -435,7 +435,7 @@ ORDER BY File.Name,
          Job.JobTDate DESC
 )SQL",
 
-/* 0036_select_recent_version.postgresql */
+/* 0036_select_recent_version */
 R"SQL(SELECT DISTINCT ON (File.Name,
                     PathId) JobTDate,
                    JobId,
@@ -536,7 +536,7 @@ ORDER BY StartTime DESC
 LIMIT 20
 )SQL",
 
-/* 0042_uar_create_temp.postgresql */
+/* 0042_uar_create_temp */
 R"SQL(CREATE TEMPORARY TABLE
        temp (
           JobId INTEGER NOT NULL, JobTDate BIGINT, ClientId INTEGER, Level CHAR, JobFiles INTEGER, JobBytes BIGINT, StartTime
@@ -544,11 +544,11 @@ R"SQL(CREATE TEMPORARY TABLE
        )
 )SQL",
 
-/* 0043_uar_create_temp1.postgresql */
+/* 0043_uar_create_temp1 */
 R"SQL(CREATE TEMPORARY TABLE temp1 ( JobId INTEGER NOT NULL, JobTDate BIGINT)
 )SQL",
 
-/* 0044_uar_jobid_fileindex_from_dir.postgresql */
+/* 0044_uar_jobid_fileindex_from_dir */
 R"SQL(SELECT Job.JobId,
        File.FileIndex
 FROM Job,
@@ -567,11 +567,11 @@ WHERE Job.JobId IN (%s)
 R"SQL(ORDER BY LastWritten IS NULL,LastWritten DESC,MediaId
 )SQL",
 
-/* 0046_sql_get_max_connections.postgresql */
+/* 0046_sql_get_max_connections */
 R"SQL(SHOW max_connections
 )SQL",
 
-/* 0047_bvfs_select.postgresql */
+/* 0047_bvfs_select */
 R"SQL(CREATE TABLE %s AS
   (SELECT JobId,
           FileIndex,
@@ -588,7 +588,7 @@ R"SQL(CREATE TABLE %s AS
    WHERE FileIndex > 0)
 )SQL",
 
-/* 0048_bvfs_list_files.postgresql */
+/* 0048_bvfs_list_files */
 R"SQL(SELECT TYPE,
        PathId,
        Name,
@@ -618,11 +618,11 @@ LIMIT %lld
 OFFSET %lld
 )SQL",
 
-/* 0049_batch_lock_path_query.postgresql */
+/* 0049_batch_lock_path_query */
 R"SQL(BEGIN; LOCK TABLE Path IN SHARE ROW EXCLUSIVE MODE
 )SQL",
 
-/* 0050_batch_lock_filename_query.postgresql */
+/* 0050_batch_lock_filename_query */
 R"SQL(BEGIN; LOCK TABLE Filename IN SHARE ROW EXCLUSIVE MODE
 )SQL",
 
@@ -630,7 +630,7 @@ R"SQL(BEGIN; LOCK TABLE Filename IN SHARE ROW EXCLUSIVE MODE
 R"SQL(COMMIT
 )SQL",
 
-/* 0052_batch_fill_path_query.postgresql */
+/* 0052_batch_fill_path_query */
 R"SQL(INSERT INTO Path (Path)
 SELECT a.Path
   FROM (
@@ -644,7 +644,7 @@ SELECT a.Path
        )
 )SQL",
 
-/* 0053_batch_fill_filename_query.postgresql */
+/* 0053_batch_fill_filename_query */
 R"SQL(INSERT INTO Filename (Name)
 SELECT a.Name
   FROM (
@@ -658,11 +658,11 @@ SELECT a.Name
        )
 )SQL",
 
-/* 0054_match_query.postgresql */
+/* 0054_match_query */
 R"SQL( AND Path2.Path ~ '%s'
 )SQL",
 
-/* 0055_match_query2.postgresql */
+/* 0055_match_query2 */
 R"SQL( AND Filename.Name ~ '%s'
 )SQL",
 
@@ -683,7 +683,7 @@ R"SQL(UPDATE Counters
  WHERE Counter  = '%s'
 )SQL",
 
-/* 0059_get_quota_jobbytes.postgresql */
+/* 0059_get_quota_jobbytes */
 R"SQL(SELECT SUM(JobBytes)
   FROM Job
  WHERE ClientId  =  %s
@@ -691,7 +691,7 @@ R"SQL(SELECT SUM(JobBytes)
    AND SchedTime >  TIMESTAMP '%s'
 )SQL",
 
-/* 0060_get_quota_jobbytes_nofailed.postgresql */
+/* 0060_get_quota_jobbytes_nofailed */
 R"SQL(SELECT SUM(JobBytes)
   FROM Job
  WHERE ClientId  =  %s
@@ -818,7 +818,7 @@ WHERE  Path != ''
   AND  Path NOT LIKE '%%/'
 )SQL",
 
-/* 0074_bvfs_ls_special_dirs_3.postgresql */
+/* 0074_bvfs_ls_special_dirs_3 */
 R"SQL(SELECT DISTINCT ON (PathId) 'D', SpecialDir.PathId, SpecialDir.Path, JobId, LStat, FileId
 FROM (
     SELECT %s AS PathId, '.' AS Path
@@ -837,7 +837,7 @@ LEFT JOIN (
 ON (SpecialDir.PathId = DirAttribute.PathId)
 )SQL",
 
-/* 0075_bvfs_ls_sub_dirs_5.postgresql */
+/* 0075_bvfs_ls_sub_dirs_5 */
 R"SQL((
 SELECT DISTINCT ON (Path) 'D', PathId, Path, JobId, LStat, FileId
 FROM (
@@ -939,7 +939,7 @@ FROM      Media
 LEFT JOIN Storage USING(StorageId)
 )SQL",
 
-/* 0078_bvfs_lock_pathhierarchy_0.postgresql */
+/* 0078_bvfs_lock_pathhierarchy_0 */
 R"SQL(BEGIN; LOCK TABLE PathHierarchy IN SHARE ROW EXCLUSIVE MODE
 )SQL",
 

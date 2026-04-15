@@ -1,41 +1,18 @@
-# Get the list of the most recent version with a given jobid list
-# This is a tricky part because with SQL the result of
-#
-# SELECT MAX(A), B, C, D FROM... GROUP BY (B,C)
-#
-# doesn't give the good result (for D).
-#
-# With PostgreSQL, we can use DISTINCT ON(), but with Mysql or Sqlite,
-# we need an extra join using JobTDate.
-SELECT File.FileId,
-       Job.JobId AS JobId,
-       File.FileIndex,
-       File.PathId AS PathId,
-       File.Name AS Name,
-       File.LStat,
-       File.MD5,
-       File.DeltaSeq,
-       File.Fhinfo,
-       File.Fhnode,
-       Job.JobTDate AS JobTDate
+SELECT DISTINCT ON (File.Name,
+                    File.PathId) Job.JobTDate,
+                                   File.JobId,
+                                   File.FileId,
+                                   File.FileIndex,
+                                   File.PathId,
+                                   File.Name,
+                                   File.LStat,
+                                   File.MD5,
+                                   File.DeltaSeq,
+                                   File.Fhinfo,
+                                   File.Fhnode
 FROM File
 JOIN Job USING (JobId)
-JOIN (
-  SELECT MAX(JobTDate) AS JobTDate,
-         PathId,
-         FileName
-  FROM (
-    SELECT JobTDate,
-           PathId,
-           File.Name AS FileName
-    FROM File
-    JOIN Job USING (JobId)
-    WHERE File.JobId IN (%s)
-  ) AS tmp
-  GROUP BY PathId,
-           FileName
-) AS T1
-  ON T1.JobTDate = Job.JobTDate
- AND T1.PathId = File.PathId
- AND T1.FileName = File.Name
-WHERE Job.JobId IN (%s)
+WHERE File.JobId IN (%s)
+ORDER BY File.Name,
+         File.PathId,
+         Job.JobTDate DESC
