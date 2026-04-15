@@ -224,3 +224,19 @@ TEST(BareosSetupStepsShared, BuildsTapeStorageScript)
   EXPECT_NE(script.find("ArchiveDevice = /dev/tape/by-id/drive-1-nst"),
             std::string::npos);
 }
+
+TEST(BareosSetupStepsShared, EscapesAdminUserCommandArguments)
+{
+  const auto cmd
+      = BuildAdminUserCmd("admin/user", "pa\"ss\\word and spaces");
+
+  ASSERT_EQ(cmd.size(), 3U);
+  EXPECT_EQ(cmd[0], "bash");
+  EXPECT_EQ(cmd[1], "-c");
+  EXPECT_NE(cmd[2].find("console/admin_user.conf"), std::string::npos);
+  EXPECT_NE(cmd[2].find("Name = \"admin/user\""), std::string::npos);
+  EXPECT_NE(cmd[2].find("Password = \"pa\\\"ss\\\\word and spaces\""),
+            std::string::npos);
+  EXPECT_NE(cmd[2].find("cat > '/etc/bareos/bareos-dir.d/console/admin_user.conf'"),
+            std::string::npos);
+}

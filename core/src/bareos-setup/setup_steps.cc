@@ -244,6 +244,31 @@ std::string ShellQuote(const std::string& value)
   return quoted;
 }
 
+std::string EscapeBareosQuotedValue(const std::string& value)
+{
+  std::string escaped;
+  escaped.reserve(value.size());
+  for (char ch : value) {
+    if (ch == '\\' || ch == '"') escaped += '\\';
+    escaped += ch;
+  }
+  return escaped;
+}
+
+std::string SanitizeConfigFileStem(const std::string& value)
+{
+  std::string sanitized;
+  sanitized.reserve(value.size());
+  for (unsigned char ch : value) {
+    if (std::isalnum(ch) != 0 || ch == '-' || ch == '_' || ch == '.') {
+      sanitized += static_cast<char>(ch);
+    } else {
+      sanitized += '_';
+    }
+  }
+  return sanitized.empty() ? "admin" : sanitized;
+}
+
 uint16_t ReadBe16(const std::vector<uint8_t>& data, size_t offset)
 {
   return static_cast<uint16_t>((static_cast<uint16_t>(data[offset]) << 8)
@@ -578,20 +603,24 @@ std::vector<std::string> BuildDbCmd()
 std::vector<std::string> BuildAdminUserCmd(const std::string& username,
                                            const std::string& password)
 {
+  const std::string console_name = EscapeBareosQuotedValue(username);
+  const std::string console_password = EscapeBareosQuotedValue(password);
   const std::string console_conf
-      = "/etc/bareos/bareos-dir.d/console/" + username + ".conf";
+      = "/etc/bareos/bareos-dir.d/console/"
+        + SanitizeConfigFileStem(username) + ".conf";
+  const std::string quoted_console_conf = ShellQuote(console_conf);
   return {"bash",
           "-c",
-          "cat > " + console_conf + " << 'BAREOS_EOF'\n"
+          "cat > " + quoted_console_conf + " << 'BAREOS_EOF'\n"
           "Console {\n"
-          "  Name = " + username + "\n"
-          "  Password = \"" + password + "\"\n"
+          "  Name = \"" + console_name + "\"\n"
+          "  Password = \"" + console_password + "\"\n"
           "  Profile = \"webui-admin\"\n"
           "  TLS Enable = No\n"
           "}\n"
           "BAREOS_EOF\n"
-          "chmod 640 " + console_conf + " && "
-          "chown root:bareos " + console_conf + " && "
+          "chmod 640 " + quoted_console_conf + " && "
+          "chown root:bareos " + quoted_console_conf + " && "
           "systemctl reload bareos-dir 2>/dev/null || true"};
 }
 
