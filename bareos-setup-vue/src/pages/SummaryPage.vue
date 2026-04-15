@@ -64,7 +64,7 @@
              :loading="generatingScript" @click="generateScript" />
       <q-btn label="Open WebUI"
              icon="open_in_browser" color="primary"
-             href="http://localhost:9100" target="_blank" />
+             :href="webuiUrl" target="_blank" />
     </div>
 
     <div class="row justify-between">
@@ -86,6 +86,11 @@ const { send, messages } = useSetupWs()
 
 const generatingScript = ref(false)
 const scriptContent    = ref('')
+
+const webuiUrl = computed(() => {
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'
+  return `${protocol}//${window.location.hostname}:9100`
+})
 
 const storageTargets = computed(() => {
   const labels = []
