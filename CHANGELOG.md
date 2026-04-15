@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - barri: sync parameter names between plugin and cli [PR #2566]
 - docs and comments: fix typos [PR #2585]
 - `status subscription` command: adapt to new price-list [PR #2547]
+- matrix.yml: add Fedora 44 [PR #2616]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2261,4 +2262,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2595]: https://github.com/bareos/bareos/pull/2595
 [PR #2597]: https://github.com/bareos/bareos/pull/2597
 [PR #2607]: https://github.com/bareos/bareos/pull/2607
+[PR #2616]: https://github.com/bareos/bareos/pull/2616
 [unreleased]: https://github.com/bareos/bareos/tree/master
