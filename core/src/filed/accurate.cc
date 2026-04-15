@@ -109,7 +109,7 @@ void AccurateFree(JobControlRecord* jcr)
   }
 }
 
-// Send the deleted or the base file list and cleanup.
+// Send the deleted list and cleanup.
 bool AccurateFinish(JobControlRecord* jcr)
 {
   bool retval = true;
@@ -120,11 +120,7 @@ bool AccurateFinish(JobControlRecord* jcr)
   }
 
   if (jcr->accurate && jcr->fd_impl->file_list) {
-    if (jcr->is_JobLevel(L_FULL)) {
-      if (!jcr->rerunning) {
-        retval = jcr->fd_impl->file_list->SendBaseFileList();
-      }
-    } else {
+    if (!jcr->is_JobLevel(L_FULL)) {
       retval = jcr->fd_impl->file_list->SendDeletedList();
     }
 
