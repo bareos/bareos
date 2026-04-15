@@ -86,6 +86,11 @@ class ScheduleController extends AbstractActionController
             $this->bsock = $this->getServiceLocator()->get('director');
         } catch (Exception $e) {
             error_log($e->getMessage());
+            return new ViewModel(['error' => 'Failed to connect to director']);
+        }
+
+        if (!$this->bsock) {
+            return new ViewModel(['error' => 'Failed to connect to director']);
         }
 
         if (empty($action)) {
@@ -145,10 +150,12 @@ class ScheduleController extends AbstractActionController
                 }
             }
 
-            try {
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                error_log($e->getMessage());
+            if ($this->bsock) {
+                try {
+                    $this->bsock->disconnect();
+                } catch (Exception $e) {
+                    error_log($e->getMessage());
+                }
             }
 
             return new ViewModel(
