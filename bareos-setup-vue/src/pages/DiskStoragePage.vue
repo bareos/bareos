@@ -137,6 +137,14 @@ watch(messages, (msgs) => {
     nextTick(() => {
       if (consoleEl.value) consoleEl.value.scrollTop = consoleEl.value.scrollHeight
     })
+  } else if (last.type === 'error') {
+    running.value = false
+    done.value = true
+    exitCode.value = 1
+    lines.value.push({
+      text: last.message,
+      cls: 'output-line-err',
+    })
   } else if (last.type === 'done') {
     running.value = false
     done.value = true
