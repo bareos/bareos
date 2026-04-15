@@ -5,6 +5,8 @@ FileSet {
   Include {
     Options {
       Signature = xxh128
+      Accurate = "Acamping15usddsu51gnipmacA"
+      Verify = "camping15usddsu51gnipmac"
       HardLinks = Yes
       fstype = ext2
       fstype = ext3

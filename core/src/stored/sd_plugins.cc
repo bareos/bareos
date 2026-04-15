@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -97,10 +97,11 @@ static CoreFunctions bareos_core_functions
 
 // Bareos private context
 struct b_plugin_ctx {
-  JobControlRecord* jcr;                        /* jcr for plugin */
-  bRC rc;                                       /* last return code */
-  bool disabled;                                /* set if plugin disabled */
-  char events[NbytesForBits(SD_NR_EVENTS + 1)]; /* enabled events bitmask */
+  JobControlRecord* jcr; /* jcr for plugin */
+  bRC rc;                /* last return code */
+  bool disabled;         /* set if plugin disabled */
+  char events[NbytesForBits(PLUGIN_EVENT_COUNT
+                            + 1)]; /* enabled events bitmask */
   Plugin* plugin; /* pointer to plugin of which this is an instance off */
 };
 

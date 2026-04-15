@@ -19,17 +19,8 @@ export TestName
 #shellcheck source=../../environment.in
 . ./environment
 
-LSAN_OPTIONS=suppressions="$(pwd)/lsan-suppressions.txt"
-export LSAN_OPTIONS
-
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
-"${BAREOS_SCRIPTS_DIR}"/cleanup
-"${BAREOS_SCRIPTS_DIR}"/setup
-
-# Use a tgz to setup data to be backuped.
-# Fill ${BackupDirectory} with data.
-setup_data
 
 start_test
 
@@ -51,7 +42,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos "$@"
+run_bconsole "$@"
 check_for_zombie_jobs storage=File
 
 for i in bDirEventJobStart bDirEventJobInit bDirEventJobRun bDirEventJobEnd; do
@@ -62,7 +53,7 @@ done
 
 for i in 1 2 3 4; do
   num="$(grep -c -F "Job:'backup-bareos-fd$i." "${tmp}/test-plugin$i.log")"
-  if [ $num -ne 4 ]; then
+  if [ "${num}" -ne 4 ]; then
     set_error "Mismatched job context on plugin event in backup-bareos-fd$i"
   fi
 done

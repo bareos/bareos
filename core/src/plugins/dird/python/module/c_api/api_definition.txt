@@ -1,6 +1,0 @@
-bRC PyParsePluginDefinition(PluginContext* plugin_ctx, void* value);
-bRC PyGetPluginValue(PluginContext* plugin_ctx, pVariable var, void* value);
-bRC PySetPluginValue(PluginContext* plugin_ctx, pVariable var, void* value);
-bRC PyHandlePluginEvent(PluginContext* plugin_ctx, bDirEvent* event, void* value);
-bRC set_bareos_core_functions( CoreFunctions* new_bareos_core_functions);
-bRC set_plugin_context(PluginContext* new_plugin_context);

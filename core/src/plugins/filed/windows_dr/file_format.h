@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -122,12 +122,12 @@ struct decoded_version {
   constexpr auto operator<=>(const decoded_version&) const = default;
 };
 
-static constexpr bool test_decode(decoded_version v)
+static consteval bool test_decode(decoded_version v)
 {
   return v == decoded_version{static_cast<std::uint32_t>(v)};
 }
 
-static constexpr bool test_encode(std::uint32_t v)
+static consteval bool test_encode(std::uint32_t v)
 {
   return v == decoded_version{v}.encode();
 }

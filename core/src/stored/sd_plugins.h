@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2023 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -109,7 +109,8 @@ typedef enum
   bSdEventChangerUnlock = 24
 } bSdEventType;
 
-#define SD_NR_EVENTS bSdEventChangerUnlock /**< keep this updated ! */
+static inline constexpr auto PLUGIN_EVENT_COUNT
+    = bSdEventChangerUnlock; /**< keep this updated ! */
 
 typedef struct s_bSdEvent {
   uint32_t eventType;

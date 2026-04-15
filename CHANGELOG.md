@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs and comments: fix typos [PR #2585]
 - `status subscription` command: adapt to new price-list [PR #2547]
 - matrix.yml: add Fedora 44 [PR #2616]
+- python-dir/sd: fix not registering python thread state correctly [PR #2493]
 
 ### Removed
 - dird: deprecate Pool->FileRetention, Pool->JobRetention, WriteVerifyList [PR #2567]
@@ -2231,6 +2232,7 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2482]: https://github.com/bareos/bareos/pull/2482
 [PR #2483]: https://github.com/bareos/bareos/pull/2483
 [PR #2484]: https://github.com/bareos/bareos/pull/2484
+[PR #2493]: https://github.com/bareos/bareos/pull/2493
 [PR #2498]: https://github.com/bareos/bareos/pull/2498
 [PR #2501]: https://github.com/bareos/bareos/pull/2501
 [PR #2505]: https://github.com/bareos/bareos/pull/2505
