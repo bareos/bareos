@@ -118,8 +118,8 @@ void RunProxySession(int fd,
   cfg.username = jstr("username", "admin");
   cfg.password = jstr("password", "");
   cfg.director_name = jstr("director", defaults.name);
-  cfg.host = jstr("host", defaults.host);
-  cfg.port = jint("port", defaults.port);
+  cfg.host = defaults.host;
+  cfg.port = defaults.port;
   std::string mode = jstr("mode", "json");
   cfg.json_mode = (mode != "raw");
 

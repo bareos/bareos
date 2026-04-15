@@ -154,8 +154,6 @@ function connectRaw() {
       username: creds.username,
       password: creds.password,
       director: creds.director,
-      host:     creds.host ?? 'localhost',
-      port:     creds.port ?? 9101,
     }))
   }
 
