@@ -36,10 +36,12 @@ export function useSetupWs() {
 
   // Kick the connection
   const ws = getSocket()
-  ws.addEventListener('open', () => { connected.value = true })
+  const onOpen = () => { connected.value = true }
+  ws.addEventListener('open', onOpen)
 
   onUnmounted(() => {
     listeners = listeners.filter(fn => fn !== onMsg)
+    ws.removeEventListener('open', onOpen)
   })
 
   function send(payload) {
