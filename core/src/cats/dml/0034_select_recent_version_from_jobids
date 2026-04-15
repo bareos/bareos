@@ -1,4 +1,4 @@
-# Get the list of the last recent version per Delta with a given jobid list
+# Get the list of the most recent version with a given jobid list
 # This is a tricky part because with SQL the result of
 #
 # SELECT MAX(A), B, C, D FROM... GROUP BY (B,C)
