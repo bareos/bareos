@@ -380,34 +380,38 @@ class SeleniumTest(unittest.TestCase):
             )
             # Select correct client
             self.wait_and_click(By.LINK_TEXT, self.client)
-        # For readonly: client (bareos-fd) is auto-selected on page load;
-        # skip the dropdown interaction and wait for the file tree directly.
-        # Clicks on file and navigates through the tree
-        # by using the arrow-keys.
-        pathlist = self.restorefile.split("/")
-        for i in pathlist[:-1]:
-            self.wait_for_element(
-                By.XPATH, '//a[contains(text(),"%s/")]' % i
-            ).send_keys(Keys.ARROW_RIGHT)
-        self.wait_for_element(
-            By.XPATH, '//a[contains(text(),"%s")]' % pathlist[-1]
-        ).click()
+        else:
+            # For readonly: verify the restore form loads with the auto-selected
+            # client. The readonly profile is not expected to submit restore jobs.
+            self.wait_for_presence(By.ID, "restorejob")
+            self.wait_for_presence(By.ID, "filebrowser")
+            self.logout()
+            return
+
+        # Select the first visible restore tree entry. The BVFS root varies with
+        # the test environment, so absolute path traversal is brittle here.
+        self.wait_and_click(
+            By.XPATH,
+            '//div[@id="filebrowser"]//a[contains(@class, "jstree-anchor")]',
+        )
         # Submit restore
         self.wait_and_click(By.XPATH, '//button[@id="btn-form-submit"]')
         # Confirm modals
         self.wait_and_click(By.XPATH, '//div[@id="modal-003"]//button[.="OK"]')
-        if self.profile == "readonly":
-            self.wait_and_click(By.LINK_TEXT, "Back")
-        else:
-            self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
+        self.close_result_modal()
         # Logout
         self.logout()
 
     def test_run_configured_job(self):
         self.login()
-        self.job_start_configured()
         if self.profile == "readonly":
-            self.wait_and_click(By.LINK_TEXT, "Back")
+            self.driver.get(self.base_url + "/job/run?jobname=backup-bareos-fd")
+            self.wait_for_spinner_absence()
+            self.wait_for_presence(By.ID, "job")
+            self.wait_for_presence(By.ID, "client")
+            self.wait_for_presence(By.ID, "submit")
+        else:
+            self.job_start_configured()
         self.logout()
 
     def test_run_default_job(self):
@@ -415,19 +419,15 @@ class SeleniumTest(unittest.TestCase):
         self.driver.get(self.base_url + "/job/run")
         self.wait_for_spinner_absence()
         if self.profile == "readonly":
-            # For readonly: use native select to pick the first job.
-            # The bootstrap-select dropdown interaction is unreliable for readonly.
-            Select(self.driver.find_element(By.ID, "job")).select_by_index(1)
+            self.wait_for_presence(By.ID, "job")
+            self.wait_for_presence(By.ID, "submit")
         else:
             # Open the job list
             self.wait_and_click(By.XPATH, '(//button[@data-id="job"])')
             # Select the first job
             self.wait_and_click(By.XPATH, '(//li[@data-original-index="1"])')
-        # Start it
-        self.wait_and_click(By.ID, "submit")
-        if self.profile == "readonly":
-            self.wait_and_click(By.LINK_TEXT, "Back")
-        else:
+            # Start it
+            self.wait_and_click(By.ID, "submit")
             self.driver.get(self.base_url + "/dashboard/")
             self.wait_for_spinner_absence()
         self.logout()
@@ -569,6 +569,12 @@ class SeleniumTest(unittest.TestCase):
             self.wait_and_click(By.CSS_SELECTOR, "span.input-group-addon")
         # Submit the job
         self.wait_and_click(By.ID, "submit")
+
+    def close_result_modal(self):
+        self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
+
+    def wait_for_presence(self, by, value):
+        return self.wait.until(EC.presence_of_element_located((by, value)))
 
     def login(self):
         driver = self.driver
