@@ -34,6 +34,7 @@
 #include "filed/filed_globals.h"
 #include "filed/filed_jcr_impl.h"
 #include "filed/fileset.h"
+#include <cstdlib>
 #include "findlib/match.h"
 #include "lib/berrno.h"
 #include "lib/edit.h"
@@ -73,18 +74,17 @@ std::optional<std::string> job_code_callback_filed(JobControlRecord* jcr,
 bool InitFileset(JobControlRecord* jcr)
 {
   FindFilesPacket* ff;
-  findFILESET* fileset;
 
   if (!jcr->fd_impl->ff) { return false; }
   ff = jcr->fd_impl->ff;
   if (ff->fileset) { return false; }
-  fileset = (findFILESET*)malloc(sizeof(findFILESET));
-  *fileset = findFILESET{};
+  auto* fileset = new findFILESET{};
 
   ff->fileset = fileset;
   fileset->state = state_none;
   fileset->include_list.init(1, true);
   fileset->exclude_list.init(1, true);
+
   return true;
 }
 
@@ -151,7 +151,8 @@ void CleanupFileset(JobControlRecord* jcr)
       incexe->ignoredir.destroy();
     }
     fileset->exclude_list.destroy();
-    free(fileset);
+
+    delete fileset;
   }
   jcr->fd_impl->ff->fileset = nullptr;
 }
