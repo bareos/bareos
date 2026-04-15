@@ -492,20 +492,6 @@ std::string Unquote(std::string value)
   return defaults;
 }
 
-std::string ShellQuote(const std::string& value)
-{
-  std::string quoted = "'";
-  for (char ch : value) {
-    if (ch == '\'') {
-      quoted += "'\"'\"'";
-    } else {
-      quoted += ch;
-    }
-  }
-  quoted += "'";
-  return quoted;
-}
-
 std::string BuildDiskStorageSdConfig(const DiskStorageRequest& disk)
 {
   std::ostringstream conf;
