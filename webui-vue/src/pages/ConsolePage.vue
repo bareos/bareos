@@ -12,6 +12,7 @@
 
       <!-- terminal area — click to focus, then type -->
       <div
+        data-testid="console-output"
         class="console-output"
         :class="{ 'console-output-popup': isPopup }"
         ref="outputEl"

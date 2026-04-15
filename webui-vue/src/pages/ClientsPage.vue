@@ -56,14 +56,15 @@
               </template>
               <template #body-cell-actions="props">
                 <q-td :props="props" class="text-center">
-                  <q-btn flat round dense size="sm"
-                         :icon="props.row.enabled ? 'pause' : 'play_arrow'"
-                         :color="props.row.enabled ? 'warning' : 'positive'"
-                         :title="props.row.enabled ? 'Disable' : 'Enable'"
-                         :loading="toggling === props.row.name"
-                         @click="toggleEnabled(props.row)" />
-                  <q-btn flat round dense size="sm" icon="info" title="Status"
-                         @click="showStatus(props.row.name)" />
+                   <q-btn flat round dense size="sm"
+                          :icon="props.row.enabled ? 'pause' : 'play_arrow'"
+                          :color="props.row.enabled ? 'warning' : 'positive'"
+                          :title="props.row.enabled ? 'Disable' : 'Enable'"
+                          :loading="toggling === props.row.name"
+                          @click="toggleEnabled(props.row)" />
+                   <q-btn flat round dense size="sm" icon="info" title="Status"
+                          :data-testid="`client-status-${props.row.name}`"
+                          @click="showStatus(props.row.name)" />
                 </q-td>
               </template>
             </q-table>
@@ -87,7 +88,7 @@
         </q-card-section>
         <q-card-section class="q-pa-none">
           <q-inner-loading :showing="statusDialog.loading" />
-          <pre v-if="statusDialog.text" class="client-status-output">{{ statusDialog.text }}</pre>
+          <pre v-if="statusDialog.text" data-testid="client-status-output" class="client-status-output">{{ statusDialog.text }}</pre>
           <div v-else-if="!statusDialog.loading" class="text-grey q-pa-md text-center">No output</div>
         </q-card-section>
       </q-card>

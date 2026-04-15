@@ -20,6 +20,7 @@
         <!-- Navigation items -->
         <q-list dark>
           <q-item v-for="nav in navItems" :key="nav.to"
+                  :data-testid="nav.drawerTestId"
                   clickable v-ripple :to="nav.to" exact
                   active-class="bg-white text-primary"
                   @click="drawerOpen = false">
@@ -98,6 +99,7 @@
                 class="q-ml-md" indicator-color="white"
                 active-color="white" active-bg-color="rgba(255,255,255,0.15)">
           <q-route-tab v-for="nav in navItems" :key="nav.to"
+                       :data-testid="nav.testId"
                        :name="nav.label.toLowerCase()" :to="nav.to"
                        :label="nav.label" no-caps />
         </q-tabs>
@@ -155,7 +157,7 @@
     <q-footer class="bareos-statusbar row items-center no-wrap q-px-md q-gutter-x-sm">
       <!-- connection indicator -->
       <q-icon :name="dirStatusIcon" :color="dirStatusColor" size="13px" />
-      <span>{{ dirStatusLabel }}</span>
+      <span data-testid="director-status-label">{{ dirStatusLabel }}</span>
       <span v-if="director.errorMsg" class="text-negative q-ml-xs">— {{ director.errorMsg }}</span>
 
       <q-space />
@@ -204,15 +206,15 @@ function openConsole() {
 }
 
 const navItems = [
-  { label: 'Dashboard', to: '/dashboard', icon: 'dashboard'    },
-  { label: 'Jobs',      to: '/jobs',      icon: 'work'         },
-  { label: 'Restore',   to: '/restore',   icon: 'restore'      },
-  { label: 'Clients',   to: '/clients',   icon: 'devices'      },
-  { label: 'Schedules', to: '/schedules', icon: 'schedule'     },
-  { label: 'Storages',      to: '/storages',      icon: 'storage'      },
-  { label: 'Autochangers',  to: '/autochangers',  icon: 'swap_horiz'   },
-  { label: 'Director',      to: '/director',      icon: 'settings'     },
-  { label: 'Analytics', to: '/analytics', icon: 'bar_chart'    },
+  { label: 'Dashboard',    to: '/dashboard',    icon: 'dashboard',  testId: 'nav-dashboard',    drawerTestId: 'drawer-nav-dashboard'    },
+  { label: 'Jobs',         to: '/jobs',         icon: 'work',       testId: 'nav-jobs',         drawerTestId: 'drawer-nav-jobs'         },
+  { label: 'Restore',      to: '/restore',      icon: 'restore',    testId: 'nav-restore',      drawerTestId: 'drawer-nav-restore'      },
+  { label: 'Clients',      to: '/clients',      icon: 'devices',    testId: 'nav-clients',      drawerTestId: 'drawer-nav-clients'      },
+  { label: 'Schedules',    to: '/schedules',    icon: 'schedule',   testId: 'nav-schedules',    drawerTestId: 'drawer-nav-schedules'    },
+  { label: 'Storages',     to: '/storages',     icon: 'storage',    testId: 'nav-storages',     drawerTestId: 'drawer-nav-storages'     },
+  { label: 'Autochangers', to: '/autochangers', icon: 'swap_horiz', testId: 'nav-autochangers', drawerTestId: 'drawer-nav-autochangers' },
+  { label: 'Director',     to: '/director',     icon: 'settings',   testId: 'nav-director',     drawerTestId: 'drawer-nav-director'     },
+  { label: 'Analytics',    to: '/analytics',    icon: 'bar_chart',  testId: 'nav-analytics',    drawerTestId: 'drawer-nav-analytics'    },
 ]
 
 const settings = useSettingsStore()

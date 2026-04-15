@@ -1,0 +1,142 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+set -e
+set -o pipefail
+set -u
+
+TestName="$(basename "$(pwd)")"
+export TestName
+
+JobName=backup-bareos-fd
+
+. ./environment
+. "${BAREOS_SCRIPTS_DIR}/functions"
+
+proxy_port="${BAREOS_WEBUI_PROXY_PORT}"
+bundle_dir="${current_test_directory}/webui-vue-dist"
+proxy_log="${tmp}/webui-vue-proxy.out"
+frontend_log="${tmp}/webui-vue-frontend.out"
+playwright_log="${tmp}/webui-vue-playwright.out"
+
+function wait_for_http()
+{
+  local url="$1"
+  local attempt
+  for attempt in $(seq 1 100); do
+    if curl --silent --fail "$url" >/dev/null; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  return 1
+}
+
+function wait_for_tcp()
+{
+  local host="$1"
+  local port="$2"
+  local attempt
+  for attempt in $(seq 1 100); do
+    if (echo >/dev/tcp/"$host"/"$port") >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 0.2
+  done
+  return 1
+}
+
+${BAREOS_SCRIPTS_DIR}/cleanup
+${BAREOS_SCRIPTS_DIR}/setup
+
+setup_data
+
+start_test
+
+cat <<END_OF_DATA >"${tmp}/bconcmds"
+@$out ${NULL_DEV}
+messages
+@$out ${tmp}/log1.out
+run job=$JobName yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+run_bconsole
+
+pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
+if ! [ -x node_modules/.bin/playwright ] || ! [ -x node_modules/.bin/vitest ]; then
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 "${NPM_EXECUTABLE}" ci >"${tmp}/webui-vue-npm-ci.out" 2>&1
+fi
+
+VITE_DIRECTOR_WS_URL="ws://127.0.0.1:${proxy_port}" \
+VITE_DIRECTOR_HOST="127.0.0.1" \
+VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
+  "${NPM_EXECUTABLE}" exec vite build -- --outDir "${bundle_dir}" \
+  >"${tmp}/webui-vue-build.out" 2>&1
+popd >/dev/null
+
+"${BAREOS_WEBUI_PROXY_BINARY}" \
+  --ws-host 127.0.0.1 \
+  --ws-port "${proxy_port}" \
+  --director-host 127.0.0.1 \
+  --director-port "${BAREOS_DIRECTOR_PORT}" \
+  --director-name bareos-dir \
+  >"${proxy_log}" 2>&1 &
+PROXY_PID=$!
+
+"${NODE_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/webui-vue/scripts/serve-spa.mjs" \
+  --host 127.0.0.1 \
+  --port "${BAREOS_WEBUI_PORT}" \
+  --root "${bundle_dir}" \
+  >"${frontend_log}" 2>&1 &
+FRONTEND_PID=$!
+
+if ! wait_for_tcp 127.0.0.1 "${proxy_port}"; then
+  set_error "bareos-webui-proxy did not start:\n$(cat "${proxy_log}")"
+fi
+
+if ! wait_for_http "${BAREOS_WEBUI_BASE_URL}"; then
+  set_error "webui-vue frontend did not start:\n$(cat "${frontend_log}")"
+fi
+
+pushd "${CMAKE_SOURCE_DIR}/webui-vue" >/dev/null
+if ! PLAYWRIGHT_BASE_URL="${BAREOS_WEBUI_BASE_URL}" \
+  PLAYWRIGHT_ARTIFACTS_DIR="${tmp}/playwright-artifacts" \
+  BAREOS_WEBUI_USERNAME="${BAREOS_WEBUI_USERNAME}" \
+  BAREOS_WEBUI_PASSWORD="${BAREOS_WEBUI_PASSWORD}" \
+  GOOGLE_CHROME_EXECUTABLE="${GOOGLE_CHROME_EXECUTABLE}" \
+  "${NPM_EXECUTABLE}" run test:e2e -- --reporter=line \
+  >"${playwright_log}" 2>&1; then
+  set_error "$(cat "${playwright_log}")"
+fi
+popd >/dev/null
+
+kill "${FRONTEND_PID}"
+wait "${FRONTEND_PID}" || true
+kill "${PROXY_PID}"
+wait "${PROXY_PID}" || true
+
+stop_bareos
+
+end_test

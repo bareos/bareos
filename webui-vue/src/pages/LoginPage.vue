@@ -12,9 +12,10 @@
           <div class="text-h6">Sign In</div>
         </q-card-section>
         <q-card-section>
-          <q-form @submit.prevent="doLogin">
+          <q-form data-testid="login-form" @submit.prevent="doLogin">
             <q-input
               v-model="host"
+              data-testid="login-host"
               label="Director Host"
               outlined dense
               class="q-mb-sm"
@@ -24,6 +25,7 @@
               <template #append>
                 <q-input
                   v-model.number="port"
+                  data-testid="login-port"
                   dense borderless
                   style="width:60px"
                   type="number"
@@ -33,6 +35,7 @@
             </q-input>
             <q-select
               v-model="directorRef"
+              data-testid="login-director"
               :options="directors"
               label="Director Name"
               outlined dense
@@ -44,6 +47,7 @@
             />
             <q-input
               v-model="username"
+              data-testid="login-username"
               label="Username"
               outlined dense
               class="q-mb-sm"
@@ -51,6 +55,7 @@
             />
             <q-input
               v-model="password"
+              data-testid="login-password"
               label="Password"
               type="password"
               outlined dense
@@ -58,12 +63,13 @@
               autocomplete="current-password"
             />
 
-            <q-banner v-if="errorMsg" dense class="bg-negative text-white q-mb-md rounded-borders">
+            <q-banner v-if="errorMsg" data-testid="login-error" dense class="bg-negative text-white q-mb-md rounded-borders">
               <template #avatar><q-icon name="error" /></template>
               {{ errorMsg }}
             </q-banner>
 
             <q-btn
+              data-testid="login-submit"
               type="submit"
               label="Login"
               color="primary"

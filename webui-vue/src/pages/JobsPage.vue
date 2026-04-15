@@ -2,8 +2,8 @@
   <q-page class="q-pa-md">
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
       <q-tab name="list"     label="Show"     no-caps />
-      <q-tab name="actions"  label="Actions"  no-caps />
-      <q-tab name="run"      label="Run"      no-caps />
+      <q-tab name="actions"  label="Actions"  no-caps data-testid="jobs-tab-actions" />
+      <q-tab name="run"      label="Run"      no-caps data-testid="jobs-tab-run" />
       <q-tab name="rerun"    label="Rerun"    no-caps />
       <q-tab name="timeline" label="Timeline" no-caps />
     </q-tabs>
@@ -195,9 +195,10 @@
                          label="Disable" class="q-mr-xs"
                          :disable="!props.row.enabled"
                          @click="disableJob(props.row.name)" />
-                  <q-btn flat dense no-caps size="sm" icon="send" color="primary"
-                         label="Run"
-                         @click="runThisJob(props.row.name)" />
+                   <q-btn flat dense no-caps size="sm" icon="send" color="primary"
+                          :data-testid="`jobdef-run-${props.row.name}`"
+                          label="Run"
+                          @click="runThisJob(props.row.name)" />
                 </q-td>
               </template>
             </q-table>
@@ -211,8 +212,8 @@
           <q-card-section class="panel-header">Run Job</q-card-section>
           <q-card-section>
             <q-form @submit.prevent="runJob" class="q-gutter-md">
-              <q-select v-model="runForm.job"     :options="dotJobs"     label="Job *"     outlined dense
-                        @update:model-value="onJobSelected" />
+               <q-select v-model="runForm.job"     data-testid="run-job-field" :options="dotJobs"     label="Job *"     outlined dense
+                         @update:model-value="onJobSelected" />
               <q-select v-model="runForm.client"  :options="dotClients"  label="Client"    outlined dense clearable />
               <q-select v-model="runForm.fileset" :options="dotFilesets" label="Fileset"   outlined dense clearable />
               <q-select v-model="runForm.pool"    :options="dotPools"    label="Pool"      outlined dense clearable />
@@ -222,8 +223,8 @@
                         placeholder="YYYY-MM-DD HH:MM:SS" />
               <q-input  v-model.number="runForm.priority" type="number" label="Priority" outlined dense style="max-width:140px" />
               <div>
-                <q-btn type="submit" color="primary" label="Run Job" icon="play_arrow"
-                       no-caps :loading="runLoading" :disable="!runForm.job" />
+                 <q-btn data-testid="run-job-submit" type="submit" color="primary" label="Run Job" icon="play_arrow"
+                        no-caps :loading="runLoading" :disable="!runForm.job" />
               </div>
             </q-form>
           </q-card-section>
