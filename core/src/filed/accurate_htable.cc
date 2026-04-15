@@ -41,9 +41,7 @@ BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(
     JobControlRecord* jcr,
     uint32_t number_of_files)
     : BareosAccurateFilelist(jcr, number_of_files)
-{
-  file_list_ = new FileList(number_of_files);
-}
+{ file_list_ = new FileList(number_of_files); }
 
 bool BareosAccurateFilelistHtable::AddFile(char* fname,
                                            int fname_length,
@@ -126,39 +124,7 @@ accurate_payload* BareosAccurateFilelistHtable::lookup_payload(char* fname)
 }
 
 bool BareosAccurateFilelistHtable::UpdatePayload(char*, accurate_payload*)
-{
-  return true;
-}
-
-bool BareosAccurateFilelistHtable::SendBaseFileList()
-{
-  CurFile* elt;
-  FindFilesPacket* ff_pkt;
-  int32_t LinkFIc;
-  struct stat statp;
-  int stream = STREAM_UNIX_ATTRIBUTES;
-
-  if (!jcr_->accurate || jcr_->getJobLevel() != L_FULL) { return true; }
-
-  if (file_list_ == NULL) { return true; }
-
-  ff_pkt = init_find_files();
-  ff_pkt->type = FT_BASE;
-
-  foreach_htable (elt, file_list_) {
-    if (seen_bitmap_.at(elt->payload.filenr)) {
-      Dmsg1(debuglevel, "base file fname=%s\n", elt->fname);
-      DecodeStat(elt->payload.lstat, &statp, sizeof(statp),
-                 &LinkFIc); /* decode catalog stat */
-      ff_pkt->fname = elt->fname;
-      ff_pkt->statp = statp;
-      EncodeAndSendAttributes(jcr_, ff_pkt, stream);
-    }
-  }
-
-  TermFindFiles(ff_pkt);
-  return true;
-}
+{ return true; }
 
 bool BareosAccurateFilelistHtable::SendDeletedList()
 {
