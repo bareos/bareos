@@ -1,15 +1,36 @@
 -- update db schema from 2250 to 2260
 -- start transaction
-begin;
+BEGIN;
 
-alter table Path set (autovacuum_vacuum_scale_factor = 0.02);
-alter table File set (autovacuum_vacuum_scale_factor = 0.02);
+DO $$
+DECLARE
+  remaining_rows bigint;
+BEGIN
+  IF to_regclass('basefiles') IS NULL THEN
+    RETURN;
+  END IF;
 
-create index job_starttime_idx on job (StartTime);
+  SELECT count(*) INTO remaining_rows FROM basefiles;
 
--- update the schema version
-update Version set VersionId = 2260;
+  IF remaining_rows != 0 THEN
+    RAISE EXCEPTION
+      'Refusing to drop non-empty basefiles table during 2250 to 2260 migration (% rows remain). See the "Updating the database scheme" chapter in the Bareos documentation for guidance.',
+      remaining_rows;
+  END IF;
+END
+$$ LANGUAGE 'plpgsql';
 
-commit;
-set client_min_messages = warning;
-analyze;
+ALTER TABLE Path SET (autovacuum_vacuum_scale_factor = 0.02);
+ALTER TABLE File SET (autovacuum_vacuum_scale_factor = 0.02);
+
+CREATE INDEX job_starttime_idx ON job (StartTime);
+
+DROP TABLE IF EXISTS basefiles;
+ALTER TABLE Job DROP COLUMN IF EXISTS HasBase;
+ALTER TABLE JobHisto DROP COLUMN IF EXISTS HasBase;
+
+UPDATE Version SET VersionId = 2260;
+
+COMMIT;
+SET client_min_messages = warning;
+ANALYZE;
