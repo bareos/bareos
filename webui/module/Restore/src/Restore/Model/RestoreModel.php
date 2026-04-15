@@ -47,8 +47,7 @@ class RestoreModel
             $iteration = 0;
             while (true) {
                 if (++$iteration > $max_iterations) {
-                    error_log('getDirectories: max iteration limit reached');
-                    break;
+                    throw new \RuntimeException('getDirectories: max iteration limit reached');
                 }
                 if ($pathid == null || $pathid == "#") {
                     $cmd_1 = '.bvfs_lsdirs jobid=' . $jobid . ' path= limit=' . $limit . ' offset=' . $offset;
@@ -119,8 +118,7 @@ class RestoreModel
             $iteration = 0;
             while (true) {
                 if (++$iteration > $max_iterations) {
-                    error_log('getFiles: max iteration limit reached');
-                    break;
+                    throw new \RuntimeException('getFiles: max iteration limit reached');
                 }
                 if ($pathid == null || $pathid == "#") {
                     $cmd_1 = '.bvfs_lsfiles jobid=' . $jobid . ' path= limit=' . $limit . ' offset=' . $offset;
