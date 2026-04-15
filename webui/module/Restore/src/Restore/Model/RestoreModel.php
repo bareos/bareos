@@ -164,7 +164,23 @@ class RestoreModel
         if (isset($bsock)) {
             $cmd = '.bvfs_versions jobid=0 client=' . $clientname . ' pathid=' . $pathid . ' fname="' . addslashes($filename) . '"';
             $result = $bsock->send_command($cmd, 2);
-            $versions = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
+            try {
+                $versions = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
+            } catch (\Throwable $e) {
+                error_log('getFileVersions: failed to decode response');
+                return null;
+            }
+
+            if (
+                !is_array($versions)
+                || !isset($versions['result'])
+                || !array_key_exists('versions', $versions['result'])
+                || !is_array($versions['result']['versions'])
+            ) {
+                error_log('getFileVersions: missing result versions');
+                return null;
+            }
+
             return $versions['result']['versions'];
         } else {
             throw new \Exception('Missing argument.');
@@ -287,20 +303,22 @@ class RestoreModel
 
     public function isNDMPBackupClient(&$bsock = null, $client = null): ?bool
     {
-        if (isset($bsock)) {
-            if ($client != null) {
-                $cmd = 'show client=' . $client;
-                $result = $bsock->send_command($cmd, 0);
-                $keywords = array('NDMPv2', 'NDMPv3', 'NDMPv4');
-                foreach ($keywords as $keyword) {
-                    if (stripos($result, $keyword) !== false) {
-                        return true;
-                    }
-                }
-                return false;
-            } else {
-                throw new \Exception('Missing argument');
-            }
+        if (!isset($bsock)) {
+            throw new \Exception('Missing argument');
         }
+
+        if ($client != null) {
+            $cmd = 'show client=' . $client;
+            $result = $bsock->send_command($cmd, 0);
+            $keywords = array('NDMPv2', 'NDMPv3', 'NDMPv4');
+            foreach ($keywords as $keyword) {
+                if (stripos($result, $keyword) !== false) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        throw new \Exception('Missing argument');
     }
 }

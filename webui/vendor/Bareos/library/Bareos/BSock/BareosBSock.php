@@ -284,13 +284,20 @@ class BareosBSock implements BareosBSockInterface
         $iteration = 0;
         while (true) {
             if (++$iteration > $max_iterations) {
-                error_log('receive_message: max iteration limit reached');
-                break;
+                throw new \RuntimeException('receive_message: max iteration limit reached');
             }
             $buffer = stream_get_contents($this->socket, 4);
 
             if ($buffer === false) {
                 throw new \Exception("Error reading socket. " . socket_strerror(socket_last_error()) . "\n");
+            }
+
+            $metadata = stream_get_meta_data($this->socket);
+            if ($metadata['timed_out']) {
+                throw new \RuntimeException('Error reading socket: read timed out.');
+            }
+            if (strlen($buffer) !== 4) {
+                throw new \RuntimeException('Error reading socket header.');
             }
 
             $len = self::ntohl($buffer);
@@ -299,7 +306,20 @@ class BareosBSock implements BareosBSockInterface
                 break;
             }
             if ($len > 0) {
-                $msg .= stream_get_contents($this->socket, $len);
+                $payload = stream_get_contents($this->socket, $len);
+                if ($payload === false) {
+                    throw new \Exception("Error reading socket. " . socket_strerror(socket_last_error()) . "\n");
+                }
+
+                $metadata = stream_get_meta_data($this->socket);
+                if ($metadata['timed_out']) {
+                    throw new \RuntimeException('Error reading socket: read timed out.');
+                }
+                if (strlen($payload) !== $len) {
+                    throw new \RuntimeException('Error reading socket payload.');
+                }
+
+                $msg .= $payload;
             } elseif ($len < 0) {
                 // signal received
                 switch ($len) {
@@ -487,6 +507,7 @@ class BareosBSock implements BareosBSockInterface
             if (!$this->socket) {
                 throw new \Exception("Error: " . $errstr . ", director seems to be down or blocking our request.");
             }
+            stream_set_timeout($this->socket, 60);
             // socket_set_nonblock($this->socket);
         } catch(\Exception $e) {
             error_log($e->getMessage());

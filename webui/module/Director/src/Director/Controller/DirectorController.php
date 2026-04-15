@@ -77,19 +77,22 @@ class DirectorController extends AbstractActionController
             );
         }
 
+        $result = null;
+        $error = null;
+
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
             $result = $this->getDirectorModel()->getDirectorStatus($this->bsock);
-            $this->bsock->disconnect();
         } catch (Exception $e) {
-            if ($this->bsock) {
-                $this->bsock->disconnect();
-            }
             error_log($e->getMessage());
+            $error = $e->getMessage();
+        } finally {
+            $this->cleanupSocket();
         }
 
         return new ViewModel(array(
-            'directorOutput' => $result
+            'directorOutput' => $result,
+            'error' => $error,
         ));
     }
 
@@ -126,19 +129,22 @@ class DirectorController extends AbstractActionController
             );
         }
 
+        $result = null;
+        $error = null;
+
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 0, "");
-            $this->bsock->disconnect();
+            $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 0, "detail");
         } catch (Exception $e) {
-            if ($this->bsock) {
-                $this->bsock->disconnect();
-            }
             error_log($e->getMessage());
+            $error = $e->getMessage();
+        } finally {
+            $this->cleanupSocket();
         }
 
         return new ViewModel(array(
-            'directorOutput' => $result
+            'directorOutput' => $result,
+            'error' => $error,
         ));
     }
 
@@ -183,23 +189,34 @@ class DirectorController extends AbstractActionController
         }
 
         $result = null;
+        $error = null;
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
             $result = $this->getDirectorModel()->getBackupUnitReport($this->bsock, 2, $reportOptions);
-            $this->bsock->disconnect();
         } catch (Exception $e) {
-            if ($this->bsock) {
-                $this->bsock->disconnect();
-            }
             error_log($e->getMessage());
+            $error = $e->getMessage();
+        } finally {
+            $this->cleanupSocket();
         }
 
         $response = $this->getResponse();
         $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
         $response->getHeaders()->addHeaderLine('Content-Disposition', 'attachment; filename="bareos-backup-unit-report.json"');
 
-        if (isset($result)) {
+        if ($error !== null) {
+            $response->setStatusCode(500);
+            $response->setContent(
+                json_encode(
+                    array(
+                        'status' => 'error',
+                        'message' => $error,
+                    ),
+                    JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT
+                )
+            );
+        } elseif (isset($result)) {
             $json_backupunitreport = json_encode($result, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
             $response->setContent($json_backupunitreport);
         }
@@ -260,5 +277,20 @@ class DirectorController extends AbstractActionController
             $this->directorModel = $sm->get('Director\Model\DirectorModel');
         }
         return $this->directorModel;
+    }
+
+    private function cleanupSocket(): void
+    {
+        if (!$this->bsock) {
+            return;
+        }
+
+        try {
+            $this->bsock->disconnect();
+        } catch (Exception $e) {
+            error_log($e->getMessage());
+        }
+
+        $this->bsock = null;
     }
 }
