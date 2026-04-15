@@ -36,6 +36,18 @@ bundle_dir="${current_test_directory}/webui-vue-dist"
 proxy_log="${tmp}/webui-vue-proxy.out"
 frontend_log="${tmp}/webui-vue-frontend.out"
 playwright_log="${tmp}/webui-vue-playwright.out"
+source_snapshot_file="${tmp}/webui-vue-source-before.sha256"
+source_snapshot_after_file="${tmp}/webui-vue-source-after.sha256"
+
+function snapshot_webui_vue_sources()
+{
+  local output_file="$1"
+  (
+    cd "${CMAKE_SOURCE_DIR}"
+    find webui-vue/dist -type f -print0 | sort -z | xargs -0 sha256sum
+    sha256sum webui-vue/src/generated/bareos-version.js
+  ) >"${output_file}"
+}
 
 function wait_for_http()
 {
@@ -70,6 +82,7 @@ ${BAREOS_SCRIPTS_DIR}/setup
 setup_data
 
 start_test
+snapshot_webui_vue_sources "${source_snapshot_file}"
 
 cat <<END_OF_DATA >"${tmp}/bconcmds"
 @$out ${NULL_DEV}
@@ -131,6 +144,11 @@ if ! PLAYWRIGHT_BASE_URL="${BAREOS_WEBUI_BASE_URL}" \
   set_error "$(cat "${playwright_log}")"
 fi
 popd >/dev/null
+
+snapshot_webui_vue_sources "${source_snapshot_after_file}"
+if ! cmp -s "${source_snapshot_file}" "${source_snapshot_after_file}"; then
+  set_error "webui-vue tests modified committed source artifacts under webui-vue/dist or src/generated/bareos-version.js"
+fi
 
 kill "${FRONTEND_PID}"
 wait "${FRONTEND_PID}" || true
