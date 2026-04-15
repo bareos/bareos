@@ -43,12 +43,7 @@ class RestoreModel
             $offset = 0;
             $retval = array();
 
-            $max_iterations = 100;
-            $iteration = 0;
             while (true) {
-                if (++$iteration > $max_iterations) {
-                    throw new \RuntimeException('getDirectories: max iteration limit reached');
-                }
                 if ($pathid == null || $pathid == "#") {
                     $cmd_1 = '.bvfs_lsdirs jobid=' . $jobid . ' path= limit=' . $limit . ' offset=' . $offset;
                 } else {
@@ -114,12 +109,7 @@ class RestoreModel
             $offset = 0;
             $retval = array();
 
-            $max_iterations = 100;
-            $iteration = 0;
             while (true) {
-                if (++$iteration > $max_iterations) {
-                    throw new \RuntimeException('getFiles: max iteration limit reached');
-                }
                 if ($pathid == null || $pathid == "#") {
                     $cmd_1 = '.bvfs_lsfiles jobid=' . $jobid . ' path= limit=' . $limit . ' offset=' . $offset;
                 } else {
