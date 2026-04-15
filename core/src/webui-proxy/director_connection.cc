@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <cstring>
 #include <ctime>
 #include <random>
@@ -62,6 +63,7 @@ static void WriteAll(int fd, const void* buf, size_t len)
   const auto* p = static_cast<const uint8_t*>(buf);
   while (len > 0) {
     ssize_t n = ::send(fd, p, len, MSG_NOSIGNAL);
+    if (n < 0 && errno == EINTR) { continue; }
     if (n <= 0) { throw std::runtime_error("Director: send failed"); }
     p += n;
     len -= static_cast<size_t>(n);
@@ -73,6 +75,7 @@ static void ReadAll(int fd, void* buf, size_t len)
   auto* p = static_cast<uint8_t*>(buf);
   while (len > 0) {
     ssize_t n = ::recv(fd, p, len, MSG_WAITALL);
+    if (n < 0 && errno == EINTR) { continue; }
     if (n <= 0) {
       throw std::runtime_error("Director: connection closed by peer");
     }
