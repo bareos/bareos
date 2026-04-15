@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 - Add documentation for the barri image file format [PR #2608]
 
+### Changed
+- matrix.yml: add Fedora 44 [PR #2617]
+
 ## [25.0.3] - 2026-04-01
 
 ### Changed
@@ -2262,4 +2265,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2604]: https://github.com/bareos/bareos/pull/2604
 [PR #2606]: https://github.com/bareos/bareos/pull/2606
 [PR #2608]: https://github.com/bareos/bareos/pull/2608
+[PR #2617]: https://github.com/bareos/bareos/pull/2617
 [unreleased]: https://github.com/bareos/bareos/tree/master
