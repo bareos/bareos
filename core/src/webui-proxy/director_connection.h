@@ -95,7 +95,8 @@ class DirectorConnection {
   // Bareos frame I/O
   void SendFrame(const std::string& data);
   // Receive one frame; returns empty on signal frames (len <= 0).
-  std::string RecvFrame();
+  // When signal is non-null, it receives the raw negative frame code.
+  std::string RecvFrame(int32_t* signal = nullptr);
   // Receive a complete response (accumulate frames until BNET_EOD).
   std::string RecvResponse();
 

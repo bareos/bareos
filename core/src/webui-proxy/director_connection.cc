@@ -130,15 +130,18 @@ void DirectorConnection::SendFrame(const std::string& data)
   if (!data.empty()) { WriteAll(fd_, data.data(), data.size()); }
 }
 
-std::string DirectorConnection::RecvFrame()
+std::string DirectorConnection::RecvFrame(int32_t* signal)
 {
   int32_t hdr_net;
   ReadAll(fd_, &hdr_net, 4);
   int32_t len = ntohl(hdr_net);
 
   if (len <= 0) {
+    if (signal) { *signal = len; }
     return {};  // signal frame (BNET_EOD, BNET_ERROR, etc.) — no payload
   }
+
+  if (signal) { *signal = 0; }
 
   std::string msg(static_cast<size_t>(len), '\0');
   ReadAll(fd_, msg.data(), static_cast<size_t>(len));
@@ -268,8 +271,17 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   if (cfg.json_mode) {
     auto RecvDataFrame = [this]() {
       while (true) {
-        std::string f = RecvFrame();
+        int32_t signal = 0;
+        std::string f = RecvFrame(&signal);
         if (!f.empty()) { return f; }
+        if (signal == kBnetError) {
+          throw std::runtime_error("Director: received BNET_ERROR signal");
+        }
+        if (signal == kBnetMainPrompt || signal == kBnetSubPrompt
+            || signal == kBnetSelectInput || signal == kBnetEod
+            || signal == kBnetEods || signal == kBnetEof) {
+          return f;
+        }
       }
     };
     SendFrame(".api json\n");
@@ -349,6 +361,27 @@ CallResult DirectorConnection::Call(const std::string& command)
     int32_t len = ntohl(hdr_net);
 
     if (len < 0) {
+      if (len == kBnetError) {
+        throw std::runtime_error("Director: received BNET_ERROR signal");
+      }
+      if (result.text.empty()) {
+        if (len == kBnetMainPrompt) {
+          result.prompt = DirectorPrompt::Main;
+          break;
+        }
+        if (len == kBnetSubPrompt) {
+          result.prompt = DirectorPrompt::Sub;
+          break;
+        }
+        if (len == kBnetSelectInput) {
+          result.prompt = DirectorPrompt::Select;
+          break;
+        }
+        if (len == kBnetEod || len == kBnetEods || len == kBnetEof) {
+          result.prompt = DirectorPrompt::Other;
+          break;
+        }
+      }
       if (!result.text.empty()) {
         // Signal after data: determine prompt type and stop.
         if (len == kBnetMainPrompt) {
