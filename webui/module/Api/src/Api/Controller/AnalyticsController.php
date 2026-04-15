@@ -67,11 +67,14 @@ class AnalyticsController extends AbstractRestfulController
                 $response = $this->getResponse();
                 $response->getHeaders()->addHeaderLine('Content-Type', 'application/json');
                 $response->setContent(JSON::encode($this->result));
+                $this->bsock->disconnect();
                 return $response;
             }
         } catch (Exception $e) {
             $this->getResponse()->setStatusCode(500);
             error_log($e->getMessage());
+        } finally {
+            $this->bsock->disconnect();
         }
 
         return new JsonModel($this->result);
