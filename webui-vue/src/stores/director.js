@@ -92,7 +92,12 @@ export const useDirectorStore = defineStore('director', () => {
    * @param {number} [credentials.port]    director port (default: 9101)
    */
   function connect(credentials) {
-    if (ws.value && ws.value.readyState === WebSocket.OPEN) return
+    if (ws.value
+        && (ws.value.readyState === WebSocket.OPEN
+          || ws.value.readyState === WebSocket.CONNECTING
+          || status.value === 'authenticating')) {
+      return
+    }
 
     status.value = 'connecting'
     errorMsg.value = null
