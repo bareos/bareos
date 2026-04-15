@@ -280,8 +280,7 @@ onUnmounted(stopPolling)
 function confirmRerun() {
   $q.dialog({
     title: 'Rerun Job',
-    message: `Rerun job <b>${job.value.name}</b> (ID&nbsp;${job.value.id})?`,
-    html: true,
+    message: `Rerun job ${job.value.name} (ID ${job.value.id})?`,
     ok:     { label: 'Rerun', color: 'primary', flat: true },
     cancel: { label: 'Cancel', flat: true },
   }).onOk(doRerun)
@@ -304,8 +303,7 @@ async function doRerun() {
 function confirmCancel() {
   $q.dialog({
     title: 'Cancel Job',
-    message: `Cancel job <b>${job.value.name}</b> (ID&nbsp;${job.value.id})?`,
-    html: true,
+    message: `Cancel job ${job.value.name} (ID ${job.value.id})?`,
     ok:     { label: 'Cancel Job', color: 'negative', flat: true },
     cancel: { label: 'Keep Running', flat: true },
   }).onOk(doCancel)
