@@ -350,6 +350,10 @@ const statusFilter = ref(route.query.status || '')
 const fmtBytes  = formatBytes
 const fmtSpeed  = formatSpeed
 
+function quoteDirectorString(value) {
+  return `"${String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
 // ── paginated job list ────────────────────────────────────────────────────────
 const jobs       = ref([])
 const totalJobs  = ref(0)
@@ -581,7 +585,7 @@ function cancelAll() {
 // ── enable / disable ──────────────────────────────────────────────────────────
 async function enableJob(name) {
   try {
-    await director.call(`enable job="${name}" yes`)
+    await director.call(`enable job=${quoteDirectorString(name)} yes`)
     $q.notify({ type: 'positive', message: `Job "${name}" enabled.` })
     const j = jobDefs.value.find(d => d.name === name)
     if (j) j.enabled = true
@@ -592,7 +596,7 @@ async function enableJob(name) {
 
 async function disableJob(name) {
   try {
-    await director.call(`disable job="${name}" yes`)
+    await director.call(`disable job=${quoteDirectorString(name)} yes`)
     $q.notify({ type: 'positive', message: `Job "${name}" disabled.` })
     const j = jobDefs.value.find(d => d.name === name)
     if (j) j.enabled = false
@@ -643,7 +647,7 @@ async function loadRunOptions() {
 async function onJobSelected(name) {
   if (!name) return
   try {
-    const res = await director.call(`.defaults job="${name}"`)
+    const res = await director.call(`.defaults job=${quoteDirectorString(name)}`)
     const d   = res?.defaults ?? res ?? {}
     if (d.client)   runForm.value.client   = d.client
     if (d.fileset)  runForm.value.fileset  = d.fileset
@@ -657,13 +661,13 @@ async function onJobSelected(name) {
 async function runJob() {
   const f = runForm.value
   if (!f.job) return
-  let cmd = `run job="${f.job}"`
-  if (f.client)   cmd += ` client="${f.client}"`
-  if (f.fileset)  cmd += ` fileset="${f.fileset}"`
-  if (f.pool)     cmd += ` pool="${f.pool}"`
-  if (f.storage)  cmd += ` storage="${f.storage}"`
-  if (f.level)    cmd += ` level=${f.level}`
-  if (f.when)     cmd += ` when="${f.when}"`
+  let cmd = `run job=${quoteDirectorString(f.job)}`
+  if (f.client)   cmd += ` client=${quoteDirectorString(f.client)}`
+  if (f.fileset)  cmd += ` fileset=${quoteDirectorString(f.fileset)}`
+  if (f.pool)     cmd += ` pool=${quoteDirectorString(f.pool)}`
+  if (f.storage)  cmd += ` storage=${quoteDirectorString(f.storage)}`
+  if (f.level)    cmd += ` level=${quoteDirectorString(f.level)}`
+  if (f.when)     cmd += ` when=${quoteDirectorString(f.when)}`
   if (f.priority) cmd += ` priority=${f.priority}`
   cmd += ' yes'
 
