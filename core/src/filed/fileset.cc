@@ -88,6 +88,75 @@ bool InitFileset(JobControlRecord* jcr)
   return true;
 }
 
+void CleanupFileset(JobControlRecord* jcr)
+{
+  findFILESET* fileset;
+  findIncludeExcludeItem* incexe;
+  findFOPTS* fo;
+
+  fileset = jcr->fd_impl->ff->fileset;
+  if (fileset) {
+    // Delete FileSet Include lists
+    for (int i = 0; i < fileset->include_list.size(); i++) {
+      incexe = (findIncludeExcludeItem*)fileset->include_list.get(i);
+      for (int j = 0; j < incexe->opts_list.size(); j++) {
+        fo = (findFOPTS*)incexe->opts_list.get(j);
+        if (fo->plugin) { free(fo->plugin); }
+        for (int k = 0; k < fo->regex.size(); k++) {
+          regfree((regex_t*)fo->regex.get(k));
+        }
+        for (int k = 0; k < fo->regexdir.size(); k++) {
+          regfree((regex_t*)fo->regexdir.get(k));
+        }
+        for (int k = 0; k < fo->regexfile.size(); k++) {
+          regfree((regex_t*)fo->regexfile.get(k));
+        }
+        if (fo->size_match) { free(fo->size_match); }
+        fo->regex.destroy();
+        fo->regexdir.destroy();
+        fo->regexfile.destroy();
+        fo->wild.destroy();
+        fo->wilddir.destroy();
+        fo->wildfile.destroy();
+        fo->wildbase.destroy();
+        fo->fstype.destroy();
+        fo->Drivetype.destroy();
+      }
+      incexe->opts_list.destroy();
+      incexe->name_list.destroy();
+      incexe->plugin_list.destroy();
+      incexe->ignoredir.destroy();
+    }
+    fileset->include_list.destroy();
+
+    // Delete FileSet Exclude lists
+    for (int i = 0; i < fileset->exclude_list.size(); i++) {
+      incexe = (findIncludeExcludeItem*)fileset->exclude_list.get(i);
+      for (int j = 0; j < incexe->opts_list.size(); j++) {
+        fo = (findFOPTS*)incexe->opts_list.get(j);
+        if (fo->size_match) { free(fo->size_match); }
+        fo->regex.destroy();
+        fo->regexdir.destroy();
+        fo->regexfile.destroy();
+        fo->wild.destroy();
+        fo->wilddir.destroy();
+        fo->wildfile.destroy();
+        fo->wildbase.destroy();
+        fo->fstype.destroy();
+        fo->Drivetype.destroy();
+      }
+      incexe->opts_list.destroy();
+      incexe->name_list.destroy();
+      incexe->plugin_list.destroy();
+      incexe->ignoredir.destroy();
+    }
+    fileset->exclude_list.destroy();
+    free(fileset);
+  }
+  jcr->fd_impl->ff->fileset = nullptr;
+}
+
+
 static void append_file(JobControlRecord* jcr,
                         findIncludeExcludeItem* incexe,
                         const char* buf,
