@@ -623,18 +623,10 @@ std::string BuildTapeStorageDirConfig(const TapeStorageRequest& tape,
       return false;
     }
 
-    std::set<std::string> seen_drives;
     for (const auto& assignment : tape.assignments) {
       if (assignment.changer_path.empty() || assignment.drive_paths.empty()) {
         error = "Each tape changer needs at least one assigned drive.";
         return false;
-      }
-
-      for (const auto& drive_path : assignment.drive_paths) {
-        if (!seen_drives.insert(drive_path).second) {
-          error = "A tape drive can only be assigned to one changer.";
-          return false;
-        }
       }
     }
   }
