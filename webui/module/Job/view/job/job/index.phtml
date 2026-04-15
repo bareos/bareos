@@ -220,7 +220,7 @@ $this->headTitle($title);
 <script>
 
    var basePath = "<?php echo $this->basePath(); ?>";
-   var result = '<?php echo $this->escapeJs(str_replace(array("\n","\r"), "", $this->result)); ?>';
+   var result = '<?php echo $this->escapeJs(str_replace(array("\n","\r"), "", $this->escapeHtml($this->result))); ?>';
    var displayRange = <?php echo $this->period; ?>;
 
    var rsLabel1 = "1 " + iJS._("day");
