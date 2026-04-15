@@ -298,7 +298,17 @@ function applyAssignments(suggestedAssignments) {
 }
 
 function availableDriveOptions(changerPath) {
-  return store.tapeDrives
+  const changer = store.tapeChangers.find((entry) => entry.path === changerPath)
+  const allowedIdentifiers = new Set(
+    (changer?.drive_identifiers ?? []).flatMap((drive) => drive.identifiers ?? [])
+  )
+  const matchingDrives = allowedIdentifiers.size === 0
+    ? store.tapeDrives
+    : store.tapeDrives.filter((drive) =>
+      (drive.device_identifiers ?? []).some((identifier) => allowedIdentifiers.has(identifier))
+    )
+
+  return (matchingDrives.length > 0 ? matchingDrives : store.tapeDrives)
     .map((drive) => ({
       label: driveLabel(drive),
       value: drive.path,

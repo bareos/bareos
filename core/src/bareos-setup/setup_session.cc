@@ -895,16 +895,23 @@ json_t* BuildStorageInventoryJson()
     for (const auto& alias : drive.aliases) {
       json_array_append_new(aliases, json_string(alias.c_str()));
     }
+    json_t* device_identifiers = json_array();
+    for (const auto& identifier : drive.device_identifiers) {
+      json_array_append_new(
+          device_identifiers,
+          json_string(::DescribeDeviceIdentifier(identifier).c_str()));
+    }
     json_array_append_new(
         drives_json,
         json_pack(
-            "{s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:o}", "path",
+            "{s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:o, s:o}", "path",
             drive.path.c_str(), "canonical_path", drive.canonical_path.c_str(),
             "display_name", drive.display_name.c_str(), "identifier",
             drive.identifier.c_str(), "serial_number",
             drive.serial_number.c_str(), "vendor", drive.vendor.c_str(),
             "model", drive.model.c_str(), "firmware_version",
-             drive.firmware_version.c_str(), "aliases", aliases));
+            drive.firmware_version.c_str(), "aliases", aliases,
+            "device_identifiers", device_identifiers));
   }
 
   json_t* assignments = json_array();
