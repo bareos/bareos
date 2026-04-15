@@ -7,35 +7,35 @@
 #
 # With PostgreSQL, we can use DISTINCT ON(), but with Mysql or Sqlite,
 # we need an extra join using JobTDate.
-SELECT FileId,
+SELECT File.FileId,
        Job.JobId AS JobId,
-       FileIndex,
+       File.FileIndex,
        File.PathId AS PathId,
        File.Name AS Name,
-       LStat,
-       MD5,
-       DeltaSeq,
-       Fhinfo,
-       Fhnode,
+       File.LStat,
+       File.MD5,
+       File.DeltaSeq,
+       File.Fhinfo,
+       File.Fhnode,
        Job.JobTDate AS JobTDate
-FROM Job,
-     File,
-
-  (SELECT MAX(JobTDate) AS JobTDate,
-          PathId,
-          FileName
-   FROM
-     (SELECT JobTDate,
-             PathId,
-             File.Name AS FileName
-      FROM File
-      JOIN Job USING (JobId)
-      WHERE File.JobId IN (%s)
-     ) AS tmp
-   GROUP BY PathId,
-            FileName) AS T1
-WHERE (Job.JobId IN (%s))
-  AND T1.JobTDate = Job.JobTDate
-  AND Job.JobId = File.JobId
-  AND T1.PathId = File.PathId
-  AND T1.FileName = File.Name
+FROM File
+JOIN Job USING (JobId)
+JOIN (
+  SELECT MAX(JobTDate) AS JobTDate,
+         PathId,
+         FileName
+  FROM (
+    SELECT JobTDate,
+           PathId,
+           File.Name AS FileName
+    FROM File
+    JOIN Job USING (JobId)
+    WHERE File.JobId IN (%s)
+  ) AS tmp
+  GROUP BY PathId,
+           FileName
+) AS T1
+  ON T1.JobTDate = Job.JobTDate
+ AND T1.PathId = File.PathId
+ AND T1.FileName = File.Name
+WHERE Job.JobId IN (%s)
