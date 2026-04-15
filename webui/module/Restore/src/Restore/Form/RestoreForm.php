@@ -40,6 +40,9 @@ class RestoreForm extends Form
     {
         parent::__construct('restore');
 
+        $restore_params = $restore_params ?? array();
+        $backups = $backups ?? array();
+
         $this->restore_params = $restore_params;
         $this->restore_source_clients = $this->getNameOptionsMap($restore_source_clients);
         $this->restore_target_clients = $this->getNameOptionsMap($restore_target_clients);
