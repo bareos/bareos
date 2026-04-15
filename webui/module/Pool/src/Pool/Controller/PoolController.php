@@ -28,6 +28,7 @@ namespace Pool\Controller;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
 use Exception;
+use Throwable;
 
 class PoolController extends AbstractActionController
 {
@@ -76,15 +77,27 @@ class PoolController extends AbstractActionController
             );
         }
 
+        $pools = array();
+
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
             $pools = $this->getPoolModel()->getPools($this->bsock);
-            $this->bsock->disconnect();
-        } catch (Exception $e) {
-            if ($this->bsock) {
-                $this->bsock->disconnect();
-            }
+        } catch (Throwable $e) {
             error_log($e->getMessage());
+            return new ViewModel(
+                array(
+                    'pools' => $pools,
+                    'error' => 'Failed to load pools',
+                )
+            );
+        } finally {
+            if ($this->bsock) {
+                try {
+                    $this->bsock->disconnect();
+                } catch (Throwable $e) {
+                    error_log($e->getMessage());
+                }
+            }
         }
 
         return new ViewModel(
@@ -136,13 +149,23 @@ class PoolController extends AbstractActionController
 
         try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $pool = $this->getPoolModel()->getPool($this->bsock, $poolname);
-            $this->bsock->disconnect();
-        } catch (Exception $e) {
-            if ($this->bsock) {
-                $this->bsock->disconnect();
-            }
+            $this->getPoolModel()->getPool($this->bsock, $poolname);
+        } catch (Throwable $e) {
             error_log($e->getMessage());
+            return new ViewModel(
+                array(
+                    'pool' => $poolname,
+                    'error' => 'Failed to load pool',
+                )
+            );
+        } finally {
+            if ($this->bsock) {
+                try {
+                    $this->bsock->disconnect();
+                } catch (Throwable $e) {
+                    error_log($e->getMessage());
+                }
+            }
         }
 
         return new ViewModel(
