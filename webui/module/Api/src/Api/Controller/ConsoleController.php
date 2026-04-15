@@ -62,6 +62,8 @@ class ConsoleController extends AbstractRestfulController
         } catch(Exception $e) {
             $this->getResponse()->setStatusCode(500);
             error_log($e->getMessage());
+        } finally {
+            $this->bsock->disconnect();
         }
 
         $response = $this->getResponse();
