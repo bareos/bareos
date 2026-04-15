@@ -285,7 +285,7 @@ bool SendAccurateCurrentFiles(JobControlRecord* jcr)
   if (!jcr->accurate) { return true; }
 
   if (jcr->is_JobLevel(L_FULL)) {
-    // On Full mode, if no previous base job, no accurate things
+    // On Full mode no accurate things
     return true;
   } else {
     // For Incr/Diff level, we search for older jobs
