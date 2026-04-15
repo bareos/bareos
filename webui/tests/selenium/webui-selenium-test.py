@@ -134,6 +134,9 @@ class WrongCredentialsException(Exception):
 class SeleniumTest(unittest.TestCase):
 
     chrome_user_data_dir = tempfile.TemporaryDirectory()
+    shared_driver = None
+    shared_wait = None
+    shared_session_logged_in = False
     browser = "chrome"
     # Used by Univention AppCenter test: 1200x800
     # Large resolution to show website without hamburger menu, e.g. 1920x1080
@@ -165,7 +168,19 @@ class SeleniumTest(unittest.TestCase):
             level=logging.INFO,
         )
         self.logger = logging.getLogger()
+        self.verificationErrors = []
 
+        if self.is_shared_session_test():
+            self.prepare_shared_driver()
+        else:
+            self.close_shared_driver()
+            self.create_driver()
+
+        # take base url, but remove last /
+        self.base_url = self.base_url.rstrip("/")
+        self.logger.info("===================== TESTING =====================")
+
+    def create_driver(self):
         if self.browser == "chrome":
             self.chromedriverpath = self.getChromedriverpath()
             # chrome webdriver option: disable experimental feature
@@ -212,10 +227,28 @@ class SeleniumTest(unittest.TestCase):
         # used as timeout for selenium.webdriver.support.expected_conditions (EC)
         self.wait = WebDriverWait(self.driver, self.maxwait)
 
-        # take base url, but remove last /
-        self.base_url = self.base_url.rstrip("/")
-        self.verificationErrors = []
-        self.logger.info("===================== TESTING =====================")
+    def prepare_shared_driver(self):
+        if SeleniumTest.shared_driver is None:
+            self.create_driver()
+            SeleniumTest.shared_driver = self.driver
+            SeleniumTest.shared_wait = self.wait
+            SeleniumTest.shared_session_logged_in = False
+        else:
+            self.driver = SeleniumTest.shared_driver
+            self.wait = SeleniumTest.shared_wait
+            self.driver.set_window_size(self.resolution_x, self.resolution_y)
+
+    @classmethod
+    def close_shared_driver(cls):
+        if cls.shared_driver is None:
+            return
+        try:
+            cls.shared_driver.quit()
+        except WebDriverException:
+            pass
+        cls.shared_driver = None
+        cls.shared_wait = None
+        cls.shared_session_logged_in = False
 
     #
     # Tests
@@ -576,7 +609,27 @@ class SeleniumTest(unittest.TestCase):
     def wait_for_presence(self, by, value):
         return self.wait.until(EC.presence_of_element_located((by, value)))
 
+    def is_shared_session_test(self):
+        return self.__get_name_of_test() in {
+            "test_job_list_page",
+            "test_job_timeline_page",
+            "test_schedule_page",
+            "test_schedule_overview_page",
+            "test_schedule_status_page",
+            "test_storage_devices_page",
+            "test_pool_page",
+            "test_media_page",
+            "test_director_status_page",
+            "test_director_messages_page",
+            "test_fileset_page",
+            "test_console_page",
+            "test_analytics_page",
+        }
+
     def login(self):
+        if self.is_shared_session_test() and SeleniumTest.shared_session_logged_in:
+            return
+
         driver = self.driver
         driver.get(self.base_url + "/auth/login")
         # Currently not required in the test environment because it is preselected
@@ -605,7 +658,12 @@ class SeleniumTest(unittest.TestCase):
             # ... otherwise (i.e. if an alert was found) the login is wronng
             raise WrongCredentialsException(self.username, self.password)
 
+        if self.is_shared_session_test():
+            SeleniumTest.shared_session_logged_in = True
+
     def logout(self):
+        if self.is_shared_session_test():
+            return
         self.driver.get(self.base_url + "/auth/logout")
         sleep(self.sleeptime)
 
@@ -791,12 +849,17 @@ class SeleniumTest(unittest.TestCase):
 
     def tearDown(self):
         logger = logging.getLogger()
-        try:
-            self.driver.quit()
-        except WebDriverException as e:
-            logger.warn("{}: ignored".format(str(e)))
+        if not self.is_shared_session_test():
+            try:
+                self.driver.quit()
+            except WebDriverException as e:
+                logger.warn("{}: ignored".format(str(e)))
 
         self.assertEqual([], self.verificationErrors)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.close_shared_driver()
 
     def __get_name_of_test(self):
         return self.id().split(".", 1)[1]
