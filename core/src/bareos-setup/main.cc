@@ -71,6 +71,11 @@ int main(int argc, char* argv[])
 
   CLI11_PARSE(app, argc, argv);
 
+  if (port < 1 || port > 65535) {
+    std::cerr << "Fatal: --port must be in the range 1..65535\n";
+    return 1;
+  }
+
   std::cout << "Bareos Setup Wizard " << BAREOS_FULL_VERSION;
   if (dry_run) std::cout << " [dry-run]";
   std::cout << "\n";
