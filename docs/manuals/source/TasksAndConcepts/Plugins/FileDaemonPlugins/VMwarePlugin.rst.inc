@@ -23,6 +23,11 @@ Status
 
 The Plugin can do full, differential and incremental backup and restore of VM disks.
 
+Since :sinceVersion:`25.0.4: VMware Plugin` When using the plugin option
+:strong:`localvmdk=yes`, virtual disks larger than 2TB can now be restored
+to local VMDK files, in which case they will be split into 2GB extents. Restoring
+such virtual disks to existing or recreated VM was always possible.
+
 Since :sinceVersion:`24.0.5: VMware Plugin` The Plugin can now save and recreate
 VMs with VirtualSerialPort devices.
 
