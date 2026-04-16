@@ -778,34 +778,75 @@ std::vector<TapeAssignment> SuggestTapeAssignments(
 TapeStorageInventory DiscoverTapeStorageInventory()
 {
   TapeStorageInventory inventory;
-  if (!std::filesystem::exists("/dev/tape/by-id")) return inventory;
-
   std::map<std::string, TapeDriveInfo> drive_map;
-  for (const auto& entry :
-       std::filesystem::directory_iterator("/dev/tape/by-id")) {
-    if (!entry.is_symlink()) continue;
-    const auto name = entry.path().filename().string();
-    if (name.ends_with("-changer")) {
-      auto device = ReadTapeDeviceInfo(entry);
-      TapeChangerInfo changer;
-      changer.path = device.path;
-      changer.canonical_path = device.canonical_path;
-      changer.display_name = device.display_name;
-      changer.identifier = device.identifier;
-      changer.serial_number = device.serial_number;
-      changer.vendor = device.vendor;
-      changer.model = device.model;
-      changer.firmware_version = device.firmware_version;
-      changer.aliases = device.aliases;
-      changer.status = QueryTapeChangerStatus(changer.path);
-      inventory.changers.push_back(std::move(changer));
-    } else if (name.ends_with("-nst") || name.ends_with("-st")) {
-      auto info = ReadTapeDeviceInfo(entry);
-      auto& drive = drive_map[info.canonical_path];
-      if (drive.canonical_path.empty()) {
-        drive = std::move(info);
-      } else {
-        for (const auto& alias : info.aliases) drive.aliases.push_back(alias);
+
+  const auto add_changer = [&](const std::filesystem::directory_entry& entry) {
+    auto device = ReadTapeDeviceInfo(entry);
+    TapeChangerInfo changer;
+    changer.path = device.path;
+    changer.canonical_path = device.canonical_path;
+    changer.display_name = device.display_name;
+    changer.identifier = device.identifier;
+    changer.serial_number = device.serial_number;
+    changer.vendor = device.vendor;
+    changer.model = device.model;
+    changer.firmware_version = device.firmware_version;
+    changer.aliases = device.aliases;
+    changer.status = QueryTapeChangerStatus(changer.path);
+    inventory.changers.push_back(std::move(changer));
+  };
+
+  const auto add_drive = [&](const std::filesystem::directory_entry& entry) {
+    auto info = ReadTapeDeviceInfo(entry);
+    auto& drive = drive_map[info.canonical_path];
+    if (drive.canonical_path.empty()) {
+      drive = std::move(info);
+    } else {
+      for (const auto& alias : info.aliases) drive.aliases.push_back(alias);
+    }
+  };
+
+  if (std::filesystem::exists("/dev/tape/by-id")) {
+    for (const auto& entry :
+         std::filesystem::directory_iterator("/dev/tape/by-id")) {
+      if (!entry.is_symlink()) continue;
+      const auto name = entry.path().filename().string();
+      if (name.ends_with("-changer")) {
+        add_changer(entry);
+      } else if (name.ends_with("-nst") || name.ends_with("-st")) {
+        add_drive(entry);
+      }
+    }
+  }
+
+  if (inventory.changers.empty() && drive_map.empty()) {
+    for (const auto& entry :
+         std::filesystem::directory_iterator("/sys/class/scsi_generic")) {
+      const auto type_path = entry.path() / "device/type";
+      std::ifstream type_file(type_path);
+      std::string device_type;
+      std::getline(type_file, device_type);
+      if (device_type != "8") continue;
+
+      const auto dev_path = std::filesystem::path("/dev") / entry.path().filename();
+      if (std::filesystem::exists(dev_path)) {
+        add_changer(std::filesystem::directory_entry(dev_path));
+      }
+    }
+
+    if (std::filesystem::exists("/sys/class/scsi_tape")) {
+      for (const auto& entry :
+           std::filesystem::directory_iterator("/sys/class/scsi_tape")) {
+        const auto name = entry.path().filename().string();
+        if (!name.starts_with("nst")
+            || name.find_first_not_of("0123456789", 3) != std::string::npos) {
+          continue;
+        }
+
+        const auto dev_path = std::filesystem::path("/dev") / name;
+        if (std::filesystem::exists(dev_path)) {
+          add_drive(std::filesystem::directory_entry(dev_path));
+        }
       }
     }
   }
