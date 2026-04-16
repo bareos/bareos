@@ -135,6 +135,26 @@ if [ "${num_changers}" -eq 0 ]; then
   exit 1
 fi
 
+for ((i = 0; i + 1 < num_changers; i++)); do
+  for ((j = i + 1; j < num_changers; j++)); do
+    if [ "${changer_hosts[i]}" -le "${changer_hosts[j]}" ]; then
+      continue
+    fi
+
+    tmp_path=${changer_paths[i]}
+    changer_paths[i]=${changer_paths[j]}
+    changer_paths[j]=${tmp_path}
+
+    tmp_host=${changer_hosts[i]}
+    changer_hosts[i]=${changer_hosts[j]}
+    changer_hosts[j]=${tmp_host}
+
+    tmp_topo=${changer_topo[i]}
+    changer_topo[i]=${changer_topo[j]}
+    changer_topo[j]=${tmp_topo}
+  done
+done
+
 # ── Collect tape drives ──────────────────────────────────────────────────────
 declare -a tape_paths=()
 declare -a tape_hosts=()
