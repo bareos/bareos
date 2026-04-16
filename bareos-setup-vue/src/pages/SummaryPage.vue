@@ -49,7 +49,17 @@
             <q-item-section avatar><q-icon name="inventory_2" color="primary" /></q-item-section>
             <q-item-section>
               <q-item-label>Tape Storage</q-item-label>
-              <q-item-label caption>{{ tapeAssignmentsSummary }}</q-item-label>
+              <q-item-label caption>
+                <div v-if="tapeAssignmentsSummary.length">
+                  <div v-for="assignment in tapeAssignmentsSummary" :key="assignment.changerPath" class="q-mb-xs">
+                    <div>{{ assignment.label }}</div>
+                    <div class="q-ml-lg">{{ assignment.details }}</div>
+                    <div class="q-ml-lg">{{ assignment.summary }}</div>
+                    <div class="q-ml-lg">Path: {{ assignment.path }}</div>
+                  </div>
+                </div>
+                <span v-else>No changer assignments</span>
+              </q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -83,6 +93,11 @@ import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useSetupStore } from '../stores/setup.js'
 import { useSetupWs } from '../composables/useSetupWs.js'
+import {
+  formatChangerDetails,
+  formatChangerLabel,
+  formatChangerSummary,
+} from '../utils/tapeLibraries.js'
 
 const $q = useQuasar()
 const router = useRouter()
@@ -104,12 +119,26 @@ const storageTargets = computed(() => {
   return labels.join(', ') || 'None'
 })
 
-const tapeAssignmentsSummary = computed(() =>
-  store.tapeAssignments
+const tapeAssignmentsSummary = computed(() => {
+  const changerByPath = new Map(
+    store.tapeChangers.map((changer) => [changer.path, changer])
+  )
+
+  return store.tapeAssignments
     .filter((assignment) => assignment.drive_paths.length > 0)
-    .map((assignment) => `${assignment.changer_path} (${assignment.drive_paths.length} drives)`)
-    .join('; ') || 'No changer assignments'
-)
+    .map((assignment) => {
+      const changer = changerByPath.get(assignment.changer_path)
+      return {
+        changerPath: assignment.changer_path,
+        label: formatChangerLabel(changer ?? { path: assignment.changer_path }),
+        details: formatChangerDetails(changer ?? { path: assignment.changer_path }),
+        summary: formatChangerSummary(changer ?? {
+          status: { drives: assignment.drive_paths.length },
+        }),
+        path: changer?.path || assignment.changer_path,
+      }
+    })
+})
 
 watch(messages, (msgs) => {
   const last = msgs[msgs.length - 1]

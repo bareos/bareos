@@ -41,29 +41,28 @@
           <div class="row q-col-gutter-lg items-start">
             <div class="col-12 col-md-6">
               <div class="text-subtitle2 q-mb-sm">
-                {{ changerLabel(changer) }}
+                <div class="row items-center no-wrap q-col-gutter-sm">
+                  <q-icon name="precision_manufacturing" color="primary" />
+                  <span>{{ changerLabel(changer) }}</span>
+                </div>
               </div>
-              <div class="q-gutter-y-xs">
+              <div class="text-caption q-mb-xs q-ml-lg">
+                {{ changerDetails(changer) }}
+              </div>
+              <div class="text-caption q-mb-sm q-ml-lg">
+                {{ changerSummary(changer) }}
+              </div>
+              <div class="q-gutter-y-xs q-ml-lg">
                 <div><strong>Path:</strong> {{ changer.path }}</div>
-                <div><strong>Manufacturer:</strong> {{ changer.vendor || '-' }}</div>
-                <div><strong>Type:</strong> {{ changer.model || '-' }}</div>
-                <div><strong>Firmware:</strong> {{ changer.firmware_version || '-' }}</div>
-                <div>
-                  <strong>Slots:</strong> {{ changer.status?.slots ?? '-' }},
-                  <strong>Drives:</strong> {{ changer.status?.drives ?? '-' }},
-                  <strong>Robot Arms:</strong> {{ changer.status?.robot_arms ?? '-' }},
-                  <strong>I/E Slots:</strong> {{ changer.status?.ie_slots ?? '-' }}
-                </div>
-                <div>
-                  <strong>Tape Identifiers:</strong>
-                  <div v-if="changer.drive_identifiers?.length" class="q-mt-xs">
-                    <div v-for="drive in changer.drive_identifiers" :key="`${changer.path}-${drive.element_address}`">
-                      Element {{ drive.element_address }}:
-                      {{ (drive.identifiers || []).join(' | ') || '-' }}
-                    </div>
+                <div v-if="changerDriveEntries(changer).length" class="q-mt-sm">
+                  <div v-for="drive in changerDriveEntries(changer)"
+                       :key="drive.key"
+                       class="row items-start no-wrap q-col-gutter-sm q-mt-xs">
+                    <q-icon name="dns" color="primary" size="18px" class="q-mt-xs" />
+                    <div>{{ drive.label }}</div>
                   </div>
-                  <span v-else> - </span>
                 </div>
+                <div v-else class="q-mt-sm">-</div>
               </div>
             </div>
             <div class="col-12 col-md-6">
@@ -85,10 +84,13 @@
               <q-list v-if="selectedDrivesFor(changer.path).length"
                       bordered separator class="q-mt-md">
                 <q-item v-for="drive in selectedDrivesFor(changer.path)" :key="drive.path">
+                  <q-item-section avatar>
+                    <q-icon name="dns" color="primary" />
+                  </q-item-section>
                   <q-item-section>
-                    <q-item-label>{{ driveLabel(drive) }}</q-item-label>
+                    <q-item-label>{{ drive.label }}</q-item-label>
                     <q-item-label caption>
-                      {{ drive.vendor || '-' }} / {{ drive.model || '-' }} / {{ drive.firmware_version || '-' }}
+                      {{ drive.tapeDrive?.path || drive.path }}
                     </q-item-label>
                   </q-item-section>
                 </q-item>
@@ -142,6 +144,12 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSetupStore } from '../stores/setup.js'
 import { useSetupWs } from '../composables/useSetupWs.js'
+import {
+  formatChangerDetails,
+  formatChangerLabel,
+  formatChangerSummary,
+  resolveChangerDrives,
+} from '../utils/tapeLibraries.js'
 
 const router = useRouter()
 const store = useSetupStore()
@@ -231,7 +239,19 @@ function drivePathsFor(changerPath) {
 }
 
 function changerLabel(changer) {
-  return `${changer.identifier || changer.display_name}${changer.serial_number ? ` / ${changer.serial_number}` : ''}`
+  return formatChangerLabel(changer)
+}
+
+function changerDetails(changer) {
+  return formatChangerDetails(changer)
+}
+
+function changerSummary(changer) {
+  return formatChangerSummary(changer)
+}
+
+function changerDriveEntries(changer) {
+  return resolveChangerDrives(changer, store.tapeDrives)
 }
 
 function driveLabel(drive) {
@@ -240,9 +260,29 @@ function driveLabel(drive) {
 
 function selectedDrivesFor(changerPath) {
   const assignedPaths = drivePathsFor(changerPath)
+  const changer = store.tapeChangers.find((entry) => entry.path === changerPath)
+  const matchedEntries = new Map(
+    changerDriveEntries(changer)
+      .filter((entry) => entry.path)
+      .map((entry) => [entry.path, entry])
+  )
   const driveMap = new Map(store.tapeDrives.map((drive) => [drive.path, drive]))
+
   return assignedPaths
-    .map((drivePath) => driveMap.get(drivePath))
+    .map((drivePath) => {
+      const matchedEntry = matchedEntries.get(drivePath)
+      if (matchedEntry) return matchedEntry
+
+      const drive = driveMap.get(drivePath)
+      if (!drive) return null
+
+      return {
+        key: drive.path,
+        path: drive.path,
+        label: driveLabel(drive),
+        tapeDrive: drive,
+      }
+    })
     .filter((drive) => Boolean(drive))
 }
 
@@ -307,6 +347,15 @@ function availableDriveOptions(changerPath) {
     : store.tapeDrives.filter((drive) =>
       (drive.device_identifiers ?? []).some((identifier) => allowedIdentifiers.has(identifier))
     )
+
+  const matchedEntries = changerDriveEntries(changer)
+    .filter((entry) => entry.path)
+    .map((entry) => ({
+      label: entry.label,
+      value: entry.path,
+    }))
+
+  if (matchedEntries.length > 0) return matchedEntries
 
   return (matchingDrives.length > 0 ? matchingDrives : store.tapeDrives)
     .map((drive) => ({

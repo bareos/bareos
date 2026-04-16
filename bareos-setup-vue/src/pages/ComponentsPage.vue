@@ -39,29 +39,31 @@
           <q-item v-for="changer in store.tapeChangers" :key="changer.path" class="q-py-md">
             <q-item-section>
               <q-item-label class="text-subtitle2">
-                {{ changerLabel(changer) }}
-              </q-item-label>
-              <q-item-label caption class="q-mt-xs">
-                {{ changer.vendor || '-' }} / {{ changer.model || '-' }} / {{ changer.firmware_version || '-' }}
-              </q-item-label>
-              <q-item-label class="q-mt-sm">
-                <strong>Path:</strong> {{ changer.path }}
-              </q-item-label>
-              <q-item-label class="q-mt-xs">
-                <strong>Slots:</strong> {{ changer.status?.slots ?? '-' }},
-                <strong>Drives:</strong> {{ changer.status?.drives ?? '-' }},
-                <strong>I/E Slots:</strong> {{ changer.status?.ie_slots ?? '-' }}
-              </q-item-label>
-              <q-item-label class="q-mt-xs">
-                <strong>Tape Identifiers:</strong>
-              </q-item-label>
-              <div v-if="changer.drive_identifiers?.length" class="text-caption q-mt-xs">
-                <div v-for="drive in changer.drive_identifiers" :key="`${changer.path}-${drive.element_address}`">
-                  Element {{ drive.element_address }}:
-                  {{ (drive.identifiers || []).join(' | ') || '-' }}
+                <div class="row items-center no-wrap q-col-gutter-sm">
+                  <q-icon name="precision_manufacturing" color="primary" />
+                  <span>{{ changerLabel(changer) }}</span>
                 </div>
+              </q-item-label>
+              <q-item-label caption class="q-mt-xs q-ml-lg">
+                {{ changerDetails(changer) }}
+              </q-item-label>
+              <q-item-label caption class="q-mt-xs q-ml-lg">
+                {{ changerSummary(changer) }}
+              </q-item-label>
+              <div class="q-ml-lg q-mt-sm">
+                <q-item-label>
+                  <strong>Path:</strong> {{ changer.path }}
+                </q-item-label>
+                <div v-if="changerDriveEntries(changer).length" class="text-caption q-mt-sm">
+                  <div v-for="drive in changerDriveEntries(changer)"
+                       :key="drive.key"
+                       class="row items-start no-wrap q-col-gutter-sm q-mt-xs">
+                    <q-icon name="dns" color="primary" size="18px" class="q-mt-xs" />
+                    <div>{{ drive.label }}</div>
+                  </div>
+                </div>
+                <q-item-label v-else caption class="q-mt-sm">-</q-item-label>
               </div>
-              <q-item-label v-else caption class="q-mt-xs">-</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -86,6 +88,12 @@ import { computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSetupStore } from '../stores/setup.js'
 import { useSetupWs } from '../composables/useSetupWs.js'
+import {
+  formatChangerDetails,
+  formatChangerLabel,
+  formatChangerSummary,
+  resolveChangerDrives,
+} from '../utils/tapeLibraries.js'
 
 const router = useRouter()
 const store = useSetupStore()
@@ -122,7 +130,19 @@ onMounted(() => {
 })
 
 function changerLabel(changer) {
-  return `${changer.identifier || changer.display_name}${changer.serial_number ? ` / ${changer.serial_number}` : ''}`
+  return formatChangerLabel(changer)
+}
+
+function changerDetails(changer) {
+  return formatChangerDetails(changer)
+}
+
+function changerSummary(changer) {
+  return formatChangerSummary(changer)
+}
+
+function changerDriveEntries(changer) {
+  return resolveChangerDrives(changer, store.tapeDrives)
 }
 
 function back() {
