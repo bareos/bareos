@@ -295,3 +295,23 @@ TEST(BareosSetupStepsShared, EscapesAdminUserCommandArguments)
       cmd[2].find("cat > '/etc/bareos/bareos-dir.d/console/admin_user.conf'"),
       std::string::npos);
 }
+
+TEST(BareosSetupStepsShared, KeepsRepoCredentialsOutOfShellSource)
+{
+  const auto cmd = BuildAddRepoCmd("ubuntu", "24.04", "subscription",
+                                   "user", "pa'ss word");
+
+  ASSERT_EQ(cmd.size(), 6U);
+  EXPECT_EQ(cmd[0], "bash");
+  EXPECT_EQ(cmd[1], "-c");
+  EXPECT_EQ(cmd[3], "bash");
+  EXPECT_EQ(
+      cmd[4],
+      "https://download.bareos.com/bareos/release/latest/Ubuntu_24.04/"
+      "add_bareos_repositories.sh");
+  EXPECT_EQ(cmd[5], "user:pa'ss word");
+  EXPECT_EQ(cmd[2].find("pa'ss word"), std::string::npos);
+  EXPECT_EQ(cmd[2].find("user:"), std::string::npos);
+  EXPECT_NE(cmd[2].find("curl \"${curl_args[@]}\" \"$1\" | bash"),
+            std::string::npos);
+}

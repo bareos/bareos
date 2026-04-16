@@ -560,12 +560,19 @@ std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
                                  + "/add_bareos_repositories.sh";
 
   std::string curl_auth;
-  if (repo_type == "subscription" && !login.empty()) {
-    curl_auth = " -u '" + login + ":" + password + "'";
-  }
+  if (repo_type == "subscription" && !login.empty())
+    curl_auth = login + ":" + password;
 
-  return {"bash", "-c",
-          "curl -fsSL" + curl_auth + " " + script_url + " | bash"};
+  return {"bash",
+          "-c",
+          "curl_args=(-fsSL)\n"
+          "if [ -n \"$2\" ]; then\n"
+          "  curl_args+=(-u \"$2\")\n"
+          "fi\n"
+          "curl \"${curl_args[@]}\" \"$1\" | bash",
+          "bash",
+          script_url,
+          curl_auth};
 }
 
 std::vector<std::string> BuildInstallCmd(
