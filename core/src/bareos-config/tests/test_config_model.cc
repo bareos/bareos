@@ -1,0 +1,553 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+ */
+#include "config_model.h"
+
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+
+#include <gtest/gtest.h>
+#include <unistd.h>
+
+namespace {
+class TempConfigRoot {
+ public:
+  TempConfigRoot()
+  {
+    auto pattern = std::filesystem::temp_directory_path()
+                   / "bareos-config-model-XXXXXX";
+    auto mutable_path = pattern.string();
+    path_ = mkdtemp(mutable_path.data());
+    if (path_.empty()) throw std::runtime_error("mkdtemp failed");
+  }
+
+  ~TempConfigRoot() { std::filesystem::remove_all(path_); }
+
+  const std::filesystem::path& path() const { return path_; }
+
+ private:
+  std::filesystem::path path_;
+};
+}  // namespace
+
+TEST(BareosConfigModel, DiscoversDirectorAndDaemonResources)
+{
+  TempConfigRoot root;
+
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/fileset");
+
+  std::ofstream(root.path() / "bareos-dir.conf") << "# director\n";
+  std::ofstream(root.path() / "bareos-sd.conf")
+      << "Storage {\n  Name = example-sd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/client/example-fd.conf")
+      << "Client {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/storage/example-sd.conf")
+      << "Storage {}\n";
+  std::ofstream(root.path() / "bareos-sd.d/device/tape.conf") << "Device {}\n";
+  std::ofstream(root.path() / "bareos-fd.d/fileset/local.conf") << "FileSet {}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+
+  ASSERT_EQ(summary.directors.size(), 1U);
+  EXPECT_EQ(summary.directors[0].name, "bareos-dir");
+  ASSERT_GE(summary.directors[0].resources.size(), 2U);
+  EXPECT_EQ(summary.directors[0].daemons.size(), 2U);
+  EXPECT_EQ(summary.directors[0].daemons[0].kind, "storage-daemon");
+  EXPECT_EQ(summary.directors[0].daemons[1].kind, "file-daemon");
+  EXPECT_EQ(summary.directors[0].daemons[0].configured_name, "example-sd");
+  EXPECT_EQ(summary.directors[0].daemons[1].configured_name, "example-fd");
+  EXPECT_EQ(summary.directors[0].daemons[0].resources[0].type, "configuration");
+  EXPECT_EQ(summary.directors[0].daemons[0].resources[1].type, "device");
+  EXPECT_EQ(summary.directors[0].daemons[1].resources[0].type, "configuration");
+  EXPECT_EQ(summary.directors[0].daemons[1].resources[1].type, "fileset");
+  EXPECT_EQ(summary.directors[0].resources[0].id,
+            "resource-0-director-main");
+  EXPECT_EQ(summary.directors[0].daemons[0].id, "daemon-0-storage-daemon");
+  EXPECT_EQ(summary.tree.kind, "datacenter");
+  ASSERT_EQ(summary.tree.children.size(), 3U);
+  EXPECT_EQ(summary.tree.children[0].kind, "director");
+  EXPECT_EQ(summary.tree.children[0].id, "director-0");
+  EXPECT_EQ(summary.tree.children[1].kind, "storage-daemon");
+  EXPECT_EQ(summary.tree.children[1].id, "daemon-0-storage-daemon");
+  EXPECT_EQ(summary.tree.children[2].kind, "file-daemon");
+  EXPECT_EQ(summary.tree.children[2].id, "daemon-0-file-daemon");
+  EXPECT_TRUE(summary.tree.children[0].children.empty());
+  EXPECT_EQ(summary.tree.children[0].resources[1].type, "client");
+  EXPECT_EQ(summary.tree.children[0].resources[2].type, "storage");
+
+  const auto* director = FindTreeNodeById(summary, "director-0");
+  ASSERT_NE(director, nullptr);
+  EXPECT_EQ(director->label, "bareos-dir");
+
+  const auto* file_daemon = FindTreeNodeById(summary, "daemon-0-file-daemon");
+  ASSERT_NE(file_daemon, nullptr);
+  EXPECT_EQ(file_daemon->kind, "file-daemon");
+
+  const auto* storage_reference = FindTreeNodeById(summary, "storage-0-0");
+  EXPECT_EQ(storage_reference, nullptr);
+
+  const auto director_relationships
+      = FindRelationshipsForNode(summary, "director-0");
+  ASSERT_EQ(director_relationships.size(), 2U);
+  EXPECT_EQ(director_relationships[0].from_node_id, "director-0");
+  EXPECT_EQ(director_relationships[0].to_node_id, "daemon-0-file-daemon");
+  EXPECT_EQ(director_relationships[0].relation, "client");
+  EXPECT_EQ(director_relationships[0].endpoint_name, "example-fd");
+  EXPECT_NE(director_relationships[0].resolution.find("configured name example-fd"),
+            std::string::npos);
+  EXPECT_EQ(director_relationships[1].to_node_id, "daemon-0-storage-daemon");
+  EXPECT_EQ(director_relationships[1].relation, "storage");
+
+  const auto* resource
+      = FindResourceById(summary, "resource-0-director-main");
+  ASSERT_NE(resource, nullptr);
+  EXPECT_EQ(resource->file_path,
+            (root.path() / "bareos-dir.conf").string());
+}
+
+TEST(BareosConfigModel, UsesDirectorConfigStemAndNormalizesRoot)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::ofstream(root.path() / "bareos-dir.conf")
+      << "Director {\n  Name = main-director\n}\n";
+
+  const auto summary
+      = DiscoverDatacenterSummary({root.path().string() + "/"});
+
+  ASSERT_EQ(summary.directors.size(), 1U);
+  EXPECT_EQ(summary.directors[0].name, "bareos-dir");
+  EXPECT_EQ(summary.tree.children[0].label, "bareos-dir");
+}
+
+TEST(BareosConfigModel, UsesDirectorConfigStemEvenWithOtherNames)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::ofstream(root.path() / "bareos-dir.conf")
+      << "Client {\n"
+      << "  Name = bareos-fd\n"
+      << "}\n"
+      << "Director {\n"
+      << "  Name = bareos\n"
+      << "}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+
+  ASSERT_EQ(summary.directors.size(), 1U);
+  EXPECT_EQ(summary.directors[0].name, "bareos-dir");
+  EXPECT_EQ(summary.tree.children[0].label, "bareos-dir");
+}
+
+TEST(BareosConfigModel, UsesDirectorDirectoryStemWithoutMainConfig)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::ofstream(root.path() / "bareos-dir.d/client/example-fd.conf")
+      << "Client {\n  Name = example-fd\n}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+
+  ASSERT_EQ(summary.directors.size(), 1U);
+  EXPECT_EQ(summary.directors[0].name, "bareos-dir");
+  ASSERT_FALSE(summary.tree.children.empty());
+  EXPECT_EQ(summary.tree.children[0].label, "bareos-dir");
+}
+
+TEST(BareosConfigModel, LeavesRelationshipUnresolvedWithoutMatchingDaemonName)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/fileset");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = different-fd\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/client/example-fd.conf")
+      << "Client {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/fileset/local.conf") << "FileSet {}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+  const auto relationships = FindRelationshipsForNode(summary, "director-0");
+
+  ASSERT_EQ(relationships.size(), 1U);
+  EXPECT_TRUE(relationships[0].resolved);
+  EXPECT_EQ(relationships[0].to_node_id, "daemon-0-file-daemon");
+  EXPECT_EQ(relationships[0].to_label, "bareos-fd");
+  EXPECT_NE(relationships[0].resolution.find("does not match endpoint example-fd"),
+            std::string::npos);
+}
+
+TEST(BareosConfigModel, ResolvesRelationshipFromDaemonOwnedResourceName)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/storage");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/client/bareos-fd.conf")
+      << "Client {\n  Name = bareos-fd\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/storage/File.conf")
+      << "Storage {\n  Name = File\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/client/myself.conf")
+      << "Client {\n  Name = bareos-fd\n}\n";
+  std::ofstream(root.path() / "bareos-sd.d/storage/bareos-sd.conf")
+      << "Storage {\n  Name = File\n}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+  const auto relationships = FindRelationshipsForNode(summary, "director-0");
+
+  ASSERT_EQ(relationships.size(), 2U);
+  EXPECT_TRUE(relationships[0].resolved);
+  EXPECT_EQ(relationships[0].to_node_id, "daemon-0-file-daemon");
+  EXPECT_TRUE(relationships[1].resolved);
+  EXPECT_EQ(relationships[1].to_node_id, "daemon-0-storage-daemon");
+}
+
+TEST(BareosConfigModel, UsesParsedResourceNameInsteadOfFilenameStem)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/client");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/client/not-the-name.conf")
+      << "Client {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/client/myself.conf")
+      << "Client {\n  Name = example-fd\n}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+
+  ASSERT_GE(summary.directors[0].resources.size(), 2U);
+  EXPECT_EQ(summary.directors[0].resources[1].name, "example-fd");
+
+  const auto relationships = FindRelationshipsForNode(summary, "director-0");
+  ASSERT_EQ(relationships.size(), 1U);
+  EXPECT_EQ(relationships[0].endpoint_name, "example-fd");
+  EXPECT_TRUE(relationships[0].resolved);
+}
+
+TEST(BareosConfigModel, SplitsMultipleResourcesFromOneFile)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/storage/File.conf")
+      << "Storage {\n"
+      << "  Name = File\n"
+      << "  Address = quadstorvtl\n"
+      << "}\n\n"
+      << "Storage {\n"
+      << "  Name = File2\n"
+      << "  Address = quadstorvtl\n"
+      << "}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+  std::vector<ResourceSummary> storages;
+  for (const auto& resource : summary.directors[0].resources) {
+    if (resource.type == "storage") storages.push_back(resource);
+  }
+
+  ASSERT_EQ(storages.size(), 2U);
+  EXPECT_EQ(storages[0].name, "File");
+  EXPECT_EQ(storages[1].name, "File2");
+  EXPECT_EQ(storages[0].file_path, storages[1].file_path);
+
+  const auto detail = LoadResourceDetail(storages[1]);
+  EXPECT_NE(detail.content.find("Name = File2"), std::string::npos);
+  EXPECT_EQ(detail.content.find("Name = File\n"), std::string::npos);
+  for (const auto& message : detail.validation_messages) {
+    EXPECT_NE(message.code, "duplicate-directive");
+  }
+}
+
+TEST(BareosConfigModel, SerializesDatacenterSummaryAsJson)
+{
+  DatacenterSummary summary;
+  summary.config_roots = {"/etc/bareos"};
+  summary.directors.push_back({
+      "director-id",
+      "Main Director",
+      "/etc/bareos",
+      {{"resource-id", "client", "example-fd", "/etc/bareos/bareos-dir.d/client/example-fd.conf"}},
+      {{"daemon-id", "file-daemon", "bareos-fd", "example-fd", "/etc/bareos/bareos-fd.d", {}}},
+  });
+
+  const auto json = SerializeDatacenterSummary(summary);
+
+  EXPECT_NE(json.find("\"name\":\"Datacenter\""), std::string::npos);
+  EXPECT_NE(json.find("\"name\":\"Main Director\""), std::string::npos);
+  EXPECT_NE(json.find("\"kind\":\"file-daemon\""), std::string::npos);
+  EXPECT_NE(json.find("\"type\":\"client\""), std::string::npos);
+  EXPECT_NE(json.find("\"tree\":{"), std::string::npos);
+  EXPECT_NE(json.find("\"kind\":\"datacenter\""), std::string::npos);
+}
+
+TEST(BareosConfigModel, LoadsResourceDetailContent)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+
+  const auto resource_path = root.path() / "bareos-dir.d/client/example-fd.conf";
+  std::ofstream(resource_path) << "Client {\n  Name = example-fd\n}\n";
+
+  ResourceSummary summary{"resource-1", "client", "example-fd",
+                          resource_path.string()};
+
+  const auto detail = LoadResourceDetail(summary);
+
+  EXPECT_EQ(detail.summary.id, "resource-1");
+  EXPECT_NE(detail.content.find("Name = example-fd"), std::string::npos);
+  ASSERT_EQ(detail.directives.size(), 1U);
+  EXPECT_EQ(detail.directives[0].key, "Name");
+  EXPECT_EQ(detail.directives[0].value, "example-fd");
+  EXPECT_EQ(detail.directives[0].line, 2U);
+  EXPECT_EQ(detail.directives[0].nesting_level, 1U);
+  ASSERT_EQ(detail.validation_messages.size(), 2U);
+  EXPECT_EQ(detail.validation_messages[0].code, "missing-address");
+  EXPECT_EQ(detail.validation_messages[1].code, "missing-required-directive");
+  const auto has_required_hint = [&detail](const std::string& key) {
+    const auto it = std::find_if(detail.field_hints.begin(), detail.field_hints.end(),
+                                 [&key](const ResourceFieldHint& hint) {
+                                   return hint.key == key && hint.required;
+                                 });
+    return it != detail.field_hints.end();
+  };
+  EXPECT_TRUE(has_required_hint("Name"));
+  EXPECT_TRUE(has_required_hint("Address"));
+  EXPECT_TRUE(has_required_hint("Password"));
+  ASSERT_GE(detail.field_hints.size(), 3U);
+  EXPECT_EQ(detail.field_hints[0].key, "Name");
+  EXPECT_EQ(detail.field_hints[1].key, "Address");
+  EXPECT_EQ(detail.field_hints[2].key, "Password");
+
+  const auto json = SerializeResourceDetail(detail);
+  EXPECT_NE(json.find("\"id\":\"resource-1\""), std::string::npos);
+  EXPECT_NE(json.find("Name = example-fd"), std::string::npos);
+  EXPECT_NE(json.find("\"directives\":[{"), std::string::npos);
+  EXPECT_NE(json.find("\"validation_messages\":[{"), std::string::npos);
+  EXPECT_NE(json.find("\"field_hints\":[{"), std::string::npos);
+}
+
+TEST(BareosConfigModel, UsesParserMetadataForReferenceFieldHints)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/catalog");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+
+  std::ofstream(root.path() / "bareos-dir.d/catalog/MyCatalog.conf")
+      << "Catalog {\n  Name = MyCatalog\n}\n";
+  const auto resource_path = root.path() / "bareos-dir.d/client/example-fd.conf";
+  std::ofstream(resource_path)
+      << "Client {\n  Name = example-fd\n  Address = 10.0.0.20\n}\n";
+
+  ResourceSummary summary{"resource-1", "client", "example-fd",
+                          resource_path.string()};
+
+  const auto detail = LoadResourceDetail(summary);
+  const auto catalog_hint = std::find_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "Catalog"; });
+
+  ASSERT_NE(catalog_hint, detail.field_hints.end());
+  EXPECT_EQ(catalog_hint->datatype, "RES");
+  EXPECT_EQ(catalog_hint->related_resource_type, "catalog");
+  EXPECT_NE(std::find(catalog_hint->allowed_values.begin(),
+                      catalog_hint->allowed_values.end(), "MyCatalog"),
+            catalog_hint->allowed_values.end());
+
+  const auto file_retention_hint = std::find_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "FileRetention"; });
+  ASSERT_NE(file_retention_hint, detail.field_hints.end());
+  EXPECT_TRUE(file_retention_hint->deprecated);
+}
+
+TEST(BareosConfigModel, BuildsFieldHintPreviewContent)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+
+  const auto resource_path = root.path() / "bareos-dir.d/client/example-fd.conf";
+  std::ofstream(resource_path) << "Client {\n  Name = example-fd\n}\n";
+
+  ResourceSummary summary{"resource-1", "client", "example-fd",
+                          resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+
+  auto updated_field_hints = detail.field_hints;
+  for (auto& field : updated_field_hints) {
+    if (field.key == "Address") {
+      field.value = "10.0.0.20";
+      field.present = true;
+    }
+    if (field.key == "Password") {
+      field.value = "secret";
+      field.present = true;
+    }
+  }
+
+  const auto preview = BuildFieldHintEditPreview(detail, updated_field_hints);
+
+  EXPECT_TRUE(preview.changed);
+  EXPECT_LT(preview.updated_content.find("Name = example-fd"),
+            preview.updated_content.find("Address = 10.0.0.20"));
+  EXPECT_LT(preview.updated_content.find("Address = 10.0.0.20"),
+            preview.updated_content.find("Password = secret"));
+  EXPECT_NE(preview.updated_content.find("Address = 10.0.0.20"),
+            std::string::npos);
+  EXPECT_TRUE(preview.updated_validation_messages.empty());
+}
+
+TEST(BareosConfigModel, NormalizesDirectiveNamesLikeParser)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/fileset");
+
+  const auto resource_path = root.path() / "bareos-dir.d/fileset/SelfTest.conf";
+  std::ofstream(resource_path)
+      << "FileSet {\n"
+      << "  Name = SelfTest\n"
+      << "  Enable VSS = No\n"
+      << "}\n";
+
+  ResourceSummary summary{"resource-1", "fileset", "SelfTest",
+                          resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+
+  const auto enable_vss_count = std::count_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "EnableVSS"; });
+  const auto spaced_enable_vss_count = std::count_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "Enable VSS"; });
+
+  EXPECT_EQ(enable_vss_count, 1);
+  EXPECT_EQ(spaced_enable_vss_count, 0);
+
+  const auto enable_vss = std::find_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "EnableVSS"; });
+  ASSERT_NE(enable_vss, detail.field_hints.end());
+  EXPECT_EQ(enable_vss->datatype, "BOOLEAN");
+  EXPECT_EQ(enable_vss->value, "no");
+  EXPECT_EQ(enable_vss->allowed_values, (std::vector<std::string>{"yes", "no"}));
+
+  auto updated_field_hints = detail.field_hints;
+  for (auto& field : updated_field_hints) {
+    if (field.key == "EnableVSS") {
+      field.value = "yes";
+      field.present = true;
+    }
+  }
+
+  const auto preview = BuildFieldHintEditPreview(detail, updated_field_hints);
+  EXPECT_EQ(preview.updated_content.find("EnableVSS = yes"), std::string::npos);
+  EXPECT_NE(preview.updated_content.find("Enable VSS = yes"), std::string::npos);
+}
+
+TEST(BareosConfigModel, LimitsGuidedFieldsToTopLevelDirectives)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/fileset");
+
+  const auto resource_path = root.path() / "bareos-dir.d/fileset/SelfTest.conf";
+  std::ofstream(resource_path)
+      << "FileSet {\n"
+      << "  Name = SelfTest\n"
+      << "  Enable VSS = No\n"
+      << "  Include {\n"
+      << "    Options {\n"
+      << "      Signature = XXH128\n"
+      << "      HardLinks = Yes\n"
+      << "    }\n"
+      << "    File = /tmp/example\n"
+      << "  }\n"
+      << "}\n";
+
+  ResourceSummary summary{"resource-1", "fileset", "SelfTest",
+                          resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+
+  EXPECT_TRUE(std::any_of(detail.directives.begin(), detail.directives.end(),
+                          [](const ResourceDirective& directive) {
+                            return directive.key == "Signature"
+                                   && directive.nesting_level == 3;
+                          }));
+  EXPECT_TRUE(std::any_of(detail.directives.begin(), detail.directives.end(),
+                          [](const ResourceDirective& directive) {
+                            return directive.key == "File"
+                                   && directive.nesting_level == 2;
+                          }));
+
+  EXPECT_FALSE(std::any_of(detail.field_hints.begin(), detail.field_hints.end(),
+                           [](const ResourceFieldHint& hint) {
+                             return hint.key == "Signature" || hint.key == "File"
+                                    || hint.key == "HardLinks";
+                           }));
+  EXPECT_TRUE(std::any_of(detail.field_hints.begin(), detail.field_hints.end(),
+                          [](const ResourceFieldHint& hint) {
+                            return hint.key == "EnableVSS";
+                          }));
+}
+
+TEST(BareosConfigModel, OrdersDisplayedDirectivesAndFieldHints)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+
+  const auto resource_path = root.path() / "bareos-dir.d/client/example-fd.conf";
+  std::ofstream(resource_path)
+      << "Client {\n"
+      << "  Catalog = MyCatalog\n"
+      << "  Password = secret\n"
+      << "  Name = example-fd\n"
+      << "  Address = 10.0.0.20\n"
+      << "}\n";
+
+  ResourceSummary summary{"resource-1", "client", "example-fd",
+                          resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+
+  ASSERT_GE(detail.directives.size(), 4U);
+  EXPECT_EQ(detail.directives[0].key, "Name");
+  EXPECT_EQ(detail.directives[1].key, "Address");
+  EXPECT_EQ(detail.directives[2].key, "Password");
+  EXPECT_EQ(detail.directives[3].key, "Catalog");
+
+  ASSERT_GE(detail.field_hints.size(), 4U);
+  const auto field_hint_position = [&](std::string_view key) {
+    return std::distance(
+        detail.field_hints.begin(),
+        std::find_if(detail.field_hints.begin(), detail.field_hints.end(),
+                     [&](const ResourceFieldHint& hint) { return hint.key == key; }));
+  };
+  EXPECT_EQ(detail.field_hints[0].key, "Name");
+  EXPECT_EQ(field_hint_position("Address"), 1);
+  EXPECT_LT(field_hint_position("Address"), field_hint_position("Password"));
+  EXPECT_LT(field_hint_position("Password"), field_hint_position("AuthType"));
+  EXPECT_LT(field_hint_position("AuthType"), field_hint_position("AutoPrune"));
+  EXPECT_LT(field_hint_position("AutoPrune"), field_hint_position("Catalog"));
+}
