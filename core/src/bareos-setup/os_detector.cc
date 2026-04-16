@@ -46,9 +46,11 @@ OsInfo DetectOs()
 {
   OsInfo info;
 
-  // Parse /etc/os-release
   std::ifstream f("/etc/os-release");
-  if (!f) throw std::runtime_error("Cannot open /etc/os-release");
+  if (!f) f.open("/usr/lib/os-release");
+  if (!f)
+    throw std::runtime_error(
+        "Cannot open /etc/os-release or /usr/lib/os-release");
 
   std::string line;
   while (std::getline(f, line)) {
