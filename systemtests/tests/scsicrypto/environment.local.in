@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#   BAREOS® - Backup Archiving REcovery Open Sourced
+#
+#   Copyright (C) 2026 Bareos GmbH & Co. KG
+#
+#   This program is Free Software; you can redistribute it and/or
+#   modify it under the terms of version three of the GNU Affero General Public
+#   License as published by the Free Software Foundation and included
+#   in the file LICENSE.
+#
+#   This program is distributed in the hope that it will be useful, but
+#   WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#   Affero General Public License for more details.
+#
+#   You should have received a copy of the GNU Affero General Public License
+#   along with this program; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+#   02110-1301, USA.
+
+runner_name="$(basename "$0")"
+export runner_tmp="${tmp}/${runner_name}"
+mkdir -p "${runner_tmp}"
+set -u
+
+#maximum of 9 changer devices possible
+
+readonly CHANGER_DEVICE0="@CHANGER_DEVICE0@"
+readonly TAPE_DEVICES0=(@TAPE_DEVICES0@)
+
+# testrunner currently supports only a single autochanger
+#readonly CHANGER_DEVICE1="/dev/tape/by-id/scsi-SSTK_L80_XYZZY_B"
+#readonly TAPE_DEVICES1=(\
+#  "/dev/tape/by-id/scsi-XYZZY_B1-nst"\
+#  "/dev/tape/by-id/scsi-XYZZY_B2-nst"\
+#  "/dev/tape/by-id/scsi-XYZZY_B3-nst"\
+#  "/dev/tape/by-id/scsi-XYZZY_B4-nst"\
+#)
+
+readonly USE_TAPE_DEVICE=0 # use this tape device to invalidate tapes
+
+readonly NUMBER_OF_POOLS=4
+readonly NUMBER_OF_TAPES_PER_POOL=1
+
+readonly FIRST_SLOT_NUMBER=1
+readonly LAST_SLOT_NUMBER=$((${NUMBER_OF_POOLS} * ${NUMBER_OF_TAPES_PER_POOL}))
+
+readonly NUMBER_OF_TEST_ROUNDS=1
+readonly NUMBER_OF_SPOOLING_JOBS_PER_ROUND=2
