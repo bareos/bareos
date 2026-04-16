@@ -166,8 +166,9 @@ function finish() {
     if (!window.closed) {
       $q.notify({
         type: 'info',
-        message: 'This tab cannot be closed automatically. You can close it manually and open the WebUI link above.',
+        message: 'This tab cannot be closed automatically. Redirecting to the Bareos WebUI instead.',
       })
+      window.location.assign(webuiUrl.value)
     }
   }, 100)
 }
