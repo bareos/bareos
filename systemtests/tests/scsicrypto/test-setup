@@ -51,7 +51,6 @@ PATH=${PATH}:/usr/sbin
 # set raw cap for binaries
 for b in bareos_sd bcopy bextract bls bscan bscrypto btape; do
   sb=$(readlink sbin/${b}-scsicrypto)
-  export sb
   sudo setcap cap_sys_rawio=ep "${sb}"
 done
 
