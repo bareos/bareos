@@ -101,6 +101,7 @@ function repoOsPath(distro, version) {
 }
 
 const canProceed = computed(() => {
+  if (!store.osInfo?.distro || !store.osInfo?.version) return false
   if (store.repoType === 'subscription') {
     return !!store.repoCredentials.login && !!store.repoCredentials.password
   }
