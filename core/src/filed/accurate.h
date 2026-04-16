@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -68,7 +68,9 @@ class BareosAccurateFilelist {
  public:
   BareosAccurateFilelist(JobControlRecord* jcr, std::size_t initial_capacity)
       : jcr_{jcr}, initial_capacity_{initial_capacity}
-  { seen_bitmap_.reserve(initial_capacity); }
+  {
+    seen_bitmap_.reserve(initial_capacity);
+  }
 
   virtual ~BareosAccurateFilelist() {}
 
@@ -79,7 +81,8 @@ class BareosAccurateFilelist {
                        int lstat_length,
                        char* chksum,
                        int checksum_length,
-                       int32_t delta_seq) = 0;
+                       int32_t delta_seq)
+      = 0;
   virtual bool EndLoad() = 0;
   virtual accurate_payload* lookup_payload(char* fname) = 0;
   virtual bool UpdatePayload(char* fname, accurate_payload* payload) = 0;
@@ -103,10 +106,14 @@ class BareosAccurateFilelist {
   }
 
   void MarkAllFilesAsSeen()
-  { std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 1); }
+  {
+    std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 1);
+  }
 
   void UnmarkAllFilesAsSeen()
-  { std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 0); }
+  {
+    std::fill(std::begin(seen_bitmap_), std::end(seen_bitmap_), 0);
+  }
 };
 
 /*

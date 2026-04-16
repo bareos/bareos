@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -41,7 +41,9 @@ BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(
     JobControlRecord* jcr,
     uint32_t number_of_files)
     : BareosAccurateFilelist(jcr, number_of_files)
-{ file_list_ = new FileList(number_of_files); }
+{
+  file_list_ = new FileList(number_of_files);
+}
 
 bool BareosAccurateFilelistHtable::AddFile(char* fname,
                                            int fname_length,
@@ -124,7 +126,9 @@ accurate_payload* BareosAccurateFilelistHtable::lookup_payload(char* fname)
 }
 
 bool BareosAccurateFilelistHtable::UpdatePayload(char*, accurate_payload*)
-{ return true; }
+{
+  return true;
+}
 
 bool BareosAccurateFilelistHtable::SendDeletedList()
 {

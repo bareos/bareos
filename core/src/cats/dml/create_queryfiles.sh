@@ -45,11 +45,11 @@ get_query_include_filename()
 #
 # file header
 #
-: >$QUERY_NAMES_FILE
+>$QUERY_NAMES_FILE
 print_note >>$QUERY_NAMES_FILE
 printf "const char *BareosDb::query_names[] = {\n" >>$QUERY_NAMES_FILE
 
-: >$QUERY_ENUM_FILE
+>$QUERY_ENUM_FILE
 print_note >>$QUERY_ENUM_FILE
 cat >>$QUERY_ENUM_FILE <<EOF
 #ifndef BAREOS_CATS_BDB_QUERY_ENUM_CLASS_H_
@@ -63,28 +63,27 @@ EOF
 
 for db in $DATABASES; do
   DB=${db^}
-  queryincludefile=$(get_query_include_filename "${db}")
-  : >"${queryincludefile}"
-  print_note >>"${queryincludefile}"
+  queryincludefile=$(get_query_include_filename $db)
+  >$queryincludefile
+  print_note >>$queryincludefile
+  printf "const char *BareosDb%s::query_definitions[] = {\n" "$DB" >>$queryincludefile
 done
 
 #
 # file data
 #
-((i = 0))
+let i=0
 for query in $(ls ????_* | sed 's#\..*##g' | sort | uniq); do
-  queryname=$(sed 's/[0-9]*_//' <<<"${query}")
-  printf '"%s",\n' "$queryname" >>"${QUERY_NAMES_FILE}"
-  printf "    %s = %s,\n" "$queryname" "$i" >>"${QUERY_ENUM_FILE}"
-
-  ((i++))
-
+  queryname=$(sed 's/[0-9]*_//' <<<$query)
+  printf '"%s",\n' "$queryname" >>$QUERY_NAMES_FILE
+  printf "    %s = %s,\n" "$queryname" "$i" >>$QUERY_ENUM_FILE
+  let i++
   for db in $DATABASES; do
     queryincludefile=$(get_query_include_filename $db)
     queryfile="$query"
     printf '/* %s */\nR"SQL(' "$queryfile" >>$queryincludefile
     # remove comments and empty lines
-    sed -r -e "/^#/d" -e "/^$/d" <"$queryfile" >>$queryincludefile
+    sed -r -e "/^#/d" -e "/^$/d" <"$queryfile" >>"$queryincludefile"
     printf ')SQL",\n\n' >>$queryincludefile
   done
 done
@@ -92,8 +91,7 @@ done
 #
 # file footer
 #
-
-printf "NULL\n};\n" >>"${QUERY_NAMES_FILE}"
+printf "NULL\n};\n" >>$QUERY_NAMES_FILE
 
 cat >>$QUERY_ENUM_FILE <<EOF
     SQL_QUERY_NUMBER = $i
@@ -102,3 +100,8 @@ cat >>$QUERY_ENUM_FILE <<EOF
 
 #endif  // BAREOS_CATS_BDB_QUERY_ENUM_CLASS_H_
 EOF
+
+for db in $DATABASES; do
+  queryincludefile=$(get_query_include_filename $db)
+  printf "NULL\n};\n" >>$queryincludefile
+done
