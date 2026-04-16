@@ -18,6 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
  */
+#include "command_runner.h"
 #include "setup_steps.h"
 
 #include <gtest/gtest.h>
@@ -314,4 +315,12 @@ TEST(BareosSetupStepsShared, KeepsRepoCredentialsOutOfShellSource)
   EXPECT_EQ(cmd[2].find("user:"), std::string::npos);
   EXPECT_NE(cmd[2].find("curl \"${curl_args[@]}\" \"$1\" | bash"),
             std::string::npos);
+}
+
+TEST(BareosSetupStepsShared, ThrowsOnExecFailure)
+{
+  EXPECT_THROW(
+      RunCommand({"definitely-not-a-real-bareos-setup-command"}, false,
+                 [](const std::string&, const std::string&) {}),
+      std::runtime_error);
 }

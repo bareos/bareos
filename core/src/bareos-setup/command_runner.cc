@@ -21,6 +21,7 @@
 #include "command_runner.h"
 
 #include <array>
+#include <cerrno>
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -68,9 +69,10 @@ int RunCommand(const std::vector<std::string>& argv,
   cargv.push_back(nullptr);
 
   // Create stdout and stderr pipes
-  int pipe_out[2], pipe_err[2];
-  if (pipe(pipe_out) != 0 || pipe(pipe_err) != 0)
+  int pipe_out[2], pipe_err[2], pipe_exec[2];
+  if (pipe(pipe_out) != 0 || pipe(pipe_err) != 0 || pipe(pipe_exec) != 0)
     throw std::runtime_error(std::string("pipe: ") + strerror(errno));
+  fcntl(pipe_exec[1], F_SETFD, FD_CLOEXEC);
 
   pid_t pid = fork();
   if (pid < 0)
@@ -80,6 +82,7 @@ int RunCommand(const std::vector<std::string>& argv,
     // Child
     close(pipe_out[0]);
     close(pipe_err[0]);
+    close(pipe_exec[0]);
     dup2(pipe_out[1], STDOUT_FILENO);
     dup2(pipe_err[1], STDERR_FILENO);
     close(pipe_out[1]);
@@ -91,15 +94,28 @@ int RunCommand(const std::vector<std::string>& argv,
       close(devnull);
     }
     execvp(cargv[0], const_cast<char* const*>(cargv.data()));
-    // execvp failed — write error to stderr and exit
-    const char* msg = strerror(errno);
-    [[maybe_unused]] auto _ = write(STDERR_FILENO, msg, strlen(msg));
+    const int exec_errno = errno;
+    [[maybe_unused]] auto _
+        = write(pipe_exec[1], &exec_errno, sizeof(exec_errno));
+    close(pipe_exec[1]);
     _exit(127);
   }
 
   // Parent
   close(pipe_out[1]);
   close(pipe_err[1]);
+  close(pipe_exec[1]);
+
+  int exec_errno = 0;
+  const ssize_t exec_bytes = read(pipe_exec[0], &exec_errno, sizeof(exec_errno));
+  close(pipe_exec[0]);
+  if (exec_bytes > 0) {
+    close(pipe_out[0]);
+    close(pipe_err[0]);
+    int status = 0;
+    waitpid(pid, &status, 0);
+    throw std::runtime_error(std::string("execvp: ") + strerror(exec_errno));
+  }
 
   // Make pipes non-blocking for poll loop
   fcntl(pipe_out[0], F_SETFL, O_NONBLOCK);
