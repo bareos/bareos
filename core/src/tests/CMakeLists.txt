@@ -540,7 +540,7 @@ if(ENABLE_BARRI)
   )
 endif()
 
-if(ENABLE_PYTHON)
+if(ENABLE_PYTHON AND TARGET python-common)
   bareos_add_test(
     python_common_test LINK_LIBRARIES python-common GTest::gtest_main
   )
