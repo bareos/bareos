@@ -124,6 +124,14 @@ watch(messages, (msgs) => {
     done.value    = true
     exitCode.value = last.exit_code
     if (last.exit_code === 0) store.repoAdded = true
+  } else if (last.type === 'error') {
+    running.value = false
+    done.value = true
+    exitCode.value = 1
+    lines.value.push({
+      text: last.message || 'Repository setup failed.',
+      cls: 'output-line-err',
+    })
   }
 }, { deep: true })
 
