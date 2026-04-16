@@ -22,7 +22,7 @@ set -e
 set -u
 
 . ./environment
-. ./test-config
+
 . "${BAREOS_SCRIPTS_DIR}/redirect_output"
 
 echo "=== $0 Running ==="

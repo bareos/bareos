@@ -34,8 +34,6 @@ export TestName
 
 #shellcheck source=../../environment.in
 . ./environment
-#shellcheck source=test-config.in
-. ./test-config
 
 #shellcheck source=../../scripts/functions
 . "${BAREOS_SCRIPTS_DIR}"/functions
@@ -54,7 +52,7 @@ on_error()
 trap 'on_error' ERR
 
 # Create more data to fill up tape
-generate_test_data
+generate_test_data data
 
 # remove jobs from previous runs in pool Broken
 volumes=$(bin/bconsole <<<".api 2
