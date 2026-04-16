@@ -66,7 +66,7 @@ set(EMBEDDED_ASSETS_CC "${CMAKE_CURRENT_BINARY_DIR}/embedded_assets.cc")
 
 add_custom_command(
   OUTPUT "${EMBEDDED_ASSETS_CC}"
-  COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/embed_assets.py"
+  COMMAND ${PYTHON_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/embed_assets.py"
           "${SETUP_VUE_DIST}" "${EMBEDDED_ASSETS_CC}"
   DEPENDS "${SETUP_VUE_DIST_INDEX}"
           "${CMAKE_CURRENT_SOURCE_DIR}/embed_assets.py"
