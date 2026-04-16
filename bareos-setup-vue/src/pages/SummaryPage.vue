@@ -56,8 +56,11 @@
       </q-card-section>
     </q-card>
 
-    <!-- Script output -->
-    <div v-if="scriptContent" class="output-console q-mb-md">{{ scriptContent }}</div>
+    <q-banner v-if="scriptDownloaded"
+              class="bg-positive text-white q-mb-md" rounded>
+      <template #avatar><q-icon name="download_done" /></template>
+      The setup script was downloaded as <code>bareos-setup.sh</code>.
+    </q-banner>
 
     <div class="row q-gutter-sm q-mb-lg">
       <q-btn label="Download Script" icon="download" color="secondary"
@@ -87,7 +90,7 @@ const store  = useSetupStore()
 const { send, messages } = useSetupWs()
 
 const generatingScript = ref(false)
-const scriptContent    = ref('')
+const scriptDownloaded = ref(false)
 
 const webuiUrl = computed(() => {
   const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'
@@ -112,8 +115,8 @@ watch(messages, (msgs) => {
   const last = msgs[msgs.length - 1]
   if (!last) return
   if (last.type === 'script') {
-    scriptContent.value    = last.content
     generatingScript.value = false
+    scriptDownloaded.value = true
     // trigger download
     const blob = new Blob([last.content], { type: 'text/plain' })
     const url  = URL.createObjectURL(blob)
@@ -124,6 +127,7 @@ watch(messages, (msgs) => {
     URL.revokeObjectURL(url)
   } else if (last.type === 'error') {
     generatingScript.value = false
+    scriptDownloaded.value = false
     $q.notify({
       type: 'negative',
       message: last.message || 'Failed to generate the setup script.',
@@ -133,6 +137,7 @@ watch(messages, (msgs) => {
 
 function generateScript() {
   generatingScript.value = true
+  scriptDownloaded.value = false
   send({
     action: 'generate_script',
     distro: store.osInfo?.distro,
