@@ -29,6 +29,8 @@
  *   BAREOS_DIRECTOR_PORT  director port       (default: 9101)
  *   BAREOS_DIRECTOR_NAME  director name       (default: bareos-dir)
  *
+ * The proxy requires TLS-PSK for its connection to the Director.
+ *
  * CLI flags (override env vars):
  *   --ws-host <addr>
  *   --ws-port <port>

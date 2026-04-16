@@ -47,14 +47,19 @@ install(
 if(BUILD_TESTING AND GTest_FOUND)
   include(GoogleTest)
 
-  set(PROXY_LIB_SOURCES bareos_base64.cc)
+  set(PROXY_LIB_SOURCES bareos_base64.cc director_connection.cc)
 
   add_executable(
-    test_webui_proxy tests/test_bareos_base64.cc ${PROXY_LIB_SOURCES}
+    test_webui_proxy tests/test_bareos_base64.cc
+                     tests/test_director_connection.cc ${PROXY_LIB_SOURCES}
   )
   target_compile_features(test_webui_proxy PRIVATE cxx_std_20)
+  target_compile_definitions(
+    test_webui_proxy PRIVATE BAREOS_FULL_VERSION="${BAREOS_FULL_VERSION}"
+  )
   target_include_directories(
     test_webui_proxy PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                             "${CMAKE_CURRENT_SOURCE_DIR}/../lib"
   )
   target_link_libraries(
     test_webui_proxy PRIVATE OpenSSL::SSL OpenSSL::Crypto GTest::gtest

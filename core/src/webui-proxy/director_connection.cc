@@ -20,6 +20,7 @@
 */
 #include "director_connection.h"
 #include "bareos_base64.h"
+#include "ascii_control_characters.h"
 
 #include <algorithm>
 #include <array>
@@ -35,8 +36,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include <openssl/ssl.h>
 
 // ---------------------------------------------------------------------------
 // Bareos signal codes (negative length-prefix values)
@@ -58,41 +61,15 @@ static constexpr int32_t kBnetSubPrompt = -27;  // At a sub-prompt
 // Helpers
 // ---------------------------------------------------------------------------
 
-static void WriteAll(int fd, const void* buf, size_t len)
-{
-  const auto* p = static_cast<const uint8_t*>(buf);
-  while (len > 0) {
-    ssize_t n = ::send(fd, p, len, MSG_NOSIGNAL);
-    if (n < 0 && errno == EINTR) { continue; }
-    if (n <= 0) { throw std::runtime_error("Director: send failed"); }
-    p += n;
-    len -= static_cast<size_t>(n);
-  }
-}
-
-static void ReadAll(int fd, void* buf, size_t len)
-{
-  auto* p = static_cast<uint8_t*>(buf);
-  while (len > 0) {
-    ssize_t n = ::recv(fd, p, len, MSG_WAITALL);
-    if (n < 0 && errno == EINTR) { continue; }
-    if (n <= 0) {
-      throw std::runtime_error("Director: connection closed by peer");
-    }
-    p += n;
-    len -= static_cast<size_t>(n);
-  }
-}
-
 // Compute MD5(text) and return it as a lowercase hex string (32 chars).
-static std::string Md5Hex(const std::string& text)
+std::string GetDirectorTlsPskSecret(const std::string& password)
 {
   uint8_t digest[EVP_MAX_MD_SIZE];
   unsigned int dlen = 0;
 
   EVP_MD_CTX* ctx = EVP_MD_CTX_new();
   EVP_DigestInit_ex(ctx, EVP_md5(), nullptr);
-  EVP_DigestUpdate(ctx, text.data(), text.size());
+  EVP_DigestUpdate(ctx, password.data(), password.size());
   EVP_DigestFinal_ex(ctx, digest, &dlen);
   EVP_MD_CTX_free(ctx);
 
@@ -101,6 +78,12 @@ static std::string Md5Hex(const std::string& text)
     snprintf(hex + i * 2, 3, "%02x", digest[i]);
   }
   return {hex, dlen * 2};
+}
+
+std::string GetDirectorTlsPskIdentity(const std::string& console_name)
+{
+  return std::string("R_CONSOLE")
+         + AsciiControlCharacters::RecordSeparator() + console_name;
 }
 
 /**
@@ -119,21 +102,123 @@ static std::array<uint8_t, 16> HmacMd5(const std::string& key,
   return result;
 }
 
+static std::string GetOpenSslError()
+{
+  std::string error;
+  while (unsigned long code = ERR_get_error()) {
+    char buffer[256] = {};
+    ERR_error_string_n(code, buffer, sizeof(buffer));
+    if (!error.empty()) { error += ": "; }
+    error += buffer;
+  }
+  return error.empty() ? "unknown OpenSSL error" : error;
+}
+
+static int GetDirectorConnectionSslCtxExDataIndex()
+{
+  static const int index
+      = SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  return index;
+}
+
+unsigned int TlsPskClientCallback(SSL* ssl,
+                                  const char* /*hint*/,
+                                  char* identity,
+                                  unsigned int max_identity_len,
+                                  unsigned char* psk,
+                                  unsigned int max_psk_len)
+{
+  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
+  if (!ssl_ctx) { return 0; }
+
+  auto* connection = static_cast<DirectorConnection*>(
+      SSL_CTX_get_ex_data(ssl_ctx, GetDirectorConnectionSslCtxExDataIndex()));
+  if (!connection) { return 0; }
+
+  const std::string& tls_psk_identity = connection->tls_psk_identity_;
+  const std::string& tls_psk_secret = connection->tls_psk_secret_;
+
+  if (tls_psk_identity.empty() || tls_psk_secret.empty()) { return 0; }
+  if (tls_psk_identity.size() + 1 > max_identity_len
+      || tls_psk_secret.size() > max_psk_len) {
+    return 0;
+  }
+
+  std::memcpy(identity, tls_psk_identity.c_str(),
+              tls_psk_identity.size() + 1);
+  std::memcpy(psk, tls_psk_secret.data(), tls_psk_secret.size());
+  return static_cast<unsigned int>(tls_psk_secret.size());
+}
+
 // ---------------------------------------------------------------------------
 // Frame I/O
 // ---------------------------------------------------------------------------
 
+void DirectorConnection::WriteAll(const void* buf, size_t len)
+{
+  const auto* p = static_cast<const uint8_t*>(buf);
+  while (len > 0) {
+    int n = 0;
+    if (ssl_) {
+      n = SSL_write(ssl_, p, static_cast<int>(len));
+      if (n <= 0) {
+        int ssl_error = SSL_get_error(ssl_, n);
+        if (ssl_error == SSL_ERROR_WANT_READ
+            || ssl_error == SSL_ERROR_WANT_WRITE) {
+          continue;
+        }
+        throw std::runtime_error("Director: TLS write failed: "
+                                 + GetOpenSslError());
+      }
+    } else {
+      n = static_cast<int>(::send(fd_, p, len, MSG_NOSIGNAL));
+      if (n < 0 && errno == EINTR) { continue; }
+    }
+    if (!ssl_ && n <= 0) { throw std::runtime_error("Director: send failed"); }
+    p += n;
+    len -= static_cast<size_t>(n);
+  }
+}
+
+void DirectorConnection::ReadAll(void* buf, size_t len)
+{
+  auto* p = static_cast<uint8_t*>(buf);
+  while (len > 0) {
+    int n = 0;
+    if (ssl_) {
+      n = SSL_read(ssl_, p, static_cast<int>(len));
+      if (n <= 0) {
+        int ssl_error = SSL_get_error(ssl_, n);
+        if (ssl_error == SSL_ERROR_WANT_READ
+            || ssl_error == SSL_ERROR_WANT_WRITE) {
+          continue;
+        }
+        throw std::runtime_error("Director: TLS read failed: "
+                                 + GetOpenSslError());
+      }
+    } else {
+      n = static_cast<int>(::recv(fd_, p, len, MSG_WAITALL));
+      if (n < 0 && errno == EINTR) { continue; }
+    }
+    if (!ssl_ && n <= 0) {
+      throw std::runtime_error("Director: connection closed by peer");
+    }
+    p += n;
+    len -= static_cast<size_t>(n);
+  }
+}
+
 void DirectorConnection::SendFrame(const std::string& data)
 {
   int32_t hdr = htonl(static_cast<int32_t>(data.size()));
-  WriteAll(fd_, &hdr, 4);
-  if (!data.empty()) { WriteAll(fd_, data.data(), data.size()); }
+  WriteAll(&hdr, 4);
+  if (!data.empty()) { WriteAll(data.data(), data.size()); }
 }
 
 std::string DirectorConnection::RecvFrame(int32_t* signal)
 {
   int32_t hdr_net;
-  ReadAll(fd_, &hdr_net, 4);
+  ReadAll(&hdr_net, 4);
   int32_t len = ntohl(hdr_net);
 
   if (len <= 0) {
@@ -144,7 +229,7 @@ std::string DirectorConnection::RecvFrame(int32_t* signal)
   if (signal) { *signal = 0; }
 
   std::string msg(static_cast<size_t>(len), '\0');
-  ReadAll(fd_, msg.data(), static_cast<size_t>(len));
+  ReadAll(msg.data(), static_cast<size_t>(len));
   return msg;
 }
 
@@ -153,7 +238,7 @@ std::string DirectorConnection::RecvResponse()
   std::string result;
   while (true) {
     int32_t hdr_net;
-    ReadAll(fd_, &hdr_net, 4);
+    ReadAll(&hdr_net, 4);
     int32_t len = ntohl(hdr_net);
 
     if (len == kBnetEod || len == kBnetEods || len == kBnetEof) {
@@ -170,7 +255,7 @@ std::string DirectorConnection::RecvResponse()
     }
 
     std::string chunk(static_cast<size_t>(len), '\0');
-    ReadAll(fd_, chunk.data(), static_cast<size_t>(len));
+    ReadAll(chunk.data(), static_cast<size_t>(len));
     result += chunk;
   }
   return result;
@@ -183,7 +268,7 @@ std::string DirectorConnection::RecvResponse()
 void DirectorConnection::Authenticate(const DirectorConfig& cfg)
 {
   // The CRAM-MD5 key is MD5(plaintext_password) as a hex string.
-  const std::string key = Md5Hex(cfg.password);
+  const std::string key = GetDirectorTlsPskSecret(cfg.password);
 
   // Step 1: send Hello with version so the director uses the >= 18.2 protocol.
   const std::string hello
@@ -299,8 +384,30 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
 void DirectorConnection::Connect(const DirectorConfig& cfg)
 {
   json_mode_ = cfg.json_mode;
+  tls_psk_identity_ = GetDirectorTlsPskIdentity(cfg.username);
+  tls_psk_secret_ = GetDirectorTlsPskSecret(cfg.password);
 
-  // Resolve host and connect
+  ConnectTcp(cfg);
+
+  if (cfg.tls_psk_require) {
+    try {
+      ConnectTlsPsk(cfg);
+    } catch (...) {
+      Disconnect();
+      throw;
+    }
+  }
+
+  try {
+    Authenticate(cfg);
+  } catch (...) {
+    Disconnect();
+    throw;
+  }
+}
+
+void DirectorConnection::ConnectTcp(const DirectorConfig& cfg)
+{
   struct addrinfo hints{};
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
@@ -326,13 +433,53 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
     throw std::runtime_error("Director: could not connect to " + cfg.host + ":"
                              + std::to_string(cfg.port));
   }
+}
 
-  try {
-    Authenticate(cfg);
-  } catch (...) {
-    ::close(fd_);
-    fd_ = -1;
-    throw;
+void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
+{
+  ssl_ctx_ = SSL_CTX_new(TLS_client_method());
+  if (!ssl_ctx_) {
+    throw std::runtime_error("Director: could not create TLS-PSK context: "
+                             + GetOpenSslError());
+  }
+
+  if (SSL_CTX_set_cipher_list(ssl_ctx_, "PSK") != 1) {
+    throw std::runtime_error("Director: could not set TLS-PSK cipher list: "
+                             + GetOpenSslError());
+  }
+  if (SSL_CTX_set_min_proto_version(ssl_ctx_, TLS1_2_VERSION) != 1
+      || SSL_CTX_set_max_proto_version(ssl_ctx_, TLS1_2_VERSION) != 1) {
+    throw std::runtime_error("Director: could not restrict TLS-PSK protocol: "
+                             + GetOpenSslError());
+  }
+
+  SSL_CTX_set_ex_data(ssl_ctx_, GetDirectorConnectionSslCtxExDataIndex(),
+                      this);
+  SSL_CTX_set_psk_client_callback(ssl_ctx_, TlsPskClientCallback);
+
+  ssl_ = SSL_new(ssl_ctx_);
+  if (!ssl_) {
+    throw std::runtime_error("Director: could not create TLS-PSK session: "
+                             + GetOpenSslError());
+  }
+  if (SSL_set_fd(ssl_, fd_) != 1) {
+    throw std::runtime_error("Director: could not bind TLS-PSK session: "
+                             + GetOpenSslError());
+  }
+  if (SSL_set_tlsext_host_name(ssl_, cfg.host.c_str()) != 1) {
+    throw std::runtime_error("Director: could not set TLS-PSK server name: "
+                             + GetOpenSslError());
+  }
+  while (true) {
+    int rc = SSL_connect(ssl_);
+    if (rc == 1) { break; }
+    int ssl_error = SSL_get_error(ssl_, rc);
+    if (ssl_error == SSL_ERROR_WANT_READ
+        || ssl_error == SSL_ERROR_WANT_WRITE) {
+      continue;
+    }
+    throw std::runtime_error("Director: TLS-PSK handshake failed: "
+                             + GetOpenSslError());
   }
 }
 
@@ -357,7 +504,7 @@ CallResult DirectorConnection::Call(const std::string& command)
   CallResult result;
   while (true) {
     int32_t hdr_net;
-    ReadAll(fd_, &hdr_net, 4);
+    ReadAll(&hdr_net, 4);
     int32_t len = ntohl(hdr_net);
 
     if (len < 0) {
@@ -400,7 +547,7 @@ CallResult DirectorConnection::Call(const std::string& command)
     if (len == 0) { continue; }  // keep-alive
 
     std::string chunk(static_cast<size_t>(len), '\0');
-    ReadAll(fd_, chunk.data(), static_cast<size_t>(len));
+    ReadAll(chunk.data(), static_cast<size_t>(len));
     result.text += chunk;
   }
   return result;
@@ -408,14 +555,25 @@ CallResult DirectorConnection::Call(const std::string& command)
 
 void DirectorConnection::Disconnect()
 {
-  if (fd_ >= 0) {
+  if (fd_ >= 0 || ssl_ || ssl_ctx_) {
     // Best-effort: send quit command
     try {
-      SendFrame("quit\n");
+      if (fd_ >= 0) { SendFrame("quit\n"); }
     } catch (...) {
     }
-    ::close(fd_);
-    fd_ = -1;
+    if (ssl_) {
+      SSL_shutdown(ssl_);
+      SSL_free(ssl_);
+      ssl_ = nullptr;
+    }
+    if (ssl_ctx_) {
+      SSL_CTX_free(ssl_ctx_);
+      ssl_ctx_ = nullptr;
+    }
+    if (fd_ >= 0) {
+      ::close(fd_);
+      fd_ = -1;
+    }
   }
 }
 
