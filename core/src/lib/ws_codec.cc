@@ -201,6 +201,10 @@ WsCodec::Frame WsCodec::RecvFrame()
   uint8_t mask[4] = {};
   if (masked) { ReadAll(mask, 4); }
 
+  if (payload_len > kMaxMessageSize) {
+    throw std::runtime_error("WebSocket: frame too large");
+  }
+
   if (payload_len > 0) {
     f.payload.resize(static_cast<size_t>(payload_len));
     ReadAll(f.payload.data(), static_cast<size_t>(payload_len));
@@ -264,11 +268,17 @@ std::string WsCodec::RecvMessage()
 
       case kOpText:
       case kOpBinary:
+        if (message.size() + f.payload.size() > kMaxMessageSize) {
+          throw std::runtime_error("WebSocket: message too large");
+        }
         message += f.payload;
         if (f.fin) { return message; }
         break;
 
       case kOpContinuation:
+        if (message.size() + f.payload.size() > kMaxMessageSize) {
+          throw std::runtime_error("WebSocket: message too large");
+        }
         message += f.payload;
         if (f.fin) { return message; }
         break;
