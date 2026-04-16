@@ -173,6 +173,15 @@ watch(messages, (msgs) => {
     store.tapeChangers = last.tape_changers ?? []
     store.tapeDrives = last.tape_drives ?? []
     applyAssignments(last.suggested_tape_assignments ?? [])
+  } else if (last.type === 'error') {
+    running.value = false
+    done.value = true
+    exitCode.value = 1
+    completedStep.value = last.step ?? ''
+    lines.value.push({
+      text: last.message,
+      cls: 'output-line-err',
+    })
   } else if (!running.value) {
     return
   } else if (last.type === 'output') {
@@ -182,15 +191,6 @@ watch(messages, (msgs) => {
     })
     nextTick(() => {
       if (consoleEl.value) consoleEl.value.scrollTop = consoleEl.value.scrollHeight
-    })
-  } else if (last.type === 'error') {
-    running.value = false
-    done.value = true
-    exitCode.value = 1
-    completedStep.value = last.step ?? ''
-    lines.value.push({
-      text: last.message,
-      cls: 'output-line-err',
     })
   } else if (last.type === 'done') {
     running.value = false
