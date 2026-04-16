@@ -22,6 +22,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cctype>
 #include <cstring>
 #include <functional>
@@ -42,6 +43,9 @@
 #include <openssl/sha.h>
 
 #include "embedded_assets.h"
+
+static constexpr int kMaxConcurrentWorkers = 64;
+static constexpr int kHeaderReadTimeoutSeconds = 10;
 
 // ---- helpers ---------------------------------------------------------------
 
@@ -195,15 +199,42 @@ void RunHttpServer(int port, WsHandler ws_handler)
   std::cout << "bareos-setup listening on http://localhost:" << port << "/\n"
             << std::flush;
 
+  std::atomic<int> active_workers{0};
   while (true) {
     int fd = accept(srv, nullptr, nullptr);
     if (fd < 0) continue;
 
+    if (active_workers.load(std::memory_order_relaxed)
+        >= kMaxConcurrentWorkers) {
+      const char* r503
+          = "HTTP/1.1 503 Service Unavailable\r\n"
+            "Connection: close\r\n"
+            "Content-Length: 19\r\n\r\nService Unavailable";
+      WriteAll(fd, r503, strlen(r503));
+      close(fd);
+      continue;
+    }
+
+    active_workers.fetch_add(1, std::memory_order_relaxed);
+
     // Handle each connection in its own thread
-    std::thread([fd, ws_handler]() {
+    std::thread([fd, ws_handler, &active_workers]() {
+      struct WorkerGuard {
+        int fd;
+        std::atomic<int>& active_workers;
+        ~WorkerGuard()
+        {
+          close(fd);
+          active_workers.fetch_sub(1, std::memory_order_relaxed);
+        }
+      } guard{fd, active_workers};
+
+      const timeval header_timeout{kHeaderReadTimeoutSeconds, 0};
+      setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &header_timeout,
+                 sizeof(header_timeout));
+
       std::string headers = ReadHttpHeaders(fd);
       if (headers.empty()) {
-        close(fd);
         return;
       }
 
@@ -212,6 +243,10 @@ void RunHttpServer(int port, WsHandler ws_handler)
                     || upgrade.find("WebSocket") != std::string::npos);
 
       if (is_ws) {
+        const timeval no_timeout{0, 0};
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &no_timeout,
+                   sizeof(no_timeout));
+
         // Send 101 Switching Protocols
         std::string key = GetHeader(headers, "Sec-WebSocket-Key");
         std::string accept = ComputeAcceptKey(key);
@@ -233,7 +268,6 @@ void RunHttpServer(int port, WsHandler ws_handler)
         if (q != std::string::npos) path = path.substr(0, q);
         ServeStaticFile(fd, path);
       }
-      close(fd);
     }).detach();
   }
 }
