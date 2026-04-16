@@ -82,8 +82,11 @@ std::string GetDirectorTlsPskSecret(const std::string& password)
 
 std::string GetDirectorTlsPskIdentity(const std::string& console_name)
 {
-  return std::string("R_CONSOLE")
-         + AsciiControlCharacters::RecordSeparator() + console_name;
+  std::string identity = "R_CONSOLE";
+  identity.reserve(identity.size() + 1 + console_name.size());
+  identity.push_back(AsciiControlCharacters::RecordSeparator());
+  identity.append(console_name);
+  return identity;
 }
 
 /**

@@ -28,10 +28,11 @@
 TEST(DirectorConnection, BuildsTlsPskIdentityForConsole)
 {
   const std::string identity = GetDirectorTlsPskIdentity("admin-tls");
+  std::string expected = "R_CONSOLE";
+  expected.push_back(AsciiControlCharacters::RecordSeparator());
+  expected.append("admin-tls");
 
-  EXPECT_EQ(identity,
-            std::string("R_CONSOLE")
-                + AsciiControlCharacters::RecordSeparator() + "admin-tls");
+  EXPECT_EQ(identity, expected);
 }
 
 TEST(DirectorConnection, UsesMd5HexPasswordAsTlsPsk)
