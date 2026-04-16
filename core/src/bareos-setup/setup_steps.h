@@ -172,7 +172,8 @@ std::string DescribeDeviceIdentifier(const DeviceIdentifier& identifier);
 std::vector<DeviceIdentifier> ParseDeviceIdentifiersVpdPage(
     const std::vector<uint8_t>& page_data);
 
-/** Parse the changer's data transfer element identifiers from READ ELEMENT STATUS. */
+/** Parse the changer's data transfer element identifiers from READ ELEMENT
+ * STATUS. */
 std::vector<TapeChangerDriveIdentifier> ParseTapeLibraryDriveIdentifiers(
     const std::vector<uint8_t>& status_data);
 
@@ -197,10 +198,10 @@ bool ValidateStorageConfig(const DiskStorageConfig& disk,
 DirectorStorageDefaults ReadDirectorStorageDefaults();
 
 /** Build the shell script that applies the selected storage configuration. */
-std::string BuildConfigureStorageScript(
-    const DiskStorageConfig& disk,
-    const TapeStorageConfig& tape,
-    const DirectorStorageDefaults& defaults = {});
+std::string BuildConfigureStorageScript(const DiskStorageConfig& disk,
+                                        const TapeStorageConfig& tape,
+                                        const DirectorStorageDefaults& defaults
+                                        = {});
 
 /** Execute a generated shell script via a temporary file. */
 int RunGeneratedScript(const std::string& script,

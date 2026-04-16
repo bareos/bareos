@@ -23,9 +23,9 @@ find_program(NPM_EXECUTABLE npm)
 
 if(NPM_EXECUTABLE)
   # Collect Vue source files so CMake knows when to retrigger the build. Use
-  # GLOB_RECURSE only for src/ sub-trees; use plain GLOB for root-level files
-  # so that dist/index.html (which is a build OUTPUT) is not picked up
-  # recursively and does not create a dependency cycle in Ninja.
+  # GLOB_RECURSE only for src/ sub-trees; use plain GLOB for root-level files so
+  # that dist/index.html (which is a build OUTPUT) is not picked up recursively
+  # and does not create a dependency cycle in Ninja.
   file(GLOB_RECURSE SETUP_VUE_SOURCES "${SETUP_VUE_SRC}/src/*.vue"
        "${SETUP_VUE_SRC}/src/*.js" "${SETUP_VUE_SRC}/src/*.scss"
   )
@@ -34,10 +34,10 @@ if(NPM_EXECUTABLE)
   )
   list(APPEND SETUP_VUE_SOURCES ${SETUP_VUE_SOURCES_ROOT})
 
-  # Use dist/index.html as the build output so CMake's dependency tracking
-  # skips the npm build when the checked-in dist is already up-to-date. Run
-  # `npm run build` (not `npm ci`) so no network access is required; run
-  # `npm ci` manually once when updating dependencies.
+  # Use dist/index.html as the build output so CMake's dependency tracking skips
+  # the npm build when the checked-in dist is already up-to-date. Run `npm run
+  # build` (not `npm ci`) so no network access is required; run `npm ci`
+  # manually once when updating dependencies.
   add_custom_command(
     OUTPUT "${SETUP_VUE_DIST_INDEX}"
     COMMAND "${NPM_EXECUTABLE}" run build
@@ -49,12 +49,12 @@ if(NPM_EXECUTABLE)
 
   add_custom_target(bareos-setup-vue-build DEPENDS "${SETUP_VUE_DIST_INDEX}")
 else()
-  # npm not found — use the committed dist/ as-is (same approach as
-  # webui-vue). To rebuild, run: cd bareos-setup-vue && npm install &&
-  # npm run build, then commit the updated dist/.
+  # npm not found — use the committed dist/ as-is (same approach as webui-vue).
+  # To rebuild, run: cd bareos-setup-vue && npm install && npm run build, then
+  # commit the updated dist/.
   message(
     STATUS
-    "npm not found — using committed bareos-setup-vue dist/ without rebuild"
+      "npm not found — using committed bareos-setup-vue dist/ without rebuild"
   )
   add_custom_target(bareos-setup-vue-build)
 endif()

@@ -25,13 +25,12 @@
 # /dev/nstX device nodes.  Multiple autochangers are supported.
 #
 # The same script can be run standalone from the source tree:
-#   ./core/scripts/bareos-detect-autochanger
+# ./core/scripts/bareos-detect-autochanger
 #
-# Sets in the caller's scope:
-#   DETECTED_CHANGER_COUNT   – number of changers found (0 if none)
-#   DETECTED_CHANGER_DEVICE  – path to the first SCSI medium changer found
-#   DETECTED_TAPE_DEVICES    – CMake list of tape drive paths for the first
-#                              changer (semicolon-separated)
+# Sets in the caller's scope: DETECTED_CHANGER_COUNT   – number of changers
+# found (0 if none) DETECTED_CHANGER_DEVICE  – path to the first SCSI medium
+# changer found DETECTED_TAPE_DEVICES    – CMake list of tape drive paths for
+# the first changer (semicolon-separated)
 #
 function(bareos_autodetect_autochanger)
   if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -57,7 +56,7 @@ function(bareos_autodetect_autochanger)
   if(NOT EXISTS "${_detect_script}")
     message(
       WARNING
-      "Skipping tape autochanger detection because ${_detect_script} is missing."
+        "Skipping tape autochanger detection because ${_detect_script} is missing."
     )
     set(DETECTED_CHANGER_COUNT
         0
@@ -77,8 +76,7 @@ function(bareos_autodetect_autochanger)
   execute_process(
     COMMAND bash "${_detect_script}"
     OUTPUT_VARIABLE _detect_output
-    ERROR_QUIET
-    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
     RESULT_VARIABLE _detect_result
   )
 
@@ -87,12 +85,8 @@ function(bareos_autodetect_autochanger)
   set(_tape_paths "")
 
   if(_detect_result EQUAL 0)
-    # Output format:
-    #   CHANGER_COUNT=<n>
-    #   CHANGER_DEVICE_0=<path>
-    #   TAPE_DEVICES_0=<path1>;<path2>;...
-    #   CHANGER_DEVICE_1=<path>
-    #   ...
+    # Output format: CHANGER_COUNT=<n> CHANGER_DEVICE_0=<path>
+    # TAPE_DEVICES_0=<path1>;<path2>;... CHANGER_DEVICE_1=<path> ...
     string(REGEX MATCH "CHANGER_COUNT=([0-9]+)" _ "${_detect_output}")
     set(_changer_count "${CMAKE_MATCH_1}")
 

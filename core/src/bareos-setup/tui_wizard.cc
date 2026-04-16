@@ -171,7 +171,10 @@ struct WizardState {
   bool tape_enabled = false;
   bool storage_configured = false;
   DiskStorageConfig disk_config{
-      true, "/var/lib/bareos/storage", false, 15,
+      true,
+      "/var/lib/bareos/storage",
+      false,
+      15,
   };
   TapeStorageConfig tape_config;
   std::vector<TapeChangerInfo> tape_changers;
@@ -185,7 +188,8 @@ struct WizardState {
 static std::string FormatTapeDeviceLabel(const TapeDriveInfo& device)
 {
   std::ostringstream label;
-  label << (device.identifier.empty() ? device.display_name : device.identifier);
+  label << (device.identifier.empty() ? device.display_name
+                                      : device.identifier);
   if (!device.serial_number.empty()) label << " / " << device.serial_number;
   label << " (" << device.path << ")";
   return label.str();
@@ -194,7 +198,8 @@ static std::string FormatTapeDeviceLabel(const TapeDriveInfo& device)
 static std::string FormatTapeChangerLabel(const TapeChangerInfo& changer)
 {
   std::ostringstream label;
-  label << (changer.identifier.empty() ? changer.display_name : changer.identifier);
+  label << (changer.identifier.empty() ? changer.display_name
+                                       : changer.identifier);
   if (!changer.serial_number.empty()) label << " / " << changer.serial_number;
   label << " (" << changer.path << ")";
   return label.str();
@@ -279,9 +284,8 @@ static bool ApplyStorageConfiguration(WizardState& state, bool dry_run)
   }
 
   const auto defaults = ReadDirectorStorageDefaults();
-  const auto script
-      = BuildConfigureStorageScript(state.disk_config, state.tape_config,
-                                    defaults);
+  const auto script = BuildConfigureStorageScript(state.disk_config,
+                                                  state.tape_config, defaults);
 
   if (dry_run) {
     std::istringstream stream(script);
@@ -297,8 +301,7 @@ static bool ApplyStorageConfiguration(WizardState& state, bool dry_run)
   int rc = 0;
   try {
     rc = RunGeneratedScript(
-        script, true,
-        [](const std::string& line, const std::string& stream) {
+        script, true, [](const std::string& line, const std::string& stream) {
           if (stream == "stderr") {
             std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
           } else {
@@ -415,8 +418,7 @@ static bool StepAddRepo(WizardState& state, bool dry_run)
   }
 
   const int rc = RunCommand(
-      cmd, true,
-      [](const std::string& line, const std::string& stream) {
+      cmd, true, [](const std::string& line, const std::string& stream) {
         if (stream == "stderr") {
           std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
         } else {
@@ -461,8 +463,7 @@ static bool StepInstall(WizardState& state, bool dry_run)
   }
 
   const int rc = RunCommand(
-      cmd, true,
-      [](const std::string& line, const std::string& stream) {
+      cmd, true, [](const std::string& line, const std::string& stream) {
         if (stream == "stderr") {
           std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
         } else {
@@ -527,9 +528,8 @@ static bool StepDiskStorage(WizardState& state, bool dry_run)
       = Prompt("Disk storage path", state.disk_config.storage_path);
   state.disk_config.dedupable
       = PromptYN("Use dedupable storage", state.disk_config.dedupable);
-  state.disk_config.concurrent_jobs
-      = PromptInt("Parallel backup operations",
-                  state.disk_config.concurrent_jobs, 1);
+  state.disk_config.concurrent_jobs = PromptInt(
+      "Parallel backup operations", state.disk_config.concurrent_jobs, 1);
 
   if (state.tape_enabled) return true;
 
@@ -545,8 +545,8 @@ static void PrintTapeInventory(const WizardState& state)
   } else {
     for (size_t i = 0; i < state.tape_changers.size(); ++i) {
       const auto& changer = state.tape_changers[i];
-      std::cout << "    " << (i + 1) << ") "
-                << FormatTapeChangerLabel(changer) << "\n";
+      std::cout << "    " << (i + 1) << ") " << FormatTapeChangerLabel(changer)
+                << "\n";
       std::cout << "       Drives: " << changer.status.drives
                 << ", Slots: " << changer.status.slots
                 << ", I/E Slots: " << changer.status.ie_slots << "\n";
@@ -570,9 +570,8 @@ static void PrintTapeInventory(const WizardState& state)
   std::cout << "\n";
 }
 
-static TapeAssignment CurrentAssignmentFor(
-    const WizardState& state,
-    const std::string& changer_path)
+static TapeAssignment CurrentAssignmentFor(const WizardState& state,
+                                           const std::string& changer_path)
 {
   for (const auto& assignment : state.tape_config.assignments) {
     if (assignment.changer_path == changer_path) return assignment;
@@ -611,8 +610,8 @@ static bool CollectTapeAssignments(WizardState& state)
       std::cout << "    Enter comma-separated drive numbers in the order "
                    "Bareos should use them.\n";
 
-      const std::string input = Prompt(
-          "Drive numbers", JoinDriveNumbers(current_numbers));
+      const std::string input
+          = Prompt("Drive numbers", JoinDriveNumbers(current_numbers));
 
       if (Trim(input).empty()) continue;
 
@@ -713,8 +712,7 @@ static bool StepDatabase(WizardState& state, bool dry_run)
   }
 
   const int rc = RunCommand(
-      cmd, true,
-      [](const std::string& line, const std::string& stream) {
+      cmd, true, [](const std::string& line, const std::string& stream) {
         if (stream == "stderr") {
           std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
         } else {
@@ -760,7 +758,8 @@ static bool StepAdminUser(WizardState& state, bool dry_run)
     break;
   }
 
-  const auto cmd = BuildAdminUserCmd(state.admin_username, state.admin_password);
+  const auto cmd
+      = BuildAdminUserCmd(state.admin_username, state.admin_password);
   if (dry_run) {
     std::cout << ansi::yellow << "  [dry-run] sudo ";
     for (size_t i = 0; i < cmd.size(); ++i) {
@@ -777,8 +776,7 @@ static bool StepAdminUser(WizardState& state, bool dry_run)
   }
 
   const int rc = RunCommand(
-      cmd, true,
-      [](const std::string& line, const std::string& stream) {
+      cmd, true, [](const std::string& line, const std::string& stream) {
         if (stream == "stderr") {
           std::cout << ansi::dim << "  " << line << ansi::reset << "\n";
         } else {
@@ -828,8 +826,7 @@ static void StepSummary(const WizardState& state)
 int RunTuiWizard(bool dry_run)
 {
   if (dry_run) {
-    std::cout << ansi::yellow
-              << "[dry-run mode — no commands will be executed]"
+    std::cout << ansi::yellow << "[dry-run mode — no commands will be executed]"
               << ansi::reset << "\n";
   }
 

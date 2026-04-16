@@ -39,7 +39,7 @@
 namespace {
 
 CapturedCommandOutput RunCommandCapture(const std::vector<std::string>& argv,
-                                       bool use_sudo = false)
+                                        bool use_sudo = false)
 {
   CapturedCommandOutput output;
   output.exit_code = RunCommand(
@@ -152,7 +152,8 @@ TapeDriveInfo ReadTapeDeviceInfo(const std::filesystem::directory_entry& entry)
   }();
   info.model = [&]() {
     std::string value = ReadUdevProperty(udev.stdout_text, "ID_MODEL");
-    if (value.empty()) value = ReadUdevProperty(udev.stdout_text, "ID_MODEL_ENC");
+    if (value.empty())
+      value = ReadUdevProperty(udev.stdout_text, "ID_MODEL_ENC");
     return value;
   }();
   info.firmware_version = [&]() {
@@ -161,14 +162,15 @@ TapeDriveInfo ReadTapeDeviceInfo(const std::filesystem::directory_entry& entry)
       value = ReadUdevProperty(udev.stdout_text, "SCSI_IDENT_REVISION");
     return value;
   }();
-  info.display_name = !identifier.empty() ? identifier
-                                          : (!serial_number.empty() ? serial_number
-                                                                    : name);
+  info.display_name = !identifier.empty()
+                          ? identifier
+                          : (!serial_number.empty() ? serial_number : name);
   for (const auto& devlink : devlinks) {
     if (devlink != info.path) info.aliases.push_back(devlink);
   }
   if (info.canonical_path != info.path
-      && std::find(info.aliases.begin(), info.aliases.end(), info.canonical_path)
+      && std::find(info.aliases.begin(), info.aliases.end(),
+                   info.canonical_path)
              == info.aliases.end()) {
     info.aliases.insert(info.aliases.begin(), info.canonical_path);
   }
@@ -178,12 +180,11 @@ TapeDriveInfo ReadTapeDeviceInfo(const std::filesystem::directory_entry& entry)
 TapeChangerStatus QueryTapeChangerStatus(const std::string& changer_path)
 {
   TapeChangerStatus status;
-  auto result
-      = RunCommandCapture({"mtx", "-f", StableTapePath(changer_path), "status"},
-                          false);
+  auto result = RunCommandCapture(
+      {"mtx", "-f", StableTapePath(changer_path), "status"}, false);
   if (result.exit_code != 0) {
-    status.error = !result.stderr_text.empty() ? result.stderr_text
-                                               : result.stdout_text;
+    status.error
+        = !result.stderr_text.empty() ? result.stderr_text : result.stdout_text;
     return status;
   }
 
@@ -278,8 +279,7 @@ uint16_t ReadBe16(const std::vector<uint8_t>& data, size_t offset)
 uint32_t ReadBe24(const std::vector<uint8_t>& data, size_t offset)
 {
   return (static_cast<uint32_t>(data[offset]) << 16)
-         | (static_cast<uint32_t>(data[offset + 1]) << 8)
-         | data[offset + 2];
+         | (static_cast<uint32_t>(data[offset + 1]) << 8) | data[offset + 2];
 }
 
 bool SameDeviceIdentifier(const DeviceIdentifier& lhs,
@@ -354,8 +354,8 @@ std::optional<std::vector<uint8_t>> ReadBinaryStdoutCommand(
 std::optional<std::vector<uint8_t>> QueryDriveIdentifiersRaw(
     const std::string& drive_path)
 {
-  const std::string command = "sg_inq --page=0x83 --raw "
-                              + ShellQuote(StableTapePath(drive_path));
+  const std::string command
+      = "sg_inq --page=0x83 --raw " + ShellQuote(StableTapePath(drive_path));
   if (auto data = ReadBinaryStdoutCommand(command, false)) return data;
   return ReadBinaryStdoutCommand(command, true);
 }
@@ -363,10 +363,9 @@ std::optional<std::vector<uint8_t>> QueryDriveIdentifiersRaw(
 std::optional<std::vector<uint8_t>> QueryLibraryDriveIdentifiersRaw(
     const std::string& changer_path)
 {
-  const std::string command
-      = "sg_raw --binary --readonly --request=65535 "
-        + ShellQuote(StableTapePath(changer_path))
-        + " b8 04 00 00 ff ff 01 00 ff ff 00 00";
+  const std::string command = "sg_raw --binary --readonly --request=65535 "
+                              + ShellQuote(StableTapePath(changer_path))
+                              + " b8 04 00 00 ff ff 01 00 ff ff 00 00";
   if (auto data = ReadBinaryStdoutCommand(command, false)) return data;
   return ReadBinaryStdoutCommand(command, true);
 }
@@ -529,13 +528,18 @@ std::string Trim(std::string value)
 
 std::vector<std::string> BuildDefaultPackageList()
 {
-  return {"bareos-filedaemon",      "bareos-director",
-          "bareos-storage",         "bareos-storage-tape",
-          "bareos-storage-dedupable", "bareos-database-tools",
-          "bareos-tools",           "bareos-webui-vue"};
+  return {"bareos-filedaemon",
+          "bareos-director",
+          "bareos-storage",
+          "bareos-storage-tape",
+          "bareos-storage-dedupable",
+          "bareos-database-tools",
+          "bareos-tools",
+          "bareos-webui-vue"};
 }
 
-std::string BuildRepoOsPath(const std::string& distro, const std::string& version)
+std::string BuildRepoOsPath(const std::string& distro,
+                            const std::string& version)
 {
   if (IsElDistro(distro)) return "EL_" + MajorVersion(version);
   return CapFirst(distro) + "_" + version;
@@ -552,9 +556,8 @@ std::vector<std::string> BuildAddRepoCmd(const std::string& distro,
             ? "https://download.bareos.com/bareos/release/latest"
             : "https://download.bareos.org/current";
 
-  const std::string script_url
-      = base + "/" + BuildRepoOsPath(distro, version)
-        + "/add_bareos_repositories.sh";
+  const std::string script_url = base + "/" + BuildRepoOsPath(distro, version)
+                                 + "/add_bareos_repositories.sh";
 
   std::string curl_auth;
   if (repo_type == "subscription" && !login.empty()) {
@@ -605,9 +608,8 @@ std::vector<std::string> BuildAdminUserCmd(const std::string& username,
 {
   const std::string console_name = EscapeBareosQuotedValue(username);
   const std::string console_password = EscapeBareosQuotedValue(password);
-  const std::string console_conf
-      = "/etc/bareos/bareos-dir.d/console/"
-        + SanitizeConfigFileStem(username) + ".conf";
+  const std::string console_conf = "/etc/bareos/bareos-dir.d/console/"
+                                   + SanitizeConfigFileStem(username) + ".conf";
   const std::string quoted_console_conf = ShellQuote(console_conf);
   return {"bash",
           "-c",
@@ -650,17 +652,17 @@ std::vector<DeviceIdentifier> ParseDeviceIdentifiersVpdPage(
   std::vector<DeviceIdentifier> identifiers;
   if (page_data.size() < 4 || page_data[1] != 0x83) return identifiers;
 
-  const size_t total_length
-      = std::min(page_data.size(), static_cast<size_t>(4 + ReadBe16(page_data, 2)));
+  const size_t total_length = std::min(
+      page_data.size(), static_cast<size_t>(4 + ReadBe16(page_data, 2)));
   for (size_t offset = 4; offset + 4 <= total_length;) {
     const size_t descriptor_length = 4 + page_data[offset + 3];
     if (offset + descriptor_length > total_length) break;
 
     const uint8_t association = (page_data[offset + 1] >> 4) & 0x3;
     if (association == 0) {
-      identifiers.emplace_back(page_data.begin() + static_cast<long>(offset),
-                               page_data.begin()
-                                   + static_cast<long>(offset + descriptor_length));
+      identifiers.emplace_back(
+          page_data.begin() + static_cast<long>(offset),
+          page_data.begin() + static_cast<long>(offset + descriptor_length));
     }
     offset += descriptor_length;
   }
@@ -687,7 +689,8 @@ std::vector<TapeChangerDriveIdentifier> ParseTapeLibraryDriveIdentifiers(
 
     if (element_type == 0x04) {
       for (size_t offset = descriptors_offset;
-           offset + descriptor_length <= page_end; offset += descriptor_length) {
+           offset + descriptor_length <= page_end;
+           offset += descriptor_length) {
         if (descriptor_length < 12) continue;
 
         size_t ident_offset = offset + 12;
@@ -738,9 +741,11 @@ std::vector<TapeAssignment> SuggestTapeAssignments(
             changer_drive.device_identifiers.end(),
             [&drive](const auto& library_identifier) {
               return std::any_of(
-                  drive.device_identifiers.begin(), drive.device_identifiers.end(),
+                  drive.device_identifiers.begin(),
+                  drive.device_identifiers.end(),
                   [&library_identifier](const auto& drive_identifier) {
-                    return SameDeviceIdentifier(library_identifier, drive_identifier);
+                    return SameDeviceIdentifier(library_identifier,
+                                                drive_identifier);
                   });
             });
         if (!matches) continue;
@@ -752,10 +757,12 @@ std::vector<TapeAssignment> SuggestTapeAssignments(
     }
 
     if (!matched_identifier_for_changer) {
-      for (const auto& drive : drives) assignment.drive_paths.push_back(drive.path);
+      for (const auto& drive : drives)
+        assignment.drive_paths.push_back(drive.path);
     }
 
-    if (!assignment.drive_paths.empty()) assignments.push_back(std::move(assignment));
+    if (!assignment.drive_paths.empty())
+      assignments.push_back(std::move(assignment));
   }
 
   return assignments;
@@ -767,7 +774,8 @@ TapeStorageInventory DiscoverTapeStorageInventory()
   if (!std::filesystem::exists("/dev/tape/by-id")) return inventory;
 
   std::map<std::string, TapeDriveInfo> drive_map;
-  for (const auto& entry : std::filesystem::directory_iterator("/dev/tape/by-id")) {
+  for (const auto& entry :
+       std::filesystem::directory_iterator("/dev/tape/by-id")) {
     if (!entry.is_symlink()) continue;
     const auto name = entry.path().filename().string();
     if (name.ends_with("-changer")) {
@@ -799,9 +807,9 @@ TapeStorageInventory DiscoverTapeStorageInventory()
     std::sort(drive.aliases.begin(), drive.aliases.end());
     drive.aliases.erase(std::unique(drive.aliases.begin(), drive.aliases.end()),
                         drive.aliases.end());
-    drive.aliases.erase(std::remove(drive.aliases.begin(), drive.aliases.end(),
-                                    drive.path),
-                        drive.aliases.end());
+    drive.aliases.erase(
+        std::remove(drive.aliases.begin(), drive.aliases.end(), drive.path),
+        drive.aliases.end());
     if (const auto identifiers = QueryDriveIdentifiersRaw(drive.path)) {
       drive.device_identifiers = ParseDeviceIdentifiersVpdPage(*identifiers);
     }
@@ -809,15 +817,19 @@ TapeStorageInventory DiscoverTapeStorageInventory()
   }
 
   for (auto& changer : inventory.changers) {
-    if (const auto identifiers = QueryLibraryDriveIdentifiersRaw(changer.path)) {
-      changer.drive_identifiers = ParseTapeLibraryDriveIdentifiers(*identifiers);
+    if (const auto identifiers
+        = QueryLibraryDriveIdentifiersRaw(changer.path)) {
+      changer.drive_identifiers
+          = ParseTapeLibraryDriveIdentifiers(*identifiers);
     }
   }
 
-  std::sort(inventory.changers.begin(), inventory.changers.end(),
-            [](const auto& lhs, const auto& rhs) { return lhs.path < rhs.path; });
-  std::sort(inventory.drives.begin(), inventory.drives.end(),
-            [](const auto& lhs, const auto& rhs) { return lhs.path < rhs.path; });
+  std::sort(
+      inventory.changers.begin(), inventory.changers.end(),
+      [](const auto& lhs, const auto& rhs) { return lhs.path < rhs.path; });
+  std::sort(
+      inventory.drives.begin(), inventory.drives.end(),
+      [](const auto& lhs, const auto& rhs) { return lhs.path < rhs.path; });
   inventory.suggested_assignments
       = SuggestTapeAssignments(inventory.changers, inventory.drives);
   return inventory;
@@ -856,10 +868,12 @@ TapeChangerInventory ParseTapeChangerInventoryStatus(
     }
   }
 
-  std::sort(inventory.drives.begin(), inventory.drives.end(),
-            [](const auto& lhs, const auto& rhs) { return lhs.number < rhs.number; });
-  std::sort(inventory.slots.begin(), inventory.slots.end(),
-            [](const auto& lhs, const auto& rhs) { return lhs.number < rhs.number; });
+  std::sort(
+      inventory.drives.begin(), inventory.drives.end(),
+      [](const auto& lhs, const auto& rhs) { return lhs.number < rhs.number; });
+  std::sort(
+      inventory.slots.begin(), inventory.slots.end(),
+      [](const auto& lhs, const auto& rhs) { return lhs.number < rhs.number; });
   return inventory;
 }
 
@@ -963,11 +977,9 @@ std::string BuildConfigureStorageScript(const DiskStorageConfig& disk,
            << "\"\n"
            << "install -d " << ShellQuote(disk.storage_path) << "\n"
            << "cat <<'EOF' > /etc/bareos/bareos-sd.d/device/FileStorage.conf\n"
-           << BuildDiskStorageSdConfig(disk)
-           << "EOF\n"
+           << BuildDiskStorageSdConfig(disk) << "EOF\n"
            << "cat <<'EOF' > /etc/bareos/bareos-dir.d/storage/File.conf\n"
-           << BuildDiskStorageDirConfig(disk, defaults)
-           << "EOF\n\n";
+           << BuildDiskStorageDirConfig(disk, defaults) << "EOF\n\n";
   } else {
     script << "echo \"Removing disk storage configuration...\"\n"
            << "rm -f /etc/bareos/bareos-sd.d/device/FileStorage.conf "
@@ -978,15 +990,12 @@ std::string BuildConfigureStorageScript(const DiskStorageConfig& disk,
     script << "echo \"Writing tape drive configuration...\"\n"
            << "cat <<'EOF' > /etc/bareos/bareos-sd.d/device/"
               "tape_devices.conf\n"
-           << BuildTapeDevicesSdConfig(tape)
-           << "EOF\n"
+           << BuildTapeDevicesSdConfig(tape) << "EOF\n"
            << "cat <<'EOF' > /etc/bareos/bareos-sd.d/autochanger/"
               "autochanger.conf\n"
-           << BuildAutochangerSdConfig(tape)
-           << "EOF\n"
+           << BuildAutochangerSdConfig(tape) << "EOF\n"
            << "cat <<'EOF' > /etc/bareos/bareos-dir.d/storage/Tape.conf\n"
-           << BuildTapeStorageDirConfig(tape, defaults)
-           << "EOF\n\n";
+           << BuildTapeStorageDirConfig(tape, defaults) << "EOF\n\n";
   } else {
     script << "echo \"Removing tape storage configuration...\"\n"
            << "rm -f /etc/bareos/bareos-sd.d/device/tape_devices.conf "
@@ -994,43 +1003,47 @@ std::string BuildConfigureStorageScript(const DiskStorageConfig& disk,
               "/etc/bareos/bareos-dir.d/storage/Tape.conf\n\n";
   }
 
-  script << "if command -v bareos-sd >/dev/null 2>&1; then\n"
-         << "  echo \"Checking bareos-sd configuration...\"\n"
-         << "  bareos-sd -t\n"
-         << "else\n"
-         << "  echo \"Skipping bareos-sd config check: bareos-sd not found.\"\n"
-         << "fi\n\n"
-         << "if command -v bareos-dir >/dev/null 2>&1; then\n"
-         << "  echo \"Checking bareos-dir configuration...\"\n"
-         << "  bareos-dir -t\n"
-         << "else\n"
-         << "  echo \"Skipping bareos-dir config check: bareos-dir not found.\"\n"
-         << "fi\n\n"
-         << "if command -v systemctl >/dev/null 2>&1 "
-            "&& systemctl list-unit-files bareos-sd.service >/dev/null 2>&1; "
-            "then\n"
-         << "  echo \"Restarting bareos-sd...\"\n"
-         << "  systemctl restart bareos-sd\n"
-         << "else\n"
-         << "  echo \"Skipping bareos-sd restart: systemd unit not found.\"\n"
-         << "fi\n\n"
-         << "if command -v systemctl >/dev/null 2>&1 "
-            "&& systemctl list-unit-files bareos-dir.service >/dev/null 2>&1; "
-            "then\n"
-         << "  echo \"Restarting bareos-dir...\"\n"
-         << "  systemctl restart bareos-dir\n"
-         << "else\n"
-         << "  echo \"Skipping bareos-dir restart: systemd unit not found.\"\n"
-         << "fi\n";
+  script
+      << "if command -v bareos-sd >/dev/null 2>&1; then\n"
+      << "  echo \"Checking bareos-sd configuration...\"\n"
+      << "  bareos-sd -t\n"
+      << "else\n"
+      << "  echo \"Skipping bareos-sd config check: bareos-sd not found.\"\n"
+      << "fi\n\n"
+      << "if command -v bareos-dir >/dev/null 2>&1; then\n"
+      << "  echo \"Checking bareos-dir configuration...\"\n"
+      << "  bareos-dir -t\n"
+      << "else\n"
+      << "  echo \"Skipping bareos-dir config check: bareos-dir not found.\"\n"
+      << "fi\n\n"
+      << "if command -v systemctl >/dev/null 2>&1 "
+         "&& systemctl list-unit-files bareos-sd.service >/dev/null 2>&1; "
+         "then\n"
+      << "  echo \"Restarting bareos-sd...\"\n"
+      << "  systemctl restart bareos-sd\n"
+      << "else\n"
+      << "  echo \"Skipping bareos-sd restart: systemd unit not found.\"\n"
+      << "fi\n\n"
+      << "if command -v systemctl >/dev/null 2>&1 "
+         "&& systemctl list-unit-files bareos-dir.service >/dev/null 2>&1; "
+         "then\n"
+      << "  echo \"Restarting bareos-dir...\"\n"
+      << "  systemctl restart bareos-dir\n"
+      << "else\n"
+      << "  echo \"Skipping bareos-dir restart: systemd unit not found.\"\n"
+      << "fi\n";
 
   return script.str();
 }
 
-int RunGeneratedScript(const std::string& script, bool use_sudo, OutputCallback cb)
+int RunGeneratedScript(const std::string& script,
+                       bool use_sudo,
+                       OutputCallback cb)
 {
   char path_template[] = "/tmp/bareos-setup-storage-XXXXXX";
   const int fd = mkstemp(path_template);
-  if (fd < 0) throw std::runtime_error("Failed to create temporary script file.");
+  if (fd < 0)
+    throw std::runtime_error("Failed to create temporary script file.");
 
   const std::string script_path(path_template);
   close(fd);
