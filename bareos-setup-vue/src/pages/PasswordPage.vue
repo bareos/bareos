@@ -130,6 +130,14 @@ watch(messages, (msgs) => {
     done.value    = true
     exitCode.value = last.exit_code
     if (last.exit_code === 0) adminDone.value = true
+  } else if (last.type === 'error') {
+    running.value = false
+    done.value = true
+    exitCode.value = 1
+    lines.value.push({
+      text: last.message || 'Failed to create admin user.',
+      cls: 'output-line-err',
+    })
   }
 }, { deep: true })
 
