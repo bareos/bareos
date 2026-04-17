@@ -120,6 +120,8 @@ class DirectorConnection {
   void ReadAll(void* buf, size_t len);
   void ConnectTcp(const DirectorConfig& cfg);
   void ConnectTlsPsk(const DirectorConfig& cfg);
+  bool HasPendingInput() const;
+  void DrainPendingInput();
 
   // Bareos frame I/O
   void SendFrame(const std::string& data);

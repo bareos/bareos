@@ -33,6 +33,7 @@
 
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -216,6 +217,33 @@ void DirectorConnection::SendFrame(const std::string& data)
   int32_t hdr = htonl(static_cast<int32_t>(data.size()));
   WriteAll(&hdr, 4);
   if (!data.empty()) { WriteAll(data.data(), data.size()); }
+}
+
+bool DirectorConnection::HasPendingInput() const
+{
+  if (ssl_ && SSL_pending(ssl_) > 0) { return true; }
+  if (fd_ < 0) { return false; }
+
+  struct pollfd pfd {
+    fd_, POLLIN, 0
+  };
+  int rc = poll(&pfd, 1, 0);
+  return rc > 0 && (pfd.revents & POLLIN);
+}
+
+void DirectorConnection::DrainPendingInput()
+{
+  while (HasPendingInput()) {
+    int32_t signal = 0;
+    std::string frame = RecvFrame(&signal);
+    if (signal == kBnetError) {
+      throw std::runtime_error("Director: received BNET_ERROR signal");
+    }
+    if (!frame.empty()) {
+      // Discard queued JSON/text frames that belong to a previous command.
+      continue;
+    }
+  }
 }
 
 std::string DirectorConnection::RecvFrame(int32_t* signal)
@@ -489,6 +517,7 @@ void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
 
 CallResult DirectorConnection::Call(const std::string& command)
 {
+  if (json_mode_) { DrainPendingInput(); }
   SendFrame(command + "\n");
   // Unified receive strategy for both JSON and raw (text) mode:
   //
