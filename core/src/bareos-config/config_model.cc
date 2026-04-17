@@ -302,11 +302,14 @@ ConfigComponent DetectComponentForPath(const std::filesystem::path& path)
 
 std::filesystem::path FindConfigRootForPath(const std::filesystem::path& path)
 {
-  for (auto current = path; !current.empty(); current = current.parent_path()) {
+  for (auto current = path; !current.empty();) {
     const auto name = current.filename().string();
     if (name == "bareos-dir.d" || name == "bareos-fd.d" || name == "bareos-sd.d") {
       return current.parent_path();
     }
+    const auto parent = current.parent_path();
+    if (parent == current) break;
+    current = parent;
   }
 
   const auto filename = path.filename().string();
@@ -1223,15 +1226,31 @@ std::string ConfiguredNameForDaemon(
     const std::filesystem::path& daemon_conf,
     const std::vector<ResourceSummary>& resources)
 {
-  const auto block_name = kind == "file-daemon" ? "FileDaemon" : "Storage";
+  std::string block_name;
+  std::string resource_type;
+  std::string resource_block;
+  if (kind == "file-daemon") {
+    block_name = "FileDaemon";
+    resource_type = "client";
+    resource_block = "Client";
+  } else if (kind == "storage-daemon") {
+    block_name = "Storage";
+    resource_type = "storage";
+    resource_block = "Storage";
+  } else if (kind == "console") {
+    block_name = "Console";
+    resource_type = "console";
+    resource_block = "Console";
+  } else {
+    return "";
+  }
+
   if (std::filesystem::exists(daemon_conf)) {
     const auto configured_name
         = ExtractDirectiveFromNamedBlock(daemon_conf, block_name, "Name");
     if (!configured_name.empty()) return configured_name;
   }
 
-  const auto resource_type = kind == "file-daemon" ? "client" : "storage";
-  const auto resource_block = kind == "file-daemon" ? "Client" : "Storage";
   for (const auto& resource : resources) {
     if (resource.type != resource_type) continue;
     const auto configured_name
@@ -1545,6 +1564,24 @@ std::vector<TreeNodeSummary> BuildKnownClientTreeNodes(
   return nodes;
 }
 
+std::string FindConsoleDirectorReference(const DaemonSummary& console_daemon)
+{
+  for (const auto& resource : console_daemon.resources) {
+    if (resource.type != "director") continue;
+    const auto director_name = ExtractDirectiveFromNamedBlock(
+        resource.file_path, "Director", "Name");
+    if (!director_name.empty()) return StripSurroundingQuotes(director_name);
+  }
+
+  const auto configuration = std::find_if(
+      console_daemon.resources.begin(), console_daemon.resources.end(),
+      [](const ResourceSummary& resource) { return resource.type == "configuration"; });
+  if (configuration == console_daemon.resources.end()) return "";
+
+  return StripSurroundingQuotes(ExtractDirectiveFromNamedBlock(
+      configuration->file_path, "Director", "Name"));
+}
+
 std::vector<RelationshipSummary> BuildRelationshipSummaries(
     const DatacenterSummary& summary)
 {
@@ -1555,6 +1592,7 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
     const auto* file_daemon = FindDirectorDaemonByKind(director, "file-daemon");
     const auto* storage_daemon
         = FindDirectorDaemonByKind(director, "storage-daemon");
+    const auto* console_daemon = FindDirectorDaemonByKind(director, "console");
     size_t relationship_index = 0;
 
     for (const auto& resource : director.resources) {
@@ -1683,6 +1721,38 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
         });
       }
     }
+
+    if (console_daemon) {
+      const auto referenced_director = FindConsoleDirectorReference(*console_daemon);
+      if (!referenced_director.empty()) {
+        const auto target_resource = std::find_if(
+            director.resources.begin(), director.resources.end(),
+            [&referenced_director](const ResourceSummary& resource) {
+              return resource.type == "director"
+                     && StripSurroundingQuotes(resource.name) == referenced_director;
+            });
+        const bool resolved = StripSurroundingQuotes(director.name) == referenced_director;
+        relationships.push_back({
+            MakeRelationshipId(director_index, relationship_index++),
+            "director",
+            referenced_director,
+            console_daemon->id,
+            console_daemon->name,
+            resolved ? director.id : "",
+            resolved ? director.name : referenced_director,
+            console_daemon->resources.empty() ? "" : console_daemon->resources.front().id,
+            console_daemon->resources.empty() ? "" : console_daemon->resources.front().file_path,
+            target_resource != director.resources.end() ? target_resource->id : "",
+            target_resource != director.resources.end() ? target_resource->file_path : "",
+            resolved,
+            resolved ? "Resolved to director node " + director.name
+                         + " from the bconsole Director configuration."
+                     : "Configured bconsole director " + referenced_director
+                           + " does not match discovered director node "
+                           + director.name + ".",
+        });
+      }
+    }
   }
 
   return relationships;
@@ -1773,6 +1843,9 @@ DatacenterSummary DiscoverDatacenterSummary(
     director.daemons.push_back(DiscoverDaemon(root, director_index,
                                               "file-daemon", "bareos-fd.d",
                                               "bareos-fd"));
+    director.daemons.push_back(DiscoverDaemon(root, director_index,
+                                              "console", "bconsole.d",
+                                              "bconsole"));
     summary.directors.push_back(std::move(director));
     summary.tree.children.push_back(
         BuildDirectorTreeNode(summary.directors.back(), director_index));
@@ -1961,6 +2034,20 @@ ResourceDetail BuildResourceDetail(const ResourceSummary& resource,
                                   inherited_directives)};
 }
 
+std::string MaybeRenameResourceFilePath(const ResourceSummary& summary,
+                                        const std::string& old_name,
+                                        const std::string& new_name)
+{
+  if (old_name.empty() || new_name.empty() || old_name == new_name) {
+    return summary.file_path;
+  }
+
+  const auto path = std::filesystem::path(summary.file_path);
+  if (path.extension() != ".conf") return summary.file_path;
+  if (path.stem() != old_name) return summary.file_path;
+  return (path.parent_path() / (new_name + path.extension().string())).string();
+}
+
 ResourceEditPreview BuildResourceEditPreview(
     const ResourceDetail& resource, const std::string& updated_content)
 {
@@ -1970,8 +2057,11 @@ ResourceEditPreview BuildResourceEditPreview(
   auto display_updated_directives = parsed_updated_directives;
   SortResourceDirectivesForDisplay(resource.summary, display_updated_directives);
   auto updated_summary = resource.summary;
+  const auto old_name = ExtractResourceName(resource.summary, resource.directives);
   updated_summary.name = ExtractResourceName(updated_summary,
                                              parsed_updated_directives);
+  updated_summary.file_path = MaybeRenameResourceFilePath(
+      updated_summary, old_name, updated_summary.name);
   return {updated_summary,
           resource.content,
           updated_content,

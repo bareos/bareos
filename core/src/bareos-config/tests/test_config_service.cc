@@ -209,6 +209,65 @@ TEST(BareosConfigService, ExposesCreatableStorageDaemonResourceTypes)
   EXPECT_NE(response.body.find("\"storage\""), std::string::npos);
 }
 
+TEST(BareosConfigService, ReturnsConsoleNodeAndResources)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bconsole.conf")
+      << "Director {\n  Name = bareos-dir\n}\n"
+      << "Console {\n  Name = admin\n}\n";
+  std::ofstream(root.path() / "bconsole.d/console/admin.conf")
+      << "Console {\n  Name = admin\n}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const auto bootstrap
+      = HandleConfigServiceRequest(options, {"GET", "/api/v1/bootstrap", "", ""});
+  ASSERT_EQ(bootstrap.status_code, 200);
+  EXPECT_NE(bootstrap.body.find("\"id\":\"daemon-0-console\""), std::string::npos);
+  EXPECT_NE(bootstrap.body.find("\"kind\":\"console\""), std::string::npos);
+
+  const HttpRequest request{"GET", "/api/v1/nodes/daemon-0-console/resources", "", ""};
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find("\"type\":\"configuration\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"type\":\"console\""), std::string::npos);
+  EXPECT_NE(response.body.find((root.path() / "bconsole.conf").string()),
+            std::string::npos);
+}
+
+TEST(BareosConfigService, ReturnsConsoleRelationships)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(root.path() / "bconsole.conf")
+      << "Director {\n  Name = bareos-dir\n}\n"
+      << "Console {\n  Name = admin\n}\n";
+  std::ofstream(root.path() / "bconsole.d/console/admin.conf")
+      << "Console {\n  Name = admin\n}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "GET", "/api/v1/nodes/daemon-0-console/relationships", "", ""};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find("\"relation\":\"director\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"from_node_id\":\"daemon-0-console\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"to_node_id\":\"director-0\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"endpoint_name\":\"bareos-dir\""),
+            std::string::npos);
+}
+
 TEST(BareosConfigService, ReturnsNewAutochangerEditorPayloadForStorageDaemon)
 {
   TempConfigRoot root;
@@ -250,15 +309,66 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
   EXPECT_NE(response.body.find("node.kind === 'datacenter'"),
             std::string::npos);
   EXPECT_NE(response.body.find("loadNodeById(node.id);"), std::string::npos);
+  EXPECT_NE(response.body.find("grid-template-columns: 420px 1fr"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("--setup-primary: #0075be;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("--setup-accent: #f5a623;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("background: linear-gradient(180deg, #eef6fb 0%, #f5f7fa 160px);"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("border-radius: 16px;"),
+            std::string::npos);
+  EXPECT_EQ(response.body.find("<h3>Resources</h3>"), std::string::npos);
+  EXPECT_NE(response.body.find("Resources are shown in the tree on the left"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const expandedTreeIds = new Set(["),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function iconMarkup(name, options = {})"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function iconForGroup(groupId)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function iconForNode(node)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function iconForResource(resource)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("class=\"app-title\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("class=\"section-heading\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("label: 'Directors'"), std::string::npos);
+  EXPECT_NE(response.body.find("label: 'Storages'"), std::string::npos);
+  EXPECT_NE(response.body.find("label: 'Clients'"), std::string::npos);
+  EXPECT_NE(response.body.find("label: 'Consoles'"), std::string::npos);
+  EXPECT_NE(response.body.find("function groupedTreeEntries(root)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function renderGroup(group, parentEl)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function renderDatacenterTree(root, parentEl)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const nodeExpansionId = `tree-node-${node.id}`;"),
+            std::string::npos);
   EXPECT_NE(response.body.find("isEffectivelyEmptyDirectiveValue"),
             std::string::npos);
   EXPECT_NE(response.body.find("hideEmptyOptional: true"),
             std::string::npos);
   EXPECT_NE(response.body.find("allowEmptyOptionalToggle: true"),
             std::string::npos);
+  EXPECT_NE(response.body.find("textarea.repeatable-field"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("select[multiple]"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("size=\"${Math.min(Math.max(optionValues.length, 2), 4)}\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("rows=\"2\""),
+            std::string::npos);
   EXPECT_NE(response.body.find("stripSurroundingQuotes"),
             std::string::npos);
   EXPECT_NE(response.body.find("escapeHtml(stripSurroundingQuotes(resource.name))"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("if (node.kind === 'datacenter') {"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("return [];"),
             std::string::npos);
   EXPECT_NE(response.body.find("renderInheritedDirectives"),
             std::string::npos);
@@ -319,6 +429,14 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
   EXPECT_NE(response.body.find("field.datatype === 'RESOURCE_LIST'"),
             std::string::npos);
   EXPECT_NE(response.body.find("multiple"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("if (!payload.saved) {"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("return fetch('/api/v1/bootstrap')"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("renderTree(data);"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("loadNodeById('datacenter');"),
             std::string::npos);
   EXPECT_NE(response.body.find("No non-empty directive fields parsed yet."),
             std::string::npos);
@@ -523,9 +641,12 @@ TEST(BareosConfigService, SavesRenamedResourceAndUpdatesReferences)
   EXPECT_NE(response.body.find("\"saved\":true"), std::string::npos);
   EXPECT_NE(response.body.find("\"affected_updates\":[{"), std::string::npos);
   EXPECT_NE(response.body.find(job_path.string()), std::string::npos);
+  const auto renamed_client_path = root.path() / "bareos-dir.d/client/renamed-fd.conf";
+  ASSERT_FALSE(std::filesystem::exists(client_path));
+  ASSERT_TRUE(std::filesystem::exists(renamed_client_path));
 
-  const auto client_content = [&client_path] {
-    std::ifstream input(client_path);
+  const auto client_content = [&renamed_client_path] {
+    std::ifstream input(renamed_client_path);
     std::ostringstream output;
     output << input.rdbuf();
     return output.str();
@@ -698,10 +819,15 @@ TEST(BareosConfigService, ReportsDirectorRenameImpactsInPreview)
   std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
   std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::filesystem::create_directories(root.path() / "bconsole.d/user");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   const auto director_path = root.path() / "bareos-dir.d/director/bareos-dir.conf";
   const auto fd_director_path = root.path() / "bareos-fd.d/director/bareos-dir.conf";
   const auto sd_director_path = root.path() / "bareos-sd.d/director/bareos-dir.conf";
+  const auto console_config_path = root.path() / "bconsole.conf";
+  const auto console_path = root.path() / "bconsole.d/console/admin.conf";
+  const auto user_path = root.path() / "bconsole.d/user/api.conf";
   std::ofstream(director_path)
       << "Director {\n"
       << "  Name = bareos-dir\n"
@@ -717,6 +843,15 @@ TEST(BareosConfigService, ReportsDirectorRenameImpactsInPreview)
       << "  Name = bareos-dir\n"
       << "  Password = secret\n"
       << "}\n";
+  std::ofstream(console_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "}\n"
+      << "Console {\n"
+      << "  Name = admin\n"
+      << "}\n";
+  std::ofstream(console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
 
   const auto model = DiscoverDatacenterSummary({root.path()});
   const auto resource = std::find_if(
@@ -741,7 +876,230 @@ TEST(BareosConfigService, ReportsDirectorRenameImpactsInPreview)
   EXPECT_NE(response.body.find("Name in director bareos-dir"), std::string::npos);
   EXPECT_NE(response.body.find(fd_director_path.string()), std::string::npos);
   EXPECT_NE(response.body.find(sd_director_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(console_config_path.string()), std::string::npos);
   EXPECT_NE(response.body.find("\"new_value\":\"renamed-dir\""), std::string::npos);
+}
+
+TEST(BareosConfigService, ReportsDirectorPasswordImpactsInPreview)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::filesystem::create_directories(root.path() / "bconsole.d/user");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  const auto director_path = root.path() / "bareos-dir.d/director/bareos-dir.conf";
+  const auto fd_director_path = root.path() / "bareos-fd.d/director/bareos-dir.conf";
+  const auto sd_director_path = root.path() / "bareos-sd.d/director/bareos-dir.conf";
+  const auto console_config_path = root.path() / "bconsole.conf";
+  const auto console_path = root.path() / "bconsole.d/console/admin.conf";
+  const auto user_path = root.path() / "bconsole.d/user/api.conf";
+  std::ofstream(director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(fd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(sd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "}\n"
+      << "Console {\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
+  std::ofstream(user_path)
+      << "User {\n  Name = api\n  Password = secret\n}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].resources.begin(), model.directors[0].resources.end(),
+      [](const ResourceSummary& summary) {
+        return summary.type == "director" && summary.name == "bareos-dir";
+      });
+  ASSERT_NE(resource, model.directors[0].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "POST",
+      "/api/v1/resources/" + resource->id + "/preview",
+      "text/plain; charset=utf-8",
+      "Director {\n  Name = bareos-dir\n  Password = newersecret\n}\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find("\"code\":\"password-reference-update\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Password in director bareos-dir"),
+            std::string::npos);
+  EXPECT_NE(response.body.find(fd_director_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(sd_director_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(console_config_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(console_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(user_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find("\"directive_key\":\"Password\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"new_value\":\"newersecret\""), std::string::npos);
+}
+
+TEST(BareosConfigService, ReportsRootDirectorConfigRenameImpactsInPreview)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::filesystem::create_directories(root.path() / "bconsole.d/user");
+  const auto director_config_path = root.path() / "bareos-dir.conf";
+  const auto fd_director_path = root.path() / "bareos-fd.d/director/bareos-dir.conf";
+  const auto sd_director_path = root.path() / "bareos-sd.d/director/bareos-dir.conf";
+  const auto console_config_path = root.path() / "bconsole.conf";
+  const auto console_path = root.path() / "bconsole.d/console/admin.conf";
+  const auto user_path = root.path() / "bconsole.d/user/api.conf";
+  std::ofstream(director_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(fd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(sd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "}\n"
+      << "Console {\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
+  std::ofstream(user_path)
+      << "User {\n  Name = api\n  Password = secret\n}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].resources.begin(), model.directors[0].resources.end(),
+      [&director_config_path](const ResourceSummary& summary) {
+        return summary.type == "configuration"
+               && summary.file_path == director_config_path.string();
+      });
+  ASSERT_NE(resource, model.directors[0].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "POST",
+      "/api/v1/resources/" + resource->id + "/preview",
+      "text/plain; charset=utf-8",
+      "Director {\n  Name = renamed-dir\n  Password = secret\n}\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200) << response.body;
+  EXPECT_NE(response.body.find("\"code\":\"rename-reference-update\""),
+            std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(fd_director_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(sd_director_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(console_config_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find("\"new_value\":\"renamed-dir\""), std::string::npos)
+      << response.body;
+}
+
+TEST(BareosConfigService, ReportsRootDirectorConfigPasswordImpactsInPreview)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::filesystem::create_directories(root.path() / "bconsole.d/user");
+  const auto director_config_path = root.path() / "bareos-dir.conf";
+  const auto fd_director_path = root.path() / "bareos-fd.d/director/bareos-dir.conf";
+  const auto sd_director_path = root.path() / "bareos-sd.d/director/bareos-dir.conf";
+  const auto console_config_path = root.path() / "bconsole.conf";
+  const auto console_path = root.path() / "bconsole.d/console/admin.conf";
+  const auto user_path = root.path() / "bconsole.d/user/api.conf";
+  std::ofstream(director_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(fd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(sd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "}\n"
+      << "Console {\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
+  std::ofstream(user_path)
+      << "User {\n  Name = api\n  Password = secret\n}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].resources.begin(), model.directors[0].resources.end(),
+      [&director_config_path](const ResourceSummary& summary) {
+        return summary.type == "configuration"
+               && summary.file_path == director_config_path.string();
+      });
+  ASSERT_NE(resource, model.directors[0].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "POST",
+      "/api/v1/resources/" + resource->id + "/preview",
+      "text/plain; charset=utf-8",
+      "Director {\n  Name = bareos-dir\n  Password = newersecret\n}\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200) << response.body;
+  EXPECT_NE(response.body.find("\"code\":\"password-reference-update\""),
+            std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(fd_director_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(sd_director_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(console_config_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(console_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(user_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find("\"new_value\":\"newersecret\""),
+            std::string::npos)
+      << response.body;
 }
 
 TEST(BareosConfigService, SavesUpdatedPasswordAndUpdatesCounterpart)
@@ -801,6 +1159,192 @@ TEST(BareosConfigService, SavesUpdatedPasswordAndUpdatesCounterpart)
   EXPECT_NE(client_content.find("Password = newersecret"), std::string::npos);
   EXPECT_NE(counterpart_content.find("Password = newersecret"), std::string::npos);
   EXPECT_EQ(counterpart_content.find("Password = secret"), std::string::npos);
+}
+
+TEST(BareosConfigService, SavesUpdatedDirectorPasswordAndUpdatesBconsoleConfig)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::filesystem::create_directories(root.path() / "bconsole.d/user");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-sd.conf")
+      << "Storage {\n  Name = example-sd\n}\n";
+  std::ofstream(root.path() / "bconsole.conf")
+      << "Director {\n  Name = bareos-dir\n}\n"
+      << "Console {\n  Password = secret\n}\n";
+  const auto console_path = root.path() / "bconsole.d/console/admin.conf";
+  std::ofstream(console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
+  const auto user_path = root.path() / "bconsole.d/user/api.conf";
+  std::ofstream(user_path)
+      << "User {\n  Name = api\n  Password = secret\n}\n";
+  const auto director_path = root.path() / "bareos-dir.d/director/bareos-dir.conf";
+  const auto fd_director_path = root.path() / "bareos-fd.d/director/bareos-dir.conf";
+  const auto sd_director_path = root.path() / "bareos-sd.d/director/bareos-dir.conf";
+  const auto console_config_path = root.path() / "bconsole.conf";
+  std::ofstream(director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(fd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(sd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].resources.begin(), model.directors[0].resources.end(),
+      [](const ResourceSummary& summary) {
+        return summary.type == "director" && summary.name == "bareos-dir";
+      });
+  ASSERT_NE(resource, model.directors[0].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "POST",
+      "/api/v1/resources/" + resource->id + "/save",
+      "text/plain; charset=utf-8",
+      "Director {\n  Name = bareos-dir\n  Password = newersecret\n}\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find("\"saved\":true"), std::string::npos);
+  EXPECT_NE(response.body.find(fd_director_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(sd_director_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(console_config_path.string()),
+            std::string::npos);
+  EXPECT_NE(response.body.find(console_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(user_path.string()), std::string::npos);
+
+  const auto read_file = [](const std::filesystem::path& path) {
+    std::ifstream input(path);
+    std::ostringstream output;
+    output << input.rdbuf();
+    return output.str();
+  };
+
+  EXPECT_NE(read_file(director_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(fd_director_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(sd_director_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(console_config_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(console_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(user_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_EQ(read_file(console_config_path).find("Password = secret"),
+            std::string::npos);
+}
+
+TEST(BareosConfigService,
+     SavesUpdatedRootDirectorConfigPasswordAndUpdatesBconsoleConfig)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::filesystem::create_directories(root.path() / "bconsole.d/user");
+  const auto director_config_path = root.path() / "bareos-dir.conf";
+  const auto fd_director_path = root.path() / "bareos-fd.d/director/bareos-dir.conf";
+  const auto sd_director_path = root.path() / "bareos-sd.d/director/bareos-dir.conf";
+  const auto console_config_path = root.path() / "bconsole.conf";
+  const auto console_path = root.path() / "bconsole.d/console/admin.conf";
+  const auto user_path = root.path() / "bconsole.d/user/api.conf";
+  std::ofstream(director_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(fd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(sd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "}\n"
+      << "Console {\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
+  std::ofstream(user_path)
+      << "User {\n  Name = api\n  Password = secret\n}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].resources.begin(), model.directors[0].resources.end(),
+      [&director_config_path](const ResourceSummary& summary) {
+        return summary.type == "configuration"
+               && summary.file_path == director_config_path.string();
+      });
+  ASSERT_NE(resource, model.directors[0].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "POST",
+      "/api/v1/resources/" + resource->id + "/save",
+      "text/plain; charset=utf-8",
+      "Director {\n  Name = bareos-dir\n  Password = newersecret\n}\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200) << response.body;
+  EXPECT_NE(response.body.find("\"saved\":true"), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find("\"code\":\"password-reference-update\""),
+            std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(console_config_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(console_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(user_path.string()), std::string::npos)
+      << response.body;
+
+  const auto read_file = [](const std::filesystem::path& path) {
+    std::ifstream input(path);
+    std::ostringstream output;
+    output << input.rdbuf();
+    return output.str();
+  };
+
+  EXPECT_NE(read_file(director_config_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(fd_director_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(sd_director_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(console_config_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(console_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(user_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_EQ(read_file(console_config_path).find("Password = secret"),
+            std::string::npos);
 }
 
 TEST(BareosConfigService, SavesRenamedStorageDeviceAndUpdatesDirectorStorage)
@@ -941,10 +1485,12 @@ TEST(BareosConfigService, SavesRenamedDirectorAndUpdatesDaemonConfigs)
   std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
   std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   const auto director_path = root.path() / "bareos-dir.d/director/bareos-dir.conf";
   const auto fd_director_path = root.path() / "bareos-fd.d/director/bareos-dir.conf";
   const auto sd_director_path = root.path() / "bareos-sd.d/director/bareos-dir.conf";
+  const auto console_config_path = root.path() / "bconsole.conf";
   std::ofstream(director_path)
       << "Director {\n"
       << "  Name = bareos-dir\n"
@@ -960,6 +1506,15 @@ TEST(BareosConfigService, SavesRenamedDirectorAndUpdatesDaemonConfigs)
       << "  Name = bareos-dir\n"
       << "  Password = secret\n"
       << "}\n";
+  std::ofstream(console_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "}\n"
+      << "Console {\n"
+      << "  Name = admin\n"
+      << "}\n";
+  std::ofstream(root.path() / "bconsole.d/console/admin.conf")
+      << "Console {\n  Name = admin\n}\n";
 
   const auto model = DiscoverDatacenterSummary({root.path()});
   const auto resource = std::find_if(
@@ -980,8 +1535,15 @@ TEST(BareosConfigService, SavesRenamedDirectorAndUpdatesDaemonConfigs)
 
   EXPECT_EQ(response.status_code, 200);
   EXPECT_NE(response.body.find("\"saved\":true"), std::string::npos);
-  EXPECT_NE(response.body.find(fd_director_path.string()), std::string::npos);
-  EXPECT_NE(response.body.find(sd_director_path.string()), std::string::npos);
+  const auto renamed_director_path
+      = root.path() / "bareos-dir.d/director/renamed-dir.conf";
+  const auto renamed_fd_director_path
+      = root.path() / "bareos-fd.d/director/renamed-dir.conf";
+  const auto renamed_sd_director_path
+      = root.path() / "bareos-sd.d/director/renamed-dir.conf";
+  EXPECT_NE(response.body.find(renamed_fd_director_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(renamed_sd_director_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(console_config_path.string()), std::string::npos);
 
   const auto read_file = [](const std::filesystem::path& path) {
     std::ifstream input(path);
@@ -990,15 +1552,162 @@ TEST(BareosConfigService, SavesRenamedDirectorAndUpdatesDaemonConfigs)
     return output.str();
   };
 
-  const auto director_content = read_file(director_path);
-  const auto fd_director_content = read_file(fd_director_path);
-  const auto sd_director_content = read_file(sd_director_path);
+  ASSERT_FALSE(std::filesystem::exists(director_path));
+  ASSERT_FALSE(std::filesystem::exists(fd_director_path));
+  ASSERT_FALSE(std::filesystem::exists(sd_director_path));
+  ASSERT_TRUE(std::filesystem::exists(renamed_director_path));
+  ASSERT_TRUE(std::filesystem::exists(renamed_fd_director_path));
+  ASSERT_TRUE(std::filesystem::exists(renamed_sd_director_path));
+
+  const auto director_content = read_file(renamed_director_path);
+  const auto fd_director_content = read_file(renamed_fd_director_path);
+  const auto sd_director_content = read_file(renamed_sd_director_path);
+  const auto console_content = read_file(console_config_path);
 
   EXPECT_NE(director_content.find("Name = renamed-dir"), std::string::npos);
   EXPECT_NE(fd_director_content.find("Name = renamed-dir"), std::string::npos);
   EXPECT_NE(sd_director_content.find("Name = renamed-dir"), std::string::npos);
+  EXPECT_NE(console_content.find("Name = renamed-dir"), std::string::npos);
   EXPECT_EQ(fd_director_content.find("Name = bareos-dir"), std::string::npos);
   EXPECT_EQ(sd_director_content.find("Name = bareos-dir"), std::string::npos);
+  EXPECT_EQ(console_content.find("Name = bareos-dir"), std::string::npos);
+}
+
+TEST(BareosConfigService,
+     SavesRenamedRootDirectorConfigAndUpdatesDaemonConfigsAndBconsole)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  const auto director_config_path = root.path() / "bareos-dir.conf";
+  const auto fd_director_path = root.path() / "bareos-fd.d/director/bareos-dir.conf";
+  const auto sd_director_path = root.path() / "bareos-sd.d/director/bareos-dir.conf";
+  const auto console_config_path = root.path() / "bconsole.conf";
+  std::ofstream(director_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(fd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(sd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n"
+      << "Console {\n"
+      << "  Name = admin\n"
+      << "}\n";
+  std::ofstream(root.path() / "bconsole.d/console/admin.conf")
+      << "Console {\n  Name = admin\n}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].resources.begin(), model.directors[0].resources.end(),
+      [&director_config_path](const ResourceSummary& summary) {
+        return summary.type == "configuration"
+               && summary.file_path == director_config_path.string();
+      });
+  ASSERT_NE(resource, model.directors[0].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "POST",
+      "/api/v1/resources/" + resource->id + "/save",
+      "text/plain; charset=utf-8",
+      "Director {\n  Name = renamed-dir\n  Password = secret\n}\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200) << response.body;
+  EXPECT_NE(response.body.find("\"saved\":true"), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(console_config_path.string()), std::string::npos)
+      << response.body;
+
+  const auto renamed_fd_director_path
+      = root.path() / "bareos-fd.d/director/renamed-dir.conf";
+  const auto renamed_sd_director_path
+      = root.path() / "bareos-sd.d/director/renamed-dir.conf";
+  const auto renamed_director_config_path = root.path() / "renamed-dir.conf";
+
+  const auto read_file = [](const std::filesystem::path& path) {
+    std::ifstream input(path);
+    std::ostringstream output;
+    output << input.rdbuf();
+    return output.str();
+  };
+
+  ASSERT_FALSE(std::filesystem::exists(director_config_path));
+  ASSERT_FALSE(std::filesystem::exists(fd_director_path));
+  ASSERT_FALSE(std::filesystem::exists(sd_director_path));
+  ASSERT_TRUE(std::filesystem::exists(renamed_director_config_path));
+  ASSERT_TRUE(std::filesystem::exists(renamed_fd_director_path));
+  ASSERT_TRUE(std::filesystem::exists(renamed_sd_director_path));
+
+  EXPECT_NE(read_file(renamed_director_config_path).find("Name = renamed-dir"),
+            std::string::npos);
+  EXPECT_NE(read_file(renamed_fd_director_path).find("Name = renamed-dir"),
+            std::string::npos);
+  EXPECT_NE(read_file(renamed_sd_director_path).find("Name = renamed-dir"),
+            std::string::npos);
+  EXPECT_NE(read_file(console_config_path).find("Name = renamed-dir"),
+            std::string::npos);
+  EXPECT_EQ(read_file(console_config_path).find("Name = bareos-dir"),
+            std::string::npos);
+}
+
+TEST(BareosConfigService, SavesRenamedStorageResourceToRenamedFile)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  const auto storage_path = root.path() / "bareos-dir.d/storage/example-sd.conf";
+  std::ofstream(storage_path)
+      << "Storage {\n"
+      << "  Name = example-sd\n"
+      << "  Address = 10.0.0.20\n"
+      << "  Password = secret\n"
+      << "  Device = tape-drive-0\n"
+      << "  MediaType = File\n"
+      << "}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].resources.begin(), model.directors[0].resources.end(),
+      [](const ResourceSummary& summary) { return summary.type == "storage"; });
+  ASSERT_NE(resource, model.directors[0].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "POST",
+      "/api/v1/resources/" + resource->id + "/save",
+      "text/plain; charset=utf-8",
+      "Storage {\n  Name = renamed-sd\n  Address = 10.0.0.20\n  Password = secret\n  Device = tape-drive-0\n  MediaType = File\n}\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find("\"saved\":true"), std::string::npos);
+
+  const auto renamed_storage_path
+      = root.path() / "bareos-dir.d/storage/renamed-sd.conf";
+  ASSERT_FALSE(std::filesystem::exists(storage_path));
+  ASSERT_TRUE(std::filesystem::exists(renamed_storage_path));
+
+  std::ifstream input(renamed_storage_path);
+  std::ostringstream output;
+  output << input.rdbuf();
+  EXPECT_NE(output.str().find("Name = renamed-sd"), std::string::npos);
 }
 
 TEST(BareosConfigService, SavesOnlySelectedBlockFromMultiResourceFile)
@@ -1061,7 +1770,7 @@ TEST(BareosConfigService, SavesNewResourceContent)
   EXPECT_NE(response.body.find("\"saved\":true"), std::string::npos);
   EXPECT_NE(response.body.find("\"action\":\"create\""), std::string::npos);
 
-  const auto saved_path = root.path() / "bareos-dir.d/client/new-client.conf";
+  const auto saved_path = root.path() / "bareos-dir.d/client/new-fd.conf";
   ASSERT_TRUE(std::filesystem::exists(saved_path));
   const auto saved_content = [&saved_path] {
     std::ifstream input(saved_path);
@@ -1312,20 +2021,30 @@ TEST(BareosConfigService, ReturnsAddClientWizardPreview)
   EXPECT_NE(response.body.find("wizard-fd.conf"), std::string::npos);
   EXPECT_NE(response.body.find("Address = 10.0.0.40"), std::string::npos);
   EXPECT_NE(response.body.find(
+                (root.path() / "generated/directors/bareos-dir/etc/bareos/bareos-dir.d/client/wizard-fd.conf")
+                    .string()),
+            std::string::npos);
+  EXPECT_NE(response.body.find(
                 (root.path() / "generated/clients/wizard-fd/etc/bareos/bareos-fd.d/director/bareos-dir.conf")
                     .string()),
             std::string::npos);
   EXPECT_NE(response.body.find("\"validation_messages\":[]"), std::string::npos);
 }
 
-TEST(BareosConfigService, SavesAddClientWizardArtifactsLocally)
+TEST(BareosConfigService, SavesAddClientWizardArtifactsBelowStagingRoot)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
   std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/messages");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/messages");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   std::ofstream(root.path() / "bareos-fd.conf")
       << "FileDaemon {\n  Name = wizard-fd\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/messages/Standard.conf")
+      << "Messages {\n  Name = Standard\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/messages/Standard.conf")
+      << "Messages {\n  Name = Standard\n}\n";
 
   const ConfigServiceOptions options = MakeServiceOptions(root.path());
   const HttpRequest request{"POST",
@@ -1341,16 +2060,25 @@ TEST(BareosConfigService, SavesAddClientWizardArtifactsLocally)
             std::string::npos);
   EXPECT_NE(response.body.find("\"role\":\"client-file-daemon-director\""),
             std::string::npos);
-  EXPECT_NE(response.body.find("\"follow_up_component\":\"director\""),
-            std::string::npos);
-  EXPECT_NE(response.body.find("\"follow_up_component\":\"file-daemon\""),
-            std::string::npos);
 
-  const auto director_path = root.path() / "bareos-dir.d/client/wizard-fd.conf";
-  const auto file_daemon_path
-      = root.path() / "bareos-fd.d/director/bareos-dir.conf";
+  const auto director_path = root.path()
+                             / "generated/directors/bareos-dir/etc/bareos/bareos-dir.d/client/wizard-fd.conf";
+  const auto file_daemon_path = root.path()
+                                / "generated/clients/wizard-fd/etc/bareos/bareos-fd.d/director/bareos-dir.conf";
+  const auto staged_director_main
+      = root.path() / "generated/directors/bareos-dir/etc/bareos/bareos-dir.conf";
+  const auto staged_director_messages = root.path()
+                                        / "generated/directors/bareos-dir/etc/bareos/bareos-dir.d/messages/Standard.conf";
+  const auto staged_file_daemon_main
+      = root.path() / "generated/clients/wizard-fd/etc/bareos/bareos-fd.conf";
+  const auto staged_file_daemon_messages = root.path()
+                                           / "generated/clients/wizard-fd/etc/bareos/bareos-fd.d/messages/Standard.conf";
   ASSERT_TRUE(std::filesystem::exists(director_path));
   ASSERT_TRUE(std::filesystem::exists(file_daemon_path));
+  ASSERT_TRUE(std::filesystem::exists(staged_director_main));
+  ASSERT_TRUE(std::filesystem::exists(staged_director_messages));
+  ASSERT_TRUE(std::filesystem::exists(staged_file_daemon_main));
+  ASSERT_TRUE(std::filesystem::exists(staged_file_daemon_messages));
 
   const auto director_content = [&director_path] {
     std::ifstream input(director_path);
@@ -1371,42 +2099,99 @@ TEST(BareosConfigService, SavesAddClientWizardArtifactsLocally)
   EXPECT_NE(file_daemon_content.find("Password = secret"), std::string::npos);
 }
 
-TEST(BareosConfigService, SavesAddClientWizardArtifactsForRemoteClientTarget)
+TEST(BareosConfigService, CopiesDirectorConfigTreeIntoStagingForRemoteClient)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/job");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/client/existing-fd.conf")
+      << "Client {\n  Name = existing-fd\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/job/backup.conf")
+      << "Job {\n  Name = BackupClient\n}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{"POST",
+                            "/api/v1/nodes/datacenter/add-client/save/director-0",
+                            "text/plain; charset=utf-8",
+                            "Name=remote-fd\nAddress=10.0.0.50\nPassword=secret\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_TRUE(std::filesystem::exists(
+      root.path() / "generated/directors/bareos-dir/etc/bareos/bareos-dir.conf"));
+  EXPECT_TRUE(std::filesystem::exists(
+      root.path()
+      / "generated/directors/bareos-dir/etc/bareos/bareos-dir.d/job/backup.conf"));
+
+  const auto bootstrap
+      = HandleConfigServiceRequest(options, {"GET", "/api/v1/bootstrap", "", ""});
+  EXPECT_EQ(bootstrap.status_code, 200);
+  EXPECT_EQ(bootstrap.body.find("\"id\":\"staged-client-bareos-dir-existing-fd\""),
+            std::string::npos);
+}
+
+TEST(BareosConfigService, ShowsStagedClientInBootstrapTreeAndResources)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
 
   const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest save_request{"POST",
+                                 "/api/v1/nodes/datacenter/add-client/save/director-0",
+                                 "text/plain; charset=utf-8",
+                                 "Name=wizard-fd\nAddress=10.0.0.40\nPassword=secret\n"};
+  const auto save_response = HandleConfigServiceRequest(options, save_request);
+  ASSERT_EQ(save_response.status_code, 200);
+
+  const auto bootstrap = HandleConfigServiceRequest(
+      options, {"GET", "/api/v1/bootstrap", "", ""});
+  EXPECT_EQ(bootstrap.status_code, 200);
+  EXPECT_NE(bootstrap.body.find("\"id\":\"staged-client-bareos-dir-wizard-fd\""),
+            std::string::npos);
+
+  const auto resources = HandleConfigServiceRequest(
+      options,
+      {"GET", "/api/v1/nodes/staged-client-bareos-dir-wizard-fd/resources", "", ""});
+  EXPECT_EQ(resources.status_code, 200);
+  EXPECT_NE(resources.body.find("\"name\":\"wizard-fd\""), std::string::npos);
+  EXPECT_NE(resources.body.find("\"name\":\"wizard-fd generated client config\""),
+            std::string::npos);
+}
+
+TEST(BareosConfigService, MarksStagedAddClientWizardPreviewAsUpdate)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(
+      root.path()
+      / "generated/directors/bareos-dir/etc/bareos/bareos-dir.d/client");
+  std::filesystem::create_directories(
+      root.path()
+      / "generated/clients/wizard-fd/etc/bareos/bareos-fd.d/director");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path()
+                / "generated/directors/bareos-dir/etc/bareos/bareos-dir.d/client/wizard-fd.conf")
+      << "Client {\n  Name = wizard-fd\n}\n";
+  std::ofstream(root.path()
+                / "generated/clients/wizard-fd/etc/bareos/bareos-fd.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
   const HttpRequest request{"POST",
-                            "/api/v1/nodes/datacenter/add-client/save/director-0",
+                            "/api/v1/nodes/datacenter/add-client/preview/director-0",
                             "text/plain; charset=utf-8",
                             "Name=wizard-fd\nAddress=10.0.0.40\nPassword=secret\n"};
 
   const auto response = HandleConfigServiceRequest(options, request);
 
   EXPECT_EQ(response.status_code, 200);
-  EXPECT_NE(response.body.find("\"saved\":true"), std::string::npos);
+  EXPECT_NE(response.body.find("\"action\":\"update\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"role\":\"director-client\""),
+            std::string::npos);
   EXPECT_NE(response.body.find("\"role\":\"client-file-daemon-director\""),
-            std::string::npos);
-  EXPECT_EQ(response.body.find("\"follow_up_component\":\"file-daemon\""),
-            std::string::npos);
-
-  const auto director_path = root.path() / "bareos-dir.d/client/wizard-fd.conf";
-  const auto staged_file_daemon_path = root.path()
-                                       / "generated/clients/wizard-fd/etc/bareos/bareos-fd.d/director/bareos-dir.conf";
-  ASSERT_TRUE(std::filesystem::exists(director_path));
-  ASSERT_TRUE(std::filesystem::exists(staged_file_daemon_path));
-
-  const auto staged_file_daemon_content = [&staged_file_daemon_path] {
-    std::ifstream input(staged_file_daemon_path);
-    std::ostringstream output;
-    output << input.rdbuf();
-    return output.str();
-  }();
-  EXPECT_NE(staged_file_daemon_content.find("Name = bareos-dir"),
-            std::string::npos);
-  EXPECT_NE(staged_file_daemon_content.find("Password = secret"),
             std::string::npos);
 }
 
@@ -1419,7 +2204,7 @@ TEST(BareosConfigService, ReturnsAddClientWizardSchema)
   std::ofstream(root.path() / "bareos-dir.d/catalog/MyCatalog.conf")
       << "Catalog {\n  Name = MyCatalog\n}\n";
 
-  const ConfigServiceOptions options{{root.path()}};
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
   const HttpRequest request{
       "GET", "/api/v1/nodes/datacenter/add-client/schema/director-0", "", ""};
 
@@ -1447,7 +2232,7 @@ TEST(BareosConfigService, ReturnsAddClientWizardSchemaWithCatalogChoice)
   std::ofstream(root.path() / "bareos-dir.d/catalog/OtherCatalog.conf")
       << "Catalog {\n  Name = OtherCatalog\n}\n";
 
-  const ConfigServiceOptions options{{root.path()}};
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
   const HttpRequest request{
       "GET", "/api/v1/nodes/datacenter/add-client/schema/director-0", "", ""};
 
@@ -1488,10 +2273,14 @@ TEST(BareosConfigService, MarksExistingClientWizardPreviewAsUpdate)
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
-  std::ofstream(root.path() / "bareos-dir.d/client/wizard-fd.conf")
+  std::filesystem::create_directories(
+      root.path()
+      / "generated/directors/bareos-dir/etc/bareos/bareos-dir.d/client");
+  std::ofstream(root.path()
+                / "generated/directors/bareos-dir/etc/bareos/bareos-dir.d/client/wizard-fd.conf")
       << "Client {\n  Name = wizard-fd\n}\n";
 
-  const ConfigServiceOptions options{{root.path()}};
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
   const HttpRequest request{"POST",
                             "/api/v1/nodes/datacenter/add-client/preview/director-0",
                             "text/plain; charset=utf-8",
@@ -1503,38 +2292,7 @@ TEST(BareosConfigService, MarksExistingClientWizardPreviewAsUpdate)
   EXPECT_NE(response.body.find("\"action\":\"update\""), std::string::npos);
 }
 
-TEST(BareosConfigService, UsesLocalFileDaemonTargetWhenManagedLocally)
-{
-  TempConfigRoot root;
-  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
-  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
-  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
-  std::ofstream(root.path() / "bareos-fd.conf")
-      << "FileDaemon {\n  Name = wizard-fd\n}\n";
-  std::ofstream(root.path() / "bareos-fd.d/director/bareos-dir.conf")
-      << "Director {\n  Name = bareos-dir\n}\n";
-
-  const ConfigServiceOptions options{{root.path()}};
-  const HttpRequest request{"POST",
-                            "/api/v1/nodes/datacenter/add-client/preview/director-0",
-                            "text/plain; charset=utf-8",
-                            "Name=wizard-fd\nAddress=10.0.0.40\nPassword=secret\n"};
-
-  const auto response = HandleConfigServiceRequest(options, request);
-
-  EXPECT_EQ(response.status_code, 200);
-  EXPECT_NE(response.body.find("\"role\":\"client-file-daemon-director\""),
-            std::string::npos);
-  EXPECT_NE(response.body.find("\"action\":\"update\""), std::string::npos);
-  EXPECT_NE(response.body.find("\"exists_local\":true"), std::string::npos);
-  EXPECT_NE(response.body.find(
-                (root.path() / "bareos-fd.d/director/bareos-dir.conf").string()),
-            std::string::npos);
-  EXPECT_EQ(response.body.find("/generated/clients/wizard-fd/"),
-            std::string::npos);
-}
-
-TEST(BareosConfigService, DefaultsNewClientWizardToRemoteTarget)
+TEST(BareosConfigService, StagesClientFileDaemonConfigEvenWhenManagedLocally)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
@@ -1559,7 +2317,9 @@ TEST(BareosConfigService, DefaultsNewClientWizardToRemoteTarget)
                  / "generated/clients/wizard-fd/etc/bareos/bareos-fd.d/director/bareos-dir.conf")
                     .string()),
             std::string::npos);
-  EXPECT_EQ(response.body.find(
-                (root.path() / "bareos-fd.d/director/bareos-dir.conf").string()),
+  EXPECT_NE(response.body.find(
+                (root.path()
+                 / "generated/directors/bareos-dir/etc/bareos/bareos-dir.d/client/wizard-fd.conf")
+                    .string()),
             std::string::npos);
 }

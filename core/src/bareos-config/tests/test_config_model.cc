@@ -56,44 +56,56 @@ TEST(BareosConfigModel, DiscoversDirectorAndDaemonResources)
   std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
   std::filesystem::create_directories(root.path() / "bareos-fd.d/fileset");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
 
   std::ofstream(root.path() / "bareos-dir.conf") << "# director\n";
   std::ofstream(root.path() / "bareos-sd.conf")
       << "Storage {\n  Name = example-sd\n}\n";
   std::ofstream(root.path() / "bareos-fd.conf")
       << "FileDaemon {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bconsole.conf")
+      << "Director {\n  Name = bareos-dir\n}\n"
+      << "Console {\n  Name = admin\n}\n";
   std::ofstream(root.path() / "bareos-dir.d/client/example-fd.conf")
       << "Client {}\n";
   std::ofstream(root.path() / "bareos-dir.d/storage/example-sd.conf")
       << "Storage {}\n";
   std::ofstream(root.path() / "bareos-sd.d/device/tape.conf") << "Device {}\n";
   std::ofstream(root.path() / "bareos-fd.d/fileset/local.conf") << "FileSet {}\n";
+  std::ofstream(root.path() / "bconsole.d/console/admin.conf")
+      << "Console {\n  Name = admin\n}\n";
 
   const auto summary = DiscoverDatacenterSummary({root.path()});
 
   ASSERT_EQ(summary.directors.size(), 1U);
   EXPECT_EQ(summary.directors[0].name, "bareos-dir");
   ASSERT_GE(summary.directors[0].resources.size(), 2U);
-  EXPECT_EQ(summary.directors[0].daemons.size(), 2U);
+  EXPECT_EQ(summary.directors[0].daemons.size(), 3U);
   EXPECT_EQ(summary.directors[0].daemons[0].kind, "storage-daemon");
   EXPECT_EQ(summary.directors[0].daemons[1].kind, "file-daemon");
+  EXPECT_EQ(summary.directors[0].daemons[2].kind, "console");
   EXPECT_EQ(summary.directors[0].daemons[0].configured_name, "example-sd");
   EXPECT_EQ(summary.directors[0].daemons[1].configured_name, "example-fd");
+  EXPECT_EQ(summary.directors[0].daemons[2].configured_name, "admin");
   EXPECT_EQ(summary.directors[0].daemons[0].resources[0].type, "configuration");
   EXPECT_EQ(summary.directors[0].daemons[0].resources[1].type, "device");
   EXPECT_EQ(summary.directors[0].daemons[1].resources[0].type, "configuration");
   EXPECT_EQ(summary.directors[0].daemons[1].resources[1].type, "fileset");
+  EXPECT_EQ(summary.directors[0].daemons[2].resources[0].type, "configuration");
+  EXPECT_EQ(summary.directors[0].daemons[2].resources[1].type, "console");
   EXPECT_EQ(summary.directors[0].resources[0].id,
             "resource-0-director-main");
   EXPECT_EQ(summary.directors[0].daemons[0].id, "daemon-0-storage-daemon");
   EXPECT_EQ(summary.tree.kind, "datacenter");
-  ASSERT_EQ(summary.tree.children.size(), 3U);
+  ASSERT_EQ(summary.tree.children.size(), 4U);
   EXPECT_EQ(summary.tree.children[0].kind, "director");
   EXPECT_EQ(summary.tree.children[0].id, "director-0");
   EXPECT_EQ(summary.tree.children[1].kind, "storage-daemon");
   EXPECT_EQ(summary.tree.children[1].id, "daemon-0-storage-daemon");
   EXPECT_EQ(summary.tree.children[2].kind, "file-daemon");
   EXPECT_EQ(summary.tree.children[2].id, "daemon-0-file-daemon");
+  EXPECT_EQ(summary.tree.children[3].kind, "console");
+  EXPECT_EQ(summary.tree.children[3].id, "daemon-0-console");
   EXPECT_TRUE(summary.tree.children[0].children.empty());
   EXPECT_EQ(summary.tree.children[0].resources[1].type, "client");
   EXPECT_EQ(summary.tree.children[0].resources[2].type, "storage");
@@ -111,7 +123,7 @@ TEST(BareosConfigModel, DiscoversDirectorAndDaemonResources)
 
   const auto director_relationships
       = FindRelationshipsForNode(summary, "director-0");
-  ASSERT_EQ(director_relationships.size(), 2U);
+  ASSERT_EQ(director_relationships.size(), 3U);
   EXPECT_EQ(director_relationships[0].from_node_id, "director-0");
   EXPECT_EQ(director_relationships[0].to_node_id, "daemon-0-file-daemon");
   EXPECT_EQ(director_relationships[0].relation, "client");
@@ -120,12 +132,21 @@ TEST(BareosConfigModel, DiscoversDirectorAndDaemonResources)
             std::string::npos);
   EXPECT_EQ(director_relationships[1].to_node_id, "daemon-0-storage-daemon");
   EXPECT_EQ(director_relationships[1].relation, "storage");
+  EXPECT_EQ(director_relationships[2].from_node_id, "daemon-0-console");
+  EXPECT_EQ(director_relationships[2].to_node_id, "director-0");
+  EXPECT_EQ(director_relationships[2].relation, "director");
+  EXPECT_EQ(director_relationships[2].endpoint_name, "bareos-dir");
 
   const auto* resource
       = FindResourceById(summary, "resource-0-director-main");
   ASSERT_NE(resource, nullptr);
   EXPECT_EQ(resource->file_path,
             (root.path() / "bareos-dir.conf").string());
+
+  const auto console_relationships = FindRelationshipsForNode(summary, "daemon-0-console");
+  ASSERT_EQ(console_relationships.size(), 1U);
+  EXPECT_EQ(console_relationships[0].to_node_id, "director-0");
+  EXPECT_EQ(console_relationships[0].relation, "director");
 }
 
 TEST(BareosConfigModel, UsesDirectorConfigStemAndNormalizesRoot)
@@ -564,6 +585,8 @@ TEST(BareosConfigModel, UpdatesPreviewSummaryNameAfterRename)
       "Client {\n  Name = renamed-fd\n  Address = 10.0.0.20\n  Password = secret\n}\n");
 
   EXPECT_EQ(preview.summary.name, "renamed-fd");
+  EXPECT_EQ(preview.summary.file_path,
+            (root.path() / "bareos-dir.d/client/renamed-fd.conf").string());
 }
 
 TEST(BareosConfigModel, PreservesRepeatableScheduleRunDirectives)

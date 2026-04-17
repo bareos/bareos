@@ -189,6 +189,8 @@ struct AddClientTargetPlan {
   std::string file_path;
   std::string action;
   bool exists_local = false;
+  std::filesystem::path staged_root;
+  std::optional<std::filesystem::path> source_root;
 };
 
 std::string SanitizePathComponent(std::string value)
@@ -213,11 +215,21 @@ std::filesystem::path BuildGeneratedRemoteConfigRoot(
          / SanitizePathComponent(target_name) / "etc" / "bareos";
 }
 
+std::filesystem::path BuildGeneratedDirectorConfigRoot(
+    const ConfigServiceOptions& options, const std::string& director_name)
+{
+  return options.generated_config_root / "directors"
+         / SanitizePathComponent(director_name) / "etc" / "bareos";
+}
+
 bool IsGeneratedRemotePath(const std::string& path)
 {
   return path.find("/generated/clients/") != std::string::npos
+         || path.find("/generated/directors/") != std::string::npos
          || path.find("/generated/storages/") != std::string::npos
          || path.find("/var/lib/bareos-config/generated/clients/")
+                != std::string::npos
+         || path.find("/var/lib/bareos-config/generated/directors/")
                 != std::string::npos
          || path.find("/var/lib/bareos-config/generated/storages/")
                 != std::string::npos;
@@ -230,8 +242,24 @@ std::string MakeGeneratedClientConfigId(const std::string& director_id,
          + SanitizePathComponent(client_name);
 }
 
+std::string MakeStagedDirectorClientNodeId(const std::string& director_name,
+                                           const std::string& client_name)
+{
+  return "staged-client-" + SanitizePathComponent(director_name) + "-"
+         + SanitizePathComponent(client_name);
+}
+
 struct PersistResult;
 struct VerificationResult;
+std::vector<TreeNodeSummary> CollectStagedDirectorClientNodes(
+    const ConfigServiceOptions& options, const DatacenterSummary& model);
+std::optional<TreeNodeSummary> ResolveNodeSummary(const ConfigServiceOptions& options,
+                                                  const DatacenterSummary& model,
+                                                  const std::string& node_id);
+TreeNodeSummary BuildAugmentedTree(const ConfigServiceOptions& options,
+                                   const DatacenterSummary& model);
+std::string SerializeBootstrapSummary(const ConfigServiceOptions& options,
+                                      const DatacenterSummary& model);
 std::vector<ResourceSummary> CollectDatacenterSyntheticResources(
     const ConfigServiceOptions& options, const DatacenterSummary& model);
 std::optional<ResourceSummary> ResolveResourceSummary(
@@ -246,6 +274,10 @@ bool RemoveExistingResource(const ResourceSummary& summary,
                             std::string& action,
                             std::string& backup_path,
                             std::string& error);
+bool MirrorConfigTreeIntoStage(const std::filesystem::path& source_root,
+                               const std::filesystem::path& staged_root,
+                               const std::filesystem::path& excluded_root,
+                               std::string& error);
 void PopulateFollowUpAction(PersistResult& result);
 void RollbackPersistedResource(const PersistResult& result);
 VerificationResult VerifySavedConfig(const ConfigServiceOptions& options,
@@ -283,6 +315,7 @@ struct PersistedAffectedUpdate {
   std::string action;
   std::string path;
   std::string backup_path;
+  std::string original_path;
 };
 
 struct PersistResult {
@@ -290,6 +323,7 @@ struct PersistResult {
   int status_code = 200;
   std::string action = "unchanged";
   std::string backup_path;
+  std::string original_path;
   std::string error;
   ResourceEditPreview preview;
   std::string verification_command;
@@ -537,14 +571,120 @@ const DaemonSummary* FindDirectorDaemonByKind(const DirectorSummary& director,
   return it == director.daemons.end() ? nullptr : &(*it);
 }
 
-const DirectorSummary* FindDirectorById(const DatacenterSummary& summary,
-                                        const std::string& director_id)
+std::optional<std::string> ExtractGeneratedDirectorName(
+    const ConfigServiceOptions& options, const std::string& file_path)
 {
-  const auto it = std::find_if(summary.directors.begin(), summary.directors.end(),
-                               [&director_id](const DirectorSummary& director) {
-                                 return director.id == director_id;
+  if (options.generated_config_root.empty()) return std::nullopt;
+
+  const auto absolute_path = std::filesystem::path(file_path).lexically_normal();
+  const auto generated_root = options.generated_config_root.lexically_normal();
+  const auto relative = absolute_path.lexically_relative(generated_root);
+  if (relative.empty() || relative == absolute_path) return std::nullopt;
+
+  auto it = relative.begin();
+  if (it == relative.end() || *it != "directors") return std::nullopt;
+  ++it;
+  if (it == relative.end()) return std::nullopt;
+  return it->string();
+}
+
+std::vector<TreeNodeSummary> CollectStagedDirectorClientNodes(
+    const ConfigServiceOptions& options, const DatacenterSummary& model)
+{
+  std::vector<TreeNodeSummary> nodes;
+  const auto generated_root = options.generated_config_root / "directors";
+  if (!std::filesystem::exists(generated_root)) return nodes;
+
+  for (std::filesystem::recursive_directory_iterator it(generated_root), end;
+       it != end; ++it) {
+    if (!it->is_regular_file()) continue;
+    if (it->path().extension() != ".conf") continue;
+    if (it->path().parent_path().filename() != "client") continue;
+    if (it->path().parent_path().parent_path().filename() != "bareos-dir.d") {
+      continue;
+    }
+
+    const auto director_name = ExtractGeneratedDirectorName(
+        options, it->path().string());
+    if (!director_name || director_name->empty()) continue;
+
+    const auto client_name = it->path().stem().string();
+    if (client_name.empty()) continue;
+    const auto live_director = std::find_if(
+        model.directors.begin(), model.directors.end(),
+        [&director_name](const DirectorSummary& director) {
+          return director.name == *director_name;
+        });
+    if (live_director != model.directors.end()) {
+      const auto existing_client = std::find_if(
+          live_director->resources.begin(), live_director->resources.end(),
+          [&client_name](const ResourceSummary& resource) {
+            return resource.type == "client"
+                   && StripSurroundingQuotes(resource.name) == client_name;
+          });
+      if (existing_client != live_director->resources.end()) continue;
+    }
+
+    const ResourceSummary resource{
+        "staged-director-client-" + SanitizePathComponent(*director_name) + "-"
+            + SanitizePathComponent(client_name),
+        "client",
+        client_name,
+        it->path().string()};
+    nodes.push_back({MakeStagedDirectorClientNodeId(*director_name, client_name),
+                     "client",
+                     client_name,
+                     it->path().string(),
+                     {resource},
+                     {}});
+  }
+
+  std::sort(nodes.begin(), nodes.end(),
+            [](const TreeNodeSummary& lhs, const TreeNodeSummary& rhs) {
+              return lhs.label < rhs.label;
+            });
+  return nodes;
+}
+
+std::optional<TreeNodeSummary> ResolveNodeSummary(const ConfigServiceOptions& options,
+                                                  const DatacenterSummary& model,
+                                                  const std::string& node_id)
+{
+  if (const auto* node = FindTreeNodeById(model, node_id)) {
+    return *node;
+  }
+
+  const auto staged_nodes = CollectStagedDirectorClientNodes(options, model);
+  const auto it = std::find_if(staged_nodes.begin(), staged_nodes.end(),
+                               [&node_id](const TreeNodeSummary& node) {
+                                 return node.id == node_id;
                                });
-  return it == summary.directors.end() ? nullptr : &(*it);
+  if (it == staged_nodes.end()) return std::nullopt;
+  return *it;
+}
+
+TreeNodeSummary BuildAugmentedTree(const ConfigServiceOptions& options,
+                                   const DatacenterSummary& model)
+{
+  auto tree = model.tree;
+  auto staged_nodes = CollectStagedDirectorClientNodes(options, model);
+  for (auto& node : staged_nodes) {
+    const auto duplicate = std::find_if(
+        tree.children.begin(), tree.children.end(),
+        [&node](const TreeNodeSummary& existing) { return existing.id == node.id; });
+    if (duplicate == tree.children.end()) {
+      tree.children.push_back(std::move(node));
+    }
+  }
+
+  return tree;
+}
+
+std::string SerializeBootstrapSummary(const ConfigServiceOptions& options,
+                                      const DatacenterSummary& model)
+{
+  return "{\"tree\":"
+         + SerializeTreeNodeSummary(BuildAugmentedTree(options, model)) + "}";
 }
 
 std::vector<ResourceSummary> CollectDatacenterSyntheticResources(
@@ -576,6 +716,23 @@ std::vector<ResourceSummary> CollectDatacenterSyntheticResources(
            "configuration", client_name + " generated client config",
            generated_path.string()});
     }
+  }
+
+  for (const auto& node : CollectStagedDirectorClientNodes(options, model)) {
+    resources.insert(resources.end(), node.resources.begin(), node.resources.end());
+
+    const auto director_name
+        = ExtractGeneratedDirectorName(options, node.description).value_or("");
+    const auto generated_path
+        = BuildGeneratedRemoteConfigRoot(options, "client", node.label)
+          / "bareos-fd.d" / "director" / (director_name + ".conf");
+    if (!std::filesystem::exists(generated_path)) continue;
+
+    resources.push_back(
+        {MakeGeneratedClientConfigId(node.id, node.label),
+         "configuration",
+         node.label + " generated client config",
+         generated_path.string()});
   }
 
   std::sort(resources.begin(), resources.end(),
@@ -617,15 +774,26 @@ std::vector<ResourceSummary> CollectNodeResources(
   auto resources = node.resources;
   if (node.kind != "client" || node.resources.empty()) return resources;
 
-  const auto* director = FindOwningDirectorForResource(model, node.resources.front().id);
-  if (!director) return resources;
+  std::string director_name;
+  std::string director_id;
+  if (const auto* director
+      = FindOwningDirectorForResource(model, node.resources.front().id)) {
+    director_name = director->name;
+    director_id = director->id;
+  } else if (const auto staged_director_name
+             = ExtractGeneratedDirectorName(options, node.resources.front().file_path)) {
+    director_name = *staged_director_name;
+    director_id = node.id;
+  } else {
+    return resources;
+  }
 
   const auto generated_path
       = BuildGeneratedRemoteConfigRoot(options, "client", node.label)
-        / "bareos-fd.d" / "director" / (director->name + ".conf");
+        / "bareos-fd.d" / "director" / (director_name + ".conf");
   if (!std::filesystem::exists(generated_path)) return resources;
 
-  resources.push_back({MakeGeneratedClientConfigId(director->id, node.label),
+  resources.push_back({MakeGeneratedClientConfigId(director_id, node.label),
                        "configuration",
                        node.label + " generated client config",
                        generated_path.string()});
@@ -645,8 +813,15 @@ RemoteClientRemovalResult RemoveRemoteClient(
   }
 
   const auto client_resource = node.resources.front();
-  const auto* director = FindOwningDirectorForResource(model, client_resource.id);
-  if (!director) {
+  std::string director_name;
+  bool verify_director = true;
+  if (const auto* director = FindOwningDirectorForResource(model, client_resource.id)) {
+    director_name = director->name;
+  } else if (const auto staged_director_name
+             = ExtractGeneratedDirectorName(options, client_resource.file_path)) {
+    director_name = *staged_director_name;
+    verify_director = false;
+  } else {
     result.status_code = 404;
     result.error = "Owning director for remote client not found.";
     return result;
@@ -670,9 +845,9 @@ RemoteClientRemovalResult RemoveRemoteClient(
 
   const auto generated_path
       = BuildGeneratedRemoteConfigRoot(options, "client", node.label)
-        / "bareos-fd.d" / "director" / (director->name + ".conf");
+        / "bareos-fd.d" / "director" / (director_name + ".conf");
   const ResourceSummary generated_summary{
-      MakeGeneratedClientConfigId(director->id, node.label),
+      MakeGeneratedClientConfigId(node.id, node.label),
       "configuration",
       node.label + " generated client config",
       generated_path.string()};
@@ -697,20 +872,22 @@ RemoteClientRemovalResult RemoveRemoteClient(
   }
   result.generated_config.saved = true;
 
-  const auto verification = VerifySavedConfig(options, client_resource.file_path);
-  result.client_resource.verification_command = verification.command;
-  result.client_resource.verification_output = verification.output;
-  if (!verification.success) {
-    RollbackPersistedResource(result.generated_config);
-    RollbackPersistedResource(result.client_resource);
-    result.client_resource.saved = false;
-    result.generated_config.saved = false;
-    result.status_code = 409;
-    result.error = verification.error.empty()
-                       ? "Daemon configuration verification failed."
-                       : verification.error;
-    result.client_resource.error = result.error;
-    return result;
+  if (verify_director) {
+    const auto verification = VerifySavedConfig(options, client_resource.file_path);
+    result.client_resource.verification_command = verification.command;
+    result.client_resource.verification_output = verification.output;
+    if (!verification.success) {
+      RollbackPersistedResource(result.generated_config);
+      RollbackPersistedResource(result.client_resource);
+      result.client_resource.saved = false;
+      result.generated_config.saved = false;
+      result.status_code = 409;
+      result.error = verification.error.empty()
+                         ? "Daemon configuration verification failed."
+                         : verification.error;
+      result.client_resource.error = result.error;
+      return result;
+    }
   }
 
   PopulateFollowUpAction(result.client_resource);
@@ -721,6 +898,10 @@ RemoteClientRemovalResult RemoveRemoteClient(
 DaemonComponent DetectComponentForPath(const std::filesystem::path& path)
 {
   const auto path_string = path.string();
+  if (path_string.find("bconsole.d") != std::string::npos
+      || path.filename() == "bconsole.conf") {
+    return DaemonComponent::kUnknown;
+  }
   if (path_string.find("bareos-dir.d") != std::string::npos
       || path.filename() == "bareos-dir.conf") {
     return DaemonComponent::kDirector;
@@ -738,11 +919,14 @@ DaemonComponent DetectComponentForPath(const std::filesystem::path& path)
 
 std::filesystem::path FindConfigRootForPath(const std::filesystem::path& path)
 {
-  for (auto current = path; !current.empty(); current = current.parent_path()) {
+  for (auto current = path; !current.empty();) {
     const auto name = current.filename().string();
     if (name == "bareos-dir.d" || name == "bareos-fd.d" || name == "bareos-sd.d") {
       return current.parent_path();
     }
+    const auto parent = current.parent_path();
+    if (parent == current) break;
+    current = parent;
   }
 
   const auto filename = path.filename().string();
@@ -835,11 +1019,10 @@ VerificationResult RunVerificationCommand(const std::vector<std::string>& args)
 }
 
 std::vector<NamedResourceBlockRange> ParseNamedResourceBlockRanges(
-    const std::filesystem::path& path, const std::string& block_name)
+    const std::string& content,
+    const std::string& fallback_stem,
+    const std::string& block_name)
 {
-  std::ifstream input(path);
-  if (!input) return {};
-
   std::vector<NamedResourceBlockRange> blocks;
   std::string line;
   bool in_block = false;
@@ -848,6 +1031,7 @@ std::vector<NamedResourceBlockRange> ParseNamedResourceBlockRanges(
   size_t start_line = 0;
   std::string current_name;
 
+  std::istringstream input(content);
   while (std::getline(input, line)) {
     ++line_number;
     auto parsed_line = line;
@@ -890,7 +1074,6 @@ std::vector<NamedResourceBlockRange> ParseNamedResourceBlockRanges(
     }
   }
 
-  const auto fallback_stem = StemWithoutExtension(path);
   for (auto& block : blocks) {
     if (!block.name.empty()) continue;
     block.name = blocks.size() == 1 ? fallback_stem
@@ -899,6 +1082,53 @@ std::vector<NamedResourceBlockRange> ParseNamedResourceBlockRanges(
   }
 
   return blocks;
+}
+
+std::vector<NamedResourceBlockRange> ParseNamedResourceBlockRanges(
+    const std::filesystem::path& path, const std::string& block_name)
+{
+  std::ifstream input(path);
+  if (!input) return {};
+
+  std::ostringstream content;
+  content << input.rdbuf();
+  return ParseNamedResourceBlockRanges(content.str(), StemWithoutExtension(path),
+                                       block_name);
+}
+
+std::optional<ResourceDetail> BuildDirectorBlockDetail(
+    const ResourceSummary& resource,
+    const std::string& content,
+    const std::string& preferred_name = "")
+{
+  const auto block_ranges = ParseNamedResourceBlockRanges(
+      content, StemWithoutExtension(std::filesystem::path(resource.file_path)),
+      "Director");
+  if (block_ranges.empty()) return std::nullopt;
+
+  auto match = block_ranges.begin();
+  if (!preferred_name.empty()) {
+    match = std::find_if(
+        block_ranges.begin(), block_ranges.end(),
+        [&preferred_name](const NamedResourceBlockRange& block) {
+          return StripSurroundingQuotes(block.name) == preferred_name;
+        });
+    if (match == block_ranges.end()) {
+      if (block_ranges.size() != 1) return std::nullopt;
+      match = block_ranges.begin();
+    }
+  }
+
+  const auto content_lines = SplitLines(content);
+  if (match->end_line >= content_lines.size()) return std::nullopt;
+
+  std::vector<std::string> block_lines(
+      content_lines.begin() + static_cast<std::ptrdiff_t>(match->start_line),
+      content_lines.begin() + static_cast<std::ptrdiff_t>(match->end_line + 1));
+  auto block_summary = resource;
+  block_summary.type = "director";
+  block_summary.name = StripSurroundingQuotes(match->name);
+  return BuildResourceDetail(block_summary, JoinLines(block_lines));
 }
 
 bool HasValidationErrors(const std::vector<ValidationMessage>& messages)
@@ -980,6 +1210,67 @@ bool WriteFileWithBackup(const std::filesystem::path& path,
   return true;
 }
 
+bool MirrorConfigTreeIntoStage(const std::filesystem::path& source_root,
+                               const std::filesystem::path& staged_root,
+                               const std::filesystem::path& excluded_root,
+                               std::string& error)
+{
+  if (source_root.empty() || !std::filesystem::exists(source_root)) return true;
+
+  std::error_code ec;
+  std::filesystem::create_directories(staged_root, ec);
+  if (ec) {
+    error = "Failed to create staging root " + staged_root.string() + ".";
+    return false;
+  }
+
+  const auto normalized_excluded_root = excluded_root.lexically_normal();
+  for (std::filesystem::recursive_directory_iterator it(source_root), end;
+       it != end; ++it) {
+    const auto current_path = it->path().lexically_normal();
+    if (!normalized_excluded_root.empty()) {
+      const auto excluded_relative
+          = current_path.lexically_relative(normalized_excluded_root);
+      if ((current_path == normalized_excluded_root)
+          || (!excluded_relative.empty() && excluded_relative != current_path
+              && *excluded_relative.begin() != "..")) {
+        if (it->is_directory()) it.disable_recursion_pending();
+        continue;
+      }
+    }
+
+    const auto relative = it->path().lexically_relative(source_root);
+    const auto target = staged_root / relative;
+
+    if (it->is_directory()) {
+      std::filesystem::create_directories(target, ec);
+      if (ec) {
+        error = "Failed to create staging directory " + target.string() + ".";
+        return false;
+      }
+      continue;
+    }
+
+    if (!it->is_regular_file()) continue;
+    std::filesystem::create_directories(target.parent_path(), ec);
+    if (ec) {
+      error = "Failed to create staging directory " + target.parent_path().string()
+              + ".";
+      return false;
+    }
+    if (std::filesystem::exists(target)) continue;
+
+    std::filesystem::copy_file(it->path(), target,
+                               std::filesystem::copy_options::skip_existing, ec);
+    if (ec) {
+      error = "Failed to copy " + it->path().string() + " into staging.";
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool DeleteFileWithBackup(const std::filesystem::path& path,
                           std::string& action,
                           std::string& backup_path,
@@ -1011,31 +1302,58 @@ bool DeleteFileWithBackup(const std::filesystem::path& path,
   return true;
 }
 
-bool SaveExistingResourceContent(const ResourceSummary& summary,
+bool SaveExistingResourceContent(const ResourceSummary& original_summary,
+                                 const ResourceSummary& updated_summary,
                                  const std::string& updated_content,
                                  std::string& action,
                                  std::string& backup_path,
                                  std::string& error)
 {
-  const auto path = std::filesystem::path(summary.file_path);
-  const auto block_name = ResourceBlockNameForType(summary.type);
-  if (block_name.empty() || !std::filesystem::exists(path)) {
-    return WriteFileWithBackup(path, updated_content, action, backup_path, error);
+  const auto original_path = std::filesystem::path(original_summary.file_path);
+  const auto updated_path = std::filesystem::path(updated_summary.file_path);
+  const auto block_name = ResourceBlockNameForType(original_summary.type);
+  if (updated_path != original_path) {
+    if (std::filesystem::exists(updated_path)) {
+      error = "Target path already exists: " + updated_path.string() + ".";
+      return false;
+    }
+
+    if (!WriteFileWithBackup(updated_path, updated_content, action, backup_path,
+                             error)) {
+      return false;
+    }
+
+    std::string delete_action;
+    std::string original_backup_path;
+    if (!DeleteFileWithBackup(original_path, delete_action, original_backup_path,
+                              error)) {
+      std::error_code cleanup_error;
+      std::filesystem::remove(updated_path, cleanup_error);
+      return false;
+    }
+    action = "move";
+    backup_path = std::move(original_backup_path);
+    return true;
   }
 
-  const auto original_content = ReadFileToString(path);
-  const auto block_ranges = ParseNamedResourceBlockRanges(path, block_name);
+  if (block_name.empty() || !std::filesystem::exists(updated_path)) {
+    return WriteFileWithBackup(updated_path, updated_content, action, backup_path,
+                               error);
+  }
+
+  const auto original_content = ReadFileToString(updated_path);
+  const auto block_ranges = ParseNamedResourceBlockRanges(updated_path, block_name);
   std::vector<NamedResourceBlockRange> matches;
   for (const auto& block : block_ranges) {
-    if (block.name == summary.name) matches.push_back(block);
+    if (block.name == original_summary.name) matches.push_back(block);
   }
   if (matches.empty()) {
     error = "Resource block could not be located in "
-            + summary.file_path + ".";
+            + original_summary.file_path + ".";
     return false;
   }
   if (matches.size() > 1) {
-    error = "Resource block name is ambiguous in " + summary.file_path + ".";
+    error = "Resource block name is ambiguous in " + original_summary.file_path + ".";
     return false;
   }
 
@@ -1047,7 +1365,8 @@ bool SaveExistingResourceContent(const ResourceSummary& summary,
   lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(match.start_line),
                replacement_lines.begin(), replacement_lines.end());
 
-  return WriteFileWithBackup(path, JoinLines(lines), action, backup_path, error);
+  return WriteFileWithBackup(updated_path, JoinLines(lines), action, backup_path,
+                             error);
 }
 
 bool RemoveExistingResource(const ResourceSummary& summary,
@@ -1127,6 +1446,38 @@ std::vector<ResourceSummary> FindPasswordPropagationTargets(
     if (seen.insert(resource.id).second) targets.push_back(resource);
   };
 
+  if (detail.summary.type == "director") {
+    const auto director_name = StripSurroundingQuotes(detail.summary.name);
+    if (director_name.empty()) return targets;
+
+    const auto add_matching_director_targets = [&](const DirectorSummary& director) {
+      for (const auto& resource : director.resources) {
+        if (resource.id == detail.summary.id || resource.type != "director") continue;
+        if (StripSurroundingQuotes(resource.name) != director_name) continue;
+        add_target(resource);
+      }
+      for (const auto& daemon : director.daemons) {
+        for (const auto& resource : daemon.resources) {
+          if (resource.id == detail.summary.id || resource.type != "director") continue;
+          if (StripSurroundingQuotes(resource.name) != director_name) continue;
+          add_target(resource);
+        }
+      }
+    };
+
+    if (const auto* director = FindOwningDirectorForResource(summary, detail.summary.id)) {
+      add_matching_director_targets(*director);
+      return targets;
+    }
+
+    const DaemonSummary* daemon = nullptr;
+    const auto* director
+        = FindOwningDirectorForDaemonResource(summary, detail.summary.id, &daemon);
+    if (!director || !daemon) return targets;
+    add_matching_director_targets(*director);
+    return targets;
+  }
+
   if (detail.summary.type == "client" || detail.summary.type == "storage") {
     const auto* director = FindOwningDirectorForResource(summary, detail.summary.id);
     if (!director) return targets;
@@ -1167,6 +1518,75 @@ std::vector<ResourceSummary> FindPasswordPropagationTargets(
     add_target(*resource);
   }
 
+  return targets;
+}
+
+std::vector<ResourceSummary> FindConsoleConfigurationDirectorTargets(
+    const DatacenterSummary& summary, const ResourceDetail& detail)
+{
+  std::vector<ResourceSummary> targets;
+  if (detail.summary.type != "director") return targets;
+
+  const auto director_name = StripSurroundingQuotes(detail.summary.name);
+  if (director_name.empty()) return targets;
+
+  const auto collect = [&](const DirectorSummary& director) {
+      for (const auto& daemon : director.daemons) {
+        if (daemon.kind != "console") continue;
+        for (const auto& resource : daemon.resources) {
+          if (resource.id == detail.summary.id) continue;
+          if (resource.type != "configuration") continue;
+          const auto blocks = ParseNamedResourceBlockRanges(
+              std::filesystem::path(resource.file_path), "Director");
+        const auto match = std::find_if(
+            blocks.begin(), blocks.end(),
+            [&director_name](const NamedResourceBlockRange& block) {
+              return StripSurroundingQuotes(block.name) == director_name;
+            });
+        if (match != blocks.end()) targets.push_back(resource);
+      }
+    }
+  };
+
+  if (const auto* director = FindOwningDirectorForResource(summary, detail.summary.id)) {
+    collect(*director);
+    return targets;
+  }
+
+  const auto* director = FindOwningDirectorForDaemonResource(summary, detail.summary.id);
+  if (!director) return targets;
+  collect(*director);
+  return targets;
+}
+
+std::vector<ResourceSummary> FindConsoleAuthPasswordTargets(
+    const DatacenterSummary& summary, const ResourceDetail& detail)
+{
+  std::vector<ResourceSummary> targets;
+  if (detail.summary.type != "director") return targets;
+
+  std::set<std::string> seen;
+  const auto add_target = [&](const ResourceSummary& resource) {
+    if (resource.id == detail.summary.id) return;
+    if (resource.type != "console" && resource.type != "user") return;
+    if (seen.insert(resource.id).second) targets.push_back(resource);
+  };
+
+  const auto collect = [&](const DirectorSummary& director) {
+    for (const auto& daemon : director.daemons) {
+      if (daemon.kind != "console") continue;
+      for (const auto& resource : daemon.resources) add_target(resource);
+    }
+  };
+
+  if (const auto* director = FindOwningDirectorForResource(summary, detail.summary.id)) {
+    collect(*director);
+    return targets;
+  }
+
+  const auto* director = FindOwningDirectorForDaemonResource(summary, detail.summary.id);
+  if (!director) return targets;
+  collect(*director);
   return targets;
 }
 
@@ -1274,9 +1694,33 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
 {
   auto result = RenameAwarePreview{BuildResourceEditPreview(detail, updated_content),
                                    {}, {}};
-  const auto old_name = ExtractResourceName(detail.summary, detail.directives);
+  const auto source_director_detail
+      = detail.summary.type == "configuration"
+            ? BuildDirectorBlockDetail(detail.summary, detail.content)
+            : std::nullopt;
+  const auto updated_director_detail
+      = source_director_detail
+            ? BuildDirectorBlockDetail(result.preview.summary,
+                                       result.preview.updated_content,
+                                       source_director_detail->summary.name)
+            : std::nullopt;
+  const auto& name_source_directives
+      = source_director_detail ? source_director_detail->directives
+                               : detail.directives;
+  const auto& name_updated_directives
+      = updated_director_detail ? updated_director_detail->directives
+                                : result.preview.updated_directives;
+  const auto name_source_summary
+      = source_director_detail ? source_director_detail->summary : detail.summary;
+  const auto name_updated_summary
+      = updated_director_detail ? updated_director_detail->summary
+                                : result.preview.summary;
+  const auto& rename_source_detail
+      = source_director_detail ? *source_director_detail : detail;
+  const auto old_name
+      = ExtractResourceName(name_source_summary, name_source_directives);
   const auto new_name
-      = ExtractResourceName(result.preview.summary, result.preview.updated_directives);
+      = ExtractResourceName(name_updated_summary, name_updated_directives);
   const bool name_changed
       = !old_name.empty() && !new_name.empty() && old_name != new_name;
 
@@ -1295,7 +1739,8 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
       bool changed = false;
 
       for (auto& field : updated_field_hints) {
-        if (!field.present || field.related_resource_type != detail.summary.type) {
+        if (!field.present
+            || field.related_resource_type != name_source_summary.type) {
           continue;
         }
 
@@ -1337,7 +1782,7 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
           {std::move(related_detail), std::move(preview), std::move(resource_impacts)});
     }
 
-    for (const auto& target : FindDeviceRenameTargets(model, detail)) {
+    for (const auto& target : FindDeviceRenameTargets(model, rename_source_detail)) {
       const auto existing_update = std::find_if(
           result.affected_updates.begin(), result.affected_updates.end(),
           [&target](const RenameAffectedUpdate& update) {
@@ -1400,7 +1845,8 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
       }
     }
 
-    for (const auto& target : FindDirectorRenameTargets(model, detail, old_name)) {
+    for (const auto& target
+         : FindDirectorRenameTargets(model, rename_source_detail, old_name)) {
       const auto existing_update = std::find_if(
           result.affected_updates.begin(), result.affected_updates.end(),
           [&target](const RenameAffectedUpdate& update) {
@@ -1446,6 +1892,69 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
         result.affected_updates.push_back(
             {std::move(related_detail), std::move(preview), std::move(existing_impacts)});
       }
+    }
+
+    for (const auto& target : FindConsoleConfigurationDirectorTargets(
+             model, rename_source_detail)) {
+      const auto existing_update = std::find_if(
+          result.affected_updates.begin(), result.affected_updates.end(),
+          [&target](const RenameAffectedUpdate& update) {
+            return update.detail.summary.id == target.id;
+          });
+      if (existing_update != result.affected_updates.end()) continue;
+
+      auto related_detail = LoadResourceDetail(target);
+      const auto block_ranges = ParseNamedResourceBlockRanges(
+          related_detail.content,
+          StemWithoutExtension(std::filesystem::path(target.file_path)), "Director");
+      const auto block = std::find_if(
+          block_ranges.begin(), block_ranges.end(),
+          [&old_name](const NamedResourceBlockRange& range) {
+            return StripSurroundingQuotes(range.name) == old_name;
+          });
+      if (block == block_ranges.end()) continue;
+
+      auto content_lines = SplitLines(related_detail.content);
+      const std::vector<std::string> block_lines(
+          content_lines.begin() + static_cast<std::ptrdiff_t>(block->start_line),
+          content_lines.begin() + static_cast<std::ptrdiff_t>(block->end_line + 1));
+      auto block_summary = ResourceSummary{target.id + "-director", "director",
+                                           StripSurroundingQuotes(block->name),
+                                           target.file_path};
+      auto block_detail = BuildResourceDetail(block_summary, JoinLines(block_lines));
+      auto updated_field_hints = block_detail.field_hints;
+      auto name_field = std::find_if(
+          updated_field_hints.begin(), updated_field_hints.end(),
+          [](const ResourceFieldHint& field) {
+            return NormalizeDirectiveNameForComparison(field.key) == "name";
+          });
+      if (name_field == updated_field_hints.end() || !name_field->present
+          || StripSurroundingQuotes(name_field->value) != old_name) {
+        continue;
+      }
+
+      name_field->value = PreserveReferenceQuoting(name_field->value, new_name);
+      name_field->present = true;
+
+      auto block_preview = BuildFieldHintEditPreview(block_detail, updated_field_hints);
+      auto impacts = CollectRenameImpacts(block_detail, "Name", old_name, new_name);
+      if (impacts.empty()) {
+        impacts.push_back({target, "Name", 0, old_name, new_name});
+      }
+      result.rename_impacts.insert(result.rename_impacts.end(), impacts.begin(),
+                                   impacts.end());
+
+      content_lines.erase(
+          content_lines.begin() + static_cast<std::ptrdiff_t>(block->start_line),
+          content_lines.begin() + static_cast<std::ptrdiff_t>(block->end_line + 1));
+      const auto replacement_lines = SplitLines(block_preview.updated_content);
+      content_lines.insert(
+          content_lines.begin() + static_cast<std::ptrdiff_t>(block->start_line),
+          replacement_lines.begin(), replacement_lines.end());
+
+      auto preview = BuildResourceEditPreview(related_detail, JoinLines(content_lines));
+      result.affected_updates.push_back(
+          {std::move(related_detail), std::move(preview), std::move(impacts)});
     }
   }
 
@@ -1529,12 +2038,36 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
     result.preview.updated_validation_messages.push_back(std::move(warning));
   }
 
+  const auto& source_password_detail = source_director_detail;
+  const auto& updated_password_detail = updated_director_detail;
+  const auto& password_source_directives
+      = source_password_detail ? source_password_detail->directives
+                               : detail.directives;
+  const auto& password_updated_directives
+      = updated_password_detail ? updated_password_detail->directives
+                                : result.preview.updated_directives;
+  const auto password_source_summary
+      = source_password_detail ? source_password_detail->summary : detail.summary;
+
   const auto old_password = StripSurroundingQuotes(
-      ExtractDirectiveValue(detail.directives, "Password"));
+      ExtractDirectiveValue(password_source_directives, "Password"));
   const auto new_password = StripSurroundingQuotes(
-      ExtractDirectiveValue(result.preview.updated_directives, "Password"));
+      ExtractDirectiveValue(password_updated_directives, "Password"));
   if (!old_password.empty() && !new_password.empty() && old_password != new_password) {
-    for (const auto& target : FindPasswordPropagationTargets(model, detail)) {
+    auto password_detail = detail;
+    password_detail.summary = password_source_summary;
+    password_detail.directives = password_source_directives;
+    if (source_password_detail) {
+      password_detail.content = source_password_detail->content;
+      password_detail.inherited_directives
+          = source_password_detail->inherited_directives;
+      password_detail.validation_messages
+          = source_password_detail->validation_messages;
+      password_detail.field_hints = source_password_detail->field_hints;
+    }
+    const auto console_configuration_targets
+        = FindConsoleConfigurationDirectorTargets(model, password_detail);
+    for (const auto& target : FindPasswordPropagationTargets(model, password_detail)) {
       const auto existing_update = std::find_if(
           result.affected_updates.begin(), result.affected_updates.end(),
           [&target](const RenameAffectedUpdate& update) {
@@ -1581,6 +2114,169 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
         result.affected_updates.push_back(
             {std::move(related_detail), std::move(preview), std::move(existing_impacts)});
       }
+    }
+
+    for (const auto& target : FindConsoleAuthPasswordTargets(model, password_detail)) {
+      const bool handled_by_configuration = std::any_of(
+          console_configuration_targets.begin(), console_configuration_targets.end(),
+          [&target](const ResourceSummary& configuration_target) {
+            return configuration_target.file_path == target.file_path;
+          });
+      if (handled_by_configuration) continue;
+
+      const auto existing_update = std::find_if(
+          result.affected_updates.begin(), result.affected_updates.end(),
+          [&target](const RenameAffectedUpdate& update) {
+            return update.detail.summary.id == target.id;
+          });
+
+      ResourceDetail related_detail;
+      std::vector<ResourceFieldHint> updated_field_hints;
+      std::vector<RenameImpact> existing_impacts;
+      if (existing_update != result.affected_updates.end()) {
+        related_detail = existing_update->detail;
+        updated_field_hints = existing_update->preview.updated_field_hints;
+        existing_impacts = existing_update->impacts;
+      } else {
+        related_detail = LoadResourceDetail(target);
+        updated_field_hints = related_detail.field_hints;
+      }
+
+      auto password_field = std::find_if(
+          updated_field_hints.begin(), updated_field_hints.end(),
+          [](const ResourceFieldHint& field) {
+            return NormalizeDirectiveNameForComparison(field.key) == "password";
+          });
+      if (password_field == updated_field_hints.end() || !password_field->present
+          || StripSurroundingQuotes(password_field->value) != old_password) {
+        continue;
+      }
+
+      password_field->value
+          = PreserveReferenceQuoting(password_field->value, new_password);
+      password_field->present = true;
+
+      auto impacts = CollectRenameImpacts(related_detail, "Password", old_password,
+                                          new_password);
+      existing_impacts.insert(existing_impacts.end(), impacts.begin(), impacts.end());
+      result.rename_impacts.insert(result.rename_impacts.end(), impacts.begin(),
+                                   impacts.end());
+
+      auto preview = BuildFieldHintEditPreview(related_detail, updated_field_hints);
+      if (existing_update != result.affected_updates.end()) {
+        existing_update->preview = std::move(preview);
+        existing_update->impacts = std::move(existing_impacts);
+      } else {
+        result.affected_updates.push_back(
+            {std::move(related_detail), std::move(preview), std::move(existing_impacts)});
+      }
+    }
+
+    for (const auto& target : console_configuration_targets) {
+      const auto existing_update = std::find_if(
+          result.affected_updates.begin(), result.affected_updates.end(),
+          [&target](const RenameAffectedUpdate& update) {
+            return update.detail.summary.id == target.id;
+          });
+
+      if (existing_update != result.affected_updates.end()) continue;
+
+      auto related_detail = LoadResourceDetail(target);
+      auto updated_config_content = related_detail.content;
+      std::vector<RenameImpact> impacts;
+      bool changed = false;
+      const auto config_path = std::filesystem::path(target.file_path);
+      const auto config_stem = StemWithoutExtension(config_path);
+
+      const auto update_matching_blocks
+          = [&](const std::string& block_name,
+                const std::string& resource_type,
+                const auto& matcher) {
+              const auto block_ranges
+                  = ParseNamedResourceBlockRanges(updated_config_content, config_stem,
+                                                 block_name);
+              for (size_t block_index = 0; block_index < block_ranges.size();
+                   ++block_index) {
+                const auto& block = block_ranges[block_index];
+                if (!matcher(block)) continue;
+
+                auto content_lines = SplitLines(updated_config_content);
+                const std::vector<std::string> block_lines(
+                    content_lines.begin()
+                        + static_cast<std::ptrdiff_t>(block.start_line),
+                    content_lines.begin()
+                        + static_cast<std::ptrdiff_t>(block.end_line + 1));
+                auto block_summary = ResourceSummary{
+                    target.id + "-" + resource_type + "-" + std::to_string(block_index),
+                    resource_type, StripSurroundingQuotes(block.name), target.file_path};
+                auto block_detail
+                    = BuildResourceDetail(block_summary, JoinLines(block_lines));
+                auto updated_field_hints = block_detail.field_hints;
+                auto password_field = std::find_if(
+                    updated_field_hints.begin(), updated_field_hints.end(),
+                    [](const ResourceFieldHint& field) {
+                      return NormalizeDirectiveNameForComparison(field.key)
+                             == "password";
+                    });
+                if (password_field == updated_field_hints.end()) continue;
+
+                const bool had_password = password_field->present;
+                if (had_password
+                    && StripSurroundingQuotes(password_field->value)
+                           != old_password) {
+                  continue;
+                }
+
+                password_field->value = PreserveReferenceQuoting(
+                    password_field->value, new_password);
+                password_field->present = true;
+
+                auto block_preview = BuildFieldHintEditPreview(block_detail,
+                                                               updated_field_hints);
+                auto block_impacts = CollectRenameImpacts(
+                    block_detail, "Password", had_password ? old_password : "",
+                    new_password);
+                if (block_impacts.empty()) {
+                  block_impacts.push_back(
+                      {block_summary, "Password", 0,
+                       had_password ? old_password : "", new_password});
+                }
+                impacts.insert(impacts.end(), block_impacts.begin(),
+                               block_impacts.end());
+
+                content_lines.erase(
+                    content_lines.begin()
+                        + static_cast<std::ptrdiff_t>(block.start_line),
+                    content_lines.begin()
+                        + static_cast<std::ptrdiff_t>(block.end_line + 1));
+                const auto replacement_lines
+                    = SplitLines(block_preview.updated_content);
+                content_lines.insert(
+                    content_lines.begin()
+                        + static_cast<std::ptrdiff_t>(block.start_line),
+                    replacement_lines.begin(), replacement_lines.end());
+                updated_config_content = JoinLines(content_lines);
+                changed = true;
+              }
+            };
+
+      update_matching_blocks(
+          "Director", "director",
+          [&password_detail](const NamedResourceBlockRange& range) {
+            return StripSurroundingQuotes(range.name)
+                   == StripSurroundingQuotes(password_detail.summary.name);
+          });
+      update_matching_blocks("Console", "console",
+                             [](const NamedResourceBlockRange&) { return true; });
+      update_matching_blocks("User", "user",
+                             [](const NamedResourceBlockRange&) { return true; });
+
+      if (!changed) continue;
+      result.rename_impacts.insert(result.rename_impacts.end(), impacts.begin(),
+                                   impacts.end());
+      auto preview = BuildResourceEditPreview(related_detail, updated_config_content);
+      result.affected_updates.push_back(
+          {std::move(related_detail), std::move(preview), std::move(impacts)});
     }
 
     if (!result.rename_impacts.empty()) {
@@ -1682,7 +2378,8 @@ std::string SerializePersistedAffectedUpdates(
            << "\"resource_name\":" << JsonString(update.resource.name) << ","
            << "\"path\":" << JsonString(update.path) << ","
            << "\"action\":" << JsonString(update.action) << ","
-           << "\"backup_path\":" << JsonString(update.backup_path) << "}";
+           << "\"backup_path\":" << JsonString(update.backup_path) << ","
+           << "\"original_path\":" << JsonString(update.original_path) << "}";
   }
   output << "]";
   return output.str();
@@ -1696,6 +2393,7 @@ std::string SerializePersistResult(const PersistResult& result)
          << "\"action\":" << JsonString(result.action) << ","
          << "\"path\":" << JsonString(result.preview.summary.file_path) << ","
          << "\"backup_path\":" << JsonString(result.backup_path) << ","
+         << "\"original_path\":" << JsonString(result.original_path) << ","
          << "\"error\":" << JsonString(result.error) << ","
          << "\"verification_command\":"
          << JsonString(result.verification_command) << ","
@@ -1746,6 +2444,7 @@ PersistResult PersistResourceDetail(const ConfigServiceOptions& options,
   }
 
   struct PendingWrite {
+    ResourceSummary original_summary;
     ResourceSummary summary;
     std::string content;
     bool new_resource = false;
@@ -1755,9 +2454,11 @@ PersistResult PersistResourceDetail(const ConfigServiceOptions& options,
 
   std::vector<PendingWrite> writes;
   writes.push_back(
-      {detail.summary, result.preview.updated_content, new_resource, "", ""});
+      {detail.summary, result.preview.summary, result.preview.updated_content,
+       new_resource, "", ""});
   for (const auto& affected_update : rename_preview.affected_updates) {
     writes.push_back({affected_update.detail.summary,
+                      affected_update.preview.summary,
                       affected_update.preview.updated_content, false, "", ""});
   }
 
@@ -1767,7 +2468,8 @@ PersistResult PersistResourceDetail(const ConfigServiceOptions& options,
         = write.new_resource
               ? WriteFileWithBackup(write.summary.file_path, write.content,
                                     write.action, write.backup_path, error)
-              : SaveExistingResourceContent(write.summary, write.content, write.action,
+              : SaveExistingResourceContent(write.original_summary, write.summary,
+                                            write.content, write.action,
                                             write.backup_path, error);
     if (!saved) {
       for (auto written = writes.rbegin(); written != writes.rend(); ++written) {
@@ -1777,6 +2479,7 @@ PersistResult PersistResourceDetail(const ConfigServiceOptions& options,
         rollback_result.action = written->action;
         rollback_result.backup_path = written->backup_path;
         rollback_result.preview.summary = written->summary;
+        rollback_result.original_path = written->original_summary.file_path;
         RollbackPersistedResource(rollback_result);
       }
       result.status_code = 409;
@@ -1788,10 +2491,11 @@ PersistResult PersistResourceDetail(const ConfigServiceOptions& options,
   result.saved = true;
   result.action = writes.front().action;
   result.backup_path = writes.front().backup_path;
+  result.original_path = writes.front().original_summary.file_path;
   for (size_t i = 1; i < writes.size(); ++i) {
     result.affected_updates.push_back(
         {writes[i].summary, writes[i].action, writes[i].summary.file_path,
-         writes[i].backup_path});
+         writes[i].backup_path, writes[i].original_summary.file_path});
   }
 
   std::set<std::string> verified_targets;
@@ -1822,6 +2526,7 @@ PersistResult PersistResourceDetail(const ConfigServiceOptions& options,
         rollback_result.action = written->action;
         rollback_result.backup_path = written->backup_path;
         rollback_result.preview.summary = written->summary;
+        rollback_result.original_path = written->original_summary.file_path;
         RollbackPersistedResource(rollback_result);
       }
       result.saved = false;
@@ -1929,6 +2634,16 @@ void RollbackPersistedResource(const PersistResult& result)
     return;
   }
 
+  if (result.action == "move") {
+    std::filesystem::remove(path, ec);
+    if (!result.backup_path.empty() && !result.original_path.empty()) {
+      std::filesystem::copy_file(
+          result.backup_path, result.original_path,
+          std::filesystem::copy_options::overwrite_existing, ec);
+    }
+    return;
+  }
+
   if ((result.action == "update" || result.action == "delete")
       && !result.backup_path.empty()) {
     std::filesystem::copy_file(result.backup_path, path,
@@ -2032,10 +2747,12 @@ std::map<std::string, std::string> ParseKeyValueBody(const std::string& body)
 }
 
 ResourceDetail BuildAddClientDirectorPreview(
+    const ConfigServiceOptions& options,
     const TreeNodeSummary& director_node,
     const std::map<std::string, std::string>& values);
 
 ResourceDetail BuildAddClientDirectorTemplate(
+    const ConfigServiceOptions& options,
     const TreeNodeSummary& director_node,
     const std::map<std::string, std::string>& values)
 {
@@ -2045,10 +2762,18 @@ ResourceDetail BuildAddClientDirectorTemplate(
     resource_name = name_it->second;
   }
 
-  const ResourceSummary summary{
-      "wizard-add-client-preview", "client", resource_name,
-      director_node.description + "/bareos-dir.d/client/" + resource_name + ".conf"};
-  return BuildResourceDetail(summary, "Client {\n}\n");
+  const auto staged_path = BuildGeneratedDirectorConfigRoot(options, director_node.label)
+                           / "bareos-dir.d" / "client" / (resource_name + ".conf");
+  const ResourceSummary live_summary{
+      "wizard-add-client-preview",
+      "client",
+      resource_name,
+      (std::filesystem::path(director_node.description) / "bareos-dir.d" / "client"
+       / (resource_name + ".conf"))
+          .string()};
+  auto detail = BuildResourceDetail(live_summary, "Client {\n}\n");
+  detail.summary.file_path = staged_path.string();
+  return detail;
 }
 
 std::vector<ResourceFieldHint> SelectAddClientWizardFieldHints(
@@ -2099,9 +2824,11 @@ std::vector<ResourceFieldHint> ApplyAddClientWizardValues(
   return field_hints;
 }
 
-std::string SerializeAddClientWizardSchema(const TreeNodeSummary& director_node)
+std::string SerializeAddClientWizardSchema(const ConfigServiceOptions& options,
+                                           const TreeNodeSummary& director_node)
 {
-  const auto director_template = BuildAddClientDirectorTemplate(director_node, {});
+  const auto director_template
+      = BuildAddClientDirectorTemplate(options, director_node, {});
   const auto field_hints = SelectAddClientWizardFieldHints(director_template);
 
   std::ostringstream output;
@@ -2115,6 +2842,7 @@ std::string SerializeAddClientWizardSchema(const TreeNodeSummary& director_node)
 }
 
 ResourceDetail BuildAddClientDirectorPreview(
+    const ConfigServiceOptions& options,
     const TreeNodeSummary& director_node,
     const std::map<std::string, std::string>& values)
 {
@@ -2128,9 +2856,12 @@ ResourceDetail BuildAddClientDirectorPreview(
       "wizard-add-client-preview",
       "client",
       resource_name,
-      director_node.description + "/bareos-dir.d/client/" + resource_name + ".conf"};
+      (BuildGeneratedDirectorConfigRoot(options, director_node.label) / "bareos-dir.d"
+       / "client" / (resource_name + ".conf"))
+          .string()};
 
-  auto director_template = BuildAddClientDirectorTemplate(director_node, values);
+  auto director_template
+      = BuildAddClientDirectorTemplate(options, director_node, values);
   director_template.summary = summary;
   const auto field_hints = ApplyAddClientWizardValues(
       SelectAddClientWizardFieldHints(director_template), values);
@@ -2159,46 +2890,55 @@ std::string BuildClientSideDirectorPreviewContent(
   return output.str();
 }
 
+bool IsManagedLocalClient(const ConfigServiceOptions& options,
+                          const TreeNodeSummary& director_node,
+                          const std::string& client_name)
+{
+  if (client_name.empty()) return false;
+
+  const auto config_root = std::filesystem::path(director_node.description);
+  const auto local_fd_conf = config_root / "bareos-fd.conf";
+  const auto local_fd_dir = config_root / "bareos-fd.d";
+  if (!std::filesystem::exists(local_fd_conf)
+      && !std::filesystem::exists(local_fd_dir)) {
+    return false;
+  }
+
+  const auto model = DiscoverDatacenterSummary(options.config_roots);
+  const auto director = std::find_if(
+      model.directors.begin(), model.directors.end(),
+      [&director_node](const DirectorSummary& summary) {
+        return summary.id == director_node.id;
+      });
+  if (director == model.directors.end()) return false;
+
+  const auto daemon_it = std::find_if(
+      director->daemons.begin(), director->daemons.end(),
+      [](const DaemonSummary& daemon) { return daemon.kind == "file-daemon"; });
+  if (daemon_it == director->daemons.end()) return false;
+
+  return StripSurroundingQuotes(daemon_it->configured_name) == client_name;
+}
+
 AddClientTargetPlan BuildClientFileDaemonTargetPlan(
     const ConfigServiceOptions& options,
     const TreeNodeSummary& director_node,
     const std::string& client_name)
 {
-  const auto config_root = std::filesystem::path(director_node.description);
-  const auto local_fd_conf = config_root / "bareos-fd.conf";
-  const auto local_fd_dir = config_root / "bareos-fd.d";
-  const auto local_target
-      = local_fd_dir / "director" / (director_node.label + ".conf");
-  bool use_local_target = false;
-
-  if ((std::filesystem::exists(local_fd_conf) || std::filesystem::exists(local_fd_dir))
-      && !client_name.empty()) {
-    const auto model = DiscoverDatacenterSummary(options.config_roots);
-    const auto* director = FindDirectorById(model, director_node.id);
-    if (director) {
-      const auto daemon_it = std::find_if(
-          director->daemons.begin(), director->daemons.end(),
-          [](const DaemonSummary& daemon) { return daemon.kind == "file-daemon"; });
-      if (daemon_it != director->daemons.end()
-          && StripSurroundingQuotes(daemon_it->configured_name) == client_name) {
-        use_local_target = true;
-      }
-    }
-  }
-
-  if (use_local_target) {
-    const bool target_exists = std::filesystem::exists(local_target);
-    return {local_target.string(), target_exists ? "update" : "create",
-            target_exists};
-  }
-
   const auto staged_root
       = BuildGeneratedRemoteConfigRoot(options, "client", client_name);
   const auto staged_target
       = staged_root / "bareos-fd.d" / "director" / (director_node.label + ".conf");
   const bool target_exists = std::filesystem::exists(staged_target);
-  return {staged_target.string(), target_exists ? "update" : "create",
-          target_exists};
+  AddClientTargetPlan plan{staged_target.string(),
+                           target_exists ? "update" : "create",
+                           target_exists,
+                           staged_root,
+                           std::nullopt};
+  if (IsManagedLocalClient(options, director_node, client_name)) {
+    plan.source_root = std::filesystem::path(director_node.description);
+  }
+  return plan;
 }
 
 ResourceDetail BuildAddClientFileDaemonPreview(
@@ -2227,7 +2967,8 @@ std::string SerializeAddClientWizardPreview(
     const TreeNodeSummary& director_node,
     const std::map<std::string, std::string>& values)
 {
-  const auto director_preview = BuildAddClientDirectorPreview(director_node, values);
+  const auto director_preview
+      = BuildAddClientDirectorPreview(options, director_node, values);
   const auto file_daemon_preview
       = BuildAddClientFileDaemonPreview(options, director_node, values);
   const auto file_daemon_target_plan
@@ -2275,7 +3016,13 @@ WizardPersistResult PersistAddClientWizard(
     const std::map<std::string, std::string>& values)
 {
   auto result = WizardPersistResult{};
-  const auto director_preview = BuildAddClientDirectorPreview(director_node, values);
+  const auto client_name = values.contains("Name") ? values.at("Name") : "";
+  const auto director_staged_root
+      = BuildGeneratedDirectorConfigRoot(options, director_node.label);
+  const auto file_daemon_target_plan
+      = BuildClientFileDaemonTargetPlan(options, director_node, client_name);
+  const auto director_preview
+      = BuildAddClientDirectorPreview(options, director_node, values);
   const auto file_daemon_preview
       = BuildAddClientFileDaemonPreview(options, director_node, values);
 
@@ -2283,6 +3030,24 @@ WizardPersistResult PersistAddClientWizard(
       = BuildResourceEditPreview(director_preview, director_preview.content);
   result.client_file_daemon_director.preview
       = BuildResourceEditPreview(file_daemon_preview, file_daemon_preview.content);
+
+  std::string stage_error;
+  if (!MirrorConfigTreeIntoStage(std::filesystem::path(director_node.description),
+                                 director_staged_root,
+                                 options.generated_config_root, stage_error)) {
+    result.status_code = 409;
+    result.error = stage_error;
+    return result;
+  }
+  if (file_daemon_target_plan.source_root
+      && !MirrorConfigTreeIntoStage(*file_daemon_target_plan.source_root,
+                                    file_daemon_target_plan.staged_root,
+                                    options.generated_config_root,
+                                    stage_error)) {
+    result.status_code = 409;
+    result.error = stage_error;
+    return result;
+  }
 
   result.director_client = PersistResourceDetail(
       options, director_preview, director_preview.content,
@@ -2319,57 +3084,234 @@ std::string BuildIndexHtml()
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bareos Config</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 0; color: #1f2937; }
-    header { padding: 12px 16px; background: #111827; color: white; }
-    .layout { display: grid; grid-template-columns: 320px 360px 1fr; min-height: calc(100vh - 52px); }
-    .pane { border-right: 1px solid #d1d5db; padding: 16px; overflow: auto; }
-    .pane:last-child { border-right: 0; }
-    .node { cursor: pointer; padding: 4px 0; }
+    :root {
+      --setup-primary: #0075be;
+      --setup-secondary: #5a6773;
+      --setup-accent: #f5a623;
+      --setup-surface: #ffffff;
+      --setup-surface-muted: #f5f7fa;
+      --setup-border: #d9e2ec;
+      --setup-text: #22303c;
+      --setup-text-muted: #5a6773;
+      --setup-shadow: 0 10px 30px rgba(0, 117, 190, 0.08);
+    }
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      color: var(--setup-text);
+      background: linear-gradient(180deg, #eef6fb 0%, #f5f7fa 160px);
+    }
+    header {
+      padding: 14px 24px;
+      background: var(--setup-primary);
+      color: white;
+      box-shadow: 0 2px 12px rgba(0, 117, 190, 0.25);
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 24px;
+      min-height: calc(100vh - 60px);
+      box-sizing: border-box;
+      align-items: start;
+    }
+    .pane {
+      background: var(--setup-surface);
+      border: 1px solid var(--setup-border);
+      border-radius: 16px;
+      padding: 20px;
+      overflow: auto;
+      box-shadow: var(--setup-shadow);
+    }
+    .pane h3 {
+      margin: 0 0 16px;
+      color: var(--setup-primary);
+      font-size: 1.2rem;
+      font-weight: 700;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e7edf3;
+    }
+    .app-title, .section-heading, .tree-icon-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .icon {
+      display: inline-flex;
+      width: 18px;
+      height: 18px;
+      color: currentColor;
+      flex: 0 0 18px;
+    }
+    .icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .icon.fill svg { fill: currentColor; stroke: none; }
+    .tree-entry { display: flex; align-items: center; gap: 6px; }
+    .tree-toggle {
+      margin: 0;
+      padding: 0;
+      width: 18px;
+      min-width: 18px;
+      height: 18px;
+      border: 0;
+      background: none;
+      color: var(--setup-secondary);
+      border-radius: 4px;
+    }
+    .tree-toggle:hover { background: #e7f2fa; }
+    .tree-toggle.placeholder { cursor: default; }
+    .tree-label { flex: 1; min-width: 0; }
+    .tree-group {
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-weight: 700;
+      color: var(--setup-primary);
+      background: #f2f8fc;
+      border: 1px solid #d8eaf6;
+      margin-top: 8px;
+    }
+    .node {
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 10px;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .node:hover { background: #f5f9fc; }
+    .node.selected {
+      background: #e6f2fb;
+      box-shadow: inset 3px 0 0 var(--setup-primary);
+    }
     .children { padding-left: 18px; }
-    .resource { padding: 8px 0; border-bottom: 1px solid #e5e7eb; cursor: pointer; }
-    .resource small { color: #6b7280; display: block; }
-    .muted { color: #6b7280; }
-    textarea { width: 100%; min-height: 320px; box-sizing: border-box; font: 13px/1.4 ui-monospace, monospace; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; }
-    button { margin-top: 12px; padding: 8px 12px; border: 1px solid #111827; background: #111827; color: white; border-radius: 6px; cursor: pointer; }
+    .resource {
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .resource:hover {
+      background: #f8fbfd;
+      border-color: #e0edf7;
+    }
+    .resource.selected {
+      background: #e9f5ff;
+      border-color: #b7daf4;
+    }
+    .resource small { color: var(--setup-text-muted); display: block; }
+    .muted { color: var(--setup-text-muted); }
+    textarea {
+      width: 100%;
+      min-height: 320px;
+      box-sizing: border-box;
+      font: 13px/1.5 ui-monospace, monospace;
+      padding: 12px;
+      border: 1px solid var(--setup-border);
+      border-radius: 10px;
+      background: #fcfdff;
+    }
+    input, select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1px solid var(--setup-border);
+      border-radius: 10px;
+      background: white;
+      color: var(--setup-text);
+    }
+    select[multiple],
+    textarea.repeatable-field {
+      min-height: 0;
+      padding: 8px 10px;
+      font-size: 0.92rem;
+      line-height: 1.35;
+    }
+    select[multiple] {
+      max-height: 9.5rem;
+    }
+    textarea.repeatable-field {
+      resize: vertical;
+    }
+    button {
+      margin-top: 12px;
+      padding: 9px 14px;
+      border: 1px solid var(--setup-primary);
+      background: var(--setup-primary);
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 117, 190, 0.18);
+    }
+    button:hover { background: #0068a9; }
     button:disabled { opacity: 0.6; cursor: progress; }
-    .link-button { margin-top: 0; padding: 0; border: 0; background: none; color: #1d4ed8; border-radius: 0; }
+    .link-button {
+      margin-top: 0;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--setup-primary);
+      border-radius: 0;
+      box-shadow: none;
+    }
     .link-button:hover { text-decoration: underline; }
     .directive-list { margin: 12px 0; padding: 0; list-style: none; }
-    .directive-list li { padding: 6px 0; border-bottom: 1px solid #e5e7eb; }
+    .directive-list li { padding: 8px 0; border-bottom: 1px solid #e7edf3; }
     .field-hint-list { display: grid; gap: 10px; margin: 12px 0; }
     .field-hint-row { display: grid; gap: 4px; }
-    .field-hint-row input { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; }
     .validation-list { margin: 12px 0; padding: 0; list-style: none; }
-    .validation-list li { padding: 6px 8px; border-radius: 6px; margin-bottom: 8px; }
-     .validation-list li.warning { background: #fef3c7; color: #92400e; }
-     .validation-list li.error { background: #fee2e2; color: #991b1b; }
-     table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-     th, td { padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
-     pre { white-space: pre-wrap; word-break: break-word; background: #f3f4f6; padding: 12px; border-radius: 6px; }
-   </style>
+    .validation-list li { padding: 8px 10px; border-radius: 10px; margin-bottom: 8px; }
+     .validation-list li.warning { background: #fff5d6; color: #8a6200; }
+     .validation-list li.error { background: #fde7ea; color: #a12638; }
+     table { width: 100%; border-collapse: collapse; margin: 12px 0; background: #fbfdff; border-radius: 10px; overflow: hidden; }
+     th, td { padding: 10px; border-bottom: 1px solid #e7edf3; text-align: left; vertical-align: top; }
+     th { background: #f2f8fc; color: var(--setup-primary); font-weight: 700; }
+     pre {
+       white-space: pre-wrap;
+       word-break: break-word;
+       background: #f7fafc;
+       border: 1px solid #e2ebf2;
+       padding: 12px;
+       border-radius: 10px;
+     }
+    </style>
 </head>
 <body>
   <header>
-    <strong>Bareos Config</strong> — standalone configuration service bootstrap
+    <div class="app-title"><span class="icon fill" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v1H4V7Z"></path><path d="M4 10h16v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7Z"></path></svg></span><strong>Bareos Config</strong></div> — standalone configuration service bootstrap
   </header>
   <div class="layout">
     <section class="pane">
-      <h3>Datacenter</h3>
+      <h3><span class="section-heading"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 10h.01"></path><path d="M9 14h.01"></path><path d="M15 10h.01"></path><path d="M15 14h.01"></path></svg></span>Datacenter</span></h3>
       <div id="tree" class="muted">Loading...</div>
     </section>
     <section class="pane">
-      <h3>Resources</h3>
-      <div id="resources" class="muted">Select a director or daemon.</div>
-    </section>
-    <section class="pane">
-      <h3>Details</h3>
-      <div id="details" class="muted">Select a resource to inspect its source path.</div>
+      <h3><span class="section-heading"><span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3h-4a2 2 0 0 0-2 2v14l4-2 4 2V5a2 2 0 0 0-2-2Z"></path></svg></span>Details</span></h3>
+      <div id="details" class="muted">Select a node or resource from the tree.</div>
     </section>
   </div>
   <script>
     const treeEl = document.getElementById('tree');
-    const resourcesEl = document.getElementById('resources');
     const detailsEl = document.getElementById('details');
+    let currentTreeData = null;
+    let selectedNodeId = 'datacenter';
+    let selectedResourceId = '';
+    const loadedNodeResources = new Map();
+    const expandedTreeIds = new Set([
+      'tree-group-directors',
+      'tree-group-storages',
+      'tree-group-clients',
+      'tree-group-consoles',
+    ]);
 
     function escapeHtml(text) {
       return text
@@ -2423,6 +3365,43 @@ std::string BuildIndexHtml()
       return `${quote}${value}${quote}`;
     }
 
+    function iconMarkup(name, options = {}) {
+      const kind = options.fill ? 'icon fill' : 'icon';
+      const icons = {
+        datacenter: '<svg viewBox="0 0 24 24"><path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 10h.01"></path><path d="M9 14h.01"></path><path d="M15 10h.01"></path><path d="M15 14h.01"></path></svg>',
+        directors: '<svg viewBox="0 0 24 24"><path d="M4 20h16"></path><path d="M6 20V8h12v12"></path><path d="M9 4h6v4H9z"></path></svg>',
+        storages: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"></ellipse><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"></path><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"></path></svg>',
+        clients: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"></rect><path d="M8 21h8"></path><path d="M12 17v4"></path></svg>',
+        consoles: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="m7 9 2 2-2 2"></path><path d="M11 13h4"></path></svg>',
+        director: '<svg viewBox="0 0 24 24"><path d="M4 20h16"></path><path d="M6 20V8h12v12"></path><path d="M9 4h6v4H9z"></path></svg>',
+        'storage-daemon': '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"></ellipse><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6"></path><path d="M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"></path></svg>',
+        'file-daemon': '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"></rect><path d="M8 21h8"></path><path d="M12 17v4"></path></svg>',
+        client: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"></rect><path d="M8 21h8"></path><path d="M12 17v4"></path></svg>',
+        console: '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="m7 9 2 2-2 2"></path><path d="M11 13h4"></path></svg>',
+        resource: '<svg viewBox="0 0 24 24"><path d="M8 3h6l5 5v13H8z"></path><path d="M14 3v5h5"></path></svg>',
+        configuration: '<svg viewBox="0 0 24 24"><path d="M8 3h6l5 5v13H8z"></path><path d="M14 3v5h5"></path></svg>',
+      };
+      return `<span class="${kind}" aria-hidden="true">${icons[name] || icons.resource}</span>`;
+    }
+
+    function iconForGroup(groupId) {
+      const byGroup = {
+        'tree-group-directors': 'directors',
+        'tree-group-storages': 'storages',
+        'tree-group-clients': 'clients',
+        'tree-group-consoles': 'consoles',
+      };
+      return iconMarkup(byGroup[groupId] || 'resource');
+    }
+
+    function iconForNode(node) {
+      return iconMarkup(node.kind || 'resource');
+    }
+
+    function iconForResource(resource) {
+      return iconMarkup(resource.type || 'resource');
+    }
+
     function splitRepeatableFieldValues(value) {
       return `${value || ''}`
         .split('\n')
@@ -2435,6 +3414,138 @@ std::string BuildIndexHtml()
         return Array.from(fieldEl.selectedOptions).map((option) => option.value);
       }
       return splitRepeatableFieldValues(fieldEl.value);
+    }
+
+    function sortResourcesForNode(node, resources) {
+      const preferredResourceTypeByKind = {
+        director: 'director',
+        'file-daemon': 'client',
+        'storage-daemon': 'storage',
+      };
+      const preferredResourceType = preferredResourceTypeByKind[node.kind] || '';
+      const normalizedNodeLabel = stripSurroundingQuotes(node.label || '');
+      const sortedResources = [...resources].sort((left, right) => {
+        const leftTypePriority = left.type === preferredResourceType ? 0 : 1;
+        const rightTypePriority = right.type === preferredResourceType ? 0 : 1;
+        if (leftTypePriority !== rightTypePriority) {
+          return leftTypePriority - rightTypePriority;
+        }
+        if (left.type !== right.type) {
+          return left.type.localeCompare(right.type);
+        }
+        const leftNamePriority = left.type === preferredResourceType
+            && stripSurroundingQuotes(left.name || '') === normalizedNodeLabel
+          ? 0
+          : 1;
+        const rightNamePriority = right.type === preferredResourceType
+            && stripSurroundingQuotes(right.name || '') === normalizedNodeLabel
+          ? 0
+          : 1;
+        if (leftNamePriority !== rightNamePriority) {
+          return leftNamePriority - rightNamePriority;
+        }
+        return (left.name || '').localeCompare(right.name || '');
+      });
+      return sortedResources;
+    }
+
+    function getNodeResourcesForTree(node) {
+      if (node.kind === 'datacenter') {
+        return [];
+      }
+      const resources = loadedNodeResources.get(node.id) || node.resources || [];
+      return sortResourcesForNode(node, resources);
+    }
+
+    function treeGroupForNodeKind(kind) {
+      if (kind === 'director') {
+        return { id: 'tree-group-directors', label: 'Directors' };
+      }
+      if (kind === 'storage-daemon') {
+        return { id: 'tree-group-storages', label: 'Storages' };
+      }
+      if (kind === 'file-daemon' || kind === 'client') {
+        return { id: 'tree-group-clients', label: 'Clients' };
+      }
+      if (kind === 'console') {
+        return { id: 'tree-group-consoles', label: 'Consoles' };
+      }
+      return null;
+    }
+
+    function sortTreeNodes(nodes) {
+      return [...nodes].sort((left, right) =>
+        stripSurroundingQuotes(left.label || '').localeCompare(
+          stripSurroundingQuotes(right.label || ''),
+        ));
+    }
+
+    function groupedTreeEntries(root) {
+      const treeGroupDefinitions = [
+        { id: 'tree-group-directors', label: 'Directors', nodes: [] },
+        { id: 'tree-group-storages', label: 'Storages', nodes: [] },
+        { id: 'tree-group-clients', label: 'Clients', nodes: [] },
+        { id: 'tree-group-consoles', label: 'Consoles', nodes: [] },
+      ];
+      const groupsById = new Map(
+        treeGroupDefinitions.map((group) => [group.id, group]),
+      );
+      (root.children || []).forEach((child) => {
+        const group = treeGroupForNodeKind(child.kind);
+        if (!group || !groupsById.has(group.id)) {
+          return;
+        }
+        groupsById.get(group.id).nodes.push(child);
+      });
+      return treeGroupDefinitions
+        .map((group) => ({
+          ...group,
+          nodes: sortTreeNodes(group.nodes),
+        }))
+        .filter((group) => group.nodes.length);
+    }
+
+    function renderTreeToggle(isExpanded, onToggle, isVisible = true) {
+      const toggleEl = document.createElement('button');
+      toggleEl.type = 'button';
+      toggleEl.className = `tree-toggle${isVisible ? '' : ' placeholder'}`;
+      toggleEl.textContent = isExpanded ? '▾' : '▸';
+      if (isVisible) {
+        toggleEl.addEventListener('click', (event) => {
+          event.stopPropagation();
+          onToggle();
+        });
+      } else {
+        toggleEl.disabled = true;
+      }
+      return toggleEl;
+    }
+
+    function toggleTreeExpansion(entryId) {
+      if (expandedTreeIds.has(entryId)) {
+        expandedTreeIds.delete(entryId);
+      } else {
+        expandedTreeIds.add(entryId);
+      }
+      renderTree(currentTreeData);
+    }
+
+    function isTreeExpanded(entryId) {
+      return expandedTreeIds.has(entryId);
+    }
+
+    function findNodeContainingResource(node, resourceId) {
+      const resources = loadedNodeResources.get(node.id) || node.resources || [];
+      if (resources.some((resource) => resource.id === resourceId)) {
+        return node.id;
+      }
+      for (const child of (node.children || [])) {
+        const match = findNodeContainingResource(child, resourceId);
+        if (match) {
+          return match;
+        }
+      }
+      return '';
     }
 
     function renderDirectives(directives) {
@@ -2583,6 +3694,16 @@ std::string BuildIndexHtml()
               : (payload.error || (ok ? 'Save incomplete.' : 'Save blocked.'));
             resultsEl.innerHTML = renderWizardSaveResults(payload.results || [])
               + (payload.results || []).map((entry) => renderFollowUpAction(entry.result)).join('');
+            if (!payload.saved) {
+              return;
+            }
+            return fetch('/api/v1/bootstrap')
+              .then((response) => response.json())
+              .then((data) => {
+                loadedNodeResources.clear();
+                renderTree(data);
+                loadNodeById('datacenter');
+              });
           })
           .catch((error) => {
             statusEl.textContent = `Failed to save generated config: ${error}`;
@@ -2763,8 +3884,9 @@ std::string BuildIndexHtml()
             ]),
           );
           return `<select
+              class="repeatable-field"
               multiple
-              size="${Math.min(Math.max(optionValues.length, 2), 8)}"
+              size="${Math.min(Math.max(optionValues.length, 2), 4)}"
               data-field-key="${escapeHtml(field.key)}"
               data-field-required="${field.required ? 'true' : 'false'}"
               data-field-repeatable="true"
@@ -2773,12 +3895,13 @@ std::string BuildIndexHtml()
         }
         if (field.repeatable) {
           return `<textarea
+              class="repeatable-field"
               data-field-key="${escapeHtml(field.key)}"
               data-field-required="${field.required ? 'true' : 'false'}"
               data-field-repeatable="true"
               data-field-quote-char="${escapeHtml(detectSurroundingQuote(field.value || ''))}"
               placeholder="${escapeHtml(stripSurroundingQuotes((!field.present && field.inherited_value) ? field.inherited_value : ''))}"
-              rows="3"
+              rows="2"
             >${escapeHtml(stripSurroundingQuotes(field.value || ''))}</textarea>`;
         }
         if (field.allowed_values && field.allowed_values.length) {
@@ -3032,6 +4155,15 @@ std::string BuildIndexHtml()
               outputText += `\n# Command: ${payload.follow_up_command}`;
             }
             previewOutputEl.textContent = outputText;
+            if (payload.saved) {
+              fetch('/api/v1/bootstrap')
+                .then((response) => response.json())
+                .then((data) => {
+                  loadedNodeResources.clear();
+                  renderTree(data);
+                })
+                .catch(() => {});
+            }
           })
           .catch((error) => {
             previewStatusEl.textContent = `Failed to save resource: ${error}`;
@@ -3051,6 +4183,17 @@ std::string BuildIndexHtml()
     }
 
     function showResourceDetails(resourceId) {
+      if (currentTreeData && currentTreeData.tree) {
+        const ownerNodeId = findNodeContainingResource(currentTreeData.tree, resourceId);
+        if (ownerNodeId) {
+          selectedNodeId = ownerNodeId;
+          expandedTreeIds.add(`tree-node-${ownerNodeId}`);
+        }
+      }
+      selectedResourceId = resourceId;
+      if (currentTreeData) {
+        renderTree(currentTreeData);
+      }
       fetch(`/api/v1/resources/${resourceId}/editor`)
         .then((response) => response.json())
         .then((resource) => {
@@ -3068,6 +4211,11 @@ std::string BuildIndexHtml()
     }
 
     function showNewResourceEditor(nodeId, resourceType) {
+      selectedNodeId = nodeId;
+      selectedResourceId = '';
+      if (currentTreeData) {
+        renderTree(currentTreeData);
+      }
       fetch(`/api/v1/nodes/${nodeId}/new-resource/${resourceType}/editor`)
         .then((response) => response.json())
         .then((resource) => {
@@ -3085,6 +4233,11 @@ std::string BuildIndexHtml()
     }
 
     function loadNodeById(nodeId) {
+      selectedNodeId = nodeId;
+      selectedResourceId = '';
+      if (currentTreeData) {
+        renderTree(currentTreeData);
+      }
       fetch(`/api/v1/nodes/${nodeId}`)
         .then((response) => response.json())
         .then((node) => {
@@ -3093,6 +4246,76 @@ std::string BuildIndexHtml()
         .catch((error) => {
           detailsEl.textContent = `Failed to load node: ${error}`;
         });
+    }
+
+    function renderNodeDetails(node, resources, relationships) {
+      const creatableTypes = Array.isArray(node.creatable_resource_types)
+        ? node.creatable_resource_types
+        : [];
+      detailsEl.innerHTML = `
+        <h4 style="margin-top: 0;">${escapeHtml(node.label)}</h4>
+        <div class="muted" style="margin-bottom: 12px;">
+          Kind: ${escapeHtml(node.kind)}<br>
+          Location: ${escapeHtml(node.description || '-')}<br>
+          Resources are shown in the tree on the left (${resources.length} total).
+        </div>
+        ${creatableTypes.length
+          ? `<div style="margin: 12px 0 16px;">
+              <label for="new-resource-type"><strong>Add resource</strong></label><br>
+              <select id="new-resource-type" style="margin-top: 8px;">${creatableTypes.map((type) => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join('')}</select>
+              <button id="create-resource" style="margin-top: 0; margin-left: 8px;">Add resource</button>
+            </div>`
+          : ''}
+        ${node.kind === 'client'
+          ? `<div><button id="remove-remote-client">Remove remote client</button></div>
+             <div id="remove-remote-client-status" class="muted" style="margin-top: 8px;"></div>`
+          : ''}
+        <h4>Relationships</h4>
+        <div>${renderRelationships(relationships)}</div>`;
+
+      if (creatableTypes.length) {
+        document.getElementById('create-resource').addEventListener('click', () => {
+          showNewResourceEditor(
+            node.id,
+            document.getElementById('new-resource-type').value,
+          );
+        });
+      }
+
+      if (node.kind === 'client') {
+        document.getElementById('remove-remote-client').addEventListener('click', () => {
+          const removeButton = document.getElementById('remove-remote-client');
+          const statusEl = document.getElementById('remove-remote-client-status');
+          if (!window.confirm(`Remove remote client ${node.label}?`)) {
+            return;
+          }
+          removeButton.disabled = true;
+          statusEl.textContent = 'Removing remote client...';
+          fetch(`/api/v1/nodes/${node.id}/remove`, { method: 'POST' })
+            .then((response) => response.json())
+            .then((payload) => {
+              if (!payload.removed) {
+                throw new Error(payload.error || 'Removal failed');
+              }
+              statusEl.textContent = 'Remote client removed.';
+              return fetch('/api/v1/bootstrap')
+                .then((response) => response.json())
+                .then((data) => {
+                  loadedNodeResources.clear();
+                  renderTree(data);
+                  loadNodeById('datacenter');
+                });
+            })
+            .catch((error) => {
+              statusEl.textContent = `Failed to remove remote client: ${error}`;
+            })
+            .finally(() => {
+              removeButton.disabled = false;
+            });
+        });
+      }
+
+      attachRelationshipActions();
     }
 
     function showResources(node, title, resources) {
@@ -3186,85 +4409,129 @@ std::string BuildIndexHtml()
         fetch(`/api/v1/nodes/${node.id}/relationships`).then((response) => response.json()),
       ])
         .then(([resources, relationships]) => {
-          showResources(node, `${node.label} resources`, resources);
+          loadedNodeResources.set(node.id, resources);
+          renderTree(currentTreeData);
           if (node.kind === 'datacenter') {
             renderAddClientWizard(node);
             return;
           }
-          detailsEl.innerHTML = `<pre>Kind: ${node.kind}
-Location: ${node.description || '-'}</pre>
-            ${node.kind === 'client'
-              ? `<div><button id="remove-remote-client">Remove remote client</button></div>
-                 <div id="remove-remote-client-status" class="muted" style="margin-top: 8px;"></div>`
-              : ''}
-            <h4>Relationships</h4>
-            <div>${renderRelationships(relationships)}</div>`;
-          if (node.kind === 'client') {
-            document.getElementById('remove-remote-client').addEventListener('click', () => {
-              const removeButton = document.getElementById('remove-remote-client');
-              const statusEl = document.getElementById('remove-remote-client-status');
-              if (!window.confirm(`Remove remote client ${node.label}?`)) {
-                return;
-              }
-              removeButton.disabled = true;
-              statusEl.textContent = 'Removing remote client...';
-              fetch(`/api/v1/nodes/${node.id}/remove`, { method: 'POST' })
-                .then((response) => response.json())
-                .then((payload) => {
-                  if (!payload.removed) {
-                    throw new Error(payload.error || 'Removal failed');
-                  }
-                  statusEl.textContent = 'Remote client removed.';
-                  return fetch('/api/v1/bootstrap')
-                    .then((response) => response.json())
-                    .then((data) => {
-                      renderTree(data);
-                      loadNodeById('datacenter');
-                    });
-                })
-                .catch((error) => {
-                  statusEl.textContent = `Failed to remove remote client: ${error}`;
-                })
-                .finally(() => {
-                  removeButton.disabled = false;
-                });
-            });
-          }
-          attachRelationshipActions();
+          renderNodeDetails(node, resources, relationships);
         })
         .catch((error) => {
           detailsEl.textContent = `Failed to load node resources: ${error}`;
         });
     }
 
-    function renderNode(node, parentEl) {
+    function renderGroup(group, parentEl) {
       const wrapper = document.createElement('div');
-      wrapper.innerHTML = `
-        <div class="node"><strong>${node.label}</strong> <small class="muted">${node.kind}</small></div>
-        <div class="children"></div>`;
+      const expanded = isTreeExpanded(group.id);
+      const rowEl = document.createElement('div');
+      rowEl.className = 'tree-group';
+      const entryEl = document.createElement('div');
+      entryEl.className = 'tree-entry';
+      entryEl.appendChild(renderTreeToggle(expanded, () => toggleTreeExpansion(group.id)));
+      const labelEl = document.createElement('div');
+      labelEl.className = 'tree-label';
+      labelEl.innerHTML = `<span class="tree-icon-label">${iconForGroup(group.id)}<span>${escapeHtml(group.label)}</span></span>`;
+      entryEl.appendChild(labelEl);
+      rowEl.appendChild(entryEl);
+      wrapper.appendChild(rowEl);
 
-      wrapper.querySelector(':scope > .node').addEventListener('click', () => {
+      const childrenEl = document.createElement('div');
+      childrenEl.className = 'children';
+      if (expanded) {
+        group.nodes.forEach((node) => renderNode(node, childrenEl));
+      }
+      wrapper.appendChild(childrenEl);
+      parentEl.appendChild(wrapper);
+    }
+
+    function renderNode(node, parentEl) {
+      const resources = getNodeResourcesForTree(node);
+      const nodeExpansionId = `tree-node-${node.id}`;
+      const hasExpandableContent = resources.length || (node.children || []).length;
+      const expanded = hasExpandableContent && isTreeExpanded(nodeExpansionId);
+      const wrapper = document.createElement('div');
+      const rowEl = document.createElement('div');
+      rowEl.className = `node${selectedNodeId === node.id && !selectedResourceId ? ' selected' : ''}`;
+      const entryEl = document.createElement('div');
+      entryEl.className = 'tree-entry';
+      entryEl.appendChild(
+        renderTreeToggle(expanded, () => toggleTreeExpansion(nodeExpansionId), hasExpandableContent),
+      );
+      const labelEl = document.createElement('div');
+      labelEl.className = 'tree-label';
+      labelEl.innerHTML = `<span class="tree-icon-label">${iconForNode(node)}<strong>${escapeHtml(node.label)}</strong></span>`;
+      entryEl.appendChild(labelEl);
+      rowEl.appendChild(entryEl);
+      rowEl.addEventListener('click', () => {
         loadNodeById(node.id);
       });
+      wrapper.appendChild(rowEl);
 
-      const childrenEl = wrapper.querySelector(':scope > .children');
-      (node.children || []).forEach((child) => renderNode(child, childrenEl));
+      const childrenEl = document.createElement('div');
+      childrenEl.className = 'children';
+      if (expanded) {
+        resources.forEach((resource) => {
+          const resourceEl = document.createElement('div');
+          const isSelectedResource = selectedResourceId === resource.id;
+          resourceEl.className = `resource${isSelectedResource ? ' selected' : ''}`;
+          resourceEl.innerHTML = `<span class="tree-icon-label">${iconForResource(resource)}<span>${escapeHtml(stripSurroundingQuotes(resource.name))}</span></span>
+            <small>${escapeHtml(resource.type)}</small>`;
+          resourceEl.addEventListener('click', (event) => {
+            event.stopPropagation();
+            selectedNodeId = node.id;
+            showResourceDetails(resource.id);
+          });
+          childrenEl.appendChild(resourceEl);
+        });
+        (node.children || []).forEach((child) => renderNode(child, childrenEl));
+      }
+      wrapper.appendChild(childrenEl);
+      parentEl.appendChild(wrapper);
+    }
+
+    function renderDatacenterTree(root, parentEl) {
+      const wrapper = document.createElement('div');
+      const rowEl = document.createElement('div');
+      rowEl.className = `node${selectedNodeId === root.id && !selectedResourceId ? ' selected' : ''}`;
+      const entryEl = document.createElement('div');
+      entryEl.className = 'tree-entry';
+      entryEl.appendChild(renderTreeToggle(true, () => {}, false));
+      const labelEl = document.createElement('div');
+      labelEl.className = 'tree-label';
+      labelEl.innerHTML = `<span class="tree-icon-label">${iconMarkup('datacenter')}<span><strong>${escapeHtml(root.label)}</strong> <small class="muted">${escapeHtml(root.kind)}</small></span></span>`;
+      entryEl.appendChild(labelEl);
+      rowEl.appendChild(entryEl);
+      rowEl.addEventListener('click', () => {
+        loadNodeById(root.id);
+      });
+      wrapper.appendChild(rowEl);
+
+      const childrenEl = document.createElement('div');
+      childrenEl.className = 'children';
+      groupedTreeEntries(root).forEach((group) => renderGroup(group, childrenEl));
+      wrapper.appendChild(childrenEl);
       parentEl.appendChild(wrapper);
     }
 
     function renderTree(data) {
+      currentTreeData = data;
       const root = data.tree;
       if (!root || !(root.children || []).length) {
         treeEl.innerHTML = '<div class="muted">No Bareos directors discovered.</div>';
         return;
       }
       treeEl.innerHTML = '';
-      renderNode(root, treeEl);
+      renderDatacenterTree(root, treeEl);
     }
 
     fetch('/api/v1/bootstrap')
       .then((response) => response.json())
-      .then((data) => renderTree(data))
+      .then((data) => {
+        renderTree(data);
+        loadNodeById('datacenter');
+      })
       .catch((error) => {
         treeEl.textContent = `Failed to load bootstrap data: ${error}`;
       });
@@ -3293,12 +4560,13 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
   if (request.method == "GET" && request.path == "/api/v1/bootstrap") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
     return {200, "application/json; charset=utf-8",
-            SerializeDatacenterSummary(model)};
+            SerializeBootstrapSummary(options, model)};
   }
 
   if (request.method == "GET" && request.path == "/api/v1/tree") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
-    return {200, "application/json; charset=utf-8", SerializeTreeNodeSummary(model.tree)};
+    return {200, "application/json; charset=utf-8",
+            SerializeTreeNodeSummary(BuildAugmentedTree(options, model))};
   }
 
   const auto path_parts = SplitPath(request.path);
@@ -3306,7 +4574,7 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
       && path_parts[1] == "v1"
       && path_parts[2] == "nodes") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
-    const auto* node = FindTreeNodeById(model, path_parts[3]);
+    const auto node = ResolveNodeSummary(options, model, path_parts[3]);
     if (!node) return {404, "text/plain; charset=utf-8", "Node Not Found"};
     return {200, "application/json; charset=utf-8", SerializeNodeDetail(*node)};
   }
@@ -3315,7 +4583,7 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
       && path_parts[0] == "api" && path_parts[1] == "v1"
       && path_parts[2] == "nodes" && path_parts[4] == "resources") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
-    const auto* node = FindTreeNodeById(model, path_parts[3]);
+    const auto node = ResolveNodeSummary(options, model, path_parts[3]);
     if (!node) return {404, "text/plain; charset=utf-8", "Node Not Found"};
     return {200, "application/json; charset=utf-8",
             SerializeResourceSummaries(
@@ -3326,18 +4594,18 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
       && path_parts[0] == "api" && path_parts[1] == "v1"
       && path_parts[2] == "nodes" && path_parts[4] == "relationships") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
-    const auto* node = FindTreeNodeById(model, path_parts[3]);
+    const auto node = ResolveNodeSummary(options, model, path_parts[3]);
     if (!node) return {404, "text/plain; charset=utf-8", "Node Not Found"};
     return {200, "application/json; charset=utf-8",
-             SerializeRelationshipSummaries(
-                 FindRelationshipsForNode(model, path_parts[3]))};
+              SerializeRelationshipSummaries(
+                  FindRelationshipsForNode(model, path_parts[3]))};
   }
 
   if (request.method == "POST" && path_parts.size() == 5
       && path_parts[0] == "api" && path_parts[1] == "v1"
       && path_parts[2] == "nodes" && path_parts[4] == "remove") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
-    const auto* node = FindTreeNodeById(model, path_parts[3]);
+    const auto node = ResolveNodeSummary(options, model, path_parts[3]);
     if (!node) return {404, "text/plain; charset=utf-8", "Node Not Found"};
     const auto result = RemoveRemoteClient(options, model, *node);
     return {result.status_code, "application/json; charset=utf-8",
@@ -3512,7 +4780,7 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
     }
 
     return {200, "application/json; charset=utf-8",
-            SerializeAddClientWizardSchema(*node)};
+            SerializeAddClientWizardSchema(options, *node)};
   }
 
   if (request.method == "GET" && path_parts.size() == 7
@@ -3531,7 +4799,7 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
     }
 
     return {200, "application/json; charset=utf-8",
-            SerializeAddClientWizardSchema(*director)};
+            SerializeAddClientWizardSchema(options, *director)};
   }
 
   if (request.method == "POST" && path_parts.size() == 6
