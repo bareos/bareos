@@ -47,3 +47,10 @@ TEST(DirectorConfig, DoesNotRequireTlsPskByDefault)
 
   EXPECT_FALSE(cfg.tls_psk_require);
 }
+
+TEST(DirectorConnection, StartsWithoutTlsPskTransport)
+{
+  DirectorConnection connection;
+
+  EXPECT_FALSE(connection.UsesTlsPsk());
+}

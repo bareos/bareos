@@ -24,7 +24,8 @@
  *
  * Connects to the Bareos Director over TCP and runs the Bareos wire protocol
  * (4-byte big-endian length-prefix framing) with CRAM-MD5 mutual
- * authentication. TLS-PSK can be enabled explicitly when needed.
+ * authentication. By default it first tries the console-style TLS-PSK path
+ * and falls back to cleartext when that handshake is not accepted.
  *
  * Protocol summary (client side):
  *  1. Connect TCP to director:9101
@@ -95,6 +96,8 @@ class DirectorConnection {
   /** Cleanly disconnect from the director. */
   void Disconnect();
 
+  bool UsesTlsPsk() const { return tls_psk_active_; }
+
   ~DirectorConnection();
 
  private:
@@ -109,6 +112,7 @@ class DirectorConnection {
   bool json_mode_{true};
   ssl_ctx_st* ssl_ctx_{nullptr};
   ssl_st* ssl_{nullptr};
+  bool tls_psk_active_{false};
   std::string tls_psk_identity_;
   std::string tls_psk_secret_;
 

@@ -29,7 +29,8 @@
  *   BAREOS_DIRECTOR_PORT  director port       (default: 9101)
  *   BAREOS_DIRECTOR_NAME  director name       (default: bareos-dir)
  *
- * The proxy can use TLS-PSK for its connection to the Director when enabled.
+ * The proxy first tries the Director's TLS-PSK console path and falls back to
+ * cleartext when that handshake is not accepted.
  *
  * CLI flags (override env vars):
  *   --ws-host <addr>

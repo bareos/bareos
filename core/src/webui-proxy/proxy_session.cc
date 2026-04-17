@@ -122,7 +122,6 @@ void RunProxySession(int fd,
   cfg.port = jint("port", defaults.port);
   std::string mode = jstr("mode", "json");
   cfg.json_mode = (mode != "raw");
-  const char* director_transport = cfg.tls_psk_require ? "TLS-PSK" : "cleartext";
 
   json_decref(auth_msg);
 
@@ -153,6 +152,9 @@ void RunProxySession(int fd,
     }
     return;
   }
+
+  const char* director_transport = director.UsesTlsPsk() ? "TLS-PSK"
+                                                          : "cleartext";
 
   fprintf(stderr, "[proxy] %s director transport: %s\n", peer.c_str(),
           director_transport);

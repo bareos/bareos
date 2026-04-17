@@ -387,22 +387,39 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
 void DirectorConnection::Connect(const DirectorConfig& cfg)
 {
   json_mode_ = cfg.json_mode;
+  tls_psk_active_ = false;
   tls_psk_identity_ = GetDirectorTlsPskIdentity(cfg.username);
   tls_psk_secret_ = GetDirectorTlsPskSecret(cfg.password);
 
-  ConnectTcp(cfg);
+  auto connect_and_authenticate = [this, &cfg](bool use_tls) {
+    ConnectTcp(cfg);
+    if (use_tls) { ConnectTlsPsk(cfg); }
+    Authenticate(cfg);
+  };
 
   if (cfg.tls_psk_require) {
     try {
-      ConnectTlsPsk(cfg);
+      connect_and_authenticate(true);
     } catch (...) {
       Disconnect();
       throw;
     }
+    return;
   }
 
   try {
-    Authenticate(cfg);
+    connect_and_authenticate(true);
+    return;
+  } catch (...) {
+    if (tls_psk_active_) {
+      Disconnect();
+      throw;
+    }
+    Disconnect();
+  }
+
+  try {
+    connect_and_authenticate(false);
   } catch (...) {
     Disconnect();
     throw;
@@ -484,6 +501,7 @@ void DirectorConnection::ConnectTlsPsk(const DirectorConfig& cfg)
     throw std::runtime_error("Director: TLS-PSK handshake failed: "
                              + GetOpenSslError());
   }
+  tls_psk_active_ = true;
 }
 
 CallResult DirectorConnection::Call(const std::string& command)
@@ -578,6 +596,7 @@ void DirectorConnection::Disconnect()
       fd_ = -1;
     }
   }
+  tls_psk_active_ = false;
 }
 
 DirectorConnection::~DirectorConnection() { Disconnect(); }
