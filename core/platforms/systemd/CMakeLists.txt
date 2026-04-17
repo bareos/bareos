@@ -21,6 +21,7 @@ message("Entering ${CMAKE_CURRENT_SOURCE_DIR}")
 include(BareosConfigureFile)
 bareos_configure_file(
   FILES bareos-fd.service.in bareos-sd.service.in bareos-dir.service.in
+        bareos-webui-proxy.service.in
 )
 
 message(STATUS "CMAKE_CURRENT_LIST_FILE: " ${CMAKE_CURRENT_LIST_FILE})
@@ -34,6 +35,9 @@ if(NOT client-only)
           DESTINATION ${SYSTEMD_UNITDIR}
   )
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-dir.service"
+          DESTINATION ${SYSTEMD_UNITDIR}
+  )
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/bareos-webui-proxy.service"
           DESTINATION ${SYSTEMD_UNITDIR}
   )
 endif()

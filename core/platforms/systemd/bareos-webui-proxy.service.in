@@ -1,0 +1,30 @@
+#
+# Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+#
+[Unit]
+Description=Bareos WebUI WebSocket Proxy
+Documentation=man:bareos-webui-proxy(8)
+Requires=network.target
+After=network-online.target
+# Limit the number of restart per day
+StartLimitIntervalSec=1d
+
+[Service]
+Type=simple
+User=nobody
+# Configuration via environment variables
+Environment=WS_HOST=localhost
+Environment=WS_PORT=8765
+Environment=BAREOS_DIRECTOR_HOST=localhost
+Environment=BAREOS_DIRECTOR_PORT=9101
+Environment=BAREOS_DIRECTOR_NAME=bareos-dir
+EnvironmentFile=-/etc/default/bareos-webui-proxy
+ExecStart=@sbindir@/bareos-webui-proxy
+# Restart on failure, wait 30 seconds
+Restart=on-failure
+RestartSec=30
+# Limit the number of restarts to 10; reset with systemctl reset-failed
+StartLimitBurst=10
+
+[Install]
+WantedBy=multi-user.target
