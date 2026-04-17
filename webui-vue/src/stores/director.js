@@ -88,6 +88,8 @@ export const useDirectorStore = defineStore('director', () => {
    * @param {string} credentials.username
    * @param {string} credentials.password
    * @param {string} credentials.director  director resource name
+   * @param {string} [credentials.host]    director host (default: localhost)
+   * @param {number} [credentials.port]    director port (default: 9101)
    */
   function connect(credentials) {
     if (ws.value
@@ -110,6 +112,8 @@ export const useDirectorStore = defineStore('director', () => {
         username:  credentials.username,
         password:  credentials.password,
         director:  credentials.director,
+        host:      credentials.host  ?? 'localhost',
+        port:      credentials.port  ?? 9101,
       })
     }
 
@@ -191,6 +195,8 @@ export const useDirectorStore = defineStore('director', () => {
           username: creds.username,
           password: creds.password,
           director: creds.director,
+          host:     creds.host ?? 'localhost',
+          port:     creds.port ?? 9101,
         }))
       }
 
