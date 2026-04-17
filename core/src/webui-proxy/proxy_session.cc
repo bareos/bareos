@@ -109,15 +109,20 @@ void RunProxySession(int fd,
     const char* v = json_string_value(json_object_get(auth_msg, key));
     return v ? v : def;
   };
+  auto jint = [&](const char* key, int def) -> int {
+    json_t* v = json_object_get(auth_msg, key);
+    return json_is_integer(v) ? static_cast<int>(json_integer_value(v)) : def;
+  };
 
   DirectorConfig cfg;
   cfg.username = jstr("username", "admin");
   cfg.password = jstr("password", "");
   cfg.director_name = jstr("director", defaults.name);
-  cfg.host = defaults.host;
-  cfg.port = defaults.port;
+  cfg.host = jstr("host", defaults.host);
+  cfg.port = jint("port", defaults.port);
   std::string mode = jstr("mode", "json");
   cfg.json_mode = (mode != "raw");
+  const char* director_transport = cfg.tls_psk_require ? "TLS-PSK" : "cleartext";
 
   json_decref(auth_msg);
 
@@ -149,12 +154,16 @@ void RunProxySession(int fd,
     return;
   }
 
+  fprintf(stderr, "[proxy] %s director transport: %s\n", peer.c_str(),
+          director_transport);
+
   // Build auth_ok response
   {
     json_t* ok = json_object();
     json_object_set_new(ok, "type", json_string("auth_ok"));
     json_object_set_new(ok, "director", json_string(cfg.director_name.c_str()));
     json_object_set_new(ok, "mode", json_string(mode.c_str()));
+    json_object_set_new(ok, "transport", json_string(director_transport));
     char* ok_str = json_dumps(ok, JSON_COMPACT);
     json_decref(ok);
     try {
@@ -166,9 +175,10 @@ void RunProxySession(int fd,
     free(ok_str);
   }
 
-  fprintf(stderr, "[proxy] %s authenticated as %s on %s (mode=%s)\n",
+  fprintf(stderr,
+          "[proxy] %s authenticated as %s on %s (mode=%s, transport=%s)\n",
           peer.c_str(), cfg.username.c_str(), cfg.director_name.c_str(),
-          mode.c_str());
+          mode.c_str(), director_transport);
 
   // ── Step 3: command loop ─────────────────────────────────────────────────
   while (!ws.IsClosed()) {

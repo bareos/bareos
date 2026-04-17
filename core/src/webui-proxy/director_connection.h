@@ -22,13 +22,13 @@
  * @file
  * Bareos Director TCP client.
  *
- * Connects to the Bareos Director over TCP, upgrades that transport to
- * TLS-PSK, and then runs the Bareos wire protocol (4-byte big-endian
- * length-prefix framing) with CRAM-MD5 mutual authentication.
+ * Connects to the Bareos Director over TCP and runs the Bareos wire protocol
+ * (4-byte big-endian length-prefix framing) with CRAM-MD5 mutual
+ * authentication. TLS-PSK can be enabled explicitly when needed.
  *
  * Protocol summary (client side):
  *  1. Connect TCP to director:9101
- *  2. Establish TLS-PSK on that socket
+ *  2. Optionally establish TLS-PSK on that socket
  *  3. Send:  Hello <name> calling\n               (as a Bareos frame)
  *  4. Recv:  auth cram-md5 <chal> ssl=<n>\n      (director challenge)
  *  5. Compute response = BareosBase64(HMAC-MD5(MD5(password), challenge))
@@ -71,7 +71,7 @@ struct DirectorConfig {
   std::string username;
   std::string password;  // plaintext
   bool json_mode{true};
-  bool tls_psk_require{true};
+  bool tls_psk_require{false};
 };
 
 std::string GetDirectorTlsPskIdentity(const std::string& console_name);

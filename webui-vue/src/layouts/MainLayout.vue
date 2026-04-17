@@ -158,6 +158,9 @@
       <!-- connection indicator -->
       <q-icon :name="dirStatusIcon" :color="dirStatusColor" size="13px" />
       <span data-testid="director-status-label">{{ dirStatusLabel }}</span>
+      <span v-if="director.transport" data-testid="director-transport-label" style="opacity:.7">
+        — {{ director.transport }}
+      </span>
       <span v-if="director.errorMsg" class="text-negative q-ml-xs">— {{ director.errorMsg }}</span>
 
       <q-space />
@@ -228,13 +231,17 @@ function toggleDark() {
   settings.darkMode = $q.dark.isActive
 }
 
-const dirStatusColor = computed(() => ({
-  connected:      'positive',
-  connecting:     'warning',
-  authenticating: 'warning',
-  error:          'negative',
-  disconnected:   'grey',
-}[director.status] ?? 'grey'))
+const dirStatusColor = computed(() => {
+  if (director.status === 'connected') {
+    return director.transport === 'cleartext' ? 'warning' : 'positive'
+  }
+  return ({
+    connecting:     'warning',
+    authenticating: 'warning',
+    error:          'negative',
+    disconnected:   'grey',
+  }[director.status] ?? 'grey')
+})
 
 const dirStatusIcon = computed(() => ({
   connected:      'check_circle',

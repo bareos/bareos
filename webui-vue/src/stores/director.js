@@ -28,6 +28,7 @@ export const useDirectorStore = defineStore('director', () => {
   // 'disconnected' | 'connecting' | 'authenticating' | 'connected' | 'error'
   const status   = ref('disconnected')
   const errorMsg = ref(null)
+  const transport = ref(null)
 
   const isConnected = computed(() => status.value === 'connected')
 
@@ -56,12 +57,14 @@ export const useDirectorStore = defineStore('director', () => {
     if (msg.type === 'auth_ok') {
       status.value = 'connected'
       errorMsg.value = null
+      transport.value = msg.transport ?? null
       return
     }
 
     if (msg.type === 'auth_error') {
       status.value = 'error'
       errorMsg.value = msg.message ?? 'Authentication failed'
+      transport.value = null
       ws.value?.close()
       return
     }
@@ -101,6 +104,7 @@ export const useDirectorStore = defineStore('director', () => {
 
     status.value = 'connecting'
     errorMsg.value = null
+    transport.value = null
 
     const socket = new WebSocket(WS_URL)
     ws.value = socket
@@ -140,6 +144,7 @@ export const useDirectorStore = defineStore('director', () => {
     ws.value = null
     status.value = 'disconnected'
     errorMsg.value = null
+    transport.value = null
   }
 
   /**
@@ -233,5 +238,7 @@ export const useDirectorStore = defineStore('director', () => {
     })
   }
 
-  return { status, errorMsg, isConnected, connect, disconnect, call, rawCall }
+  return {
+    status, errorMsg, transport, isConnected, connect, disconnect, call, rawCall,
+  }
 })

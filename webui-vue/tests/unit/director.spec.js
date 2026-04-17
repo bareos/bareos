@@ -87,4 +87,26 @@ describe('director store', () => {
       port: 19101,
     })
   })
+
+  it('stores director transport from auth_ok', () => {
+    const director = useDirectorStore()
+
+    director.connect({
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+    socket.onmessage?.({
+      data: JSON.stringify({
+        type: 'auth_ok',
+        transport: 'cleartext',
+      }),
+    })
+
+    expect(director.status).toBe('connected')
+    expect(director.transport).toBe('cleartext')
+  })
 })
