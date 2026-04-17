@@ -483,7 +483,7 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { normaliseJob } from '../composables/useDirectorFetch.js'
+import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
 import { formatBytes } from '../mock/index.js'
 import { resolveOsIcon } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -539,9 +539,9 @@ const statusHeader = computed(() => {
   if (!d || typeof d !== 'object') return {}
   return d.header || {}
 })
-const scheduledJobs  = computed(() => rawStatus.value?.scheduled  ?? [])
-const runningJobs    = computed(() => rawStatus.value?.running    ?? [])
-const terminatedJobs = computed(() => rawStatus.value?.terminated ?? [])
+const scheduledJobs = computed(() => directorCollection(rawStatus.value?.scheduled))
+const runningJobs = computed(() => directorCollection(rawStatus.value?.running))
+const terminatedJobs = computed(() => directorCollection(rawStatus.value?.terminated))
 
 const maxTermBytes = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.bytes) || 0)))
 const maxTermFiles = computed(() => Math.max(1, ...terminatedJobs.value.map(j => Number(j.files) || 0)))
@@ -774,7 +774,7 @@ async function loadEmptyJobs() {
   selectedEmptyJobs.value = []
   try {
     const res  = await director.call('list jobs')
-    const jobs = (res?.jobs ?? []).map(normaliseJob)
+    const jobs = directorCollection(res?.jobs).map(normaliseJob)
     emptyJobs.value = jobs.filter(j =>
       !Number(j.bytes) && !Number(j.files) && j.status !== 'R'
     )

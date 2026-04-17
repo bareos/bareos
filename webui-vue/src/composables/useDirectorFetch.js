@@ -46,6 +46,15 @@ export function useDirectorFetch(command, key = null, init = []) {
 
 // ── Field-name normalisers for catalog data ──────────────────────────────────
 
+export function directorCollection(value) {
+  if (!value) return []
+  if (Array.isArray(value)) return value
+  if (typeof value !== 'object') return []
+  return Object.values(value).flatMap((item) => (
+    Array.isArray(item) ? item : [item]
+  ))
+}
+
 /**
  * Normalise a raw director job record (from "list jobs") to the shape used
  * by the UI tables.

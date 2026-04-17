@@ -98,7 +98,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { normaliseClient } from '../composables/useDirectorFetch.js'
+import {
+  directorCollection,
+  normaliseClient,
+} from '../composables/useDirectorFetch.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import { useDirectorStore } from '../stores/director.js'
 import JobTimeline from '../components/JobTimeline.vue'
@@ -122,8 +125,8 @@ async function refresh() {
       director.call('llist clients'),
       director.call('.clients'),
     ])
-    const list = listResult?.clients ?? []
-    const dot  = dotResult?.clients  ?? []
+    const list = directorCollection(listResult?.clients)
+    const dot = directorCollection(dotResult?.clients)
     const enabledMap = Object.fromEntries(dot.map(c => [c.name, c.enabled]))
     rawClients.value = list.map(c => ({
       ...c,
@@ -138,7 +141,7 @@ async function refresh() {
 
 onMounted(refresh)
 
-const clients = computed(() => (rawClients.value ?? []).map(normaliseClient))
+const clients = computed(() => directorCollection(rawClients.value).map(normaliseClient))
 
 function osIcon(client)  { return osIconName(client)  }
 function osColor(client) { return osIconColor(client) }

@@ -87,7 +87,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { formatBytes, timeAgo } from '../mock/index.js'
-import { normaliseClient, normaliseJob } from '../composables/useDirectorFetch.js'
+import {
+  directorCollection,
+  normaliseClient,
+  normaliseJob,
+} from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
@@ -116,7 +120,7 @@ onMounted(async () => {
       director.call(`.defaults client=${name}`),
     ])
     if (clientRes.status === 'fulfilled') {
-      const list  = clientRes.value?.clients ?? []
+      const list = directorCollection(clientRes.value?.clients)
       const found = list.find(c => c.name === name)
       if (found) {
         const defaults = defaultsRes.status === 'fulfilled' ? (defaultsRes.value ?? {}) : {}
@@ -126,7 +130,7 @@ onMounted(async () => {
       }
     }
     if (jobsRes.status === 'fulfilled') {
-      clientJobs.value = (jobsRes.value?.jobs ?? []).map(normaliseJob)
+      clientJobs.value = directorCollection(jobsRes.value?.jobs).map(normaliseJob)
     }
   } catch (e) {
     error.value = e.message

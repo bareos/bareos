@@ -253,7 +253,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { useDirectorFetch, normaliseVolume } from '../composables/useDirectorFetch.js'
+import {
+  directorCollection,
+  useDirectorFetch,
+  normaliseVolume,
+} from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
@@ -272,7 +276,7 @@ const { data: rawPools,    loading: poolsLoading,    error: poolsError,    refre
 const { data: rawVolumes,  loading: volsLoading,     error: volsError,     refresh: refreshVols } =
   useDirectorFetch('llist volumes', 'volumes')
 
-const storages = computed(() => (rawStorages.value ?? []).map(s => ({
+const storages = computed(() => directorCollection(rawStorages.value).map(s => ({
   ...s,
   autochanger: s.autochanger === '1' || s.autochanger === true,
   enabled:     s.enabled !== '0' && s.enabled !== false,
@@ -284,7 +288,7 @@ const pools = computed(() => {
     const key = v.pool ?? ''
     bytesByPool[key] = (bytesByPool[key] ?? 0) + (Number(v.volbytes) || 0)
   }
-  return (rawPools.value ?? []).map(p => ({
+  return directorCollection(rawPools.value).map(p => ({
     ...p,
     numvols:    Number(p.numvols ?? 0),
     maxvols:    Number(p.maxvols ?? 0),

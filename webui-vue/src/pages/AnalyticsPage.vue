@@ -117,7 +117,11 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { formatBytes } from '../mock/index.js'
-import { useDirectorFetch, normaliseJob } from '../composables/useDirectorFetch.js'
+import {
+  directorCollection,
+  useDirectorFetch,
+  normaliseJob,
+} from '../composables/useDirectorFetch.js'
 
 const fmtBytes = formatBytes
 const treemapMode = ref('bytes')
@@ -129,7 +133,7 @@ const treemapH    = ref(280)
 const { data: rawJobs }    = useDirectorFetch('list jobs', 'jobs')
 const { data: rawClients } = useDirectorFetch('list clients', 'clients')
 
-const jobs = computed(() => (rawJobs.value ?? []).map(normaliseJob))
+const jobs = computed(() => directorCollection(rawJobs.value).map(normaliseJob))
 const totalJobs = computed(() => jobs.value.length || 1)
 
 // ── overall stats ─────────────────────────────────────────────────────────────

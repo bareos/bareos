@@ -418,6 +418,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 import { useQuasar } from 'quasar'
+import { directorCollection } from '../composables/useDirectorFetch.js'
 
 const director = useDirectorStore()
 const $q = useQuasar()
@@ -543,7 +544,7 @@ async function loadStorages() {
   storagesLoading.value = true
   try {
     const res = await director.call('list storages')
-    const list = res?.storages ?? []
+    const list = directorCollection(res?.storages)
     autochangerStorages.value = list.filter(
       s => String(s.autochanger) === '1'
     )

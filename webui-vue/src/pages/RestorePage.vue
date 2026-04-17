@@ -313,6 +313,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { directorCollection } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import { formatBytes } from '../mock/index.js'
 
@@ -349,7 +350,7 @@ async function loadClients() {
   loadingClients.value = true
   try {
     const r = await director.call('list clients')
-    clients.value = r?.clients ?? []
+    clients.value = directorCollection(r?.clients)
   } catch (_) {
     clients.value = []
   } finally {
@@ -369,7 +370,7 @@ async function loadRestoreJobs() {
   loadingRestoreJobs.value = true
   try {
     const r = await director.call('.jobs type=R')
-    restoreJobs.value = r?.jobs ?? []
+    restoreJobs.value = directorCollection(r?.jobs)
     if (restoreJobs.value.length && !form.value.restorejob) {
       form.value.restorejob = restoreJobs.value[0].name
     }
@@ -409,7 +410,8 @@ async function loadBackups(clientName) {
   loadingBackups.value = true
   try {
     const r = await director.call(`llist backups client=${quoteDirectorString(clientName)}`)
-    backups.value = (r?.backups ?? []).sort((a, b) => Number(b.jobid) - Number(a.jobid))
+    backups.value = directorCollection(r?.backups)
+      .sort((a, b) => Number(b.jobid) - Number(a.jobid))
   } catch (_) {
     backups.value = []
   } finally {
@@ -459,7 +461,7 @@ async function initBrowser() {
       // If get_jobids fails, fall back to using only the selected jobid
       gjr = null
     }
-    const ids = (gjr?.jobids ?? []).map(j => j.id).filter(Boolean).join(',')
+    const ids = directorCollection(gjr?.jobids).map(j => j.id).filter(Boolean).join(',')
     mergedJobids.value = ids || String(form.value.jobid)
 
     // Step 2: update BVFS cache (non-fatal — may be slow on large catalogs)
@@ -765,7 +767,7 @@ async function checkVersionsInBackground(files, dirKey) {
           `.bvfs_versions jobid=${jids} client="${client}" pathid=${f.pathId} fname=${f.name}`
         )
         if (dirKey !== versionCheckDirKey) return
-        const count = r?.versions?.length ?? 0
+        const count = directorCollection(r?.versions).length
         if (count > 1) {
           const next = new Map(fileHasVersions.value)
           next.set(f.fileId, count)

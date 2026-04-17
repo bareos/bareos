@@ -332,7 +332,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { jobStatusMap, formatBytes, formatSpeed, parseDurationSecs, timeAgo } from '../mock/index.js'
-import { normaliseJob } from '../composables/useDirectorFetch.js'
+import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -377,9 +377,9 @@ async function fetchPage() {
       director.call(`list jobs count${filter}`),
     ])
     if (pageResult.status === 'rejected') throw pageResult.reason
-    jobs.value = (pageResult.value?.jobs ?? []).map(normaliseJob)
+    jobs.value = directorCollection(pageResult.value?.jobs).map(normaliseJob)
     const count = countResult.status === 'fulfilled'
-      ? Number(countResult.value?.jobs?.[0]?.count ?? 0)
+      ? Number(directorCollection(countResult.value?.jobs)[0]?.count ?? 0)
       : (jobs.value.length < rowsPerPage
           ? offset + jobs.value.length
           : offset + jobs.value.length + rowsPerPage)
@@ -634,11 +634,11 @@ async function loadRunOptions() {
       director.call('.pools'),
       director.call('.storage'),
     ])
-    dotJobs.value     = (j?.jobs     ?? []).map(x => x.name).sort()
-    dotClients.value  = (c?.clients  ?? []).map(x => x.name).sort()
-    dotFilesets.value = (f?.filesets ?? []).map(x => x.name).sort()
-    dotPools.value    = (p?.pools    ?? []).map(x => x.name).sort()
-    dotStorages.value = (s?.storages ?? []).map(x => x.name).sort()
+    dotJobs.value = directorCollection(j?.jobs).map(x => x.name).sort()
+    dotClients.value = directorCollection(c?.clients).map(x => x.name).sort()
+    dotFilesets.value = directorCollection(f?.filesets).map(x => x.name).sort()
+    dotPools.value = directorCollection(p?.pools).map(x => x.name).sort()
+    dotStorages.value = directorCollection(s?.storages).map(x => x.name).sort()
   } catch (e) {
     // non-fatal — user can still type values
     console.warn('Could not load run form options:', e.message)

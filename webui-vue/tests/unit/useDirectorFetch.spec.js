@@ -21,6 +21,7 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  directorCollection,
   normaliseClient,
   normaliseJob,
   normaliseVolume,
@@ -107,5 +108,26 @@ describe('director data normalisers', () => {
       slot: 8,
       enabled: true,
     })
+  })
+
+  it('converts keyed director collections to arrays', () => {
+    expect(directorCollection({
+      one: { name: 'alpha' },
+      two: { name: 'beta' },
+    })).toEqual([
+      { name: 'alpha' },
+      { name: 'beta' },
+    ])
+  })
+
+  it('flattens nested director collections', () => {
+    expect(directorCollection({
+      full: [{ name: 'Full-0001' }],
+      incr: [{ name: 'Incr-0001' }, { name: 'Incr-0002' }],
+    })).toEqual([
+      { name: 'Full-0001' },
+      { name: 'Incr-0001' },
+      { name: 'Incr-0002' },
+    ])
   })
 })

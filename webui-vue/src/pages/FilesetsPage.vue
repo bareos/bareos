@@ -54,12 +54,12 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useDirectorFetch } from '../composables/useDirectorFetch.js'
+import { directorCollection, useDirectorFetch } from '../composables/useDirectorFetch.js'
 
 // "list filesets" returns {filesets:[{filesetid, fileset, md5, createtime}]}
 const { data: rawFilesets, loading, error, refresh } = useDirectorFetch('list filesets', 'filesets')
 
-const filesets = computed(() => (rawFilesets.value ?? []).map(f => ({
+const filesets = computed(() => directorCollection(rawFilesets.value).map(f => ({
   name:        f.fileset ?? f.name ?? '',
   description: f.description ?? '',
   createtime:  f.createtime  ?? '',

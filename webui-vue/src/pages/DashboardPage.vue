@@ -198,7 +198,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { formatBytes, formatSpeed, parseDurationSecs, timeAgo, formatDuration } from '../mock/index.js'
-import { normaliseJob } from '../composables/useDirectorFetch.js'
+import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -230,14 +230,12 @@ async function fetchJobs() {
       director.call('llist jobs last'),
     ])
     if (past24hRes.status === 'fulfilled' && past24hRes.value?.jobs)
-      rawPast24hJobs.value = past24hRes.value.jobs
+      rawPast24hJobs.value = directorCollection(past24hRes.value.jobs)
     if (runningRes.status === 'fulfilled' && runningRes.value?.jobs) {
-      const raw = runningRes.value.jobs
-      rawRunningJobs.value = Array.isArray(raw) ? raw : Object.values(raw)
+      rawRunningJobs.value = directorCollection(runningRes.value.jobs)
     }
     if (lastRes.status === 'fulfilled' && lastRes.value?.jobs) {
-      const raw = lastRes.value.jobs
-      rawLastJobs.value = Array.isArray(raw) ? raw : Object.values(raw)
+      rawLastJobs.value = directorCollection(lastRes.value.jobs)
     }
   } catch { /* keep empty */ } finally {
     loadingJobs.value = false
@@ -266,8 +264,8 @@ async function fetchSidebar() {
       director.call('list clients'),
       director.call('list storages'),
     ])
-    if (cr.status === 'fulfilled') clientCount.value  = cr.value?.clients?.length  ?? 0
-    if (sr.status === 'fulfilled') storageCount.value = sr.value?.storages?.length ?? 0
+    if (cr.status === 'fulfilled') clientCount.value = directorCollection(cr.value?.clients).length
+    if (sr.status === 'fulfilled') storageCount.value = directorCollection(sr.value?.storages).length
   } catch { /* ignore */ }
 }
 
