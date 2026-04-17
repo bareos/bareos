@@ -39,8 +39,19 @@ async function login(page) {
 
 test('logs in and shows the dashboard', async ({ page }) => {
   await login(page)
+  const recentJobsCard = page.locator('.q-card').filter({
+    hasText: 'Most recent job status per job name',
+  })
+  const totalsCard = page.locator('.q-card').filter({
+    hasText: 'Job Totals',
+  })
+
   await expect(page.getByText('Running Jobs', { exact: true })).toBeVisible()
-  await expect(page.getByText('Most recent job status per job name')).toBeVisible()
+  await expect(recentJobsCard).toBeVisible()
+  await expect(recentJobsCard).not.toContainText('No data available')
+  await expect(recentJobsCard).toContainText('backup-bareos-fd')
+  await expect(totalsCard).not.toContainText('Total Jobs0')
+  await expect(totalsCard).not.toContainText('Total Bytes0 B')
 })
 
 test('opens the console and runs a raw command through the real proxy', async ({ page }) => {

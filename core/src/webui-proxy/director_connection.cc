@@ -354,29 +354,12 @@ void DirectorConnection::Authenticate(const DirectorConfig& cfg)
   RecvFrame();
 
   // Step 9: activate JSON API if requested.
-  // Signal frames (e.g. BNET_MSGS_PENDING) may appear between commands;
-  // loop until we receive the actual data frame for each .api response.
+  // Use the normal Call() path here so we consume both the data response and
+  // the terminating prompt. Otherwise the last .api response can remain queued
+  // and shift every subsequent dashboard command by one response.
   if (cfg.json_mode) {
-    auto RecvDataFrame = [this]() {
-      while (true) {
-        int32_t signal = 0;
-        std::string f = RecvFrame(&signal);
-        if (!f.empty()) { return f; }
-        if (signal == kBnetError) {
-          throw std::runtime_error("Director: received BNET_ERROR signal");
-        }
-        if (signal == kBnetMainPrompt || signal == kBnetSubPrompt
-            || signal == kBnetSelectInput || signal == kBnetEod
-            || signal == kBnetEods || signal == kBnetEof) {
-          return f;
-        }
-      }
-    };
-    SendFrame(".api json\n");
-    RecvDataFrame();
-
-    SendFrame(".api json compact=yes\n");
-    RecvDataFrame();
+    Call(".api json");
+    Call(".api json compact=yes");
   }
 }
 
