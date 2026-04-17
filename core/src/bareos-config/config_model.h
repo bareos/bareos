@@ -53,17 +53,30 @@ struct ResourceFieldHint {
   bool repeatable = false;
   bool deprecated = false;
   bool present = false;
+  bool inherited = false;
   std::string value;
+  std::string inherited_value;
   std::string datatype;
   std::string description;
+  std::string default_value;
+  std::string inherited_source_resource_type;
+  std::string inherited_source_resource_name;
   std::string related_resource_type;
   std::vector<std::string> allowed_values;
+};
+
+struct InheritedDirective {
+  ResourceDirective directive;
+  std::string source_resource_type;
+  std::string source_resource_name;
+  std::string source_resource_path;
 };
 
 struct ResourceDetail {
   ResourceSummary summary;
   std::string content;
   std::vector<ResourceDirective> directives;
+  std::vector<InheritedDirective> inherited_directives;
   std::vector<ValidationMessage> validation_messages;
   std::vector<ResourceFieldHint> field_hints;
 };
@@ -74,6 +87,8 @@ struct ResourceEditPreview {
   std::string updated_content;
   std::vector<ResourceDirective> original_directives;
   std::vector<ResourceDirective> updated_directives;
+  std::vector<InheritedDirective> original_inherited_directives;
+  std::vector<InheritedDirective> updated_inherited_directives;
   std::vector<ValidationMessage> original_validation_messages;
   std::vector<ValidationMessage> updated_validation_messages;
   std::vector<ResourceFieldHint> original_field_hints;
@@ -111,6 +126,8 @@ struct RelationshipSummary {
   std::string to_label;
   std::string source_resource_id;
   std::string source_resource_path;
+  std::string target_resource_id;
+  std::string target_resource_path;
   bool resolved = false;
   std::string resolution;
 };

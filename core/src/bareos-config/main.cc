@@ -19,7 +19,9 @@
    02110-1301, USA.
  */
 #include <iostream>
+#include <cstdlib>
 #include <stdexcept>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -31,6 +33,41 @@
 #include "http_server.h"
 
 namespace {
+bool CommandExistsInPath(const std::string& command)
+{
+  if (command.empty()) return false;
+
+  if (command.find('/') != std::string::npos) {
+    return access(command.c_str(), X_OK) == 0;
+  }
+
+  const char* path_env = std::getenv("PATH");
+  if (!path_env) return false;
+
+  std::stringstream path_stream(path_env);
+  std::string path_entry;
+  while (std::getline(path_stream, path_entry, ':')) {
+    const auto candidate = std::filesystem::path(
+                               path_entry.empty() ? "." : path_entry)
+                           / command;
+    if (access(candidate.c_str(), X_OK) == 0) return true;
+  }
+
+  return false;
+}
+
+std::string DefaultDaemonBinary(const std::filesystem::path& argv0,
+                                const std::string& sibling_dir,
+                                const std::string& binary_name,
+                                const std::string& fallback)
+{
+  if (CommandExistsInPath(fallback)) return fallback;
+
+  const auto exec_dir = std::filesystem::absolute(argv0).parent_path();
+  const auto candidate = exec_dir.parent_path() / sibling_dir / binary_name;
+  return std::filesystem::exists(candidate) ? candidate.string() : fallback;
+}
+
 void OpenBrowser(const std::string& bind_address, int port)
 {
   const std::string url = "http://" + bind_address + ":" + std::to_string(port)
@@ -52,6 +89,13 @@ int main(int argc, char* argv[])
   std::string bind_address = "127.0.0.1";
   bool no_browser = false;
   std::vector<std::filesystem::path> config_roots;
+  std::string bareos_dir_binary
+      = DefaultDaemonBinary(argv[0], "dird", "bareos-dir", "bareos-dir");
+  std::string bareos_fd_binary
+      = DefaultDaemonBinary(argv[0], "filed", "bareos-fd", "bareos-fd");
+  std::string bareos_sd_binary
+      = DefaultDaemonBinary(argv[0], "stored", "bareos-sd", "bareos-sd");
+  std::filesystem::path generated_config_root = "/var/lib/bareos-config/generated";
 
   app.add_option("--port,-p", port, "TCP port to listen on")->default_val(19111);
   app.add_option("--bind", bind_address, "IPv4 address to bind to")
@@ -60,6 +104,14 @@ int main(int argc, char* argv[])
                "Do not open the browser automatically");
   app.add_option("--config-root", config_roots,
                  "Bareos configuration root to manage (repeatable)");
+  app.add_option("--bareos-dir-binary", bareos_dir_binary,
+                 "Path to the Bareos Director binary used for -t verification");
+  app.add_option("--bareos-fd-binary", bareos_fd_binary,
+                 "Path to the Bareos File Daemon binary used for -t verification");
+  app.add_option("--bareos-sd-binary", bareos_sd_binary,
+                  "Path to the Bareos Storage Daemon binary used for -t verification");
+  app.add_option("--generated-config-root", generated_config_root,
+                 "Root directory for generated remote daemon configurations");
 
   CLI11_PARSE(app, argc, argv);
 
@@ -80,7 +132,9 @@ int main(int argc, char* argv[])
   }
 
   try {
-    const ConfigServiceOptions options{config_roots};
+    const ConfigServiceOptions options{config_roots, bareos_dir_binary,
+                                       bareos_fd_binary, bareos_sd_binary,
+                                       generated_config_root};
     RunHttpServer(bind_address, port, [&options](const HttpRequest& request) {
       return HandleConfigServiceRequest(options, request);
     });

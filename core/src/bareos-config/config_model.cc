@@ -58,11 +58,14 @@ struct DirectiveMetadata {
   std::string key;
   std::string datatype;
   std::string description;
+  std::string default_value;
   std::string related_resource_type;
   bool required = false;
   bool repeatable = false;
   bool deprecated = false;
 };
+
+struct ParsedResourceBlock;
 
 std::map<std::string, DirectiveMetadata> BuildDirectiveMetadata(
     const ResourceSummary& summary);
@@ -70,6 +73,11 @@ const ResourceTable* LookupResourceTable(const ResourceSummary& summary);
 const ResourceItem* LookupDirectiveResourceItem(const ResourceSummary& summary,
                                                 const ResourceTable* table,
                                                 const std::string& key);
+std::string TrimWhitespace(std::string value);
+std::filesystem::path FindConfigRootForPath(const std::filesystem::path& path);
+std::vector<ParsedResourceBlock> ParseNamedResourceBlocks(
+    const std::filesystem::path& file_path, const std::string& block_name);
+std::vector<ResourceDirective> ParseResourceDirectives(const std::string& content);
 
 std::string Lowercase(std::string value)
 {
@@ -95,9 +103,58 @@ std::string NormalizeBooleanValue(const std::string& value)
   return value;
 }
 
+std::string StripSurroundingQuotes(std::string value)
+{
+  value = TrimWhitespace(std::move(value));
+  if (value.size() < 2) return value;
+  const auto first = value.front();
+  const auto last = value.back();
+  if ((first == '"' || first == '\'') && first == last) {
+    return value.substr(1, value.size() - 2);
+  }
+  return value;
+}
+
+std::vector<std::string> SplitRepeatableFieldValue(const std::string& value)
+{
+  std::vector<std::string> values;
+  std::istringstream input(value);
+  std::string line;
+  while (std::getline(input, line)) {
+    auto trimmed = TrimWhitespace(line);
+    if (!trimmed.empty()) values.push_back(std::move(trimmed));
+  }
+  return values;
+}
+
+std::string JoinRepeatableFieldValues(const std::vector<std::string>& values)
+{
+  std::ostringstream output;
+  bool first = true;
+  for (const auto& value : values) {
+    if (value.empty()) continue;
+    if (!first) output << '\n';
+    output << value;
+    first = false;
+  }
+  return output.str();
+}
+
 bool IsTopLevelDirective(const ResourceDirective& directive)
 {
   return directive.nesting_level == 1;
+}
+
+std::string ExtractResourceName(const ResourceSummary& summary,
+                                const std::vector<ResourceDirective>& directives)
+{
+  for (const auto& directive : directives) {
+    if (!IsTopLevelDirective(directive)) continue;
+    if (NormalizeDirectiveNameForComparison(directive.key) != "name") continue;
+    const auto value = StripSurroundingQuotes(directive.value);
+    if (!value.empty()) return value;
+  }
+  return summary.name;
 }
 
 int DirectiveSortGroup(const std::string& key, bool required)
@@ -387,14 +444,18 @@ std::map<std::string, DirectiveMetadata> BuildDirectiveMetadata(
     auto entry = DirectiveMetadata{item.name,
                                    DatatypeString(item.type),
                                    item.description ? item.description : "",
-                                   RelatedResourceType(summary, item),
-                                   item.is_required,
-                                   item.type == CFG_TYPE_ALIST_RES
-                                       || item.type == CFG_TYPE_ALIST_STR
-                                       || item.type == CFG_TYPE_ALIST_DIR
-                                       || item.type == CFG_TYPE_STR_VECTOR
-                                       || item.type == CFG_TYPE_STR_VECTOR_OF_DIRS,
-                                   item.is_deprecated};
+                                    item.default_value ? item.default_value : "",
+                                    RelatedResourceType(summary, item),
+                                    item.is_required,
+                                    item.type == CFG_TYPE_ALIST_RES
+                                        || item.type == CFG_TYPE_ALIST_STR
+                                        || item.type == CFG_TYPE_ALIST_DIR
+                                        || item.type == CFG_TYPE_ACL
+                                        || item.type == CFG_TYPE_MSGS
+                                        || item.type == CFG_TYPE_RUN
+                                        || item.type == CFG_TYPE_STR_VECTOR
+                                        || item.type == CFG_TYPE_STR_VECTOR_OF_DIRS,
+                                    item.is_deprecated};
     metadata.emplace(entry.key, std::move(entry));
   }
 
@@ -417,6 +478,28 @@ std::string MakeRelationshipId(size_t director_index, size_t relationship_index)
          + std::to_string(relationship_index);
 }
 
+std::string SanitizeNodeIdComponent(std::string value)
+{
+  std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
+    if (std::isalnum(c)) return static_cast<char>(std::tolower(c));
+    return '-';
+  });
+  value.erase(std::unique(value.begin(), value.end(),
+                          [](char left, char right) {
+                            return left == '-' && right == '-';
+                          }),
+              value.end());
+  while (!value.empty() && value.front() == '-') value.erase(value.begin());
+  while (!value.empty() && value.back() == '-') value.pop_back();
+  return value.empty() ? "unnamed" : value;
+}
+
+std::string MakeKnownClientNodeId(size_t director_index, const std::string& name)
+{
+  return "known-client-" + std::to_string(director_index) + "-"
+         + SanitizeNodeIdComponent(StripSurroundingQuotes(name));
+}
+
 const DaemonSummary* FindDirectorDaemonByKind(const DirectorSummary& director,
                                               const std::string& kind)
 {
@@ -430,6 +513,9 @@ const DaemonSummary* FindDirectorDaemonByKind(const DirectorSummary& director,
 
 void AppendJsonDirectives(std::ostringstream& output,
                           const std::vector<ResourceDirective>& directives);
+void AppendJsonInheritedDirectives(
+    std::ostringstream& output,
+    const std::vector<InheritedDirective>& inherited_directives);
 void AppendJsonValidationMessages(
     std::ostringstream& output,
     const std::vector<ValidationMessage>& validation_messages);
@@ -661,10 +747,73 @@ std::vector<ResourceDirective> ParseResourceDirectives(
   return directives;
 }
 
+std::vector<InheritedDirective> ResolveInheritedDirectives(
+    const ResourceSummary& summary,
+    const std::vector<ResourceDirective>& directives)
+{
+  if (summary.type != "job") return {};
+
+  std::string inherited_jobdefs_name;
+  for (const auto& directive : directives) {
+    if (!IsTopLevelDirective(directive)) continue;
+    if (NormalizeDirectiveNameForComparison(directive.key) != "jobdefs") continue;
+    inherited_jobdefs_name = StripSurroundingQuotes(directive.value);
+    break;
+  }
+  if (inherited_jobdefs_name.empty()) return {};
+
+  std::set<std::string> direct_keys;
+  for (const auto& directive : directives) {
+    if (!IsTopLevelDirective(directive)) continue;
+    direct_keys.insert(NormalizeDirectiveNameForComparison(directive.key));
+  }
+
+  const auto config_root = FindConfigRootForPath(summary.file_path);
+  const auto jobdefs_dir = config_root / "bareos-dir.d" / "jobdefs";
+  if (jobdefs_dir.empty() || !std::filesystem::exists(jobdefs_dir)) return {};
+
+  const auto normalized_jobdefs_name
+      = NormalizeDirectiveNameForComparison(inherited_jobdefs_name);
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(jobdefs_dir)) {
+    if (!entry.is_regular_file() || entry.path().extension() != ".conf") continue;
+
+    const auto blocks = ParseNamedResourceBlocks(entry.path(), "JobDefs");
+    for (const auto& block : blocks) {
+      if (NormalizeDirectiveNameForComparison(
+              StripSurroundingQuotes(block.name))
+          != normalized_jobdefs_name) {
+        continue;
+      }
+
+      std::vector<InheritedDirective> inherited_directives;
+      for (const auto& inherited_directive : ParseResourceDirectives(block.content)) {
+        if (!IsTopLevelDirective(inherited_directive)) continue;
+        const auto normalized_key
+            = NormalizeDirectiveNameForComparison(inherited_directive.key);
+        if (normalized_key == "name" || normalized_key == "jobdefs"
+            || direct_keys.contains(normalized_key)) {
+          continue;
+        }
+
+        inherited_directives.push_back(InheritedDirective{
+            inherited_directive,
+            "jobdefs",
+            StripSurroundingQuotes(block.name),
+            entry.path().string(),
+        });
+      }
+      return inherited_directives;
+    }
+  }
+
+  return {};
+}
+
 std::vector<ValidationMessage> ValidateResourceContent(
     const ResourceSummary& summary,
     const std::string& content,
-    const std::vector<ResourceDirective>& directives)
+    const std::vector<ResourceDirective>& directives,
+    const std::vector<InheritedDirective>& inherited_directives)
 {
   std::vector<ValidationMessage> messages;
   const auto* table = LookupResourceTable(summary);
@@ -684,7 +833,9 @@ std::vector<ValidationMessage> ValidateResourceContent(
     if (const auto* item = LookupDirectiveResourceItem(summary, table, directive.key)) {
       canonical_key = item->name;
     }
-    if (top_level) { present_keys.insert(canonical_key); }
+    if (top_level) {
+      present_keys.insert(NormalizeDirectiveNameForComparison(canonical_key));
+    }
 
     if (directive.value.empty()) {
       messages.push_back({"warning", "empty-value",
@@ -695,15 +846,27 @@ std::vector<ValidationMessage> ValidateResourceContent(
 
     const auto insert_result
         = first_occurrence.emplace(canonical_key, directive.line);
-    if (!insert_result.second) {
+    const auto metadata_it = directive_metadata.find(canonical_key);
+    const bool repeatable = metadata_it != directive_metadata.end()
+                            && metadata_it->second.repeatable;
+    if (!insert_result.second && !repeatable) {
       messages.push_back({"warning", "duplicate-directive",
                           "Directive appears multiple times in this resource.",
                           directive.line});
     }
   }
 
+  for (const auto& inherited_directive : inherited_directives) {
+    if (!IsTopLevelDirective(inherited_directive.directive)) continue;
+    present_keys.insert(NormalizeDirectiveNameForComparison(
+        inherited_directive.directive.key));
+  }
+
   for (const auto& [key, metadata] : directive_metadata) {
-    if (!metadata.required || present_keys.contains(key)) continue;
+    if (!metadata.required
+        || present_keys.contains(NormalizeDirectiveNameForComparison(key))) {
+      continue;
+    }
 
     if (key == "Name") {
       messages.push_back({"error", "missing-name",
@@ -745,12 +908,14 @@ std::vector<ValidationMessage> ValidateResourceContent(
 
 std::vector<ResourceFieldHint> BuildResourceFieldHints(
     const ResourceSummary& summary,
-    const std::vector<ResourceDirective>& directives)
+    const std::vector<ResourceDirective>& directives,
+    const std::vector<InheritedDirective>& inherited_directives)
 {
   const auto* table = LookupResourceTable(summary);
   const auto directive_metadata = BuildDirectiveMetadata(summary);
 
-  std::map<std::string, std::string> first_values;
+  std::map<std::string, std::vector<std::string>> values_by_key;
+  std::map<std::string, InheritedDirective> inherited_by_key;
   std::map<std::string, size_t> counts;
   for (const auto& directive : directives) {
     if (!IsTopLevelDirective(directive)) continue;
@@ -759,26 +924,57 @@ std::vector<ResourceFieldHint> BuildResourceFieldHints(
       canonical_key = item->name;
     }
     ++counts[canonical_key];
-    first_values.emplace(canonical_key, directive.value);
+    values_by_key[canonical_key].push_back(directive.value);
+  }
+  for (const auto& inherited_directive : inherited_directives) {
+    if (!IsTopLevelDirective(inherited_directive.directive)) continue;
+    const auto normalized_key = NormalizeDirectiveNameForComparison(
+        inherited_directive.directive.key);
+    if (!inherited_by_key.contains(normalized_key)) {
+      inherited_by_key.emplace(normalized_key, inherited_directive);
+    }
   }
 
   std::vector<ResourceFieldHint> hints;
   std::map<std::string, bool> known_keys;
   for (const auto& [key, metadata] : directive_metadata) {
-    const auto value_it = first_values.find(key);
-    const bool present = value_it != first_values.end();
-    const auto value = present ? value_it->second : "";
+    const auto value_it = values_by_key.find(key);
+    const bool present = value_it != values_by_key.end();
+    const auto inherited_it
+        = inherited_by_key.find(NormalizeDirectiveNameForComparison(key));
+    const bool inherited = !present && inherited_it != inherited_by_key.end();
+    const auto value = !present
+                           ? std::string{}
+                           : metadata.repeatable
+                                 ? JoinRepeatableFieldValues(value_it->second)
+                                 : value_it->second.front();
+    const auto inherited_value = !inherited
+                                     ? std::string{}
+                                     : inherited_it->second.directive.value;
     auto hint = ResourceFieldHint{key,
                                   key,
                                   metadata.required,
                                   metadata.repeatable || counts[key] > 1,
                                   metadata.deprecated,
                                   present,
+                                  inherited,
                                   metadata.datatype == "BOOLEAN"
                                       ? NormalizeBooleanValue(value)
                                       : value,
+                                  metadata.datatype == "BOOLEAN"
+                                      ? NormalizeBooleanValue(inherited_value)
+                                      : inherited_value,
                                   metadata.datatype,
                                   metadata.description,
+                                  metadata.datatype == "BOOLEAN"
+                                      ? NormalizeBooleanValue(metadata.default_value)
+                                      : metadata.default_value,
+                                  inherited
+                                      ? inherited_it->second.source_resource_type
+                                      : "",
+                                  inherited
+                                      ? inherited_it->second.source_resource_name
+                                      : "",
                                   metadata.related_resource_type,
                                   CollectAllowedValues(summary, metadata)};
     if (present && !hint.allowed_values.empty()
@@ -799,8 +995,8 @@ std::vector<ResourceFieldHint> BuildResourceFieldHints(
     }
     if (known_keys[canonical_key]) continue;
     hints.push_back({canonical_key, canonical_key, false,
-                     counts[canonical_key] > 1, false, true, directive.value, "",
-                     "", "", {}});
+                     counts[canonical_key] > 1, false, true, false, directive.value,
+                     "", "", "", "", "", "", "", {}});
     known_keys[canonical_key] = true;
   }
 
@@ -840,7 +1036,7 @@ std::string ApplyFieldHintsToContent(
 {
   auto lines = SplitLinesPreserveTrailing(resource.content);
   const auto* table = LookupResourceTable(resource.summary);
-  std::map<std::string, size_t> directive_index_by_key;
+  std::map<std::string, std::vector<size_t>> directive_indexes_by_key;
   std::map<std::string, std::string> rendered_key_by_canonical_key;
   for (size_t i = 0; i < lines.size(); ++i) {
     auto trimmed = TrimWhitespace(lines[i]);
@@ -851,9 +1047,7 @@ std::string ApplyFieldHintsToContent(
     if (const auto* item = LookupDirectiveResourceItem(resource.summary, table, key)) {
       key = item->name;
     }
-    if (!directive_index_by_key.contains(key)) {
-      directive_index_by_key.emplace(key, i);
-    }
+    directive_indexes_by_key[key].push_back(i);
     rendered_key_by_canonical_key[key] = std::move(rendered_key);
   }
 
@@ -866,32 +1060,69 @@ std::string ApplyFieldHintsToContent(
   }
 
   auto adjust_indices_after_removal = [&](size_t removed_index) {
-    for (auto& [key, index] : directive_index_by_key) {
-      if (index > removed_index) --index;
+    for (auto& [key, indexes] : directive_indexes_by_key) {
+      for (auto& index : indexes) {
+        if (index > removed_index) --index;
+      }
     }
   };
   auto adjust_indices_after_insert = [&](size_t inserted_index) {
-    for (auto& [key, index] : directive_index_by_key) {
-      if (index >= inserted_index) ++index;
+    for (auto& [key, indexes] : directive_indexes_by_key) {
+      for (auto& index : indexes) {
+        if (index >= inserted_index) ++index;
+      }
     }
+  };
+  auto render_line = [](const std::string& key, const std::string& value) {
+    return "  " + key + " = " + value;
   };
 
   for (const auto& field : updated_field_hints) {
     const auto desired_value = TrimWhitespace(field.value);
-    const auto directive_it = directive_index_by_key.find(field.key);
-    if (directive_it != directive_index_by_key.end()) {
-      const auto line_index = directive_it->second;
-      const auto rendered_key_it = rendered_key_by_canonical_key.find(field.key);
-      const auto& rendered_key
-          = rendered_key_it != rendered_key_by_canonical_key.end()
-                ? rendered_key_it->second
-                : field.key;
-      const auto replacement = "  " + rendered_key + " = " + desired_value;
+    const auto directive_it = directive_indexes_by_key.find(field.key);
+    const auto rendered_key_it = rendered_key_by_canonical_key.find(field.key);
+    const auto& rendered_key
+        = rendered_key_it != rendered_key_by_canonical_key.end()
+              ? rendered_key_it->second
+              : field.key;
+    if (field.repeatable) {
+      const auto desired_values = SplitRepeatableFieldValue(field.value);
+      if (directive_it != directive_indexes_by_key.end()) {
+        auto existing_indexes = directive_it->second;
+        std::sort(existing_indexes.rbegin(), existing_indexes.rend());
+        for (const auto line_index : existing_indexes) {
+          lines.erase(lines.begin() + static_cast<std::ptrdiff_t>(line_index));
+          adjust_indices_after_removal(line_index);
+          if (closing_index > line_index) --closing_index;
+        }
+        directive_indexes_by_key.erase(directive_it);
+      }
+      if (desired_values.empty()) {
+        rendered_key_by_canonical_key.erase(field.key);
+        continue;
+      }
+
+      const auto insert_index = std::min(closing_index, lines.size());
+      for (size_t value_index = 0; value_index < desired_values.size();
+           ++value_index) {
+        const auto current_index = insert_index + value_index;
+        adjust_indices_after_insert(current_index);
+        lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(current_index),
+                     render_line(rendered_key, desired_values[value_index]));
+        directive_indexes_by_key[field.key].push_back(current_index);
+        if (closing_index >= current_index) ++closing_index;
+      }
+      rendered_key_by_canonical_key[field.key] = rendered_key;
+      continue;
+    }
+    if (directive_it != directive_indexes_by_key.end()) {
+      const auto line_index = directive_it->second.front();
+      const auto replacement = render_line(rendered_key, desired_value);
       if (!desired_value.empty() || field.required) {
         lines[line_index] = replacement;
       } else {
         lines.erase(lines.begin() + static_cast<std::ptrdiff_t>(line_index));
-        directive_index_by_key.erase(directive_it);
+        directive_indexes_by_key.erase(directive_it);
         rendered_key_by_canonical_key.erase(field.key);
         adjust_indices_after_removal(line_index);
         if (closing_index > line_index) --closing_index;
@@ -900,12 +1131,12 @@ std::string ApplyFieldHintsToContent(
     }
 
     if (desired_value.empty() && !field.required) continue;
-    const auto replacement = "  " + field.key + " = " + desired_value;
+    const auto replacement = render_line(field.key, desired_value);
     const auto insert_index = std::min(closing_index, lines.size());
     adjust_indices_after_insert(insert_index);
     lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(insert_index),
                  replacement);
-    directive_index_by_key[field.key] = insert_index;
+    directive_indexes_by_key[field.key] = {insert_index};
     rendered_key_by_canonical_key[field.key] = field.key;
     if (closing_index >= insert_index) ++closing_index;
   }
@@ -1079,6 +1310,10 @@ void AppendJsonRelationshipArray(
            << JsonString(relationship.source_resource_id) << ","
            << "\"source_resource_path\":"
            << JsonString(relationship.source_resource_path) << ","
+           << "\"target_resource_id\":"
+           << JsonString(relationship.target_resource_id) << ","
+           << "\"target_resource_path\":"
+           << JsonString(relationship.target_resource_path) << ","
            << "\"resolved\":" << JsonBool(relationship.resolved) << ","
            << "\"resolution\":"
            << JsonString(relationship.resolution) << "}";
@@ -1095,8 +1330,10 @@ void AppendJsonResourceDetail(std::ostringstream& output,
          << "\"name\":" << JsonString(resource.summary.name) << ","
          << "\"file_path\":" << JsonString(resource.summary.file_path) << ","
          << "\"content\":" << JsonString(resource.content) << ","
-          << "\"directives\":";
+           << "\"directives\":";
   AppendJsonDirectives(output, resource.directives);
+  output << ",\"inherited_directives\":";
+  AppendJsonInheritedDirectives(output, resource.inherited_directives);
   output << ",\"validation_messages\":";
   AppendJsonValidationMessages(output, resource.validation_messages);
   output << ",\"field_hints\":";
@@ -1117,6 +1354,30 @@ void AppendJsonDirectives(std::ostringstream& output,
            << "\"line\":" << std::to_string(directive.line) << ","
            << "\"nesting_level\":" << std::to_string(directive.nesting_level)
            << "}";
+  }
+  output << "]";
+}
+
+void AppendJsonInheritedDirectives(
+    std::ostringstream& output,
+    const std::vector<InheritedDirective>& inherited_directives)
+{
+  output << "[";
+  for (size_t i = 0; i < inherited_directives.size(); ++i) {
+    if (i > 0) output << ",";
+    const auto& inherited = inherited_directives[i];
+    output << "{"
+           << "\"key\":" << JsonString(inherited.directive.key) << ","
+           << "\"value\":" << JsonString(inherited.directive.value) << ","
+           << "\"line\":" << std::to_string(inherited.directive.line) << ","
+           << "\"nesting_level\":"
+           << std::to_string(inherited.directive.nesting_level) << ","
+           << "\"source_resource_type\":"
+           << JsonString(inherited.source_resource_type) << ","
+           << "\"source_resource_name\":"
+           << JsonString(inherited.source_resource_name) << ","
+           << "\"source_resource_path\":"
+           << JsonString(inherited.source_resource_path) << "}";
   }
   output << "]";
 }
@@ -1152,9 +1413,16 @@ void AppendJsonFieldHints(std::ostringstream& output,
            << "\"repeatable\":" << JsonBool(field.repeatable) << ","
            << "\"deprecated\":" << JsonBool(field.deprecated) << ","
             << "\"present\":" << JsonBool(field.present) << ","
+           << "\"inherited\":" << JsonBool(field.inherited) << ","
            << "\"value\":" << JsonString(field.value) << ","
+           << "\"inherited_value\":" << JsonString(field.inherited_value) << ","
            << "\"datatype\":" << JsonString(field.datatype) << ","
            << "\"description\":" << JsonString(field.description) << ","
+           << "\"default_value\":" << JsonString(field.default_value) << ","
+           << "\"inherited_source_resource_type\":"
+           << JsonString(field.inherited_source_resource_type) << ","
+           << "\"inherited_source_resource_name\":"
+           << JsonString(field.inherited_source_resource_name) << ","
            << "\"related_resource_type\":"
            << JsonString(field.related_resource_type) << ","
            << "\"allowed_values\":[";
@@ -1179,6 +1447,8 @@ void AppendJsonEditableResourceDetail(std::ostringstream& output,
          << "\"content\":" << JsonString(resource.content) << ","
          << "\"directives\":";
   AppendJsonDirectives(output, resource.directives);
+  output << ",\"inherited_directives\":";
+  AppendJsonInheritedDirectives(output, resource.inherited_directives);
   output << ",\"validation_messages\":";
   AppendJsonValidationMessages(output, resource.validation_messages);
   output << ",\"field_hints\":";
@@ -1204,6 +1474,10 @@ void AppendJsonResourceEditPreview(std::ostringstream& output,
   AppendJsonDirectives(output, preview.original_directives);
   output << ",\"updated_directives\":";
   AppendJsonDirectives(output, preview.updated_directives);
+  output << ",\"original_inherited_directives\":";
+  AppendJsonInheritedDirectives(output, preview.original_inherited_directives);
+  output << ",\"updated_inherited_directives\":";
+  AppendJsonInheritedDirectives(output, preview.updated_inherited_directives);
   output << ",\"original_validation_messages\":";
   AppendJsonValidationMessages(output, preview.original_validation_messages);
   output << ",\"updated_validation_messages\":";
@@ -1250,6 +1524,27 @@ TreeNodeSummary BuildDirectorTreeNode(const DirectorSummary& director,
   };
 }
 
+std::vector<TreeNodeSummary> BuildKnownClientTreeNodes(
+    const DirectorSummary& director, size_t director_index)
+{
+  std::vector<TreeNodeSummary> nodes;
+  const auto* file_daemon = FindDirectorDaemonByKind(director, "file-daemon");
+  const auto local_client_name
+      = file_daemon ? StripSurroundingQuotes(file_daemon->configured_name) : "";
+
+  for (const auto& resource : director.resources) {
+    if (resource.type != "client") continue;
+    const auto client_name = StripSurroundingQuotes(resource.name);
+    if (client_name.empty()) continue;
+    if (!local_client_name.empty() && client_name == local_client_name) continue;
+
+    nodes.push_back({MakeKnownClientNodeId(director_index, client_name), "client",
+                     client_name, resource.file_path, {resource}, {}});
+  }
+
+  return nodes;
+}
+
 std::vector<RelationshipSummary> BuildRelationshipSummaries(
     const DatacenterSummary& summary)
 {
@@ -1273,7 +1568,26 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
       std::string resolution;
       bool resolved = false;
 
-      if (!target) {
+      if (is_client
+          && (!target
+              || StripSurroundingQuotes(target->configured_name)
+                     != StripSurroundingQuotes(resource.name))) {
+        to_node_id = MakeKnownClientNodeId(director_index, resource.name);
+        to_label = StripSurroundingQuotes(resource.name);
+        resolved = true;
+        if (!target) {
+          resolution = "Resolved to known remote client " + to_label
+                       + " from the director configuration.";
+        } else if (target->configured_name.empty()) {
+          resolution = "Resolved to known remote client " + to_label
+                       + " because the parsed local file-daemon node has no configured Name directive to match.";
+        } else {
+          resolution = "Resolved to known remote client " + to_label
+                       + " because the parsed local file-daemon name "
+                       + StripSurroundingQuotes(target->configured_name)
+                       + " does not match.";
+        }
+      } else if (!target) {
         to_label = is_client ? "unresolved file-daemon"
                              : "unresolved storage-daemon";
         resolution = is_client
@@ -1313,9 +1627,61 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
           to_label,
           resource.id,
           resource.file_path,
+          "",
+          "",
           resolved,
           resolution,
       });
+
+      if (!is_storage || !target) continue;
+
+      const auto storage_detail = LoadResourceDetail(resource);
+      for (const auto& directive : storage_detail.directives) {
+        if (!IsTopLevelDirective(directive)) continue;
+        if (NormalizeDirectiveNameForComparison(directive.key) != "device") {
+          continue;
+        }
+
+        const auto device_name = StripSurroundingQuotes(directive.value);
+        const auto device_resource = std::find_if(
+            target->resources.begin(), target->resources.end(),
+            [&device_name](const ResourceSummary& candidate) {
+              return candidate.type == "device"
+                     && StripSurroundingQuotes(candidate.name) == device_name;
+            });
+
+        std::string target_resource_id;
+        std::string target_resource_path;
+        std::string device_resolution;
+        bool device_resolved = false;
+        if (device_resource == target->resources.end()) {
+          device_resolution = "No parsed local device resource named "
+                              + device_name
+                              + " is available for this storage reference yet.";
+        } else {
+          target_resource_id = device_resource->id;
+          target_resource_path = device_resource->file_path;
+          device_resolved = true;
+          device_resolution = "Resolved to storage-daemon device resource "
+                              + device_resource->name + ".";
+        }
+
+        relationships.push_back({
+            MakeRelationshipId(director_index, relationship_index++),
+            "device",
+            device_name,
+            director.id,
+            director.name,
+            target->id,
+            target->name,
+            resource.id,
+            resource.file_path,
+            target_resource_id,
+            target_resource_path,
+            device_resolved,
+            device_resolution,
+        });
+      }
     }
   }
 
@@ -1421,6 +1787,11 @@ DatacenterSummary DiscoverDatacenterSummary(
           daemon.resources,
           {},
       });
+    }
+
+    for (auto& node : BuildKnownClientTreeNodes(summary.directors.back(),
+                                                director_index)) {
+      summary.tree.children.push_back(std::move(node));
     }
   }
 
@@ -1579,29 +1950,42 @@ ResourceDetail BuildResourceDetail(const ResourceSummary& resource,
                                    const std::string& content)
 {
   const auto parsed_directives = ParseResourceDirectives(content);
+  const auto inherited_directives
+      = ResolveInheritedDirectives(resource, parsed_directives);
   auto display_directives = parsed_directives;
   SortResourceDirectivesForDisplay(resource, display_directives);
-  return {resource, content, display_directives,
-          ValidateResourceContent(resource, content, parsed_directives),
-          BuildResourceFieldHints(resource, parsed_directives)};
+  return {resource, content, display_directives, inherited_directives,
+          ValidateResourceContent(resource, content, parsed_directives,
+                                  inherited_directives),
+          BuildResourceFieldHints(resource, parsed_directives,
+                                  inherited_directives)};
 }
 
 ResourceEditPreview BuildResourceEditPreview(
     const ResourceDetail& resource, const std::string& updated_content)
 {
   const auto parsed_updated_directives = ParseResourceDirectives(updated_content);
+  const auto updated_inherited_directives
+      = ResolveInheritedDirectives(resource.summary, parsed_updated_directives);
   auto display_updated_directives = parsed_updated_directives;
   SortResourceDirectivesForDisplay(resource.summary, display_updated_directives);
-  return {resource.summary,
+  auto updated_summary = resource.summary;
+  updated_summary.name = ExtractResourceName(updated_summary,
+                                             parsed_updated_directives);
+  return {updated_summary,
           resource.content,
           updated_content,
           resource.directives,
           display_updated_directives,
+          resource.inherited_directives,
+          updated_inherited_directives,
           resource.validation_messages,
           ValidateResourceContent(resource.summary, updated_content,
-                                  parsed_updated_directives),
+                                  parsed_updated_directives,
+                                  updated_inherited_directives),
           resource.field_hints,
-          BuildResourceFieldHints(resource.summary, parsed_updated_directives),
+          BuildResourceFieldHints(resource.summary, parsed_updated_directives,
+                                  updated_inherited_directives),
           resource.content != updated_content,
           CountLines(resource.content),
           CountLines(updated_content)};

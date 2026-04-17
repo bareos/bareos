@@ -177,7 +177,7 @@ TEST(BareosConfigModel, UsesDirectorDirectoryStemWithoutMainConfig)
   EXPECT_EQ(summary.tree.children[0].label, "bareos-dir");
 }
 
-TEST(BareosConfigModel, LeavesRelationshipUnresolvedWithoutMatchingDaemonName)
+TEST(BareosConfigModel, ShowsKnownRemoteClientWithoutMatchingLocalDaemonName)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
@@ -194,10 +194,15 @@ TEST(BareosConfigModel, LeavesRelationshipUnresolvedWithoutMatchingDaemonName)
 
   ASSERT_EQ(relationships.size(), 1U);
   EXPECT_TRUE(relationships[0].resolved);
-  EXPECT_EQ(relationships[0].to_node_id, "daemon-0-file-daemon");
-  EXPECT_EQ(relationships[0].to_label, "bareos-fd");
-  EXPECT_NE(relationships[0].resolution.find("does not match endpoint example-fd"),
+  EXPECT_EQ(relationships[0].to_node_id, "known-client-0-example-fd");
+  EXPECT_EQ(relationships[0].to_label, "example-fd");
+  EXPECT_NE(relationships[0].resolution.find("known remote client example-fd"),
             std::string::npos);
+
+  const auto* remote_client = FindTreeNodeById(summary, "known-client-0-example-fd");
+  ASSERT_NE(remote_client, nullptr);
+  EXPECT_EQ(remote_client->kind, "client");
+  EXPECT_EQ(remote_client->label, "example-fd");
 }
 
 TEST(BareosConfigModel, ResolvesRelationshipFromDaemonOwnedResourceName)
@@ -351,6 +356,67 @@ TEST(BareosConfigModel, LoadsResourceDetailContent)
   EXPECT_NE(json.find("\"field_hints\":[{"), std::string::npos);
 }
 
+TEST(BareosConfigModel, ResolvesInheritedJobDefsDirectives)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/job");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/jobdefs");
+
+  std::ofstream(root.path() / "bareos-dir.d/jobdefs/DefaultJob.conf")
+      << "JobDefs {\n"
+      << "  Name = DefaultJob\n"
+      << "  Type = Backup\n"
+      << "  Pool = Full\n"
+      << "  Messages = Standard\n"
+      << "}\n";
+  const auto resource_path = root.path() / "bareos-dir.d/job/example.conf";
+  std::ofstream(resource_path)
+      << "Job {\n"
+      << "  Name = ExampleJob\n"
+      << "  JobDefs = DefaultJob\n"
+      << "  Client = example-fd\n"
+      << "  FileSet = SelfTest\n"
+      << "}\n";
+
+  ResourceSummary summary{"resource-1", "job", "ExampleJob",
+                          resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+
+  EXPECT_EQ(detail.inherited_directives.size(), 3U);
+  EXPECT_EQ(detail.inherited_directives[0].source_resource_type, "jobdefs");
+  EXPECT_EQ(detail.inherited_directives[0].source_resource_name, "DefaultJob");
+
+  const auto has_inherited_key = [&detail](const std::string& key) {
+    return std::any_of(detail.inherited_directives.begin(),
+                       detail.inherited_directives.end(),
+                       [&key](const InheritedDirective& directive) {
+                         return directive.directive.key == key;
+                       });
+  };
+  EXPECT_TRUE(has_inherited_key("Type"));
+  EXPECT_TRUE(has_inherited_key("Pool"));
+  EXPECT_TRUE(has_inherited_key("Messages"));
+
+  const auto type_hint = std::find_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "Type"; });
+  ASSERT_NE(type_hint, detail.field_hints.end());
+  EXPECT_FALSE(type_hint->present);
+  EXPECT_TRUE(type_hint->inherited);
+  EXPECT_EQ(type_hint->inherited_value, "Backup");
+  EXPECT_EQ(type_hint->inherited_source_resource_type, "jobdefs");
+  EXPECT_EQ(type_hint->inherited_source_resource_name, "DefaultJob");
+
+  for (const auto& message : detail.validation_messages) {
+    EXPECT_EQ(message.message.find("Type is required for this resource type."),
+              std::string::npos);
+    EXPECT_EQ(message.message.find("Pool is required for this resource type."),
+              std::string::npos);
+    EXPECT_EQ(message.message.find("Messages is required for this resource type."),
+              std::string::npos);
+  }
+}
+
 TEST(BareosConfigModel, UsesParserMetadataForReferenceFieldHints)
 {
   TempConfigRoot root;
@@ -383,6 +449,62 @@ TEST(BareosConfigModel, UsesParserMetadataForReferenceFieldHints)
       [](const ResourceFieldHint& hint) { return hint.key == "FileRetention"; });
   ASSERT_NE(file_retention_hint, detail.field_hints.end());
   EXPECT_TRUE(file_retention_hint->deprecated);
+}
+
+TEST(BareosConfigModel, AllowsRepeatableMessagesDestinations)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/messages");
+
+  const auto resource_path = root.path() / "bareos-dir.d/messages/daemon.conf";
+  std::ofstream(resource_path)
+      << "Messages {\n"
+      << "  Name = Daemon\n"
+      << "  Append = \"/var/log/bareos.log\" = all, !skipped\n"
+      << "  Append = \"/var/log/bareos-errors.log\" = error, fatal\n"
+      << "}\n";
+
+  ResourceSummary summary{"resource-1", "messages", "Daemon",
+                          resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+
+  const auto append_hint = std::find_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "Append"; });
+  ASSERT_NE(append_hint, detail.field_hints.end());
+  EXPECT_TRUE(append_hint->repeatable);
+
+  for (const auto& message : detail.validation_messages) {
+    EXPECT_NE(message.code, "duplicate-directive");
+  }
+}
+
+TEST(BareosConfigModel, AllowsRepeatableProfileCommandAcl)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/profile");
+
+  const auto resource_path = root.path() / "bareos-dir.d/profile/operator.conf";
+  std::ofstream(resource_path)
+      << "Profile {\n"
+      << "  Name = operator\n"
+      << "  Command ACL = list, llist\n"
+      << "  Command ACL = status, show\n"
+      << "}\n";
+
+  ResourceSummary summary{"resource-1", "profile", "operator",
+                          resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+
+  const auto command_acl_hint = std::find_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "CommandAcl"; });
+  ASSERT_NE(command_acl_hint, detail.field_hints.end());
+  EXPECT_TRUE(command_acl_hint->repeatable);
+
+  for (const auto& message : detail.validation_messages) {
+    EXPECT_NE(message.code, "duplicate-directive");
+  }
 }
 
 TEST(BareosConfigModel, BuildsFieldHintPreviewContent)
@@ -421,6 +543,77 @@ TEST(BareosConfigModel, BuildsFieldHintPreviewContent)
   EXPECT_TRUE(preview.updated_validation_messages.empty());
 }
 
+TEST(BareosConfigModel, UpdatesPreviewSummaryNameAfterRename)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+
+  const auto resource_path = root.path() / "bareos-dir.d/client/example-fd.conf";
+  std::ofstream(resource_path)
+      << "Client {\n"
+      << "  Name = example-fd\n"
+      << "  Address = 10.0.0.20\n"
+      << "  Password = secret\n"
+      << "}\n";
+
+  ResourceSummary summary{"resource-1", "client", "example-fd",
+                          resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+  const auto preview = BuildResourceEditPreview(
+      detail,
+      "Client {\n  Name = renamed-fd\n  Address = 10.0.0.20\n  Password = secret\n}\n");
+
+  EXPECT_EQ(preview.summary.name, "renamed-fd");
+}
+
+TEST(BareosConfigModel, PreservesRepeatableScheduleRunDirectives)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/schedule");
+
+  const auto resource_path = root.path() / "bareos-dir.d/schedule/Nightly.conf";
+  std::ofstream(resource_path)
+      << "Schedule {\n"
+      << "  Name = Nightly\n"
+      << "  Run = Level=Full mon at 21:00\n"
+      << "  Run = Level=Incremental tue at 21:00\n"
+      << "}\n";
+
+  ResourceSummary summary{"resource-1", "schedule", "Nightly",
+                          resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+
+  const auto run_hint = std::find_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "Run"; });
+  ASSERT_NE(run_hint, detail.field_hints.end());
+  EXPECT_TRUE(run_hint->repeatable);
+  EXPECT_EQ(run_hint->value,
+            "Level=Full mon at 21:00\nLevel=Incremental tue at 21:00");
+
+  for (const auto& message : detail.validation_messages) {
+    EXPECT_NE(message.code, "duplicate-directive");
+  }
+
+  auto updated_field_hints = detail.field_hints;
+  for (auto& field : updated_field_hints) {
+    if (field.key == "Run") {
+      field.value = "Level=Full mon at 21:00\nLevel=Differential wed at 21:00";
+      field.present = true;
+    }
+  }
+
+  const auto preview = BuildFieldHintEditPreview(detail, updated_field_hints);
+
+  EXPECT_NE(preview.updated_content.find("Run = Level=Full mon at 21:00"),
+            std::string::npos);
+  EXPECT_NE(preview.updated_content.find("Run = Level=Differential wed at 21:00"),
+            std::string::npos);
+  EXPECT_EQ(
+      preview.updated_content.find("Run = Level=Incremental tue at 21:00"),
+      std::string::npos);
+}
+
 TEST(BareosConfigModel, NormalizesDirectiveNamesLikeParser)
 {
   TempConfigRoot root;
@@ -453,6 +646,7 @@ TEST(BareosConfigModel, NormalizesDirectiveNamesLikeParser)
   ASSERT_NE(enable_vss, detail.field_hints.end());
   EXPECT_EQ(enable_vss->datatype, "BOOLEAN");
   EXPECT_EQ(enable_vss->value, "no");
+  EXPECT_EQ(enable_vss->default_value, "yes");
   EXPECT_EQ(enable_vss->allowed_values, (std::vector<std::string>{"yes", "no"}));
 
   auto updated_field_hints = detail.field_hints;

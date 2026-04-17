@@ -28,6 +28,10 @@
 
 struct ConfigServiceOptions {
   std::vector<std::filesystem::path> config_roots;
+  std::string bareos_dir_binary = "bareos-dir";
+  std::string bareos_fd_binary = "bareos-fd";
+  std::string bareos_sd_binary = "bareos-sd";
+  std::filesystem::path generated_config_root = "/var/lib/bareos-config/generated";
 };
 
 HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
