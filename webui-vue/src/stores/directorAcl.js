@@ -53,7 +53,7 @@ export const useDirectorAclStore = defineStore('directorAcl', () => {
     loading.value = true
     error.value = null
     try {
-      commands.value = await director.call('.help')
+      commands.value = await director.call('.help full=yes')
       return commands.value
     } catch (e) {
       commands.value = null

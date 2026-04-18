@@ -241,7 +241,7 @@ static struct ua_cmdstruct commands[] = {
     {NT_(".filesets"), DotFilesetsCmd, T_("List all filesets"), NULL, false,
      false},
     {NT_(".help"), DotHelpCmd, T_("Print parsable information about a command"),
-     NT_("[ all | item=cmd ]"), false, false},
+     NT_("[ all ] [ item=cmd ] [ full=yes ]"), false, false},
     {NT_(".jobdefs"), DotJobdefsCmd, T_("List all job defaults resources"),
      NULL, true, false},
     {NT_(".jobs"), DotJobsCmd, T_("List all job resources"),
@@ -2804,9 +2804,15 @@ static bool help_cmd(UaContext* ua, const char*)
 static bool DotHelpCmd(UaContext* ua, const char*)
 {
   int i, j;
+  bool full = false;
 
   /* Implement DotHelpCmd here instead of ua_dotcmds.c,
    * because comsize and commands are defined here. */
+
+  j = FindArgWithValue(ua, NT_("full"));
+  if (j >= 0 && ua->argv[j] && Bstrcasecmp(ua->argv[j], NT_("yes"))) {
+    full = true;
+  }
 
   // Want to display a specific help section
   j = FindArgWithValue(ua, NT_("item"));
@@ -2830,25 +2836,26 @@ static bool DotHelpCmd(UaContext* ua, const char*)
   if (j >= 0) {
     // Want to display only user commands (except dot commands)
     for (i = 0; i < comsize; i++) {
-      if (ua->AclAccessOk(Command_ACL, commands[i].key)
-          && (!IsDotCommand(commands[i].key))) {
+      const bool allowed = ua->AclAccessOk(Command_ACL, commands[i].key);
+      if ((full || allowed) && (!IsDotCommand(commands[i].key))) {
         ua->send->ObjectStart(commands[i].key);
         ua->send->ObjectKeyValue("command", commands[i].key, "%s\n");
         ua->send->ObjectKeyValue("description", commands[i].help);
         ua->send->ObjectKeyValue("arguments", commands[i].usage, NULL, 0);
-        ua->send->ObjectKeyValueBool("permission", true);
+        ua->send->ObjectKeyValueBool("permission", allowed);
         ua->send->ObjectEnd(commands[i].key);
       }
     }
   } else {
     // Want to display everything
     for (i = 0; i < comsize; i++) {
-      if (ua->AclAccessOk(Command_ACL, commands[i].key)) {
+      const bool allowed = ua->AclAccessOk(Command_ACL, commands[i].key);
+      if (full || allowed) {
         ua->send->ObjectStart(commands[i].key);
         ua->send->ObjectKeyValue("command", commands[i].key, "%s ");
         ua->send->ObjectKeyValue("description", commands[i].help, "%s -- ");
         ua->send->ObjectKeyValue("arguments", commands[i].usage, "%s\n", 0);
-        ua->send->ObjectKeyValueBool("permission", true);
+        ua->send->ObjectKeyValueBool("permission", allowed);
         ua->send->ObjectEnd(commands[i].key);
       }
     }
