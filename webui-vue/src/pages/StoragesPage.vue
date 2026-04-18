@@ -1,13 +1,14 @@
 <template>
   <q-page class="q-pa-md">
-    <!-- Tab bar: Devices | Pools | Volumes -->
+    <!-- Tab bar: Devices | Pools | Volumes | Autochangers -->
     <q-tabs v-model="tab" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
-      <q-tab name="storages" label="Devices"  no-caps />
-      <q-tab name="pools"    label="Pools"    no-caps />
-      <q-tab name="volumes"  label="Volumes"  no-caps />
+      <q-route-tab name="storages" label="Devices"      no-caps :to="{ path: '/storages' }" />
+      <q-route-tab name="pools"    label="Pools"        no-caps :to="{ path: '/storages', query: { tab: 'pools' } }" />
+      <q-route-tab name="volumes"  label="Volumes"      no-caps :to="{ path: '/storages', query: { tab: 'volumes' } }" />
+      <q-route-tab name="autochangers" label="Autochangers" no-caps :to="{ path: '/storages', query: { tab: 'autochangers' } }" />
     </q-tabs>
 
-    <q-tab-panels v-model="tab" animated>
+    <q-tab-panels v-model="tab" animated swipeable>
       <!-- DEVICES -->
       <q-tab-panel name="storages" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">
@@ -227,6 +228,11 @@
           </q-card>
         </q-dialog>
       </q-tab-panel>
+
+      <!-- AUTOCHANGERS -->
+      <q-tab-panel name="autochangers" class="q-pa-none">
+        <AutochangerPage embedded />
+      </q-tab-panel>
     </q-tab-panels>
 
     <!-- Storage Status Dialog -->
@@ -252,12 +258,13 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import {
   directorCollection,
   useDirectorFetch,
   normaliseVolume,
 } from '../composables/useDirectorFetch.js'
+import AutochangerPage from './AutochangerPage.vue'
 import { useDirectorStore } from '../stores/director.js'
 import { formatBytes, formatDuration } from '../mock/index.js'
 import BoolIcon from '../components/BoolIcon.vue'
@@ -265,8 +272,9 @@ import EnabledBadge from '../components/EnabledBadge.vue'
 import PoolTypeBadge from '../components/PoolTypeBadge.vue'
 
 const route    = useRoute()
+const router   = useRouter()
 const director = useDirectorStore()
-const validTabs = new Set(['storages', 'pools', 'volumes'])
+const validTabs = new Set(['storages', 'pools', 'volumes', 'autochangers'])
 function normaliseTab(value) {
   return validTabs.has(value) ? value : 'storages'
 }
@@ -278,6 +286,23 @@ watch(() => route.query.tab, (value) => {
   if (tab.value !== next) {
     tab.value = next
   }
+})
+
+watch(tab, (next) => {
+  const current = normaliseTab(route.query.tab)
+  if (current === next) {
+    return
+  }
+
+  const query = next === 'storages'
+    ? { ...route.query }
+    : { ...route.query, tab: next }
+  delete query.tab
+  if (next !== 'storages') {
+    query.tab = next
+  }
+
+  router.replace({ path: '/storages', query })
 })
 
 const { data: rawStorages, loading: storagesLoading, error: storagesError, refresh: refreshStorages } =

@@ -27,30 +27,6 @@
             <q-item-section avatar><q-icon :name="nav.icon" /></q-item-section>
             <q-item-section>{{ nav.label }}</q-item-section>
           </q-item>
-          <q-expansion-item
-            v-model="storageMenuOpen"
-            icon="storage"
-            label="Storages"
-            :header-class="storageMenuActive ? 'bg-white text-primary' : 'text-white'"
-            expand-separator
-            data-testid="drawer-nav-storages"
-          >
-            <q-list dark>
-              <q-item
-                v-for="nav in storageNavItems"
-                :key="nav.label"
-                clickable
-                v-ripple
-                :to="nav.to"
-                :data-testid="nav.drawerTestId"
-                active-class="bg-white text-primary"
-                @click="drawerOpen = false"
-              >
-                <q-item-section avatar><q-icon :name="nav.icon" /></q-item-section>
-                <q-item-section>{{ nav.label }}</q-item-section>
-              </q-item>
-            </q-list>
-          </q-expansion-item>
         </q-list>
 
         <q-separator dark class="q-my-sm" />
@@ -123,41 +99,14 @@
         </span>
 
         <!-- Main nav tabs (desktop only) -->
-        <div v-if="!$q.screen.lt.md" class="row items-center no-wrap q-ml-md q-gutter-xs">
-          <q-tabs dense align="left"
-                  indicator-color="white"
-                  active-color="white"
-                  active-bg-color="rgba(255,255,255,0.15)">
-            <q-route-tab v-for="nav in mainNavItems" :key="nav.to"
-                         :data-testid="nav.testId"
-                         :name="nav.label.toLowerCase()" :to="nav.to"
-                         :label="nav.label" no-caps />
-          </q-tabs>
-          <q-btn-dropdown
-            flat
-            no-caps
-            dense
-            color="white"
-            label="Storages"
-            icon="storage"
-            :class="storageMenuActive ? 'bg-white text-primary' : ''"
-            data-testid="nav-storages"
-          >
-            <q-list dense style="min-width:180px">
-              <q-item
-                v-for="nav in storageNavItems"
-                :key="nav.label"
-                clickable
-                v-close-popup
-                :to="nav.to"
-                :data-testid="nav.testId"
-              >
-                <q-item-section avatar><q-icon :name="nav.icon" /></q-item-section>
-                <q-item-section>{{ nav.label }}</q-item-section>
-              </q-item>
-            </q-list>
-          </q-btn-dropdown>
-        </div>
+        <q-tabs v-if="!$q.screen.lt.md" dense align="left"
+                class="q-ml-md" indicator-color="white"
+                active-color="white" active-bg-color="rgba(255,255,255,0.15)">
+          <q-route-tab v-for="nav in mainNavItems" :key="nav.to"
+                       :data-testid="nav.testId"
+                       :name="nav.label.toLowerCase()" :to="nav.to"
+                       :label="nav.label" no-caps />
+        </q-tabs>
 
         <q-space />
 
@@ -241,8 +190,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import bareosLogo from '../assets/bareos-logo-small.png'
 import { bareosVersion as appVersion } from '../generated/bareos-version.js'
@@ -254,9 +203,7 @@ const $q       = useQuasar()
 const auth     = useAuthStore()
 const director = useDirectorStore()
 const router   = useRouter()
-const route    = useRoute()
 const drawerOpen = ref(false)
-const storageMenuOpen = ref(false)
 
 function openConsole() {
   const base = window.location.href.replace(/#.*$/, '')
@@ -273,58 +220,16 @@ const mainNavItems = [
   { label: 'Restore',      to: '/restore',      icon: 'restore',    testId: 'nav-restore',      drawerTestId: 'drawer-nav-restore'      },
   { label: 'Clients',      to: '/clients',      icon: 'devices',    testId: 'nav-clients',      drawerTestId: 'drawer-nav-clients'      },
   { label: 'Schedules',    to: '/schedules',    icon: 'schedule',   testId: 'nav-schedules',    drawerTestId: 'drawer-nav-schedules'    },
+  { label: 'Storages',     to: '/storages',     icon: 'storage',    testId: 'nav-storages',     drawerTestId: 'drawer-nav-storages'     },
   { label: 'Director',     to: '/director',     icon: 'settings',   testId: 'nav-director',     drawerTestId: 'drawer-nav-director'     },
   { label: 'Analytics',    to: '/analytics',    icon: 'bar_chart',  testId: 'nav-analytics',    drawerTestId: 'drawer-nav-analytics'    },
 ]
-
-const storageNavItems = [
-  {
-    label: 'Devices',
-    to: { path: '/storages' },
-    icon: 'storage',
-    testId: 'nav-storages-devices',
-    drawerTestId: 'drawer-nav-storages-devices',
-  },
-  {
-    label: 'Pools',
-    to: { path: '/storages', query: { tab: 'pools' } },
-    icon: 'inventory_2',
-    testId: 'nav-storages-pools',
-    drawerTestId: 'drawer-nav-storages-pools',
-  },
-  {
-    label: 'Volumes',
-    to: { path: '/storages', query: { tab: 'volumes' } },
-    icon: 'save',
-    testId: 'nav-storages-volumes',
-    drawerTestId: 'drawer-nav-storages-volumes',
-  },
-  {
-    label: 'Autochangers',
-    to: { path: '/autochangers' },
-    icon: 'swap_horiz',
-    testId: 'nav-autochangers',
-    drawerTestId: 'drawer-nav-autochangers',
-  },
-]
-
-const storageMenuActive = computed(() => (
-  route.path === '/storages'
-  || route.path === '/autochangers'
-  || route.path.startsWith('/storages/')
-))
 
 const settings = useSettingsStore()
 
 onMounted(() => {
   $q.dark.set(settings.darkMode)
 })
-
-watch(() => route.fullPath, () => {
-  if (storageMenuActive.value) {
-    storageMenuOpen.value = true
-  }
-}, { immediate: true })
 
 function toggleDark() {
   $q.dark.toggle()

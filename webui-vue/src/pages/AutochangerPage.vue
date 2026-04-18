@@ -20,7 +20,14 @@
 -->
 
 <template>
-  <q-page class="q-pa-md">
+  <component :is="embedded ? 'div' : 'q-page'" class="q-pa-md">
+    <q-tabs v-if="!embedded" dense align="left" class="q-mb-md page-tabs" indicator-color="primary">
+      <q-route-tab label="Devices"      no-caps :to="{ path: '/storages' }" />
+      <q-route-tab label="Pools"        no-caps :to="{ path: '/storages', query: { tab: 'pools' } }" />
+      <q-route-tab label="Volumes"      no-caps :to="{ path: '/storages', query: { tab: 'volumes' } }" />
+      <q-route-tab label="Autochangers" no-caps :to="{ path: '/storages', query: { tab: 'autochangers' } }" />
+    </q-tabs>
+
     <!-- ── Toolbar ─────────────────────────────────────────── -->
     <div class="row items-center q-gutter-sm q-mb-md">
       <q-select
@@ -411,7 +418,7 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-  </q-page>
+  </component>
 </template>
 
 <script setup>
@@ -419,6 +426,13 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 import { useQuasar } from 'quasar'
 import { directorCollection } from '../composables/useDirectorFetch.js'
+
+defineProps({
+  embedded: {
+    type: Boolean,
+    default: false,
+  },
+})
 
 const director = useDirectorStore()
 const $q = useQuasar()
