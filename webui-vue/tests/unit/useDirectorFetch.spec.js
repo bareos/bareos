@@ -21,9 +21,11 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  directorCommandCategory,
   directorCommandAllowed,
   directorCollection,
   missingDirectorCommands,
+  normaliseDirectorCommandPermissions,
   normaliseClient,
   normaliseJob,
   normaliseVolume,
@@ -148,5 +150,41 @@ describe('director data normalisers', () => {
       prune: { permission: true },
       delete: { permission: false },
     }, ['delete', 'prune', 'list'])).toEqual(['delete', 'list'])
+  })
+
+  it('groups director commands into display categories', () => {
+    expect(directorCommandCategory('delete')).toBe('Commands')
+    expect(directorCommandCategory('.help')).toBe('Dot commands')
+    expect(directorCommandCategory('.bvfs_restore')).toBe('BVFS')
+  })
+
+  it('normalises command permission records for display', () => {
+    expect(normaliseDirectorCommandPermissions({
+      '.help': {
+        description: 'Print parsable information about a command',
+        arguments: '[ all | item=cmd ]',
+        permission: true,
+      },
+      delete: {
+        description: 'Delete catalog records',
+        arguments: 'jobid=<jobid>',
+        permission: false,
+      },
+    })).toEqual([
+      {
+        command: '.help',
+        description: 'Print parsable information about a command',
+        arguments: '[ all | item=cmd ]',
+        permission: true,
+        category: 'Dot commands',
+      },
+      {
+        command: 'delete',
+        description: 'Delete catalog records',
+        arguments: 'jobid=<jobid>',
+        permission: false,
+        category: 'Commands',
+      },
+    ])
   })
 })

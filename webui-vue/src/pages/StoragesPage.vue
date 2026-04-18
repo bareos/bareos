@@ -251,7 +251,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import {
   directorCollection,
@@ -266,8 +266,19 @@ import PoolTypeBadge from '../components/PoolTypeBadge.vue'
 
 const route    = useRoute()
 const director = useDirectorStore()
-const tab      = ref(route.query.tab || 'storages')
+const validTabs = new Set(['storages', 'pools', 'volumes'])
+function normaliseTab(value) {
+  return validTabs.has(value) ? value : 'storages'
+}
+const tab      = ref(normaliseTab(route.query.tab))
 const volSearch = ref('')
+
+watch(() => route.query.tab, (value) => {
+  const next = normaliseTab(value)
+  if (tab.value !== next) {
+    tab.value = next
+  }
+})
 
 const { data: rawStorages, loading: storagesLoading, error: storagesError, refresh: refreshStorages } =
   useDirectorFetch('list storages', 'storages')

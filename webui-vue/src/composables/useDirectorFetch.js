@@ -63,6 +63,24 @@ export function missingDirectorCommands(commands, requiredCommands) {
   return requiredCommands.filter(command => !directorCommandAllowed(commands, command))
 }
 
+export function directorCommandCategory(command) {
+  if (command.startsWith('.bvfs_')) return 'BVFS'
+  if (command.startsWith('.')) return 'Dot commands'
+  return 'Commands'
+}
+
+export function normaliseDirectorCommandPermissions(commands) {
+  return Object.entries(commands ?? {})
+    .map(([command, meta]) => ({
+      command,
+      description: meta?.description ?? '',
+      arguments: meta?.arguments ?? '',
+      permission: meta?.permission === true,
+      category: directorCommandCategory(command),
+    }))
+    .sort((a, b) => a.command.localeCompare(b.command))
+}
+
 /**
  * Normalise a raw director job record (from "list jobs") to the shape used
  * by the UI tables.

@@ -29,6 +29,7 @@ const routes = [
       { path: 'director',  name: 'director',  component: () => import('../pages/DirectorPage.vue') },
       { path: 'analytics', name: 'analytics', component: () => import('../pages/AnalyticsPage.vue') },
       { path: 'filesets',  name: 'filesets',  component: () => import('../pages/FilesetsPage.vue') },
+      { path: 'acls',      name: 'acls',      component: () => import('../pages/AclPage.vue') },
       { path: 'settings',  name: 'settings',  component: () => import('../pages/SettingsPage.vue') },
     ]
   },

@@ -507,6 +507,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
+import { useDirectorAclStore } from '../stores/directorAcl.js'
 import { useSettingsStore } from '../stores/settings.js'
 import {
   directorCollection,
@@ -523,9 +524,8 @@ import SubscriptionReport from '../components/SubscriptionReport.vue'
 
 const tab = ref('status')
 const director = useDirectorStore()
+const acl = useDirectorAclStore()
 const settings  = useSettingsStore()
-const commandPermissions = ref(null)
-const commandPermissionsError = ref(null)
 
 // ── Status ───────────────────────────────────────────────────────────────────
 const statusLoading = ref(false)
@@ -701,7 +701,7 @@ watch(messagesLimit, () => refreshMessages())
 
 refreshStatus()
 refreshMessages()
-loadCommandPermissions()
+acl.ensureLoaded()
 watch(tab, (t) => {
   if (t === 'messages') refreshMessages()
   if (t === 'catalog') loadEmptyJobs()
@@ -785,7 +785,7 @@ const selectedEmptyJobs = ref([])
 const deleteLoading     = ref(false)
 const deleteResult      = ref(null)
 const canDeleteEmptyJobs = computed(() => (
-  directorCommandAllowed(commandPermissions.value, 'delete')
+  directorCommandAllowed(acl.commands, 'delete')
 ))
 const deleteSelectedLabel = computed(() => (
   selectedEmptyJobs.value.length
@@ -797,28 +797,18 @@ const deleteActionDisabled = computed(() => (
   || !selectedEmptyJobs.value.length
 ))
 const canPruneCatalog = computed(() => (
-  directorCommandAllowed(commandPermissions.value, 'prune')
+  directorCommandAllowed(acl.commands, 'prune')
 ))
-const catalogAclError = computed(() => commandPermissionsError.value)
+const catalogAclError = computed(() => acl.error)
 const catalogAclNotice = computed(() => {
-  if (!commandPermissions.value || commandPermissionsError.value) return null
+  if (!acl.commands || acl.error) return null
   const missing = missingDirectorCommands(
-    commandPermissions.value,
+    acl.commands,
     ['delete', 'prune']
   )
   if (!missing.length) return null
   return missing.map(cmd => `"${cmd}"`).join(' and ')
 })
-
-async function loadCommandPermissions() {
-  commandPermissionsError.value = null
-  try {
-    commandPermissions.value = await director.call('.help')
-  } catch (e) {
-    commandPermissions.value = null
-    commandPermissionsError.value = e.message
-  }
-}
 
 const emptyJobCols = [
   { name: 'id',        label: 'ID',       field: 'id',
