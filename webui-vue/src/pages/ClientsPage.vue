@@ -5,7 +5,7 @@
       <q-tab name="timeline" label="Timeline" no-caps />
     </q-tabs>
 
-    <q-tab-panels v-model="tab" animated>
+    <q-tab-panels v-model="tab" animated swipeable>
       <!-- SHOW -->
       <q-tab-panel name="list" class="q-pa-none">
         <q-card flat bordered class="bareos-panel">

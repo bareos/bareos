@@ -7,7 +7,7 @@
       <q-tab name="subscription" label="Subscription" no-caps />
     </q-tabs>
 
-    <q-tab-panels v-model="tab" animated>
+    <q-tab-panels v-model="tab" animated swipeable>
       <!-- STATUS -->
       <q-tab-panel name="status" class="q-pa-none">
         <q-inner-loading :showing="statusLoading" />

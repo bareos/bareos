@@ -5,7 +5,7 @@
       <q-tab name="show"   label="Show"    no-caps />
     </q-tabs>
 
-    <q-tab-panels v-model="tab" animated>
+    <q-tab-panels v-model="tab" animated swipeable>
 
       <!-- SHOW: all configured schedules -->
       <q-tab-panel name="show" class="q-pa-none">
