@@ -522,6 +522,10 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("path.includes('/bareos-sd.d/')"),
             std::string::npos);
+  EXPECT_NE(response.body.find("splitObjectResources: true"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Resources are distributed into two lanes"),
+            std::string::npos);
   EXPECT_NE(response.body.find("Jump to resolved node"),
             std::string::npos);
   EXPECT_NE(response.body.find("size=\"${Math.min(Math.max(optionValues.length, 2), 4)}\""),

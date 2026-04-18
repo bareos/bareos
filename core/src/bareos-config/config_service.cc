@@ -4177,26 +4177,61 @@ std::string BuildIndexHtml()
         relationship._graphTargetResourceKey = targetResource.key;
       });
 
+      const splitObjectResources = Boolean(options.splitObjectResources);
       objects.forEach((object) => {
         object.resources.sort((left, right) =>
           left.label.localeCompare(right.label),
         );
         object.column = object.nodeId && object.nodeId.startsWith('director-') ? 0 : 1;
+        object.leftResources = [];
+        object.rightResources = [];
+        object.resources.forEach((resource) => {
+          let lane = 0;
+          if (splitObjectResources) {
+            if (resource.outgoing > resource.incoming) {
+              lane = 0;
+            } else if (resource.incoming > resource.outgoing) {
+              lane = 1;
+            } else {
+              lane = object.leftResources.length <= object.rightResources.length ? 0 : 1;
+            }
+          }
+          resource.lane = lane;
+          if (lane === 0) {
+            resource.laneIndex = object.leftResources.length;
+            object.leftResources.push(resource);
+          } else {
+            resource.laneIndex = object.rightResources.length;
+            object.rightResources.push(resource);
+          }
+        });
       });
 
-      const objectWidth = 208;
+      const baseObjectWidth = 208;
+      const columnGap = 92;
       const headerHeight = 40;
       const resourceRowHeight = 20;
       const objectPaddingTop = 8;
       const objectPaddingBottom = 8;
+      const objectPaddingSide = 8;
+      const objectWidth = splitObjectResources
+        ? (objectPaddingSide * 2) + (baseObjectWidth * 2) + columnGap
+        : baseObjectWidth;
+      const resourceLaneGap = splitObjectResources ? columnGap : 0;
+      const resourceBoxHeight = resourceRowHeight - 3;
+      const resourceBoxWidth = splitObjectResources
+        ? baseObjectWidth
+        : objectWidth - (objectPaddingSide * 2);
       const topPadding = 30;
       const portInset = 10;
       objects.forEach((object) => {
+        const visibleRowCount = splitObjectResources
+          ? Math.max(object.leftResources.length, object.rightResources.length)
+          : object.resources.length;
         object.height = objectPaddingTop + headerHeight
-          + (object.resources.length * resourceRowHeight) + objectPaddingBottom;
+          + (visibleRowCount * resourceRowHeight) + objectPaddingBottom;
       });
 
-      const columnGap = 92;
       const verticalGap = 14;
       const graphPaddingX = 18;
       const columns = [0, 1].map((column) =>
@@ -4206,7 +4241,7 @@ std::string BuildIndexHtml()
       );
       const visibleColumns = [0, 1].filter((column) => columns[column].length > 0);
       const graphWidth = visibleColumns.length === 1
-        ? 244
+        ? graphPaddingX * 2 + objectWidth
         : graphPaddingX * 2 + objectWidth * 2 + columnGap;
       const columnX = {
         0: visibleColumns.length === 1
@@ -4234,9 +4269,15 @@ std::string BuildIndexHtml()
         columns[column].forEach((object) => {
           object.x = columnX[column];
           object.y = currentY;
-          object.resources.forEach((resource, index) => {
+          object.resources.forEach((resource) => {
+            const laneX = splitObjectResources
+              ? object.x + objectPaddingSide
+                + (resource.lane * (resourceBoxWidth + resourceLaneGap))
+              : object.x + objectPaddingSide;
+            resource.x = laneX;
+            resource.width = resourceBoxWidth;
             resource.y = object.y + objectPaddingTop + headerHeight
-              + (index * resourceRowHeight) + (resourceRowHeight / 2);
+              + (resource.laneIndex * resourceRowHeight) + (resourceRowHeight / 2);
           });
           currentY += object.height + verticalGap;
           maxObjectHeight = Math.max(maxObjectHeight, object.height);
@@ -4262,10 +4303,14 @@ std::string BuildIndexHtml()
         const sameObject = sourceObject.key === targetObject.key;
         const forward = sourceObject.x <= targetObject.x;
         const startX = sameObject
-          ? sourceObject.x + objectWidth - portInset
+          ? (sourceResource.lane === 0
+              ? sourceResource.x + sourceResource.width
+              : sourceResource.x)
           : sourceObject.x + (forward ? objectWidth - portInset : portInset);
         const endX = sameObject
-          ? targetObject.x + objectWidth - portInset
+          ? (targetResource.lane === 0
+              ? targetResource.x + targetResource.width
+              : targetResource.x)
           : targetObject.x + (forward ? portInset : objectWidth - portInset);
         const startY = sourceResource.y;
         const endY = targetResource.y;
@@ -4279,6 +4324,39 @@ std::string BuildIndexHtml()
         const stroke = relationshipColor(relationship.relation);
         const title = `${relationship.from_label || '-'} → ${relationship.to_label || relationship.endpoint_name || '-'} (${relationship.relation || 'related'})${relationship.resolution ? ` — ${relationship.resolution}` : ''}`;
         if (sameObject) {
+          if (splitObjectResources) {
+            const centerX = sourceObject.x + (objectWidth / 2);
+            const sameLane = sourceResource.lane === targetResource.lane;
+            if (!sameLane) {
+              const controlX1 = centerX + (sourceResource.lane === 0 ? -14 : 14);
+              const controlX2 = centerX + (targetResource.lane === 0 ? -14 : 14);
+              return `<path d="M ${startX} ${startY} C ${controlX1} ${startY + laneOffset}, ${controlX2} ${endY + laneOffset}, ${endX} ${endY}"
+                fill="none"
+                stroke="${stroke}"
+                stroke-width="2.1"
+                stroke-linecap="round"
+                ${relationship.resolved ? '' : 'stroke-dasharray="7 6"'}
+                opacity="${relationship.resolved ? '0.92' : '0.72'}"
+                marker-end="url(#${markerId})">
+                <title>${escapeHtml(title)}</title>
+              </path>`;
+            }
+            const loopX = sourceResource.lane === 0
+              ? sourceObject.x + objectWidth - 18 - Math.abs(laneOffset)
+              : sourceObject.x + 18 + Math.abs(laneOffset);
+            const controlY1 = startY + laneOffset - 10;
+            const controlY2 = endY + laneOffset + 10;
+            return `<path d="M ${startX} ${startY} C ${loopX} ${controlY1}, ${loopX} ${controlY2}, ${endX} ${endY}"
+              fill="none"
+              stroke="${stroke}"
+              stroke-width="2.1"
+              stroke-linecap="round"
+              ${relationship.resolved ? '' : 'stroke-dasharray="7 6"'}
+              opacity="${relationship.resolved ? '0.92' : '0.72'}"
+              marker-end="url(#${markerId})">
+              <title>${escapeHtml(title)}</title>
+            </path>`;
+          }
           const loopX = sourceObject.x + objectWidth + 30 + Math.abs(laneOffset);
           const controlY1 = startY + laneOffset - 10;
           const controlY2 = endY + laneOffset + 10;
@@ -4331,7 +4409,7 @@ std::string BuildIndexHtml()
         return '#d3dde6';
       };
 
-      const objectMarkup = objects.map((object) => `
+      const objectBackgroundMarkup = objects.map((object) => `
         <g transform="translate(${object.x}, ${object.y})">
           <rect width="${objectWidth}" height="${object.height}" rx="10"
             fill="${objectFill(object)}"
@@ -4339,13 +4417,18 @@ std::string BuildIndexHtml()
             stroke-width="1.3"></rect>
           <text x="10" y="18" fill="#22303c" font-size="12" font-weight="700">${escapeHtml(truncateGraphLabel(object.label, 22))}</text>
           <text x="10" y="32" fill="#5a6773" font-size="9">${escapeHtml(object.unresolved ? 'unresolved object' : 'daemon / definition object')}</text>
-          ${object.resources.map((resource, resourceIndex) => {
-            const rowTop = objectPaddingTop + headerHeight + (resourceIndex * resourceRowHeight);
+          <title>${escapeHtml(object.label)}</title>
+        </g>`).join('');
+      const objectResourceMarkup = objects.map((object) => `
+        <g transform="translate(${object.x}, ${object.y})">
+          ${object.resources.map((resource) => {
+            const rowTop = objectPaddingTop + headerHeight + (resource.laneIndex * resourceRowHeight);
+            const rowLeft = resource.x - object.x;
             const typeLabel = truncateGraphLabel((resource.typeLabel || '').toUpperCase(), 10);
             const nameLabel = truncateGraphLabel(resource.nameLabel, 14);
             const fallbackLabel = truncateGraphLabel(resource.label, 21);
-            return `<g transform="translate(8, ${rowTop})">
-              <rect width="${objectWidth - 16}" height="${resourceRowHeight - 3}" rx="6"
+            return `<g transform="translate(${rowLeft}, ${rowTop})">
+              <rect width="${resource.width}" height="${resourceBoxHeight}" rx="6"
                 fill="${resourceFill(resource)}"
                 stroke="${resourceStroke(resource)}"
                 stroke-width="1.1"></rect>
@@ -4354,12 +4437,11 @@ std::string BuildIndexHtml()
                       ? `<tspan dx="6" font-size="10.5" font-style="italic" font-weight="500" fill="#22303c">${escapeHtml(nameLabel)}</tspan>`
                       : ''}`
                   : `<tspan font-weight="600">${escapeHtml(fallbackLabel)}</tspan>`}</text>
-              ${resource.incoming > 0 ? `<circle cx="3" cy="${(resourceRowHeight - 3) / 2}" r="2.7" fill="${resourceStroke(resource)}"></circle>` : ''}
-              ${resource.outgoing > 0 ? `<circle cx="${objectWidth - 19}" cy="${(resourceRowHeight - 3) / 2}" r="2.7" fill="${resourceStroke(resource)}"></circle>` : ''}
+              ${resource.incoming > 0 ? `<circle cx="3" cy="${resourceBoxHeight / 2}" r="2.7" fill="${resourceStroke(resource)}"></circle>` : ''}
+              ${resource.outgoing > 0 ? `<circle cx="${resource.width - 3}" cy="${resourceBoxHeight / 2}" r="2.7" fill="${resourceStroke(resource)}"></circle>` : ''}
               <title>${escapeHtml(resource.label)}${resource.path ? ` — ${resource.path}` : ''}</title>
             </g>`;
           }).join('')}
-          <title>${escapeHtml(object.label)}</title>
         </g>`).join('');
 
       const graphHeight = topPadding + columnHeight + 24;
@@ -4377,8 +4459,9 @@ std::string BuildIndexHtml()
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"></path>
               </marker>
             </defs>
+            ${objectBackgroundMarkup}
             ${edgeMarkup}
-            ${objectMarkup}
+            ${objectResourceMarkup}
           </svg>
         </div>
         ${clickableNodes.length ? `<div class="relationship-graph-note muted">Jump to resolved node</div>
@@ -4513,9 +4596,10 @@ std::string BuildIndexHtml()
       return `<div class="relationship-view">
         ${renderRelationshipGraph(internalRelationships, {
           title: 'Internal relations graph',
-          description: 'This graph shows only relations that stay inside the same entity or configuration object. The nested rows are resource entries with the type and name styled separately so you can quickly distinguish what kind of resource is being referenced.',
+          description: 'This graph shows only relations that stay inside the same entity or configuration object. Resources are distributed into two lanes so internal arrows can be seen more clearly, while the type and name stay visually distinct.',
           emptyMessage: 'No internal relations discovered for this node.',
           graphId: 'internal',
+          splitObjectResources: true,
         })}
         ${renderRelationshipGraph(crossEntityRelationships, {
           title: 'Relations between entities graph',
