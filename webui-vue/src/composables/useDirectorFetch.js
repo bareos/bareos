@@ -55,6 +55,14 @@ export function directorCollection(value) {
   ))
 }
 
+export function directorCommandAllowed(commands, command) {
+  return commands?.[command]?.permission === true
+}
+
+export function missingDirectorCommands(commands, requiredCommands) {
+  return requiredCommands.filter(command => !directorCommandAllowed(commands, command))
+}
+
 /**
  * Normalise a raw director job record (from "list jobs") to the shape used
  * by the UI tables.

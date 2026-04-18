@@ -21,7 +21,9 @@
 
 import { describe, expect, it } from 'vitest'
 import {
+  directorCommandAllowed,
   directorCollection,
+  missingDirectorCommands,
   normaliseClient,
   normaliseJob,
   normaliseVolume,
@@ -129,5 +131,22 @@ describe('director data normalisers', () => {
       { name: 'Incr-0001' },
       { name: 'Incr-0002' },
     ])
+  })
+
+  it('detects allowed director commands from help output', () => {
+    expect(directorCommandAllowed({
+      delete: { permission: false },
+      prune: { permission: true },
+    }, 'prune')).toBe(true)
+    expect(directorCommandAllowed({
+      delete: { permission: false },
+    }, 'delete')).toBe(false)
+  })
+
+  it('lists missing required director commands', () => {
+    expect(missingDirectorCommands({
+      prune: { permission: true },
+      delete: { permission: false },
+    }, ['delete', 'prune', 'list'])).toEqual(['delete', 'list'])
   })
 })

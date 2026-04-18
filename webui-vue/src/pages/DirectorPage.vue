@@ -316,6 +316,22 @@
       <!-- CATALOG MAINTENANCE -->
       <q-tab-panel name="catalog" class="q-pa-none">
         <div class="row q-col-gutter-md">
+          <div class="col-12" v-if="catalogAclError">
+            <q-banner dense rounded class="bg-negative text-white">
+              Could not determine catalog-maintenance permissions: {{ catalogAclError }}
+            </q-banner>
+          </div>
+
+          <div class="col-12" v-else-if="catalogAclNotice">
+            <q-banner dense rounded class="bg-grey-3 text-grey-9">
+              <template #avatar>
+                <q-icon name="lock" color="warning" />
+              </template>
+              Catalog maintenance actions are disabled for this console because
+              the required Command ACL does not allow
+              {{ catalogAclNotice }}.
+            </q-banner>
+          </div>
 
           <!-- Empty Jobs -->
           <div class="col-12">
@@ -336,12 +352,16 @@
                       0 files and 0 bytes found
                     </span>
                     <q-space />
+                    <span v-if="!canDeleteEmptyJobs" class="text-caption text-grey-6">
+                      Delete is unavailable because the ACL forbids the
+                      <code>delete</code> command.
+                    </span>
                     <q-btn
-                      v-if="selectedEmptyJobs.length"
                       color="negative" size="sm" no-caps unelevated
-                      :label="`Delete ${selectedEmptyJobs.length} selected`"
+                      :label="deleteSelectedLabel"
                       icon="delete"
                       :loading="deleteLoading"
+                      :disable="deleteActionDisabled"
                       @click="deleteSelected"
                     />
                   </div>
@@ -390,14 +410,19 @@
                   This does not delete any data from storage volumes.
                 </p>
                 <div class="row q-gutter-sm">
-                  <q-btn
-                    v-for="prune in pruneActions" :key="prune.cmd"
-                    :label="prune.label" :icon="prune.icon"
-                    color="warning" text-color="black"
-                    size="sm" no-caps unelevated
-                    :loading="pruneLoading[prune.cmd]"
-                    @click="runPrune(prune.cmd)"
-                  />
+                    <q-btn
+                      v-for="prune in pruneActions" :key="prune.cmd"
+                      :label="prune.label" :icon="prune.icon"
+                      color="warning" text-color="black"
+                      size="sm" no-caps unelevated
+                      :loading="pruneLoading[prune.cmd]"
+                      :disable="!canPruneCatalog"
+                      @click="runPrune(prune.cmd)"
+                    />
+                  </div>
+                <div v-if="!canPruneCatalog" class="text-caption text-grey-6 q-mt-sm">
+                  Prune is unavailable because the ACL forbids the
+                  <code>prune</code> command.
                 </div>
                 <div v-if="pruneResults.length" class="q-mt-md column q-gutter-xs">
                   <q-banner
@@ -483,7 +508,12 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
-import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
+import {
+  directorCollection,
+  directorCommandAllowed,
+  missingDirectorCommands,
+  normaliseJob,
+} from '../composables/useDirectorFetch.js'
 import { formatBytes } from '../mock/index.js'
 import { resolveOsIcon } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
@@ -494,6 +524,8 @@ import SubscriptionReport from '../components/SubscriptionReport.vue'
 const tab = ref('status')
 const director = useDirectorStore()
 const settings  = useSettingsStore()
+const commandPermissions = ref(null)
+const commandPermissionsError = ref(null)
 
 // ── Status ───────────────────────────────────────────────────────────────────
 const statusLoading = ref(false)
@@ -669,6 +701,7 @@ watch(messagesLimit, () => refreshMessages())
 
 refreshStatus()
 refreshMessages()
+loadCommandPermissions()
 watch(tab, (t) => {
   if (t === 'messages') refreshMessages()
   if (t === 'catalog') loadEmptyJobs()
@@ -751,6 +784,41 @@ const emptyJobs         = ref([])
 const selectedEmptyJobs = ref([])
 const deleteLoading     = ref(false)
 const deleteResult      = ref(null)
+const canDeleteEmptyJobs = computed(() => (
+  directorCommandAllowed(commandPermissions.value, 'delete')
+))
+const deleteSelectedLabel = computed(() => (
+  selectedEmptyJobs.value.length
+    ? `Delete ${selectedEmptyJobs.value.length} selected`
+    : 'Delete selected'
+))
+const deleteActionDisabled = computed(() => (
+  !canDeleteEmptyJobs.value
+  || !selectedEmptyJobs.value.length
+))
+const canPruneCatalog = computed(() => (
+  directorCommandAllowed(commandPermissions.value, 'prune')
+))
+const catalogAclError = computed(() => commandPermissionsError.value)
+const catalogAclNotice = computed(() => {
+  if (!commandPermissions.value || commandPermissionsError.value) return null
+  const missing = missingDirectorCommands(
+    commandPermissions.value,
+    ['delete', 'prune']
+  )
+  if (!missing.length) return null
+  return missing.map(cmd => `"${cmd}"`).join(' and ')
+})
+
+async function loadCommandPermissions() {
+  commandPermissionsError.value = null
+  try {
+    commandPermissions.value = await director.call('.help')
+  } catch (e) {
+    commandPermissions.value = null
+    commandPermissionsError.value = e.message
+  }
+}
 
 const emptyJobCols = [
   { name: 'id',        label: 'ID',       field: 'id',
@@ -786,7 +854,7 @@ async function loadEmptyJobs() {
 }
 
 async function deleteSelected() {
-  if (!selectedEmptyJobs.value.length) return
+  if (deleteActionDisabled.value) return
   deleteLoading.value = true
   deleteResult.value  = null
   const ids = selectedEmptyJobs.value.map(j => j.id).join(',')
@@ -818,6 +886,7 @@ const pruneLoading = ref(
 const pruneResults = ref([])
 
 async function runPrune(cmd) {
+  if (!canPruneCatalog.value) return
   pruneLoading.value[cmd] = true
   try {
     await director.call(cmd)
