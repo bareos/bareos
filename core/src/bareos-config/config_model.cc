@@ -157,6 +157,18 @@ std::string ExtractResourceName(const ResourceSummary& summary,
   return summary.name;
 }
 
+std::string ExtractDirectiveValue(const std::vector<ResourceDirective>& directives,
+                                  const std::string& key)
+{
+  const auto normalized_key = NormalizeDirectiveNameForComparison(key);
+  for (const auto& directive : directives) {
+    if (!IsTopLevelDirective(directive)) continue;
+    if (NormalizeDirectiveNameForComparison(directive.key) != normalized_key) continue;
+    return directive.value;
+  }
+  return "";
+}
+
 int DirectiveSortGroup(const std::string& key, bool required)
 {
   if (NormalizeDirectiveNameForComparison(key) == "name") return 0;
@@ -1582,6 +1594,134 @@ std::string FindConsoleDirectorReference(const DaemonSummary& console_daemon)
       configuration->file_path, "Director", "Name"));
 }
 
+struct RelationshipResourceEntry {
+  const ResourceSummary* resource = nullptr;
+  std::string owner_node_id;
+  std::string owner_label;
+  std::string owner_kind;
+};
+
+struct RelationshipSubject {
+  ResourceSummary summary;
+  ResourceSummary source_resource;
+  ResourceDetail detail;
+  std::string owner_node_id;
+  std::string owner_label;
+  std::string owner_kind;
+};
+
+std::vector<RelationshipResourceEntry> CollectRelationshipResourceEntries(
+    const DirectorSummary& director)
+{
+  std::vector<RelationshipResourceEntry> entries;
+  for (const auto& resource : director.resources) {
+    entries.push_back(
+        {&resource, director.id, director.name, "director"});
+  }
+  for (const auto& daemon : director.daemons) {
+    for (const auto& resource : daemon.resources) {
+      entries.push_back({&resource, daemon.id, daemon.name, daemon.kind});
+    }
+  }
+  return entries;
+}
+
+bool IsPrimaryDaemonResourceType(const std::string& owner_kind,
+                                 const std::string& resource_type)
+{
+  if (owner_kind == "director") return resource_type == "director";
+  if (owner_kind == "file-daemon") return resource_type == "client";
+  if (owner_kind == "storage-daemon") return resource_type == "storage";
+  if (owner_kind == "console") return resource_type == "console";
+  return false;
+}
+
+std::vector<RelationshipSubject> CollectRelationshipSubjects(
+    const std::vector<RelationshipResourceEntry>& resource_entries)
+{
+  std::vector<RelationshipSubject> subjects;
+  for (const auto& entry : resource_entries) {
+    subjects.push_back({*entry.resource,
+                        *entry.resource,
+                        LoadResourceDetail(*entry.resource),
+                        entry.owner_node_id,
+                        entry.owner_label,
+                        entry.owner_kind});
+
+    if (entry.resource->type != "configuration" || entry.owner_kind != "console") {
+      continue;
+    }
+
+    for (const auto& block_name : std::array<std::string, 3>{"Director", "Console",
+                                                             "User"}) {
+      const auto blocks = ParseNamedResourceBlocks(entry.resource->file_path, block_name);
+      for (size_t block_index = 0; block_index < blocks.size(); ++block_index) {
+        auto summary = *entry.resource;
+        summary.type = Lowercase(block_name);
+        if (blocks[block_index].name.empty()) {
+          summary.name = Lowercase(block_name) + "-" + std::to_string(block_index);
+        } else {
+          summary.name = StripSurroundingQuotes(blocks[block_index].name);
+        }
+        auto detail = BuildResourceDetail(summary, blocks[block_index].content);
+        subjects.push_back({std::move(summary),
+                            *entry.resource,
+                            std::move(detail),
+                            entry.owner_node_id,
+                            entry.owner_label,
+                            entry.owner_kind});
+      }
+    }
+  }
+  return subjects;
+}
+
+std::string CanonicalDirectiveKey(const ResourceSummary& summary,
+                                  const ResourceDirective& directive)
+{
+  auto canonical_key = directive.key;
+  const auto* table = LookupResourceTable(summary);
+  if (const auto* item = LookupDirectiveResourceItem(summary, table, directive.key)) {
+    canonical_key = item->name;
+  }
+  return canonical_key;
+}
+
+std::string RelationshipTargetLabel(const RelationshipResourceEntry& target)
+{
+  if (!target.resource) return "";
+  if (IsPrimaryDaemonResourceType(target.owner_kind, target.resource->type)) {
+    return target.owner_label;
+  }
+  return StripSurroundingQuotes(target.resource->name);
+}
+
+std::string RelationshipResolutionForReference(
+    const RelationshipSubject& source,
+    const std::string& relation,
+    const std::string& directive_key,
+    const std::string& referenced_name,
+    const RelationshipResourceEntry* target)
+{
+  const auto source_name = StripSurroundingQuotes(source.detail.summary.name).empty()
+                               ? source.detail.summary.type
+                               : StripSurroundingQuotes(source.detail.summary.name);
+  if (!target || !target->resource) {
+    return "Directive " + directive_key + " in " + source.detail.summary.type + " "
+           + source_name + " references " + referenced_name
+           + ", but no matching " + relation + " target was found.";
+  }
+
+  if (relation == "daemon-name") {
+    return "Directive " + directive_key + " in " + source.detail.summary.type + " "
+           + source_name + " resolves to daemon node " + target->owner_label + ".";
+  }
+
+  return "Directive " + directive_key + " in " + source.detail.summary.type + " "
+         + source_name + " resolves to resource "
+         + StripSurroundingQuotes(target->resource->name) + ".";
+}
+
 std::vector<RelationshipSummary> BuildRelationshipSummaries(
     const DatacenterSummary& summary)
 {
@@ -1589,6 +1729,8 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
   for (size_t director_index = 0; director_index < summary.directors.size();
        ++director_index) {
     const auto& director = summary.directors[director_index];
+    const auto resource_entries = CollectRelationshipResourceEntries(director);
+    const auto subjects = CollectRelationshipSubjects(resource_entries);
     const auto* file_daemon = FindDirectorDaemonByKind(director, "file-daemon");
     const auto* storage_daemon
         = FindDirectorDaemonByKind(director, "storage-daemon");
@@ -1750,6 +1892,171 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
                      : "Configured bconsole director " + referenced_director
                            + " does not match discovered director node "
                            + director.name + ".",
+        });
+      }
+    }
+
+    for (const auto& subject : subjects) {
+      const auto directive_metadata = BuildDirectiveMetadata(subject.detail.summary);
+      for (const auto& directive : subject.detail.directives) {
+        if (!IsTopLevelDirective(directive)) continue;
+
+        const auto canonical_key = CanonicalDirectiveKey(subject.detail.summary, directive);
+        const auto metadata_it = directive_metadata.find(canonical_key);
+        if (metadata_it == directive_metadata.end()
+            || metadata_it->second.related_resource_type.empty()) {
+          continue;
+        }
+
+        const auto normalized_key
+            = NormalizeDirectiveNameForComparison(canonical_key);
+        if ((subject.detail.summary.type == "storage" && normalized_key == "device")
+            || (subject.owner_kind == "console"
+                && metadata_it->second.related_resource_type == "director")) {
+          continue;
+        }
+
+        const auto referenced_name = StripSurroundingQuotes(directive.value);
+        if (referenced_name.empty()) continue;
+
+        std::vector<const RelationshipResourceEntry*> matches;
+        for (const auto& entry : resource_entries) {
+          if (!entry.resource) continue;
+          if (entry.resource->type != metadata_it->second.related_resource_type) continue;
+          if (NormalizeDirectiveNameForComparison(
+                  StripSurroundingQuotes(entry.resource->name))
+              != NormalizeDirectiveNameForComparison(referenced_name)) {
+            continue;
+          }
+          matches.push_back(&entry);
+        }
+
+        std::string daemon_target_node_id;
+        std::string daemon_target_label;
+        if (metadata_it->second.related_resource_type == "client" && file_daemon
+            && NormalizeDirectiveNameForComparison(file_daemon->configured_name)
+                   == NormalizeDirectiveNameForComparison(referenced_name)) {
+          daemon_target_node_id = file_daemon->id;
+          daemon_target_label = file_daemon->name;
+        } else if (metadata_it->second.related_resource_type == "storage"
+                   && storage_daemon
+                   && NormalizeDirectiveNameForComparison(
+                          storage_daemon->configured_name)
+                          == NormalizeDirectiveNameForComparison(referenced_name)) {
+          daemon_target_node_id = storage_daemon->id;
+          daemon_target_label = storage_daemon->name;
+        } else if (metadata_it->second.related_resource_type == "console"
+                   && console_daemon
+                   && NormalizeDirectiveNameForComparison(console_daemon->configured_name)
+                          == NormalizeDirectiveNameForComparison(referenced_name)) {
+          daemon_target_node_id = console_daemon->id;
+          daemon_target_label = console_daemon->name;
+        } else if (metadata_it->second.related_resource_type == "director"
+                   && NormalizeDirectiveNameForComparison(director.name)
+                          == NormalizeDirectiveNameForComparison(referenced_name)) {
+          daemon_target_node_id = director.id;
+          daemon_target_label = director.name;
+        }
+
+        if (!daemon_target_node_id.empty()) {
+          const auto* target_resource
+              = matches.empty() ? nullptr : matches.front()->resource;
+          relationships.push_back({
+              MakeRelationshipId(director_index, relationship_index++),
+              "daemon-name",
+              referenced_name,
+              subject.owner_node_id,
+              subject.owner_label,
+              daemon_target_node_id,
+              daemon_target_label,
+              subject.source_resource.id,
+              subject.source_resource.file_path,
+              target_resource ? target_resource->id : "",
+              target_resource ? target_resource->file_path : "",
+              true,
+              "Directive " + canonical_key + " in " + subject.detail.summary.type
+                  + " " + StripSurroundingQuotes(subject.detail.summary.name)
+                  + " resolves to daemon node " + daemon_target_label + ".",
+          });
+          continue;
+        }
+
+        if (matches.empty()) {
+          relationships.push_back({
+              MakeRelationshipId(director_index, relationship_index++),
+              "resource-name",
+              referenced_name,
+              subject.owner_node_id,
+              subject.owner_label,
+              "",
+              referenced_name,
+              subject.source_resource.id,
+              subject.source_resource.file_path,
+              "",
+              "",
+              false,
+              RelationshipResolutionForReference(subject, "resource-name",
+                                                 canonical_key, referenced_name,
+                                                 nullptr),
+          });
+          continue;
+        }
+
+        for (const auto* match : matches) {
+          const auto relation
+              = IsPrimaryDaemonResourceType(match->owner_kind, match->resource->type)
+                    ? "daemon-name"
+                    : "resource-name";
+          relationships.push_back({
+              MakeRelationshipId(director_index, relationship_index++),
+              relation,
+              referenced_name,
+              subject.owner_node_id,
+              subject.owner_label,
+              match->owner_node_id,
+              RelationshipTargetLabel(*match),
+              subject.source_resource.id,
+              subject.source_resource.file_path,
+              match->resource->id,
+              match->resource->file_path,
+              true,
+              RelationshipResolutionForReference(subject, relation, canonical_key,
+                                                 referenced_name, match),
+          });
+        }
+      }
+    }
+
+    std::vector<const RelationshipSubject*> password_subjects;
+    for (const auto& subject : subjects) {
+      const auto password = StripSurroundingQuotes(
+          ExtractDirectiveValue(subject.detail.directives, "Password"));
+      if (password.empty()) continue;
+      password_subjects.push_back(&subject);
+    }
+    for (size_t left = 0; left < password_subjects.size(); ++left) {
+      const auto left_password = StripSurroundingQuotes(
+          ExtractDirectiveValue(password_subjects[left]->detail.directives, "Password"));
+      for (size_t right = left + 1; right < password_subjects.size(); ++right) {
+        const auto right_password = StripSurroundingQuotes(
+            ExtractDirectiveValue(password_subjects[right]->detail.directives,
+                                  "Password"));
+        if (left_password.empty() || left_password != right_password) continue;
+
+        relationships.push_back({
+            MakeRelationshipId(director_index, relationship_index++),
+            "shared-password",
+            "common password",
+            password_subjects[left]->owner_node_id,
+            password_subjects[left]->owner_label,
+            password_subjects[right]->owner_node_id,
+            password_subjects[right]->owner_label,
+            password_subjects[left]->source_resource.id,
+            password_subjects[left]->source_resource.file_path,
+            password_subjects[right]->source_resource.id,
+            password_subjects[right]->source_resource.file_path,
+            true,
+            "Resources share a common password value.",
         });
       }
     }

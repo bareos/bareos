@@ -310,6 +310,16 @@ struct RenameAwarePreview {
   std::vector<RenameAffectedUpdate> affected_updates;
 };
 
+struct PasswordChange {
+  std::string old_password;
+  std::string new_password;
+};
+
+struct PasswordSourceDetails {
+  ResourceDetail original;
+  ResourceDetail updated;
+};
+
 struct PersistedAffectedUpdate {
   ResourceSummary resource;
   std::string action;
@@ -921,7 +931,8 @@ std::filesystem::path FindConfigRootForPath(const std::filesystem::path& path)
 {
   for (auto current = path; !current.empty();) {
     const auto name = current.filename().string();
-    if (name == "bareos-dir.d" || name == "bareos-fd.d" || name == "bareos-sd.d") {
+    if (name == "bareos-dir.d" || name == "bareos-fd.d" || name == "bareos-sd.d"
+        || name == "bconsole.d") {
       return current.parent_path();
     }
     const auto parent = current.parent_path();
@@ -931,7 +942,7 @@ std::filesystem::path FindConfigRootForPath(const std::filesystem::path& path)
 
   const auto filename = path.filename().string();
   if (filename == "bareos-dir.conf" || filename == "bareos-fd.conf"
-      || filename == "bareos-sd.conf") {
+      || filename == "bareos-sd.conf" || filename == "bconsole.conf") {
     return path.parent_path();
   }
 
@@ -1129,6 +1140,118 @@ std::optional<ResourceDetail> BuildDirectorBlockDetail(
   block_summary.type = "director";
   block_summary.name = StripSurroundingQuotes(match->name);
   return BuildResourceDetail(block_summary, JoinLines(block_lines));
+}
+
+std::optional<ResourceDetail> BuildSyntheticDirectorPasswordDetail(
+    const ResourceSummary& resource,
+    const std::string& director_name,
+    const std::string& password)
+{
+  if (director_name.empty() || password.empty()) return std::nullopt;
+
+  auto summary = resource;
+  summary.type = "director";
+  summary.name = director_name;
+
+  std::ostringstream content;
+  content << "Director {\n"
+          << "  Name = " << director_name << "\n"
+          << "  Password = " << password << "\n"
+          << "}\n";
+  return BuildResourceDetail(summary, content.str());
+}
+
+std::optional<PasswordSourceDetails> BuildConsoleAuthPasswordSourceDetails(
+    const DatacenterSummary& summary,
+    const ResourceDetail& detail,
+    const ResourceEditPreview& preview)
+{
+  const DaemonSummary* daemon = nullptr;
+  const auto* director
+      = FindOwningDirectorForDaemonResource(summary, detail.summary.id, &daemon);
+  if (!director || !daemon || daemon->kind != "console") return std::nullopt;
+
+  const auto director_name = StripSurroundingQuotes(director->name);
+  if (director_name.empty()) return std::nullopt;
+
+  if (detail.summary.type == "console" || detail.summary.type == "user") {
+    const auto old_password = StripSurroundingQuotes(
+        ExtractDirectiveValue(detail.directives, "Password"));
+    const auto new_password = StripSurroundingQuotes(
+        ExtractDirectiveValue(preview.updated_directives, "Password"));
+    if (old_password.empty() || new_password.empty() || old_password == new_password) {
+      return std::nullopt;
+    }
+
+    const auto original = BuildSyntheticDirectorPasswordDetail(
+        detail.summary, director_name, old_password);
+    const auto updated = BuildSyntheticDirectorPasswordDetail(
+        preview.summary, director_name, new_password);
+    if (!original || !updated) return std::nullopt;
+    return PasswordSourceDetails{*original, *updated};
+  }
+
+  if (detail.summary.type != "configuration") return std::nullopt;
+
+  const auto config_stem
+      = StemWithoutExtension(std::filesystem::path(detail.summary.file_path));
+  const auto old_lines = SplitLines(detail.content);
+  const auto new_lines = SplitLines(preview.updated_content);
+  const auto find_changed_password = [&](const std::string& block_name)
+      -> std::optional<PasswordChange> {
+    const auto old_blocks
+        = ParseNamedResourceBlockRanges(detail.content, config_stem, block_name);
+    const auto new_blocks = ParseNamedResourceBlockRanges(preview.updated_content,
+                                                          config_stem, block_name);
+    const auto block_count = std::min(old_blocks.size(), new_blocks.size());
+    for (size_t index = 0; index < block_count; ++index) {
+      const auto& old_block = old_blocks[index];
+      const auto& new_block = new_blocks[index];
+      if (old_block.end_line >= old_lines.size()
+          || new_block.end_line >= new_lines.size()) {
+        continue;
+      }
+
+      const std::vector<std::string> old_block_lines(
+          old_lines.begin() + static_cast<std::ptrdiff_t>(old_block.start_line),
+          old_lines.begin() + static_cast<std::ptrdiff_t>(old_block.end_line + 1));
+      const std::vector<std::string> new_block_lines(
+          new_lines.begin() + static_cast<std::ptrdiff_t>(new_block.start_line),
+          new_lines.begin() + static_cast<std::ptrdiff_t>(new_block.end_line + 1));
+      auto old_summary = detail.summary;
+      old_summary.type = NormalizeDirectiveNameForComparison(block_name);
+      old_summary.name = StripSurroundingQuotes(old_block.name);
+      auto new_summary = preview.summary;
+      new_summary.type = NormalizeDirectiveNameForComparison(block_name);
+      new_summary.name = StripSurroundingQuotes(new_block.name);
+      const auto old_detail = BuildResourceDetail(old_summary, JoinLines(old_block_lines));
+      const auto new_detail = BuildResourceDetail(new_summary, JoinLines(new_block_lines));
+      const auto old_password = StripSurroundingQuotes(
+          ExtractDirectiveValue(old_detail.directives, "Password"));
+      const auto new_password = StripSurroundingQuotes(
+          ExtractDirectiveValue(new_detail.directives, "Password"));
+      if (old_password.empty() || new_password.empty() || old_password == new_password) {
+        continue;
+      }
+      return PasswordChange{old_password, new_password};
+    }
+    return std::nullopt;
+  };
+
+  for (const auto& block_name : std::array<std::string, 3>{"Director", "Console",
+                                                           "User"}) {
+    const auto changed_password = find_changed_password(block_name);
+    if (!changed_password) continue;
+
+    const auto original = BuildSyntheticDirectorPasswordDetail(
+        detail.summary, director_name, changed_password->old_password);
+    const auto updated = BuildSyntheticDirectorPasswordDetail(
+        preview.summary, director_name, changed_password->new_password);
+    if (!original || !updated) return std::nullopt;
+    return PasswordSourceDetails{*original, *updated};
+  }
+
+  return std::nullopt;
 }
 
 bool HasValidationErrors(const std::vector<ValidationMessage>& messages)
@@ -1534,7 +1657,6 @@ std::vector<ResourceSummary> FindConsoleConfigurationDirectorTargets(
       for (const auto& daemon : director.daemons) {
         if (daemon.kind != "console") continue;
         for (const auto& resource : daemon.resources) {
-          if (resource.id == detail.summary.id) continue;
           if (resource.type != "configuration") continue;
           const auto blocks = ParseNamedResourceBlockRanges(
               std::filesystem::path(resource.file_path), "Director");
@@ -2038,8 +2160,26 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
     result.preview.updated_validation_messages.push_back(std::move(warning));
   }
 
-  const auto& source_password_detail = source_director_detail;
-  const auto& updated_password_detail = updated_director_detail;
+  std::optional<ResourceDetail> console_source_password_detail;
+  std::optional<ResourceDetail> console_updated_password_detail;
+  if (detail.summary.type == "configuration" || detail.summary.type == "console"
+      || detail.summary.type == "user") {
+    const auto console_password_source
+        = BuildConsoleAuthPasswordSourceDetails(model, detail, result.preview);
+    if (console_password_source) {
+      console_source_password_detail = console_password_source->original;
+      console_updated_password_detail = console_password_source->updated;
+    }
+  }
+
+  const ResourceDetail* source_password_detail
+      = console_source_password_detail
+            ? &*console_source_password_detail
+            : (source_director_detail ? &*source_director_detail : nullptr);
+  const ResourceDetail* updated_password_detail
+      = console_updated_password_detail
+            ? &*console_updated_password_detail
+            : (updated_director_detail ? &*updated_director_detail : nullptr);
   const auto& password_source_directives
       = source_password_detail ? source_password_detail->directives
                                : detail.directives;

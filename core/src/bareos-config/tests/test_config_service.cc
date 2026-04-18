@@ -268,6 +268,76 @@ TEST(BareosConfigService, ReturnsConsoleRelationships)
             std::string::npos);
 }
 
+TEST(BareosConfigService, ReturnsGenericReferenceAndSharedPasswordRelationships)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/fileset");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/job");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::filesystem::create_directories(root.path() / "bconsole.d/user");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-sd.conf")
+      << "Storage {\n  Name = example-sd\n}\n";
+  const auto fileset_path = root.path() / "bareos-dir.d/fileset/SelfTest.conf";
+  const auto job_path = root.path() / "bareos-dir.d/job/example-job.conf";
+  const auto console_path = root.path() / "bconsole.d/console/admin.conf";
+  const auto user_path = root.path() / "bconsole.d/user/api.conf";
+  std::ofstream(root.path() / "bareos-dir.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n  Password = secret\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/client/example-fd.conf")
+      << "Client {\n  Name = example-fd\n  Address = 10.0.0.10\n  Password = secret\n}\n";
+  std::ofstream(fileset_path)
+      << "FileSet {\n  Name = SelfTest\n  Include {\n    Options {}\n  }\n}\n";
+  std::ofstream(job_path)
+      << "Job {\n"
+      << "  Name = BackupClient\n"
+      << "  Client = example-fd\n"
+      << "  FileSet = SelfTest\n"
+      << "  Storage = example-sd\n"
+      << "}\n";
+  std::ofstream(root.path() / "bareos-dir.d/storage/example-sd.conf")
+      << "Storage {\n"
+      << "  Name = example-sd\n"
+      << "  Address = 10.0.0.20\n"
+      << "  Device = tape-drive-0\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(root.path() / "bareos-sd.d/device/tape.conf")
+      << "Device {\n  Name = tape-drive-0\n  ArchiveDevice = /tmp/tape\n  MediaType = File\n}\n";
+  std::ofstream(root.path() / "bconsole.conf")
+      << "Director {\n  Name = bareos-dir\n  Password = secret\n}\n"
+      << "Console {\n  Password = secret\n}\n";
+  std::ofstream(console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
+  std::ofstream(user_path)
+      << "User {\n  Name = api\n  Password = secret\n}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "GET", "/api/v1/nodes/director-0/relationships", "", ""};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find("\"relation\":\"daemon-name\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"relation\":\"resource-name\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"relation\":\"shared-password\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"endpoint_name\":\"example-fd\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"endpoint_name\":\"SelfTest\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find(fileset_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(console_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(user_path.string()), std::string::npos);
+}
+
 TEST(BareosConfigService, ReturnsNewAutochangerEditorPayloadForStorageDaemon)
 {
   TempConfigRoot root;
@@ -1332,6 +1402,114 @@ TEST(BareosConfigService,
   };
 
   EXPECT_NE(read_file(director_config_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(fd_director_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(sd_director_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(console_config_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(console_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_NE(read_file(user_path).find("Password = newersecret"),
+            std::string::npos);
+  EXPECT_EQ(read_file(console_config_path).find("Password = secret"),
+            std::string::npos);
+}
+
+TEST(BareosConfigService,
+     SavesUpdatedBconsoleConfigPasswordAndUpdatesDirectorAuthResources)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::filesystem::create_directories(root.path() / "bconsole.d/user");
+  const auto director_path = root.path() / "bareos-dir.d/director/bareos-dir.conf";
+  const auto fd_director_path = root.path() / "bareos-fd.d/director/bareos-dir.conf";
+  const auto sd_director_path = root.path() / "bareos-sd.d/director/bareos-dir.conf";
+  const auto console_config_path = root.path() / "bconsole.conf";
+  const auto console_path = root.path() / "bconsole.d/console/admin.conf";
+  const auto user_path = root.path() / "bconsole.d/user/api.conf";
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(fd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(sd_director_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_config_path)
+      << "Director {\n"
+      << "  Name = bareos-dir\n"
+      << "  Password = secret\n"
+      << "}\n"
+      << "Console {\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
+  std::ofstream(user_path)
+      << "User {\n  Name = api\n  Password = secret\n}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].daemons[2].resources.begin(),
+      model.directors[0].daemons[2].resources.end(),
+      [&console_config_path](const ResourceSummary& summary) {
+        return summary.type == "configuration"
+               && summary.file_path == console_config_path.string();
+      });
+  ASSERT_NE(resource, model.directors[0].daemons[2].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "POST",
+      "/api/v1/resources/" + resource->id + "/save",
+      "text/plain; charset=utf-8",
+      "Director {\n"
+      "  Name = bareos-dir\n"
+      "  Password = secret\n"
+      "}\n"
+      "Console {\n"
+      "  Password = newersecret\n"
+      "}\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200) << response.body;
+  EXPECT_NE(response.body.find("\"saved\":true"), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(director_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(fd_director_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(sd_director_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(console_config_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(console_path.string()), std::string::npos)
+      << response.body;
+  EXPECT_NE(response.body.find(user_path.string()), std::string::npos)
+      << response.body;
+
+  const auto read_file = [](const std::filesystem::path& path) {
+    std::ifstream input(path);
+    std::ostringstream output;
+    output << input.rdbuf();
+    return output.str();
+  };
+
+  EXPECT_NE(read_file(director_path).find("Password = newersecret"),
             std::string::npos);
   EXPECT_NE(read_file(fd_director_path).find("Password = newersecret"),
             std::string::npos);

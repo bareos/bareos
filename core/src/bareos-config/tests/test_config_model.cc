@@ -20,6 +20,7 @@
  */
 #include "config_model.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -181,6 +182,98 @@ TEST(BareosConfigModel, UsesDirectorConfigStemEvenWithOtherNames)
   ASSERT_EQ(summary.directors.size(), 1U);
   EXPECT_EQ(summary.directors[0].name, "bareos-dir");
   EXPECT_EQ(summary.tree.children[0].label, "bareos-dir");
+}
+
+TEST(BareosConfigModel, DetectsGenericReferenceAndSharedPasswordRelationships)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/fileset");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/job");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::filesystem::create_directories(root.path() / "bconsole.d/user");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-sd.conf")
+      << "Storage {\n  Name = example-sd\n}\n";
+  const auto director_path = root.path() / "bareos-dir.d/director/bareos-dir.conf";
+  const auto client_path = root.path() / "bareos-dir.d/client/example-fd.conf";
+  const auto fileset_path = root.path() / "bareos-dir.d/fileset/SelfTest.conf";
+  const auto job_path = root.path() / "bareos-dir.d/job/example-job.conf";
+  const auto storage_path = root.path() / "bareos-dir.d/storage/example-sd.conf";
+  const auto console_path = root.path() / "bconsole.d/console/admin.conf";
+  const auto user_path = root.path() / "bconsole.d/user/api.conf";
+  std::ofstream(director_path)
+      << "Director {\n  Name = bareos-dir\n  Password = secret\n}\n";
+  std::ofstream(client_path)
+      << "Client {\n  Name = example-fd\n  Address = 10.0.0.10\n  Password = secret\n}\n";
+  std::ofstream(fileset_path)
+      << "FileSet {\n  Name = SelfTest\n  Include {\n    Options {}\n  }\n}\n";
+  std::ofstream(job_path)
+      << "Job {\n"
+      << "  Name = BackupClient\n"
+      << "  Client = example-fd\n"
+      << "  FileSet = SelfTest\n"
+      << "  Storage = example-sd\n"
+      << "}\n";
+  std::ofstream(storage_path)
+      << "Storage {\n"
+      << "  Name = example-sd\n"
+      << "  Address = 10.0.0.20\n"
+      << "  Device = tape-drive-0\n"
+      << "  Password = secret\n"
+      << "}\n";
+  std::ofstream(root.path() / "bareos-sd.d/device/tape.conf")
+      << "Device {\n  Name = tape-drive-0\n  ArchiveDevice = /tmp/tape\n  MediaType = File\n}\n";
+  std::ofstream(root.path() / "bconsole.conf")
+      << "Director {\n  Name = bareos-dir\n  Password = secret\n}\n"
+      << "Console {\n  Password = secret\n}\n";
+  std::ofstream(console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
+  std::ofstream(user_path)
+      << "User {\n  Name = api\n  Password = secret\n}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+  const auto relationships = FindRelationshipsForNode(summary, "director-0");
+
+  const auto daemon_name_relationship = std::find_if(
+      relationships.begin(), relationships.end(),
+      [&job_path](const RelationshipSummary& relationship) {
+        return relationship.relation == "daemon-name"
+               && relationship.source_resource_path == job_path.string()
+               && relationship.endpoint_name == "example-fd"
+               && relationship.to_node_id == "daemon-0-file-daemon";
+      });
+  ASSERT_NE(daemon_name_relationship, relationships.end());
+
+  const auto resource_name_relationship = std::find_if(
+      relationships.begin(), relationships.end(),
+      [&job_path, &fileset_path](const RelationshipSummary& relationship) {
+        return relationship.relation == "resource-name"
+               && relationship.source_resource_path == job_path.string()
+               && relationship.endpoint_name == "SelfTest"
+               && relationship.target_resource_path == fileset_path.string();
+      });
+  ASSERT_NE(resource_name_relationship, relationships.end());
+
+  const auto shared_password_relationship = std::find_if(
+      relationships.begin(), relationships.end(),
+      [&director_path, &console_path, &user_path](const RelationshipSummary& relationship) {
+        if (relationship.relation != "shared-password") return false;
+        const auto source_path = relationship.source_resource_path;
+        const auto target_path = relationship.target_resource_path;
+        return (source_path == director_path.string()
+                && (target_path == console_path.string()
+                    || target_path == user_path.string()))
+               || (target_path == director_path.string()
+                   && (source_path == console_path.string()
+                       || source_path == user_path.string()));
+      });
+  ASSERT_NE(shared_password_relationship, relationships.end());
 }
 
 TEST(BareosConfigModel, UsesDirectorDirectoryStemWithoutMainConfig)
