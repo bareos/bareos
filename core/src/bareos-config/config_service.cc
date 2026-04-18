@@ -3412,6 +3412,72 @@ std::string BuildIndexHtml()
     .validation-list li { padding: 8px 10px; border-radius: 10px; margin-bottom: 8px; }
      .validation-list li.warning { background: #fff5d6; color: #8a6200; }
      .validation-list li.error { background: #fde7ea; color: #a12638; }
+     .relationship-view { display: grid; gap: 16px; }
+     .relationship-graph-card {
+        border: 1px solid #d8eaf6;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #f8fcff 0%, #f2f8fc 100%);
+        padding: 10px 12px;
+      }
+      .relationship-graph-card h5 {
+        margin: 0 0 4px;
+        color: var(--setup-primary);
+        font-size: 0.92rem;
+      }
+       .relationship-graph {
+         width: 100%;
+         overflow-x: auto;
+         margin-top: 8px;
+       }
+       .relationship-graph svg {
+         display: block;
+         width: auto;
+         max-width: 100%;
+          height: auto;
+        }
+       .relationship-graph-note {
+         margin-top: 6px;
+       }
+       .relationship-graph-list {
+         display: flex;
+         flex-wrap: wrap;
+         gap: 6px;
+         margin-top: 6px;
+       }
+       .relationship-graph-node-link {
+         margin-top: 0;
+         padding: 4px 8px;
+         border: 1px solid #d8eaf6;
+         border-radius: 999px;
+         background: rgba(255, 255, 255, 0.9);
+         color: var(--setup-primary);
+         box-shadow: none;
+         font-size: 0.83rem;
+       }
+       .relationship-legend {
+         display: flex;
+         flex-wrap: wrap;
+         gap: 6px;
+        margin-top: 8px;
+      }
+      .relationship-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.82);
+        border: 1px solid #d8eaf6;
+        font-size: 0.8rem;
+        color: var(--setup-text);
+      }
+       .relationship-chip-swatch {
+         width: 8px;
+         height: 8px;
+         border-radius: 999px;
+         flex: 0 0 8px;
+       }
+      .table-scroll { overflow-x: auto; }
      table { width: 100%; border-collapse: collapse; margin: 12px 0; background: #fbfdff; border-radius: 10px; overflow: hidden; }
      th, td { padding: 10px; border-bottom: 1px solid #e7edf3; text-align: left; vertical-align: top; }
      th { background: #f2f8fc; color: var(--setup-primary); font-weight: 700; }
@@ -3859,24 +3925,532 @@ std::string BuildIndexHtml()
       attachRelationshipActions();
     }
 
-    function renderRelationships(relationships) {
-      if (!relationships || !relationships.length) {
-        return '<div class="muted">No daemon relationships discovered for this node yet.</div>';
+    function relationshipColor(relation) {
+      switch ((relation || '').toLowerCase()) {
+        case 'daemon-name':
+          return '#0075be';
+        case 'resource-name':
+          return '#3f8f5c';
+        case 'shared-password':
+          return '#f5a623';
+        case 'client':
+          return '#0075be';
+        case 'storage':
+          return '#8a55d7';
+        default:
+          return '#5a6773';
+      }
+    }
+
+    function truncateGraphLabel(value, limit = 26) {
+      if (!value) {
+        return '-';
+      }
+      if (value.length <= limit) {
+        return value;
+      }
+      return `${value.slice(0, Math.max(limit - 1, 1))}\u2026`;
+    }
+
+    function resourceDisplayLabel(type, name, fallback) {
+      const normalizedType = `${type || ''}`.trim();
+      const normalizedName = `${name || ''}`.trim();
+      if (normalizedType && normalizedName) {
+        return `${normalizedType} ${normalizedName}`;
+      }
+      if (normalizedType) {
+        return normalizedType;
+      }
+      if (normalizedName) {
+        return normalizedName;
+      }
+      return fallback || 'unresolved';
+    }
+
+    function graphResourceTypeLabel(type) {
+      const normalizedType = `${type || ''}`.trim().toLowerCase();
+      const labels = {
+        'autochanger': 'Autochanger',
+        'client': 'Client',
+        'configuration': 'Configuration',
+        'console': 'Console',
+        'device': 'Device',
+        'director': 'Director',
+        'file-daemon': 'FileDaemon',
+        'fileset': 'FileSet',
+        'job': 'Job',
+        'jobdefs': 'JobDefs',
+        'messages': 'Messages',
+        'pool': 'Pool',
+        'profile': 'Profile',
+        'schedule': 'Schedule',
+        'storage': 'Storage',
+        'user': 'User',
+      };
+      if (labels[normalizedType]) {
+        return labels[normalizedType];
+      }
+      return normalizedType
+        ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1)
+        : '';
+    }
+
+    function graphResourceLabelParts(type, name, fallback) {
+      const normalizedName = `${name || ''}`.trim();
+      const typeLabel = graphResourceTypeLabel(type);
+      if (typeLabel && normalizedName) {
+        return {
+          typeLabel,
+          nameLabel: normalizedName,
+          fullLabel: `${typeLabel} ${normalizedName}`,
+        };
+      }
+      if (typeLabel) {
+        return {
+          typeLabel,
+          nameLabel: '',
+          fullLabel: typeLabel,
+        };
+      }
+      return {
+        typeLabel: '',
+        nameLabel: '',
+        fullLabel: fallback || 'unresolved',
+      };
+    }
+
+    function isInternalRelationship(relationship) {
+      const fromNodeId = `${relationship.from_node_id || ''}`.trim();
+      const toNodeId = `${relationship.to_node_id || ''}`.trim();
+      const sourcePath = `${relationship.source_resource_path || ''}`.trim();
+      const targetPath = `${relationship.target_resource_path || ''}`.trim();
+      const relationshipPathDomain = (path) => {
+        if (!path) {
+          return '';
+        }
+        if (path.includes('/bareos-dir.d/') || path.endsWith('/bareos-dir.conf')) {
+          return 'director';
+        }
+        if (path.includes('/bareos-sd.d/') || path.endsWith('/bareos-sd.conf')) {
+          return 'storage-daemon';
+        }
+        if (path.includes('/bareos-fd.d/') || path.endsWith('/bareos-fd.conf')) {
+          return 'file-daemon';
+        }
+        if (path.includes('/bconsole.d/') || path.endsWith('/bconsole.conf')) {
+          return 'console';
+        }
+        return '';
+      };
+      const sourceDomain = relationshipPathDomain(sourcePath);
+      const targetDomain = relationshipPathDomain(targetPath);
+      if (sourceDomain && targetDomain && sourceDomain !== targetDomain) {
+        return false;
+      }
+      if (fromNodeId && toNodeId) {
+        return fromNodeId === toNodeId;
+      }
+      if (sourceDomain && targetDomain) {
+        return sourceDomain === targetDomain;
       }
 
-        return `<table>
+      return Boolean(sourcePath && targetPath && sourcePath === targetPath);
+    }
+
+    function renderRelationshipGraph(relationships, options = {}) {
+      const title = options.title || 'Graph view';
+      const description = options.description
+        || 'Each daemon or director definition appears once as an object. The nested rows are the concrete config resources participating in relationships, with the resource type and name styled differently, and the arrows show which resource links to which other resource.';
+      const emptyMessage = options.emptyMessage || 'No relationships discovered for this graph.';
+      const graphId = `${options.graphId || 'relationships'}`
+        .replace(/[^a-z0-9_-]+/gi, '-')
+        .toLowerCase();
+      const markerId = `relationship-arrow-${graphId}`;
+      if (!relationships || !relationships.length) {
+        return `<div class="relationship-graph-card">
+          <h5>${escapeHtml(title)}</h5>
+          <div class="muted">${escapeHtml(description)}</div>
+          <div class="muted">${escapeHtml(emptyMessage)}</div>
+        </div>`;
+      }
+
+      const legendCounts = [];
+      const objectIndex = new Map();
+      const objects = [];
+      const ensureObject = (key, label, options = {}) => {
+        if (!objectIndex.has(key)) {
+          const object = {
+            key,
+            label: label || '-',
+            nodeId: options.nodeId || '',
+            unresolved: Boolean(options.unresolved),
+            resourceIndex: new Map(),
+            resources: [],
+          };
+          objectIndex.set(key, object);
+          objects.push(object);
+        }
+        return objectIndex.get(key);
+      };
+      const ensureResource = (object, key, label, path, options = {}) => {
+        if (!object.resourceIndex.has(key)) {
+          const resource = {
+            key,
+            label,
+            path,
+            resourceId: options.resourceId || '',
+            typeLabel: options.typeLabel || '',
+            nameLabel: options.nameLabel || '',
+            incoming: 0,
+            outgoing: 0,
+          };
+          object.resourceIndex.set(key, resource);
+          object.resources.push(resource);
+        }
+        return object.resourceIndex.get(key);
+      };
+      const objectKeyForRelationshipEnd = (nodeId, label, unresolvedPrefix) =>
+        nodeId ? `node:${nodeId}` : `${unresolvedPrefix}:${label || '-'}`;
+
+      relationships.forEach((relationship) => {
+        const relation = relationship.relation || 'other';
+        const existing = legendCounts.find((entry) => entry.relation === relation);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          legendCounts.push({ relation, count: 1 });
+        }
+
+        const sourceLabel = relationship.from_label || '-';
+        const targetLabel = relationship.to_label || relationship.endpoint_name || '-';
+        const sourceObject = ensureObject(
+          objectKeyForRelationshipEnd(relationship.from_node_id, sourceLabel, 'source'),
+          sourceLabel,
+          { nodeId: relationship.from_node_id },
+        );
+        const targetObject = ensureObject(
+          objectKeyForRelationshipEnd(relationship.to_node_id, targetLabel, 'unresolved'),
+          targetLabel,
+          {
+            nodeId: relationship.to_node_id,
+            unresolved: !relationship.to_node_id,
+          },
+        );
+
+        const sourceResourceLabel = graphResourceLabelParts(
+          relationship.source_resource_type,
+          relationship.source_resource_name,
+          relationship.endpoint_name || relationship.relation || 'source',
+        );
+        const sourceResource = ensureResource(
+          sourceObject,
+          relationship.source_resource_id || `source:${relationship.source_resource_path || ''}:${relationship.relation}:${relationship.endpoint_name || ''}`,
+          sourceResourceLabel.fullLabel,
+          relationship.source_resource_path || '',
+          {
+            resourceId: relationship.source_resource_id,
+            typeLabel: sourceResourceLabel.typeLabel,
+            nameLabel: sourceResourceLabel.nameLabel,
+          },
+        );
+        const targetResourceLabel = graphResourceLabelParts(
+          relationship.target_resource_type,
+          relationship.target_resource_name,
+          targetLabel || relationship.endpoint_name || relationship.relation || 'target',
+        );
+        const targetResource = ensureResource(
+          targetObject,
+          relationship.target_resource_id || `target:${relationship.target_resource_path || ''}:${relationship.relation}:${targetLabel}`,
+          targetResourceLabel.fullLabel,
+          relationship.target_resource_path || '',
+          {
+            resourceId: relationship.target_resource_id,
+            typeLabel: targetResourceLabel.typeLabel,
+            nameLabel: targetResourceLabel.nameLabel,
+          },
+        );
+        sourceResource.outgoing += 1;
+        targetResource.incoming += 1;
+        relationship._graphSourceObjectKey = sourceObject.key;
+        relationship._graphTargetObjectKey = targetObject.key;
+        relationship._graphSourceResourceKey = sourceResource.key;
+        relationship._graphTargetResourceKey = targetResource.key;
+      });
+
+      objects.forEach((object) => {
+        object.resources.sort((left, right) =>
+          left.label.localeCompare(right.label),
+        );
+        object.column = object.nodeId && object.nodeId.startsWith('director-') ? 0 : 1;
+      });
+
+      const objectWidth = 208;
+      const headerHeight = 40;
+      const resourceRowHeight = 20;
+      const objectPaddingTop = 8;
+      const objectPaddingBottom = 8;
+      const topPadding = 30;
+      const portInset = 10;
+      objects.forEach((object) => {
+        object.height = objectPaddingTop + headerHeight
+          + (object.resources.length * resourceRowHeight) + objectPaddingBottom;
+      });
+
+      const columnGap = 92;
+      const verticalGap = 14;
+      const graphPaddingX = 18;
+      const columns = [0, 1].map((column) =>
+        objects
+          .filter((object) => object.column === column)
+          .sort((left, right) => left.label.localeCompare(right.label)),
+      );
+      const visibleColumns = [0, 1].filter((column) => columns[column].length > 0);
+      const graphWidth = visibleColumns.length === 1
+        ? 244
+        : graphPaddingX * 2 + objectWidth * 2 + columnGap;
+      const columnX = {
+        0: visibleColumns.length === 1
+          ? Math.max((graphWidth - objectWidth) / 2, graphPaddingX)
+          : graphPaddingX,
+        1: visibleColumns.length === 1
+          ? Math.max((graphWidth - objectWidth) / 2, graphPaddingX)
+          : graphPaddingX + objectWidth + columnGap,
+      };
+      const columnHeight = Math.max(
+        ...columns.map((entries) =>
+          entries.reduce((sum, object) => sum + object.height, 0)
+          + Math.max(entries.length - 1, 0) * verticalGap,
+        ),
+        1,
+      );
+      const centerOffset = (entries) => {
+        const entriesHeight = entries.reduce((sum, object) => sum + object.height, 0)
+          + Math.max(entries.length - 1, 0) * verticalGap;
+        return topPadding + Math.max((columnHeight - entriesHeight) / 2, 0);
+      };
+      let maxObjectHeight = 0;
+      visibleColumns.forEach((column) => {
+        let currentY = centerOffset(columns[column]);
+        columns[column].forEach((object) => {
+          object.x = columnX[column];
+          object.y = currentY;
+          object.resources.forEach((resource, index) => {
+            resource.y = object.y + objectPaddingTop + headerHeight
+              + (index * resourceRowHeight) + (resourceRowHeight / 2);
+          });
+          currentY += object.height + verticalGap;
+          maxObjectHeight = Math.max(maxObjectHeight, object.height);
+        });
+      });
+
+      const directedCounts = new Map();
+      relationships.forEach((relationship) => {
+        const key = `${relationship._graphSourceObjectKey}:${relationship._graphSourceResourceKey}->${relationship._graphTargetObjectKey}:${relationship._graphTargetResourceKey}`;
+        directedCounts.set(key, (directedCounts.get(key) || 0) + 1);
+      });
+      const directedSeen = new Map();
+
+      const edgeMarkup = relationships.map((relationship) => {
+        const sourceObject = objectIndex.get(relationship._graphSourceObjectKey);
+        const targetObject = objectIndex.get(relationship._graphTargetObjectKey);
+        const sourceResource = sourceObject?.resourceIndex.get(relationship._graphSourceResourceKey);
+        const targetResource = targetObject?.resourceIndex.get(relationship._graphTargetResourceKey);
+        if (!sourceObject || !targetObject || !sourceResource || !targetResource) {
+          return '';
+        }
+
+        const sameObject = sourceObject.key === targetObject.key;
+        const forward = sourceObject.x <= targetObject.x;
+        const startX = sameObject
+          ? sourceObject.x + objectWidth - portInset
+          : sourceObject.x + (forward ? objectWidth - portInset : portInset);
+        const endX = sameObject
+          ? targetObject.x + objectWidth - portInset
+          : targetObject.x + (forward ? portInset : objectWidth - portInset);
+        const startY = sourceResource.y;
+        const endY = targetResource.y;
+        const pairKey = `${relationship._graphSourceObjectKey}:${relationship._graphSourceResourceKey}->${relationship._graphTargetObjectKey}:${relationship._graphTargetResourceKey}`;
+        const reverseKey = `${relationship._graphTargetObjectKey}:${relationship._graphTargetResourceKey}->${relationship._graphSourceObjectKey}:${relationship._graphSourceResourceKey}`;
+        const pairCount = directedCounts.get(pairKey) || 1;
+        const pairIndex = directedSeen.get(pairKey) || 0;
+        directedSeen.set(pairKey, pairIndex + 1);
+        const reverseCount = directedCounts.get(reverseKey) || 0;
+        const laneOffset = (pairIndex - ((pairCount - 1) / 2)) * 8;
+        const stroke = relationshipColor(relationship.relation);
+        const title = `${relationship.from_label || '-'} → ${relationship.to_label || relationship.endpoint_name || '-'} (${relationship.relation || 'related'})${relationship.resolution ? ` — ${relationship.resolution}` : ''}`;
+        if (sameObject) {
+          const loopX = sourceObject.x + objectWidth + 30 + Math.abs(laneOffset);
+          const controlY1 = startY + laneOffset - 10;
+          const controlY2 = endY + laneOffset + 10;
+          return `<path d="M ${startX} ${startY} C ${loopX} ${controlY1}, ${loopX} ${controlY2}, ${endX} ${endY}"
+            fill="none"
+            stroke="${stroke}"
+            stroke-width="2.1"
+            stroke-linecap="round"
+            ${relationship.resolved ? '' : 'stroke-dasharray="7 6"'}
+            opacity="${relationship.resolved ? '0.92' : '0.72'}"
+            marker-end="url(#${markerId})">
+            <title>${escapeHtml(title)}</title>
+          </path>`;
+        }
+
+        const bendOffset = laneOffset + (reverseCount ? (forward ? -18 : 18) : 0);
+        const deltaX = endX - startX;
+        const controlX1 = startX + (deltaX * 0.3);
+        const controlX2 = startX + (deltaX * 0.7);
+        const controlY1 = startY + bendOffset;
+        const controlY2 = endY + bendOffset;
+        return `<path d="M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}"
+            fill="none"
+            stroke="${stroke}"
+            stroke-width="2.1"
+            stroke-linecap="round"
+            ${relationship.resolved ? '' : 'stroke-dasharray="7 6"'}
+            opacity="${relationship.resolved ? '0.92' : '0.72'}"
+            marker-end="url(#${markerId})">
+            <title>${escapeHtml(title)}</title>
+          </path>`;
+      }).join('');
+
+      const objectFill = (object) => {
+        if (object.unresolved) return '#fff6f6';
+        return '#ffffff';
+      };
+      const objectStroke = (object) => {
+        if (object.unresolved) return '#e2b6b6';
+        return '#8fc5e6';
+      };
+      const resourceFill = (resource) => {
+        if (resource.incoming > 0 && resource.outgoing > 0) return '#fff2d8';
+        if (resource.outgoing > 0) return '#e8f4fc';
+        return '#f5f7fa';
+      };
+      const resourceStroke = (resource) => {
+        if (resource.incoming > 0 && resource.outgoing > 0) return '#f0c36a';
+        if (resource.outgoing > 0) return '#8fc5e6';
+        return '#d3dde6';
+      };
+
+      const objectMarkup = objects.map((object) => `
+        <g transform="translate(${object.x}, ${object.y})">
+          <rect width="${objectWidth}" height="${object.height}" rx="10"
+            fill="${objectFill(object)}"
+            stroke="${objectStroke(object)}"
+            stroke-width="1.3"></rect>
+          <text x="10" y="18" fill="#22303c" font-size="12" font-weight="700">${escapeHtml(truncateGraphLabel(object.label, 22))}</text>
+          <text x="10" y="32" fill="#5a6773" font-size="9">${escapeHtml(object.unresolved ? 'unresolved object' : 'daemon / definition object')}</text>
+          ${object.resources.map((resource, resourceIndex) => {
+            const rowTop = objectPaddingTop + headerHeight + (resourceIndex * resourceRowHeight);
+            const typeLabel = truncateGraphLabel((resource.typeLabel || '').toUpperCase(), 10);
+            const nameLabel = truncateGraphLabel(resource.nameLabel, 14);
+            const fallbackLabel = truncateGraphLabel(resource.label, 21);
+            return `<g transform="translate(8, ${rowTop})">
+              <rect width="${objectWidth - 16}" height="${resourceRowHeight - 3}" rx="6"
+                fill="${resourceFill(resource)}"
+                stroke="${resourceStroke(resource)}"
+                stroke-width="1.1"></rect>
+              <text x="8" y="12" fill="#22303c" font-size="10">${resource.typeLabel
+                  ? `<tspan font-size="8" font-weight="700" letter-spacing="0.8" fill="#2b6b8f">${escapeHtml(typeLabel)}</tspan>${resource.nameLabel
+                      ? `<tspan dx="6" font-size="10.5" font-style="italic" font-weight="500" fill="#22303c">${escapeHtml(nameLabel)}</tspan>`
+                      : ''}`
+                  : `<tspan font-weight="600">${escapeHtml(fallbackLabel)}</tspan>`}</text>
+              ${resource.incoming > 0 ? `<circle cx="3" cy="${(resourceRowHeight - 3) / 2}" r="2.7" fill="${resourceStroke(resource)}"></circle>` : ''}
+              ${resource.outgoing > 0 ? `<circle cx="${objectWidth - 19}" cy="${(resourceRowHeight - 3) / 2}" r="2.7" fill="${resourceStroke(resource)}"></circle>` : ''}
+              <title>${escapeHtml(resource.label)}${resource.path ? ` — ${resource.path}` : ''}</title>
+            </g>`;
+          }).join('')}
+          <title>${escapeHtml(object.label)}</title>
+        </g>`).join('');
+
+      const graphHeight = topPadding + columnHeight + 24;
+      const clickableNodes = objects
+        .filter((object) => object.nodeId)
+        .sort((left, right) => left.label.localeCompare(right.label));
+
+      return `<div class="relationship-graph-card">
+        <h5>${escapeHtml(title)}</h5>
+        <div class="muted">${escapeHtml(description)} The table below stays the detailed source of truth.</div>
+        <div class="relationship-graph">
+          <svg width="${graphWidth}" height="${graphHeight}" viewBox="0 0 ${graphWidth} ${graphHeight}" role="img" aria-label="Relationship graph">
+            <defs>
+              <marker id="${markerId}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"></path>
+              </marker>
+            </defs>
+            ${edgeMarkup}
+            ${objectMarkup}
+          </svg>
+        </div>
+        ${clickableNodes.length ? `<div class="relationship-graph-note muted">Jump to resolved node</div>
+        <div class="relationship-graph-list">${clickableNodes.map((node) => `
+          <button class="relationship-node relationship-graph-node-link" data-node-id="${escapeHtml(node.nodeId)}">${escapeHtml(node.label)}</button>`).join('')}</div>` : ''}
+        <div class="relationship-legend">${legendCounts.map((entry) => `
+          <span class="relationship-chip">
+            <span class="relationship-chip-swatch" style="background:${relationshipColor(entry.relation)}"></span>
+            ${escapeHtml(entry.relation)} · ${entry.count}
+          </span>`).join('')}</div>
+      </div>`;
+    }
+
+    function renderRelationshipsTable(relationships) {
+      const visibleRelationships = relationships.filter(
+        (relationship) => `${relationship.target_resource_path || ''}`.trim(),
+      );
+      const relationshipResourceLabel = (relationship, side) => {
+        const type = `${relationship[`${side}_resource_type`] || ''}`.trim();
+        const name = `${relationship[`${side}_resource_name`] || ''}`.trim();
+        if (type && name) {
+          return `${type} ${name}`;
+        }
+        if (type) {
+          return type;
+        }
+        if (name) {
+          return name;
+        }
+        return '-';
+      };
+      const sortedRelationships = [...visibleRelationships].sort((left, right) => {
+        const fromComparison = `${left.from_label || ''}`.localeCompare(
+          `${right.from_label || ''}`,
+          undefined,
+          { sensitivity: 'base' },
+        );
+        if (fromComparison !== 0) {
+          return fromComparison;
+        }
+        const toComparison = `${left.to_label || ''}`.localeCompare(
+          `${right.to_label || ''}`,
+          undefined,
+          { sensitivity: 'base' },
+        );
+        if (toComparison !== 0) {
+          return toComparison;
+        }
+        return `${left.relation || ''}`.localeCompare(
+          `${right.relation || ''}`,
+          undefined,
+          { sensitivity: 'base' },
+        );
+      });
+      const renderRelationshipTableSection = (title, sectionRelationships, emptyMessage) => `
+        <div class="relationship-table-section">
+          <h5>${escapeHtml(title)}</h5>
+          ${sectionRelationships.length ? `<div class="table-scroll"><table>
         <thead>
           <tr>
             <th>From</th>
             <th>To</th>
             <th>Relation</th>
             <th>Endpoint</th>
-            <th>Resolution</th>
             <th>Source resource</th>
+            <th>Source defined in</th>
             <th>Target resource</th>
+            <th>Target defined in</th>
+            <th>Resolution</th>
           </tr>
         </thead>
-        <tbody>${relationships.map((relationship) => `
+        <tbody>${sectionRelationships.map((relationship) => `
           <tr>
             <td>${relationship.from_node_id
                 ? `<button class="link-button relationship-node" data-node-id="${escapeHtml(relationship.from_node_id)}">${escapeHtml(relationship.from_label)}</button>`
@@ -3886,15 +4460,71 @@ std::string BuildIndexHtml()
                 : escapeHtml(relationship.to_label)}</td>
             <td>${escapeHtml(relationship.relation)}${relationship.resolved ? '' : ' (unresolved)'}</td>
             <td>${escapeHtml(relationship.endpoint_name || '-')}</td>
-            <td><small>${escapeHtml(relationship.resolution || '-')}</small></td>
+            <td>${relationship.source_resource_id
+                ? `<button class="link-button relationship-resource" data-resource-id="${escapeHtml(relationship.source_resource_id)}">${escapeHtml(relationshipResourceLabel(relationship, 'source'))}</button>`
+                : escapeHtml(relationshipResourceLabel(relationship, 'source'))}</td>
             <td>${relationship.source_resource_id
                 ? `<button class="link-button relationship-resource" data-resource-id="${escapeHtml(relationship.source_resource_id)}"><small>${escapeHtml(relationship.source_resource_path || '-')}</small></button>`
                 : `<small>${escapeHtml(relationship.source_resource_path || '-')}</small>`}</td>
             <td>${relationship.target_resource_id
+                ? `<button class="link-button relationship-resource" data-resource-id="${escapeHtml(relationship.target_resource_id)}">${escapeHtml(relationshipResourceLabel(relationship, 'target'))}</button>`
+                : escapeHtml(relationshipResourceLabel(relationship, 'target'))}</td>
+            <td>${relationship.target_resource_id
                 ? `<button class="link-button relationship-resource" data-resource-id="${escapeHtml(relationship.target_resource_id)}"><small>${escapeHtml(relationship.target_resource_path || '-')}</small></button>`
                 : `<small>${escapeHtml(relationship.target_resource_path || '-')}</small>`}</td>
+            <td><small>${escapeHtml(relationship.resolution || '-')}</small></td>
           </tr>`).join('')}</tbody>
-      </table>`;
+      </table></div>` : `<div class="muted">${escapeHtml(emptyMessage)}</div>`}
+        </div>`;
+
+      const internalRelationships = sortedRelationships.filter((relationship) =>
+        isInternalRelationship(relationship),
+      );
+      const crossEntityRelationships = sortedRelationships.filter(
+        (relationship) => !isInternalRelationship(relationship),
+      );
+
+      return `${renderRelationshipTableSection(
+        'Internal relations',
+        internalRelationships,
+        'No internal relations discovered for this node.',
+      )}${renderRelationshipTableSection(
+        'Relations between entities',
+        crossEntityRelationships,
+        'No cross-entity relations discovered for this node.',
+      )}`;
+    }
+
+    function renderRelationships(relationships) {
+      const visibleRelationships = (relationships || []).filter(
+        (relationship) => `${relationship.target_resource_path || ''}`.trim(),
+      );
+      if (!visibleRelationships.length) {
+        return '<div class="muted">No resolved resource relationships discovered for this node yet.</div>';
+      }
+
+      const internalRelationships = visibleRelationships.filter((relationship) =>
+        isInternalRelationship(relationship),
+      );
+      const crossEntityRelationships = visibleRelationships.filter(
+        (relationship) => !isInternalRelationship(relationship),
+      );
+
+      return `<div class="relationship-view">
+        ${renderRelationshipGraph(internalRelationships, {
+          title: 'Internal relations graph',
+          description: 'This graph shows only relations that stay inside the same entity or configuration object. The nested rows are resource entries with the type and name styled separately so you can quickly distinguish what kind of resource is being referenced.',
+          emptyMessage: 'No internal relations discovered for this node.',
+          graphId: 'internal',
+        })}
+        ${renderRelationshipGraph(crossEntityRelationships, {
+          title: 'Relations between entities graph',
+          description: 'This graph shows only relations that connect one entity or configuration object to another. The nested rows are resource entries with the type and name styled separately, so you can see exactly which resource in one configuration links to which resource in another configuration.',
+          emptyMessage: 'No cross-entity relations discovered for this node.',
+          graphId: 'cross-entity',
+        })}
+        ${renderRelationshipsTable(visibleRelationships)}
+      </div>`;
     }
 
     function attachRelationshipActions() {

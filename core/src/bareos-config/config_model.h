@@ -126,8 +126,12 @@ struct RelationshipSummary {
   std::string to_label;
   std::string source_resource_id;
   std::string source_resource_path;
+  std::string source_resource_type;
+  std::string source_resource_name;
   std::string target_resource_id;
   std::string target_resource_path;
+  std::string target_resource_type;
+  std::string target_resource_name;
   bool resolved = false;
   std::string resolution;
 };

@@ -1341,10 +1341,18 @@ void AppendJsonRelationshipArray(
            << JsonString(relationship.source_resource_id) << ","
            << "\"source_resource_path\":"
            << JsonString(relationship.source_resource_path) << ","
+           << "\"source_resource_type\":"
+           << JsonString(relationship.source_resource_type) << ","
+           << "\"source_resource_name\":"
+           << JsonString(relationship.source_resource_name) << ","
            << "\"target_resource_id\":"
            << JsonString(relationship.target_resource_id) << ","
            << "\"target_resource_path\":"
            << JsonString(relationship.target_resource_path) << ","
+           << "\"target_resource_type\":"
+           << JsonString(relationship.target_resource_type) << ","
+           << "\"target_resource_name\":"
+           << JsonString(relationship.target_resource_name) << ","
            << "\"resolved\":" << JsonBool(relationship.resolved) << ","
            << "\"resolution\":"
            << JsonString(relationship.resolution) << "}";
@@ -1594,6 +1602,11 @@ std::string FindConsoleDirectorReference(const DaemonSummary& console_daemon)
       configuration->file_path, "Director", "Name"));
 }
 
+bool HasNamedResourceDirective(const ResourceDetail& detail, const std::string& key)
+{
+  return !StripSurroundingQuotes(ExtractDirectiveValue(detail.directives, key)).empty();
+}
+
 struct RelationshipResourceEntry {
   const ResourceSummary* resource = nullptr;
   std::string owner_node_id;
@@ -1634,6 +1647,11 @@ bool IsPrimaryDaemonResourceType(const std::string& owner_kind,
   if (owner_kind == "storage-daemon") return resource_type == "storage";
   if (owner_kind == "console") return resource_type == "console";
   return false;
+}
+
+bool IsOwnerScopedRelationshipType(const std::string& resource_type)
+{
+  return resource_type == "messages";
 }
 
 std::vector<RelationshipSubject> CollectRelationshipSubjects(
@@ -1696,6 +1714,12 @@ std::string RelationshipTargetLabel(const RelationshipResourceEntry& target)
   return StripSurroundingQuotes(target.resource->name);
 }
 
+std::string RelationshipResourceDisplayName(const ResourceSummary& resource)
+{
+  const auto name = StripSurroundingQuotes(resource.name);
+  return name.empty() ? resource.type : name;
+}
+
 std::string RelationshipResolutionForReference(
     const RelationshipSubject& source,
     const std::string& relation,
@@ -1736,6 +1760,27 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
         = FindDirectorDaemonByKind(director, "storage-daemon");
     const auto* console_daemon = FindDirectorDaemonByKind(director, "console");
     size_t relationship_index = 0;
+    const auto director_resource = std::find_if(
+        director.resources.begin(), director.resources.end(),
+        [&director](const ResourceSummary& candidate) {
+          return candidate.type == "director"
+                 && NormalizeDirectiveNameForComparison(
+                        StripSurroundingQuotes(candidate.name))
+                        == NormalizeDirectiveNameForComparison(director.name);
+        });
+    const auto find_named_resource = [](const DaemonSummary* daemon,
+                                        const std::string& resource_type,
+                                        const std::string& resource_name) {
+      return daemon ? std::find_if(
+                          daemon->resources.begin(), daemon->resources.end(),
+                          [&resource_type, &resource_name](const ResourceSummary& candidate) {
+                            return candidate.type == resource_type
+                                   && NormalizeDirectiveNameForComparison(
+                                          StripSurroundingQuotes(candidate.name))
+                                          == NormalizeDirectiveNameForComparison(resource_name);
+                          })
+                    : std::vector<ResourceSummary>::const_iterator{};
+    };
 
     for (const auto& resource : director.resources) {
       const bool is_client = resource.type == "client";
@@ -1743,63 +1788,33 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
       if (!is_client && !is_storage) continue;
 
       const auto* target = is_client ? file_daemon : storage_daemon;
-      std::string to_node_id;
-      std::string to_label;
-      std::string resolution;
-      bool resolved = false;
-
-      if (is_client
-          && (!target
-              || StripSurroundingQuotes(target->configured_name)
-                     != StripSurroundingQuotes(resource.name))) {
-        to_node_id = MakeKnownClientNodeId(director_index, resource.name);
-        to_label = StripSurroundingQuotes(resource.name);
-        resolved = true;
-        if (!target) {
-          resolution = "Resolved to known remote client " + to_label
-                       + " from the director configuration.";
-        } else if (target->configured_name.empty()) {
-          resolution = "Resolved to known remote client " + to_label
-                       + " because the parsed local file-daemon node has no configured Name directive to match.";
-        } else {
-          resolution = "Resolved to known remote client " + to_label
-                       + " because the parsed local file-daemon name "
-                       + StripSurroundingQuotes(target->configured_name)
-                       + " does not match.";
-        }
-      } else if (!target) {
-        to_label = is_client ? "unresolved file-daemon"
-                             : "unresolved storage-daemon";
-        resolution = is_client
-                         ? "No parsed local file-daemon node is available for this client reference yet."
-                         : "No parsed local storage-daemon node is available for this storage reference yet.";
-      } else if (target->configured_name.empty()) {
-        to_node_id = target->id;
-        to_label = target->name;
-        resolved = true;
-        resolution = "Parsed local " + target->kind + " node " + target->name
-                     + " is linked, but no configured Name directive was found to compare with endpoint "
-                     + resource.name + ".";
-      } else if (target->configured_name != resource.name) {
-        to_node_id = target->id;
-        to_label = target->name;
-        resolved = true;
-        resolution = "Resolved to parsed local " + target->kind + " node "
-                     + target->name + ", but its configured name "
-                     + target->configured_name + " does not match endpoint "
-                     + resource.name + ".";
-      } else {
-        to_node_id = target->id;
-        to_label = target->name;
-        resolved = true;
-        resolution = "Resolved to parsed local " + target->kind + " node "
-                     + target->name + " with configured name "
-                     + target->configured_name + ".";
+      const auto target_resource = is_client
+                                       ? find_named_resource(target, "client",
+                                                             StripSurroundingQuotes(resource.name))
+                                       : find_named_resource(target, "storage",
+                                                             StripSurroundingQuotes(resource.name));
+      if (!target || target_resource == target->resources.end()
+          || target->configured_name.empty()
+          || NormalizeDirectiveNameForComparison(target->configured_name)
+                 != NormalizeDirectiveNameForComparison(resource.name)) {
+        continue;
       }
+
+      const auto to_node_id = target->id;
+      const auto to_label = target->name;
+      const auto target_resource_id = target_resource->id;
+      const auto target_resource_path = target_resource->file_path;
+      const auto target_resource_type = target_resource->type;
+      const auto target_resource_name
+          = StripSurroundingQuotes(target_resource->name);
+      const auto resolution = "Resolved to "
+                              + std::string(is_client ? "client" : "storage")
+                              + " resource " + target_resource->name + " in "
+                              + target->name + ".";
 
       relationships.push_back({
           MakeRelationshipId(director_index, relationship_index++),
-          is_client ? "client" : "storage",
+          is_client ? "resource-name" : "storage",
           resource.name,
           director.id,
           director.name,
@@ -1807,11 +1822,71 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
           to_label,
           resource.id,
           resource.file_path,
-          "",
-          "",
-          resolved,
+          resource.type,
+          RelationshipResourceDisplayName(resource),
+          target_resource_id,
+          target_resource_path,
+          target_resource_type,
+          target_resource_name,
+          true,
           resolution,
       });
+
+      if (is_client && director_resource != director.resources.end()) {
+        const auto client_director_resource
+            = find_named_resource(target, "director", director.name);
+        if (client_director_resource != target->resources.end()) {
+          relationships.push_back({
+              MakeRelationshipId(director_index, relationship_index++),
+              "resource-name",
+              director.name,
+              target->id,
+              target->name,
+              director.id,
+              director.name,
+              client_director_resource->id,
+              client_director_resource->file_path,
+              client_director_resource->type,
+              RelationshipResourceDisplayName(*client_director_resource),
+              director_resource->id,
+              director_resource->file_path,
+              director_resource->type,
+              RelationshipResourceDisplayName(*director_resource),
+              true,
+              "Resolved to director resource "
+                  + director_resource->name + " from the client director resource "
+                  + client_director_resource->name + ".",
+          });
+        }
+      }
+
+      if (is_storage && director_resource != director.resources.end()) {
+        const auto storage_director_resource
+            = find_named_resource(target, "director", director.name);
+        if (storage_director_resource != target->resources.end()) {
+          relationships.push_back({
+              MakeRelationshipId(director_index, relationship_index++),
+              "resource-name",
+              director.name,
+              target->id,
+              target->name,
+              director.id,
+              director.name,
+              storage_director_resource->id,
+              storage_director_resource->file_path,
+              storage_director_resource->type,
+              RelationshipResourceDisplayName(*storage_director_resource),
+              director_resource->id,
+              director_resource->file_path,
+              director_resource->type,
+              RelationshipResourceDisplayName(*director_resource),
+              true,
+              "Resolved to director resource "
+                  + director_resource->name + " from the storage director resource "
+                  + storage_director_resource->name + ".",
+          });
+        }
+      }
 
       if (!is_storage || !target) continue;
 
@@ -1830,21 +1905,7 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
                      && StripSurroundingQuotes(candidate.name) == device_name;
             });
 
-        std::string target_resource_id;
-        std::string target_resource_path;
-        std::string device_resolution;
-        bool device_resolved = false;
-        if (device_resource == target->resources.end()) {
-          device_resolution = "No parsed local device resource named "
-                              + device_name
-                              + " is available for this storage reference yet.";
-        } else {
-          target_resource_id = device_resource->id;
-          target_resource_path = device_resource->file_path;
-          device_resolved = true;
-          device_resolution = "Resolved to storage-daemon device resource "
-                              + device_resource->name + ".";
-        }
+        if (device_resource == target->resources.end()) continue;
 
         relationships.push_back({
             MakeRelationshipId(director_index, relationship_index++),
@@ -1856,43 +1917,180 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
             target->name,
             resource.id,
             resource.file_path,
-            target_resource_id,
-            target_resource_path,
-            device_resolved,
-            device_resolution,
+            resource.type,
+            RelationshipResourceDisplayName(resource),
+            device_resource->id,
+            device_resource->file_path,
+            device_resource->type,
+            RelationshipResourceDisplayName(*device_resource),
+            true,
+            "Resolved to storage-daemon device resource "
+                + device_resource->name + ".",
         });
       }
     }
 
     if (console_daemon) {
+      const auto find_console_subject
+          = [&subjects](const std::string& resource_type, const std::string& resource_name) {
+              return std::find_if(
+                  subjects.begin(), subjects.end(),
+                  [&resource_type, &resource_name](const RelationshipSubject& subject) {
+                    return subject.owner_kind == "console"
+                           && subject.detail.summary.type == resource_type
+                           && NormalizeDirectiveNameForComparison(
+                                  StripSurroundingQuotes(subject.detail.summary.name))
+                                  == NormalizeDirectiveNameForComparison(resource_name);
+                  });
+            };
+      const auto has_named_console_subject = [&subjects]() {
+        return std::any_of(
+            subjects.begin(), subjects.end(),
+            [](const RelationshipSubject& subject) {
+              return subject.owner_kind == "console"
+                     && subject.detail.summary.type == "console"
+                     && HasNamedResourceDirective(subject.detail, "Name");
+            });
+      };
+
       const auto referenced_director = FindConsoleDirectorReference(*console_daemon);
       if (!referenced_director.empty()) {
+        const auto console_director_subject
+            = find_console_subject("director", referenced_director);
         const auto target_resource = std::find_if(
             director.resources.begin(), director.resources.end(),
             [&referenced_director](const ResourceSummary& resource) {
               return resource.type == "director"
-                     && StripSurroundingQuotes(resource.name) == referenced_director;
+                     && NormalizeDirectiveNameForComparison(
+                            StripSurroundingQuotes(resource.name))
+                            == NormalizeDirectiveNameForComparison(referenced_director);
             });
-        const bool resolved = StripSurroundingQuotes(director.name) == referenced_director;
+        if (console_director_subject != subjects.end()
+            && target_resource != director.resources.end()) {
+          relationships.push_back({
+              MakeRelationshipId(director_index, relationship_index++),
+              "resource-name",
+              referenced_director,
+              console_daemon->id,
+              console_daemon->name,
+              director.id,
+              director.name,
+              console_director_subject->source_resource.id,
+              console_director_subject->source_resource.file_path,
+              console_director_subject->detail.summary.type,
+              RelationshipResourceDisplayName(console_director_subject->detail.summary),
+              target_resource->id,
+              target_resource->file_path,
+              target_resource->type,
+              RelationshipResourceDisplayName(*target_resource),
+              true,
+              "Resolved to director resource "
+                  + RelationshipResourceDisplayName(*target_resource)
+                  + " from the bconsole Director resource "
+                  + RelationshipResourceDisplayName(console_director_subject->detail.summary)
+                  + ".",
+          });
+
+          if (!has_named_console_subject()) {
+            const auto bconsole_password = StripSurroundingQuotes(
+                ExtractDirectiveValue(console_director_subject->detail.directives,
+                                      "Password"));
+            const auto director_password = StripSurroundingQuotes(
+                ExtractDirectiveFromNamedBlock(target_resource->file_path, "Director",
+                                               "Password"));
+            if (!bconsole_password.empty() && bconsole_password == director_password) {
+              relationships.push_back({
+                  MakeRelationshipId(director_index, relationship_index++),
+                  "shared-password",
+                  "common password",
+                  console_daemon->id,
+                  console_daemon->name,
+                  director.id,
+                  director.name,
+                  console_director_subject->source_resource.id,
+                  console_director_subject->source_resource.file_path,
+                  console_director_subject->detail.summary.type,
+                  RelationshipResourceDisplayName(console_director_subject->detail.summary),
+                  target_resource->id,
+                  target_resource->file_path,
+                  target_resource->type,
+                  RelationshipResourceDisplayName(*target_resource),
+                  true,
+                  "The default bconsole authentication uses the same password as "
+                  "the director resource.",
+              });
+            }
+          }
+        }
+      }
+
+      for (const auto& subject : subjects) {
+        if (subject.owner_kind != "console" || subject.detail.summary.type != "console"
+            || !HasNamedResourceDirective(subject.detail, "Name")) {
+          continue;
+        }
+
+        const auto console_name = StripSurroundingQuotes(subject.detail.summary.name);
+        const auto target_resource = std::find_if(
+            director.resources.begin(), director.resources.end(),
+            [&console_name](const ResourceSummary& resource) {
+              return resource.type == "console"
+                     && NormalizeDirectiveNameForComparison(
+                            StripSurroundingQuotes(resource.name))
+                            == NormalizeDirectiveNameForComparison(console_name);
+            });
+        if (target_resource == director.resources.end()) continue;
+
         relationships.push_back({
             MakeRelationshipId(director_index, relationship_index++),
-            "director",
-            referenced_director,
+            "resource-name",
+            console_name,
             console_daemon->id,
             console_daemon->name,
-            resolved ? director.id : "",
-            resolved ? director.name : referenced_director,
-            console_daemon->resources.empty() ? "" : console_daemon->resources.front().id,
-            console_daemon->resources.empty() ? "" : console_daemon->resources.front().file_path,
-            target_resource != director.resources.end() ? target_resource->id : "",
-            target_resource != director.resources.end() ? target_resource->file_path : "",
-            resolved,
-            resolved ? "Resolved to director node " + director.name
-                         + " from the bconsole Director configuration."
-                     : "Configured bconsole director " + referenced_director
-                           + " does not match discovered director node "
-                           + director.name + ".",
+            director.id,
+            director.name,
+            subject.source_resource.id,
+            subject.source_resource.file_path,
+            subject.detail.summary.type,
+            RelationshipResourceDisplayName(subject.detail.summary),
+            target_resource->id,
+            target_resource->file_path,
+            target_resource->type,
+            RelationshipResourceDisplayName(*target_resource),
+            true,
+            "Resolved to director console resource "
+                + RelationshipResourceDisplayName(*target_resource)
+                + " from the bconsole Console resource "
+                + RelationshipResourceDisplayName(subject.detail.summary) + ".",
         });
+
+        const auto console_password = StripSurroundingQuotes(
+            ExtractDirectiveValue(subject.detail.directives, "Password"));
+        const auto director_console_password = StripSurroundingQuotes(
+            ExtractDirectiveFromNamedBlock(target_resource->file_path, "Console",
+                                           "Password"));
+        if (!console_password.empty() && console_password == director_console_password) {
+          relationships.push_back({
+              MakeRelationshipId(director_index, relationship_index++),
+              "shared-password",
+              "common password",
+              console_daemon->id,
+              console_daemon->name,
+              director.id,
+              director.name,
+              subject.source_resource.id,
+              subject.source_resource.file_path,
+              subject.detail.summary.type,
+              RelationshipResourceDisplayName(subject.detail.summary),
+              target_resource->id,
+              target_resource->file_path,
+              target_resource->type,
+              RelationshipResourceDisplayName(*target_resource),
+              true,
+              "The bconsole Console resource and the director Console resource "
+              "share the authentication password.",
+          });
+        }
       }
     }
 
@@ -1923,6 +2121,16 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
         for (const auto& entry : resource_entries) {
           if (!entry.resource) continue;
           if (entry.resource->type != metadata_it->second.related_resource_type) continue;
+          if (subject.owner_kind == "director"
+              && (metadata_it->second.related_resource_type == "client"
+                  || metadata_it->second.related_resource_type == "storage")
+              && entry.owner_kind != "director") {
+            continue;
+          }
+          if (IsOwnerScopedRelationshipType(metadata_it->second.related_resource_type)
+              && entry.owner_node_id != subject.owner_node_id) {
+            continue;
+          }
           if (NormalizeDirectiveNameForComparison(
                   StripSurroundingQuotes(entry.resource->name))
               != NormalizeDirectiveNameForComparison(referenced_name)) {
@@ -1931,76 +2139,7 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
           matches.push_back(&entry);
         }
 
-        std::string daemon_target_node_id;
-        std::string daemon_target_label;
-        if (metadata_it->second.related_resource_type == "client" && file_daemon
-            && NormalizeDirectiveNameForComparison(file_daemon->configured_name)
-                   == NormalizeDirectiveNameForComparison(referenced_name)) {
-          daemon_target_node_id = file_daemon->id;
-          daemon_target_label = file_daemon->name;
-        } else if (metadata_it->second.related_resource_type == "storage"
-                   && storage_daemon
-                   && NormalizeDirectiveNameForComparison(
-                          storage_daemon->configured_name)
-                          == NormalizeDirectiveNameForComparison(referenced_name)) {
-          daemon_target_node_id = storage_daemon->id;
-          daemon_target_label = storage_daemon->name;
-        } else if (metadata_it->second.related_resource_type == "console"
-                   && console_daemon
-                   && NormalizeDirectiveNameForComparison(console_daemon->configured_name)
-                          == NormalizeDirectiveNameForComparison(referenced_name)) {
-          daemon_target_node_id = console_daemon->id;
-          daemon_target_label = console_daemon->name;
-        } else if (metadata_it->second.related_resource_type == "director"
-                   && NormalizeDirectiveNameForComparison(director.name)
-                          == NormalizeDirectiveNameForComparison(referenced_name)) {
-          daemon_target_node_id = director.id;
-          daemon_target_label = director.name;
-        }
-
-        if (!daemon_target_node_id.empty()) {
-          const auto* target_resource
-              = matches.empty() ? nullptr : matches.front()->resource;
-          relationships.push_back({
-              MakeRelationshipId(director_index, relationship_index++),
-              "daemon-name",
-              referenced_name,
-              subject.owner_node_id,
-              subject.owner_label,
-              daemon_target_node_id,
-              daemon_target_label,
-              subject.source_resource.id,
-              subject.source_resource.file_path,
-              target_resource ? target_resource->id : "",
-              target_resource ? target_resource->file_path : "",
-              true,
-              "Directive " + canonical_key + " in " + subject.detail.summary.type
-                  + " " + StripSurroundingQuotes(subject.detail.summary.name)
-                  + " resolves to daemon node " + daemon_target_label + ".",
-          });
-          continue;
-        }
-
-        if (matches.empty()) {
-          relationships.push_back({
-              MakeRelationshipId(director_index, relationship_index++),
-              "resource-name",
-              referenced_name,
-              subject.owner_node_id,
-              subject.owner_label,
-              "",
-              referenced_name,
-              subject.source_resource.id,
-              subject.source_resource.file_path,
-              "",
-              "",
-              false,
-              RelationshipResolutionForReference(subject, "resource-name",
-                                                 canonical_key, referenced_name,
-                                                 nullptr),
-          });
-          continue;
-        }
+        if (matches.empty()) continue;
 
         for (const auto* match : matches) {
           const auto relation
@@ -2017,8 +2156,12 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
               RelationshipTargetLabel(*match),
               subject.source_resource.id,
               subject.source_resource.file_path,
+              subject.detail.summary.type,
+              RelationshipResourceDisplayName(subject.detail.summary),
               match->resource->id,
               match->resource->file_path,
+              match->resource->type,
+              RelationshipResourceDisplayName(*match->resource),
               true,
               RelationshipResolutionForReference(subject, relation, canonical_key,
                                                  referenced_name, match),
@@ -2042,6 +2185,10 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
             ExtractDirectiveValue(password_subjects[right]->detail.directives,
                                   "Password"));
         if (left_password.empty() || left_password != right_password) continue;
+        if (password_subjects[left]->owner_kind == "console"
+            || password_subjects[right]->owner_kind == "console") {
+          continue;
+        }
 
         relationships.push_back({
             MakeRelationshipId(director_index, relationship_index++),
@@ -2053,8 +2200,12 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
             password_subjects[right]->owner_label,
             password_subjects[left]->source_resource.id,
             password_subjects[left]->source_resource.file_path,
+            password_subjects[left]->detail.summary.type,
+            RelationshipResourceDisplayName(password_subjects[left]->detail.summary),
             password_subjects[right]->source_resource.id,
             password_subjects[right]->source_resource.file_path,
+            password_subjects[right]->detail.summary.type,
+            RelationshipResourceDisplayName(password_subjects[right]->detail.summary),
             true,
             "Resources share a common password value.",
         });

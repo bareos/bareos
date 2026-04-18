@@ -187,6 +187,7 @@ TEST(BareosConfigService, ExposesCreatableStorageDaemonResourceTypes)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/storage");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   std::ofstream(root.path() / "bareos-sd.conf")
@@ -242,15 +243,20 @@ TEST(BareosConfigService, ReturnsConsoleRelationships)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/console");
   std::filesystem::create_directories(root.path() / "bconsole.d/console");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   std::ofstream(root.path() / "bareos-dir.d/director/bareos-dir.conf")
       << "Director {\n  Name = bareos-dir\n}\n";
+  const auto director_console_path = root.path() / "bareos-dir.d/console/admin.conf";
+  std::ofstream(director_console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
   std::ofstream(root.path() / "bconsole.conf")
       << "Director {\n  Name = bareos-dir\n}\n"
       << "Console {\n  Name = admin\n}\n";
-  std::ofstream(root.path() / "bconsole.d/console/admin.conf")
-      << "Console {\n  Name = admin\n}\n";
+  const auto bconsole_console_path = root.path() / "bconsole.d/console/admin.conf";
+  std::ofstream(bconsole_console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
 
   const ConfigServiceOptions options = MakeServiceOptions(root.path());
   const HttpRequest request{
@@ -259,13 +265,46 @@ TEST(BareosConfigService, ReturnsConsoleRelationships)
   const auto response = HandleConfigServiceRequest(options, request);
 
   EXPECT_EQ(response.status_code, 200);
-  EXPECT_NE(response.body.find("\"relation\":\"director\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"relation\":\"resource-name\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"relation\":\"shared-password\""),
+            std::string::npos);
   EXPECT_NE(response.body.find("\"from_node_id\":\"daemon-0-console\""),
             std::string::npos);
   EXPECT_NE(response.body.find("\"to_node_id\":\"director-0\""),
             std::string::npos);
   EXPECT_NE(response.body.find("\"endpoint_name\":\"bareos-dir\""),
             std::string::npos);
+  EXPECT_NE(response.body.find("\"endpoint_name\":\"admin\""), std::string::npos);
+  EXPECT_NE(response.body.find(bconsole_console_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(director_console_path.string()), std::string::npos);
+}
+
+TEST(BareosConfigService, ReturnsRootConsoleAuthenticationRelationships)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  const auto director_path = root.path() / "bareos-dir.d/director/bareos-dir.conf";
+  const auto bconsole_path = root.path() / "bconsole.conf";
+  std::ofstream(director_path)
+      << "Director {\n  Name = bareos-dir\n  Password = secret\n}\n";
+  std::ofstream(bconsole_path)
+      << "Director {\n  Name = bareos-dir\n  Password = secret\n}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "GET", "/api/v1/nodes/daemon-0-console/relationships", "", ""};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find("\"relation\":\"resource-name\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"relation\":\"shared-password\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"source_resource_type\":\"director\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find(bconsole_path.string()), std::string::npos);
+  EXPECT_NE(response.body.find(director_path.string()), std::string::npos);
 }
 
 TEST(BareosConfigService, ReturnsGenericReferenceAndSharedPasswordRelationships)
@@ -284,13 +323,14 @@ TEST(BareosConfigService, ReturnsGenericReferenceAndSharedPasswordRelationships)
       << "FileDaemon {\n  Name = example-fd\n}\n";
   std::ofstream(root.path() / "bareos-sd.conf")
       << "Storage {\n  Name = example-sd\n}\n";
+  const auto client_path = root.path() / "bareos-dir.d/client/example-fd.conf";
   const auto fileset_path = root.path() / "bareos-dir.d/fileset/SelfTest.conf";
   const auto job_path = root.path() / "bareos-dir.d/job/example-job.conf";
   const auto console_path = root.path() / "bconsole.d/console/admin.conf";
   const auto user_path = root.path() / "bconsole.d/user/api.conf";
   std::ofstream(root.path() / "bareos-dir.d/director/bareos-dir.conf")
       << "Director {\n  Name = bareos-dir\n  Password = secret\n}\n";
-  std::ofstream(root.path() / "bareos-dir.d/client/example-fd.conf")
+  std::ofstream(client_path)
       << "Client {\n  Name = example-fd\n  Address = 10.0.0.10\n  Password = secret\n}\n";
   std::ofstream(fileset_path)
       << "FileSet {\n  Name = SelfTest\n  Include {\n    Options {}\n  }\n}\n";
@@ -325,7 +365,6 @@ TEST(BareosConfigService, ReturnsGenericReferenceAndSharedPasswordRelationships)
   const auto response = HandleConfigServiceRequest(options, request);
 
   EXPECT_EQ(response.status_code, 200);
-  EXPECT_NE(response.body.find("\"relation\":\"daemon-name\""), std::string::npos);
   EXPECT_NE(response.body.find("\"relation\":\"resource-name\""), std::string::npos);
   EXPECT_NE(response.body.find("\"relation\":\"shared-password\""),
             std::string::npos);
@@ -333,9 +372,45 @@ TEST(BareosConfigService, ReturnsGenericReferenceAndSharedPasswordRelationships)
             std::string::npos);
   EXPECT_NE(response.body.find("\"endpoint_name\":\"SelfTest\""),
             std::string::npos);
+  EXPECT_NE(response.body.find(client_path.string()), std::string::npos);
   EXPECT_NE(response.body.find(fileset_path.string()), std::string::npos);
-  EXPECT_NE(response.body.find(console_path.string()), std::string::npos);
-  EXPECT_NE(response.body.find(user_path.string()), std::string::npos);
+  EXPECT_EQ(response.body.find(console_path.string()), std::string::npos);
+  EXPECT_EQ(response.body.find(user_path.string()), std::string::npos);
+}
+
+TEST(BareosConfigService, KeepsMessagesRelationshipsScopedToOwningDaemon)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/jobdefs");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/messages");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/messages");
+  const auto director_messages_path
+      = root.path() / "bareos-dir.d/messages/Standard.conf";
+  const auto file_daemon_messages_path
+      = root.path() / "bareos-fd.d/messages/Standard.conf";
+  std::ofstream(root.path() / "bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = example-fd\n}\n";
+  std::ofstream(director_messages_path)
+      << "Messages {\n  Name = Standard\n}\n";
+  std::ofstream(file_daemon_messages_path)
+      << "Messages {\n  Name = Standard\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/jobdefs/DefaultJob.conf")
+      << "JobDefs {\n  Name = DefaultJob\n  Messages = Standard\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/client/example-fd.conf")
+      << "Client {\n  Name = example-fd\n  Messages = Standard\n}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "GET", "/api/v1/nodes/daemon-0-file-daemon/relationships", "", ""};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find(file_daemon_messages_path.string()), std::string::npos);
+  EXPECT_EQ(response.body.find(director_messages_path.string()), std::string::npos);
 }
 
 TEST(BareosConfigService, ReturnsNewAutochangerEditorPayloadForStorageDaemon)
@@ -428,6 +503,27 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("select[multiple]"),
             std::string::npos);
+  EXPECT_NE(response.body.find("function renderRelationshipGraph(relationships, options = {})"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("class=\"relationship-view\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Internal relations graph"), std::string::npos);
+  EXPECT_NE(response.body.find("Relations between entities graph"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Each daemon or director definition appears once as an object."),
+            std::string::npos);
+  EXPECT_NE(response.body.find("This graph shows only relations that stay inside the same entity"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("This graph shows only relations that connect one entity"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("the arrows show which resource links to which other resource"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function isInternalRelationship(relationship)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("path.includes('/bareos-sd.d/')"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Jump to resolved node"),
+            std::string::npos);
   EXPECT_NE(response.body.find("size=\"${Math.min(Math.max(optionValues.length, 2), 4)}\""),
             std::string::npos);
   EXPECT_NE(response.body.find("rows=\"2\""),
@@ -495,6 +591,15 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
   EXPECT_NE(response.body.find("splitRepeatableFieldValues"),
             std::string::npos);
   EXPECT_NE(response.body.find("getRepeatableFieldValues"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function isInternalRelationship(relationship) {"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Internal relations"), std::string::npos);
+  EXPECT_NE(response.body.find("Relations between entities"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("No internal relations discovered for this node."),
+            std::string::npos);
+  EXPECT_NE(response.body.find("No cross-entity relations discovered for this node."),
             std::string::npos);
   EXPECT_NE(response.body.find("field.datatype === 'RESOURCE_LIST'"),
             std::string::npos);
@@ -783,6 +888,7 @@ TEST(BareosConfigService, ReportsStorageDeviceReferenceImpactsInPreview)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/storage");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   std::ofstream(root.path() / "bareos-sd.conf")
@@ -794,6 +900,12 @@ TEST(BareosConfigService, ReportsStorageDeviceReferenceImpactsInPreview)
       << "  Name = example-sd\n"
       << "  Address = 10.0.0.20\n"
       << "  Password = secret\n"
+      << "  Device = tape-drive-0\n"
+      << "  MediaType = File\n"
+      << "}\n";
+  std::ofstream(root.path() / "bareos-sd.d/storage/example-sd.conf")
+      << "Storage {\n"
+      << "  Name = example-sd\n"
       << "  Device = tape-drive-0\n"
       << "  MediaType = File\n"
       << "}\n";
@@ -836,6 +948,7 @@ TEST(BareosConfigService, ReportsDirectorDeviceRenameImpactsInPreview)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/storage");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   std::ofstream(root.path() / "bareos-sd.conf")
@@ -848,6 +961,12 @@ TEST(BareosConfigService, ReportsDirectorDeviceRenameImpactsInPreview)
       << "  Name = example-sd\n"
       << "  Address = 10.0.0.20\n"
       << "  Password = secret\n"
+      << "  Device = tape-drive-0\n"
+      << "  MediaType = File\n"
+      << "}\n";
+  std::ofstream(root.path() / "bareos-sd.d/storage/example-sd.conf")
+      << "Storage {\n"
+      << "  Name = example-sd\n"
       << "  Device = tape-drive-0\n"
       << "  MediaType = File\n"
       << "}\n";
@@ -1529,6 +1648,7 @@ TEST(BareosConfigService, SavesRenamedStorageDeviceAndUpdatesDirectorStorage)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/storage");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   std::ofstream(root.path() / "bareos-sd.conf")
@@ -1541,6 +1661,12 @@ TEST(BareosConfigService, SavesRenamedStorageDeviceAndUpdatesDirectorStorage)
       << "  Name = example-sd\n"
       << "  Address = 10.0.0.20\n"
       << "  Password = secret\n"
+      << "  Device = tape-drive-0\n"
+      << "  MediaType = File\n"
+      << "}\n";
+  std::ofstream(root.path() / "bareos-sd.d/storage/example-sd.conf")
+      << "Storage {\n"
+      << "  Name = example-sd\n"
       << "  Device = tape-drive-0\n"
       << "  MediaType = File\n"
       << "}\n";
@@ -1597,6 +1723,7 @@ TEST(BareosConfigService, SavesRenamedDirectorDeviceAndUpdatesStorageDaemon)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/storage");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   std::ofstream(root.path() / "bareos-sd.conf")
@@ -1609,6 +1736,12 @@ TEST(BareosConfigService, SavesRenamedDirectorDeviceAndUpdatesStorageDaemon)
       << "  Name = example-sd\n"
       << "  Address = 10.0.0.20\n"
       << "  Password = secret\n"
+      << "  Device = tape-drive-0\n"
+      << "  MediaType = File\n"
+      << "}\n";
+  std::ofstream(root.path() / "bareos-sd.d/storage/example-sd.conf")
+      << "Storage {\n"
+      << "  Name = example-sd\n"
       << "  Device = tape-drive-0\n"
       << "  MediaType = File\n"
       << "}\n";
@@ -2001,6 +2134,10 @@ TEST(BareosConfigService, ReturnsNodeRelationships)
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
   std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/storage");
   std::filesystem::create_directories(root.path() / "bareos-fd.d/fileset");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
@@ -2012,6 +2149,14 @@ TEST(BareosConfigService, ReturnsNodeRelationships)
       << "Client {\n  Name = example-fd\n}\n";
   std::ofstream(root.path() / "bareos-dir.d/storage/not-the-storage-name.conf")
       << "Storage {\n  Name = example-sd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/client/example-fd.conf")
+      << "Client {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(root.path() / "bareos-sd.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(root.path() / "bareos-sd.d/storage/example-sd.conf")
+      << "Storage {\n  Name = example-sd\n}\n";
   std::ofstream(root.path() / "bareos-fd.d/fileset/local.conf") << "FileSet {}\n";
   std::ofstream(root.path() / "bareos-sd.d/device/tape.conf") << "Device {}\n";
 
@@ -2022,8 +2167,7 @@ TEST(BareosConfigService, ReturnsNodeRelationships)
   const auto response = HandleConfigServiceRequest(options, request);
 
   EXPECT_EQ(response.status_code, 200);
-  EXPECT_NE(response.body.find("\"relation\":\"client\""), std::string::npos);
-  EXPECT_NE(response.body.find("\"relation\":\"storage\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"relation\":\"resource-name\""), std::string::npos);
   EXPECT_NE(response.body.find("\"from_node_id\":\"director-0\""),
             std::string::npos);
   EXPECT_NE(response.body.find("\"to_node_id\":\"daemon-0-file-daemon\""),
@@ -2032,7 +2176,17 @@ TEST(BareosConfigService, ReturnsNodeRelationships)
             std::string::npos);
   EXPECT_NE(response.body.find("\"endpoint_name\":\"example-fd\""),
             std::string::npos);
-  EXPECT_NE(response.body.find("\"resolution\":\"Resolved to parsed local file-daemon node bareos-fd with configured name example-fd.\""),
+  EXPECT_NE(response.body.find("\"source_resource_type\":\"client\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"source_resource_name\":\"example-fd\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"target_resource_type\":\"client\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"target_resource_name\":\"example-fd\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find((root.path() / "bareos-fd.d/client/example-fd.conf").string()),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"resolution\":\"Resolved to client resource example-fd in bareos-fd.\""),
             std::string::npos);
 }
 
@@ -2040,6 +2194,7 @@ TEST(BareosConfigService, ReturnsStorageDeviceRelationships)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/storage");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   std::ofstream(root.path() / "bareos-sd.conf")
@@ -2052,6 +2207,12 @@ TEST(BareosConfigService, ReturnsStorageDeviceRelationships)
       << "  Name = example-sd\n"
       << "  Address = 10.0.0.20\n"
       << "  Password = secret\n"
+      << "  Device = tape-drive-0\n"
+      << "  MediaType = File\n"
+      << "}\n";
+  std::ofstream(root.path() / "bareos-sd.d/storage/example-sd.conf")
+      << "Storage {\n"
+      << "  Name = example-sd\n"
       << "  Device = tape-drive-0\n"
       << "  MediaType = File\n"
       << "}\n";
@@ -2076,9 +2237,21 @@ TEST(BareosConfigService, ReturnsStorageDeviceRelationships)
                                + std::string("\"")
                                + director_storage_path.string()),
             std::string::npos);
+  EXPECT_NE(response.body.find("\"source_resource_type\":\"storage\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"source_resource_name\":\"example-sd\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"from_node_id\":\"director-0\""),
+            std::string::npos);
   EXPECT_NE(response.body.find("\"target_resource_path\":"
                                + std::string("\"")
                                + device_path.string()),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"target_resource_type\":\"device\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"target_resource_name\":\"tape-drive-0\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"to_node_id\":\"daemon-0-storage-daemon\""),
             std::string::npos);
   EXPECT_NE(response.body.find("\"target_resource_id\":\"resource-0-storage-daemon"),
             std::string::npos);
@@ -2135,6 +2308,36 @@ TEST(BareosConfigService, ShowsKnownRemoteClientsInDatacenterResources)
                 "\"name\":\"remote-fd generated client config\""),
             std::string::npos);
   EXPECT_NE(node_resources_response.body.find(generated_path.string()),
+            std::string::npos);
+}
+
+TEST(BareosConfigService, OmitsRelationshipsWithoutConcreteTargetResource)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/job");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = different-fd\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/client/example-fd.conf")
+      << "Client {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/job/example-job.conf")
+      << "Job {\n"
+      << "  Name = BackupClient\n"
+      << "  FileSet = MissingFileSet\n"
+      << "}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "GET", "/api/v1/nodes/director-0/relationships", "", ""};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_EQ(response.body.find("\"relation\":"), std::string::npos);
+  EXPECT_EQ(response.body.find("\"endpoint_name\":\"example-fd\""),
+            std::string::npos);
+  EXPECT_EQ(response.body.find("\"endpoint_name\":\"MissingFileSet\""),
             std::string::npos);
 }
 

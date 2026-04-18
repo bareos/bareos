@@ -54,8 +54,13 @@ TEST(BareosConfigModel, DiscoversDirectorAndDaemonResources)
   TempConfigRoot root;
 
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
   std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/device");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/storage");
   std::filesystem::create_directories(root.path() / "bareos-fd.d/fileset");
   std::filesystem::create_directories(root.path() / "bconsole.d/console");
 
@@ -67,10 +72,20 @@ TEST(BareosConfigModel, DiscoversDirectorAndDaemonResources)
   std::ofstream(root.path() / "bconsole.conf")
       << "Director {\n  Name = bareos-dir\n}\n"
       << "Console {\n  Name = admin\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
   std::ofstream(root.path() / "bareos-dir.d/client/example-fd.conf")
-      << "Client {}\n";
+      << "Client {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/client/example-fd.conf")
+      << "Client {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
   std::ofstream(root.path() / "bareos-dir.d/storage/example-sd.conf")
-      << "Storage {}\n";
+      << "Storage {\n  Name = example-sd\n}\n";
+  std::ofstream(root.path() / "bareos-sd.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(root.path() / "bareos-sd.d/storage/example-sd.conf")
+      << "Storage {\n  Name = example-sd\n}\n";
   std::ofstream(root.path() / "bareos-sd.d/device/tape.conf") << "Device {}\n";
   std::ofstream(root.path() / "bareos-fd.d/fileset/local.conf") << "FileSet {}\n";
   std::ofstream(root.path() / "bconsole.d/console/admin.conf")
@@ -90,8 +105,12 @@ TEST(BareosConfigModel, DiscoversDirectorAndDaemonResources)
   EXPECT_EQ(summary.directors[0].daemons[2].configured_name, "admin");
   EXPECT_EQ(summary.directors[0].daemons[0].resources[0].type, "configuration");
   EXPECT_EQ(summary.directors[0].daemons[0].resources[1].type, "device");
+  EXPECT_EQ(summary.directors[0].daemons[0].resources[2].type, "director");
+  EXPECT_EQ(summary.directors[0].daemons[0].resources[3].type, "storage");
   EXPECT_EQ(summary.directors[0].daemons[1].resources[0].type, "configuration");
-  EXPECT_EQ(summary.directors[0].daemons[1].resources[1].type, "fileset");
+  EXPECT_EQ(summary.directors[0].daemons[1].resources[1].type, "client");
+  EXPECT_EQ(summary.directors[0].daemons[1].resources[2].type, "director");
+  EXPECT_EQ(summary.directors[0].daemons[1].resources[3].type, "fileset");
   EXPECT_EQ(summary.directors[0].daemons[2].resources[0].type, "configuration");
   EXPECT_EQ(summary.directors[0].daemons[2].resources[1].type, "console");
   EXPECT_EQ(summary.directors[0].resources[0].id,
@@ -109,7 +128,8 @@ TEST(BareosConfigModel, DiscoversDirectorAndDaemonResources)
   EXPECT_EQ(summary.tree.children[3].id, "daemon-0-console");
   EXPECT_TRUE(summary.tree.children[0].children.empty());
   EXPECT_EQ(summary.tree.children[0].resources[1].type, "client");
-  EXPECT_EQ(summary.tree.children[0].resources[2].type, "storage");
+  EXPECT_EQ(summary.tree.children[0].resources[2].type, "director");
+  EXPECT_EQ(summary.tree.children[0].resources[3].type, "storage");
 
   const auto* director = FindTreeNodeById(summary, "director-0");
   ASSERT_NE(director, nullptr);
@@ -124,19 +144,36 @@ TEST(BareosConfigModel, DiscoversDirectorAndDaemonResources)
 
   const auto director_relationships
       = FindRelationshipsForNode(summary, "director-0");
-  ASSERT_EQ(director_relationships.size(), 3U);
+  ASSERT_EQ(director_relationships.size(), 5U);
   EXPECT_EQ(director_relationships[0].from_node_id, "director-0");
   EXPECT_EQ(director_relationships[0].to_node_id, "daemon-0-file-daemon");
-  EXPECT_EQ(director_relationships[0].relation, "client");
+  EXPECT_EQ(director_relationships[0].relation, "resource-name");
   EXPECT_EQ(director_relationships[0].endpoint_name, "example-fd");
-  EXPECT_NE(director_relationships[0].resolution.find("configured name example-fd"),
+  EXPECT_EQ(director_relationships[0].source_resource_type, "client");
+  EXPECT_EQ(director_relationships[0].source_resource_name, "example-fd");
+  EXPECT_EQ(director_relationships[0].target_resource_type, "client");
+  EXPECT_EQ(director_relationships[0].target_resource_name, "example-fd");
+  EXPECT_EQ(director_relationships[0].target_resource_path,
+            (root.path() / "bareos-fd.d/client/example-fd.conf").string());
+  EXPECT_NE(director_relationships[0].resolution.find("client resource example-fd"),
             std::string::npos);
-  EXPECT_EQ(director_relationships[1].to_node_id, "daemon-0-storage-daemon");
-  EXPECT_EQ(director_relationships[1].relation, "storage");
-  EXPECT_EQ(director_relationships[2].from_node_id, "daemon-0-console");
-  EXPECT_EQ(director_relationships[2].to_node_id, "director-0");
-  EXPECT_EQ(director_relationships[2].relation, "director");
-  EXPECT_EQ(director_relationships[2].endpoint_name, "bareos-dir");
+  EXPECT_EQ(director_relationships[1].from_node_id, "daemon-0-file-daemon");
+  EXPECT_EQ(director_relationships[1].to_node_id, "director-0");
+  EXPECT_EQ(director_relationships[1].relation, "resource-name");
+  EXPECT_EQ(director_relationships[1].endpoint_name, "bareos-dir");
+  EXPECT_EQ(director_relationships[2].to_node_id, "daemon-0-storage-daemon");
+  EXPECT_EQ(director_relationships[2].relation, "storage");
+  EXPECT_EQ(director_relationships[2].source_resource_type, "storage");
+  EXPECT_EQ(director_relationships[2].target_resource_type, "storage");
+  EXPECT_EQ(director_relationships[3].from_node_id, "daemon-0-storage-daemon");
+  EXPECT_EQ(director_relationships[3].to_node_id, "director-0");
+  EXPECT_EQ(director_relationships[3].relation, "resource-name");
+  EXPECT_EQ(director_relationships[4].from_node_id, "daemon-0-console");
+  EXPECT_EQ(director_relationships[4].to_node_id, "director-0");
+  EXPECT_EQ(director_relationships[4].relation, "resource-name");
+  EXPECT_EQ(director_relationships[4].endpoint_name, "bareos-dir");
+  EXPECT_EQ(director_relationships[4].source_resource_type, "director");
+  EXPECT_EQ(director_relationships[4].target_resource_type, "director");
 
   const auto* resource
       = FindResourceById(summary, "resource-0-director-main");
@@ -147,7 +184,7 @@ TEST(BareosConfigModel, DiscoversDirectorAndDaemonResources)
   const auto console_relationships = FindRelationshipsForNode(summary, "daemon-0-console");
   ASSERT_EQ(console_relationships.size(), 1U);
   EXPECT_EQ(console_relationships[0].to_node_id, "director-0");
-  EXPECT_EQ(console_relationships[0].relation, "director");
+  EXPECT_EQ(console_relationships[0].relation, "resource-name");
 }
 
 TEST(BareosConfigModel, UsesDirectorConfigStemAndNormalizesRoot)
@@ -240,15 +277,24 @@ TEST(BareosConfigModel, DetectsGenericReferenceAndSharedPasswordRelationships)
   const auto summary = DiscoverDatacenterSummary({root.path()});
   const auto relationships = FindRelationshipsForNode(summary, "director-0");
 
-  const auto daemon_name_relationship = std::find_if(
+  const auto client_resource_relationship = std::find_if(
       relationships.begin(), relationships.end(),
-      [&job_path](const RelationshipSummary& relationship) {
-        return relationship.relation == "daemon-name"
+      [&job_path, &client_path](const RelationshipSummary& relationship) {
+        return relationship.relation == "resource-name"
                && relationship.source_resource_path == job_path.string()
-               && relationship.endpoint_name == "example-fd"
-               && relationship.to_node_id == "daemon-0-file-daemon";
+                && relationship.endpoint_name == "example-fd"
+               && relationship.target_resource_path == client_path.string();
       });
-  ASSERT_NE(daemon_name_relationship, relationships.end());
+  ASSERT_NE(client_resource_relationship, relationships.end());
+  EXPECT_EQ(client_resource_relationship->to_node_id, "director-0");
+  EXPECT_EQ(std::count_if(
+                relationships.begin(), relationships.end(),
+                [&job_path](const RelationshipSummary& relationship) {
+                  return relationship.relation == "daemon-name"
+                         && relationship.source_resource_path == job_path.string()
+                         && relationship.endpoint_name == "example-fd";
+                }),
+            0);
 
   const auto resource_name_relationship = std::find_if(
       relationships.begin(), relationships.end(),
@@ -262,18 +308,115 @@ TEST(BareosConfigModel, DetectsGenericReferenceAndSharedPasswordRelationships)
 
   const auto shared_password_relationship = std::find_if(
       relationships.begin(), relationships.end(),
-      [&director_path, &console_path, &user_path](const RelationshipSummary& relationship) {
+      [&director_path, &client_path, &storage_path](const RelationshipSummary& relationship) {
         if (relationship.relation != "shared-password") return false;
         const auto source_path = relationship.source_resource_path;
         const auto target_path = relationship.target_resource_path;
         return (source_path == director_path.string()
-                && (target_path == console_path.string()
-                    || target_path == user_path.string()))
+                && (target_path == client_path.string()
+                    || target_path == storage_path.string()))
                || (target_path == director_path.string()
-                   && (source_path == console_path.string()
-                       || source_path == user_path.string()));
+                   && (source_path == client_path.string()
+                       || source_path == storage_path.string()));
       });
   ASSERT_NE(shared_password_relationship, relationships.end());
+}
+
+TEST(BareosConfigModel, BuildsNamedConsoleAuthenticationRelationships)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/console");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  const auto director_path = root.path() / "bareos-dir.d/director/bareos-dir.conf";
+  const auto director_console_path = root.path() / "bareos-dir.d/console/admin.conf";
+  const auto bconsole_path = root.path() / "bconsole.conf";
+  const auto bconsole_console_path = root.path() / "bconsole.d/console/admin.conf";
+  std::ofstream(director_path)
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(director_console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
+  std::ofstream(bconsole_path)
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(bconsole_console_path)
+      << "Console {\n  Name = admin\n  Password = secret\n}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+  const auto relationships = FindRelationshipsForNode(summary, "daemon-0-console");
+
+  const auto director_relationship = std::find_if(
+      relationships.begin(), relationships.end(),
+      [&bconsole_path, &director_path](const RelationshipSummary& relationship) {
+        return relationship.relation == "resource-name"
+               && relationship.source_resource_type == "director"
+               && relationship.source_resource_path == bconsole_path.string()
+               && relationship.target_resource_path == director_path.string();
+      });
+  ASSERT_NE(director_relationship, relationships.end());
+
+  const auto console_relationship = std::find_if(
+      relationships.begin(), relationships.end(),
+      [&bconsole_console_path,
+       &director_console_path](const RelationshipSummary& relationship) {
+        return relationship.relation == "resource-name"
+               && relationship.source_resource_type == "console"
+               && relationship.source_resource_path == bconsole_console_path.string()
+               && relationship.target_resource_path == director_console_path.string();
+      });
+  ASSERT_NE(console_relationship, relationships.end());
+
+  const auto password_relationship = std::find_if(
+      relationships.begin(), relationships.end(),
+      [&bconsole_console_path,
+       &director_console_path](const RelationshipSummary& relationship) {
+        return relationship.relation == "shared-password"
+               && relationship.source_resource_type == "console"
+               && ((relationship.source_resource_path == bconsole_console_path.string()
+                    && relationship.target_resource_path == director_console_path.string())
+                   || (relationship.target_resource_path == bconsole_console_path.string()
+                       && relationship.source_resource_path
+                              == director_console_path.string()));
+      });
+  ASSERT_NE(password_relationship, relationships.end());
+}
+
+TEST(BareosConfigModel, BuildsRootConsoleAuthenticationRelationships)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  const auto director_path = root.path() / "bareos-dir.d/director/bareos-dir.conf";
+  const auto bconsole_path = root.path() / "bconsole.conf";
+  std::ofstream(director_path)
+      << "Director {\n  Name = bareos-dir\n  Password = secret\n}\n";
+  std::ofstream(bconsole_path)
+      << "Director {\n  Name = bareos-dir\n  Password = secret\n}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+  const auto relationships = FindRelationshipsForNode(summary, "daemon-0-console");
+
+  const auto director_relationship = std::find_if(
+      relationships.begin(), relationships.end(),
+      [&bconsole_path, &director_path](const RelationshipSummary& relationship) {
+        return relationship.relation == "resource-name"
+               && relationship.source_resource_type == "director"
+               && relationship.source_resource_path == bconsole_path.string()
+               && relationship.target_resource_path == director_path.string();
+      });
+  ASSERT_NE(director_relationship, relationships.end());
+
+  const auto password_relationship = std::find_if(
+      relationships.begin(), relationships.end(),
+      [&bconsole_path, &director_path](const RelationshipSummary& relationship) {
+        return relationship.relation == "shared-password"
+               && relationship.source_resource_type == "director"
+               && ((relationship.source_resource_path == bconsole_path.string()
+                    && relationship.target_resource_path == director_path.string())
+                   || (relationship.target_resource_path == bconsole_path.string()
+                       && relationship.source_resource_path == director_path.string()));
+      });
+  ASSERT_NE(password_relationship, relationships.end());
 }
 
 TEST(BareosConfigModel, UsesDirectorDirectoryStemWithoutMainConfig)
@@ -291,7 +434,65 @@ TEST(BareosConfigModel, UsesDirectorDirectoryStemWithoutMainConfig)
   EXPECT_EQ(summary.tree.children[0].label, "bareos-dir");
 }
 
-TEST(BareosConfigModel, ShowsKnownRemoteClientWithoutMatchingLocalDaemonName)
+TEST(BareosConfigModel, KeepsMessagesReferencesScopedToOwningDaemon)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/jobdefs");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/messages");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/messages");
+  const auto director_messages_path
+      = root.path() / "bareos-dir.d/messages/Standard.conf";
+  const auto file_daemon_messages_path
+      = root.path() / "bareos-fd.d/messages/Standard.conf";
+  std::ofstream(root.path() / "bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = example-fd\n}\n";
+  std::ofstream(director_messages_path)
+      << "Messages {\n  Name = Standard\n}\n";
+  std::ofstream(file_daemon_messages_path)
+      << "Messages {\n  Name = Standard\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/jobdefs/DefaultJob.conf")
+      << "JobDefs {\n  Name = DefaultJob\n  Messages = Standard\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/client/example-fd.conf")
+      << "Client {\n  Name = example-fd\n  Messages = Standard\n}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+
+  const auto director_relationships = FindRelationshipsForNode(summary, "director-0");
+  const auto director_message_relationship = std::find_if(
+      director_relationships.begin(), director_relationships.end(),
+      [&director_messages_path](const RelationshipSummary& relationship) {
+        return relationship.relation == "resource-name"
+               && relationship.endpoint_name == "Standard"
+               && relationship.target_resource_path == director_messages_path.string();
+      });
+  ASSERT_NE(director_message_relationship, director_relationships.end());
+  EXPECT_EQ(director_message_relationship->to_node_id, "director-0");
+
+  const auto file_daemon_relationships
+      = FindRelationshipsForNode(summary, "daemon-0-file-daemon");
+  const auto file_daemon_message_relationship = std::find_if(
+      file_daemon_relationships.begin(), file_daemon_relationships.end(),
+      [&file_daemon_messages_path](const RelationshipSummary& relationship) {
+        return relationship.relation == "resource-name"
+               && relationship.endpoint_name == "Standard"
+               && relationship.target_resource_path
+                      == file_daemon_messages_path.string();
+      });
+  ASSERT_NE(file_daemon_message_relationship, file_daemon_relationships.end());
+  EXPECT_EQ(file_daemon_message_relationship->to_node_id, "daemon-0-file-daemon");
+  EXPECT_EQ(std::count_if(
+                file_daemon_relationships.begin(), file_daemon_relationships.end(),
+                [&director_messages_path](const RelationshipSummary& relationship) {
+                  return relationship.target_resource_path
+                         == director_messages_path.string();
+                }),
+            0);
+}
+
+TEST(BareosConfigModel, KeepsKnownRemoteClientNodeWithoutRelationship)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
@@ -306,12 +507,7 @@ TEST(BareosConfigModel, ShowsKnownRemoteClientWithoutMatchingLocalDaemonName)
   const auto summary = DiscoverDatacenterSummary({root.path()});
   const auto relationships = FindRelationshipsForNode(summary, "director-0");
 
-  ASSERT_EQ(relationships.size(), 1U);
-  EXPECT_TRUE(relationships[0].resolved);
-  EXPECT_EQ(relationships[0].to_node_id, "known-client-0-example-fd");
-  EXPECT_EQ(relationships[0].to_label, "example-fd");
-  EXPECT_NE(relationships[0].resolution.find("known remote client example-fd"),
-            std::string::npos);
+  EXPECT_TRUE(relationships.empty());
 
   const auto* remote_client = FindTreeNodeById(summary, "known-client-0-example-fd");
   ASSERT_NE(remote_client, nullptr);
@@ -319,31 +515,65 @@ TEST(BareosConfigModel, ShowsKnownRemoteClientWithoutMatchingLocalDaemonName)
   EXPECT_EQ(remote_client->label, "example-fd");
 }
 
+TEST(BareosConfigModel, OmitsUnresolvedGenericResourceReferences)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/job");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/job/example-job.conf")
+      << "Job {\n"
+      << "  Name = BackupClient\n"
+      << "  FileSet = MissingFileSet\n"
+      << "}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+  const auto relationships = FindRelationshipsForNode(summary, "director-0");
+
+  EXPECT_TRUE(relationships.empty());
+}
+
 TEST(BareosConfigModel, ResolvesRelationshipFromDaemonOwnedResourceName)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
   std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
   std::filesystem::create_directories(root.path() / "bareos-fd.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
   std::filesystem::create_directories(root.path() / "bareos-sd.d/storage");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = bareos-fd\n}\n";
+  std::ofstream(root.path() / "bareos-sd.conf")
+      << "Storage {\n  Name = File\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
   std::ofstream(root.path() / "bareos-dir.d/client/bareos-fd.conf")
       << "Client {\n  Name = bareos-fd\n}\n";
   std::ofstream(root.path() / "bareos-dir.d/storage/File.conf")
       << "Storage {\n  Name = File\n}\n";
   std::ofstream(root.path() / "bareos-fd.d/client/myself.conf")
       << "Client {\n  Name = bareos-fd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
   std::ofstream(root.path() / "bareos-sd.d/storage/bareos-sd.conf")
       << "Storage {\n  Name = File\n}\n";
+  std::ofstream(root.path() / "bareos-sd.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
 
   const auto summary = DiscoverDatacenterSummary({root.path()});
   const auto relationships = FindRelationshipsForNode(summary, "director-0");
 
-  ASSERT_EQ(relationships.size(), 2U);
+  ASSERT_EQ(relationships.size(), 4U);
   EXPECT_TRUE(relationships[0].resolved);
   EXPECT_EQ(relationships[0].to_node_id, "daemon-0-file-daemon");
   EXPECT_TRUE(relationships[1].resolved);
-  EXPECT_EQ(relationships[1].to_node_id, "daemon-0-storage-daemon");
+  EXPECT_EQ(relationships[1].to_node_id, "director-0");
+  EXPECT_TRUE(relationships[2].resolved);
+  EXPECT_EQ(relationships[2].to_node_id, "daemon-0-storage-daemon");
+  EXPECT_TRUE(relationships[3].resolved);
+  EXPECT_EQ(relationships[3].to_node_id, "director-0");
 }
 
 TEST(BareosConfigModel, UsesParsedResourceNameInsteadOfFilenameStem)
@@ -351,11 +581,16 @@ TEST(BareosConfigModel, UsesParsedResourceNameInsteadOfFilenameStem)
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
   std::filesystem::create_directories(root.path() / "bareos-fd.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = example-fd\n}\n";
   std::ofstream(root.path() / "bareos-dir.d/client/not-the-name.conf")
       << "Client {\n  Name = example-fd\n}\n";
   std::ofstream(root.path() / "bareos-fd.d/client/myself.conf")
       << "Client {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
 
   const auto summary = DiscoverDatacenterSummary({root.path()});
 
