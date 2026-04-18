@@ -137,6 +137,81 @@ TEST(BareosConfigService, ReturnsInheritedJobDefsInEditablePayload)
             std::string::npos);
 }
 
+TEST(BareosConfigService, NormalizesQuotedProfileOptionsInEditablePayload)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/console");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/profile");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/profile/webui-admin.conf")
+      << "Profile {\n  Name = \"webui-admin\"\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/profile/webui-readonly.conf")
+      << "Profile {\n  Name = \"webui-readonly\"\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/console/admin.conf")
+      << "Console {\n"
+      << "  Name = admin\n"
+      << "  Profile = \"webui-admin\"\n"
+      << "}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].resources.begin(), model.directors[0].resources.end(),
+      [](const ResourceSummary& summary) { return summary.type == "console"; });
+  ASSERT_NE(resource, model.directors[0].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "GET", "/api/v1/resources/" + resource->id + "/editor", "", ""};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(
+      response.body.find("\"allowed_values\":[\"webui-admin\",\"webui-readonly\"]"),
+      std::string::npos);
+  EXPECT_EQ(response.body.find("\"allowed_values\":[\"\\\"webui-admin\\\"\""),
+            std::string::npos);
+}
+
+TEST(BareosConfigService, NormalizesQuotedRepeatableProfileOptionsInEditablePayload)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/profile");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/user");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/profile/webui-admin.conf")
+      << "Profile {\n  Name = \"webui-admin\"\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/profile/webui-readonly.conf")
+      << "Profile {\n  Name = \"webui-readonly\"\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/user/admin.conf")
+      << "User {\n"
+      << "  Name = admin\n"
+      << "  Password = secret\n"
+      << "  Profile = \"webui-admin\"\n"
+      << "  Profile = webui-readonly\n"
+      << "}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].resources.begin(), model.directors[0].resources.end(),
+      [](const ResourceSummary& summary) { return summary.type == "user"; });
+  ASSERT_NE(resource, model.directors[0].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "GET", "/api/v1/resources/" + resource->id + "/editor", "", ""};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(
+      response.body.find("\"allowed_values\":[\"webui-admin\",\"webui-readonly\"]"),
+      std::string::npos);
+  EXPECT_EQ(response.body.find(
+                "\"allowed_values\":[\"\\\"webui-admin\\\"\\nwebui-readonly\"]"),
+            std::string::npos);
+}
+
 TEST(BareosConfigService, ReturnsNewResourceEditorPayload)
 {
   TempConfigRoot root;
@@ -524,7 +599,93 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("splitObjectResources: true"),
             std::string::npos);
-  EXPECT_NE(response.body.find("Resources are distributed into two lanes"),
+  EXPECT_NE(response.body.find("Resources are distributed into two balanced lanes"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const normalizedTypeLabel = (resource) =>"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const typeOrder = normalizedTypeLabel(left).localeCompare(normalizedTypeLabel(right));"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const leftScore = Math.abs((leftCount + 1) - rightCount)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const forceLeftLane = normalizedType === 'director'"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("|| normalizedType.startsWith('job');"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const laneByType = new Map();"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const typeLane = laneByType.has(normalizedType)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const laneOffset = splitObjectResources"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const resourceBoxHeight = 23;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const resourceRowHeight = resourceBoxHeight * 2;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const resourceLaneGap = splitObjectResources"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("? (resourceBoxHeight + objectPaddingSide) * 3.75"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const outerColumnLinkMargin = 96;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const outerColumnLinkPadding = outerColumnLinkMargin + 64;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const graphPaddingLeft = graphPaddingX + outerColumnLinkPadding;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const rowTop = (resource.y - object.y) - (resourceBoxHeight / 2);"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("overflow: visible;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function attachRelationshipGraphHover()"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("class=\"relationship-graph-object\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("class=\"relationship-graph-edge\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("${objectResourceMarkup}\n            ${edgeMarkup}"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("class=\"relationship-graph-edge-source\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("orient=\"auto\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function relationshipDirectiveLabel(relationship)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("class=\"relationship-graph-edge-label\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Directive (.+?) in "),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const sameColumn = !sameObject && sourceObject.column === targetObject.column;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const routeOnLeft = sourceObject.column === 0;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const sameLaneStartX = sourceResource.lane === 0"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const sameResource = sourceResource.key === targetResource.key;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("? sourceResource.x"),
+            std::string::npos);
+  EXPECT_NE(response.body.find(": sourceResource.x + sourceResource.width;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const loopX = sourceResource.lane === 0"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const selfLoopHeight = resourceRowHeight + Math.abs(laneOffset);"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const selfLoopEndY = startY + 14;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const selfLoopApproachY = selfLoopEndY - 10;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("? sourceObject.x - (outerColumnLinkMargin / 2) - Math.abs(laneOffset)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const branchX = routeOnLeft ? columnStartX - 26 : columnStartX + 26;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const endApproachOffset = Math.min("),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const endApproachY = endY - (Math.sign(endY - startY || 1) * endApproachOffset);"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("C ${outerX} ${endY}, ${branchEndX} ${endApproachY}, ${columnEndX} ${endY}"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("C ${loopX} ${endY}, ${branchEndX} ${endApproachY}, ${sameLaneEndX} ${endY}"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("has-active-highlight"),
             std::string::npos);
   EXPECT_NE(response.body.find("Jump to resolved node"),
             std::string::npos);
@@ -594,7 +755,18 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("splitRepeatableFieldValues"),
             std::string::npos);
+  EXPECT_NE(response.body.find("detectRepeatableFieldQuote"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("normalizeRepeatableFieldValues"),
+            std::string::npos);
+  EXPECT_NE(response.body.find(".map((entry) => stripSurroundingQuotes(entry))"),
+            std::string::npos);
   EXPECT_NE(response.body.find("getRepeatableFieldValues"),
+            std::string::npos);
+  EXPECT_NE(response.body.find(".relationship-graph-resource[data-resource-id]"),
+            std::string::npos);
+  EXPECT_NE(response.body.find(
+                "detailsEl.querySelectorAll('.relationship-graph-resource[data-resource-id]')"),
             std::string::npos);
   EXPECT_NE(response.body.find("function isInternalRelationship(relationship) {"),
             std::string::npos);
@@ -605,6 +777,15 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("No cross-entity relations discovered for this node."),
             std::string::npos);
+  EXPECT_NE(response.body.find("Block colors"), std::string::npos);
+  EXPECT_NE(response.body.find("resource with outgoing relations"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("resource with incoming and outgoing relations"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("resource mainly targeted by relations"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("unresolved object"), std::string::npos);
+  EXPECT_NE(response.body.find("Arrow colors"), std::string::npos);
   EXPECT_NE(response.body.find("field.datatype === 'RESOURCE_LIST'"),
             std::string::npos);
   EXPECT_NE(response.body.find("multiple"),

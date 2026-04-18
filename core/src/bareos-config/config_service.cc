@@ -3429,15 +3429,60 @@ std::string BuildIndexHtml()
          overflow-x: auto;
          margin-top: 8px;
        }
-       .relationship-graph svg {
-         display: block;
-         width: auto;
-         max-width: 100%;
+        .relationship-graph svg {
+          display: block;
+          width: auto;
+          max-width: 100%;
           height: auto;
+          overflow: visible;
         }
-       .relationship-graph-note {
-         margin-top: 6px;
-       }
+        .relationship-graph-object,
+        .relationship-graph-resource,
+        .relationship-graph-edge {
+          transition: opacity 140ms ease;
+        }
+        .relationship-graph.has-active-highlight .relationship-graph-object,
+        .relationship-graph.has-active-highlight .relationship-graph-resource,
+        .relationship-graph.has-active-highlight .relationship-graph-edge {
+          opacity: 0.22;
+        }
+        .relationship-graph.has-active-highlight .relationship-graph-object.is-highlighted,
+        .relationship-graph.has-active-highlight .relationship-graph-resource.is-highlighted,
+        .relationship-graph.has-active-highlight .relationship-graph-edge.is-highlighted {
+          opacity: 1;
+        }
+        .relationship-graph-object.is-highlighted rect {
+          stroke: var(--setup-primary);
+          stroke-width: 2.1;
+        }
+        .relationship-graph-resource.is-highlighted rect {
+          stroke: var(--setup-accent);
+          stroke-width: 1.9;
+        }
+        .relationship-graph-resource[data-resource-id] {
+          cursor: pointer;
+        }
+        .relationship-graph-edge.is-highlighted path {
+          stroke-width: 3.2;
+        }
+        .relationship-graph-edge-source {
+          opacity: 0.96;
+        }
+        .relationship-graph-edge-label rect {
+          fill: rgba(255, 255, 255, 0.94);
+          stroke: #d8eaf6;
+          stroke-width: 1;
+        }
+        .relationship-graph-edge-label text {
+          fill: #22303c;
+          font-size: 8.5px;
+          font-weight: 600;
+          text-anchor: middle;
+          dominant-baseline: middle;
+        }
+        .relationship-graph-note {
+          margin-top: 6px;
+        }
        .relationship-graph-list {
          display: flex;
          flex-wrap: wrap;
@@ -3613,6 +3658,16 @@ std::string BuildIndexHtml()
         .split('\n')
         .map((entry) => entry.trim())
         .filter(Boolean);
+    }
+
+    function detectRepeatableFieldQuote(value) {
+      const firstValue = splitRepeatableFieldValues(value)[0] || '';
+      return detectSurroundingQuote(firstValue);
+    }
+
+    function normalizeRepeatableFieldValues(value) {
+      return splitRepeatableFieldValues(value)
+        .map((entry) => stripSurroundingQuotes(entry));
     }
 
     function getRepeatableFieldValues(fieldEl) {
@@ -4019,6 +4074,24 @@ std::string BuildIndexHtml()
       };
     }
 
+    function relationshipDirectiveLabel(relationship) {
+      const resolution = `${relationship?.resolution || ''}`.trim();
+      const directiveMatch = resolution.match(/^Directive (.+?) in /);
+      if (directiveMatch) {
+        return directiveMatch[1];
+      }
+      switch (`${relationship?.relation || ''}`.trim().toLowerCase()) {
+        case 'shared-password':
+          return 'Password';
+        case 'device':
+          return 'Device';
+        case 'storage':
+          return 'Storage';
+        default:
+          return '';
+      }
+    }
+
     function isInternalRelationship(relationship) {
       const fromNodeId = `${relationship.from_node_id || ''}`.trim();
       const toNodeId = `${relationship.to_node_id || ''}`.trim();
@@ -4179,24 +4252,59 @@ std::string BuildIndexHtml()
 
       const splitObjectResources = Boolean(options.splitObjectResources);
       objects.forEach((object) => {
-        object.resources.sort((left, right) =>
-          left.label.localeCompare(right.label),
-        );
+        const normalizedTypeLabel = (resource) =>
+          `${resource.typeLabel || ''}`.trim().toLowerCase();
+        object.resources.sort((left, right) => {
+          const typeOrder = normalizedTypeLabel(left).localeCompare(normalizedTypeLabel(right));
+          if (typeOrder !== 0) {
+            return typeOrder;
+          }
+          return left.label.localeCompare(right.label);
+        });
         object.column = object.nodeId && object.nodeId.startsWith('director-') ? 0 : 1;
         object.leftResources = [];
         object.rightResources = [];
+        const laneByType = new Map();
         object.resources.forEach((resource) => {
           let lane = 0;
+          const normalizedType = normalizedTypeLabel(resource);
           if (splitObjectResources) {
-            if (resource.outgoing > resource.incoming) {
+            const forceLeftLane = normalizedType === 'director'
+              || normalizedType.startsWith('job');
+            if (forceLeftLane) {
               lane = 0;
-            } else if (resource.incoming > resource.outgoing) {
-              lane = 1;
             } else {
-              lane = object.leftResources.length <= object.rightResources.length ? 0 : 1;
+              const preferredLane = resource.outgoing > resource.incoming
+                ? 0
+                : (resource.incoming > resource.outgoing ? 1 : -1);
+              const typeLane = laneByType.has(normalizedType)
+                ? laneByType.get(normalizedType)
+                : -1;
+              const leftCount = object.leftResources.length;
+              const rightCount = object.rightResources.length;
+              const leftScore = Math.abs((leftCount + 1) - rightCount)
+                + (preferredLane === 1 ? 1 : 0)
+                + (typeLane === 1 ? 1 : 0);
+              const rightScore = Math.abs(leftCount - (rightCount + 1))
+                + (preferredLane === 0 ? 1 : 0)
+                + (typeLane === 0 ? 1 : 0);
+              if (leftScore < rightScore) {
+                lane = 0;
+              } else if (rightScore < leftScore) {
+                lane = 1;
+              } else if (typeLane >= 0) {
+                lane = typeLane;
+              } else if (preferredLane >= 0) {
+                lane = preferredLane;
+              } else {
+                lane = leftCount <= rightCount ? 0 : 1;
+              }
             }
           }
           resource.lane = lane;
+          if (normalizedType) {
+            laneByType.set(normalizedType, lane);
+          }
           if (lane === 0) {
             resource.laneIndex = object.leftResources.length;
             object.leftResources.push(resource);
@@ -4210,15 +4318,17 @@ std::string BuildIndexHtml()
       const baseObjectWidth = 208;
       const columnGap = 92;
       const headerHeight = 40;
-      const resourceRowHeight = 20;
+      const resourceBoxHeight = 23;
+      const resourceRowHeight = resourceBoxHeight * 2;
       const objectPaddingTop = 8;
       const objectPaddingBottom = 8;
       const objectPaddingSide = 8;
+      const resourceLaneGap = splitObjectResources
+        ? (resourceBoxHeight + objectPaddingSide) * 3.75
+        : 0;
       const objectWidth = splitObjectResources
-        ? (objectPaddingSide * 2) + (baseObjectWidth * 2) + columnGap
+        ? (objectPaddingSide * 2) + (baseObjectWidth * 2) + resourceLaneGap
         : baseObjectWidth;
-      const resourceLaneGap = splitObjectResources ? columnGap : 0;
-      const resourceBoxHeight = resourceRowHeight - 3;
       const resourceBoxWidth = splitObjectResources
         ? baseObjectWidth
         : objectWidth - (objectPaddingSide * 2);
@@ -4234,6 +4344,10 @@ std::string BuildIndexHtml()
 
       const verticalGap = 14;
       const graphPaddingX = 18;
+      const outerColumnLinkMargin = 96;
+      const outerColumnLinkPadding = outerColumnLinkMargin + 64;
+      const graphPaddingLeft = graphPaddingX + outerColumnLinkPadding;
+      const graphPaddingRight = graphPaddingX + outerColumnLinkPadding;
       const columns = [0, 1].map((column) =>
         objects
           .filter((object) => object.column === column)
@@ -4241,15 +4355,15 @@ std::string BuildIndexHtml()
       );
       const visibleColumns = [0, 1].filter((column) => columns[column].length > 0);
       const graphWidth = visibleColumns.length === 1
-        ? graphPaddingX * 2 + objectWidth
-        : graphPaddingX * 2 + objectWidth * 2 + columnGap;
+        ? graphPaddingLeft + graphPaddingRight + objectWidth
+        : graphPaddingLeft + graphPaddingRight + objectWidth * 2 + columnGap;
       const columnX = {
         0: visibleColumns.length === 1
-          ? Math.max((graphWidth - objectWidth) / 2, graphPaddingX)
-          : graphPaddingX,
+          ? Math.max((graphWidth - objectWidth) / 2, graphPaddingLeft)
+          : graphPaddingLeft,
         1: visibleColumns.length === 1
-          ? Math.max((graphWidth - objectWidth) / 2, graphPaddingX)
-          : graphPaddingX + objectWidth + columnGap,
+          ? Math.max((graphWidth - objectWidth) / 2, graphPaddingLeft)
+          : graphWidth - graphPaddingRight - objectWidth,
       };
       const columnHeight = Math.max(
         ...columns.map((entries) =>
@@ -4267,6 +4381,9 @@ std::string BuildIndexHtml()
       visibleColumns.forEach((column) => {
         let currentY = centerOffset(columns[column]);
         columns[column].forEach((object) => {
+          const maxLaneLength = splitObjectResources
+            ? Math.max(object.leftResources.length, object.rightResources.length)
+            : object.resources.length;
           object.x = columnX[column];
           object.y = currentY;
           object.resources.forEach((resource) => {
@@ -4274,9 +4391,18 @@ std::string BuildIndexHtml()
               ? object.x + objectPaddingSide
                 + (resource.lane * (resourceBoxWidth + resourceLaneGap))
               : object.x + objectPaddingSide;
+            const laneLength = splitObjectResources
+              ? (resource.lane === 0
+                  ? object.leftResources.length
+                  : object.rightResources.length)
+              : object.resources.length;
+            const laneOffset = splitObjectResources
+              ? ((maxLaneLength - laneLength) * resourceRowHeight) / 2
+              : 0;
             resource.x = laneX;
             resource.width = resourceBoxWidth;
             resource.y = object.y + objectPaddingTop + headerHeight
+              + laneOffset
               + (resource.laneIndex * resourceRowHeight) + (resourceRowHeight / 2);
           });
           currentY += object.height + verticalGap;
@@ -4290,6 +4416,28 @@ std::string BuildIndexHtml()
         directedCounts.set(key, (directedCounts.get(key) || 0) + 1);
       });
       const directedSeen = new Map();
+      const graphResourceRef = (object, resource) => `${object.key}|${resource.key}`;
+      const renderEdgeMarkup = (relationship, edgeDataAttributes, pathD, title, stroke, startX, startY, labelX, labelY) => {
+        const directiveLabel = truncateGraphLabel(relationshipDirectiveLabel(relationship), 18);
+        const labelWidth = Math.max((directiveLabel.length * 5.8) + 10, 24);
+        return `<g class="relationship-graph-edge" ${edgeDataAttributes}>
+            <path d="${pathD}"
+              fill="none"
+              stroke="${stroke}"
+              stroke-width="2.1"
+              stroke-linecap="round"
+              ${relationship.resolved ? '' : 'stroke-dasharray="7 6"'}
+              opacity="${relationship.resolved ? '0.92' : '0.72'}"
+              marker-end="url(#${markerId})">
+              <title>${escapeHtml(title)}</title>
+            </path>
+            <circle class="relationship-graph-edge-source" cx="${startX}" cy="${startY}" r="2.4" fill="${stroke}" opacity="${relationship.resolved ? '0.96' : '0.8'}"></circle>${directiveLabel ? `
+            <g class="relationship-graph-edge-label" transform="translate(${labelX} ${labelY})">
+              <rect x="${-(labelWidth / 2)}" y="-6.5" width="${labelWidth}" height="13" rx="6"></rect>
+              <text x="0" y="0">${escapeHtml(directiveLabel)}</text>
+            </g>` : ''}
+          </g>`;
+      };
 
       const edgeMarkup = relationships.map((relationship) => {
         const sourceObject = objectIndex.get(relationship._graphSourceObjectKey);
@@ -4301,6 +4449,7 @@ std::string BuildIndexHtml()
         }
 
         const sameObject = sourceObject.key === targetObject.key;
+        const sameColumn = !sameObject && sourceObject.column === targetObject.column;
         const forward = sourceObject.x <= targetObject.x;
         const startX = sameObject
           ? (sourceResource.lane === 0
@@ -4320,6 +4469,12 @@ std::string BuildIndexHtml()
         const pairIndex = directedSeen.get(pairKey) || 0;
         directedSeen.set(pairKey, pairIndex + 1);
         const reverseCount = directedCounts.get(reverseKey) || 0;
+        const sourceResourceRef = graphResourceRef(sourceObject, sourceResource);
+        const targetResourceRef = graphResourceRef(targetObject, targetResource);
+        const edgeDataAttributes = `data-source-object-key="${escapeHtml(sourceObject.key)}"
+                data-target-object-key="${escapeHtml(targetObject.key)}"
+                data-source-resource-ref="${escapeHtml(sourceResourceRef)}"
+                data-target-resource-ref="${escapeHtml(targetResourceRef)}"`;
         const laneOffset = (pairIndex - ((pairCount - 1) / 2)) * 8;
         const stroke = relationshipColor(relationship.relation);
         const title = `${relationship.from_label || '-'} → ${relationship.to_label || relationship.endpoint_name || '-'} (${relationship.relation || 'related'})${relationship.resolution ? ` — ${relationship.resolution}` : ''}`;
@@ -4328,66 +4483,145 @@ std::string BuildIndexHtml()
             const centerX = sourceObject.x + (objectWidth / 2);
             const sameLane = sourceResource.lane === targetResource.lane;
             if (!sameLane) {
+              const crossLaneStartX = sourceResource.lane === 0
+                ? sourceResource.x + sourceResource.width
+                : sourceResource.x;
+              const crossLaneEndX = targetResource.lane === 0
+                ? targetResource.x + targetResource.width
+                : targetResource.x;
               const controlX1 = centerX + (sourceResource.lane === 0 ? -14 : 14);
               const controlX2 = centerX + (targetResource.lane === 0 ? -14 : 14);
-              return `<path d="M ${startX} ${startY} C ${controlX1} ${startY + laneOffset}, ${controlX2} ${endY + laneOffset}, ${endX} ${endY}"
-                fill="none"
-                stroke="${stroke}"
-                stroke-width="2.1"
-                stroke-linecap="round"
-                ${relationship.resolved ? '' : 'stroke-dasharray="7 6"'}
-                opacity="${relationship.resolved ? '0.92' : '0.72'}"
-                marker-end="url(#${markerId})">
-                <title>${escapeHtml(title)}</title>
-              </path>`;
+              return renderEdgeMarkup(
+                relationship,
+                edgeDataAttributes,
+                `M ${crossLaneStartX} ${startY} C ${controlX1} ${startY + laneOffset}, ${controlX2} ${endY + laneOffset}, ${crossLaneEndX} ${endY}`,
+                title,
+                stroke,
+                crossLaneStartX,
+                startY,
+                centerX,
+                ((startY + endY) / 2) + laneOffset - 10,
+              );
             }
+            const sameResource = sourceResource.key === targetResource.key;
+            const sameLaneStartX = sourceResource.lane === 0
+              ? sourceResource.x
+              : sourceResource.x + sourceResource.width;
+            const sameLaneEndX = targetResource.lane === 0
+              ? targetResource.x
+              : targetResource.x + targetResource.width;
             const loopX = sourceResource.lane === 0
-              ? sourceObject.x + objectWidth - 18 - Math.abs(laneOffset)
-              : sourceObject.x + 18 + Math.abs(laneOffset);
-            const controlY1 = startY + laneOffset - 10;
-            const controlY2 = endY + laneOffset + 10;
-            return `<path d="M ${startX} ${startY} C ${loopX} ${controlY1}, ${loopX} ${controlY2}, ${endX} ${endY}"
-              fill="none"
-              stroke="${stroke}"
-              stroke-width="2.1"
-              stroke-linecap="round"
-              ${relationship.resolved ? '' : 'stroke-dasharray="7 6"'}
-              opacity="${relationship.resolved ? '0.92' : '0.72'}"
-              marker-end="url(#${markerId})">
-              <title>${escapeHtml(title)}</title>
-            </path>`;
+              ? sourceObject.x - (outerColumnLinkMargin / 2) - Math.abs(laneOffset)
+              : sourceObject.x + objectWidth + (outerColumnLinkMargin / 2) + Math.abs(laneOffset);
+            if (sameResource) {
+              const branchX = sourceResource.lane === 0
+                ? sameLaneStartX - 22
+                : sameLaneStartX + 22;
+              const selfLoopHeight = resourceRowHeight + Math.abs(laneOffset);
+              const selfLoopEndY = startY + 14;
+              const selfLoopApproachY = selfLoopEndY - 10;
+              return renderEdgeMarkup(
+                relationship,
+                edgeDataAttributes,
+                `M ${sameLaneStartX} ${startY} C ${branchX} ${startY}, ${loopX} ${startY - selfLoopHeight}, ${loopX} ${startY}
+                C ${loopX} ${startY + selfLoopHeight}, ${branchX} ${selfLoopApproachY}, ${sameLaneStartX} ${selfLoopEndY}`,
+                title,
+                stroke,
+                sameLaneStartX,
+                startY,
+                loopX,
+                startY - selfLoopHeight - 10,
+              );
+            }
+            const branchX = sourceResource.lane === 0
+              ? sameLaneStartX - 22
+              : sameLaneStartX + 22;
+            const branchEndX = targetResource.lane === 0
+              ? sameLaneEndX - 22
+              : sameLaneEndX + 22;
+            const midY = ((startY + endY) / 2) + laneOffset;
+            const endApproachOffset = Math.min(
+              Math.max(Math.abs(endY - startY) / 3, 10),
+              18,
+            );
+            const endApproachY = endY - (Math.sign(endY - startY || 1) * endApproachOffset);
+            return renderEdgeMarkup(
+              relationship,
+              edgeDataAttributes,
+              `M ${sameLaneStartX} ${startY} C ${branchX} ${startY}, ${loopX} ${startY}, ${loopX} ${midY}
+              C ${loopX} ${endY}, ${branchEndX} ${endApproachY}, ${sameLaneEndX} ${endY}`,
+              title,
+              stroke,
+              sameLaneStartX,
+              startY,
+              loopX,
+              midY - 10,
+            );
           }
           const loopX = sourceObject.x + objectWidth + 30 + Math.abs(laneOffset);
           const controlY1 = startY + laneOffset - 10;
           const controlY2 = endY + laneOffset + 10;
-          return `<path d="M ${startX} ${startY} C ${loopX} ${controlY1}, ${loopX} ${controlY2}, ${endX} ${endY}"
-            fill="none"
-            stroke="${stroke}"
-            stroke-width="2.1"
-            stroke-linecap="round"
-            ${relationship.resolved ? '' : 'stroke-dasharray="7 6"'}
-            opacity="${relationship.resolved ? '0.92' : '0.72'}"
-            marker-end="url(#${markerId})">
-            <title>${escapeHtml(title)}</title>
-          </path>`;
+          return renderEdgeMarkup(
+            relationship,
+            edgeDataAttributes,
+            `M ${startX} ${startY} C ${loopX} ${controlY1}, ${loopX} ${controlY2}, ${endX} ${endY}`,
+            title,
+            stroke,
+            startX,
+            startY,
+            loopX,
+            ((startY + endY) / 2) + laneOffset - 10,
+          );
         }
 
         const bendOffset = laneOffset + (reverseCount ? (forward ? -18 : 18) : 0);
+        if (sameColumn) {
+          const routeOnLeft = sourceObject.column === 0;
+          const outerX = routeOnLeft
+            ? Math.min(sourceObject.x, targetObject.x) - outerColumnLinkMargin - Math.abs(bendOffset)
+            : Math.max(
+                sourceObject.x + objectWidth,
+                targetObject.x + objectWidth,
+              ) + outerColumnLinkMargin + Math.abs(bendOffset);
+          const columnStartX = sourceObject.x + (routeOnLeft ? portInset : objectWidth - portInset);
+          const columnEndX = targetObject.x + (routeOnLeft ? portInset : objectWidth - portInset);
+          const branchX = routeOnLeft ? columnStartX - 26 : columnStartX + 26;
+          const branchEndX = routeOnLeft ? columnEndX - 26 : columnEndX + 26;
+          const midY = ((startY + endY) / 2) + bendOffset;
+          const endApproachOffset = Math.min(
+            Math.max(Math.abs(endY - startY) / 3, 10),
+            18,
+          );
+          const endApproachY = endY - (Math.sign(endY - startY || 1) * endApproachOffset);
+          return renderEdgeMarkup(
+            relationship,
+            edgeDataAttributes,
+            `M ${columnStartX} ${startY} C ${branchX} ${startY}, ${outerX} ${startY}, ${outerX} ${midY}
+              C ${outerX} ${endY}, ${branchEndX} ${endApproachY}, ${columnEndX} ${endY}`,
+            title,
+            stroke,
+            columnStartX,
+            startY,
+            outerX,
+            midY - 10,
+          );
+        }
         const deltaX = endX - startX;
         const controlX1 = startX + (deltaX * 0.3);
         const controlX2 = startX + (deltaX * 0.7);
         const controlY1 = startY + bendOffset;
         const controlY2 = endY + bendOffset;
-        return `<path d="M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}"
-            fill="none"
-            stroke="${stroke}"
-            stroke-width="2.1"
-            stroke-linecap="round"
-            ${relationship.resolved ? '' : 'stroke-dasharray="7 6"'}
-            opacity="${relationship.resolved ? '0.92' : '0.72'}"
-            marker-end="url(#${markerId})">
-            <title>${escapeHtml(title)}</title>
-          </path>`;
+        return renderEdgeMarkup(
+          relationship,
+          edgeDataAttributes,
+          `M ${startX} ${startY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${endX} ${endY}`,
+          title,
+          stroke,
+          startX,
+          startY,
+          startX + (deltaX / 2),
+          ((startY + endY) / 2) + bendOffset - 10,
+        );
       }).join('');
 
       const objectFill = (object) => {
@@ -4410,7 +4644,7 @@ std::string BuildIndexHtml()
       };
 
       const objectBackgroundMarkup = objects.map((object) => `
-        <g transform="translate(${object.x}, ${object.y})">
+        <g class="relationship-graph-object" data-object-key="${escapeHtml(object.key)}" transform="translate(${object.x}, ${object.y})">
           <rect width="${objectWidth}" height="${object.height}" rx="10"
             fill="${objectFill(object)}"
             stroke="${objectStroke(object)}"
@@ -4422,12 +4656,13 @@ std::string BuildIndexHtml()
       const objectResourceMarkup = objects.map((object) => `
         <g transform="translate(${object.x}, ${object.y})">
           ${object.resources.map((resource) => {
-            const rowTop = objectPaddingTop + headerHeight + (resource.laneIndex * resourceRowHeight);
+            const rowTop = (resource.y - object.y) - (resourceBoxHeight / 2);
             const rowLeft = resource.x - object.x;
+            const resourceRef = graphResourceRef(object, resource);
             const typeLabel = truncateGraphLabel((resource.typeLabel || '').toUpperCase(), 10);
             const nameLabel = truncateGraphLabel(resource.nameLabel, 14);
             const fallbackLabel = truncateGraphLabel(resource.label, 21);
-            return `<g transform="translate(${rowLeft}, ${rowTop})">
+            return `<g class="relationship-graph-resource" data-object-key="${escapeHtml(object.key)}" data-resource-ref="${escapeHtml(resourceRef)}"${resource.resourceId ? ` data-resource-id="${escapeHtml(resource.resourceId)}"` : ''} transform="translate(${rowLeft}, ${rowTop})">
               <rect width="${resource.width}" height="${resourceBoxHeight}" rx="6"
                 fill="${resourceFill(resource)}"
                 stroke="${resourceStroke(resource)}"
@@ -4455,18 +4690,38 @@ std::string BuildIndexHtml()
         <div class="relationship-graph">
           <svg width="${graphWidth}" height="${graphHeight}" viewBox="0 0 ${graphWidth} ${graphHeight}" role="img" aria-label="Relationship graph">
             <defs>
-              <marker id="${markerId}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <marker id="${markerId}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
                 <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"></path>
               </marker>
             </defs>
             ${objectBackgroundMarkup}
-            ${edgeMarkup}
             ${objectResourceMarkup}
+            ${edgeMarkup}
           </svg>
         </div>
         ${clickableNodes.length ? `<div class="relationship-graph-note muted">Jump to resolved node</div>
         <div class="relationship-graph-list">${clickableNodes.map((node) => `
           <button class="relationship-node relationship-graph-node-link" data-node-id="${escapeHtml(node.nodeId)}">${escapeHtml(node.label)}</button>`).join('')}</div>` : ''}
+        <div class="relationship-graph-note muted">Block colors</div>
+        <div class="relationship-legend">
+          <span class="relationship-chip">
+            <span class="relationship-chip-swatch" style="background:#e8f4fc"></span>
+            resource with outgoing relations
+          </span>
+          <span class="relationship-chip">
+            <span class="relationship-chip-swatch" style="background:#fff2d8"></span>
+            resource with incoming and outgoing relations
+          </span>
+          <span class="relationship-chip">
+            <span class="relationship-chip-swatch" style="background:#f5f7fa"></span>
+            resource mainly targeted by relations
+          </span>
+          <span class="relationship-chip">
+            <span class="relationship-chip-swatch" style="background:#fff6f6"></span>
+            unresolved object
+          </span>
+        </div>
+        <div class="relationship-graph-note muted">Arrow colors</div>
         <div class="relationship-legend">${legendCounts.map((entry) => `
           <span class="relationship-chip">
             <span class="relationship-chip-swatch" style="background:${relationshipColor(entry.relation)}"></span>
@@ -4596,7 +4851,7 @@ std::string BuildIndexHtml()
       return `<div class="relationship-view">
         ${renderRelationshipGraph(internalRelationships, {
           title: 'Internal relations graph',
-          description: 'This graph shows only relations that stay inside the same entity or configuration object. Resources are distributed into two lanes so internal arrows can be seen more clearly, while the type and name stay visually distinct.',
+          description: 'This graph shows only relations that stay inside the same entity or configuration object. Resources are distributed into two balanced lanes so internal arrows can be seen more clearly, while the type and name stay visually distinct.',
           emptyMessage: 'No internal relations discovered for this node.',
           graphId: 'internal',
           splitObjectResources: true,
@@ -4611,6 +4866,117 @@ std::string BuildIndexHtml()
       </div>`;
     }
 
+    function clearRelationshipGraphHighlight(graphEl) {
+      graphEl.classList.remove('has-active-highlight');
+      graphEl.querySelectorAll('.relationship-graph-object, .relationship-graph-resource, .relationship-graph-edge')
+        .forEach((element) => {
+          element.classList.remove('is-highlighted');
+        });
+    }
+
+    function applyRelationshipGraphHighlight(graphEl, highlightedEdges, highlightedResourceRefs, highlightedObjectKeys) {
+      graphEl.classList.add('has-active-highlight');
+      graphEl.querySelectorAll('.relationship-graph-edge').forEach((edgeEl) => {
+        edgeEl.classList.toggle('is-highlighted', highlightedEdges.has(edgeEl));
+      });
+      graphEl.querySelectorAll('.relationship-graph-resource').forEach((resourceEl) => {
+        resourceEl.classList.toggle(
+          'is-highlighted',
+          highlightedResourceRefs.has(resourceEl.dataset.resourceRef),
+        );
+      });
+      graphEl.querySelectorAll('.relationship-graph-object').forEach((objectEl) => {
+        objectEl.classList.toggle(
+          'is-highlighted',
+          highlightedObjectKeys.has(objectEl.dataset.objectKey),
+        );
+      });
+    }
+
+    function attachRelationshipGraphHover() {
+      detailsEl.querySelectorAll('.relationship-graph').forEach((graphEl) => {
+        const highlightSelection = (highlightedEdges, highlightedResourceRefs, highlightedObjectKeys) => {
+          if (!highlightedEdges.size && !highlightedResourceRefs.size && !highlightedObjectKeys.size) {
+            clearRelationshipGraphHighlight(graphEl);
+            return;
+          }
+          applyRelationshipGraphHighlight(
+            graphEl,
+            highlightedEdges,
+            highlightedResourceRefs,
+            highlightedObjectKeys,
+          );
+        };
+
+        graphEl.querySelectorAll('.relationship-graph-resource').forEach((resourceEl) => {
+          resourceEl.addEventListener('mouseenter', () => {
+            const highlightedEdges = new Set();
+            const highlightedResourceRefs = new Set([resourceEl.dataset.resourceRef]);
+            const highlightedObjectKeys = new Set([resourceEl.dataset.objectKey]);
+            graphEl.querySelectorAll('.relationship-graph-edge').forEach((edgeEl) => {
+              if (edgeEl.dataset.sourceResourceRef === resourceEl.dataset.resourceRef
+                  || edgeEl.dataset.targetResourceRef === resourceEl.dataset.resourceRef) {
+                highlightedEdges.add(edgeEl);
+                highlightedResourceRefs.add(edgeEl.dataset.sourceResourceRef);
+                highlightedResourceRefs.add(edgeEl.dataset.targetResourceRef);
+                highlightedObjectKeys.add(edgeEl.dataset.sourceObjectKey);
+                highlightedObjectKeys.add(edgeEl.dataset.targetObjectKey);
+              }
+            });
+            highlightSelection(highlightedEdges, highlightedResourceRefs, highlightedObjectKeys);
+          });
+          resourceEl.addEventListener('mouseleave', () => {
+            clearRelationshipGraphHighlight(graphEl);
+          });
+        });
+
+        graphEl.querySelectorAll('.relationship-graph-object').forEach((objectEl) => {
+          objectEl.addEventListener('mouseenter', () => {
+            const highlightedEdges = new Set();
+            const highlightedResourceRefs = new Set();
+            const highlightedObjectKeys = new Set([objectEl.dataset.objectKey]);
+            graphEl.querySelectorAll('.relationship-graph-resource').forEach((resourceEl) => {
+              if (resourceEl.dataset.objectKey === objectEl.dataset.objectKey) {
+                highlightedResourceRefs.add(resourceEl.dataset.resourceRef);
+              }
+            });
+            graphEl.querySelectorAll('.relationship-graph-edge').forEach((edgeEl) => {
+              if (edgeEl.dataset.sourceObjectKey === objectEl.dataset.objectKey
+                  || edgeEl.dataset.targetObjectKey === objectEl.dataset.objectKey) {
+                highlightedEdges.add(edgeEl);
+                highlightedResourceRefs.add(edgeEl.dataset.sourceResourceRef);
+                highlightedResourceRefs.add(edgeEl.dataset.targetResourceRef);
+                highlightedObjectKeys.add(edgeEl.dataset.sourceObjectKey);
+                highlightedObjectKeys.add(edgeEl.dataset.targetObjectKey);
+              }
+            });
+            highlightSelection(highlightedEdges, highlightedResourceRefs, highlightedObjectKeys);
+          });
+          objectEl.addEventListener('mouseleave', () => {
+            clearRelationshipGraphHighlight(graphEl);
+          });
+        });
+
+        graphEl.querySelectorAll('.relationship-graph-edge').forEach((edgeEl) => {
+          edgeEl.addEventListener('mouseenter', () => {
+            const highlightedEdges = new Set([edgeEl]);
+            const highlightedResourceRefs = new Set([
+              edgeEl.dataset.sourceResourceRef,
+              edgeEl.dataset.targetResourceRef,
+            ]);
+            const highlightedObjectKeys = new Set([
+              edgeEl.dataset.sourceObjectKey,
+              edgeEl.dataset.targetObjectKey,
+            ]);
+            highlightSelection(highlightedEdges, highlightedResourceRefs, highlightedObjectKeys);
+          });
+          edgeEl.addEventListener('mouseleave', () => {
+            clearRelationshipGraphHighlight(graphEl);
+          });
+        });
+      });
+    }
+
     function attachRelationshipActions() {
       detailsEl.querySelectorAll('.relationship-node').forEach((buttonEl) => {
         buttonEl.addEventListener('click', () => {
@@ -4623,6 +4989,12 @@ std::string BuildIndexHtml()
           showResourceDetails(buttonEl.dataset.resourceId);
         });
       });
+      detailsEl.querySelectorAll('.relationship-graph-resource[data-resource-id]').forEach((resourceEl) => {
+        resourceEl.addEventListener('click', () => {
+          showResourceDetails(resourceEl.dataset.resourceId);
+        });
+      });
+      attachRelationshipGraphHover();
     }
 
     function renderAddClientWizard(node, selectedDirectorId) {
@@ -4729,11 +5101,11 @@ std::string BuildIndexHtml()
         if (field.repeatable && field.allowed_values && field.allowed_values.length
             && field.datatype === 'RESOURCE_LIST') {
           const selectedValues = new Set(
-            splitRepeatableFieldValues(field.present ? field.value : ''),
+            normalizeRepeatableFieldValues(field.present ? field.value : ''),
           );
           const optionValues = Array.from(
             new Set([
-              ...field.allowed_values,
+              ...field.allowed_values.map((value) => stripSurroundingQuotes(value)),
               ...Array.from(selectedValues),
             ]),
           );
@@ -4744,7 +5116,7 @@ std::string BuildIndexHtml()
               data-field-key="${escapeHtml(field.key)}"
               data-field-required="${field.required ? 'true' : 'false'}"
               data-field-repeatable="true"
-              data-field-quote-char="${escapeHtml(detectSurroundingQuote(field.value || ''))}"
+              data-field-quote-char="${escapeHtml(detectRepeatableFieldQuote(field.value || ''))}"
             >${optionValues.map((value) => `<option value="${escapeHtml(value)}"${selectedValues.has(value) ? ' selected' : ''}>${escapeHtml(value)}</option>`).join('')}</select>`;
         }
         if (field.repeatable) {
@@ -4753,10 +5125,10 @@ std::string BuildIndexHtml()
               data-field-key="${escapeHtml(field.key)}"
               data-field-required="${field.required ? 'true' : 'false'}"
               data-field-repeatable="true"
-              data-field-quote-char="${escapeHtml(detectSurroundingQuote(field.value || ''))}"
+              data-field-quote-char="${escapeHtml(detectRepeatableFieldQuote(field.value || ''))}"
               placeholder="${escapeHtml(stripSurroundingQuotes((!field.present && field.inherited_value) ? field.inherited_value : ''))}"
               rows="2"
-            >${escapeHtml(stripSurroundingQuotes(field.value || ''))}</textarea>`;
+            >${escapeHtml(normalizeRepeatableFieldValues(field.value || '').join('\n'))}</textarea>`;
         }
         if (field.allowed_values && field.allowed_values.length) {
           if (field.datatype === 'BOOLEAN') {

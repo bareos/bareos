@@ -470,6 +470,8 @@ TEST(BareosConfigModel, KeepsMessagesReferencesScopedToOwningDaemon)
       });
   ASSERT_NE(director_message_relationship, director_relationships.end());
   EXPECT_EQ(director_message_relationship->to_node_id, "director-0");
+  EXPECT_EQ(director_message_relationship->source_resource_type, "jobdefs");
+  EXPECT_EQ(director_message_relationship->source_resource_name, "DefaultJob");
 
   const auto file_daemon_relationships
       = FindRelationshipsForNode(summary, "daemon-0-file-daemon");
@@ -483,6 +485,8 @@ TEST(BareosConfigModel, KeepsMessagesReferencesScopedToOwningDaemon)
       });
   ASSERT_NE(file_daemon_message_relationship, file_daemon_relationships.end());
   EXPECT_EQ(file_daemon_message_relationship->to_node_id, "daemon-0-file-daemon");
+  EXPECT_EQ(file_daemon_message_relationship->source_resource_type, "client");
+  EXPECT_EQ(file_daemon_message_relationship->source_resource_name, "example-fd");
   EXPECT_EQ(std::count_if(
                 file_daemon_relationships.begin(), file_daemon_relationships.end(),
                 [&director_messages_path](const RelationshipSummary& relationship) {
@@ -854,6 +858,87 @@ TEST(BareosConfigModel, AllowsRepeatableProfileCommandAcl)
   for (const auto& message : detail.validation_messages) {
     EXPECT_NE(message.code, "duplicate-directive");
   }
+}
+
+TEST(BareosConfigModel, NormalizesQuotedProfileAllowedValuesForConsole)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/console");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/profile");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/profile/operator.conf")
+      << "Profile {\n  Name = \"operator\"\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/profile/readonly.conf")
+      << "Profile {\n  Name = readonly\n}\n";
+  const auto resource_path = root.path() / "bareos-dir.d/console/admin.conf";
+  std::ofstream(resource_path)
+      << "Console {\n"
+      << "  Name = admin\n"
+      << "  Profile = \"operator\"\n"
+      << "}\n";
+
+  ResourceSummary summary{"resource-1", "console", "admin",
+                          resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+  const auto profile_hint = std::find_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "Profile"; });
+
+  ASSERT_NE(profile_hint, detail.field_hints.end());
+  EXPECT_EQ(profile_hint->related_resource_type, "profile");
+  EXPECT_NE(std::find(profile_hint->allowed_values.begin(),
+                      profile_hint->allowed_values.end(), "operator"),
+            profile_hint->allowed_values.end());
+  EXPECT_NE(std::find(profile_hint->allowed_values.begin(),
+                      profile_hint->allowed_values.end(), "readonly"),
+            profile_hint->allowed_values.end());
+  EXPECT_EQ(std::find(profile_hint->allowed_values.begin(),
+                      profile_hint->allowed_values.end(), "\"operator\""),
+            profile_hint->allowed_values.end());
+  EXPECT_EQ(profile_hint->allowed_values.front(), "operator");
+}
+
+TEST(BareosConfigModel, NormalizesQuotedRepeatableProfileAllowedValuesForUser)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/profile");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/user");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/profile/webui-admin.conf")
+      << "Profile {\n  Name = \"webui-admin\"\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/profile/webui-readonly.conf")
+      << "Profile {\n  Name = webui-readonly\n}\n";
+  const auto resource_path = root.path() / "bareos-dir.d/user/admin.conf";
+  std::ofstream(resource_path)
+      << "User {\n"
+      << "  Name = admin\n"
+      << "  Password = secret\n"
+      << "  Profile = \"webui-admin\"\n"
+      << "  Profile = webui-readonly\n"
+      << "}\n";
+
+  ResourceSummary summary{"resource-1", "user", "admin", resource_path.string()};
+  const auto detail = LoadResourceDetail(summary);
+  const auto profile_hint = std::find_if(
+      detail.field_hints.begin(), detail.field_hints.end(),
+      [](const ResourceFieldHint& hint) { return hint.key == "Profile"; });
+
+  ASSERT_NE(profile_hint, detail.field_hints.end());
+  EXPECT_TRUE(profile_hint->repeatable);
+  EXPECT_EQ(profile_hint->related_resource_type, "profile");
+  EXPECT_NE(std::find(profile_hint->allowed_values.begin(),
+                      profile_hint->allowed_values.end(), "webui-admin"),
+            profile_hint->allowed_values.end());
+  EXPECT_NE(std::find(profile_hint->allowed_values.begin(),
+                      profile_hint->allowed_values.end(), "webui-readonly"),
+            profile_hint->allowed_values.end());
+  EXPECT_EQ(std::find(profile_hint->allowed_values.begin(),
+                      profile_hint->allowed_values.end(), "\"webui-admin\""),
+            profile_hint->allowed_values.end());
+  EXPECT_EQ(std::find(profile_hint->allowed_values.begin(),
+                      profile_hint->allowed_values.end(),
+                      "\"webui-admin\"\nwebui-readonly"),
+            profile_hint->allowed_values.end());
 }
 
 TEST(BareosConfigModel, BuildsFieldHintPreviewContent)

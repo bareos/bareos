@@ -432,8 +432,9 @@ std::vector<std::string> CollectAllowedValues(const ResourceSummary& summary,
     for (const auto& resource : resources) {
       if (DetectComponentForPath(resource.file_path) != source_component) continue;
       if (resource.type != metadata.related_resource_type) continue;
-      if (resource.name.empty()) continue;
-      values.insert(resource.name);
+      const auto normalized_name = StripSurroundingQuotes(resource.name);
+      if (normalized_name.empty()) continue;
+      values.insert(normalized_name);
     }
   };
 
@@ -992,11 +993,28 @@ std::vector<ResourceFieldHint> BuildResourceFieldHints(
                                       : "",
                                   metadata.related_resource_type,
                                   CollectAllowedValues(summary, metadata)};
-    if (present && !hint.allowed_values.empty()
-        && std::find(hint.allowed_values.begin(), hint.allowed_values.end(),
-                     hint.value)
-               == hint.allowed_values.end()) {
-      hint.allowed_values.insert(hint.allowed_values.begin(), hint.value);
+    std::vector<std::string> normalized_hint_values;
+    if (metadata.related_resource_type.empty()) {
+      normalized_hint_values.push_back(hint.value);
+    } else if (hint.repeatable) {
+      normalized_hint_values = SplitRepeatableFieldValue(hint.value);
+      for (auto& normalized_value : normalized_hint_values) {
+        normalized_value = StripSurroundingQuotes(std::move(normalized_value));
+      }
+    } else {
+      normalized_hint_values.push_back(StripSurroundingQuotes(hint.value));
+    }
+    if (present && !hint.allowed_values.empty()) {
+      for (const auto& normalized_hint_value : normalized_hint_values) {
+        if (normalized_hint_value.empty()) continue;
+        if (std::find(hint.allowed_values.begin(), hint.allowed_values.end(),
+                      normalized_hint_value)
+            != hint.allowed_values.end()) {
+          continue;
+        }
+        hint.allowed_values.insert(hint.allowed_values.begin(),
+                                   normalized_hint_value);
+      }
     }
     hints.push_back(std::move(hint));
     known_keys[key] = true;
