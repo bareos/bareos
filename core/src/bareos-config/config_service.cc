@@ -1489,6 +1489,20 @@ std::vector<RenameImpact> CollectRenameImpacts(const ResourceDetail& detail,
         {detail.summary, directive.key, directive.line, directive.value,
          PreserveReferenceQuoting(directive.value, new_name)});
   }
+
+  if (detail.summary.type == "schedule") {
+    for (const auto& reference : ExtractScheduleRunOverrideReferences(detail)) {
+      if (NormalizeDirectiveNameForComparison(reference.directive_key)
+              != normalized_key
+          || reference.referenced_name != old_name) {
+        continue;
+      }
+      impacts.push_back({detail.summary, reference.directive_key, reference.line,
+                         reference.raw_value,
+                         PreserveReferenceQuoting(reference.raw_value, new_name)});
+    }
+  }
+
   return impacts;
 }
 
@@ -1582,6 +1596,39 @@ bool ApplyRenameToFieldHints(std::vector<ResourceFieldHint>& field_hints,
 
     if (StripSurroundingQuotes(field.value) != old_name) continue;
     field.value = PreserveReferenceQuoting(field.value, new_name);
+    changed = true;
+  }
+
+  if (normalized_key == "run") return changed;
+
+  for (auto& field : field_hints) {
+    if (!field.present || NormalizeDirectiveNameForComparison(field.key) != "run") {
+      continue;
+    }
+
+    auto run_lines = SplitRepeatableFieldValue(field.value);
+    bool field_changed = false;
+    for (size_t run_index = 0; run_index < run_lines.size(); ++run_index) {
+      ResourceDetail run_detail;
+      run_detail.summary.type = "schedule";
+      run_detail.directives.push_back(
+          {"Run", run_lines[run_index], run_index + 1, 1});
+
+      auto references = ExtractScheduleRunOverrideReferences(run_detail);
+      for (auto it = references.rbegin(); it != references.rend(); ++it) {
+        if (NormalizeDirectiveNameForComparison(it->directive_key) != normalized_key
+            || it->referenced_name != old_name) {
+          continue;
+        }
+        run_lines[run_index].replace(
+            it->value_offset, it->value_length,
+            PreserveReferenceQuoting(it->raw_value, new_name));
+        field_changed = true;
+      }
+    }
+
+    if (!field_changed) continue;
+    field.value = JoinRepeatableFieldValues(run_lines);
     changed = true;
   }
 

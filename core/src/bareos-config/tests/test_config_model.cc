@@ -1057,6 +1057,53 @@ TEST(BareosConfigModel, PreservesRepeatableScheduleRunDirectives)
       std::string::npos);
 }
 
+TEST(BareosConfigModel, BuildsRelationshipsForScheduleRunOverrides)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/schedule");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/pool");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/messages");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  const auto pool_path = root.path() / "bareos-dir.d/pool/full.conf";
+  const auto storage_path = root.path() / "bareos-dir.d/storage/file.conf";
+  const auto messages_path = root.path() / "bareos-dir.d/messages/standard.conf";
+  std::ofstream(pool_path) << "Pool {\n  Name = FullPool\n}\n";
+  std::ofstream(storage_path) << "Storage {\n  Name = FileStorage\n}\n";
+  std::ofstream(messages_path) << "Messages {\n  Name = Standard\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/schedule/Nightly.conf")
+      << "Schedule {\n"
+      << "  Name = Nightly\n"
+      << "  Run = Incremental FullPool=FullPool Storage=FileStorage Messages=Standard mon at 21:00\n"
+      << "}\n";
+
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+  const auto relationships = FindRelationshipsForNode(summary, "director-0");
+
+  const auto has_schedule_override = [&relationships](const std::string& directive_key,
+                                                      const std::string& target_name,
+                                                      const std::string& target_path) {
+    return std::any_of(
+        relationships.begin(), relationships.end(),
+        [&directive_key, &target_name, &target_path](
+            const RelationshipSummary& relationship) {
+          return relationship.source_resource_type == "schedule"
+                 && relationship.source_resource_name == "Nightly"
+                 && relationship.target_resource_name == target_name
+                 && relationship.target_resource_path == target_path
+                 && relationship.resolution.find("Directive " + directive_key + " in schedule Nightly")
+                        != std::string::npos;
+        });
+  };
+
+  EXPECT_TRUE(
+      has_schedule_override("FullPool", "FullPool", pool_path.string()));
+  EXPECT_TRUE(has_schedule_override("Storage", "FileStorage",
+                                    storage_path.string()));
+  EXPECT_TRUE(has_schedule_override("Messages", "Standard",
+                                    messages_path.string()));
+}
+
 TEST(BareosConfigModel, NormalizesDirectiveNamesLikeParser)
 {
   TempConfigRoot root;

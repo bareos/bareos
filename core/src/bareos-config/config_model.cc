@@ -120,6 +120,28 @@ std::string NormalizeDirectiveNameForComparison(std::string value)
   return value;
 }
 
+struct ScheduleRunOverrideMetadata {
+  const char* directive_key;
+  const char* related_resource_type;
+};
+
+const ScheduleRunOverrideMetadata* LookupScheduleRunOverrideMetadata(
+    const std::string& key)
+{
+  static const std::map<std::string, ScheduleRunOverrideMetadata> kMetadata{
+      {"pool", {"Pool", "pool"}},
+      {"fullpool", {"FullPool", "pool"}},
+      {"incrementalpool", {"IncrementalPool", "pool"}},
+      {"differentialpool", {"DifferentialPool", "pool"}},
+      {"nextpool", {"NextPool", "pool"}},
+      {"storage", {"Storage", "storage"}},
+      {"messages", {"Messages", "messages"}},
+  };
+
+  const auto it = kMetadata.find(NormalizeDirectiveNameForComparison(key));
+  return it == kMetadata.end() ? nullptr : &it->second;
+}
+
 std::string NormalizeBooleanValue(const std::string& value)
 {
   const auto normalized = NormalizeDirectiveNameForComparison(value);
@@ -138,6 +160,80 @@ std::string StripSurroundingQuotes(std::string value)
     return value.substr(1, value.size() - 2);
   }
   return value;
+}
+
+std::vector<ScheduleRunOverrideReference> ParseScheduleRunOverrideReferences(
+    const std::string& run_value, size_t line, size_t run_index)
+{
+  std::vector<ScheduleRunOverrideReference> references;
+  size_t position = 0;
+
+  while (position < run_value.size()) {
+    while (position < run_value.size()
+           && std::isspace(static_cast<unsigned char>(run_value[position]))) {
+      ++position;
+    }
+    if (position >= run_value.size()) break;
+
+    const auto key_start = position;
+    while (position < run_value.size() && run_value[position] != '='
+           && !std::isspace(static_cast<unsigned char>(run_value[position]))) {
+      ++position;
+    }
+
+    const auto key_end = position;
+    while (position < run_value.size()
+           && std::isspace(static_cast<unsigned char>(run_value[position]))) {
+      ++position;
+    }
+
+    if (position >= run_value.size() || run_value[position] != '=') {
+      continue;
+    }
+
+    auto key = run_value.substr(key_start, key_end - key_start);
+    ++position;
+
+    while (position < run_value.size()
+           && std::isspace(static_cast<unsigned char>(run_value[position]))) {
+      ++position;
+    }
+    if (position >= run_value.size()) break;
+
+    const auto value_start = position;
+    if (run_value[position] == '"' || run_value[position] == '\'') {
+      const auto quote = run_value[position];
+      ++position;
+      while (position < run_value.size() && run_value[position] != quote) {
+        ++position;
+      }
+      if (position < run_value.size()) ++position;
+    } else {
+      while (position < run_value.size()
+             && !std::isspace(static_cast<unsigned char>(run_value[position]))) {
+        ++position;
+      }
+    }
+    const auto value_end = position;
+
+    const auto* metadata = LookupScheduleRunOverrideMetadata(key);
+    if (!metadata) continue;
+
+    const auto raw_value = run_value.substr(value_start, value_end - value_start);
+    const auto referenced_name = StripSurroundingQuotes(raw_value);
+    if (referenced_name.empty()) continue;
+
+    references.push_back({metadata->directive_key,
+                          metadata->related_resource_type,
+                          referenced_name,
+                          raw_value,
+                          line,
+                          run_index,
+                          value_start,
+                          value_end - value_start});
+  }
+
+  return references;
 }
 
 std::vector<std::string> SplitRepeatableFieldValue(const std::string& value)
@@ -2314,9 +2410,64 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
           [&client_name](const TreeNodeSummary& node) {
             return node.kind == "client"
                    && NormalizeDirectiveNameForComparison(node.label)
-                          == NormalizeDirectiveNameForComparison(client_name);
+                           == NormalizeDirectiveNameForComparison(client_name);
           });
     };
+    const auto add_reference_relationships
+        = [&](const RelationshipSubject& subject, const std::string& canonical_key,
+              const std::string& related_resource_type,
+              const std::string& referenced_name) {
+            if (related_resource_type.empty() || referenced_name.empty()) return;
+
+            std::vector<const RelationshipResourceEntry*> matches;
+            for (const auto& entry : resource_entries) {
+              if (!entry.resource) continue;
+              if (entry.resource->type != related_resource_type) continue;
+              if (subject.owner_kind == "director"
+                  && (related_resource_type == "client"
+                      || related_resource_type == "storage")
+                  && entry.owner_kind != "director") {
+                continue;
+              }
+              if (IsOwnerScopedRelationshipType(related_resource_type)
+                  && entry.owner_node_id != subject.owner_node_id) {
+                continue;
+              }
+              if (NormalizeDirectiveNameForComparison(
+                      StripSurroundingQuotes(entry.resource->name))
+                  != NormalizeDirectiveNameForComparison(referenced_name)) {
+                continue;
+              }
+              matches.push_back(&entry);
+            }
+
+            for (const auto* match : matches) {
+              const auto relation
+                  = IsPrimaryDaemonResourceType(match->owner_kind, match->resource->type)
+                        ? "daemon-name"
+                        : "resource-name";
+              relationships.push_back({
+                  MakeRelationshipId(director_index, relationship_index++),
+                  relation,
+                  referenced_name,
+                  subject.owner_node_id,
+                  subject.owner_label,
+                  match->owner_node_id,
+                  RelationshipTargetLabel(*match),
+                  subject.source_resource.id,
+                  subject.source_resource.file_path,
+                  subject.detail.summary.type,
+                  RelationshipResourceDisplayName(subject.detail.summary),
+                  match->resource->id,
+                  match->resource->file_path,
+                  match->resource->type,
+                  RelationshipResourceDisplayName(*match->resource),
+                  true,
+                  RelationshipResolutionForReference(subject, relation, canonical_key,
+                                                     referenced_name, match),
+              });
+            }
+          };
 
     for (const auto& resource : director.resources) {
       const bool is_client = resource.type == "client";
@@ -2677,56 +2828,17 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
 
         const auto referenced_name = StripSurroundingQuotes(directive.value);
         if (referenced_name.empty()) continue;
+        add_reference_relationships(subject, canonical_key,
+                                    metadata_it->second.related_resource_type,
+                                    referenced_name);
+      }
 
-        std::vector<const RelationshipResourceEntry*> matches;
-        for (const auto& entry : resource_entries) {
-          if (!entry.resource) continue;
-          if (entry.resource->type != metadata_it->second.related_resource_type) continue;
-          if (subject.owner_kind == "director"
-              && (metadata_it->second.related_resource_type == "client"
-                  || metadata_it->second.related_resource_type == "storage")
-              && entry.owner_kind != "director") {
-            continue;
-          }
-          if (IsOwnerScopedRelationshipType(metadata_it->second.related_resource_type)
-              && entry.owner_node_id != subject.owner_node_id) {
-            continue;
-          }
-          if (NormalizeDirectiveNameForComparison(
-                  StripSurroundingQuotes(entry.resource->name))
-              != NormalizeDirectiveNameForComparison(referenced_name)) {
-            continue;
-          }
-          matches.push_back(&entry);
-        }
-
-        if (matches.empty()) continue;
-
-        for (const auto* match : matches) {
-          const auto relation
-              = IsPrimaryDaemonResourceType(match->owner_kind, match->resource->type)
-                    ? "daemon-name"
-                    : "resource-name";
-          relationships.push_back({
-              MakeRelationshipId(director_index, relationship_index++),
-              relation,
-              referenced_name,
-              subject.owner_node_id,
-              subject.owner_label,
-              match->owner_node_id,
-              RelationshipTargetLabel(*match),
-              subject.source_resource.id,
-              subject.source_resource.file_path,
-              subject.detail.summary.type,
-              RelationshipResourceDisplayName(subject.detail.summary),
-              match->resource->id,
-              match->resource->file_path,
-              match->resource->type,
-              RelationshipResourceDisplayName(*match->resource),
-              true,
-              RelationshipResolutionForReference(subject, relation, canonical_key,
-                                                 referenced_name, match),
-          });
+      if (subject.detail.summary.type == "schedule") {
+        for (const auto& run_reference
+             : ExtractScheduleRunOverrideReferences(subject.detail)) {
+          add_reference_relationships(subject, run_reference.directive_key,
+                                      run_reference.related_resource_type,
+                                      run_reference.referenced_name);
         }
       }
     }
@@ -2997,6 +3109,24 @@ std::vector<RelationshipSummary> FindAllRelationships(
     const DatacenterSummary& summary)
 {
   return BuildRelationshipSummaries(summary);
+}
+
+std::vector<ScheduleRunOverrideReference> ExtractScheduleRunOverrideReferences(
+    const ResourceDetail& detail)
+{
+  std::vector<ScheduleRunOverrideReference> references;
+  size_t run_index = 0;
+  for (const auto& directive : detail.directives) {
+    if (!IsTopLevelDirective(directive)
+        || NormalizeDirectiveNameForComparison(directive.key) != "run") {
+      continue;
+    }
+    auto run_references = ParseScheduleRunOverrideReferences(directive.value,
+                                                             directive.line,
+                                                             run_index++);
+    references.insert(references.end(), run_references.begin(), run_references.end());
+  }
+  return references;
 }
 
 const TreeNodeSummary* FindTreeNodeById(const DatacenterSummary& summary,

@@ -270,6 +270,51 @@ TEST(BareosConfigService, PreviewsRepeatableScheduleRunFields)
       std::string::npos);
 }
 
+TEST(BareosConfigService, ReturnsScheduleRunOverrideRelationships)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/schedule");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/pool");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/messages");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/pool/full.conf")
+      << "Pool {\n  Name = FullPool\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/storage/file.conf")
+      << "Storage {\n  Name = FileStorage\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/messages/standard.conf")
+      << "Messages {\n  Name = Standard\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/schedule/Nightly.conf")
+      << "Schedule {\n"
+      << "  Name = Nightly\n"
+      << "  Run = Incremental FullPool=FullPool Storage=FileStorage Messages=Standard mon at 21:00\n"
+      << "}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "GET", "/api/v1/nodes/director-0/relationships", "", ""};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find("\"source_resource_type\":\"schedule\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"source_resource_name\":\"Nightly\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"target_resource_name\":\"FullPool\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"target_resource_name\":\"FileStorage\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"target_resource_name\":\"Standard\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Directive FullPool in schedule Nightly"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Directive Storage in schedule Nightly"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Directive Messages in schedule Nightly"),
+            std::string::npos);
+}
+
 TEST(BareosConfigService, ExposesCreatableStorageDaemonResourceTypes)
 {
   TempConfigRoot root;
@@ -1139,9 +1184,11 @@ TEST(BareosConfigService,
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/pool");
   std::filesystem::create_directories(root.path() / "bareos-dir.d/job");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/schedule");
   std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
   const auto pool_path = root.path() / "bareos-dir.d/pool/scratch.conf";
   const auto job_path = root.path() / "bareos-dir.d/job/backup.conf";
+  const auto schedule_path = root.path() / "bareos-dir.d/schedule/nightly.conf";
   std::ofstream(pool_path)
       << "Pool {\n"
       << "  Name = ScratchPool\n"
@@ -1152,6 +1199,11 @@ TEST(BareosConfigService,
       << "  Name = BackupJob\n"
       << "  Pool = ScratchPool\n"
       << "  FullBackupPool = ScratchPool\n"
+      << "}\n";
+  std::ofstream(schedule_path)
+      << "Schedule {\n"
+      << "  Name = Nightly\n"
+      << "  Run = Incremental FullPool=ScratchPool mon at 21:00\n"
       << "}\n";
 
   const auto model = DiscoverDatacenterSummary({root.path()});
@@ -1178,6 +1230,8 @@ TEST(BareosConfigService,
   EXPECT_NE(response.body.find("\"directive_key\":\"Pool\""), std::string::npos);
   EXPECT_NE(response.body.find("\"directive_key\":\"FullBackupPool\""),
             std::string::npos);
+  EXPECT_NE(response.body.find("\"directive_key\":\"FullPool\""),
+            std::string::npos);
 
   const auto pool_content = [&pool_path] {
     std::ifstream input(pool_path);
@@ -1191,6 +1245,12 @@ TEST(BareosConfigService,
     output << input.rdbuf();
     return output.str();
   }();
+  const auto schedule_content = [&schedule_path] {
+    std::ifstream input(schedule_path);
+    std::ostringstream output;
+    output << input.rdbuf();
+    return output.str();
+  }();
 
   EXPECT_NE(pool_content.find("Name = RenamedScratchPool"), std::string::npos);
   EXPECT_NE(pool_content.find("RecyclePool = RenamedScratchPool"),
@@ -1200,6 +1260,10 @@ TEST(BareosConfigService,
   EXPECT_NE(job_content.find("FullBackupPool = RenamedScratchPool"),
             std::string::npos);
   EXPECT_EQ(job_content.find("FullBackupPool = ScratchPool"), std::string::npos);
+  EXPECT_NE(schedule_content.find("Run = Incremental FullPool=RenamedScratchPool mon at 21:00"),
+            std::string::npos);
+  EXPECT_EQ(schedule_content.find("Run = Incremental FullPool=ScratchPool mon at 21:00"),
+            std::string::npos);
 }
 
 TEST(BareosConfigService, ReportsPasswordReferenceImpactsInPreview)

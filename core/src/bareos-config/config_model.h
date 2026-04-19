@@ -160,6 +160,17 @@ struct RelationshipSummary {
   std::string resolution;
 };
 
+struct ScheduleRunOverrideReference {
+  std::string directive_key;
+  std::string related_resource_type;
+  std::string referenced_name;
+  std::string raw_value;
+  size_t line = 0;
+  size_t run_index = 0;
+  size_t value_offset = 0;
+  size_t value_length = 0;
+};
+
 struct DirectorSummary {
   std::string id;
   std::string name;
@@ -193,6 +204,8 @@ std::string SerializeResourceFieldHints(
 std::string SerializeResourceEditPreview(const ResourceEditPreview& preview);
 std::vector<RelationshipSummary> FindAllRelationships(
     const DatacenterSummary& summary);
+std::vector<ScheduleRunOverrideReference> ExtractScheduleRunOverrideReferences(
+    const ResourceDetail& detail);
 std::vector<RelationshipSummary> FindRelationshipsForNode(
     const DatacenterSummary& summary, const std::string& node_id);
 const TreeNodeSummary* FindTreeNodeById(const DatacenterSummary& summary,
