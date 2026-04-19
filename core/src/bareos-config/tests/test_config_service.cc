@@ -456,6 +456,36 @@ TEST(BareosConfigService, ReturnsConsoleRelationships)
   EXPECT_NE(response.body.find(director_console_path.string()), std::string::npos);
 }
 
+TEST(BareosConfigService, ReturnsKnownRemoteClientPasswordRelationship)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/fileset");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = different-fd\n}\n";
+  const auto client_path = root.path() / "bareos-dir.d/client/example-fd.conf";
+  std::ofstream(client_path)
+      << "Client {\n  Name = example-fd\n  Password = secret\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/fileset/local.conf") << "FileSet {}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "GET", "/api/v1/nodes/known-client-0-example-fd/relationships", "", ""};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find("\"relation\":\"resource-name\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"relation\":\"shared-password\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"to_node_id\":\"known-client-0-example-fd\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"endpoint_name\":\"common password\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find(client_path.string()), std::string::npos);
+}
+
 TEST(BareosConfigService, ReturnsRootConsoleAuthenticationRelationships)
 {
   TempConfigRoot root;
@@ -850,6 +880,42 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
   EXPECT_NE(response.body.find("const laneOffset = splitObjectResources"),
             std::string::npos);
   EXPECT_NE(response.body.find("const compactGraph = !splitObjectResources;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const foldEquivalentClients = !splitObjectResources;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const localFileDaemonNodeIdByLabel = new Map();"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("normalizedNodeId.endsWith('-file-daemon')"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("normalizedNodeId.startsWith('known-client-')"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("return localFileDaemonNodeIdByLabel.get(normalizedLabel)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function scrollTreeSelectionIntoView() {"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const selectedTreeEntry = treeEl.querySelector('.resource.selected')"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("selectedTreeEntry.scrollIntoView({"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function ensureTreeNodeResourcesLoaded(nodeId) {"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("return fetchJson(`/api/v1/nodes/${nodeId}/resources`)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("console.warn(`Failed to load tree resources for ${ownerNodeId}: ${error}`);"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function graphObjectNodeId(objectKey) {"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("normalizedObjectKey.startsWith('node:')"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("graphObjectNodeId(resourceEl.dataset.objectKey)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const crossEntityConnectionWarnings = (validationMessages) =>"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("rename-cross-entity-connection', 'password-cross-entity-connection"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Save cancelled after cross-entity warning."),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Save anyway?"),
             std::string::npos);
   EXPECT_NE(response.body.find("const headerHeight = compactGraph ? 12 : 40;"),
             std::string::npos);
@@ -1630,6 +1696,10 @@ TEST(BareosConfigService, ReportsDirectorRenameImpactsInPreview)
   EXPECT_EQ(response.status_code, 200);
   EXPECT_NE(response.body.find("\"code\":\"rename-reference-update\""),
             std::string::npos);
+  EXPECT_NE(response.body.find("\"code\":\"rename-cross-entity-connection\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("cross-entity relations with bareos-fd"),
+            std::string::npos);
   EXPECT_NE(response.body.find("Name in director bareos-dir"), std::string::npos);
   EXPECT_NE(response.body.find(fd_director_path.string()), std::string::npos);
   EXPECT_NE(response.body.find(sd_director_path.string()), std::string::npos);
@@ -1698,6 +1768,10 @@ TEST(BareosConfigService, ReportsDirectorPasswordImpactsInPreview)
 
   EXPECT_EQ(response.status_code, 200);
   EXPECT_NE(response.body.find("\"code\":\"password-reference-update\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"code\":\"password-cross-entity-connection\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("shared across entities with bareos-fd"),
             std::string::npos);
   EXPECT_NE(response.body.find("Password in director bareos-dir"),
             std::string::npos);
@@ -2825,7 +2899,7 @@ TEST(BareosConfigService, ReturnsStorageDeviceRelationships)
             std::string::npos);
 }
 
-TEST(BareosConfigService, ShowsKnownRemoteClientsInDatacenterResources)
+TEST(BareosConfigService, GeneratesKnownRemoteClientConfigOnLoad)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
@@ -2839,9 +2913,6 @@ TEST(BareosConfigService, ShowsKnownRemoteClientsInDatacenterResources)
       << "Client {\n  Name = remote-fd\n  Password = secret\n}\n";
   const auto generated_path = root.path()
                               / "generated/clients/remote-fd/etc/bareos/bareos-fd.d/director/bareos-dir.conf";
-  std::filesystem::create_directories(generated_path.parent_path());
-  std::ofstream(generated_path)
-      << "Director {\n  Name = bareos-dir\n  Password = secret\n}\n";
 
   const ConfigServiceOptions options = MakeServiceOptions(root.path());
   const HttpRequest request{"GET", "/api/v1/nodes/datacenter/resources", "", ""};
@@ -2849,11 +2920,20 @@ TEST(BareosConfigService, ShowsKnownRemoteClientsInDatacenterResources)
   const auto response = HandleConfigServiceRequest(options, request);
 
   EXPECT_EQ(response.status_code, 200);
+  ASSERT_TRUE(std::filesystem::exists(generated_path));
+  const auto read_file = [](const std::filesystem::path& path) {
+    std::ifstream input(path);
+    std::ostringstream output;
+    output << input.rdbuf();
+    return output.str();
+  };
   EXPECT_NE(response.body.find("\"name\":\"remote-fd\""), std::string::npos);
   EXPECT_NE(response.body.find("\"name\":\"remote-fd generated client config\""),
             std::string::npos);
   EXPECT_NE(response.body.find(generated_path.string()), std::string::npos);
   EXPECT_EQ(response.body.find("\"name\":\"local-fd\""), std::string::npos);
+  EXPECT_EQ(read_file(generated_path),
+            "Director {\n  Name = bareos-dir\n  Password = secret\n}\n");
 
   const HttpRequest editor_request{
       "GET",

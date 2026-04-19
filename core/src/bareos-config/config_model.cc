@@ -2567,6 +2567,31 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
                 true,
                 "Resolved to known client node " + known_client->label + ".",
             });
+            const auto client_password = StripSurroundingQuotes(
+                ExtractDirectiveValue(LoadResourceDetail(resource).directives,
+                                      "Password"));
+            if (!client_password.empty()) {
+              relationships.push_back({
+                  MakeRelationshipId(director_index, relationship_index++),
+                  "shared-password",
+                  "common password",
+                  director.id,
+                  director.name,
+                  known_client->id,
+                  known_client->label,
+                  resource.id,
+                  resource.file_path,
+                  resource.type,
+                  RelationshipResourceDisplayName(resource),
+                  resource.id,
+                  resource.file_path,
+                  resource.type,
+                  RelationshipResourceDisplayName(resource),
+                  true,
+                  "Known client node " + known_client->label
+                      + " uses the configured client password.",
+              });
+            }
           }
         }
         continue;

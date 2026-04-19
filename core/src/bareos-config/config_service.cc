@@ -269,6 +269,11 @@ std::optional<ResourceSummary> ResolveResourceSummary(
     const ConfigServiceOptions& options,
     const DatacenterSummary& model,
     const std::string& resource_id);
+bool EnsureGeneratedRemoteClientConfigs(const ConfigServiceOptions& options,
+                                        const DatacenterSummary& model,
+                                        std::string& error);
+std::optional<HttpResponse> EnsureGeneratedRemoteClientConfigsResponse(
+    const ConfigServiceOptions& options, const DatacenterSummary& model);
 bool DeleteFileWithBackup(const std::filesystem::path& path,
                           std::string& action,
                           std::string& backup_path,
@@ -1313,6 +1318,63 @@ bool MirrorConfigTreeIntoStage(const std::filesystem::path& source_root,
   return true;
 }
 
+bool EnsureGeneratedRemoteClientConfigs(const ConfigServiceOptions& options,
+                                        const DatacenterSummary& model,
+                                        std::string& error)
+{
+  if (options.generated_config_root.empty()) return true;
+
+  for (const auto& director : model.directors) {
+    const auto* file_daemon = FindDirectorDaemonByKind(director, "file-daemon");
+    const auto local_file_daemon_name
+        = file_daemon ? StripSurroundingQuotes(file_daemon->configured_name) : "";
+    for (const auto& resource : director.resources) {
+      if (resource.type != "client") continue;
+
+      const auto client_name = StripSurroundingQuotes(resource.name);
+      if (client_name.empty()) continue;
+      if (!local_file_daemon_name.empty() && client_name == local_file_daemon_name) {
+        continue;
+      }
+
+      const auto generated_path
+          = BuildGeneratedRemoteConfigRoot(options, "client", client_name)
+            / "bareos-fd.d" / "director" / (director.name + ".conf");
+      if (std::filesystem::exists(generated_path)) continue;
+
+      const auto detail = LoadResourceDetail(resource);
+      const auto password_value = ExtractDirectiveValue(detail.directives, "Password");
+
+      std::ostringstream content;
+      content << "Director {\n"
+              << "  Name = " << director.name << "\n";
+      if (!StripSurroundingQuotes(password_value).empty()) {
+        content << "  Password = " << password_value << "\n";
+      }
+      content << "}\n";
+
+      std::string action;
+      std::string backup_path;
+      if (!WriteFileWithBackup(generated_path, content.str(), action, backup_path,
+                               error)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+std::optional<HttpResponse> EnsureGeneratedRemoteClientConfigsResponse(
+    const ConfigServiceOptions& options, const DatacenterSummary& model)
+{
+  std::string error;
+  if (EnsureGeneratedRemoteClientConfigs(options, model, error)) {
+    return std::nullopt;
+  }
+  return HttpResponse{409, "text/plain; charset=utf-8", error};
+}
+
 bool DeleteFileWithBackup(const std::filesystem::path& path,
                           std::string& action,
                           std::string& backup_path,
@@ -1654,6 +1716,55 @@ void AppendUniqueRenameImpacts(std::vector<RenameImpact>& impacts,
 
 std::string SummarizeRenameImpacts(const std::vector<RenameImpact>& rename_impacts);
 
+bool IsCrossEntityRelationship(const RelationshipSummary& relationship)
+{
+  return !relationship.from_node_id.empty() && !relationship.to_node_id.empty()
+         && relationship.from_node_id != relationship.to_node_id;
+}
+
+std::vector<std::string> CollectCrossEntityCounterpartyLabels(
+    const std::vector<RelationshipSummary>& relationships,
+    const ResourceSummary& resource,
+    const std::optional<std::string>& relation_filter = std::nullopt)
+{
+  std::set<std::string> labels;
+  for (const auto& relationship : relationships) {
+    if (!relationship.resolved || !IsCrossEntityRelationship(relationship)) {
+      continue;
+    }
+    if (relation_filter
+        && NormalizeDirectiveNameForComparison(relationship.relation)
+               != NormalizeDirectiveNameForComparison(*relation_filter)) {
+      continue;
+    }
+
+    const bool matches_source = MatchesRelationshipSource(relationship, resource);
+    const bool matches_target = MatchesRelationshipTarget(relationship, resource);
+    if (!matches_source && !matches_target) continue;
+
+    const auto label = StripSurroundingQuotes(
+        matches_source ? relationship.to_label : relationship.from_label);
+    if (!label.empty()) labels.insert(label);
+  }
+  return {labels.begin(), labels.end()};
+}
+
+std::string SummarizeEntityLabels(const std::vector<std::string>& labels)
+{
+  if (labels.empty()) return {};
+  if (labels.size() == 1) return labels.front();
+  if (labels.size() == 2) return labels[0] + " and " + labels[1];
+
+  std::ostringstream summary;
+  for (size_t index = 0; index < labels.size(); ++index) {
+    if (index > 0) {
+      summary << (index + 1 == labels.size() ? ", and " : ", ");
+    }
+    summary << labels[index];
+  }
+  return summary.str();
+}
+
 std::vector<ResourceSummary> FindPasswordPropagationTargets(
     const DatacenterSummary& summary, const ResourceDetail& detail)
 {
@@ -1951,6 +2062,7 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
   if (config_root.empty()) return result;
 
   const auto model = DiscoverDatacenterSummary({config_root});
+  const auto relationships = FindAllRelationships(model);
   if (name_changed) {
     auto updated_source_field_hints = result.preview.updated_field_hints;
     std::vector<RenameImpact> source_impacts;
@@ -2278,6 +2390,23 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
     result.preview.updated_validation_messages.push_back(std::move(warning));
   }
 
+  if (name_changed) {
+    const auto remote_name_labels = CollectCrossEntityCounterpartyLabels(
+        relationships, name_source_summary);
+    if (!remote_name_labels.empty()) {
+      auto warning = ValidationMessage{};
+      warning.level = "warning";
+      warning.code = "rename-cross-entity-connection";
+      warning.message
+          = "This name is used in cross-entity relations with "
+            + SummarizeEntityLabels(remote_name_labels)
+            + ". If the remote configuration is not updated too, that "
+              "connection will break.";
+      warning.line = FindDirectiveLine(result.preview.updated_directives, "Name");
+      result.preview.updated_validation_messages.push_back(std::move(warning));
+    }
+  }
+
   std::optional<ResourceDetail> console_source_password_detail;
   std::optional<ResourceDetail> console_updated_password_detail;
   if (detail.summary.type == "configuration" || detail.summary.type == "console"
@@ -2547,6 +2676,22 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
         warning.line = FindDirectiveLine(result.preview.updated_directives, "Password");
         result.preview.updated_validation_messages.push_back(std::move(warning));
       }
+    }
+
+    const auto remote_password_labels = CollectCrossEntityCounterpartyLabels(
+        relationships, password_source_summary, "shared-password");
+    if (!remote_password_labels.empty()) {
+      auto warning = ValidationMessage{};
+      warning.level = "warning";
+      warning.code = "password-cross-entity-connection";
+      warning.message
+          = "This password is shared across entities with "
+            + SummarizeEntityLabels(remote_password_labels)
+            + ". If the remote configuration is not updated too, that "
+              "connection will break.";
+      warning.line
+          = FindDirectiveLine(result.preview.updated_directives, "Password");
+      result.preview.updated_validation_messages.push_back(std::move(warning));
     }
   }
 
@@ -5833,6 +5978,45 @@ std::string BuildIndexHtml()
         </div>`;
       }
 
+      const splitObjectResources = Boolean(options.splitObjectResources);
+      const foldEquivalentClients = !splitObjectResources;
+      const normalizedGraphObjectLabel = (value) =>
+        stripSurroundingQuotes(`${value || ''}`).trim().toLowerCase();
+      const localFileDaemonNodeIdByLabel = new Map();
+      if (foldEquivalentClients) {
+        relationships.forEach((relationship) => {
+          [
+            [relationship.from_node_id, relationship.from_label],
+            [
+              relationship.to_node_id,
+              relationship.to_label || relationship.endpoint_name || '-',
+            ],
+          ].forEach(([nodeId, label]) => {
+            const normalizedNodeId = `${nodeId || ''}`.trim();
+            if (!normalizedNodeId.startsWith('daemon-')
+                || !normalizedNodeId.endsWith('-file-daemon')) {
+              return;
+            }
+            const normalizedLabel = normalizedGraphObjectLabel(label);
+            if (normalizedLabel
+                && !localFileDaemonNodeIdByLabel.has(normalizedLabel)) {
+              localFileDaemonNodeIdByLabel.set(
+                  normalizedLabel, normalizedNodeId);
+            }
+          });
+        });
+      }
+      const canonicalGraphNodeId = (nodeId, label) => {
+        const normalizedNodeId = `${nodeId || ''}`.trim();
+        if (!foldEquivalentClients
+            || !normalizedNodeId.startsWith('known-client-')) {
+          return normalizedNodeId;
+        }
+        const normalizedLabel = normalizedGraphObjectLabel(label);
+        return localFileDaemonNodeIdByLabel.get(normalizedLabel)
+               || normalizedNodeId;
+      };
+
       const legendCounts = [];
       const objectIndex = new Map();
       const objects = [];
@@ -5868,8 +6052,12 @@ std::string BuildIndexHtml()
         }
         return object.resourceIndex.get(key);
       };
-      const objectKeyForRelationshipEnd = (nodeId, label, unresolvedPrefix) =>
-        nodeId ? `node:${nodeId}` : `${unresolvedPrefix}:${label || '-'}`;
+      const objectKeyForRelationshipEnd = (nodeId, label, unresolvedPrefix) => {
+        const canonicalNodeId = canonicalGraphNodeId(nodeId, label);
+        return canonicalNodeId
+          ? `node:${canonicalNodeId}`
+          : `${unresolvedPrefix}:${label || '-'}`;
+      };
 
       relationships.forEach((relationship) => {
         const relation = relationship.relation || 'other';
@@ -5885,13 +6073,13 @@ std::string BuildIndexHtml()
         const sourceObject = ensureObject(
           objectKeyForRelationshipEnd(relationship.from_node_id, sourceLabel, 'source'),
           sourceLabel,
-          { nodeId: relationship.from_node_id },
+          { nodeId: canonicalGraphNodeId(relationship.from_node_id, sourceLabel) },
         );
         const targetObject = ensureObject(
           objectKeyForRelationshipEnd(relationship.to_node_id, targetLabel, 'unresolved'),
           targetLabel,
           {
-            nodeId: relationship.to_node_id,
+            nodeId: canonicalGraphNodeId(relationship.to_node_id, targetLabel),
             unresolved: !relationship.to_node_id,
           },
         );
@@ -5936,7 +6124,6 @@ std::string BuildIndexHtml()
         relationship._graphTargetResourceKey = targetResource.key;
       });
 
-      const splitObjectResources = Boolean(options.splitObjectResources);
       const splitLaneCount = splitObjectResources ? 2 : 1;
       const preferredLaneForResource = (resource) => {
         if (resource.outgoing > 0) return 0;
@@ -6686,7 +6873,10 @@ std::string BuildIndexHtml()
       });
       detailsEl.querySelectorAll('.relationship-graph-resource[data-resource-id]').forEach((resourceEl) => {
         resourceEl.addEventListener('click', () => {
-          showResourceDetails(resourceEl.dataset.resourceId);
+          showResourceDetails(
+            resourceEl.dataset.resourceId,
+            graphObjectNodeId(resourceEl.dataset.objectKey),
+          );
         });
       });
       attachRelationshipGraphHover();
@@ -6988,6 +7178,22 @@ std::string BuildIndexHtml()
         previewOutputEl.textContent = preview.updated_content;
       };
 
+      const crossEntityConnectionWarnings = (validationMessages) =>
+        (validationMessages || []).filter((validation) =>
+          ['rename-cross-entity-connection', 'password-cross-entity-connection']
+            .includes(validation.code));
+
+      const confirmCrossEntityWarnings = (validationMessages) => {
+        const warnings = crossEntityConnectionWarnings(validationMessages);
+        if (!warnings.length) {
+          return true;
+        }
+        const message = warnings
+          .map((warning) => `Warning: ${warning.message}`)
+          .join('\n\n');
+        return window.confirm(`${message}\n\nSave anyway?`);
+      };
+
       renderCurrentFieldHints();
 
       applyFieldsButton.addEventListener('click', () => {
@@ -7041,17 +7247,34 @@ std::string BuildIndexHtml()
 
       saveButton.addEventListener('click', () => {
         saveButton.disabled = true;
-        previewStatusEl.textContent = 'Saving resource...';
-        fetch(saveUrl, {
+        previewStatusEl.textContent = 'Checking for save warnings...';
+        const saveContent = editorEl.value;
+        fetch(previewUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-          body: editorEl.value,
+          body: saveContent,
         })
-          .then(async (response) => ({
-            ok: response.ok,
-            payload: await response.json(),
-          }))
-          .then(({ ok, payload }) => {
+          .then((response) => response.json())
+          .then((preview) => {
+            applyPreviewToEditor(preview);
+            if (!confirmCrossEntityWarnings(preview.updated_validation_messages)) {
+              previewStatusEl.textContent = 'Save cancelled after cross-entity warning.';
+              return null;
+            }
+            previewStatusEl.textContent = 'Saving resource...';
+            return fetch(saveUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+              body: saveContent,
+            })
+              .then(async (response) => ({
+                ok: response.ok,
+                payload: await response.json(),
+              }));
+          })
+          .then((result) => {
+            if (!result) return;
+            const { ok, payload } = result;
             if (payload.preview) {
               applyPreviewToEditor(payload.preview);
             }
@@ -7113,20 +7336,26 @@ std::string BuildIndexHtml()
       }
     }
 
-    function showResourceDetails(resourceId) {
-      if (currentTreeData && currentTreeData.tree) {
-        const ownerNodeId = findNodeContainingResource(currentTreeData.tree, resourceId);
-        if (ownerNodeId) {
-          selectedNodeId = ownerNodeId;
-          expandedTreeIds.add(`tree-node-${ownerNodeId}`);
-        }
+    function showResourceDetails(resourceId, ownerNodeIdHint = '') {
+      let ownerNodeId = `${ownerNodeIdHint || ''}`.trim();
+      if (!ownerNodeId && currentTreeData && currentTreeData.tree) {
+        ownerNodeId = findNodeContainingResource(currentTreeData.tree, resourceId);
+      }
+      if (ownerNodeId) {
+        selectedNodeId = ownerNodeId;
+        expandedTreeIds.add(`tree-node-${ownerNodeId}`);
       }
       selectedResourceId = resourceId;
-      if (currentTreeData) {
-        renderTree(currentTreeData);
-      }
-      fetch(`/api/v1/resources/${resourceId}/editor`)
-        .then((response) => response.json())
+      ensureTreeNodeResourcesLoaded(ownerNodeId)
+        .catch((error) => {
+          console.warn(`Failed to load tree resources for ${ownerNodeId}: ${error}`);
+        })
+        .finally(() => {
+          if (currentTreeData) {
+            renderTree(currentTreeData);
+          }
+        });
+      fetchJson(`/api/v1/resources/${resourceId}/editor`)
         .then((resource) => {
           renderEditableResource(
             resource,
@@ -7157,6 +7386,23 @@ std::string BuildIndexHtml()
           throw new Error(`Invalid JSON from ${url}: ${error}`);
         }
       });
+    }
+
+    function ensureTreeNodeResourcesLoaded(nodeId) {
+      if (!nodeId || loadedNodeResources.has(nodeId)) {
+        return Promise.resolve();
+      }
+      return fetchJson(`/api/v1/nodes/${nodeId}/resources`)
+        .then((resources) => {
+          loadedNodeResources.set(nodeId, resources);
+        });
+    }
+
+    function graphObjectNodeId(objectKey) {
+      const normalizedObjectKey = `${objectKey || ''}`.trim();
+      return normalizedObjectKey.startsWith('node:')
+        ? normalizedObjectKey.slice(5)
+        : '';
     }
 
     function showNewResourceEditor(nodeId, resourceType) {
@@ -7465,6 +7711,20 @@ std::string BuildIndexHtml()
       parentEl.appendChild(wrapper);
     }
 
+    function scrollTreeSelectionIntoView() {
+      const selectedTreeEntry = treeEl.querySelector('.resource.selected')
+        || treeEl.querySelector('.node.selected');
+      if (!selectedTreeEntry) {
+        return;
+      }
+      requestAnimationFrame(() => {
+        selectedTreeEntry.scrollIntoView({
+          block: 'center',
+          inline: 'nearest',
+        });
+      });
+    }
+
     function renderTree(data) {
       currentTreeData = data;
       const root = data.tree;
@@ -7474,6 +7734,7 @@ std::string BuildIndexHtml()
       }
       treeEl.innerHTML = '';
       renderDatacenterTree(root, treeEl);
+      scrollTreeSelectionIntoView();
     }
 
     fetch('/api/v1/bootstrap')
@@ -7512,12 +7773,20 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
 
   if (request.method == "GET" && request.path == "/api/v1/bootstrap") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
+    if (const auto error_response
+        = EnsureGeneratedRemoteClientConfigsResponse(options, model)) {
+      return *error_response;
+    }
     return {200, "application/json; charset=utf-8",
             SerializeBootstrapSummary(options, model)};
   }
 
   if (request.method == "GET" && request.path == "/api/v1/tree") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
+    if (const auto error_response
+        = EnsureGeneratedRemoteClientConfigsResponse(options, model)) {
+      return *error_response;
+    }
     return {200, "application/json; charset=utf-8",
             SerializeTreeNodeSummary(BuildAugmentedTree(options, model))};
   }
@@ -7527,6 +7796,10 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
       && path_parts[1] == "v1"
       && path_parts[2] == "nodes") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
+    if (const auto error_response
+        = EnsureGeneratedRemoteClientConfigsResponse(options, model)) {
+      return *error_response;
+    }
     const auto node = ResolveNodeSummary(options, model, path_parts[3]);
     if (!node) return {404, "text/plain; charset=utf-8", "Node Not Found"};
     return {200, "application/json; charset=utf-8", SerializeNodeDetail(*node)};
@@ -7536,6 +7809,10 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
       && path_parts[0] == "api" && path_parts[1] == "v1"
       && path_parts[2] == "nodes" && path_parts[4] == "resources") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
+    if (const auto error_response
+        = EnsureGeneratedRemoteClientConfigsResponse(options, model)) {
+      return *error_response;
+    }
     const auto node = ResolveNodeSummary(options, model, path_parts[3]);
     if (!node) return {404, "text/plain; charset=utf-8", "Node Not Found"};
     return {200, "application/json; charset=utf-8",
@@ -7662,6 +7939,10 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
       && path_parts[0] == "api" && path_parts[1] == "v1"
       && path_parts[2] == "resources") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
+    if (const auto error_response
+        = EnsureGeneratedRemoteClientConfigsResponse(options, model)) {
+      return *error_response;
+    }
     const auto resource = ResolveResourceSummary(options, model, path_parts[3]);
     if (!resource) return {404, "text/plain; charset=utf-8", "Resource Not Found"};
     return {200, "application/json; charset=utf-8",
@@ -7672,6 +7953,10 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
       && path_parts[0] == "api" && path_parts[1] == "v1"
       && path_parts[2] == "resources" && path_parts[4] == "editor") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
+    if (const auto error_response
+        = EnsureGeneratedRemoteClientConfigsResponse(options, model)) {
+      return *error_response;
+    }
     const auto resource = ResolveResourceSummary(options, model, path_parts[3]);
     if (!resource) return {404, "text/plain; charset=utf-8", "Resource Not Found"};
     return {200, "application/json; charset=utf-8",
@@ -7682,6 +7967,10 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
       && path_parts[0] == "api" && path_parts[1] == "v1"
       && path_parts[2] == "resources" && path_parts[4] == "preview") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
+    if (const auto error_response
+        = EnsureGeneratedRemoteClientConfigsResponse(options, model)) {
+      return *error_response;
+    }
     const auto resource = ResolveResourceSummary(options, model, path_parts[3]);
     if (!resource) return {404, "text/plain; charset=utf-8", "Resource Not Found"};
 
@@ -7695,6 +7984,10 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
       && path_parts[0] == "api" && path_parts[1] == "v1"
       && path_parts[2] == "resources" && path_parts[4] == "preview-fields") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
+    if (const auto error_response
+        = EnsureGeneratedRemoteClientConfigsResponse(options, model)) {
+      return *error_response;
+    }
     const auto resource = ResolveResourceSummary(options, model, path_parts[3]);
     if (!resource) return {404, "text/plain; charset=utf-8", "Resource Not Found"};
 
@@ -7712,6 +8005,10 @@ HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
       && path_parts[0] == "api" && path_parts[1] == "v1"
       && path_parts[2] == "resources" && path_parts[4] == "save") {
     const auto model = DiscoverDatacenterSummary(options.config_roots);
+    if (const auto error_response
+        = EnsureGeneratedRemoteClientConfigsResponse(options, model)) {
+      return *error_response;
+    }
     const auto resource = ResolveResourceSummary(options, model, path_parts[3]);
     if (!resource) return {404, "text/plain; charset=utf-8", "Resource Not Found"};
 

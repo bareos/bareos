@@ -505,19 +505,25 @@ TEST(BareosConfigModel, BuildsKnownRemoteClientRelationship)
   std::ofstream(root.path() / "bareos-fd.conf")
       << "FileDaemon {\n  Name = different-fd\n}\n";
   std::ofstream(root.path() / "bareos-dir.d/client/example-fd.conf")
-      << "Client {\n  Name = example-fd\n}\n";
+      << "Client {\n  Name = example-fd\n  Password = secret\n}\n";
   std::ofstream(root.path() / "bareos-fd.d/fileset/local.conf") << "FileSet {}\n";
 
   const auto summary = DiscoverDatacenterSummary({root.path()});
   const auto relationships = FindRelationshipsForNode(summary, "director-0");
 
-  ASSERT_EQ(relationships.size(), 1U);
+  ASSERT_EQ(relationships.size(), 2U);
   EXPECT_EQ(relationships[0].relation, "resource-name");
   EXPECT_EQ(relationships[0].source_resource_type, "client");
   EXPECT_EQ(relationships[0].source_resource_name, "example-fd");
   EXPECT_EQ(relationships[0].to_node_id, "known-client-0-example-fd");
   EXPECT_EQ(relationships[0].target_resource_type, "client");
   EXPECT_EQ(relationships[0].target_resource_name, "example-fd");
+  EXPECT_EQ(relationships[1].relation, "shared-password");
+  EXPECT_EQ(relationships[1].source_resource_type, "client");
+  EXPECT_EQ(relationships[1].source_resource_name, "example-fd");
+  EXPECT_EQ(relationships[1].to_node_id, "known-client-0-example-fd");
+  EXPECT_EQ(relationships[1].target_resource_type, "client");
+  EXPECT_EQ(relationships[1].target_resource_name, "example-fd");
 
   const auto* remote_client = FindTreeNodeById(summary, "known-client-0-example-fd");
   ASSERT_NE(remote_client, nullptr);
