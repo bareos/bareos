@@ -27,6 +27,8 @@
 #include "lib/lex.h"
 #include "lib/qualified_resource_name_type_converter.h"
 
+#include <filesystem>
+
 ConfigParserStateMachine::ConfigParserStateMachine(
     const char* config_file_name,
     void* caller_ctx,
@@ -173,8 +175,25 @@ ConfigParserStateMachine::ScanResource(int token)
       state = ParseState::kInit;
       Dmsg0(900, "BCT_EOB => define new resource\n");
       if (!currently_parsed_resource_.allocated_resource_->resource_name_) {
-        scan_err0(lexical_parser_, T_("Name not specified for resource"));
-        return ParseInternalReturnCode::kError;
+        if (my_config_.allow_unnamed_resources_) {
+          auto fallback_name
+              = std::filesystem::path(
+                    currently_parsed_resource_.allocated_resource_->source_file_)
+                    .stem()
+                    .string();
+          if (fallback_name == ".conf") {
+            fallback_name = std::filesystem::path(
+                                currently_parsed_resource_.allocated_resource_
+                                    ->source_file_)
+                                .filename()
+                                .string();
+          }
+          currently_parsed_resource_.allocated_resource_->resource_name_
+              = strdup(fallback_name.c_str());
+        } else {
+          scan_err0(lexical_parser_, T_("Name not specified for resource"));
+          return ParseInternalReturnCode::kError;
+        }
       }
       /* save resource */
       if (!my_config_.SaveResourceCb_(
@@ -184,6 +203,8 @@ ConfigParserStateMachine::ScanResource(int token)
         scan_err0(lexical_parser_, T_("SaveResource failed"));
         return ParseInternalReturnCode::kError;
       }
+      currently_parsed_resource_.allocated_resource_->source_line_end_
+          = lexical_parser_->line_no;
 
       FreeUnusedMemoryFromPass2();
       return ParseInternalReturnCode::kGetNextToken;
@@ -251,6 +272,12 @@ ConfigParserStateMachine::ParserInitResource(int token)
     currently_parsed_resource_.allocated_resource_->rcode_str_
         = my_config_.GetQualifiedResourceNameTypeConverter()
               ->ResourceTypeToString(resource_table->rcode);
+    currently_parsed_resource_.allocated_resource_->source_file_
+        = lexical_parser_->fname ? lexical_parser_->fname : "";
+    currently_parsed_resource_.allocated_resource_->source_line_start_
+        = lexical_parser_->line_no;
+    currently_parsed_resource_.allocated_resource_->source_line_end_
+        = lexical_parser_->line_no;
 
     state = ParseState::kResource;
 

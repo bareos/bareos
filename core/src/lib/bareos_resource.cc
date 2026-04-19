@@ -42,6 +42,10 @@ BareosResource::BareosResource(const BareosResource& other)
   description_ = other.description_ ? strdup(other.description_) : nullptr;
   rcode_ = other.rcode_;
   refcnt_ = other.refcnt_;
+  rcode_str_ = other.rcode_str_;
+  source_file_ = other.source_file_;
+  source_line_start_ = other.source_line_start_;
+  source_line_end_ = other.source_line_end_;
   item_present_ = other.item_present_;
   ::memcpy(inherit_content_, other.inherit_content_, MAX_RES_ITEMS);
 }
@@ -55,6 +59,10 @@ BareosResource& BareosResource::operator=(const BareosResource& rhs)
   description_ = rhs.description_;
   rcode_ = rhs.rcode_;
   refcnt_ = rhs.refcnt_;
+  rcode_str_ = rhs.rcode_str_;
+  source_file_ = rhs.source_file_;
+  source_line_start_ = rhs.source_line_start_;
+  source_line_end_ = rhs.source_line_end_;
   item_present_ = rhs.item_present_;
   ::memcpy(inherit_content_, rhs.inherit_content_, MAX_RES_ITEMS);
   return *this;

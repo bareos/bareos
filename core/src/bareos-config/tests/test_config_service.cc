@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <regex>
 #include <sstream>
 
 #include <gtest/gtest.h>
@@ -61,6 +62,17 @@ ConfigServiceOptions MakeServiceOptions(
           bareos_fd_binary,
           bareos_sd_binary,
           root / "generated"};
+}
+
+std::vector<std::string> ExtractNodeIdsFromBootstrap(const std::string& body)
+{
+  std::vector<std::string> ids;
+  const std::regex node_regex("\"id\":\"([^\"]+)\",\"kind\":\"");
+  for (std::sregex_iterator it(body.begin(), body.end(), node_regex), end;
+       it != end; ++it) {
+    ids.push_back((*it)[1].str());
+  }
+  return ids;
 }
 }  // namespace
 
@@ -382,6 +394,70 @@ TEST(BareosConfigService, ReturnsRootConsoleAuthenticationRelationships)
   EXPECT_NE(response.body.find(director_path.string()), std::string::npos);
 }
 
+TEST(BareosConfigService, LoadsResourcesAndRelationshipsForAllBootstrapNodes)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/job");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/client");
+  std::filesystem::create_directories(root.path() / "bareos-fd.d/director");
+  std::filesystem::create_directories(root.path() / "bareos-sd.d/director");
+  std::filesystem::create_directories(root.path() / "bconsole.d/console");
+  std::ofstream(root.path() / "bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(root.path() / "bareos-fd.conf")
+      << "FileDaemon {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-sd.conf")
+      << "Storage {\n  Name = example-sd\n}\n";
+  std::ofstream(root.path() / "bconsole.conf")
+      << "Director {\n  Name = bareos-dir\n}\n"
+      << "Console {\n  Name = bconsole\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/client/example-fd.conf")
+      << "Client {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/client/remote-fd.conf")
+      << "Client {\n  Name = remote-fd\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/job/backup.conf")
+      << "Job {\n  Name = BackupClient\n  Client = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/client/myself.conf")
+      << "Client {\n  Name = example-fd\n}\n";
+  std::ofstream(root.path() / "bareos-fd.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(root.path() / "bareos-sd.d/director/bareos-dir.conf")
+      << "Director {\n  Name = bareos-dir\n}\n";
+  std::ofstream(root.path() / "bconsole.d/console/admin.conf")
+      << "Console {\n  Name = admin\n}\n";
+
+  const auto generated_path = root.path()
+                              / "generated/clients/remote-fd/etc/bareos/bareos-fd.d/director/bareos-dir.conf";
+  std::filesystem::create_directories(generated_path.parent_path());
+  std::ofstream(generated_path)
+      << "Director {\n  Name = bareos-dir\n}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const auto bootstrap
+      = HandleConfigServiceRequest(options, {"GET", "/api/v1/bootstrap", "", ""});
+  ASSERT_EQ(bootstrap.status_code, 200);
+
+  const auto node_ids = ExtractNodeIdsFromBootstrap(bootstrap.body);
+  ASSERT_FALSE(node_ids.empty());
+
+  for (const auto& node_id : node_ids) {
+    const auto resources = HandleConfigServiceRequest(
+        options, {"GET", "/api/v1/nodes/" + node_id + "/resources", "", ""});
+    EXPECT_EQ(resources.status_code, 200) << node_id << "\n" << resources.body;
+    EXPECT_EQ(resources.mime_type, "application/json; charset=utf-8");
+
+    const auto relationships = HandleConfigServiceRequest(
+        options, {"GET", "/api/v1/nodes/" + node_id + "/relationships", "", ""});
+    EXPECT_EQ(relationships.status_code, 200)
+        << node_id << "\n" << relationships.body;
+    EXPECT_EQ(relationships.mime_type, "application/json; charset=utf-8");
+  }
+}
+
 TEST(BareosConfigService, ReturnsGenericReferenceAndSharedPasswordRelationships)
 {
   TempConfigRoot root;
@@ -677,9 +753,13 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("const branchX = routeOnLeft ? columnStartX - 26 : columnStartX + 26;"),
             std::string::npos);
-  EXPECT_NE(response.body.find("const endApproachOffset = Math.min("),
+  EXPECT_NE(response.body.find("const graphEdgeDataAttributes = ("),
             std::string::npos);
-  EXPECT_NE(response.body.find("const endApproachY = endY - (Math.sign(endY - startY || 1) * endApproachOffset);"),
+  EXPECT_NE(response.body.find("const graphEdgeTitle = (relationship) =>"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const graphEndApproachY = (startY, endY) => {"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const renderRelationshipLegend = (entries) => `"),
             std::string::npos);
   EXPECT_NE(response.body.find("C ${outerX} ${endY}, ${branchEndX} ${endApproachY}, ${columnEndX} ${endY}"),
             std::string::npos);

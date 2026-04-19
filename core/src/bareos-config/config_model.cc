@@ -27,7 +27,10 @@
 #include <memory>
 #include <set>
 #include <sstream>
+#include <utility>
 
+#define NEED_JANSSON_NAMESPACE 1
+#include <jansson.h>
 #include "console/console_conf.h"
 #include "console/console_globals.h"
 #include "dird/dird_conf.h"
@@ -35,6 +38,9 @@
 #include "filed/filed_conf.h"
 #include "filed/filed_globals.h"
 #include "include/bareos.h"
+#include "lib/bareos_resource.h"
+#include "lib/output_formatter.h"
+#include "lib/output_formatter_resource.h"
 #include "lib/parse_conf.h"
 #include "lib/resource_item.h"
 #include "stored/stored_conf.h"
@@ -65,19 +71,32 @@ struct DirectiveMetadata {
   bool deprecated = false;
 };
 
-struct ParsedResourceBlock;
+struct PrintedDirective {
+  ResourceDirective directive;
+  bool inherited = false;
+};
+
+struct ParsedResourceDump {
+  std::string content;
+  std::vector<PrintedDirective> directives;
+};
 
 std::map<std::string, DirectiveMetadata> BuildDirectiveMetadata(
     const ResourceSummary& summary);
+std::vector<ResourceSummary> DiscoverResourcesInDirectory(
+    const std::filesystem::path& path,
+    const std::string& id_prefix,
+    const std::string& component,
+    const std::string& config_root);
+const ResourceTable* FindResourceTableByNormalizedType(
+    const ConfigurationParser& parser, const std::string& normalized_type);
 const ResourceTable* LookupResourceTable(const ResourceSummary& summary);
 const ResourceItem* LookupDirectiveResourceItem(const ResourceSummary& summary,
-                                                const ResourceTable* table,
-                                                const std::string& key);
+                                                 const ResourceTable* table,
+                                                 const std::string& key);
 std::string TrimWhitespace(std::string value);
-std::filesystem::path FindConfigRootForPath(const std::filesystem::path& path);
-std::vector<ParsedResourceBlock> ParseNamedResourceBlocks(
-    const std::filesystem::path& file_path, const std::string& block_name);
-std::vector<ResourceDirective> ParseResourceDirectives(const std::string& content);
+ParsedResourceDump DumpResourceFromParser(const ResourceSummary& summary);
+thread_local ConfigurationParser* standalone_parser = nullptr;
 
 std::string Lowercase(std::string value)
 {
@@ -293,77 +312,188 @@ ParserBinding GetParserBinding(ConfigComponent component)
   return {};
 }
 
-ConfigComponent DetectComponentForPath(const std::filesystem::path& path)
+ConfigComponent ComponentForSummary(const ResourceSummary& summary)
 {
-  const auto path_string = path.string();
-  if (path_string.find("bareos-dir.d") != std::string::npos
-      || path.filename() == "bareos-dir.conf") {
+  if (summary.component == "director") {
     return ConfigComponent::kDirector;
   }
-  if (path_string.find("bareos-fd.d") != std::string::npos
-      || path.filename() == "bareos-fd.conf") {
+  if (summary.component == "file-daemon") {
     return ConfigComponent::kFileDaemon;
   }
-  if (path_string.find("bareos-sd.d") != std::string::npos
-      || path.filename() == "bareos-sd.conf") {
+  if (summary.component == "storage-daemon") {
     return ConfigComponent::kStorageDaemon;
   }
-  if (path.filename() == "bconsole.conf") { return ConfigComponent::kConsole; }
+  if (summary.component == "console") { return ConfigComponent::kConsole; }
   return ConfigComponent::kUnknown;
 }
 
-std::filesystem::path FindConfigRootForPath(const std::filesystem::path& path)
+ConfigComponent ComponentFromString(const std::string& component)
 {
-  for (auto current = path; !current.empty();) {
-    const auto name = current.filename().string();
-    if (name == "bareos-dir.d" || name == "bareos-fd.d" || name == "bareos-sd.d") {
-      return current.parent_path();
-    }
-    const auto parent = current.parent_path();
-    if (parent == current) break;
-    current = parent;
-  }
-
-  const auto filename = path.filename().string();
-  if (filename == "bareos-dir.conf" || filename == "bareos-fd.conf"
-      || filename == "bareos-sd.conf" || filename == "bconsole.conf") {
-    return path.parent_path();
-  }
-
-  return {};
+  return ComponentForSummary(
+      ResourceSummary{"", "", "", "", component, ""});
 }
 
-std::string ParserResourceTypeForSummary(const ResourceSummary& summary)
+std::string DefaultConfigFilenameForComponent(ConfigComponent component)
 {
-  if (summary.type == "autochanger") return "Autochanger";
-  if (summary.type == "catalog") return "Catalog";
-  if (summary.type == "client") return "Client";
-  if (summary.type == "console") return "Console";
-  if (summary.type == "counter") return "Counter";
-  if (summary.type == "device") return "Device";
-  if (summary.type == "director") return "Director";
-  if (summary.type == "fileset") return "FileSet";
-  if (summary.type == "job") return "Job";
-  if (summary.type == "jobdefs") return "JobDefs";
-  if (summary.type == "messages") return "Messages";
-  if (summary.type == "ndmp") return "Ndmp";
-  if (summary.type == "pool") return "Pool";
-  if (summary.type == "profile") return "Profile";
-  if (summary.type == "schedule") return "Schedule";
-  if (summary.type == "storage") return "Storage";
-  if (summary.type == "user") return "User";
+  switch (component) {
+    case ConfigComponent::kDirector:
+      return "bareos-dir.conf";
+    case ConfigComponent::kFileDaemon:
+      return "bareos-fd.conf";
+    case ConfigComponent::kStorageDaemon:
+      return "bareos-sd.conf";
+    case ConfigComponent::kConsole:
+      return "bconsole.conf";
+    case ConfigComponent::kUnknown:
+      break;
+  }
   return "";
+}
+
+std::unique_ptr<ConfigurationParser> CreateParserForComponent(
+    ConfigComponent component, const char* config_file)
+{
+  switch (component) {
+    case ConfigComponent::kDirector:
+      return std::unique_ptr<ConfigurationParser>(
+          directordaemon::InitDirConfig(config_file, M_INFO));
+    case ConfigComponent::kFileDaemon:
+      return std::unique_ptr<ConfigurationParser>(
+          filedaemon::InitFdConfig(config_file, M_INFO));
+    case ConfigComponent::kStorageDaemon:
+      return std::unique_ptr<ConfigurationParser>(
+          storagedaemon::InitSdConfig(config_file, M_INFO));
+    case ConfigComponent::kConsole:
+      return std::unique_ptr<ConfigurationParser>(
+          console::InitConsConfig(config_file, M_INFO));
+    case ConfigComponent::kUnknown:
+      return nullptr;
+  }
+  return nullptr;
+}
+
+std::filesystem::path ConfigFileForRoot(const std::filesystem::path& root,
+                                        ConfigComponent component)
+{
+  const auto filename = DefaultConfigFilenameForComponent(component);
+  if (filename.empty()) return {};
+  return root / filename;
+}
+
+std::vector<ConfigComponent> CandidateComponentsForType(
+    const std::string& resource_type, ConfigComponent preferred)
+{
+  std::vector<ConfigComponent> candidates;
+  if (preferred != ConfigComponent::kUnknown) {
+    candidates.push_back(preferred);
+  }
+
+  for (const auto component : {ConfigComponent::kDirector,
+                               ConfigComponent::kFileDaemon,
+                               ConfigComponent::kStorageDaemon,
+                               ConfigComponent::kConsole}) {
+    if (std::find(candidates.begin(), candidates.end(), component)
+        != candidates.end()) {
+      continue;
+    }
+    const auto binding = GetParserBinding(component);
+    if (!binding.parser) continue;
+    if (FindResourceTableByNormalizedType(*binding.parser, resource_type)) {
+      candidates.push_back(component);
+    }
+  }
+
+  if (candidates.empty()) {
+    candidates = {ConfigComponent::kDirector, ConfigComponent::kFileDaemon,
+                  ConfigComponent::kStorageDaemon, ConfigComponent::kConsole};
+  }
+  return candidates;
+}
+
+bool SaveStandaloneDiscoveryResource(int type, const ResourceItem* items, int pass)
+{
+  if (pass != 1 || !standalone_parser || !items || !items->allocated_resource) {
+    return true;
+  }
+
+  auto* resource = *items->allocated_resource;
+  if (!resource) return true;
+
+  if (!resource->resource_name_ || resource->resource_name_[0] == '\0') {
+    auto fallback_name = std::filesystem::path(resource->source_file_).stem().string();
+    if (fallback_name == ".conf") {
+      fallback_name = std::filesystem::path(resource->source_file_).filename().string();
+    }
+    resource->resource_name_ = strdup(fallback_name.c_str());
+  }
+
+  if (!standalone_parser->AppendToResourcesChain(resource, type)) {
+    return false;
+  }
+
+  *items->allocated_resource = nullptr;
+  return true;
+}
+
+bool HasParsedResources(const ConfigurationParser& parser)
+{
+  if (const auto* tables = parser.GetResourceTables()) {
+    for (const auto* table = tables; table->name; ++table) {
+      if (parser.GetNextRes(table->rcode, nullptr) != nullptr) return true;
+    }
+  }
+  return false;
+}
+
+bool ParseStandaloneConfigFile(ConfigurationParser& parser,
+                               const std::filesystem::path& config_file,
+                               bool lenient)
+{
+  std::map<int, std::string> resource_type_names;
+  if (const auto* tables = parser.GetResourceTables()) {
+    for (const auto* table = tables; table->name; ++table) {
+      resource_type_names.emplace(table->rcode, table->name);
+    }
+  }
+  parser.InitializeQualifiedResourceNameTypeConverter(resource_type_names);
+  parser.allow_unnamed_resources_ = lenient;
+  if (lenient) {
+    standalone_parser = &parser;
+    parser.SaveResourceCb_ = &SaveStandaloneDiscoveryResource;
+  }
+  const auto parsed = parser.ParseConfigFile(config_file.c_str(), nullptr);
+  if (lenient) { standalone_parser = nullptr; }
+  return parsed || (lenient && HasParsedResources(parser));
+}
+
+const ResourceTable* FindResourceTableByNormalizedType(
+    const ConfigurationParser& parser, const std::string& normalized_type)
+{
+  const auto* tables = parser.GetResourceTables();
+  if (!tables) return nullptr;
+
+  for (const auto* table = tables; table->name; ++table) {
+    if (NormalizeParserResourceType(table->name) == normalized_type) {
+      return table;
+    }
+  }
+
+  return nullptr;
 }
 
 const ResourceTable* LookupResourceTable(const ResourceSummary& summary)
 {
-  const auto parser_resource_type = ParserResourceTypeForSummary(summary);
-  if (parser_resource_type.empty()) return nullptr;
-
-  const auto binding = GetParserBinding(DetectComponentForPath(summary.file_path));
-  if (!binding.parser) return nullptr;
-  if (binding.assign_global) { binding.assign_global(binding.parser); }
-  return binding.parser->GetResourceTable(parser_resource_type.c_str());
+  for (const auto candidate :
+       CandidateComponentsForType(summary.type, ComponentForSummary(summary))) {
+    const auto binding = GetParserBinding(candidate);
+    if (!binding.parser) continue;
+    if (binding.assign_global) { binding.assign_global(binding.parser); }
+    if (const auto* table
+        = FindResourceTableByNormalizedType(*binding.parser, summary.type)) {
+      return table;
+    }
+  }
+  return nullptr;
 }
 
 const ResourceItem* LookupDirectiveResourceItem(const ResourceSummary& summary,
@@ -372,7 +502,7 @@ const ResourceItem* LookupDirectiveResourceItem(const ResourceSummary& summary,
 {
   if (!table) return nullptr;
 
-  const auto binding = GetParserBinding(DetectComponentForPath(summary.file_path));
+  const auto binding = GetParserBinding(ComponentForSummary(summary));
   if (!binding.parser) return nullptr;
   if (binding.assign_global) { binding.assign_global(binding.parser); }
 
@@ -403,13 +533,18 @@ std::string RelatedResourceType(const ResourceSummary& summary,
 {
   if (item.type != CFG_TYPE_RES && item.type != CFG_TYPE_ALIST_RES) return "";
 
-  const auto binding = GetParserBinding(DetectComponentForPath(summary.file_path));
-  if (!binding.parser) return "";
-  if (binding.assign_global) { binding.assign_global(binding.parser); }
+  for (const auto candidate :
+       CandidateComponentsForType(summary.type, ComponentForSummary(summary))) {
+    const auto binding = GetParserBinding(candidate);
+    if (!binding.parser) continue;
+    if (binding.assign_global) { binding.assign_global(binding.parser); }
+    if (!FindResourceTableByNormalizedType(*binding.parser, summary.type)) continue;
 
-  const auto* resource_type = binding.parser->ResToStr(item.code);
-  if (!resource_type) return "";
-  return NormalizeParserResourceType(resource_type);
+    const auto* resource_type = binding.parser->ResToStr(item.code);
+    if (!resource_type) return "";
+    return NormalizeParserResourceType(resource_type);
+  }
+  return "";
 }
 
 std::vector<std::string> CollectAllowedValues(const ResourceSummary& summary,
@@ -421,28 +556,29 @@ std::vector<std::string> CollectAllowedValues(const ResourceSummary& summary,
 
   if (metadata.related_resource_type.empty()) return {};
 
-  const auto config_root = FindConfigRootForPath(summary.file_path);
+  const auto config_root = std::filesystem::path(summary.config_root);
   if (config_root.empty()) return {};
 
-  const auto source_component = DetectComponentForPath(summary.file_path);
-  const auto datacenter = DiscoverDatacenterSummary({config_root});
-
   std::set<std::string> values;
-  auto collect = [&](const std::vector<ResourceSummary>& resources) {
-    for (const auto& resource : resources) {
-      if (DetectComponentForPath(resource.file_path) != source_component) continue;
-      if (resource.type != metadata.related_resource_type) continue;
-      const auto normalized_name = StripSurroundingQuotes(resource.name);
-      if (normalized_name.empty()) continue;
-      values.insert(normalized_name);
-    }
-  };
+  std::filesystem::path component_dir;
+  if (summary.component == "director") {
+    component_dir = config_root / "bareos-dir.d";
+  } else if (summary.component == "file-daemon") {
+    component_dir = config_root / "bareos-fd.d";
+  } else if (summary.component == "storage-daemon") {
+    component_dir = config_root / "bareos-sd.d";
+  } else if (summary.component == "console") {
+    component_dir = config_root / "bconsole.d";
+  }
+  if (component_dir.empty()) return {};
 
-  for (const auto& director : datacenter.directors) {
-    collect(director.resources);
-    for (const auto& daemon : director.daemons) {
-      collect(daemon.resources);
-    }
+  const auto related_dir = component_dir / metadata.related_resource_type;
+  for (const auto& resource : DiscoverResourcesInDirectory(
+           related_dir, "allowed-values", summary.component, summary.config_root)) {
+    if (resource.type != metadata.related_resource_type) continue;
+    const auto normalized_name = StripSurroundingQuotes(resource.name);
+    if (normalized_name.empty()) continue;
+    values.insert(normalized_name);
   }
 
   return {values.begin(), values.end()};
@@ -460,22 +596,396 @@ std::map<std::string, DirectiveMetadata> BuildDirectiveMetadata(
     auto entry = DirectiveMetadata{item.name,
                                    DatatypeString(item.type),
                                    item.description ? item.description : "",
-                                    item.default_value ? item.default_value : "",
-                                    RelatedResourceType(summary, item),
-                                    item.is_required,
-                                    item.type == CFG_TYPE_ALIST_RES
-                                        || item.type == CFG_TYPE_ALIST_STR
-                                        || item.type == CFG_TYPE_ALIST_DIR
-                                        || item.type == CFG_TYPE_ACL
-                                        || item.type == CFG_TYPE_MSGS
-                                        || item.type == CFG_TYPE_RUN
-                                        || item.type == CFG_TYPE_STR_VECTOR
-                                        || item.type == CFG_TYPE_STR_VECTOR_OF_DIRS,
-                                    item.is_deprecated};
+                                   item.default_value ? item.default_value : "",
+                                   RelatedResourceType(summary, item),
+                                   item.is_required,
+                                   IsRepeatableDatatype(item.type),
+                                   item.is_deprecated};
     metadata.emplace(entry.key, std::move(entry));
   }
 
   return metadata;
+}
+
+bool AppendFormattedOutput(void* context, const char* fmt, ...)
+{
+  if (!context || !fmt) return false;
+
+  va_list args;
+  va_start(args, fmt);
+  char* rendered = nullptr;
+  const int length = vasprintf(&rendered, fmt, args);
+  va_end(args);
+  if (length < 0 || !rendered) return false;
+
+  static_cast<std::string*>(context)->append(rendered,
+                                             static_cast<size_t>(length));
+  free(rendered);
+  return true;
+}
+
+std::string RenderResourceContent(ConfigurationParser& parser,
+                                  BareosResource& resource)
+{
+  std::string output;
+  OutputFormatter formatter(&AppendFormattedOutput, &output, nullptr, nullptr);
+  OutputFormatterResource formatter_resource(&formatter);
+  resource.PrintConfig(formatter_resource, parser, false, false);
+  formatter.FinalizeResult(true);
+  return output;
+}
+
+json_t* RenderResourceJson(ConfigurationParser& parser, BareosResource& resource)
+{
+  std::string output;
+  OutputFormatter formatter(&AppendFormattedOutput, &output, nullptr, nullptr,
+                            API_MODE_JSON);
+  OutputFormatterResource formatter_resource(&formatter);
+  resource.PrintConfig(formatter_resource, parser, false, false);
+  formatter.FinalizeResult(true);
+
+  json_error_t error;
+  json_t* root = json_loads(output.c_str(), 0, &error);
+  if (!root) return nullptr;
+
+  json_t* result = json_object_get(root, "result");
+  if (!result) {
+    json_decref(root);
+    return nullptr;
+  }
+
+  json_incref(result);
+  json_decref(root);
+  return result;
+}
+
+bool PathIsWithin(const std::filesystem::path& path,
+                  const std::filesystem::path& root)
+{
+  if (root.empty()) return false;
+
+  const auto normalized_path = path.lexically_normal();
+  const auto normalized_root = root.lexically_normal();
+  if (normalized_path == normalized_root) return true;
+
+  const auto relative = normalized_path.lexically_relative(normalized_root);
+  return !relative.empty() && relative != normalized_path
+         && *relative.begin() != "..";
+}
+
+std::vector<ResourceSummary> CollectResourceSummariesFromParser(
+    ConfigurationParser& parser,
+    const std::string& id_prefix,
+    const std::string& component,
+    const std::string& config_root,
+    const std::filesystem::path& source_root_filter)
+{
+  std::vector<ResourceSummary> resources;
+  size_t resource_index = 0;
+
+  const auto* tables = parser.GetResourceTables();
+  if (!tables) return resources;
+
+  for (const auto* table = tables; table->name; ++table) {
+    for (auto* resource = parser.GetNextRes(table->rcode, nullptr); resource;
+         resource = parser.GetNextRes(table->rcode, resource)) {
+      if (resource->internal_) continue;
+
+      const std::filesystem::path source_file = resource->source_file_;
+      if (!source_root_filter.empty() && !PathIsWithin(source_file, source_root_filter)) {
+        continue;
+      }
+
+      resources.emplace_back(
+          id_prefix + "-" + std::to_string(resource_index++),
+          NormalizeParserResourceType(parser.ResToStr(table->rcode)),
+          resource->resource_name_ ? resource->resource_name_ : "",
+          source_file.string(), component, config_root, resource->source_line_start_,
+          resource->source_line_end_);
+    }
+  }
+
+  std::sort(resources.begin(), resources.end(),
+            [](const ResourceSummary& lhs, const ResourceSummary& rhs) {
+              if (lhs.file_path != rhs.file_path) return lhs.file_path < rhs.file_path;
+              if (lhs.source_line_start != rhs.source_line_start) {
+                return lhs.source_line_start < rhs.source_line_start;
+              }
+              if (lhs.type != rhs.type) return lhs.type < rhs.type;
+              return lhs.name < rhs.name;
+            });
+  return resources;
+}
+
+BareosResource* FindParsedResource(ConfigurationParser& parser,
+                                   const ResourceSummary& summary)
+{
+  const auto* tables = parser.GetResourceTables();
+  if (!tables) return nullptr;
+
+  for (const auto* table = tables; table->name; ++table) {
+    for (auto* resource = parser.GetNextRes(table->rcode, nullptr); resource;
+         resource = parser.GetNextRes(table->rcode, resource)) {
+      if (resource->internal_) continue;
+      if (NormalizeParserResourceType(parser.ResToStr(table->rcode)) != summary.type) {
+        continue;
+      }
+      if ((resource->resource_name_ ? resource->resource_name_ : "") != summary.name) {
+        continue;
+      }
+      if (!summary.file_path.empty() && resource->source_file_ != summary.file_path) {
+        continue;
+      }
+      if (summary.source_line_start != 0
+          && resource->source_line_start_ != summary.source_line_start) {
+        continue;
+      }
+      return resource;
+    }
+  }
+
+  return nullptr;
+}
+
+std::string ReadFileLineRange(const std::filesystem::path& path,
+                              size_t start_line,
+                              size_t end_line)
+{
+  std::ifstream input(path);
+  if (!input) return {};
+
+  std::ostringstream output;
+  std::string line;
+  size_t line_number = 0;
+  while (std::getline(input, line)) {
+    ++line_number;
+    if (line_number < start_line) continue;
+    if (end_line != 0 && line_number > end_line) break;
+    output << line << "\n";
+  }
+  return output.str();
+}
+
+std::string JsonScalarToDirectiveValue(const json_t* value)
+{
+  if (json_is_string(value)) return json_string_value(value);
+  if (json_is_boolean(value)) return json_is_true(value) ? "yes" : "no";
+  if (json_is_integer(value)) return std::to_string(json_integer_value(value));
+  if (json_is_real(value)) return std::to_string(json_real_value(value));
+  return "";
+}
+
+std::string CanonicalDirectiveKey(const ResourceItem* items, const std::string& key)
+{
+  if (!items) return key;
+  const auto normalized_key = NormalizeDirectiveNameForComparison(key);
+  for (int index = 0; items[index].name; ++index) {
+    const auto& item = items[index];
+    if (NormalizeDirectiveNameForComparison(item.name) == normalized_key) {
+      return item.name;
+    }
+    for (const auto& alias : item.aliases) {
+      if (NormalizeDirectiveNameForComparison(alias) == normalized_key) {
+        return item.name;
+      }
+    }
+  }
+  return key;
+}
+
+size_t CountChar(const std::string& text, char needle)
+{
+  return static_cast<size_t>(std::count(text.begin(), text.end(), needle));
+}
+
+std::vector<ResourceDirective> ParseDirectivesFromContent(
+    const std::string& content)
+{
+  std::vector<ResourceDirective> directives;
+  std::istringstream input(content);
+  std::string line;
+  size_t line_number = 0;
+  size_t brace_depth = 0;
+
+  while (std::getline(input, line)) {
+    ++line_number;
+    const auto comment_start = line.find('#');
+    if (comment_start != std::string::npos) {
+      line = line.substr(0, comment_start);
+    }
+
+    auto trimmed = TrimWhitespace(line);
+    const auto open_braces = CountChar(line, '{');
+    const auto close_braces = CountChar(line, '}');
+    const auto current_depth = brace_depth;
+
+    if (!trimmed.empty() && trimmed != "{" && trimmed != "}"
+        && !trimmed.ends_with('{')) {
+      const auto separator = trimmed.find('=');
+      if (separator != std::string::npos) {
+        auto key = TrimWhitespace(trimmed.substr(0, separator));
+        auto value = TrimWhitespace(trimmed.substr(separator + 1));
+        if (!key.empty()) {
+          directives.push_back(
+              {std::move(key), std::move(value), line_number, current_depth});
+        }
+      }
+    }
+
+    brace_depth += open_braces;
+    brace_depth -= std::min(brace_depth, close_braces);
+  }
+
+  return directives;
+}
+
+size_t AppendJsonValueDirectives(const ResourceItem* items,
+                                 const std::string& key,
+                                 json_t* value,
+                                 size_t nesting_level,
+                                 size_t line,
+                                 std::vector<PrintedDirective>& directives)
+{
+  const auto canonical_key = CanonicalDirectiveKey(items, key);
+  if (json_is_object(value)) {
+    ++line;
+    const char* child_key = nullptr;
+    json_t* child_value = nullptr;
+    json_object_foreach(value, child_key, child_value)
+    {
+      line = AppendJsonValueDirectives(items, child_key, child_value,
+                                       nesting_level + 1, line, directives);
+    }
+    return line + 1;
+  }
+
+  if (json_is_array(value)) {
+    const size_t array_size = json_array_size(value);
+    bool contains_object = false;
+    for (size_t index = 0; index < array_size; ++index) {
+      json_t* item = json_array_get(value, index);
+      if (json_is_object(item) || json_is_array(item)) {
+        contains_object = true;
+        break;
+      }
+    }
+
+    if (!contains_object) {
+      for (size_t index = 0; index < array_size; ++index) {
+        directives.push_back(
+            {{canonical_key,
+              JsonScalarToDirectiveValue(json_array_get(value, index)), line,
+              nesting_level},
+             false});
+        ++line;
+      }
+      return line;
+    }
+
+    ++line;
+    for (size_t index = 0; index < array_size; ++index) {
+      line = AppendJsonValueDirectives(items, canonical_key,
+                                       json_array_get(value, index),
+                                       nesting_level + 1, line, directives);
+    }
+    return line + 1;
+  }
+
+  directives.push_back(
+      {{canonical_key, JsonScalarToDirectiveValue(value), line, nesting_level},
+       false});
+  return line + 1;
+}
+
+std::vector<PrintedDirective> ExtractPrintedDirectives(ConfigurationParser& parser,
+                                                       BareosResource& resource)
+{
+  std::vector<PrintedDirective> directives;
+  json_t* result = RenderResourceJson(parser, resource);
+  if (!result) return directives;
+
+  const auto group_name = Lowercase(parser.ResGroupToStr(resource.rcode_));
+  json_t* group = json_object_get(result, group_name.c_str());
+  json_t* resource_object
+      = group ? json_object_get(group, resource.resource_name_) : nullptr;
+  if (!resource_object || !json_is_object(resource_object)) {
+    json_decref(result);
+    return directives;
+  }
+
+  const auto* table = parser.GetResourceTable(parser.ResToStr(resource.rcode_));
+  const auto* items = table ? table->items : nullptr;
+  size_t line = 2;
+  const char* key = nullptr;
+  json_t* value = nullptr;
+  json_object_foreach(resource_object, key, value)
+  {
+    line = AppendJsonValueDirectives(items, key, value, 1, line, directives);
+  }
+
+  json_decref(result);
+  return directives;
+}
+
+ParsedResourceDump DumpParsedResource(ConfigurationParser& parser,
+                                      const ResourceSummary& summary)
+{
+  ParsedResourceDump dump;
+  auto* resource = FindParsedResource(parser, summary);
+  if (!resource) return dump;
+
+  if (summary.source_line_start != 0 && summary.source_line_end != 0) {
+    dump.content = ReadFileLineRange(summary.file_path, summary.source_line_start,
+                                     summary.source_line_end);
+  } else if (!summary.file_path.empty()
+             && std::filesystem::exists(summary.file_path)) {
+    std::ifstream input(summary.file_path);
+    std::ostringstream content;
+    content << input.rdbuf();
+    dump.content = content.str();
+  } else {
+    dump.content = RenderResourceContent(parser, *resource);
+  }
+  dump.directives = ExtractPrintedDirectives(parser, *resource);
+  return dump;
+}
+
+ParsedResourceDump DumpResourceFromParser(const ResourceSummary& summary)
+{
+  const auto preferred_component = ComponentForSummary(summary);
+
+  const auto parse_with = [&](ConfigComponent component,
+                              const std::filesystem::path& config_file)
+      -> ParsedResourceDump {
+    auto parser = CreateParserForComponent(component, nullptr);
+    if (!parser) return {};
+
+    const auto binding = GetParserBinding(component);
+    if (binding.assign_global) { binding.assign_global(parser.get()); }
+    if (!ParseStandaloneConfigFile(*parser, config_file, true)) return {};
+    return DumpParsedResource(*parser, summary);
+  };
+
+  const auto file_path = std::filesystem::path(summary.file_path);
+  if (!file_path.empty() && std::filesystem::exists(file_path)) {
+    for (const auto candidate :
+         CandidateComponentsForType(summary.type, preferred_component)) {
+      auto dump = parse_with(candidate, file_path);
+      if (!dump.content.empty() || !dump.directives.empty()) return dump;
+    }
+  }
+
+  const auto config_root = std::filesystem::path(summary.config_root);
+  for (const auto candidate :
+       CandidateComponentsForType(summary.type, preferred_component)) {
+    const auto root_config_file = ConfigFileForRoot(config_root, candidate);
+    if (!root_config_file.empty() && std::filesystem::exists(root_config_file)) {
+      auto dump = parse_with(candidate, root_config_file);
+      if (!dump.content.empty() || !dump.directives.empty()) return dump;
+    }
+  }
+
+  return {};
 }
 
 std::string MakeDirectorId(size_t director_index)
@@ -600,38 +1110,6 @@ std::string TrimWhitespace(std::string value)
   return value;
 }
 
-std::string ExtractDirectiveFromNamedBlock(const std::filesystem::path& path,
-                                           const std::string& block_name,
-                                           const std::string& directive_key)
-{
-  std::ifstream input(path);
-  if (!input) return "";
-
-  std::string line;
-  bool in_block = false;
-  while (std::getline(input, line)) {
-    auto trimmed = TrimWhitespace(line);
-    if (!in_block) {
-      if (trimmed.rfind(block_name, 0) == 0
-          && trimmed.find('{') != std::string::npos) {
-        in_block = true;
-      }
-      continue;
-    }
-
-    if (trimmed == "}") break;
-    const auto separator = trimmed.find('=');
-    if (separator == std::string::npos) continue;
-
-    const auto key = TrimWhitespace(trimmed.substr(0, separator));
-    if (key != directive_key) continue;
-
-    return TrimWhitespace(trimmed.substr(separator + 1));
-  }
-
-  return "";
-}
-
 std::string ResourceBlockNameForTypeImpl(const std::string& type)
 {
   if (type == "autochanger") return "Autochanger";
@@ -652,115 +1130,6 @@ std::string ResourceBlockNameForTypeImpl(const std::string& type)
   if (type == "storage") return "Storage";
   if (type == "user") return "User";
   return "";
-}
-
-size_t CountChar(const std::string& text, char needle)
-{
-  return static_cast<size_t>(
-      std::count(text.begin(), text.end(), needle));
-}
-
-struct ParsedResourceBlock {
-  std::string name;
-  std::string content;
-};
-
-std::vector<ParsedResourceBlock> ParseNamedResourceBlocks(
-    const std::filesystem::path& path, const std::string& block_name)
-{
-  std::ifstream input(path);
-  if (!input) return {};
-
-  std::vector<ParsedResourceBlock> blocks;
-  std::string line;
-  bool in_block = false;
-  size_t brace_depth = 0;
-  std::ostringstream content;
-  std::string current_name;
-
-  while (std::getline(input, line)) {
-    auto parsed_line = line;
-    const auto comment_start = parsed_line.find('#');
-    if (comment_start != std::string::npos) {
-      parsed_line = parsed_line.substr(0, comment_start);
-    }
-    const auto trimmed = TrimWhitespace(parsed_line);
-
-    if (!in_block) {
-      if (trimmed.rfind(block_name, 0) != 0
-          || trimmed.find('{') == std::string::npos) {
-        continue;
-      }
-
-      in_block = true;
-      brace_depth = CountChar(parsed_line, '{') - CountChar(parsed_line, '}');
-      content.str("");
-      content.clear();
-      content << line << "\n";
-      current_name.clear();
-      continue;
-    }
-
-    content << line << "\n";
-
-    const auto separator = trimmed.find('=');
-    if (separator != std::string::npos) {
-      const auto key = TrimWhitespace(trimmed.substr(0, separator));
-      if (key == "Name" && current_name.empty()) {
-        current_name = TrimWhitespace(trimmed.substr(separator + 1));
-      }
-    }
-
-    brace_depth += CountChar(parsed_line, '{');
-    brace_depth -= CountChar(parsed_line, '}');
-    if (brace_depth == 0) {
-      blocks.push_back({current_name, content.str()});
-      in_block = false;
-    }
-  }
-
-  return blocks;
-}
-
-std::vector<ResourceDirective> ParseResourceDirectives(
-    const std::string& content)
-{
-  std::vector<ResourceDirective> directives;
-  std::istringstream input(content);
-  std::string line;
-  size_t line_number = 0;
-  size_t brace_depth = 0;
-
-  while (std::getline(input, line)) {
-    ++line_number;
-    const auto comment_start = line.find('#');
-    if (comment_start != std::string::npos) {
-      line = line.substr(0, comment_start);
-    }
-
-    auto trimmed = TrimWhitespace(line);
-    const auto open_braces = CountChar(line, '{');
-    const auto close_braces = CountChar(line, '}');
-    const auto current_depth = brace_depth;
-
-    if (!trimmed.empty() && trimmed != "{" && trimmed != "}"
-        && !trimmed.ends_with('{')) {
-      const auto separator = trimmed.find('=');
-      if (separator != std::string::npos) {
-        auto key = TrimWhitespace(trimmed.substr(0, separator));
-        auto value = TrimWhitespace(trimmed.substr(separator + 1));
-        if (!key.empty()) {
-          directives.push_back(
-              {std::move(key), std::move(value), line_number, current_depth});
-        }
-      }
-    }
-
-    brace_depth += open_braces;
-    brace_depth -= std::min(brace_depth, close_braces);
-  }
-
-  return directives;
 }
 
 std::vector<InheritedDirective> ResolveInheritedDirectives(
@@ -784,42 +1153,40 @@ std::vector<InheritedDirective> ResolveInheritedDirectives(
     direct_keys.insert(NormalizeDirectiveNameForComparison(directive.key));
   }
 
-  const auto config_root = FindConfigRootForPath(summary.file_path);
+  const auto config_root = std::filesystem::path(summary.config_root);
   const auto jobdefs_dir = config_root / "bareos-dir.d" / "jobdefs";
   if (jobdefs_dir.empty() || !std::filesystem::exists(jobdefs_dir)) return {};
 
   const auto normalized_jobdefs_name
       = NormalizeDirectiveNameForComparison(inherited_jobdefs_name);
-  for (const auto& entry : std::filesystem::recursive_directory_iterator(jobdefs_dir)) {
-    if (!entry.is_regular_file() || entry.path().extension() != ".conf") continue;
+  const auto jobdefs_resources = DiscoverResourcesInDirectory(
+      jobdefs_dir, "inherited-jobdefs", "director", summary.config_root);
+  for (const auto& resource : jobdefs_resources) {
+    if (resource.type != "jobdefs") continue;
+    if (NormalizeDirectiveNameForComparison(StripSurroundingQuotes(resource.name))
+        != normalized_jobdefs_name) {
+      continue;
+    }
 
-    const auto blocks = ParseNamedResourceBlocks(entry.path(), "JobDefs");
-    for (const auto& block : blocks) {
-      if (NormalizeDirectiveNameForComparison(
-              StripSurroundingQuotes(block.name))
-          != normalized_jobdefs_name) {
+    const auto detail = LoadResourceDetail(resource);
+    std::vector<InheritedDirective> inherited_directives;
+    for (const auto& inherited_directive : detail.directives) {
+      if (!IsTopLevelDirective(inherited_directive)) continue;
+      const auto normalized_key
+          = NormalizeDirectiveNameForComparison(inherited_directive.key);
+      if (normalized_key == "name" || normalized_key == "jobdefs"
+          || direct_keys.contains(normalized_key)) {
         continue;
       }
 
-      std::vector<InheritedDirective> inherited_directives;
-      for (const auto& inherited_directive : ParseResourceDirectives(block.content)) {
-        if (!IsTopLevelDirective(inherited_directive)) continue;
-        const auto normalized_key
-            = NormalizeDirectiveNameForComparison(inherited_directive.key);
-        if (normalized_key == "name" || normalized_key == "jobdefs"
-            || direct_keys.contains(normalized_key)) {
-          continue;
-        }
-
-        inherited_directives.push_back(InheritedDirective{
-            inherited_directive,
-            "jobdefs",
-            StripSurroundingQuotes(block.name),
-            entry.path().string(),
-        });
-      }
-      return inherited_directives;
+      inherited_directives.push_back(InheritedDirective{
+          inherited_directive,
+          "jobdefs",
+          StripSurroundingQuotes(resource.name),
+          resource.file_path,
+      });
     }
+    return inherited_directives;
   }
 
   return {};
@@ -1178,54 +1545,62 @@ std::string ApplyFieldHintsToContent(
 }
 
 std::vector<ResourceSummary> DiscoverResourcesInDirectory(
-    const std::filesystem::path& path, const std::string& id_prefix)
+    const std::filesystem::path& path,
+    const std::string& id_prefix,
+    const std::string& component,
+    const std::string& config_root)
 {
   std::vector<ResourceSummary> resources;
   if (!std::filesystem::exists(path)) return resources;
 
-  size_t resource_index = 0;
+  const auto component_type = ComponentFromString(component);
+  std::vector<ResourceSummary> parsed_resources;
   for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
     if (!entry.is_regular_file() || entry.path().extension() != ".conf") continue;
+    const auto hinted_type = entry.path().parent_path().filename().string();
+    const auto parsed_count_before = parsed_resources.size();
+    for (const auto candidate :
+         CandidateComponentsForType(hinted_type, component_type)) {
+      auto parser = CreateParserForComponent(candidate, nullptr);
+      if (!parser) continue;
+      const auto binding = GetParserBinding(candidate);
+      if (binding.assign_global) { binding.assign_global(parser.get()); }
+      if (!ParseStandaloneConfigFile(*parser, entry.path(), true)) continue;
 
-    const auto type = entry.path().parent_path().filename().string();
-    const auto block_name = ResourceBlockNameForTypeImpl(type);
-    if (!block_name.empty()) {
-      const auto parsed_blocks = ParseNamedResourceBlocks(entry.path(), block_name);
-      if (!parsed_blocks.empty()) {
-        const auto fallback_stem = StemWithoutExtension(entry.path());
-        for (size_t block_index = 0; block_index < parsed_blocks.size();
-             ++block_index) {
-          auto name = parsed_blocks[block_index].name;
-          if (name.empty()) {
-            name = parsed_blocks.size() == 1
-                       ? fallback_stem
-                       : fallback_stem + "-" + std::to_string(block_index);
-          }
-          resources.push_back({
-              id_prefix + "-" + std::to_string(resource_index++),
-              type.empty() ? "resource" : type,
-              name,
-              entry.path().string(),
-          });
-        }
-        continue;
-      }
+      auto file_resources = CollectResourceSummariesFromParser(
+          *parser, id_prefix, component, config_root, entry.path());
+      if (file_resources.empty()) continue;
+      parsed_resources.insert(parsed_resources.end(),
+                              std::make_move_iterator(file_resources.begin()),
+                              std::make_move_iterator(file_resources.end()));
+      break;
     }
 
-    auto name = StemWithoutExtension(entry.path());
-    resources.push_back({
-        id_prefix + "-" + std::to_string(resource_index++),
-        type.empty() ? "resource" : type,
-        name,
-        entry.path().string(),
-    });
+    if (parsed_resources.size() == parsed_count_before
+        && !ResourceBlockNameForType(hinted_type).empty()) {
+      std::ifstream input(entry.path());
+      std::ostringstream content;
+      content << input.rdbuf();
+      const auto text = content.str();
+      const auto directives = ParseDirectivesFromContent(text);
+      const auto name = ExtractDirectiveValue(directives, "Name");
+      const auto end_line = static_cast<size_t>(std::count(text.begin(), text.end(), '\n'));
+      parsed_resources.push_back({id_prefix + "-" + std::to_string(parsed_resources.size()),
+                                  hinted_type,
+                                  name.empty() ? entry.path().stem().string() : name,
+                                  entry.path().string(),
+                                  component,
+                                  config_root,
+                                  1,
+                                  end_line == 0 ? 1 : end_line});
+    }
   }
 
-  std::sort(resources.begin(), resources.end(),
-            [](const ResourceSummary& lhs, const ResourceSummary& rhs) {
-              if (lhs.type != rhs.type) return lhs.type < rhs.type;
-              return lhs.name < rhs.name;
-            });
+  resources = std::move(parsed_resources);
+
+  for (size_t index = 0; index < resources.size(); ++index) {
+    resources[index].id = id_prefix + "-" + std::to_string(index);
+  }
   return resources;
 }
 
@@ -1256,35 +1631,44 @@ std::string ConfiguredNameForDaemon(
     const std::filesystem::path& daemon_conf,
     const std::vector<ResourceSummary>& resources)
 {
-  std::string block_name;
   std::string resource_type;
-  std::string resource_block;
   if (kind == "file-daemon") {
-    block_name = "FileDaemon";
     resource_type = "client";
-    resource_block = "Client";
   } else if (kind == "storage-daemon") {
-    block_name = "Storage";
     resource_type = "storage";
-    resource_block = "Storage";
   } else if (kind == "console") {
-    block_name = "Console";
     resource_type = "console";
-    resource_block = "Console";
   } else {
     return "";
   }
 
   if (std::filesystem::exists(daemon_conf)) {
-    const auto configured_name
-        = ExtractDirectiveFromNamedBlock(daemon_conf, block_name, "Name");
-    if (!configured_name.empty()) return configured_name;
+    auto parser = CreateParserForComponent(ComponentFromString(kind), nullptr);
+    if (parser) {
+      const auto binding = GetParserBinding(ComponentFromString(kind));
+      if (binding.assign_global) { binding.assign_global(parser.get()); }
+      if (ParseStandaloneConfigFile(*parser, daemon_conf, false)
+          || ParseStandaloneConfigFile(*parser, daemon_conf, true)) {
+        const auto main_resources = CollectResourceSummariesFromParser(
+            *parser, "daemon-name-main", kind, daemon_conf.parent_path().string(),
+            daemon_conf);
+        const auto it = std::find_if(main_resources.begin(), main_resources.end(),
+                                     [&](const ResourceSummary& resource) {
+                                       return resource.type == resource_type;
+                                     });
+        if (it != main_resources.end()) {
+          const auto configured_name
+              = ExtractDirectiveValue(LoadResourceDetail(*it).directives, "Name");
+          if (!configured_name.empty()) return configured_name;
+        }
+      }
+    }
   }
 
   for (const auto& resource : resources) {
     if (resource.type != resource_type) continue;
     const auto configured_name
-        = ExtractDirectiveFromNamedBlock(resource.file_path, resource_block, "Name");
+        = ExtractDirectiveValue(LoadResourceDetail(resource).directives, "Name");
     if (!configured_name.empty()) return configured_name;
   }
 
@@ -1299,16 +1683,19 @@ DaemonSummary DiscoverDaemon(const std::filesystem::path& root,
 {
   const auto conf_dir = root / conf_dir_name;
   auto resources = DiscoverResourcesInDirectory(
-      conf_dir, "resource-" + std::to_string(director_index) + "-" + kind);
+      conf_dir,
+      "resource-" + std::to_string(director_index) + "-" + kind,
+      kind,
+      root.string());
   const auto daemon_conf = root / (daemon_name + ".conf");
   const auto configured_name
       = ConfiguredNameForDaemon(kind, daemon_conf, resources);
   if (std::filesystem::exists(daemon_conf)) {
     resources.insert(resources.begin(),
                      {"resource-" + std::to_string(director_index) + "-" + kind
-                          + "-main",
-                       "configuration", daemon_conf.filename().string(),
-                       daemon_conf.string()});
+                           + "-main",
+                        "configuration", daemon_conf.filename().string(),
+                        daemon_conf.string(), kind, root.string()});
   }
 
   return {
@@ -1606,8 +1993,8 @@ std::string FindConsoleDirectorReference(const DaemonSummary& console_daemon)
 {
   for (const auto& resource : console_daemon.resources) {
     if (resource.type != "director") continue;
-    const auto director_name = ExtractDirectiveFromNamedBlock(
-        resource.file_path, "Director", "Name");
+    const auto director_name
+        = ExtractDirectiveValue(LoadResourceDetail(resource).directives, "Name");
     if (!director_name.empty()) return StripSurroundingQuotes(director_name);
   }
 
@@ -1616,8 +2003,32 @@ std::string FindConsoleDirectorReference(const DaemonSummary& console_daemon)
       [](const ResourceSummary& resource) { return resource.type == "configuration"; });
   if (configuration == console_daemon.resources.end()) return "";
 
-  return StripSurroundingQuotes(ExtractDirectiveFromNamedBlock(
-      configuration->file_path, "Director", "Name"));
+  auto parser = CreateParserForComponent(ConfigComponent::kConsole,
+                                         nullptr);
+  if (!parser) return "";
+
+  const auto binding = GetParserBinding(ConfigComponent::kConsole);
+  if (binding.assign_global) { binding.assign_global(parser.get()); }
+  if (!ParseStandaloneConfigFile(*parser, configuration->file_path, false)
+      && !ParseStandaloneConfigFile(*parser, configuration->file_path, true)) {
+    return "";
+  }
+
+  const auto resources = CollectResourceSummariesFromParser(
+      *parser, "console-main", "console", configuration->config_root,
+      configuration->file_path);
+  const auto it = std::find_if(resources.begin(), resources.end(),
+                               [](const ResourceSummary& resource) {
+                                 return resource.type == "director";
+                               });
+  if (it == resources.end()) return "";
+
+  const auto director_name
+      = ExtractDirectiveValue(LoadResourceDetail(*it).directives, "Name");
+  if (!director_name.empty()) {
+    return StripSurroundingQuotes(director_name);
+  }
+  return "";
 }
 
 bool HasNamedResourceDirective(const ResourceDetail& detail, const std::string& key)
@@ -1688,25 +2099,20 @@ std::vector<RelationshipSubject> CollectRelationshipSubjects(
       continue;
     }
 
-    for (const auto& block_name : std::array<std::string, 3>{"Director", "Console",
-                                                             "User"}) {
-      const auto blocks = ParseNamedResourceBlocks(entry.resource->file_path, block_name);
-      for (size_t block_index = 0; block_index < blocks.size(); ++block_index) {
-        auto summary = *entry.resource;
-        summary.type = Lowercase(block_name);
-        if (blocks[block_index].name.empty()) {
-          summary.name = Lowercase(block_name) + "-" + std::to_string(block_index);
-        } else {
-          summary.name = StripSurroundingQuotes(blocks[block_index].name);
-        }
-        auto detail = BuildResourceDetail(summary, blocks[block_index].content);
-        subjects.push_back({std::move(summary),
-                            *entry.resource,
-                            std::move(detail),
-                            entry.owner_node_id,
-                            entry.owner_label,
-                            entry.owner_kind});
-      }
+    auto parser = CreateParserForComponent(ConfigComponent::kConsole,
+                                           entry.resource->file_path.c_str());
+    if (!parser) continue;
+    const auto binding = GetParserBinding(ConfigComponent::kConsole);
+    if (binding.assign_global) { binding.assign_global(parser.get()); }
+    if (!parser->ParseConfig()) continue;
+
+    for (const auto& summary : CollectResourceSummariesFromParser(
+             *parser, "configuration-subject", entry.owner_kind,
+             entry.resource->config_root, entry.resource->file_path)) {
+      auto detail = LoadResourceDetail(summary);
+      subjects.push_back({summary, *entry.resource, std::move(detail),
+                          entry.owner_node_id, entry.owner_label,
+                          entry.owner_kind});
     }
   }
   return subjects;
@@ -2014,8 +2420,8 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
                 ExtractDirectiveValue(console_director_subject->detail.directives,
                                       "Password"));
             const auto director_password = StripSurroundingQuotes(
-                ExtractDirectiveFromNamedBlock(target_resource->file_path, "Director",
-                                               "Password"));
+                ExtractDirectiveValue(LoadResourceDetail(*target_resource).directives,
+                                      "Password"));
             if (!bconsole_password.empty() && bconsole_password == director_password) {
               relationships.push_back({
                   MakeRelationshipId(director_index, relationship_index++),
@@ -2085,8 +2491,8 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
         const auto console_password = StripSurroundingQuotes(
             ExtractDirectiveValue(subject.detail.directives, "Password"));
         const auto director_console_password = StripSurroundingQuotes(
-            ExtractDirectiveFromNamedBlock(target_resource->file_path, "Console",
-                                           "Password"));
+            ExtractDirectiveValue(LoadResourceDetail(*target_resource).directives,
+                                  "Password"));
         if (!console_password.empty() && console_password == director_console_password) {
           relationships.push_back({
               MakeRelationshipId(director_index, relationship_index++),
@@ -2303,14 +2709,17 @@ DatacenterSummary DiscoverDatacenterSummary(
     director.name = DirectorNameForRoot(root);
     director.config_root = root.string();
     director.resources = DiscoverResourcesInDirectory(
-        director_dir, "resource-" + std::to_string(director_index) + "-director");
+        director_dir,
+        "resource-" + std::to_string(director_index) + "-director",
+        "director",
+        root.string());
 
     if (std::filesystem::exists(director_conf)) {
       director.resources.insert(
           director.resources.begin(),
           {"resource-" + std::to_string(director_index) + "-director-main",
            "configuration", director_conf.filename().string(),
-           director_conf.string()});
+           director_conf.string(), "director", root.string()});
     }
 
     director.daemons.push_back(DiscoverDaemon(root, director_index,
@@ -2475,39 +2884,81 @@ std::vector<RelationshipSummary> FindRelationshipsForNode(
 
 ResourceDetail LoadResourceDetail(const ResourceSummary& resource)
 {
-  const auto block_name = ResourceBlockNameForType(resource.type);
-  if (!block_name.empty()) {
-    const auto parsed_blocks
-        = ParseNamedResourceBlocks(resource.file_path, block_name);
-    const auto it = std::find_if(
-        parsed_blocks.begin(), parsed_blocks.end(),
-        [&resource](const ParsedResourceBlock& block) {
-          return block.name == resource.name;
-        });
-    if (it != parsed_blocks.end()) {
-      return BuildResourceDetail(resource, it->content);
-    }
+  if (resource.type == "configuration") {
+    std::ifstream input(resource.file_path);
+    std::ostringstream content;
+    content << input.rdbuf();
+    return BuildResourceDetail(resource, content.str());
   }
 
-  std::ifstream input(resource.file_path);
-  std::ostringstream content;
-  content << input.rdbuf();
-  return BuildResourceDetail(resource, content.str());
+  if (!resource.file_path.empty() && std::filesystem::exists(resource.file_path)) {
+    if (resource.source_line_start != 0 && resource.source_line_end != 0) {
+      return BuildResourceDetail(resource,
+                                 ReadFileLineRange(resource.file_path,
+                                                   resource.source_line_start,
+                                                   resource.source_line_end));
+    }
+
+    std::ifstream input(resource.file_path);
+    std::ostringstream content;
+    content << input.rdbuf();
+    return BuildResourceDetail(resource, content.str());
+  }
+
+  const auto dump = DumpResourceFromParser(resource);
+  if (!dump.content.empty() || !dump.directives.empty()) {
+    auto directives = ParseDirectivesFromContent(dump.content);
+    const auto* table = LookupResourceTable(resource);
+    for (auto& directive : directives) {
+      if (const auto* item
+          = LookupDirectiveResourceItem(resource, table, directive.key)) {
+        directive.key = item->name;
+      }
+    }
+
+    const auto inherited_directives = ResolveInheritedDirectives(resource, directives);
+    auto display_directives = directives;
+    SortResourceDirectivesForDisplay(resource, display_directives);
+    return {resource, dump.content, display_directives, inherited_directives,
+            ValidateResourceContent(resource, dump.content, directives,
+                                    inherited_directives),
+            BuildResourceFieldHints(resource, directives, inherited_directives)};
+  }
+
+  return {resource, {}, {}, {}, {}, {}};
 }
 
 ResourceDetail BuildResourceDetail(const ResourceSummary& resource,
                                    const std::string& content)
 {
-  const auto parsed_directives = ParseResourceDirectives(content);
-  const auto inherited_directives
-      = ResolveInheritedDirectives(resource, parsed_directives);
-  auto display_directives = parsed_directives;
+  if (resource.type == "configuration") {
+    return {resource, content, {}, {}, {}, {}};
+  }
+
+  ParsedResourceDump dump;
+  if (content.empty()) {
+    dump = DumpResourceFromParser(resource);
+  } else {
+    dump.content = content;
+  }
+  if (dump.content.empty()) dump.content = content;
+
+  auto directives = ParseDirectivesFromContent(dump.content);
+  const auto* table = LookupResourceTable(resource);
+  for (auto& directive : directives) {
+    if (const auto* item
+        = LookupDirectiveResourceItem(resource, table, directive.key)) {
+      directive.key = item->name;
+    }
+  }
+
+  const auto inherited_directives = ResolveInheritedDirectives(resource, directives);
+  auto display_directives = directives;
   SortResourceDirectivesForDisplay(resource, display_directives);
-  return {resource, content, display_directives, inherited_directives,
-          ValidateResourceContent(resource, content, parsed_directives,
+  return {resource, dump.content, display_directives, inherited_directives,
+          ValidateResourceContent(resource, dump.content, directives,
                                   inherited_directives),
-          BuildResourceFieldHints(resource, parsed_directives,
-                                  inherited_directives)};
+          BuildResourceFieldHints(resource, directives, inherited_directives)};
 }
 
 std::string MaybeRenameResourceFilePath(const ResourceSummary& summary,
@@ -2527,9 +2978,9 @@ std::string MaybeRenameResourceFilePath(const ResourceSummary& summary,
 ResourceEditPreview BuildResourceEditPreview(
     const ResourceDetail& resource, const std::string& updated_content)
 {
-  const auto parsed_updated_directives = ParseResourceDirectives(updated_content);
-  const auto updated_inherited_directives
-      = ResolveInheritedDirectives(resource.summary, parsed_updated_directives);
+  const auto updated_detail = BuildResourceDetail(resource.summary, updated_content);
+  const auto parsed_updated_directives = updated_detail.directives;
+  const auto updated_inherited_directives = updated_detail.inherited_directives;
   auto display_updated_directives = parsed_updated_directives;
   SortResourceDirectivesForDisplay(resource.summary, display_updated_directives);
   auto updated_summary = resource.summary;

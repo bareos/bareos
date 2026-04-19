@@ -672,7 +672,7 @@ TEST(BareosConfigModel, LoadsResourceDetailContent)
   std::ofstream(resource_path) << "Client {\n  Name = example-fd\n}\n";
 
   ResourceSummary summary{"resource-1", "client", "example-fd",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
 
   const auto detail = LoadResourceDetail(summary);
 
@@ -732,7 +732,7 @@ TEST(BareosConfigModel, ResolvesInheritedJobDefsDirectives)
       << "}\n";
 
   ResourceSummary summary{"resource-1", "job", "ExampleJob",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
 
   EXPECT_EQ(detail.inherited_directives.size(), 3U);
@@ -783,7 +783,7 @@ TEST(BareosConfigModel, UsesParserMetadataForReferenceFieldHints)
       << "Client {\n  Name = example-fd\n  Address = 10.0.0.20\n}\n";
 
   ResourceSummary summary{"resource-1", "client", "example-fd",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
 
   const auto detail = LoadResourceDetail(summary);
   const auto catalog_hint = std::find_if(
@@ -818,7 +818,7 @@ TEST(BareosConfigModel, AllowsRepeatableMessagesDestinations)
       << "}\n";
 
   ResourceSummary summary{"resource-1", "messages", "Daemon",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
 
   const auto append_hint = std::find_if(
@@ -846,7 +846,7 @@ TEST(BareosConfigModel, AllowsRepeatableProfileCommandAcl)
       << "}\n";
 
   ResourceSummary summary{"resource-1", "profile", "operator",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
 
   const auto command_acl_hint = std::find_if(
@@ -878,7 +878,7 @@ TEST(BareosConfigModel, NormalizesQuotedProfileAllowedValuesForConsole)
       << "}\n";
 
   ResourceSummary summary{"resource-1", "console", "admin",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
   const auto profile_hint = std::find_if(
       detail.field_hints.begin(), detail.field_hints.end(),
@@ -917,7 +917,8 @@ TEST(BareosConfigModel, NormalizesQuotedRepeatableProfileAllowedValuesForUser)
       << "  Profile = webui-readonly\n"
       << "}\n";
 
-  ResourceSummary summary{"resource-1", "user", "admin", resource_path.string()};
+  ResourceSummary summary{"resource-1", "user", "admin", resource_path.string(),
+                          "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
   const auto profile_hint = std::find_if(
       detail.field_hints.begin(), detail.field_hints.end(),
@@ -950,7 +951,7 @@ TEST(BareosConfigModel, BuildsFieldHintPreviewContent)
   std::ofstream(resource_path) << "Client {\n  Name = example-fd\n}\n";
 
   ResourceSummary summary{"resource-1", "client", "example-fd",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
 
   auto updated_field_hints = detail.field_hints;
@@ -991,7 +992,7 @@ TEST(BareosConfigModel, UpdatesPreviewSummaryNameAfterRename)
       << "}\n";
 
   ResourceSummary summary{"resource-1", "client", "example-fd",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
   const auto preview = BuildResourceEditPreview(
       detail,
@@ -1016,7 +1017,7 @@ TEST(BareosConfigModel, PreservesRepeatableScheduleRunDirectives)
       << "}\n";
 
   ResourceSummary summary{"resource-1", "schedule", "Nightly",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
 
   const auto run_hint = std::find_if(
@@ -1063,7 +1064,7 @@ TEST(BareosConfigModel, NormalizesDirectiveNamesLikeParser)
       << "}\n";
 
   ResourceSummary summary{"resource-1", "fileset", "SelfTest",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
 
   const auto enable_vss_count = std::count_if(
@@ -1118,7 +1119,7 @@ TEST(BareosConfigModel, LimitsGuidedFieldsToTopLevelDirectives)
       << "}\n";
 
   ResourceSummary summary{"resource-1", "fileset", "SelfTest",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
 
   EXPECT_TRUE(std::any_of(detail.directives.begin(), detail.directives.end(),
@@ -1158,7 +1159,7 @@ TEST(BareosConfigModel, OrdersDisplayedDirectivesAndFieldHints)
       << "}\n";
 
   ResourceSummary summary{"resource-1", "client", "example-fd",
-                          resource_path.string()};
+                          resource_path.string(), "director", root.path().string()};
   const auto detail = LoadResourceDetail(summary);
 
   ASSERT_GE(detail.directives.size(), 4U);

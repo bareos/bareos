@@ -26,10 +26,34 @@
 #include <vector>
 
 struct ResourceSummary {
+  ResourceSummary() = default;
+  ResourceSummary(std::string resource_id,
+                  std::string resource_type,
+                  std::string resource_name,
+                  std::string resource_file_path,
+                  std::string resource_component = {},
+                  std::string resource_config_root = {},
+                  size_t resource_source_line_start = 0,
+                  size_t resource_source_line_end = 0)
+      : id{std::move(resource_id)}
+      , type{std::move(resource_type)}
+      , name{std::move(resource_name)}
+      , file_path{std::move(resource_file_path)}
+      , component{std::move(resource_component)}
+      , config_root{std::move(resource_config_root)}
+      , source_line_start{resource_source_line_start}
+      , source_line_end{resource_source_line_end}
+  {
+  }
+
   std::string id;
   std::string type;
   std::string name;
   std::string file_path;
+  std::string component;
+  std::string config_root;
+  size_t source_line_start = 0;
+  size_t source_line_end = 0;
 };
 
 struct ResourceDirective {

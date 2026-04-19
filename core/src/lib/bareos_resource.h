@@ -43,6 +43,9 @@ class BareosResource {
   uint32_t rcode_{0};             /* Resource id or type */
   int32_t refcnt_{0};             /* Reference count for releasing */
   std::string rcode_str_{};
+  std::string source_file_{};
+  uint32_t source_line_start_{0};
+  uint32_t source_line_end_{0};
   std::unordered_set<std::string_view>
       item_present_{}; /* set of resource member names where values were
                           written */

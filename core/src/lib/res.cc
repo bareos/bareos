@@ -2290,6 +2290,23 @@ DatatypeName* GetDatatype(int number)
   return &(datatype_names[number]);
 }
 
+bool IsRepeatableDatatype(int type)
+{
+  switch (type) {
+    case CFG_TYPE_ALIST_RES:
+    case CFG_TYPE_ALIST_STR:
+    case CFG_TYPE_ALIST_DIR:
+    case CFG_TYPE_ACL:
+    case CFG_TYPE_MSGS:
+    case CFG_TYPE_RUN:
+    case CFG_TYPE_STR_VECTOR:
+    case CFG_TYPE_STR_VECTOR_OF_DIRS:
+      return true;
+    default:
+      return false;
+  }
+}
+
 const char* DatatypeToString(int type)
 {
   for (int i = 0; datatype_names[i].name; i++) {

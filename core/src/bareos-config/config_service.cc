@@ -27,6 +27,7 @@
 #include <fstream>
 #include <array>
 #include <map>
+#include <mutex>
 #include <optional>
 #include <set>
 #include <sstream>
@@ -181,7 +182,9 @@ ResourceDetail BuildNewResourceDetail(const TreeNodeSummary& node,
                          / resource_type / ("new-" + resource_type + ".conf");
   const ResourceSummary summary{"new-resource-" + node.id + "-" + resource_type,
                                 resource_type, "new-" + resource_type,
-                                file_path.string()};
+                                file_path.string(),
+                                node.kind,
+                                node.description};
   return BuildResourceDetail(summary, block_name + " {\n}\n");
 }
 
@@ -281,7 +284,7 @@ bool MirrorConfigTreeIntoStage(const std::filesystem::path& source_root,
 void PopulateFollowUpAction(PersistResult& result);
 void RollbackPersistedResource(const PersistResult& result);
 VerificationResult VerifySavedConfig(const ConfigServiceOptions& options,
-                                     const std::string& file_path);
+                                     const ResourceSummary& summary);
 
 struct NamedResourceBlockRange {
   std::string name;
@@ -369,6 +372,16 @@ enum class DaemonComponent {
   kStorageDaemon,
 };
 
+DaemonComponent ComponentForSummary(const ResourceSummary& summary)
+{
+  if (summary.component == "director") return DaemonComponent::kDirector;
+  if (summary.component == "file-daemon") return DaemonComponent::kFileDaemon;
+  if (summary.component == "storage-daemon") {
+    return DaemonComponent::kStorageDaemon;
+  }
+  return DaemonComponent::kUnknown;
+}
+
 struct VerificationResult {
   bool success = false;
   std::string command;
@@ -379,6 +392,22 @@ struct VerificationResult {
 std::string StemWithoutExtension(const std::filesystem::path& path)
 {
   return path.stem().string();
+}
+
+std::string MaybeRenameConfigFilePath(const ResourceSummary& summary,
+                                      const std::string& old_name,
+                                      const std::string& new_name)
+{
+  if (summary.type != "configuration" || old_name.empty() || new_name.empty()
+      || old_name == new_name) {
+    return summary.file_path;
+  }
+
+  const auto path = std::filesystem::path(summary.file_path);
+  if (path.extension() != ".conf" || path.stem() != old_name) {
+    return summary.file_path;
+  }
+  return (path.parent_path() / (new_name + path.extension().string())).string();
 }
 
 std::vector<std::string> SplitLines(const std::string& content)
@@ -640,7 +669,9 @@ std::vector<TreeNodeSummary> CollectStagedDirectorClientNodes(
             + SanitizePathComponent(client_name),
         "client",
         client_name,
-        it->path().string()};
+        it->path().string(),
+        "director",
+        std::filesystem::path(it->path()).parent_path().parent_path().string()};
     nodes.push_back({MakeStagedDirectorClientNodeId(*director_name, client_name),
                      "client",
                      client_name,
@@ -724,7 +755,9 @@ std::vector<ResourceSummary> CollectDatacenterSyntheticResources(
       resources.push_back(
           {MakeGeneratedClientConfigId(director.id, client_name),
            "configuration", client_name + " generated client config",
-           generated_path.string()});
+           generated_path.string(),
+           "file-daemon",
+           director.config_root});
     }
   }
 
@@ -742,7 +775,9 @@ std::vector<ResourceSummary> CollectDatacenterSyntheticResources(
         {MakeGeneratedClientConfigId(node.id, node.label),
          "configuration",
          node.label + " generated client config",
-         generated_path.string()});
+         generated_path.string(),
+         "file-daemon",
+         node.description});
   }
 
   std::sort(resources.begin(), resources.end(),
@@ -806,7 +841,9 @@ std::vector<ResourceSummary> CollectNodeResources(
   resources.push_back({MakeGeneratedClientConfigId(director_id, node.label),
                        "configuration",
                        node.label + " generated client config",
-                       generated_path.string()});
+                       generated_path.string(),
+                       "file-daemon",
+                       node.description});
   return resources;
 }
 
@@ -860,7 +897,9 @@ RemoteClientRemovalResult RemoveRemoteClient(
       MakeGeneratedClientConfigId(node.id, node.label),
       "configuration",
       node.label + " generated client config",
-      generated_path.string()};
+      generated_path.string(),
+      "file-daemon",
+      std::filesystem::path(node.description).string()};
   result.generated_config.preview.summary = generated_summary;
   if (std::filesystem::exists(generated_path)) {
     auto generated_detail = LoadResourceDetail(generated_summary);
@@ -883,7 +922,7 @@ RemoteClientRemovalResult RemoveRemoteClient(
   result.generated_config.saved = true;
 
   if (verify_director) {
-    const auto verification = VerifySavedConfig(options, client_resource.file_path);
+    const auto verification = VerifySavedConfig(options, client_resource);
     result.client_resource.verification_command = verification.command;
     result.client_resource.verification_output = verification.output;
     if (!verification.success) {
@@ -903,50 +942,6 @@ RemoteClientRemovalResult RemoveRemoteClient(
   PopulateFollowUpAction(result.client_resource);
   result.removed = true;
   return result;
-}
-
-DaemonComponent DetectComponentForPath(const std::filesystem::path& path)
-{
-  const auto path_string = path.string();
-  if (path_string.find("bconsole.d") != std::string::npos
-      || path.filename() == "bconsole.conf") {
-    return DaemonComponent::kUnknown;
-  }
-  if (path_string.find("bareos-dir.d") != std::string::npos
-      || path.filename() == "bareos-dir.conf") {
-    return DaemonComponent::kDirector;
-  }
-  if (path_string.find("bareos-fd.d") != std::string::npos
-      || path.filename() == "bareos-fd.conf") {
-    return DaemonComponent::kFileDaemon;
-  }
-  if (path_string.find("bareos-sd.d") != std::string::npos
-      || path.filename() == "bareos-sd.conf") {
-    return DaemonComponent::kStorageDaemon;
-  }
-  return DaemonComponent::kUnknown;
-}
-
-std::filesystem::path FindConfigRootForPath(const std::filesystem::path& path)
-{
-  for (auto current = path; !current.empty();) {
-    const auto name = current.filename().string();
-    if (name == "bareos-dir.d" || name == "bareos-fd.d" || name == "bareos-sd.d"
-        || name == "bconsole.d") {
-      return current.parent_path();
-    }
-    const auto parent = current.parent_path();
-    if (parent == current) break;
-    current = parent;
-  }
-
-  const auto filename = path.filename().string();
-  if (filename == "bareos-dir.conf" || filename == "bareos-fd.conf"
-      || filename == "bareos-sd.conf" || filename == "bconsole.conf") {
-    return path.parent_path();
-  }
-
-  return {};
 }
 
 std::string VerificationBinaryForComponent(const ConfigServiceOptions& options,
@@ -1845,9 +1840,14 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
       = ExtractResourceName(name_updated_summary, name_updated_directives);
   const bool name_changed
       = !old_name.empty() && !new_name.empty() && old_name != new_name;
+  if (detail.summary.type == "configuration" && name_changed) {
+    result.preview.summary.file_path
+        = MaybeRenameConfigFilePath(detail.summary, old_name, new_name);
+    result.preview.summary.name
+        = std::filesystem::path(result.preview.summary.file_path).filename().string();
+  }
 
-  const auto config_root
-      = FindConfigRootForPath(std::filesystem::path(detail.summary.file_path));
+  const auto config_root = std::filesystem::path(detail.summary.config_root);
   if (config_root.empty()) return result;
 
   const auto model = DiscoverDatacenterSummary({config_root});
@@ -2042,7 +2042,9 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
           content_lines.begin() + static_cast<std::ptrdiff_t>(block->end_line + 1));
       auto block_summary = ResourceSummary{target.id + "-director", "director",
                                            StripSurroundingQuotes(block->name),
-                                           target.file_path};
+                                           target.file_path,
+                                           target.component,
+                                           target.config_root};
       auto block_detail = BuildResourceDetail(block_summary, JoinLines(block_lines));
       auto updated_field_hints = block_detail.field_hints;
       auto name_field = std::find_if(
@@ -2348,7 +2350,11 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
                         + static_cast<std::ptrdiff_t>(block.end_line + 1));
                 auto block_summary = ResourceSummary{
                     target.id + "-" + resource_type + "-" + std::to_string(block_index),
-                    resource_type, StripSurroundingQuotes(block.name), target.file_path};
+                    resource_type,
+                    StripSurroundingQuotes(block.name),
+                    target.file_path,
+                    target.component,
+                    target.config_root};
                 auto block_detail
                     = BuildResourceDetail(block_summary, JoinLines(block_lines));
                 auto updated_field_hints = block_detail.field_hints;
@@ -2558,7 +2564,7 @@ std::string SerializePersistResult(const PersistResult& result)
 void PopulateFollowUpAction(PersistResult& result);
 void RollbackPersistedResource(const PersistResult& result);
 VerificationResult VerifySavedConfig(const ConfigServiceOptions& options,
-                                     const std::string& file_path);
+                                     const ResourceSummary& summary);
 
 PersistResult PersistResourceDetail(const ConfigServiceOptions& options,
                                     const ResourceDetail& detail,
@@ -2641,15 +2647,15 @@ PersistResult PersistResourceDetail(const ConfigServiceOptions& options,
   std::set<std::string> verified_targets;
   for (const auto& write : writes) {
     if (IsGeneratedRemotePath(write.summary.file_path)) continue;
-    const auto component = DetectComponentForPath(write.summary.file_path);
+    const auto component = ComponentForSummary(write.summary);
     if (component == DaemonComponent::kUnknown) continue;
-    const auto config_root = FindConfigRootForPath(write.summary.file_path);
+    const auto config_root = std::filesystem::path(write.summary.config_root);
     if (config_root.empty()) continue;
     const auto verification_key
         = std::to_string(static_cast<int>(component)) + ":" + config_root.string();
     if (!verified_targets.insert(verification_key).second) continue;
 
-    const auto verification = VerifySavedConfig(options, write.summary.file_path);
+    const auto verification = VerifySavedConfig(options, write.summary);
     if (!result.verification_command.empty() && !verification.command.empty()) {
       result.verification_command += "\n";
     }
@@ -2687,10 +2693,11 @@ void PopulateFollowUpAction(PersistResult& result)
 {
   if (!result.saved) return;
 
-  const auto& path = result.preview.summary.file_path;
+  const auto& summary = result.preview.summary;
+  const auto& path = summary.file_path;
   if (!IsManagedLocalPath(path)) return;
 
-  const bool default_root = path.rfind("/etc/bareos/", 0) == 0;
+  const bool default_root = summary.config_root == "/etc/bareos";
   auto set_follow_up = [&](std::string component, std::string action,
                            std::string command, std::string message) {
     result.follow_up_component = std::move(component);
@@ -2699,12 +2706,7 @@ void PopulateFollowUpAction(PersistResult& result)
     result.follow_up_message = std::move(message);
   };
 
-  const auto is_component_path = [&](const std::string& stem) {
-    return path.find("/" + stem + ".conf") != std::string::npos
-           || path.find("/" + stem + ".d/") != std::string::npos;
-  };
-
-  if (is_component_path("bareos-fd")) {
+  if (summary.component == "file-daemon") {
     set_follow_up(
         "file-daemon", "restart",
         default_root ? "systemctl restart bareos-filedaemon" : "",
@@ -2713,7 +2715,7 @@ void PopulateFollowUpAction(PersistResult& result)
             : "Restart the matching Bareos File Daemon instance for this non-default config root.");
     return;
   }
-  if (is_component_path("bareos-sd")) {
+  if (summary.component == "storage-daemon") {
     set_follow_up(
         "storage-daemon", "restart",
         default_root ? "systemctl restart bareos-storage" : "",
@@ -2722,7 +2724,7 @@ void PopulateFollowUpAction(PersistResult& result)
             : "Restart the matching Bareos Storage Daemon instance for this non-default config root.");
     return;
   }
-  if (is_component_path("bareos-dir")) {
+  if (summary.component == "director") {
     set_follow_up(
         "director", "reload",
         default_root ? "systemctl reload bareos-director" : "",
@@ -2733,14 +2735,14 @@ void PopulateFollowUpAction(PersistResult& result)
 }
 
 VerificationResult VerifySavedConfig(const ConfigServiceOptions& options,
-                                     const std::string& file_path)
+                                     const ResourceSummary& summary)
 {
-  const auto component = DetectComponentForPath(file_path);
+  const auto component = ComponentForSummary(summary);
   if (component == DaemonComponent::kUnknown) {
     return {true, "", "", ""};
   }
 
-  const auto config_root = FindConfigRootForPath(file_path);
+  const auto config_root = std::filesystem::path(summary.config_root);
   if (config_root.empty()) {
     return {false, "", "",
             "Could not determine config root for daemon verification."};
@@ -2909,8 +2911,10 @@ ResourceDetail BuildAddClientDirectorTemplate(
       "client",
       resource_name,
       (std::filesystem::path(director_node.description) / "bareos-dir.d" / "client"
-       / (resource_name + ".conf"))
-          .string()};
+        / (resource_name + ".conf"))
+          .string(),
+      "director",
+      director_node.description};
   auto detail = BuildResourceDetail(live_summary, "Client {\n}\n");
   detail.summary.file_path = staged_path.string();
   return detail;
@@ -2997,8 +3001,10 @@ ResourceDetail BuildAddClientDirectorPreview(
       "client",
       resource_name,
       (BuildGeneratedDirectorConfigRoot(options, director_node.label) / "bareos-dir.d"
-       / "client" / (resource_name + ".conf"))
-          .string()};
+        / "client" / (resource_name + ".conf"))
+          .string(),
+      "director",
+      director_node.description};
 
   auto director_template
       = BuildAddClientDirectorTemplate(options, director_node, values);
@@ -3096,7 +3102,9 @@ ResourceDetail BuildAddClientFileDaemonPreview(
       "wizard-add-client-file-daemon",
       "director",
       director_node.label,
-      target_plan.file_path};
+      target_plan.file_path,
+      "file-daemon",
+      director_node.description};
   return BuildResourceDetail(summary,
                              BuildClientSideDirectorPreviewContent(director_node,
                                                                     values));
@@ -4417,6 +4425,24 @@ std::string BuildIndexHtml()
       });
       const directedSeen = new Map();
       const graphResourceRef = (object, resource) => `${object.key}|${resource.key}`;
+      const graphEdgeDataAttributes = (
+        sourceObject,
+        targetObject,
+        sourceResourceRef,
+        targetResourceRef,
+      ) => `data-source-object-key="${escapeHtml(sourceObject.key)}"
+                data-target-object-key="${escapeHtml(targetObject.key)}"
+                data-source-resource-ref="${escapeHtml(sourceResourceRef)}"
+                data-target-resource-ref="${escapeHtml(targetResourceRef)}"`;
+      const graphEdgeTitle = (relationship) =>
+        `${relationship.from_label || '-'} → ${relationship.to_label || relationship.endpoint_name || '-'} (${relationship.relation || 'related'})${relationship.resolution ? ` — ${relationship.resolution}` : ''}`;
+      const graphEndApproachY = (startY, endY) => {
+        const endApproachOffset = Math.min(
+          Math.max(Math.abs(endY - startY) / 3, 10),
+          18,
+        );
+        return endY - (Math.sign(endY - startY || 1) * endApproachOffset);
+      };
       const renderEdgeMarkup = (relationship, edgeDataAttributes, pathD, title, stroke, startX, startY, labelX, labelY) => {
         const directiveLabel = truncateGraphLabel(relationshipDirectiveLabel(relationship), 18);
         const labelWidth = Math.max((directiveLabel.length * 5.8) + 10, 24);
@@ -4438,6 +4464,12 @@ std::string BuildIndexHtml()
             </g>` : ''}
           </g>`;
       };
+      const renderRelationshipLegend = (entries) => `
+        <div class="relationship-legend">${entries.map((entry) => `
+          <span class="relationship-chip">
+            <span class="relationship-chip-swatch" style="background:${entry.color}"></span>
+            ${escapeHtml(entry.label)}
+          </span>`).join('')}</div>`;
 
       const edgeMarkup = relationships.map((relationship) => {
         const sourceObject = objectIndex.get(relationship._graphSourceObjectKey);
@@ -4471,13 +4503,15 @@ std::string BuildIndexHtml()
         const reverseCount = directedCounts.get(reverseKey) || 0;
         const sourceResourceRef = graphResourceRef(sourceObject, sourceResource);
         const targetResourceRef = graphResourceRef(targetObject, targetResource);
-        const edgeDataAttributes = `data-source-object-key="${escapeHtml(sourceObject.key)}"
-                data-target-object-key="${escapeHtml(targetObject.key)}"
-                data-source-resource-ref="${escapeHtml(sourceResourceRef)}"
-                data-target-resource-ref="${escapeHtml(targetResourceRef)}"`;
+        const edgeDataAttributes = graphEdgeDataAttributes(
+          sourceObject,
+          targetObject,
+          sourceResourceRef,
+          targetResourceRef,
+        );
         const laneOffset = (pairIndex - ((pairCount - 1) / 2)) * 8;
         const stroke = relationshipColor(relationship.relation);
-        const title = `${relationship.from_label || '-'} → ${relationship.to_label || relationship.endpoint_name || '-'} (${relationship.relation || 'related'})${relationship.resolution ? ` — ${relationship.resolution}` : ''}`;
+        const title = graphEdgeTitle(relationship);
         if (sameObject) {
           if (splitObjectResources) {
             const centerX = sourceObject.x + (objectWidth / 2);
@@ -4540,11 +4574,7 @@ std::string BuildIndexHtml()
               ? sameLaneEndX - 22
               : sameLaneEndX + 22;
             const midY = ((startY + endY) / 2) + laneOffset;
-            const endApproachOffset = Math.min(
-              Math.max(Math.abs(endY - startY) / 3, 10),
-              18,
-            );
-            const endApproachY = endY - (Math.sign(endY - startY || 1) * endApproachOffset);
+            const endApproachY = graphEndApproachY(startY, endY);
             return renderEdgeMarkup(
               relationship,
               edgeDataAttributes,
@@ -4588,11 +4618,7 @@ std::string BuildIndexHtml()
           const branchX = routeOnLeft ? columnStartX - 26 : columnStartX + 26;
           const branchEndX = routeOnLeft ? columnEndX - 26 : columnEndX + 26;
           const midY = ((startY + endY) / 2) + bendOffset;
-          const endApproachOffset = Math.min(
-            Math.max(Math.abs(endY - startY) / 3, 10),
-            18,
-          );
-          const endApproachY = endY - (Math.sign(endY - startY || 1) * endApproachOffset);
+          const endApproachY = graphEndApproachY(startY, endY);
           return renderEdgeMarkup(
             relationship,
             edgeDataAttributes,
@@ -4703,30 +4729,17 @@ std::string BuildIndexHtml()
         <div class="relationship-graph-list">${clickableNodes.map((node) => `
           <button class="relationship-node relationship-graph-node-link" data-node-id="${escapeHtml(node.nodeId)}">${escapeHtml(node.label)}</button>`).join('')}</div>` : ''}
         <div class="relationship-graph-note muted">Block colors</div>
-        <div class="relationship-legend">
-          <span class="relationship-chip">
-            <span class="relationship-chip-swatch" style="background:#e8f4fc"></span>
-            resource with outgoing relations
-          </span>
-          <span class="relationship-chip">
-            <span class="relationship-chip-swatch" style="background:#fff2d8"></span>
-            resource with incoming and outgoing relations
-          </span>
-          <span class="relationship-chip">
-            <span class="relationship-chip-swatch" style="background:#f5f7fa"></span>
-            resource mainly targeted by relations
-          </span>
-          <span class="relationship-chip">
-            <span class="relationship-chip-swatch" style="background:#fff6f6"></span>
-            unresolved object
-          </span>
-        </div>
+        ${renderRelationshipLegend([
+          { color: '#e8f4fc', label: 'resource with outgoing relations' },
+          { color: '#fff2d8', label: 'resource with incoming and outgoing relations' },
+          { color: '#f5f7fa', label: 'resource mainly targeted by relations' },
+          { color: '#fff6f6', label: 'unresolved object' },
+        ])}
         <div class="relationship-graph-note muted">Arrow colors</div>
-        <div class="relationship-legend">${legendCounts.map((entry) => `
-          <span class="relationship-chip">
-            <span class="relationship-chip-swatch" style="background:${relationshipColor(entry.relation)}"></span>
-            ${escapeHtml(entry.relation)} · ${entry.count}
-          </span>`).join('')}</div>
+        ${renderRelationshipLegend(legendCounts.map((entry) => ({
+          color: relationshipColor(entry.relation),
+          label: `${entry.relation} · ${entry.count}`,
+        })))}
       </div>`;
     }
 
@@ -5436,6 +5449,24 @@ std::string BuildIndexHtml()
         });
     }
 
+    function fetchJson(url, options) {
+      return fetch(url, options).then(async (response) => {
+        const body = await response.text();
+        if (!response.ok) {
+          const detail = body || response.statusText || 'empty response';
+          throw new Error(`HTTP ${response.status}: ${detail}`);
+        }
+        if (!body) {
+          throw new Error(`Empty response from ${url}`);
+        }
+        try {
+          return JSON.parse(body);
+        } catch (error) {
+          throw new Error(`Invalid JSON from ${url}: ${error}`);
+        }
+      });
+    }
+
     function showNewResourceEditor(nodeId, resourceType) {
       selectedNodeId = nodeId;
       selectedResourceId = '';
@@ -5464,8 +5495,7 @@ std::string BuildIndexHtml()
       if (currentTreeData) {
         renderTree(currentTreeData);
       }
-      fetch(`/api/v1/nodes/${nodeId}`)
-        .then((response) => response.json())
+      fetchJson(`/api/v1/nodes/${nodeId}`)
         .then((node) => {
           loadNodeResources(node);
         })
@@ -5631,8 +5661,8 @@ std::string BuildIndexHtml()
 
     function loadNodeResources(node) {
       Promise.all([
-        fetch(`/api/v1/nodes/${node.id}/resources`).then((response) => response.json()),
-        fetch(`/api/v1/nodes/${node.id}/relationships`).then((response) => response.json()),
+        fetchJson(`/api/v1/nodes/${node.id}/resources`),
+        fetchJson(`/api/v1/nodes/${node.id}/relationships`),
       ])
         .then(([resources, relationships]) => {
           loadedNodeResources.set(node.id, resources);
@@ -5770,6 +5800,9 @@ std::string BuildIndexHtml()
 HttpResponse HandleConfigServiceRequest(const ConfigServiceOptions& options,
                                         const HttpRequest& request)
 {
+  static std::mutex request_mutex;
+  const std::lock_guard<std::mutex> lock(request_mutex);
+
   if (request.method != "GET" && request.method != "POST") {
     return {405, "text/plain; charset=utf-8", "Method Not Allowed"};
   }
