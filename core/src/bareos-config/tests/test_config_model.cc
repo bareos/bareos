@@ -496,7 +496,7 @@ TEST(BareosConfigModel, KeepsMessagesReferencesScopedToOwningDaemon)
             0);
 }
 
-TEST(BareosConfigModel, KeepsKnownRemoteClientNodeWithoutRelationship)
+TEST(BareosConfigModel, BuildsKnownRemoteClientRelationship)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
@@ -511,7 +511,13 @@ TEST(BareosConfigModel, KeepsKnownRemoteClientNodeWithoutRelationship)
   const auto summary = DiscoverDatacenterSummary({root.path()});
   const auto relationships = FindRelationshipsForNode(summary, "director-0");
 
-  EXPECT_TRUE(relationships.empty());
+  ASSERT_EQ(relationships.size(), 1U);
+  EXPECT_EQ(relationships[0].relation, "resource-name");
+  EXPECT_EQ(relationships[0].source_resource_type, "client");
+  EXPECT_EQ(relationships[0].source_resource_name, "example-fd");
+  EXPECT_EQ(relationships[0].to_node_id, "known-client-0-example-fd");
+  EXPECT_EQ(relationships[0].target_resource_type, "client");
+  EXPECT_EQ(relationships[0].target_resource_name, "example-fd");
 
   const auto* remote_client = FindTreeNodeById(summary, "known-client-0-example-fd");
   ASSERT_NE(remote_client, nullptr);

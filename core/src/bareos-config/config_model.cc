@@ -2284,6 +2284,7 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
     const auto* storage_daemon
         = FindDirectorDaemonByKind(director, "storage-daemon");
     const auto* console_daemon = FindDirectorDaemonByKind(director, "console");
+    const auto known_client_nodes = BuildKnownClientTreeNodes(director, director_index);
     size_t relationship_index = 0;
     const auto director_resource = std::find_if(
         director.resources.begin(), director.resources.end(),
@@ -2306,6 +2307,16 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
                           })
                     : std::vector<ResourceSummary>::const_iterator{};
     };
+    const auto find_known_client_node = [&known_client_nodes](
+                                            const std::string& client_name) {
+      return std::find_if(
+          known_client_nodes.begin(), known_client_nodes.end(),
+          [&client_name](const TreeNodeSummary& node) {
+            return node.kind == "client"
+                   && NormalizeDirectiveNameForComparison(node.label)
+                          == NormalizeDirectiveNameForComparison(client_name);
+          });
+    };
 
     for (const auto& resource : director.resources) {
       const bool is_client = resource.type == "client";
@@ -2322,6 +2333,31 @@ std::vector<RelationshipSummary> BuildRelationshipSummaries(
           || target->configured_name.empty()
           || NormalizeDirectiveNameForComparison(target->configured_name)
                  != NormalizeDirectiveNameForComparison(resource.name)) {
+        if (is_client) {
+          const auto known_client = find_known_client_node(
+              StripSurroundingQuotes(resource.name));
+          if (known_client != known_client_nodes.end()) {
+            relationships.push_back({
+                MakeRelationshipId(director_index, relationship_index++),
+                "resource-name",
+                resource.name,
+                director.id,
+                director.name,
+                known_client->id,
+                known_client->label,
+                resource.id,
+                resource.file_path,
+                resource.type,
+                RelationshipResourceDisplayName(resource),
+                resource.id,
+                resource.file_path,
+                resource.type,
+                RelationshipResourceDisplayName(resource),
+                true,
+                "Resolved to known client node " + known_client->label + ".",
+            });
+          }
+        }
         continue;
       }
 
@@ -2957,6 +2993,12 @@ std::string SerializeResourceEditPreview(const ResourceEditPreview& preview)
   return output.str();
 }
 
+std::vector<RelationshipSummary> FindAllRelationships(
+    const DatacenterSummary& summary)
+{
+  return BuildRelationshipSummaries(summary);
+}
+
 const TreeNodeSummary* FindTreeNodeById(const DatacenterSummary& summary,
                                         const std::string& node_id)
 {
@@ -2972,7 +3014,7 @@ const ResourceSummary* FindResourceById(const DatacenterSummary& summary,
 std::vector<RelationshipSummary> FindRelationshipsForNode(
     const DatacenterSummary& summary, const std::string& node_id)
 {
-  const auto all_relationships = BuildRelationshipSummaries(summary);
+  const auto all_relationships = FindAllRelationships(summary);
   std::vector<RelationshipSummary> matches;
   for (const auto& relationship : all_relationships) {
     if (relationship.from_node_id == node_id

@@ -191,6 +191,8 @@ std::string SerializeEditableResourceDetail(const ResourceDetail& resource);
 std::string SerializeResourceFieldHints(
     const std::vector<ResourceFieldHint>& field_hints);
 std::string SerializeResourceEditPreview(const ResourceEditPreview& preview);
+std::vector<RelationshipSummary> FindAllRelationships(
+    const DatacenterSummary& summary);
 std::vector<RelationshipSummary> FindRelationshipsForNode(
     const DatacenterSummary& summary, const std::string& node_id);
 const TreeNodeSummary* FindTreeNodeById(const DatacenterSummary& summary,

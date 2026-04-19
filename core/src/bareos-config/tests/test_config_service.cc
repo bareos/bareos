@@ -628,15 +628,31 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("function iconForResource(resource)"),
             std::string::npos);
+  EXPECT_NE(response.body.find("function clientManagementState(node)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function renderClientManagementBadge(node)"),
+            std::string::npos);
   EXPECT_NE(response.body.find("class=\"app-title\""),
             std::string::npos);
   EXPECT_NE(response.body.find("class=\"section-heading\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find(".tree-status-badge.managed"),
+            std::string::npos);
+  EXPECT_NE(response.body.find(".tree-status-badge.remote"),
             std::string::npos);
   EXPECT_NE(response.body.find("label: 'Directors'"), std::string::npos);
   EXPECT_NE(response.body.find("label: 'Storages'"), std::string::npos);
   EXPECT_NE(response.body.find("label: 'Clients'"), std::string::npos);
   EXPECT_NE(response.body.find("label: 'Consoles'"), std::string::npos);
   EXPECT_NE(response.body.find("function groupedTreeEntries(root)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function normalizeNodeLabelForComparison(label)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function deduplicateClientGroupNodes(nodes)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("group.id === 'tree-group-clients'"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Management: ${escapeHtml(managementState.description)}<br>"),
             std::string::npos);
   EXPECT_NE(response.body.find("function renderGroup(group, parentEl)"),
             std::string::npos);
@@ -675,21 +691,23 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("splitObjectResources: true"),
             std::string::npos);
-  EXPECT_NE(response.body.find("Resources are distributed into two balanced lanes"),
+  EXPECT_NE(response.body.find("Resources are distributed into two lanes: resources with outgoing relations stay on the left"),
             std::string::npos);
   EXPECT_NE(response.body.find("const normalizedTypeLabel = (resource) =>"),
             std::string::npos);
   EXPECT_NE(response.body.find("const typeOrder = normalizedTypeLabel(left).localeCompare(normalizedTypeLabel(right));"),
             std::string::npos);
-  EXPECT_NE(response.body.find("const leftScore = Math.abs((leftCount + 1) - rightCount)"),
+  EXPECT_NE(response.body.find("const splitLaneCount = splitObjectResources ? 2 : 1;"),
             std::string::npos);
-  EXPECT_NE(response.body.find("const forceLeftLane = normalizedType === 'director'"),
+  EXPECT_NE(response.body.find("const preferredLaneForResource = (resource) => {"),
             std::string::npos);
-  EXPECT_NE(response.body.find("|| normalizedType.startsWith('job');"),
+  EXPECT_NE(response.body.find("if (resource.outgoing > 0) return 0;"),
             std::string::npos);
-  EXPECT_NE(response.body.find("const laneByType = new Map();"),
+  EXPECT_NE(response.body.find("const laneOrderForResource = (resource) => {"),
             std::string::npos);
-  EXPECT_NE(response.body.find("const typeLane = laneByType.has(normalizedType)"),
+  EXPECT_NE(response.body.find("const laneResourcesForObject = (object, lane) =>"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("object.resourceLanes = Array.from("),
             std::string::npos);
   EXPECT_NE(response.body.find("const laneOffset = splitObjectResources"),
             std::string::npos);
@@ -725,6 +743,14 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("function relationshipDirectiveLabel(relationship)"),
             std::string::npos);
+  EXPECT_NE(response.body.find("const referencedType = `${relationship?.target_resource_type || ''}`.trim().toLowerCase();"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("if (!normalizedLabel || normalizedLabel.includes('-')) return '';"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("return normalizedLabel.toLowerCase() === referencedType ? '' : normalizedLabel;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const rawDirectiveLabel = relationshipDirectiveLabel(relationship);"),
+            std::string::npos);
   EXPECT_NE(response.body.find("class=\"relationship-graph-edge-label\""),
             std::string::npos);
   EXPECT_NE(response.body.find("Directive (.+?) in "),
@@ -733,21 +759,25 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("const routeOnLeft = sourceObject.column === 0;"),
             std::string::npos);
-  EXPECT_NE(response.body.find("const sameLaneStartX = sourceResource.lane === 0"),
+  EXPECT_NE(response.body.find("const lanePortX = (resource, direction) =>"),
             std::string::npos);
   EXPECT_NE(response.body.find("const sameResource = sourceResource.key === targetResource.key;"),
             std::string::npos);
-  EXPECT_NE(response.body.find("? sourceResource.x"),
+  EXPECT_NE(response.body.find("const sameLaneLoopDirection = (lane) => (lane === 0 ? -1 : 1);"),
             std::string::npos);
-  EXPECT_NE(response.body.find(": sourceResource.x + sourceResource.width;"),
+  EXPECT_NE(response.body.find("const laneBoundaryX = (object, leftLane) =>"),
             std::string::npos);
-  EXPECT_NE(response.body.find("const loopX = sourceResource.lane === 0"),
+  EXPECT_NE(response.body.find("laneResources.sort((left, right) => {"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const boundaryX = laneBoundaryX("),
             std::string::npos);
   EXPECT_NE(response.body.find("const selfLoopHeight = resourceRowHeight + Math.abs(laneOffset);"),
             std::string::npos);
   EXPECT_NE(response.body.find("const selfLoopEndY = startY + 14;"),
             std::string::npos);
   EXPECT_NE(response.body.find("const selfLoopApproachY = selfLoopEndY - 10;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const selfLoopLabelY = startY + ((selfLoopEndY - startY) / 2) - 2;"),
             std::string::npos);
   EXPECT_NE(response.body.find("? sourceObject.x - (outerColumnLinkMargin / 2) - Math.abs(laneOffset)"),
             std::string::npos);
@@ -1101,6 +1131,75 @@ TEST(BareosConfigService, SavesRenamedResourceAndUpdatesReferences)
   EXPECT_NE(client_content.find("Name = renamed-fd"), std::string::npos);
   EXPECT_NE(job_content.find("Client = renamed-fd"), std::string::npos);
   EXPECT_EQ(job_content.find("Client = example-fd"), std::string::npos);
+}
+
+TEST(BareosConfigService,
+     SavesRenamedPoolAndUpdatesSelfAndPoolReferenceForms)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/pool");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/job");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  const auto pool_path = root.path() / "bareos-dir.d/pool/scratch.conf";
+  const auto job_path = root.path() / "bareos-dir.d/job/backup.conf";
+  std::ofstream(pool_path)
+      << "Pool {\n"
+      << "  Name = ScratchPool\n"
+      << "  RecyclePool = ScratchPool\n"
+      << "}\n";
+  std::ofstream(job_path)
+      << "Job {\n"
+      << "  Name = BackupJob\n"
+      << "  Pool = ScratchPool\n"
+      << "  FullBackupPool = ScratchPool\n"
+      << "}\n";
+
+  const auto model = DiscoverDatacenterSummary({root.path()});
+  const auto resource = std::find_if(
+      model.directors[0].resources.begin(), model.directors[0].resources.end(),
+      [](const ResourceSummary& summary) {
+        return summary.type == "pool" && summary.name == "ScratchPool";
+      });
+  ASSERT_NE(resource, model.directors[0].resources.end());
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const HttpRequest request{
+      "POST",
+      "/api/v1/resources/" + resource->id + "/save",
+      "text/plain; charset=utf-8",
+      "Pool {\n  Name = RenamedScratchPool\n  RecyclePool = ScratchPool\n}\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200) << response.body;
+  EXPECT_NE(response.body.find("\"saved\":true"), std::string::npos);
+  EXPECT_NE(response.body.find("\"directive_key\":\"RecyclePool\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"directive_key\":\"Pool\""), std::string::npos);
+  EXPECT_NE(response.body.find("\"directive_key\":\"FullBackupPool\""),
+            std::string::npos);
+
+  const auto pool_content = [&pool_path] {
+    std::ifstream input(pool_path);
+    std::ostringstream output;
+    output << input.rdbuf();
+    return output.str();
+  }();
+  const auto job_content = [&job_path] {
+    std::ifstream input(job_path);
+    std::ostringstream output;
+    output << input.rdbuf();
+    return output.str();
+  }();
+
+  EXPECT_NE(pool_content.find("Name = RenamedScratchPool"), std::string::npos);
+  EXPECT_NE(pool_content.find("RecyclePool = RenamedScratchPool"),
+            std::string::npos);
+  EXPECT_EQ(pool_content.find("RecyclePool = ScratchPool"), std::string::npos);
+  EXPECT_NE(job_content.find("Pool = RenamedScratchPool"), std::string::npos);
+  EXPECT_NE(job_content.find("FullBackupPool = RenamedScratchPool"),
+            std::string::npos);
+  EXPECT_EQ(job_content.find("FullBackupPool = ScratchPool"), std::string::npos);
 }
 
 TEST(BareosConfigService, ReportsPasswordReferenceImpactsInPreview)
@@ -2576,7 +2675,7 @@ TEST(BareosConfigService, ShowsKnownRemoteClientsInDatacenterResources)
             std::string::npos);
 }
 
-TEST(BareosConfigService, OmitsRelationshipsWithoutConcreteTargetResource)
+TEST(BareosConfigService, KeepsKnownClientRelationshipsAndOmitsMissingReferences)
 {
   TempConfigRoot root;
   std::filesystem::create_directories(root.path() / "bareos-dir.d/client");
@@ -2599,8 +2698,11 @@ TEST(BareosConfigService, OmitsRelationshipsWithoutConcreteTargetResource)
   const auto response = HandleConfigServiceRequest(options, request);
 
   EXPECT_EQ(response.status_code, 200);
-  EXPECT_EQ(response.body.find("\"relation\":"), std::string::npos);
-  EXPECT_EQ(response.body.find("\"endpoint_name\":\"example-fd\""),
+  EXPECT_NE(response.body.find("\"relation\":\"resource-name\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"endpoint_name\":\"example-fd\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"to_node_id\":\"known-client-0-example-fd\""),
             std::string::npos);
   EXPECT_EQ(response.body.find("\"endpoint_name\":\"MissingFileSet\""),
             std::string::npos);

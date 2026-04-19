@@ -581,20 +581,6 @@ std::string ExtractDirectiveValue(const std::vector<ResourceDirective>& directiv
   return "";
 }
 
-std::vector<ResourceSummary> CollectAllResources(const DatacenterSummary& summary)
-{
-  std::vector<ResourceSummary> resources;
-  for (const auto& director : summary.directors) {
-    resources.insert(resources.end(), director.resources.begin(),
-                     director.resources.end());
-    for (const auto& daemon : director.daemons) {
-      resources.insert(resources.end(), daemon.resources.begin(),
-                       daemon.resources.end());
-    }
-  }
-  return resources;
-}
-
 const DirectorSummary* FindOwningDirectorForResource(
     const DatacenterSummary& summary, const std::string& resource_id)
 {
@@ -1506,6 +1492,119 @@ std::vector<RenameImpact> CollectRenameImpacts(const ResourceDetail& detail,
   return impacts;
 }
 
+std::optional<std::string> ExtractDirectiveKeyFromRelationship(
+    const RelationshipSummary& relationship)
+{
+  static const std::string prefix = "Directive ";
+  static const std::string suffix = " in ";
+  if (!relationship.resolution.starts_with(prefix)) {
+    return std::nullopt;
+  }
+
+  const auto suffix_pos = relationship.resolution.find(suffix, prefix.size());
+  if (suffix_pos == std::string::npos || suffix_pos <= prefix.size()) {
+    return std::nullopt;
+  }
+
+  const auto directive_key = TrimWhitespace(
+      relationship.resolution.substr(prefix.size(),
+                                     suffix_pos - prefix.size()));
+  if (directive_key.empty()) return std::nullopt;
+  return directive_key;
+}
+
+bool MatchesRelationshipTarget(const RelationshipSummary& relationship,
+                               const ResourceSummary& target)
+{
+  if (!relationship.target_resource_id.empty() && !target.id.empty()
+      && relationship.target_resource_id == target.id) {
+    return true;
+  }
+
+  if (!relationship.target_resource_path.empty() && !target.file_path.empty()
+      && relationship.target_resource_path == target.file_path
+      && relationship.target_resource_type == target.type
+      && NormalizeDirectiveNameForComparison(relationship.target_resource_name)
+             == NormalizeDirectiveNameForComparison(
+                 StripSurroundingQuotes(target.name))) {
+    return true;
+  }
+
+  return false;
+}
+
+bool MatchesRelationshipSource(const RelationshipSummary& relationship,
+                               const ResourceSummary& source)
+{
+  if (!relationship.source_resource_id.empty() && !source.id.empty()
+      && relationship.source_resource_id == source.id) {
+    return true;
+  }
+
+  if (!relationship.source_resource_path.empty() && !source.file_path.empty()
+      && relationship.source_resource_path == source.file_path
+      && relationship.source_resource_type == source.type
+      && NormalizeDirectiveNameForComparison(relationship.source_resource_name)
+             == NormalizeDirectiveNameForComparison(
+                 StripSurroundingQuotes(source.name))) {
+    return true;
+  }
+
+  return false;
+}
+
+bool ApplyRenameToFieldHints(std::vector<ResourceFieldHint>& field_hints,
+                             const std::string& directive_key,
+                             const std::string& old_name,
+                             const std::string& new_name)
+{
+  const auto normalized_key = NormalizeDirectiveNameForComparison(directive_key);
+  bool changed = false;
+  for (auto& field : field_hints) {
+    if (!field.present
+        || NormalizeDirectiveNameForComparison(field.key) != normalized_key) {
+      continue;
+    }
+
+    if (field.repeatable) {
+      auto values = SplitRepeatableFieldValue(field.value);
+      bool field_changed = false;
+      for (auto& value : values) {
+        if (StripSurroundingQuotes(value) != old_name) continue;
+        value = PreserveReferenceQuoting(value, new_name);
+        field_changed = true;
+      }
+      if (!field_changed) continue;
+      field.value = JoinRepeatableFieldValues(values);
+      changed = true;
+      continue;
+    }
+
+    if (StripSurroundingQuotes(field.value) != old_name) continue;
+    field.value = PreserveReferenceQuoting(field.value, new_name);
+    changed = true;
+  }
+
+  return changed;
+}
+
+void AppendUniqueRenameImpacts(std::vector<RenameImpact>& impacts,
+                               const std::vector<RenameImpact>& additions)
+{
+  for (const auto& addition : additions) {
+    const auto duplicate = std::find_if(
+        impacts.begin(), impacts.end(),
+        [&addition](const RenameImpact& existing) {
+          return existing.resource.id == addition.resource.id
+                 && existing.directive_key == addition.directive_key
+                 && existing.line == addition.line
+                 && existing.old_value == addition.old_value
+                 && existing.new_value == addition.new_value;
+        });
+    if (duplicate == impacts.end()) impacts.push_back(addition);
+  }
+}
+
 std::string SummarizeRenameImpacts(const std::vector<RenameImpact>& rename_impacts);
 
 std::vector<ResourceSummary> FindPasswordPropagationTargets(
@@ -1806,56 +1905,77 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
 
   const auto model = DiscoverDatacenterSummary({config_root});
   if (name_changed) {
-    for (const auto& resource : CollectAllResources(model)) {
-      if (resource.id == detail.summary.id) continue;
+    auto updated_source_field_hints = result.preview.updated_field_hints;
+    std::vector<RenameImpact> source_impacts;
+    bool source_changed = false;
 
-      auto related_detail = LoadResourceDetail(resource);
-      auto updated_field_hints = related_detail.field_hints;
-      std::vector<RenameImpact> resource_impacts;
-      bool changed = false;
+    for (const auto& relationship : FindAllRelationships(model)) {
+      if (!MatchesRelationshipTarget(relationship, name_source_summary)) continue;
 
-      for (auto& field : updated_field_hints) {
-        if (!field.present
-            || field.related_resource_type != name_source_summary.type) {
+      const auto directive_key = ExtractDirectiveKeyFromRelationship(relationship);
+      if (!directive_key) continue;
+
+      if (MatchesRelationshipSource(relationship, rename_source_detail.summary)) {
+        if (rename_source_detail.summary.type == "configuration") continue;
+        if (!ApplyRenameToFieldHints(updated_source_field_hints, *directive_key,
+                                     old_name, new_name)) {
           continue;
         }
-
-        if (field.repeatable) {
-          auto values = SplitRepeatableFieldValue(field.value);
-          bool field_changed = false;
-          for (auto& value : values) {
-            if (StripSurroundingQuotes(value) != old_name) continue;
-            value = PreserveReferenceQuoting(value, new_name);
-            field_changed = true;
-            changed = true;
-          }
-          if (!field_changed) continue;
-          field.value = JoinRepeatableFieldValues(values);
-          field.present = true;
-          auto impacts = CollectRenameImpacts(related_detail, field.key, old_name,
-                                              new_name);
-          resource_impacts.insert(resource_impacts.end(), impacts.begin(),
-                                  impacts.end());
-          continue;
-        }
-
-        if (StripSurroundingQuotes(field.value) != old_name) continue;
-        field.value = PreserveReferenceQuoting(field.value, new_name);
-        field.present = true;
-        changed = true;
-        auto impacts
-            = CollectRenameImpacts(related_detail, field.key, old_name, new_name);
-        resource_impacts.insert(resource_impacts.end(), impacts.begin(),
-                                impacts.end());
+        AppendUniqueRenameImpacts(
+            source_impacts,
+            CollectRenameImpacts(rename_source_detail, *directive_key, old_name,
+                                 new_name));
+        source_changed = true;
+        continue;
       }
 
-      if (!changed) continue;
+      const auto* source_resource
+          = FindResourceById(model, relationship.source_resource_id);
+      if (!source_resource) continue;
+
+      const auto existing_update = std::find_if(
+          result.affected_updates.begin(), result.affected_updates.end(),
+          [source_resource](const RenameAffectedUpdate& update) {
+            return update.detail.summary.id == source_resource->id;
+          });
+
+      ResourceDetail related_detail;
+      std::vector<ResourceFieldHint> updated_field_hints;
+      std::vector<RenameImpact> resource_impacts;
+      if (existing_update != result.affected_updates.end()) {
+        related_detail = existing_update->detail;
+        updated_field_hints = existing_update->preview.updated_field_hints;
+        resource_impacts = existing_update->impacts;
+      } else {
+        related_detail = LoadResourceDetail(*source_resource);
+        updated_field_hints = related_detail.field_hints;
+      }
+
+      if (!ApplyRenameToFieldHints(updated_field_hints, *directive_key, old_name,
+                                   new_name)) {
+        continue;
+      }
+
+      AppendUniqueRenameImpacts(
+          resource_impacts,
+          CollectRenameImpacts(related_detail, *directive_key, old_name,
+                               new_name));
       auto preview = BuildFieldHintEditPreview(related_detail, updated_field_hints);
-      result.rename_impacts.insert(result.rename_impacts.end(),
-                                   resource_impacts.begin(),
-                                   resource_impacts.end());
-      result.affected_updates.push_back(
-          {std::move(related_detail), std::move(preview), std::move(resource_impacts)});
+      AppendUniqueRenameImpacts(result.rename_impacts, resource_impacts);
+      if (existing_update != result.affected_updates.end()) {
+        existing_update->preview = std::move(preview);
+        existing_update->impacts = std::move(resource_impacts);
+      } else {
+        result.affected_updates.push_back(
+            {std::move(related_detail), std::move(preview),
+             std::move(resource_impacts)});
+      }
+    }
+
+    if (source_changed) {
+      result.preview
+          = BuildFieldHintEditPreview(rename_source_detail, updated_source_field_hints);
+      AppendUniqueRenameImpacts(result.rename_impacts, source_impacts);
     }
 
     for (const auto& target : FindDeviceRenameTargets(model, rename_source_detail)) {
@@ -2105,7 +2225,7 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
                       + std::to_string(name_impacts.size())
                       + " reference(s) in "
                       + std::to_string(resource_ids.size())
-                      + " other resource(s): "
+                      + " resource(s): "
                       + SummarizeRenameImpacts(name_impacts) + ".";
     warning.line = FindDirectiveLine(result.preview.updated_directives, "Name");
     result.preview.updated_validation_messages.push_back(std::move(warning));
@@ -3288,6 +3408,30 @@ std::string BuildIndexHtml()
       border-color: #b7daf4;
     }
     .resource small { color: var(--setup-text-muted); display: block; }
+    .tree-status-badge {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 8px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      border: 1px solid #d8eaf6;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--setup-text-muted);
+    }
+    .tree-status-badge.managed {
+      border-color: #bde2ca;
+      background: #edf9f1;
+      color: #22663c;
+    }
+    .tree-status-badge.remote {
+      border-color: #f0d7a9;
+      background: #fff6e6;
+      color: #8a6200;
+    }
     .muted { color: var(--setup-text-muted); }
     textarea {
       width: 100%;
@@ -3593,6 +3737,32 @@ std::string BuildIndexHtml()
       return iconMarkup(resource.type || 'resource');
     }
 
+    function clientManagementState(node) {
+      if (node.kind === 'file-daemon') {
+        return {
+          badgeClass: 'managed',
+          badgeLabel: 'managed',
+          description: 'fully managed client',
+        };
+      }
+      if (node.kind === 'client') {
+        return {
+          badgeClass: 'remote',
+          badgeLabel: 'remote',
+          description: 'remote client only',
+        };
+      }
+      return null;
+    }
+
+    function renderClientManagementBadge(node) {
+      const state = clientManagementState(node);
+      if (!state) {
+        return '';
+      }
+      return `<span class="tree-status-badge ${escapeHtml(state.badgeClass)}">${escapeHtml(state.badgeLabel)}</span>`;
+    }
+
     function splitRepeatableFieldValues(value) {
       return `${value || ''}`
         .split('\n')
@@ -3681,6 +3851,25 @@ std::string BuildIndexHtml()
         ));
     }
 
+    function normalizeNodeLabelForComparison(label) {
+      return `${stripSurroundingQuotes(label || '')}`.trim().toLowerCase();
+    }
+
+    function deduplicateClientGroupNodes(nodes) {
+      const fileDaemonLabels = new Set(
+        nodes
+          .filter((node) => node.kind === 'file-daemon')
+          .map((node) => normalizeNodeLabelForComparison(node.label)),
+      );
+      return nodes.filter((node) => {
+        if (node.kind !== 'client') {
+          return true;
+        }
+        const label = normalizeNodeLabelForComparison(node.label);
+        return !label || !fileDaemonLabels.has(label);
+      });
+    }
+
     function groupedTreeEntries(root) {
       const treeGroupDefinitions = [
         { id: 'tree-group-directors', label: 'Directors', nodes: [] },
@@ -3701,7 +3890,11 @@ std::string BuildIndexHtml()
       return treeGroupDefinitions
         .map((group) => ({
           ...group,
-          nodes: sortTreeNodes(group.nodes),
+          nodes: sortTreeNodes(
+            group.id === 'tree-group-clients'
+              ? deduplicateClientGroupNodes(group.nodes)
+              : group.nodes,
+          ),
         }))
         .filter((group) => group.nodes.length);
     }
@@ -4015,21 +4208,32 @@ std::string BuildIndexHtml()
     }
 
     function relationshipDirectiveLabel(relationship) {
+      const referencedType = `${relationship?.target_resource_type || ''}`.trim().toLowerCase();
       const resolution = `${relationship?.resolution || ''}`.trim();
       const directiveMatch = resolution.match(/^Directive (.+?) in /);
+      let label = '';
       if (directiveMatch) {
-        return directiveMatch[1];
+        label = directiveMatch[1];
+      } else {
+        switch (`${relationship?.relation || ''}`.trim().toLowerCase()) {
+          case 'shared-password':
+            label = 'Password';
+            break;
+          case 'device':
+            label = 'Device';
+            break;
+          case 'storage':
+            label = 'Storage';
+            break;
+          default:
+            label = '';
+            break;
+        }
       }
-      switch (`${relationship?.relation || ''}`.trim().toLowerCase()) {
-        case 'shared-password':
-          return 'Password';
-        case 'device':
-          return 'Device';
-        case 'storage':
-          return 'Storage';
-        default:
-          return '';
-      }
+      if (!label) return '';
+      const normalizedLabel = label.trim();
+      if (!normalizedLabel || normalizedLabel.includes('-')) return '';
+      return normalizedLabel.toLowerCase() === referencedType ? '' : normalizedLabel;
     }
 
     function isInternalRelationship(relationship) {
@@ -4191,6 +4395,26 @@ std::string BuildIndexHtml()
       });
 
       const splitObjectResources = Boolean(options.splitObjectResources);
+      const splitLaneCount = splitObjectResources ? 2 : 1;
+      const preferredLaneForResource = (resource) => {
+        if (resource.outgoing > 0) return 0;
+        return 1;
+      };
+      const laneOrderForResource = (resource) => {
+        if (resource.outgoing > 0 && resource.incoming === 0) return 0;
+        if (resource.incoming > 0 && resource.outgoing > 0) return 1;
+        return 2;
+      };
+      const laneResourcesForObject = (object, lane) =>
+        splitObjectResources ? object.resourceLanes[lane] : object.resources;
+      const lanePortX = (resource, direction) =>
+        direction >= 0 ? resource.x + resource.width : resource.x;
+      const sameLaneLoopDirection = (lane) => (lane === 0 ? -1 : 1);
+      const laneBoundaryX = (object, leftLane) =>
+        object.x + objectPaddingSide
+          + ((leftLane + 1) * resourceBoxWidth)
+          + (leftLane * resourceLaneGap)
+          + (resourceLaneGap / 2);
       objects.forEach((object) => {
         const normalizedTypeLabel = (resource) =>
           `${resource.typeLabel || ''}`.trim().toLowerCase();
@@ -4202,57 +4426,36 @@ std::string BuildIndexHtml()
           return left.label.localeCompare(right.label);
         });
         object.column = object.nodeId && object.nodeId.startsWith('director-') ? 0 : 1;
-        object.leftResources = [];
-        object.rightResources = [];
-        const laneByType = new Map();
+        object.resourceLanes = Array.from(
+          { length: splitLaneCount },
+          () => [],
+        );
         object.resources.forEach((resource) => {
           let lane = 0;
-          const normalizedType = normalizedTypeLabel(resource);
           if (splitObjectResources) {
-            const forceLeftLane = normalizedType === 'director'
-              || normalizedType.startsWith('job');
-            if (forceLeftLane) {
-              lane = 0;
-            } else {
-              const preferredLane = resource.outgoing > resource.incoming
-                ? 0
-                : (resource.incoming > resource.outgoing ? 1 : -1);
-              const typeLane = laneByType.has(normalizedType)
-                ? laneByType.get(normalizedType)
-                : -1;
-              const leftCount = object.leftResources.length;
-              const rightCount = object.rightResources.length;
-              const leftScore = Math.abs((leftCount + 1) - rightCount)
-                + (preferredLane === 1 ? 1 : 0)
-                + (typeLane === 1 ? 1 : 0);
-              const rightScore = Math.abs(leftCount - (rightCount + 1))
-                + (preferredLane === 0 ? 1 : 0)
-                + (typeLane === 0 ? 1 : 0);
-              if (leftScore < rightScore) {
-                lane = 0;
-              } else if (rightScore < leftScore) {
-                lane = 1;
-              } else if (typeLane >= 0) {
-                lane = typeLane;
-              } else if (preferredLane >= 0) {
-                lane = preferredLane;
-              } else {
-                lane = leftCount <= rightCount ? 0 : 1;
-              }
-            }
+            lane = preferredLaneForResource(resource);
           }
           resource.lane = lane;
-          if (normalizedType) {
-            laneByType.set(normalizedType, lane);
-          }
-          if (lane === 0) {
-            resource.laneIndex = object.leftResources.length;
-            object.leftResources.push(resource);
-          } else {
-            resource.laneIndex = object.rightResources.length;
-            object.rightResources.push(resource);
-          }
+          const laneResources = laneResourcesForObject(object, lane);
+          resource.laneIndex = laneResources.length;
+          laneResources.push(resource);
         });
+        if (splitObjectResources) {
+          object.resourceLanes.forEach((laneResources) => {
+            laneResources.sort((left, right) => {
+              const order = laneOrderForResource(left) - laneOrderForResource(right);
+              if (order !== 0) return order;
+              const typeOrder = normalizedTypeLabel(left).localeCompare(
+                normalizedTypeLabel(right),
+              );
+              if (typeOrder !== 0) return typeOrder;
+              return left.label.localeCompare(right.label);
+            });
+            laneResources.forEach((resource, index) => {
+              resource.laneIndex = index;
+            });
+          });
+        }
       });
 
       const baseObjectWidth = 208;
@@ -4267,7 +4470,9 @@ std::string BuildIndexHtml()
         ? (resourceBoxHeight + objectPaddingSide) * 3.75
         : 0;
       const objectWidth = splitObjectResources
-        ? (objectPaddingSide * 2) + (baseObjectWidth * 2) + resourceLaneGap
+        ? (objectPaddingSide * 2)
+          + (baseObjectWidth * splitLaneCount)
+          + (resourceLaneGap * (splitLaneCount - 1))
         : baseObjectWidth;
       const resourceBoxWidth = splitObjectResources
         ? baseObjectWidth
@@ -4276,7 +4481,7 @@ std::string BuildIndexHtml()
       const portInset = 10;
       objects.forEach((object) => {
         const visibleRowCount = splitObjectResources
-          ? Math.max(object.leftResources.length, object.rightResources.length)
+          ? Math.max(...object.resourceLanes.map((lane) => lane.length), 0)
           : object.resources.length;
         object.height = objectPaddingTop + headerHeight
           + (visibleRowCount * resourceRowHeight) + objectPaddingBottom;
@@ -4322,7 +4527,7 @@ std::string BuildIndexHtml()
         let currentY = centerOffset(columns[column]);
         columns[column].forEach((object) => {
           const maxLaneLength = splitObjectResources
-            ? Math.max(object.leftResources.length, object.rightResources.length)
+            ? Math.max(...object.resourceLanes.map((lane) => lane.length), 0)
             : object.resources.length;
           object.x = columnX[column];
           object.y = currentY;
@@ -4332,9 +4537,7 @@ std::string BuildIndexHtml()
                 + (resource.lane * (resourceBoxWidth + resourceLaneGap))
               : object.x + objectPaddingSide;
             const laneLength = splitObjectResources
-              ? (resource.lane === 0
-                  ? object.leftResources.length
-                  : object.rightResources.length)
+              ? laneResourcesForObject(object, resource.lane).length
               : object.resources.length;
             const laneOffset = splitObjectResources
               ? ((maxLaneLength - laneLength) * resourceRowHeight) / 2
@@ -4376,7 +4579,10 @@ std::string BuildIndexHtml()
         return endY - (Math.sign(endY - startY || 1) * endApproachOffset);
       };
       const renderEdgeMarkup = (relationship, edgeDataAttributes, pathD, title, stroke, startX, startY, labelX, labelY) => {
-        const directiveLabel = truncateGraphLabel(relationshipDirectiveLabel(relationship), 18);
+        const rawDirectiveLabel = relationshipDirectiveLabel(relationship);
+        const directiveLabel = rawDirectiveLabel
+          ? truncateGraphLabel(rawDirectiveLabel, 18)
+          : '';
         const labelWidth = Math.max((directiveLabel.length * 5.8) + 10, 24);
         return `<g class="relationship-graph-edge" ${edgeDataAttributes}>
             <path d="${pathD}"
@@ -4446,46 +4652,45 @@ std::string BuildIndexHtml()
         const title = graphEdgeTitle(relationship);
         if (sameObject) {
           if (splitObjectResources) {
-            const centerX = sourceObject.x + (objectWidth / 2);
             const sameLane = sourceResource.lane === targetResource.lane;
             if (!sameLane) {
-              const crossLaneStartX = sourceResource.lane === 0
-                ? sourceResource.x + sourceResource.width
-                : sourceResource.x;
-              const crossLaneEndX = targetResource.lane === 0
-                ? targetResource.x + targetResource.width
-                : targetResource.x;
-              const controlX1 = centerX + (sourceResource.lane === 0 ? -14 : 14);
-              const controlX2 = centerX + (targetResource.lane === 0 ? -14 : 14);
+              const laneDirection = targetResource.lane > sourceResource.lane ? 1 : -1;
+              const crossLaneStartX = lanePortX(sourceResource, laneDirection);
+              const crossLaneEndX = lanePortX(targetResource, -laneDirection);
+              const boundaryX = laneBoundaryX(
+                sourceObject,
+                Math.min(sourceResource.lane, targetResource.lane),
+              );
+              const branchStartX = crossLaneStartX + (laneDirection * 14);
+              const branchEndX = crossLaneEndX - (laneDirection * 14);
+              const midY = ((startY + endY) / 2) + laneOffset;
+              const endApproachY = graphEndApproachY(startY, endY);
               return renderEdgeMarkup(
                 relationship,
                 edgeDataAttributes,
-                `M ${crossLaneStartX} ${startY} C ${controlX1} ${startY + laneOffset}, ${controlX2} ${endY + laneOffset}, ${crossLaneEndX} ${endY}`,
+                `M ${crossLaneStartX} ${startY} C ${branchStartX} ${startY}, ${boundaryX} ${startY}, ${boundaryX} ${midY}
+                C ${boundaryX} ${endY}, ${branchEndX} ${endApproachY}, ${crossLaneEndX} ${endY}`,
                 title,
                 stroke,
                 crossLaneStartX,
                 startY,
-                centerX,
-                ((startY + endY) / 2) + laneOffset - 10,
+                boundaryX,
+                midY - 10,
               );
             }
             const sameResource = sourceResource.key === targetResource.key;
-            const sameLaneStartX = sourceResource.lane === 0
-              ? sourceResource.x
-              : sourceResource.x + sourceResource.width;
-            const sameLaneEndX = targetResource.lane === 0
-              ? targetResource.x
-              : targetResource.x + targetResource.width;
-            const loopX = sourceResource.lane === 0
+            const loopDirection = sameLaneLoopDirection(sourceResource.lane);
+            const sameLaneStartX = lanePortX(sourceResource, loopDirection);
+            const sameLaneEndX = lanePortX(targetResource, loopDirection);
+            const loopX = loopDirection < 0
               ? sourceObject.x - (outerColumnLinkMargin / 2) - Math.abs(laneOffset)
               : sourceObject.x + objectWidth + (outerColumnLinkMargin / 2) + Math.abs(laneOffset);
             if (sameResource) {
-              const branchX = sourceResource.lane === 0
-                ? sameLaneStartX - 22
-                : sameLaneStartX + 22;
+              const branchX = sameLaneStartX + (loopDirection * 22);
               const selfLoopHeight = resourceRowHeight + Math.abs(laneOffset);
               const selfLoopEndY = startY + 14;
               const selfLoopApproachY = selfLoopEndY - 10;
+              const selfLoopLabelY = startY + ((selfLoopEndY - startY) / 2) - 2;
               return renderEdgeMarkup(
                 relationship,
                 edgeDataAttributes,
@@ -4496,15 +4701,11 @@ std::string BuildIndexHtml()
                 sameLaneStartX,
                 startY,
                 loopX,
-                startY - selfLoopHeight - 10,
+                selfLoopLabelY,
               );
             }
-            const branchX = sourceResource.lane === 0
-              ? sameLaneStartX - 22
-              : sameLaneStartX + 22;
-            const branchEndX = targetResource.lane === 0
-              ? sameLaneEndX - 22
-              : sameLaneEndX + 22;
+            const branchX = sameLaneStartX + (loopDirection * 22);
+            const branchEndX = sameLaneEndX + (loopDirection * 22);
             const midY = ((startY + endY) / 2) + laneOffset;
             const endApproachY = graphEndApproachY(startY, endY);
             return renderEdgeMarkup(
@@ -4796,7 +4997,7 @@ std::string BuildIndexHtml()
       return `<div class="relationship-view">
         ${renderRelationshipGraph(internalRelationships, {
           title: 'Internal relations graph',
-          description: 'This graph shows only relations that stay inside the same entity or configuration object. Resources are distributed into two balanced lanes so internal arrows can be seen more clearly, while the type and name stay visually distinct.',
+          description: 'This graph shows only relations that stay inside the same entity or configuration object. Resources are distributed into two lanes: resources with outgoing relations stay on the left, with the mixed incoming/outgoing resources placed at the bottom of that lane, while mainly targeted resources stay on the right so internal arrows remain easier to follow and the type and name remain visually distinct.',
           emptyMessage: 'No internal relations discovered for this node.',
           graphId: 'internal',
           splitObjectResources: true,
@@ -5440,10 +5641,12 @@ std::string BuildIndexHtml()
       const creatableTypes = Array.isArray(node.creatable_resource_types)
         ? node.creatable_resource_types
         : [];
+      const managementState = clientManagementState(node);
       detailsEl.innerHTML = `
         <h4 style="margin-top: 0;">${escapeHtml(node.label)}</h4>
         <div class="muted" style="margin-bottom: 12px;">
           Kind: ${escapeHtml(node.kind)}<br>
+          ${managementState ? `Management: ${escapeHtml(managementState.description)}<br>` : ''}
           Location: ${escapeHtml(node.description || '-')}<br>
           Resources are shown in the tree on the left (${resources.length} total).
         </div>
@@ -5649,7 +5852,7 @@ std::string BuildIndexHtml()
       );
       const labelEl = document.createElement('div');
       labelEl.className = 'tree-label';
-      labelEl.innerHTML = `<span class="tree-icon-label">${iconForNode(node)}<strong>${escapeHtml(node.label)}</strong></span>`;
+      labelEl.innerHTML = `<span class="tree-icon-label">${iconForNode(node)}<strong>${escapeHtml(node.label)}</strong>${renderClientManagementBadge(node)}</span>`;
       entryEl.appendChild(labelEl);
       rowEl.appendChild(entryEl);
       rowEl.addEventListener('click', () => {
