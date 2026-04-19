@@ -696,6 +696,39 @@ std::vector<std::string> CollectAllowedValues(const ResourceSummary& summary,
   return {values.begin(), values.end()};
 }
 
+std::vector<std::string> CollectAllowedValuesForRelatedResourceType(
+    const ResourceSummary& summary, const std::string& related_resource_type)
+{
+  if (related_resource_type.empty()) return {};
+  return CollectAllowedValues(summary, DirectiveMetadata{"",
+                                                        "",
+                                                        "",
+                                                        "",
+                                                        related_resource_type,
+                                                        false,
+                                                        false,
+                                                        false});
+}
+
+std::map<std::string, std::vector<std::string>>
+BuildScheduleRunOverrideAllowedValues(const ResourceSummary& summary)
+{
+  if (summary.type != "schedule") return {};
+
+  return {
+      {"Pool", CollectAllowedValuesForRelatedResourceType(summary, "pool")},
+      {"FullPool", CollectAllowedValuesForRelatedResourceType(summary, "pool")},
+      {"IncrementalPool",
+       CollectAllowedValuesForRelatedResourceType(summary, "pool")},
+      {"DifferentialPool",
+       CollectAllowedValuesForRelatedResourceType(summary, "pool")},
+      {"NextPool", CollectAllowedValuesForRelatedResourceType(summary, "pool")},
+      {"Storage", CollectAllowedValuesForRelatedResourceType(summary, "storage")},
+      {"Messages",
+       CollectAllowedValuesForRelatedResourceType(summary, "messages")},
+  };
+}
+
 std::map<std::string, DirectiveMetadata> BuildDirectiveMetadata(
     const ResourceSummary& summary)
 {
@@ -2077,6 +2110,26 @@ void AppendJsonFieldHints(std::ostringstream& output,
   output << "]";
 }
 
+void AppendJsonScheduleRunOverrideAllowedValues(
+    std::ostringstream& output,
+    const std::map<std::string, std::vector<std::string>>& allowed_values_by_key)
+{
+  output << "{";
+  bool first_schedule_override = true;
+  for (const auto& [directive_key, allowed_values] : allowed_values_by_key) {
+    if (!first_schedule_override) output << ",";
+    first_schedule_override = false;
+    output << JsonString(directive_key) << ":" << "[";
+    for (size_t value_index = 0; value_index < allowed_values.size();
+         ++value_index) {
+      if (value_index > 0) output << ",";
+      output << JsonString(allowed_values[value_index]);
+    }
+    output << "]";
+  }
+  output << "}";
+}
+
 void AppendJsonEditableResourceDetail(std::ostringstream& output,
                                       const ResourceDetail& resource)
 {
@@ -2094,6 +2147,9 @@ void AppendJsonEditableResourceDetail(std::ostringstream& output,
   AppendJsonValidationMessages(output, resource.validation_messages);
   output << ",\"field_hints\":";
   AppendJsonFieldHints(output, resource.field_hints);
+  output << ",\"schedule_run_override_allowed_values\":";
+  AppendJsonScheduleRunOverrideAllowedValues(
+      output, resource.schedule_run_override_allowed_values);
   output << ","
          << "\"editable\":true,"
          << "\"save_mode\":\"dry-run\"}";
@@ -2127,6 +2183,10 @@ void AppendJsonResourceEditPreview(std::ostringstream& output,
   AppendJsonFieldHints(output, preview.original_field_hints);
   output << ",\"updated_field_hints\":";
   AppendJsonFieldHints(output, preview.updated_field_hints);
+  output << ",\"schedule_run_override_allowed_values\":";
+  AppendJsonScheduleRunOverrideAllowedValues(
+      output,
+      BuildScheduleRunOverrideAllowedValues(preview.summary));
   output << ","
          << "\"changed\":" << JsonBool(preview.changed) << ","
          << "\"original_line_count\":"
@@ -3192,13 +3252,17 @@ ResourceDetail LoadResourceDetail(const ResourceSummary& resource)
     const auto inherited_directives = ResolveInheritedDirectives(resource, directives);
     auto display_directives = directives;
     SortResourceDirectivesForDisplay(resource, display_directives);
-    return {resource, dump.content, display_directives, inherited_directives,
+    return {resource,
+            dump.content,
+            display_directives,
+            inherited_directives,
             ValidateResourceContent(resource, dump.content, directives,
                                     inherited_directives),
-            BuildResourceFieldHints(resource, directives, inherited_directives)};
+            BuildResourceFieldHints(resource, directives, inherited_directives),
+            BuildScheduleRunOverrideAllowedValues(resource)};
   }
 
-  return {resource, {}, {}, {}, {}, {}};
+  return {resource, {}, {}, {}, {}, {}, {}};
 }
 
 std::vector<ResourceSummary> DiscoverResourceSummariesFromContent(
@@ -3310,7 +3374,7 @@ ResourceDetail BuildResourceDetail(const ResourceSummary& resource,
                                    const std::string& content)
 {
   if (resource.type == "configuration") {
-    return {resource, content, {}, {}, {}, {}};
+    return {resource, content, {}, {}, {}, {}, {}};
   }
 
   ParsedResourceDump dump;
@@ -3333,10 +3397,14 @@ ResourceDetail BuildResourceDetail(const ResourceSummary& resource,
   const auto inherited_directives = ResolveInheritedDirectives(resource, directives);
   auto display_directives = directives;
   SortResourceDirectivesForDisplay(resource, display_directives);
-  return {resource, dump.content, display_directives, inherited_directives,
+  return {resource,
+          dump.content,
+          display_directives,
+          inherited_directives,
           ValidateResourceContent(resource, dump.content, directives,
                                   inherited_directives),
-          BuildResourceFieldHints(resource, directives, inherited_directives)};
+          BuildResourceFieldHints(resource, directives, inherited_directives),
+          BuildScheduleRunOverrideAllowedValues(resource)};
 }
 
 std::string MaybeRenameResourceFilePath(const ResourceSummary& summary,

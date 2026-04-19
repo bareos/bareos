@@ -22,6 +22,7 @@
 #define BAREOS_BAREOS_CONFIG_CONFIG_MODEL_H_
 
 #include <filesystem>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -103,6 +104,8 @@ struct ResourceDetail {
   std::vector<InheritedDirective> inherited_directives;
   std::vector<ValidationMessage> validation_messages;
   std::vector<ResourceFieldHint> field_hints;
+  std::map<std::string, std::vector<std::string>>
+      schedule_run_override_allowed_values;
 };
 
 struct ResourceEditPreview {

@@ -2930,6 +2930,7 @@ std::vector<ResourceFieldHint> ParseFieldHintUpdateBody(
 {
   auto field_hints = base_field_hints;
   std::map<std::string, size_t> field_index_by_key;
+  std::set<std::string> updated_keys_from_request;
   for (size_t i = 0; i < field_hints.size(); ++i) {
     field_index_by_key[field_hints[i].key] = i;
   }
@@ -2950,12 +2951,14 @@ std::vector<ResourceFieldHint> ParseFieldHintUpdateBody(
     const auto it = field_index_by_key.find(key);
     if (it != field_index_by_key.end()) {
       auto& field = field_hints[it->second];
-      if (field.repeatable && !field.value.empty() && !value.empty()) {
+      if (field.repeatable && updated_keys_from_request.contains(key)
+          && !field.value.empty() && !value.empty()) {
         field.value += "\n" + value;
       } else {
         field.value = value;
       }
       field.present = !value.empty();
+      updated_keys_from_request.insert(key);
       continue;
     }
 
@@ -3117,7 +3120,8 @@ ResourceDetail BuildAddClientDirectorPreview(
           preview.updated_directives,
           preview.updated_inherited_directives,
           preview.updated_validation_messages,
-          preview.updated_field_hints};
+          preview.updated_field_hints,
+          {}};
 }
 
 std::string BuildClientSideDirectorPreviewContent(
@@ -3539,6 +3543,182 @@ std::string BuildIndexHtml()
     .directive-list li { padding: 8px 0; border-bottom: 1px solid #e7edf3; }
     .field-hint-list { display: grid; gap: 10px; margin: 12px 0; }
     .field-hint-row { display: grid; gap: 4px; }
+    .schedule-run-editor {
+      display: grid;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .schedule-run-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .schedule-run-rows {
+      display: grid;
+      gap: 10px;
+    }
+    .schedule-run-row {
+      border: 1px solid #d8eaf6;
+      border-radius: 12px;
+      background: #fbfdff;
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+    .schedule-run-row-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .schedule-run-row-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .schedule-run-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+    .schedule-run-grid label {
+      display: grid;
+      gap: 4px;
+    }
+    .schedule-run-grid label > span,
+    .schedule-run-advanced label > span {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--setup-text-muted);
+    }
+    .schedule-run-advanced {
+      display: grid;
+      gap: 6px;
+    }
+    .schedule-run-advanced textarea {
+      min-height: 96px;
+    }
+    .schedule-run-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #d8eaf6;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--setup-text-muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .schedule-run-chip.advanced {
+      border-color: #f0d7a9;
+      background: #fff6e6;
+      color: #8a6200;
+    }
+    .schedule-run-preview {
+      border: 1px solid #e2ebf2;
+      border-radius: 12px;
+      background: #f8fbfd;
+      padding: 10px 12px;
+      display: grid;
+      gap: 8px;
+    }
+    .schedule-run-preview h5 {
+      margin: 0;
+      color: var(--setup-primary);
+      font-size: 0.92rem;
+    }
+    .schedule-run-preview-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+    .schedule-run-preview-card {
+      border: 1px solid #d8eaf6;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 8px 10px;
+    }
+    .schedule-run-preview-card ul,
+    .schedule-run-timeline ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+    }
+    .schedule-run-preview-card li,
+    .schedule-run-timeline li {
+      margin: 4px 0;
+    }
+    .schedule-run-overlap {
+      color: #8a6200;
+      font-weight: 600;
+    }
+    .schedule-run-when-builder {
+      grid-column: 1 / -1;
+      border: 1px solid #d8eaf6;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.88);
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+    .schedule-run-when-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+    .schedule-run-when-group {
+      display: grid;
+      gap: 6px;
+    }
+    .schedule-run-when-group > span {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--setup-text-muted);
+    }
+    .schedule-run-chip-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .schedule-run-chip-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .schedule-run-chip-toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .schedule-run-chip-toggle span {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid #d8eaf6;
+      background: #ffffff;
+      color: var(--setup-text);
+      font-size: 0.8rem;
+      cursor: pointer;
+      user-select: none;
+    }
+    .schedule-run-chip-toggle input:checked + span {
+      border-color: #7db6de;
+      background: #e8f4fc;
+      color: var(--setup-primary);
+      font-weight: 600;
+    }
+    .schedule-run-summary {
+      font-size: 0.83rem;
+      color: var(--setup-text-muted);
+    }
+    .schedule-run-when-fallback {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 6px;
+    }
     .validation-list { margin: 12px 0; padding: 0; list-style: none; }
     .validation-list li { padding: 8px 10px; border-radius: 10px; margin-bottom: 8px; }
      .validation-list li.warning { background: #fff5d6; color: #8a6200; }
@@ -3825,6 +4005,1321 @@ std::string BuildIndexHtml()
     function normalizeRepeatableFieldValues(value) {
       return splitRepeatableFieldValues(value)
         .map((entry) => stripSurroundingQuotes(entry));
+    }
+
+    const scheduleRunOverrideKeys = [
+      'Pool',
+      'FullPool',
+      'IncrementalPool',
+      'DifferentialPool',
+      'NextPool',
+      'Storage',
+      'Messages',
+      'Priority',
+      'SpoolData',
+      'Accurate',
+      'MaxRunSchedTime',
+    ];
+
+    const scheduleRunBooleanOverrideKeys = new Set([
+      'Accurate',
+      'SpoolData',
+    ]);
+
+    const scheduleRunKnownLevels = new Map([
+      ['full', 'Full'],
+      ['differential', 'Differential'],
+      ['incremental', 'Incremental'],
+      ['virtualfull', 'VirtualFull'],
+      ['base', 'Base'],
+      ['since', 'Since'],
+      ['verifycatalog', 'VerifyCatalog'],
+      ['verifydata', 'VerifyData'],
+      ['verifyvolume', 'VerifyVolume'],
+      ['initcatalog', 'InitCatalog'],
+      ['volumetocatalog', 'VolumeToCatalog'],
+      ['disktocatalog', 'DiskToCatalog'],
+    ]);
+
+    const scheduleRunLevelOptions = [
+      'Full',
+      'Differential',
+      'Incremental',
+      'VirtualFull',
+      'Base',
+      'Since',
+      'VerifyCatalog',
+      'VerifyData',
+      'VerifyVolume',
+      'InitCatalog',
+      'VolumeToCatalog',
+      'DiskToCatalog',
+    ];
+
+    const scheduleWeekdayTokens = new Map([
+      ['sun', 0], ['sunday', 0],
+      ['mon', 1], ['monday', 1],
+      ['tue', 2], ['tuesday', 2],
+      ['wed', 3], ['wednesday', 3],
+      ['thu', 4], ['thursday', 4],
+      ['fri', 5], ['friday', 5],
+      ['sat', 6], ['saturday', 6],
+    ]);
+
+    const scheduleMonthTokens = new Map([
+      ['jan', 0], ['january', 0],
+      ['feb', 1], ['february', 1],
+      ['mar', 2], ['march', 2],
+      ['apr', 3], ['april', 3],
+      ['may', 4],
+      ['jun', 5], ['june', 5],
+      ['jul', 6], ['july', 6],
+      ['aug', 7], ['august', 7],
+      ['sep', 8], ['september', 8],
+      ['oct', 9], ['october', 9],
+      ['nov', 10], ['november', 10],
+      ['dec', 11], ['december', 11],
+    ]);
+
+    const scheduleOrdinalTokens = new Map([
+      ['1st', 0], ['first', 0],
+      ['2nd', 1], ['second', 1],
+      ['3rd', 2], ['third', 2],
+      ['4th', 3], ['fourth', 3],
+      ['5th', 4], ['fifth', 4],
+    ]);
+
+    const scheduleWeekdayOrder = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const scheduleWeekdayLabels = {
+      sun: 'Sun',
+      mon: 'Mon',
+      tue: 'Tue',
+      wed: 'Wed',
+      thu: 'Thu',
+      fri: 'Fri',
+      sat: 'Sat',
+    };
+    const scheduleMonthOrder = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',
+      'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    const scheduleMonthLabels = {
+      jan: 'Jan',
+      feb: 'Feb',
+      mar: 'Mar',
+      apr: 'Apr',
+      may: 'May',
+      jun: 'Jun',
+      jul: 'Jul',
+      aug: 'Aug',
+      sep: 'Sep',
+      oct: 'Oct',
+      nov: 'Nov',
+      dec: 'Dec',
+    };
+    const scheduleOrdinalOptions = ['1st', '2nd', '3rd', '4th', '5th', 'last'];
+
+    function createEmptyScheduleRunOverrides() {
+      return scheduleRunOverrideKeys.reduce((result, key) => {
+        result[key] = '';
+        return result;
+      }, {});
+    }
+
+    function createDefaultScheduleRunRow() {
+      return {
+        mode: 'structured',
+        raw: '',
+        dirty: false,
+        level: '',
+        levelStyle: 'keyword',
+        scheduleExpression: '',
+        overrides: createEmptyScheduleRunOverrides(),
+      };
+    }
+
+    function stripScheduleRunQuotes(value) {
+      return stripSurroundingQuotes((value || '').trim());
+    }
+
+    function quoteScheduleRunValue(value) {
+      const trimmed = `${value || ''}`.trim();
+      if (!trimmed) {
+        return '';
+      }
+      if (detectSurroundingQuote(trimmed)) {
+        return trimmed;
+      }
+      return /[\s,]/.test(trimmed) ? `"${trimmed}"` : trimmed;
+    }
+
+    function tokenizeScheduleRunLine(line) {
+      const tokens = [];
+      const source = `${line || ''}`;
+      let current = '';
+      let quote = '';
+      for (let index = 0; index < source.length; index += 1) {
+        const character = source[index];
+        if (quote) {
+          current += character;
+          if (character === quote) {
+            quote = '';
+          }
+          continue;
+        }
+        if (character === '"' || character === '\'') {
+          quote = character;
+          current += character;
+          continue;
+        }
+        if (/\s|,/.test(character)) {
+          if (current) {
+            tokens.push(current);
+            current = '';
+          }
+          continue;
+        }
+        current += character;
+      }
+      if (current) {
+        tokens.push(current);
+      }
+      return tokens;
+    }
+
+    function parseScheduleRunAssignment(token) {
+      const separator = token.indexOf('=');
+      if (separator < 0) {
+        return null;
+      }
+      return {
+        key: token.slice(0, separator).trim(),
+        value: token.slice(separator + 1).trim(),
+      };
+    }
+
+    function normalizeScheduleRunToken(token) {
+      return stripScheduleRunQuotes(token).trim().toLowerCase();
+    }
+
+    function normalizeScheduleDirectiveName(name) {
+      return `${name || ''}`
+        .trim()
+        .replace(/[^A-Za-z0-9]/g, '')
+        .toLowerCase();
+    }
+
+    function scheduleCanonicalWeekday(token) {
+      const normalized = normalizeScheduleRunToken(token);
+      return scheduleWeekdayOrder.find(
+        (weekday) => scheduleWeekdayTokens.get(normalized) === scheduleWeekdayTokens.get(weekday),
+      ) || '';
+    }
+
+    function scheduleCanonicalMonth(token) {
+      const normalized = normalizeScheduleRunToken(token);
+      return scheduleMonthOrder.find(
+        (month) => scheduleMonthTokens.get(normalized) === scheduleMonthTokens.get(month),
+      ) || '';
+    }
+
+    function formatScheduleTimeValue(hour, minute) {
+      return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    }
+
+    function createDefaultScheduleWhenState() {
+      return {
+        supported: true,
+        unsupportedReason: '',
+        frequency: 'daily',
+        weekdays: [],
+        months: [],
+        monthDays: [],
+        ordinal: '',
+        ordinalWeekday: '',
+        time: '',
+        hourlyMinute: '0',
+        hasExplicitTime: false,
+      };
+    }
+
+    function sortedUniqueNumbers(values, minimum, maximum) {
+      return Array.from(new Set((values || [])
+        .map((value) => Number(value))
+        .filter((value) => Number.isInteger(value) && value >= minimum && value <= maximum)))
+        .sort((left, right) => left - right);
+    }
+
+    function parseMonthDaysInput(value) {
+      return sortedUniqueNumbers(`${value || ''}`.split(/[,\s]+/), 1, 31);
+    }
+
+    function parseScheduleWhenState(expression) {
+      const tokens = tokenizeScheduleRunLine(expression || '');
+      const state = createDefaultScheduleWhenState();
+      let explicitFrequency = '';
+      for (let index = 0; index < tokens.length; index += 1) {
+        const token = normalizeScheduleRunToken(tokens[index]);
+        if (!token || token === 'on' || token === 'pooltime') {
+          continue;
+        }
+        if (token === 'at') {
+          const parsedTime = parseScheduleTimeToken(tokens[index + 1]);
+          if (!parsedTime) {
+            state.supported = false;
+            state.unsupportedReason = 'This schedule time cannot be represented by the guided editor yet.';
+            return state;
+          }
+          state.time = formatScheduleTimeValue(parsedTime.hour, parsedTime.minute);
+          state.hourlyMinute = String(parsedTime.minute);
+          state.hasExplicitTime = true;
+          index += 1;
+          continue;
+        }
+        if (token === 'hourly') {
+          explicitFrequency = 'hourly';
+          continue;
+        }
+        if (token === 'daily' || token === 'weekly' || token === 'monthly') {
+          explicitFrequency = token;
+          continue;
+        }
+        if (token === 'last') {
+          const weekday = scheduleCanonicalWeekday(tokens[index + 1]);
+          if (!weekday) {
+            state.supported = false;
+            state.unsupportedReason = 'Use raw mode for this `last` expression.';
+            return state;
+          }
+          state.ordinal = 'last';
+          state.ordinalWeekday = weekday;
+          index += 1;
+          continue;
+        }
+        if (scheduleOrdinalTokens.has(token)) {
+          const weekday = scheduleCanonicalWeekday(tokens[index + 1]);
+          if (!weekday) {
+            state.supported = false;
+            state.unsupportedReason = 'Use raw mode for this ordinal expression.';
+            return state;
+          }
+          const ordinalIndex = scheduleOrdinalTokens.get(token);
+          state.ordinal = ['1st', '2nd', '3rd', '4th', '5th'][ordinalIndex] || '';
+          state.ordinalWeekday = weekday;
+          index += 1;
+          continue;
+        }
+        if (/^w\d{1,2}$/.test(token) || token.includes('/')) {
+          state.supported = false;
+          state.unsupportedReason = 'Use raw mode for week-of-year or modulo expressions.';
+          return state;
+        }
+        if (token.includes('-')) {
+          const [startToken, endToken] = token.split('-', 2).map((part) => part.trim().toLowerCase());
+          const weekdayRange = expandScheduleTokenRange(startToken, endToken, scheduleWeekdayTokens);
+          if (weekdayRange) {
+            weekdayRange.forEach((weekdayValue) => {
+              const weekday = scheduleWeekdayOrder.find(
+                (candidate) => scheduleWeekdayTokens.get(candidate) === weekdayValue,
+              );
+              if (weekday) state.weekdays.push(weekday);
+            });
+            continue;
+          }
+          const monthRange = expandScheduleTokenRange(startToken, endToken, scheduleMonthTokens);
+          if (monthRange) {
+            monthRange.forEach((monthValue) => {
+              const month = scheduleMonthOrder.find(
+                (candidate) => scheduleMonthTokens.get(candidate) === monthValue,
+              );
+              if (month) state.months.push(month);
+            });
+            continue;
+          }
+          if (/^\d{1,2}$/.test(startToken) && /^\d{1,2}$/.test(endToken)) {
+            const start = Number(startToken);
+            const end = Number(endToken);
+            for (let current = start; current <= end; current += 1) {
+              state.monthDays.push(current);
+            }
+            continue;
+          }
+          state.supported = false;
+          state.unsupportedReason = 'Use raw mode for this range expression.';
+          return state;
+        }
+        if (/^\d{1,2}$/.test(token)) {
+          state.monthDays.push(Number(token));
+          continue;
+        }
+        const weekday = scheduleCanonicalWeekday(token);
+        if (weekday) {
+          state.weekdays.push(weekday);
+          continue;
+        }
+        const month = scheduleCanonicalMonth(token);
+        if (month) {
+          state.months.push(month);
+          continue;
+        }
+        state.supported = false;
+        state.unsupportedReason = `Use raw mode for \`${stripScheduleRunQuotes(tokens[index])}\`.`;
+        return state;
+      }
+
+      state.weekdays = Array.from(new Set(state.weekdays));
+      state.months = Array.from(new Set(state.months));
+      state.monthDays = sortedUniqueNumbers(state.monthDays, 1, 31);
+
+      if (explicitFrequency) {
+        state.frequency = explicitFrequency;
+      } else if (state.months.length) {
+        state.frequency = 'yearly';
+      } else if (state.ordinal || state.monthDays.length) {
+        state.frequency = 'monthly';
+      } else if (state.weekdays.length) {
+        state.frequency = 'weekly';
+      } else {
+        state.frequency = 'daily';
+      }
+
+      return state;
+    }
+
+    function serializeScheduleWhenState(state) {
+      const parts = [];
+      const frequency = `${state.frequency || 'daily'}`.trim();
+      const weekdays = (state.weekdays || []).filter(Boolean)
+        .sort((left, right) => scheduleWeekdayOrder.indexOf(left) - scheduleWeekdayOrder.indexOf(right));
+      const months = (state.months || []).filter(Boolean)
+        .sort((left, right) => scheduleMonthOrder.indexOf(left) - scheduleMonthOrder.indexOf(right));
+      const monthDays = sortedUniqueNumbers(state.monthDays, 1, 31);
+
+      if (frequency === 'hourly') {
+        parts.push('hourly');
+        const minute = Number(state.hourlyMinute);
+        if (state.hasExplicitTime || (Number.isInteger(minute) && minute !== 0)) {
+          parts.push('at', `00:${String(Number.isInteger(minute) ? minute : 0).padStart(2, '0')}`);
+        }
+        return parts.join(' ').trim();
+      }
+
+      if (frequency === 'daily') {
+        parts.push('daily');
+      } else if (frequency === 'weekly') {
+        if (weekdays.length) {
+          parts.push(...weekdays);
+        } else {
+          parts.push('weekly');
+        }
+      } else if (frequency === 'monthly') {
+        if (state.ordinal && state.ordinalWeekday) {
+          parts.push(state.ordinal, state.ordinalWeekday);
+        } else if (monthDays.length) {
+          parts.push(...monthDays.map((value) => String(value)));
+        } else {
+          parts.push('monthly');
+        }
+      } else if (frequency === 'yearly') {
+        if (months.length) parts.push(...months);
+        if (state.ordinal && state.ordinalWeekday) {
+          parts.push(state.ordinal, state.ordinalWeekday);
+        } else if (monthDays.length) {
+          parts.push(...monthDays.map((value) => String(value)));
+        }
+      } else {
+        if (months.length) parts.push(...months);
+        if (state.ordinal && state.ordinalWeekday) {
+          parts.push(state.ordinal, state.ordinalWeekday);
+        } else {
+          if (monthDays.length) parts.push(...monthDays.map((value) => String(value)));
+          if (weekdays.length) parts.push(...weekdays);
+        }
+      }
+
+      if (state.hasExplicitTime && state.time) {
+        parts.push('at', state.time);
+      }
+      return parts.join(' ').trim();
+    }
+
+    function parseScheduleRunLine(line) {
+      const raw = `${line || ''}`.trim();
+      const row = createDefaultScheduleRunRow();
+      row.raw = raw;
+      if (!raw) {
+        return row;
+      }
+
+      const scheduleTokens = [];
+      const tokens = tokenizeScheduleRunLine(raw);
+      for (const token of tokens) {
+        const assignment = parseScheduleRunAssignment(token);
+        if (assignment) {
+          const normalizedKey = normalizeScheduleDirectiveName(assignment.key);
+          if (normalizedKey === 'level') {
+            row.level = stripScheduleRunQuotes(assignment.value);
+            row.levelStyle = 'keyword';
+            continue;
+          }
+          const overrideKey = scheduleRunOverrideKeys.find(
+            (key) => normalizeScheduleDirectiveName(key) === normalizedKey,
+          );
+          if (overrideKey) {
+            row.overrides[overrideKey] = stripScheduleRunQuotes(assignment.value);
+            continue;
+          }
+          return {
+            ...row,
+            mode: 'advanced',
+            raw,
+          };
+        }
+
+        const normalizedToken = normalizeScheduleRunToken(token);
+        if (!row.level && scheduleRunKnownLevels.has(normalizedToken)) {
+          row.level = scheduleRunKnownLevels.get(normalizedToken);
+          row.levelStyle = 'legacy';
+          continue;
+        }
+        scheduleTokens.push(token);
+      }
+
+      row.scheduleExpression = scheduleTokens.join(' ').trim();
+      return row;
+    }
+
+    function serializeScheduleRunLine(row) {
+      if (!row) {
+        return '';
+      }
+      if (row.mode === 'advanced') {
+        return `${row.raw || ''}`.trim();
+      }
+      if (!row.dirty && row.raw) {
+        return `${row.raw}`.trim();
+      }
+      const parts = [];
+      const level = `${row.level || ''}`.trim();
+      if (level) {
+        parts.push(
+          row.levelStyle === 'legacy'
+            ? quoteScheduleRunValue(level)
+            : `Level=${quoteScheduleRunValue(level)}`,
+        );
+      }
+      scheduleRunOverrideKeys.forEach((key) => {
+        const value = `${row.overrides?.[key] || ''}`.trim();
+        if (value) {
+          parts.push(`${key}=${quoteScheduleRunValue(value)}`);
+        }
+      });
+      const expression = `${row.scheduleExpression || ''}`.trim();
+      if (expression) {
+        parts.push(expression);
+      }
+      return parts.join(' ').trim();
+    }
+
+    function normalizeScheduleBooleanValue(value) {
+      const normalized = `${value || ''}`.trim().toLowerCase();
+      if (normalized === 'yes' || normalized === 'true' || normalized === '1') {
+        return 'yes';
+      }
+      if (normalized === 'no' || normalized === 'false' || normalized === '0') {
+        return 'no';
+      }
+      return '';
+    }
+
+    function parseScheduleTimeToken(token) {
+      const match = `${token || ''}`.trim().match(/^(\d{1,2}):(\d{2})(am|pm)?$/i);
+      if (!match) {
+        return null;
+      }
+      let hour = Number(match[1]);
+      const minute = Number(match[2]);
+      const suffix = (match[3] || '').toLowerCase();
+      if (!Number.isInteger(hour) || !Number.isInteger(minute) || minute < 0 || minute > 59) {
+        return null;
+      }
+      if (suffix === 'pm' && hour !== 12) {
+        hour += 12;
+      } else if (suffix === 'am' && hour === 12) {
+        hour = 0;
+      }
+      if (hour < 0 || hour > 23) {
+        return null;
+      }
+      return { hour, minute };
+    }
+
+    function expandScheduleTokenRange(startToken, endToken, tokenMap) {
+      const start = tokenMap.get(startToken);
+      const end = tokenMap.get(endToken);
+      if (start === undefined || end === undefined) {
+        return null;
+      }
+      const values = [];
+      const wrap = Math.max(...tokenMap.values()) + 1;
+      for (let current = start; ; current = (current + 1) % wrap) {
+        values.push(current);
+        if (current === end) {
+          break;
+        }
+      }
+      return values;
+    }
+
+    function getScheduleWeekOfMonth(date) {
+      return Math.floor((date.getDate() - 1) / 7);
+    }
+
+    function isScheduleLastSevenDaysOfMonth(date) {
+      const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+      return date.getDate() > lastDay - 7;
+    }
+
+    function getScheduleWeekOfYear(date) {
+      const start = new Date(date.getFullYear(), 0, 1);
+      const startMidnight = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      const currentMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const days = Math.floor((currentMidnight - startMidnight) / 86400000);
+      return Math.floor((days + startMidnight.getDay()) / 7);
+    }
+
+    function parseScheduleExpression(expression) {
+      const tokens = tokenizeScheduleRunLine(expression || '');
+      const spec = {
+        hourly: false,
+        minute: 0,
+        hours: null,
+        weekdays: null,
+        months: null,
+        monthDays: null,
+        weeksOfMonth: null,
+        weeksOfYear: null,
+        lastSevenDays: false,
+        valid: true,
+        unsupportedReason: '',
+      };
+
+      const addToSet = (name, value) => {
+        if (!spec[name]) {
+          spec[name] = new Set();
+        }
+        spec[name].add(value);
+      };
+
+      for (let index = 0; index < tokens.length; index += 1) {
+        const token = normalizeScheduleRunToken(tokens[index]);
+        if (!token || token === 'on' || token === 'pooltime') {
+          continue;
+        }
+        if (token === 'at') {
+          const parsedTime = parseScheduleTimeToken(tokens[index + 1]);
+          if (!parsedTime) {
+            spec.valid = false;
+            spec.unsupportedReason = 'Preview needs an `at HH:MM` time.';
+            return spec;
+          }
+          spec.minute = parsedTime.minute;
+          spec.hours = new Set([parsedTime.hour]);
+          index += 1;
+          continue;
+        }
+        if (token === 'hourly') {
+          spec.hourly = true;
+          spec.hours = new Set(Array.from({ length: 24 }, (_, hour) => hour));
+          continue;
+        }
+        if (token === 'daily' || token === 'weekly' || token === 'monthly') {
+          continue;
+        }
+        if (token === 'last') {
+          const nextToken = normalizeScheduleRunToken(tokens[index + 1]);
+          if (!scheduleWeekdayTokens.has(nextToken)) {
+            spec.valid = false;
+            spec.unsupportedReason = 'Preview currently supports `last` only with a weekday.';
+            return spec;
+          }
+          spec.lastSevenDays = true;
+          addToSet('weekdays', scheduleWeekdayTokens.get(nextToken));
+          index += 1;
+          continue;
+        }
+        if (scheduleOrdinalTokens.has(token)) {
+          const nextToken = normalizeScheduleRunToken(tokens[index + 1]);
+          if (!scheduleWeekdayTokens.has(nextToken)) {
+            spec.valid = false;
+            spec.unsupportedReason = 'Preview needs an ordinal like `1st mon`.';
+            return spec;
+          }
+          addToSet('weeksOfMonth', scheduleOrdinalTokens.get(token));
+          addToSet('weekdays', scheduleWeekdayTokens.get(nextToken));
+          index += 1;
+          continue;
+        }
+        if (/^w\d{1,2}$/.test(token)) {
+          addToSet('weeksOfYear', Number(token.slice(1)));
+          continue;
+        }
+        if (/^\d{1,2}$/.test(token)) {
+          const day = Number(token);
+          if (day < 1 || day > 31) {
+            spec.valid = false;
+            spec.unsupportedReason = 'Preview only supports month days between 1 and 31.';
+            return spec;
+          }
+          addToSet('monthDays', day);
+          continue;
+        }
+        if (scheduleWeekdayTokens.has(token)) {
+          addToSet('weekdays', scheduleWeekdayTokens.get(token));
+          continue;
+        }
+        if (scheduleMonthTokens.has(token)) {
+          addToSet('months', scheduleMonthTokens.get(token));
+          continue;
+        }
+        if (token.includes('/')) {
+          spec.valid = false;
+          spec.unsupportedReason = 'Preview is not available yet for modulo expressions.';
+          return spec;
+        }
+        if (token.includes('-')) {
+          const [startToken, endToken] = token.split('-', 2).map((part) => part.trim().toLowerCase());
+          if (/^\d{1,2}$/.test(startToken) && /^\d{1,2}$/.test(endToken)) {
+            const start = Number(startToken);
+            const end = Number(endToken);
+            if (start < 1 || start > 31 || end < 1 || end > 31) {
+              spec.valid = false;
+              spec.unsupportedReason = 'Preview only supports day ranges between 1 and 31.';
+              return spec;
+            }
+            for (let current = start; ; current = current === 31 ? 1 : current + 1) {
+              addToSet('monthDays', current);
+              if (current === end) {
+                break;
+              }
+            }
+            continue;
+          }
+          const weekdayRange = expandScheduleTokenRange(startToken, endToken, scheduleWeekdayTokens);
+          if (weekdayRange) {
+            weekdayRange.forEach((weekday) => addToSet('weekdays', weekday));
+            continue;
+          }
+          const monthRange = expandScheduleTokenRange(startToken, endToken, scheduleMonthTokens);
+          if (monthRange) {
+            monthRange.forEach((month) => addToSet('months', month));
+            continue;
+          }
+          const ordinalRange = expandScheduleTokenRange(startToken, endToken, scheduleOrdinalTokens);
+          if (ordinalRange) {
+            ordinalRange.forEach((ordinal) => addToSet('weeksOfMonth', ordinal));
+            continue;
+          }
+        }
+        spec.valid = false;
+        spec.unsupportedReason = `Preview does not yet understand \`${stripScheduleRunQuotes(tokens[index])}\`.`;
+        return spec;
+      }
+
+      if (!spec.hours) {
+        spec.hours = new Set([0]);
+      }
+      return spec;
+    }
+
+    function scheduleDateMatchesSpec(date, spec) {
+      if (spec.months && !spec.months.has(date.getMonth())) {
+        return false;
+      }
+      if (spec.monthDays && !spec.monthDays.has(date.getDate())) {
+        return false;
+      }
+      if (spec.weekdays && !spec.weekdays.has(date.getDay())) {
+        return false;
+      }
+      if (spec.weeksOfMonth && spec.weeksOfMonth.size > 0) {
+        const weekOfMonth = getScheduleWeekOfMonth(date);
+        if (!spec.weeksOfMonth.has(weekOfMonth)
+            && !(spec.lastSevenDays && isScheduleLastSevenDaysOfMonth(date))) {
+          return false;
+        }
+      } else if (spec.lastSevenDays && !isScheduleLastSevenDaysOfMonth(date)) {
+        return false;
+      }
+      if (spec.weeksOfYear && !spec.weeksOfYear.has(getScheduleWeekOfYear(date))) {
+        return false;
+      }
+      return true;
+    }
+
+    function buildScheduleOccurrence(date, spec, hour) {
+      return new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        hour,
+        spec.minute,
+        0,
+        0,
+      );
+    }
+
+    function getNextScheduleRunOccurrences(row, limit = 5) {
+      if (!row || row.mode === 'advanced') {
+        return { occurrences: [], unsupportedReason: 'Advanced rows stay in raw mode.' };
+      }
+      const spec = parseScheduleExpression(`${row.scheduleExpression || ''}`.trim());
+      if (!spec.valid) {
+        return { occurrences: [], unsupportedReason: spec.unsupportedReason };
+      }
+
+      const occurrences = [];
+      const now = new Date();
+      if (spec.hourly) {
+        let candidate = new Date(now);
+        candidate.setSeconds(0, 0);
+        if (candidate.getMinutes() > spec.minute
+            || (candidate.getMinutes() === spec.minute && candidate <= now)) {
+          candidate.setHours(candidate.getHours() + 1);
+        }
+        candidate.setMinutes(spec.minute, 0, 0);
+        for (let guard = 0; guard < 24 * 120 && occurrences.length < limit; guard += 1) {
+          if (scheduleDateMatchesSpec(candidate, spec)) {
+            occurrences.push(new Date(candidate));
+          }
+          candidate = new Date(candidate.getTime() + 3600000);
+        }
+        return {
+          occurrences,
+          unsupportedReason: occurrences.length ? '' : 'No run time found in the preview window.',
+        };
+      }
+
+      let candidateDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      for (let guard = 0; guard < 370 && occurrences.length < limit; guard += 1) {
+        if (scheduleDateMatchesSpec(candidateDay, spec)) {
+          const dayOccurrences = Array.from(spec.hours)
+            .sort((left, right) => left - right)
+            .map((hour) => buildScheduleOccurrence(candidateDay, spec, hour))
+            .filter((occurrence) => occurrence > now);
+          occurrences.push(...dayOccurrences.slice(0, limit - occurrences.length));
+        }
+        candidateDay = new Date(candidateDay.getTime() + 86400000);
+      }
+      return {
+        occurrences,
+        unsupportedReason: occurrences.length ? '' : 'No run time found in the preview window.',
+      };
+    }
+
+    function formatScheduleOccurrence(occurrence) {
+      return occurrence.toLocaleString([], {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    }
+
+    function renderScheduleRunOverrideField(row, key, allowedValuesByKey) {
+      const currentValue = `${row.overrides?.[key] || ''}`.trim();
+      if (scheduleRunBooleanOverrideKeys.has(key)) {
+        return `<label>
+          <span>${escapeHtml(key)}</span>
+          <input
+            type="checkbox"
+            data-schedule-run-field="${escapeHtml(key)}"
+            ${normalizeScheduleBooleanValue(currentValue) === 'yes' ? 'checked' : ''}
+          >
+        </label>`;
+      }
+
+      const allowedValues = Array.isArray(allowedValuesByKey?.[key])
+        ? allowedValuesByKey[key]
+        : [];
+      if (allowedValues.length) {
+        const optionValues = Array.from(new Set([
+          '',
+          ...allowedValues.map((value) => stripSurroundingQuotes(value)),
+          currentValue,
+        ]));
+        return `<label>
+          <span>${escapeHtml(key)}</span>
+          <select data-schedule-run-field="${escapeHtml(key)}">
+            ${optionValues.map((value) => `<option value="${escapeHtml(value)}"${value === currentValue ? ' selected' : ''}>${escapeHtml(value || '—')}</option>`).join('')}
+          </select>
+        </label>`;
+      }
+
+      if (key === 'Priority') {
+        return `<label>
+          <span>${escapeHtml(key)}</span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            data-schedule-run-field="${escapeHtml(key)}"
+            value="${escapeHtml(currentValue)}"
+          >
+        </label>`;
+      }
+
+      return `<label>
+        <span>${escapeHtml(key)}</span>
+        <input data-schedule-run-field="${escapeHtml(key)}" value="${escapeHtml(currentValue)}">
+      </label>`;
+    }
+
+    function renderScheduleRunLevelField(row) {
+      const currentValue = `${row.level || ''}`.trim();
+      const optionValues = Array.from(new Set(['', ...scheduleRunLevelOptions, currentValue]));
+      return `<label>
+        <span>Level</span>
+        <select data-schedule-run-field="level">
+          ${optionValues.map((value) => `<option value="${escapeHtml(value)}"${value === currentValue ? ' selected' : ''}>${escapeHtml(value || '—')}</option>`).join('')}
+        </select>
+      </label>`;
+    }
+
+    function renderScheduleChipGroup(options, selectedValues, fieldName) {
+      return `<div class="schedule-run-chip-grid">${options.map((value) => `<label class="schedule-run-chip-toggle">
+        <input
+          type="checkbox"
+          data-schedule-run-when-field="${escapeHtml(fieldName)}"
+          value="${escapeHtml(value)}"
+          ${selectedValues.includes(value) ? 'checked' : ''}
+        >
+        <span>${escapeHtml(scheduleWeekdayLabels[value] || scheduleMonthLabels[value] || value)}</span>
+      </label>`).join('')}</div>`;
+    }
+
+    function renderScheduleWhenBuilder(row) {
+      const whenState = parseScheduleWhenState(row.scheduleExpression || '');
+      if (!whenState.supported) {
+        return `<div class="schedule-run-when-fallback">
+          <span><strong>When</strong> <small class="muted">This expression stays in text mode for now.</small></span>
+          <input data-schedule-run-field="scheduleExpression" placeholder="sun at 12:34" value="${escapeHtml(row.scheduleExpression || '')}">
+          <div class="muted">${escapeHtml(whenState.unsupportedReason)}</div>
+        </div>`;
+      }
+
+      return `<div class="schedule-run-when-builder">
+        <div class="schedule-run-when-grid">
+          <label>
+            <span>Frequency</span>
+            <select data-schedule-run-when-field="frequency">
+              ${['hourly', 'daily', 'weekly', 'monthly', 'yearly', 'custom'].map((value) => `<option value="${value}"${value === whenState.frequency ? ' selected' : ''}>${escapeHtml(value.charAt(0).toUpperCase() + value.slice(1))}</option>`).join('')}
+            </select>
+          </label>
+          ${whenState.frequency === 'hourly'
+            ? `<label>
+                <span>Minute</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  step="1"
+                  data-schedule-run-when-field="hourlyMinute"
+                  value="${escapeHtml(whenState.hourlyMinute || '0')}"
+                >
+              </label>`
+            : `<label>
+                <span>Time</span>
+                <input
+                  type="time"
+                  data-schedule-run-when-field="time"
+                  value="${escapeHtml(whenState.time || '')}"
+                >
+              </label>`
+          }
+          <label>
+            <span>Month days</span>
+            <input
+              data-schedule-run-when-field="monthDays"
+              placeholder="1,15,31"
+              value="${escapeHtml((whenState.monthDays || []).join(', '))}"
+            >
+          </label>
+          <label>
+            <span>Ordinal weekday</span>
+            <select data-schedule-run-when-field="ordinal">
+              <option value="">None</option>
+              ${scheduleOrdinalOptions.map((value) => `<option value="${value}"${value === whenState.ordinal ? ' selected' : ''}>${escapeHtml(value)}</option>`).join('')}
+            </select>
+          </label>
+          <label>
+            <span>Ordinal day</span>
+            <select data-schedule-run-when-field="ordinalWeekday">
+              <option value="">-</option>
+              ${scheduleWeekdayOrder.map((value) => `<option value="${value}"${value === whenState.ordinalWeekday ? ' selected' : ''}>${escapeHtml(scheduleWeekdayLabels[value])}</option>`).join('')}
+            </select>
+          </label>
+        </div>
+        <div class="schedule-run-when-group">
+          <span>Weekdays</span>
+          ${renderScheduleChipGroup(scheduleWeekdayOrder, whenState.weekdays || [], 'weekdays')}
+        </div>
+        <div class="schedule-run-when-group">
+          <span>Months</span>
+          ${renderScheduleChipGroup(scheduleMonthOrder, whenState.months || [], 'months')}
+        </div>
+        <div class="schedule-run-summary">Summary: ${escapeHtml(serializeScheduleWhenState(whenState) || 'No schedule yet')}</div>
+      </div>`;
+    }
+
+    function renderScheduleRunRow(row, index, allowedValuesByKey = {}) {
+      const modeLabel = row.mode === 'advanced' ? 'Advanced' : 'Structured';
+      const preview = getNextScheduleRunOccurrences(row, 4);
+      const previewMarkup = row.mode === 'advanced'
+        ? '<div class="muted">This row stays in raw mode. Switch back when it fits the structured editor again.</div>'
+        : (preview.occurrences.length
+            ? `<ul>${preview.occurrences.map((occurrence) => `<li>${escapeHtml(formatScheduleOccurrence(occurrence))}</li>`).join('')}</ul>`
+            : `<div class="muted">${escapeHtml(preview.unsupportedReason || 'No upcoming run found.')}</div>`);
+      return `<div class="schedule-run-row" data-row-index="${index}">
+        <div class="schedule-run-row-header">
+          <div>
+            <strong>Run ${index + 1}</strong>
+            <span class="schedule-run-chip${row.mode === 'advanced' ? ' advanced' : ''}">${escapeHtml(modeLabel)}</span>
+          </div>
+          <div class="schedule-run-row-actions">
+            <button type="button" class="link-button" data-schedule-run-action="move-up"${index === 0 ? ' disabled' : ''}>Up</button>
+            <button type="button" class="link-button" data-schedule-run-action="move-down">Down</button>
+            <button type="button" class="link-button" data-schedule-run-action="duplicate">Duplicate</button>
+            <button type="button" class="link-button" data-schedule-run-action="toggle-mode">${row.mode === 'advanced' ? 'Use fields' : 'Use raw line'}</button>
+            <button type="button" class="link-button" data-schedule-run-action="remove">Remove</button>
+          </div>
+        </div>
+        ${row.mode === 'advanced'
+          ? `<label class="schedule-run-advanced">
+              <span>Raw Run entry</span>
+              <textarea data-schedule-run-field="raw" rows="3" placeholder="Incremental FullPool=Scratch Storage=File Messages=Standard sun at 12:34">${escapeHtml(row.raw || '')}</textarea>
+            </label>`
+          : `<div class="schedule-run-grid">
+              ${renderScheduleRunLevelField(row)}
+              ${renderScheduleWhenBuilder(row)}
+              ${scheduleRunOverrideKeys.map((key) => renderScheduleRunOverrideField(
+                row,
+                key,
+                allowedValuesByKey,
+              )).join('')}
+            </div>`
+        }
+        <div class="schedule-run-preview-card">
+          <strong>Next runs</strong>
+          ${previewMarkup}
+        </div>
+      </div>`;
+    }
+
+    function renderScheduleRunPreview(rows) {
+      const rowSummaries = rows.map((row, index) => {
+        const preview = getNextScheduleRunOccurrences(row, 5);
+        return { index, preview };
+      });
+      const mergedTimeline = rowSummaries
+        .flatMap(({ index, preview }) => preview.occurrences.map((occurrence) => ({
+          index,
+          occurrence,
+        })))
+        .sort((left, right) => left.occurrence - right.occurrence)
+        .slice(0, 10);
+      const overlapCounts = mergedTimeline.reduce((result, entry) => {
+        const key = entry.occurrence.toISOString();
+        result.set(key, (result.get(key) || 0) + 1);
+        return result;
+      }, new Map());
+      return `<div class="schedule-run-preview">
+        <h5>Combined schedule preview</h5>
+        <div class="muted">Each Run line is evaluated independently, so overlapping matches still queue separately.</div>
+        <div class="schedule-run-preview-grid">
+          ${rowSummaries.map(({ index, preview }) => `<div class="schedule-run-preview-card">
+            <strong>Run ${index + 1}</strong>
+            ${preview.occurrences.length
+              ? `<ul>${preview.occurrences.slice(0, 3).map((occurrence) => `<li>${escapeHtml(formatScheduleOccurrence(occurrence))}</li>`).join('')}</ul>`
+              : `<div class="muted">${escapeHtml(preview.unsupportedReason || 'No preview available.')}</div>`}
+          </div>`).join('')}
+        </div>
+        <div class="schedule-run-timeline">
+          <strong>Merged timeline</strong>
+          ${mergedTimeline.length
+            ? `<ul>${mergedTimeline.map((entry) => {
+              const count = overlapCounts.get(entry.occurrence.toISOString()) || 0;
+              return `<li>${escapeHtml(formatScheduleOccurrence(entry.occurrence))} · Run ${entry.index + 1}${count > 1 ? ` <span class="schedule-run-overlap">(${count} overlapping entries)</span>` : ''}</li>`;
+            }).join('')}</ul>`
+            : '<div class="muted">Add a schedulable Run entry to preview the upcoming queue.</div>'}
+        </div>
+      </div>`;
+    }
+
+    function renderScheduleRunField(field, options = {}) {
+      const rows = normalizeRepeatableFieldValues(field.value || '')
+        .map((line) => parseScheduleRunLine(line));
+      const effectiveRows = rows.length ? rows : [createDefaultScheduleRunRow()];
+      const allowedValuesByKey = options.scheduleRunAllowedValues || {};
+      const hiddenValue = effectiveRows
+        .map((row) => serializeScheduleRunLine(row))
+        .filter((line) => line)
+        .join('\n');
+      return `<div
+        class="schedule-run-editor"
+        data-schedule-run-allowed-values="${escapeHtml(JSON.stringify(allowedValuesByKey))}"
+      >
+        <textarea
+          class="repeatable-field schedule-run-storage"
+          data-field-key="${escapeHtml(field.key)}"
+          data-field-required="${field.required ? 'true' : 'false'}"
+          data-field-repeatable="true"
+          data-field-quote-char=""
+          hidden
+        >${escapeHtml(hiddenValue)}</textarea>
+        <div class="schedule-run-toolbar">
+          <div class="muted">Edit Run entries row by row while keeping embedded pool, storage, and message overrides visible.</div>
+          <button type="button" class="link-button" data-schedule-run-action="add">Add Run entry</button>
+        </div>
+        <div class="schedule-run-rows">${effectiveRows.map((row, index) => renderScheduleRunRow(row, index, allowedValuesByKey)).join('')}</div>
+        ${renderScheduleRunPreview(effectiveRows)}
+      </div>`;
+    }
+
+    function readScheduleRunRowFromElement(rowEl, previousRow) {
+      if (!rowEl) {
+        return createDefaultScheduleRunRow();
+      }
+      if (rowEl.querySelector('[data-schedule-run-field="raw"]')) {
+        return {
+          ...(previousRow || createDefaultScheduleRunRow()),
+          mode: 'advanced',
+          dirty: true,
+          raw: rowEl.querySelector('[data-schedule-run-field="raw"]').value,
+        };
+      }
+      const row = {
+        ...(previousRow || createDefaultScheduleRunRow()),
+        mode: 'structured',
+        dirty: true,
+        level: rowEl.querySelector('[data-schedule-run-field="level"]')?.value || '',
+        scheduleExpression: '',
+        overrides: createEmptyScheduleRunOverrides(),
+      };
+      if (rowEl.querySelector('[data-schedule-run-field="scheduleExpression"]')) {
+        row.scheduleExpression
+          = rowEl.querySelector('[data-schedule-run-field="scheduleExpression"]').value || '';
+      } else {
+        const frequency = rowEl.querySelector('[data-schedule-run-when-field="frequency"]')?.value || 'daily';
+        const time = rowEl.querySelector('[data-schedule-run-when-field="time"]')?.value || '';
+        const hourlyMinute = rowEl.querySelector('[data-schedule-run-when-field="hourlyMinute"]')?.value || '0';
+        const monthDays = parseMonthDaysInput(
+          rowEl.querySelector('[data-schedule-run-when-field="monthDays"]')?.value || '',
+        );
+        const ordinal = rowEl.querySelector('[data-schedule-run-when-field="ordinal"]')?.value || '';
+        const ordinalWeekday
+          = rowEl.querySelector('[data-schedule-run-when-field="ordinalWeekday"]')?.value || '';
+        const weekdays = Array.from(
+          rowEl.querySelectorAll('[data-schedule-run-when-field="weekdays"]:checked'),
+        ).map((fieldEl) => fieldEl.value);
+        const months = Array.from(
+          rowEl.querySelectorAll('[data-schedule-run-when-field="months"]:checked'),
+        ).map((fieldEl) => fieldEl.value);
+        row.scheduleExpression = serializeScheduleWhenState({
+          frequency,
+          time,
+          hourlyMinute,
+          monthDays,
+          ordinal,
+          ordinalWeekday,
+          weekdays,
+          months,
+          hasExplicitTime: frequency === 'hourly' ? true : !!time,
+        });
+      }
+      scheduleRunOverrideKeys.forEach((key) => {
+        const fieldEl = rowEl.querySelector(`[data-schedule-run-field="${key}"]`);
+        if (!fieldEl) {
+          row.overrides[key] = '';
+          return;
+        }
+        if (scheduleRunBooleanOverrideKeys.has(key) && fieldEl.type === 'checkbox') {
+          row.overrides[key] = fieldEl.checked ? 'yes' : '';
+          return;
+        }
+        row.overrides[key] = fieldEl.value || '';
+      });
+      return row;
+    }
+
+    function initializeScheduleRunEditors(containerEl) {
+      containerEl.querySelectorAll('.schedule-run-editor').forEach((editorEl) => {
+        if (editorEl.dataset.initialized === 'true') {
+          return;
+        }
+        editorEl.dataset.initialized = 'true';
+        const storageEl = editorEl.querySelector('.schedule-run-storage');
+        const rowsEl = editorEl.querySelector('.schedule-run-rows');
+        const allowedValuesByKey = editorEl.dataset.scheduleRunAllowedValues
+          ? JSON.parse(editorEl.dataset.scheduleRunAllowedValues)
+          : {};
+
+        const refreshEditorPreview = () => {
+          const rows = editorEl._scheduleRunRows && editorEl._scheduleRunRows.length
+            ? editorEl._scheduleRunRows
+            : [createDefaultScheduleRunRow()];
+          storageEl.value = rows
+            .map((row) => serializeScheduleRunLine(row))
+            .filter((line) => line)
+            .join('\n');
+          rowsEl.querySelectorAll('.schedule-run-row').forEach((rowEl, index) => {
+            const row = rows[index] || createDefaultScheduleRunRow();
+            const preview = getNextScheduleRunOccurrences(row, 4);
+            const summaryEl = rowEl.querySelector('.schedule-run-summary');
+            if (summaryEl) {
+              summaryEl.textContent = `Summary: ${serializeScheduleWhenState(
+                parseScheduleWhenState(row.scheduleExpression || ''),
+              ) || 'No schedule yet'}`;
+            }
+            const previewCard = rowEl.querySelector('.schedule-run-preview-card');
+            if (!previewCard) {
+              return;
+            }
+            previewCard.innerHTML = `<strong>Next runs</strong>${row.mode === 'advanced'
+              ? '<div class="muted">This row stays in raw mode. Switch back when it fits the structured editor again.</div>'
+              : (preview.occurrences.length
+                  ? `<ul>${preview.occurrences.map((occurrence) => `<li>${escapeHtml(formatScheduleOccurrence(occurrence))}</li>`).join('')}</ul>`
+                  : `<div class="muted">${escapeHtml(preview.unsupportedReason || 'No upcoming run found.')}</div>`)}`;
+          });
+          const oldPreview = editorEl.querySelector('.schedule-run-preview');
+          if (oldPreview) {
+            oldPreview.remove();
+          }
+          editorEl.insertAdjacentHTML('beforeend', renderScheduleRunPreview(rows));
+        };
+
+        const renderEditor = () => {
+          const rows = editorEl._scheduleRunRows && editorEl._scheduleRunRows.length
+            ? editorEl._scheduleRunRows
+            : [createDefaultScheduleRunRow()];
+          rowsEl.innerHTML = rows.map((row, index) => renderScheduleRunRow(
+            row,
+            index,
+            allowedValuesByKey,
+          )).join('');
+          refreshEditorPreview();
+        };
+
+        editorEl._scheduleRunRows = normalizeRepeatableFieldValues(storageEl.value || '')
+          .map((line) => parseScheduleRunLine(line));
+        if (!editorEl._scheduleRunRows.length) {
+          editorEl._scheduleRunRows = [createDefaultScheduleRunRow()];
+        }
+        renderEditor();
+
+        const handleScheduleRunRowUpdate = (event) => {
+          const rowEl = event.target.closest('.schedule-run-row');
+          if (!rowEl) {
+            return;
+          }
+          const rowIndex = Number(rowEl.dataset.rowIndex);
+          editorEl._scheduleRunRows[rowIndex] = readScheduleRunRowFromElement(
+            rowEl,
+            editorEl._scheduleRunRows[rowIndex],
+          );
+          if (event.type === 'change'
+              && event.target.matches('[data-schedule-run-when-field="frequency"], [data-schedule-run-when-field="ordinal"]')) {
+            renderEditor();
+            return;
+          }
+          refreshEditorPreview();
+        };
+        editorEl.addEventListener('input', handleScheduleRunRowUpdate);
+        editorEl.addEventListener('change', handleScheduleRunRowUpdate);
+
+        editorEl.addEventListener('click', (event) => {
+          const actionEl = event.target.closest('[data-schedule-run-action]');
+          if (!actionEl) {
+            return;
+          }
+          event.preventDefault();
+          const action = actionEl.dataset.scheduleRunAction;
+          const rowEl = actionEl.closest('.schedule-run-row');
+          const rowIndex = rowEl ? Number(rowEl.dataset.rowIndex) : -1;
+
+          if (rowIndex >= 0) {
+            editorEl._scheduleRunRows[rowIndex] = readScheduleRunRowFromElement(
+              rowEl,
+              editorEl._scheduleRunRows[rowIndex],
+            );
+          }
+
+          switch (action) {
+            case 'add':
+              editorEl._scheduleRunRows.push(createDefaultScheduleRunRow());
+              break;
+            case 'remove':
+              editorEl._scheduleRunRows.splice(rowIndex, 1);
+              if (!editorEl._scheduleRunRows.length) {
+                editorEl._scheduleRunRows.push(createDefaultScheduleRunRow());
+              }
+              break;
+            case 'duplicate': {
+              const sourceRow = editorEl._scheduleRunRows[rowIndex] || createDefaultScheduleRunRow();
+              const serialized = serializeScheduleRunLine({
+                ...sourceRow,
+                dirty: true,
+              });
+              const parsedDuplicate = parseScheduleRunLine(serialized);
+              editorEl._scheduleRunRows.splice(rowIndex + 1, 0, {
+                ...parsedDuplicate,
+                raw: serialized,
+                dirty: true,
+                overrides: { ...(parsedDuplicate.overrides || createEmptyScheduleRunOverrides()) },
+              });
+              break;
+            }
+            case 'move-up':
+              if (rowIndex > 0) {
+                [editorEl._scheduleRunRows[rowIndex - 1], editorEl._scheduleRunRows[rowIndex]]
+                  = [editorEl._scheduleRunRows[rowIndex], editorEl._scheduleRunRows[rowIndex - 1]];
+              }
+              break;
+            case 'move-down':
+              if (rowIndex >= 0 && rowIndex < editorEl._scheduleRunRows.length - 1) {
+                [editorEl._scheduleRunRows[rowIndex], editorEl._scheduleRunRows[rowIndex + 1]]
+                  = [editorEl._scheduleRunRows[rowIndex + 1], editorEl._scheduleRunRows[rowIndex]];
+              }
+              break;
+            case 'toggle-mode':
+              if (rowIndex >= 0) {
+                const currentRow = editorEl._scheduleRunRows[rowIndex];
+                if (currentRow.mode === 'advanced') {
+                  const parsedRow = parseScheduleRunLine(currentRow.raw);
+                  editorEl._scheduleRunRows[rowIndex] = parsedRow.mode === 'advanced'
+                    ? currentRow
+                    : {
+                      ...parsedRow,
+                      dirty: true,
+                    };
+                } else {
+                  editorEl._scheduleRunRows[rowIndex] = {
+                    ...currentRow,
+                    mode: 'advanced',
+                    raw: serializeScheduleRunLine({
+                      ...currentRow,
+                      dirty: true,
+                    }),
+                    dirty: true,
+                  };
+                }
+              }
+              break;
+            default:
+              break;
+          }
+          renderEditor();
+        });
+      });
     }
 
     function getRepeatableFieldValues(fieldEl) {
@@ -4477,15 +5972,19 @@ std::string BuildIndexHtml()
           { length: splitLaneCount },
           () => [],
         );
-        object.resources.forEach((resource) => {
+        object.resources.forEach((resource, resourceIndex) => {
           let lane = 0;
           if (splitObjectResources) {
             lane = preferredLaneForResource(resource);
           }
           resource.lane = lane;
-          const laneResources = laneResourcesForObject(object, lane);
-          resource.laneIndex = laneResources.length;
-          laneResources.push(resource);
+          if (splitObjectResources) {
+            const laneResources = laneResourcesForObject(object, lane);
+            resource.laneIndex = laneResources.length;
+            laneResources.push(resource);
+          } else {
+            resource.laneIndex = resourceIndex;
+          }
         });
         if (splitObjectResources) {
           object.resourceLanes.forEach((laneResources) => {
@@ -4505,14 +6004,17 @@ std::string BuildIndexHtml()
         }
       });
 
-      const baseObjectWidth = 208;
-      const columnGap = 92;
-      const headerHeight = 40;
+      const compactGraph = !splitObjectResources;
+      const baseObjectWidth = compactGraph ? 182 : 208;
+      const columnGap = compactGraph ? 68 : 92;
+      const headerHeight = compactGraph ? 12 : 40;
       const resourceBoxHeight = 23;
-      const resourceRowHeight = resourceBoxHeight * 2;
-      const objectPaddingTop = 8;
-      const objectPaddingBottom = 8;
-      const objectPaddingSide = 8;
+      const resourceRowHeight = compactGraph
+        ? resourceBoxHeight + 4
+        : resourceBoxHeight * 2;
+      const objectPaddingTop = compactGraph ? 2 : 8;
+      const objectPaddingBottom = compactGraph ? 2 : 8;
+      const objectPaddingSide = compactGraph ? 6 : 8;
       const resourceLaneGap = splitObjectResources
         ? (resourceBoxHeight + objectPaddingSide) * 3.75
         : 0;
@@ -4524,7 +6026,7 @@ std::string BuildIndexHtml()
       const resourceBoxWidth = splitObjectResources
         ? baseObjectWidth
         : objectWidth - (objectPaddingSide * 2);
-      const topPadding = 30;
+      const topPadding = compactGraph ? 14 : 30;
       const portInset = 10;
       objects.forEach((object) => {
         const visibleRowCount = splitObjectResources
@@ -4534,7 +6036,7 @@ std::string BuildIndexHtml()
           + (visibleRowCount * resourceRowHeight) + objectPaddingBottom;
       });
 
-      const verticalGap = 14;
+      const verticalGap = compactGraph ? 6 : 14;
       const graphPaddingX = 18;
       const outerColumnLinkMargin = 96;
       const outerColumnLinkPadding = outerColumnLinkMargin + 64;
@@ -4855,8 +6357,8 @@ std::string BuildIndexHtml()
             fill="${objectFill(object)}"
             stroke="${objectStroke(object)}"
             stroke-width="1.3"></rect>
-          <text x="10" y="18" fill="#22303c" font-size="12" font-weight="700">${escapeHtml(truncateGraphLabel(object.label, 22))}</text>
-          <text x="10" y="32" fill="#5a6773" font-size="9">${escapeHtml(object.unresolved ? 'unresolved object' : 'daemon / definition object')}</text>
+          <text x="10" y="${compactGraph ? 12 : 18}" fill="#22303c" font-size="${compactGraph ? 12 : 12}" font-weight="700">${escapeHtml(truncateGraphLabel(object.label, compactGraph ? 20 : 22))}</text>
+          ${compactGraph ? '' : `<text x="10" y="32" fill="#5a6773" font-size="9">${escapeHtml(object.unresolved ? 'unresolved object' : 'daemon / definition object')}</text>`}
           <title>${escapeHtml(object.label)}</title>
         </g>`).join('');
       const objectResourceMarkup = objects.map((object) => `
@@ -5235,6 +6737,7 @@ std::string BuildIndexHtml()
             currentRelationships = relationships;
             relationshipsEl.innerHTML = renderRelationships(relationships);
             wizardFieldsEl.innerHTML = renderFieldHints(schema.field_hints || []);
+            initializeScheduleRunEditors(wizardFieldsEl);
             previewButton.disabled = false;
             attachRelationshipActions();
           })
@@ -5291,6 +6794,9 @@ std::string BuildIndexHtml()
       }
 
       const renderValueInput = (field, index) => {
+        if ((options.resourceType || '') === 'schedule' && field.key === 'Run' && field.repeatable) {
+          return renderScheduleRunField(field, options);
+        }
         if (field.repeatable && field.allowed_values && field.allowed_values.length
             && field.datatype === 'RESOURCE_LIST') {
           const selectedValues = new Set(
@@ -5425,6 +6931,7 @@ std::string BuildIndexHtml()
       const renameImpactsEl = document.getElementById('resource-rename-impacts');
       const validationEl = document.getElementById('resource-validation');
       let currentFieldHints = resource.field_hints || [];
+      let currentScheduleRunAllowedValues = resource.schedule_run_override_allowed_values || {};
       let hideEmptyOptional = !!options.hideEmptyOptional;
       previewOutputEl.textContent = resource.content;
       previewStatusEl.textContent = 'Preview changes first if you want to inspect the generated writeback before saving.';
@@ -5456,7 +6963,10 @@ std::string BuildIndexHtml()
         fieldHintsEl.innerHTML = renderFieldHints(currentFieldHints, {
           ...options,
           hideEmptyOptional,
+          resourceType: resource.type,
+          scheduleRunAllowedValues: currentScheduleRunAllowedValues,
         });
+        initializeScheduleRunEditors(fieldHintsEl);
         if (toggleEmptyFieldsButton) {
           toggleEmptyFieldsButton.textContent = hideEmptyOptional
             ? 'Show empty and unset fields'
@@ -5466,6 +6976,8 @@ std::string BuildIndexHtml()
 
       const applyPreviewToEditor = (preview) => {
         currentFieldHints = preview.updated_field_hints;
+        currentScheduleRunAllowedValues = preview.schedule_run_override_allowed_values
+          || currentScheduleRunAllowedValues;
         resourceTitleEl.textContent = stripSurroundingQuotes(preview.name || resource.name || '');
         resourceMetaEl.innerHTML = `Type: ${escapeHtml(preview.type || resource.type)}<br>File: ${escapeHtml(preview.file_path || resource.file_path)}`;
         editorEl.value = preview.updated_content;

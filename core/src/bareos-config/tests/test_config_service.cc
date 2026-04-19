@@ -315,6 +315,51 @@ TEST(BareosConfigService, ReturnsScheduleRunOverrideRelationships)
             std::string::npos);
 }
 
+TEST(BareosConfigService, ReturnsScheduleRunOverrideAllowedValues)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/schedule");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/pool");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/storage");
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/messages");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/pool/full.conf")
+      << "Pool {\n  Name = Scratch\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/storage/file.conf")
+      << "Storage {\n  Name = File\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/messages/standard.conf")
+      << "Messages {\n  Name = Standard\n}\n";
+  std::ofstream(root.path() / "bareos-dir.d/schedule/Nightly.conf")
+      << "Schedule {\n"
+      << "  Name = Nightly\n"
+      << "  Run = Incremental FullPool=Scratch Storage=File Messages=Standard mon at 21:00\n"
+      << "}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+  const auto schedule = std::find_if(
+      summary.directors[0].resources.begin(), summary.directors[0].resources.end(),
+      [](const ResourceSummary& resource) { return resource.type == "schedule"; });
+  ASSERT_NE(schedule, summary.directors[0].resources.end());
+
+  const HttpRequest request{
+      "GET", "/api/v1/resources/" + schedule->id + "/editor", "", ""};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(response.body.find("\"schedule_run_override_allowed_values\":{"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"DifferentialPool\":[\"Scratch\"]"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"FullPool\":[\"Scratch\"]"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"Storage\":[\"File\"]"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("\"Messages\":[\"Standard\"]"),
+            std::string::npos);
+}
+
 TEST(BareosConfigService, ExposesCreatableStorageDaemonResourceTypes)
 {
   TempConfigRoot root;
@@ -715,6 +760,48 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("select[multiple]"),
             std::string::npos);
+  EXPECT_NE(response.body.find("function renderScheduleRunField(field, options = {})"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function renderScheduleRunOverrideField(row, key, allowedValuesByKey)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function renderScheduleRunLevelField(row)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function parseScheduleWhenState(expression)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function serializeScheduleWhenState(state)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function renderScheduleWhenBuilder(row)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Frequency"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Weekdays"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Month days"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Ordinal weekday"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Summary:"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("scheduleRunAllowedValues: currentScheduleRunAllowedValues"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("preview.schedule_run_override_allowed_values"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function parseScheduleRunLine(line)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("function initializeScheduleRunEditors(containerEl)"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("data-schedule-run-allowed-values"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("type=\"checkbox\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("type=\"number\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("class=\"schedule-run-editor\""),
+            std::string::npos);
+  EXPECT_NE(response.body.find("Combined schedule preview"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("overlapping matches still queue separately"),
+            std::string::npos);
   EXPECT_NE(response.body.find("function renderRelationshipGraph(relationships, options = {})"),
             std::string::npos);
   EXPECT_NE(response.body.find("class=\"relationship-view\""),
@@ -754,11 +841,29 @@ TEST(BareosConfigService, ServesDatacenterScopedWizardUi)
             std::string::npos);
   EXPECT_NE(response.body.find("object.resourceLanes = Array.from("),
             std::string::npos);
+  EXPECT_NE(response.body.find("object.resources.forEach((resource, resourceIndex) => {"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("if (splitObjectResources) {"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("resource.laneIndex = resourceIndex;"),
+            std::string::npos);
   EXPECT_NE(response.body.find("const laneOffset = splitObjectResources"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const compactGraph = !splitObjectResources;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const headerHeight = compactGraph ? 12 : 40;"),
             std::string::npos);
   EXPECT_NE(response.body.find("const resourceBoxHeight = 23;"),
             std::string::npos);
-  EXPECT_NE(response.body.find("const resourceRowHeight = resourceBoxHeight * 2;"),
+  EXPECT_NE(response.body.find("const resourceRowHeight = compactGraph"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("? resourceBoxHeight + 4"),
+            std::string::npos);
+  EXPECT_NE(response.body.find(": resourceBoxHeight * 2;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const objectPaddingTop = compactGraph ? 2 : 8;"),
+            std::string::npos);
+  EXPECT_NE(response.body.find("const objectPaddingBottom = compactGraph ? 2 : 8;"),
             std::string::npos);
   EXPECT_NE(response.body.find("const resourceLaneGap = splitObjectResources"),
             std::string::npos);
@@ -1053,6 +1158,41 @@ TEST(BareosConfigService, ReturnsFieldBasedPreviewForUpdatedContent)
   EXPECT_NE(response.body.find("\"updated_field_hints\":[{"), std::string::npos);
   EXPECT_NE(response.body.find("\"updated_validation_messages\":[]"),
             std::string::npos);
+}
+
+TEST(BareosConfigService, ReplacesExistingRepeatableScheduleRunFieldsInPreview)
+{
+  TempConfigRoot root;
+  std::filesystem::create_directories(root.path() / "bareos-dir.d/schedule");
+  std::ofstream(root.path() / "bareos-dir.conf") << "Director {}\n";
+  std::ofstream(root.path() / "bareos-dir.d/schedule/Nightly.conf")
+      << "Schedule {\n"
+      << "  Name = Nightly\n"
+      << "  Run = Level=Full mon at 21:00\n"
+      << "  Run = Level=Incremental tue at 21:00\n"
+      << "}\n";
+
+  const ConfigServiceOptions options = MakeServiceOptions(root.path());
+  const auto summary = DiscoverDatacenterSummary({root.path()});
+  const auto schedule = std::find_if(
+      summary.directors[0].resources.begin(), summary.directors[0].resources.end(),
+      [](const ResourceSummary& resource) { return resource.type == "schedule"; });
+  ASSERT_NE(schedule, summary.directors[0].resources.end());
+  const HttpRequest request{
+      "POST",
+      "/api/v1/resources/" + schedule->id + "/preview-fields",
+      "text/plain; charset=utf-8",
+      "Name=Nightly\nRun=Level=Full mon at 21:00\nRun=Level=Differential wed at 21:00\n"};
+
+  const auto response = HandleConfigServiceRequest(options, request);
+
+  EXPECT_EQ(response.status_code, 200);
+  EXPECT_NE(
+      response.body.find(
+          "\"updated_content\":\"Schedule {\\n  Name = Nightly\\n  Run = "
+          "Level=Full mon at 21:00\\n  Run = Level=Differential wed at "
+          "21:00\\n}\\n\""),
+      std::string::npos);
 }
 
 TEST(BareosConfigService, ReturnsFieldBasedPreviewForNewResource)
