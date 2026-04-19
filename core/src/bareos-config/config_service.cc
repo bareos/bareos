@@ -286,13 +286,6 @@ void RollbackPersistedResource(const PersistResult& result);
 VerificationResult VerifySavedConfig(const ConfigServiceOptions& options,
                                      const ResourceSummary& summary);
 
-struct NamedResourceBlockRange {
-  std::string name;
-  size_t index = 0;
-  size_t start_line = 0;
-  size_t end_line = 0;
-};
-
 struct RenameImpact {
   ResourceSummary resource;
   std::string directive_key;
@@ -389,11 +382,6 @@ struct VerificationResult {
   std::string error;
 };
 
-std::string StemWithoutExtension(const std::filesystem::path& path)
-{
-  return path.stem().string();
-}
-
 std::string MaybeRenameConfigFilePath(const ResourceSummary& summary,
                                       const std::string& old_name,
                                       const std::string& new_name)
@@ -432,6 +420,59 @@ std::string JoinLines(const std::vector<std::string>& lines)
   }
   output << "\n";
   return output.str();
+}
+
+size_t StartLineIndex(const ResourceSummary& resource)
+{
+  return resource.source_line_start == 0 ? 0 : resource.source_line_start - 1;
+}
+
+size_t EndLineIndex(const ResourceSummary& resource)
+{
+  return resource.source_line_end == 0 ? 0 : resource.source_line_end - 1;
+}
+
+std::vector<ResourceSummary> DiscoverContainedResources(
+    const ResourceSummary& resource,
+    const std::string& content,
+    const std::string& resource_type = {})
+{
+  auto resources = DiscoverResourceSummariesFromContent(resource, content);
+  if (!resource_type.empty()) {
+    resources.erase(
+        std::remove_if(resources.begin(), resources.end(),
+                       [&resource_type](const ResourceSummary& summary) {
+                         return summary.type != resource_type;
+                       }),
+        resources.end());
+  }
+  return resources;
+}
+
+std::optional<ResourceDetail> BuildContainedResourceDetail(
+    const ResourceSummary& container,
+    const ResourceSummary& resource,
+    const std::string& content)
+{
+  if (resource.source_line_start == 0 || resource.source_line_end == 0) {
+    return std::nullopt;
+  }
+
+  const auto lines = SplitLines(content);
+  const auto start = StartLineIndex(resource);
+  const auto end = EndLineIndex(resource);
+  if (start >= lines.size() || end >= lines.size() || start > end) {
+    return std::nullopt;
+  }
+
+  std::vector<std::string> block_lines(
+      lines.begin() + static_cast<std::ptrdiff_t>(start),
+      lines.begin() + static_cast<std::ptrdiff_t>(end + 1));
+  auto summary = resource;
+  summary.file_path = container.file_path;
+  summary.component = container.component;
+  summary.config_root = container.config_root;
+  return BuildResourceDetail(summary, JoinLines(block_lines));
 }
 
 std::string Lowercase(std::string value)
@@ -1024,117 +1065,30 @@ VerificationResult RunVerificationCommand(const std::vector<std::string>& args)
   return result;
 }
 
-std::vector<NamedResourceBlockRange> ParseNamedResourceBlockRanges(
-    const std::string& content,
-    const std::string& fallback_stem,
-    const std::string& block_name)
-{
-  std::vector<NamedResourceBlockRange> blocks;
-  std::string line;
-  bool in_block = false;
-  size_t brace_depth = 0;
-  size_t line_number = 0;
-  size_t start_line = 0;
-  std::string current_name;
-
-  std::istringstream input(content);
-  while (std::getline(input, line)) {
-    ++line_number;
-    auto parsed_line = line;
-    const auto comment_start = parsed_line.find('#');
-    if (comment_start != std::string::npos) {
-      parsed_line = parsed_line.substr(0, comment_start);
-    }
-    const auto trimmed = TrimWhitespace(parsed_line);
-
-    if (!in_block) {
-      if (trimmed.rfind(block_name, 0) != 0
-          || trimmed.find('{') == std::string::npos) {
-        continue;
-      }
-
-      in_block = true;
-      brace_depth = std::count(parsed_line.begin(), parsed_line.end(), '{')
-                    - std::count(parsed_line.begin(), parsed_line.end(), '}');
-      start_line = line_number - 1;
-      current_name.clear();
-      continue;
-    }
-
-    const auto separator = trimmed.find('=');
-    if (separator != std::string::npos) {
-      const auto key = TrimWhitespace(trimmed.substr(0, separator));
-      if (key == "Name" && current_name.empty()) {
-        current_name = TrimWhitespace(trimmed.substr(separator + 1));
-      }
-    }
-
-    brace_depth += std::count(parsed_line.begin(), parsed_line.end(), '{');
-    brace_depth -= std::min(brace_depth,
-                            static_cast<size_t>(std::count(parsed_line.begin(),
-                                                           parsed_line.end(),
-                                                           '}')));
-    if (brace_depth == 0) {
-      blocks.push_back({current_name, blocks.size(), start_line, line_number - 1});
-      in_block = false;
-    }
-  }
-
-  for (auto& block : blocks) {
-    if (!block.name.empty()) continue;
-    block.name = blocks.size() == 1 ? fallback_stem
-                                    : fallback_stem + "-"
-                                          + std::to_string(block.index);
-  }
-
-  return blocks;
-}
-
-std::vector<NamedResourceBlockRange> ParseNamedResourceBlockRanges(
-    const std::filesystem::path& path, const std::string& block_name)
-{
-  std::ifstream input(path);
-  if (!input) return {};
-
-  std::ostringstream content;
-  content << input.rdbuf();
-  return ParseNamedResourceBlockRanges(content.str(), StemWithoutExtension(path),
-                                       block_name);
-}
-
 std::optional<ResourceDetail> BuildDirectorBlockDetail(
     const ResourceSummary& resource,
     const std::string& content,
     const std::string& preferred_name = "")
 {
-  const auto block_ranges = ParseNamedResourceBlockRanges(
-      content, StemWithoutExtension(std::filesystem::path(resource.file_path)),
-      "Director");
-  if (block_ranges.empty()) return std::nullopt;
+  auto blocks = DiscoverContainedResources(resource, content, "director");
+  if (blocks.empty()) return std::nullopt;
 
-  auto match = block_ranges.begin();
+  auto match = blocks.begin();
   if (!preferred_name.empty()) {
-    match = std::find_if(
-        block_ranges.begin(), block_ranges.end(),
-        [&preferred_name](const NamedResourceBlockRange& block) {
-          return StripSurroundingQuotes(block.name) == preferred_name;
-        });
-    if (match == block_ranges.end()) {
-      if (block_ranges.size() != 1) return std::nullopt;
-      match = block_ranges.begin();
+    match = std::find_if(blocks.begin(), blocks.end(),
+                         [&preferred_name](const ResourceSummary& block) {
+                           return StripSurroundingQuotes(block.name)
+                                  == preferred_name;
+                         });
+    if (match == blocks.end()) {
+      if (blocks.size() != 1) return std::nullopt;
+      match = blocks.begin();
     }
   }
 
-  const auto content_lines = SplitLines(content);
-  if (match->end_line >= content_lines.size()) return std::nullopt;
-
-  std::vector<std::string> block_lines(
-      content_lines.begin() + static_cast<std::ptrdiff_t>(match->start_line),
-      content_lines.begin() + static_cast<std::ptrdiff_t>(match->end_line + 1));
-  auto block_summary = resource;
-  block_summary.type = "director";
-  block_summary.name = StripSurroundingQuotes(match->name);
-  return BuildResourceDetail(block_summary, JoinLines(block_lines));
+  auto detail = BuildContainedResourceDetail(resource, *match, content);
+  if (detail) { detail->summary.id = resource.id; }
+  return detail;
 }
 
 std::optional<ResourceDetail> BuildSyntheticDirectorPasswordDetail(
@@ -1188,43 +1142,27 @@ std::optional<PasswordSourceDetails> BuildConsoleAuthPasswordSourceDetails(
 
   if (detail.summary.type != "configuration") return std::nullopt;
 
-  const auto config_stem
-      = StemWithoutExtension(std::filesystem::path(detail.summary.file_path));
-  const auto old_lines = SplitLines(detail.content);
-  const auto new_lines = SplitLines(preview.updated_content);
   const auto find_changed_password = [&](const std::string& block_name)
       -> std::optional<PasswordChange> {
+    const auto resource_type = NormalizeDirectiveNameForComparison(block_name);
     const auto old_blocks
-        = ParseNamedResourceBlockRanges(detail.content, config_stem, block_name);
-    const auto new_blocks = ParseNamedResourceBlockRanges(preview.updated_content,
-                                                          config_stem, block_name);
+        = DiscoverContainedResources(detail.summary, detail.content, resource_type);
+    const auto new_blocks = DiscoverContainedResources(preview.summary,
+                                                       preview.updated_content,
+                                                       resource_type);
     const auto block_count = std::min(old_blocks.size(), new_blocks.size());
     for (size_t index = 0; index < block_count; ++index) {
       const auto& old_block = old_blocks[index];
       const auto& new_block = new_blocks[index];
-      if (old_block.end_line >= old_lines.size()
-          || new_block.end_line >= new_lines.size()) {
-        continue;
-      }
-
-      const std::vector<std::string> old_block_lines(
-          old_lines.begin() + static_cast<std::ptrdiff_t>(old_block.start_line),
-          old_lines.begin() + static_cast<std::ptrdiff_t>(old_block.end_line + 1));
-      const std::vector<std::string> new_block_lines(
-          new_lines.begin() + static_cast<std::ptrdiff_t>(new_block.start_line),
-          new_lines.begin() + static_cast<std::ptrdiff_t>(new_block.end_line + 1));
-      auto old_summary = detail.summary;
-      old_summary.type = NormalizeDirectiveNameForComparison(block_name);
-      old_summary.name = StripSurroundingQuotes(old_block.name);
-      auto new_summary = preview.summary;
-      new_summary.type = NormalizeDirectiveNameForComparison(block_name);
-      new_summary.name = StripSurroundingQuotes(new_block.name);
-      const auto old_detail = BuildResourceDetail(old_summary, JoinLines(old_block_lines));
-      const auto new_detail = BuildResourceDetail(new_summary, JoinLines(new_block_lines));
+      const auto old_detail
+          = BuildContainedResourceDetail(detail.summary, old_block, detail.content);
+      const auto new_detail = BuildContainedResourceDetail(preview.summary, new_block,
+                                                           preview.updated_content);
+      if (!old_detail || !new_detail) continue;
       const auto old_password = StripSurroundingQuotes(
-          ExtractDirectiveValue(old_detail.directives, "Password"));
+          ExtractDirectiveValue(old_detail->directives, "Password"));
       const auto new_password = StripSurroundingQuotes(
-          ExtractDirectiveValue(new_detail.directives, "Password"));
+          ExtractDirectiveValue(new_detail->directives, "Password"));
       if (old_password.empty() || new_password.empty() || old_password == new_password) {
         continue;
       }
@@ -1460,10 +1398,18 @@ bool SaveExistingResourceContent(const ResourceSummary& original_summary,
   }
 
   const auto original_content = ReadFileToString(updated_path);
-  const auto block_ranges = ParseNamedResourceBlockRanges(updated_path, block_name);
-  std::vector<NamedResourceBlockRange> matches;
+  const auto block_ranges = DiscoverContainedResources(
+      original_summary, original_content,
+      NormalizeDirectiveNameForComparison(block_name));
+  std::vector<ResourceSummary> matches;
   for (const auto& block : block_ranges) {
-    if (block.name == original_summary.name) matches.push_back(block);
+    if (StripSurroundingQuotes(block.name)
+        == StripSurroundingQuotes(original_summary.name)) {
+      matches.push_back(block);
+    }
+  }
+  if (matches.empty() && block_ranges.size() == 1) {
+    matches.push_back(block_ranges.front());
   }
   if (matches.empty()) {
     error = "Resource block could not be located in "
@@ -1478,9 +1424,9 @@ bool SaveExistingResourceContent(const ResourceSummary& original_summary,
   auto lines = SplitLines(original_content);
   const auto replacement_lines = SplitLines(updated_content);
   const auto& match = matches.front();
-  lines.erase(lines.begin() + static_cast<std::ptrdiff_t>(match.start_line),
-              lines.begin() + static_cast<std::ptrdiff_t>(match.end_line + 1));
-  lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(match.start_line),
+  lines.erase(lines.begin() + static_cast<std::ptrdiff_t>(StartLineIndex(match)),
+              lines.begin() + static_cast<std::ptrdiff_t>(EndLineIndex(match) + 1));
+  lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(StartLineIndex(match)),
                replacement_lines.begin(), replacement_lines.end());
 
   return WriteFileWithBackup(updated_path, JoinLines(lines), action, backup_path,
@@ -1499,10 +1445,17 @@ bool RemoveExistingResource(const ResourceSummary& summary,
   }
 
   const auto original_content = ReadFileToString(path);
-  const auto block_ranges = ParseNamedResourceBlockRanges(path, block_name);
-  std::vector<NamedResourceBlockRange> matches;
+  const auto block_ranges = DiscoverContainedResources(
+      summary, original_content, NormalizeDirectiveNameForComparison(block_name));
+  std::vector<ResourceSummary> matches;
   for (const auto& block : block_ranges) {
-    if (block.name == summary.name) matches.push_back(block);
+    if (StripSurroundingQuotes(block.name)
+        == StripSurroundingQuotes(summary.name)) {
+      matches.push_back(block);
+    }
+  }
+  if (matches.empty() && block_ranges.size() == 1) {
+    matches.push_back(block_ranges.front());
   }
   if (matches.empty()) {
     error = "Resource block could not be located in " + summary.file_path + ".";
@@ -1515,8 +1468,8 @@ bool RemoveExistingResource(const ResourceSummary& summary,
 
   auto lines = SplitLines(original_content);
   const auto& match = matches.front();
-  lines.erase(lines.begin() + static_cast<std::ptrdiff_t>(match.start_line),
-              lines.begin() + static_cast<std::ptrdiff_t>(match.end_line + 1));
+  lines.erase(lines.begin() + static_cast<std::ptrdiff_t>(StartLineIndex(match)),
+              lines.begin() + static_cast<std::ptrdiff_t>(EndLineIndex(match) + 1));
 
   bool has_content = false;
   for (const auto& line : lines) {
@@ -1653,16 +1606,17 @@ std::vector<ResourceSummary> FindConsoleConfigurationDirectorTargets(
         if (daemon.kind != "console") continue;
         for (const auto& resource : daemon.resources) {
           if (resource.type != "configuration") continue;
-          const auto blocks = ParseNamedResourceBlockRanges(
-              std::filesystem::path(resource.file_path), "Director");
-        const auto match = std::find_if(
-            blocks.begin(), blocks.end(),
-            [&director_name](const NamedResourceBlockRange& block) {
-              return StripSurroundingQuotes(block.name) == director_name;
-            });
-        if (match != blocks.end()) targets.push_back(resource);
+          const auto content = ReadFileToString(resource.file_path);
+          const auto blocks
+              = DiscoverContainedResources(resource, content, "director");
+          const auto match = std::find_if(
+              blocks.begin(), blocks.end(),
+              [&director_name](const ResourceSummary& block) {
+                return StripSurroundingQuotes(block.name) == director_name;
+              });
+          if (match != blocks.end()) targets.push_back(resource);
+        }
       }
-    }
   };
 
   if (const auto* director = FindOwningDirectorForResource(summary, detail.summary.id)) {
@@ -2026,27 +1980,20 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
       if (existing_update != result.affected_updates.end()) continue;
 
       auto related_detail = LoadResourceDetail(target);
-      const auto block_ranges = ParseNamedResourceBlockRanges(
-          related_detail.content,
-          StemWithoutExtension(std::filesystem::path(target.file_path)), "Director");
+      const auto block_ranges
+          = DiscoverContainedResources(target, related_detail.content, "director");
       const auto block = std::find_if(
           block_ranges.begin(), block_ranges.end(),
-          [&old_name](const NamedResourceBlockRange& range) {
+          [&old_name](const ResourceSummary& range) {
             return StripSurroundingQuotes(range.name) == old_name;
           });
       if (block == block_ranges.end()) continue;
 
       auto content_lines = SplitLines(related_detail.content);
-      const std::vector<std::string> block_lines(
-          content_lines.begin() + static_cast<std::ptrdiff_t>(block->start_line),
-          content_lines.begin() + static_cast<std::ptrdiff_t>(block->end_line + 1));
-      auto block_summary = ResourceSummary{target.id + "-director", "director",
-                                           StripSurroundingQuotes(block->name),
-                                           target.file_path,
-                                           target.component,
-                                           target.config_root};
-      auto block_detail = BuildResourceDetail(block_summary, JoinLines(block_lines));
-      auto updated_field_hints = block_detail.field_hints;
+      const auto block_detail
+          = BuildContainedResourceDetail(target, *block, related_detail.content);
+      if (!block_detail) continue;
+      auto updated_field_hints = block_detail->field_hints;
       auto name_field = std::find_if(
           updated_field_hints.begin(), updated_field_hints.end(),
           [](const ResourceFieldHint& field) {
@@ -2060,8 +2007,9 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
       name_field->value = PreserveReferenceQuoting(name_field->value, new_name);
       name_field->present = true;
 
-      auto block_preview = BuildFieldHintEditPreview(block_detail, updated_field_hints);
-      auto impacts = CollectRenameImpacts(block_detail, "Name", old_name, new_name);
+      auto block_preview
+          = BuildFieldHintEditPreview(*block_detail, updated_field_hints);
+      auto impacts = CollectRenameImpacts(*block_detail, "Name", old_name, new_name);
       if (impacts.empty()) {
         impacts.push_back({target, "Name", 0, old_name, new_name});
       }
@@ -2069,11 +2017,12 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
                                    impacts.end());
 
       content_lines.erase(
-          content_lines.begin() + static_cast<std::ptrdiff_t>(block->start_line),
-          content_lines.begin() + static_cast<std::ptrdiff_t>(block->end_line + 1));
+          content_lines.begin() + static_cast<std::ptrdiff_t>(StartLineIndex(*block)),
+          content_lines.begin()
+              + static_cast<std::ptrdiff_t>(EndLineIndex(*block) + 1));
       const auto replacement_lines = SplitLines(block_preview.updated_content);
       content_lines.insert(
-          content_lines.begin() + static_cast<std::ptrdiff_t>(block->start_line),
+          content_lines.begin() + static_cast<std::ptrdiff_t>(StartLineIndex(*block)),
           replacement_lines.begin(), replacement_lines.end());
 
       auto preview = BuildResourceEditPreview(related_detail, JoinLines(content_lines));
@@ -2327,37 +2276,20 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
       auto updated_config_content = related_detail.content;
       std::vector<RenameImpact> impacts;
       bool changed = false;
-      const auto config_path = std::filesystem::path(target.file_path);
-      const auto config_stem = StemWithoutExtension(config_path);
 
       const auto update_matching_blocks
-          = [&](const std::string& block_name,
-                const std::string& resource_type,
+          = [&](const std::string& resource_type,
                 const auto& matcher) {
-              const auto block_ranges
-                  = ParseNamedResourceBlockRanges(updated_config_content, config_stem,
-                                                 block_name);
-              for (size_t block_index = 0; block_index < block_ranges.size();
-                   ++block_index) {
-                const auto& block = block_ranges[block_index];
+              const auto block_ranges = DiscoverContainedResources(
+                  target, updated_config_content, resource_type);
+              for (const auto& block : block_ranges) {
                 if (!matcher(block)) continue;
 
                 auto content_lines = SplitLines(updated_config_content);
-                const std::vector<std::string> block_lines(
-                    content_lines.begin()
-                        + static_cast<std::ptrdiff_t>(block.start_line),
-                    content_lines.begin()
-                        + static_cast<std::ptrdiff_t>(block.end_line + 1));
-                auto block_summary = ResourceSummary{
-                    target.id + "-" + resource_type + "-" + std::to_string(block_index),
-                    resource_type,
-                    StripSurroundingQuotes(block.name),
-                    target.file_path,
-                    target.component,
-                    target.config_root};
                 auto block_detail
-                    = BuildResourceDetail(block_summary, JoinLines(block_lines));
-                auto updated_field_hints = block_detail.field_hints;
+                    = BuildContainedResourceDetail(target, block, updated_config_content);
+                if (!block_detail) continue;
+                auto updated_field_hints = block_detail->field_hints;
                 auto password_field = std::find_if(
                     updated_field_hints.begin(), updated_field_hints.end(),
                     [](const ResourceFieldHint& field) {
@@ -2377,14 +2309,14 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
                     password_field->value, new_password);
                 password_field->present = true;
 
-                auto block_preview = BuildFieldHintEditPreview(block_detail,
+                auto block_preview = BuildFieldHintEditPreview(*block_detail,
                                                                updated_field_hints);
                 auto block_impacts = CollectRenameImpacts(
-                    block_detail, "Password", had_password ? old_password : "",
+                    *block_detail, "Password", had_password ? old_password : "",
                     new_password);
                 if (block_impacts.empty()) {
                   block_impacts.push_back(
-                      {block_summary, "Password", 0,
+                      {block_detail->summary, "Password", 0,
                        had_password ? old_password : "", new_password});
                 }
                 impacts.insert(impacts.end(), block_impacts.begin(),
@@ -2392,14 +2324,14 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
 
                 content_lines.erase(
                     content_lines.begin()
-                        + static_cast<std::ptrdiff_t>(block.start_line),
+                        + static_cast<std::ptrdiff_t>(StartLineIndex(block)),
                     content_lines.begin()
-                        + static_cast<std::ptrdiff_t>(block.end_line + 1));
+                        + static_cast<std::ptrdiff_t>(EndLineIndex(block) + 1));
                 const auto replacement_lines
                     = SplitLines(block_preview.updated_content);
                 content_lines.insert(
                     content_lines.begin()
-                        + static_cast<std::ptrdiff_t>(block.start_line),
+                        + static_cast<std::ptrdiff_t>(StartLineIndex(block)),
                     replacement_lines.begin(), replacement_lines.end());
                 updated_config_content = JoinLines(content_lines);
                 changed = true;
@@ -2407,15 +2339,15 @@ RenameAwarePreview BuildRenameAwarePreview(const ResourceDetail& detail,
             };
 
       update_matching_blocks(
-          "Director", "director",
-          [&password_detail](const NamedResourceBlockRange& range) {
+          "director",
+          [&password_detail](const ResourceSummary& range) {
             return StripSurroundingQuotes(range.name)
                    == StripSurroundingQuotes(password_detail.summary.name);
           });
-      update_matching_blocks("Console", "console",
-                             [](const NamedResourceBlockRange&) { return true; });
-      update_matching_blocks("User", "user",
-                             [](const NamedResourceBlockRange&) { return true; });
+      update_matching_blocks("console",
+                             [](const ResourceSummary&) { return true; });
+      update_matching_blocks("user",
+                             [](const ResourceSummary&) { return true; });
 
       if (!changed) continue;
       result.rename_impacts.insert(result.rename_impacts.end(), impacts.begin(),

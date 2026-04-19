@@ -21,6 +21,7 @@
 #include "config_model.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <fstream>
 #include <map>
@@ -28,6 +29,7 @@
 #include <set>
 #include <sstream>
 #include <utility>
+#include <unistd.h>
 
 #define NEED_JANSSON_NAMESPACE 1
 #include <jansson.h>
@@ -88,6 +90,10 @@ std::vector<ResourceSummary> DiscoverResourcesInDirectory(
     const std::string& id_prefix,
     const std::string& component,
     const std::string& config_root);
+bool StageEditedContentInConfigRoot(const ResourceSummary& resource,
+                                    const std::string& content,
+                                    const std::filesystem::path& staged_root,
+                                    std::filesystem::path& staged_file);
 const ResourceTable* FindResourceTableByNormalizedType(
     const ConfigurationParser& parser, const std::string& normalized_type);
 const ResourceTable* LookupResourceTable(const ResourceSummary& summary);
@@ -333,23 +339,6 @@ ConfigComponent ComponentFromString(const std::string& component)
       ResourceSummary{"", "", "", "", component, ""});
 }
 
-std::string DefaultConfigFilenameForComponent(ConfigComponent component)
-{
-  switch (component) {
-    case ConfigComponent::kDirector:
-      return "bareos-dir.conf";
-    case ConfigComponent::kFileDaemon:
-      return "bareos-fd.conf";
-    case ConfigComponent::kStorageDaemon:
-      return "bareos-sd.conf";
-    case ConfigComponent::kConsole:
-      return "bconsole.conf";
-    case ConfigComponent::kUnknown:
-      break;
-  }
-  return "";
-}
-
 std::unique_ptr<ConfigurationParser> CreateParserForComponent(
     ConfigComponent component, const char* config_file)
 {
@@ -372,12 +361,21 @@ std::unique_ptr<ConfigurationParser> CreateParserForComponent(
   return nullptr;
 }
 
-std::filesystem::path ConfigFileForRoot(const std::filesystem::path& root,
-                                        ConfigComponent component)
+std::string DefaultConfigIncludeDirForComponent(ConfigComponent component)
 {
-  const auto filename = DefaultConfigFilenameForComponent(component);
-  if (filename.empty()) return {};
-  return root / filename;
+  switch (component) {
+    case ConfigComponent::kDirector:
+      return "bareos-dir.d";
+    case ConfigComponent::kFileDaemon:
+      return "bareos-fd.d";
+    case ConfigComponent::kStorageDaemon:
+      return "bareos-sd.d";
+    case ConfigComponent::kConsole:
+      return "bconsole.d";
+    case ConfigComponent::kUnknown:
+      break;
+  }
+  return "";
 }
 
 std::vector<ConfigComponent> CandidateComponentsForType(
@@ -385,7 +383,10 @@ std::vector<ConfigComponent> CandidateComponentsForType(
 {
   std::vector<ConfigComponent> candidates;
   if (preferred != ConfigComponent::kUnknown) {
-    candidates.push_back(preferred);
+    auto parser = CreateParserForComponent(preferred, nullptr);
+    if (parser && FindResourceTableByNormalizedType(*parser, resource_type)) {
+      candidates.push_back(preferred);
+    }
   }
 
   for (const auto component : {ConfigComponent::kDirector,
@@ -396,9 +397,9 @@ std::vector<ConfigComponent> CandidateComponentsForType(
         != candidates.end()) {
       continue;
     }
-    const auto binding = GetParserBinding(component);
-    if (!binding.parser) continue;
-    if (FindResourceTableByNormalizedType(*binding.parser, resource_type)) {
+    auto parser = CreateParserForComponent(component, nullptr);
+    if (!parser) continue;
+    if (FindResourceTableByNormalizedType(*parser, resource_type)) {
       candidates.push_back(component);
     }
   }
@@ -412,19 +413,23 @@ std::vector<ConfigComponent> CandidateComponentsForType(
 
 bool SaveStandaloneDiscoveryResource(int type, const ResourceItem* items, int pass)
 {
-  if (pass != 1 || !standalone_parser || !items || !items->allocated_resource) {
+  if (pass != 1 && pass != 2) {
+    return true;
+  }
+  if (!standalone_parser || !items || !items->allocated_resource) {
     return true;
   }
 
   auto* resource = *items->allocated_resource;
   if (!resource) return true;
 
-  if (!resource->resource_name_ || resource->resource_name_[0] == '\0') {
-    auto fallback_name = std::filesystem::path(resource->source_file_).stem().string();
-    if (fallback_name == ".conf") {
-      fallback_name = std::filesystem::path(resource->source_file_).filename().string();
+  if (resource->resource_name_) {
+    for (auto* existing = standalone_parser->GetNextRes(type, nullptr); existing;
+         existing = standalone_parser->GetNextRes(type, existing)) {
+      if (bstrcmp(existing->resource_name_, resource->resource_name_)) {
+        return true;
+      }
     }
-    resource->resource_name_ = strdup(fallback_name.c_str());
   }
 
   if (!standalone_parser->AppendToResourcesChain(resource, type)) {
@@ -464,6 +469,17 @@ bool ParseStandaloneConfigFile(ConfigurationParser& parser,
   const auto parsed = parser.ParseConfigFile(config_file.c_str(), nullptr);
   if (lenient) { standalone_parser = nullptr; }
   return parsed || (lenient && HasParsedResources(parser));
+}
+
+bool ParseConfigIncludeTree(ConfigurationParser& parser,
+                            const std::filesystem::path& config_root,
+                            ConfigComponent component,
+                            bool lenient)
+{
+  const auto include_dir = DefaultConfigIncludeDirForComponent(component);
+  if (include_dir.empty() || config_root.empty()) return false;
+  return ParseStandaloneConfigFile(
+      parser, config_root / include_dir / "*" / "*.conf", lenient);
 }
 
 const ResourceTable* FindResourceTableByNormalizedType(
@@ -978,9 +994,14 @@ ParsedResourceDump DumpResourceFromParser(const ResourceSummary& summary)
   const auto config_root = std::filesystem::path(summary.config_root);
   for (const auto candidate :
        CandidateComponentsForType(summary.type, preferred_component)) {
-    const auto root_config_file = ConfigFileForRoot(config_root, candidate);
-    if (!root_config_file.empty() && std::filesystem::exists(root_config_file)) {
-      auto dump = parse_with(candidate, root_config_file);
+    if (!config_root.empty() && std::filesystem::exists(config_root)) {
+      auto parser = CreateParserForComponent(candidate, nullptr);
+      if (!parser) continue;
+
+      const auto binding = GetParserBinding(candidate);
+      if (binding.assign_global) { binding.assign_global(parser.get()); }
+      if (!ParseConfigIncludeTree(*parser, config_root, candidate, true)) continue;
+      auto dump = DumpParsedResource(*parser, summary);
       if (!dump.content.empty() || !dump.directives.empty()) return dump;
     }
   }
@@ -1550,10 +1571,42 @@ std::vector<ResourceSummary> DiscoverResourcesInDirectory(
     const std::string& component,
     const std::string& config_root)
 {
-  std::vector<ResourceSummary> resources;
-  if (!std::filesystem::exists(path)) return resources;
+  if (!std::filesystem::exists(path)) return {};
 
   const auto component_type = ComponentFromString(component);
+  const auto root_path = std::filesystem::path(config_root);
+  std::vector<ResourceSummary> root_resources;
+  if (component_type != ConfigComponent::kUnknown && !root_path.empty()
+      && std::filesystem::exists(root_path)) {
+    auto parser = CreateParserForComponent(component_type, nullptr);
+    if (parser) {
+      const auto binding = GetParserBinding(component_type);
+      if (binding.assign_global) { binding.assign_global(parser.get()); }
+      if (ParseConfigIncludeTree(*parser, root_path, component_type, true)) {
+        root_resources = CollectResourceSummariesFromParser(
+            *parser, id_prefix, component, config_root, path);
+      }
+    }
+  }
+
+  auto same_resource = [](const ResourceSummary& lhs, const ResourceSummary& rhs) {
+    return lhs.file_path == rhs.file_path
+           && lhs.source_line_start == rhs.source_line_start
+           && lhs.source_line_end == rhs.source_line_end && lhs.type == rhs.type
+           && lhs.name == rhs.name;
+  };
+  auto append_unique = [&](std::vector<ResourceSummary>& destination,
+                           ResourceSummary resource) {
+    const auto duplicate = std::find_if(
+        destination.begin(), destination.end(),
+        [&](const ResourceSummary& existing) {
+          return same_resource(existing, resource);
+        });
+    if (duplicate == destination.end()) {
+      destination.push_back(std::move(resource));
+    }
+  };
+
   std::vector<ResourceSummary> parsed_resources;
   for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
     if (!entry.is_regular_file() || entry.path().extension() != ".conf") continue;
@@ -1570,9 +1623,9 @@ std::vector<ResourceSummary> DiscoverResourcesInDirectory(
       auto file_resources = CollectResourceSummariesFromParser(
           *parser, id_prefix, component, config_root, entry.path());
       if (file_resources.empty()) continue;
-      parsed_resources.insert(parsed_resources.end(),
-                              std::make_move_iterator(file_resources.begin()),
-                              std::make_move_iterator(file_resources.end()));
+      for (auto& summary : file_resources) {
+        append_unique(parsed_resources, std::move(summary));
+      }
       break;
     }
 
@@ -1581,27 +1634,75 @@ std::vector<ResourceSummary> DiscoverResourcesInDirectory(
       std::ifstream input(entry.path());
       std::ostringstream content;
       content << input.rdbuf();
-      const auto text = content.str();
-      const auto directives = ParseDirectivesFromContent(text);
-      const auto name = ExtractDirectiveValue(directives, "Name");
-      const auto end_line = static_cast<size_t>(std::count(text.begin(), text.end(), '\n'));
-      parsed_resources.push_back({id_prefix + "-" + std::to_string(parsed_resources.size()),
-                                  hinted_type,
-                                  name.empty() ? entry.path().stem().string() : name,
-                                  entry.path().string(),
-                                  component,
-                                  config_root,
-                                  1,
-                                  end_line == 0 ? 1 : end_line});
+      auto discovered = DiscoverResourceSummariesFromContent(
+          {id_prefix + "-" + std::to_string(parsed_resources.size()),
+           hinted_type,
+           "",
+           entry.path().string(),
+           component,
+           config_root},
+          content.str());
+      for (auto& summary : discovered) {
+        append_unique(parsed_resources, std::move(summary));
+      }
     }
   }
 
-  resources = std::move(parsed_resources);
-
-  for (size_t index = 0; index < resources.size(); ++index) {
-    resources[index].id = id_prefix + "-" + std::to_string(index);
+  for (auto& summary : root_resources) {
+    append_unique(parsed_resources, std::move(summary));
   }
-  return resources;
+
+  for (size_t index = 0; index < parsed_resources.size(); ++index) {
+    parsed_resources[index].id = id_prefix + "-" + std::to_string(index);
+  }
+  return parsed_resources;
+}
+
+bool StageEditedContentInConfigRoot(const ResourceSummary& resource,
+                                    const std::string& content,
+                                    const std::filesystem::path& staged_root,
+                                    std::filesystem::path& staged_file)
+{
+  const auto config_root = std::filesystem::path(resource.config_root);
+  const auto resource_path = std::filesystem::path(resource.file_path);
+  if (config_root.empty() || resource_path.empty()
+      || !std::filesystem::exists(config_root)) {
+    return false;
+  }
+
+  const auto relative_path = resource_path.lexically_relative(config_root);
+  if (relative_path.empty() || relative_path == resource_path
+      || *relative_path.begin() == "..") {
+    return false;
+  }
+
+  std::error_code ec;
+  for (const auto& entry : std::filesystem::recursive_directory_iterator(config_root)) {
+    const auto entry_relative = entry.path().lexically_relative(config_root);
+    const auto staged_path = staged_root / entry_relative;
+    if (entry.is_directory()) {
+      std::filesystem::create_directories(staged_path, ec);
+      if (ec) return false;
+      continue;
+    }
+    if (!entry.is_regular_file()) continue;
+
+    std::filesystem::create_directories(staged_path.parent_path(), ec);
+    if (ec) return false;
+    std::filesystem::copy_file(entry.path(), staged_path,
+                               std::filesystem::copy_options::overwrite_existing,
+                               ec);
+    if (ec) return false;
+  }
+
+  staged_file = staged_root / relative_path;
+  std::filesystem::create_directories(staged_file.parent_path(), ec);
+  if (ec) return false;
+
+  std::ofstream output(staged_file, std::ios::trunc);
+  if (!output) return false;
+  output << content;
+  return static_cast<bool>(output);
 }
 
 std::string DirectorNameForRoot(const std::filesystem::path& root)
@@ -2926,6 +3027,111 @@ ResourceDetail LoadResourceDetail(const ResourceSummary& resource)
   }
 
   return {resource, {}, {}, {}, {}, {}};
+}
+
+std::vector<ResourceSummary> DiscoverResourceSummariesFromContent(
+    const ResourceSummary& resource, const std::string& content)
+{
+  const auto preferred_component = ComponentForSummary(resource);
+  if (preferred_component == ConfigComponent::kUnknown) return {};
+
+  static std::atomic<size_t> temp_counter{0};
+  const auto temp_root = std::filesystem::temp_directory_path()
+                         / ("bareos-config-" + std::to_string(::getpid()) + "-"
+                            + std::to_string(temp_counter.fetch_add(1)));
+  std::error_code ec;
+  std::filesystem::create_directories(temp_root, ec);
+  if (ec) return {};
+
+  const auto file_name = std::filesystem::path(resource.file_path).filename().empty()
+                             ? std::filesystem::path("resource.conf")
+                             : std::filesystem::path(resource.file_path).filename();
+  auto temp_file = temp_root / file_name;
+  const bool staged_in_root
+      = StageEditedContentInConfigRoot(resource, content, temp_root, temp_file);
+  if (!staged_in_root) {
+    std::ofstream output(temp_file, std::ios::trunc);
+    if (!output) {
+      std::filesystem::remove_all(temp_root, ec);
+      return {};
+    }
+    output << content;
+    if (!output) {
+      std::filesystem::remove_all(temp_root, ec);
+      return {};
+    }
+  }
+
+  std::vector<ResourceSummary> summaries;
+  const auto candidates = resource.type == "configuration"
+                              ? std::vector<ConfigComponent>{preferred_component}
+                              : CandidateComponentsForType(resource.type,
+                                                           preferred_component);
+  for (const auto candidate : candidates) {
+    const auto make_parser = [&]() {
+      auto parser = CreateParserForComponent(candidate, nullptr);
+      if (!parser) return parser;
+      const auto binding = GetParserBinding(candidate);
+      if (binding.assign_global) { binding.assign_global(parser.get()); }
+      return parser;
+    };
+
+    auto parser = make_parser();
+    if (!parser) continue;
+
+    if (staged_in_root && resource.type != "configuration") {
+      if (ParseStandaloneConfigFile(*parser, temp_file, false)
+          || ParseStandaloneConfigFile(*parser, temp_file, true)) {
+        summaries = CollectResourceSummariesFromParser(
+            *parser, resource.id.empty() ? "content" : resource.id,
+            resource.component, resource.config_root, temp_file);
+      }
+      if (summaries.empty()) {
+        parser = make_parser();
+        if (!parser
+            || !ParseConfigIncludeTree(*parser, temp_root, candidate, true)) {
+          continue;
+        }
+      }
+    } else if (!ParseStandaloneConfigFile(*parser, temp_file, false)
+               && !ParseStandaloneConfigFile(*parser, temp_file, true)) {
+      continue;
+    }
+
+    if (summaries.empty()) {
+      summaries = CollectResourceSummariesFromParser(
+          *parser, resource.id.empty() ? "content" : resource.id,
+          resource.component, resource.config_root, temp_file);
+    }
+    if (!summaries.empty()) break;
+  }
+
+  for (auto& summary : summaries) {
+    summary.file_path = resource.file_path;
+    summary.component = resource.component;
+    summary.config_root = resource.config_root;
+  }
+
+  if (summaries.empty() && resource.type == "user") {
+    // bareos-config intentionally keeps compatibility for password-bearing
+    // user files even though parser-backed rediscovery is still incomplete.
+    auto fallback = resource;
+    const auto line_count
+        = static_cast<size_t>(std::count(content.begin(), content.end(), '\n'));
+    const auto content_end_line = line_count == 0 ? 1 : line_count;
+    if (resource.source_line_start != 0 && resource.source_line_end != 0
+        && content_end_line >= resource.source_line_end) {
+      fallback.source_line_start = resource.source_line_start;
+      fallback.source_line_end = resource.source_line_end;
+    } else {
+      fallback.source_line_start = 1;
+      fallback.source_line_end = content_end_line;
+    }
+    summaries.push_back(std::move(fallback));
+  }
+
+  std::filesystem::remove_all(temp_root, ec);
+  return summaries;
 }
 
 ResourceDetail BuildResourceDetail(const ResourceSummary& resource,

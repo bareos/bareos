@@ -200,6 +200,8 @@ const ResourceSummary* FindResourceById(const DatacenterSummary& summary,
 ResourceDetail BuildResourceDetail(const ResourceSummary& resource,
                                    const std::string& content);
 ResourceDetail LoadResourceDetail(const ResourceSummary& resource);
+std::vector<ResourceSummary> DiscoverResourceSummariesFromContent(
+    const ResourceSummary& resource, const std::string& content);
 ResourceEditPreview BuildResourceEditPreview(
     const ResourceDetail& resource, const std::string& updated_content);
 ResourceEditPreview BuildFieldHintEditPreview(
