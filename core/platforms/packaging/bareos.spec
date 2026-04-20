@@ -1310,6 +1310,12 @@ mkdir -p %{?buildroot}/%{_libdir}/bareos/plugins/vmware_plugin
 %{plugin_dir}/grpc/bareosfd.py
 %{plugin_dir}/grpc/bareosfd_types.py
 %{plugin_dir}/grpc/bareosfd_type_conv.py
+%{plugin_dir}/grpc/proto/backup_pb2.py
+%{plugin_dir}/grpc/proto/bareos_pb2.py
+%{plugin_dir}/grpc/proto/common_pb2.py
+%{plugin_dir}/grpc/proto/events_pb2.py
+%{plugin_dir}/grpc/proto/plugin_pb2.py
+%{plugin_dir}/grpc/proto/restore_pb2.py
 %{plugin_dir}/grpc/grpc-test-module
 %endif
 

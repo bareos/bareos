@@ -158,6 +158,17 @@ if(ENABLE_GRPC)
     COMPONENT filedaemon
   )
 
+  install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/proto/backup_pb2.py"
+          "${CMAKE_CURRENT_BINARY_DIR}/proto/bareos_pb2.py"
+          "${CMAKE_CURRENT_BINARY_DIR}/proto/common_pb2.py"
+          "${CMAKE_CURRENT_BINARY_DIR}/proto/events_pb2.py"
+          "${CMAKE_CURRENT_BINARY_DIR}/proto/plugin_pb2.py"
+          "${CMAKE_CURRENT_BINARY_DIR}/proto/restore_pb2.py"
+    DESTINATION ${plugindir}/grpc/proto
+    COMPONENT filedaemon
+  )
+
   bareos_configure_file(
     FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/bareosfd.py"
