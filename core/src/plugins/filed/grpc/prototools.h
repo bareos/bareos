@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2025-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,7 @@
 #include <queue>
 #include <cstring>
 #include <cassert>
+#include <unistd.h>
 
 static bool WaitOnReadable(int fd)
 {
@@ -296,7 +297,7 @@ struct ProtoOutputStream {
 
     while (bytes_written < size) {
       auto new_bytes
-          = write(fd, buffer.data() + bytes_written, size - bytes_written);
+          = ::write(fd, buffer.data() + bytes_written, size - bytes_written);
       if (new_bytes <= 0) { return false; }
 
       bytes_written += new_bytes;
