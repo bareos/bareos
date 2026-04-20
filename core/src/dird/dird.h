@@ -225,6 +225,7 @@ inline constexpr slot_number_t INDEX_SLOT_OFFSET = 100;
 #define FD_VERSION_52 52
 #define FD_VERSION_53 53
 #define FD_VERSION_54 54
+#define FD_VERSION_55 55
 
 } /* namespace directordaemon */
 

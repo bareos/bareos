@@ -52,8 +52,9 @@ const int debuglevel = 50;
  *  52 13Jul13 - Added plugin options
  *  53 02Apr15 - Added setdebug timestamp
  *  54 29Oct15 - Added getSecureEraseCmd
+ *  55          - Added JSON output for .status command
  */
-inline constexpr const char OK_hello[] = "2000 OK Hello 54\n";
+inline constexpr const char OK_hello[] = "2000 OK Hello 55\n";
 
 inline constexpr const char Dir_sorry[] = "2999 Authentication failed.\n";
 

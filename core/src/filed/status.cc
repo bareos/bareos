@@ -39,6 +39,10 @@
 #include "findlib/enable_priv.h"
 #include "lib/util.h"
 
+#if HAVE_JANSSON
+#  include <jansson.h>
+#endif
+
 namespace filedaemon {
 
 /* Forward referenced functions */
@@ -46,6 +50,9 @@ static void ListTerminatedJobs(StatusPacket* sp);
 static void ListRunningJobs(StatusPacket* sp);
 static void ListStatusHeader(StatusPacket* sp);
 static const char* JobLevelToString(int level);
+#if HAVE_JANSSON
+static void OutputStatusJson(StatusPacket* sp);
+#endif
 
 /* Static variables */
 inline constexpr const char qstatus[] = ".status %s\n";
@@ -406,6 +413,241 @@ static void ListTerminatedJobs(StatusPacket* sp)
   }
 }
 
+#if HAVE_JANSSON
+
+/* Long-form status string for a terminated job, mirroring the text emitter
+ * in ListTerminatedJobs(). */
+static const char* TerminatedStatusToLongString(int js)
+{
+  switch (js) {
+    case JS_Created:
+      return "Created";
+    case JS_FatalError:
+    case JS_ErrorTerminated:
+      return "Error";
+    case JS_Differences:
+      return "Diffs";
+    case JS_Canceled:
+      return "Cancel";
+    case JS_Terminated:
+      return "OK";
+    default:
+      return "Other";
+  }
+}
+
+static json_t* TimeAsIsoJson(utime_t t)
+{
+  if (t == 0) { return json_null(); }
+  char dt[MAX_TIME_LENGTH];
+  bstrftime(dt, sizeof(dt), t, "%Y-%m-%dT%H:%M:%S");
+  return json_string(dt);
+}
+
+static json_t* CharAsStringJson(char c)
+{
+  char buf[2] = {c, 0};
+  return json_string(buf);
+}
+
+static json_t* BuildStatusHeaderJson()
+{
+  json_t* obj = json_object();
+  json_object_set_new(obj, "name", json_string(my_name));
+  json_object_set_new(obj, "version", json_string(kBareosVersionStrings.Full));
+  json_object_set_new(obj, "version_date",
+                      json_string(kBareosVersionStrings.Date));
+  json_object_set_new(obj, "os_info",
+                      json_string(kBareosVersionStrings.GetOsInfo()));
+  json_object_set_new(obj, "daemon_started", TimeAsIsoJson(daemon_start_time));
+  json_object_set_new(obj, "jobs_run",
+                      json_integer(static_cast<json_int_t>(NumJobsRun())));
+  json_object_set_new(obj, "jobs_running",
+                      json_integer(static_cast<json_int_t>(JobCount())));
+  json_object_set_new(obj, "binary_info",
+                      json_string(kBareosVersionStrings.BinaryInfo));
+#ifdef WIN32_VSS
+  json_object_set_new(obj, "vss_supported", json_true());
+#else
+  json_object_set_new(obj, "vss_supported", json_false());
+#endif
+  json_object_set_new(obj, "secure_erase_command",
+                      me->secure_erase_cmdline
+                          ? json_string(me->secure_erase_cmdline)
+                          : json_null());
+  json_object_set_new(obj, "config_warnings",
+                      json_boolean(my_config->HasWarnings()));
+  return obj;
+}
+
+static json_t* BuildRunningJobsJson()
+{
+  json_t* arr = json_array();
+  JobControlRecord* njcr;
+
+  foreach_jcr (njcr) {
+    if (njcr->JobId == 0) {
+      /* Director control connections are emitted separately. */
+      continue;
+    }
+    json_t* j = json_object();
+    json_object_set_new(j, "jobid",
+                        json_integer(static_cast<json_int_t>(njcr->JobId)));
+    json_object_set_new(j, "job", json_string(njcr->Job));
+    json_object_set_new(j, "started", TimeAsIsoJson(njcr->start_time));
+    json_object_set_new(j, "level",
+                        CharAsStringJson(njcr->getJobLevel()));
+    json_object_set_new(j, "job_type",
+                        CharAsStringJson(njcr->getJobType()));
+#ifdef WIN32_VSS
+    json_object_set_new(
+        j, "vss",
+        json_boolean(njcr->fd_impl->pVSSClient
+                     && njcr->fd_impl->pVSSClient->IsInitialized()));
+#else
+    json_object_set_new(j, "vss", json_false());
+#endif
+    int sec = time(NULL) - njcr->start_time;
+    if (sec <= 0) { sec = 1; }
+    uint64_t bps = njcr->JobBytes / sec;
+    json_object_set_new(j, "files",
+                        json_integer(static_cast<json_int_t>(njcr->JobFiles)));
+    json_object_set_new(j, "bytes",
+                        json_integer(static_cast<json_int_t>(njcr->JobBytes)));
+    json_object_set_new(j, "bytes_per_sec",
+                        json_integer(static_cast<json_int_t>(bps)));
+    json_object_set_new(j, "errors",
+                        json_integer(static_cast<json_int_t>(njcr->JobErrors)));
+    json_object_set_new(
+        j, "bwlimit",
+        json_integer(static_cast<json_int_t>(njcr->max_bandwidth)));
+    json_object_set_new(
+        j, "files_examined",
+        json_integer(
+            static_cast<json_int_t>(njcr->fd_impl->num_files_examined)));
+    if (njcr->JobFiles > 0) {
+      std::unique_lock l(njcr->mutex_guard());
+      json_object_set_new(j, "processing_file",
+                          njcr->fd_impl->last_fname
+                              ? json_string(njcr->fd_impl->last_fname)
+                              : json_null());
+    } else {
+      json_object_set_new(j, "processing_file", json_null());
+    }
+    if (njcr->store_bsock) {
+      json_t* sdsock = json_object();
+      json_object_set_new(
+          sdsock, "read_seqno",
+          json_integer(
+              static_cast<json_int_t>(njcr->store_bsock->read_seqno)));
+      json_object_set_new(
+          sdsock, "fd",
+          json_integer(static_cast<json_int_t>(njcr->store_bsock->fd_)));
+      json_object_set_new(j, "sd_socket", sdsock);
+    } else {
+      json_object_set_new(j, "sd_socket", json_null());
+    }
+    json_array_append_new(arr, j);
+  }
+  endeach_jcr(njcr);
+  return arr;
+}
+
+static json_t* BuildDirectorsConnectedJson()
+{
+  json_t* arr = json_array();
+  JobControlRecord* njcr;
+
+  foreach_jcr (njcr) {
+    if (njcr->JobId == 0 && njcr->fd_impl && njcr->fd_impl->director) {
+      json_t* o = json_object();
+      json_object_set_new(
+          o, "name",
+          json_string(njcr->fd_impl->director->resource_name_));
+      json_object_set_new(o, "connected_at", TimeAsIsoJson(njcr->start_time));
+      json_array_append_new(arr, o);
+    }
+  }
+  endeach_jcr(njcr);
+  return arr;
+}
+
+static json_t* BuildTerminatedJobsJson()
+{
+  json_t* arr = json_array();
+
+  for (const RecentJobResultsList::JobResult& je :
+       RecentJobResultsList::Get()) {
+    json_t* j = json_object();
+    json_object_set_new(j, "jobid",
+                        json_integer(static_cast<json_int_t>(je.JobId)));
+
+    const char* level_str;
+    switch (je.JobType) {
+      case JT_ADMIN:
+      case JT_RESTORE:
+        level_str = "";
+        break;
+      default:
+        level_str = JobLevelToString(je.JobLevel);
+        break;
+    }
+    json_object_set_new(j, "level", json_string(level_str));
+    json_object_set_new(j, "files",
+                        json_integer(static_cast<json_int_t>(je.JobFiles)));
+    json_object_set_new(j, "bytes",
+                        json_integer(static_cast<json_int_t>(je.JobBytes)));
+    json_object_set_new(j, "status_code",
+                        CharAsStringJson(static_cast<char>(je.JobStatus)));
+    json_object_set_new(j, "status",
+                        json_string(TerminatedStatusToLongString(je.JobStatus)));
+    json_object_set_new(j, "finished", TimeAsIsoJson(je.end_time));
+
+    /* Strip the three trailing ".<timestamp>.<seq>" pieces from the Job
+     * name, matching the text emitter's behavior. */
+    char JobName[MAX_NAME_LENGTH];
+    bstrncpy(JobName, je.Job, sizeof(JobName));
+    for (int i = 0; i < 3; i++) {
+      char* p = strrchr(JobName, '.');
+      if (p) { *p = 0; }
+    }
+    json_object_set_new(j, "job_name", json_string(JobName));
+
+    json_array_append_new(arr, j);
+  }
+  return arr;
+}
+
+static void OutputStatusJson(StatusPacket* sp)
+{
+  json_t* root = json_object();
+  json_object_set_new(root, "header", BuildStatusHeaderJson());
+  json_object_set_new(root, "directors_connected",
+                      BuildDirectorsConnectedJson());
+  json_object_set_new(root, "running_jobs", BuildRunningJobsJson());
+  json_object_set_new(root, "terminated_jobs", BuildTerminatedJobsJson());
+
+  char* serialized = json_dumps(root, JSON_INDENT(2));
+  if (serialized) {
+    int len = strlen(serialized);
+    if (sp->bs) {
+      /* StatusPacket::send() assumes bs->msg is already large enough; JSON
+       * payloads can exceed the default PM_MESSAGE buffer, so grow it
+       * explicitly before sending. */
+      sp->bs->msg = CheckPoolMemorySize(sp->bs->msg, len + 1);
+      memcpy(sp->bs->msg, serialized, len + 1);
+      sp->bs->message_length = len + 1;
+      sp->bs->send();
+    } else if (sp->callback) {
+      sp->callback(serialized, len, sp->context);
+    }
+    free(serialized);
+  }
+  json_decref(root);
+}
+
+#endif  // HAVE_JANSSON
+
 // Status command from Director
 bool StatusCmd(JobControlRecord* jcr)
 {
@@ -467,6 +709,10 @@ bool QstatusCmd(JobControlRecord* jcr)
   } else if (Bstrcasecmp(cmd, "terminated")) {
     sp.api = true;
     ListTerminatedJobs(&sp);
+#if HAVE_JANSSON
+  } else if (Bstrcasecmp(cmd, "json")) {
+    OutputStatusJson(&sp);
+#endif
   } else {
     PmStrcpy(jcr->errmsg, dir->msg);
     Jmsg1(jcr, M_FATAL, 0, T_("Bad .status command: %s\n"), jcr->errmsg);
