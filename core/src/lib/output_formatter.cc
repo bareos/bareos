@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -347,16 +347,12 @@ void OutputFormatter::ArrayItem(const char* value,
 }
 
 void OutputFormatter::ObjectKeyValueBool(const char* key, bool value)
-{
-  ObjectKeyValueBool(key, NULL, value, NULL);
-}
+{ ObjectKeyValueBool(key, NULL, value, NULL); }
 
 void OutputFormatter::ObjectKeyValueBool(const char* key,
                                          bool value,
                                          const char* value_fmt)
-{
-  ObjectKeyValueBool(key, NULL, value, value_fmt);
-}
+{ ObjectKeyValueBool(key, NULL, value, value_fmt); }
 
 void OutputFormatter::ObjectKeyValueBool(const char* key,
                                          const char* key_fmt,
@@ -389,16 +385,12 @@ void OutputFormatter::ObjectKeyValueBool(const char* key,
 }
 
 void OutputFormatter::ObjectKeyValue(const char* key, uint64_t value)
-{
-  ObjectKeyValue(key, NULL, value, NULL);
-}
+{ ObjectKeyValue(key, NULL, value, NULL); }
 
 void OutputFormatter::ObjectKeyValue(const char* key,
                                      uint64_t value,
                                      const char* value_fmt)
-{
-  ObjectKeyValue(key, NULL, value, value_fmt);
-}
+{ ObjectKeyValue(key, NULL, value, value_fmt); }
 
 void OutputFormatter::ObjectKeyValue(const char* key,
                                      const char* key_fmt,
@@ -427,16 +419,12 @@ void OutputFormatter::ObjectKeyValue(const char* key,
 }
 
 void OutputFormatter::ObjectKeyValueSignedInt(const char* key, int64_t value)
-{
-  ObjectKeyValueSignedInt(key, NULL, value, NULL);
-}
+{ ObjectKeyValueSignedInt(key, NULL, value, NULL); }
 
 void OutputFormatter::ObjectKeyValueSignedInt(const char* key,
                                               int64_t value,
                                               const char* value_fmt)
-{
-  ObjectKeyValueSignedInt(key, NULL, value, value_fmt);
-}
+{ ObjectKeyValueSignedInt(key, NULL, value, value_fmt); }
 
 void OutputFormatter::ObjectKeyValueSignedInt(const char* key,
                                               const char* key_fmt,
@@ -468,17 +456,13 @@ void OutputFormatter::ObjectKeyValueSignedInt(const char* key,
 void OutputFormatter::ObjectKeyValue(const char* key,
                                      const char* value,
                                      int wrap)
-{
-  ObjectKeyValue(key, NULL, value, NULL, wrap);
-}
+{ ObjectKeyValue(key, NULL, value, NULL, wrap); }
 
 void OutputFormatter::ObjectKeyValue(const char* key,
                                      const char* value,
                                      const char* value_fmt,
                                      int wrap)
-{
-  ObjectKeyValue(key, NULL, value, value_fmt, wrap);
-}
+{ ObjectKeyValue(key, NULL, value, value_fmt, wrap); }
 
 void OutputFormatter::ObjectKeyValue(const char* key,
                                      const char* key_fmt,
@@ -638,19 +622,13 @@ void OutputFormatter::AddAclFilterTuple(int column, int acltype)
 }
 
 void OutputFormatter::AddResFilterTuple(int column, int restype)
-{
-  CreateNewResFilter(OF_FILTER_RESOURCE, column, restype);
-}
+{ CreateNewResFilter(OF_FILTER_RESOURCE, column, restype); }
 
 void OutputFormatter::AddEnabledFilterTuple(int column, int restype)
-{
-  CreateNewResFilter(OF_FILTER_ENABLED, column, restype);
-}
+{ CreateNewResFilter(OF_FILTER_ENABLED, column, restype); }
 
 void OutputFormatter::AddDisabledFilterTuple(int column, int restype)
-{
-  CreateNewResFilter(OF_FILTER_DISABLED, column, restype);
-}
+{ CreateNewResFilter(OF_FILTER_DISABLED, column, restype); }
 
 void OutputFormatter::ClearFilters()
 {
@@ -920,6 +898,26 @@ bool OutputFormatter::JsonKeyValueAdd(const char* key, const char* value)
   int rc = json_object_set_new(json_obj, lkey.c_str(), value_as_json_string);
   assert(rc == 0);
 
+  return (rc == 0);
+}
+
+bool OutputFormatter::JsonKeyValueAddJson(const char* key, json_t* value)
+{
+  PoolMem lkey(key);
+
+  lkey.toLower();
+  json_t* json_obj = (json_t*)result_stack_json->last();
+  if (json_obj == NULL || !json_is_object(json_obj)) {
+    Emsg1(M_ERROR, 0, "No json object on stack to add subtree for key '%s'\n",
+          key);
+    if (value) { json_decref(value); }
+    return false;
+  }
+  if (value == NULL) {
+    Emsg1(M_ERROR, 0, "Refusing to add NULL subtree for key '%s'\n", key);
+    return false;
+  }
+  int rc = json_object_set_new(json_obj, lkey.c_str(), value);
   return (rc == 0);
 }
 

@@ -34,6 +34,10 @@
 #include "include/bareos.h"
 #include "include/filetypes.h"
 #include "include/streams.h"
+
+#if HAVE_JANSSON
+#  include <jansson.h>
+#endif
 #include "cats/cats.h"
 #include "dird.h"
 #include "dird/dird_globals.h"
@@ -1022,13 +1026,56 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
 
   Dmsg0(20, T_("Connected to file daemon\n"));
   fd = ua->jcr->file_bsock;
-  if (cmd) {
-    fd->fsend(".status %s", cmd);
-  } else {
-    fd->fsend("status");
-  }
 
-  while (fd->recv() >= 0) { ua->SendMsg("%s", fd->msg); }
+#if HAVE_JANSSON
+  if (ua->api == API_MODE_JSON) {
+    /* Require a File Daemon new enough to speak `.status json`. Older
+     * FDs would return text that we cannot usefully nest. */
+    if (ua->jcr->dir_impl->FDVersion < FD_VERSION_55) {
+      ua->send->ObjectStart("client_status");
+      ua->send->ObjectKeyValue("error", "file_daemon_too_old", 0);
+      ua->send->ObjectKeyValue("client", client->resource_name_, 0);
+      ua->send->ObjectKeyValue(
+          "message",
+          "File Daemon does not support JSON status output (requires "
+          "FD protocol version 55 or newer).",
+          0);
+      ua->send->ObjectEnd("client_status");
+    } else {
+      fd->fsend(".status json");
+
+      PoolMem buf(PM_MESSAGE);
+      int total = 0;
+      while (fd->recv() >= 0) {
+        buf.check_size(total + fd->message_length + 1);
+        memcpy(buf.c_str() + total, fd->msg, fd->message_length);
+        total += fd->message_length;
+        buf.c_str()[total] = '\0';
+      }
+
+      json_error_t jerr;
+      json_t* parsed = json_loads(buf.c_str(), 0, &jerr);
+      ua->send->ObjectStart("client_status");
+      ua->send->ObjectKeyValue("client", client->resource_name_, 0);
+      if (parsed) {
+        ua->send->JsonKeyValueAddJson("data", parsed);
+      } else {
+        ua->send->ObjectKeyValue("error", "parse_failed", 0);
+        ua->send->ObjectKeyValue("message", jerr.text, 0);
+      }
+      ua->send->ObjectEnd("client_status");
+    }
+  } else
+#endif  // HAVE_JANSSON
+  {
+    if (cmd) {
+      fd->fsend(".status %s", cmd);
+    } else {
+      fd->fsend("status");
+    }
+
+    while (fd->recv() >= 0) { ua->SendMsg("%s", fd->msg); }
+  }
 
   fd->signal(BNET_TERMINATE);
   fd->close();
