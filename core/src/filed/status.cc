@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
 
    This program is Free Software; you can redistribute it and/or
@@ -466,11 +466,11 @@ static json_t* BuildStatusHeaderJson()
                       json_integer(static_cast<json_int_t>(JobCount())));
   json_object_set_new(obj, "binary_info",
                       json_string(kBareosVersionStrings.BinaryInfo));
-#ifdef WIN32_VSS
+#  ifdef WIN32_VSS
   json_object_set_new(obj, "vss_supported", json_true());
-#else
+#  else
   json_object_set_new(obj, "vss_supported", json_false());
-#endif
+#  endif
   json_object_set_new(obj, "secure_erase_command",
                       me->secure_erase_cmdline
                           ? json_string(me->secure_erase_cmdline)
@@ -495,18 +495,16 @@ static json_t* BuildRunningJobsJson()
                         json_integer(static_cast<json_int_t>(njcr->JobId)));
     json_object_set_new(j, "job", json_string(njcr->Job));
     json_object_set_new(j, "started", TimeAsIsoJson(njcr->start_time));
-    json_object_set_new(j, "level",
-                        CharAsStringJson(njcr->getJobLevel()));
-    json_object_set_new(j, "job_type",
-                        CharAsStringJson(njcr->getJobType()));
-#ifdef WIN32_VSS
+    json_object_set_new(j, "level", CharAsStringJson(njcr->getJobLevel()));
+    json_object_set_new(j, "job_type", CharAsStringJson(njcr->getJobType()));
+#  ifdef WIN32_VSS
     json_object_set_new(
         j, "vss",
         json_boolean(njcr->fd_impl->pVSSClient
                      && njcr->fd_impl->pVSSClient->IsInitialized()));
-#else
+#  else
     json_object_set_new(j, "vss", json_false());
-#endif
+#  endif
     int sec = time(NULL) - njcr->start_time;
     if (sec <= 0) { sec = 1; }
     uint64_t bps = njcr->JobBytes / sec;
@@ -521,10 +519,9 @@ static json_t* BuildRunningJobsJson()
     json_object_set_new(
         j, "bwlimit",
         json_integer(static_cast<json_int_t>(njcr->max_bandwidth)));
-    json_object_set_new(
-        j, "files_examined",
-        json_integer(
-            static_cast<json_int_t>(njcr->fd_impl->num_files_examined)));
+    json_object_set_new(j, "files_examined",
+                        json_integer(static_cast<json_int_t>(
+                            njcr->fd_impl->num_files_examined)));
     if (njcr->JobFiles > 0) {
       std::unique_lock l(njcr->mutex_guard());
       json_object_set_new(j, "processing_file",
@@ -538,8 +535,7 @@ static json_t* BuildRunningJobsJson()
       json_t* sdsock = json_object();
       json_object_set_new(
           sdsock, "read_seqno",
-          json_integer(
-              static_cast<json_int_t>(njcr->store_bsock->read_seqno)));
+          json_integer(static_cast<json_int_t>(njcr->store_bsock->read_seqno)));
       json_object_set_new(
           sdsock, "fd",
           json_integer(static_cast<json_int_t>(njcr->store_bsock->fd_)));
@@ -561,9 +557,8 @@ static json_t* BuildDirectorsConnectedJson()
   foreach_jcr (njcr) {
     if (njcr->JobId == 0 && njcr->fd_impl && njcr->fd_impl->director) {
       json_t* o = json_object();
-      json_object_set_new(
-          o, "name",
-          json_string(njcr->fd_impl->director->resource_name_));
+      json_object_set_new(o, "name",
+                          json_string(njcr->fd_impl->director->resource_name_));
       json_object_set_new(o, "connected_at", TimeAsIsoJson(njcr->start_time));
       json_array_append_new(arr, o);
     }
@@ -599,8 +594,8 @@ static json_t* BuildTerminatedJobsJson()
                         json_integer(static_cast<json_int_t>(je.JobBytes)));
     json_object_set_new(j, "status_code",
                         CharAsStringJson(static_cast<char>(je.JobStatus)));
-    json_object_set_new(j, "status",
-                        json_string(TerminatedStatusToLongString(je.JobStatus)));
+    json_object_set_new(
+        j, "status", json_string(TerminatedStatusToLongString(je.JobStatus)));
     json_object_set_new(j, "finished", TimeAsIsoJson(je.end_time));
 
     /* Strip the three trailing ".<timestamp>.<seq>" pieces from the Job

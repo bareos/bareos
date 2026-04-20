@@ -34,6 +34,7 @@
 #include "stored/stored_jcr_impl.h"
 #include "stored/spool.h"
 #include "stored/status.h"
+#include "stored/vol_mgr.h"
 #include "lib/status_packet.h"
 #include "lib/edit.h"
 #include "include/jcr.h"
@@ -42,6 +43,10 @@
 #include "lib/recent_job_results_list.h"
 #include "lib/util.h"
 #include "lib/version.h"
+
+#if HAVE_JANSSON
+#  include <jansson.h>
+#endif
 
 namespace storagedaemon {
 
@@ -903,6 +908,402 @@ static const char* JobLevelToString(int level)
   return str;
 }
 
+#if HAVE_JANSSON
+
+static json_t* TimeAsIsoJson(utime_t t)
+{
+  if (t == 0) { return json_null(); }
+  char dt[MAX_TIME_LENGTH];
+  bstrftime(dt, sizeof(dt), t, "%Y-%m-%dT%H:%M:%S");
+  return json_string(dt);
+}
+
+static json_t* CharAsStringJson(char c)
+{
+  char buf[2] = {c, 0};
+  return json_string(buf);
+}
+
+static const char* TerminatedStatusToLongString(int js)
+{
+  switch (js) {
+    case JS_Created:
+      return "Created";
+    case JS_FatalError:
+    case JS_ErrorTerminated:
+      return "Error";
+    case JS_Differences:
+      return "Diffs";
+    case JS_Canceled:
+      return "Cancel";
+    case JS_Terminated:
+      return "OK";
+    default:
+      return "Other";
+  }
+}
+
+static const char* BlockedStateToString(int state)
+{
+  switch (state) {
+    case BST_NOT_BLOCKED:
+      return "not_blocked";
+    case BST_UNMOUNTED:
+      return "unmounted";
+    case BST_WAITING_FOR_SYSOP:
+      return "waiting_for_sysop";
+    case BST_DOING_ACQUIRE:
+      return "doing_acquire";
+    case BST_WRITING_LABEL:
+      return "writing_label";
+    case BST_UNMOUNTED_WAITING_FOR_SYSOP:
+      return "unmounted_waiting_for_sysop";
+    case BST_MOUNT:
+      return "mount";
+    case BST_DESPOOLING:
+      return "despooling";
+    case BST_RELEASING:
+      return "releasing";
+    default:
+      return "unknown";
+  }
+}
+
+static json_t* BuildStatusHeaderJson()
+{
+  json_t* obj = json_object();
+  json_object_set_new(obj, "name", json_string(my_name));
+  json_object_set_new(obj, "version", json_string(kBareosVersionStrings.Full));
+  json_object_set_new(obj, "version_date",
+                      json_string(kBareosVersionStrings.Date));
+  json_object_set_new(obj, "os_info",
+                      json_string(kBareosVersionStrings.GetOsInfo()));
+  json_object_set_new(obj, "daemon_started", TimeAsIsoJson(daemon_start_time));
+  json_object_set_new(obj, "jobs_run",
+                      json_integer(static_cast<json_int_t>(NumJobsRun())));
+  json_object_set_new(obj, "jobs_running",
+                      json_integer(static_cast<json_int_t>(JobCount())));
+  json_object_set_new(obj, "binary_info",
+                      json_string(kBareosVersionStrings.BinaryInfo));
+  json_object_set_new(obj, "config_warnings",
+                      json_boolean(my_config->HasWarnings()));
+  return obj;
+}
+
+static json_t* BuildDcrJson(DeviceControlRecord* dcr)
+{
+  json_t* o = json_object();
+  json_object_set_new(o, "volume", json_string(dcr->VolumeName));
+  json_object_set_new(o, "pool", json_string(dcr->pool_name));
+  json_object_set_new(
+      o, "device",
+      json_string(dcr->dev ? dcr->dev->print_name()
+                           : dcr->device_resource->archive_device_string));
+  return o;
+}
+
+static json_t* BuildRunningJobsJson()
+{
+  json_t* arr = json_array();
+  JobControlRecord* jcr;
+
+  foreach_jcr (jcr) {
+    DeviceControlRecord* dcr = jcr->sd_impl->dcr;
+    DeviceControlRecord* rdcr = jcr->sd_impl->read_dcr;
+
+    if (!(dcr && dcr->device_resource) && !(rdcr && rdcr->device_resource)
+        && jcr->getJobStatus() != JS_WaitFD) {
+      continue;
+    }
+
+    json_t* j = json_object();
+    json_object_set_new(j, "jobid",
+                        json_integer(static_cast<json_int_t>(jcr->JobId)));
+
+    /* Strip the three trailing ".<timestamp>.<seq>" pieces from the Job
+     * name to match the text emitter. */
+    char JobName[MAX_NAME_LENGTH];
+    bstrncpy(JobName, jcr->Job, sizeof(JobName));
+    for (int i = 0; i < 3; i++) {
+      char* p = strrchr(JobName, '.');
+      if (p) { *p = 0; }
+    }
+    json_object_set_new(j, "job_name", json_string(JobName));
+    json_object_set_new(j, "level",
+                        json_string(job_level_to_str(jcr->getJobLevel())));
+    json_object_set_new(j, "job_type",
+                        json_string(job_type_to_str(jcr->getJobType())));
+    json_object_set_new(
+        j, "status_code",
+        CharAsStringJson(static_cast<char>(jcr->getJobStatus())));
+    json_object_set_new(
+        j, "status",
+        json_string(JobstatusToAscii(jcr->getJobStatus()).c_str()));
+
+    if (rdcr && rdcr->device_resource) {
+      json_object_set_new(j, "reading", BuildDcrJson(rdcr));
+    } else {
+      json_object_set_new(j, "reading", json_null());
+    }
+    if (dcr && dcr->device_resource) {
+      json_t* w = BuildDcrJson(dcr);
+      json_object_set_new(w, "spooling", json_boolean(dcr->spooling));
+      json_object_set_new(w, "despooling", json_boolean(dcr->despooling));
+      json_object_set_new(w, "despool_wait", json_boolean(dcr->despool_wait));
+      json_object_set_new(j, "writing", w);
+    } else {
+      json_object_set_new(j, "writing", json_null());
+    }
+
+    jcr->UpdateJobStats();
+    json_object_set_new(j, "files",
+                        json_integer(static_cast<json_int_t>(jcr->JobFiles)));
+    json_object_set_new(j, "bytes",
+                        json_integer(static_cast<json_int_t>(jcr->JobBytes)));
+    json_object_set_new(
+        j, "avg_bytes_per_sec",
+        json_integer(static_cast<json_int_t>(jcr->AverageRate)));
+    json_object_set_new(j, "last_bytes_per_sec",
+                        json_integer(static_cast<json_int_t>(jcr->LastRate)));
+
+    if (jcr->file_bsock) {
+      json_t* fd_sock = json_object();
+      json_object_set_new(
+          fd_sock, "read_seqno",
+          json_integer(static_cast<json_int_t>(jcr->file_bsock->read_seqno)));
+      json_object_set_new(
+          fd_sock, "in_msg",
+          json_integer(static_cast<json_int_t>(jcr->file_bsock->in_msg_no)));
+      json_object_set_new(
+          fd_sock, "out_msg",
+          json_integer(static_cast<json_int_t>(jcr->file_bsock->out_msg_no)));
+      json_object_set_new(
+          fd_sock, "fd",
+          json_integer(static_cast<json_int_t>(jcr->file_bsock->fd_)));
+      json_object_set_new(j, "fd_socket", fd_sock);
+    } else {
+      json_object_set_new(j, "fd_socket", json_null());
+    }
+
+    json_array_append_new(arr, j);
+  }
+  endeach_jcr(jcr);
+  return arr;
+}
+
+static json_t* BuildWaitingJobsJson()
+{
+  json_t* arr = json_array();
+  JobControlRecord* jcr;
+
+  foreach_jcr (jcr) {
+    if (!jcr->sd_impl->reserve_msgs.size()) { continue; }
+    json_t* j = json_object();
+    json_object_set_new(j, "jobid",
+                        json_integer(static_cast<json_int_t>(jcr->JobId)));
+    json_t* msgs = json_array();
+    {
+      std::unique_lock lock(jcr->mutex_guard());
+      for (auto& m : jcr->sd_impl->reserve_msgs) {
+        json_array_append_new(msgs, json_string(m.c_str()));
+      }
+    }
+    json_object_set_new(j, "reserve_messages", msgs);
+    json_array_append_new(arr, j);
+  }
+  endeach_jcr(jcr);
+  return arr;
+}
+
+static json_t* BuildTerminatedJobsJson()
+{
+  json_t* arr = json_array();
+
+  for (const RecentJobResultsList::JobResult& je :
+       RecentJobResultsList::Get()) {
+    json_t* j = json_object();
+    json_object_set_new(j, "jobid",
+                        json_integer(static_cast<json_int_t>(je.JobId)));
+
+    const char* level_str;
+    switch (je.JobType) {
+      case JT_ADMIN:
+      case JT_RESTORE:
+        level_str = "";
+        break;
+      default:
+        level_str = JobLevelToString(je.JobLevel);
+        break;
+    }
+    json_object_set_new(j, "level", json_string(level_str));
+    json_object_set_new(j, "files",
+                        json_integer(static_cast<json_int_t>(je.JobFiles)));
+    json_object_set_new(j, "bytes",
+                        json_integer(static_cast<json_int_t>(je.JobBytes)));
+    json_object_set_new(j, "status_code",
+                        CharAsStringJson(static_cast<char>(je.JobStatus)));
+    json_object_set_new(
+        j, "status", json_string(TerminatedStatusToLongString(je.JobStatus)));
+    json_object_set_new(j, "finished", TimeAsIsoJson(je.end_time));
+
+    char JobName[MAX_NAME_LENGTH];
+    bstrncpy(JobName, je.Job, sizeof(JobName));
+    for (int i = 0; i < 3; i++) {
+      char* p = strrchr(JobName, '.');
+      if (p) { *p = 0; }
+    }
+    json_object_set_new(j, "job_name", json_string(JobName));
+
+    json_array_append_new(arr, j);
+  }
+  return arr;
+}
+
+static json_t* BuildDeviceJson(DeviceResource* device_resource)
+{
+  json_t* o = json_object();
+  Device* dev = device_resource->dev;
+
+  json_object_set_new(o, "name", json_string(device_resource->resource_name_));
+  json_object_set_new(
+      o, "device_path",
+      json_string(dev ? dev->print_name()
+                      : device_resource->archive_device_string));
+  json_object_set_new(o, "media_type",
+                      json_string(device_resource->media_type));
+  json_object_set_new(
+      o, "autochanger",
+      device_resource->changer_res
+          ? json_string(device_resource->changer_res->resource_name_)
+          : json_null());
+
+  if (dev && dev->IsOpen()) {
+    json_object_set_new(o, "open", json_true());
+    json_object_set_new(o, "labeled", json_boolean(dev->IsLabeled()));
+    json_object_set_new(o, "blocked_state",
+                        json_string(BlockedStateToString(dev->blocked())));
+    if (dev->IsLabeled()) {
+      json_object_set_new(o, "mounted_volume",
+                          json_string(dev->VolHdr.VolumeName));
+      json_object_set_new(o, "pool",
+                          json_string(dev->pool_name[0] ? dev->pool_name : ""));
+      if (dev->CanAppend()) {
+        json_t* pos = json_object();
+        int64_t blocks = dev->VolCatInfo.VolCatBlocks;
+        int64_t bpb = blocks > 0 ? dev->VolCatInfo.VolCatBytes / blocks : 0;
+        json_object_set_new(
+            pos, "total_bytes",
+            json_integer(static_cast<json_int_t>(dev->VolCatInfo.VolCatBytes)));
+        json_object_set_new(pos, "blocks",
+                            json_integer(static_cast<json_int_t>(blocks)));
+        json_object_set_new(pos, "bytes_per_block",
+                            json_integer(static_cast<json_int_t>(bpb)));
+        json_object_set_new(o, "write_position", pos);
+      }
+    } else {
+      json_object_set_new(o, "mounted_volume", json_null());
+      json_object_set_new(o, "pool", json_null());
+    }
+    json_object_set_new(
+        o, "num_writers",
+        json_integer(static_cast<json_int_t>(dev->num_writers)));
+    json_object_set_new(
+        o, "reserved",
+        json_integer(static_cast<json_int_t>(dev->NumReserved())));
+    json_object_set_new(o, "can_read", json_boolean(dev->CanRead()));
+    json_object_set_new(o, "can_append", json_boolean(dev->CanAppend()));
+  } else {
+    json_object_set_new(o, "open", json_false());
+  }
+  return o;
+}
+
+static json_t* BuildDevicesJson()
+{
+  json_t* arr = json_array();
+  DeviceResource* device_resource = nullptr;
+
+  foreach_res (device_resource, R_DEVICE) {
+    if (device_resource->count > 1) { continue; }
+    json_array_append_new(arr, BuildDeviceJson(device_resource));
+  }
+  return arr;
+}
+
+static json_t* BuildUsedVolumesJson()
+{
+  json_t* arr = json_array();
+
+  foreach_vol ([&](auto* vol) {
+    json_t* v = json_object();
+    Device* dev = vol->dev;
+    json_object_set_new(v, "volume", json_string(vol->vol_name));
+    json_object_set_new(v, "device",
+                        dev ? json_string(dev->print_name()) : json_null());
+    json_object_set_new(v, "direction", json_string("write"));
+    json_object_set_new(v, "readers",
+                        json_integer(dev && dev->CanRead() ? 1 : 0));
+    json_object_set_new(
+        v, "writers",
+        json_integer(static_cast<json_int_t>(dev ? dev->num_writers : 0)));
+    json_object_set_new(
+        v, "reserves",
+        json_integer(static_cast<json_int_t>(dev ? dev->NumReserved() : 0)));
+    json_object_set_new(v, "in_use", json_boolean(vol->IsInUse()));
+    json_array_append_new(arr, v);
+  });
+
+  foreach_read_vol([&](auto* vol) {
+    json_t* v = json_object();
+    Device* dev = vol->dev;
+    json_object_set_new(v, "volume", json_string(vol->vol_name));
+    json_object_set_new(v, "device",
+                        dev ? json_string(dev->print_name()) : json_null());
+    json_object_set_new(v, "direction", json_string("read"));
+    json_object_set_new(v, "readers",
+                        json_integer(dev && dev->CanRead() ? 1 : 0));
+    json_object_set_new(
+        v, "writers",
+        json_integer(static_cast<json_int_t>(dev ? dev->num_writers : 0)));
+    json_object_set_new(
+        v, "reserves",
+        json_integer(static_cast<json_int_t>(dev ? dev->NumReserved() : 0)));
+    json_object_set_new(v, "in_use", json_boolean(vol->IsInUse()));
+    json_object_set_new(v, "jobid",
+                        json_integer(static_cast<json_int_t>(vol->GetJobid())));
+    json_array_append_new(arr, v);
+  });
+  return arr;
+}
+
+static void OutputStatusJson(StatusPacket* sp)
+{
+  json_t* root = json_object();
+  json_object_set_new(root, "header", BuildStatusHeaderJson());
+  json_object_set_new(root, "running_jobs", BuildRunningJobsJson());
+  json_object_set_new(root, "waiting_jobs", BuildWaitingJobsJson());
+  json_object_set_new(root, "terminated_jobs", BuildTerminatedJobsJson());
+  json_object_set_new(root, "devices", BuildDevicesJson());
+  json_object_set_new(root, "used_volumes", BuildUsedVolumesJson());
+
+  char* serialized = json_dumps(root, JSON_INDENT(2));
+  if (serialized) {
+    int len = strlen(serialized);
+    if (sp->bs) {
+      sp->bs->msg = CheckPoolMemorySize(sp->bs->msg, len + 1);
+      memcpy(sp->bs->msg, serialized, len + 1);
+      sp->bs->message_length = len + 1;
+      sp->bs->send();
+    } else if (sp->callback) {
+      sp->callback(serialized, len, sp->context);
+    }
+    free(serialized);
+  }
+  json_decref(root);
+}
+
+#endif  // HAVE_JANSSON
+
 // Status command from Director
 bool StatusCmd(JobControlRecord* jcr)
 {
@@ -986,6 +1387,10 @@ bool DotstatusCmd(JobControlRecord* jcr)
   } else if (Bstrcasecmp(cmd.c_str(), "terminated")) {
     sp.api = true;
     ListTerminatedJobs(&sp);
+#if HAVE_JANSSON
+  } else if (Bstrcasecmp(cmd.c_str(), "json")) {
+    OutputStatusJson(&sp);
+#endif
   } else {
     PmStrcpy(jcr->errmsg, dir->msg);
     dir->fsend(T_("3900 Unknown arg in .status command: %s\n"), jcr->errmsg);

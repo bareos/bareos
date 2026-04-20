@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -226,6 +226,14 @@ inline constexpr slot_number_t INDEX_SLOT_OFFSET = 100;
 #define FD_VERSION_53 53
 #define FD_VERSION_54 54
 #define FD_VERSION_55 55
+
+/* Storage daemon protocol versions. Historically the SD's hello reply did
+ * not include a version; clients treat an unversioned hello as SD_VERSION_0.
+ *
+ *  1 Apr26 - Versioned hello + JSON output for .status command
+ */
+#define SD_VERSION_0 0
+#define SD_VERSION_1 1
 
 } /* namespace directordaemon */
 

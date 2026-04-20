@@ -147,6 +147,7 @@ struct DirectorJcrImpl {
   int32_t NumVols{};                    /**< Number of Volume used in pool */
   int32_t reschedule_count{};           /**< Number of times rescheduled */
   int32_t FDVersion{};                  /**< File daemon version number */
+  int32_t SDVersion{};                  /**< Storage daemon version number */
   int64_t spool_size{};                 /**< Spool size for this job */
   std::atomic<bool> sd_msg_thread_done{};   /**< Set when Storage message thread done */
   bool IgnoreDuplicateJobChecking{};    /**< Set in migration jobs */
