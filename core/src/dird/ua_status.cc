@@ -64,6 +64,13 @@ static void ListRunningJobs(UaContext* ua);
 static void ListTerminatedJobs(UaContext* ua);
 static void ListConnectedClients(UaContext* ua);
 static void DoDirectorStatus(UaContext* ua);
+#if HAVE_JANSSON
+static void ListDirStatusHeaderJson(UaContext* ua);
+static void ListScheduledJobsJson(UaContext* ua);
+static void ListRunningJobsJson(UaContext* ua);
+static void ListTerminatedJobsJson(UaContext* ua);
+static void DoDirectorStatusJson(UaContext* ua);
+#endif
 static void DoSchedulerStatus(UaContext* ua);
 static bool DoSubscriptionStatus(UaContext* ua);
 static void DoConfigurationStatus(UaContext* ua);
@@ -642,6 +649,12 @@ static void DoConfigurationStatus(UaContext* ua)
 
 static void DoSchedulerStatus(UaContext* ua)
 {
+#if HAVE_JANSSON
+  if (ua->api == API_MODE_JSON) {
+    ListScheduledJobsJson(ua);
+    return;
+  }
+#endif
   int i;
   int max_date_len = 0;
   int days = DEFAULT_STATUS_SCHED_DAYS; /* Default days for preview */
@@ -813,8 +826,250 @@ start_again:
   ua->SendMsg("====\n");
 }
 
+struct sched_pkt {
+  JobResource* job;
+  int level;
+  int priority;
+  utime_t runtime;
+  PoolResource* pool;
+  StorageResource* store;
+};
+
+// Sort items by runtime, priority
+static int CompareByRuntimePriority(const sched_pkt& p1, const sched_pkt& p2)
+{
+  if (p1.runtime < p2.runtime) {
+    return -1;
+  } else if (p1.runtime > p2.runtime) {
+    return 1;
+  }
+
+  if (p1.priority < p2.priority) {
+    return -1;
+  } else if (p1.priority > p2.priority) {
+    return 1;
+  }
+
+  return 0;
+}
+
+#if HAVE_JANSSON
+static void ListDirStatusHeaderJson(UaContext* ua)
+{
+  char dt[MAX_TIME_LENGTH];
+  PoolMem msg(PM_FNAME);
+
+  ua->send->ObjectStart("header");
+  ua->send->ObjectKeyValue("name", my_name, 0);
+  ua->send->ObjectKeyValue("version", kBareosVersionStrings.Full, 0);
+  ua->send->ObjectKeyValue("version_date", kBareosVersionStrings.Date, 0);
+  ua->send->ObjectKeyValue("os_info", kBareosVersionStrings.GetOsInfo(), 0);
+  bstrftime(dt, sizeof(dt), daemon_start_time, "%Y-%m-%dT%H:%M:%S");
+  ua->send->ObjectKeyValue("daemon_started", dt, 0);
+  ua->send->ObjectKeyValue("jobs_run", static_cast<uint64_t>(NumJobsRun()));
+  ua->send->ObjectKeyValue("jobs_running", static_cast<uint64_t>(JobCount()));
+  ua->send->ObjectKeyValue("binary_info", kBareosVersionStrings.BinaryInfo, 0);
+  ua->send->ObjectKeyValueBool("config_warnings", my_config->HasWarnings(), 0);
+  if (me->secure_erase_cmdline) {
+    ua->send->ObjectKeyValue("secure_erase_command", me->secure_erase_cmdline,
+                             0);
+  }
+  int plugin_len = ListDirPlugins(msg);
+  if (plugin_len > 0) { ua->send->ObjectKeyValue("plugins", msg.c_str(), 0); }
+  ua->send->ObjectEnd("header");
+}
+
+static void ListScheduledJobsJson(UaContext* ua)
+{
+  int days = 1;
+  if (const char* value = GetArgValue(ua, NT_("days"))) {
+    days = atoi(value);
+    if (days < 0 || days > 500) { days = 1; }
+  }
+
+  ua->send->ArrayStart("scheduled_jobs");
+  JobResource* job = nullptr;
+  std::vector<sched_pkt> sched;
+  time_t now = time(nullptr);
+  foreach_res (job, R_JOB) {
+    if (!ua->AclAccessOk(Job_ACL, job->resource_name_) || !job->enabled
+        || (job->client && !job->client->enabled)) {
+      continue;
+    }
+    if (!job->schedule) { continue; }
+    for (RunResource* run = job->schedule->run; run; run = run->next) {
+      std::optional<time_t> next_scheduled = run->NextScheduleTime(now, days);
+      if (!next_scheduled.has_value()) { continue; }
+
+      UnifiedStorageResource storage_res;
+      GetJobStorage(&storage_res, job, run);
+      sched.push_back(
+          {.job = job,
+           .level = int(run->level ? run->level : job->JobLevel),
+           .priority = (run->Priority ? run->Priority : job->Priority),
+           .runtime = next_scheduled.value(),
+           .pool = run->pool,
+           .store = storage_res.store});
+    }
+  }
+
+  std::sort(sched.begin(), sched.end(), [](auto& l, auto& r) -> bool {
+    return CompareByRuntimePriority(l, r) < 0;
+  });
+
+  char dt[MAX_TIME_LENGTH];
+  for (sched_pkt& sp : sched) {
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("job_name", sp.job->resource_name_, 0);
+    ua->send->ObjectKeyValue("level", job_level_to_str(sp.level), 0);
+    ua->send->ObjectKeyValue("job_type", job_type_to_str(sp.job->JobType), 0);
+    ua->send->ObjectKeyValue("priority", static_cast<uint64_t>(sp.priority));
+    bstrftime(dt, sizeof(dt), sp.runtime, "%Y-%m-%dT%H:%M:%S");
+    ua->send->ObjectKeyValue("scheduled", dt, 0);
+    if (sp.pool) {
+      ua->send->ObjectKeyValue("pool", sp.pool->resource_name_, 0);
+    }
+    if (sp.store) {
+      ua->send->ObjectKeyValue("storage", sp.store->resource_name_, 0);
+    }
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("scheduled_jobs");
+}
+
+static void ListRunningJobsJson(UaContext* ua)
+{
+  JobControlRecord* jcr;
+
+  ua->send->ArrayStart("running_jobs");
+  foreach_jcr (jcr) {
+    if (jcr->JobId == 0
+        || !ua->AclAccessOk(Job_ACL, jcr->dir_impl->res.job->resource_name_)) {
+      continue;
+    }
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("jobid", static_cast<uint64_t>(jcr->JobId));
+    ua->send->ObjectKeyValue("job_name", jcr->Job, 0);
+    ua->send->ObjectKeyValue("level", job_level_to_str(jcr->getJobLevel()), 0);
+    ua->send->ObjectKeyValue("job_type", job_type_to_str(jcr->getJobType()), 0);
+    char status_code[2] = {static_cast<char>(jcr->getJobStatus()), 0};
+    ua->send->ObjectKeyValue("status_code", status_code, 0);
+    ua->send->ObjectKeyValue("status",
+                             JobstatusToAscii(jcr->getJobStatus()).c_str(), 0);
+    if (jcr->dir_impl->res.client) {
+      ua->send->ObjectKeyValue("client",
+                               jcr->dir_impl->res.client->resource_name_, 0);
+    }
+    if (jcr->dir_impl->res.write_storage) {
+      ua->send->ObjectKeyValue(
+          "storage", jcr->dir_impl->res.write_storage->resource_name_, 0);
+    } else if (jcr->dir_impl->res.read_storage) {
+      ua->send->ObjectKeyValue(
+          "storage", jcr->dir_impl->res.read_storage->resource_name_, 0);
+    }
+    if (jcr->start_time) {
+      char dt[MAX_TIME_LENGTH];
+      bstrftime(dt, sizeof(dt), jcr->start_time, "%Y-%m-%dT%H:%M:%S");
+      ua->send->ObjectKeyValue("started", dt, 0);
+    }
+    if (jcr->sched_time) {
+      char dt[MAX_TIME_LENGTH];
+      bstrftime(dt, sizeof(dt), jcr->sched_time, "%Y-%m-%dT%H:%M:%S");
+      ua->send->ObjectKeyValue("scheduled", dt, 0);
+    }
+    ua->send->ObjectEnd();
+  }
+  endeach_jcr(jcr);
+  ua->send->ArrayEnd("running_jobs");
+}
+
+static void ListTerminatedJobsJson(UaContext* ua)
+{
+  ua->send->ArrayStart("terminated_jobs");
+  for (const RecentJobResultsList::JobResult& je :
+       RecentJobResultsList::Get()) {
+    char JobName[MAX_NAME_LENGTH];
+    const char* termstat;
+
+    bstrncpy(JobName, je.Job, sizeof(JobName));
+    for (int i = 0; i < 3; i++) {
+      char* p = strrchr(JobName, '.');
+      if (p) { *p = 0; }
+    }
+    if (!ua->AclAccessOk(Job_ACL, JobName)) { continue; }
+
+    const char* level_str;
+    switch (je.JobType) {
+      case JT_ADMIN:
+      case JT_ARCHIVE:
+      case JT_RESTORE:
+        level_str = "";
+        break;
+      default:
+        level_str = JobLevelToString(je.JobLevel);
+        break;
+    }
+    switch (je.JobStatus) {
+      case JS_Created:
+        termstat = "Created";
+        break;
+      case JS_FatalError:
+      case JS_ErrorTerminated:
+        termstat = "Error";
+        break;
+      case JS_Differences:
+        termstat = "Diffs";
+        break;
+      case JS_Canceled:
+        termstat = "Cancel";
+        break;
+      case JS_Terminated:
+        termstat = "OK";
+        break;
+      case JS_Warnings:
+        termstat = "OK -- with warnings";
+        break;
+      default:
+        termstat = "Other";
+        break;
+    }
+
+    char dt[MAX_TIME_LENGTH];
+    bstrftime(dt, sizeof(dt), je.end_time, "%Y-%m-%dT%H:%M:%S");
+    char status_code[2] = {static_cast<char>(je.JobStatus), 0};
+
+    ua->send->ObjectStart();
+    ua->send->ObjectKeyValue("jobid", static_cast<uint64_t>(je.JobId));
+    ua->send->ObjectKeyValue("job_name", JobName, 0);
+    ua->send->ObjectKeyValue("level", level_str, 0);
+    ua->send->ObjectKeyValue("files", static_cast<uint64_t>(je.JobFiles));
+    ua->send->ObjectKeyValue("bytes", static_cast<uint64_t>(je.JobBytes));
+    ua->send->ObjectKeyValue("status_code", status_code, 0);
+    ua->send->ObjectKeyValue("status", termstat, 0);
+    ua->send->ObjectKeyValue("finished", dt, 0);
+    ua->send->ObjectEnd();
+  }
+  ua->send->ArrayEnd("terminated_jobs");
+}
+
+static void DoDirectorStatusJson(UaContext* ua)
+{
+  ListDirStatusHeaderJson(ua);
+  ListScheduledJobsJson(ua);
+  ListRunningJobsJson(ua);
+  ListTerminatedJobsJson(ua);
+  ListConnectedClients(ua);
+}
+#endif  // HAVE_JANSSON
+
 static void DoDirectorStatus(UaContext* ua)
 {
+#if HAVE_JANSSON
+  if (ua->api == API_MODE_JSON) {
+    DoDirectorStatusJson(ua);
+    return;
+  }
+#endif
   ListDirStatusHeader(ua);
   ListScheduledJobs(ua);
   ListRunningJobs(ua);
@@ -837,15 +1092,6 @@ static void PrtRunhdr(UaContext* ua)
 }
 
 /* Scheduling packet */
-struct sched_pkt {
-  JobResource* job;
-  int level;
-  int priority;
-  utime_t runtime;
-  PoolResource* pool;
-  StorageResource* store;
-};
-
 static void PrtRuntime(UaContext* ua, sched_pkt* sp)
 {
   char dt[MAX_TIME_LENGTH];
@@ -896,24 +1142,6 @@ static void PrtRuntime(UaContext* ua, sched_pkt* sp)
   if (CloseDb) { DbSqlClosePooledConnection(jcr, jcr->db); }
   jcr->db = ua->db; /* restore ua db to jcr */
   jcr->setJobType(orig_jobtype);
-}
-
-// Sort items by runtime, priority
-static int CompareByRuntimePriority(const sched_pkt& p1, const sched_pkt& p2)
-{
-  if (p1.runtime < p2.runtime) {
-    return -1;
-  } else if (p1.runtime > p2.runtime) {
-    return 1;
-  }
-
-  if (p1.priority < p2.priority) {
-    return -1;
-  } else if (p1.priority > p2.priority) {
-    return 1;
-  }
-
-  return 0;
 }
 
 // Find all jobs to be run in roughly the next 24 hours.
