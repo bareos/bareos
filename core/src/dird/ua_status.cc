@@ -27,6 +27,11 @@
  */
 
 #include "include/bareos.h"
+
+#if HAVE_JANSSON
+#  include <jansson.h>
+#endif
+
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/date_time.h"
@@ -64,6 +69,7 @@ static void ListRunningJobs(UaContext* ua);
 static void ListTerminatedJobs(UaContext* ua);
 static void ListConnectedClients(UaContext* ua);
 static void DoDirectorStatus(UaContext* ua);
+static void DoJobIdStatus(UaContext* ua, uint32_t jobid);
 #if HAVE_JANSSON
 static void ListDirStatusHeaderJson(UaContext* ua);
 static void ListScheduledJobsJson(UaContext* ua);
@@ -195,6 +201,11 @@ bool StatusCmd(UaContext* ua, const char* cmd)
     } else if (Bstrcasecmp(ua->argk[i], NT_("client"))) {
       client = get_client_resource(ua);
       if (client) { ClientStatus(ua, client, NULL); }
+      return true;
+    } else if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
+      uint32_t jobid = 0;
+      if (ua->argv[i]) { jobid = static_cast<uint32_t>(atoi(ua->argv[i])); }
+      DoJobIdStatus(ua, jobid);
       return true;
     } else if (bstrncasecmp(ua->argk[i], NT_("sched"), 5)) {
       DoSchedulerStatus(ua);
@@ -2016,4 +2027,161 @@ bail_out:
 
   return;
 }
+
+#if HAVE_JANSSON
+/* Drain whatever the daemon wrote to the socket up to BNET_EOD, parse the
+ * accumulated bytes as JSON, return a new json_t* on success or nullptr on
+ * parse failure. `err_out` (if non-null) receives the parser's error text. */
+static json_t* ReadDaemonStatusJson(BareosSocket* bs, std::string& err_out)
+{
+  PoolMem buf(PM_MESSAGE);
+  int total = 0;
+  while (bs->recv() >= 0) {
+    buf.check_size(total + bs->message_length + 1);
+    memcpy(buf.c_str() + total, bs->msg, bs->message_length);
+    total += bs->message_length;
+    buf.c_str()[total] = '\0';
+  }
+  json_error_t jerr;
+  json_t* parsed = json_loads(buf.c_str(), 0, &jerr);
+  if (!parsed) { err_out = jerr.text; }
+  return parsed;
+}
+#endif
+
+/* Aggregate per-job status: combine director-local info with the FD and SD
+ * JSON replies for a specific running job. JSON mode only — text mode was
+ * never offered, since consumers of this command are monitoring tools. */
+static void DoJobIdStatus(UaContext* ua, uint32_t jobid)
+{
+#if HAVE_JANSSON
+  if (ua->api != API_MODE_JSON) {
+    ua->SendMsg(
+        T_("status jobid=N is only available in JSON mode. "
+           "Run '.api json' first.\n"));
+    return;
+  }
+
+  JobControlRecord* job_jcr = get_jcr_by_id(jobid);
+  ua->send->ObjectStart("job_status");
+  ua->send->ObjectKeyValue("jobid", static_cast<uint64_t>(jobid));
+
+  if (!job_jcr) {
+    ua->send->ObjectKeyValue("error", "job_not_found", 0);
+    ua->send->ObjectEnd("job_status");
+    return;
+  }
+  /* A JCR that lacks its director-private side cannot be fanned out; this
+   * only happens for malformed or partially-initialized records. */
+  if (!job_jcr->dir_impl) {
+    ua->send->ObjectKeyValue("error", "job_has_no_dir_state", 0);
+    ua->send->ObjectEnd("job_status");
+    FreeJcr(job_jcr);
+    return;
+  }
+
+  /* Director-side metadata subtree. */
+  ua->send->ObjectStart("dir");
+  ua->send->ObjectKeyValue("job", job_jcr->Job, 0);
+  ua->send->ObjectKeyValue("level", job_level_to_str(job_jcr->getJobLevel()),
+                           0);
+  ua->send->ObjectKeyValue("job_type", job_type_to_str(job_jcr->getJobType()),
+                           0);
+  char status_code[2] = {static_cast<char>(job_jcr->getJobStatus()), 0};
+  ua->send->ObjectKeyValue("status_code", status_code, 0);
+  ua->send->ObjectKeyValue(
+      "status", JobstatusToAscii(job_jcr->getJobStatus()).c_str(), 0);
+
+  ClientResource* client = job_jcr->dir_impl->res.client;
+  if (client) { ua->send->ObjectKeyValue("client", client->resource_name_, 0); }
+  StorageResource* store = job_jcr->dir_impl->res.write_storage
+                               ? job_jcr->dir_impl->res.write_storage
+                               : job_jcr->dir_impl->res.read_storage;
+  if (store) { ua->send->ObjectKeyValue("storage", store->resource_name_, 0); }
+  if (job_jcr->start_time) {
+    char dt[MAX_TIME_LENGTH];
+    bstrftime(dt, sizeof(dt), job_jcr->start_time, "%Y-%m-%dT%H:%M:%S");
+    ua->send->ObjectKeyValue("start_time", dt, 0);
+  }
+  if (job_jcr->sched_time) {
+    char dt[MAX_TIME_LENGTH];
+    bstrftime(dt, sizeof(dt), job_jcr->sched_time, "%Y-%m-%dT%H:%M:%S");
+    ua->send->ObjectKeyValue("sched_time", dt, 0);
+  }
+  ua->send->ObjectEnd("dir");
+
+  /* FD subtree: connect, ask for `.status json`, nest the reply. */
+  if (client) {
+    ua->send->ObjectStart("fd");
+    ua->send->ObjectKeyValue("client", client->resource_name_, 0);
+
+    ua->jcr->dir_impl->res.client = client;
+    if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
+      ua->send->ObjectKeyValue("error", "connect_failed", 0);
+    } else {
+      BareosSocket* fd = ua->jcr->file_bsock;
+      if (ua->jcr->dir_impl->FDVersion < FD_VERSION_55) {
+        ua->send->ObjectKeyValue("error", "file_daemon_too_old", 0);
+      } else {
+        fd->fsend(".status json");
+        std::string perr;
+        json_t* parsed = ReadDaemonStatusJson(fd, perr);
+        if (parsed) {
+          ua->send->JsonKeyValueAddJson("data", parsed);
+        } else {
+          ua->send->ObjectKeyValue("error", "parse_failed", 0);
+          ua->send->ObjectKeyValue("message", perr.c_str(), 0);
+        }
+      }
+      fd->signal(BNET_TERMINATE);
+      fd->close();
+      delete ua->jcr->file_bsock;
+      ua->jcr->file_bsock = nullptr;
+    }
+    ua->send->ObjectEnd("fd");
+  }
+
+  /* SD subtree: same pattern. */
+  if (store) {
+    ua->send->ObjectStart("sd");
+    ua->send->ObjectKeyValue("storage", store->resource_name_, 0);
+
+    UnifiedStorageResource lstore;
+    lstore.store = store;
+    PmStrcpy(lstore.store_source, T_("status jobid aggregator"));
+    SetWstorage(ua->jcr, &lstore);
+    if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
+      ua->send->ObjectKeyValue("error", "connect_failed", 0);
+    } else {
+      BareosSocket* sd = ua->jcr->store_bsock;
+      if (ua->jcr->dir_impl->SDVersion < SD_VERSION_1) {
+        ua->send->ObjectKeyValue("error", "storage_daemon_too_old", 0);
+      } else {
+        sd->fsend(".status json\n");
+        std::string perr;
+        json_t* parsed = ReadDaemonStatusJson(sd, perr);
+        if (parsed) {
+          ua->send->JsonKeyValueAddJson("data", parsed);
+        } else {
+          ua->send->ObjectKeyValue("error", "parse_failed", 0);
+          ua->send->ObjectKeyValue("message", perr.c_str(), 0);
+        }
+      }
+      sd->signal(BNET_TERMINATE);
+      sd->close();
+      delete ua->jcr->store_bsock;
+      ua->jcr->store_bsock = nullptr;
+    }
+    ua->send->ObjectEnd("sd");
+  }
+
+  ua->send->ObjectEnd("job_status");
+  FreeJcr(job_jcr);
+#else
+  (void)ua;
+  (void)jobid;
+  ua->SendMsg(T_("status jobid=N requires JSON support (jansson).\n"));
+#endif
+}
+
 } /* namespace directordaemon */
