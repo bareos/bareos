@@ -144,9 +144,8 @@ std::unique_ptr<ConfigurationParser> CreateParser(Component component,
 #ifdef BCONFIG_HAVE_TRAYMONITOR
     case Component::kTrayMonitor: {
       ::my_config = nullptr;
-      auto parser
-          = std::unique_ptr<ConfigurationParser>(InitTmonConfig(path.c_str(),
-                                                                M_ERROR));
+      auto parser = std::unique_ptr<ConfigurationParser>(
+          InitTmonConfig(path.c_str(), M_ERROR));
       ::my_config = parser.get();
       return parser;
     }
@@ -177,6 +176,49 @@ void AppendRelation(std::vector<RelationEntry>& relations,
       GetResourceName(target),
       CopySource(resource.GetMemberSource(item.name)),
   });
+}
+
+void AppendRunOverrideRelation(std::vector<RelationEntry>& relations,
+                               const ConfigurationParser& config,
+                               const char* directive_name,
+                               BareosResource* target,
+                               const directordaemon::RunResource& run)
+{
+  if (!target) { return; }
+
+  relations.emplace_back(RelationEntry{
+      directive_name,
+      config.ResToStr(target->rcode_),
+      GetResourceName(target),
+      run.GetDefinitionSource(),
+  });
+}
+
+void AppendDirectorScheduleRelations(std::vector<RelationEntry>& relations,
+                                     const ConfigurationParser& config,
+                                     const BareosResource& resource)
+{
+  auto schedule
+      = dynamic_cast<const directordaemon::ScheduleResource*>(&resource);
+  if (!schedule) { return; }
+
+  for (auto* run = schedule->run; run != nullptr; run = run->next) {
+    AppendRunOverrideRelation(relations, config, "Run.Pool", run->pool, *run);
+    AppendRunOverrideRelation(relations, config, "Run.FullPool", run->full_pool,
+                              *run);
+    AppendRunOverrideRelation(relations, config, "Run.VirtualFullPool",
+                              run->vfull_pool, *run);
+    AppendRunOverrideRelation(relations, config, "Run.IncrementalPool",
+                              run->inc_pool, *run);
+    AppendRunOverrideRelation(relations, config, "Run.DifferentialPool",
+                              run->diff_pool, *run);
+    AppendRunOverrideRelation(relations, config, "Run.NextPool", run->next_pool,
+                              *run);
+    AppendRunOverrideRelation(relations, config, "Run.Storage", run->storage,
+                              *run);
+    AppendRunOverrideRelation(relations, config, "Run.Messages", run->msgs,
+                              *run);
+  }
 }
 
 }  // namespace
@@ -217,7 +259,9 @@ const char* ComponentToString(Component component)
   return "unknown";
 }
 
-LoadedConfig LoadConfig(Component component, const std::string& path, bool parse)
+LoadedConfig LoadConfig(Component component,
+                        const std::string& path,
+                        bool parse)
 {
   InitializeRuntime();
 
@@ -239,6 +283,8 @@ LoadedConfig LoadConfig(Component component, const std::string& path, bool parse
     for (const auto& warning : result.parser->GetWarnings()) {
       result.messages.warnings.emplace_back(warning.c_str());
     }
+
+    if (!result.messages.errors.empty()) { result.parse_ok = false; }
   } else {
     result.parse_ok = true;
   }
@@ -246,7 +292,8 @@ LoadedConfig LoadConfig(Component component, const std::string& path, bool parse
   return result;
 }
 
-std::vector<ResourceSchemaEntry> CollectSchema(const ConfigurationParser& config)
+std::vector<ResourceSchemaEntry> CollectSchema(
+    const ConfigurationParser& config)
 {
   std::vector<ResourceSchemaEntry> resources;
 
@@ -265,7 +312,9 @@ std::vector<ResourceSchemaEntry> CollectSchema(const ConfigurationParser& config
       directive_entry.required = item->is_required;
       directive_entry.deprecated = item->is_deprecated;
       directive_entry.aliases = item->aliases;
-      if (item->description) { directive_entry.description = item->description; }
+      if (item->description) {
+        directive_entry.description = item->description;
+      }
       resource_entry.directives.emplace_back(std::move(directive_entry));
     }
 
@@ -275,7 +324,8 @@ std::vector<ResourceSchemaEntry> CollectSchema(const ConfigurationParser& config
   return resources;
 }
 
-std::vector<ResourceInspectionEntry> CollectResources(ConfigurationParser& config)
+std::vector<ResourceInspectionEntry> CollectResources(
+    ConfigurationParser& config)
 {
   std::vector<ResourceInspectionEntry> resources;
 
@@ -288,7 +338,8 @@ std::vector<ResourceInspectionEntry> CollectResources(ConfigurationParser& confi
       entry.source = resource->GetDefinitionSource();
       entry.internal = resource->internal_;
 
-      const ResourceItem* items = config.resource_definitions_[resource->rcode_].items;
+      const ResourceItem* items
+          = config.resource_definitions_[resource->rcode_].items;
       if (!items) {
         resources.emplace_back(std::move(entry));
         continue;
@@ -300,9 +351,8 @@ std::vector<ResourceInspectionEntry> CollectResources(ConfigurationParser& confi
       for (const ResourceItem* item = items; item->name; ++item) {
         if (!resource->IsMemberPresent(item->name)) { continue; }
 
-        entry.directives.emplace_back(
-            DirectiveUseEntry{item->name,
-                              CopySource(resource->GetMemberSource(item->name))});
+        entry.directives.emplace_back(DirectiveUseEntry{
+            item->name, CopySource(resource->GetMemberSource(item->name))});
 
         switch (item->type) {
           case CFG_TYPE_RES: {
@@ -323,6 +373,8 @@ std::vector<ResourceInspectionEntry> CollectResources(ConfigurationParser& confi
             break;
         }
       }
+
+      AppendDirectorScheduleRelations(entry.relations, config, *resource);
 
       resources.emplace_back(std::move(entry));
     }

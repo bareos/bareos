@@ -171,6 +171,8 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
   char* p;
   int i, j;
   auto options = lc->options;
+  const char* run_source_file = lc->fname;
+  int run_source_line = lc->line_no;
   int token, state, state2 = 0, code = 0, code2 = 0;
   bool found;
   utime_t utime;
@@ -709,6 +711,8 @@ void StoreRun(lexer* lc, const ResourceItem* item, int index, int pass)
     RunResource* tail;
 
     RunResource* nrun = new RunResource(std::move(res_run));
+    nrun->SetDefinitionSource(run_source_file ? run_source_file : "",
+                              run_source_line);
 
     nrun->next = NULL;
 

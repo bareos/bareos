@@ -51,6 +51,40 @@ void PrintMessages(const bconfig::ParseMessages& messages)
   }
 }
 
+void PrintHeader(const bconfig::LoadedConfig& loaded)
+{
+  std::cout << "Component: " << bconfig::ComponentToString(loaded.component)
+            << "\n"
+            << "Config: " << loaded.parser->get_base_config_path() << "\n"
+            << "Parse status: " << (loaded.parse_ok ? "ok" : "failed") << "\n";
+  PrintMessages(loaded.messages);
+}
+
+void PrintRelationsOnly(ConfigurationParser& parser)
+{
+  bool found_relations = false;
+
+  for (const auto& resource : bconfig::CollectResources(parser)) {
+    if (resource.internal || resource.relations.empty()) { continue; }
+
+    found_relations = true;
+    std::cout << "\nResource: " << resource.type << " \"" << resource.name
+              << "\"";
+    PrintSource(resource.source);
+    std::cout << "\n";
+
+    for (const auto& relation : resource.relations) {
+      std::cout << "  - " << relation.directive << " -> "
+                << relation.target_type << " \"" << relation.target_name
+                << "\"";
+      PrintSource(relation.source);
+      std::cout << "\n";
+    }
+  }
+
+  if (!found_relations) { std::cout << "\nNo internal relations found.\n"; }
+}
+
 }  // namespace
 
 int main(int argc, char** argv)
@@ -95,6 +129,25 @@ int main(int argc, char** argv)
                    )
       ->required();
   inspect_command
+      ->add_option("config", config_path,
+                   "Config file or configuration directory root.")
+      ->required();
+
+  auto* relations_command = app.add_subcommand(
+      "relations",
+      "Parse one component config and print only internal relations.");
+  relations_command
+      ->add_option("component", component_name,
+                   "Component to inspect: director, storage, client"
+#ifdef BCONFIG_HAVE_CONSOLE
+                   ", console"
+#endif
+#ifdef BCONFIG_HAVE_TRAYMONITOR
+                   ", traymonitor"
+#endif
+                   )
+      ->required();
+  relations_command
       ->add_option("config", config_path,
                    "Config file or configuration directory root.")
       ->required();
@@ -149,10 +202,12 @@ int main(int argc, char** argv)
     return BEXIT_FAILURE;
   }
 
-  std::cout << "Component: " << bconfig::ComponentToString(*component) << "\n"
-            << "Config: " << loaded.parser->get_base_config_path() << "\n"
-            << "Parse status: " << (loaded.parse_ok ? "ok" : "failed") << "\n";
-  PrintMessages(loaded.messages);
+  PrintHeader(loaded);
+
+  if (*relations_command) {
+    PrintRelationsOnly(*loaded.parser);
+    return loaded.parse_ok ? BEXIT_SUCCESS : BEXIT_FAILURE;
+  }
 
   for (const auto& resource : bconfig::CollectResources(*loaded.parser)) {
     if (resource.internal) { continue; }
