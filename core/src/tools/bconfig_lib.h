@@ -73,6 +73,16 @@ struct RelationEntry {
   std::optional<BareosResource::SourceLocation> source{};
 };
 
+struct ExternalRelationEntry {
+  std::string relation{};
+  std::string target_component{};
+  std::string target_type{};
+  std::string target_name{};
+  std::optional<BareosResource::SourceLocation> source{};
+  bool matched{true};
+  std::optional<std::string> detail{};
+};
+
 struct DirectiveUseEntry {
   std::string name{};
   std::optional<BareosResource::SourceLocation> source{};
@@ -85,6 +95,7 @@ struct ResourceInspectionEntry {
   bool internal{false};
   std::vector<DirectiveUseEntry> directives{};
   std::vector<RelationEntry> relations{};
+  std::vector<ExternalRelationEntry> external_relations{};
 };
 
 struct LoadedConfig {
@@ -99,9 +110,13 @@ const char* ComponentToString(Component component);
 LoadedConfig LoadConfig(Component component,
                         const std::string& path,
                         bool parse = true);
-std::vector<ResourceSchemaEntry> CollectSchema(const ConfigurationParser& config);
+std::vector<ResourceSchemaEntry> CollectSchema(
+    const ConfigurationParser& config);
 std::vector<ResourceInspectionEntry> CollectResources(
     ConfigurationParser& config);
+std::vector<ResourceInspectionEntry> CollectResources(
+    const LoadedConfig& config,
+    const std::vector<const LoadedConfig*>& peers);
 
 }  // namespace bconfig
 

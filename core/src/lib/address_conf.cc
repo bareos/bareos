@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -53,6 +53,7 @@ IPADDR::IPADDR(const IPADDR& src)
 {
   type = src.type;
   memcpy(&addr_storage, &src.addr_storage, sizeof(addr_storage));
+  unresolved_address_ = src.unresolved_address_;
 }
 
 IPADDR::IPADDR(int af)
@@ -146,8 +147,23 @@ void IPADDR::SetAddr6(struct in6_addr* ip6)
   addr_in6.sin6_addr = *ip6;
 }
 
+void IPADDR::SetUnresolvedAddress(std::string value)
+{
+  unresolved_address_ = std::move(value);
+}
+
+const std::string& IPADDR::GetUnresolvedAddress() const
+{
+  return unresolved_address_;
+}
+
 const char* IPADDR::GetAddress(char* outputbuf, int outlen)
 {
+  if (!unresolved_address_.empty()) {
+    bstrncpy(outputbuf, unresolved_address_.c_str(), outlen);
+    return outputbuf;
+  }
+
   outputbuf[0] = '\0';
 #ifdef HAVE_INET_NTOP
   inet_ntop(addr.sa_family,
@@ -386,7 +402,8 @@ int AddAddress(dlist<IPADDR>** out,
                const char* hostname_str,
                const char* port_str,
                char* buf,
-               int buflen)
+               int buflen,
+               bool resolve_hostname)
 {
   IPADDR* iaddr = nullptr;
   IPADDR* jaddr = nullptr;
@@ -425,12 +442,14 @@ int AddAddress(dlist<IPADDR>** out,
     return 0;
   }
 
-  const char* myerrstr;
-  hostaddrs = BnetHost2IpAddrs(hostname_str, family, &myerrstr);
-  if (!hostaddrs) {
-    Bsnprintf(buf, buflen, T_("can't resolve hostname(%s) %s"), hostname_str,
-              myerrstr);
-    return 0;
+  if (resolve_hostname) {
+    const char* myerrstr;
+    hostaddrs = BnetHost2IpAddrs(hostname_str, family, &myerrstr);
+    if (!hostaddrs) {
+      Bsnprintf(buf, buflen, T_("can't resolve hostname(%s) %s"),
+                hostname_str ? hostname_str : "", myerrstr);
+      return 0;
+    }
   }
 
   if (intype == IPADDR::R_SINGLE_PORT) {
@@ -459,26 +478,40 @@ int AddAddress(dlist<IPADDR>** out,
     addr = new IPADDR(family);
     addr->SetType(type);
     addr->SetPortNet(addr_port);
-    addr->CopyAddr((IPADDR*)(hostaddrs->first()));
+    if (hostaddrs) {
+      addr->CopyAddr((IPADDR*)(hostaddrs->first()));
+    } else {
+      addr->SetAddrAny();
+      if (hostname_str) { addr->SetUnresolvedAddress(hostname_str); }
+    }
     addrs->append(addr);
 
   } else {
-    foreach_dlist (iaddr, hostaddrs) {
-      bool sameaddress = false;
-      /* for duplicates */
-      foreach_dlist (jaddr, addrs) {
-        if (IsSameIpAddress(iaddr, jaddr)) {
-          sameaddress = true;
-          break;
+    if (hostaddrs) {
+      foreach_dlist (iaddr, hostaddrs) {
+        bool sameaddress = false;
+        /* for duplicates */
+        foreach_dlist (jaddr, addrs) {
+          if (IsSameIpAddress(iaddr, jaddr)) {
+            sameaddress = true;
+            break;
+          }
+        }
+        if (!sameaddress) {
+          IPADDR* clone = nullptr;
+          clone = new IPADDR(*iaddr);
+          clone->SetType(type);
+          clone->SetPortNet(port);
+          addrs->append(clone);
         }
       }
-      if (!sameaddress) {
-        IPADDR* clone = nullptr;
-        clone = new IPADDR(*iaddr);
-        clone->SetType(type);
-        clone->SetPortNet(port);
-        addrs->append(clone);
-      }
+    } else {
+      auto* addr = new IPADDR(family);
+      addr->SetType(type);
+      addr->SetPortNet(port);
+      addr->SetAddrAny();
+      if (hostname_str) { addr->SetUnresolvedAddress(hostname_str); }
+      addrs->append(addr);
     }
   }
   FreeAddresses(hostaddrs);
@@ -532,6 +565,7 @@ void EmptyAddressList(dlist<IPADDR>* addrs)
 
 void FreeAddresses(dlist<IPADDR>* addrs)
 {
+  if (!addrs) { return; }
   while (!addrs->empty()) {
     IPADDR* ptr = (IPADDR*)addrs->first();
     addrs->remove(ptr);

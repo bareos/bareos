@@ -314,4 +314,177 @@ Storage {
   EXPECT_TRUE(has_relation("Run.Messages", "Messages", "AltMessages", 4));
 }
 
+TEST(Bconfig, SkipsHostnameValidationWhenInspecting)
+{
+  auto config_path = WriteTempConfig("bconfig-unresolved-hostname.conf",
+                                     R"(Director {
+  Name = bareos-dir
+  Password = "dir_password"
+  Address = bareos-dir
+  Messages = Standard
+}
+
+Messages {
+  Name = Standard
+  Console = all
+}
+)");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    config_path.string());
+
+  ASSERT_TRUE(loaded.parser);
+  EXPECT_TRUE(loaded.parse_ok);
+  EXPECT_TRUE(loaded.messages.errors.empty());
+
+  auto resources = bconfig::CollectResources(*loaded.parser);
+  auto director = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Director" && resource.name == "bareos-dir";
+      });
+  ASSERT_NE(director, resources.end());
+  EXPECT_TRUE(std::any_of(
+      director->directives.begin(), director->directives.end(),
+      [](const auto& directive) { return directive.name == "Address"; }));
+}
+
+TEST(Bconfig, CollectsDirectorClientPeerRelations)
+{
+  auto director_path = WriteTempConfig("bconfig-director-peer-client.conf",
+                                       R"(Director {
+  Name = bareos-dir
+  Password = "director-password"
+  Messages = Standard
+}
+
+Messages {
+  Name = Standard
+  Console = all
+}
+
+Client {
+  Name = bareos-fd
+  Address = localhost
+  Password = "client-password"
+}
+)");
+  auto client_path = WriteTempConfig("bconfig-client-peer.conf",
+                                     R"(Director {
+  Name = bareos-dir
+  Password = "client-password"
+}
+
+Client {
+  Name = bareos-fd
+}
+)");
+
+  auto director = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                      director_path.string());
+  auto client
+      = bconfig::LoadConfig(bconfig::Component::kClient, client_path.string());
+
+  ASSERT_TRUE(director.parser);
+  ASSERT_TRUE(client.parser);
+  ASSERT_TRUE(director.parse_ok);
+  ASSERT_TRUE(client.parse_ok);
+
+  auto resources = bconfig::CollectResources(director, {&client});
+  auto entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Client" && resource.name == "bareos-fd";
+      });
+  ASSERT_NE(entry, resources.end());
+
+  auto has_external = [&entry](const char* relation, const char* component,
+                               const char* target_type,
+                               const char* target_name) {
+    return std::any_of(
+        entry->external_relations.begin(), entry->external_relations.end(),
+        [relation, component, target_type, target_name](const auto& rel) {
+          return rel.relation == relation && rel.target_component == component
+                 && rel.target_type == target_type
+                 && rel.target_name == target_name && rel.matched;
+        });
+  };
+
+  EXPECT_TRUE(has_external("Peer.Client", "client", "Client", "bareos-fd"));
+  EXPECT_TRUE(
+      has_external("Peer.DirectorAuth", "client", "Director", "bareos-dir"));
+}
+
+TEST(Bconfig, CollectsDirectorStoragePeerRelations)
+{
+  auto director_path = WriteTempConfig("bconfig-director-peer-storage.conf",
+                                       R"(Director {
+  Name = bareos-dir
+  Password = "director-password"
+  Messages = Standard
+}
+
+Messages {
+  Name = Standard
+  Console = all
+}
+
+Storage {
+  Name = MainStorage
+  Address = localhost
+  Password = "storage-password"
+  Device = FileStorage
+  Media Type = File
+}
+)");
+  auto storage_path = WriteTempConfig("bconfig-storage-peer.conf",
+                                      R"(Director {
+  Name = bareos-dir
+  Password = "storage-password"
+}
+
+Storage {
+  Name = bareos-sd
+}
+
+Device {
+  Name = FileStorage
+  Media Type = File
+  Archive Device = /tmp/bconfig-storage-peer
+  Device Type = File
+}
+)");
+
+  auto director = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                      director_path.string());
+  auto storage = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                     storage_path.string());
+
+  ASSERT_TRUE(director.parser);
+  ASSERT_TRUE(storage.parser);
+  ASSERT_TRUE(director.parse_ok);
+  ASSERT_TRUE(storage.parse_ok);
+
+  auto resources = bconfig::CollectResources(director, {&storage});
+  auto entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Storage" && resource.name == "MainStorage";
+      });
+  ASSERT_NE(entry, resources.end());
+
+  auto has_external = [&entry](const char* relation, const char* component,
+                               const char* target_type,
+                               const char* target_name) {
+    return std::any_of(
+        entry->external_relations.begin(), entry->external_relations.end(),
+        [relation, component, target_type, target_name](const auto& rel) {
+          return rel.relation == relation && rel.target_component == component
+                 && rel.target_type == target_type
+                 && rel.target_name == target_name && rel.matched;
+        });
+  };
+
+  EXPECT_TRUE(
+      has_external("Peer.DirectorAuth", "storage", "Director", "bareos-dir"));
+  EXPECT_TRUE(has_external("Device", "storage", "Device", "FileStorage"));
+}
+
 }  // namespace

@@ -775,7 +775,10 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
   if (pass == 2) {
     BareosResource* allocated_resource = my_config->GetResWithName(
         type, (*items->allocated_resource)->resource_name_);
-    if (allocated_resource && !allocated_resource->Validate()) { return false; }
+    if (allocated_resource && my_config->IsOptionValidationEnabled()
+        && !allocated_resource->Validate()) {
+      return false;
+    }
     switch (type) {
       case R_DEVICE:
       case R_MSGS:

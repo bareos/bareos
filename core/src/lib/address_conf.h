@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,8 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
+
+#include <string>
 
 #include "lib/dlist.h"
 
@@ -65,6 +67,7 @@ class IPADDR {
     sockaddr_in6 addr_in6;
     sockaddr_storage addr_storage = {};
   };
+  std::string unresolved_address_{};
 
  public:
   void SetType(i_type o);
@@ -79,6 +82,8 @@ class IPADDR {
   void SetAddrAny();
   void SetAddr4(struct in_addr* ip4);
   void SetAddr6(struct in6_addr* ip6);
+  void SetUnresolvedAddress(std::string value);
+  const std::string& GetUnresolvedAddress() const;
   const char* GetAddress(char* outputbuf, int outlen);
   void BuildConfigString(OutputFormatterResource& send,
                                       bool inherited);
@@ -102,7 +107,8 @@ int AddAddress(dlist<IPADDR>** out,
                const char* hostname_str,
                const char* port_str,
                char* buf,
-               int buflen);
+               int buflen,
+               bool resolve_hostname = true);
 bool CheckIfFamilyEnabled(IpFamily family);
 
 bool IsSameIpAddress(IPADDR* first, IPADDR* second);

@@ -22,6 +22,7 @@
 #include "tools/bconfig_lib.h"
 
 #include <iostream>
+#include <vector>
 
 #include "include/exit_codes.h"
 #include "lib/cli.h"
@@ -60,12 +61,47 @@ void PrintHeader(const bconfig::LoadedConfig& loaded)
   PrintMessages(loaded.messages);
 }
 
-void PrintRelationsOnly(ConfigurationParser& parser)
+void PrintLoadedConfig(const bconfig::LoadedConfig& loaded, bool peer)
+{
+  if (peer) {
+    std::cout << "Peer component: "
+              << bconfig::ComponentToString(loaded.component) << "\n"
+              << "Peer config: " << loaded.parser->get_base_config_path()
+              << "\n"
+              << "Peer parse status: " << (loaded.parse_ok ? "ok" : "failed")
+              << "\n";
+    PrintMessages(loaded.messages);
+  } else {
+    PrintHeader(loaded);
+  }
+}
+
+void PrintExternalRelations(
+    const std::vector<bconfig::ExternalRelationEntry>& relations,
+    const char* indent)
+{
+  for (const auto& relation : relations) {
+    std::cout << indent << "- " << relation.relation << " -> "
+              << relation.target_component << " " << relation.target_type
+              << " \"" << relation.target_name << "\"";
+    if (!relation.matched) { std::cout << " [missing]"; }
+    PrintSource(relation.source);
+    if (relation.detail) { std::cout << " (" << *relation.detail << ")"; }
+    std::cout << "\n";
+  }
+}
+
+void PrintRelationsOnly(
+    const std::vector<bconfig::ResourceInspectionEntry>& resources)
 {
   bool found_relations = false;
 
-  for (const auto& resource : bconfig::CollectResources(parser)) {
-    if (resource.internal || resource.relations.empty()) { continue; }
+  for (const auto& resource : resources) {
+    if (resource.internal
+        || (resource.relations.empty()
+            && resource.external_relations.empty())) {
+      continue;
+    }
 
     found_relations = true;
     std::cout << "\nResource: " << resource.type << " \"" << resource.name
@@ -80,9 +116,32 @@ void PrintRelationsOnly(ConfigurationParser& parser)
       PrintSource(relation.source);
       std::cout << "\n";
     }
+
+    if (!resource.external_relations.empty()) {
+      std::cout << "  External:\n";
+      PrintExternalRelations(resource.external_relations, "    ");
+    }
   }
 
-  if (!found_relations) { std::cout << "\nNo internal relations found.\n"; }
+  if (!found_relations) { std::cout << "\nNo relations found.\n"; }
+}
+
+bool ParsePeerSpec(const std::string& spec,
+                   bconfig::Component* component,
+                   std::string* path)
+{
+  auto separator = spec.find('=');
+  if (separator == std::string::npos || separator == 0
+      || separator + 1 >= spec.size()) {
+    return false;
+  }
+
+  auto parsed = bconfig::ParseComponent(spec.substr(0, separator));
+  if (!parsed) { return false; }
+
+  *component = *parsed;
+  *path = spec.substr(separator + 1);
+  return true;
 }
 
 }  // namespace
@@ -100,6 +159,7 @@ int main(int argc, char** argv)
 
   std::string component_name{};
   std::string config_path{};
+  std::vector<std::string> peer_specs{};
 
   auto* schema_command = app.add_subcommand(
       "schema", "Print resource and directive metadata for one component.");
@@ -132,6 +192,9 @@ int main(int argc, char** argv)
       ->add_option("config", config_path,
                    "Config file or configuration directory root.")
       ->required();
+  inspect_command->add_option(
+      "--with", peer_specs,
+      "Load a peer config for inter-program relations as component=path.");
 
   auto* relations_command = app.add_subcommand(
       "relations",
@@ -151,6 +214,9 @@ int main(int argc, char** argv)
       ->add_option("config", config_path,
                    "Config file or configuration directory root.")
       ->required();
+  relations_command->add_option(
+      "--with", peer_specs,
+      "Load a peer config for inter-program relations as component=path.");
 
   ParseBareosApp(app, argc, argv);
 
@@ -202,14 +268,58 @@ int main(int argc, char** argv)
     return BEXIT_FAILURE;
   }
 
-  PrintHeader(loaded);
+  std::vector<bconfig::LoadedConfig> peer_configs;
+  bool ok = loaded.parse_ok;
+  for (const auto& spec : peer_specs) {
+    bconfig::Component peer_component;
+    std::string peer_path;
+    if (!ParsePeerSpec(spec, &peer_component, &peer_path)) {
+      std::cerr << "Invalid --with value: " << spec
+                << " (expected component=path)\n";
+      return BEXIT_FAILURE;
+    }
+    if (peer_component == *component) {
+      std::cerr << "Peer component must differ from primary component: " << spec
+                << "\n";
+      return BEXIT_FAILURE;
+    }
+    if (std::any_of(peer_configs.begin(), peer_configs.end(),
+                    [peer_component](const auto& peer) {
+                      return peer.component == peer_component;
+                    })) {
+      std::cerr << "Duplicate peer component: "
+                << bconfig::ComponentToString(peer_component) << "\n";
+      return BEXIT_FAILURE;
+    }
 
-  if (*relations_command) {
-    PrintRelationsOnly(*loaded.parser);
-    return loaded.parse_ok ? BEXIT_SUCCESS : BEXIT_FAILURE;
+    peer_configs.emplace_back(bconfig::LoadConfig(peer_component, peer_path));
+    if (!peer_configs.back().parser) {
+      PrintMessages(peer_configs.back().messages);
+      return BEXIT_FAILURE;
+    }
+    ok = ok && peer_configs.back().parse_ok;
   }
 
-  for (const auto& resource : bconfig::CollectResources(*loaded.parser)) {
+  PrintLoadedConfig(loaded, false);
+  for (const auto& peer : peer_configs) {
+    std::cout << "\n";
+    PrintLoadedConfig(peer, true);
+  }
+
+  std::vector<const bconfig::LoadedConfig*> peer_views;
+  peer_views.reserve(peer_configs.size());
+  for (const auto& peer : peer_configs) { peer_views.emplace_back(&peer); }
+
+  auto resources = peer_views.empty()
+                       ? bconfig::CollectResources(*loaded.parser)
+                       : bconfig::CollectResources(loaded, peer_views);
+
+  if (*relations_command) {
+    PrintRelationsOnly(resources);
+    return ok ? BEXIT_SUCCESS : BEXIT_FAILURE;
+  }
+
+  for (const auto& resource : resources) {
     if (resource.internal) { continue; }
 
     std::cout << "\nResource: " << resource.type << " \"" << resource.name
@@ -236,7 +346,12 @@ int main(int argc, char** argv)
         std::cout << "\n";
       }
     }
+
+    if (!resource.external_relations.empty()) {
+      std::cout << "  External relations:\n";
+      PrintExternalRelations(resource.external_relations, "    ");
+    }
   }
 
-  return loaded.parse_ok ? BEXIT_SUCCESS : BEXIT_FAILURE;
+  return ok ? BEXIT_SUCCESS : BEXIT_FAILURE;
 }

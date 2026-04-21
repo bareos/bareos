@@ -1137,7 +1137,7 @@ bool ValidateResource(int res_type,
   if (res_type == R_JOBDEFS) {
     // a jobdef don't have to be fully defined.
     return true;
-  } else if (!res->Validate()) {
+  } else if (my_config->IsOptionValidationEnabled() && !res->Validate()) {
     return false;
   }
 
