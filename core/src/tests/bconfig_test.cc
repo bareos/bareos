@@ -39,6 +39,22 @@ std::filesystem::path WriteTempConfig(const char* filename,
   return path;
 }
 
+bool HasMatchedExternalRelation(
+    const bconfig::ResourceInspectionEntry& resource,
+    const char* relation,
+    const char* component,
+    const char* target_type,
+    const char* target_name)
+{
+  return std::any_of(
+      resource.external_relations.begin(), resource.external_relations.end(),
+      [relation, component, target_type, target_name](const auto& rel) {
+        return rel.relation == relation && rel.target_component == component
+               && rel.target_type == target_type
+               && rel.target_name == target_name && rel.matched;
+      });
+}
+
 TEST(Bconfig, CollectsDirectorResourceSources)
 {
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
@@ -560,5 +576,370 @@ Autochanger {
                                    && rel.matched;
                           }));
 }
+
+TEST(Bconfig, CollectsClientPrimaryPeerRelations)
+{
+  auto client_path = WriteTempConfig("bconfig-client-primary-peer.conf",
+                                     R"(Director {
+  Name = bareos-dir
+  Password = "client-password"
+}
+
+Client {
+  Name = bareos-fd
+  Messages = Standard
+}
+
+Messages {
+  Name = Standard
+  Director = bareos-dir = all
+}
+)");
+  auto director_path
+      = WriteTempConfig("bconfig-director-for-client-primary.conf",
+                        R"(Director {
+  Name = bareos-dir
+  Password = "director-password"
+  Messages = Standard
+}
+
+Messages {
+  Name = Standard
+  Console = all
+}
+
+Client {
+  Name = bareos-fd
+  Address = localhost
+  Password = "client-password"
+}
+)");
+
+  auto client
+      = bconfig::LoadConfig(bconfig::Component::kClient, client_path.string());
+  auto director = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                      director_path.string());
+
+  ASSERT_TRUE(client.parser);
+  ASSERT_TRUE(director.parser);
+  ASSERT_TRUE(client.parse_ok);
+  ASSERT_TRUE(director.parse_ok);
+
+  auto resources = bconfig::CollectResources(client, {&director});
+
+  auto client_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Client" && resource.name == "bareos-fd";
+      });
+  ASSERT_NE(client_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(*client_entry, "Peer.Client",
+                                         "director", "Client", "bareos-fd"));
+
+  auto director_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Director" && resource.name == "bareos-dir";
+      });
+  ASSERT_NE(director_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(*director_entry, "Peer.Director",
+                                         "director", "Director", "bareos-dir"));
+  EXPECT_TRUE(HasMatchedExternalRelation(*director_entry, "Peer.ClientAuth",
+                                         "director", "Client", "bareos-fd"));
+}
+
+TEST(Bconfig, CollectsStoragePrimaryPeerRelations)
+{
+  auto storage_path = WriteTempConfig("bconfig-storage-primary-peer.conf",
+                                      R"(Director {
+  Name = bareos-dir
+  Password = "storage-password"
+}
+
+Storage {
+  Name = bareos-sd
+}
+
+Device {
+  Name = FileStorage
+  Media Type = File
+  Archive Device = /tmp/bconfig-storage-primary-device
+  Device Type = File
+}
+
+Device {
+  Name = ll2-drive-1
+  Media Type = LTO
+  Archive Device = /tmp/bconfig-storage-primary-drive
+  Device Type = File
+}
+
+Autochanger {
+  Name = ll2-lto7
+  Device = ll2-drive-1
+  Changer Device = /dev/null
+  Changer Command = "/bin/true"
+}
+)");
+  auto director_path
+      = WriteTempConfig("bconfig-director-for-storage-primary.conf",
+                        R"(Director {
+  Name = bareos-dir
+  Password = "director-password"
+  Messages = Standard
+}
+
+Messages {
+  Name = Standard
+  Console = all
+}
+
+Storage {
+  Name = FileStorageRef
+  Address = localhost
+  Password = "storage-password"
+  Device = FileStorage
+  Media Type = File
+}
+
+Storage {
+  Name = AutochangerRef
+  Address = localhost
+  Password = "storage-password"
+  Device = ll2-lto7
+  Media Type = LTO
+}
+)");
+
+  auto storage = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                     storage_path.string());
+  auto director = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                      director_path.string());
+
+  ASSERT_TRUE(storage.parser);
+  ASSERT_TRUE(director.parser);
+  ASSERT_TRUE(storage.parse_ok);
+  ASSERT_TRUE(director.parse_ok);
+
+  auto resources = bconfig::CollectResources(storage, {&director});
+
+  auto director_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Director" && resource.name == "bareos-dir";
+      });
+  ASSERT_NE(director_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(*director_entry, "Peer.Director",
+                                         "director", "Director", "bareos-dir"));
+  EXPECT_TRUE(HasMatchedExternalRelation(*director_entry, "Peer.StorageAuth",
+                                         "director", "Storage",
+                                         "FileStorageRef"));
+  EXPECT_TRUE(HasMatchedExternalRelation(*director_entry, "Peer.StorageAuth",
+                                         "director", "Storage",
+                                         "AutochangerRef"));
+
+  auto device_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Device" && resource.name == "FileStorage";
+      });
+  ASSERT_NE(device_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(
+      *device_entry, "Peer.Storage", "director", "Storage", "FileStorageRef"));
+
+  auto autochanger_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Autochanger" && resource.name == "ll2-lto7";
+      });
+  ASSERT_NE(autochanger_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(*autochanger_entry, "Peer.Storage",
+                                         "director", "Storage",
+                                         "AutochangerRef"));
+}
+
+#ifdef BCONFIG_HAVE_CONSOLE
+TEST(Bconfig, CollectsConsolePrimaryPeerRelations)
+{
+  auto console_path = WriteTempConfig("bconfig-console-primary-peer.conf",
+                                      R"(Director {
+  Name = bareos-dir
+  Address = localhost
+  Password = "director-password"
+}
+
+Console {
+  Name = admin
+  Password = "console-password"
+  Director = bareos-dir
+}
+)");
+  auto director_path
+      = WriteTempConfig("bconfig-director-for-console-primary.conf",
+                        R"(Director {
+  Name = bareos-dir
+  Password = "director-password"
+  Messages = Standard
+}
+
+Messages {
+  Name = Standard
+  Console = all
+}
+
+Console {
+  Name = admin
+  Password = "console-password"
+  CommandACL = status
+}
+)");
+
+  auto console = bconfig::LoadConfig(bconfig::Component::kConsole,
+                                     console_path.string());
+  auto director = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                      director_path.string());
+
+  ASSERT_TRUE(console.parser);
+  ASSERT_TRUE(director.parser);
+  ASSERT_TRUE(console.parse_ok);
+  ASSERT_TRUE(director.parse_ok);
+
+  auto resources = bconfig::CollectResources(console, {&director});
+
+  auto director_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Director" && resource.name == "bareos-dir";
+      });
+  ASSERT_NE(director_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(*director_entry, "Peer.DefaultConsole",
+                                         "director", "Director", "bareos-dir"));
+
+  auto console_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Console" && resource.name == "admin";
+      });
+  ASSERT_NE(console_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(*console_entry, "Peer.Director",
+                                         "director", "Director", "bareos-dir"));
+  EXPECT_TRUE(HasMatchedExternalRelation(*console_entry, "Peer.Console",
+                                         "director", "Console", "admin"));
+}
+#endif
+
+#ifdef BCONFIG_HAVE_TRAYMONITOR
+TEST(Bconfig, CollectsTrayMonitorPrimaryPeerRelations)
+{
+  auto tray_path = WriteTempConfig("bconfig-traymonitor-primary-peer.conf",
+                                   R"(Monitor {
+  Name = tray-monitor
+  Password = "console-password"
+}
+
+Director {
+  Name = bareos-dir
+  Address = localhost
+}
+
+Client {
+  Name = bareos-fd
+  Address = localhost
+  Password = "client-password"
+}
+
+Storage {
+  Name = bareos-sd
+  Address = localhost
+  Password = "storage-password"
+}
+)");
+  auto director_path = WriteTempConfig("bconfig-director-for-traymonitor.conf",
+                                       R"(Director {
+  Name = bareos-dir
+  Password = "director-password"
+  Messages = Standard
+}
+
+Messages {
+  Name = Standard
+  Console = all
+}
+
+Console {
+  Name = tray-monitor
+  Password = "console-password"
+  CommandACL = status
+}
+)");
+  auto client_path = WriteTempConfig("bconfig-client-for-traymonitor.conf",
+                                     R"(Director {
+  Name = tray-monitor
+  Password = "client-password"
+}
+
+Client {
+  Name = bareos-fd
+}
+)");
+  auto storage_path = WriteTempConfig("bconfig-storage-for-traymonitor.conf",
+                                      R"(Director {
+  Name = tray-monitor
+  Password = "storage-password"
+}
+
+Storage {
+  Name = bareos-sd
+}
+)");
+
+  auto tray = bconfig::LoadConfig(bconfig::Component::kTrayMonitor,
+                                  tray_path.string());
+  auto director = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                      director_path.string());
+  auto client
+      = bconfig::LoadConfig(bconfig::Component::kClient, client_path.string());
+  auto storage = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                     storage_path.string());
+
+  ASSERT_TRUE(tray.parser);
+  ASSERT_TRUE(director.parser);
+  ASSERT_TRUE(client.parser);
+  ASSERT_TRUE(storage.parser);
+  ASSERT_TRUE(tray.parse_ok);
+  ASSERT_TRUE(director.parse_ok);
+  ASSERT_TRUE(client.parse_ok);
+  ASSERT_TRUE(storage.parse_ok);
+
+  auto resources
+      = bconfig::CollectResources(tray, {&director, &client, &storage});
+
+  auto director_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Director" && resource.name == "bareos-dir";
+      });
+  ASSERT_NE(director_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(*director_entry, "Peer.Director",
+                                         "director", "Director", "bareos-dir"));
+
+  auto monitor_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Monitor" && resource.name == "tray-monitor";
+      });
+  ASSERT_NE(monitor_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(
+      *monitor_entry, "Peer.Console", "director", "Console", "tray-monitor"));
+
+  auto client_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Client" && resource.name == "bareos-fd";
+      });
+  ASSERT_NE(client_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(*client_entry, "Peer.DirectorAuth",
+                                         "client", "Director", "tray-monitor"));
+
+  auto storage_entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Storage" && resource.name == "bareos-sd";
+      });
+  ASSERT_NE(storage_entry, resources.end());
+  EXPECT_TRUE(HasMatchedExternalRelation(*storage_entry, "Peer.DirectorAuth",
+                                         "storage", "Director",
+                                         "tray-monitor"));
+}
+#endif
 
 }  // namespace

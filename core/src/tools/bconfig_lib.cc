@@ -45,6 +45,10 @@
 #  include "qt-tray-monitor/tray_conf.h"
 #endif
 
+#ifdef BCONFIG_HAVE_TRAYMONITOR
+ConfigurationParser* my_config = nullptr;
+#endif
+
 namespace bconfig {
 namespace {
 
@@ -559,6 +563,450 @@ void AppendDirectorPeerRelations(ResourceInspectionEntry& entry,
 #endif
 }
 
+void AppendClientPeerRelations(ResourceInspectionEntry& entry,
+                               const LoadedConfig& loaded,
+                               const std::vector<const LoadedConfig*>& peers,
+                               BareosResource& resource)
+{
+  if (loaded.component != Component::kClient) { return; }
+
+  const auto* director_config = FindPeerConfig(peers, Component::kDirector);
+  if (!director_config) { return; }
+
+  const auto local_clients
+      = CollectTypedResources<filedaemon::ClientResource>(loaded);
+
+  if (auto* local_director
+      = dynamic_cast<filedaemon::DirectorResource*>(&resource)) {
+    const auto local_name_source = SourceOrDefinition(*local_director, "Name");
+    const auto local_password_source
+        = SourceOrDefinition(*local_director, "Password");
+
+    auto peer_directors = FindTypedResources<directordaemon::DirectorResource>(
+        *director_config, [local_director](auto* peer) {
+          return std::string_view(SafeString(peer->resource_name_))
+                 == SafeString(local_director->resource_name_);
+        });
+
+    if (peer_directors.empty()) {
+      AppendMissingExternalRelation(
+          entry.external_relations, "Peer.Director", Component::kDirector,
+          "Director", SafeString(local_director->resource_name_),
+          local_name_source,
+          "no loaded director config defines a Director with this name");
+    } else {
+      for (auto* peer : peer_directors) {
+        AppendExternalRelation(entry.external_relations, "Peer.Director",
+                               *director_config, peer, local_name_source);
+      }
+    }
+
+    bool matched_auth = false;
+    for (auto* candidate_client : local_clients) {
+      auto peer_clients = FindTypedResources<directordaemon::ClientResource>(
+          *director_config, [local_director, candidate_client](auto* peer) {
+            return std::string_view(SafeString(peer->resource_name_))
+                       == SafeString(candidate_client->resource_name_)
+                   && PasswordsMatch(peer->password_,
+                                     local_director->password_);
+          });
+
+      for (auto* peer : peer_clients) {
+        matched_auth = true;
+        AppendExternalRelation(
+            entry.external_relations, "Peer.ClientAuth", *director_config, peer,
+            local_password_source,
+            std::string("matched via Client \"")
+                + SafeString(candidate_client->resource_name_) + "\"");
+      }
+    }
+
+    if (!matched_auth && !local_clients.empty()) {
+      AppendMissingExternalRelation(
+          entry.external_relations, "Peer.ClientAuth", Component::kDirector,
+          "Client", SafeString(local_clients.front()->resource_name_),
+          local_password_source,
+          "no loaded director Client matches a local Client name and this "
+          "Director password");
+    }
+  } else if (auto* local_client
+             = dynamic_cast<filedaemon::ClientResource*>(&resource)) {
+    auto peer_clients = FindTypedResources<directordaemon::ClientResource>(
+        *director_config, [local_client](auto* peer) {
+          return std::string_view(SafeString(peer->resource_name_))
+                 == SafeString(local_client->resource_name_);
+        });
+
+    if (peer_clients.empty()) {
+      AppendMissingExternalRelation(
+          entry.external_relations, "Peer.Client", Component::kDirector,
+          "Client", SafeString(local_client->resource_name_),
+          SourceOrDefinition(*local_client, "Name"),
+          "no loaded director config defines a Client with this name");
+    } else {
+      for (auto* peer : peer_clients) {
+        AppendExternalRelation(entry.external_relations, "Peer.Client",
+                               *director_config, peer,
+                               SourceOrDefinition(*local_client, "Name"));
+      }
+    }
+  }
+}
+
+void AppendStoragePeerRelations(ResourceInspectionEntry& entry,
+                                const LoadedConfig& loaded,
+                                const std::vector<const LoadedConfig*>& peers,
+                                BareosResource& resource)
+{
+  if (loaded.component != Component::kStorage) { return; }
+
+  const auto* director_config = FindPeerConfig(peers, Component::kDirector);
+  if (!director_config) { return; }
+
+  const auto local_directors
+      = CollectTypedResources<storagedaemon::DirectorResource>(loaded);
+
+  if (auto* local_director
+      = dynamic_cast<storagedaemon::DirectorResource*>(&resource)) {
+    const auto local_name_source = SourceOrDefinition(*local_director, "Name");
+    const auto local_password_source
+        = SourceOrDefinition(*local_director, "Password");
+
+    auto peer_directors = FindTypedResources<directordaemon::DirectorResource>(
+        *director_config, [local_director](auto* peer) {
+          return std::string_view(SafeString(peer->resource_name_))
+                 == SafeString(local_director->resource_name_);
+        });
+
+    if (peer_directors.empty()) {
+      AppendMissingExternalRelation(
+          entry.external_relations, "Peer.Director", Component::kDirector,
+          "Director", SafeString(local_director->resource_name_),
+          local_name_source,
+          "no loaded director config defines a Director with this name");
+    } else {
+      for (auto* peer : peer_directors) {
+        AppendExternalRelation(entry.external_relations, "Peer.Director",
+                               *director_config, peer, local_name_source);
+      }
+    }
+
+    auto peer_storages = FindTypedResources<directordaemon::StorageResource>(
+        *director_config, [local_director](auto* peer) {
+          return PasswordsMatch(peer->password_, local_director->password_);
+        });
+
+    if (peer_storages.empty()) {
+      AppendMissingExternalRelation(
+          entry.external_relations, "Peer.StorageAuth", Component::kDirector,
+          "Storage", "", local_password_source,
+          "no loaded director Storage matches this Director password");
+    } else {
+      for (auto* peer : peer_storages) {
+        AppendExternalRelation(entry.external_relations, "Peer.StorageAuth",
+                               *director_config, peer, local_password_source);
+      }
+    }
+  } else if (auto* local_device
+             = dynamic_cast<storagedaemon::DeviceResource*>(&resource)) {
+    bool matched = false;
+    for (auto* peer_storage :
+         CollectTypedResources<directordaemon::StorageResource>(
+             *director_config)) {
+      auto uses_device = std::any_of(
+          peer_storage->devices.begin(), peer_storage->devices.end(),
+          [local_device](const auto& device) {
+            return device.name == SafeString(local_device->resource_name_);
+          });
+      if (!uses_device) { continue; }
+
+      for (auto* candidate_director : local_directors) {
+        if (!PasswordsMatch(peer_storage->password_,
+                            candidate_director->password_)) {
+          continue;
+        }
+        matched = true;
+        AppendExternalRelation(
+            entry.external_relations, "Peer.Storage", *director_config,
+            peer_storage, local_device->GetDefinitionSource(),
+            std::string("matched via Director \"")
+                + SafeString(candidate_director->resource_name_) + "\"");
+      }
+    }
+
+    if (!matched) {
+      AppendMissingExternalRelation(
+          entry.external_relations, "Peer.Storage", Component::kDirector,
+          "Storage", "", local_device->GetDefinitionSource(),
+          "no loaded director Storage references this Device with matching "
+          "storage authentication");
+    }
+  } else if (auto* local_autochanger
+             = dynamic_cast<storagedaemon::AutochangerResource*>(&resource)) {
+    bool matched = false;
+    for (auto* peer_storage :
+         CollectTypedResources<directordaemon::StorageResource>(
+             *director_config)) {
+      auto uses_autochanger = std::any_of(
+          peer_storage->devices.begin(), peer_storage->devices.end(),
+          [local_autochanger](const auto& device) {
+            return device.name == SafeString(local_autochanger->resource_name_);
+          });
+      if (!uses_autochanger) { continue; }
+
+      for (auto* candidate_director : local_directors) {
+        if (!PasswordsMatch(peer_storage->password_,
+                            candidate_director->password_)) {
+          continue;
+        }
+        matched = true;
+        AppendExternalRelation(
+            entry.external_relations, "Peer.Storage", *director_config,
+            peer_storage, local_autochanger->GetDefinitionSource(),
+            std::string("matched via Director \"")
+                + SafeString(candidate_director->resource_name_) + "\"");
+      }
+    }
+
+    if (!matched) {
+      AppendMissingExternalRelation(entry.external_relations, "Peer.Storage",
+                                    Component::kDirector, "Storage", "",
+                                    local_autochanger->GetDefinitionSource(),
+                                    "no loaded director Storage references "
+                                    "this Autochanger with matching "
+                                    "storage authentication");
+    }
+  }
+}
+
+#ifdef BCONFIG_HAVE_CONSOLE
+void AppendConsolePeerRelations(ResourceInspectionEntry& entry,
+                                const LoadedConfig& loaded,
+                                const std::vector<const LoadedConfig*>& peers,
+                                BareosResource& resource)
+{
+  if (loaded.component != Component::kConsole) { return; }
+
+  const auto* director_config = FindPeerConfig(peers, Component::kDirector);
+  if (!director_config) { return; }
+
+  if (auto* local_director
+      = dynamic_cast<console::DirectorResource*>(&resource)) {
+    const auto local_password_source
+        = SourceOrDefinition(*local_director, "Password");
+
+    auto peer_directors = FindTypedResources<directordaemon::DirectorResource>(
+        *director_config, [local_director](auto* peer) {
+          return std::string_view(SafeString(peer->resource_name_))
+                     == SafeString(local_director->resource_name_)
+                 && PasswordsMatch(peer->password_, local_director->password_);
+        });
+
+    if (peer_directors.empty()) {
+      AppendMissingExternalRelation(
+          entry.external_relations, "Peer.DefaultConsole", Component::kDirector,
+          "Director", SafeString(local_director->resource_name_),
+          local_password_source,
+          "no loaded director Director matches this name and password");
+    } else {
+      for (auto* peer : peer_directors) {
+        AppendExternalRelation(entry.external_relations, "Peer.DefaultConsole",
+                               *director_config, peer, local_password_source);
+      }
+    }
+  } else if (auto* local_console
+             = dynamic_cast<console::ConsoleResource*>(&resource)) {
+    if (local_console->director) {
+      auto peer_directors
+          = FindTypedResources<directordaemon::DirectorResource>(
+              *director_config, [local_console](auto* peer) {
+                return std::string_view(SafeString(peer->resource_name_))
+                       == SafeString(local_console->director);
+              });
+
+      if (peer_directors.empty()) {
+        AppendMissingExternalRelation(
+            entry.external_relations, "Peer.Director", Component::kDirector,
+            "Director", SafeString(local_console->director),
+            SourceOrDefinition(*local_console, "Director"),
+            "no loaded director config defines this Director");
+      } else {
+        for (auto* peer : peer_directors) {
+          AppendExternalRelation(
+              entry.external_relations, "Peer.Director", *director_config, peer,
+              SourceOrDefinition(*local_console, "Director"));
+        }
+      }
+    }
+
+    auto peer_consoles = FindTypedResources<directordaemon::ConsoleResource>(
+        *director_config, [local_console](auto* peer) {
+          return std::string_view(SafeString(peer->resource_name_))
+                     == SafeString(local_console->resource_name_)
+                 && PasswordsMatch(peer->password_, local_console->password_);
+        });
+
+    if (peer_consoles.empty()) {
+      AppendMissingExternalRelation(
+          entry.external_relations, "Peer.Console", Component::kDirector,
+          "Console", SafeString(local_console->resource_name_),
+          SourceOrDefinition(*local_console, "Password"),
+          "no loaded director config defines a Console with this name and "
+          "password");
+    } else {
+      for (auto* peer : peer_consoles) {
+        AppendExternalRelation(entry.external_relations, "Peer.Console",
+                               *director_config, peer,
+                               SourceOrDefinition(*local_console, "Password"));
+      }
+    }
+  }
+}
+#endif
+
+#ifdef BCONFIG_HAVE_TRAYMONITOR
+void AppendTrayMonitorPeerRelations(
+    ResourceInspectionEntry& entry,
+    const LoadedConfig& loaded,
+    const std::vector<const LoadedConfig*>& peers,
+    BareosResource& resource)
+{
+  if (loaded.component != Component::kTrayMonitor) { return; }
+
+  const auto local_monitors = CollectTypedResources<::MonitorResource>(loaded);
+
+  if (const auto* director_config
+      = FindPeerConfig(peers, Component::kDirector)) {
+    if (auto* local_director = dynamic_cast<::DirectorResource*>(&resource)) {
+      auto peer_directors
+          = FindTypedResources<directordaemon::DirectorResource>(
+              *director_config, [local_director](auto* peer) {
+                return std::string_view(SafeString(peer->resource_name_))
+                       == SafeString(local_director->resource_name_);
+              });
+
+      if (peer_directors.empty()) {
+        AppendMissingExternalRelation(
+            entry.external_relations, "Peer.Director", Component::kDirector,
+            "Director", SafeString(local_director->resource_name_),
+            SourceOrDefinition(*local_director, "Name"),
+            "no loaded director config defines a Director with this name");
+      } else {
+        for (auto* peer : peer_directors) {
+          AppendExternalRelation(entry.external_relations, "Peer.Director",
+                                 *director_config, peer,
+                                 SourceOrDefinition(*local_director, "Name"));
+        }
+      }
+    } else if (auto* monitor = dynamic_cast<::MonitorResource*>(&resource)) {
+      auto peer_consoles = FindTypedResources<directordaemon::ConsoleResource>(
+          *director_config, [monitor](auto* peer) {
+            return std::string_view(SafeString(peer->resource_name_))
+                       == SafeString(monitor->resource_name_)
+                   && PasswordsMatch(peer->password_, monitor->password);
+          });
+
+      if (peer_consoles.empty()) {
+        AppendMissingExternalRelation(
+            entry.external_relations, "Peer.Console", Component::kDirector,
+            "Console", SafeString(monitor->resource_name_),
+            SourceOrDefinition(*monitor, "Password"),
+            "no loaded director config defines a Console with this name and "
+            "password");
+      } else {
+        for (auto* peer : peer_consoles) {
+          AppendExternalRelation(entry.external_relations, "Peer.Console",
+                                 *director_config, peer,
+                                 SourceOrDefinition(*monitor, "Password"));
+        }
+      }
+    }
+  }
+
+  if (const auto* client_config = FindPeerConfig(peers, Component::kClient)) {
+    if (auto* local_client = dynamic_cast<::ClientResource*>(&resource)) {
+      bool matched_auth = false;
+      for (auto* monitor : local_monitors) {
+        auto peer_directors = FindTypedResources<filedaemon::DirectorResource>(
+            *client_config, [local_client, monitor](auto* peer) {
+              return std::string_view(SafeString(peer->resource_name_))
+                         == SafeString(monitor->resource_name_)
+                     && PasswordsMatch(peer->password_, local_client->password);
+            });
+
+        for (auto* peer : peer_directors) {
+          matched_auth = true;
+          AppendExternalRelation(
+              entry.external_relations, "Peer.DirectorAuth", *client_config,
+              peer, SourceOrDefinition(*local_client, "Password"),
+              std::string("matched via Monitor \"")
+                  + SafeString(monitor->resource_name_) + "\"");
+        }
+      }
+
+      if (!matched_auth && !local_monitors.empty()) {
+        AppendMissingExternalRelation(
+            entry.external_relations, "Peer.DirectorAuth", Component::kClient,
+            "Director", SafeString(local_monitors.front()->resource_name_),
+            SourceOrDefinition(*local_client, "Password"),
+            "no loaded client Director matches a local Monitor name and this "
+            "Client password");
+      }
+    }
+  }
+
+  if (const auto* storage_config = FindPeerConfig(peers, Component::kStorage)) {
+    if (auto* local_storage = dynamic_cast<::StorageResource*>(&resource)) {
+      bool matched_auth = false;
+      for (auto* monitor : local_monitors) {
+        auto peer_directors
+            = FindTypedResources<storagedaemon::DirectorResource>(
+                *storage_config, [local_storage, monitor](auto* peer) {
+                  return std::string_view(SafeString(peer->resource_name_))
+                             == SafeString(monitor->resource_name_)
+                         && PasswordsMatch(peer->password_,
+                                           local_storage->password);
+                });
+
+        for (auto* peer : peer_directors) {
+          matched_auth = true;
+          AppendExternalRelation(
+              entry.external_relations, "Peer.DirectorAuth", *storage_config,
+              peer, SourceOrDefinition(*local_storage, "Password"),
+              std::string("matched via Monitor \"")
+                  + SafeString(monitor->resource_name_) + "\"");
+        }
+      }
+
+      if (!matched_auth && !local_monitors.empty()) {
+        AppendMissingExternalRelation(
+            entry.external_relations, "Peer.DirectorAuth", Component::kStorage,
+            "Director", SafeString(local_monitors.front()->resource_name_),
+            SourceOrDefinition(*local_storage, "Password"),
+            "no loaded storage Director matches a local Monitor name and this "
+            "Storage password");
+      }
+    }
+  }
+}
+#endif
+
+void AppendPeerRelations(ResourceInspectionEntry& entry,
+                         const LoadedConfig& loaded,
+                         const std::vector<const LoadedConfig*>& peers,
+                         BareosResource& resource)
+{
+  AppendDirectorPeerRelations(entry, loaded, peers, resource);
+  AppendClientPeerRelations(entry, loaded, peers, resource);
+  AppendStoragePeerRelations(entry, loaded, peers, resource);
+#ifdef BCONFIG_HAVE_CONSOLE
+  AppendConsolePeerRelations(entry, loaded, peers, resource);
+#endif
+#ifdef BCONFIG_HAVE_TRAYMONITOR
+  AppendTrayMonitorPeerRelations(entry, loaded, peers, resource);
+#endif
+}
+
 std::vector<ResourceInspectionEntry> CollectResourcesImpl(
     ConfigurationParser& config,
     const LoadedConfig* loaded,
@@ -612,9 +1060,7 @@ std::vector<ResourceInspectionEntry> CollectResourcesImpl(
       }
 
       AppendDirectorScheduleRelations(entry.relations, config, *resource);
-      if (loaded) {
-        AppendDirectorPeerRelations(entry, *loaded, peers, *resource);
-      }
+      if (loaded) { AppendPeerRelations(entry, *loaded, peers, *resource); }
 
       resources.emplace_back(std::move(entry));
     }
