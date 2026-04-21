@@ -67,7 +67,7 @@ if not getattr(ssl, "HAS_PSK", False):
         except ImportError:
             warnings.warn(
                 "Connection encryption via TLS-PSK is not available "
-                "(not available in 'ssl' and extra module 'sslpsk3' or 'sslpsk' is not installed)."
+                "(not available in 'ssl' and neither extra module 'sslpsk3' nor 'sslpsk' is installed)."
             )
 
 
