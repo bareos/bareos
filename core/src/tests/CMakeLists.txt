@@ -336,6 +336,16 @@ if(NOT client-only)
   )
   bareos_add_test(sql_query_test LINK_LIBRARIES Bareos::SQL GTest::gtest_main)
   bareos_add_test(
+    bconfig_test
+    ADDITIONAL_SOURCES ../tools/bconfig_lib.cc
+    LINK_LIBRARIES Bareos::Dir Bareos::FD Bareos::SD Bareos::LibSD Bareos::Lib
+                   Bareos::Findlib GTest::gtest_main
+  )
+  if(ENABLE_BCONSOLE)
+    target_link_libraries(bconfig_test Bareos::Console)
+    target_compile_definitions(bconfig_test PRIVATE BCONFIG_HAVE_CONSOLE)
+  endif()
+  bareos_add_test(
     test_config_parser_dir
     LINK_LIBRARIES Bareos::Dir Bareos::Lib Bareos::Findlib testing_common
                    Bareos::SQL GTest::gtest_main

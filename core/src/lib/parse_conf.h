@@ -317,6 +317,9 @@ class ConfigurationParser {
   void ClearWarnings();
   bool HasWarnings() const;
   const BStringList& GetWarnings() const;
+  void SetRunReadyCallback(bool enabled) { run_ready_callback_ = enabled; }
+  lexer::error_handler* scan_error_{nullptr};
+  lexer::warning_handler* scan_warning_{nullptr};
 
  private:
   ConfigurationParser(const ConfigurationParser&) = delete;
@@ -343,6 +346,7 @@ class ConfigurationParser {
       qualified_resource_name_type_converter_;
   ParseConfigBeforeCb_t ParseConfigBeforeCb_{nullptr};
   ParseConfigReadyCb_t ParseConfigReadyCb_{nullptr};
+  bool run_ready_callback_{true};
   bool parser_first_run_{true};
   BStringList warnings_;
 

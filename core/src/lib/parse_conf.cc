@@ -198,9 +198,13 @@ bool ConfigurationParser::ParseConfig()
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());
-  bool success = ParseConfigFile(config_path.c_str(), this, nullptr,
-                                 &ConfigurationParser_PrintWarning);
-  if (success && ParseConfigReadyCb_) { ParseConfigReadyCb_(*this); }
+  auto* warning_handler
+      = scan_warning_ ? scan_warning_ : &ConfigurationParser_PrintWarning;
+  bool success
+      = ParseConfigFile(config_path.c_str(), this, scan_error_, warning_handler);
+  if (success && ParseConfigReadyCb_ && run_ready_callback_) {
+    ParseConfigReadyCb_(*this);
+  }
 
   config_resources_container_->SetTimestampToNow();
 

@@ -114,6 +114,8 @@ ConfigParserStateMachine::ScanResource(int token)
       config_level_++;
       return ParseInternalReturnCode::kGetNextToken;
     case BCT_IDENTIFIER: {
+      const auto* directive_file = lexical_parser_->fname;
+      int directive_line = lexical_parser_->line_no;
       if (config_level_ != 1) {
         scan_err(lexical_parser_, T_("not in resource definition: %s"),
                  lexical_parser_->str);
@@ -155,6 +157,8 @@ ConfigParserStateMachine::ScanResource(int token)
                                       ->configuration_resources_.data());
           }
         }
+        currently_parsed_resource_.allocated_resource_->SetMemberPresent(
+            item->name, directive_file ? directive_file : "", directive_line);
       } else {
         Dmsg2(900, "config_level_=%d id=%s\n", config_level_,
               lexical_parser_->str);
@@ -247,6 +251,9 @@ ConfigParserStateMachine::ParserInitResource(int token)
     currently_parsed_resource_.allocated_resource_
         = *resource_table->allocated_resource_;
     ASSERT(currently_parsed_resource_.allocated_resource_);
+    currently_parsed_resource_.allocated_resource_->SetDefinitionSource(
+        lexical_parser_->fname ? lexical_parser_->fname : "",
+        lexical_parser_->line_no);
 
     currently_parsed_resource_.allocated_resource_->rcode_str_
         = my_config_.GetQualifiedResourceNameTypeConverter()

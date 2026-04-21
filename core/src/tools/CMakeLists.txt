@@ -1,6 +1,6 @@
 #   BAREOS® - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -98,6 +98,22 @@ endif()
 
 add_executable(random-commands random_commands.cc)
 target_link_libraries(random-commands fmt::fmt CLI11::CLI11)
+
+add_executable(bconfig)
+target_sources(bconfig PRIVATE bconfig.cc bconfig_lib.cc)
+target_link_libraries(
+  bconfig PRIVATE Bareos::Dir Bareos::FD Bareos::SD Bareos::LibSD Bareos::Lib
+                  Bareos::Findlib CLI11::CLI11
+)
+if(ENABLE_BCONSOLE)
+  target_link_libraries(bconfig PRIVATE Bareos::Console)
+  target_compile_definitions(bconfig PRIVATE BCONFIG_HAVE_CONSOLE)
+endif()
+if(${traymonitor})
+  target_sources(bconfig PRIVATE ../qt-tray-monitor/tray_conf.cc)
+  target_compile_definitions(bconfig PRIVATE BCONFIG_HAVE_TRAYMONITOR)
+endif()
+list(APPEND TOOLS_SBIN bconfig)
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
