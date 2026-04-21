@@ -100,7 +100,7 @@ def readmsg(sock, msg):
 def writemsg(sock, msg):
     obj_bytes = msg.SerializeToString()
     size = len(obj_bytes)
-    log(f"sending {msg} (size = {size}) to {sock}")
+    # log(f"sending {msg} (size = {size}) to {sock}")
     size_bytes = size.to_bytes(4, "little")
     log(f"bytes = {len(size_bytes)}, obj = {len(obj_bytes)}")
     send_bytes = size_bytes + obj_bytes
@@ -110,7 +110,7 @@ def writemsg(sock, msg):
 def writemsg_with_fd(sock, msg, fd):
     obj_bytes = msg.SerializeToString()
     size = len(obj_bytes)
-    log(f"sending {msg} (size = {size}) to {sock}")
+    # log(f"sending {msg} (size = {size}) to {sock}")
     size_bytes = size.to_bytes(4, "little")
     log(f"bytes = {len(size_bytes)}, obj = {len(obj_bytes)}")
 
