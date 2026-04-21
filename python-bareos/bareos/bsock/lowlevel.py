@@ -1,6 +1,6 @@
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2015-2024 Bareos GmbH & Co. KG
+#   Copyright (C) 2015-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -325,7 +325,11 @@ class LowLevel(object):
     @staticmethod
     def is_tls_psk_available():
         """Checks if TLS-PSK is available."""
-        return getattr(ssl, "HAS_PSK", False) or ("sslpsk3" in sys.modules) or ("sslpsk" in sys.modules)
+        return (
+            getattr(ssl, "HAS_PSK", False)
+            or ("sslpsk3" in sys.modules)
+            or ("sslpsk" in sys.modules)
+        )
 
     def get_protocol_version(self):
         """Get the Bareos Console protocol version that is used.
