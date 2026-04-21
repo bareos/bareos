@@ -180,6 +180,18 @@ void AddDeprecatedExportOptionsHelp(CLI::App& app)
       ->group("");
 }
 
+CLI::Option* AddOptionValidationFlag(CLI::App& app,
+                                     bool& disable_option_validation,
+                                     CLI::Option* export_schema_option)
+{
+  auto* option = app.add_flag(
+      "--no-option-validation", disable_option_validation,
+      "Skip environment-dependent configuration option validation while "
+      "reading configuration.");
+  if (export_schema_option) { option->excludes(export_schema_option); }
+  return option;
+}
+
 void AddDebugOptions(CLI::App& app)
 {
   app.add_option(

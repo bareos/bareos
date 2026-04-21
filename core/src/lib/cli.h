@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2022-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2022-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -36,5 +36,8 @@ void AddDebugOptions(CLI::App& app);
 void AddVerboseOption(CLI::App& app);
 void AddUserAndGroupOptions(CLI::App& app, std::string& uid, std::string& gid);
 void AddDeprecatedExportOptionsHelp(CLI::App& app);
+CLI::Option* AddOptionValidationFlag(CLI::App& app,
+                                     bool& disable_option_validation,
+                                     CLI::Option* export_schema_option);
 
 #endif  // BAREOS_LIB_CLI_H_

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -174,10 +174,14 @@ int main(int argc, char* argv[])
 
 
   bool export_config_schema = false;
-  sd_app
-      .add_flag("--xs,--export-schema", export_config_schema,
-                "Print configuration schema in JSON format and exit.")
-      ->excludes(xc);
+  CLI::Option* xs
+      = sd_app
+            .add_flag("--xs,--export-schema", export_config_schema,
+                      "Print configuration schema in JSON format and exit.")
+            ->excludes(xc);
+
+  bool disable_option_validation = false;
+  AddOptionValidationFlag(sd_app, disable_option_validation, xs);
 
   AddDeprecatedExportOptionsHelp(sd_app);
 
@@ -207,6 +211,12 @@ int main(int argc, char* argv[])
              "but program was not started with required root privileges.\n"));
   }
 
+  if (disable_option_validation && !test_config && !export_config) {
+    Emsg0(M_ERROR_TERM, 0,
+          T_("--no-option-validation requires --test-config or "
+             "--export-config.\n"));
+  }
+
   if (export_config_schema) {
     PoolMem buffer;
 
@@ -218,6 +228,7 @@ int main(int argc, char* argv[])
   }
 
   my_config = InitSdConfig(configfile, M_CONFIG_ERROR);
+  my_config->SetOptionValidation(!disable_option_validation);
   ParseSdConfig(configfile, M_CONFIG_ERROR);
 
   if (forge_on) {

@@ -97,3 +97,28 @@ TEST(CLI, HelpMessageDisplaysWithCorrectFormat)
                                                  << help << "\n---\n"
                                                  << default_help << "\n---\n";
 }
+
+TEST(CLI, OptionValidationFlagExcludesExportSchema)
+{
+  CLI::App app;
+  InitCLIApp(app, "test app");
+
+  bool export_schema = false;
+  auto* export_schema_option
+      = app.add_flag("--xs,--export-schema", export_schema, "Export schema.");
+
+  bool disable_option_validation = false;
+  AddOptionValidationFlag(app, disable_option_validation, export_schema_option);
+
+  std::vector<std::string> valid_args{"--no-option-validation"};
+  EXPECT_NO_THROW(app.parse(valid_args));
+  EXPECT_TRUE(disable_option_validation);
+  EXPECT_FALSE(export_schema);
+
+  app.clear();
+  disable_option_validation = false;
+  export_schema = false;
+
+  std::vector<std::string> invalid_args{"--xs", "--no-option-validation"};
+  EXPECT_THROW(app.parse(invalid_args), CLI::ExcludesError);
+}

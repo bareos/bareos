@@ -923,10 +923,14 @@ int main(int argc, char* argv[])
                              "Print configuration resources and exit");
 
   bool export_config_schema = false;
-  console_app
-      .add_flag("--xs,--export-schema", export_config_schema,
-                "Print configuration schema in JSON format and exit")
-      ->excludes(xc);
+  CLI::Option* xs
+      = console_app
+            .add_flag("--xs,--export-schema", export_config_schema,
+                      "Print configuration schema in JSON format and exit")
+            ->excludes(xc);
+
+  bool disable_option_validation = false;
+  AddOptionValidationFlag(console_app, disable_option_validation, xs);
 
   AddDeprecatedExportOptionsHelp(console_app);
 
@@ -945,6 +949,12 @@ int main(int argc, char* argv[])
 
   OSDependentInit();
 
+  if (disable_option_validation && !test_config && !export_config) {
+    Emsg0(M_ERROR_TERM, 0,
+          T_("--no-option-validation requires --test-config or "
+             "--export-config.\n"));
+  }
+
   if (export_config_schema) {
     PoolMem buffer;
 
@@ -955,6 +965,7 @@ int main(int argc, char* argv[])
   }
 
   my_config = InitConsConfig(configfile, M_CONFIG_ERROR);
+  my_config->SetOptionValidation(!disable_option_validation);
   my_config->ParseConfigOrExit();
 
   if (export_config) {

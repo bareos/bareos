@@ -77,10 +77,13 @@ static void ParseCommandLine(int argc, char* argv[], cl_opts& cl)
                                   "Print configuration resources and exit.");
 
 
-  tray_monitor_app
-      .add_flag("--xs,--export-schema", cl.export_config_schema_,
-                "Print configuration schema in JSON format and exit.")
-      ->excludes(xc);
+  CLI::Option* xs
+      = tray_monitor_app
+            .add_flag("--xs,--export-schema", cl.export_config_schema_,
+                      "Print configuration schema in JSON format and exit.")
+            ->excludes(xc);
+
+  AddOptionValidationFlag(tray_monitor_app, cl.disable_option_validation_, xs);
 
   AddDeprecatedExportOptionsHelp(tray_monitor_app);
 
@@ -230,8 +233,16 @@ int main(int argc, char* argv[])
     exit(BEXIT_SUCCESS);
   }
 
+  if (cl.disable_option_validation_ && !cl.test_config_only_
+      && !cl.export_config_) {
+    Emsg0(M_ERROR_TERM, 0,
+          T_("--no-option-validation requires --test-config or "
+             "--export-config.\n"));
+  }
+
   // read the config file
   my_config = InitTmonConfig(cl.configfile_, M_CONFIG_ERROR);
+  my_config->SetOptionValidation(!cl.disable_option_validation_);
   my_config->ParseConfigOrExit();
 
   if (cl.export_config_) {

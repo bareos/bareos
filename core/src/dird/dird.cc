@@ -216,10 +216,14 @@ int main(int argc, char* argv[])
             ->expected(0, 2);
 
   bool export_config_schema = false;
-  dir_app
-      .add_flag("--xs,--export-schema", export_config_schema,
-                "Print configuration schema in JSON format and exit.")
-      ->excludes(xc);
+  CLI::Option* xs
+      = dir_app
+            .add_flag("--xs,--export-schema", export_config_schema,
+                      "Print configuration schema in JSON format and exit.")
+            ->excludes(xc);
+
+  bool disable_option_validation = false;
+  AddOptionValidationFlag(dir_app, disable_option_validation, xs);
 
   AddDeprecatedExportOptionsHelp(dir_app);
 
@@ -248,6 +252,12 @@ int main(int argc, char* argv[])
              "but program was not started with required root privileges.\n"));
   }
 
+  if (disable_option_validation && !test_config && !export_config) {
+    Emsg0(M_ERROR_TERM, 0,
+          T_("--no-option-validation requires --test-config or "
+             "--export-config.\n"));
+  }
+
   my_config = InitDirConfig(configfile, M_CONFIG_ERROR);
   if (export_config_schema) {
     PoolMem buffer;
@@ -259,6 +269,7 @@ int main(int argc, char* argv[])
     return BEXIT_SUCCESS;
   }
 
+  my_config->SetOptionValidation(!disable_option_validation);
   my_config->ParseConfigOrExit();
 
   if (export_config) {
