@@ -487,4 +487,78 @@ Device {
   EXPECT_TRUE(has_external("Device", "storage", "Device", "FileStorage"));
 }
 
+TEST(Bconfig, CollectsDirectorStorageAutochangerPeerRelations)
+{
+  auto director_path = WriteTempConfig("bconfig-director-peer-autochanger.conf",
+                                       R"(Director {
+  Name = bareos-dir
+  Password = "director-password"
+  Messages = Standard
+}
+
+Messages {
+  Name = Standard
+  Console = all
+}
+
+Storage {
+  Name = TapeStorage
+  Address = localhost
+  Password = "storage-password"
+  Device = ll2-lto7
+  Media Type = LTO
+}
+)");
+  auto storage_path = WriteTempConfig("bconfig-storage-peer-autochanger.conf",
+                                      R"(Director {
+  Name = bareos-dir
+  Password = "storage-password"
+}
+
+Storage {
+  Name = bareos-sd
+}
+
+Device {
+  Name = ll2-drive-1
+  Media Type = LTO
+  Archive Device = /tmp/bconfig-storage-autochanger-1
+  Device Type = File
+}
+
+Autochanger {
+  Name = ll2-lto7
+  Device = ll2-drive-1
+  Changer Device = /dev/null
+  Changer Command = "/bin/true"
+}
+)");
+
+  auto director = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                      director_path.string());
+  auto storage = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                     storage_path.string());
+
+  ASSERT_TRUE(director.parser);
+  ASSERT_TRUE(storage.parser);
+  ASSERT_TRUE(director.parse_ok);
+  ASSERT_TRUE(storage.parse_ok);
+
+  auto resources = bconfig::CollectResources(director, {&storage});
+  auto entry = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Storage" && resource.name == "TapeStorage";
+      });
+  ASSERT_NE(entry, resources.end());
+
+  EXPECT_TRUE(std::any_of(entry->external_relations.begin(),
+                          entry->external_relations.end(), [](const auto& rel) {
+                            return rel.relation == "Device"
+                                   && rel.target_component == "storage"
+                                   && rel.target_type == "Autochanger"
+                                   && rel.target_name == "ll2-lto7"
+                                   && rel.matched;
+                          }));
+}
+
 }  // namespace

@@ -476,14 +476,25 @@ void AppendDirectorPeerRelations(ResourceInspectionEntry& entry,
                 return std::string_view(SafeString(peer->resource_name_))
                        == device.name;
               });
+          auto peer_autochangers
+              = FindTypedResources<storagedaemon::AutochangerResource>(
+                  *storage_config, [&device](auto* peer) {
+                    return std::string_view(SafeString(peer->resource_name_))
+                           == device.name;
+                  });
 
-          if (peer_devices.empty()) {
+          if (peer_devices.empty() && peer_autochangers.empty()) {
             AppendMissingExternalRelation(
                 entry.external_relations, "Device", Component::kStorage,
                 "Device", device.name, SourceOrDefinition(*storage, "Device"),
-                "no loaded storage config defines this Device");
+                "no loaded storage config defines this Device or Autochanger");
           } else {
             for (auto* peer : peer_devices) {
+              AppendExternalRelation(entry.external_relations, "Device",
+                                     *storage_config, peer,
+                                     SourceOrDefinition(*storage, "Device"));
+            }
+            for (auto* peer : peer_autochangers) {
               AppendExternalRelation(entry.external_relations, "Device",
                                      *storage_config, peer,
                                      SourceOrDefinition(*storage, "Device"));
