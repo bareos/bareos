@@ -1,0 +1,188 @@
+/*
+   BAREOS® - Backup Archiving REcovery Open Sourced
+
+   Copyright (C) 2026-2026 Bareos GmbH & Co. KG
+
+   This program is Free Software; you can redistribute it and/or
+   modify it under the terms of version three of the GNU Affero General Public
+   License as published by the Free Software Foundation and included
+   in the file LICENSE.
+
+   This program is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+   Affero General Public License for more details.
+
+   You should have received a copy of the GNU Affero General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+   02110-1301, USA.
+ */
+
+#ifndef BAREOS_TOOLS_BCONFIG_SERVICE_H_
+#define BAREOS_TOOLS_BCONFIG_SERVICE_H_
+
+#include <cstdint>
+#include <filesystem>
+#include <condition_variable>
+#include <mutex>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <thread>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+namespace bconfig::service {
+
+enum class WorkflowMode
+{
+  kDirectCommit,
+  kReview
+};
+
+enum class JobStatus
+{
+  kQueued,
+  kRunning,
+  kSucceeded,
+  kFailed
+};
+
+template <typename T> struct OperationResult {
+  std::optional<T> value{};
+  std::string error{};
+
+  explicit operator bool() const { return value.has_value(); }
+};
+
+struct DeploymentSpec {
+  std::string id{};
+  std::string name{};
+  std::filesystem::path repository_path{};
+  WorkflowMode workflow_mode{WorkflowMode::kDirectCommit};
+};
+
+struct DeploymentRecord {
+  std::string id{};
+  std::string name{};
+  std::filesystem::path repository_path{};
+  WorkflowMode workflow_mode{WorkflowMode::kDirectCommit};
+  std::string created_at{};
+};
+
+struct DeploymentImportRecord {
+  std::string job_id{};
+  std::string component{};
+  std::string resource_name{};
+  std::optional<std::string> source_path{};
+  std::string destination_path{};
+  std::string imported_at{};
+};
+
+struct JobSpec {
+  std::string type{};
+  std::optional<std::string> deployment_id{};
+  std::optional<std::string> source_component{};
+  std::optional<std::string> source_path{};
+};
+
+struct JobRecord {
+  std::string id{};
+  std::string type{};
+  std::optional<std::string> deployment_id{};
+  std::optional<std::string> source_component{};
+  std::optional<std::string> source_path{};
+  JobStatus status{JobStatus::kQueued};
+  std::string created_at{};
+  std::string updated_at{};
+  std::optional<std::string> started_at{};
+  std::optional<std::string> finished_at{};
+  std::optional<std::string> last_error{};
+  std::vector<std::string> logs{};
+};
+
+class RepositoryLayout {
+ public:
+  static std::filesystem::path ManifestPath(
+      const std::filesystem::path& repository_root);
+  static std::filesystem::path ServiceDirectory(
+      const std::filesystem::path& repository_root);
+  static std::filesystem::path OwnershipPath(
+      const std::filesystem::path& repository_root);
+  static std::filesystem::path ImportStatePath(
+      const std::filesystem::path& repository_root);
+  static std::filesystem::path DirectorsDirectory(
+      const std::filesystem::path& repository_root);
+  static std::filesystem::path StoragesDirectory(
+      const std::filesystem::path& repository_root);
+  static std::filesystem::path ClientsDirectory(
+      const std::filesystem::path& repository_root);
+  static std::filesystem::path ConsolesDirectory(
+      const std::filesystem::path& repository_root);
+  static std::vector<std::filesystem::path> Directories(
+      const std::filesystem::path& repository_root);
+};
+
+std::string_view ToString(WorkflowMode mode);
+std::optional<WorkflowMode> ParseWorkflowMode(std::string_view value);
+std::string_view ToString(JobStatus status);
+std::optional<JobStatus> ParseJobStatus(std::string_view value);
+
+class ServiceState {
+ public:
+  explicit ServiceState(std::filesystem::path state_directory = {});
+  ~ServiceState();
+
+  OperationResult<DeploymentRecord> CreateDeployment(
+      const DeploymentSpec& spec);
+  std::vector<DeploymentRecord> ListDeployments() const;
+  std::optional<DeploymentRecord> GetDeployment(std::string_view id) const;
+  OperationResult<std::vector<DeploymentImportRecord>> ListDeploymentImports(
+      std::string_view deployment_id) const;
+
+  OperationResult<JobRecord> CreateJob(const JobSpec& spec);
+  std::vector<JobRecord> ListJobs() const;
+  std::optional<JobRecord> GetJob(std::string_view id) const;
+  const std::filesystem::path& GetStateDirectory() const;
+  bool HasPersistentState() const;
+
+ private:
+  static std::string MakeTimestamp();
+  static bool IsValidIdentifier(std::string_view id);
+  static std::string JsonEscape(std::string_view value);
+  static std::string ManifestJson(const DeploymentRecord& record);
+  static std::string EmptyObjectJson();
+  static std::string SerializeState(
+      uint64_t next_job_id,
+      const std::vector<DeploymentRecord>& deployments,
+      const std::vector<JobRecord>& jobs);
+  static std::optional<std::string> InitializeRepositoryLayout(
+      const DeploymentRecord& record);
+  void WorkerLoop();
+  std::optional<JobRecord> GetNextQueuedJobLocked();
+  void MarkJobRunning(const std::string& id, std::string log_message);
+  void MarkJobFinished(const std::string& id,
+                       JobStatus status,
+                       std::optional<std::string> last_error,
+                       std::string log_message);
+  void RequeueRunningJobsLocked();
+  std::pair<JobStatus, std::vector<std::string>> ExecuteJob(
+      const JobRecord& job_snapshot) const;
+  std::optional<std::string> LoadState();
+  std::optional<std::string> SaveStateLocked() const;
+
+  mutable std::mutex mutex_{};
+  std::condition_variable worker_condition_{};
+  std::thread worker_thread_{};
+  bool stop_worker_{false};
+  std::filesystem::path state_directory_{};
+  std::unordered_map<std::string, DeploymentRecord> deployments_{};
+  std::unordered_map<std::string, JobRecord> jobs_{};
+  uint64_t next_job_id_{1};
+};
+
+}  // namespace bconfig::service
+
+#endif  // BAREOS_TOOLS_BCONFIG_SERVICE_H_

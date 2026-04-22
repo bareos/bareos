@@ -528,6 +528,10 @@ target_compile_definitions(
   bpipe_env_test PRIVATE "-DTEST_PROGRAM=\"$<TARGET_FILE:env_tester>\""
 )
 
+bareos_add_test(
+  bconfig_service_test LINK_LIBRARIES bconfig_service_core GTest::gtest_main
+)
+
 if(ENABLE_BARRI)
   if(HAVE_WIN32)
     bareos_add_test(

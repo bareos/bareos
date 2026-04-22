@@ -99,21 +99,38 @@ endif()
 add_executable(random-commands random_commands.cc)
 target_link_libraries(random-commands fmt::fmt CLI11::CLI11)
 
-add_executable(bconfig)
-target_sources(bconfig PRIVATE bconfig.cc bconfig_lib.cc)
+add_library(bconfig_parser_core STATIC bconfig_lib.cc)
 target_link_libraries(
-  bconfig PRIVATE Bareos::Dir Bareos::FD Bareos::SD Bareos::LibSD Bareos::Lib
-                  Bareos::Findlib CLI11::CLI11
+  bconfig_parser_core PUBLIC Bareos::Dir Bareos::FD Bareos::SD Bareos::LibSD
+                             Bareos::Lib Bareos::Findlib
 )
 if(ENABLE_BCONSOLE)
-  target_link_libraries(bconfig PRIVATE Bareos::Console)
-  target_compile_definitions(bconfig PRIVATE BCONFIG_HAVE_CONSOLE)
+  target_link_libraries(bconfig_parser_core PUBLIC Bareos::Console)
+  target_compile_definitions(bconfig_parser_core PUBLIC BCONFIG_HAVE_CONSOLE)
 endif()
 if(${traymonitor})
-  target_sources(bconfig PRIVATE ../qt-tray-monitor/tray_conf.cc)
-  target_compile_definitions(bconfig PRIVATE BCONFIG_HAVE_TRAYMONITOR)
+  target_sources(bconfig_parser_core PRIVATE ../qt-tray-monitor/tray_conf.cc)
+  target_compile_definitions(
+    bconfig_parser_core PUBLIC BCONFIG_HAVE_TRAYMONITOR
+  )
 endif()
+
+add_executable(bconfig)
+target_sources(bconfig PRIVATE bconfig.cc)
+target_link_libraries(bconfig PRIVATE bconfig_parser_core CLI11::CLI11)
 list(APPEND TOOLS_SBIN bconfig)
+
+add_library(bconfig_service_core STATIC bconfig_service.cc)
+target_link_libraries(
+  bconfig_service_core PUBLIC bconfig_parser_core Bareos::Lib
+)
+
+add_executable(bconfig-service bconfig_service_server.cc)
+target_link_libraries(
+  bconfig-service PRIVATE bconfig_service_core bconfig_parser_core CLI11::CLI11
+                          Bareos::Lib
+)
+list(APPEND TOOLS_SBIN bconfig-service)
 
 install(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 install(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")
