@@ -36,6 +36,7 @@ return array(
             'Api\Controller\Fileset' => 'Api\Controller\FilesetController',
             'Api\Controller\Job' => 'Api\Controller\JobController',
             'Api\Controller\JobLog' => 'Api\Controller\JobLogController',
+            'Api\Controller\JobStatus' => 'Api\Controller\JobStatusController',
             'Api\Controller\JobTotals' => 'Api\Controller\JobTotalsController',
             'Api\Controller\Media' => 'Api\Controller\MediaController',
             'Api\Controller\Pool' => 'Api\Controller\PoolController',
@@ -82,6 +83,18 @@ return array(
                             ),
                             'defaults' => array(
                                 'controller' => 'Api\Controller\JobLog',
+                            ),
+                        ),
+                    ),
+                    'jobstatus' => array(
+                        'type' => Segment::class,
+                        'options' => array(
+                            'route' => '/jobstatus[/][:id]',
+                            'constraints' => array(
+                                'id' => '[a-zA-Z0-9][a-zA-Z0-9\._-]*',
+                            ),
+                            'defaults' => array(
+                                'controller' => 'Api\Controller\JobStatus',
                             ),
                         ),
                     ),

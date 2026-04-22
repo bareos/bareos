@@ -222,7 +222,15 @@ $this->headTitle($title);
             {
                field: 'jobbytes',
                sortable: true,
-               formatter: function(value) {
+               formatter: function(value, row) {
+                  // For running jobs the catalog's jobbytes isn't populated
+                  // until the job completes. Queue a live-status fetch that
+                  // fills in the real byte count asynchronously.
+                  if (row && row.jobstatus === 'R' && row.jobid) {
+                     queueTableLiveBytes(row.jobid);
+                     return '<span class="lp-table-bytes-' + row.jobid
+                        + '"><em class="text-muted">&mdash;</em></span>';
+                  }
                   return formatBytes(value);
                }
             },
@@ -268,8 +276,15 @@ $this->headTitle($title);
                      //$('.rjc-panel-'+i).append('<div class="progress" id="progress" data-toggle="tooltip" data-placement="top"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em; width: 100%"></div></div>');
                      //$('.rjc-panel-'+i).append('<span class="text-muted"><i>(<?php echo $this->translate("Not enough data to estimate progress or statistics collection is disabled."); ?>)</i></span>');
                   }
+                  // Live-progress slot (populated asynchronously per-job below).
+                  // Works even without a prior successful run to estimate against.
+                  $('.rjc-panel-'+i).append('<div class="lp-live-dashboard" id="lp-live-' + data[id].jobid + '" style="margin-top:6px; font-size:90%; color:#333;"></div>');
                   $('.rjc-panel-'+i).append('</div></div>');
                   i++;
+               });
+               // Fetch per-job live status (backend aggregator -> FD + SD).
+               $(Object.keys(data)).each(function(key, id) {
+                  fetchDashboardLiveProgress(data[id].jobid);
                });
             }
             else {
@@ -288,6 +303,83 @@ $this->headTitle($title);
          parsererror: function() {
             $('.running-jobs-container').empty();
             $('.running-jobs-container').append('Error parsing data.');
+         }
+      });
+   }
+
+   // Fetch live mid-run progress for one running job and inject it into the
+   // dashboard card. Uses the director's `status jobid=N api=json` aggregator
+   // which returns the FD and SD views combined. Fails silently on error --
+   // the existing card (with Bareos's own bytes/progress fields) stays visible.
+   function fetchDashboardLiveProgress(jobid) {
+      var basePath = '<?php echo $this->basePath(); ?>';
+      // API returns jobid as a JSON number. The id coming in from the outer
+      // getRunningJobs payload can be a string -- coerce once so the
+      // .find() strict comparison below matches.
+      var jobidNum = Number(jobid);
+      $.ajax({
+         url: basePath + '/api/jobstatus/' + jobidNum,
+         dataType: 'json',
+         timeout: 8000,
+         success: function(data) {
+            // The endpoint returns the job_status object directly (Laminas
+            // JsonModel serializes the inner subtree, not the wrapper).
+            if (!data || !data.jobid || data.error) return;
+            var js = data;
+            var fj = (js.fd && js.fd.data && js.fd.data.running_jobs)
+               ? js.fd.data.running_jobs.find(function(j){return j.jobid===jobidNum;}) : null;
+            var sj = (js.sd && js.sd.data && js.sd.data.running_jobs)
+               ? js.sd.data.running_jobs.find(function(j){return j.jobid===jobidNum;}) : null;
+            var parts = [];
+            if (fj) {
+               if (fj.bytes !== undefined)   parts.push('<strong>FD:</strong> ' + formatBytes(fj.bytes));
+               if (fj.files !== undefined)   parts.push(fj.files.toLocaleString() + ' files');
+               if (fj.processing_file)       parts.push('<span style="word-break:break-all">' + $('<div>').text(fj.processing_file).html() + '</span>');
+            }
+            if (sj) {
+               if (sj.bytes !== undefined)            parts.push('<strong>SD:</strong> ' + formatBytes(sj.bytes));
+               if (sj.avg_bytes_per_sec !== undefined) parts.push(formatBytes(sj.avg_bytes_per_sec) + '/s avg');
+               if (sj.last_bytes_per_sec !== undefined)parts.push(formatBytes(sj.last_bytes_per_sec) + '/s now');
+               if (sj.writing && sj.writing.volume)    parts.push('vol ' + $('<div>').text(sj.writing.volume).html());
+            }
+            if (parts.length) {
+               $('#lp-live-' + jobid).html(parts.join(' &middot; '));
+            }
+         }
+      });
+   }
+
+   // Fills the bytes cell of a running row in the "Most recent job status"
+   // table with live FD/SD bytes. Reuses the same `status jobid=N api=json`
+   // endpoint. The table formatter emits `<span class="lp-table-bytes-N">`
+   // placeholders; this function updates them after the AJAX returns.
+   // Dedups in-flight requests so rapid re-renders don't pile up.
+   var lpTableInflight = {};
+   function queueTableLiveBytes(jobid) {
+      var key = Number(jobid);
+      if (lpTableInflight[key]) return;
+      lpTableInflight[key] = true;
+      var basePath = '<?php echo $this->basePath(); ?>';
+      $.ajax({
+         url: basePath + '/api/jobstatus/' + key,
+         dataType: 'json',
+         timeout: 8000
+      }).always(function() {
+         delete lpTableInflight[key];
+      }).done(function(data) {
+         if (!data || data.error || !data.sd || !data.sd.data) return;
+         var sj = (data.sd.data.running_jobs || []).find(function(j){
+            return j.jobid === key;
+         });
+         var fj = ((data.fd && data.fd.data) ? data.fd.data.running_jobs : [] || [])
+            .find(function(j){ return j.jobid === key; });
+         // Prefer SD bytes (closer to what actually landed on storage);
+         // fall back to FD bytes if the SD hasn't started writing yet.
+         var bytes = null;
+         if (sj && sj.bytes) bytes = sj.bytes;
+         else if (fj && fj.bytes) bytes = fj.bytes;
+         if (bytes !== null) {
+            $('.lp-table-bytes-' + key).html(formatBytes(bytes));
          }
       });
    }
