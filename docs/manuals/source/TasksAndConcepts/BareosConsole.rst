@@ -1537,7 +1537,7 @@ status
    available in previous releases.
 
    For clients, the director requires |fd| protocol version 55 or newer
-   (:config:option:`dir/director/*`) to obtain the JSON status; older
+   to obtain the JSON status; older
    |fd|'s return a structured
    ``{"error": "file_daemon_too_old"}`` response instead. The equivalent
    gate for |sd| is protocol version 1 -- older |sd|'s return

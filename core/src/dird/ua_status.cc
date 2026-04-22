@@ -32,6 +32,10 @@
 #  include <jansson.h>
 #endif
 
+#include <cerrno>
+#include <cstdlib>
+#include <limits>
+
 #include "dird.h"
 #include "dird/director_jcr_impl.h"
 #include "dird/date_time.h"
@@ -203,8 +207,30 @@ bool StatusCmd(UaContext* ua, const char* cmd)
       if (client) { ClientStatus(ua, client, NULL); }
       return true;
     } else if (Bstrcasecmp(ua->argk[i], NT_("jobid"))) {
+      /* Require jobid=<positive integer>. Reject bare `jobid`, empty values,
+       * negatives, and non-numeric junk rather than silently defaulting to 0
+       * and returning {"error":"job_not_found"}. */
       uint32_t jobid = 0;
-      if (ua->argv[i]) { jobid = static_cast<uint32_t>(atoi(ua->argv[i])); }
+      if (ua->argv[i] && *ua->argv[i]) {
+        char* endp = nullptr;
+        errno = 0;
+        unsigned long v = strtoul(ua->argv[i], &endp, 10);
+        if (errno == 0 && endp != ua->argv[i] && *endp == '\0' && v > 0
+            && v <= std::numeric_limits<uint32_t>::max()) {
+          jobid = static_cast<uint32_t>(v);
+        }
+      }
+      if (jobid == 0) {
+        if (ua->api == API_MODE_JSON) {
+          ua->send->ObjectStart("job_status");
+          ua->send->ObjectKeyValue("error", "invalid_jobid", 0);
+          ua->send->ObjectEnd("job_status");
+        } else {
+          ua->SendMsg(
+              T_("status jobid=<N> requires a positive integer argument.\n"));
+        }
+        return true;
+      }
       DoJobIdStatus(ua, jobid);
       return true;
     } else if (bstrncasecmp(ua->argk[i], NT_("sched"), 5)) {
@@ -865,6 +891,17 @@ static int CompareByRuntimePriority(const sched_pkt& p1, const sched_pkt& p2)
 }
 
 #if HAVE_JANSSON
+/* Emit a JS_* status code as a one-character JSON string. All currently
+ * defined JS_* values are ASCII-printable, but `char` is signed on most
+ * targets, so guard against any future non-ASCII code that would emit a
+ * lone high byte and break UTF-8 JSON encoding. */
+static void EmitStatusCodeJson(UaContext* ua, int status)
+{
+  unsigned char u = static_cast<unsigned char>(status);
+  char buf[2] = {(u < 0x80) ? static_cast<char>(u) : '?', 0};
+  ua->send->ObjectKeyValue("status_code", buf, 0);
+}
+
 static void ListDirStatusHeaderJson(UaContext* ua)
 {
   char dt[MAX_TIME_LENGTH];
@@ -893,11 +930,22 @@ static void ListDirStatusHeaderJson(UaContext* ua)
 static void ListScheduledJobsJson(UaContext* ua)
 {
   int days = 1;
+  bool days_invalid = false;
   if (const char* value = GetArgValue(ua, NT_("days"))) {
-    days = atoi(value);
-    if (days < 0 || days > 500) { days = 1; }
+    char* endp = nullptr;
+    errno = 0;
+    long v = strtol(value, &endp, 10);
+    if (errno != 0 || endp == value || *endp != '\0' || v < 0 || v > 500) {
+      days_invalid = true;
+    } else {
+      days = static_cast<int>(v);
+    }
   }
 
+  if (days_invalid) {
+    ua->send->ObjectKeyValue("days_warning",
+                             "invalid_or_out_of_range_reset_to_1", 0);
+  }
   ua->send->ArrayStart("scheduled_jobs");
   JobResource* job = nullptr;
   std::vector<sched_pkt> sched;
@@ -963,8 +1011,7 @@ static void ListRunningJobsJson(UaContext* ua)
     ua->send->ObjectKeyValue("job_name", jcr->Job, 0);
     ua->send->ObjectKeyValue("level", job_level_to_str(jcr->getJobLevel()), 0);
     ua->send->ObjectKeyValue("job_type", job_type_to_str(jcr->getJobType()), 0);
-    char status_code[2] = {static_cast<char>(jcr->getJobStatus()), 0};
-    ua->send->ObjectKeyValue("status_code", status_code, 0);
+    EmitStatusCodeJson(ua, jcr->getJobStatus());
     ua->send->ObjectKeyValue("status",
                              JobstatusToAscii(jcr->getJobStatus()).c_str(), 0);
     if (jcr->dir_impl->res.client) {
@@ -1047,7 +1094,6 @@ static void ListTerminatedJobsJson(UaContext* ua)
 
     char dt[MAX_TIME_LENGTH];
     bstrftime(dt, sizeof(dt), je.end_time, "%Y-%m-%dT%H:%M:%S");
-    char status_code[2] = {static_cast<char>(je.JobStatus), 0};
 
     ua->send->ObjectStart();
     ua->send->ObjectKeyValue("jobid", static_cast<uint64_t>(je.JobId));
@@ -1055,7 +1101,7 @@ static void ListTerminatedJobsJson(UaContext* ua)
     ua->send->ObjectKeyValue("level", level_str, 0);
     ua->send->ObjectKeyValue("files", static_cast<uint64_t>(je.JobFiles));
     ua->send->ObjectKeyValue("bytes", static_cast<uint64_t>(je.JobBytes));
-    ua->send->ObjectKeyValue("status_code", status_code, 0);
+    EmitStatusCodeJson(ua, je.JobStatus);
     ua->send->ObjectKeyValue("status", termstat, 0);
     ua->send->ObjectKeyValue("finished", dt, 0);
     ua->send->ObjectEnd();
@@ -2124,8 +2170,7 @@ static void DoJobIdStatus(UaContext* ua, uint32_t jobid)
                            0);
   ua->send->ObjectKeyValue("job_type", job_type_to_str(job_jcr->getJobType()),
                            0);
-  char status_code[2] = {static_cast<char>(job_jcr->getJobStatus()), 0};
-  ua->send->ObjectKeyValue("status_code", status_code, 0);
+  EmitStatusCodeJson(ua, job_jcr->getJobStatus());
   ua->send->ObjectKeyValue(
       "status", JobstatusToAscii(job_jcr->getJobStatus()).c_str(), 0);
 
@@ -2249,7 +2294,6 @@ static void DoJobIdStatus(UaContext* ua, uint32_t jobid)
 
   FreeJcr(job_jcr);
 #else
-  (void)ua;
   (void)jobid;
   ua->SendMsg(T_("status jobid=N requires JSON support (jansson).\n"));
 #endif

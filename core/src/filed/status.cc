@@ -453,6 +453,8 @@ static const char* TerminatedStatusToLongString(int js)
       return "Cancel";
     case JS_Terminated:
       return "OK";
+    case JS_Warnings:
+      return "OK -- with warnings";
     default:
       return "Other";
   }
