@@ -44,7 +44,13 @@ constexpr const char Dir_sorry[] = "3999 No go\n";
  *  0          - Implicit version: hello had no version field
  *  1          - Added JSON output for .status command
  */
+#if HAVE_JANSSON
 constexpr const char OK_hello[] = "3000 OK Hello 1\n";
+#else
+/* Without jansson the .status json handler is absent -- don't advertise
+ * the capability or the director would send a command we cannot answer. */
+constexpr const char OK_hello[] = "3000 OK Hello\n";
+#endif
 
 /**
  * Initiate the message channel with the Director.

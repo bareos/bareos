@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2025 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,7 +54,13 @@ const int debuglevel = 50;
  *  54 29Oct15 - Added getSecureEraseCmd
  *  55          - Added JSON output for .status command
  */
+#if HAVE_JANSSON
 inline constexpr const char OK_hello[] = "2000 OK Hello 55\n";
+#else
+/* Without jansson the .status json handler is absent -- don't advertise
+ * the capability or the director would send a command we cannot answer. */
+inline constexpr const char OK_hello[] = "2000 OK Hello 54\n";
+#endif
 
 inline constexpr const char Dir_sorry[] = "2999 Authentication failed.\n";
 

@@ -2036,7 +2036,10 @@ constexpr int64_t kMaxDaemonStatusJsonBytes = 16 * 1024 * 1024;
 
 /* Drain whatever the daemon wrote to the socket up to BNET_EOD, parse the
  * accumulated bytes as JSON, return a new json_t* on success or nullptr on
- * parse failure. `err_out` (if non-null) receives the parser's error text. */
+ * failure. On failure, `err_out` receives a short classifier; callers use
+ * the same error word as the key in the JSON error response so consumers
+ * can distinguish a protocol-level transport error from a malformed
+ * payload or an oversized reply. */
 static json_t* ReadDaemonStatusJson(BareosSocket* bs, std::string& err_out)
 {
   PoolMem buf(PM_MESSAGE);
@@ -2053,8 +2056,17 @@ static json_t* ReadDaemonStatusJson(BareosSocket* bs, std::string& err_out)
     total += bs->message_length;
     buf.c_str()[total] = '\0';
   }
+  /* The recv() loop exits on any negative return -- that covers BNET_EOD
+   * (normal end), BNET_TERMINATE, and real socket errors. Distinguish
+   * transport failure from clean EOD so callers don't feed a truncated
+   * payload to the JSON parser and surface the parser's complaint as if
+   * it were the root cause. */
+  if (bs->IsError() || bs->IsStop()) {
+    err_out = "transport_error";
+    return nullptr;
+  }
   if (overflow) {
-    err_out = "daemon JSON response exceeded size cap";
+    err_out = "reply_too_large";
     return nullptr;
   }
   json_error_t jerr;
@@ -2088,8 +2100,18 @@ static void DoJobIdStatus(UaContext* ua, uint32_t jobid)
   }
   /* A JCR that lacks its director-private side cannot be fanned out; this
    * only happens for malformed or partially-initialized records. */
-  if (!job_jcr->dir_impl) {
+  if (!job_jcr->dir_impl || !job_jcr->dir_impl->res.job) {
     ua->send->ObjectKeyValue("error", "job_has_no_dir_state", 0);
+    ua->send->ObjectEnd("job_status");
+    FreeJcr(job_jcr);
+    return;
+  }
+
+  /* Gate on Job_ACL so restricted consoles cannot enumerate or introspect
+   * jobs they aren't allowed to see. Client_ACL / Storage_ACL are re-checked
+   * below before fanning out to the target daemon. */
+  if (!ua->AclAccessOk(Job_ACL, job_jcr->dir_impl->res.job->resource_name_)) {
+    ua->send->ObjectKeyValue("error", "access_denied", 0);
     ua->send->ObjectEnd("job_status");
     FreeJcr(job_jcr);
     return;
@@ -2126,41 +2148,49 @@ static void DoJobIdStatus(UaContext* ua, uint32_t jobid)
   ua->send->ObjectEnd("dir");
 
   /* The aggregator reuses the console's JCR (ua->jcr) to open sockets to
-   * the target FD and SD. That requires temporarily setting its
-   * res.client and write_storage to the running job's values. Save them
-   * first and restore before returning so subsequent console commands on
-   * the same session aren't affected. */
+   * the target FD and SD. That requires temporarily setting its res.client
+   * and write-storage to the running job's values, and leaves the handshake
+   * side-effects (FDVersion, SDVersion, authenticated) mutated. Save every
+   * field the fan-out touches and restore before returning so subsequent
+   * console commands on the same session see the console's original state. */
   ClientResource* saved_client = ua->jcr->dir_impl->res.client;
   StorageResource* saved_wstore = ua->jcr->dir_impl->res.write_storage;
   StorageResource* saved_rstore = ua->jcr->dir_impl->res.read_storage;
+  int32_t saved_fdversion = ua->jcr->dir_impl->FDVersion;
+  int32_t saved_sdversion = ua->jcr->dir_impl->SDVersion;
+  bool saved_authenticated = ua->jcr->authenticated;
 
   /* FD subtree: connect, ask for `.status json`, nest the reply. */
   if (client) {
     ua->send->ObjectStart("fd");
     ua->send->ObjectKeyValue("client", client->resource_name_, 0);
 
-    ua->jcr->dir_impl->res.client = client;
-    if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
-      ua->send->ObjectKeyValue("error", "connect_failed", 0);
+    if (!ua->AclAccessOk(Client_ACL, client->resource_name_)) {
+      ua->send->ObjectKeyValue("error", "access_denied", 0);
     } else {
-      BareosSocket* fd = ua->jcr->file_bsock;
-      if (ua->jcr->dir_impl->FDVersion < FD_VERSION_55) {
-        ua->send->ObjectKeyValue("error", "file_daemon_too_old", 0);
+      ua->jcr->dir_impl->res.client = client;
+      if (!ConnectToFileDaemon(ua->jcr, 1, 15, false, ua)) {
+        ua->send->ObjectKeyValue("error", "connect_failed", 0);
       } else {
-        fd->fsend(".status json");
-        std::string perr;
-        json_t* parsed = ReadDaemonStatusJson(fd, perr);
-        if (parsed) {
-          ua->send->JsonKeyValueAddJson("data", parsed);
+        BareosSocket* fd = ua->jcr->file_bsock;
+        if (ua->jcr->dir_impl->FDVersion < FD_VERSION_55) {
+          ua->send->ObjectKeyValue("error", "file_daemon_too_old", 0);
         } else {
-          ua->send->ObjectKeyValue("error", "parse_failed", 0);
-          ua->send->ObjectKeyValue("message", perr.c_str(), 0);
+          fd->fsend(".status json");
+          std::string perr;
+          json_t* parsed = ReadDaemonStatusJson(fd, perr);
+          if (parsed) {
+            ua->send->JsonKeyValueAddJson("data", parsed);
+          } else {
+            ua->send->ObjectKeyValue("error", "parse_failed", 0);
+            ua->send->ObjectKeyValue("message", perr.c_str(), 0);
+          }
         }
+        fd->signal(BNET_TERMINATE);
+        fd->close();
+        delete ua->jcr->file_bsock;
+        ua->jcr->file_bsock = nullptr;
       }
-      fd->signal(BNET_TERMINATE);
-      fd->close();
-      delete ua->jcr->file_bsock;
-      ua->jcr->file_bsock = nullptr;
     }
     ua->send->ObjectEnd("fd");
   }
@@ -2170,41 +2200,52 @@ static void DoJobIdStatus(UaContext* ua, uint32_t jobid)
     ua->send->ObjectStart("sd");
     ua->send->ObjectKeyValue("storage", store->resource_name_, 0);
 
-    UnifiedStorageResource lstore;
-    lstore.store = store;
-    PmStrcpy(lstore.store_source, T_("status jobid aggregator"));
-    SetWstorage(ua->jcr, &lstore);
-    if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
-      ua->send->ObjectKeyValue("error", "connect_failed", 0);
+    if (!ua->AclAccessOk(Storage_ACL, store->resource_name_)) {
+      ua->send->ObjectKeyValue("error", "access_denied", 0);
     } else {
-      BareosSocket* sd = ua->jcr->store_bsock;
-      if (ua->jcr->dir_impl->SDVersion < SD_VERSION_1) {
-        ua->send->ObjectKeyValue("error", "storage_daemon_too_old", 0);
+      UnifiedStorageResource lstore;
+      lstore.store = store;
+      PmStrcpy(lstore.store_source, T_("status jobid aggregator"));
+      SetWstorage(ua->jcr, &lstore);
+      if (!ConnectToStorageDaemon(ua->jcr, 10, me->SDConnectTimeout, false)) {
+        ua->send->ObjectKeyValue("error", "connect_failed", 0);
       } else {
-        sd->fsend(".status json\n");
-        std::string perr;
-        json_t* parsed = ReadDaemonStatusJson(sd, perr);
-        if (parsed) {
-          ua->send->JsonKeyValueAddJson("data", parsed);
+        BareosSocket* sd = ua->jcr->store_bsock;
+        if (ua->jcr->dir_impl->SDVersion < SD_VERSION_1) {
+          ua->send->ObjectKeyValue("error", "storage_daemon_too_old", 0);
         } else {
-          ua->send->ObjectKeyValue("error", "parse_failed", 0);
-          ua->send->ObjectKeyValue("message", perr.c_str(), 0);
+          sd->fsend(".status json");
+          std::string perr;
+          json_t* parsed = ReadDaemonStatusJson(sd, perr);
+          if (parsed) {
+            ua->send->JsonKeyValueAddJson("data", parsed);
+          } else {
+            ua->send->ObjectKeyValue("error", "parse_failed", 0);
+            ua->send->ObjectKeyValue("message", perr.c_str(), 0);
+          }
         }
+        sd->signal(BNET_TERMINATE);
+        sd->close();
+        delete ua->jcr->store_bsock;
+        ua->jcr->store_bsock = nullptr;
       }
-      sd->signal(BNET_TERMINATE);
-      sd->close();
-      delete ua->jcr->store_bsock;
-      ua->jcr->store_bsock = nullptr;
+      /* SetWstorage pushed an entry onto the write-storage list; pop it so
+       * the console's JCR doesn't accumulate storage references on repeated
+       * aggregator calls. */
+      FreeWstorage(ua->jcr);
     }
     ua->send->ObjectEnd("sd");
   }
 
   ua->send->ObjectEnd("job_status");
 
-  /* Restore prior console JCR state. */
+  /* Restore prior console JCR state in full. */
   ua->jcr->dir_impl->res.client = saved_client;
   ua->jcr->dir_impl->res.write_storage = saved_wstore;
   ua->jcr->dir_impl->res.read_storage = saved_rstore;
+  ua->jcr->dir_impl->FDVersion = saved_fdversion;
+  ua->jcr->dir_impl->SDVersion = saved_sdversion;
+  ua->jcr->authenticated = saved_authenticated;
 
   FreeJcr(job_jcr);
 #else

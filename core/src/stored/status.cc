@@ -1237,6 +1237,12 @@ static json_t* BuildDeviceJson(DeviceResource* device_resource)
     json_object_set_new(o, "can_append", json_boolean(dev->CanAppend()));
   } else {
     json_object_set_new(o, "open", json_false());
+    /* Closed devices still carry a blocked_state -- unmounted /
+     * waiting-for-sysop are common operational causes worth surfacing
+     * even when the device isn't currently open. */
+    json_object_set_new(
+        o, "blocked_state",
+        dev ? json_string(BlockedStateToString(dev->blocked())) : json_null());
   }
   return o;
 }
