@@ -112,14 +112,29 @@ class JobStatusController extends AbstractRestfulController
             );
         }
 
+        /* The route constraint permits non-numeric ids; reject them up
+         * front rather than letting JobModel silently cast to `(int)0`
+         * and issue `status jobid=0`. */
+        if (!ctype_digit((string)$id)) {
+            $this->getResponse()->setStatusCode(400);
+            return new JsonModel(array('error' => 'invalid_jobid'));
+        }
+
         $this->bsock = $this->getServiceLocator()->get('director');
-        $jobid = $this->params()->fromRoute('id');
 
         try {
-            $this->result = $this->getJobModel()->getLiveJobStatus($this->bsock, $jobid);
+            $this->result = $this->getJobModel()->getLiveJobStatus($this->bsock, $id);
         } catch (Exception $e) {
             $this->getResponse()->setStatusCode(500);
-            error_log($e);
+            /* Log only the message so file paths / stack frames don't
+             * land in the server error log on every transient director
+             * hiccup. */
+            error_log(sprintf(
+                'JobStatusController: director error for jobid=%s: %s',
+                $id,
+                $e->getMessage()
+            ));
+            $this->result = array('error' => 'director_error');
         }
 
         return new JsonModel($this->result);
