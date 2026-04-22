@@ -336,6 +336,21 @@ int main(int argc, char** argv)
       }
     }
 
+    if (!resource.nested_details.empty()) {
+      std::cout << "  Nested details:\n";
+      for (const auto& detail : resource.nested_details) {
+        std::cout << "    - " << detail.kind;
+        if (detail.summary) { std::cout << " \"" << *detail.summary << "\""; }
+        PrintSource(detail.source);
+        std::cout << "\n";
+        for (const auto& value : detail.values) {
+          std::cout << "      " << value.name << ": " << value.value;
+          PrintSource(value.source);
+          std::cout << "\n";
+        }
+      }
+    }
+
     if (!resource.relations.empty()) {
       std::cout << "  Internal relations:\n";
       for (const auto& relation : resource.relations) {

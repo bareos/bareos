@@ -55,6 +55,30 @@ bool HasMatchedExternalRelation(
       });
 }
 
+const bconfig::NestedDetailEntry* FindNestedDetail(
+    const bconfig::ResourceInspectionEntry& resource,
+    const char* kind,
+    const char* summary)
+{
+  auto it = std::find_if(
+      resource.nested_details.begin(), resource.nested_details.end(),
+      [kind, summary](const auto& detail) {
+        return detail.kind == kind && detail.summary.has_value()
+               && *detail.summary == summary;
+      });
+  return it == resource.nested_details.end() ? nullptr : &*it;
+}
+
+const bconfig::DetailValueEntry* FindDetailValue(
+    const bconfig::NestedDetailEntry& detail,
+    const char* name)
+{
+  auto it
+      = std::find_if(detail.values.begin(), detail.values.end(),
+                     [name](const auto& value) { return value.name == name; });
+  return it == detail.values.end() ? nullptr : &*it;
+}
+
 TEST(Bconfig, CollectsDirectorResourceSources)
 {
   auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
@@ -328,6 +352,149 @@ Storage {
   EXPECT_TRUE(has_relation("Run.DifferentialPool", "Pool", "Diff", 4));
   EXPECT_TRUE(has_relation("Run.NextPool", "Pool", "Next", 4));
   EXPECT_TRUE(has_relation("Run.Messages", "Messages", "AltMessages", 4));
+}
+
+TEST(Bconfig, CollectsRunscriptNestedDetails)
+{
+  auto config_path = WriteTempConfig("bconfig-runscript-details.conf",
+                                     R"(Director {
+  Name = bareos-dir
+  Password = "dir_password"
+  Messages = Standard
+}
+
+Messages {
+  Name = Standard
+  Console = all
+}
+
+Client {
+  Name = bareos-fd
+  Address = localhost
+  Password = "client_password"
+}
+
+FileSet {
+  Name = TestFileset
+  Include {
+    File = /tmp
+  }
+}
+
+Schedule {
+  Name = Nightly
+  Run = Full at 01:00
+}
+
+Pool {
+  Name = Full
+  Pool Type = Backup
+}
+
+Storage {
+  Name = MainStorage
+  Address = localhost
+  Password = "storage_password"
+  Device = FileStorage
+  Media Type = File
+}
+
+JobDefs {
+  Name = DefaultJob
+  Type = Backup
+  Level = Full
+  Client = bareos-fd
+  FileSet = TestFileset
+  Schedule = Nightly
+  Storage = MainStorage
+  Pool = Full
+  Messages = Standard
+  RunScript {
+    Command = "/bin/true"
+    Target = bareos-fd
+    RunsWhen = before
+    FailJobOnError = no
+  }
+}
+
+Job {
+  Name = BackupJob
+  JobDefs = DefaultJob
+  ClientRunBeforeJob = "/bin/echo job-client"
+  RunScript {
+    Console = "status dir"
+    RunsWhen = after
+    RunsOnFailure = yes
+  }
+}
+)");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    config_path.string());
+
+  ASSERT_TRUE(loaded.parser);
+  ASSERT_TRUE(loaded.parse_ok);
+
+  auto resources = bconfig::CollectResources(*loaded.parser);
+  auto jobdefs = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "JobDefs" && resource.name == "DefaultJob";
+      });
+  ASSERT_NE(jobdefs, resources.end());
+
+  auto* jobdefs_script = FindNestedDetail(*jobdefs, "RunScript", "/bin/true");
+  ASSERT_NE(jobdefs_script, nullptr);
+  ASSERT_TRUE(jobdefs_script->source.has_value());
+  EXPECT_EQ(jobdefs_script->source->line, 53);
+
+  auto* command = FindDetailValue(*jobdefs_script, "Command");
+  ASSERT_NE(command, nullptr);
+  EXPECT_EQ(command->value, "/bin/true");
+  ASSERT_TRUE(command->source.has_value());
+  EXPECT_EQ(command->source->line, 54);
+
+  auto* target = FindDetailValue(*jobdefs_script, "Target");
+  ASSERT_NE(target, nullptr);
+  EXPECT_EQ(target->value, "bareos-fd");
+  ASSERT_TRUE(target->source.has_value());
+  EXPECT_EQ(target->source->line, 55);
+
+  auto* fail_on_error = FindDetailValue(*jobdefs_script, "FailJobOnError");
+  ASSERT_NE(fail_on_error, nullptr);
+  EXPECT_EQ(fail_on_error->value, "no");
+  ASSERT_TRUE(fail_on_error->source.has_value());
+  EXPECT_EQ(fail_on_error->source->line, 57);
+
+  auto job = std::find_if(
+      resources.begin(), resources.end(), [](const auto& resource) {
+        return resource.type == "Job" && resource.name == "BackupJob";
+      });
+  ASSERT_NE(job, resources.end());
+
+  auto* short_script
+      = FindNestedDetail(*job, "RunScript", "/bin/echo job-client");
+  ASSERT_NE(short_script, nullptr);
+  ASSERT_TRUE(short_script->source.has_value());
+  EXPECT_EQ(short_script->source->line, 64);
+
+  auto* short_target = FindDetailValue(*short_script, "Target");
+  ASSERT_NE(short_target, nullptr);
+  EXPECT_EQ(short_target->value, "job-client");
+  ASSERT_TRUE(short_target->source.has_value());
+  EXPECT_EQ(short_target->source->line, 64);
+
+  auto* short_form = FindDetailValue(*short_script, "Form");
+  ASSERT_NE(short_form, nullptr);
+  EXPECT_EQ(short_form->value, "short");
+  EXPECT_FALSE(short_form->source.has_value());
+
+  auto* console_script = FindNestedDetail(*job, "RunScript", "status dir");
+  ASSERT_NE(console_script, nullptr);
+  auto* command_type = FindDetailValue(*console_script, "CommandType");
+  ASSERT_NE(command_type, nullptr);
+  EXPECT_EQ(command_type->value, "Console");
+  ASSERT_TRUE(command_type->source.has_value());
+  EXPECT_EQ(command_type->source->line, 66);
 }
 
 TEST(Bconfig, SkipsHostnameValidationWhenInspecting)

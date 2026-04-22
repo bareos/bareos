@@ -2789,7 +2789,10 @@ static void StoreAudit(lexer* lc, const ResourceItem* item, int index, int pass)
   ClearBit(index, (*item->allocated_resource)->inherit_content_);
 }
 
-static void StoreRunscriptWhen(lexer* lc, const ResourceItem* item, int, int)
+static void StoreRunscriptWhen(lexer* lc,
+                               const ResourceItem* item,
+                               int,
+                               int pass)
 {
   LexGetToken(lc, BCT_NAME);
 
@@ -2806,7 +2809,12 @@ static void StoreRunscriptWhen(lexer* lc, const ResourceItem* item, int, int)
     scan_err(lc, T_("Expect %s, got: %s"), "Before, After, AfterVSS or Always",
              lc->str);
   }
-  if (value != SCRIPT_INVALID) { SetItemVariable<uint32_t>(*item, value); }
+  if (value != SCRIPT_INVALID) {
+    SetItemVariable<uint32_t>(*item, value);
+    if (pass == 2) {
+      res_runscript->SetMemberPresent(item->name, lc->fname, lc->line_no);
+    }
+  }
   ScanToEol(lc);
 }
 
@@ -2837,6 +2845,7 @@ static void StoreRunscriptTarget(lexer* lc,
 
       r->SetTarget(lc->str);
     }
+    r->SetMemberPresent(item->name, lc->fname, lc->line_no);
   }
   ScanToEol(lc);
 }
@@ -2851,7 +2860,8 @@ static void StoreRunscriptCmd(lexer* lc,
   if (pass == 2) {
     Dmsg2(100, "runscript cmd=%s type=%c\n", lc->str, item->code);
     RunScript* r = GetItemVariablePointer<RunScript*>(*item);
-    r->temp_parser_command_container.emplace_back(lc->str, item->code);
+    r->temp_parser_command_container.emplace_back(lc->str, item->code,
+                                                  lc->fname, lc->line_no);
   }
   ScanToEol(lc);
 }
@@ -2868,10 +2878,12 @@ static void StoreShortRunscript(lexer* lc,
   if (pass == 2) {
     Dmsg0(500, "runscript: creating new RunScript object\n");
     RunScript* script = new RunScript;
+    script->SetDefinitionSource(lc->fname, lc->line_no);
 
     script->SetJobCodeCallback(job_code_callback_director);
 
     script->SetCommand(lc->str);
+    script->SetMemberPresent("Command", lc->fname, lc->line_no);
     if (Bstrcasecmp(item->name, "runbeforejob")) {
       script->when = SCRIPT_Before;
       script->SetTarget("");
@@ -2900,6 +2912,13 @@ static void StoreShortRunscript(lexer* lc,
 
     // Remember that the entry was configured in the short runscript form.
     script->short_form = true;
+    script->SetMemberPresent("RunsWhen", lc->fname, lc->line_no);
+    script->SetMemberPresent("RunsOnSuccess", lc->fname, lc->line_no);
+    script->SetMemberPresent("RunsOnFailure", lc->fname, lc->line_no);
+    script->SetMemberPresent("FailJobOnError", lc->fname, lc->line_no);
+    if (!script->target.empty()) {
+      script->SetMemberPresent("Target", lc->fname, lc->line_no);
+    }
 
     if (!*runscripts) {
       *runscripts = new alist<RunScript*>(10, not_owned_by_alist);
@@ -2916,18 +2935,27 @@ static void StoreShortRunscript(lexer* lc,
  * Store a bool in a bit field without modifying hdr
  * We can also add an option to StoreBool to skip hdr
  */
-static void StoreRunscriptBool(lexer* lc, const ResourceItem* item, int, int)
+static void StoreRunscriptBool(lexer* lc,
+                               const ResourceItem* item,
+                               int,
+                               int pass)
 {
   LexGetToken(lc, BCT_NAME);
   switch (parse_conf_bool(lc)) {
     case parse_bool_result::True: {
       SetItemVariable<bool>(*item, true);
+      if (pass == 2) {
+        res_runscript->SetMemberPresent(item->name, lc->fname, lc->line_no);
+      }
     } break;
     case parse_bool_result::False: {
       SetItemVariable<bool>(*item, false);
+      if (pass == 2) {
+        res_runscript->SetMemberPresent(item->name, lc->fname, lc->line_no);
+      }
     } break;
     case parse_bool_result::Error: {
-      scan_err(lc, T_("Expect %s, got: %s"), "YES or NO",
+      scan_err(lc, T_("Expect %s, got: %s"), "YES, NO, TRUE, or FALSE",
                lc->str); /* YES and NO must not be translated */
       return;
     } break;
@@ -2949,6 +2977,8 @@ static void StoreRunscript(lexer* lc,
 {
   Dmsg1(200, "StoreRunscript: begin StoreRunscript pass=%i\n", pass);
 
+  const char* definition_file = lc->fname;
+  int definition_line = lc->line_no;
   int token = LexGetToken(lc, BCT_SKIP_EOL);
 
   if (token != BCT_BOB) {
@@ -2957,6 +2987,9 @@ static void StoreRunscript(lexer* lc,
   }
 
   res_runscript = new RunScript();
+  if (pass == 2) {
+    res_runscript->SetDefinitionSource(definition_file, definition_line);
+  }
 
   /* Run on client by default.
    * Set this here, instead of in the class constructor,
@@ -3020,6 +3053,10 @@ static void StoreRunscript(lexer* lc,
       RunScript* script = new RunScript(*res_runscript);
       script->command = cmd.command_;
       script->cmd_type = cmd.code_;
+      if (cmd.source_) {
+        script->SetMemberPresent(cmd.code_ == SHELL_CMD ? "Command" : "Console",
+                                 cmd.source_->file.c_str(), cmd.source_->line);
+      }
 
       // each shell runscript object have a copy of target.
       // console runscripts are always executed on the Director.

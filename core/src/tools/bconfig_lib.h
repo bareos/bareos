@@ -88,6 +88,19 @@ struct DirectiveUseEntry {
   std::optional<BareosResource::SourceLocation> source{};
 };
 
+struct DetailValueEntry {
+  std::string name{};
+  std::string value{};
+  std::optional<BareosResource::SourceLocation> source{};
+};
+
+struct NestedDetailEntry {
+  std::string kind{};
+  std::optional<std::string> summary{};
+  std::optional<BareosResource::SourceLocation> source{};
+  std::vector<DetailValueEntry> values{};
+};
+
 struct ResourceInspectionEntry {
   std::string type{};
   std::string name{};
@@ -96,6 +109,7 @@ struct ResourceInspectionEntry {
   std::vector<DirectiveUseEntry> directives{};
   std::vector<RelationEntry> relations{};
   std::vector<ExternalRelationEntry> external_relations{};
+  std::vector<NestedDetailEntry> nested_details{};
 };
 
 struct LoadedConfig {

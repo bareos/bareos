@@ -35,6 +35,7 @@
 #include "lib/lex.h"
 #include "lib/parse_conf.h"
 #include "lib/resource_item.h"
+#include "lib/runscript.h"
 #include "stored/stored_conf.h"
 #include "stored/stored_globals.h"
 #ifdef BCONFIG_HAVE_CONSOLE
@@ -180,6 +181,18 @@ std::optional<BareosResource::SourceLocation> SourceOrDefinition(
 {
   auto source = CopySource(resource.GetMemberSource(member_name));
   if (source) { return source; }
+  return resource.GetDefinitionSource();
+}
+
+std::optional<BareosResource::SourceLocation> FirstSourceOrDefinition(
+    const BareosResource& resource,
+    std::initializer_list<std::string_view> member_names)
+{
+  for (auto member_name : member_names) {
+    if (auto source = CopySource(resource.GetMemberSource(member_name))) {
+      return source;
+    }
+  }
   return resource.GetDefinitionSource();
 }
 
@@ -331,6 +344,90 @@ void AppendDirectorScheduleRelations(std::vector<RelationEntry>& relations,
                               *run);
     AppendRunOverrideRelation(relations, config, "Run.Messages", run->msgs,
                               *run);
+  }
+}
+
+const char* RunscriptWhenToString(int when)
+{
+  switch (when) {
+    case SCRIPT_Before:
+      return "before";
+    case SCRIPT_After:
+      return "after";
+    case SCRIPT_AfterVSS:
+      return "aftervss";
+    case SCRIPT_Any:
+      return "always";
+    case SCRIPT_Never:
+    default:
+      return "never";
+  }
+}
+
+std::string RunscriptTargetToString(const RunScript& runscript)
+{
+  if (runscript.IsLocal()) { return "local"; }
+  if (runscript.target == "%c") { return "job-client"; }
+  return runscript.target;
+}
+
+void AppendDetailValue(std::vector<DetailValueEntry>& values,
+                       std::string name,
+                       std::string value,
+                       std::optional<BareosResource::SourceLocation> source)
+{
+  values.emplace_back(DetailValueEntry{
+      std::move(name),
+      std::move(value),
+      std::move(source),
+  });
+}
+
+void AppendDirectorNestedDetails(std::vector<NestedDetailEntry>& details,
+                                 const BareosResource& resource)
+{
+  auto* job = dynamic_cast<const directordaemon::JobResource*>(&resource);
+  if (!job || !job->RunScripts) { return; }
+
+  for (const auto* runscript : *job->RunScripts) {
+    if (!runscript) { continue; }
+
+    NestedDetailEntry detail;
+    detail.kind = "RunScript";
+    detail.source = runscript->GetDefinitionSource();
+    if (!runscript->command.empty()) { detail.summary = runscript->command; }
+
+    auto command_source
+        = FirstSourceOrDefinition(*runscript, {"Command", "Console"});
+    AppendDetailValue(
+        detail.values, "CommandType",
+        runscript->cmd_type == CONSOLE_CMD ? "Console" : "Command",
+        command_source);
+    AppendDetailValue(detail.values, "Command", runscript->command,
+                      command_source);
+    AppendDetailValue(detail.values, "RunsWhen",
+                      RunscriptWhenToString(runscript->when),
+                      SourceOrDefinition(*runscript, "RunsWhen"));
+    AppendDetailValue(
+        detail.values, "Target", RunscriptTargetToString(*runscript),
+        FirstSourceOrDefinition(*runscript, {"Target", "RunsOnClient"}));
+    AppendDetailValue(detail.values, "RunsOnSuccess",
+                      runscript->on_success ? "yes" : "no",
+                      SourceOrDefinition(*runscript, "RunsOnSuccess"));
+    AppendDetailValue(detail.values, "RunsOnFailure",
+                      runscript->on_failure ? "yes" : "no",
+                      SourceOrDefinition(*runscript, "RunsOnFailure"));
+    AppendDetailValue(detail.values, "FailJobOnError",
+                      runscript->fail_on_error ? "yes" : "no",
+                      SourceOrDefinition(*runscript, "FailJobOnError"));
+    AppendDetailValue(detail.values, "Form",
+                      runscript->short_form ? "short" : "block", std::nullopt);
+    if (runscript->from_jobdef) {
+      AppendDetailValue(detail.values, "InheritedFrom", "JobDefs",
+                        std::nullopt);
+    }
+
+    details.emplace_back(std::move(detail));
   }
 }
 
@@ -1060,6 +1157,7 @@ std::vector<ResourceInspectionEntry> CollectResourcesImpl(
       }
 
       AppendDirectorScheduleRelations(entry.relations, config, *resource);
+      AppendDirectorNestedDetails(entry.nested_details, *resource);
       if (loaded) { AppendPeerRelations(entry, *loaded, peers, *resource); }
 
       resources.emplace_back(std::move(entry));

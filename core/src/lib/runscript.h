@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -63,9 +63,17 @@ enum
 };
 
 struct TempParserCommand {
-  TempParserCommand(POOLMEM* p, int32_t c) : command_(p), code_(c) {}
+  TempParserCommand(POOLMEM* p,
+                    int32_t c,
+                    const char* file = nullptr,
+                    int line = 0)
+      : command_(p), code_(c)
+  {
+    if (file) { source_ = BareosResource::SourceLocation{file, line}; }
+  }
   std::string command_;
   int32_t code_ = 0;
+  std::optional<BareosResource::SourceLocation> source_{};
 };
 
 class RunScript : public BareosResource {
