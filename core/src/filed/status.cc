@@ -415,6 +415,28 @@ static void ListTerminatedJobs(StatusPacket* sp)
 
 #if HAVE_JANSSON
 
+/* json_string() returns NULL when the input isn't valid UTF-8, which would
+ * leave the resulting JSON object in a broken state. Filesystem paths can
+ * contain arbitrary non-UTF-8 bytes, so fall back to a sanitized copy where
+ * invalid continuation bytes are replaced with '?'. */
+static json_t* SafeJsonString(const char* s)
+{
+  if (!s) { return json_null(); }
+  json_t* j = json_string(s);
+  if (j) { return j; }
+
+  size_t len = strlen(s);
+  PoolMem clean(PM_FNAME);
+  clean.check_size(len + 1);
+  char* out = clean.c_str();
+  for (size_t i = 0; i < len; i++) {
+    unsigned char c = static_cast<unsigned char>(s[i]);
+    out[i] = (c < 0x80) ? s[i] : '?';
+  }
+  out[len] = '\0';
+  return json_string(out);
+}
+
 /* Long-form status string for a terminated job, mirroring the text emitter
  * in ListTerminatedJobs(). */
 static const char* TerminatedStatusToLongString(int js)
@@ -493,7 +515,7 @@ static json_t* BuildRunningJobsJson()
     json_t* j = json_object();
     json_object_set_new(j, "jobid",
                         json_integer(static_cast<json_int_t>(njcr->JobId)));
-    json_object_set_new(j, "job", json_string(njcr->Job));
+    json_object_set_new(j, "job", SafeJsonString(njcr->Job));
     json_object_set_new(j, "started", TimeAsIsoJson(njcr->start_time));
     json_object_set_new(j, "level", CharAsStringJson(njcr->getJobLevel()));
     json_object_set_new(j, "job_type", CharAsStringJson(njcr->getJobType()));
@@ -526,7 +548,7 @@ static json_t* BuildRunningJobsJson()
       std::unique_lock l(njcr->mutex_guard());
       json_object_set_new(j, "processing_file",
                           njcr->fd_impl->last_fname
-                              ? json_string(njcr->fd_impl->last_fname)
+                              ? SafeJsonString(njcr->fd_impl->last_fname)
                               : json_null());
     } else {
       json_object_set_new(j, "processing_file", json_null());
@@ -557,8 +579,8 @@ static json_t* BuildDirectorsConnectedJson()
   foreach_jcr (njcr) {
     if (njcr->JobId == 0 && njcr->fd_impl && njcr->fd_impl->director) {
       json_t* o = json_object();
-      json_object_set_new(o, "name",
-                          json_string(njcr->fd_impl->director->resource_name_));
+      json_object_set_new(
+          o, "name", SafeJsonString(njcr->fd_impl->director->resource_name_));
       json_object_set_new(o, "connected_at", TimeAsIsoJson(njcr->start_time));
       json_array_append_new(arr, o);
     }
@@ -606,7 +628,7 @@ static json_t* BuildTerminatedJobsJson()
       char* p = strrchr(JobName, '.');
       if (p) { *p = 0; }
     }
-    json_object_set_new(j, "job_name", json_string(JobName));
+    json_object_set_new(j, "job_name", SafeJsonString(JobName));
 
     json_array_append_new(arr, j);
   }

@@ -737,26 +737,40 @@ void DoNativeStorageStatus(UaContext* ua, StorageResource* store, char* cmd)
           0);
       ua->send->ObjectEnd("storage_status");
     } else {
+      /* Cap on JSON payload from SD. See matching rationale in fd_cmds.cc. */
+      constexpr int64_t kMaxStorageStatusJsonBytes = 16 * 1024 * 1024;
       sd->fsend(dotstatuscmd, "json");
 
       PoolMem buf(PM_MESSAGE);
-      int total = 0;
+      int64_t total = 0;
+      bool overflow = false;
       while (sd->recv() >= 0) {
+        if (overflow) { continue; }
+        if (total + sd->message_length + 1 > kMaxStorageStatusJsonBytes) {
+          overflow = true;
+          continue;
+        }
         buf.check_size(total + sd->message_length + 1);
         memcpy(buf.c_str() + total, sd->msg, sd->message_length);
         total += sd->message_length;
         buf.c_str()[total] = '\0';
       }
 
-      json_error_t jerr;
-      json_t* parsed = json_loads(buf.c_str(), 0, &jerr);
       ua->send->ObjectStart("storage_status");
       ua->send->ObjectKeyValue("storage", store->resource_name_, 0);
-      if (parsed) {
-        ua->send->JsonKeyValueAddJson("data", parsed);
+      if (overflow) {
+        ua->send->ObjectKeyValue("error", "reply_too_large", 0);
+        ua->send->ObjectKeyValue(
+            "message", "Storage Daemon JSON status exceeded 16 MB cap", 0);
       } else {
-        ua->send->ObjectKeyValue("error", "parse_failed", 0);
-        ua->send->ObjectKeyValue("message", jerr.text, 0);
+        json_error_t jerr;
+        json_t* parsed = json_loads(buf.c_str(), 0, &jerr);
+        if (parsed) {
+          ua->send->JsonKeyValueAddJson("data", parsed);
+        } else {
+          ua->send->ObjectKeyValue("error", "parse_failed", 0);
+          ua->send->ObjectKeyValue("message", jerr.text, 0);
+        }
       }
       ua->send->ObjectEnd("storage_status");
     }

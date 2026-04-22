@@ -910,6 +910,28 @@ static const char* JobLevelToString(int level)
 
 #if HAVE_JANSSON
 
+/* json_string() returns NULL when input isn't valid UTF-8, which breaks the
+ * surrounding JSON object. Filesystem paths and pool/volume names can carry
+ * arbitrary bytes, so fall back to a sanitized copy where non-ASCII bytes
+ * are replaced with '?'. Mirrors the helper in filed/status.cc. */
+static json_t* SafeJsonString(const char* s)
+{
+  if (!s) { return json_null(); }
+  json_t* j = json_string(s);
+  if (j) { return j; }
+
+  size_t len = strlen(s);
+  PoolMem clean(PM_FNAME);
+  clean.check_size(len + 1);
+  char* out = clean.c_str();
+  for (size_t i = 0; i < len; i++) {
+    unsigned char c = static_cast<unsigned char>(s[i]);
+    out[i] = (c < 0x80) ? s[i] : '?';
+  }
+  out[len] = '\0';
+  return json_string(out);
+}
+
 static json_t* TimeAsIsoJson(utime_t t)
 {
   if (t == 0) { return json_null(); }
@@ -993,12 +1015,12 @@ static json_t* BuildStatusHeaderJson()
 static json_t* BuildDcrJson(DeviceControlRecord* dcr)
 {
   json_t* o = json_object();
-  json_object_set_new(o, "volume", json_string(dcr->VolumeName));
-  json_object_set_new(o, "pool", json_string(dcr->pool_name));
+  json_object_set_new(o, "volume", SafeJsonString(dcr->VolumeName));
+  json_object_set_new(o, "pool", SafeJsonString(dcr->pool_name));
   json_object_set_new(
       o, "device",
-      json_string(dcr->dev ? dcr->dev->print_name()
-                           : dcr->device_resource->archive_device_string));
+      SafeJsonString(dcr->dev ? dcr->dev->print_name()
+                              : dcr->device_resource->archive_device_string));
   return o;
 }
 
@@ -1028,7 +1050,7 @@ static json_t* BuildRunningJobsJson()
       char* p = strrchr(JobName, '.');
       if (p) { *p = 0; }
     }
-    json_object_set_new(j, "job_name", json_string(JobName));
+    json_object_set_new(j, "job_name", SafeJsonString(JobName));
     json_object_set_new(j, "level",
                         json_string(job_level_to_str(jcr->getJobLevel())));
     json_object_set_new(j, "job_type",
@@ -1105,7 +1127,7 @@ static json_t* BuildWaitingJobsJson()
     {
       std::unique_lock lock(jcr->mutex_guard());
       for (auto& m : jcr->sd_impl->reserve_msgs) {
-        json_array_append_new(msgs, json_string(m.c_str()));
+        json_array_append_new(msgs, SafeJsonString(m.c_str()));
       }
     }
     json_object_set_new(j, "reserve_messages", msgs);
@@ -1152,7 +1174,7 @@ static json_t* BuildTerminatedJobsJson()
       char* p = strrchr(JobName, '.');
       if (p) { *p = 0; }
     }
-    json_object_set_new(j, "job_name", json_string(JobName));
+    json_object_set_new(j, "job_name", SafeJsonString(JobName));
 
     json_array_append_new(arr, j);
   }
@@ -1164,17 +1186,18 @@ static json_t* BuildDeviceJson(DeviceResource* device_resource)
   json_t* o = json_object();
   Device* dev = device_resource->dev;
 
-  json_object_set_new(o, "name", json_string(device_resource->resource_name_));
+  json_object_set_new(o, "name",
+                      SafeJsonString(device_resource->resource_name_));
   json_object_set_new(
       o, "device_path",
-      json_string(dev ? dev->print_name()
-                      : device_resource->archive_device_string));
+      SafeJsonString(dev ? dev->print_name()
+                         : device_resource->archive_device_string));
   json_object_set_new(o, "media_type",
-                      json_string(device_resource->media_type));
+                      SafeJsonString(device_resource->media_type));
   json_object_set_new(
       o, "autochanger",
       device_resource->changer_res
-          ? json_string(device_resource->changer_res->resource_name_)
+          ? SafeJsonString(device_resource->changer_res->resource_name_)
           : json_null());
 
   if (dev && dev->IsOpen()) {
@@ -1184,9 +1207,9 @@ static json_t* BuildDeviceJson(DeviceResource* device_resource)
                         json_string(BlockedStateToString(dev->blocked())));
     if (dev->IsLabeled()) {
       json_object_set_new(o, "mounted_volume",
-                          json_string(dev->VolHdr.VolumeName));
-      json_object_set_new(o, "pool",
-                          json_string(dev->pool_name[0] ? dev->pool_name : ""));
+                          SafeJsonString(dev->VolHdr.VolumeName));
+      json_object_set_new(
+          o, "pool", SafeJsonString(dev->pool_name[0] ? dev->pool_name : ""));
       if (dev->CanAppend()) {
         json_t* pos = json_object();
         int64_t blocks = dev->VolCatInfo.VolCatBlocks;
@@ -1237,9 +1260,9 @@ static json_t* BuildUsedVolumesJson()
   foreach_vol ([&](auto* vol) {
     json_t* v = json_object();
     Device* dev = vol->dev;
-    json_object_set_new(v, "volume", json_string(vol->vol_name));
+    json_object_set_new(v, "volume", SafeJsonString(vol->vol_name));
     json_object_set_new(v, "device",
-                        dev ? json_string(dev->print_name()) : json_null());
+                        dev ? SafeJsonString(dev->print_name()) : json_null());
     json_object_set_new(v, "direction", json_string("write"));
     json_object_set_new(v, "readers",
                         json_integer(dev && dev->CanRead() ? 1 : 0));
@@ -1256,9 +1279,9 @@ static json_t* BuildUsedVolumesJson()
   foreach_read_vol([&](auto* vol) {
     json_t* v = json_object();
     Device* dev = vol->dev;
-    json_object_set_new(v, "volume", json_string(vol->vol_name));
+    json_object_set_new(v, "volume", SafeJsonString(vol->vol_name));
     json_object_set_new(v, "device",
-                        dev ? json_string(dev->print_name()) : json_null());
+                        dev ? SafeJsonString(dev->print_name()) : json_null());
     json_object_set_new(v, "direction", json_string("read"));
     json_object_set_new(v, "readers",
                         json_integer(dev && dev->CanRead() ? 1 : 0));

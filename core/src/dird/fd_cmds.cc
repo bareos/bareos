@@ -1042,26 +1042,42 @@ void DoNativeClientStatus(UaContext* ua, ClientResource* client, char* cmd)
           0);
       ua->send->ObjectEnd("client_status");
     } else {
+      /* Cap on JSON payload from FD: a real status reply is a few KB.
+       * Protects the director from a compromised/buggy FD flooding the
+       * authenticated channel and exhausting memory. */
+      constexpr int64_t kMaxClientStatusJsonBytes = 16 * 1024 * 1024;
       fd->fsend(".status json");
 
       PoolMem buf(PM_MESSAGE);
-      int total = 0;
+      int64_t total = 0;
+      bool overflow = false;
       while (fd->recv() >= 0) {
+        if (overflow) { continue; }
+        if (total + fd->message_length + 1 > kMaxClientStatusJsonBytes) {
+          overflow = true;
+          continue;
+        }
         buf.check_size(total + fd->message_length + 1);
         memcpy(buf.c_str() + total, fd->msg, fd->message_length);
         total += fd->message_length;
         buf.c_str()[total] = '\0';
       }
 
-      json_error_t jerr;
-      json_t* parsed = json_loads(buf.c_str(), 0, &jerr);
       ua->send->ObjectStart("client_status");
       ua->send->ObjectKeyValue("client", client->resource_name_, 0);
-      if (parsed) {
-        ua->send->JsonKeyValueAddJson("data", parsed);
+      if (overflow) {
+        ua->send->ObjectKeyValue("error", "reply_too_large", 0);
+        ua->send->ObjectKeyValue(
+            "message", "File Daemon JSON status exceeded 16 MB cap", 0);
       } else {
-        ua->send->ObjectKeyValue("error", "parse_failed", 0);
-        ua->send->ObjectKeyValue("message", jerr.text, 0);
+        json_error_t jerr;
+        json_t* parsed = json_loads(buf.c_str(), 0, &jerr);
+        if (parsed) {
+          ua->send->JsonKeyValueAddJson("data", parsed);
+        } else {
+          ua->send->ObjectKeyValue("error", "parse_failed", 0);
+          ua->send->ObjectKeyValue("message", jerr.text, 0);
+        }
       }
       ua->send->ObjectEnd("client_status");
     }

@@ -2029,18 +2029,33 @@ bail_out:
 }
 
 #if HAVE_JANSSON
+/* Cap on JSON status payload the director will accept from FD/SD. A real
+ * status reply is at most a few KB; caps prevent a compromised or buggy
+ * daemon from exhausting director memory over the authenticated channel. */
+constexpr int64_t kMaxDaemonStatusJsonBytes = 16 * 1024 * 1024;
+
 /* Drain whatever the daemon wrote to the socket up to BNET_EOD, parse the
  * accumulated bytes as JSON, return a new json_t* on success or nullptr on
  * parse failure. `err_out` (if non-null) receives the parser's error text. */
 static json_t* ReadDaemonStatusJson(BareosSocket* bs, std::string& err_out)
 {
   PoolMem buf(PM_MESSAGE);
-  int total = 0;
+  int64_t total = 0;
+  bool overflow = false;
   while (bs->recv() >= 0) {
+    if (overflow) { continue; /* drain remainder so peer can close cleanly */ }
+    if (total + bs->message_length + 1 > kMaxDaemonStatusJsonBytes) {
+      overflow = true;
+      continue;
+    }
     buf.check_size(total + bs->message_length + 1);
     memcpy(buf.c_str() + total, bs->msg, bs->message_length);
     total += bs->message_length;
     buf.c_str()[total] = '\0';
+  }
+  if (overflow) {
+    err_out = "daemon JSON response exceeded size cap";
+    return nullptr;
   }
   json_error_t jerr;
   json_t* parsed = json_loads(buf.c_str(), 0, &jerr);
@@ -2110,6 +2125,15 @@ static void DoJobIdStatus(UaContext* ua, uint32_t jobid)
   }
   ua->send->ObjectEnd("dir");
 
+  /* The aggregator reuses the console's JCR (ua->jcr) to open sockets to
+   * the target FD and SD. That requires temporarily setting its
+   * res.client and write_storage to the running job's values. Save them
+   * first and restore before returning so subsequent console commands on
+   * the same session aren't affected. */
+  ClientResource* saved_client = ua->jcr->dir_impl->res.client;
+  StorageResource* saved_wstore = ua->jcr->dir_impl->res.write_storage;
+  StorageResource* saved_rstore = ua->jcr->dir_impl->res.read_storage;
+
   /* FD subtree: connect, ask for `.status json`, nest the reply. */
   if (client) {
     ua->send->ObjectStart("fd");
@@ -2176,6 +2200,12 @@ static void DoJobIdStatus(UaContext* ua, uint32_t jobid)
   }
 
   ua->send->ObjectEnd("job_status");
+
+  /* Restore prior console JCR state. */
+  ua->jcr->dir_impl->res.client = saved_client;
+  ua->jcr->dir_impl->res.write_storage = saved_wstore;
+  ua->jcr->dir_impl->res.read_storage = saved_rstore;
+
   FreeJcr(job_jcr);
 #else
   (void)ua;
