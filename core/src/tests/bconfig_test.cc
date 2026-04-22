@@ -981,6 +981,12 @@ Console {
         return resource.type == "Console" && resource.name == "admin";
       });
   ASSERT_NE(console_entry, resources.end());
+  EXPECT_TRUE(std::any_of(console_entry->relations.begin(),
+                          console_entry->relations.end(), [](const auto& rel) {
+                            return rel.directive == "Director"
+                                   && rel.target_type == "Director"
+                                   && rel.target_name == "bareos-dir";
+                          }));
   EXPECT_TRUE(HasMatchedExternalRelation(*console_entry, "Peer.Director",
                                          "director", "Director", "bareos-dir"));
   EXPECT_TRUE(HasMatchedExternalRelation(*console_entry, "Peer.Console",

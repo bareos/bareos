@@ -752,11 +752,7 @@ static bool SelectDirector(const char* director,
   for (i = 0; i < numcon; i++) {
     console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
         R_CONSOLE, (BareosResource*)console_resource_tmp);
-    if (console_resource_tmp->director
-        && bstrcmp(console_resource_tmp->director,
-                   director_resource_tmp->resource_name_)) {
-      break;
-    }
+    if (console_resource_tmp->director == director_resource_tmp) { break; }
     console_resource_tmp = NULL;
   }
 
@@ -765,7 +761,7 @@ static bool SelectDirector(const char* director,
     for (i = 0; i < numcon; i++) {
       console_resource_tmp = (ConsoleResource*)my_config->GetNextRes(
           R_CONSOLE, (BareosResource*)console_resource_tmp);
-      if (console_resource_tmp->director == NULL) break;
+      if (console_resource_tmp->director == nullptr) break;
       console_resource_tmp = NULL;
     }
   }

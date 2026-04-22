@@ -918,13 +918,13 @@ void AppendConsolePeerRelations(ResourceInspectionEntry& entry,
           = FindTypedResources<directordaemon::DirectorResource>(
               *director_config, [local_console](auto* peer) {
                 return std::string_view(SafeString(peer->resource_name_))
-                       == SafeString(local_console->director);
+                       == SafeString(local_console->director->resource_name_);
               });
 
       if (peer_directors.empty()) {
         AppendMissingExternalRelation(
             entry.external_relations, "Peer.Director", Component::kDirector,
-            "Director", SafeString(local_console->director),
+            "Director", SafeString(local_console->director->resource_name_),
             SourceOrDefinition(*local_console, "Director"),
             "no loaded director config defines this Director");
       } else {

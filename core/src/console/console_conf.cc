@@ -59,7 +59,7 @@ static const ResourceItem cons_items[] = {
   { "HistoryFile", CFG_TYPE_DIR, ITEM(res_cons, history_file), {}},
   { "HistoryLength", CFG_TYPE_PINT32, ITEM(res_cons, history_length), {config::DefaultValue{"100"}}},
   { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons, password_), {config::Required{}}},
-  { "Director", CFG_TYPE_STR, ITEM(res_cons, director), {}},
+  { "Director", CFG_TYPE_RES, ITEM(res_cons, director), {config::Code{R_DIRECTOR}}},
   { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons, heartbeat_interval), {config::DefaultValue{"0"}}},
   TLS_COMMON_CONFIG(res_cons),
   TLS_CERT_CONFIG(res_cons),
@@ -143,7 +143,6 @@ static void FreeResource(BareosResource* res, int type)
       if (p->rc_file) { free(p->rc_file); }
       if (p->history_file) { free(p->history_file); }
       if (p->password_.value) { free(p->password_.value); }
-      if (p->director) { free(p->director); }
       delete p;
       break;
     }
@@ -188,6 +187,7 @@ static bool SaveResource(int type, const ResourceItem* items, int pass)
           Emsg1(M_ABORT, 0, T_("Cannot find Console resource %s\n"),
                 res_cons->resource_name_);
         } else {
+          p->director = res_cons->director;
           p->tls_cert_.allowed_certificate_common_names_ = std::move(
               res_cons->tls_cert_.allowed_certificate_common_names_);
         }

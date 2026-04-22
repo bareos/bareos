@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2022 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,6 +38,8 @@ namespace console {
 
 static const std::string default_config_filename("bconsole.conf");
 
+class DirectorResource;
+
 // Resource codes -- they must be sequential for indexing
 
 enum
@@ -63,10 +65,10 @@ class ConsoleResource
   ConsoleResource() = default;
   virtual ~ConsoleResource() = default;
 
-  char* rc_file = nullptr;       /**< startup file */
-  char* history_file = nullptr;  /**< command history file */
-  uint32_t history_length = 0;   /**< readline history length */
-  char* director = nullptr;      /**< bind to director */
+  char* rc_file = nullptr;              /**< startup file */
+  char* history_file = nullptr;         /**< command history file */
+  uint32_t history_length = 0;          /**< readline history length */
+  DirectorResource* director = nullptr; /**< bind to director */
   utime_t heartbeat_interval{0}; /**< Interval to send heartbeats to Dir */
 };
 
