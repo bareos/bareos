@@ -53,6 +53,14 @@ class JobStatusController extends AbstractRestfulController
     protected $jobModel = null;
     protected $result = null;
 
+    /**
+     * Handle `GET /api/jobstatus` (collection). Not used — clients must
+     * request a specific jobid via `GET /api/jobstatus/<id>`. Redirects
+     * to the login page if the session has timed out; otherwise returns
+     * an empty JSON object.
+     *
+     * @return JsonModel|\Laminas\Http\Response
+     */
     public function getList()
     {
         $this->RequestURIPlugin()->setRequestURI();
@@ -75,6 +83,16 @@ class JobStatusController extends AbstractRestfulController
         return new JsonModel();
     }
 
+    /**
+     * Handle `GET /api/jobstatus/<id>`. Forwards to
+     * JobModel::getLiveJobStatus(), which invokes the director's
+     * aggregating `status jobid=<id>` command under `.api json`.
+     * Redirects to login on session timeout. Returns HTTP 500 if the
+     * director call throws.
+     *
+     * @param int|string $id jobid to query.
+     * @return JsonModel|\Laminas\Http\Response
+     */
     public function get($id)
     {
         $this->RequestURIPlugin()->setRequestURI();
@@ -107,6 +125,11 @@ class JobStatusController extends AbstractRestfulController
         return new JsonModel($this->result);
     }
 
+    /**
+     * Lazily resolve and memoize the Job model from the service locator.
+     *
+     * @return \Job\Model\JobModel
+     */
     public function getJobModel()
     {
         if (!$this->jobModel) {
