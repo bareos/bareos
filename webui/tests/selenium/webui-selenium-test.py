@@ -701,10 +701,10 @@ class SeleniumTest(unittest.TestCase):
     def getChromedriverpath(self):
         if SeleniumTest.chromedriverpath is None:
             for chromedriverpath in [
-                "/usr/bin/chromedriver",
-                "/usr/sbin/chromedriver",
                 "/usr/local/bin/chromedriver",
                 "/usr/local/sbin/chromedriver",
+                "/usr/bin/chromedriver",
+                "/usr/sbin/chromedriver",
             ]:
                 if os.path.isfile(chromedriverpath):
                     return chromedriverpath
