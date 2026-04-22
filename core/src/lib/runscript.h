@@ -80,7 +80,7 @@ class RunScript : public BareosResource {
  public:
   RunScript() = default;
   virtual ~RunScript() = default;
-  RunScript(const RunScript& other) = default;
+  RunScript(const RunScript& other);
 
   std::string command;       /* Command string */
   std::string target;        /* Host target. Values:

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2019-2024 Bareos GmbH & Co. KG
+   Copyright (C) 2019-2026 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,6 +38,21 @@
  * daemon cannot run console commands.
  */
 bool (*console_command)(JobControlRecord* jcr, const char* cmd) = NULL;
+
+RunScript::RunScript(const RunScript& other) : BareosResource(other)
+{
+  command = other.command;
+  target = other.target;
+  when = other.when;
+  cmd_type = other.cmd_type;
+  level = other.level;
+  short_form = other.short_form;
+  from_jobdef = other.from_jobdef;
+  on_success = other.on_success;
+  on_failure = other.on_failure;
+  fail_on_error = other.fail_on_error;
+  job_code_callback = other.job_code_callback;
+}
 
 RunScript* DuplicateRunscript(RunScript* src)
 {
