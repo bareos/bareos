@@ -25,6 +25,9 @@
 #include "dird/dird_conf.h"
 #include "include/bareos.h"
 #include "lib/bpipe.h"
+#include "lib/message.h"
+#include "lib/thread_specific_data.h"
+#include "stored/stored_conf.h"
 
 #include <jansson.h>
 
@@ -36,16 +39,69 @@
 #include <ctime>
 #include <fstream>
 #include <iomanip>
+#include <set>
+#include <source_location>
 #include <sstream>
 #include <stdexcept>
 #include <system_error>
+#include <variant>
 
 namespace bconfig::service {
 namespace {
 
 using JsonPtr = std::unique_ptr<json_t, decltype(&json_decref)>;
+constexpr int kServiceDebugLevel = 10;
 
 JsonPtr MakeJson(json_t* value) { return JsonPtr(value, &json_decref); }
+
+std::string MakeDebugTimestamp()
+{
+  const auto now = std::chrono::system_clock::now();
+  const auto now_seconds = std::chrono::system_clock::to_time_t(now);
+  const auto subseconds = now.time_since_epoch() % std::chrono::seconds(1);
+  constexpr auto kSubsecondTicksPerSecond
+      = std::chrono::system_clock::duration::period::den
+        / std::chrono::system_clock::duration::period::num;
+  constexpr int kSubsecondDigits = [] {
+    auto ticks = kSubsecondTicksPerSecond;
+    int digits = 0;
+    while (ticks > 1) {
+      ticks /= 10;
+      ++digits;
+    }
+    return digits;
+  }();
+  std::tm utc{};
+#if HAVE_WIN32
+  gmtime_s(&utc, &now_seconds);
+#else
+  gmtime_r(&now_seconds, &utc);
+#endif
+
+  std::ostringstream stream;
+  stream << std::put_time(&utc, "%Y-%m-%dT%H:%M:%S");
+  if constexpr (kSubsecondDigits > 0) {
+    stream << '.' << std::setw(kSubsecondDigits) << std::setfill('0')
+           << subseconds.count();
+  }
+  stream << 'Z';
+  return stream.str();
+}
+
+void DebugLog(std::string_view message,
+              const std::source_location& location
+              = std::source_location::current())
+{
+  if (kServiceDebugLevel > debug_level) { return; }
+
+  const auto line = MakeDebugTimestamp() + " " + std::string{my_name} + " ("
+                    + std::to_string(kServiceDebugLevel)
+                    + "): " + get_basename(location.file_name()) + ":"
+                    + std::to_string(location.line()) + "-"
+                    + std::to_string(GetJobIdFromThreadSpecificData()) + " "
+                    + std::string{message};
+  p_msg(__FILE__, __LINE__, -1, "%s\n", line.c_str());
+}
 
 std::filesystem::path HomeDirectory()
 {
@@ -190,6 +246,111 @@ OperationResult<std::string> ReadFile(const std::filesystem::path& path)
 
   return {.value = std::string{std::istreambuf_iterator<char>(stream),
                                std::istreambuf_iterator<char>()}};
+}
+
+std::filesystem::path RepositoryRootFromConfigPath(
+    const std::filesystem::path& config_root)
+{
+  return config_root.parent_path().parent_path();
+}
+
+OperationResult<std::set<std::string>> LoadManagedPaths(
+    const std::filesystem::path& repository_root)
+{
+  const auto ownership_path = RepositoryLayout::OwnershipPath(repository_root);
+  if (!std::filesystem::exists(ownership_path)) {
+    return {.value = std::set<std::string>{}};
+  }
+
+  json_error_t json_error{};
+  auto root = MakeJson(json_load_file(ownership_path.c_str(), 0, &json_error));
+  if (!root) {
+    return {.error = "failed to parse ownership file '"
+                     + ownership_path.string() + "': " + json_error.text};
+  }
+  if (!json_is_object(root.get())) {
+    return {.error = "ownership file '" + ownership_path.string()
+                     + "' must contain a JSON object."};
+  }
+
+  std::set<std::string> managed_paths;
+  auto* managed_files = json_object_get(root.get(), "managed_files");
+  if (!managed_files) { return {.value = std::move(managed_paths)}; }
+  if (!json_is_array(managed_files)) {
+    return {.error = "ownership file '" + ownership_path.string()
+                     + "' contains a non-array 'managed_files' field."};
+  }
+
+  size_t index = 0;
+  json_t* entry = nullptr;
+  json_array_foreach(managed_files, index, entry)
+  {
+    if (!json_is_string(entry)) {
+      return {.error = "ownership file '" + ownership_path.string()
+                       + "' contains a non-string managed file entry."};
+    }
+    managed_paths.emplace(json_string_value(entry));
+  }
+
+  return {.value = std::move(managed_paths)};
+}
+
+std::optional<std::string> WriteManagedPaths(
+    const std::filesystem::path& repository_root,
+    const std::set<std::string>& managed_paths)
+{
+  const auto ownership_path = RepositoryLayout::OwnershipPath(repository_root);
+  auto root = MakeJson(json_object());
+  auto managed_files = MakeJson(json_array());
+  for (const auto& path : managed_paths) {
+    json_array_append_new(managed_files.get(), json_string(path.c_str()));
+  }
+  json_object_set_new(root.get(), "managed_files", managed_files.release());
+
+  char* dump = json_dumps(root.get(), JSON_INDENT(2));
+  if (!dump) {
+    return "failed to serialize ownership file '" + ownership_path.string()
+           + "'.";
+  }
+
+  std::string content{dump};
+  std::free(dump);
+  content.push_back('\n');
+  if (!WriteFile(ownership_path, content)) {
+    return "failed to write ownership file '" + ownership_path.string() + "'.";
+  }
+  return std::nullopt;
+}
+
+bool IsManagedPath(const std::set<std::string>& managed_paths,
+                   const std::filesystem::path& repository_root,
+                   const std::filesystem::path& path)
+{
+  std::error_code error_code;
+  const auto relative
+      = std::filesystem::relative(path, repository_root, error_code);
+  if (error_code) { return false; }
+  return managed_paths.contains(relative.generic_string());
+}
+
+void SetManagedPath(std::set<std::string>& managed_paths,
+                    const std::filesystem::path& repository_root,
+                    const std::filesystem::path& path)
+{
+  std::error_code error_code;
+  const auto relative
+      = std::filesystem::relative(path, repository_root, error_code);
+  if (!error_code) { managed_paths.emplace(relative.generic_string()); }
+}
+
+void RemoveManagedPath(std::set<std::string>& managed_paths,
+                       const std::filesystem::path& repository_root,
+                       const std::filesystem::path& path)
+{
+  std::error_code error_code;
+  const auto relative
+      = std::filesystem::relative(path, repository_root, error_code);
+  if (!error_code) { managed_paths.erase(relative.generic_string()); }
 }
 
 template <typename T>
@@ -445,6 +606,79 @@ std::string BuildClientDirectorStubContent(std::string_view director_name,
   return content.str();
 }
 
+constexpr uint16_t kDefaultFileDaemonPort = 9102;
+constexpr uint16_t kDefaultStorageDaemonPort = 9103;
+
+std::string BuildDirectorClientResourceContent(std::string_view client_name,
+                                               std::string_view address,
+                                               std::string_view password,
+                                               uint16_t port,
+                                               std::string_view description)
+{
+  std::ostringstream content;
+  content << "Client {\n"
+          << "  Name = " << QuoteBareosString(client_name) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n"
+          << "  Address = " << address << "\n"
+          << "  Password = " << QuoteBareosString(password) << "\n"
+          << "  Port = " << port << "\n"
+          << "}\n";
+  return content.str();
+}
+
+std::string BuildDirectorStorageResourceContent(std::string_view storage_name,
+                                                std::string_view address,
+                                                std::string_view password,
+                                                std::string_view device,
+                                                std::string_view media_type,
+                                                uint16_t port,
+                                                std::string_view description)
+{
+  std::ostringstream content;
+  content << "Storage {\n"
+          << "  Name = " << QuoteBareosString(storage_name) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n"
+          << "  Address = " << address << "\n"
+          << "  Password = " << QuoteBareosString(password) << "\n"
+          << "  Device = " << device << "\n"
+          << "  Media Type = " << media_type << "\n"
+          << "  Port = " << port << "\n"
+          << "}\n";
+  return content.str();
+}
+
+std::string BuildStorageDaemonDirectorResourceContent(
+    std::string_view director_name,
+    std::string_view password,
+    std::string_view description)
+{
+  std::ostringstream content;
+  content << "Director {\n"
+          << "  Name = " << QuoteBareosString(director_name) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n"
+          << "  Password = " << QuoteBareosString(password) << "\n"
+          << "}\n";
+  return content.str();
+}
+
+std::string BuildStorageDaemonDeviceResourceContent(
+    std::string_view device_name,
+    std::string_view media_type,
+    std::string_view archive_device,
+    std::string_view device_type,
+    std::string_view description)
+{
+  std::ostringstream content;
+  content << "Device {\n"
+          << "  Name = " << QuoteBareosString(device_name) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n"
+          << "  Media Type = " << media_type << "\n"
+          << "  Device Type = " << QuoteBareosString(device_type) << "\n"
+          << "  Archive Device = " << archive_device << "\n"
+          << "}\n";
+  return content.str();
+}
+
 std::string DefaultClientDirectorStubDescription(std::string_view client_name,
                                                  std::string_view director_name)
 {
@@ -452,11 +686,64 @@ std::string DefaultClientDirectorStubDescription(std::string_view client_name,
          + " and director " + std::string{director_name};
 }
 
+std::string DefaultDirectorClientDescription(std::string_view client_name,
+                                             std::string_view director_name)
+{
+  return "Managed client resource for " + std::string{client_name}
+         + " in director " + std::string{director_name};
+}
+
+std::string DefaultDirectorStorageDescription(std::string_view storage_name,
+                                              std::string_view director_name)
+{
+  return "Managed storage resource for " + std::string{storage_name}
+         + " in director " + std::string{director_name};
+}
+
+std::string DefaultStorageDaemonDirectorDescription(
+    std::string_view director_name,
+    std::string_view storage_name)
+{
+  return "Managed storage-daemon director resource for "
+         + std::string{director_name} + " synced from storage "
+         + std::string{storage_name};
+}
+
+std::string DefaultStorageDaemonDeviceDescription(std::string_view device_name,
+                                                  std::string_view storage_name)
+{
+  return "Managed storage-daemon device resource for "
+         + std::string{device_name} + " synced from storage "
+         + std::string{storage_name};
+}
+
+OperationResult<std::string> RenderPasswordForConfig(const s_password& password,
+                                                     std::string_view context)
+{
+  switch (password.encoding) {
+    case p_encoding_clear:
+      return {.value = std::string{password.value ? password.value : ""}};
+    case p_encoding_md5: {
+      std::string rendered = "[md5]";
+      if (password.value) { rendered += password.value; }
+      return {.value = std::move(rendered)};
+    }
+    default:
+      return {.error = "failed to render " + std::string{context} + "."};
+  }
+}
+
 bool IsSafePathSegment(std::string_view value)
 {
   return !value.empty() && value != "." && value != ".."
          && value.find('/') == std::string_view::npos
          && value.find('\\') == std::string_view::npos;
+}
+
+bool IsSafeBareosToken(std::string_view value)
+{
+  return !value.empty()
+         && value.find_first_of(" \t\r\n{}\"'\\") == std::string_view::npos;
 }
 
 std::optional<std::string> CleanupCreatedClientStub(
@@ -490,6 +777,67 @@ std::optional<std::string> RestoreClientStubFile(
   return "failed to restore client stub '" + stub_path.string() + "'.";
 }
 
+std::optional<std::string> RestoreDeletedFile(const std::filesystem::path& path,
+                                              const std::string& content)
+{
+  std::error_code error_code;
+  std::filesystem::create_directories(path.parent_path(), error_code);
+  if (error_code) {
+    return "failed to recreate directory '" + path.parent_path().string()
+           + "': " + error_code.message();
+  }
+  if (WriteFile(path, content)) { return std::nullopt; }
+  return "failed to restore file '" + path.string() + "'.";
+}
+
+std::optional<std::string> DeleteFileAndEmptyParents(
+    const std::filesystem::path& file_path,
+    const std::filesystem::path& stop_directory)
+{
+  std::error_code error_code;
+  std::filesystem::remove(file_path, error_code);
+  if (error_code) {
+    return "failed to delete file '" + file_path.string()
+           + "': " + error_code.message();
+  }
+
+  auto current = file_path.parent_path();
+  while (!current.empty() && current != stop_directory) {
+    std::filesystem::remove(current, error_code);
+    if (error_code) {
+      error_code.clear();
+      break;
+    }
+    current = current.parent_path();
+  }
+
+  return std::nullopt;
+}
+
+std::optional<std::string> CleanupCreatedFile(
+    const std::filesystem::path& file_path,
+    const std::filesystem::path& stop_directory)
+{
+  std::error_code error_code;
+  std::filesystem::remove(file_path, error_code);
+  if (error_code) {
+    return "failed to roll back created file '" + file_path.string()
+           + "': " + error_code.message();
+  }
+
+  auto current = file_path.parent_path();
+  while (!current.empty() && current != stop_directory) {
+    std::filesystem::remove(current, error_code);
+    if (error_code) {
+      error_code.clear();
+      break;
+    }
+    current = current.parent_path();
+  }
+
+  return std::nullopt;
+}
+
 std::string FormatParseFailure(std::string_view prefix,
                                const bconfig::ParseMessages& messages)
 {
@@ -499,6 +847,879 @@ std::string FormatParseFailure(std::string_view prefix,
   rendered << prefix << "did not validate cleanly.";
   for (const auto& message : logs) { rendered << "\n" << message; }
   return rendered.str();
+}
+
+struct DirectorClientWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorStorageWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<std::string> password{};
+  std::optional<std::string> device{};
+  std::optional<std::string> media_type{};
+  std::optional<std::string> description{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct StorageDaemonDirectorWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+  bool exists{false};
+  bool is_standalone_file{false};
+  bool is_managed{false};
+};
+
+struct StorageDaemonDeviceWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> media_type{};
+  std::optional<std::string> archive_device{};
+  std::optional<std::string> device_type{};
+  std::optional<std::string> description{};
+  bool exists{false};
+  bool is_standalone_file{false};
+  bool is_managed{false};
+};
+
+struct StorageSyncTarget {
+  DeploymentConfigRecord storage_config{};
+};
+
+OperationResult<DirectorClientWriteContext> LoadDirectorClientWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view client_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorClientWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "client"
+                   / (std::string{client_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_CLIENT, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_CLIENT, resource)) {
+    auto* client = dynamic_cast<directordaemon::ClientResource*>(resource);
+    if (!client) { continue; }
+    if (auto source = client->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_CLIENT, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_CLIENT, resource)) {
+    auto* client = dynamic_cast<directordaemon::ClientResource*>(resource);
+    if (!client || !client->resource_name_
+        || client->resource_name_ != client_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (client->address && client->address[0] != '\0') {
+      context.address = std::string{client->address};
+    }
+    if (client->FDport != 0) {
+      context.port = static_cast<uint16_t>(client->FDport);
+    }
+    if (client->description_ && client->description_[0] != '\0') {
+      context.description = std::string{client->description_};
+    }
+    auto rendered_password = RenderPasswordForConfig(
+        client->password_,
+        "director-side client password for '" + std::string{client_name} + "'");
+    if (!rendered_password) { return {.error = rendered_password.error}; }
+    context.password = *rendered_password.value;
+
+    auto source = client->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director client '" + std::string{client_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director client '" + std::string{client_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view storage_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorStorageWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "storage"
+                   / (std::string{storage_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_STORAGE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_STORAGE, resource)) {
+    auto* storage = dynamic_cast<directordaemon::StorageResource*>(resource);
+    if (!storage) { continue; }
+    if (auto source = storage->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_STORAGE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_STORAGE, resource)) {
+    auto* storage = dynamic_cast<directordaemon::StorageResource*>(resource);
+    if (!storage || !storage->resource_name_
+        || storage->resource_name_ != storage_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (storage->address && storage->address[0] != '\0') {
+      context.address = std::string{storage->address};
+    }
+    if (storage->SDport != 0) {
+      context.port = static_cast<uint16_t>(storage->SDport);
+    }
+    if (storage->description_ && storage->description_[0] != '\0') {
+      context.description = std::string{storage->description_};
+    }
+    if (storage->media_type && storage->media_type[0] != '\0') {
+      context.media_type = std::string{storage->media_type};
+    }
+    if (storage->devices.size() != 1) {
+      return {.error = "director storage '" + std::string{storage_name}
+                       + "' must have exactly one Device to be managed."};
+    }
+    if (storage->devices.front().name.empty()) {
+      return {.error = "director storage '" + std::string{storage_name}
+                       + "' has an empty Device value."};
+    }
+    context.device = storage->devices.front().name;
+
+    auto rendered_password = RenderPasswordForConfig(
+        storage->password_, "director-side storage password for '"
+                                + std::string{storage_name} + "'");
+    if (!rendered_password) { return {.error = rendered_password.error}; }
+    context.password = *rendered_password.value;
+
+    auto source = storage->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director storage '" + std::string{storage_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director storage '" + std::string{storage_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<StorageDaemonDirectorWriteContext>
+LoadStorageDaemonDirectorWriteContext(
+    const DeploymentConfigRecord& storage_config,
+    std::string_view director_name,
+    const std::set<std::string>& managed_paths)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("storage config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("storage config ", loaded.messages)};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.path);
+  StorageDaemonDirectorWriteContext context{
+      .file_path = storage_config.path / "bareos-sd.d" / "director"
+                   / (std::string{director_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_DIRECTOR, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                storagedaemon::R_DIRECTOR, resource)) {
+    auto* director = dynamic_cast<storagedaemon::DirectorResource*>(resource);
+    if (!director) { continue; }
+    if (auto source = director->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_DIRECTOR, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                storagedaemon::R_DIRECTOR, resource)) {
+    auto* director = dynamic_cast<storagedaemon::DirectorResource*>(resource);
+    if (!director || !director->resource_name_
+        || director->resource_name_ != director_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (director->description_ && director->description_[0] != '\0') {
+      context.description = std::string{director->description_};
+    }
+    auto rendered_password = RenderPasswordForConfig(
+        director->password_, "storage-daemon director password for '"
+                                 + std::string{director_name} + "'");
+    if (!rendered_password) { return {.error = rendered_password.error}; }
+    context.password = *rendered_password.value;
+
+    auto source = director->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "storage-daemon director '" + std::string{director_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    context.is_managed
+        = IsManagedPath(managed_paths, repository_root, context.file_path);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<StorageDaemonDeviceWriteContext>
+LoadStorageDaemonDeviceWriteContext(
+    const DeploymentConfigRecord& storage_config,
+    std::string_view device_name,
+    const std::set<std::string>& managed_paths)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("storage config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("storage config ", loaded.messages)};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.path);
+  StorageDaemonDeviceWriteContext context{
+      .file_path = storage_config.path / "bareos-sd.d" / "device"
+                   / (std::string{device_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_DEVICE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                storagedaemon::R_DEVICE, resource)) {
+    auto* device = dynamic_cast<storagedaemon::DeviceResource*>(resource);
+    if (!device) { continue; }
+    if (auto source = device->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_DEVICE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                storagedaemon::R_DEVICE, resource)) {
+    auto* device = dynamic_cast<storagedaemon::DeviceResource*>(resource);
+    if (!device || !device->resource_name_
+        || device->resource_name_ != device_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (device->description_ && device->description_[0] != '\0') {
+      context.description = std::string{device->description_};
+    }
+    if (device->media_type && device->media_type[0] != '\0') {
+      context.media_type = std::string{device->media_type};
+    }
+    if (device->archive_device_string
+        && device->archive_device_string[0] != '\0') {
+      context.archive_device = std::string{device->archive_device_string};
+    }
+    if (!device->device_type.empty()) {
+      context.device_type = std::string{device->device_type};
+    }
+
+    auto source = device->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "storage-daemon device '" + std::string{device_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    context.is_managed
+        = IsManagedPath(managed_paths, repository_root, context.file_path);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<std::optional<StorageSyncTarget>> SelectStorageSyncTarget(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view device_name,
+    const ServiceState& state)
+{
+  auto storage_configs = state.ListDeploymentConfigs(
+      deployment_id, bconfig::Component::kStorage);
+  if (!storage_configs) { return {.error = storage_configs.error}; }
+  if (storage_configs.value->empty()) {
+    return {.value = std::optional<StorageSyncTarget>{}};
+  }
+
+  std::vector<DeploymentConfigRecord> exact_matches;
+  std::vector<DeploymentConfigRecord> director_matches;
+  for (const auto& storage_config : *storage_configs.value) {
+    auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                      storage_config.path.string(), true);
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "storage config parser initialization ", loaded.messages)};
+    }
+    if (!loaded.parse_ok) {
+      return {.error = FormatParseFailure("storage config ", loaded.messages)};
+    }
+
+    bool has_director = false;
+    for (auto* resource
+         = loaded.parser->GetNextRes(storagedaemon::R_DIRECTOR, nullptr);
+         resource != nullptr; resource = loaded.parser->GetNextRes(
+                                  storagedaemon::R_DIRECTOR, resource)) {
+      auto* director = dynamic_cast<storagedaemon::DirectorResource*>(resource);
+      if (director && director->resource_name_
+          && director->resource_name_ == director_name) {
+        has_director = true;
+        break;
+      }
+    }
+    if (!has_director) { continue; }
+
+    director_matches.push_back(storage_config);
+
+    for (auto* resource
+         = loaded.parser->GetNextRes(storagedaemon::R_DEVICE, nullptr);
+         resource != nullptr; resource = loaded.parser->GetNextRes(
+                                  storagedaemon::R_DEVICE, resource)) {
+      auto* device = dynamic_cast<storagedaemon::DeviceResource*>(resource);
+      if (device && device->resource_name_
+          && device->resource_name_ == device_name) {
+        exact_matches.push_back(storage_config);
+        break;
+      }
+    }
+  }
+
+  if (exact_matches.size() == 1) {
+    return {.value
+            = StorageSyncTarget{.storage_config = exact_matches.front()}};
+  }
+  if (exact_matches.size() > 1) {
+    return {.error
+            = "automatic storage sync is ambiguous: multiple storage "
+              "daemons match director '"
+              + std::string{director_name} + "' and device '"
+              + std::string{device_name} + "'."};
+  }
+  if (director_matches.size() == 1) {
+    return {.value
+            = StorageSyncTarget{.storage_config = director_matches.front()}};
+  }
+  if (director_matches.size() > 1) {
+    return {.error
+            = "automatic storage sync is ambiguous: multiple storage "
+              "daemons match director '"
+              + std::string{director_name} + "'."};
+  }
+  if (storage_configs.value->size() == 1) {
+    return {.value = StorageSyncTarget{.storage_config
+                                       = storage_configs.value->front()}};
+  }
+
+  return {.error
+          = "automatic storage sync could not determine which storage "
+            "daemon config to update."};
+}
+
+OperationResult<bool> DirectorConfigHasStorageResources(
+    const DeploymentConfigRecord& director_config)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  auto* resource
+      = loaded.parser->GetNextRes(directordaemon::R_STORAGE, nullptr);
+  return {.value = resource != nullptr};
+}
+
+OperationResult<bool> DirectorConfigUsesStorageDevice(
+    const DeploymentConfigRecord& director_config,
+    std::string_view device_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_STORAGE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_STORAGE, resource)) {
+    auto* storage = dynamic_cast<directordaemon::StorageResource*>(resource);
+    if (!storage || storage->devices.empty()) { continue; }
+    if (storage->devices.front().name == device_name) {
+      return {.value = true};
+    }
+  }
+
+  return {.value = false};
+}
+
+OperationResult<std::monostate> SyncStorageDaemonConfig(
+    const ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view storage_name,
+    const DirectorStorageWriteContext& current_context,
+    std::string_view password,
+    std::string_view device_name,
+    std::string_view media_type,
+    const std::optional<std::string>& archive_device_spec,
+    const std::optional<std::string>& device_type_spec)
+{
+  if (current_context.device && *current_context.device != device_name) {
+    return {.error
+            = "automatic storage-daemon sync does not support changing "
+              "the Device name yet."};
+  }
+
+  auto target = SelectStorageSyncTarget(deployment_id, director_name,
+                                        device_name, state);
+  if (!target) { return {.error = target.error}; }
+  if (!target.value->has_value()) { return {.value = std::monostate{}}; }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(target.value->value().storage_config.path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto director_context = LoadStorageDaemonDirectorWriteContext(
+      target.value->value().storage_config, director_name,
+      *managed_paths.value);
+  if (!director_context) { return {.error = director_context.error}; }
+  auto device_context = LoadStorageDaemonDeviceWriteContext(
+      target.value->value().storage_config, device_name, *managed_paths.value);
+  if (!device_context) { return {.error = device_context.error}; }
+
+  const bool director_requires_managed_update
+      = director_context.value->exists
+        && (!director_context.value->is_standalone_file
+            || !director_context.value->is_managed);
+
+  const bool device_requires_managed_update
+      = device_context.value->exists
+        && (!device_context.value->is_standalone_file
+            || !device_context.value->is_managed);
+
+  if (director_requires_managed_update && device_requires_managed_update) {
+    return {.value = std::monostate{}};
+  }
+
+  const auto archive_device = archive_device_spec
+                                  ? *archive_device_spec
+                                  : device_context.value->archive_device;
+  if (!device_requires_managed_update
+      && (!archive_device || archive_device->empty())) {
+    return {.error
+            = "field 'archive_device' is required when automatic "
+              "storage-daemon device creation is needed."};
+  }
+
+  const auto device_type = device_type_spec ? *device_type_spec
+                                            : device_context.value->device_type;
+  if (!device_requires_managed_update
+      && (!device_type || device_type->empty())) {
+    return {.error
+            = "field 'device_type' is required when automatic "
+              "storage-daemon device creation is needed."};
+  }
+
+  const auto director_description
+      = director_context.value->description.value_or(
+          DefaultStorageDaemonDirectorDescription(director_name, storage_name));
+  const auto device_description = device_context.value->description.value_or(
+      DefaultStorageDaemonDeviceDescription(device_name, storage_name));
+
+  const auto director_content = BuildStorageDaemonDirectorResourceContent(
+      director_name, password, director_description);
+  const auto device_content = BuildStorageDaemonDeviceResourceContent(
+      device_name, media_type, *archive_device, *device_type,
+      device_description);
+
+  const auto director_directory
+      = target.value->value().storage_config.path / "bareos-sd.d" / "director";
+  const auto device_directory
+      = target.value->value().storage_config.path / "bareos-sd.d" / "device";
+  std::error_code error_code;
+  std::filesystem::create_directories(director_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create storage-daemon director directory '"
+                     + director_directory.string()
+                     + "': " + error_code.message()};
+  }
+  error_code.clear();
+  std::filesystem::create_directories(device_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create storage-daemon device directory '"
+                     + device_directory.string()
+                     + "': " + error_code.message()};
+  }
+
+  std::string original_director_content;
+  if (director_context.value->exists && !director_requires_managed_update) {
+    auto existing = ReadFile(director_context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_director_content = std::move(*existing.value);
+  }
+  std::string original_device_content;
+  if (device_context.value->exists && !device_requires_managed_update) {
+    auto existing = ReadFile(device_context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_device_content = std::move(*existing.value);
+  }
+
+  if (!director_requires_managed_update
+      && !WriteFile(director_context.value->file_path, director_content)) {
+    return {.error = "failed to write storage-daemon director resource '"
+                     + director_context.value->file_path.string() + "'."};
+  }
+  if (!device_requires_managed_update
+      && !WriteFile(device_context.value->file_path, device_content)) {
+    std::optional<std::string> rollback_error;
+    if (director_context.value->exists && !director_requires_managed_update) {
+      rollback_error = RestoreClientStubFile(director_context.value->file_path,
+                                             original_director_content);
+    } else if (!director_requires_managed_update) {
+      rollback_error
+          = CleanupCreatedFile(director_context.value->file_path,
+                               target.value->value().storage_config.path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = "failed to write storage-daemon device resource '"
+                     + device_context.value->file_path.string() + "'."};
+  }
+
+  {
+    auto loaded = bconfig::LoadConfig(
+        bconfig::Component::kStorage,
+        target.value->value().storage_config.path.string(), true);
+    if (!loaded.parser || !loaded.parse_ok) {
+      std::optional<std::string> rollback_error;
+      if (device_context.value->exists && !device_requires_managed_update) {
+        rollback_error = RestoreClientStubFile(device_context.value->file_path,
+                                               original_device_content);
+      } else if (!device_requires_managed_update) {
+        rollback_error
+            = CleanupCreatedFile(device_context.value->file_path,
+                                 target.value->value().storage_config.path);
+      }
+      if (!rollback_error) {
+        if (director_context.value->exists
+            && !director_requires_managed_update) {
+          rollback_error = RestoreClientStubFile(
+              director_context.value->file_path, original_director_content);
+        } else if (!director_requires_managed_update) {
+          rollback_error
+              = CleanupCreatedFile(director_context.value->file_path,
+                                   target.value->value().storage_config.path);
+        }
+      }
+      if (rollback_error) { return {.error = *rollback_error}; }
+      if (!loaded.parser) {
+        return {
+            .error = FormatParseFailure(
+                "storage-daemon sync parser initialization ", loaded.messages)};
+      }
+      return {.error
+              = FormatParseFailure("storage-daemon sync ", loaded.messages)};
+    }
+  }
+
+  auto updated_managed_paths = *managed_paths.value;
+  if (!director_requires_managed_update) {
+    SetManagedPath(updated_managed_paths, repository_root,
+                   director_context.value->file_path);
+  }
+  if (!device_requires_managed_update) {
+    SetManagedPath(updated_managed_paths, repository_root,
+                   device_context.value->file_path);
+  }
+  if (auto error = WriteManagedPaths(repository_root, updated_managed_paths);
+      error) {
+    return {.error = *error};
+  }
+
+  return {.value = std::monostate{}};
+}
+
+OperationResult<std::monostate> DeleteClientDirectorStub(
+    const std::filesystem::path& repository_root,
+    std::string_view client_name,
+    std::string_view director_name)
+{
+  const auto client_root = RepositoryLayout::ClientsDirectory(repository_root)
+                           / std::string{client_name};
+  const auto stub_path = client_root / "bareos-fd.d" / "director"
+                         / (std::string{director_name} + ".conf");
+  if (!std::filesystem::exists(stub_path)) {
+    return {.value = std::monostate{}};
+  }
+
+  auto original_content = ReadFile(stub_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(
+          stub_path, RepositoryLayout::ClientsDirectory(repository_root));
+      error) {
+    return {.error = *error};
+  }
+
+  if (!std::filesystem::exists(client_root / "bareos-fd.d")) {
+    return {.value = std::monostate{}};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
+                                    client_root.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto restore_error = RestoreDeletedFile(stub_path, *original_content.value);
+    if (restore_error) { return {.error = *restore_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure("client stub parser initialization ",
+                                          loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("client stub delete ", loaded.messages)};
+  }
+
+  return {.value = std::monostate{}};
+}
+
+OperationResult<std::monostate> DeleteSyncedStorageDaemonConfig(
+    const ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view device_name,
+    const DeploymentConfigRecord& director_config)
+{
+  auto target = SelectStorageSyncTarget(deployment_id, director_name,
+                                        device_name, state);
+  if (!target) { return {.error = target.error}; }
+  if (!target.value->has_value()) { return {.value = std::monostate{}}; }
+
+  const auto& storage_config = target.value->value().storage_config;
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto director_context = LoadStorageDaemonDirectorWriteContext(
+      storage_config, director_name, *managed_paths.value);
+  if (!director_context) { return {.error = director_context.error}; }
+  auto device_context = LoadStorageDaemonDeviceWriteContext(
+      storage_config, device_name, *managed_paths.value);
+  if (!device_context) { return {.error = device_context.error}; }
+
+  auto has_any_storage = DirectorConfigHasStorageResources(director_config);
+  if (!has_any_storage) { return {.error = has_any_storage.error}; }
+  auto uses_device
+      = DirectorConfigUsesStorageDevice(director_config, device_name);
+  if (!uses_device) { return {.error = uses_device.error}; }
+
+  const bool delete_director = director_context.value->exists
+                               && director_context.value->is_standalone_file
+                               && director_context.value->is_managed
+                               && !*has_any_storage.value;
+  const bool delete_device
+      = device_context.value->exists && device_context.value->is_standalone_file
+        && device_context.value->is_managed && !*uses_device.value;
+  if (!delete_director && !delete_device) {
+    return {.value = std::monostate{}};
+  }
+
+  std::optional<std::string> original_director_content;
+  if (delete_director) {
+    auto content = ReadFile(director_context.value->file_path);
+    if (!content) { return {.error = content.error}; }
+    original_director_content = *content.value;
+  }
+  std::optional<std::string> original_device_content;
+  if (delete_device) {
+    auto content = ReadFile(device_context.value->file_path);
+    if (!content) { return {.error = content.error}; }
+    original_device_content = *content.value;
+  }
+
+  if (delete_director) {
+    if (auto error = DeleteFileAndEmptyParents(
+            director_context.value->file_path, storage_config.path);
+        error) {
+      return {.error = *error};
+    }
+  }
+  if (delete_device) {
+    if (auto error = DeleteFileAndEmptyParents(device_context.value->file_path,
+                                               storage_config.path);
+        error) {
+      if (delete_director) {
+        auto restore_error = RestoreDeletedFile(
+            director_context.value->file_path, *original_director_content);
+        if (restore_error) { return {.error = *restore_error}; }
+      }
+      return {.error = *error};
+    }
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    std::optional<std::string> rollback_error;
+    if (delete_device) {
+      rollback_error = RestoreDeletedFile(device_context.value->file_path,
+                                          *original_device_content);
+    }
+    if (!rollback_error && delete_director) {
+      rollback_error = RestoreDeletedFile(director_context.value->file_path,
+                                          *original_director_content);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {
+          .error = FormatParseFailure(
+              "storage-daemon delete parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("storage-daemon delete ", loaded.messages)};
+  }
+
+  auto updated_managed_paths = *managed_paths.value;
+  if (delete_director) {
+    RemoveManagedPath(updated_managed_paths, repository_root,
+                      director_context.value->file_path);
+  }
+  if (delete_device) {
+    RemoveManagedPath(updated_managed_paths, repository_root,
+                      device_context.value->file_path);
+  }
+  if (auto error = WriteManagedPaths(repository_root, updated_managed_paths);
+      error) {
+    std::optional<std::string> rollback_error;
+    if (delete_device) {
+      rollback_error = RestoreDeletedFile(device_context.value->file_path,
+                                          *original_device_content);
+    }
+    if (!rollback_error && delete_director) {
+      rollback_error = RestoreDeletedFile(director_context.value->file_path,
+                                          *original_director_content);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = *error};
+  }
+
+  return {.value = std::monostate{}};
+}
+
+OperationResult<std::string> LoadClientPasswordFromDirectorConfig(
+    const DeploymentConfigRecord& director_config,
+    std::string_view client_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_CLIENT, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_CLIENT, resource)) {
+    auto* client = dynamic_cast<directordaemon::ClientResource*>(resource);
+    if (!client || !client->resource_name_
+        || client->resource_name_ != client_name) {
+      continue;
+    }
+    if (!client->password_.value || client->password_.value[0] == '\0') {
+      return {.error = "director '" + director_config.name + "' client '"
+                       + std::string{client_name} + "' has an empty password."};
+    }
+    return RenderPasswordForConfig(
+        client->password_,
+        "director-side client password for '" + std::string{client_name} + "'");
+  }
+
+  return {.error = "director '" + director_config.name
+                   + "' does not define client '" + std::string{client_name}
+                   + "'."};
 }
 
 std::optional<std::string> WriteGeneratedClientDirectorStub(
@@ -517,22 +1738,13 @@ std::optional<std::string> WriteGeneratedClientDirectorStub(
 
   const auto target_path
       = target_directory / (std::string{director_name} + ".conf");
-  std::string rendered_password;
-  switch (password.encoding) {
-    case p_encoding_clear:
-      rendered_password = password.value ? password.value : "";
-      break;
-    case p_encoding_md5:
-      rendered_password = "[md5]";
-      if (password.value) { rendered_password += password.value; }
-      break;
-    default:
-      return "failed to render generated client stub password for '"
-             + std::string{client_name} + "'.";
-  }
+  auto rendered_password
+      = RenderPasswordForConfig(password, "generated client stub password for '"
+                                              + std::string{client_name} + "'");
+  if (!rendered_password) { return rendered_password.error; }
 
   const auto stub_content = BuildClientDirectorStubContent(
-      director_name, rendered_password,
+      director_name, *rendered_password.value,
       "Generated director stub for client " + std::string{client_name});
 
   if (!WriteFile(target_path, stub_content)) {
@@ -548,6 +1760,8 @@ OperationResult<std::vector<ImportedComponent>> GenerateDirectorClientStubs(
     const std::filesystem::path& deployment_repository_root,
     std::vector<std::string>& logs)
 {
+  DebugLog("checking director '" + director_import.resource_name
+           + "' for missing client stubs");
   if (director_import.component != bconfig::Component::kDirector) {
     return {.value = std::vector<ImportedComponent>{}};
   }
@@ -618,6 +1832,8 @@ OperationResult<std::vector<ImportedComponent>> GenerateDirectorClientStubs(
     logs.emplace_back("generated client stub '" + client_name
                       + "' for director '" + director_import.resource_name
                       + "' into " + client_root.string());
+    DebugLog("generated client stub '" + client_name + "' for director '"
+             + director_import.resource_name + "'");
     generated.push_back(ImportedComponent{bconfig::Component::kClient,
                                           client_name, client_root});
   }
@@ -834,6 +2050,8 @@ OperationResult<ImportedComponent> ImportComponentIntoDeployment(
     const std::filesystem::path& deployment_repository_root,
     std::vector<std::string>& logs)
 {
+  DebugLog("importing " + std::string{bconfig::ComponentToString(component)}
+           + " config from " + source_root.string());
   const auto source_config_directory
       = FindComponentConfigDirectory(component, source_root);
   if (!source_config_directory) { return {}; }
@@ -1086,6 +2304,7 @@ std::optional<JobStatus> ParseJobStatus(std::string_view value)
 OperationResult<DeploymentRecord> ServiceState::CreateDeployment(
     const DeploymentSpec& spec)
 {
+  DebugLog("creating deployment '" + spec.id + "'");
   if (!IsValidIdentifier(spec.id)) {
     return {.error
             = "deployment id must contain only letters, digits, '-' "
@@ -1122,6 +2341,8 @@ OperationResult<DeploymentRecord> ServiceState::CreateDeployment(
     deployments_.erase(record.id);
     return {.error = *error};
   }
+  DebugLog("created deployment '" + record.id + "' at "
+           + record.repository_path.string());
   return {.value = record};
 }
 
@@ -1184,11 +2405,11 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
     std::string_view director_name,
     const ClientDirectorStubSpec& spec) const
 {
+  DebugLog("upserting client stub for deployment '" + std::string{deployment_id}
+           + "', client '" + std::string{client_name} + "', director '"
+           + std::string{director_name} + "'");
   if (!IsSafePathSegment(client_name) || !IsSafePathSegment(director_name)) {
     return {.error = "client and director names must be safe path segments."};
-  }
-  if (spec.password.empty()) {
-    return {.error = "password must not be empty."};
   }
 
   std::filesystem::path repository_path;
@@ -1198,6 +2419,19 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
     if (it == deployments_.end()) { return {.error = "deployment not found."}; }
     repository_path = it->second.repository_path;
   }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+  auto password = LoadClientPasswordFromDirectorConfig(*director_config.value,
+                                                       client_name);
+  if (!password) { return {.error = password.error}; }
+  DebugLog("resolved director-side password for client '"
+           + std::string{client_name} + "' from director '"
+           + std::string{director_name} + "'");
 
   const auto client_root
       = RepositoryLayout::ClientsDirectory(repository_path) / client_name;
@@ -1219,7 +2453,7 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
             ? *spec.description
             : DefaultClientDirectorStubDescription(client_name, director_name);
   const auto stub_content = BuildClientDirectorStubContent(
-      director_name, spec.password, description);
+      director_name, *password.value, description);
 
   std::error_code error_code;
   std::filesystem::create_directories(stub_directory, error_code);
@@ -1231,10 +2465,13 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
     return {.error
             = "failed to write client stub '" + stub_path.string() + "'."};
   }
+  DebugLog("wrote client stub file '" + stub_path.string() + "'");
 
   auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
                                     client_root.string(), true);
   if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("client stub update for '" + std::string{client_name}
+             + "' failed validation and will be rolled back");
     std::optional<std::string> rollback_error;
     if (stub_existed) {
       rollback_error = RestoreClientStubFile(stub_path, original_content);
@@ -1252,10 +2489,451 @@ OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
             = FormatParseFailure("client stub update ", loaded.messages)};
   }
 
+  DebugLog("updated client stub for '" + std::string{client_name}
+           + "' against director '" + std::string{director_name} + "'");
   return {.value
           = DeploymentConfigRecord{.component = bconfig::Component::kClient,
                                    .name = std::string{client_name},
                                    .path = client_root}};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorClientResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view client_name,
+    const DirectorClientResourceSpec& spec) const
+{
+  DebugLog("upserting director client resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', client '"
+           + std::string{client_name} + "'");
+  if (!IsSafePathSegment(client_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "client and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorClientWriteContext(*director_config.value, client_name);
+  if (!context) { return {.error = context.error}; }
+
+  const auto address = spec.address ? *spec.address : context.value->address;
+  if (!address || address->empty()) {
+    return {.error
+            = "field 'address' is required when creating a director "
+              "client resource."};
+  }
+  if (!IsSafeBareosToken(*address)) {
+    return {.error
+            = "director client address must be a bare Bareos token "
+              "without whitespace or quotes."};
+  }
+
+  const auto password
+      = spec.password ? *spec.password : context.value->password;
+  if (!password || password->empty()) {
+    return {.error
+            = "field 'password' is required when creating a director "
+              "client resource."};
+  }
+
+  const auto port = spec.port.value_or(
+      context.value->port.value_or(kDefaultFileDaemonPort));
+  if (port == 0) {
+    return {.error = "director client port must be greater than zero."};
+  }
+
+  const auto description
+      = spec.description
+            ? *spec.description
+            : context.value->description.value_or(
+                  DefaultDirectorClientDescription(client_name, director_name));
+  const auto content = BuildDirectorClientResourceContent(
+      client_name, *address, *password, port, description);
+
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "client";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director client directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, content)) {
+    return {.error = "failed to write director client resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director client file '" + context.value->file_path.string()
+           + "'");
+
+  {
+    auto loaded
+        = bconfig::LoadConfig(bconfig::Component::kDirector,
+                              director_config.value->path.string(), true);
+    if (!loaded.parser || !loaded.parse_ok) {
+      DebugLog("director client update for '" + std::string{client_name}
+               + "' failed validation and will be rolled back");
+      std::optional<std::string> rollback_error;
+      if (file_existed) {
+        rollback_error
+            = RestoreClientStubFile(context.value->file_path, original_content);
+      } else {
+        rollback_error = CleanupCreatedFile(context.value->file_path,
+                                            director_config.value->path);
+      }
+      if (rollback_error) { return {.error = *rollback_error}; }
+      if (!loaded.parser) {
+        return {.error = FormatParseFailure(
+                    "director client parser initialization ", loaded.messages)};
+      }
+      return {.error
+              = FormatParseFailure("director client update ", loaded.messages)};
+    }
+  }
+
+  auto synced_stub
+      = UpsertClientDirectorStub(deployment_id, client_name, director_name, {});
+  if (!synced_stub) {
+    DebugLog("director client update for '" + std::string{client_name}
+             + "' failed stub synchronization and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = synced_stub.error};
+  }
+
+  DebugLog("updated director client resource '" + std::string{client_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorStorageResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view storage_name,
+    const DirectorStorageResourceSpec& spec) const
+{
+  DebugLog("upserting director storage resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', storage '"
+           + std::string{storage_name} + "'");
+  if (!IsSafePathSegment(storage_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "storage and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorStorageWriteContext(*director_config.value, storage_name);
+  if (!context) { return {.error = context.error}; }
+
+  const auto address = spec.address ? *spec.address : context.value->address;
+  if (!address || address->empty()) {
+    return {.error
+            = "field 'address' is required when creating a director "
+              "storage resource."};
+  }
+  if (!IsSafeBareosToken(*address)) {
+    return {.error
+            = "director storage address must be a bare Bareos token "
+              "without whitespace or quotes."};
+  }
+
+  const auto password
+      = spec.password ? *spec.password : context.value->password;
+  if (!password || password->empty()) {
+    return {.error
+            = "field 'password' is required when creating a director "
+              "storage resource."};
+  }
+
+  const auto device
+      = spec.device ? *spec.device
+                    : context.value->device.value_or(std::string{storage_name});
+  if (device.empty()) {
+    return {.error
+            = "field 'device' is required when creating a director "
+              "storage resource."};
+  }
+  if (!IsSafeBareosToken(device)) {
+    return {.error
+            = "director storage device must be a bare Bareos token "
+              "without whitespace or quotes."};
+  }
+
+  const auto media_type
+      = spec.media_type ? *spec.media_type : context.value->media_type;
+  if (!media_type || media_type->empty()) {
+    return {.error
+            = "field 'media_type' is required when creating a director "
+              "storage resource."};
+  }
+  if (!IsSafeBareosToken(*media_type)) {
+    return {.error
+            = "director storage media_type must be a bare Bareos token "
+              "without whitespace or quotes."};
+  }
+
+  const auto port = spec.port.value_or(
+      context.value->port.value_or(kDefaultStorageDaemonPort));
+  if (port == 0) {
+    return {.error = "director storage port must be greater than zero."};
+  }
+
+  const auto description = spec.description
+                               ? *spec.description
+                               : context.value->description.value_or(
+                                     DefaultDirectorStorageDescription(
+                                         storage_name, director_name));
+  const auto content = BuildDirectorStorageResourceContent(
+      storage_name, *address, *password, device, *media_type, port,
+      description);
+
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "storage";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director storage directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, content)) {
+    return {.error = "failed to write director storage resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director storage file '" + context.value->file_path.string()
+           + "'");
+
+  {
+    auto loaded
+        = bconfig::LoadConfig(bconfig::Component::kDirector,
+                              director_config.value->path.string(), true);
+    if (!loaded.parser || !loaded.parse_ok) {
+      DebugLog("director storage update for '" + std::string{storage_name}
+               + "' failed validation and will be rolled back");
+      std::optional<std::string> rollback_error;
+      if (file_existed) {
+        rollback_error
+            = RestoreClientStubFile(context.value->file_path, original_content);
+      } else {
+        rollback_error = CleanupCreatedFile(context.value->file_path,
+                                            director_config.value->path);
+      }
+      if (rollback_error) { return {.error = *rollback_error}; }
+      if (!loaded.parser) {
+        return {.error
+                = FormatParseFailure("director storage parser initialization ",
+                                     loaded.messages)};
+      }
+      return {.error = FormatParseFailure("director storage update ",
+                                          loaded.messages)};
+    }
+  }
+
+  auto synced_storage = SyncStorageDaemonConfig(
+      *this, deployment_id, director_name, storage_name, *context.value,
+      *password, device, *media_type, spec.archive_device, spec.device_type);
+  if (!synced_storage) {
+    DebugLog("director storage update for '" + std::string{storage_name}
+             + "' failed storage-daemon synchronization and will be rolled "
+               "back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = synced_storage.error};
+  }
+
+  DebugLog("updated director storage resource '" + std::string{storage_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorClientResource(std::string_view deployment_id,
+                                           std::string_view director_name,
+                                           std::string_view client_name) const
+{
+  DebugLog("deleting director client resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', client '"
+           + std::string{client_name} + "'");
+  if (!IsSafePathSegment(client_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "client and director names must be safe path segments."};
+  }
+
+  std::filesystem::path repository_path;
+  {
+    std::lock_guard guard{mutex_};
+    auto it = deployments_.find(std::string{deployment_id});
+    if (it == deployments_.end()) { return {.error = "deployment not found."}; }
+    repository_path = it->second.repository_path;
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorClientWriteContext(*director_config.value, client_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define client '" + std::string{client_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  {
+    auto loaded
+        = bconfig::LoadConfig(bconfig::Component::kDirector,
+                              director_config.value->path.string(), true);
+    if (!loaded.parser || !loaded.parse_ok) {
+      auto rollback_error = RestoreDeletedFile(context.value->file_path,
+                                               *original_content.value);
+      if (rollback_error) { return {.error = *rollback_error}; }
+      if (!loaded.parser) {
+        return {.error = FormatParseFailure(
+                    "director client parser initialization ", loaded.messages)};
+      }
+      return {.error
+              = FormatParseFailure("director client delete ", loaded.messages)};
+    }
+  }
+
+  auto deleted_stub
+      = DeleteClientDirectorStub(repository_path, client_name, director_name);
+  if (!deleted_stub) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = deleted_stub.error};
+  }
+
+  DebugLog("deleted director client resource '" + std::string{client_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorStorageResource(std::string_view deployment_id,
+                                            std::string_view director_name,
+                                            std::string_view storage_name) const
+{
+  DebugLog("deleting director storage resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', storage '"
+           + std::string{storage_name} + "'");
+  if (!IsSafePathSegment(storage_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "storage and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorStorageWriteContext(*director_config.value, storage_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define storage '" + std::string{storage_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  {
+    auto loaded
+        = bconfig::LoadConfig(bconfig::Component::kDirector,
+                              director_config.value->path.string(), true);
+    if (!loaded.parser || !loaded.parse_ok) {
+      auto rollback_error = RestoreDeletedFile(context.value->file_path,
+                                               *original_content.value);
+      if (rollback_error) { return {.error = *rollback_error}; }
+      if (!loaded.parser) {
+        return {.error
+                = FormatParseFailure("director storage parser initialization ",
+                                     loaded.messages)};
+      }
+      return {.error = FormatParseFailure("director storage delete ",
+                                          loaded.messages)};
+    }
+  }
+
+  auto deleted_synced = DeleteSyncedStorageDaemonConfig(
+      *this, deployment_id, director_name, *context.value->device,
+      *director_config.value);
+  if (!deleted_synced) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = deleted_synced.error};
+  }
+
+  DebugLog("deleted director storage resource '" + std::string{storage_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
 }
 
 OperationResult<std::vector<DeploymentImportRecord>>
@@ -1302,6 +2980,7 @@ ServiceState::GetDeploymentDiffPreview(std::string_view deployment_id) const
 
 OperationResult<JobRecord> ServiceState::CreateJob(const JobSpec& spec)
 {
+  DebugLog("queueing job type '" + spec.type + "'");
   if (spec.type.empty()) { return {.error = "job type must not be empty."}; }
 
   std::lock_guard guard{mutex_};
@@ -1328,6 +3007,7 @@ OperationResult<JobRecord> ServiceState::CreateJob(const JobSpec& spec)
     --next_job_id_;
     return {.error = *error};
   }
+  DebugLog("queued job '" + record.id + "' of type '" + record.type + "'");
   worker_condition_.notify_one();
   return {.value = record};
 }
@@ -1358,6 +3038,7 @@ bool ServiceState::HasPersistentState() const
 
 void ServiceState::WorkerLoop()
 {
+  DebugLog("worker loop started");
   for (;;) {
     std::optional<JobRecord> queued_job;
 
@@ -1374,6 +3055,8 @@ void ServiceState::WorkerLoop()
       queued_job = GetNextQueuedJobLocked();
       if (!queued_job) { continue; }
       MarkJobRunning(queued_job->id, "job execution started");
+      DebugLog("starting job '" + queued_job->id + "' of type '"
+               + queued_job->type + "'");
       queued_job = jobs_.at(queued_job->id);
     }
 
@@ -1398,6 +3081,8 @@ void ServiceState::WorkerLoop()
       it->second.logs.insert(it->second.logs.end(), logs.begin(), logs.end());
       MarkJobFinished(queued_job->id, status, last_error, final_log);
     }
+    DebugLog("finished job '" + queued_job->id + "' with status '"
+             + std::string{ToString(status)} + "'");
   }
 }
 
@@ -1462,6 +3147,8 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
   std::vector<std::string> logs;
 
   if (job_snapshot.type == "validate_deployment_repo") {
+    DebugLog("validating deployment repository for job '" + job_snapshot.id
+             + "'");
     if (!job_snapshot.deployment_id) {
       logs.emplace_back("deployment_id is required");
       return {JobStatus::kFailed, logs};
@@ -1536,6 +3223,7 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
   }
 
   if (job_snapshot.type == "import_configuration") {
+    DebugLog("importing configuration for job '" + job_snapshot.id + "'");
     if (!job_snapshot.deployment_id) {
       logs.emplace_back("deployment_id is required");
       return {JobStatus::kFailed, logs};
@@ -1625,6 +3313,8 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
   }
 
   if (job_snapshot.type == "commit_deployment_repo") {
+    DebugLog("committing deployment repository for job '" + job_snapshot.id
+             + "'");
     if (!job_snapshot.deployment_id) {
       logs.emplace_back("deployment_id is required");
       return {JobStatus::kFailed, logs};

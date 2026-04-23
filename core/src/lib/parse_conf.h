@@ -459,13 +459,13 @@ class ConfigResourcesContainer {
       : free_res{config->FreeResourceCb_}
       , configuration_resources_(config->r_num_)
   {
-    Dmsg1(10, "ConfigResourcesContainer: new configuration_resources_ %p\n",
+    Dmsg1(900, "ConfigResourcesContainer: new configuration_resources_ %p\n",
           configuration_resources_.data());
   }
 
   ~ConfigResourcesContainer()
   {
-    Dmsg1(10, "ConfigResourcesContainer freeing %p %s\n",
+    Dmsg1(900, "ConfigResourcesContainer freeing %p %s\n",
           configuration_resources_.data(), TPAsString(timestamp_).c_str());
 
     for (size_t i = 0; i < configuration_resources_.size(); ++i) {

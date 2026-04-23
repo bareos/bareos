@@ -115,6 +115,23 @@ std::filesystem::path FindFixtureRoot()
   return {};
 }
 
+std::string ReadTextFile(const std::filesystem::path& path)
+{
+  std::ifstream file{path};
+  EXPECT_TRUE(file.good());
+  return std::string((std::istreambuf_iterator<char>(file)),
+                     std::istreambuf_iterator<char>());
+}
+
+void WriteTextFile(const std::filesystem::path& path, std::string_view content)
+{
+  std::filesystem::create_directories(path.parent_path());
+  std::ofstream file{path};
+  ASSERT_TRUE(file.good());
+  file << content;
+  ASSERT_TRUE(file.good());
+}
+
 std::optional<JobRecord> WaitForJobTerminal(ServiceState& state,
                                             std::string_view id)
 {
@@ -549,6 +566,7 @@ TEST(BconfigService, GeneratesClientStubsForDirectorOnlyImports)
 
 TEST(BconfigService, UpsertsClientDirectorStubs)
 {
+  ScopedDirectory source_root{MakeTempPath()};
   ScopedDirectory repo_path{MakeTempPath()};
   ServiceState state;
 
@@ -558,12 +576,27 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
                                 .repository_path = repo_path.path()});
   ASSERT_TRUE(deployment);
 
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
   auto created = state.UpsertClientDirectorStub(
-      "prod", "custom-fd", "bareos-dir",
-      {.password = "initial-secret",
-       .description = std::string{"Initial stub"}});
+      "prod", "bareos-fd", "bareos-dir",
+      {.description = std::string{"Initial stub"}});
   ASSERT_TRUE(created);
-  EXPECT_EQ(created.value->name, "custom-fd");
+  EXPECT_EQ(created.value->name, "bareos-fd");
 
   const auto stub_path
       = created.value->path / "bareos-fd.d/director/bareos-dir.conf";
@@ -571,29 +604,28 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
   ASSERT_TRUE(created_file.good());
   const std::string created_text((std::istreambuf_iterator<char>(created_file)),
                                  std::istreambuf_iterator<char>());
-  EXPECT_NE(created_text.find("Password = \"initial-secret\""),
-            std::string::npos);
+  EXPECT_NE(created_text.find("Password = \"[md5]"), std::string::npos);
   EXPECT_NE(created_text.find("Description = \"Initial stub\""),
             std::string::npos);
 
   auto updated = state.UpsertClientDirectorStub(
-      "prod", "custom-fd", "bareos-dir",
-      {.password = "[md5]0123456789abcdef0123456789abcdef",
-       .description = std::string{"Updated stub"}});
+      "prod", "bareos-fd", "bareos-dir",
+      {.description = std::string{"Updated stub"}});
   ASSERT_TRUE(updated);
 
   std::ifstream updated_file{stub_path};
   ASSERT_TRUE(updated_file.good());
   const std::string updated_text((std::istreambuf_iterator<char>(updated_file)),
                                  std::istreambuf_iterator<char>());
-  EXPECT_NE(updated_text.find("[md5]0123456789abcdef0123456789abcdef"),
-            std::string::npos);
+  EXPECT_NE(updated_text.find("Password = \"[md5]"), std::string::npos);
   EXPECT_NE(updated_text.find("Description = \"Updated stub\""),
             std::string::npos);
 
-  auto rejected = state.UpsertClientDirectorStub(
-      "prod", "custom-fd", "bareos-dir", {.password = "[md5]not-a-valid-hash"});
+  auto rejected = state.UpsertClientDirectorStub("prod", "missing-client",
+                                                 "bareos-dir", {});
   ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("does not define client 'missing-client'"),
+            std::string::npos);
 
   std::ifstream reverted_file{stub_path};
   ASSERT_TRUE(reverted_file.good());
@@ -601,6 +633,607 @@ TEST(BconfigService, UpsertsClientDirectorStubs)
       (std::istreambuf_iterator<char>(reverted_file)),
       std::istreambuf_iterator<char>());
   EXPECT_EQ(reverted_text, updated_text);
+}
+
+TEST(BconfigService, UpsertsDirectorClientResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorClientResource(
+      "prod", "bareos-dir", "client1-fd",
+      {.address = std::string{"client1-fd.example.com"},
+       .password = std::string{"[md5]0123456789abcdef0123456789abcdef"},
+       .description = std::string{"Managed by service"}});
+  ASSERT_TRUE(created) << created.error;
+  EXPECT_EQ(created.value->name, "bareos-dir");
+
+  const auto director_client_path
+      = created.value->path / "bareos-dir.d/client/client1-fd.conf";
+  const auto created_text = ReadTextFile(director_client_path);
+  EXPECT_NE(created_text.find("Name = \"client1-fd\""), std::string::npos);
+  EXPECT_NE(created_text.find("Address = client1-fd.example.com"),
+            std::string::npos);
+  EXPECT_NE(
+      created_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find("Port = 9102"), std::string::npos);
+  EXPECT_NE(created_text.find("Description = \"Managed by service\""),
+            std::string::npos);
+
+  const auto stub_path = RepositoryLayout::ClientsDirectory(repo_path.path())
+                         / "client1-fd/bareos-fd.d/director/bareos-dir.conf";
+  const auto stub_text = ReadTextFile(stub_path);
+  EXPECT_NE(
+      stub_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
+      std::string::npos);
+
+  auto updated = state.UpsertDirectorClientResource(
+      "prod", "bareos-dir", "client1-fd",
+      {.address = std::string{"client1-alt.example.com"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(director_client_path);
+  EXPECT_NE(updated_text.find("Address = client1-alt.example.com"),
+            std::string::npos);
+  EXPECT_NE(
+      updated_text.find("Password = \"[md5]0123456789abcdef0123456789abcdef\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("Port = 9102"), std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Managed by service\""),
+            std::string::npos);
+}
+
+TEST(BconfigService, RejectsDirectorClientUpdatesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto client_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/client";
+  const auto original_path = client_directory / "bareos-fd.conf";
+  const auto shared_path = client_directory / "shared.conf";
+  std::filesystem::rename(original_path, shared_path);
+
+  auto rejected = state.UpsertDirectorClientResource(
+      "prod", "bareos-dir", "bareos-fd",
+      {.address = std::string{"bareos-fd-alt.example.com"}});
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
+TEST(BconfigService, DeletesDirectorClientResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorClientResource(
+      "prod", "bareos-dir", "client1-fd",
+      {.address = std::string{"client1-fd.example.com"},
+       .password = std::string{"[md5]0123456789abcdef0123456789abcdef"}});
+  ASSERT_TRUE(created) << created.error;
+
+  const auto director_client_path
+      = created.value->path / "bareos-dir.d/client/client1-fd.conf";
+  const auto stub_path = RepositoryLayout::ClientsDirectory(repo_path.path())
+                         / "client1-fd/bareos-fd.d/director/bareos-dir.conf";
+  ASSERT_TRUE(std::filesystem::exists(director_client_path));
+  ASSERT_TRUE(std::filesystem::exists(stub_path));
+
+  auto deleted
+      = state.DeleteDirectorClientResource("prod", "bareos-dir", "client1-fd");
+  ASSERT_TRUE(deleted) << deleted.error;
+  EXPECT_FALSE(std::filesystem::exists(director_client_path));
+  EXPECT_FALSE(std::filesystem::exists(stub_path));
+}
+
+TEST(BconfigService, RejectsDirectorClientDeletesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto client_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/client";
+  const auto original_path = client_directory / "bareos-fd.conf";
+  const auto shared_path = client_directory / "shared.conf";
+  std::filesystem::rename(original_path, shared_path);
+
+  auto rejected
+      = state.DeleteDirectorClientResource("prod", "bareos-dir", "bareos-fd");
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
+TEST(BconfigService, UpsertsDirectorStorageResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "FileManaged",
+      {.address = std::string{"localhost"},
+       .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
+       .device = std::string{"FileStorage"},
+       .media_type = std::string{"File"},
+       .description = std::string{"Managed storage"}});
+  ASSERT_TRUE(created) << created.error;
+  EXPECT_EQ(created.value->name, "bareos-dir");
+
+  const auto storage_path
+      = created.value->path / "bareos-dir.d/storage/FileManaged.conf";
+  const auto created_text = ReadTextFile(storage_path);
+  EXPECT_NE(created_text.find("Name = \"FileManaged\""), std::string::npos);
+  EXPECT_NE(created_text.find("Address = localhost"), std::string::npos);
+  EXPECT_NE(
+      created_text.find("Password = \"[md5]abcdef0123456789abcdef0123456789\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find("Device = FileStorage"), std::string::npos);
+  EXPECT_NE(created_text.find("Media Type = File"), std::string::npos);
+  EXPECT_NE(created_text.find("Port = 9103"), std::string::npos);
+  EXPECT_NE(created_text.find("Description = \"Managed storage\""),
+            std::string::npos);
+
+  auto updated = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "FileManaged",
+      {.address = std::string{"storage.example.com"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(storage_path);
+  EXPECT_NE(updated_text.find("Address = storage.example.com"),
+            std::string::npos);
+  EXPECT_NE(
+      updated_text.find("Password = \"[md5]abcdef0123456789abcdef0123456789\""),
+      std::string::npos);
+  EXPECT_NE(updated_text.find("Device = FileStorage"), std::string::npos);
+  EXPECT_NE(updated_text.find("Media Type = File"), std::string::npos);
+  EXPECT_NE(updated_text.find("Port = 9103"), std::string::npos);
+  EXPECT_NE(updated_text.find("Description = \"Managed storage\""),
+            std::string::npos);
+}
+
+TEST(BconfigService,
+     UpsertsDirectorStorageResourcesWithMatchingImportedStorageDaemonFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  std::filesystem::copy(source_fixture_root / "bareos-sd.d",
+                        source_root.path() / "bareos-sd.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-sd.d/storage/bareos-sd.conf",
+                "Storage {\n"
+                "  Name = \"bareos-sd\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto storage_root
+      = RepositoryLayout::StoragesDirectory(repo_path.path()) / "bareos-sd";
+  const auto original_director_text
+      = ReadTextFile(storage_root / "bareos-sd.d/director/bareos-dir.conf");
+  const auto original_device_text
+      = ReadTextFile(storage_root / "bareos-sd.d/device/FileStorage.conf");
+
+  auto created = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "FileManaged",
+      {.address = std::string{"localhost"},
+       .password = std::string{"sd_password"},
+       .device = std::string{"FileStorage"},
+       .media_type = std::string{"File"}});
+  ASSERT_TRUE(created) << created.error;
+
+  EXPECT_EQ(ReadTextFile(storage_root / "bareos-sd.d/director/bareos-dir.conf"),
+            original_director_text);
+  EXPECT_EQ(ReadTextFile(storage_root / "bareos-sd.d/device/FileStorage.conf"),
+            original_device_text);
+}
+
+TEST(BconfigService, DefaultsNewDirectorStorageDeviceToStorageName)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-sd.d/storage/bareos-sd.conf",
+                "Storage {\n"
+                "  Name = \"bareos-sd\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "FileManaged",
+      {.address = std::string{"localhost"},
+       .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
+       .media_type = std::string{"File"},
+       .archive_device = std::string{"/tmp/bareos-storage"},
+       .device_type = std::string{"file"}});
+  ASSERT_TRUE(created) << created.error;
+
+  const auto director_storage_path
+      = created.value->path / "bareos-dir.d/storage/FileManaged.conf";
+  EXPECT_NE(ReadTextFile(director_storage_path).find("Device = FileManaged"),
+            std::string::npos);
+
+  const auto storage_root
+      = RepositoryLayout::StoragesDirectory(repo_path.path()) / "bareos-sd";
+  EXPECT_TRUE(std::filesystem::exists(storage_root
+                                      / "bareos-sd.d/device/FileManaged.conf"));
+}
+
+TEST(BconfigService, RejectsDirectorStorageUpdatesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto rejected = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "File",
+      {.address = std::string{"storage-alt.example.com"}});
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+}
+
+TEST(BconfigService, DeletesDirectorStorageResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-sd.d/storage/bareos-sd.conf",
+                "Storage {\n"
+                "  Name = \"bareos-sd\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "FileManaged",
+      {.address = std::string{"localhost"},
+       .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
+       .device = std::string{"FileManagedDevice"},
+       .media_type = std::string{"File"},
+       .archive_device = std::string{"/tmp/bareos-storage"},
+       .device_type = std::string{"file"}});
+  ASSERT_TRUE(created) << created.error;
+
+  const auto director_storage_path
+      = created.value->path / "bareos-dir.d/storage/FileManaged.conf";
+  const auto storage_root
+      = RepositoryLayout::StoragesDirectory(repo_path.path()) / "bareos-sd";
+  const auto director_sync_path
+      = storage_root / "bareos-sd.d/director/bareos-dir.conf";
+  const auto device_sync_path
+      = storage_root / "bareos-sd.d/device/FileManagedDevice.conf";
+  ASSERT_TRUE(std::filesystem::exists(director_storage_path));
+  ASSERT_TRUE(std::filesystem::exists(director_sync_path));
+  ASSERT_TRUE(std::filesystem::exists(device_sync_path));
+
+  auto deleted = state.DeleteDirectorStorageResource("prod", "bareos-dir",
+                                                     "FileManaged");
+  ASSERT_TRUE(deleted) << deleted.error;
+
+  EXPECT_FALSE(std::filesystem::exists(director_storage_path));
+  EXPECT_TRUE(std::filesystem::exists(director_sync_path));
+  EXPECT_FALSE(std::filesystem::exists(device_sync_path));
+
+  const auto ownership_text
+      = ReadTextFile(RepositoryLayout::OwnershipPath(repo_path.path()));
+  EXPECT_NE(ownership_text.find("storages/bareos-sd/bareos-sd.d/director/"
+                                "bareos-dir.conf"),
+            std::string::npos);
+  EXPECT_EQ(ownership_text.find("storages/bareos-sd/bareos-sd.d/device/"
+                                "FileManagedDevice.conf"),
+            std::string::npos);
+}
+
+TEST(BconfigService, RejectsDirectorStorageDeletesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto rejected
+      = state.DeleteDirectorStorageResource("prod", "bareos-dir", "File");
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+}
+
+TEST(BconfigService, SyncsDirectorStorageResourcesIntoStorageDaemonFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-sd.d/storage/bareos-sd.conf",
+                "Storage {\n"
+                "  Name = \"bareos-sd\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorStorageResource(
+      "prod", "bareos-dir", "FileManaged",
+      {.address = std::string{"localhost"},
+       .password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
+       .device = std::string{"FileManagedDevice"},
+       .media_type = std::string{"File"},
+       .archive_device = std::string{"/tmp/bareos-storage"},
+       .device_type = std::string{"file"},
+       .description = std::string{"Managed storage"}});
+  ASSERT_TRUE(created) << created.error;
+
+  const auto storage_root
+      = RepositoryLayout::StoragesDirectory(repo_path.path()) / "bareos-sd";
+  const auto director_sync_path
+      = storage_root / "bareos-sd.d/director/bareos-dir.conf";
+  const auto device_sync_path
+      = storage_root / "bareos-sd.d/device/FileManagedDevice.conf";
+
+  const auto director_text = ReadTextFile(director_sync_path);
+  EXPECT_NE(director_text.find("Name = \"bareos-dir\""), std::string::npos);
+  EXPECT_NE(director_text.find(
+                "Password = \"[md5]abcdef0123456789abcdef0123456789\""),
+            std::string::npos);
+
+  const auto device_text = ReadTextFile(device_sync_path);
+  EXPECT_NE(device_text.find("Name = \"FileManagedDevice\""),
+            std::string::npos);
+  EXPECT_NE(device_text.find("Media Type = File"), std::string::npos);
+  EXPECT_NE(device_text.find("Archive Device = /tmp/bareos-storage"),
+            std::string::npos);
+  EXPECT_NE(device_text.find("Device Type = \"file\""), std::string::npos);
+
+  const auto ownership_text
+      = ReadTextFile(RepositoryLayout::OwnershipPath(repo_path.path()));
+  EXPECT_NE(ownership_text.find("storages/bareos-sd/bareos-sd.d/director/"
+                                "bareos-dir.conf"),
+            std::string::npos);
+  EXPECT_NE(ownership_text.find("storages/bareos-sd/bareos-sd.d/device/"
+                                "FileManagedDevice.conf"),
+            std::string::npos);
 }
 
 TEST(BconfigService, CommitsDeploymentRepositoryChanges)

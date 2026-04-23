@@ -597,7 +597,7 @@ static void StoreWild(lexer* lc, const ResourceItem* item, int pass)
           res_incexe->current_opts->wild.append(strdup(lc->str));
           newsize = res_incexe->current_opts->wild.size();
         }
-        Dmsg4(9, "set %s %p size=%d %s\n", type, res_incexe->current_opts,
+        Dmsg4(900, "set %s %p size=%d %s\n", type, res_incexe->current_opts,
               newsize, lc->str);
         break;
       default:

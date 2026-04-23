@@ -106,7 +106,24 @@ struct DeploymentConfigRecord {
 };
 
 struct ClientDirectorStubSpec {
-  std::string password{};
+  std::optional<std::string> description{};
+};
+
+struct DirectorClientResourceSpec {
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+};
+
+struct DirectorStorageResourceSpec {
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<std::string> password{};
+  std::optional<std::string> device{};
+  std::optional<std::string> media_type{};
+  std::optional<std::string> archive_device{};
+  std::optional<std::string> device_type{};
   std::optional<std::string> description{};
 };
 
@@ -187,6 +204,24 @@ class ServiceState {
       std::string_view client_name,
       std::string_view director_name,
       const ClientDirectorStubSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorClientResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view client_name,
+      const DirectorClientResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorClientResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view client_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorStorageResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view storage_name,
+      const DirectorStorageResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorStorageResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view storage_name) const;
   OperationResult<std::vector<DeploymentImportRecord>> ListDeploymentImports(
       std::string_view deployment_id) const;
   OperationResult<DeploymentGitStatusRecord> GetDeploymentGitStatus(

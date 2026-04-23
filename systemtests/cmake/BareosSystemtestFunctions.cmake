@@ -960,10 +960,12 @@ function(validate_systemtest_fixtures_in_dir test_dir)
   endforeach()
 endfunction()
 
-function(add_systemtest_from_directory test_dir test_basename)
-  if(EXISTS ${test_dir}/testrunner)
+function(add_systemtest_from_directory source_test_dir runtime_test_dir
+         test_basename
+)
+  if(EXISTS ${runtime_test_dir}/testrunner)
     # single test directory
-    add_systemtest(${test_basename} ${test_dir}/testrunner)
+    add_systemtest(${test_basename} ${runtime_test_dir}/testrunner)
     return()
   endif()
 
@@ -977,15 +979,15 @@ function(add_systemtest_from_directory test_dir test_basename)
   file(
     GLOB all_tests
     LIST_DIRECTORIES false
-    RELATIVE "${test_dir}"
-    CONFIGURE_DEPENDS "${test_dir}/testrunner-*"
+    RELATIVE "${runtime_test_dir}"
+    CONFIGURE_DEPENDS "${runtime_test_dir}/testrunner-*"
   )
   foreach(testfilename ${all_tests})
     string(REPLACE "testrunner-" "" test ${testfilename})
-    add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename})
+    add_systemtest(${test_basename}:${test} ${runtime_test_dir}/${testfilename})
 
     init_systemtest_properties(
-      ${test_basename} ${test} ${test_dir}/${testfilename}
+      ${test_basename} ${test} ${runtime_test_dir}/${testfilename}
       test_wants_setup_fixture
     )
     if(test_wants_setup_fixture)
@@ -997,15 +999,17 @@ function(add_systemtest_from_directory test_dir test_basename)
   file(
     GLOB all_tests
     LIST_DIRECTORIES false
-    RELATIVE "${test_dir}"
-    CONFIGURE_DEPENDS "${test_dir}/test_*.py"
+    RELATIVE "${source_test_dir}"
+    CONFIGURE_DEPENDS "${source_test_dir}/test_*.py"
   )
   foreach(testfilename ${all_tests})
     # python test currently cannot disable the setup fixture, so we will add it
     set(setup_fixture_required ON)
     string(REPLACE ".py" "" test0 ${testfilename})
     string(REPLACE "test_" "" test ${test0})
-    add_systemtest(${test_basename}:${test} ${test_dir}/${testfilename} PYTHON)
+    add_systemtest(
+      ${test_basename}:${test} ${runtime_test_dir}/${testfilename} PYTHON
+    )
     set_tests_properties(
       "${test_basename}:${test}"
       PROPERTIES FIXTURES_REQUIRED
@@ -1020,24 +1024,24 @@ function(add_systemtest_from_directory test_dir test_basename)
   endforeach()
 
   if(setup_fixture_required)
-    if(NOT EXISTS "${test_dir}/test-setup")
+    if(NOT EXISTS "${runtime_test_dir}/test-setup")
       file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/start_bareos.sh"
-           "${test_dir}/test-setup" SYMBOLIC
+           "${runtime_test_dir}/test-setup" SYMBOLIC
       )
     endif()
-    add_systemtest("${test_basename}:setup" "${test_dir}/test-setup")
+    add_systemtest("${test_basename}:setup" "${runtime_test_dir}/test-setup")
 
     set_tests_properties(
       "${test_basename}:setup" PROPERTIES FIXTURES_SETUP
                                           "${test_basename}-fixture"
     )
 
-    if(NOT EXISTS ${test_dir}/test-cleanup)
+    if(NOT EXISTS ${runtime_test_dir}/test-cleanup)
       file(CREATE_LINK "${PROJECT_BINARY_DIR}/scripts/cleanup"
-           "${test_dir}/test-cleanup" SYMBOLIC
+           "${runtime_test_dir}/test-cleanup" SYMBOLIC
       )
     endif()
-    add_systemtest(${test_basename}:cleanup "${test_dir}/test-cleanup")
+    add_systemtest(${test_basename}:cleanup "${runtime_test_dir}/test-cleanup")
     set_tests_properties(
       ${test_basename}:cleanup PROPERTIES FIXTURES_CLEANUP
                                           "${test_basename}-fixture"
@@ -1048,7 +1052,7 @@ function(add_systemtest_from_directory test_dir test_basename)
   if(NOT test_basename MATCHES ".*py3.?grpc.*")
     # grpc tests are actually setup in the non-grpc directory, so this will not
     # work for them
-    validate_systemtest_fixtures_in_dir(${test_dir})
+    validate_systemtest_fixtures_in_dir(${runtime_test_dir})
   endif()
 endfunction()
 
@@ -1076,7 +1080,10 @@ macro(create_enabled_systemtest prefix test_name test_srcdir test_dir
     NEWLINE_STYLE UNIX
   )
 
-  add_systemtest_from_directory(${tests_dir}/${test_dir} "${test_fullname}")
+  add_systemtest_from_directory(
+    "${PROJECT_SOURCE_DIR}/systemtests/tests/${test_srcdir}"
+    "${tests_dir}/${test_dir}" "${test_fullname}"
+  )
   # Increase global BASEPORT variable
   math(EXPR BASEPORT "${BASEPORT} + 10")
   set(BASEPORT

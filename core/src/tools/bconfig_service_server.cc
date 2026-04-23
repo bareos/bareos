@@ -25,6 +25,8 @@
 #include "include/bareos.h"
 #include "include/exit_codes.h"
 #include "lib/cli.h"
+#include "lib/message.h"
+#include "lib/thread_specific_data.h"
 
 #include <boost/asio/ip/address.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -33,9 +35,14 @@
 #include <boost/beast/version.hpp>
 #include <jansson.h>
 
+#include <chrono>
 #include <cstring>
+#include <ctime>
+#include <iomanip>
 #include <iostream>
 #include <memory>
+#include <source_location>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -49,6 +56,7 @@ namespace net = boost::asio;
 using tcp = net::ip::tcp;
 
 using JsonPtr = std::unique_ptr<json_t, decltype(&json_decref)>;
+constexpr int kServiceDebugLevel = 10;
 
 struct PeerLoadSpec {
   bconfig::Component component;
@@ -62,15 +70,87 @@ struct InspectRequestSpec {
 };
 
 struct ClientDirectorStubRequestSpec {
-  std::string password{};
+  std::optional<std::string> description{};
+};
+
+struct DirectorClientRequestSpec {
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+};
+
+struct DirectorStorageRequestSpec {
+  std::optional<std::string> address{};
+  std::optional<uint16_t> port{};
+  std::optional<std::string> password{};
+  std::optional<std::string> device{};
+  std::optional<std::string> media_type{};
+  std::optional<std::string> archive_device{};
+  std::optional<std::string> device_type{};
   std::optional<std::string> description{};
 };
 
 std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     std::string_view body,
     std::string& error);
+std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
+    std::string_view body,
+    std::string& error);
 
 JsonPtr MakeJson(json_t* value) { return JsonPtr(value, &json_decref); }
+
+std::string MakeDebugTimestamp()
+{
+  const auto now = std::chrono::system_clock::now();
+  const auto now_seconds = std::chrono::system_clock::to_time_t(now);
+  const auto subseconds = now.time_since_epoch() % std::chrono::seconds(1);
+  constexpr auto kSubsecondTicksPerSecond
+      = std::chrono::system_clock::duration::period::den
+        / std::chrono::system_clock::duration::period::num;
+  constexpr int kSubsecondDigits = [] {
+    auto ticks = kSubsecondTicksPerSecond;
+    int digits = 0;
+    while (ticks > 1) {
+      ticks /= 10;
+      ++digits;
+    }
+    return digits;
+  }();
+  std::tm utc{};
+#if HAVE_WIN32
+  gmtime_s(&utc, &now_seconds);
+#else
+  gmtime_r(&now_seconds, &utc);
+#endif
+
+  std::ostringstream stream;
+  stream << std::put_time(&utc, "%Y-%m-%dT%H:%M:%S");
+  if constexpr (kSubsecondDigits > 0) {
+    stream << '.' << std::setw(kSubsecondDigits) << std::setfill('0')
+           << subseconds.count();
+  }
+  stream << 'Z';
+  return stream.str();
+}
+
+void DebugLog(std::string_view message,
+              const std::source_location& location
+              = std::source_location::current())
+{
+  if (kServiceDebugLevel > debug_level) { return; }
+
+  const auto line = MakeDebugTimestamp() + " " + std::string{my_name} + " ("
+                    + std::to_string(kServiceDebugLevel)
+                    + "): " + get_basename(location.file_name()) + ":"
+                    + std::to_string(location.line()) + "-"
+                    + std::to_string(GetJobIdFromThreadSpecificData()) + " "
+                    + std::string{message};
+  p_msg(__FILE__, __LINE__, -1, "%s\n", line.c_str());
+}
 
 std::vector<bconfig::Component> SupportedDeploymentInspectComponents()
 {
@@ -414,9 +494,10 @@ const char* kTestUiHtmlTemplate = R"HTML(
         <label for="client-stub-director-name">Director name</label>
         <input id="client-stub-director-name" name="director_name" value="bareos-dir">
 
-        <label for="client-stub-password">Password</label>
-        <input id="client-stub-password" name="password"
-               placeholder="cleartext or [md5]hash">
+        <p class="contents-meta">
+          The password is taken from the matching director-side
+          <code>Client</code> resource.
+        </p>
 
         <label for="client-stub-description">Description</label>
         <input id="client-stub-description" name="description"
@@ -424,6 +505,86 @@ const char* kTestUiHtmlTemplate = R"HTML(
 
         <button type="submit">
           PUT /v1/deployments/{id}/clients/{client}/directors/{director}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director client resource</h2>
+      <form id="director-client-form">
+        <label for="director-client-deployment-id">Deployment ID</label>
+        <input id="director-client-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-client-director-name">Director name</label>
+        <input id="director-client-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-client-client-name">Client name</label>
+        <input id="director-client-client-name" name="client_name" value="client1-fd">
+
+        <label for="director-client-address">Address</label>
+        <input id="director-client-address" name="address" value="client1-fd.example.com">
+
+        <label for="director-client-password">Password</label>
+        <input id="director-client-password" name="password"
+               placeholder="cleartext or [md5]hash">
+
+        <label for="director-client-description">Description</label>
+        <input id="director-client-description" name="description"
+               placeholder="Managed client resource">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/clients/{client}
+        </button>
+        <button type="button" id="director-client-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/clients/{client}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director storage resource</h2>
+      <form id="director-storage-form">
+        <label for="director-storage-deployment-id">Deployment ID</label>
+        <input id="director-storage-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-storage-director-name">Director name</label>
+        <input id="director-storage-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-storage-storage-name">Storage name</label>
+        <input id="director-storage-storage-name" name="storage_name" value="FileManaged">
+
+        <label for="director-storage-address">Address</label>
+        <input id="director-storage-address" name="address" value="localhost">
+
+        <label for="director-storage-port">Port</label>
+        <input id="director-storage-port" name="port" type="number" min="1" max="65535" value="9103">
+
+        <label for="director-storage-password">Password</label>
+        <input id="director-storage-password" name="password"
+               placeholder="cleartext or [md5]hash">
+
+        <label for="director-storage-device">Device</label>
+        <input id="director-storage-device" name="device" value="FileManaged">
+
+        <label for="director-storage-media-type">Media Type</label>
+        <input id="director-storage-media-type" name="media_type" value="File">
+
+        <label for="director-storage-archive-device">Archive Device</label>
+        <input id="director-storage-archive-device" name="archive_device"
+               value="/tmp/bareos-storage">
+
+        <label for="director-storage-device-type">Device Type</label>
+        <input id="director-storage-device-type" name="device_type" value="file">
+
+        <label for="director-storage-description">Description</label>
+        <input id="director-storage-description" name="description"
+               placeholder="Managed storage resource">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/storages/{storage}
+        </button>
+        <button type="button" id="director-storage-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/storages/{storage}
         </button>
       </form>
     </section>
@@ -1100,7 +1261,6 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const clientName = String(form.get('client_name') ?? '').trim();
         const directorName = String(form.get('director_name') ?? '').trim();
         const payload = {
-          password: String(form.get('password') ?? '').trim(),
           description: String(form.get('description') ?? '').trim(),
         };
         if (!payload.description) {
@@ -1110,6 +1270,138 @@ const char* kTestUiHtmlTemplate = R"HTML(
           'PUT',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/clients/${encodeURIComponent(clientName)}/directors/${encodeURIComponent(directorName)}`,
           payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-client-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const clientName = String(form.get('client_name') ?? '').trim();
+        const payload = {
+          address: String(form.get('address') ?? '').trim(),
+          password: String(form.get('password') ?? '').trim(),
+          description: String(form.get('description') ?? '').trim(),
+        };
+        if (!payload.address) {
+          delete payload.address;
+        }
+        if (!payload.password) {
+          delete payload.password;
+        }
+        if (!payload.description) {
+          delete payload.description;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/clients/${encodeURIComponent(clientName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          document.getElementById('client-stub-client-name').value = clientName;
+          document.getElementById('client-stub-director-name').value = directorName;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-client-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-client-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const clientName = String(form.get('client_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/clients/${encodeURIComponent(clientName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-storage-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const storageName = String(form.get('storage_name') ?? '').trim();
+        const payload = {
+          address: String(form.get('address') ?? '').trim(),
+          port: String(form.get('port') ?? '').trim(),
+          password: String(form.get('password') ?? '').trim(),
+          device: String(form.get('device') ?? '').trim(),
+          media_type: String(form.get('media_type') ?? '').trim(),
+          archive_device: String(form.get('archive_device') ?? '').trim(),
+          device_type: String(form.get('device_type') ?? '').trim(),
+          description: String(form.get('description') ?? '').trim(),
+        };
+        if (!payload.address) {
+          delete payload.address;
+        }
+        if (!payload.port) {
+          delete payload.port;
+        } else {
+          payload.port = Number(payload.port);
+        }
+        if (!payload.password) {
+          delete payload.password;
+        }
+        if (!payload.device) {
+          delete payload.device;
+        }
+        if (!payload.media_type) {
+          delete payload.media_type;
+        }
+        if (!payload.archive_device) {
+          delete payload.archive_device;
+        }
+        if (!payload.device_type) {
+          delete payload.device_type;
+        }
+        if (!payload.description) {
+          delete payload.description;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/storages/${encodeURIComponent(storageName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    {
+      const storageNameInput = document.getElementById('director-storage-storage-name');
+      const deviceInput = document.getElementById('director-storage-device');
+      let autoDeviceName = deviceInput.value;
+      storageNameInput.addEventListener('input', () => {
+        if (deviceInput.value === autoDeviceName || !deviceInput.value.trim()) {
+          autoDeviceName = storageNameInput.value.trim();
+          deviceInput.value = autoDeviceName;
+        }
+      });
+      deviceInput.addEventListener('input', () => {
+        if (!deviceInput.value.trim()) {
+          autoDeviceName = storageNameInput.value.trim();
+        }
+      });
+    }
+    document.getElementById('director-storage-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-storage-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const storageName = String(form.get('storage_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/storages/${encodeURIComponent(storageName)}`);
         if (response.ok) {
           document.getElementById('deployment-inspect-id').value = deploymentId;
           await loadDeploymentContents(deploymentId);
@@ -1819,7 +2111,6 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
   if (!spec) { return ErrorResponse(http::status::bad_request, error); }
 
   ClientDirectorStubSpec stub_spec{
-      .password = spec->password,
       .description = spec->description,
   };
   auto result = state.UpsertClientDirectorStub(deployment_id, client_name,
@@ -1843,6 +2134,214 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
   json_object_set_new(root.get(), "director_name",
                       json_string(std::string{director_name}.c_str()));
   json_object_set(root.get(), "client", client_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view client_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorClientRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorClientResourceSpec resource_spec{
+      .address = spec->address,
+      .port = spec->port,
+      .password = spec->password,
+      .description = spec->description,
+  };
+  auto result = state.UpsertDirectorClientResource(deployment_id, director_name,
+                                                   client_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto client = state.GetDeploymentConfig(
+      deployment_id, bconfig::Component::kClient, client_name);
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "client_name",
+                      json_string(std::string{client_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  if (client) {
+    bool client_parser_initialized = false;
+    auto client_json = BuildDeploymentConfigDocument(*client.value,
+                                                     client_parser_initialized);
+    if (!client_parser_initialized) {
+      return JsonResponse(http::status::bad_request,
+                          DumpJson(client_json.get()));
+    }
+    json_object_set(root.get(), "client", client_json.get());
+  } else {
+    json_object_set_new(root.get(), "client", json_null());
+  }
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorClientDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view client_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorClientResource(deployment_id, director_name,
+                                                   client_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto client = state.GetDeploymentConfig(
+      deployment_id, bconfig::Component::kClient, client_name);
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "client_name",
+                      json_string(std::string{client_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  if (client) {
+    bool client_parser_initialized = false;
+    auto client_json = BuildDeploymentConfigDocument(*client.value,
+                                                     client_parser_initialized);
+    if (!client_parser_initialized) {
+      return JsonResponse(http::status::bad_request,
+                          DumpJson(client_json.get()));
+    }
+    json_object_set(root.get(), "client", client_json.get());
+  } else {
+    json_object_set_new(root.get(), "client", json_null());
+  }
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorStoragePutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view storage_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorStorageRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorStorageResourceSpec resource_spec{
+      .address = spec->address,
+      .port = spec->port,
+      .password = spec->password,
+      .device = spec->device,
+      .media_type = spec->media_type,
+      .archive_device = spec->archive_device,
+      .device_type = spec->device_type,
+      .description = spec->description,
+  };
+  auto result = state.UpsertDirectorStorageResource(
+      deployment_id, director_name, storage_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "storage_name",
+                      json_string(std::string{storage_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorStorageDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view storage_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorStorageResource(
+      deployment_id, director_name, storage_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "storage_name",
+                      json_string(std::string{storage_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
@@ -2021,10 +2520,46 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     return std::nullopt;
   }
 
+  auto* description = json_object_get(root.get(), "description");
+  if (description && !json_is_null(description)
+      && !json_is_string(description)) {
+    error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+
+  ClientDirectorStubRequestSpec spec{};
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  return spec;
+}
+
+std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* address = json_object_get(root.get(), "address");
+  auto* port = json_object_get(root.get(), "port");
   auto* password = json_object_get(root.get(), "password");
   auto* description = json_object_get(root.get(), "description");
-  if (!json_is_string(password)) {
-    error = "field 'password' must be a string.";
+
+  if (address && !json_is_null(address) && !json_is_string(address)) {
+    error = "field 'address' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (port && !json_is_null(port) && !json_is_integer(port)) {
+    error = "field 'port' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (password && !json_is_null(password) && !json_is_string(password)) {
+    error = "field 'password' must be a string when provided.";
     return std::nullopt;
   }
   if (description && !json_is_null(description)
@@ -2033,12 +2568,109 @@ std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     return std::nullopt;
   }
 
-  ClientDirectorStubRequestSpec spec{
-      .password = json_string_value(password),
-  };
-  if (spec.password.empty()) {
-    error = "field 'password' must not be empty.";
+  DirectorClientRequestSpec spec{};
+  if (address && json_is_string(address)) {
+    spec.address = std::string{json_string_value(address)};
+  }
+  if (port && json_is_integer(port)) {
+    const auto value = json_integer_value(port);
+    if (value <= 0 || value > 65535) {
+      error = "field 'port' must be between 1 and 65535.";
+      return std::nullopt;
+    }
+    spec.port = static_cast<uint16_t>(value);
+  }
+  if (password && json_is_string(password)) {
+    spec.password = std::string{json_string_value(password)};
+  }
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  return spec;
+}
+
+std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
     return std::nullopt;
+  }
+
+  auto* address = json_object_get(root.get(), "address");
+  auto* port = json_object_get(root.get(), "port");
+  auto* password = json_object_get(root.get(), "password");
+  auto* device = json_object_get(root.get(), "device");
+  auto* media_type = json_object_get(root.get(), "media_type");
+  auto* archive_device = json_object_get(root.get(), "archive_device");
+  auto* device_type = json_object_get(root.get(), "device_type");
+  auto* description = json_object_get(root.get(), "description");
+
+  if (address && !json_is_null(address) && !json_is_string(address)) {
+    error = "field 'address' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (port && !json_is_null(port) && !json_is_integer(port)) {
+    error = "field 'port' must be an integer when provided.";
+    return std::nullopt;
+  }
+  if (password && !json_is_null(password) && !json_is_string(password)) {
+    error = "field 'password' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (device && !json_is_null(device) && !json_is_string(device)) {
+    error = "field 'device' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (media_type && !json_is_null(media_type) && !json_is_string(media_type)) {
+    error = "field 'media_type' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (archive_device && !json_is_null(archive_device)
+      && !json_is_string(archive_device)) {
+    error = "field 'archive_device' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (device_type && !json_is_null(device_type)
+      && !json_is_string(device_type)) {
+    error = "field 'device_type' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (description && !json_is_null(description)
+      && !json_is_string(description)) {
+    error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+
+  DirectorStorageRequestSpec spec{};
+  if (address && json_is_string(address)) {
+    spec.address = std::string{json_string_value(address)};
+  }
+  if (port && json_is_integer(port)) {
+    const auto value = json_integer_value(port);
+    if (value <= 0 || value > 65535) {
+      error = "field 'port' must be between 1 and 65535.";
+      return std::nullopt;
+    }
+    spec.port = static_cast<uint16_t>(value);
+  }
+  if (password && json_is_string(password)) {
+    spec.password = std::string{json_string_value(password)};
+  }
+  if (device && json_is_string(device)) {
+    spec.device = std::string{json_string_value(device)};
+  }
+  if (media_type && json_is_string(media_type)) {
+    spec.media_type = std::string{json_string_value(media_type)};
+  }
+  if (archive_device && json_is_string(archive_device)) {
+    spec.archive_device = std::string{json_string_value(archive_device)};
+  }
+  if (device_type && json_is_string(device_type)) {
+    spec.device_type = std::string{json_string_value(device_type)};
   }
   if (description && json_is_string(description)) {
     spec.description = std::string{json_string_value(description)};
@@ -2119,6 +2751,30 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, request, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "clients" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorClientPutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "clients"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorClientDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "storages" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorStoragePutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "storages"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorStorageDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
   if (path_parts.size() == 4 && path_parts[3] == "git-status"
       && request.method() == http::verb::get) {
     return HandleDeploymentGitStatusRequest(state, path_parts[2]);
@@ -2184,6 +2840,8 @@ http::response<http::string_body> HandleRequest(
     ServiceState& state,
     const http::request<http::string_body>& request)
 {
+  DebugLog("handling " + std::string{request.method_string()} + " "
+           + std::string{request.target()});
   const auto target
       = std::string_view{request.target().data(), request.target().size()};
   const auto path_parts = SplitPath(
@@ -2251,6 +2909,7 @@ void RunServer(const std::string& address, uint16_t port, ServiceState& state)
 
   std::cout << "bconfig-service listening on " << address << ":" << port
             << std::endl;
+  DebugLog("server listening on " + address + ":" + std::to_string(port));
 
   for (;;) {
     tcp::socket socket{io_context};
@@ -2261,6 +2920,10 @@ void RunServer(const std::string& address, uint16_t port, ServiceState& state)
     http::read(socket, buffer, request);
 
     auto response = HandleRequest(state, request);
+    DebugLog("responding with status "
+             + std::to_string(static_cast<unsigned>(response.result_int()))
+             + " to " + std::string{request.method_string()} + " "
+             + std::string{request.target()});
     http::write(socket, response);
 
     beast::error_code error_code;

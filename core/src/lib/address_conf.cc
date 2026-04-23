@@ -428,6 +428,14 @@ int AddAddress(dlist<IPADDR>** out,
   if (family == 0) {
     bool ipv4_enabled = IsFamilyEnabled(IpFamily::V4);
     bool ipv6_enabled = IsFamilyEnabled(IpFamily::V6);
+    if (!resolve_hostname && ipv4_enabled && ipv6_enabled) {
+      if (!AddAddress(out, type, defaultport, AF_INET, hostname_str, port_str,
+                      buf, buflen, false)) {
+        return 0;
+      }
+      return AddAddress(out, type, defaultport, AF_INET6, hostname_str,
+                        port_str, buf, buflen, false);
+    }
     if (!ipv4_enabled && ipv6_enabled) { family = AF_INET6; }
     if (ipv4_enabled && !ipv6_enabled) { family = AF_INET; }
     if (!ipv4_enabled && !ipv6_enabled) {

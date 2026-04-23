@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-Copyright (C) 2023-2024 Bareos GmbH & Co. KG
+Copyright (C) 2023-2026 Bareos GmbH & Co. KG
 
 This program is Free Software; you can redistribute it and/or
 modify it under the terms of version three of the GNU Affero General Public
@@ -31,14 +31,15 @@ std::vector<std::string> CreateAddressesFromAddAddress(
     int family,
     unsigned short t_default_port,
     const char* hostname_str,
-    const char* port_str)
+    const char* port_str,
+    bool resolve_hostname = true)
 {
   std::vector<std::string> newaddresses{};
   char buf[1024];
   dlist<IPADDR>* addresses = nullptr;
 
   AddAddress(&addresses, type, htons(t_default_port), family, hostname_str,
-             port_str, buf, sizeof(buf));
+             port_str, buf, sizeof(buf), resolve_hostname);
 
   IPADDR* addr = nullptr;
   foreach_dlist (addr, addresses) {
@@ -63,6 +64,22 @@ TEST_F(AddressesAndPortsFunctions, DefaultAddressesAreCorrectlyProcessed)
       IPADDR::R_DEFAULT, 0, default_port, "", "");
   std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;9101]",
                                               "host[ipv6;::;9101]"};
+  EXPECT_EQ(addresses, expected_addresses);
+}
+
+TEST_F(AddressesAndPortsFunctions,
+       UnresolvedUnspecifiedFamilyAddressesAreCorrectlyProcessed)
+{
+  std::vector<std::string> addresses = CreateAddressesFromAddAddress(
+      IPADDR::R_SINGLE, 0, default_port, nullptr, "5000", false);
+  std::vector<std::string> expected_addresses{"host[ipv4;0.0.0.0;5000]",
+                                              "host[ipv6;::;5000]"};
+  EXPECT_EQ(addresses, expected_addresses);
+
+  addresses = CreateAddressesFromAddAddress(IPADDR::R_MULTIPLE, 0, default_port,
+                                            "example.com", "5000", false);
+  expected_addresses
+      = {"host[ipv4;example.com;5000]", "host[ipv6;example.com;5000]"};
   EXPECT_EQ(addresses, expected_addresses);
 }
 
