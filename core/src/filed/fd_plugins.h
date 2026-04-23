@@ -146,13 +146,15 @@ struct restore_pkt {
   int create_status{};                   /* Status from createFile() */
   uint32_t delta_seq{};                  /* Delta sequence number */
 #if HAVE_WIN32
-  HANDLE hndl;
+  HANDLE hndl; /* HANDLE to read/write in core */
 #else
   int filedes{}; /* file descriptor to read/write in core */
 #endif
 
-  const char* original_file_name{};
-  const char* original_link_name{};
+  const char* original_file_name{}; /* original file name (without
+                                       where/regexwhere applied) */
+  const char* original_link_name{}; /* original link name (without
+                                       where/regexwhere applied) */
 
   int32_t pkt_end{sizeof(restore_pkt)}; /* End packet sentinel */
 };
