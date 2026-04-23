@@ -13,8 +13,8 @@ JobName=backup-incus-vm
 export PATH="$current_test_directory/sbin:$current_test_directory/bin:$PATH"
 
 JobName=backup-incus-vm
-#shellcheck source=../scripts/functions
-. "$BAREOS_SCRIPTS_DIR"/functions
+#shellcheck source=../../scripts/functions
+. "${BAREOS_SCRIPTS_DIR}"/functions
 
 IMAGE=bareos-test-alpine
 INSTANCE=bareos-test-vm
