@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - matrix.yml: add Fedora 44 [PR #2617]
+- webui: optimize performance and security [PR #2628]
 
 ## [25.0.3] - 2026-04-01
 
@@ -2266,4 +2267,5 @@ If you want to migrate from your manually configured disk autochanger to simply 
 [PR #2606]: https://github.com/bareos/bareos/pull/2606
 [PR #2608]: https://github.com/bareos/bareos/pull/2608
 [PR #2617]: https://github.com/bareos/bareos/pull/2617
+[PR #2628]: https://github.com/bareos/bareos/pull/2628
 [unreleased]: https://github.com/bareos/bareos/tree/master
