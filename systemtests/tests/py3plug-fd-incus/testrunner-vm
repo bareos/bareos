@@ -81,7 +81,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @$out $NULL_DEV
 messages
-@$out $tmp/log4.out
+@$out ${runner_tmp}/full.out
 label volume=TestVolume003 storage=File pool=Full
 run job=$JobName level=Full yes
 status director
@@ -92,16 +92,16 @@ messages
 END_OF_DATA
 
 run_bconsole "$@"
-check_log "$tmp/log4.out"
+check_log "${runner_tmp}/full.out"
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out $tmp/log4-list.out
+@$out ${runner_tmp}/full-list.out
 list files jobid=$(last_jobid_or_zero)
 END_OF_DATA
 run_bconsole "$@"
 
 # 25 chunks should be created here
-chunks="$(check_chunks "$tmp/log4-list.out" "${INSTANCE}/virtual-machine.img")"
+chunks="$(check_chunks "${runner_tmp}/full-list.out" "${INSTANCE}/virtual-machine.img")"
 if ((chunks != 25)); then
   echo "Error: expected 25 chunks, got $chunks"
   exit 1
@@ -114,7 +114,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# Then, perform an incremental backup to get the new file
 @#
-@$out $tmp/log5.out
+@$out ${runner_tmp}/incr.out
 label volume=TestVolume004 storage=File pool=Incremental
 run job=$JobName level=Incremental yes
 status director
@@ -125,16 +125,16 @@ messages
 END_OF_DATA
 
 run_bconsole "$@"
-check_log "$tmp/log5.out"
+check_log "${runner_tmp}/incr.out"
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out $tmp/log2-list.out
+@$out ${runner_tmp}/incr-list.out
 list files jobid=$(last_jobid_or_zero)
 END_OF_DATA
 run_bconsole "$@"
 
 # Modifying our single file should only modify ~4 chunks, but let's be safe
-chunks="$(check_chunks "$tmp/log5-list.out" "${INSTANCE}/virtual-machine.img")"
+chunks="$(check_chunks "${runner_tmp}/incr-list.out" "${INSTANCE}/virtual-machine.img")"
 if ((chunks > 8)); then
   echo "Error: too many chunks modified ($chunks)"
   exit 1
@@ -146,7 +146,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# Now, restore the incremental backup to a new instance
 @#
-@$out $tmp/log6.out
+@$out ${runner_tmp}/restore.out
 wait
 restore client=bareos-fd fileset=IncusTestVM where=/ select all done pluginoptions=python:restore_instance=${NEWINSTANCE}
 yes
@@ -155,7 +155,7 @@ messages
 END_OF_DATA
 
 run_bconsole "$@"
-check_log "$tmp/log6.out"
+check_log "${runner_tmp}/restore.out"
 
 incus start "${NEWINSTANCE}"
 wait_for_agent "${NEWINSTANCE}"

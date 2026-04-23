@@ -77,7 +77,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @$out $NULL_DEV
 messages
-@$out $tmp/log1.out
+@$out ${runner_tmp}/full.out
 label volume=TestVolume001 storage=File pool=Full
 run job=$JobName level=Full yes
 status director
@@ -88,7 +88,7 @@ messages
 END_OF_DATA
 
 run_bconsole "$@"
-check_log "$tmp/log1.out"
+check_log "${runner_tmp}/full.out"
 
 incus file push - "$INSTANCE/new-file" <<<bazqux
 incus exec "$INSTANCE" -- setfattr -n user.foobar -v bazqux /new-file
@@ -103,7 +103,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# Then, perform an incremental backup to get the new file
 @#
-@$out $tmp/log2.out
+@$out ${runner_tmp}/incr.out
 label volume=TestVolume002 storage=File pool=Incremental
 run job=$JobName level=Incremental yes
 status director
@@ -114,15 +114,15 @@ messages
 END_OF_DATA
 
 run_bconsole "$@"
-check_log "$tmp/log2.out"
+check_log "${runner_tmp}/incr.out"
 
 cat <<END_OF_DATA >$tmp/bconcmds
-@$out $tmp/log2-list.out
+@$out ${runner_tmp}/incr-list.out
 list files jobid=$(last_jobid_or_zero)
 END_OF_DATA
 run_bconsole "$@"
 
-files="$(grep "^ @INCUS/instances/$INSTANCE/container/rootfs/" "$tmp/log2-list.out" | grep -v "^ @INCUS/instances/$INSTANCE/container/rootfs/var/log/messages" | sort)"
+files="$(grep "^ @INCUS/instances/$INSTANCE/container/rootfs/" "${runner_tmp}/incr-list.out" | grep -v "^ @INCUS/instances/$INSTANCE/container/rootfs/var/log/messages" | sort)"
 actualfiles=(etc hlinked-file new-file)
 expected="$(printf " @INCUS/instances/$INSTANCE/container/rootfs/%s\n" "${actualfiles[@]}")"
 if [ "$files" != "$expected" ]; then
@@ -139,7 +139,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 @#
 @# Now, restore the incremental backup to a new instance
 @#
-@$out $tmp/log3.out
+@$out ${runner_tmp}/restore.out
 wait
 restore client=bareos-fd fileset=IncusTestCT select all done pluginoptions=python:restore_instance=$NEWINSTANCE:restore_config_override=user.foo=bar:restore_config_override=user.baz=qux:restore_device_override=root,user.foo=bar
 yes
@@ -148,7 +148,7 @@ messages
 END_OF_DATA
 
 run_bconsole "$@"
-check_log "$tmp/log3.out"
+check_log "${runner_tmp}/restore.out"
 
 incus start "$NEWINSTANCE"
 
