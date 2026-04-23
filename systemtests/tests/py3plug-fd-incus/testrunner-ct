@@ -1,4 +1,25 @@
 #!/bin/bash
+
+# BAREOS - Backup Archiving REcovery Open Sourced
+#
+# Copyright (C) 2025-2026 Benjamin Somers
+# Copyright (C) 2025-2026 Bareos GmbH & Co. KG
+#
+# This program is Free Software; you can redistribute it and/or
+# modify it under the terms of version three of the GNU Affero General Public
+# License as published by the Free Software Foundation, which is
+# listed in the file LICENSE.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
+
 set -euo pipefail
 #
 # This systemtest tests the Incus FD plugin
@@ -16,8 +37,8 @@ JobName=backup-incus-ct
 #shellcheck source=../../scripts/functions
 . "$BAREOS_SCRIPTS_DIR"/functions
 
-INSTANCE=bareos-test-ct
-NEWINSTANCE=bareos-test-ct-2
+INSTANCE="bareos-test-ct${BUILDID:+-${BUILDID}}"
+NEWINSTANCE="${INSTANCE}-2"
 
 wait_for_network()
 {
