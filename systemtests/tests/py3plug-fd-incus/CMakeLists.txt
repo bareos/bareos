@@ -1,6 +1,6 @@
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2025-2026 Benjamin Somers
+# Copyright (C) 2025-2026 Benjamin Somers, IMT Atlantique
 # Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or

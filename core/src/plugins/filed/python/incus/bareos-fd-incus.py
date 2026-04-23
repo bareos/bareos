@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # BAREOS - Backup Archiving REcovery Open Sourced
 #
-# Copyright (C) 2025-2026 Benjamin Somers
+# Copyright (C) 2025-2026 Benjamin Somers, IMT Atlantique
 # Copyright (C) 2025-2026 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
@@ -20,7 +20,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
-# Author: Benjamin Somers
+# Author: Benjamin Somers, IMT Atlantique
 
 # pylint: disable=invalid-name,too-many-lines
 """This module provides the Incus FD plugin for Bareos"""
