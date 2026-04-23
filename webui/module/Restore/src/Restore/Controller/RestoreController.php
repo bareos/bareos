@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -103,7 +103,13 @@ class RestoreController extends AbstractActionController
         $result = null;
         $restore_jobid = null;
 
-        $restore_source_clients = $this->getClientModel()->getClientsWithBackups($this->bsock);
+        try {
+            $restore_source_clients = $this->getClientModel()->getClientsWithBackups($this->bsock);
+        } catch (Exception $e) {
+            error_log($e->getMessage());
+            $this->bsock->disconnect();
+            return new ViewModel(array('errors' => $e->getMessage()));
+        }
         $this->updateClientParam($restore_source_clients);
 
         if ($this->restore_params['client'] != null) {
@@ -119,12 +125,15 @@ class RestoreController extends AbstractActionController
             $backups = null;
         }
 
+        $restore_target_clients = array();
+        $restorejobs = array();
+        $restorejobresources = array();
         try {
             $restore_target_clients = $this->getClientModel()->getClients($this->bsock);
             $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
             $restorejobresources = $this->getRestoreModel()->getRestoreJobResources($this->bsock, $restorejobs);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         $this->updateRestoreParams($restore_source_clients, $restore_target_clients, $restorejobresources);
@@ -206,7 +215,7 @@ class RestoreController extends AbstractActionController
                         // contains information about this has happened.
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
 
                 $this->bsock->disconnect();
@@ -257,7 +266,7 @@ class RestoreController extends AbstractActionController
                     $this->restore_params['jobid'] = $latestbackup[0]['jobid'];
                 }
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
         }
     }
@@ -267,7 +276,7 @@ class RestoreController extends AbstractActionController
         try {
             $this->restore_params['jobids'] = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'], $this->restore_params['mergefilesets']);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -276,7 +285,7 @@ class RestoreController extends AbstractActionController
         try {
             return $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -328,7 +337,7 @@ class RestoreController extends AbstractActionController
                 $this->restore_params['id']
             );
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -346,7 +355,7 @@ class RestoreController extends AbstractActionController
                 $this->restore_params['id']
             );
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -363,7 +372,7 @@ class RestoreController extends AbstractActionController
                 $this->restore_params['mergejobs']
             );
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -378,7 +387,7 @@ class RestoreController extends AbstractActionController
                 $this->restore_params['jobids']
             );
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 
@@ -627,7 +636,7 @@ class RestoreController extends AbstractActionController
                 $result = $this->getRestoreModel()->getFileVersions($this->bsock, $clientname, $pathid, $filename);
                 $this->bsock->disconnect();
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
             }
         }
 
@@ -648,7 +657,7 @@ class RestoreController extends AbstractActionController
             $result = $this->getRestoreModel()->isNDMPBackupClient($this->bsock, $client);
             return $result;
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
     }
 

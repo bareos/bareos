@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (c) 2024-2024 Bareos GmbH & Co. KG
+ * @copyright Copyright (C) 2024-2026 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -49,14 +49,19 @@ class Util
         $message = "Update information could not be retrieved.";
         $version = "unknown";
         if ($version_info) {
-            $message = $version_info["package_update_info"];
-            $version = $version_info["requested_version"];
-            if ($version_info["status"] == "upgrade_required") {
-                $label = "label-danger";
-            } elseif ($version_info["version_status"] == "update_required") {
-                $label = "label-warning";
-            } elseif ($version_info["status"] == "uptodate") {
-                $label = "label-success";
+            $message = $version_info["package_update_info"] ?? $message;
+            $version = $version_info["requested_version"] ?? $version;
+
+            switch ($version_info["status"] ?? null) {
+                case "upgrade_required":
+                    $label = "label-danger";
+                    break;
+                case "update_required":
+                    $label = "label-warning";
+                    break;
+                case "uptodate":
+                    $label = "label-success";
+                    break;
             }
         }
         return sprintf('<span class="label %s" id="label-version" data-toggle="tooltip" data-placement="top" title="%s">%s</span>', $label, $message, $version);

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,7 +36,7 @@ class RestoreModel
      *
      * @return array
      */
-    public function getDirectories(&$bsock = null, $jobid = null, $pathid = null)
+    public function getDirectories(&$bsock = null, $jobid = null, $pathid = null): array
     {
         if (isset($bsock)) {
             $limit = 1000;
@@ -102,7 +102,7 @@ class RestoreModel
      *
      * @return array
      */
-    public function getFiles(&$bsock = null, $jobid = null, $pathid = null)
+    public function getFiles(&$bsock = null, $jobid = null, $pathid = null): array
     {
         if (isset($bsock)) {
             $limit = 1000;
@@ -149,12 +149,28 @@ class RestoreModel
      *
      * @return array
      */
-    public function getFileVersions(&$bsock = null, $clientname = null, $pathid = null, $filename = null)
+    public function getFileVersions(&$bsock = null, $clientname = null, $pathid = null, $filename = null): ?array
     {
         if (isset($bsock)) {
             $cmd = '.bvfs_versions jobid=0 client=' . $clientname . ' pathid=' . $pathid . ' fname="' . addslashes($filename) . '"';
             $result = $bsock->send_command($cmd, 2);
-            $versions = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
+            try {
+                $versions = \Laminas\Json\Json::decode($result, \Laminas\Json\Json::TYPE_ARRAY);
+            } catch (\Throwable $e) {
+                error_log('getFileVersions: failed to decode response');
+                return null;
+            }
+
+            if (
+                !is_array($versions)
+                || !isset($versions['result'])
+                || !array_key_exists('versions', $versions['result'])
+                || !is_array($versions['result']['versions'])
+            ) {
+                error_log('getFileVersions: missing result versions');
+                return null;
+            }
+
             return $versions['result']['versions'];
         } else {
             throw new \Exception('Missing argument.');
@@ -169,7 +185,7 @@ class RestoreModel
      *
      * @return array
      */
-    public function getRestoreJobResources(&$bsock = null, $restorejobs = null)
+    public function getRestoreJobResources(&$bsock = null, $restorejobs = null): array
     {
         if (isset($bsock) && isset($restorejobs)) {
             $restorejobresources = array();
@@ -234,7 +250,7 @@ class RestoreModel
      * @param $bsock
      * @param $jobid
      */
-    public function updateBvfsCache(&$bsock = null, $jobid = null)
+    public function updateBvfsCache(&$bsock = null, $jobid = null): void
     {
         if (isset($bsock)) {
             if ($jobid != null) {
@@ -265,7 +281,7 @@ class RestoreModel
      *
      * @return string
      */
-    public function restore(&$bsock = null, $jobid = null, $client = null, $restoreclient = null, $restorejob = null, $where = null, $fileid = null, $dirid = null, $jobids = null, $replace = null, $pluginoptions = null)
+    public function restore(&$bsock = null, $jobid = null, $client = null, $restoreclient = null, $restorejob = null, $where = null, $fileid = null, $dirid = null, $jobids = null, $replace = null, $pluginoptions = null): string
     {
         if (isset($bsock)) {
             $result = $bsock->restore($jobid, $client, $restoreclient, $restorejob, $where, $fileid, $dirid, $jobids, $replace, $pluginoptions);
@@ -275,22 +291,24 @@ class RestoreModel
         }
     }
 
-    public function isNDMPBackupClient(&$bsock = null, $client = null)
+    public function isNDMPBackupClient(&$bsock = null, $client = null): ?bool
     {
-        if (isset($bsock)) {
-            if ($client != null) {
-                $cmd = 'show client=' . $client;
-                $result = $bsock->send_command($cmd, 0);
-                $keywords = array('NDMPv2', 'NDMPv3', 'NDMPv4');
-                foreach ($keywords as $keyword) {
-                    if (stripos($result, $keyword) !== false) {
-                        return true;
-                    }
-                }
-                return false;
-            } else {
-                throw new \Exception('Missing argument');
-            }
+        if (!isset($bsock)) {
+            throw new \Exception('Missing argument');
         }
+
+        if ($client != null) {
+            $cmd = 'show client=' . $client;
+            $result = $bsock->send_command($cmd, 0);
+            $keywords = array('NDMPv2', 'NDMPv3', 'NDMPv4');
+            foreach ($keywords as $keyword) {
+                if (stripos($result, $keyword) !== false) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        throw new \Exception('Missing argument');
     }
 }

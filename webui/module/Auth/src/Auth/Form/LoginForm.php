@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -164,6 +164,16 @@ class LoginForm extends Form
                 'attributes' => array(
                     'value' => 'false',
                     'id' => 'bareos_updates'
+                ),
+            )
+        );
+
+        $this->add(
+            array(
+                'name' => 'csrf',
+                'type' => 'Laminas\Form\Element\Csrf',
+                'options' => array(
+                    'csrf_options' => array('timeout' => 3600),
                 ),
             )
         );
@@ -346,9 +356,8 @@ class LoginForm extends Form
     {
         $selectData = array();
 
-        foreach ($this->config as $dird) {
-            $selectData[key($this->config)] = key($this->config);
-            next($this->config);
+        foreach ($this->config as $key => $dird) {
+            $selectData[$key] = $key;
         }
 
         return $selectData;

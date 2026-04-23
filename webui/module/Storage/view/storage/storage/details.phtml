@@ -51,7 +51,7 @@ $this->headTitle($title);
          <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Director message"); ?></h4>
       </div>
       <div class="modal-body" style="height: 250px; overflow-y: scroll">
-         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
+         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->escapeHtml($this->result)); ?></p>
       </div>
       <div class="modal-footer">
          <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
@@ -101,6 +101,7 @@ $this->headTitle($title);
          <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Cancel"); ?></button>
          <?php
             echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
+            echo $this->formHidden($form->get('csrf'));
             echo $this->form()->closeTag($form);
          ?>
       </div>
@@ -196,7 +197,7 @@ $this->headTitle($title);
 <script>
 
    var basePath = "<?php echo $this->basePath(); ?>";
-   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+   var result = '<?php echo $this->escapeJs(str_replace(array("\n","\r"), "", $this->result)); ?>';
 
    function attachImportExportSlotsTable() {
       $('#ie_slots').bootstrapTable({
