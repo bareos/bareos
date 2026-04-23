@@ -68,7 +68,7 @@ trap cleanup_instances EXIT
 
 cleanup_instances
 
-incus launch "$IMAGE" "${INSTANCE}" --vm -c security.secureboot=false -d root,size=400MiB
+incus launch "${VMIMAGE}" "${INSTANCE}" --vm -c security.secureboot=false -d root,size=400MiB
 wait_for_agent "${INSTANCE}"
 incus file push - "${INSTANCE}/old-file" <<<"foobar"
 sync_fs
