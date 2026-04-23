@@ -28,6 +28,7 @@
  *   BAREOS_DIRECTOR_HOST  director hostname   (default: localhost)
  *   BAREOS_DIRECTOR_PORT  director port       (default: 9101)
  *   BAREOS_DIRECTOR_NAME  director name       (default: bareos-dir)
+ *   BAREOS_DIRECTOR_DISABLE_TLS_PSK  skip TLS-PSK and use cleartext only
  *
  * The proxy first tries the Director's TLS-PSK console path and falls back to
  * cleartext when that handshake is not accepted.
@@ -68,6 +69,17 @@ static int EnvIntOr(const char* var, int def)
   return val ? std::atoi(val) : def;
 }
 
+static bool EnvBoolOr(const char* var, bool def)
+{
+  const char* val = std::getenv(var);
+  if (!val) { return def; }
+
+  const std::string value{val};
+  return value == "1" || value == "true" || value == "TRUE"
+         || value == "yes" || value == "YES" || value == "on"
+         || value == "ON";
+}
+
 int main(int argc, char* argv[])
 {
   ServerConfig cfg;
@@ -76,6 +88,8 @@ int main(int argc, char* argv[])
   cfg.director.host = EnvOr("BAREOS_DIRECTOR_HOST", "localhost");
   cfg.director.port = EnvIntOr("BAREOS_DIRECTOR_PORT", 9101);
   cfg.director.name = EnvOr("BAREOS_DIRECTOR_NAME", "bareos-dir");
+  cfg.director.tls_psk_disable = EnvBoolOr("BAREOS_DIRECTOR_DISABLE_TLS_PSK",
+                                           false);
 
   CLI::App app{"Bareos Director WebSocket Proxy"};
   app.add_option("--ws-host", cfg.bind_host,
@@ -88,6 +102,9 @@ int main(int argc, char* argv[])
                  "Director port (env: BAREOS_DIRECTOR_PORT, default: 9101)");
   app.add_option("--director-name", cfg.director.name,
                  "Director name (env: BAREOS_DIRECTOR_NAME)");
+  app.add_flag("--director-disable-tls-psk", cfg.director.tls_psk_disable,
+               "Skip TLS-PSK and use cleartext only "
+               "(env: BAREOS_DIRECTOR_DISABLE_TLS_PSK)");
 
   CLI11_PARSE(app, argc, argv);
 

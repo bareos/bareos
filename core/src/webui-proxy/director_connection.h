@@ -72,6 +72,7 @@ struct DirectorConfig {
   std::string username;
   std::string password;  // plaintext
   bool json_mode{true};
+  bool tls_psk_disable{false};
   bool tls_psk_require{false};
 };
 

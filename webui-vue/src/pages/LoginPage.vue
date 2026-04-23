@@ -4,19 +4,19 @@
       <div class="text-center q-mb-lg">
         <img :src="bareosLogo" alt="Bareos" style="height:48px" />
         <div class="text-h5 text-white text-weight-bold q-mt-sm">BAREOS</div>
-        <div class="text-subtitle2 text-white">Backup Archiving Recovery Open Sourced</div>
+        <div class="text-subtitle2 text-white">{{ t('Backup Archiving Recovery Open Sourced') }}</div>
       </div>
 
       <q-card flat bordered>
         <q-card-section class="bg-primary text-white">
-          <div class="text-h6">Sign In</div>
+          <div class="text-h6">{{ t('Login') }}</div>
         </q-card-section>
         <q-card-section>
           <q-form data-testid="login-form" @submit.prevent="doLogin">
             <q-input
               v-model="username"
               data-testid="login-username"
-              label="Username"
+              :label="t('Username')"
               outlined dense
               class="q-mb-sm"
               autocomplete="username"
@@ -24,7 +24,7 @@
             <q-input
               v-model="password"
               data-testid="login-password"
-              label="Password"
+              :label="t('Password')"
               type="password"
               outlined dense
               class="q-mb-sm"
@@ -34,7 +34,7 @@
               v-model="locale"
               data-testid="login-language"
               :options="availableLocales"
-              label="Language"
+              :label="t('Language')"
               outlined dense
               emit-value map-options
               class="q-mb-md"
@@ -42,7 +42,7 @@
 
             <q-expansion-item
               data-testid="login-advanced"
-              label="Advanced connection settings"
+              :label="t('Advanced connection settings')"
               icon="tune"
               dense
               header-class="text-primary"
@@ -52,10 +52,10 @@
                 <q-input
                   v-model="host"
                   data-testid="login-host"
-                  label="Director Host"
+                  :label="t('Director Host')"
                   outlined dense
                   class="q-mb-sm"
-                  placeholder="localhost"
+                  :placeholder="t('localhost')"
                   autocomplete="off"
                 >
                   <template #append>
@@ -72,7 +72,7 @@
                 <q-input
                   v-model="directorRef"
                   data-testid="login-director"
-                  label="Director Name"
+                  :label="t('Director Name')"
                   outlined dense
                 />
               </div>
@@ -86,7 +86,7 @@
             <q-btn
               data-testid="login-submit"
               type="submit"
-              label="Login"
+              :label="t('Login')"
               color="primary"
               class="full-width"
               :loading="loading"
@@ -105,6 +105,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   DEFAULT_DIRECTOR_HOST,
   DEFAULT_DIRECTOR_NAME,
@@ -120,6 +121,7 @@ const auth     = useAuthStore()
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const router   = useRouter()
+const { t } = useI18n()
 
 const host      = ref(DEFAULT_DIRECTOR_HOST)
 const port      = ref(DEFAULT_DIRECTOR_PORT)
@@ -157,7 +159,7 @@ async function doLogin() {
   })
 
   if (!ok) {
-    errorMsg.value = director.errorMsg || 'Could not connect to director. Is the proxy running?'
+    errorMsg.value = director.errorMsg || t('Could not connect to director. Is the proxy running?')
     loading.value = false
     return
   }

@@ -2,19 +2,19 @@
   <q-page class="q-pa-md">
     <q-card flat bordered class="bareos-panel" style="max-width:600px">
       <q-card-section class="panel-header">
-        <span>User Settings</span>
+        <span>{{ t('User Settings') }}</span>
       </q-card-section>
 
       <q-card-section>
-        <div class="text-subtitle2 q-mb-sm">Language</div>
+        <div class="text-subtitle2 q-mb-sm">{{ t('Language') }}</div>
         <q-item dense>
           <q-item-section avatar>
             <q-icon name="language" />
           </q-item-section>
           <q-item-section>
-            <q-item-label>WebUI Language</q-item-label>
+            <q-item-label>{{ t('WebUI Language') }}</q-item-label>
             <q-item-label caption>
-              Reuses the locale catalog from the legacy PHP WebUI.
+              {{ t('Reuses the locale catalog from the legacy PHP WebUI.') }}
             </q-item-label>
           </q-item-section>
         </q-item>
@@ -34,14 +34,14 @@
 
       <q-card-section>
         <!-- Dark mode -->
-        <div class="text-subtitle2 q-mb-sm">Appearance</div>
+        <div class="text-subtitle2 q-mb-sm">{{ t('Appearance') }}</div>
         <q-item tag="label" dense>
           <q-item-section avatar>
             <q-icon :name="settings.darkMode ? 'dark_mode' : 'light_mode'" />
           </q-item-section>
           <q-item-section>
-            <q-item-label>Dark Mode</q-item-label>
-            <q-item-label caption>Switch between light and dark theme</q-item-label>
+            <q-item-label>{{ t('Dark Mode') }}</q-item-label>
+            <q-item-label caption>{{ t('Switch between light and dark theme') }}</q-item-label>
           </q-item-section>
           <q-item-section side>
             <q-toggle v-model="settings.darkMode" @update:model-value="applyDark" />
@@ -53,15 +53,15 @@
 
       <q-card-section>
         <!-- Refresh interval -->
-        <div class="text-subtitle2 q-mb-sm">Auto-Refresh</div>
+        <div class="text-subtitle2 q-mb-sm">{{ t('Auto-Refresh') }}</div>
         <q-item dense>
           <q-item-section avatar>
             <q-icon name="schedule" />
           </q-item-section>
           <q-item-section>
-            <q-item-label>Refresh Interval</q-item-label>
+            <q-item-label>{{ t('Refresh Interval') }}</q-item-label>
             <q-item-label caption>
-              How often pages auto-refresh: <strong>{{ settings.refreshInterval }}s</strong>
+              {{ t('How often pages auto-refresh:') }} <strong>{{ settings.refreshInterval }}s</strong>
             </q-item-label>
           </q-item-section>
         </q-item>
@@ -86,15 +86,17 @@
 
       <q-card-section>
         <!-- Time format -->
-        <div class="text-subtitle2 q-mb-sm">Tables</div>
+        <div class="text-subtitle2 q-mb-sm">{{ t('Tables') }}</div>
         <q-item tag="label" dense>
           <q-item-section avatar>
             <q-icon :name="settings.relativeTime ? 'schedule' : 'calendar_today'" />
           </q-item-section>
           <q-item-section>
-            <q-item-label>Time Display</q-item-label>
+            <q-item-label>{{ t('Time Display') }}</q-item-label>
             <q-item-label caption>
-              {{ settings.relativeTime ? 'Relative (e.g. "2 hours ago")' : 'Absolute (e.g. "2025-04-01 14:22")' }}
+              {{ settings.relativeTime
+                ? t('Relative (e.g. "2 hours ago")')
+                : t('Absolute (e.g. "2025-04-01 14:22")' ) }}
             </q-item-label>
           </q-item-section>
           <q-item-section side>
@@ -107,6 +109,7 @@
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import { useSettingsStore } from '../stores/settings.js'
 import { localeOptions } from '../utils/locales.js'
@@ -114,6 +117,7 @@ import { localeOptions } from '../utils/locales.js'
 const $q       = useQuasar()
 const settings = useSettingsStore()
 const availableLocales = localeOptions
+const { t } = useI18n()
 
 function applyDark(val) {
   $q.dark.set(val)

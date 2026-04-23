@@ -424,7 +424,6 @@ else()
 
     prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
     prepare_testdir_for_daemon_run()
-
     set(WEBUICONFDIR ${current_test_directory}/etc/bareos-webui)
     file(MAKE_DIRECTORY ${WEBUICONFDIR})
     configure_file(
@@ -459,6 +458,9 @@ else()
 
   # unset variables, so that they are not set in other environments.
   set(BAREOS_WEBUI_PROFILE "")
+  set(BAREOS_WEBUI_USERNAME "")
+  set(BAREOS_WEBUI_PASSWORD "")
+  set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT "")
   set(BAREOS_WEBUI_TESTNAME "")
   set(BAREOS_WEBUI_TESTS "")
 endif()
@@ -467,7 +469,11 @@ endif()
 # webui: end
 #
 
-set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS admin-smoke)
+set(AVAILABLE_WEBUI_VUE_PLAYWRIGHT_TESTS
+    admin-smoke
+    testuser-smoke
+    testuser-tls-psk-smoke
+)
 
 if(NODE AND NPM AND GOOGLE_CHROME)
   set(ENABLE_WEBUI_VUE_PLAYWRIGHT_TEST TRUE)
@@ -498,9 +504,29 @@ else()
     prepare_test(${TEST_NAME} ${TEST_NAME} ${TEST_NAME})
     set(BAREOS_WEBUI_PROFILE admin)
     set(BAREOS_WEBUI_TESTNAME smoke)
+    set(BAREOS_WEBUI_USERNAME admin)
+    set(BAREOS_WEBUI_PASSWORD admin)
+    set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
+    set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK 0)
+
+    if(TEST_NAME STREQUAL "testuser-smoke")
+      set(BAREOS_WEBUI_PROFILE testuser)
+      set(BAREOS_WEBUI_USERNAME testuser)
+      set(BAREOS_WEBUI_PASSWORD testuser)
+      set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT cleartext)
+      set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK 1)
+    elseif(TEST_NAME STREQUAL "testuser-tls-psk-smoke")
+      set(BAREOS_WEBUI_PROFILE testuser)
+      set(BAREOS_WEBUI_USERNAME testuser)
+      set(BAREOS_WEBUI_PASSWORD testuser)
+      set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT TLS-PSK)
+    endif()
 
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "*" @ONLY "tests/webui-common"
+    )
+    configurefilestosystemtest(
+      "systemtests" "tests/${TEST_NAME}" "*" @ONLY ""
     )
     configurefilestosystemtest(
       "systemtests" "tests/${TEST_NAME}" "testrunner" @ONLY
@@ -526,6 +552,10 @@ else()
     math(EXPR BASEPORT "${BASEPORT} + 10")
   endforeach()
   set(BAREOS_WEBUI_PROFILE "")
+  set(BAREOS_WEBUI_USERNAME "")
+  set(BAREOS_WEBUI_PASSWORD "")
+  set(BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT "")
+  set(BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK "")
   set(BAREOS_WEBUI_TESTNAME "")
 endif()
 

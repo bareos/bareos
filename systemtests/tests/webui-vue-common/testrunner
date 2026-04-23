@@ -38,6 +38,17 @@ frontend_log="${tmp}/webui-vue-frontend.out"
 playwright_log="${tmp}/webui-vue-playwright.out"
 source_snapshot_file="${tmp}/webui-vue-source-before.sha256"
 source_snapshot_after_file="${tmp}/webui-vue-source-after.sha256"
+proxy_args=(
+  --ws-host 127.0.0.1
+  --ws-port "${proxy_port}"
+  --director-host 127.0.0.1
+  --director-port "${BAREOS_DIRECTOR_PORT}"
+  --director-name bareos-dir
+)
+
+if [[ "${BAREOS_WEBUI_PROXY_DISABLE_TLS_PSK}" = "1" ]]; then
+  proxy_args+=(--director-disable-tls-psk)
+fi
 
 function snapshot_webui_vue_sources()
 {
@@ -109,13 +120,7 @@ VITE_DIRECTOR_PORT="${BAREOS_DIRECTOR_PORT}" \
   >"${tmp}/webui-vue-build.out" 2>&1
 popd >/dev/null
 
-"${BAREOS_WEBUI_PROXY_BINARY}" \
-  --ws-host 127.0.0.1 \
-  --ws-port "${proxy_port}" \
-  --director-host 127.0.0.1 \
-  --director-port "${BAREOS_DIRECTOR_PORT}" \
-  --director-name bareos-dir \
-  >"${proxy_log}" 2>&1 &
+"${BAREOS_WEBUI_PROXY_BINARY}" "${proxy_args[@]}" >"${proxy_log}" 2>&1 &
 PROXY_PID=$!
 
 "${NODE_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/webui-vue/scripts/serve-spa.mjs" \
@@ -144,6 +149,13 @@ if ! PLAYWRIGHT_BASE_URL="${BAREOS_WEBUI_BASE_URL}" \
   set_error "$(cat "${playwright_log}")"
 fi
 popd >/dev/null
+
+if [[ -n "${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}" ]]; then
+  if ! grep -F "director transport: ${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}" \
+    "${proxy_log}" >/dev/null; then
+    set_error "webui-vue proxy did not use expected director transport ${BAREOS_WEBUI_EXPECTED_DIRECTOR_TRANSPORT}:\n$(cat "${proxy_log}")"
+  fi
+fi
 
 snapshot_webui_vue_sources "${source_snapshot_after_file}"
 if ! cmp -s "${source_snapshot_file}" "${source_snapshot_after_file}"; then

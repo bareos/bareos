@@ -7,6 +7,7 @@ import 'quasar/src/css/index.sass'
 import './css/app.scss'
 import App from './App.vue'
 import router from './router/index.js'
+import { i18n } from './i18n/index.js'
 import { useSettingsStore } from './stores/settings.js'
 
 const app = createApp(App)
@@ -26,6 +27,7 @@ app.use(Quasar, {
     }
   }
 })
+app.use(i18n)
 app.use(pinia)
 useSettingsStore(pinia)
 app.use(router)

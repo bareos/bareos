@@ -13,22 +13,22 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   type: { type: String, required: true },
 })
-
-const typeMap = {
-  B: { color: 'primary',  label: 'Backup'     },
-  R: { color: 'teal',     label: 'Restore'    },
-  V: { color: 'purple',   label: 'Verify'     },
-  A: { color: 'grey',     label: 'Admin'      },
-  D: { color: 'orange',   label: 'Diagnostic' },
-  C: { color: 'cyan-8',   label: 'Copy'       },
-  M: { color: 'deep-purple', label: 'Migration' },
-}
+const { t } = useI18n()
 
 const info = computed(() =>
-  typeMap[props.type] ?? { color: 'grey', label: props.type }
+  ({
+    B: { color: 'primary', label: t('Backup') },
+    R: { color: 'teal', label: t('Restore') },
+    V: { color: 'purple', label: t('Verify') },
+    A: { color: 'grey', label: t('Admin') },
+    D: { color: 'orange', label: t('Diagnostic') },
+    C: { color: 'cyan-8', label: t('Copy') },
+    M: { color: 'deep-purple', label: t('Migration') },
+  }[props.type] ?? { color: 'grey', label: props.type })
 )
 </script>

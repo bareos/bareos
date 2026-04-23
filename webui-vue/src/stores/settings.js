@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { setI18nLocale } from '../i18n/index.js'
 import {
   applyDocumentLocale,
   detectPreferredLocale,
@@ -49,6 +50,7 @@ export const useSettingsStore = defineStore('settings', () => {
   watch(relativeTime, save)
   watch(locale, (value) => {
     applyDocumentLocale(value)
+    setI18nLocale(value)
     save()
   }, { immediate: true })
 

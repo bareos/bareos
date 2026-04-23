@@ -13,20 +13,20 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   level: { type: String, required: true },
 })
-
-const levelMap = {
-  F: { color: 'primary', label: 'Full'         },
-  I: { color: 'teal',    label: 'Incremental'  },
-  D: { color: 'orange',  label: 'Differential' },
-  V: { color: 'purple',  label: 'Virtual Full' },
-  B: { color: 'grey',    label: 'Base'         },
-}
+const { t } = useI18n()
 
 const info = computed(() =>
-  levelMap[props.level] ?? { color: 'grey', label: props.level }
+  ({
+    F: { color: 'primary', label: t('Full') },
+    I: { color: 'teal', label: t('Incremental') },
+    D: { color: 'orange', label: t('Differential') },
+    V: { color: 'purple', label: t('Virtual Full') },
+    B: { color: 'grey', label: t('Base') },
+  }[props.level] ?? { color: 'grey', label: props.level })
 )
 </script>

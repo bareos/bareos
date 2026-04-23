@@ -22,8 +22,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   DEFAULT_WEBUI_LOCALE,
-  PHP_WEBUI_LOCALES,
-} from '../../src/generated/php-locales.js'
+  WEBUI_LOCALES,
+} from '../../src/generated/webui-locales.js'
 import {
   detectPreferredLocale,
   formatDirectorRelativeTime,
@@ -34,7 +34,7 @@ import {
 
 describe('webui locales', () => {
   it('matches the PHP WebUI locale catalog', () => {
-    expect(PHP_WEBUI_LOCALES.map(({ value }) => value)).toEqual([
+    expect(WEBUI_LOCALES.map(({ value }) => value)).toEqual([
       'cn_CN',
       'cs_CZ',
       'nl_BE',

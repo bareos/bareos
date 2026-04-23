@@ -1,1 +1,0 @@
-import{u as o,a as t,b}from"./QTabs-DBnaViGX.js";import{b as m}from"./index-D8XiM952.js";const u=m({name:"QTab",props:t,emits:o,setup(s,{slots:a,emit:e}){const{renderTab:r}=b(s,a,e);return()=>r("div")}});export{u as Q};

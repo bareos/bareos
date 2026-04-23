@@ -408,6 +408,16 @@ void DirectorConnection::Connect(const DirectorConfig& cfg)
     Authenticate(cfg);
   };
 
+  if (cfg.tls_psk_disable) {
+    try {
+      connect_and_authenticate(false);
+    } catch (...) {
+      Disconnect();
+      throw;
+    }
+    return;
+  }
+
   if (cfg.tls_psk_require) {
     try {
       connect_and_authenticate(true);

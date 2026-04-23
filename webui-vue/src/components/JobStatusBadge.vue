@@ -4,21 +4,21 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   status: { type: String, required: true },
 })
+const { t } = useI18n()
 
-const statusMap = {
-  T:    { label: 'OK',       color: 'positive' },
-  OK:   { label: 'OK',       color: 'positive' },
-  W:    { label: 'Warning',  color: 'warning'  },
-  f:    { label: 'Failed',   color: 'negative' },
-  A:    { label: 'Canceled', color: 'grey'     },
-  R:    { label: 'Running',  color: 'info'     },
-  C:    { label: 'Waiting',  color: 'grey'     },
-  E:    { label: 'Error',    color: 'negative' },
-}
-
-const info = computed(() => statusMap[props.status] ?? { label: props.status, color: 'grey' })
+const info = computed(() => ({
+  T:    { label: 'OK', color: 'positive' },
+  OK:   { label: 'OK', color: 'positive' },
+  W:    { label: t('Warning'), color: 'warning' },
+  f:    { label: t('Failed'), color: 'negative' },
+  A:    { label: t('Canceled'), color: 'grey' },
+  R:    { label: t('Running'), color: 'info' },
+  C:    { label: t('Waiting'), color: 'grey' },
+  E:    { label: t('Error'), color: 'negative' },
+}[props.status] ?? { label: props.status, color: 'grey' }))
 </script>

@@ -26,7 +26,7 @@
         <!-- Jobs Past 24h stat row -->
         <q-card flat bordered class="q-mb-md bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Jobs started during the past 24 hours</span>
+            <span>{{ t('Jobs started during the past 24 hours') }}</span>
             <q-space />
             <span class="text-white text-caption q-mr-sm" style="opacity:0.7">↻ {{ countdown }}s</span>
             <q-spinner v-if="loadingJobs" color="white" size="18px" class="q-mr-sm" />
@@ -46,7 +46,7 @@
         <!-- Jobs Last Status table -->
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Most recent job status per job name</span>
+            <span>{{ t('Most recent job status per job name') }}</span>
             <q-space />
             <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
           </q-card-section>
@@ -145,7 +145,7 @@
       <div class="col-12 col-md-4">
         <!-- Job Totals -->
         <q-card flat bordered class="q-mb-md bareos-panel">
-          <q-card-section class="panel-header">Job Totals</q-card-section>
+          <q-card-section class="panel-header">{{ t('Job Totals') }}</q-card-section>
           <q-card-section class="q-pa-sm">
             <div class="row q-gutter-sm">
               <div v-for="stat in totalStats" :key="stat.label" class="col-auto">
@@ -159,7 +159,7 @@
         <!-- Running Jobs -->
         <q-card flat bordered class="bareos-panel">
           <q-card-section class="panel-header row items-center">
-            <span>Running Jobs</span>
+            <span>{{ t('Running') }} {{ t('Jobs') }}</span>
             <q-space />
             <q-btn flat round dense icon="refresh" color="white" size="sm" @click="manualRefresh" />
           </q-card-section>
@@ -174,17 +174,17 @@
                     <span class="text-grey-6 text-caption q-ml-xs">({{ job.client }})</span>
                   </q-item-label>
                   <q-item-label caption>
-                    {{ formatNumber(job.files ?? 0, settings.locale) }} files &middot; {{ jobBytes(job) }} &middot; {{ formatDuration(elapsedSecs(job)) }}
+                     {{ formatNumber(job.files ?? 0, settings.locale) }} {{ t('Files') }} &middot; {{ jobBytes(job) }} &middot; {{ formatDuration(elapsedSecs(job)) }}
                   </q-item-label>
                   <q-linear-progress indeterminate color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
                 </q-item-section>
                 <q-item-section side>
                   <q-btn flat round dense icon="cancel" color="negative" size="sm"
-                         title="Cancel job" @click="confirmCancel(job)" />
+                         :title="t('Cancel Job')" @click="confirmCancel(job)" />
                 </q-item-section>
               </q-item>
               <q-item v-if="!runningJobs.length">
-                <q-item-section class="text-grey text-caption text-center q-py-md">No running jobs</q-item-section>
+                <q-item-section class="text-grey text-caption text-center q-py-md">{{ t('No running jobs') }}</q-item-section>
               </q-item>
             </q-list>
           </q-card-section>
@@ -197,6 +197,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
+import { useI18n } from 'vue-i18n'
 import { formatBytes, formatSpeed, parseDurationSecs, timeAgo, formatDuration } from '../mock/index.js'
 import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
@@ -209,6 +210,7 @@ import StatNumber from '../components/StatNumber.vue'
 const director = useDirectorStore()
 const settings = useSettingsStore()
 const $q = useQuasar()
+const { t } = useI18n()
 const fmtBytes      = formatBytes
 const fmtSpeed      = formatSpeed
 
@@ -298,19 +300,19 @@ function refresh() {
 function confirmCancel(job) {
   $q.dialog({
     title: 'Cancel Job',
-    message: `Cancel job ${job.name} (ID ${jobId(job)})?`,
-    ok: { label: 'Cancel Job', color: 'negative', flat: true },
-    cancel: { label: 'Keep Running', flat: true },
+    message: t('Cancel job {name} (ID {id})?', { name: job.name, id: jobId(job) }),
+    ok: { label: t('Cancel Job'), color: 'negative', flat: true },
+    cancel: { label: t('Keep Running'), flat: true },
   }).onOk(() => doCancel(job))
 }
 
 async function doCancel(job) {
   try {
     await director.call(`cancel jobid=${jobId(job)} yes`)
-    $q.notify({ type: 'positive', message: `Job ${jobId(job)} cancelled.` })
+    $q.notify({ type: 'positive', message: t('Job {id} cancelled.', { id: jobId(job) }) })
     refresh()
   } catch (e) {
-    $q.notify({ type: 'negative', message: `Cancel failed: ${e.message}` })
+    $q.notify({ type: 'negative', message: t('Cancel failed: {message}', { message: e.message }) })
   }
 }
 
@@ -357,18 +359,24 @@ watch(() => director.isConnected, (connected) => { if (connected) startAutoRefre
 const past24hJobs = computed(() => rawPast24hJobs.value.map(normaliseJob))
 const lastJobs    = computed(() => rawLastJobs.value.map(normaliseJob))
 
-const recentCols = [
-  { name: 'id',        label: 'ID',       field: 'id',        align: 'right', sortable: true },
-  { name: 'name',      label: 'Job Name', field: 'name',      align: 'left',  sortable: true },
-  { name: 'client',    label: 'Client',   field: 'client',    align: 'left',  sortable: true },
-  { name: 'level',     label: 'Level',    field: 'level',     align: 'center' },
-  { name: 'starttime', label: 'Start',    field: 'starttime', align: 'left',  sortable: true },
-  { name: 'duration',  label: 'Duration', field: 'duration',  align: 'right', sortable: true,
-    sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b) },
-  { name: 'bytes',     label: 'Bytes',    field: 'bytes',     align: 'right', sortable: true },
-  { name: 'speed',     label: 'Speed',    field: 'speed',     align: 'right'  },
-  { name: 'status',    label: 'Status',   field: 'status',    align: 'center' },
-]
+const recentCols = computed(() => [
+  { name: 'id', label: 'ID', field: 'id', align: 'right', sortable: true },
+  { name: 'name', label: t('Job Name'), field: 'name', align: 'left', sortable: true },
+  { name: 'client', label: t('Client'), field: 'client', align: 'left', sortable: true },
+  { name: 'level', label: t('Level'), field: 'level', align: 'center' },
+  { name: 'starttime', label: t('Start'), field: 'starttime', align: 'left', sortable: true },
+  {
+    name: 'duration',
+    label: t('Duration'),
+    field: 'duration',
+    align: 'right',
+    sortable: true,
+    sort: (a, b) => parseDurationSecs(a) - parseDurationSecs(b),
+  },
+  { name: 'bytes', label: t('Bytes'), field: 'bytes', align: 'right', sortable: true },
+  { name: 'speed', label: t('Speed'), field: 'speed', align: 'right' },
+  { name: 'status', label: t('Status'), field: 'status', align: 'center' },
+])
 
 const recentJobs  = computed(() => lastJobs.value)
 const runningJobs = computed(() => rawRunningJobs.value.map(normaliseJob))
@@ -396,13 +404,13 @@ function durationGauge(str) { return parseDurationSecs(str) / maxDurationSecs.va
 function speedGauge(row) { return jobSpeedBps(row) / maxSpeedBps.value }
 
 const summaryStats = computed(() => {
-  const s = (code) => past24hJobs.value.filter(j => j.status === code).length
+    const s = (code) => past24hJobs.value.filter(j => j.status === code).length
   return [
-    { label: 'Running',    status: 'R', color: 'info',     count: s('R') },
-    { label: 'Waiting',    status: 'C', color: 'grey',     count: s('C') },
-    { label: 'Successful', status: 'T', color: 'positive', count: s('T') },
-    { label: 'Warning',    status: 'W', color: 'warning',  count: s('W') },
-    { label: 'Failed',     status: 'f', color: 'negative', count: s('f') },
+    { label: t('Running'), status: 'R', color: 'info', count: s('R') },
+    { label: t('Waiting'), status: 'C', color: 'grey', count: s('C') },
+    { label: t('Successful'), status: 'T', color: 'positive', count: s('T') },
+    { label: t('Warning'), status: 'W', color: 'warning', count: s('W') },
+    { label: t('Failed'), status: 'f', color: 'negative', count: s('f') },
   ]
 })
 
@@ -418,11 +426,11 @@ const totals = computed(() => {
 })
 
 const totalStats = computed(() => [
-  { label: 'Total Jobs',  value: totals.value.jobs },
-  { label: 'Total Files', value: formatNumber(totals.value.files ?? 0, settings.locale) },
-  { label: 'Total Bytes', value: fmtBytes(totals.value.bytes ?? 0) },
-  { label: 'Clients',     value: clientCount.value },
-  { label: 'Storages',    value: storageCount.value },
+  { label: t('Total Jobs'), value: totals.value.jobs },
+  { label: t('Total Files'), value: formatNumber(totals.value.files ?? 0, settings.locale) },
+  { label: t('Total Bytes'), value: fmtBytes(totals.value.bytes ?? 0) },
+  { label: t('Clients'), value: clientCount.value },
+  { label: t('Storages'), value: storageCount.value },
 ])
 
 // helper: keep status/bytes getters for template compatibility

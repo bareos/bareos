@@ -21,10 +21,10 @@
 
 import {
   DEFAULT_WEBUI_LOCALE,
-  PHP_WEBUI_LOCALES,
-} from '../generated/php-locales.js'
+  WEBUI_LOCALES,
+} from '../generated/webui-locales.js'
 
-const AVAILABLE_LOCALES = new Set(PHP_WEBUI_LOCALES.map(({ value }) => value))
+const AVAILABLE_LOCALES = new Set(WEBUI_LOCALES.map(({ value }) => value))
 
 const PHP_TO_INTL_LOCALE = Object.freeze({
   cn_CN: 'zh-CN',
@@ -96,7 +96,7 @@ const DIRECTOR_MONTHS = Object.freeze({
   Dec: 11,
 })
 
-export const localeOptions = PHP_WEBUI_LOCALES
+export const localeOptions = WEBUI_LOCALES
 
 export function normalizeWebUiLocale(locale) {
   if (typeof locale !== 'string' || locale.length === 0) {

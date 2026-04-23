@@ -45,6 +45,7 @@ TEST(DirectorConfig, DoesNotRequireTlsPskByDefault)
 {
   DirectorConfig cfg;
 
+  EXPECT_FALSE(cfg.tls_psk_disable);
   EXPECT_FALSE(cfg.tls_psk_require);
 }
 

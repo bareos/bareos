@@ -41,11 +41,11 @@
               {{ dirStatusLabel }}
             </q-item-section>
           </q-item>
-          <q-item clickable v-ripple @click="openConsole(); drawerOpen = false">
-            <q-item-section avatar><q-icon name="terminal" /></q-item-section>
-            <q-item-section>Console</q-item-section>
-          </q-item>
-        </q-list>
+            <q-item clickable v-ripple @click="openConsole(); drawerOpen = false">
+              <q-item-section avatar><q-icon name="terminal" /></q-item-section>
+              <q-item-section>{{ t('Console') }}</q-item-section>
+            </q-item>
+          </q-list>
 
         <q-separator dark class="q-my-sm" />
 
@@ -53,28 +53,28 @@
         <q-list dark>
           <q-item clickable v-ripple :to="{ name: 'acls' }" @click="drawerOpen = false">
             <q-item-section avatar><q-icon name="verified_user" /></q-item-section>
-            <q-item-section>Command ACL</q-item-section>
+            <q-item-section>{{ t('Command ACL') }}</q-item-section>
           </q-item>
           <q-item clickable v-ripple :to="{ name: 'settings' }" @click="drawerOpen = false">
             <q-item-section avatar><q-icon name="tune" /></q-item-section>
-            <q-item-section>Settings</q-item-section>
+            <q-item-section>{{ t('Settings') }}</q-item-section>
           </q-item>
           <q-item clickable v-ripple
                   tag="a" href="https://docs.bareos.org" target="_blank"
                   @click="drawerOpen = false">
             <q-item-section avatar><q-icon name="menu_book" /></q-item-section>
-            <q-item-section>Documentation</q-item-section>
+            <q-item-section>{{ t('Documentation') }}</q-item-section>
           </q-item>
           <q-item clickable v-ripple
                   tag="a" href="https://github.com/bareos/bareos/issues/" target="_blank"
                   @click="drawerOpen = false">
             <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
-            <q-item-section>Issue Tracker</q-item-section>
+            <q-item-section>{{ t('Issue Tracker') }}</q-item-section>
           </q-item>
           <q-separator dark />
           <q-item clickable v-ripple @click="logout">
             <q-item-section avatar><q-icon name="logout" /></q-item-section>
-            <q-item-section>Logout</q-item-section>
+            <q-item-section>{{ t('Logout') }}</q-item-section>
           </q-item>
         </q-list>
       </q-scroll-area>
@@ -132,7 +132,7 @@
               <q-list dense style="min-width:160px">
                 <q-item clickable v-close-popup @click="openConsole">
                   <q-item-section avatar><q-icon name="terminal" /></q-item-section>
-                  <q-item-section>Console</q-item-section>
+                  <q-item-section>{{ t('Console') }}</q-item-section>
                 </q-item>
               </q-list>
             </q-menu>
@@ -143,25 +143,25 @@
               <q-list dense style="min-width:180px">
                 <q-item clickable v-close-popup :to="{ name: 'acls' }">
                   <q-item-section avatar><q-icon name="verified_user" /></q-item-section>
-                  <q-item-section>Command ACL</q-item-section>
+                  <q-item-section>{{ t('Command ACL') }}</q-item-section>
                 </q-item>
                 <q-item clickable v-close-popup :to="{ name: 'settings' }">
                   <q-item-section avatar><q-icon name="tune" /></q-item-section>
-                  <q-item-section>Settings</q-item-section>
+                  <q-item-section>{{ t('Settings') }}</q-item-section>
                 </q-item>
                 <q-separator />
                 <q-item clickable tag="a" href="https://docs.bareos.org" target="_blank" v-close-popup>
                   <q-item-section avatar><q-icon name="menu_book" /></q-item-section>
-                  <q-item-section>Documentation</q-item-section>
+                  <q-item-section>{{ t('Documentation') }}</q-item-section>
                 </q-item>
                 <q-item clickable tag="a" href="https://github.com/bareos/bareos/issues/" target="_blank" v-close-popup>
                   <q-item-section avatar><q-icon name="bug_report" /></q-item-section>
-                  <q-item-section>Issue Tracker</q-item-section>
+                  <q-item-section>{{ t('Issue Tracker') }}</q-item-section>
                 </q-item>
                 <q-separator />
                 <q-item clickable v-close-popup @click="logout">
                   <q-item-section avatar><q-icon name="logout" /></q-item-section>
-                  <q-item-section>Logout</q-item-section>
+                  <q-item-section>{{ t('Logout') }}</q-item-section>
                 </q-item>
               </q-list>
             </q-menu>
@@ -206,6 +206,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
 import bareosLogo from '../assets/bareos-logo-small.png'
 import { bareosVersion as appVersion } from '../generated/bareos-version.js'
@@ -224,6 +225,7 @@ const releaseInfo = useReleaseInfoStore()
 const router   = useRouter()
 const drawerOpen = ref(false)
 const directorVersion = ref('')
+const { t } = useI18n()
 
 function openConsole() {
   const base = window.location.href.replace(/#.*$/, '')
@@ -234,16 +236,16 @@ function openConsole() {
   )
 }
 
-const mainNavItems = [
-  { label: 'Dashboard',    to: '/dashboard',    icon: 'dashboard',  testId: 'nav-dashboard',    drawerTestId: 'drawer-nav-dashboard'    },
-  { label: 'Jobs',         to: '/jobs',         icon: 'work',       testId: 'nav-jobs',         drawerTestId: 'drawer-nav-jobs'         },
-  { label: 'Restore',      to: '/restore',      icon: 'restore',    testId: 'nav-restore',      drawerTestId: 'drawer-nav-restore'      },
-  { label: 'Clients',      to: '/clients',      icon: 'devices',    testId: 'nav-clients',      drawerTestId: 'drawer-nav-clients'      },
-  { label: 'Schedules',    to: '/schedules',    icon: 'schedule',   testId: 'nav-schedules',    drawerTestId: 'drawer-nav-schedules'    },
-  { label: 'Storages',     to: '/storages',     icon: 'storage',    testId: 'nav-storages',     drawerTestId: 'drawer-nav-storages'     },
-  { label: 'Director',     to: '/director',     icon: 'settings',   testId: 'nav-director',     drawerTestId: 'drawer-nav-director'     },
-  { label: 'Analytics',    to: '/analytics',    icon: 'bar_chart',  testId: 'nav-analytics',    drawerTestId: 'drawer-nav-analytics'    },
-]
+const mainNavItems = computed(() => [
+  { label: t('Dashboard'), to: '/dashboard', icon: 'dashboard', testId: 'nav-dashboard', drawerTestId: 'drawer-nav-dashboard' },
+  { label: t('Jobs'), to: '/jobs', icon: 'work', testId: 'nav-jobs', drawerTestId: 'drawer-nav-jobs' },
+  { label: t('Restore'), to: '/restore', icon: 'restore', testId: 'nav-restore', drawerTestId: 'drawer-nav-restore' },
+  { label: t('Clients'), to: '/clients', icon: 'devices', testId: 'nav-clients', drawerTestId: 'drawer-nav-clients' },
+  { label: t('Schedules'), to: '/schedules', icon: 'schedule', testId: 'nav-schedules', drawerTestId: 'drawer-nav-schedules' },
+  { label: t('Storages'), to: '/storages', icon: 'storage', testId: 'nav-storages', drawerTestId: 'drawer-nav-storages' },
+  { label: t('Director'), to: '/director', icon: 'settings', testId: 'nav-director', drawerTestId: 'drawer-nav-director' },
+  { label: t('Analytics'), to: '/analytics', icon: 'bar_chart', testId: 'nav-analytics', drawerTestId: 'drawer-nav-analytics' },
+])
 
 const settings = useSettingsStore()
 
@@ -278,12 +280,12 @@ const dirStatusIcon = computed(() => ({
 }[director.status] ?? 'cloud_off'))
 
 const dirStatusLabel = computed(() => ({
-  connected:      'Connected',
-  connecting:     'Connecting…',
-  authenticating: 'Authenticating…',
-  error:          'Error',
-  disconnected:   'Offline',
-}[director.status] ?? 'Offline'))
+  connected:      t('Connected'),
+  connecting:     t('Connecting…'),
+  authenticating: t('Authenticating…'),
+  error:          t('Error'),
+  disconnected:   t('Offline'),
+}[director.status] ?? t('Offline')))
 
 async function refreshDirectorVersion() {
   if (!director.isConnected) {
