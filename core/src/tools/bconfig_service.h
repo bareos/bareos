@@ -169,6 +169,11 @@ struct DirectorCatalogResourceSpec {
   std::optional<std::string> description{};
 };
 
+struct DirectorMessagesResourceSpec {
+  std::optional<std::string> description{};
+  std::optional<std::vector<std::string>> entries{};
+};
+
 struct DirectorScheduleResourceSpec {
   std::optional<std::string> description{};
   std::optional<bool> enabled{};
@@ -235,6 +240,16 @@ struct DirectorJobDefsResourceSpec {
   std::optional<std::string> where{};
   std::optional<int32_t> priority{};
   std::optional<bool> enabled{};
+};
+
+struct StorageMessagesResourceSpec {
+  std::optional<std::string> description{};
+  std::optional<std::vector<std::string>> entries{};
+};
+
+struct StorageDirectorResourceSpec {
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
 };
 
 struct JobSpec {
@@ -377,6 +392,15 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view catalog_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorMessagesResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view messages_name,
+      const DirectorMessagesResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorMessagesResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view messages_name) const;
   OperationResult<DeploymentConfigRecord> UpsertDirectorScheduleResource(
       std::string_view deployment_id,
       std::string_view director_name,
@@ -422,6 +446,24 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view jobdefs_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertStorageMessagesResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view messages_name,
+      const StorageMessagesResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteStorageMessagesResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view messages_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertStorageDirectorResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view director_name,
+      const StorageDirectorResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteStorageDirectorResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view director_name) const;
   OperationResult<std::vector<DeploymentImportRecord>> ListDeploymentImports(
       std::string_view deployment_id) const;
   OperationResult<DeploymentGitStatusRecord> GetDeploymentGitStatus(

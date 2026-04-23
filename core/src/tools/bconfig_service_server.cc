@@ -135,6 +135,16 @@ struct DirectorCatalogRequestSpec {
   std::optional<std::string> description{};
 };
 
+struct DirectorMessagesRequestSpec {
+  std::optional<std::string> description{};
+  std::optional<std::vector<std::string>> entries{};
+};
+
+struct StorageDirectorRequestSpec {
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+};
+
 struct DirectorScheduleRequestSpec {
   std::optional<std::string> description{};
   std::optional<bool> enabled{};
@@ -202,6 +212,12 @@ std::optional<DirectorPoolRequestSpec> ParseDirectorPoolRequest(
     std::string_view body,
     std::string& error);
 std::optional<DirectorCatalogRequestSpec> ParseDirectorCatalogRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<DirectorMessagesRequestSpec> ParseDirectorMessagesRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
     std::string_view body,
     std::string& error);
 std::optional<DirectorScheduleRequestSpec> ParseDirectorScheduleRequest(
@@ -957,6 +973,36 @@ const char* kTestUiHtmlTemplate = R"HTML(
     </section>
 
     <section class="card">
+      <h2>Upsert director messages resource</h2>
+      <form id="director-messages-form">
+        <label for="director-messages-deployment-id">Deployment ID</label>
+        <input id="director-messages-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-messages-director-name">Director name</label>
+        <input id="director-messages-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-messages-messages-name">Messages name</label>
+        <input id="director-messages-messages-name" name="messages_name" value="ManagedMessages">
+
+        <label for="director-messages-description">Description</label>
+        <input id="director-messages-description" name="description"
+               placeholder="Managed messages resource">
+
+        <label for="director-messages-entries">Message entries</label>
+        <textarea id="director-messages-entries" name="entries"
+                  rows="6"
+                  placeholder="console = all, !skipped, !saved, !audit"></textarea>
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/messages/{messages}
+        </button>
+        <button type="button" id="director-messages-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/messages/{messages}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
       <h2>Upsert director counter resource</h2>
       <form id="director-counter-form">
         <label for="director-counter-deployment-id">Deployment ID</label>
@@ -1200,6 +1246,65 @@ const char* kTestUiHtmlTemplate = R"HTML(
         </button>
         <button type="button" id="director-jobdefs-delete-button">
           DELETE /v1/deployments/{id}/directors/{director}/jobdefs/{jobdefs}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert storage-daemon director resource</h2>
+      <form id="storage-director-form">
+        <label for="storage-director-deployment-id">Deployment ID</label>
+        <input id="storage-director-deployment-id" name="deployment_id" value="prod">
+
+        <label for="storage-director-storage-name">Storage name</label>
+        <input id="storage-director-storage-name" name="storage_name" value="bareos-sd">
+
+        <label for="storage-director-director-name">Director name</label>
+        <input id="storage-director-director-name" name="director_name" value="bareos-dir">
+
+        <label for="storage-director-password">Password</label>
+        <input id="storage-director-password" name="password"
+               placeholder="[md5]supersecret">
+
+        <label for="storage-director-description">Description</label>
+        <input id="storage-director-description" name="description"
+               placeholder="Managed storage-daemon director resource">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/storages/{storage}/directors/{director}
+        </button>
+        <button type="button" id="storage-director-delete-button">
+          DELETE /v1/deployments/{id}/storages/{storage}/directors/{director}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert storage-daemon messages resource</h2>
+      <form id="storage-messages-form">
+        <label for="storage-messages-deployment-id">Deployment ID</label>
+        <input id="storage-messages-deployment-id" name="deployment_id" value="prod">
+
+        <label for="storage-messages-storage-name">Storage name</label>
+        <input id="storage-messages-storage-name" name="storage_name" value="bareos-sd">
+
+        <label for="storage-messages-messages-name">Messages name</label>
+        <input id="storage-messages-messages-name" name="messages_name" value="ManagedMessages">
+
+        <label for="storage-messages-description">Description</label>
+        <input id="storage-messages-description" name="description"
+               placeholder="Managed storage-daemon messages resource">
+
+        <label for="storage-messages-entries">Message entries</label>
+        <textarea id="storage-messages-entries" name="entries"
+                  rows="4"
+                  placeholder="Director = bareos-dir = all"></textarea>
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/storages/{storage}/messages/{messages}
+        </button>
+        <button type="button" id="storage-messages-delete-button">
+          DELETE /v1/deployments/{id}/storages/{storage}/messages/{messages}
         </button>
       </form>
     </section>
@@ -2306,6 +2411,52 @@ const char* kTestUiHtmlTemplate = R"HTML(
           await loadDeploymentContents(deploymentId);
         }
       });
+    document.getElementById('director-messages-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const messagesName = String(form.get('messages_name') ?? '').trim();
+        const rawEntries = String(form.get('entries') ?? '');
+        const entries = rawEntries.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const payload = {
+          description: String(form.get('description') ?? '').trim(),
+          entries,
+        };
+        if (!payload.description) {
+          delete payload.description;
+        }
+        if (payload.entries.length === 0) {
+          delete payload.entries;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/messages/${encodeURIComponent(messagesName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-messages-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-messages-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const messagesName = String(form.get('messages_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/messages/${encodeURIComponent(messagesName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
     document.getElementById('director-schedule-form').addEventListener(
       'submit',
       async (event) => {
@@ -2624,6 +2775,86 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const { response } = await request(
           'DELETE',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/jobdefs/${encodeURIComponent(jobdefsName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('storage-director-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const storageName = String(form.get('storage_name') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const payload = {
+          password: String(form.get('password') ?? '').trim(),
+          description: String(form.get('description') ?? '').trim(),
+        };
+        if (!payload.password) { delete payload.password; }
+        if (!payload.description) { delete payload.description; }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}/directors/${encodeURIComponent(directorName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('storage-director-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('storage-director-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const storageName = String(form.get('storage_name') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}/directors/${encodeURIComponent(directorName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('storage-messages-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const storageName = String(form.get('storage_name') ?? '').trim();
+        const messagesName = String(form.get('messages_name') ?? '').trim();
+        const rawEntries = String(form.get('entries') ?? '');
+        const entries = rawEntries.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const payload = {
+          description: String(form.get('description') ?? '').trim(),
+          entries,
+        };
+        if (!payload.description) { delete payload.description; }
+        if (payload.entries.length === 0) { delete payload.entries; }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}/messages/${encodeURIComponent(messagesName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('storage-messages-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('storage-messages-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const storageName = String(form.get('storage_name') ?? '').trim();
+        const messagesName = String(form.get('messages_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}/messages/${encodeURIComponent(messagesName)}`);
         if (response.ok) {
           document.getElementById('deployment-inspect-id').value = deploymentId;
           await loadDeploymentContents(deploymentId);
@@ -3460,6 +3691,176 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body> HandleDeploymentStorageMessagesPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view messages_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorMessagesRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  StorageMessagesResourceSpec resource_spec{
+      .description = spec->description,
+      .entries = spec->entries,
+  };
+  auto result = state.UpsertStorageMessagesResource(
+      deployment_id, storage_name, messages_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto storage_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(storage_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "storage_name",
+                      json_string(std::string{storage_name}.c_str()));
+  json_object_set_new(root.get(), "messages_name",
+                      json_string(std::string{messages_name}.c_str()));
+  json_object_set(root.get(), "storage", storage_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentStorageDirectorPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view director_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseStorageDirectorRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  StorageDirectorResourceSpec resource_spec{
+      .password = spec->password,
+      .description = spec->description,
+  };
+  auto result = state.UpsertStorageDirectorResource(
+      deployment_id, storage_name, director_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto storage_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(storage_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "storage_name",
+                      json_string(std::string{storage_name}.c_str()));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set(root.get(), "storage", storage_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentStorageDirectorDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view director_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteStorageDirectorResource(deployment_id, storage_name,
+                                                    director_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto storage_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(storage_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "storage_name",
+                      json_string(std::string{storage_name}.c_str()));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set(root.get(), "storage", storage_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentStorageMessagesDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view messages_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteStorageMessagesResource(deployment_id, storage_name,
+                                                    messages_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto storage_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(storage_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "storage_name",
+                      json_string(std::string{storage_name}.c_str()));
+  json_object_set_new(root.get(), "messages_name",
+                      json_string(std::string{messages_name}.c_str()));
+  json_object_set(root.get(), "storage", storage_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 http::response<http::string_body> HandleDeploymentDirectorClientPutRequest(
     ServiceState& state,
     const http::request<http::string_body>& request,
@@ -4106,6 +4507,91 @@ http::response<http::string_body> HandleDeploymentDirectorCatalogDeleteRequest(
                       json_string(std::string{director_name}.c_str()));
   json_object_set_new(root.get(), "catalog_name",
                       json_string(std::string{catalog_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorMessagesPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view messages_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorMessagesRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorMessagesResourceSpec resource_spec{
+      .description = spec->description,
+      .entries = spec->entries,
+  };
+  auto result = state.UpsertDirectorMessagesResource(
+      deployment_id, director_name, messages_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "messages_name",
+                      json_string(std::string{messages_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorMessagesDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view messages_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorMessagesResource(
+      deployment_id, director_name, messages_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "messages_name",
+                      json_string(std::string{messages_name}.c_str()));
   json_object_set(root.get(), "director", director_json.get());
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
@@ -5277,6 +5763,82 @@ std::optional<DirectorScheduleRequestSpec> ParseDirectorScheduleRequest(
   return spec;
 }
 
+std::optional<DirectorMessagesRequestSpec> ParseDirectorMessagesRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* description = json_object_get(root.get(), "description");
+  auto* entries = json_object_get(root.get(), "entries");
+  if (description && !json_is_null(description)
+      && !json_is_string(description)) {
+    error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (entries && !json_is_null(entries) && !json_is_array(entries)) {
+    error = "field 'entries' must be an array of strings when provided.";
+    return std::nullopt;
+  }
+
+  DirectorMessagesRequestSpec spec{};
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  if (entries && json_is_array(entries)) {
+    std::vector<std::string> parsed_entries;
+    parsed_entries.reserve(json_array_size(entries));
+    for (size_t index = 0; index < json_array_size(entries); ++index) {
+      auto* entry = json_array_get(entries, index);
+      if (!json_is_string(entry)) {
+        error = "field 'entries' must contain only strings.";
+        return std::nullopt;
+      }
+      parsed_entries.emplace_back(json_string_value(entry));
+    }
+    spec.entries = std::move(parsed_entries);
+  }
+  return spec;
+}
+
+std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* password = json_object_get(root.get(), "password");
+  auto* description = json_object_get(root.get(), "description");
+  if (password && !json_is_null(password) && !json_is_string(password)) {
+    error = "field 'password' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (description && !json_is_null(description)
+      && !json_is_string(description)) {
+    error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+
+  StorageDirectorRequestSpec spec{};
+  if (password && json_is_string(password)) {
+    spec.password = std::string{json_string_value(password)};
+  }
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  return spec;
+}
+
 std::optional<DirectorCounterRequestSpec> ParseDirectorCounterRequest(
     std::string_view body,
     std::string& error)
@@ -5679,6 +6241,30 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, request, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 7 && path_parts[3] == "storages"
+      && path_parts[5] == "directors" && request.method() == http::verb::put) {
+    return HandleDeploymentStorageDirectorPutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "storages"
+      && path_parts[5] == "directors"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentStorageDirectorDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "storages"
+      && path_parts[5] == "messages" && request.method() == http::verb::put) {
+    return HandleDeploymentStorageMessagesPutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "storages"
+      && path_parts[5] == "messages"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentStorageMessagesDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "clients" && request.method() == http::verb::put) {
     return HandleDeploymentDirectorClientPutRequest(
@@ -5758,6 +6344,18 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && path_parts[5] == "catalogs"
       && request.method() == http::verb::delete_) {
     return HandleDeploymentDirectorCatalogDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "messages" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorMessagesPutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "messages"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorMessagesDeleteRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 

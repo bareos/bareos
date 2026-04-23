@@ -667,6 +667,11 @@ struct DirectorCatalogContentSpec {
   std::optional<uint32_t> validate_timeout{};
 };
 
+struct DirectorMessagesContentSpec {
+  std::optional<std::string> description{};
+  std::vector<std::string> entries{};
+};
+
 struct DirectorScheduleContentSpec {
   std::optional<std::string> description{};
   bool enabled{true};
@@ -1085,6 +1090,22 @@ std::string BuildDirectorJobDefsResourceContent(
   return content.str();
 }
 
+std::string BuildDirectorMessagesResourceContent(
+    std::string_view messages_name,
+    const DirectorMessagesContentSpec& spec)
+{
+  std::ostringstream content;
+  content << "Messages {\n"
+          << "  Name = " << QuoteBareosString(messages_name) << "\n";
+  AppendQuotedDirective(content, "Description", spec.description);
+  for (const auto& entry : spec.entries) {
+    content << entry;
+    if (entry.empty() || entry.back() != '\n') { content << "\n"; }
+  }
+  content << "}\n";
+  return content.str();
+}
+
 std::string BuildStorageDaemonDirectorResourceContent(
     std::string_view director_name,
     std::string_view password,
@@ -1171,6 +1192,22 @@ std::string DefaultDirectorCatalogDescription(std::string_view catalog_name,
 {
   return "Managed catalog resource for " + std::string{catalog_name}
          + " in director " + std::string{director_name};
+}
+
+std::string DefaultDirectorMessagesDescription(std::string_view messages_name,
+                                               std::string_view director_name)
+{
+  return "Managed messages resource for " + std::string{messages_name}
+         + " in director " + std::string{director_name};
+}
+
+std::string DefaultStorageDaemonMessagesDescription(
+    std::string_view messages_name,
+    std::string_view storage_name)
+{
+  return "Managed storage-daemon messages resource for "
+         + std::string{messages_name} + " in storage "
+         + std::string{storage_name};
 }
 
 std::string DefaultDirectorScheduleDescription(std::string_view schedule_name,
@@ -1417,6 +1454,20 @@ struct DirectorPoolWriteContext {
 struct DirectorCatalogWriteContext {
   std::filesystem::path file_path{};
   DirectorCatalogContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorMessagesWriteContext {
+  std::filesystem::path file_path{};
+  DirectorMessagesContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct StorageMessagesWriteContext {
+  std::filesystem::path file_path{};
+  DirectorMessagesContentSpec content{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -1723,8 +1774,9 @@ int CountBraces(std::string_view value)
   return depth;
 }
 
-OperationResult<std::vector<std::string>> ExtractJobPassthroughEntries(
+OperationResult<std::vector<std::string>> ExtractTopLevelResourceEntries(
     const std::filesystem::path& file_path,
+    std::string_view resource_keyword,
     const std::set<std::string>& controlled_directives)
 {
   auto file = ReadFile(file_path);
@@ -1733,8 +1785,8 @@ OperationResult<std::vector<std::string>> ExtractJobPassthroughEntries(
   std::vector<std::string> entries;
   std::istringstream stream{*file.value};
   std::string line;
-  bool in_job = false;
-  int job_depth = 0;
+  bool in_resource = false;
+  int resource_depth = 0;
   bool capturing_entry = false;
   int entry_depth = 0;
   std::ostringstream entry;
@@ -1743,11 +1795,11 @@ OperationResult<std::vector<std::string>> ExtractJobPassthroughEntries(
     const auto trimmed = TrimAsciiWhitespace(line);
     const int brace_delta = CountBraces(line);
 
-    if (!in_job) {
-      if (trimmed.rfind("Job", 0) == 0
+    if (!in_resource) {
+      if (trimmed.rfind(resource_keyword, 0) == 0
           && trimmed.find('{') != std::string::npos) {
-        in_job = true;
-        job_depth += brace_delta;
+        in_resource = true;
+        resource_depth += brace_delta;
       }
       continue;
     }
@@ -1755,18 +1807,18 @@ OperationResult<std::vector<std::string>> ExtractJobPassthroughEntries(
     if (capturing_entry) {
       entry << line << "\n";
       entry_depth += brace_delta;
-      job_depth += brace_delta;
+      resource_depth += brace_delta;
       if (entry_depth <= 0) {
         entries.push_back(entry.str());
         entry.str({});
         entry.clear();
         capturing_entry = false;
       }
-      if (job_depth <= 0) { break; }
+      if (resource_depth <= 0) { break; }
       continue;
     }
 
-    if (job_depth == 1) {
+    if (resource_depth == 1) {
       if (!trimmed.empty() && trimmed[0] != '#') {
         const auto equals = trimmed.find('=');
         const auto open_brace = trimmed.find('{');
@@ -1794,12 +1846,12 @@ OperationResult<std::vector<std::string>> ExtractJobPassthroughEntries(
       }
     }
 
-    job_depth += brace_delta;
-    if (job_depth <= 0) { break; }
+    resource_depth += brace_delta;
+    if (resource_depth <= 0) { break; }
   }
 
   if (capturing_entry) {
-    return {.error = "unterminated preserved job block in '"
+    return {.error = "unterminated preserved resource block in '"
                      + file_path.string() + "'."};
   }
   return {.value = std::move(entries)};
@@ -2428,6 +2480,146 @@ OperationResult<DirectorCatalogWriteContext> LoadDirectorCatalogWriteContext(
   return {.value = std::move(context)};
 }
 
+OperationResult<DirectorMessagesWriteContext> LoadDirectorMessagesWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view messages_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorMessagesWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "messages"
+                   / (std::string{messages_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_MSGS, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(directordaemon::R_MSGS, resource)) {
+    auto* messages = dynamic_cast<MessagesResource*>(resource);
+    if (!messages) { continue; }
+    if (auto source = messages->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_MSGS, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(directordaemon::R_MSGS, resource)) {
+    auto* messages = dynamic_cast<MessagesResource*>(resource);
+    if (!messages || !messages->resource_name_
+        || messages->resource_name_ != messages_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (messages->description_ && messages->description_[0] != '\0') {
+      context.content.description = std::string{messages->description_};
+    }
+
+    auto source = messages->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director messages '" + std::string{messages_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director messages '" + std::string{messages_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+
+    static const std::set<std::string> kControlledMessagesDirectives{
+        "Name", "Description"};
+    auto entries = ExtractTopLevelResourceEntries(
+        context.file_path, "Messages", kControlledMessagesDirectives);
+    if (!entries) { return {.error = entries.error}; }
+    context.content.entries = std::move(*entries.value);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
+    const DeploymentConfigRecord& storage_config,
+    std::string_view messages_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("storage config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("storage config ", loaded.messages)};
+  }
+
+  StorageMessagesWriteContext context{
+      .file_path = storage_config.path / "bareos-sd.d" / "messages"
+                   / (std::string{messages_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_MSGS, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(storagedaemon::R_MSGS, resource)) {
+    auto* messages = dynamic_cast<MessagesResource*>(resource);
+    if (!messages) { continue; }
+    if (auto source = messages->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_MSGS, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(storagedaemon::R_MSGS, resource)) {
+    auto* messages = dynamic_cast<MessagesResource*>(resource);
+    if (!messages || !messages->resource_name_
+        || messages->resource_name_ != messages_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (messages->description_ && messages->description_[0] != '\0') {
+      context.content.description = std::string{messages->description_};
+    }
+
+    auto source = messages->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "storage-daemon messages '" + std::string{messages_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "storage-daemon messages '" + std::string{messages_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+
+    static const std::set<std::string> kControlledMessagesDirectives{
+        "Name", "Description"};
+    auto entries = ExtractTopLevelResourceEntries(
+        context.file_path, "Messages", kControlledMessagesDirectives);
+    if (!entries) { return {.error = entries.error}; }
+    context.content.entries = std::move(*entries.value);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
 OperationResult<DirectorScheduleWriteContext> LoadDirectorScheduleWriteContext(
     const DeploymentConfigRecord& director_config,
     std::string_view schedule_name)
@@ -2742,8 +2934,8 @@ OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
         "Where",
         "Priority",
         "Enabled"};
-    auto passthrough = ExtractJobPassthroughEntries(context.file_path,
-                                                    kControlledJobDirectives);
+    auto passthrough = ExtractTopLevelResourceEntries(context.file_path, "Job",
+                                                      kControlledJobDirectives);
     if (!passthrough) { return {.error = passthrough.error}; }
     context.content.passthrough_entries = std::move(*passthrough.value);
     return {.value = std::move(context)};
@@ -2863,8 +3055,8 @@ OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
         "Where",
         "Priority",
         "Enabled"};
-    auto passthrough = ExtractJobPassthroughEntries(
-        context.file_path, kControlledJobDefsDirectives);
+    auto passthrough = ExtractTopLevelResourceEntries(
+        context.file_path, "JobDefs", kControlledJobDefsDirectives);
     if (!passthrough) { return {.error = passthrough.error}; }
     context.content.passthrough_entries = std::move(*passthrough.value);
     return {.value = std::move(context)};
@@ -5512,6 +5704,150 @@ ServiceState::DeleteDirectorCatalogResource(std::string_view deployment_id,
 }
 
 OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorMessagesResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view messages_name,
+    const DirectorMessagesResourceSpec& spec) const
+{
+  DebugLog("upserting director messages resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', messages '"
+           + std::string{messages_name} + "'");
+  if (!IsSafePathSegment(messages_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "messages and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorMessagesWriteContext(*director_config.value, messages_name);
+  if (!context) { return {.error = context.error}; }
+
+  auto content = context.value->content;
+  content.description
+      = spec.description
+            ? *spec.description
+            : content.description.value_or(DefaultDirectorMessagesDescription(
+                  messages_name, director_name));
+  if (spec.entries) { content.entries = *spec.entries; }
+
+  const auto rendered
+      = BuildDirectorMessagesResourceContent(messages_name, content);
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "messages";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director messages directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write director messages resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director messages file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director messages update for '" + std::string{messages_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director messages parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director messages update ", loaded.messages)};
+  }
+
+  DebugLog("updated director messages resource '" + std::string{messages_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorMessagesResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view messages_name) const
+{
+  DebugLog("deleting director messages resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', messages '"
+           + std::string{messages_name} + "'");
+  if (!IsSafePathSegment(messages_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "messages and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorMessagesWriteContext(*director_config.value, messages_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define messages '"
+                     + std::string{messages_name} + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director messages parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director messages delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director messages resource '" + std::string{messages_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
 ServiceState::UpsertDirectorScheduleResource(
     std::string_view deployment_id,
     std::string_view director_name,
@@ -6286,6 +6622,353 @@ ServiceState::DeleteDirectorJobDefsResource(std::string_view deployment_id,
   DebugLog("deleted director jobdefs resource '" + std::string{jobdefs_name}
            + "' from director '" + std::string{director_name} + "'");
   return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertStorageMessagesResource(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view messages_name,
+    const StorageMessagesResourceSpec& spec) const
+{
+  DebugLog("upserting storage-daemon messages resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "', messages '"
+           + std::string{messages_name} + "'");
+  if (!IsSafePathSegment(messages_name) || !IsSafePathSegment(storage_name)) {
+    return {.error = "messages and storage names must be safe path segments."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  auto context
+      = LoadStorageMessagesWriteContext(*storage_config.value, messages_name);
+  if (!context) { return {.error = context.error}; }
+
+  auto content = context.value->content;
+  content.description = spec.description
+                            ? *spec.description
+                            : content.description.value_or(
+                                  DefaultStorageDaemonMessagesDescription(
+                                      messages_name, storage_name));
+  if (spec.entries) { content.entries = *spec.entries; }
+
+  const auto rendered
+      = BuildDirectorMessagesResourceContent(messages_name, content);
+  const auto resource_directory
+      = storage_config.value->path / "bareos-sd.d" / "messages";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create storage-daemon messages directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write storage-daemon messages resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote storage-daemon messages file '"
+           + context.value->file_path.string() + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("storage-daemon messages update for '" + std::string{messages_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          storage_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "storage-daemon messages parser initialization ",
+                  loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon messages update ",
+                                        loaded.messages)};
+  }
+
+  DebugLog("updated storage-daemon messages resource '"
+           + std::string{messages_name} + "' in storage '"
+           + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteStorageMessagesResource(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view messages_name) const
+{
+  DebugLog("deleting storage-daemon messages resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "', messages '"
+           + std::string{messages_name} + "'");
+  if (!IsSafePathSegment(messages_name) || !IsSafePathSegment(storage_name)) {
+    return {.error = "messages and storage names must be safe path segments."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  auto context
+      = LoadStorageMessagesWriteContext(*storage_config.value, messages_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage '" + std::string{storage_name}
+                     + "' does not define messages '"
+                     + std::string{messages_name} + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             storage_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "storage-daemon messages parser initialization ",
+                  loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon messages delete ",
+                                        loaded.messages)};
+  }
+
+  DebugLog("deleted storage-daemon messages resource '"
+           + std::string{messages_name} + "' from storage '"
+           + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertStorageDirectorResource(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view director_name,
+    const StorageDirectorResourceSpec& spec) const
+{
+  DebugLog("upserting storage-daemon director resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "', director '"
+           + std::string{director_name} + "'");
+  if (!IsSafePathSegment(storage_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "storage and director names must be safe path segments."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageDaemonDirectorWriteContext(
+      *storage_config.value, director_name, *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (context.value->exists && !context.value->is_standalone_file) {
+    return {.error = "storage-daemon director '" + std::string{director_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  const auto password
+      = spec.password ? *spec.password : context.value->password;
+  if (!password || password->empty()) {
+    return {.error
+            = "field 'password' is required for storage-daemon "
+              "director resources."};
+  }
+
+  const auto description = spec.description
+                               ? *spec.description
+                               : context.value->description.value_or(
+                                     DefaultStorageDaemonDirectorDescription(
+                                         director_name, storage_name));
+  const auto rendered = BuildStorageDaemonDirectorResourceContent(
+      director_name, *password, description);
+  const auto resource_directory
+      = storage_config.value->path / "bareos-sd.d" / "director";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create storage-daemon director directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write storage-daemon director resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote storage-daemon director file '"
+           + context.value->file_path.string() + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("storage-daemon director update for '" + std::string{director_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          storage_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "storage-daemon director parser initialization ",
+                  loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon director update ",
+                                        loaded.messages)};
+  }
+
+  auto updated_managed_paths = *managed_paths.value;
+  SetManagedPath(updated_managed_paths, repository_root,
+                 context.value->file_path);
+  if (auto error = WriteManagedPaths(repository_root, updated_managed_paths);
+      error) {
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          storage_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = *error};
+  }
+
+  DebugLog("updated storage-daemon director resource '"
+           + std::string{director_name} + "' in storage '"
+           + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteStorageDirectorResource(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view director_name) const
+{
+  DebugLog("deleting storage-daemon director resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "', director '"
+           + std::string{director_name} + "'");
+  if (!IsSafePathSegment(storage_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "storage and director names must be safe path segments."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageDaemonDirectorWriteContext(
+      *storage_config.value, director_name, *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage '" + std::string{storage_name}
+                     + "' does not define director '"
+                     + std::string{director_name} + "'."};
+  }
+  if (!context.value->is_standalone_file) {
+    return {.error = "storage-daemon director '" + std::string{director_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             storage_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "storage-daemon director parser initialization ",
+                  loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon director delete ",
+                                        loaded.messages)};
+  }
+
+  auto updated_managed_paths = *managed_paths.value;
+  RemoveManagedPath(updated_managed_paths, repository_root,
+                    context.value->file_path);
+  if (auto error = WriteManagedPaths(repository_root, updated_managed_paths);
+      error) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = *error};
+  }
+
+  DebugLog("deleted storage-daemon director resource '"
+           + std::string{director_name} + "' from storage '"
+           + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
 }
 
 OperationResult<std::vector<DeploymentImportRecord>>
