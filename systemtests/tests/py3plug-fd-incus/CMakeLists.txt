@@ -30,7 +30,7 @@ find_program(VIRTRESIZE virt-resize)
 # We use LZMA compression in our tests
 find_program(LZMA lzma)
 
-if(DEFINED $ENV{BUILDID})
+if(DEFINED ENV{BUILDID})
   message("have buildid $ENV{BUILDID}")
 else()
   message(FATAL_ERROR "have no buildid $ENV{BUILDID}")
