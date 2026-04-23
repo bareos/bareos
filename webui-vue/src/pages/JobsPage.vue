@@ -71,8 +71,8 @@
               </template>
               <template #body-cell-starttime="props">
                 <q-td :props="props">
-                  <span :title="settings.relativeTime ? props.value : timeAgo(props.value)">
-                    {{ settings.relativeTime ? timeAgo(props.value) : props.value }}
+                  <span :title="settings.relativeTime ? props.value : timeAgo(props.value, settings.locale)">
+                    {{ settings.relativeTime ? timeAgo(props.value, settings.locale) : props.value }}
                   </span>
                 </q-td>
               </template>
@@ -95,7 +95,7 @@
               </template>
               <template #body-cell-files="props">
                 <q-td :props="props" class="text-right" style="min-width:80px">
-                  <div>{{ props.value.toLocaleString() }}</div>
+                  <div>{{ formatNumber(props.value, settings.locale) }}</div>
                   <q-linear-progress
                     v-if="isRunning(props.row.status)"
                     indeterminate
@@ -335,6 +335,7 @@ import { jobStatusMap, formatBytes, formatSpeed, parseDurationSecs, timeAgo } fr
 import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { formatNumber } from '../utils/locales.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'

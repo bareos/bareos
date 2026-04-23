@@ -27,8 +27,17 @@
               label="Password"
               type="password"
               outlined dense
-              class="q-mb-md"
+              class="q-mb-sm"
               autocomplete="current-password"
+            />
+            <q-select
+              v-model="locale"
+              data-testid="login-language"
+              :options="availableLocales"
+              label="Language"
+              outlined dense
+              emit-value map-options
+              class="q-mb-md"
             />
 
             <q-expansion-item
@@ -103,10 +112,13 @@ import {
   useAuthStore,
 } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
+import { localeOptions } from '../utils/locales.js'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
 const auth     = useAuthStore()
 const director = useDirectorStore()
+const settings = useSettingsStore()
 const router   = useRouter()
 
 const host      = ref(DEFAULT_DIRECTOR_HOST)
@@ -114,6 +126,8 @@ const port      = ref(DEFAULT_DIRECTOR_PORT)
 const directorRef = ref(DEFAULT_DIRECTOR_NAME)
 const username  = ref('admin')
 const password  = ref('')
+const locale    = ref(settings.locale)
+const availableLocales = localeOptions
 const loading   = ref(false)
 const errorMsg  = ref(null)
 
@@ -148,6 +162,7 @@ async function doLogin() {
     return
   }
 
+  settings.setLocale(locale.value)
   auth.login(username.value, directorRef.value, password.value, host.value, port.value)
   loading.value = false
   router.push({ name: 'dashboard' })

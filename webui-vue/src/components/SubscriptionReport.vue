@@ -120,15 +120,19 @@
 </template>
 
 <script setup>
+import { useSettingsStore } from '../stores/settings.js'
+import { formatLocalDateTime, formatNumber } from '../utils/locales.js'
+
 const props = defineProps({
   data:      { type: Object, required: true },
   anonymized:{ type: Boolean, default: false },
 })
 
-const generatedAt = new Date().toLocaleString()
+const settings = useSettingsStore()
+const generatedAt = formatLocalDateTime(new Date(), settings.locale)
 
 function fmtGB(gbStr) {
-  return parseFloat(gbStr).toLocaleString(undefined, {
+  return formatNumber(parseFloat(gbStr), settings.locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })

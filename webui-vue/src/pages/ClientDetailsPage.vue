@@ -58,8 +58,8 @@
               </template>
               <template #body-cell-starttime="props">
                 <q-td :props="props">
-                  <span :title="settings.relativeTime ? props.value : timeAgo(props.value)">
-                    {{ settings.relativeTime ? timeAgo(props.value) : props.value }}
+                  <span :title="settings.relativeTime ? props.value : timeAgo(props.value, settings.locale)">
+                    {{ settings.relativeTime ? timeAgo(props.value, settings.locale) : props.value }}
                   </span>
                 </q-td>
               </template>

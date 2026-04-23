@@ -6,6 +6,33 @@
       </q-card-section>
 
       <q-card-section>
+        <div class="text-subtitle2 q-mb-sm">Language</div>
+        <q-item dense>
+          <q-item-section avatar>
+            <q-icon name="language" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>WebUI Language</q-item-label>
+            <q-item-label caption>
+              Reuses the locale catalog from the legacy PHP WebUI.
+            </q-item-label>
+          </q-item-section>
+        </q-item>
+        <div class="q-px-md q-pb-sm">
+          <q-select
+            v-model="settings.locale"
+            :options="availableLocales"
+            emit-value
+            map-options
+            outlined
+            dense
+          />
+        </div>
+      </q-card-section>
+
+      <q-separator />
+
+      <q-card-section>
         <!-- Dark mode -->
         <div class="text-subtitle2 q-mb-sm">Appearance</div>
         <q-item tag="label" dense>
@@ -82,9 +109,11 @@
 <script setup>
 import { useQuasar } from 'quasar'
 import { useSettingsStore } from '../stores/settings.js'
+import { localeOptions } from '../utils/locales.js'
 
 const $q       = useQuasar()
 const settings = useSettingsStore()
+const availableLocales = localeOptions
 
 function applyDark(val) {
   $q.dark.set(val)

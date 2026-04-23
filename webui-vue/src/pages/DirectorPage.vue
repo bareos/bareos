@@ -65,7 +65,7 @@
                     </q-chip>
                     <q-chip v-if="statusHeader.daemon_started"
                             dense square color="teal-7" text-color="white" icon="schedule">
-                      {{ settings.relativeTime ? dirTimeAgo(statusHeader.daemon_started) : statusHeader.daemon_started }}
+                      {{ settings.relativeTime ? formatDirectorRelativeTime(statusHeader.daemon_started, settings.locale) : statusHeader.daemon_started }}
                       <q-tooltip>Started: {{ statusHeader.daemon_started }}</q-tooltip>
                     </q-chip>
                     <q-chip v-if="statusHeader.jobs_run != null"
@@ -117,7 +117,7 @@
                     <template #body-cell-scheduled="props">
                       <td>
                         <span :title="settings.relativeTime ? props.value : undefined">
-                          {{ settings.relativeTime ? dirTimeAgo(props.value) : props.value }}
+                          {{ settings.relativeTime ? formatDirectorRelativeTime(props.value, settings.locale) : props.value }}
                         </span>
                       </td>
                     </template>
@@ -178,13 +178,13 @@
                     <template #body-cell-start_time="props">
                       <td>
                         <span :title="settings.relativeTime ? props.value : undefined">
-                          {{ settings.relativeTime ? dirTimeAgo(props.value) : props.value }}
+                          {{ settings.relativeTime ? formatDirectorRelativeTime(props.value, settings.locale) : props.value }}
                         </span>
                       </td>
                     </template>
                     <template #body-cell-files="props">
                       <td class="text-right" style="min-width:80px">
-                        <div>{{ (props.value ?? 0).toLocaleString() }}</div>
+                        <div>{{ formatNumber(props.value ?? 0, settings.locale) }}</div>
                         <q-linear-progress v-if="!isWaiting(props.row.status)" indeterminate
                           color="teal" track-color="grey-3"
                           size="4px" class="q-mt-xs" rounded />
@@ -256,13 +256,13 @@
                     <template #body-cell-finished="props">
                       <td>
                         <span :title="settings.relativeTime ? props.value : undefined">
-                          {{ settings.relativeTime ? dirTimeAgo(props.value) : props.value }}
+                          {{ settings.relativeTime ? formatDirectorRelativeTime(props.value, settings.locale) : props.value }}
                         </span>
                       </td>
                     </template>
                     <template #body-cell-files="props">
                       <td class="text-right" style="min-width:80px">
-                        <div>{{ (props.value ?? 0).toLocaleString() }}</div>
+                        <div>{{ formatNumber(props.value ?? 0, settings.locale) }}</div>
                         <q-linear-progress
                           :value="(Number(props.value) || 0) / maxTermFiles"
                           color="teal" track-color="grey-3"
@@ -516,6 +516,10 @@ import {
   normaliseJob,
 } from '../composables/useDirectorFetch.js'
 import { formatBytes } from '../mock/index.js'
+import {
+  formatDirectorRelativeTime,
+  formatNumber,
+} from '../utils/locales.js'
 import { resolveOsIcon } from '../utils/osIcon.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge  from '../components/JobLevelBadge.vue'
@@ -607,45 +611,6 @@ const TYPE_CODE  = { Backup: 'B', Restore: 'R', Verify: 'V', Admin: 'A', Diagnos
 function levelCode(v) { return LEVEL_CODE[v] ?? null }
 function typeCode(v)  { return TYPE_CODE[v]  ?? null }
 function isWaiting(status) { return typeof status === 'string' && status.includes('is waiting') }
-
-// Parse the director's "DD-Mon-YY HH:MM" date format into a JS Date.
-const _MON = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
-function parseDirectorDate(str) {
-  if (!str) return null
-  const m = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2})\s+(\d{2}):(\d{2})/)
-  if (!m) return null
-  const month = _MON[m[2]]
-  if (month === undefined) return null
-  return new Date(2000 + parseInt(m[3]), month, parseInt(m[1]), parseInt(m[4]), parseInt(m[5]))
-}
-
-// Relative time for past and future Bareos director timestamps.
-function dirTimeAgo(str) {
-  if (!str) return '—'
-  const d = parseDirectorDate(str)
-  if (!d) return str
-  const ms = Date.now() - d.getTime()
-  if (ms < 0) {
-    // Future (scheduled jobs)
-    const abs = -ms
-    const m = Math.floor(abs / 60000)
-    if (m < 60) return `in ${m}m`
-    const h = Math.floor(m / 60)
-    if (h < 24) return `in ${h}h`
-    return `in ${Math.floor(h / 24)}d`
-  }
-  const s = Math.floor(ms / 1000)
-  if (s < 60)  return `${s}s ago`
-  const m = Math.floor(s / 60)
-  if (m < 60)  return `${m}m ago`
-  const h = Math.floor(m / 60)
-  if (h < 24)  return `${h}h ago`
-  const dy = Math.floor(h / 24)
-  if (dy < 30) return `${dy}d ago`
-  const mo = Math.floor(dy / 30)
-  if (mo < 12) return `${mo}mo ago`
-  return `${Math.floor(mo / 12)}y ago`
-}
 
 const scheduledJobCols = [
   { name: 'name',      label: 'Job',       field: 'name',      align: 'left' },

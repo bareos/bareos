@@ -131,6 +131,8 @@ import { useQuasar } from 'quasar'
 import { jobLevelMap, formatBytes, formatSpeed } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
+import { formatNumber } from '../utils/locales.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import JobTypeBadge from '../components/JobTypeBadge.vue'
@@ -139,6 +141,7 @@ const route    = useRoute()
 const router   = useRouter()
 const $q       = useQuasar()
 const director = useDirectorStore()
+const settings = useSettingsStore()
 
 const currentJobId = computed(() => route.params.id)
 
@@ -231,7 +234,7 @@ const summaryRows = computed(() => {
     { label: 'Start Time', value: j.starttime || '—' },
     { label: 'End Time',   value: j.endtime   || '—' },
     { label: 'Duration',   value: j.duration  || '—' },
-    { label: 'Files',      value: Number(j.files).toLocaleString() },
+    { label: 'Files',      value: formatNumber(j.files, settings.locale) },
     { label: 'Bytes',      value: formatBytes(j.bytes) },
     { label: 'Speed',      value: formatSpeed(j.bytes, j.duration) },
     { label: 'Errors',     value: j.errors },

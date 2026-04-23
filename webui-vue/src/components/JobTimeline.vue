@@ -121,7 +121,7 @@
         <div>Start: {{ tlTooltip.job.starttime }}</div>
         <div v-if="tlTooltip.job.endtime">End: {{ tlTooltip.job.endtime }}</div>
         <div>Duration: {{ tlTooltip.job.duration || '—' }}</div>
-        <div>Files: {{ (tlTooltip.job.files ?? 0).toLocaleString() }}</div>
+        <div>Files: {{ formatNumber(tlTooltip.job.files ?? 0, settings.locale) }}</div>
         <div>Bytes: {{ fmtBytes(tlTooltip.job.bytes ?? 0) }}</div>
       </div>
     </q-card-section>
@@ -135,10 +135,13 @@ import { useQuasar } from 'quasar'
 import { jobStatusMap, formatBytes } from '../mock/index.js'
 import { normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useSettingsStore } from '../stores/settings.js'
+import { formatNumber } from '../utils/locales.js'
 
 const $q      = useQuasar()
 const router  = useRouter()
 const director = useDirectorStore()
+const settings = useSettingsStore()
 const fmtBytes = formatBytes
 
 // ── Layout constants ──────────────────────────────────────────────────────────

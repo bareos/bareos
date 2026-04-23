@@ -35,13 +35,13 @@
               <div v-for="tile in treemapTiles" :key="tile.name"
                    :style="tile.style"
                    style="position:absolute;overflow:hidden;box-sizing:border-box;border:2px solid white;border-radius:4px;cursor:default;transition:opacity .2s"
-                   :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${tile.files.toLocaleString()} files`">
+                   :title="`${tile.name}\n${fmtBytes(tile.bytes)} · ${formatNumber(tile.files, settings.locale)} files`">
                 <div style="padding:4px 6px;height:100%;display:flex;flex-direction:column;justify-content:center">
                   <div class="text-white text-weight-bold" style="font-size:11px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                     {{ tile.name }}
                   </div>
                   <div v-if="tile.h > 36" class="text-white" style="font-size:10px;opacity:.85">
-                    {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : tile.files.toLocaleString() + ' files' }}
+                    {{ treemapMode === 'bytes' ? fmtBytes(tile.bytes) : formatNumber(tile.files, settings.locale) + ' files' }}
                   </div>
                 </div>
               </div>
@@ -122,8 +122,11 @@ import {
   useDirectorFetch,
   normaliseJob,
 } from '../composables/useDirectorFetch.js'
+import { useSettingsStore } from '../stores/settings.js'
+import { formatNumber } from '../utils/locales.js'
 
 const fmtBytes = formatBytes
+const settings = useSettingsStore()
 const treemapMode = ref('bytes')
 const treemapEl   = ref(null)
 const treemapW    = ref(600)
@@ -145,7 +148,7 @@ const overallStats = computed(() => {
     { label: 'Warning',     value: j.filter(x => x.status === 'W').length,                    color: 'warning'  },
     { label: 'Failed',      value: j.filter(x => x.status === 'f' || x.status === 'E').length,color: 'negative' },
     { label: 'Total Bytes', value: fmtBytes(j.reduce((a, x) => a + x.bytes, 0)),              color: 'blue-7'   },
-    { label: 'Total Files', value: j.reduce((a, x) => a + x.files, 0).toLocaleString(),       color: 'teal-7'   },
+    { label: 'Total Files', value: formatNumber(j.reduce((a, x) => a + x.files, 0), settings.locale), color: 'teal-7'   },
   ]
 })
 

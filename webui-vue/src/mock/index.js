@@ -1,5 +1,7 @@
 // Shared mock data for all pages
 
+import { formatSqlRelativeTime } from '../utils/locales.js'
+
 export const mockJobs = [
   { id: 1, name: 'BackupClient1', client: 'bareos-fd', type: 'B', level: 'F', starttime: '2026-03-23 08:00:01', endtime: '2026-03-23 08:12:44', duration: '0:12:43', files: 48231, bytes: 2147483648, errors: 0, status: 'T' },
   { id: 2, name: 'BackupClient2', client: 'fileserver-fd', type: 'B', level: 'I', starttime: '2026-03-23 09:00:00', endtime: '2026-03-23 09:04:12', duration: '0:04:12', files: 1203, bytes: 104857600, errors: 0, status: 'T' },
@@ -128,21 +130,8 @@ export function formatSpeed(bytes, durationStr) {
   return (bps / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i]
 }
 
-export function timeAgo(str) {
-  if (!str) return '—'
-  const ms = Date.now() - new Date(str.replace(' ', 'T')).getTime()
-  if (isNaN(ms)) return str
-  const s = Math.floor(ms / 1000)
-  if (s <    60) return `${s}s ago`
-  const m = Math.floor(s / 60)
-  if (m <    60) return `${m}m ago`
-  const h = Math.floor(m / 60)
-  if (h <    24) return `${h}h ago`
-  const d = Math.floor(h / 24)
-  if (d <    30) return `${d}d ago`
-  const mo = Math.floor(d / 30)
-  if (mo <   12) return `${mo}mo ago`
-  return `${Math.floor(mo / 12)}y ago`
+export function timeAgo(str, locale = undefined) {
+  return formatSqlRelativeTime(str, locale)
 }
 
 export function formatDuration(seconds) {

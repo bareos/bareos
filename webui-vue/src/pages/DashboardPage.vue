@@ -79,8 +79,8 @@
               </template>
               <template #body-cell-starttime="props">
                 <q-td :props="props">
-                  <span :title="settings.relativeTime ? props.value : timeAgo(props.value)">
-                    {{ settings.relativeTime ? timeAgo(props.value) : props.value }}
+                  <span :title="settings.relativeTime ? props.value : timeAgo(props.value, settings.locale)">
+                    {{ settings.relativeTime ? timeAgo(props.value, settings.locale) : props.value }}
                   </span>
                 </q-td>
               </template>
@@ -174,7 +174,7 @@
                     <span class="text-grey-6 text-caption q-ml-xs">({{ job.client }})</span>
                   </q-item-label>
                   <q-item-label caption>
-                    {{ (job.files ?? 0).toLocaleString() }} files &middot; {{ jobBytes(job) }} &middot; {{ formatDuration(elapsedSecs(job)) }}
+                    {{ formatNumber(job.files ?? 0, settings.locale) }} files &middot; {{ jobBytes(job) }} &middot; {{ formatDuration(elapsedSecs(job)) }}
                   </q-item-label>
                   <q-linear-progress indeterminate color="positive" class="q-mt-xs" style="height:6px; border-radius:3px" />
                 </q-item-section>
@@ -201,6 +201,7 @@ import { formatBytes, formatSpeed, parseDurationSecs, timeAgo, formatDuration } 
 import { directorCollection, normaliseJob } from '../composables/useDirectorFetch.js'
 import { useDirectorStore } from '../stores/director.js'
 import { useSettingsStore } from '../stores/settings.js'
+import { formatNumber } from '../utils/locales.js'
 import JobStatusBadge from '../components/JobStatusBadge.vue'
 import JobLevelBadge from '../components/JobLevelBadge.vue'
 import StatNumber from '../components/StatNumber.vue'
@@ -418,7 +419,7 @@ const totals = computed(() => {
 
 const totalStats = computed(() => [
   { label: 'Total Jobs',  value: totals.value.jobs },
-  { label: 'Total Files', value: (totals.value.files ?? 0).toLocaleString() },
+  { label: 'Total Files', value: formatNumber(totals.value.files ?? 0, settings.locale) },
   { label: 'Total Bytes', value: fmtBytes(totals.value.bytes ?? 0) },
   { label: 'Clients',     value: clientCount.value },
   { label: 'Storages',    value: storageCount.value },
