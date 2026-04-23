@@ -39,14 +39,19 @@
               </template>
               <template #body-cell-version="props">
                 <q-td :props="props">
-                  <span v-if="props.value" class="text-mono">{{ props.value }}</span>
+                  <q-badge
+                    v-if="props.value"
+                    :color="clientVersionColor(props.row)"
+                    class="text-mono"
+                    :label="props.value"
+                  />
                   <span v-else class="text-grey-5">—</span>
                   <div v-if="props.row.arch || props.row.buildDate" class="text-caption text-grey-6" style="line-height:1.2">
                     <span v-if="props.row.arch">{{ props.row.arch }}</span>
                     <span v-if="props.row.arch && props.row.buildDate"> · </span>
                     <span v-if="props.row.buildDate">{{ props.row.buildDate }}</span>
                   </div>
-                  <q-tooltip v-if="props.row.uname">{{ props.row.uname }}</q-tooltip>
+                  <q-tooltip v-if="clientVersionTooltip(props.row)">{{ clientVersionTooltip(props.row) }}</q-tooltip>
                 </q-td>
               </template>
               <template #body-cell-enabled="props">
@@ -104,10 +109,12 @@ import {
 } from '../composables/useDirectorFetch.js'
 import { osIconName, osIconColor, osLabel } from '../utils/osIcon.js'
 import { useDirectorStore } from '../stores/director.js'
+import { useReleaseInfoStore } from '../stores/releaseInfo.js'
 import JobTimeline from '../components/JobTimeline.vue'
 
 const tab = ref('list')
 const director = useDirectorStore()
+const releaseInfo = useReleaseInfoStore()
 
 const rawClients = ref([])
 const loading    = ref(false)
@@ -140,11 +147,33 @@ async function refresh() {
 }
 
 onMounted(refresh)
+onMounted(() => {
+  releaseInfo.refresh().catch(() => {})
+})
 
 const clients = computed(() => directorCollection(rawClients.value).map(normaliseClient))
 
 function osIcon(client)  { return osIconName(client)  }
 function osColor(client) { return osIconColor(client) }
+
+function clientVersionInfo(client) {
+  return releaseInfo.getVersionInfo(client.version)
+}
+
+function clientVersionColor(client) {
+  return ({
+    uptodate: 'positive',
+    update_required: 'warning',
+    upgrade_required: 'negative',
+    unknown: 'grey-6',
+  })[clientVersionInfo(client).status] ?? 'grey-6'
+}
+
+function clientVersionTooltip(client) {
+  const info = clientVersionInfo(client)
+  if (info.status === 'unknown') return info.package_update_info
+  return info.package_update_info || client.uname || ''
+}
 
 const columns = [
   { name: 'name',    label: 'Name',    field: 'name',    align: 'left',   sortable: true },

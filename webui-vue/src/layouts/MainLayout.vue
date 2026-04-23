@@ -110,6 +110,20 @@
 
         <q-space />
 
+        <q-btn
+          v-if="directorUpdateAlert"
+          flat
+          round
+          dense
+          :icon="directorUpdateAlert.icon"
+          :color="directorUpdateAlert.color"
+          :href="RELEASE_INFO_PAGE_URL"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <q-tooltip>{{ directorUpdateAlert.message }}</q-tooltip>
+        </q-btn>
+
         <!-- Desktop-only: director menu, user menu -->
         <template v-if="!$q.screen.lt.md">
 
@@ -190,20 +204,26 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import bareosLogo from '../assets/bareos-logo-small.png'
 import { bareosVersion as appVersion } from '../generated/bareos-version.js'
 import { useAuthStore } from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
+import {
+  RELEASE_INFO_PAGE_URL,
+  useReleaseInfoStore,
+} from '../stores/releaseInfo.js'
 import { useSettingsStore } from '../stores/settings.js'
 
 const $q       = useQuasar()
 const auth     = useAuthStore()
 const director = useDirectorStore()
+const releaseInfo = useReleaseInfoStore()
 const router   = useRouter()
 const drawerOpen = ref(false)
+const directorVersion = ref('')
 
 function openConsole() {
   const base = window.location.href.replace(/#.*$/, '')
@@ -229,6 +249,7 @@ const settings = useSettingsStore()
 
 onMounted(() => {
   $q.dark.set(settings.darkMode)
+  releaseInfo.refresh().catch(() => {})
 })
 
 function toggleDark() {
@@ -263,6 +284,55 @@ const dirStatusLabel = computed(() => ({
   error:          'Error',
   disconnected:   'Offline',
 }[director.status] ?? 'Offline'))
+
+async function refreshDirectorVersion() {
+  if (!director.isConnected) {
+    directorVersion.value = ''
+    return
+  }
+  try {
+    const status = await director.call('status director')
+    directorVersion.value = status?.header?.version ?? ''
+  } catch {
+    directorVersion.value = ''
+  }
+}
+
+watch(
+  () => director.status,
+  (status) => {
+    if (status === 'connected') {
+      releaseInfo.refresh().catch(() => {})
+      refreshDirectorVersion()
+    } else if (status !== 'connecting' && status !== 'authenticating') {
+      directorVersion.value = ''
+    }
+  },
+  { immediate: true }
+)
+
+const directorUpdateInfo = computed(() => releaseInfo.getVersionInfo(directorVersion.value))
+
+const directorUpdateAlert = computed(() => {
+  if (!auth.user || !directorVersion.value) return null
+  if (directorUpdateInfo.value.status === 'uptodate') return null
+
+  const color = ({
+    upgrade_required: 'negative',
+    update_required: 'warning',
+    unknown: 'warning',
+  })[directorUpdateInfo.value.status] ?? 'warning'
+
+  const icon = directorUpdateInfo.value.status === 'upgrade_required'
+    ? 'error'
+    : 'warning'
+
+  const message = directorUpdateInfo.value.status === 'unknown'
+    ? directorUpdateInfo.value.package_update_info
+    : `Bareos Director (${directorUpdateInfo.value.requested_version}): ${directorUpdateInfo.value.package_update_info}`
+
+  return { color, icon, message }
+})
 
 function logout() {
   director.disconnect()
