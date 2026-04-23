@@ -77,8 +77,27 @@ Fedora 28 example:
    The |dir| runs as user **bareos**. However, some PAM modules require more privileges. E.g. **pam_unix** requires access to the file :file:`/etc/shadow`, which is normally not permitted. Make sure you verify your system accordingly.
 
 
+.. note::
+
+   **PAM_SSS** doesn't ask for a username, and you will see a *PAM Authentication failed* message
+   without being prompted for your username. You can force a username prompt with `auth required pam_permit.so`
+
+.. code-block:: bareosconfig
+   :caption: :file:`/etc/pam.d/bareos` with pam_sss
+
+   auth	   required pam_permit.so
+   auth	   required pam_sss.so
+   account required pam_sss.so
+
+**pam_permit** always returns success and ensures the PAM conversation mechanism is triggered,
+allowing Bareos to prompt for the username. **pam_sss** then performs the actual authentication
+using the collected credentials. Without **pam_permit**, **pam_sss** may fail immediately without
+prompting for credentials.
+
+
 Upgrading from previous versions
 ''''''''''''''''''''''''''''''''
+
 Previous versions of Bareos only used PAM authentication (who is the user) but not PAM authorization (what is the user allowed to do).
 As a result configuring the account management group in PAM had no effect in these versions so that, for example, a disabled user might still be able to log in.
 
@@ -89,6 +108,7 @@ We strictly advise against the possibility to regain the old behaviour by config
 
 Bareos Console
 ^^^^^^^^^^^^^^
+
 For PAM authentication a dedicated named console is used. Set the directive UsePamAuthentication=yes in the regarding Director-Console resource:
 
 .. code-block:: bareosconfig
@@ -116,6 +136,7 @@ In the dedicated |bconsole| config use name and password according as to the |di
 
 PAM User
 ^^^^^^^^
+
 Users have limited access to commands and jobs. Therefore the appropriate rights should also be granted to PAM users. This is an example of a User resource (Bareos Director Configuration):
 
 .. code-block:: bareosconfig
