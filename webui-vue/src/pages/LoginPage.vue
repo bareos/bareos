@@ -14,38 +14,6 @@
         <q-card-section>
           <q-form data-testid="login-form" @submit.prevent="doLogin">
             <q-input
-              v-model="host"
-              data-testid="login-host"
-              label="Director Host"
-              outlined dense
-              class="q-mb-sm"
-              placeholder="localhost"
-              autocomplete="off"
-            >
-              <template #append>
-                <q-input
-                  v-model.number="port"
-                  data-testid="login-port"
-                  dense borderless
-                  style="width:60px"
-                  type="number"
-                  :min="1" :max="65535"
-                />
-              </template>
-            </q-input>
-            <q-select
-              v-model="directorRef"
-              data-testid="login-director"
-              :options="directors"
-              label="Director Name"
-              outlined dense
-              emit-value map-options
-              class="q-mb-sm"
-              use-input
-              input-debounce="0"
-              @new-value="(val, done) => done(val)"
-            />
-            <q-input
               v-model="username"
               data-testid="login-username"
               label="Username"
@@ -62,6 +30,44 @@
               class="q-mb-md"
               autocomplete="current-password"
             />
+
+            <q-expansion-item
+              data-testid="login-advanced"
+              label="Advanced connection settings"
+              icon="tune"
+              dense
+              header-class="text-primary"
+              class="q-mb-md rounded-borders"
+            >
+              <div class="q-pt-sm">
+                <q-input
+                  v-model="host"
+                  data-testid="login-host"
+                  label="Director Host"
+                  outlined dense
+                  class="q-mb-sm"
+                  placeholder="localhost"
+                  autocomplete="off"
+                >
+                  <template #append>
+                    <q-input
+                      v-model.number="port"
+                      data-testid="login-port"
+                      dense borderless
+                      style="width:60px"
+                      type="number"
+                      :min="1" :max="65535"
+                    />
+                  </template>
+                </q-input>
+                <q-input
+                  v-model="directorRef"
+                  data-testid="login-director"
+                  label="Director Name"
+                  outlined dense
+                />
+              </div>
+            </q-expansion-item>
 
             <q-banner v-if="errorMsg" data-testid="login-error" dense class="bg-negative text-white q-mb-md rounded-borders">
               <template #avatar><q-icon name="error" /></template>
@@ -90,7 +96,12 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth.js'
+import {
+  DEFAULT_DIRECTOR_HOST,
+  DEFAULT_DIRECTOR_NAME,
+  DEFAULT_DIRECTOR_PORT,
+  useAuthStore,
+} from '../stores/auth.js'
 import { useDirectorStore } from '../stores/director.js'
 import bareosLogo from '../assets/bareos-logo-small.png'
 
@@ -98,11 +109,9 @@ const auth     = useAuthStore()
 const director = useDirectorStore()
 const router   = useRouter()
 
-const host      = ref(import.meta.env.VITE_DIRECTOR_HOST || 'localhost')
-const port      = ref(Number(import.meta.env.VITE_DIRECTOR_PORT) || 9101)
-const dirName   = 'bareos-dir'
-const directors = ref(['bareos-dir', 'backup-dir', 'dr-director'])
-const directorRef = ref(dirName)
+const host      = ref(DEFAULT_DIRECTOR_HOST)
+const port      = ref(DEFAULT_DIRECTOR_PORT)
+const directorRef = ref(DEFAULT_DIRECTOR_NAME)
 const username  = ref('admin')
 const password  = ref('')
 const loading   = ref(false)

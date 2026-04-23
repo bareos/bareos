@@ -51,6 +51,26 @@ describe('auth store', () => {
     })
   })
 
+  it('falls back to the default director connection when omitted', () => {
+    const auth = useAuthStore()
+
+    auth.login('admin', undefined, 'secret')
+
+    expect(JSON.parse(sessionStorage.getItem('bareos_user'))).toEqual({
+      username: 'admin',
+      director: 'bareos-dir',
+      host: 'localhost',
+      port: 9101,
+    })
+    expect(auth.getCredentials()).toEqual({
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+      host: 'localhost',
+      port: 9101,
+    })
+  })
+
   it('clears the stored session on logout', () => {
     const auth = useAuthStore()
 

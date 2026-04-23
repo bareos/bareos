@@ -109,4 +109,25 @@ describe('director store', () => {
     expect(director.status).toBe('connected')
     expect(director.transport).toBe('cleartext')
   })
+
+  it('uses default director connection values when optional settings are omitted', () => {
+    const director = useDirectorStore()
+
+    director.connect({
+      username: 'admin',
+      password: 'secret',
+    })
+
+    const socket = FakeWebSocket.instances[0]
+    socket.open()
+
+    expect(JSON.parse(socket.sent[0])).toEqual({
+      type: 'auth',
+      username: 'admin',
+      password: 'secret',
+      director: 'bareos-dir',
+      host: 'localhost',
+      port: 9101,
+    })
+  })
 })

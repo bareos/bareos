@@ -14,7 +14,12 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { useAuthStore } from './auth.js'
+import {
+  DEFAULT_DIRECTOR_HOST,
+  DEFAULT_DIRECTOR_NAME,
+  DEFAULT_DIRECTOR_PORT,
+  useAuthStore,
+} from './auth.js'
 
 function defaultWsUrl() {
   const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -115,9 +120,9 @@ export const useDirectorStore = defineStore('director', () => {
         type:     'auth',
         username:  credentials.username,
         password:  credentials.password,
-        director:  credentials.director,
-        host:      credentials.host  ?? 'localhost',
-        port:      credentials.port  ?? 9101,
+        director:  credentials.director ?? DEFAULT_DIRECTOR_NAME,
+        host:      credentials.host ?? DEFAULT_DIRECTOR_HOST,
+        port:      credentials.port ?? DEFAULT_DIRECTOR_PORT,
       })
     }
 
@@ -199,9 +204,9 @@ export const useDirectorStore = defineStore('director', () => {
           type: 'auth', mode: 'raw',
           username: creds.username,
           password: creds.password,
-          director: creds.director,
-          host:     creds.host ?? 'localhost',
-          port:     creds.port ?? 9101,
+          director: creds.director ?? DEFAULT_DIRECTOR_NAME,
+          host:     creds.host ?? DEFAULT_DIRECTOR_HOST,
+          port:     creds.port ?? DEFAULT_DIRECTOR_PORT,
         }))
       }
 
