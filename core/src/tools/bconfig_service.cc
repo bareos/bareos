@@ -672,6 +672,14 @@ struct DirectorMessagesContentSpec {
   std::vector<std::string> entries{};
 };
 
+struct StorageDaemonContentSpec {
+  std::optional<std::string> description{};
+  std::optional<std::string> working_directory{};
+  std::optional<std::string> plugin_directory{};
+  std::optional<std::string> scripts_directory{};
+  std::optional<std::string> messages{};
+};
+
 struct DirectorScheduleContentSpec {
   std::optional<std::string> description{};
   bool enabled{true};
@@ -1106,6 +1114,22 @@ std::string BuildDirectorMessagesResourceContent(
   return content.str();
 }
 
+std::string BuildStorageDaemonResourceContent(
+    std::string_view storage_name,
+    const StorageDaemonContentSpec& spec)
+{
+  std::ostringstream content;
+  content << "Storage {\n"
+          << "  Name = " << QuoteBareosString(storage_name) << "\n";
+  AppendQuotedDirective(content, "Description", spec.description);
+  AppendQuotedDirective(content, "WorkingDirectory", spec.working_directory);
+  AppendQuotedDirective(content, "PluginDirectory", spec.plugin_directory);
+  AppendQuotedDirective(content, "ScriptsDirectory", spec.scripts_directory);
+  AppendBareosDirective(content, "Messages", spec.messages);
+  content << "}\n";
+  return content.str();
+}
+
 std::string BuildStorageDaemonDirectorResourceContent(
     std::string_view director_name,
     std::string_view password,
@@ -1468,6 +1492,13 @@ struct DirectorMessagesWriteContext {
 struct StorageMessagesWriteContext {
   std::filesystem::path file_path{};
   DirectorMessagesContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct StorageDaemonWriteContext {
+  std::filesystem::path file_path{};
+  StorageDaemonContentSpec content{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -2614,6 +2645,80 @@ OperationResult<StorageMessagesWriteContext> LoadStorageMessagesWriteContext(
         context.file_path, "Messages", kControlledMessagesDirectives);
     if (!entries) { return {.error = entries.error}; }
     context.content.entries = std::move(*entries.value);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<StorageDaemonWriteContext> LoadStorageDaemonWriteContext(
+    const DeploymentConfigRecord& storage_config)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure("storage config parser initialization ",
+                                        loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("storage config ", loaded.messages)};
+  }
+
+  StorageDaemonWriteContext context{
+      .file_path = storage_config.path / "bareos-sd.d" / "storage"
+                   / (storage_config.name + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_STORAGE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                storagedaemon::R_STORAGE, resource)) {
+    auto* storage = dynamic_cast<storagedaemon::StorageResource*>(resource);
+    if (!storage) { continue; }
+    if (auto source = storage->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(storagedaemon::R_STORAGE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                storagedaemon::R_STORAGE, resource)) {
+    auto* storage = dynamic_cast<storagedaemon::StorageResource*>(resource);
+    if (!storage || !storage->resource_name_
+        || storage->resource_name_ != storage_config.name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (storage->description_ && storage->description_[0] != '\0') {
+      context.content.description = std::string{storage->description_};
+    }
+    if (storage->working_directory && storage->working_directory[0] != '\0') {
+      context.content.working_directory
+          = std::string{storage->working_directory};
+    }
+    if (storage->plugin_directory && storage->plugin_directory[0] != '\0') {
+      context.content.plugin_directory = std::string{storage->plugin_directory};
+    }
+    if (storage->scripts_directory && storage->scripts_directory[0] != '\0') {
+      context.content.scripts_directory
+          = std::string{storage->scripts_directory};
+    }
+    context.content.messages = CopyResourceName(storage->messages);
+
+    auto source = storage->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "storage-daemon storage resource '" + storage_config.name
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "storage-daemon storage resource '" + storage_config.name
+                       + "' is not stored in a standalone file yet."};
+    }
     return {.value = std::move(context)};
   }
 
@@ -6967,6 +7072,312 @@ ServiceState::DeleteStorageDirectorResource(
 
   DebugLog("deleted storage-daemon director resource '"
            + std::string{director_name} + "' from storage '"
+           + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertStorageDeviceResource(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view device_name,
+    const StorageDeviceResourceSpec& spec) const
+{
+  DebugLog("upserting storage-daemon device resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "', device '"
+           + std::string{device_name} + "'");
+  if (!IsSafePathSegment(storage_name) || !IsSafePathSegment(device_name)) {
+    return {.error = "storage and device names must be safe path segments."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageDaemonDeviceWriteContext(
+      *storage_config.value, device_name, *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (context.value->exists && !context.value->is_standalone_file) {
+    return {.error = "storage-daemon device '" + std::string{device_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  const auto media_type
+      = spec.media_type ? *spec.media_type : context.value->media_type;
+  if (!media_type || media_type->empty()) {
+    return {.error
+            = "field 'media_type' is required for storage-daemon "
+              "device resources."};
+  }
+  const auto archive_device = spec.archive_device
+                                  ? *spec.archive_device
+                                  : context.value->archive_device;
+  if (!archive_device || archive_device->empty()) {
+    return {.error
+            = "field 'archive_device' is required for storage-daemon "
+              "device resources."};
+  }
+  const auto device_type
+      = spec.device_type ? *spec.device_type : context.value->device_type;
+  if (!device_type || device_type->empty()) {
+    return {.error
+            = "field 'device_type' is required for storage-daemon "
+              "device resources."};
+  }
+
+  const auto description = spec.description
+                               ? *spec.description
+                               : context.value->description.value_or(
+                                     DefaultStorageDaemonDeviceDescription(
+                                         device_name, storage_name));
+  const auto rendered = BuildStorageDaemonDeviceResourceContent(
+      device_name, *media_type, *archive_device, *device_type, description);
+  const auto resource_directory
+      = storage_config.value->path / "bareos-sd.d" / "device";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create storage-daemon device directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write storage-daemon device resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote storage-daemon device file '"
+           + context.value->file_path.string() + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("storage-daemon device update for '" + std::string{device_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          storage_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {
+          .error = FormatParseFailure(
+              "storage-daemon device parser initialization ", loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon device update ",
+                                        loaded.messages)};
+  }
+
+  auto updated_managed_paths = *managed_paths.value;
+  SetManagedPath(updated_managed_paths, repository_root,
+                 context.value->file_path);
+  if (auto error = WriteManagedPaths(repository_root, updated_managed_paths);
+      error) {
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          storage_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = *error};
+  }
+
+  DebugLog("updated storage-daemon device resource '" + std::string{device_name}
+           + "' in storage '" + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteStorageDeviceResource(std::string_view deployment_id,
+                                          std::string_view storage_name,
+                                          std::string_view device_name) const
+{
+  DebugLog("deleting storage-daemon device resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "', device '"
+           + std::string{device_name} + "'");
+  if (!IsSafePathSegment(storage_name) || !IsSafePathSegment(device_name)) {
+    return {.error = "storage and device names must be safe path segments."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  const auto repository_root
+      = RepositoryRootFromConfigPath(storage_config.value->path);
+  auto managed_paths = LoadManagedPaths(repository_root);
+  if (!managed_paths) { return {.error = managed_paths.error}; }
+
+  auto context = LoadStorageDaemonDeviceWriteContext(
+      *storage_config.value, device_name, *managed_paths.value);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "storage '" + std::string{storage_name}
+                     + "' does not define device '" + std::string{device_name}
+                     + "'."};
+  }
+  if (!context.value->is_standalone_file) {
+    return {.error = "storage-daemon device '" + std::string{device_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             storage_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {
+          .error = FormatParseFailure(
+              "storage-daemon device parser initialization ", loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon device delete ",
+                                        loaded.messages)};
+  }
+
+  auto updated_managed_paths = *managed_paths.value;
+  RemoveManagedPath(updated_managed_paths, repository_root,
+                    context.value->file_path);
+  if (auto error = WriteManagedPaths(repository_root, updated_managed_paths);
+      error) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    return {.error = *error};
+  }
+
+  DebugLog("deleted storage-daemon device resource '" + std::string{device_name}
+           + "' from storage '" + std::string{storage_name} + "'");
+  return {.value = *storage_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertStorageDaemonResource(
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    const StorageDaemonResourceSpec& spec) const
+{
+  DebugLog("upserting storage-daemon storage resource for deployment '"
+           + std::string{deployment_id} + "', storage '"
+           + std::string{storage_name} + "'");
+  if (!IsSafePathSegment(storage_name)) {
+    return {.error = "storage name must be a safe path segment."};
+  }
+
+  auto storage_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kStorage, storage_name);
+  if (!storage_config) {
+    return {.error = "storage config not found for '"
+                     + std::string{storage_name} + "'."};
+  }
+
+  auto context = LoadStorageDaemonWriteContext(*storage_config.value);
+  if (!context) { return {.error = context.error}; }
+  if (context.value->exists && !context.value->is_standalone_file) {
+    return {.error = "storage-daemon storage resource '"
+                     + std::string{storage_name}
+                     + "' is not stored in a standalone file yet."};
+  }
+
+  auto content = context.value->content;
+  if (spec.description) { content.description = spec.description; }
+  if (spec.working_directory) {
+    content.working_directory = spec.working_directory;
+  }
+  if (spec.plugin_directory) {
+    content.plugin_directory = spec.plugin_directory;
+  }
+  if (spec.scripts_directory) {
+    content.scripts_directory = spec.scripts_directory;
+  }
+  if (spec.messages) { content.messages = spec.messages; }
+
+  const auto rendered
+      = BuildStorageDaemonResourceContent(storage_name, content);
+  const auto resource_directory
+      = storage_config.value->path / "bareos-sd.d" / "storage";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create storage-daemon storage directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write storage-daemon storage resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote storage-daemon storage file '"
+           + context.value->file_path.string() + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kStorage,
+                                    storage_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("storage-daemon storage update for '" + std::string{storage_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          storage_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "storage-daemon storage parser initialization ",
+                  loaded.messages)};
+    }
+    return {.error = FormatParseFailure("storage-daemon storage update ",
+                                        loaded.messages)};
+  }
+
+  DebugLog("updated storage-daemon storage resource '"
            + std::string{storage_name} + "'");
   return {.value = *storage_config.value};
 }

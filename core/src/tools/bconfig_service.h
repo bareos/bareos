@@ -252,6 +252,21 @@ struct StorageDirectorResourceSpec {
   std::optional<std::string> description{};
 };
 
+struct StorageDeviceResourceSpec {
+  std::optional<std::string> media_type{};
+  std::optional<std::string> archive_device{};
+  std::optional<std::string> device_type{};
+  std::optional<std::string> description{};
+};
+
+struct StorageDaemonResourceSpec {
+  std::optional<std::string> description{};
+  std::optional<std::string> working_directory{};
+  std::optional<std::string> plugin_directory{};
+  std::optional<std::string> scripts_directory{};
+  std::optional<std::string> messages{};
+};
+
 struct JobSpec {
   std::string type{};
   std::optional<std::string> deployment_id{};
@@ -464,6 +479,19 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view storage_name,
       std::string_view director_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertStorageDeviceResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view device_name,
+      const StorageDeviceResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteStorageDeviceResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      std::string_view device_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertStorageDaemonResource(
+      std::string_view deployment_id,
+      std::string_view storage_name,
+      const StorageDaemonResourceSpec& spec) const;
   OperationResult<std::vector<DeploymentImportRecord>> ListDeploymentImports(
       std::string_view deployment_id) const;
   OperationResult<DeploymentGitStatusRecord> GetDeploymentGitStatus(

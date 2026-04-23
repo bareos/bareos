@@ -145,6 +145,21 @@ struct StorageDirectorRequestSpec {
   std::optional<std::string> description{};
 };
 
+struct StorageDeviceRequestSpec {
+  std::optional<std::string> media_type{};
+  std::optional<std::string> archive_device{};
+  std::optional<std::string> device_type{};
+  std::optional<std::string> description{};
+};
+
+struct StorageDaemonRequestSpec {
+  std::optional<std::string> description{};
+  std::optional<std::string> working_directory{};
+  std::optional<std::string> plugin_directory{};
+  std::optional<std::string> scripts_directory{};
+  std::optional<std::string> messages{};
+};
+
 struct DirectorScheduleRequestSpec {
   std::optional<std::string> description{};
   std::optional<bool> enabled{};
@@ -218,6 +233,12 @@ std::optional<DirectorMessagesRequestSpec> ParseDirectorMessagesRequest(
     std::string_view body,
     std::string& error);
 std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
     std::string_view body,
     std::string& error);
 std::optional<DirectorScheduleRequestSpec> ParseDirectorScheduleRequest(
@@ -1251,6 +1272,40 @@ const char* kTestUiHtmlTemplate = R"HTML(
     </section>
 
     <section class="card">
+      <h2>Upsert storage-daemon storage resource</h2>
+      <form id="storage-daemon-form">
+        <label for="storage-daemon-deployment-id">Deployment ID</label>
+        <input id="storage-daemon-deployment-id" name="deployment_id" value="prod">
+
+        <label for="storage-daemon-storage-name">Storage name</label>
+        <input id="storage-daemon-storage-name" name="storage_name" value="bareos-sd">
+
+        <label for="storage-daemon-description">Description</label>
+        <input id="storage-daemon-description" name="description"
+               placeholder="Managed storage-daemon storage resource">
+
+        <label for="storage-daemon-working-directory">Working directory</label>
+        <input id="storage-daemon-working-directory" name="working_directory"
+               placeholder="/var/lib/bareos/storage">
+
+        <label for="storage-daemon-plugin-directory">Plugin directory</label>
+        <input id="storage-daemon-plugin-directory" name="plugin_directory"
+               placeholder="/usr/lib/bareos/plugins">
+
+        <label for="storage-daemon-scripts-directory">Scripts directory</label>
+        <input id="storage-daemon-scripts-directory" name="scripts_directory"
+               placeholder="/usr/lib/bareos/scripts">
+
+        <label for="storage-daemon-messages">Messages</label>
+        <input id="storage-daemon-messages" name="messages" placeholder="Standard">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/storages/{storage}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
       <h2>Upsert storage-daemon director resource</h2>
       <form id="storage-director-form">
         <label for="storage-director-deployment-id">Deployment ID</label>
@@ -1275,6 +1330,41 @@ const char* kTestUiHtmlTemplate = R"HTML(
         </button>
         <button type="button" id="storage-director-delete-button">
           DELETE /v1/deployments/{id}/storages/{storage}/directors/{director}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert storage-daemon device resource</h2>
+      <form id="storage-device-form">
+        <label for="storage-device-deployment-id">Deployment ID</label>
+        <input id="storage-device-deployment-id" name="deployment_id" value="prod">
+
+        <label for="storage-device-storage-name">Storage name</label>
+        <input id="storage-device-storage-name" name="storage_name" value="bareos-sd">
+
+        <label for="storage-device-device-name">Device name</label>
+        <input id="storage-device-device-name" name="device_name" value="ManagedDevice">
+
+        <label for="storage-device-media-type">Media type</label>
+        <input id="storage-device-media-type" name="media_type" value="File">
+
+        <label for="storage-device-archive-device">Archive device</label>
+        <input id="storage-device-archive-device" name="archive_device"
+               value="/tmp/bareos-storage">
+
+        <label for="storage-device-device-type">Device type</label>
+        <input id="storage-device-device-type" name="device_type" value="file">
+
+        <label for="storage-device-description">Description</label>
+        <input id="storage-device-description" name="description"
+               placeholder="Managed storage-daemon device resource">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/storages/{storage}/devices/{device}
+        </button>
+        <button type="button" id="storage-device-delete-button">
+          DELETE /v1/deployments/{id}/storages/{storage}/devices/{device}
         </button>
       </form>
     </section>
@@ -2780,6 +2870,34 @@ const char* kTestUiHtmlTemplate = R"HTML(
           await loadDeploymentContents(deploymentId);
         }
       });
+    document.getElementById('storage-daemon-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const storageName = String(form.get('storage_name') ?? '').trim();
+        const payload = {
+          description: String(form.get('description') ?? '').trim(),
+          working_directory: String(form.get('working_directory') ?? '').trim(),
+          plugin_directory: String(form.get('plugin_directory') ?? '').trim(),
+          scripts_directory: String(form.get('scripts_directory') ?? '').trim(),
+          messages: String(form.get('messages') ?? '').trim(),
+        };
+        if (!payload.description) { delete payload.description; }
+        if (!payload.working_directory) { delete payload.working_directory; }
+        if (!payload.plugin_directory) { delete payload.plugin_directory; }
+        if (!payload.scripts_directory) { delete payload.scripts_directory; }
+        if (!payload.messages) { delete payload.messages; }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
     document.getElementById('storage-director-form').addEventListener(
       'submit',
       async (event) => {
@@ -2813,6 +2931,48 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const { response } = await request(
           'DELETE',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}/directors/${encodeURIComponent(directorName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('storage-device-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const storageName = String(form.get('storage_name') ?? '').trim();
+        const deviceName = String(form.get('device_name') ?? '').trim();
+        const payload = {
+          media_type: String(form.get('media_type') ?? '').trim(),
+          archive_device: String(form.get('archive_device') ?? '').trim(),
+          device_type: String(form.get('device_type') ?? '').trim(),
+          description: String(form.get('description') ?? '').trim(),
+        };
+        if (!payload.media_type) { delete payload.media_type; }
+        if (!payload.archive_device) { delete payload.archive_device; }
+        if (!payload.device_type) { delete payload.device_type; }
+        if (!payload.description) { delete payload.description; }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}/devices/${encodeURIComponent(deviceName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('storage-device-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('storage-device-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const storageName = String(form.get('storage_name') ?? '').trim();
+        const deviceName = String(form.get('device_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/storages/${encodeURIComponent(storageName)}/devices/${encodeURIComponent(deviceName)}`);
         if (response.ok) {
           document.getElementById('deployment-inspect-id').value = deploymentId;
           await loadDeploymentContents(deploymentId);
@@ -3691,6 +3851,53 @@ http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body> HandleDeploymentStorageDaemonPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view storage_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseStorageDaemonRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  StorageDaemonResourceSpec resource_spec{
+      .description = spec->description,
+      .working_directory = spec->working_directory,
+      .plugin_directory = spec->plugin_directory,
+      .scripts_directory = spec->scripts_directory,
+      .messages = spec->messages,
+  };
+  auto result = state.UpsertStorageDaemonResource(deployment_id, storage_name,
+                                                  resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto storage_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(storage_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "storage_name",
+                      json_string(std::string{storage_name}.c_str()));
+  json_object_set(root.get(), "storage", storage_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 http::response<http::string_body> HandleDeploymentStorageMessagesPutRequest(
     ServiceState& state,
     const http::request<http::string_body>& request,
@@ -3819,6 +4026,93 @@ http::response<http::string_body> HandleDeploymentStorageDirectorDeleteRequest(
                       json_string(std::string{storage_name}.c_str()));
   json_object_set_new(root.get(), "director_name",
                       json_string(std::string{director_name}.c_str()));
+  json_object_set(root.get(), "storage", storage_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentStorageDevicePutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view device_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseStorageDeviceRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  StorageDeviceResourceSpec resource_spec{
+      .media_type = spec->media_type,
+      .archive_device = spec->archive_device,
+      .device_type = spec->device_type,
+      .description = spec->description,
+  };
+  auto result = state.UpsertStorageDeviceResource(deployment_id, storage_name,
+                                                  device_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto storage_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(storage_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "storage_name",
+                      json_string(std::string{storage_name}.c_str()));
+  json_object_set_new(root.get(), "device_name",
+                      json_string(std::string{device_name}.c_str()));
+  json_object_set(root.get(), "storage", storage_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentStorageDeviceDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view storage_name,
+    std::string_view device_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteStorageDeviceResource(deployment_id, storage_name,
+                                                  device_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto storage_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(storage_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "storage_name",
+                      json_string(std::string{storage_name}.c_str()));
+  json_object_set_new(root.get(), "device_name",
+                      json_string(std::string{device_name}.c_str()));
   json_object_set(root.get(), "storage", storage_json.get());
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
@@ -5839,6 +6133,103 @@ std::optional<StorageDirectorRequestSpec> ParseStorageDirectorRequest(
   return spec;
 }
 
+std::optional<StorageDeviceRequestSpec> ParseStorageDeviceRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* media_type = json_object_get(root.get(), "media_type");
+  auto* archive_device = json_object_get(root.get(), "archive_device");
+  auto* device_type = json_object_get(root.get(), "device_type");
+  auto* description = json_object_get(root.get(), "description");
+  auto require_string = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_string(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a string when provided.";
+      return false;
+    }
+    return true;
+  };
+  if (!require_string(media_type, "media_type")
+      || !require_string(archive_device, "archive_device")
+      || !require_string(device_type, "device_type")
+      || !require_string(description, "description")) {
+    return std::nullopt;
+  }
+
+  StorageDeviceRequestSpec spec{};
+  if (media_type && json_is_string(media_type)) {
+    spec.media_type = std::string{json_string_value(media_type)};
+  }
+  if (archive_device && json_is_string(archive_device)) {
+    spec.archive_device = std::string{json_string_value(archive_device)};
+  }
+  if (device_type && json_is_string(device_type)) {
+    spec.device_type = std::string{json_string_value(device_type)};
+  }
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  return spec;
+}
+
+std::optional<StorageDaemonRequestSpec> ParseStorageDaemonRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* description = json_object_get(root.get(), "description");
+  auto* working_directory = json_object_get(root.get(), "working_directory");
+  auto* plugin_directory = json_object_get(root.get(), "plugin_directory");
+  auto* scripts_directory = json_object_get(root.get(), "scripts_directory");
+  auto* messages = json_object_get(root.get(), "messages");
+  auto require_string = [&error](json_t* value, const char* field) {
+    if (value && !json_is_null(value) && !json_is_string(value)) {
+      error = std::string{"field '"} + field
+              + "' must be a string when provided.";
+      return false;
+    }
+    return true;
+  };
+  if (!require_string(description, "description")
+      || !require_string(working_directory, "working_directory")
+      || !require_string(plugin_directory, "plugin_directory")
+      || !require_string(scripts_directory, "scripts_directory")
+      || !require_string(messages, "messages")) {
+    return std::nullopt;
+  }
+
+  StorageDaemonRequestSpec spec{};
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  if (working_directory && json_is_string(working_directory)) {
+    spec.working_directory = std::string{json_string_value(working_directory)};
+  }
+  if (plugin_directory && json_is_string(plugin_directory)) {
+    spec.plugin_directory = std::string{json_string_value(plugin_directory)};
+  }
+  if (scripts_directory && json_is_string(scripts_directory)) {
+    spec.scripts_directory = std::string{json_string_value(scripts_directory)};
+  }
+  if (messages && json_is_string(messages)) {
+    spec.messages = std::string{json_string_value(messages)};
+  }
+  return spec;
+}
+
 std::optional<DirectorCounterRequestSpec> ParseDirectorCounterRequest(
     std::string_view body,
     std::string& error)
@@ -6235,6 +6626,12 @@ http::response<http::string_body> HandleDeploymentsRequest(
     return HandleDeploymentClientRequest(state, path_parts[2], path_parts[4]);
   }
 
+  if (path_parts.size() == 5 && path_parts[3] == "storages"
+      && request.method() == http::verb::put) {
+    return HandleDeploymentStorageDaemonPutRequest(
+        state, request, path_parts[2], path_parts[4]);
+  }
+
   if (path_parts.size() == 7 && path_parts[3] == "clients"
       && path_parts[5] == "directors" && request.method() == http::verb::put) {
     return HandleDeploymentClientDirectorStubPutRequest(
@@ -6250,6 +6647,18 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && path_parts[5] == "directors"
       && request.method() == http::verb::delete_) {
     return HandleDeploymentStorageDirectorDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "storages"
+      && path_parts[5] == "devices" && request.method() == http::verb::put) {
+    return HandleDeploymentStorageDevicePutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "storages"
+      && path_parts[5] == "devices"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentStorageDeviceDeleteRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
