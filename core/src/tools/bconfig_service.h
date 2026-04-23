@@ -22,6 +22,8 @@
 #ifndef BAREOS_TOOLS_BCONFIG_SERVICE_H_
 #define BAREOS_TOOLS_BCONFIG_SERVICE_H_
 
+#include "tools/bconfig_lib.h"
+
 #include <cstdint>
 #include <filesystem>
 #include <condition_variable>
@@ -81,11 +83,39 @@ struct DeploymentImportRecord {
   std::string imported_at{};
 };
 
+struct DeploymentGitStatusRecord {
+  bool initialized{false};
+  std::string branch{};
+  bool clean{true};
+  bool has_staged_changes{false};
+  bool has_untracked_files{false};
+  std::vector<std::string> entries{};
+};
+
+struct DeploymentDiffPreviewRecord {
+  bool initialized{false};
+  bool has_changes{false};
+  std::string diff{};
+  std::vector<std::string> untracked_files{};
+};
+
+struct DeploymentConfigRecord {
+  bconfig::Component component{bconfig::Component::kDirector};
+  std::string name{};
+  std::filesystem::path path{};
+};
+
+struct ClientDirectorStubSpec {
+  std::string password{};
+  std::optional<std::string> description{};
+};
+
 struct JobSpec {
   std::string type{};
   std::optional<std::string> deployment_id{};
   std::optional<std::string> source_component{};
   std::optional<std::string> source_path{};
+  std::optional<std::string> commit_message{};
 };
 
 struct JobRecord {
@@ -94,6 +124,7 @@ struct JobRecord {
   std::optional<std::string> deployment_id{};
   std::optional<std::string> source_component{};
   std::optional<std::string> source_path{};
+  std::optional<std::string> commit_message{};
   JobStatus status{JobStatus::kQueued};
   std::string created_at{};
   std::string updated_at{};
@@ -125,6 +156,11 @@ class RepositoryLayout {
       const std::filesystem::path& repository_root);
 };
 
+std::filesystem::path ExpandUserPath(const std::filesystem::path& path);
+std::filesystem::path DefaultStorageBasePath();
+std::filesystem::path DefaultDeploymentRepositoryPath(
+    std::string_view deployment_id);
+
 std::string_view ToString(WorkflowMode mode);
 std::optional<WorkflowMode> ParseWorkflowMode(std::string_view value);
 std::string_view ToString(JobStatus status);
@@ -139,7 +175,23 @@ class ServiceState {
       const DeploymentSpec& spec);
   std::vector<DeploymentRecord> ListDeployments() const;
   std::optional<DeploymentRecord> GetDeployment(std::string_view id) const;
+  OperationResult<std::vector<DeploymentConfigRecord>> ListDeploymentConfigs(
+      std::string_view deployment_id,
+      bconfig::Component component) const;
+  OperationResult<DeploymentConfigRecord> GetDeploymentConfig(
+      std::string_view deployment_id,
+      bconfig::Component component,
+      std::string_view name) const;
+  OperationResult<DeploymentConfigRecord> UpsertClientDirectorStub(
+      std::string_view deployment_id,
+      std::string_view client_name,
+      std::string_view director_name,
+      const ClientDirectorStubSpec& spec) const;
   OperationResult<std::vector<DeploymentImportRecord>> ListDeploymentImports(
+      std::string_view deployment_id) const;
+  OperationResult<DeploymentGitStatusRecord> GetDeploymentGitStatus(
+      std::string_view deployment_id) const;
+  OperationResult<DeploymentDiffPreviewRecord> GetDeploymentDiffPreview(
       std::string_view deployment_id) const;
 
   OperationResult<JobRecord> CreateJob(const JobSpec& spec);

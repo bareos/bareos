@@ -22,13 +22,17 @@
 #include "tools/bconfig_service.h"
 #include "tools/bconfig_lib.h"
 
+#include "dird/dird_conf.h"
 #include "include/bareos.h"
+#include "lib/bpipe.h"
 
 #include <jansson.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cctype>
+#include <cstdlib>
 #include <ctime>
 #include <fstream>
 #include <iomanip>
@@ -43,6 +47,132 @@ using JsonPtr = std::unique_ptr<json_t, decltype(&json_decref)>;
 
 JsonPtr MakeJson(json_t* value) { return JsonPtr(value, &json_decref); }
 
+std::filesystem::path HomeDirectory()
+{
+  if (const char* home = std::getenv("HOME"); home && home[0] != '\0') {
+    return home;
+  }
+
+  return {};
+}
+
+std::string QuoteCommandArgument(const std::string& value)
+{
+  std::string quoted;
+  quoted.reserve(value.size() + 2);
+  quoted.push_back('"');
+  for (const char ch : value) {
+    if (ch == '\\' || ch == '"') { quoted.push_back('\\'); }
+    quoted.push_back(ch);
+  }
+  quoted.push_back('"');
+  return quoted;
+}
+
+std::string BuildCommand(const std::vector<std::string>& arguments)
+{
+  std::ostringstream stream;
+  bool first = true;
+  for (const auto& argument : arguments) {
+    if (!first) { stream << ' '; }
+    first = false;
+    stream << QuoteCommandArgument(argument);
+  }
+  return stream.str();
+}
+
+OperationResult<std::string> RunCommand(std::string_view command)
+{
+  auto* pipe = OpenBpipe(std::string{command}.c_str(), 30, "r");
+  if (!pipe) {
+    return {.error = "failed to execute command: " + std::string{command}};
+  }
+
+  std::string output;
+  std::array<char, 4096> buffer{};
+  while (pipe->rfd && fgets(buffer.data(), buffer.size(), pipe->rfd)) {
+    output.append(buffer.data());
+  }
+
+  const auto status = CloseBpipe(pipe);
+  if (status != 0) {
+    std::ostringstream error;
+    error << "command failed with status " << status << ": " << command;
+    if (!output.empty()) { error << "\n" << output; }
+    return {.error = error.str()};
+  }
+
+  return {.value = std::move(output)};
+}
+
+OperationResult<std::string> RunGitCommand(
+    const std::filesystem::path& repository_root,
+    const std::vector<std::string>& arguments)
+{
+  std::vector<std::string> command_arguments{"git", "-C",
+                                             repository_root.string()};
+  command_arguments.insert(command_arguments.end(), arguments.begin(),
+                           arguments.end());
+  return RunCommand(BuildCommand(command_arguments));
+}
+
+std::vector<std::string> SplitLines(const std::string& text)
+{
+  std::vector<std::string> lines;
+  std::istringstream stream{text};
+  std::string line;
+  while (std::getline(stream, line)) {
+    if (!line.empty()) { lines.emplace_back(std::move(line)); }
+  }
+  return lines;
+}
+
+OperationResult<DeploymentDiffPreviewRecord> LoadDeploymentDiffPreview(
+    const std::filesystem::path& repository_root)
+{
+  const auto git_directory = repository_root / ".git";
+  if (!std::filesystem::exists(git_directory)) {
+    return {.value = DeploymentDiffPreviewRecord{}};
+  }
+
+  auto diff = RunGitCommand(repository_root,
+                            {"diff", "--no-ext-diff", "--binary", "HEAD"});
+  if (!diff) { return {.error = diff.error}; }
+
+  auto untracked = RunGitCommand(
+      repository_root, {"ls-files", "--others", "--exclude-standard"});
+  if (!untracked) { return {.error = untracked.error}; }
+
+  DeploymentDiffPreviewRecord preview{
+      .initialized = true,
+      .has_changes = !diff.value->empty() || !untracked.value->empty(),
+      .diff = std::move(*diff.value),
+      .untracked_files = SplitLines(*untracked.value),
+  };
+  return {.value = std::move(preview)};
+}
+
+std::optional<DeploymentRecord> FindDeploymentLocked(
+    const std::unordered_map<std::string, DeploymentRecord>& deployments,
+    std::string_view deployment_id)
+{
+  auto it = deployments.find(std::string{deployment_id});
+  if (it == deployments.end()) { return std::nullopt; }
+  return it->second;
+}
+
+OperationResult<std::string> RunGitCommand(
+    const std::filesystem::path& repository_root,
+    std::initializer_list<std::string_view> arguments)
+{
+  std::vector<std::string> owned_arguments;
+  owned_arguments.reserve(arguments.size());
+  for (const auto argument : arguments) {
+    owned_arguments.emplace_back(argument);
+  }
+  return RunGitCommand(repository_root, owned_arguments);
+}
+
 bool WriteFile(const std::filesystem::path& path, const std::string& content)
 {
   std::ofstream stream(path, std::ios::out | std::ios::trunc);
@@ -51,14 +181,23 @@ bool WriteFile(const std::filesystem::path& path, const std::string& content)
   return static_cast<bool>(stream);
 }
 
+OperationResult<std::string> ReadFile(const std::filesystem::path& path)
+{
+  std::ifstream stream(path);
+  if (!stream) {
+    return {.error = "failed to read file '" + path.string() + "'."};
+  }
+
+  return {.value = std::string{std::istreambuf_iterator<char>(stream),
+                               std::istreambuf_iterator<char>()}};
+}
+
 template <typename T>
 std::vector<T> SortedValues(const std::unordered_map<std::string, T>& values)
 {
   std::vector<T> result;
   result.reserve(values.size());
-  for (const auto& [_, value] : values) {
-    result.emplace_back(value);
-  }
+  for (const auto& [_, value] : values) { result.emplace_back(value); }
 
   std::sort(result.begin(), result.end(),
             [](const auto& lhs, const auto& rhs) { return lhs.id < rhs.id; });
@@ -69,12 +208,6 @@ struct ImportedComponent {
   bconfig::Component component;
   std::string resource_name{};
   std::filesystem::path destination_root{};
-};
-
-struct DeploymentConfigRoot {
-  bconfig::Component component;
-  std::string name{};
-  std::filesystem::path path{};
 };
 
 std::filesystem::path ComponentConfigDirectoryName(bconfig::Component component)
@@ -122,7 +255,8 @@ const char* PrimaryResourceType(bconfig::Component component)
 }
 
 std::filesystem::path ComponentBucketDirectory(
-    const std::filesystem::path& repository_root, bconfig::Component component)
+    const std::filesystem::path& repository_root,
+    bconfig::Component component)
 {
   switch (component) {
     case bconfig::Component::kDirector:
@@ -158,13 +292,13 @@ void AppendParseMessages(std::vector<std::string>& logs,
 
 std::vector<bconfig::Component> SupportedImportComponents()
 {
-  return {bconfig::Component::kDirector,
-          bconfig::Component::kStorage,
+  return {bconfig::Component::kDirector, bconfig::Component::kStorage,
           bconfig::Component::kClient};
 }
 
 std::optional<std::filesystem::path> ResolveImportRoot(
-    const std::filesystem::path& source_path, std::string& error)
+    const std::filesystem::path& source_path,
+    std::string& error)
 {
   std::error_code error_code;
   const auto normalized
@@ -191,7 +325,8 @@ std::optional<std::filesystem::path> ResolveImportRoot(
 }
 
 std::optional<std::filesystem::path> FindComponentConfigDirectory(
-    bconfig::Component component, const std::filesystem::path& source_root)
+    bconfig::Component component,
+    const std::filesystem::path& source_root)
 {
   const auto config_directory_name = ComponentConfigDirectoryName(component);
   if (config_directory_name.empty()) { return std::nullopt; }
@@ -204,10 +339,10 @@ std::optional<std::filesystem::path> FindComponentConfigDirectory(
   return std::nullopt;
 }
 
-std::vector<DeploymentConfigRoot> DiscoverDeploymentConfigRoots(
+std::vector<DeploymentConfigRecord> DiscoverDeploymentConfigRoots(
     const std::filesystem::path& repository_root)
 {
-  std::vector<DeploymentConfigRoot> configs;
+  std::vector<DeploymentConfigRecord> configs;
 
   for (const auto component : SupportedImportComponents()) {
     const auto bucket = ComponentBucketDirectory(repository_root, component);
@@ -219,11 +354,12 @@ std::vector<DeploymentConfigRoot> DiscoverDeploymentConfigRoots(
 
     for (const auto& entry : std::filesystem::directory_iterator(bucket)) {
       if (!entry.is_directory()) { continue; }
-      if (!std::filesystem::is_directory(entry.path() / config_directory_name)) {
+      if (!std::filesystem::is_directory(entry.path()
+                                         / config_directory_name)) {
         continue;
       }
 
-      configs.push_back(DeploymentConfigRoot{
+      configs.push_back(DeploymentConfigRecord{
           .component = component,
           .name = entry.path().filename().string(),
           .path = entry.path(),
@@ -243,7 +379,8 @@ std::vector<DeploymentConfigRoot> DiscoverDeploymentConfigRoots(
 }
 
 std::optional<std::string> DetectPrimaryResourceName(
-    bconfig::Component component, bconfig::LoadedConfig& loaded)
+    bconfig::Component component,
+    bconfig::LoadedConfig& loaded)
 {
   const auto primary_type = std::string{PrimaryResourceType(component)};
   for (const auto& resource : bconfig::CollectResources(*loaded.parser)) {
@@ -255,8 +392,9 @@ std::optional<std::string> DetectPrimaryResourceName(
   return std::nullopt;
 }
 
-std::optional<std::string> CopyDirectoryTree(const std::filesystem::path& source,
-                                             const std::filesystem::path& target)
+std::optional<std::string> CopyDirectoryTree(
+    const std::filesystem::path& source,
+    const std::filesystem::path& target)
 {
   std::error_code error_code;
   std::filesystem::create_directories(target.parent_path(), error_code);
@@ -265,8 +403,8 @@ std::optional<std::string> CopyDirectoryTree(const std::filesystem::path& source
            + "': " + error_code.message();
   }
 
-  std::filesystem::copy(source, target, std::filesystem::copy_options::recursive,
-                        error_code);
+  std::filesystem::copy(source, target,
+                        std::filesystem::copy_options::recursive, error_code);
   if (error_code) {
     return "failed to copy '" + source.string() + "' to '" + target.string()
            + "': " + error_code.message();
@@ -279,6 +417,212 @@ void RemoveTreeQuietly(const std::filesystem::path& path)
 {
   std::error_code error_code;
   std::filesystem::remove_all(path, error_code);
+}
+
+std::string QuoteBareosString(std::string_view value)
+{
+  std::string quoted;
+  quoted.reserve(value.size() + 2);
+  quoted.push_back('"');
+  for (const char ch : value) {
+    if (ch == '\\' || ch == '"') { quoted.push_back('\\'); }
+    quoted.push_back(ch);
+  }
+  quoted.push_back('"');
+  return quoted;
+}
+
+std::string BuildClientDirectorStubContent(std::string_view director_name,
+                                           std::string_view password,
+                                           std::string_view description)
+{
+  std::ostringstream content;
+  content << "Director {\n"
+          << "  Name = " << QuoteBareosString(director_name) << "\n"
+          << "  Password = " << QuoteBareosString(password) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n"
+          << "}\n";
+  return content.str();
+}
+
+std::string DefaultClientDirectorStubDescription(std::string_view client_name,
+                                                 std::string_view director_name)
+{
+  return "Managed director stub for client " + std::string{client_name}
+         + " and director " + std::string{director_name};
+}
+
+bool IsSafePathSegment(std::string_view value)
+{
+  return !value.empty() && value != "." && value != ".."
+         && value.find('/') == std::string_view::npos
+         && value.find('\\') == std::string_view::npos;
+}
+
+std::optional<std::string> CleanupCreatedClientStub(
+    const std::filesystem::path& client_root,
+    const std::filesystem::path& stub_path,
+    bool client_root_existed)
+{
+  std::error_code error_code;
+  if (client_root_existed) {
+    std::filesystem::remove(stub_path, error_code);
+    error_code.clear();
+    std::filesystem::remove(stub_path.parent_path(), error_code);
+    error_code.clear();
+    std::filesystem::remove(stub_path.parent_path().parent_path(), error_code);
+    return std::nullopt;
+  }
+
+  std::filesystem::remove_all(client_root, error_code);
+  if (error_code) {
+    return "failed to roll back generated client root '" + client_root.string()
+           + "': " + error_code.message();
+  }
+  return std::nullopt;
+}
+
+std::optional<std::string> RestoreClientStubFile(
+    const std::filesystem::path& stub_path,
+    const std::string& content)
+{
+  if (WriteFile(stub_path, content)) { return std::nullopt; }
+  return "failed to restore client stub '" + stub_path.string() + "'.";
+}
+
+std::string FormatParseFailure(std::string_view prefix,
+                               const bconfig::ParseMessages& messages)
+{
+  std::vector<std::string> logs;
+  AppendParseMessages(logs, messages, prefix);
+  std::ostringstream rendered;
+  rendered << prefix << "did not validate cleanly.";
+  for (const auto& message : logs) { rendered << "\n" << message; }
+  return rendered.str();
+}
+
+std::optional<std::string> WriteGeneratedClientDirectorStub(
+    const std::filesystem::path& client_root,
+    std::string_view director_name,
+    std::string_view client_name,
+    const s_password& password)
+{
+  const auto target_directory = client_root / "bareos-fd.d" / "director";
+  std::error_code error_code;
+  std::filesystem::create_directories(target_directory, error_code);
+  if (error_code) {
+    return "failed to create generated client stub directory '"
+           + target_directory.string() + "': " + error_code.message();
+  }
+
+  const auto target_path
+      = target_directory / (std::string{director_name} + ".conf");
+  std::string rendered_password;
+  switch (password.encoding) {
+    case p_encoding_clear:
+      rendered_password = password.value ? password.value : "";
+      break;
+    case p_encoding_md5:
+      rendered_password = "[md5]";
+      if (password.value) { rendered_password += password.value; }
+      break;
+    default:
+      return "failed to render generated client stub password for '"
+             + std::string{client_name} + "'.";
+  }
+
+  const auto stub_content = BuildClientDirectorStubContent(
+      director_name, rendered_password,
+      "Generated director stub for client " + std::string{client_name});
+
+  if (!WriteFile(target_path, stub_content)) {
+    return "failed to write generated client stub '" + target_path.string()
+           + "'.";
+  }
+
+  return std::nullopt;
+}
+
+OperationResult<std::vector<ImportedComponent>> GenerateDirectorClientStubs(
+    const ImportedComponent& director_import,
+    const std::filesystem::path& deployment_repository_root,
+    std::vector<std::string>& logs)
+{
+  if (director_import.component != bconfig::Component::kDirector) {
+    return {.value = std::vector<ImportedComponent>{}};
+  }
+
+  auto loaded
+      = bconfig::LoadConfig(bconfig::Component::kDirector,
+                            director_import.destination_root.string(), true);
+  if (!loaded.parser) {
+    AppendParseMessages(logs, loaded.messages, "director stub source ");
+    return {.error
+            = "failed to initialize parser for imported director config."};
+  }
+
+  AppendParseMessages(logs, loaded.messages, "director stub source ");
+  if (!loaded.parse_ok) {
+    return {.error
+            = "imported director config did not validate cleanly for "
+              "client stub generation."};
+  }
+
+  std::vector<ImportedComponent> generated;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_CLIENT, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_CLIENT, resource)) {
+    auto* client = dynamic_cast<directordaemon::ClientResource*>(resource);
+    if (!client || !client->resource_name_
+        || client->resource_name_[0] == '\0') {
+      continue;
+    }
+
+    const std::string client_name{client->resource_name_};
+    const auto client_root
+        = RepositoryLayout::ClientsDirectory(deployment_repository_root)
+          / client_name;
+    if (std::filesystem::exists(client_root)) { continue; }
+
+    if (!client->password_.value || client->password_.value[0] == '\0') {
+      return {.error
+              = "cannot generate client stub for '" + client_name
+                + "' because the director-side client password is empty."};
+    }
+
+    if (auto error = WriteGeneratedClientDirectorStub(
+            client_root, director_import.resource_name, client_name,
+            client->password_);
+        error) {
+      RemoveTreeQuietly(client_root);
+      return {.error = *error};
+    }
+
+    auto imported = bconfig::LoadConfig(bconfig::Component::kClient,
+                                        client_root.string(), true);
+    if (!imported.parser) {
+      RemoveTreeQuietly(client_root);
+      AppendParseMessages(logs, imported.messages, "generated client stub ");
+      return {.error = "failed to initialize parser for generated client stub '"
+                       + client_name + "'."};
+    }
+
+    AppendParseMessages(logs, imported.messages, "generated client stub ");
+    if (!imported.parse_ok) {
+      RemoveTreeQuietly(client_root);
+      return {.error = "generated client stub for '" + client_name
+                       + "' did not validate cleanly."};
+    }
+
+    logs.emplace_back("generated client stub '" + client_name
+                      + "' for director '" + director_import.resource_name
+                      + "' into " + client_root.string());
+    generated.push_back(ImportedComponent{bconfig::Component::kClient,
+                                          client_name, client_root});
+  }
+
+  return {.value = std::move(generated)};
 }
 
 std::optional<std::string> UpdateImportState(
@@ -360,16 +704,18 @@ std::optional<std::string> UpdateImportState(
 OperationResult<std::vector<DeploymentImportRecord>> LoadDeploymentImports(
     const std::filesystem::path& repository_root)
 {
-  const auto import_state_path = RepositoryLayout::ImportStatePath(repository_root);
+  const auto import_state_path
+      = RepositoryLayout::ImportStatePath(repository_root);
   if (!std::filesystem::exists(import_state_path)) {
     return {.value = std::vector<DeploymentImportRecord>{}};
   }
 
   json_error_t json_error{};
-  auto root = MakeJson(json_load_file(import_state_path.c_str(), 0, &json_error));
+  auto root
+      = MakeJson(json_load_file(import_state_path.c_str(), 0, &json_error));
   if (!root) {
-    return {.error = "failed to parse import state '" + import_state_path.string()
-                     + "': " + json_error.text};
+    return {.error = "failed to parse import state '"
+                     + import_state_path.string() + "': " + json_error.text};
   }
   if (!json_is_object(root.get())) {
     return {.error = "import state file '" + import_state_path.string()
@@ -410,9 +756,11 @@ OperationResult<std::vector<DeploymentImportRecord>> LoadDeploymentImports(
       return {.error = "import state file '" + import_state_path.string()
                        + "' contains an import entry with invalid fields."};
     }
-    if (source_path && !json_is_null(source_path) && !json_is_string(source_path)) {
-      return {.error = "import state file '" + import_state_path.string()
-                       + "' contains an import entry with an invalid source_path."};
+    if (source_path && !json_is_null(source_path)
+        && !json_is_string(source_path)) {
+      return {.error
+              = "import state file '" + import_state_path.string()
+                + "' contains an import entry with an invalid source_path."};
     }
 
     DeploymentImportRecord record{
@@ -429,6 +777,55 @@ OperationResult<std::vector<DeploymentImportRecord>> LoadDeploymentImports(
   }
 
   return {.value = std::move(imports)};
+}
+
+OperationResult<DeploymentGitStatusRecord> LoadDeploymentGitStatus(
+    const std::filesystem::path& repository_root)
+{
+  const auto git_directory = repository_root / ".git";
+  if (!std::filesystem::exists(git_directory)) {
+    return {.value = DeploymentGitStatusRecord{}};
+  }
+
+  auto output = RunGitCommand(repository_root, {"status", "--short", "--branch",
+                                                "--untracked-files=all"});
+  if (!output) { return {.error = output.error}; }
+
+  DeploymentGitStatusRecord status{
+      .initialized = true,
+      .branch = "",
+      .clean = true,
+      .has_staged_changes = false,
+      .has_untracked_files = false,
+      .entries = {},
+  };
+
+  std::istringstream stream{*output.value};
+  std::string line;
+  while (std::getline(stream, line)) {
+    if (line.empty()) { continue; }
+    if (line.rfind("## ", 0) == 0) {
+      auto branch = line.substr(3);
+      const auto remote_separator = branch.find("...");
+      if (remote_separator != std::string::npos) {
+        branch.resize(remote_separator);
+      }
+      status.branch = std::move(branch);
+      continue;
+    }
+
+    status.entries.emplace_back(line);
+    status.clean = false;
+    if (line.rfind("?? ", 0) == 0) {
+      status.has_untracked_files = true;
+      continue;
+    }
+    if (line.size() >= 1 && line[0] != ' ') {
+      status.has_staged_changes = true;
+    }
+  }
+
+  return {.value = std::move(status)};
 }
 
 OperationResult<ImportedComponent> ImportComponentIntoDeployment(
@@ -451,9 +848,9 @@ OperationResult<ImportedComponent> ImportComponentIntoDeployment(
                      + " import."};
   }
 
-  AppendParseMessages(logs, loaded.messages,
-                      std::string{bconfig::ComponentToString(component)}
-                          + " source ");
+  AppendParseMessages(
+      logs, loaded.messages,
+      std::string{bconfig::ComponentToString(component)} + " source ");
   if (!loaded.parse_ok) {
     return {.error = std::string{bconfig::ComponentToString(component)}
                      + " source config did not parse cleanly."};
@@ -461,11 +858,10 @@ OperationResult<ImportedComponent> ImportComponentIntoDeployment(
 
   auto resource_name = DetectPrimaryResourceName(component, loaded);
   if (!resource_name) {
-    logs.emplace_back("skipping "
-                      + std::string{bconfig::ComponentToString(component)}
-                      + " import because no primary "
-                      + std::string{PrimaryResourceType(component)}
-                      + " resource was found");
+    logs.emplace_back(
+        "skipping " + std::string{bconfig::ComponentToString(component)}
+        + " import because no primary "
+        + std::string{PrimaryResourceType(component)} + " resource was found");
     return {};
   }
 
@@ -501,9 +897,9 @@ OperationResult<ImportedComponent> ImportComponentIntoDeployment(
                      + std::string{bconfig::ComponentToString(component)}
                      + " config."};
   }
-  AppendParseMessages(logs, imported.messages,
-                      std::string{bconfig::ComponentToString(component)}
-                          + " imported ");
+  AppendParseMessages(
+      logs, imported.messages,
+      std::string{bconfig::ComponentToString(component)} + " imported ");
   if (!imported.parse_ok) {
     RemoveTreeQuietly(temp_root);
     return {.error = std::string{bconfig::ComponentToString(component)}
@@ -526,16 +922,46 @@ OperationResult<ImportedComponent> ImportComponentIntoDeployment(
 
 }  // namespace
 
+std::filesystem::path ExpandUserPath(const std::filesystem::path& path)
+{
+  const auto path_text = path.string();
+  if (path_text == "~") {
+    const auto home = HomeDirectory();
+    return home.empty() ? path : home;
+  }
+
+  if (path_text.rfind("~/", 0) == 0) {
+    const auto home = HomeDirectory();
+    if (home.empty()) { return path; }
+    return home / path_text.substr(2);
+  }
+
+  return path;
+}
+
+std::filesystem::path DefaultStorageBasePath()
+{
+  const auto home = HomeDirectory();
+  if (!home.empty()) { return home / "tmp/bconfig"; }
+  return std::filesystem::temp_directory_path() / "bconfig";
+}
+
+std::filesystem::path DefaultDeploymentRepositoryPath(
+    std::string_view deployment_id)
+{
+  return DefaultStorageBasePath() / "deployments" / std::string{deployment_id};
+}
+
 ServiceState::ServiceState(std::filesystem::path state_directory)
-    : state_directory_{std::move(state_directory)}
+    : state_directory_{ExpandUserPath(std::move(state_directory))}
 {
   if (!state_directory_.empty()) {
     std::error_code error_code;
     std::filesystem::create_directories(state_directory_, error_code);
     if (error_code) {
       throw std::runtime_error{"failed to create service state directory '"
-                               + state_directory_.string() + "': "
-                               + error_code.message()};
+                               + state_directory_.string()
+                               + "': " + error_code.message()};
     }
 
     if (auto error = LoadState(); error) { throw std::runtime_error{*error}; }
@@ -661,15 +1087,17 @@ OperationResult<DeploymentRecord> ServiceState::CreateDeployment(
     const DeploymentSpec& spec)
 {
   if (!IsValidIdentifier(spec.id)) {
-    return {.error = "deployment id must contain only letters, digits, '-' "
-                      "or '_'."};
+    return {.error
+            = "deployment id must contain only letters, digits, '-' "
+              "or '_'."};
   }
 
   if (spec.name.empty()) {
     return {.error = "deployment name must not be empty."};
   }
 
-  if (spec.repository_path.empty()) {
+  const auto repository_path = ExpandUserPath(spec.repository_path);
+  if (repository_path.empty()) {
     return {.error = "repository_path must not be empty."};
   }
 
@@ -680,10 +1108,10 @@ OperationResult<DeploymentRecord> ServiceState::CreateDeployment(
   }
 
   DeploymentRecord record{.id = spec.id,
-                            .name = spec.name,
-                            .repository_path = spec.repository_path,
-                            .workflow_mode = spec.workflow_mode,
-                            .created_at = MakeTimestamp()};
+                          .name = spec.name,
+                          .repository_path = repository_path,
+                          .workflow_mode = spec.workflow_mode,
+                          .created_at = MakeTimestamp()};
 
   if (auto error = InitializeRepositoryLayout(record); error) {
     return {.error = *error};
@@ -712,6 +1140,124 @@ std::optional<DeploymentRecord> ServiceState::GetDeployment(
   return it->second;
 }
 
+OperationResult<std::vector<DeploymentConfigRecord>>
+ServiceState::ListDeploymentConfigs(std::string_view deployment_id,
+                                    bconfig::Component component) const
+{
+  std::filesystem::path repository_path;
+  {
+    std::lock_guard guard{mutex_};
+    auto it = deployments_.find(std::string{deployment_id});
+    if (it == deployments_.end()) { return {.error = "deployment not found."}; }
+    repository_path = it->second.repository_path;
+  }
+
+  std::vector<DeploymentConfigRecord> matches;
+  for (const auto& config : DiscoverDeploymentConfigRoots(repository_path)) {
+    if (config.component == component) { matches.emplace_back(config); }
+  }
+  return {.value = std::move(matches)};
+}
+
+OperationResult<DeploymentConfigRecord> ServiceState::GetDeploymentConfig(
+    std::string_view deployment_id,
+    bconfig::Component component,
+    std::string_view name) const
+{
+  auto configs = ListDeploymentConfigs(deployment_id, component);
+  if (!configs) { return {.error = configs.error}; }
+
+  auto it = std::find_if(configs.value->begin(), configs.value->end(),
+                         [name](const DeploymentConfigRecord& config) {
+                           return config.name == name;
+                         });
+  if (it == configs.value->end()) {
+    return {.error = "deployment config not found."};
+  }
+
+  return {.value = *it};
+}
+
+OperationResult<DeploymentConfigRecord> ServiceState::UpsertClientDirectorStub(
+    std::string_view deployment_id,
+    std::string_view client_name,
+    std::string_view director_name,
+    const ClientDirectorStubSpec& spec) const
+{
+  if (!IsSafePathSegment(client_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "client and director names must be safe path segments."};
+  }
+  if (spec.password.empty()) {
+    return {.error = "password must not be empty."};
+  }
+
+  std::filesystem::path repository_path;
+  {
+    std::lock_guard guard{mutex_};
+    auto it = deployments_.find(std::string{deployment_id});
+    if (it == deployments_.end()) { return {.error = "deployment not found."}; }
+    repository_path = it->second.repository_path;
+  }
+
+  const auto client_root
+      = RepositoryLayout::ClientsDirectory(repository_path) / client_name;
+  const auto stub_directory = client_root / "bareos-fd.d" / "director";
+  const auto stub_path
+      = stub_directory / (std::string{director_name} + ".conf");
+  const bool client_root_existed = std::filesystem::exists(client_root);
+  const bool stub_existed = std::filesystem::exists(stub_path);
+
+  std::string original_content;
+  if (stub_existed) {
+    auto existing = ReadFile(stub_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  const auto description
+      = spec.description && !spec.description->empty()
+            ? *spec.description
+            : DefaultClientDirectorStubDescription(client_name, director_name);
+  const auto stub_content = BuildClientDirectorStubContent(
+      director_name, spec.password, description);
+
+  std::error_code error_code;
+  std::filesystem::create_directories(stub_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create stub directory '"
+                     + stub_directory.string() + "': " + error_code.message()};
+  }
+  if (!WriteFile(stub_path, stub_content)) {
+    return {.error
+            = "failed to write client stub '" + stub_path.string() + "'."};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kClient,
+                                    client_root.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    std::optional<std::string> rollback_error;
+    if (stub_existed) {
+      rollback_error = RestoreClientStubFile(stub_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedClientStub(client_root, stub_path,
+                                                client_root_existed);
+    }
+
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure("client stub parser initialization ",
+                                          loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("client stub update ", loaded.messages)};
+  }
+
+  return {.value
+          = DeploymentConfigRecord{.component = bconfig::Component::kClient,
+                                   .name = std::string{client_name},
+                                   .path = client_root}};
+}
+
 OperationResult<std::vector<DeploymentImportRecord>>
 ServiceState::ListDeploymentImports(std::string_view deployment_id) const
 {
@@ -719,13 +1265,39 @@ ServiceState::ListDeploymentImports(std::string_view deployment_id) const
   {
     std::lock_guard guard{mutex_};
     auto it = deployments_.find(std::string{deployment_id});
-    if (it == deployments_.end()) {
-      return {.error = "deployment not found."};
-    }
+    if (it == deployments_.end()) { return {.error = "deployment not found."}; }
     repository_path = it->second.repository_path;
   }
 
   return LoadDeploymentImports(repository_path);
+}
+
+OperationResult<DeploymentGitStatusRecord> ServiceState::GetDeploymentGitStatus(
+    std::string_view deployment_id) const
+{
+  std::filesystem::path repository_path;
+  {
+    std::lock_guard guard{mutex_};
+    auto it = deployments_.find(std::string{deployment_id});
+    if (it == deployments_.end()) { return {.error = "deployment not found."}; }
+    repository_path = it->second.repository_path;
+  }
+
+  return LoadDeploymentGitStatus(repository_path);
+}
+
+OperationResult<DeploymentDiffPreviewRecord>
+ServiceState::GetDeploymentDiffPreview(std::string_view deployment_id) const
+{
+  std::filesystem::path repository_path;
+  {
+    std::lock_guard guard{mutex_};
+    auto it = deployments_.find(std::string{deployment_id});
+    if (it == deployments_.end()) { return {.error = "deployment not found."}; }
+    repository_path = it->second.repository_path;
+  }
+
+  return LoadDeploymentDiffPreview(repository_path);
 }
 
 OperationResult<JobRecord> ServiceState::CreateJob(const JobSpec& spec)
@@ -745,6 +1317,7 @@ OperationResult<JobRecord> ServiceState::CreateJob(const JobSpec& spec)
                    .deployment_id = spec.deployment_id,
                    .source_component = spec.source_component,
                    .source_path = spec.source_path,
+                   .commit_message = spec.commit_message,
                    .status = JobStatus::kQueued,
                    .created_at = timestamp,
                    .updated_at = timestamp};
@@ -810,9 +1383,9 @@ void ServiceState::WorkerLoop()
       last_error = logs.back();
     }
 
-    std::string final_log
-        = status == JobStatus::kSucceeded ? "job execution finished"
-                                          : "job execution failed";
+    std::string final_log = status == JobStatus::kSucceeded
+                                ? "job execution finished"
+                                : "job execution failed";
     if (!logs.empty()) {
       final_log += ": ";
       final_log += logs.back();
@@ -837,7 +1410,8 @@ std::optional<JobRecord> ServiceState::GetNextQueuedJobLocked()
   return it->second;
 }
 
-void ServiceState::MarkJobRunning(const std::string& id, std::string log_message)
+void ServiceState::MarkJobRunning(const std::string& id,
+                                  std::string log_message)
 {
   auto it = jobs_.find(id);
   if (it == jobs_.end()) { return; }
@@ -896,8 +1470,8 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
     std::optional<DeploymentRecord> deployment;
     {
       std::lock_guard guard{mutex_};
-      auto it = deployments_.find(*job_snapshot.deployment_id);
-      if (it != deployments_.end()) { deployment = it->second; }
+      deployment
+          = FindDeploymentLocked(deployments_, *job_snapshot.deployment_id);
     }
     if (!deployment) {
       logs.emplace_back("deployment not found");
@@ -924,15 +1498,17 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
     }
 
     for (const auto& config : configs) {
-      auto loaded = bconfig::LoadConfig(config.component, config.path.string(), true);
+      auto loaded
+          = bconfig::LoadConfig(config.component, config.path.string(), true);
       if (!loaded.parser) {
         AppendParseMessages(
             logs, loaded.messages,
             std::string{bconfig::ComponentToString(config.component)} + " '"
                 + config.name + "' ");
-        logs.emplace_back("failed to initialize parser for "
-                          + std::string{bconfig::ComponentToString(config.component)}
-                          + " '" + config.name + "'");
+        logs.emplace_back(
+            "failed to initialize parser for "
+            + std::string{bconfig::ComponentToString(config.component)} + " '"
+            + config.name + "'");
         return {JobStatus::kFailed, logs};
       }
 
@@ -941,15 +1517,17 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
           std::string{bconfig::ComponentToString(config.component)} + " '"
               + config.name + "' ");
       if (!loaded.parse_ok) {
-        logs.emplace_back("config root failed validation: "
-                          + std::string{bconfig::ComponentToString(config.component)}
-                          + " '" + config.name + "'");
+        logs.emplace_back(
+            "config root failed validation: "
+            + std::string{bconfig::ComponentToString(config.component)} + " '"
+            + config.name + "'");
         return {JobStatus::kFailed, logs};
       }
 
-      logs.emplace_back("validated "
-                        + std::string{bconfig::ComponentToString(config.component)}
-                        + " '" + config.name + "'");
+      logs.emplace_back(
+          "validated "
+          + std::string{bconfig::ComponentToString(config.component)} + " '"
+          + config.name + "'");
     }
 
     logs.emplace_back("validated " + std::to_string(configs.size())
@@ -970,8 +1548,8 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
     std::optional<DeploymentRecord> deployment;
     {
       std::lock_guard guard{mutex_};
-      auto it = deployments_.find(*job_snapshot.deployment_id);
-      if (it != deployments_.end()) { deployment = it->second; }
+      deployment
+          = FindDeploymentLocked(deployments_, *job_snapshot.deployment_id);
     }
     if (!deployment) {
       logs.emplace_back("deployment not found");
@@ -988,9 +1566,8 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
     std::vector<ImportedComponent> imported_components;
     imported_components.reserve(SupportedImportComponents().size());
     for (const auto component : SupportedImportComponents()) {
-      auto imported = ImportComponentIntoDeployment(component, *source_root,
-                                                   deployment->repository_path,
-                                                   logs);
+      auto imported = ImportComponentIntoDeployment(
+          component, *source_root, deployment->repository_path, logs);
       if (!imported.value && imported.error.empty()) { continue; }
       if (!imported) {
         for (const auto& finished_import : imported_components) {
@@ -1003,6 +1580,27 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
       imported_components.emplace_back(std::move(*imported.value));
     }
 
+    const auto imported_director = std::find_if(
+        imported_components.begin(), imported_components.end(),
+        [](const ImportedComponent& imported) {
+          return imported.component == bconfig::Component::kDirector;
+        });
+    if (imported_director != imported_components.end()) {
+      auto generated = GenerateDirectorClientStubs(
+          *imported_director, deployment->repository_path, logs);
+      if (!generated) {
+        for (const auto& finished_import : imported_components) {
+          RemoveTreeQuietly(finished_import.destination_root);
+        }
+        logs.emplace_back(generated.error);
+        return {JobStatus::kFailed, logs};
+      }
+
+      imported_components.insert(imported_components.end(),
+                                 generated.value->begin(),
+                                 generated.value->end());
+    }
+
     if (imported_components.empty()) {
       logs.emplace_back("no supported Bareos config trees found under "
                         + source_root->string());
@@ -1011,8 +1609,8 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
 
     JobRecord finished_job = job_snapshot;
     finished_job.updated_at = MakeTimestamp();
-    if (auto error = UpdateImportState(deployment->repository_path, finished_job,
-                                       imported_components);
+    if (auto error = UpdateImportState(deployment->repository_path,
+                                       finished_job, imported_components);
         error) {
       for (const auto& finished_import : imported_components) {
         RemoveTreeQuietly(finished_import.destination_root);
@@ -1021,10 +1619,77 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
       return {JobStatus::kFailed, logs};
     }
 
-    logs.emplace_back("imported "
-                      + std::to_string(imported_components.size())
-                      + " component tree(s) from "
-                      + source_root->string());
+    logs.emplace_back("imported " + std::to_string(imported_components.size())
+                      + " component tree(s) from " + source_root->string());
+    return {JobStatus::kSucceeded, logs};
+  }
+
+  if (job_snapshot.type == "commit_deployment_repo") {
+    if (!job_snapshot.deployment_id) {
+      logs.emplace_back("deployment_id is required");
+      return {JobStatus::kFailed, logs};
+    }
+    if (!job_snapshot.commit_message || job_snapshot.commit_message->empty()) {
+      logs.emplace_back("commit_message is required");
+      return {JobStatus::kFailed, logs};
+    }
+
+    std::optional<DeploymentRecord> deployment;
+    {
+      std::lock_guard guard{mutex_};
+      deployment
+          = FindDeploymentLocked(deployments_, *job_snapshot.deployment_id);
+    }
+    if (!deployment) {
+      logs.emplace_back("deployment not found");
+      return {JobStatus::kFailed, logs};
+    }
+
+    auto add_result = RunGitCommand(deployment->repository_path, {"add", "-A"});
+    if (!add_result) {
+      logs.emplace_back(add_result.error);
+      return {JobStatus::kFailed, logs};
+    }
+
+    auto staged_paths = RunGitCommand(deployment->repository_path,
+                                      {"diff", "--cached", "--name-only"});
+    if (!staged_paths) {
+      logs.emplace_back(staged_paths.error);
+      return {JobStatus::kFailed, logs};
+    }
+    auto staged_lines = SplitLines(*staged_paths.value);
+    if (staged_lines.empty()) {
+      logs.emplace_back("no changes to commit");
+      return {JobStatus::kFailed, logs};
+    }
+
+    logs.emplace_back("staged " + std::to_string(staged_lines.size())
+                      + " path(s) for commit");
+    for (const auto& path : staged_lines) {
+      logs.emplace_back("staged path: " + path);
+    }
+
+    auto commit_result = RunGitCommand(
+        deployment->repository_path,
+        {"commit", "--quiet", "-m", *job_snapshot.commit_message});
+    if (!commit_result) {
+      logs.emplace_back(commit_result.error);
+      return {JobStatus::kFailed, logs};
+    }
+
+    auto commit_id
+        = RunGitCommand(deployment->repository_path, {"rev-parse", "HEAD"});
+    if (!commit_id) {
+      logs.emplace_back(commit_id.error);
+      return {JobStatus::kFailed, logs};
+    }
+
+    auto commit_sha = *commit_id.value;
+    while (!commit_sha.empty()
+           && (commit_sha.back() == '\n' || commit_sha.back() == '\r')) {
+      commit_sha.pop_back();
+    }
+    logs.emplace_back("created commit " + commit_sha);
     return {JobStatus::kSucceeded, logs};
   }
 
@@ -1034,8 +1699,8 @@ std::pair<JobStatus, std::vector<std::string>> ServiceState::ExecuteJob(
 
 std::string ServiceState::MakeTimestamp()
 {
-  const auto now = std::chrono::system_clock::to_time_t(
-      std::chrono::system_clock::now());
+  const auto now
+      = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
   std::tm utc{};
 #if HAVE_WIN32
   gmtime_s(&utc, &now);
@@ -1116,10 +1781,7 @@ std::string ServiceState::ManifestJson(const DeploymentRecord& record)
   return stream.str();
 }
 
-std::string ServiceState::EmptyObjectJson()
-{
-  return "{}\n";
-}
+std::string ServiceState::EmptyObjectJson() { return "{}\n"; }
 
 std::string ServiceState::SerializeState(
     uint64_t next_job_id,
@@ -1137,12 +1799,11 @@ std::string ServiceState::SerializeState(
            << "      \"id\": \"" << JsonEscape(deployment.id) << "\",\n"
            << "      \"name\": \"" << JsonEscape(deployment.name) << "\",\n"
            << "      \"repository_path\": \""
-           << JsonEscape(deployment.repository_path.generic_string())
-           << "\",\n"
+           << JsonEscape(deployment.repository_path.generic_string()) << "\",\n"
            << "      \"workflow_mode\": \""
            << ToString(deployment.workflow_mode) << "\",\n"
-           << "      \"created_at\": \""
-           << JsonEscape(deployment.created_at) << "\"\n"
+           << "      \"created_at\": \"" << JsonEscape(deployment.created_at)
+           << "\"\n"
            << "    }";
     if (i + 1 != deployments.size()) { stream << ","; }
     stream << "\n";
@@ -1173,6 +1834,13 @@ std::string ServiceState::SerializeState(
            << "      \"source_path\": ";
     if (job.source_path) {
       stream << "\"" << JsonEscape(*job.source_path) << "\"";
+    } else {
+      stream << "null";
+    }
+    stream << ",\n"
+           << "      \"commit_message\": ";
+    if (job.commit_message) {
+      stream << "\"" << JsonEscape(*job.commit_message) << "\"";
     } else {
       stream << "null";
     }
@@ -1232,7 +1900,8 @@ std::optional<std::string> ServiceState::InitializeRepositoryLayout(
     }
   }
 
-  const auto manifest_path = RepositoryLayout::ManifestPath(record.repository_path);
+  const auto manifest_path
+      = RepositoryLayout::ManifestPath(record.repository_path);
   if (std::filesystem::exists(manifest_path)) {
     return "repository manifest already exists at '" + manifest_path.string()
            + "'.";
@@ -1256,6 +1925,27 @@ std::optional<std::string> ServiceState::InitializeRepositoryLayout(
     return "failed to write import state file '" + import_state_path.string()
            + "'.";
   }
+
+  auto init_result
+      = RunCommand(BuildCommand({"git", "-c", "init.defaultBranch=main", "init",
+                                 "--quiet", record.repository_path.string()}));
+  if (!init_result) { return init_result.error; }
+
+  auto config_name = RunGitCommand(record.repository_path,
+                                   {"config", "user.name", "bconfig-service"});
+  if (!config_name) { return config_name.error; }
+  auto config_email
+      = RunGitCommand(record.repository_path,
+                      {"config", "user.email", "bconfig-service@localhost"});
+  if (!config_email) { return config_email.error; }
+  auto add_result = RunGitCommand(
+      record.repository_path, {"add", "manifest.json", "service/ownership.json",
+                               "service/import-state.json"});
+  if (!add_result) { return add_result.error; }
+  auto commit_result = RunGitCommand(
+      record.repository_path,
+      {"commit", "--quiet", "-m", "Initialize deployment repository"});
+  if (!commit_result) { return commit_result.error; }
 
   return std::nullopt;
 }
@@ -1324,6 +2014,7 @@ std::optional<std::string> ServiceState::LoadState()
     auto* deployment_id = json_object_get(entry, "deployment_id");
     auto* source_component = json_object_get(entry, "source_component");
     auto* source_path = json_object_get(entry, "source_path");
+    auto* commit_message = json_object_get(entry, "commit_message");
     auto* status = json_object_get(entry, "status");
     auto* created_at = json_object_get(entry, "created_at");
     auto* updated_at = json_object_get(entry, "updated_at");
@@ -1339,12 +2030,16 @@ std::optional<std::string> ServiceState::LoadState()
             && !json_is_string(source_component))
         || (source_path && !json_is_null(source_path)
             && !json_is_string(source_path))
+        || (commit_message && !json_is_null(commit_message)
+            && !json_is_string(commit_message))
         || !json_is_string(status) || !json_is_string(created_at)
         || !json_is_string(updated_at)
-        || (started_at && !json_is_null(started_at) && !json_is_string(started_at))
+        || (started_at && !json_is_null(started_at)
+            && !json_is_string(started_at))
         || (finished_at && !json_is_null(finished_at)
             && !json_is_string(finished_at))
-        || (last_error && !json_is_null(last_error) && !json_is_string(last_error))
+        || (last_error && !json_is_null(last_error)
+            && !json_is_string(last_error))
         || (logs && !json_is_array(logs))) {
       return "service state file '" + state_file.string()
              + "' contains an invalid job entry.";
@@ -1361,6 +2056,7 @@ std::optional<std::string> ServiceState::LoadState()
                      .deployment_id = std::nullopt,
                      .source_component = std::nullopt,
                      .source_path = std::nullopt,
+                     .commit_message = std::nullopt,
                      .status = *parsed_status,
                      .created_at = json_string_value(created_at),
                      .updated_at = json_string_value(updated_at)};
@@ -1368,10 +2064,14 @@ std::optional<std::string> ServiceState::LoadState()
       record.deployment_id = std::string{json_string_value(deployment_id)};
     }
     if (source_component && json_is_string(source_component)) {
-      record.source_component = std::string{json_string_value(source_component)};
+      record.source_component
+          = std::string{json_string_value(source_component)};
     }
     if (source_path && json_is_string(source_path)) {
       record.source_path = std::string{json_string_value(source_path)};
+    }
+    if (commit_message && json_is_string(commit_message)) {
+      record.commit_message = std::string{json_string_value(commit_message)};
     }
     if (started_at && json_is_string(started_at)) {
       record.started_at = std::string{json_string_value(started_at)};

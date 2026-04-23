@@ -61,67 +61,24 @@ struct InspectRequestSpec {
   std::vector<PeerLoadSpec> peers{};
 };
 
-struct DeploymentConfigSpec {
-  bconfig::Component component;
-  std::string name;
-  std::filesystem::path path;
+struct ClientDirectorStubRequestSpec {
+  std::string password{};
+  std::optional<std::string> description{};
 };
+
+std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
+    std::string_view body,
+    std::string& error);
 
 JsonPtr MakeJson(json_t* value) { return JsonPtr(value, &json_decref); }
 
 std::vector<bconfig::Component> SupportedDeploymentInspectComponents()
 {
-  return {bconfig::Component::kDirector,
-          bconfig::Component::kStorage,
+  return {bconfig::Component::kDirector, bconfig::Component::kStorage,
           bconfig::Component::kClient};
 }
 
-std::filesystem::path ComponentConfigDirectoryName(bconfig::Component component)
-{
-  switch (component) {
-    case bconfig::Component::kDirector:
-      return "bareos-dir.d";
-    case bconfig::Component::kStorage:
-      return "bareos-sd.d";
-    case bconfig::Component::kClient:
-      return "bareos-fd.d";
-#ifdef BCONFIG_HAVE_CONSOLE
-    case bconfig::Component::kConsole:
-      return {};
-#endif
-#ifdef BCONFIG_HAVE_TRAYMONITOR
-    case bconfig::Component::kTrayMonitor:
-      return {};
-#endif
-  }
-
-  return {};
-}
-
-std::filesystem::path ComponentBucketDirectory(
-    const std::filesystem::path& repository_root, bconfig::Component component)
-{
-  switch (component) {
-    case bconfig::Component::kDirector:
-      return RepositoryLayout::DirectorsDirectory(repository_root);
-    case bconfig::Component::kStorage:
-      return RepositoryLayout::StoragesDirectory(repository_root);
-    case bconfig::Component::kClient:
-      return RepositoryLayout::ClientsDirectory(repository_root);
-#ifdef BCONFIG_HAVE_CONSOLE
-    case bconfig::Component::kConsole:
-      return RepositoryLayout::ConsolesDirectory(repository_root);
-#endif
-#ifdef BCONFIG_HAVE_TRAYMONITOR
-    case bconfig::Component::kTrayMonitor:
-      return {};
-#endif
-  }
-
-  return {};
-}
-
-const char* kTestUiHtml = R"HTML(
+const char* kTestUiHtmlTemplate = R"HTML(
 <!doctype html>
 <html lang="en">
 <head>
@@ -255,6 +212,20 @@ const char* kTestUiHtml = R"HTML(
     .relation-list li {
       margin: 0.15rem 0;
     }
+    .detail-list {
+      margin: 0.35rem 0 0 1rem;
+      padding: 0;
+    }
+    .detail-list li {
+      margin: 0.25rem 0;
+    }
+    .detail-value-list {
+      margin: 0.25rem 0 0 1rem;
+      padding: 0;
+    }
+    .detail-value-list li {
+      margin: 0.15rem 0;
+    }
     .job-list {
       display: grid;
       gap: 0.75rem;
@@ -276,6 +247,24 @@ const char* kTestUiHtml = R"HTML(
     .import-item p {
       margin: 0.2rem 0;
       color: #475569;
+    }
+    .git-status-list {
+      margin: 0.5rem 0 0 1rem;
+      padding: 0;
+    }
+    .git-status-list li {
+      margin: 0.15rem 0;
+      font-family: monospace;
+    }
+    .diff-preview {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 0.75rem;
+      border-radius: 8px;
+      overflow: auto;
+      min-height: 12rem;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .job-item {
       border: 1px solid #dbe3ef;
@@ -323,7 +312,7 @@ const char* kTestUiHtml = R"HTML(
 
         <label for="deployment-repo">Repository path</label>
         <input id="deployment-repo" name="repository_path"
-               value="/tmp/bconfig-service-prod">
+               value="__DEFAULT_DEPLOYMENT_REPOSITORY_PATH__">
 
         <label for="deployment-workflow">Workflow mode</label>
         <select id="deployment-workflow" name="workflow_mode">
@@ -346,6 +335,9 @@ const char* kTestUiHtml = R"HTML(
           <option value="import_configuration">
             import_configuration
           </option>
+          <option value="commit_deployment_repo">
+            commit_deployment_repo
+          </option>
         </select>
 
         <label for="job-deployment-id">Deployment ID</label>
@@ -358,6 +350,10 @@ const char* kTestUiHtml = R"HTML(
           Entering a config root here automatically switches the job type to
           <code>import_configuration</code>.
         </p>
+
+        <label for="job-commit-message">Commit message</label>
+        <input id="job-commit-message" name="commit_message"
+               placeholder="Import Bareos config root">
 
         <button type="submit">POST /v1/jobs</button>
       </form>
@@ -405,6 +401,32 @@ const char* kTestUiHtml = R"HTML(
         <button type="submit">GET /v1/deployments/{id}/inspect</button>
       </form>
     </section>
+
+    <section class="card">
+      <h2>Upsert client director stub</h2>
+      <form id="client-stub-form">
+        <label for="client-stub-deployment-id">Deployment ID</label>
+        <input id="client-stub-deployment-id" name="deployment_id" value="prod">
+
+        <label for="client-stub-client-name">Client name</label>
+        <input id="client-stub-client-name" name="client_name" value="bareos-fd">
+
+        <label for="client-stub-director-name">Director name</label>
+        <input id="client-stub-director-name" name="director_name" value="bareos-dir">
+
+        <label for="client-stub-password">Password</label>
+        <input id="client-stub-password" name="password"
+               placeholder="cleartext or [md5]hash">
+
+        <label for="client-stub-description">Description</label>
+        <input id="client-stub-description" name="description"
+               placeholder="Managed director stub for client">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/clients/{client}/directors/{director}
+        </button>
+      </form>
+    </section>
   </div>
 
   <div class="layout" style="margin-top: 1rem;">
@@ -441,6 +463,37 @@ const char* kTestUiHtml = R"HTML(
     </section>
 
     <section class="card">
+      <h2>Deployment clients</h2>
+      <p class="contents-meta">
+        Shows imported client config roots from
+        <code>GET /v1/deployments/{id}/clients</code>.
+      </p>
+      <div id="deployment-clients" class="contents-panel">
+        <p class="contents-empty">Load a deployment to see its clients.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Deployment git status</h2>
+      <p class="contents-meta">
+        Shows repository state for the selected deployment.
+      </p>
+      <div id="deployment-git-status" class="contents-panel">
+        <p class="contents-empty">Load a deployment to see repository status.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Deployment diff preview</h2>
+      <p class="contents-meta">
+        Shows the current git diff and untracked files for the selected deployment.
+      </p>
+      <div id="deployment-diff-preview" class="contents-panel">
+        <p class="contents-empty">Load a deployment to see repository changes.</p>
+      </div>
+    </section>
+
+    <section class="card">
       <h2>API browser</h2>
       <div class="actions">
         <button type="button" class="secondary" id="health-button">
@@ -465,22 +518,29 @@ const char* kTestUiHtml = R"HTML(
             <code>storages/</code> so one deployment can contain many of each.
         </li>
         <li>Jobs currently execute asynchronously and update their status/logs.</li>
-        <li><code>import_configuration</code> scans a Bareos config root like
-            <code>/etc/bareos</code>, imports supported component trees it
-            finds, and records them in
-            <code>service/import-state.json</code>.
-        </li>
-      </ul>
-    </section>
-  </div>
+         <li><code>import_configuration</code> scans a Bareos config root like
+             <code>/etc/bareos</code>, imports supported component trees it
+             finds, and records them in
+             <code>service/import-state.json</code>.
+         </li>
+         <li>Default persisted service data lives under
+             <code>__DEFAULT_STORAGE_BASE_PATH__</code>.
+         </li>
+       </ul>
+     </section>
+   </div>
 
   <script>
     const responsePanel = document.getElementById('response-panel');
     const deploymentContentsPanel = document.getElementById('deployment-contents');
     const deploymentJobsPanel = document.getElementById('deployment-jobs');
     const deploymentImportsPanel = document.getElementById('deployment-imports');
+    const deploymentClientsPanel = document.getElementById('deployment-clients');
+    const deploymentGitStatusPanel = document.getElementById('deployment-git-status');
+    const deploymentDiffPreviewPanel = document.getElementById('deployment-diff-preview');
     const jobTypeField = document.getElementById('job-type');
     const jobSourcePathField = document.getElementById('job-source-path');
+    const jobCommitMessageField = document.getElementById('job-commit-message');
 
     function escapeHtml(value) {
       return String(value)
@@ -538,6 +598,24 @@ const char* kTestUiHtml = R"HTML(
           const directives = (resource.directives ?? []).map((directive) =>
             `<li>${escapeHtml(directive.name)}</li>`
           ).join('');
+          const nestedDetails = (resource.nested_details ?? []).map((detail) => {
+            const summary = detail.summary
+              ? ` "${escapeHtml(detail.summary)}"`
+              : '';
+            const source = detail.source
+              ? ` <code>${escapeHtml(detail.source.file)}</code>:${detail.source.line}`
+              : '';
+            const values = (detail.values ?? []).map((value) => {
+              const valueSource = value.source
+                ? ` <code>${escapeHtml(value.source.file)}</code>:${value.source.line}`
+                : '';
+              return `<li><strong>${escapeHtml(value.name)}:</strong> ${escapeHtml(value.value)}${valueSource}</li>`;
+            }).join('');
+            const valuesBlock = values
+              ? `<ul class="detail-value-list">${values}</ul>`
+              : '';
+            return `<li><strong>${escapeHtml(detail.kind)}</strong>${summary}${source}${valuesBlock}</li>`;
+          }).join('');
           const relations = (resource.relations ?? []).map((relation) =>
             `<li>${escapeHtml(relation.directive)} → <code>${escapeHtml(relation.target_type)}</code>: ${escapeHtml(relation.target_name)}</li>`
           ).join('');
@@ -546,6 +624,9 @@ const char* kTestUiHtml = R"HTML(
           ).join('');
           const source = resource.source
             ? `<p class="resource-meta"><strong>Source:</strong> <code>${escapeHtml(resource.source.file)}</code>:${resource.source.line}</p>`
+            : '';
+          const nestedDetailsBlock = nestedDetails
+            ? `<p class="resource-meta"><strong>Nested details</strong></p><ul class="detail-list">${nestedDetails}</ul>`
             : '';
           const relationsBlock = relations
             ? `<p class="resource-meta"><strong>Relations</strong></p><ul class="relation-list">${relations}</ul>`
@@ -560,10 +641,12 @@ const char* kTestUiHtml = R"HTML(
                 ${source}
                 <p class="resource-meta">
                   Directives: ${resource.directives?.length ?? 0};
+                  Nested details: ${resource.nested_details?.length ?? 0};
                   Relations: ${resource.relations?.length ?? 0};
                   External relations: ${resource.external_relations?.length ?? 0}
                 </p>
                 <ul class="directive-list">${directives}</ul>
+                ${nestedDetailsBlock}
                 ${relationsBlock}
                 ${externalRelationsBlock}
               </details>
@@ -614,12 +697,16 @@ const char* kTestUiHtml = R"HTML(
         const logs = (job.logs ?? []).map((entry) =>
           `<li>${escapeHtml(entry)}</li>`
         ).join('');
+        const commitMessage = job.commit_message
+          ? `<p><strong>Commit:</strong> ${escapeHtml(job.commit_message)}</p>`
+          : '';
         return `
           <div class="job-item">
             <h3>${escapeHtml(job.type)}</h3>
             <p><strong>Status:</strong> ${escapeHtml(job.status)}; 
                <strong>ID:</strong> <code>${escapeHtml(job.id)}</code></p>
             <p><strong>Updated:</strong> ${escapeHtml(job.updated_at)}</p>
+            ${commitMessage}
             <ul class="job-logs">${logs}</ul>
           </div>`;
       }).join('');
@@ -656,6 +743,34 @@ const char* kTestUiHtml = R"HTML(
       deploymentImportsPanel.innerHTML = `
         <p class="contents-meta"><strong>${escapeHtml(deploymentId)}</strong>:
         ${imports.length} import record(s)</p>
+        <div class="import-list">${items}</div>`;
+    }
+
+    function renderDeploymentClients(deploymentId, clients) {
+      if (!deploymentId) {
+        deploymentClientsPanel.innerHTML =
+          '<p class="contents-empty">Enter a deployment ID first.</p>';
+        return;
+      }
+
+      if (!clients.length) {
+        deploymentClientsPanel.innerHTML = `
+          <p class="contents-meta"><strong>${escapeHtml(deploymentId)}</strong>:
+          no client config roots found.</p>`;
+        return;
+      }
+
+      const items = clients.map((client) => `
+        <div class="import-item">
+          <h3>${escapeHtml(client.name)}</h3>
+          <p><strong>Component:</strong> ${escapeHtml(client.component)}</p>
+          <p><strong>Path:</strong> <code>${escapeHtml(client.path)}</code></p>
+          <p><strong>Detail:</strong> <code>/v1/deployments/${encodeURIComponent(deploymentId)}/clients/${encodeURIComponent(client.name)}</code></p>
+        </div>`).join('');
+
+      deploymentClientsPanel.innerHTML = `
+        <p class="contents-meta"><strong>${escapeHtml(deploymentId)}</strong>:
+        ${clients.length} client config root(s)</p>
         <div class="import-list">${items}</div>`;
     }
 
@@ -703,6 +818,122 @@ const char* kTestUiHtml = R"HTML(
       renderDeploymentImports(deploymentId, imports);
     }
 
+    async function loadDeploymentClients(deploymentId) {
+      if (!deploymentId) {
+        deploymentClientsPanel.innerHTML =
+          '<p class="contents-empty">Enter a deployment ID first.</p>';
+        return;
+      }
+
+      const { response, text } = await request(
+        'GET', `/v1/deployments/${deploymentId}/clients`);
+      if (!response.ok) {
+        deploymentClientsPanel.innerHTML =
+          '<p class="contents-empty">Could not load deployment clients.</p>';
+        return;
+      }
+
+      const document = JSON.parse(text);
+      renderDeploymentClients(deploymentId, document.clients ?? []);
+    }
+
+    function renderDeploymentGitStatus(deploymentId, status) {
+      if (!deploymentId) {
+        deploymentGitStatusPanel.innerHTML =
+          '<p class="contents-empty">Enter a deployment ID first.</p>';
+        return;
+      }
+
+      if (!status.initialized) {
+        deploymentGitStatusPanel.innerHTML = `
+          <p class="contents-meta"><strong>${escapeHtml(deploymentId)}</strong>:
+          repository is not initialized.</p>`;
+        return;
+      }
+
+      const entries = (status.entries ?? []).map((entry) =>
+        `<li>${escapeHtml(entry)}</li>`
+      ).join('');
+      const entryBlock = entries
+        ? `<ul class="git-status-list">${entries}</ul>`
+        : '<p class="contents-meta">Working tree is clean.</p>';
+      deploymentGitStatusPanel.innerHTML = `
+        <p class="contents-meta"><strong>${escapeHtml(deploymentId)}</strong>:
+        branch <code>${escapeHtml(status.branch || 'unknown')}</code>;
+        clean: ${status.clean ? 'yes' : 'no'};
+        staged changes: ${status.has_staged_changes ? 'yes' : 'no'};
+        untracked files: ${status.has_untracked_files ? 'yes' : 'no'}</p>
+        ${entryBlock}`;
+    }
+
+    async function loadDeploymentGitStatus(deploymentId) {
+      if (!deploymentId) {
+        deploymentGitStatusPanel.innerHTML =
+          '<p class="contents-empty">Enter a deployment ID first.</p>';
+        return;
+      }
+
+      const { response, text } = await request(
+        'GET', `/v1/deployments/${deploymentId}/git-status`);
+      if (!response.ok) {
+        deploymentGitStatusPanel.innerHTML =
+          '<p class="contents-empty">Could not load deployment git status.</p>';
+        return;
+      }
+
+      const document = JSON.parse(text);
+      renderDeploymentGitStatus(deploymentId, document.git_status ?? {});
+    }
+
+    function renderDeploymentDiffPreview(deploymentId, preview) {
+      if (!deploymentId) {
+        deploymentDiffPreviewPanel.innerHTML =
+          '<p class="contents-empty">Enter a deployment ID first.</p>';
+        return;
+      }
+
+      if (!preview.initialized) {
+        deploymentDiffPreviewPanel.innerHTML = `
+          <p class="contents-meta"><strong>${escapeHtml(deploymentId)}</strong>:
+          repository is not initialized.</p>`;
+        return;
+      }
+
+      const untracked = (preview.untracked_files ?? []).map((path) =>
+        `<li>${escapeHtml(path)}</li>`
+      ).join('');
+      const untrackedBlock = untracked
+        ? `<p class="contents-meta"><strong>Untracked files</strong></p><ul class="git-status-list">${untracked}</ul>`
+        : '';
+      const diffText = preview.diff
+        ? escapeHtml(preview.diff)
+        : 'Working tree matches HEAD.';
+      deploymentDiffPreviewPanel.innerHTML = `
+        <p class="contents-meta"><strong>${escapeHtml(deploymentId)}</strong>:
+        changes present: ${preview.has_changes ? 'yes' : 'no'}</p>
+        ${untrackedBlock}
+        <pre class="diff-preview">${diffText}</pre>`;
+    }
+
+    async function loadDeploymentDiffPreview(deploymentId) {
+      if (!deploymentId) {
+        deploymentDiffPreviewPanel.innerHTML =
+          '<p class="contents-empty">Enter a deployment ID first.</p>';
+        return;
+      }
+
+      const { response, text } = await request(
+        'GET', `/v1/deployments/${deploymentId}/diff`);
+      if (!response.ok) {
+        deploymentDiffPreviewPanel.innerHTML =
+          '<p class="contents-empty">Could not load deployment diff preview.</p>';
+        return;
+      }
+
+      const document = JSON.parse(text);
+      renderDeploymentDiffPreview(deploymentId, document.diff_preview ?? {});
+    }
+
     async function loadDeploymentContents(deploymentId) {
       if (!deploymentId) {
         deploymentContentsPanel.innerHTML =
@@ -721,6 +952,9 @@ const char* kTestUiHtml = R"HTML(
       renderDeploymentContents(JSON.parse(text));
       await loadDeploymentJobs(deploymentId);
       await loadDeploymentImports(deploymentId);
+      await loadDeploymentClients(deploymentId);
+      await loadDeploymentGitStatus(deploymentId);
+      await loadDeploymentDiffPreview(deploymentId);
     }
 
     async function followJob(jobId, deploymentId) {
@@ -729,6 +963,12 @@ const char* kTestUiHtml = R"HTML(
       deploymentJobsPanel.innerHTML =
         `<p class="contents-empty">Waiting for job <code>${escapeHtml(jobId)}</code> to finish...</p>`;
       deploymentImportsPanel.innerHTML =
+        `<p class="contents-empty">Waiting for job <code>${escapeHtml(jobId)}</code> to finish...</p>`;
+      deploymentClientsPanel.innerHTML =
+        `<p class="contents-empty">Waiting for job <code>${escapeHtml(jobId)}</code> to finish...</p>`;
+      deploymentGitStatusPanel.innerHTML =
+        `<p class="contents-empty">Waiting for job <code>${escapeHtml(jobId)}</code> to finish...</p>`;
+      deploymentDiffPreviewPanel.innerHTML =
         `<p class="contents-empty">Waiting for job <code>${escapeHtml(jobId)}</code> to finish...</p>`;
 
       for (let attempt = 0; attempt < 30; ++attempt) {
@@ -752,6 +992,12 @@ const char* kTestUiHtml = R"HTML(
         '<p class="contents-empty">Job is still running. Refresh deployment jobs in a moment.</p>';
       deploymentImportsPanel.innerHTML =
         '<p class="contents-empty">Job is still running. Refresh deployment imports in a moment.</p>';
+      deploymentClientsPanel.innerHTML =
+        '<p class="contents-empty">Job is still running. Refresh deployment clients in a moment.</p>';
+      deploymentGitStatusPanel.innerHTML =
+        '<p class="contents-empty">Job is still running. Refresh deployment git status in a moment.</p>';
+      deploymentDiffPreviewPanel.innerHTML =
+        '<p class="contents-empty">Job is still running. Refresh deployment diff preview in a moment.</p>';
     }
 
     document.getElementById('deployment-form').addEventListener(
@@ -762,6 +1008,7 @@ const char* kTestUiHtml = R"HTML(
         const payload = Object.fromEntries(form);
         document.getElementById('job-deployment-id').value = payload.id;
         document.getElementById('deployment-inspect-id').value = payload.id;
+        document.getElementById('client-stub-deployment-id').value = payload.id;
         await request('POST', '/v1/deployments', payload);
         await loadDeploymentContents(payload.id);
       });
@@ -776,6 +1023,7 @@ const char* kTestUiHtml = R"HTML(
           delete payload.deployment_id;
         }
         payload.source_path = (payload.source_path ?? '').trim();
+        payload.commit_message = (payload.commit_message ?? '').trim();
         if (payload.source_path) {
           payload.type = 'import_configuration';
           jobTypeField.value = 'import_configuration';
@@ -786,6 +1034,11 @@ const char* kTestUiHtml = R"HTML(
           if (!payload.source_path) {
             payload.source_path = '/etc/bareos';
           }
+        }
+        if (payload.type !== 'commit_deployment_repo') {
+          delete payload.commit_message;
+        } else if (!payload.commit_message) {
+          payload.commit_message = 'Update deployment repository';
         }
         const { response, text } = await request('POST', '/v1/jobs', payload);
         if (payload.deployment_id) {
@@ -803,6 +1056,11 @@ const char* kTestUiHtml = R"HTML(
     jobSourcePathField.addEventListener('input', () => {
       if (jobSourcePathField.value.trim()) {
         jobTypeField.value = 'import_configuration';
+      }
+    });
+    jobCommitMessageField.addEventListener('input', () => {
+      if (jobCommitMessageField.value.trim() && !jobSourcePathField.value.trim()) {
+        jobTypeField.value = 'commit_deployment_repo';
       }
     });
 
@@ -833,12 +1091,58 @@ const char* kTestUiHtml = R"HTML(
         const form = new FormData(event.target);
         await loadDeploymentContents(form.get('deployment_id'));
       });
+    document.getElementById('client-stub-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const clientName = String(form.get('client_name') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const payload = {
+          password: String(form.get('password') ?? '').trim(),
+          description: String(form.get('description') ?? '').trim(),
+        };
+        if (!payload.description) {
+          delete payload.description;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/clients/${encodeURIComponent(clientName)}/directors/${encodeURIComponent(directorName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
 
     request('GET', '/v1/health');
   </script>
 </body>
 </html>
 )HTML";
+
+std::string ReplaceAll(std::string text,
+                       std::string_view needle,
+                       std::string_view replacement)
+{
+  size_t position = 0;
+  while ((position = text.find(needle, position)) != std::string::npos) {
+    text.replace(position, needle.size(), replacement);
+    position += replacement.size();
+  }
+  return text;
+}
+
+std::string BuildTestUiHtml()
+{
+  auto html = std::string{kTestUiHtmlTemplate};
+  html = ReplaceAll(html, "__DEFAULT_DEPLOYMENT_REPOSITORY_PATH__",
+                    DefaultDeploymentRepositoryPath("prod").string());
+  html = ReplaceAll(html, "__DEFAULT_STORAGE_BASE_PATH__",
+                    DefaultStorageBasePath().string());
+  return html;
+}
 
 std::string DumpJson(json_t* value)
 {
@@ -917,6 +1221,12 @@ void AppendJob(json_t* array, const JobRecord& record)
   } else {
     json_object_set_new(object.get(), "source_path", json_null());
   }
+  if (record.commit_message) {
+    json_object_set_new(object.get(), "commit_message",
+                        json_string(record.commit_message->c_str()));
+  } else {
+    json_object_set_new(object.get(), "commit_message", json_null());
+  }
   json_object_set_new(object.get(), "status",
                       json_string(ToString(record.status).data()));
   json_object_set_new(object.get(), "created_at",
@@ -952,7 +1262,8 @@ void AppendJob(json_t* array, const JobRecord& record)
 void AppendDeploymentImport(json_t* array, const DeploymentImportRecord& record)
 {
   auto object = MakeJson(json_object());
-  json_object_set_new(object.get(), "job_id", json_string(record.job_id.c_str()));
+  json_object_set_new(object.get(), "job_id",
+                      json_string(record.job_id.c_str()));
   json_object_set_new(object.get(), "component",
                       json_string(record.component.c_str()));
   json_object_set_new(object.get(), "resource_name",
@@ -968,6 +1279,46 @@ void AppendDeploymentImport(json_t* array, const DeploymentImportRecord& record)
   json_object_set_new(object.get(), "imported_at",
                       json_string(record.imported_at.c_str()));
   json_array_append_new(array, object.release());
+}
+
+void SetDeploymentGitStatus(json_t* object,
+                            const DeploymentGitStatusRecord& status)
+{
+  auto git_status = MakeJson(json_object());
+  auto entries = MakeJson(json_array());
+  json_object_set_new(git_status.get(), "initialized",
+                      json_boolean(status.initialized));
+  json_object_set_new(git_status.get(), "branch",
+                      json_string(status.branch.c_str()));
+  json_object_set_new(git_status.get(), "clean", json_boolean(status.clean));
+  json_object_set_new(git_status.get(), "has_staged_changes",
+                      json_boolean(status.has_staged_changes));
+  json_object_set_new(git_status.get(), "has_untracked_files",
+                      json_boolean(status.has_untracked_files));
+  for (const auto& entry : status.entries) {
+    json_array_append_new(entries.get(), json_string(entry.c_str()));
+  }
+  json_object_set_new(git_status.get(), "entries", entries.release());
+  json_object_set_new(object, "git_status", git_status.release());
+}
+
+void SetDeploymentDiffPreview(json_t* object,
+                              const DeploymentDiffPreviewRecord& preview)
+{
+  auto diff_preview = MakeJson(json_object());
+  auto untracked = MakeJson(json_array());
+  json_object_set_new(diff_preview.get(), "initialized",
+                      json_boolean(preview.initialized));
+  json_object_set_new(diff_preview.get(), "has_changes",
+                      json_boolean(preview.has_changes));
+  json_object_set_new(diff_preview.get(), "diff",
+                      json_string(preview.diff.c_str()));
+  for (const auto& entry : preview.untracked_files) {
+    json_array_append_new(untracked.get(), json_string(entry.c_str()));
+  }
+  json_object_set_new(diff_preview.get(), "untracked_files",
+                      untracked.release());
+  json_object_set_new(object, "diff_preview", diff_preview.release());
 }
 
 void SetSource(json_t* object,
@@ -1005,7 +1356,8 @@ void SetMessages(json_t* object, const bconfig::ParseMessages& messages)
 json_t* DirectiveUseToJson(const bconfig::DirectiveUseEntry& directive)
 {
   auto object = MakeJson(json_object());
-  json_object_set_new(object.get(), "name", json_string(directive.name.c_str()));
+  json_object_set_new(object.get(), "name",
+                      json_string(directive.name.c_str()));
   SetSource(object.get(), "source", directive.source);
   return object.release();
 }
@@ -1160,9 +1512,8 @@ std::optional<InspectRequestSpec> ParseInspectRequest(std::string_view body,
       return std::nullopt;
     }
 
-    spec.peers.emplace_back(
-        PeerLoadSpec{.component = *parsed_peer_component,
-                     .path = json_string_value(peer_path)});
+    spec.peers.emplace_back(PeerLoadSpec{.component = *parsed_peer_component,
+                                         .path = json_string_value(peer_path)});
   }
 
   return spec;
@@ -1179,7 +1530,8 @@ JsonPtr BuildInspectionDocument(const InspectRequestSpec& spec,
   peer_configs.reserve(spec.peers.size());
   peer_refs.reserve(spec.peers.size());
   for (const auto& peer : spec.peers) {
-    peer_configs.emplace_back(bconfig::LoadConfig(peer.component, peer.path, true));
+    peer_configs.emplace_back(
+        bconfig::LoadConfig(peer.component, peer.path, true));
   }
   for (const auto& peer : peer_configs) { peer_refs.emplace_back(&peer); }
 
@@ -1197,12 +1549,12 @@ JsonPtr BuildInspectionDocument(const InspectRequestSpec& spec,
     json_object_set_new(
         peer_json.get(), "component",
         json_string(bconfig::ComponentToString(peer.component)));
-    json_object_set_new(peer_json.get(), "path",
-                        json_string(peer.parser
-                                        ? peer.parser->get_base_config_path()
-                                              .c_str()
-                                        : ""));
-    json_object_set_new(peer_json.get(), "parse_ok", json_boolean(peer.parse_ok));
+    json_object_set_new(
+        peer_json.get(), "path",
+        json_string(peer.parser ? peer.parser->get_base_config_path().c_str()
+                                : ""));
+    json_object_set_new(peer_json.get(), "parse_ok",
+                        json_boolean(peer.parse_ok));
     SetMessages(peer_json.get(), peer.messages);
     json_array_append_new(peers.get(), peer_json.release());
   }
@@ -1219,45 +1571,6 @@ JsonPtr BuildInspectionDocument(const InspectRequestSpec& spec,
   json_object_set_new(root.get(), "peers", peers.release());
   json_object_set_new(root.get(), "resources", resources.release());
   return root;
-}
-
-std::vector<DeploymentConfigSpec> DiscoverDeploymentConfigs(
-    const DeploymentRecord& deployment)
-{
-  std::vector<DeploymentConfigSpec> configs;
-
-  for (const auto component : SupportedDeploymentInspectComponents()) {
-    const auto bucket
-        = ComponentBucketDirectory(deployment.repository_path, component);
-    const auto config_directory_name = ComponentConfigDirectoryName(component);
-    if (bucket.empty() || config_directory_name.empty()
-        || !std::filesystem::is_directory(bucket)) {
-      continue;
-    }
-
-    for (const auto& entry : std::filesystem::directory_iterator(bucket)) {
-      if (!entry.is_directory()) { continue; }
-      if (!std::filesystem::is_directory(entry.path() / config_directory_name)) {
-        continue;
-      }
-
-      configs.push_back(DeploymentConfigSpec{
-          .component = component,
-          .name = entry.path().filename().string(),
-          .path = entry.path(),
-      });
-    }
-  }
-
-  std::sort(configs.begin(), configs.end(),
-            [](const auto& lhs, const auto& rhs) {
-              if (lhs.component != rhs.component) {
-                return std::string{bconfig::ComponentToString(lhs.component)}
-                       < std::string{bconfig::ComponentToString(rhs.component)};
-              }
-              return lhs.name < rhs.name;
-            });
-  return configs;
 }
 
 http::response<http::string_body> HandleSchemaRequest(
@@ -1323,12 +1636,36 @@ http::response<http::string_body> HandleSchemaRequest(
       }
       json_array_append_new(directives.get(), directive_json.release());
     }
-    json_object_set_new(resource_json.get(), "directives", directives.release());
+    json_object_set_new(resource_json.get(), "directives",
+                        directives.release());
     json_array_append_new(resources.get(), resource_json.release());
   }
 
   json_object_set_new(root.get(), "resources", resources.release());
   return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+void AppendDeploymentConfig(json_t* array, const DeploymentConfigRecord& record)
+{
+  auto object = MakeJson(json_object());
+  json_object_set_new(
+      object.get(), "component",
+      json_string(bconfig::ComponentToString(record.component)));
+  json_object_set_new(object.get(), "name", json_string(record.name.c_str()));
+  json_object_set_new(object.get(), "path",
+                      json_string(record.path.string().c_str()));
+  json_array_append_new(array, object.release());
+}
+
+JsonPtr BuildDeploymentConfigDocument(const DeploymentConfigRecord& config,
+                                      bool& parser_initialized)
+{
+  InspectRequestSpec spec{
+      .component = config.component, .path = config.path.string(), .peers = {}};
+  auto inspection = BuildInspectionDocument(spec, parser_initialized);
+  json_object_set_new(inspection.get(), "name",
+                      json_string(config.name.c_str()));
+  return inspection;
 }
 
 http::response<http::string_body> HandleInspectRequest(
@@ -1347,7 +1684,8 @@ http::response<http::string_body> HandleInspectRequest(
 }
 
 http::response<http::string_body> HandleDeploymentInspectRequest(
-    ServiceState& state, std::string_view deployment_id)
+    ServiceState& state,
+    std::string_view deployment_id)
 {
   auto deployment = state.GetDeployment(deployment_id);
   if (!deployment) {
@@ -1361,14 +1699,18 @@ http::response<http::string_body> HandleDeploymentInspectRequest(
   json_object_set(root.get(), "deployment",
                   json_array_get(deployment_json.get(), 0));
 
-  for (const auto& config : DiscoverDeploymentConfigs(*deployment)) {
-    InspectRequestSpec spec{.component = config.component,
-                            .path = config.path.string(),
-                            .peers = {}};
-    bool parser_initialized = false;
-    auto inspection = BuildInspectionDocument(spec, parser_initialized);
-    json_object_set_new(inspection.get(), "name", json_string(config.name.c_str()));
-    json_array_append_new(configs_json.get(), inspection.release());
+  for (const auto component : SupportedDeploymentInspectComponents()) {
+    auto configs = state.ListDeploymentConfigs(deployment_id, component);
+    if (!configs) {
+      return ErrorResponse(http::status::bad_request, configs.error);
+    }
+
+    for (const auto& config : *configs.value) {
+      bool parser_initialized = false;
+      auto inspection
+          = BuildDeploymentConfigDocument(config, parser_initialized);
+      json_array_append_new(configs_json.get(), inspection.release());
+    }
   }
 
   json_object_set_new(root.get(), "configs", configs_json.release());
@@ -1376,7 +1718,8 @@ http::response<http::string_body> HandleDeploymentInspectRequest(
 }
 
 http::response<http::string_body> HandleDeploymentImportsRequest(
-    ServiceState& state, std::string_view deployment_id)
+    ServiceState& state,
+    std::string_view deployment_id)
 {
   auto deployment = state.GetDeployment(deployment_id);
   if (!deployment) {
@@ -1401,6 +1744,154 @@ http::response<http::string_body> HandleDeploymentImportsRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body> HandleDeploymentClientsRequest(
+    ServiceState& state,
+    std::string_view deployment_id)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto clients
+      = state.ListDeploymentConfigs(deployment_id, bconfig::Component::kClient);
+  if (!clients) {
+    return ErrorResponse(http::status::bad_request, clients.error);
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  auto clients_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  for (const auto& client : *clients.value) {
+    AppendDeploymentConfig(clients_json.get(), client);
+  }
+  json_object_set_new(root.get(), "clients", clients_json.release());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentClientRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view client_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto client = state.GetDeploymentConfig(
+      deployment_id, bconfig::Component::kClient, client_name);
+  if (!client) { return ErrorResponse(http::status::not_found, client.error); }
+
+  bool parser_initialized = false;
+  auto client_json
+      = BuildDeploymentConfigDocument(*client.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request, DumpJson(client_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set(root.get(), "client", client_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentClientDirectorStubPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view client_name,
+    std::string_view director_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseClientDirectorStubRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  ClientDirectorStubSpec stub_spec{
+      .password = spec->password,
+      .description = spec->description,
+  };
+  auto result = state.UpsertClientDirectorStub(deployment_id, client_name,
+                                               director_name, stub_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto client_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request, DumpJson(client_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set(root.get(), "client", client_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentGitStatusRequest(
+    ServiceState& state,
+    std::string_view deployment_id)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto git_status = state.GetDeploymentGitStatus(deployment_id);
+  if (!git_status) {
+    return ErrorResponse(http::status::bad_request, git_status.error);
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  SetDeploymentGitStatus(root.get(), *git_status.value);
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDiffPreviewRequest(
+    ServiceState& state,
+    std::string_view deployment_id)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto diff_preview = state.GetDeploymentDiffPreview(deployment_id);
+  if (!diff_preview) {
+    return ErrorResponse(http::status::bad_request, diff_preview.error);
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  SetDeploymentDiffPreview(root.get(), *diff_preview.value);
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 std::vector<std::string_view> SplitPath(std::string_view target)
 {
   auto path = target.substr(0, target.find('?'));
@@ -1419,7 +1910,7 @@ std::vector<std::string_view> SplitPath(std::string_view target)
 }
 
 std::optional<DeploymentSpec> ParseDeploymentSpec(std::string_view body,
-                                                      std::string& error)
+                                                  std::string& error)
 {
   json_error_t json_error{};
   auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
@@ -1452,8 +1943,7 @@ std::optional<DeploymentSpec> ParseDeploymentSpec(std::string_view body,
 
     auto parsed = ParseWorkflowMode(json_string_value(workflow_mode));
     if (!parsed) {
-      error
-          = "workflow_mode must be 'direct_commit' or 'review'.";
+      error = "workflow_mode must be 'direct_commit' or 'review'.";
       return std::nullopt;
     }
     spec.workflow_mode = *parsed;
@@ -1475,6 +1965,7 @@ std::optional<JobSpec> ParseJobSpec(std::string_view body, std::string& error)
   auto* deployment_id = json_object_get(root.get(), "deployment_id");
   auto* source_component = json_object_get(root.get(), "source_component");
   auto* source_path = json_object_get(root.get(), "source_path");
+  auto* commit_message = json_object_get(root.get(), "commit_message");
   if (!json_is_string(type)) {
     error = "field 'type' must be a string.";
     return std::nullopt;
@@ -1490,8 +1981,14 @@ std::optional<JobSpec> ParseJobSpec(std::string_view body, std::string& error)
     error = "field 'source_component' must be a string when provided.";
     return std::nullopt;
   }
-  if (source_path && !json_is_null(source_path) && !json_is_string(source_path)) {
+  if (source_path && !json_is_null(source_path)
+      && !json_is_string(source_path)) {
     error = "field 'source_path' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (commit_message && !json_is_null(commit_message)
+      && !json_is_string(commit_message)) {
+    error = "field 'commit_message' must be a string when provided.";
     return std::nullopt;
   }
 
@@ -1506,7 +2003,46 @@ std::optional<JobSpec> ParseJobSpec(std::string_view body, std::string& error)
   if (source_path && json_is_string(source_path)) {
     spec.source_path = std::string{json_string_value(source_path)};
   }
+  if (commit_message && json_is_string(commit_message)) {
+    spec.commit_message = std::string{json_string_value(commit_message)};
+  }
 
+  return spec;
+}
+
+std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* password = json_object_get(root.get(), "password");
+  auto* description = json_object_get(root.get(), "description");
+  if (!json_is_string(password)) {
+    error = "field 'password' must be a string.";
+    return std::nullopt;
+  }
+  if (description && !json_is_null(description)
+      && !json_is_string(description)) {
+    error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+
+  ClientDirectorStubRequestSpec spec{
+      .password = json_string_value(password),
+  };
+  if (spec.password.empty()) {
+    error = "field 'password' must not be empty.";
+    return std::nullopt;
+  }
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
   return spec;
 }
 
@@ -1567,6 +2103,32 @@ http::response<http::string_body> HandleDeploymentsRequest(
     return HandleDeploymentImportsRequest(state, path_parts[2]);
   }
 
+  if (path_parts.size() == 4 && path_parts[3] == "clients"
+      && request.method() == http::verb::get) {
+    return HandleDeploymentClientsRequest(state, path_parts[2]);
+  }
+
+  if (path_parts.size() == 5 && path_parts[3] == "clients"
+      && request.method() == http::verb::get) {
+    return HandleDeploymentClientRequest(state, path_parts[2], path_parts[4]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "clients"
+      && path_parts[5] == "directors" && request.method() == http::verb::put) {
+    return HandleDeploymentClientDirectorStubPutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 4 && path_parts[3] == "git-status"
+      && request.method() == http::verb::get) {
+    return HandleDeploymentGitStatusRequest(state, path_parts[2]);
+  }
+
+  if (path_parts.size() == 4 && path_parts[3] == "diff"
+      && request.method() == http::verb::get) {
+    return HandleDeploymentDiffPreviewRequest(state, path_parts[2]);
+  }
+
   return ErrorResponse(http::status::not_found, "unknown deployments route.");
 }
 
@@ -1578,9 +2140,7 @@ http::response<http::string_body> HandleJobsRequest(
   if (path_parts.size() == 2 && request.method() == http::verb::get) {
     auto root = MakeJson(json_object());
     auto jobs = MakeJson(json_array());
-    for (const auto& job : state.ListJobs()) {
-      AppendJob(jobs.get(), job);
-    }
+    for (const auto& job : state.ListJobs()) { AppendJob(jobs.get(), job); }
     json_object_set_new(root.get(), "jobs", jobs.release());
     return JsonResponse(http::status::ok, DumpJson(root.get()));
   }
@@ -1605,7 +2165,9 @@ http::response<http::string_body> HandleJobsRequest(
 
   if (path_parts.size() == 3 && request.method() == http::verb::get) {
     auto job = state.GetJob(path_parts[2]);
-    if (!job) { return ErrorResponse(http::status::not_found, "job not found."); }
+    if (!job) {
+      return ErrorResponse(http::status::not_found, "job not found.");
+    }
 
     auto root = MakeJson(json_object());
     auto jobs = MakeJson(json_array());
@@ -1619,16 +2181,17 @@ http::response<http::string_body> HandleJobsRequest(
 }
 
 http::response<http::string_body> HandleRequest(
-    ServiceState& state, const http::request<http::string_body>& request)
+    ServiceState& state,
+    const http::request<http::string_body>& request)
 {
   const auto target
       = std::string_view{request.target().data(), request.target().size()};
-  const auto path_parts = SplitPath(std::string_view{request.target().data(),
-                                                     request.target().size()});
+  const auto path_parts = SplitPath(
+      std::string_view{request.target().data(), request.target().size()});
 
   if (request.method() == http::verb::get
       && (target == "/" || target == "/ui" || target == "/ui/")) {
-    return HtmlResponse(http::status::ok, kTestUiHtml);
+    return HtmlResponse(http::status::ok, BuildTestUiHtml());
   }
 
   if (path_parts.empty()) {
@@ -1636,9 +2199,10 @@ http::response<http::string_body> HandleRequest(
   }
 
   if (request.method() != http::verb::get
-      && request.method() != http::verb::post) {
+      && request.method() != http::verb::post
+      && request.method() != http::verb::put) {
     return ErrorResponse(http::status::method_not_allowed,
-                         "only GET and POST are currently supported.");
+                         "only GET, POST, and PUT are currently supported.");
   }
 
   if (path_parts.size() == 2 && path_parts[0] == "v1"
@@ -1682,9 +2246,8 @@ http::response<http::string_body> HandleRequest(
 void RunServer(const std::string& address, uint16_t port, ServiceState& state)
 {
   net::io_context io_context{1};
-  tcp::acceptor acceptor{
-      io_context,
-      tcp::endpoint{net::ip::make_address(address), port}};
+  tcp::acceptor acceptor{io_context,
+                         tcp::endpoint{net::ip::make_address(address), port}};
 
   std::cout << "bconfig-service listening on " << address << ":" << port
             << std::endl;
@@ -1722,17 +2285,18 @@ int main(int argc, char** argv)
 
   std::string address{"127.0.0.1"};
   uint16_t port = 8080;
-  std::string state_dir{
-      (std::filesystem::temp_directory_path() / "bconfig-service-state")
-          .string()};
+  std::string state_dir
+      = (bconfig::service::DefaultStorageBasePath() / "service-state").string();
   application.add_option("--address", address,
                          "Address to listen on for HTTP requests.");
-  application.add_option("--port", port, "Port to listen on for HTTP requests.");
+  application.add_option("--port", port,
+                         "Port to listen on for HTTP requests.");
   application.add_option("--state-dir", state_dir,
                          "Directory for persistent service state.");
 
   ParseBareosApp(application, argc, argv);
   OSDependentInit();
+  state_dir = bconfig::service::ExpandUserPath(state_dir).string();
 
   try {
     bconfig::service::ServiceState state{state_dir};
