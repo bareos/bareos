@@ -194,7 +194,11 @@ bool ConfigurationParser::ParseConfig()
   parser_first_run_ = false;
 
   if (!FindConfigPath(config_path)) {
-    Jmsg0(nullptr, M_CONFIG_ERROR, 0, T_("Failed to find config filename.\n"));
+    if (scan_error_) {
+      scan_error_(__FILE__, __LINE__, nullptr,
+                  T_("Failed to find config filename.\n"));
+    }
+    return false;
   }
   used_config_path_ = config_path.c_str();
   Dmsg1(100, "config file = %s\n", used_config_path_.c_str());

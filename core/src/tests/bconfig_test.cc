@@ -273,7 +273,27 @@ TEST(Bconfig, SurfacesBrokenReferences)
   EXPECT_FALSE(loaded.messages.errors.empty());
   EXPECT_TRUE(std::any_of(loaded.messages.errors.begin(),
                           loaded.messages.errors.end(), [](const auto& error) {
-                            return error.find("Could not find config resource")
+                           return error.find("Could not find config resource")
+                                   != std::string::npos;
+                          }));
+}
+
+TEST(Bconfig, ReportsMissingConfigPathWithoutExiting)
+{
+  auto missing_path
+      = std::filesystem::temp_directory_path() / "bconfig-missing-config-dir";
+  std::filesystem::remove_all(missing_path);
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    missing_path.string());
+
+  ASSERT_TRUE(loaded.parser);
+  EXPECT_FALSE(loaded.parse_ok);
+  EXPECT_FALSE(loaded.messages.errors.empty());
+  EXPECT_TRUE(std::any_of(loaded.messages.errors.begin(),
+                          loaded.messages.errors.end(), [](const auto& error) {
+                            return error.find(
+                                       "Failed to find config filename")
                                    != std::string::npos;
                           }));
 }

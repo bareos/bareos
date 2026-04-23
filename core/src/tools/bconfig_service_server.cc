@@ -41,6 +41,7 @@
 #include <iomanip>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <source_location>
 #include <sstream>
 #include <string>
@@ -786,6 +787,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
           const source = resource.source
             ? `<p class="resource-meta"><strong>Source:</strong> <code>${escapeHtml(resource.source.file)}</code>:${resource.source.line}</p>`
             : '';
+          const ownership = `<p class="resource-meta"><strong>Ownership:</strong> ${resource.managed ? 'service-managed' : 'imported-only'}</p>`;
           const nestedDetailsBlock = nestedDetails
             ? `<p class="resource-meta"><strong>Nested details</strong></p><ul class="detail-list">${nestedDetails}</ul>`
             : '';
@@ -800,6 +802,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
               <details>
                 <summary><code>${escapeHtml(resource.type)}</code>: ${escapeHtml(resource.name)}</summary>
                 ${source}
+                ${ownership}
                 <p class="resource-meta">
                   Directives: ${resource.directives?.length ?? 0};
                   Nested details: ${resource.nested_details?.length ?? 0};
@@ -825,6 +828,7 @@ const char* kTestUiHtmlTemplate = R"HTML(
             <p><strong>Path:</strong> <code>${escapeHtml(config.path)}</code></p>
             <p><strong>Parse:</strong> ${config.parse_ok ? 'ok' : 'failed'}; 
                <strong>Resources:</strong> ${config.resources?.length ?? 0};
+               <strong>Managed resources:</strong> ${config.managed_resource_count ?? 0};
                <strong>Warnings:</strong> ${warnings};
                <strong>Errors:</strong> ${errors}</p>
             ${warningBlock}
@@ -1752,6 +1756,106 @@ json_t* InspectionEntryToJson(const bconfig::ResourceInspectionEntry& entry)
   return object.release();
 }
 
+std::filesystem::path RepositoryRootFromConfigPath(
+    const std::filesystem::path& config_root)
+{
+  return config_root.parent_path().parent_path();
+}
+
+OperationResult<std::set<std::string>> LoadManagedPathsForRepository(
+    const std::filesystem::path& repository_root)
+{
+  const auto ownership_path = RepositoryLayout::OwnershipPath(repository_root);
+  if (!std::filesystem::exists(ownership_path)) {
+    return {.value = std::set<std::string>{}};
+  }
+
+  json_error_t json_error{};
+  auto root = MakeJson(json_load_file(ownership_path.c_str(), 0, &json_error));
+  if (!root) {
+    return {.error = "failed to parse ownership file '"
+                     + ownership_path.string() + "': " + json_error.text};
+  }
+  if (!json_is_object(root.get())) {
+    return {.error = "ownership file '" + ownership_path.string()
+                     + "' must contain a JSON object."};
+  }
+
+  std::set<std::string> managed_paths;
+  auto* managed_files = json_object_get(root.get(), "managed_files");
+  if (!managed_files) { return {.value = std::move(managed_paths)}; }
+  if (!json_is_array(managed_files)) {
+    return {.error = "ownership file '" + ownership_path.string()
+                     + "' contains a non-array 'managed_files' field."};
+  }
+
+  size_t index = 0;
+  json_t* entry = nullptr;
+  json_array_foreach(managed_files, index, entry)
+  {
+    if (!json_is_string(entry)) {
+      return {.error = "ownership file '" + ownership_path.string()
+                       + "' contains a non-string managed file entry."};
+    }
+    managed_paths.emplace(json_string_value(entry));
+  }
+
+  return {.value = std::move(managed_paths)};
+}
+
+bool IsManagedSourcePath(const std::set<std::string>& managed_paths,
+                         const std::filesystem::path& repository_root,
+                         const std::filesystem::path& source_path)
+{
+  std::error_code error_code;
+  const auto relative = std::filesystem::relative(source_path, repository_root,
+                                                  error_code);
+  if (error_code) { return false; }
+  return managed_paths.contains(relative.generic_string());
+}
+
+void AnnotateInspectionOwnership(json_t* inspection,
+                                 const std::filesystem::path& config_root)
+{
+  const auto repository_root = RepositoryRootFromConfigPath(config_root);
+  auto managed_paths = LoadManagedPathsForRepository(repository_root);
+  if (!managed_paths) {
+    json_object_set_new(inspection, "ownership_error",
+                        json_string(managed_paths.error.c_str()));
+    return;
+  }
+
+  auto* resources = json_object_get(inspection, "resources");
+  if (!json_is_array(resources)) {
+    json_object_set_new(inspection, "managed_resource_count", json_integer(0));
+    json_object_set_new(inspection, "has_managed_resources", json_false());
+    return;
+  }
+
+  size_t managed_resource_count = 0;
+  size_t index = 0;
+  json_t* resource = nullptr;
+  json_array_foreach(resources, index, resource)
+  {
+    bool managed = false;
+    auto* source = json_object_get(resource, "source");
+    if (json_is_object(source)) {
+      auto* file = json_object_get(source, "file");
+      if (json_is_string(file)) {
+        managed = IsManagedSourcePath(*managed_paths.value, repository_root,
+                                      json_string_value(file));
+      }
+    }
+    if (managed) { ++managed_resource_count; }
+    json_object_set_new(resource, "managed", json_boolean(managed));
+  }
+
+  json_object_set_new(inspection, "managed_resource_count",
+                      json_integer(managed_resource_count));
+  json_object_set_new(inspection, "has_managed_resources",
+                      json_boolean(managed_resource_count > 0));
+}
+
 std::optional<InspectRequestSpec> ParseInspectRequest(std::string_view body,
                                                       std::string& error)
 {
@@ -1957,6 +2061,7 @@ JsonPtr BuildDeploymentConfigDocument(const DeploymentConfigRecord& config,
   auto inspection = BuildInspectionDocument(spec, parser_initialized);
   json_object_set_new(inspection.get(), "name",
                       json_string(config.name.c_str()));
+  AnnotateInspectionOwnership(inspection.get(), config.path);
   return inspection;
 }
 
