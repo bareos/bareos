@@ -141,6 +141,45 @@ struct DirectorScheduleRequestSpec {
   std::optional<std::vector<std::string>> run_entries{};
 };
 
+struct DirectorCounterRequestSpec {
+  std::optional<int32_t> minimum{};
+  std::optional<uint32_t> maximum{};
+  std::optional<std::string> wrap_counter{};
+  std::optional<std::string> catalog{};
+  std::optional<std::string> description{};
+};
+
+struct DirectorFilesetRequestSpec {
+  std::optional<std::string> description{};
+  std::optional<bool> ignore_fileset_changes{};
+  std::optional<bool> enable_vss{};
+  std::optional<std::vector<std::string>> include_blocks{};
+  std::optional<std::vector<std::string>> exclude_blocks{};
+};
+
+struct DirectorJobRequestSpec {
+  std::optional<std::string> description{};
+  std::optional<std::string> type{};
+  std::optional<std::string> level{};
+  std::optional<std::string> messages{};
+  std::optional<std::vector<std::string>> storages{};
+  std::optional<std::string> pool{};
+  std::optional<std::string> full_backup_pool{};
+  std::optional<std::string> virtual_full_backup_pool{};
+  std::optional<std::string> incremental_backup_pool{};
+  std::optional<std::string> differential_backup_pool{};
+  std::optional<std::string> next_pool{};
+  std::optional<std::string> client{};
+  std::optional<std::string> fileset{};
+  std::optional<std::string> schedule{};
+  std::optional<std::string> verify_job{};
+  std::optional<std::string> catalog{};
+  std::optional<std::string> jobdefs{};
+  std::optional<std::string> where{};
+  std::optional<int32_t> priority{};
+  std::optional<bool> enabled{};
+};
+
 std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     std::string_view body,
     std::string& error);
@@ -168,6 +207,15 @@ std::optional<DirectorCatalogRequestSpec> ParseDirectorCatalogRequest(
 std::optional<DirectorScheduleRequestSpec> ParseDirectorScheduleRequest(
     std::string_view body,
     std::string& error);
+std::optional<DirectorCounterRequestSpec> ParseDirectorCounterRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<DirectorFilesetRequestSpec> ParseDirectorFilesetRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
+    std::string_view body,
+    std::string& error);
 
 JsonPtr MakeJson(json_t* value) { return JsonPtr(value, &json_decref); }
 
@@ -175,33 +223,30 @@ std::string MakeDebugTimestamp()
 {
   const auto now = std::chrono::system_clock::now();
   const auto now_seconds = std::chrono::system_clock::to_time_t(now);
-  const auto subseconds = now.time_since_epoch() % std::chrono::seconds(1);
-  constexpr auto kSubsecondTicksPerSecond
-      = std::chrono::system_clock::duration::period::den
-        / std::chrono::system_clock::duration::period::num;
-  constexpr int kSubsecondDigits = [] {
-    auto ticks = kSubsecondTicksPerSecond;
-    int digits = 0;
-    while (ticks > 1) {
-      ticks /= 10;
-      ++digits;
-    }
-    return digits;
-  }();
-  std::tm utc{};
+  const auto subseconds = std::chrono::duration_cast<std::chrono::microseconds>(
+                              now.time_since_epoch())
+                          % std::chrono::seconds(1);
+  constexpr int kSubsecondDigits = 6;
+  std::tm local{};
 #if HAVE_WIN32
-  gmtime_s(&utc, &now_seconds);
+  localtime_s(&local, &now_seconds);
 #else
-  gmtime_r(&now_seconds, &utc);
+  localtime_r(&now_seconds, &local);
 #endif
 
   std::ostringstream stream;
-  stream << std::put_time(&utc, "%Y-%m-%dT%H:%M:%S");
+  stream << std::put_time(&local, "%Y-%m-%dT%H:%M:%S");
   if constexpr (kSubsecondDigits > 0) {
     stream << '.' << std::setw(kSubsecondDigits) << std::setfill('0')
            << subseconds.count();
   }
-  stream << 'Z';
+  char offset_buffer[8]{};
+  if (std::strftime(offset_buffer, sizeof(offset_buffer), "%z", &local) == 5) {
+    stream << std::string_view{offset_buffer, 3} << ':'
+           << std::string_view{offset_buffer + 3, 2};
+  } else {
+    stream << "+00:00";
+  }
   return stream.str();
 }
 
@@ -907,6 +952,254 @@ const char* kTestUiHtmlTemplate = R"HTML(
         </button>
         <button type="button" id="director-schedule-delete-button">
           DELETE /v1/deployments/{id}/directors/{director}/schedules/{schedule}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director counter resource</h2>
+      <form id="director-counter-form">
+        <label for="director-counter-deployment-id">Deployment ID</label>
+        <input id="director-counter-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-counter-director-name">Director name</label>
+        <input id="director-counter-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-counter-counter-name">Counter name</label>
+        <input id="director-counter-counter-name" name="counter_name" value="ManagedCounter">
+
+        <label for="director-counter-minimum">Minimum</label>
+        <input id="director-counter-minimum" name="minimum" type="number">
+
+        <label for="director-counter-maximum">Maximum</label>
+        <input id="director-counter-maximum" name="maximum" type="number" min="0">
+
+        <label for="director-counter-wrap-counter">WrapCounter</label>
+        <input id="director-counter-wrap-counter" name="wrap_counter"
+               placeholder="OtherCounter">
+
+        <label for="director-counter-catalog">Catalog</label>
+        <input id="director-counter-catalog" name="catalog"
+               placeholder="MyCatalog">
+
+        <label for="director-counter-description">Description</label>
+        <input id="director-counter-description" name="description"
+               placeholder="Managed counter resource">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/counters/{counter}
+        </button>
+        <button type="button" id="director-counter-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/counters/{counter}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director fileset resource</h2>
+      <form id="director-fileset-form">
+        <label for="director-fileset-deployment-id">Deployment ID</label>
+        <input id="director-fileset-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-fileset-director-name">Director name</label>
+        <input id="director-fileset-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-fileset-fileset-name">FileSet name</label>
+        <input id="director-fileset-fileset-name" name="fileset_name" value="ManagedFileSet">
+
+        <label for="director-fileset-description">Description</label>
+        <input id="director-fileset-description" name="description"
+               placeholder="Managed fileset resource">
+
+        <label class="checkbox-label" for="director-fileset-ignore-fileset-changes">
+          <input id="director-fileset-ignore-fileset-changes"
+                 name="ignore_fileset_changes" type="checkbox">
+          IgnoreFileSetChanges
+        </label>
+
+        <label class="checkbox-label" for="director-fileset-enable-vss">
+          <input id="director-fileset-enable-vss"
+                 name="enable_vss" type="checkbox" checked>
+          EnableVSS
+        </label>
+
+        <label for="director-fileset-include-blocks">Include blocks</label>
+        <textarea id="director-fileset-include-blocks" name="include_blocks"
+                  rows="8"
+                  placeholder="Include {&#10;  Options {&#10;    Signature = XXH128&#10;  }&#10;  File = /tmp&#10;}"></textarea>
+
+        <label for="director-fileset-exclude-blocks">Exclude blocks</label>
+        <textarea id="director-fileset-exclude-blocks" name="exclude_blocks"
+                  rows="6"
+                  placeholder="Exclude {&#10;  File = /tmp/cache&#10;}"></textarea>
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/filesets/{fileset}
+        </button>
+        <button type="button" id="director-fileset-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/filesets/{fileset}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director job resource</h2>
+      <form id="director-job-form">
+        <label for="director-job-deployment-id">Deployment ID</label>
+        <input id="director-job-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-job-director-name">Director name</label>
+        <input id="director-job-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-job-job-name">Job name</label>
+        <input id="director-job-job-name" name="job_name" value="ManagedJob">
+
+        <label for="director-job-description">Description</label>
+        <input id="director-job-description" name="description"
+               placeholder="Managed job resource">
+
+        <label for="director-job-type">Type</label>
+        <input id="director-job-type" name="type" placeholder="Backup">
+
+        <label for="director-job-level">Level</label>
+        <input id="director-job-level" name="level" placeholder="Incremental">
+
+        <label for="director-job-messages">Messages</label>
+        <input id="director-job-messages" name="messages" placeholder="Standard">
+
+        <label for="director-job-storages">Storage entries</label>
+        <textarea id="director-job-storages" name="storages" rows="3"
+                  placeholder="File"></textarea>
+
+        <label for="director-job-pool">Pool</label>
+        <input id="director-job-pool" name="pool" placeholder="Incremental">
+
+        <label for="director-job-full-backup-pool">FullBackupPool</label>
+        <input id="director-job-full-backup-pool" name="full_backup_pool"
+               placeholder="Full">
+
+        <label for="director-job-virtual-full-backup-pool">VirtualFullBackupPool</label>
+        <input id="director-job-virtual-full-backup-pool"
+               name="virtual_full_backup_pool">
+
+        <label for="director-job-incremental-backup-pool">IncrementalBackupPool</label>
+        <input id="director-job-incremental-backup-pool"
+               name="incremental_backup_pool" placeholder="Incremental">
+
+        <label for="director-job-differential-backup-pool">DifferentialBackupPool</label>
+        <input id="director-job-differential-backup-pool"
+               name="differential_backup_pool" placeholder="Differential">
+
+        <label for="director-job-next-pool">NextPool</label>
+        <input id="director-job-next-pool" name="next_pool">
+
+        <label for="director-job-client">Client</label>
+        <input id="director-job-client" name="client" placeholder="bareos-fd">
+
+        <label for="director-job-fileset">FileSet</label>
+        <input id="director-job-fileset" name="fileset" placeholder="SelfTest">
+
+        <label for="director-job-schedule">Schedule</label>
+        <input id="director-job-schedule" name="schedule" placeholder="WeeklyCycle">
+
+        <label for="director-job-verify-job">JobToVerify</label>
+        <input id="director-job-verify-job" name="verify_job">
+
+        <label for="director-job-catalog">Catalog</label>
+        <input id="director-job-catalog" name="catalog" placeholder="MyCatalog">
+
+        <label for="director-job-jobdefs">JobDefs</label>
+        <input id="director-job-jobdefs" name="jobdefs" placeholder="DefaultJob">
+
+        <label for="director-job-where">Where</label>
+        <input id="director-job-where" name="where">
+
+        <label for="director-job-priority">Priority</label>
+        <input id="director-job-priority" name="priority" type="number">
+
+        <label class="checkbox-label" for="director-job-enabled">
+          <input id="director-job-enabled" name="enabled" type="checkbox" checked>
+          Enabled
+        </label>
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/jobs/{job}
+        </button>
+        <button type="button" id="director-job-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/jobs/{job}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director jobdefs resource</h2>
+      <form id="director-jobdefs-form">
+        <label for="director-jobdefs-deployment-id">Deployment ID</label>
+        <input id="director-jobdefs-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-jobdefs-director-name">Director name</label>
+        <input id="director-jobdefs-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-jobdefs-jobdefs-name">JobDefs name</label>
+        <input id="director-jobdefs-jobdefs-name" name="jobdefs_name" value="ManagedJobDefs">
+
+        <label for="director-jobdefs-description">Description</label>
+        <input id="director-jobdefs-description" name="description"
+               placeholder="Managed jobdefs resource">
+
+        <label for="director-jobdefs-type">Type</label>
+        <input id="director-jobdefs-type" name="type" placeholder="Backup">
+
+        <label for="director-jobdefs-level">Level</label>
+        <input id="director-jobdefs-level" name="level" placeholder="Incremental">
+
+        <label for="director-jobdefs-messages">Messages</label>
+        <input id="director-jobdefs-messages" name="messages" placeholder="Standard">
+
+        <label for="director-jobdefs-storages">Storage entries</label>
+        <textarea id="director-jobdefs-storages" name="storages" rows="3"
+                  placeholder="File"></textarea>
+
+        <label for="director-jobdefs-pool">Pool</label>
+        <input id="director-jobdefs-pool" name="pool" placeholder="Incremental">
+
+        <label for="director-jobdefs-full-backup-pool">FullBackupPool</label>
+        <input id="director-jobdefs-full-backup-pool" name="full_backup_pool"
+               placeholder="Full">
+
+        <label for="director-jobdefs-incremental-backup-pool">IncrementalBackupPool</label>
+        <input id="director-jobdefs-incremental-backup-pool"
+               name="incremental_backup_pool" placeholder="Incremental">
+
+        <label for="director-jobdefs-differential-backup-pool">DifferentialBackupPool</label>
+        <input id="director-jobdefs-differential-backup-pool"
+               name="differential_backup_pool" placeholder="Differential">
+
+        <label for="director-jobdefs-client">Client</label>
+        <input id="director-jobdefs-client" name="client" placeholder="bareos-fd">
+
+        <label for="director-jobdefs-fileset">FileSet</label>
+        <input id="director-jobdefs-fileset" name="fileset" placeholder="SelfTest">
+
+        <label for="director-jobdefs-schedule">Schedule</label>
+        <input id="director-jobdefs-schedule" name="schedule" placeholder="WeeklyCycle">
+
+        <label for="director-jobdefs-catalog">Catalog</label>
+        <input id="director-jobdefs-catalog" name="catalog" placeholder="MyCatalog">
+
+        <label for="director-jobdefs-priority">Priority</label>
+        <input id="director-jobdefs-priority" name="priority" type="number">
+
+        <label class="checkbox-label" for="director-jobdefs-enabled">
+          <input id="director-jobdefs-enabled" name="enabled" type="checkbox" checked>
+          Enabled
+        </label>
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/jobdefs/{jobdefs}
+        </button>
+        <button type="button" id="director-jobdefs-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/jobdefs/{jobdefs}
         </button>
       </form>
     </section>
@@ -2055,6 +2348,282 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const { response } = await request(
           'DELETE',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/schedules/${encodeURIComponent(scheduleName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-counter-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const counterName = String(form.get('counter_name') ?? '').trim();
+        const payload = {
+          minimum: String(form.get('minimum') ?? '').trim(),
+          maximum: String(form.get('maximum') ?? '').trim(),
+          wrap_counter: String(form.get('wrap_counter') ?? '').trim(),
+          catalog: String(form.get('catalog') ?? '').trim(),
+          description: String(form.get('description') ?? '').trim(),
+        };
+        if (payload.minimum) {
+          payload.minimum = Number.parseInt(payload.minimum, 10);
+        } else {
+          delete payload.minimum;
+        }
+        if (payload.maximum) {
+          payload.maximum = Number.parseInt(payload.maximum, 10);
+        } else {
+          delete payload.maximum;
+        }
+        if (!payload.wrap_counter) {
+          delete payload.wrap_counter;
+        }
+        if (!payload.catalog) {
+          delete payload.catalog;
+        }
+        if (!payload.description) {
+          delete payload.description;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/counters/${encodeURIComponent(counterName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-counter-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-counter-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const counterName = String(form.get('counter_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/counters/${encodeURIComponent(counterName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-fileset-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const filesetName = String(form.get('fileset_name') ?? '').trim();
+        const includeText = String(form.get('include_blocks') ?? '').trim();
+        const excludeText = String(form.get('exclude_blocks') ?? '').trim();
+        const payload = {
+          description: String(form.get('description') ?? '').trim(),
+          ignore_fileset_changes:
+            document.getElementById('director-fileset-ignore-fileset-changes').checked,
+          enable_vss: document.getElementById('director-fileset-enable-vss').checked,
+          include_blocks: includeText ? [includeText] : [],
+          exclude_blocks: excludeText ? [excludeText] : [],
+        };
+        if (!payload.description) {
+          delete payload.description;
+        }
+        if (payload.include_blocks.length === 0) {
+          delete payload.include_blocks;
+        }
+        if (payload.exclude_blocks.length === 0) {
+          delete payload.exclude_blocks;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/filesets/${encodeURIComponent(filesetName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-fileset-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-fileset-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const filesetName = String(form.get('fileset_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/filesets/${encodeURIComponent(filesetName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-job-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const jobName = String(form.get('job_name') ?? '').trim();
+        const rawStorages = String(form.get('storages') ?? '');
+        const storages = rawStorages.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const payload = {
+          description: String(form.get('description') ?? '').trim(),
+          type: String(form.get('type') ?? '').trim(),
+          level: String(form.get('level') ?? '').trim(),
+          messages: String(form.get('messages') ?? '').trim(),
+          storages,
+          pool: String(form.get('pool') ?? '').trim(),
+          full_backup_pool: String(form.get('full_backup_pool') ?? '').trim(),
+          virtual_full_backup_pool:
+            String(form.get('virtual_full_backup_pool') ?? '').trim(),
+          incremental_backup_pool:
+            String(form.get('incremental_backup_pool') ?? '').trim(),
+          differential_backup_pool:
+            String(form.get('differential_backup_pool') ?? '').trim(),
+          next_pool: String(form.get('next_pool') ?? '').trim(),
+          client: String(form.get('client') ?? '').trim(),
+          fileset: String(form.get('fileset') ?? '').trim(),
+          schedule: String(form.get('schedule') ?? '').trim(),
+          verify_job: String(form.get('verify_job') ?? '').trim(),
+          catalog: String(form.get('catalog') ?? '').trim(),
+          jobdefs: String(form.get('jobdefs') ?? '').trim(),
+          where: String(form.get('where') ?? '').trim(),
+          priority: String(form.get('priority') ?? '').trim(),
+          enabled: document.getElementById('director-job-enabled').checked,
+        };
+        if (!payload.description) { delete payload.description; }
+        if (!payload.type) { delete payload.type; }
+        if (!payload.level) { delete payload.level; }
+        if (!payload.messages) { delete payload.messages; }
+        if (payload.storages.length === 0) { delete payload.storages; }
+        if (!payload.pool) { delete payload.pool; }
+        if (!payload.full_backup_pool) { delete payload.full_backup_pool; }
+        if (!payload.virtual_full_backup_pool) {
+          delete payload.virtual_full_backup_pool;
+        }
+        if (!payload.incremental_backup_pool) {
+          delete payload.incremental_backup_pool;
+        }
+        if (!payload.differential_backup_pool) {
+          delete payload.differential_backup_pool;
+        }
+        if (!payload.next_pool) { delete payload.next_pool; }
+        if (!payload.client) { delete payload.client; }
+        if (!payload.fileset) { delete payload.fileset; }
+        if (!payload.schedule) { delete payload.schedule; }
+        if (!payload.verify_job) { delete payload.verify_job; }
+        if (!payload.catalog) { delete payload.catalog; }
+        if (!payload.jobdefs) { delete payload.jobdefs; }
+        if (!payload.where) { delete payload.where; }
+        if (!payload.priority) {
+          delete payload.priority;
+        } else {
+          payload.priority = Number.parseInt(payload.priority, 10);
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/jobs/${encodeURIComponent(jobName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-job-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-job-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const jobName = String(form.get('job_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/jobs/${encodeURIComponent(jobName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-jobdefs-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const jobdefsName = String(form.get('jobdefs_name') ?? '').trim();
+        const rawStorages = String(form.get('storages') ?? '');
+        const storages = rawStorages.split('\n')
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        const payload = {
+          description: String(form.get('description') ?? '').trim(),
+          type: String(form.get('type') ?? '').trim(),
+          level: String(form.get('level') ?? '').trim(),
+          messages: String(form.get('messages') ?? '').trim(),
+          storages,
+          pool: String(form.get('pool') ?? '').trim(),
+          full_backup_pool: String(form.get('full_backup_pool') ?? '').trim(),
+          incremental_backup_pool:
+            String(form.get('incremental_backup_pool') ?? '').trim(),
+          differential_backup_pool:
+            String(form.get('differential_backup_pool') ?? '').trim(),
+          client: String(form.get('client') ?? '').trim(),
+          fileset: String(form.get('fileset') ?? '').trim(),
+          schedule: String(form.get('schedule') ?? '').trim(),
+          catalog: String(form.get('catalog') ?? '').trim(),
+          priority: String(form.get('priority') ?? '').trim(),
+          enabled: document.getElementById('director-jobdefs-enabled').checked,
+        };
+        if (!payload.description) { delete payload.description; }
+        if (!payload.type) { delete payload.type; }
+        if (!payload.level) { delete payload.level; }
+        if (!payload.messages) { delete payload.messages; }
+        if (payload.storages.length === 0) { delete payload.storages; }
+        if (!payload.pool) { delete payload.pool; }
+        if (!payload.full_backup_pool) { delete payload.full_backup_pool; }
+        if (!payload.incremental_backup_pool) {
+          delete payload.incremental_backup_pool;
+        }
+        if (!payload.differential_backup_pool) {
+          delete payload.differential_backup_pool;
+        }
+        if (!payload.client) { delete payload.client; }
+        if (!payload.fileset) { delete payload.fileset; }
+        if (!payload.schedule) { delete payload.schedule; }
+        if (!payload.catalog) { delete payload.catalog; }
+        if (!payload.priority) {
+          delete payload.priority;
+        } else {
+          payload.priority = Number.parseInt(payload.priority, 10);
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/jobdefs/${encodeURIComponent(jobdefsName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-jobdefs-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-jobdefs-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const jobdefsName = String(form.get('jobdefs_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/jobdefs/${encodeURIComponent(jobdefsName)}`);
         if (response.ok) {
           document.getElementById('deployment-inspect-id').value = deploymentId;
           await loadDeploymentContents(deploymentId);
@@ -3627,6 +4196,388 @@ http::response<http::string_body> HandleDeploymentDirectorScheduleDeleteRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body> HandleDeploymentDirectorCounterPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view counter_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorCounterRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorCounterResourceSpec resource_spec{
+      .minimum = spec->minimum,
+      .maximum = spec->maximum,
+      .wrap_counter = spec->wrap_counter,
+      .catalog = spec->catalog,
+      .description = spec->description,
+  };
+  auto result = state.UpsertDirectorCounterResource(
+      deployment_id, director_name, counter_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "counter_name",
+                      json_string(std::string{counter_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorCounterDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view counter_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorCounterResource(
+      deployment_id, director_name, counter_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "counter_name",
+                      json_string(std::string{counter_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorFilesetPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view fileset_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorFilesetRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorFilesetResourceSpec resource_spec{
+      .description = spec->description,
+      .ignore_fileset_changes = spec->ignore_fileset_changes,
+      .enable_vss = spec->enable_vss,
+      .include_blocks = spec->include_blocks,
+      .exclude_blocks = spec->exclude_blocks,
+  };
+  auto result = state.UpsertDirectorFilesetResource(
+      deployment_id, director_name, fileset_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "fileset_name",
+                      json_string(std::string{fileset_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorFilesetDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view fileset_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorFilesetResource(
+      deployment_id, director_name, fileset_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "fileset_name",
+                      json_string(std::string{fileset_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorJobPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view job_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorJobRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorJobResourceSpec resource_spec{
+      .description = spec->description,
+      .type = spec->type,
+      .level = spec->level,
+      .messages = spec->messages,
+      .storages = spec->storages,
+      .pool = spec->pool,
+      .full_backup_pool = spec->full_backup_pool,
+      .virtual_full_backup_pool = spec->virtual_full_backup_pool,
+      .incremental_backup_pool = spec->incremental_backup_pool,
+      .differential_backup_pool = spec->differential_backup_pool,
+      .next_pool = spec->next_pool,
+      .client = spec->client,
+      .fileset = spec->fileset,
+      .schedule = spec->schedule,
+      .verify_job = spec->verify_job,
+      .catalog = spec->catalog,
+      .jobdefs = spec->jobdefs,
+      .where = spec->where,
+      .priority = spec->priority,
+      .enabled = spec->enabled,
+  };
+  auto result = state.UpsertDirectorJobResource(deployment_id, director_name,
+                                                job_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "job_name",
+                      json_string(std::string{job_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorJobDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view job_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result
+      = state.DeleteDirectorJobResource(deployment_id, director_name, job_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "job_name",
+                      json_string(std::string{job_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorJobDefsPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view jobdefs_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorJobRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorJobDefsResourceSpec resource_spec{
+      .description = spec->description,
+      .type = spec->type,
+      .level = spec->level,
+      .messages = spec->messages,
+      .storages = spec->storages,
+      .pool = spec->pool,
+      .full_backup_pool = spec->full_backup_pool,
+      .virtual_full_backup_pool = spec->virtual_full_backup_pool,
+      .incremental_backup_pool = spec->incremental_backup_pool,
+      .differential_backup_pool = spec->differential_backup_pool,
+      .next_pool = spec->next_pool,
+      .client = spec->client,
+      .fileset = spec->fileset,
+      .schedule = spec->schedule,
+      .verify_job = spec->verify_job,
+      .catalog = spec->catalog,
+      .jobdefs = spec->jobdefs,
+      .where = spec->where,
+      .priority = spec->priority,
+      .enabled = spec->enabled,
+  };
+  auto result = state.UpsertDirectorJobDefsResource(
+      deployment_id, director_name, jobdefs_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "jobdefs_name",
+                      json_string(std::string{jobdefs_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorJobDefsDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view jobdefs_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorJobDefsResource(
+      deployment_id, director_name, jobdefs_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "jobdefs_name",
+                      json_string(std::string{jobdefs_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 http::response<http::string_body> HandleDeploymentGitStatusRequest(
     ServiceState& state,
     std::string_view deployment_id)
@@ -4326,6 +5277,335 @@ std::optional<DirectorScheduleRequestSpec> ParseDirectorScheduleRequest(
   return spec;
 }
 
+std::optional<DirectorCounterRequestSpec> ParseDirectorCounterRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* minimum = json_object_get(root.get(), "minimum");
+  auto* maximum = json_object_get(root.get(), "maximum");
+  auto* wrap_counter = json_object_get(root.get(), "wrap_counter");
+  auto* catalog = json_object_get(root.get(), "catalog");
+  auto* description = json_object_get(root.get(), "description");
+
+  auto require_integer = [&error](json_t* value, const char* field) -> bool {
+    if (!value || json_is_null(value) || json_is_integer(value)) {
+      return true;
+    }
+    error = std::string{"field '"} + field
+            + "' must be an integer when provided.";
+    return false;
+  };
+  auto require_string = [&error](json_t* value, const char* field) -> bool {
+    if (!value || json_is_null(value) || json_is_string(value)) { return true; }
+    error
+        = std::string{"field '"} + field + "' must be a string when provided.";
+    return false;
+  };
+  if (!require_integer(minimum, "minimum")
+      || !require_integer(maximum, "maximum")
+      || !require_string(wrap_counter, "wrap_counter")
+      || !require_string(catalog, "catalog")
+      || !require_string(description, "description")) {
+    return std::nullopt;
+  }
+
+  DirectorCounterRequestSpec spec{};
+  if (minimum && json_is_integer(minimum)) {
+    const auto raw = json_integer_value(minimum);
+    if (raw < std::numeric_limits<int32_t>::min()
+        || raw > std::numeric_limits<int32_t>::max()) {
+      error = "field 'minimum' must be between -2147483648 and 2147483647.";
+      return std::nullopt;
+    }
+    spec.minimum = static_cast<int32_t>(raw);
+  }
+  if (maximum && json_is_integer(maximum)) {
+    const auto raw = json_integer_value(maximum);
+    if (raw < 0 || raw > std::numeric_limits<uint32_t>::max()) {
+      error = "field 'maximum' must be between 0 and 4294967295.";
+      return std::nullopt;
+    }
+    spec.maximum = static_cast<uint32_t>(raw);
+  }
+  if (wrap_counter && json_is_string(wrap_counter)) {
+    spec.wrap_counter = std::string{json_string_value(wrap_counter)};
+  }
+  if (catalog && json_is_string(catalog)) {
+    spec.catalog = std::string{json_string_value(catalog)};
+  }
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  return spec;
+}
+
+std::optional<DirectorFilesetRequestSpec> ParseDirectorFilesetRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* description = json_object_get(root.get(), "description");
+  auto* ignore_fileset_changes
+      = json_object_get(root.get(), "ignore_fileset_changes");
+  auto* enable_vss = json_object_get(root.get(), "enable_vss");
+  auto* include_blocks = json_object_get(root.get(), "include_blocks");
+  auto* exclude_blocks = json_object_get(root.get(), "exclude_blocks");
+
+  auto require_string = [&error](json_t* value, const char* field) -> bool {
+    if (!value || json_is_null(value) || json_is_string(value)) { return true; }
+    error
+        = std::string{"field '"} + field + "' must be a string when provided.";
+    return false;
+  };
+  auto require_boolean = [&error](json_t* value, const char* field) -> bool {
+    if (!value || json_is_null(value) || json_is_boolean(value)) {
+      return true;
+    }
+    error
+        = std::string{"field '"} + field + "' must be a boolean when provided.";
+    return false;
+  };
+  auto require_string_array
+      = [&error](json_t* value, const char* field) -> bool {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field + "' must contain only strings.";
+        return false;
+      }
+    }
+    return true;
+  };
+
+  if (!require_string(description, "description")
+      || !require_boolean(ignore_fileset_changes, "ignore_fileset_changes")
+      || !require_boolean(enable_vss, "enable_vss")
+      || !require_string_array(include_blocks, "include_blocks")
+      || !require_string_array(exclude_blocks, "exclude_blocks")) {
+    return std::nullopt;
+  }
+
+  auto parse_string_array
+      = [](json_t* value) -> std::optional<std::vector<std::string>> {
+    if (!value || !json_is_array(value)) { return std::nullopt; }
+    std::vector<std::string> result;
+    result.reserve(json_array_size(value));
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      result.emplace_back(json_string_value(json_array_get(value, index)));
+    }
+    return result;
+  };
+
+  DirectorFilesetRequestSpec spec{};
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  if (ignore_fileset_changes && json_is_boolean(ignore_fileset_changes)) {
+    spec.ignore_fileset_changes = json_is_true(ignore_fileset_changes);
+  }
+  if (enable_vss && json_is_boolean(enable_vss)) {
+    spec.enable_vss = json_is_true(enable_vss);
+  }
+  spec.include_blocks = parse_string_array(include_blocks);
+  spec.exclude_blocks = parse_string_array(exclude_blocks);
+  return spec;
+}
+
+std::optional<DirectorJobRequestSpec> ParseDirectorJobRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* description = json_object_get(root.get(), "description");
+  auto* type = json_object_get(root.get(), "type");
+  auto* level = json_object_get(root.get(), "level");
+  auto* messages = json_object_get(root.get(), "messages");
+  auto* storages = json_object_get(root.get(), "storages");
+  auto* pool = json_object_get(root.get(), "pool");
+  auto* full_backup_pool = json_object_get(root.get(), "full_backup_pool");
+  auto* virtual_full_backup_pool
+      = json_object_get(root.get(), "virtual_full_backup_pool");
+  auto* incremental_backup_pool
+      = json_object_get(root.get(), "incremental_backup_pool");
+  auto* differential_backup_pool
+      = json_object_get(root.get(), "differential_backup_pool");
+  auto* next_pool = json_object_get(root.get(), "next_pool");
+  auto* client = json_object_get(root.get(), "client");
+  auto* fileset = json_object_get(root.get(), "fileset");
+  auto* schedule = json_object_get(root.get(), "schedule");
+  auto* verify_job = json_object_get(root.get(), "verify_job");
+  auto* catalog = json_object_get(root.get(), "catalog");
+  auto* jobdefs = json_object_get(root.get(), "jobdefs");
+  auto* where = json_object_get(root.get(), "where");
+  auto* priority = json_object_get(root.get(), "priority");
+  auto* enabled = json_object_get(root.get(), "enabled");
+
+  auto require_string = [&error](json_t* value, const char* field) -> bool {
+    if (!value || json_is_null(value) || json_is_string(value)) { return true; }
+    error
+        = std::string{"field '"} + field + "' must be a string when provided.";
+    return false;
+  };
+  auto require_boolean = [&error](json_t* value, const char* field) -> bool {
+    if (!value || json_is_null(value) || json_is_boolean(value)) {
+      return true;
+    }
+    error
+        = std::string{"field '"} + field + "' must be a boolean when provided.";
+    return false;
+  };
+  auto require_integer = [&error](json_t* value, const char* field) -> bool {
+    if (!value || json_is_null(value) || json_is_integer(value)) {
+      return true;
+    }
+    error = std::string{"field '"} + field
+            + "' must be an integer when provided.";
+    return false;
+  };
+  auto require_string_array
+      = [&error](json_t* value, const char* field) -> bool {
+    if (!value || json_is_null(value)) { return true; }
+    if (!json_is_array(value)) {
+      error = std::string{"field '"} + field
+              + "' must be an array of strings when provided.";
+      return false;
+    }
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      if (!json_is_string(json_array_get(value, index))) {
+        error = std::string{"field '"} + field + "' must contain only strings.";
+        return false;
+      }
+    }
+    return true;
+  };
+
+  if (!require_string(description, "description")
+      || !require_string(type, "type") || !require_string(level, "level")
+      || !require_string(messages, "messages")
+      || !require_string_array(storages, "storages")
+      || !require_string(pool, "pool")
+      || !require_string(full_backup_pool, "full_backup_pool")
+      || !require_string(virtual_full_backup_pool, "virtual_full_backup_pool")
+      || !require_string(incremental_backup_pool, "incremental_backup_pool")
+      || !require_string(differential_backup_pool, "differential_backup_pool")
+      || !require_string(next_pool, "next_pool")
+      || !require_string(client, "client")
+      || !require_string(fileset, "fileset")
+      || !require_string(schedule, "schedule")
+      || !require_string(verify_job, "verify_job")
+      || !require_string(catalog, "catalog")
+      || !require_string(jobdefs, "jobdefs") || !require_string(where, "where")
+      || !require_integer(priority, "priority")
+      || !require_boolean(enabled, "enabled")) {
+    return std::nullopt;
+  }
+
+  auto parse_string_array
+      = [](json_t* value) -> std::optional<std::vector<std::string>> {
+    if (!value || !json_is_array(value)) { return std::nullopt; }
+    std::vector<std::string> result;
+    result.reserve(json_array_size(value));
+    for (size_t index = 0; index < json_array_size(value); ++index) {
+      result.emplace_back(json_string_value(json_array_get(value, index)));
+    }
+    return result;
+  };
+
+  DirectorJobRequestSpec spec{};
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  if (type && json_is_string(type)) {
+    spec.type = std::string{json_string_value(type)};
+  }
+  if (level && json_is_string(level)) {
+    spec.level = std::string{json_string_value(level)};
+  }
+  if (messages && json_is_string(messages)) {
+    spec.messages = std::string{json_string_value(messages)};
+  }
+  spec.storages = parse_string_array(storages);
+  if (pool && json_is_string(pool)) {
+    spec.pool = std::string{json_string_value(pool)};
+  }
+  if (full_backup_pool && json_is_string(full_backup_pool)) {
+    spec.full_backup_pool = std::string{json_string_value(full_backup_pool)};
+  }
+  if (virtual_full_backup_pool && json_is_string(virtual_full_backup_pool)) {
+    spec.virtual_full_backup_pool
+        = std::string{json_string_value(virtual_full_backup_pool)};
+  }
+  if (incremental_backup_pool && json_is_string(incremental_backup_pool)) {
+    spec.incremental_backup_pool
+        = std::string{json_string_value(incremental_backup_pool)};
+  }
+  if (differential_backup_pool && json_is_string(differential_backup_pool)) {
+    spec.differential_backup_pool
+        = std::string{json_string_value(differential_backup_pool)};
+  }
+  if (next_pool && json_is_string(next_pool)) {
+    spec.next_pool = std::string{json_string_value(next_pool)};
+  }
+  if (client && json_is_string(client)) {
+    spec.client = std::string{json_string_value(client)};
+  }
+  if (fileset && json_is_string(fileset)) {
+    spec.fileset = std::string{json_string_value(fileset)};
+  }
+  if (schedule && json_is_string(schedule)) {
+    spec.schedule = std::string{json_string_value(schedule)};
+  }
+  if (verify_job && json_is_string(verify_job)) {
+    spec.verify_job = std::string{json_string_value(verify_job)};
+  }
+  if (catalog && json_is_string(catalog)) {
+    spec.catalog = std::string{json_string_value(catalog)};
+  }
+  if (jobdefs && json_is_string(jobdefs)) {
+    spec.jobdefs = std::string{json_string_value(jobdefs)};
+  }
+  if (where && json_is_string(where)) {
+    spec.where = std::string{json_string_value(where)};
+  }
+  if (priority && json_is_integer(priority)) {
+    const auto raw = json_integer_value(priority);
+    if (raw < std::numeric_limits<int32_t>::min()
+        || raw > std::numeric_limits<int32_t>::max()) {
+      error = "field 'priority' must be between -2147483648 and 2147483647.";
+      return std::nullopt;
+    }
+    spec.priority = static_cast<int32_t>(raw);
+  }
+  if (enabled && json_is_boolean(enabled)) {
+    spec.enabled = json_is_true(enabled);
+  }
+  return spec;
+}
+
 http::response<http::string_body> HandleDeploymentsRequest(
     ServiceState& state,
     const http::request<http::string_body>& request,
@@ -4490,6 +5770,53 @@ http::response<http::string_body> HandleDeploymentsRequest(
       && path_parts[5] == "schedules"
       && request.method() == http::verb::delete_) {
     return HandleDeploymentDirectorScheduleDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "counters" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorCounterPutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "counters"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorCounterDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "filesets" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorFilesetPutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "filesets"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorFilesetDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "jobs" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorJobPutRequest(state, request, path_parts[2],
+                                                 path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "jobs" && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorJobDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "jobdefs" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorJobDefsPutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "jobdefs"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorJobDefsDeleteRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 

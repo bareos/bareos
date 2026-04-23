@@ -175,6 +175,68 @@ struct DirectorScheduleResourceSpec {
   std::optional<std::vector<std::string>> run_entries{};
 };
 
+struct DirectorCounterResourceSpec {
+  std::optional<int32_t> minimum{};
+  std::optional<uint32_t> maximum{};
+  std::optional<std::string> wrap_counter{};
+  std::optional<std::string> catalog{};
+  std::optional<std::string> description{};
+};
+
+struct DirectorFilesetResourceSpec {
+  std::optional<std::string> description{};
+  std::optional<bool> ignore_fileset_changes{};
+  std::optional<bool> enable_vss{};
+  std::optional<std::vector<std::string>> include_blocks{};
+  std::optional<std::vector<std::string>> exclude_blocks{};
+};
+
+struct DirectorJobResourceSpec {
+  std::optional<std::string> description{};
+  std::optional<std::string> type{};
+  std::optional<std::string> level{};
+  std::optional<std::string> messages{};
+  std::optional<std::vector<std::string>> storages{};
+  std::optional<std::string> pool{};
+  std::optional<std::string> full_backup_pool{};
+  std::optional<std::string> virtual_full_backup_pool{};
+  std::optional<std::string> incremental_backup_pool{};
+  std::optional<std::string> differential_backup_pool{};
+  std::optional<std::string> next_pool{};
+  std::optional<std::string> client{};
+  std::optional<std::string> fileset{};
+  std::optional<std::string> schedule{};
+  std::optional<std::string> verify_job{};
+  std::optional<std::string> catalog{};
+  std::optional<std::string> jobdefs{};
+  std::optional<std::string> where{};
+  std::optional<int32_t> priority{};
+  std::optional<bool> enabled{};
+};
+
+struct DirectorJobDefsResourceSpec {
+  std::optional<std::string> description{};
+  std::optional<std::string> type{};
+  std::optional<std::string> level{};
+  std::optional<std::string> messages{};
+  std::optional<std::vector<std::string>> storages{};
+  std::optional<std::string> pool{};
+  std::optional<std::string> full_backup_pool{};
+  std::optional<std::string> virtual_full_backup_pool{};
+  std::optional<std::string> incremental_backup_pool{};
+  std::optional<std::string> differential_backup_pool{};
+  std::optional<std::string> next_pool{};
+  std::optional<std::string> client{};
+  std::optional<std::string> fileset{};
+  std::optional<std::string> schedule{};
+  std::optional<std::string> verify_job{};
+  std::optional<std::string> catalog{};
+  std::optional<std::string> jobdefs{};
+  std::optional<std::string> where{};
+  std::optional<int32_t> priority{};
+  std::optional<bool> enabled{};
+};
+
 struct JobSpec {
   std::string type{};
   std::optional<std::string> deployment_id{};
@@ -324,6 +386,42 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view schedule_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorCounterResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view counter_name,
+      const DirectorCounterResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorCounterResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view counter_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorFilesetResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view fileset_name,
+      const DirectorFilesetResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorFilesetResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view fileset_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorJobResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view job_name,
+      const DirectorJobResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorJobResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view job_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorJobDefsResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view jobdefs_name,
+      const DirectorJobDefsResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorJobDefsResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view jobdefs_name) const;
   OperationResult<std::vector<DeploymentImportRecord>> ListDeploymentImports(
       std::string_view deployment_id) const;
   OperationResult<DeploymentGitStatusRecord> GetDeploymentGitStatus(

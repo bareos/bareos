@@ -24,6 +24,8 @@
 
 #include "dird/dird_conf.h"
 #include "include/bareos.h"
+#include "include/job_level.h"
+#include "include/job_types.h"
 #include "lib/bpipe.h"
 #include "lib/message.h"
 #include "lib/thread_specific_data.h"
@@ -58,33 +60,30 @@ std::string MakeDebugTimestamp()
 {
   const auto now = std::chrono::system_clock::now();
   const auto now_seconds = std::chrono::system_clock::to_time_t(now);
-  const auto subseconds = now.time_since_epoch() % std::chrono::seconds(1);
-  constexpr auto kSubsecondTicksPerSecond
-      = std::chrono::system_clock::duration::period::den
-        / std::chrono::system_clock::duration::period::num;
-  constexpr int kSubsecondDigits = [] {
-    auto ticks = kSubsecondTicksPerSecond;
-    int digits = 0;
-    while (ticks > 1) {
-      ticks /= 10;
-      ++digits;
-    }
-    return digits;
-  }();
-  std::tm utc{};
+  const auto subseconds = std::chrono::duration_cast<std::chrono::microseconds>(
+                              now.time_since_epoch())
+                          % std::chrono::seconds(1);
+  constexpr int kSubsecondDigits = 6;
+  std::tm local{};
 #if HAVE_WIN32
-  gmtime_s(&utc, &now_seconds);
+  localtime_s(&local, &now_seconds);
 #else
-  gmtime_r(&now_seconds, &utc);
+  localtime_r(&now_seconds, &local);
 #endif
 
   std::ostringstream stream;
-  stream << std::put_time(&utc, "%Y-%m-%dT%H:%M:%S");
+  stream << std::put_time(&local, "%Y-%m-%dT%H:%M:%S");
   if constexpr (kSubsecondDigits > 0) {
     stream << '.' << std::setw(kSubsecondDigits) << std::setfill('0')
            << subseconds.count();
   }
-  stream << 'Z';
+  char offset_buffer[8]{};
+  if (std::strftime(offset_buffer, sizeof(offset_buffer), "%z", &local) == 5) {
+    stream << std::string_view{offset_buffer, 3} << ':'
+           << std::string_view{offset_buffer + 3, 2};
+  } else {
+    stream << "+00:00";
+  }
   return stream.str();
 }
 
@@ -674,6 +673,46 @@ struct DirectorScheduleContentSpec {
   std::vector<std::string> run_entries{};
 };
 
+struct DirectorCounterContentSpec {
+  std::optional<std::string> description{};
+  int32_t minimum{0};
+  int32_t maximum{2147483647};
+  std::optional<std::string> wrap_counter{};
+  std::optional<std::string> catalog{};
+};
+
+struct DirectorFilesetContentSpec {
+  std::optional<std::string> description{};
+  bool ignore_fileset_changes{false};
+  bool enable_vss{true};
+  std::vector<std::string> include_blocks{};
+  std::vector<std::string> exclude_blocks{};
+};
+
+struct DirectorJobContentSpec {
+  std::optional<std::string> description{};
+  std::optional<std::string> type{};
+  std::optional<std::string> level{};
+  std::optional<std::string> messages{};
+  std::vector<std::string> storages{};
+  std::optional<std::string> pool{};
+  std::optional<std::string> full_backup_pool{};
+  std::optional<std::string> virtual_full_backup_pool{};
+  std::optional<std::string> incremental_backup_pool{};
+  std::optional<std::string> differential_backup_pool{};
+  std::optional<std::string> next_pool{};
+  std::optional<std::string> client{};
+  std::optional<std::string> fileset{};
+  std::optional<std::string> schedule{};
+  std::optional<std::string> verify_job{};
+  std::optional<std::string> catalog{};
+  std::optional<std::string> jobdefs{};
+  std::optional<std::string> where{};
+  std::optional<int32_t> priority{};
+  std::optional<bool> enabled{};
+  std::vector<std::string> passthrough_entries{};
+};
+
 std::string BuildDirectorClientResourceContent(std::string_view client_name,
                                                std::string_view address,
                                                std::string_view password,
@@ -932,6 +971,120 @@ std::string BuildDirectorScheduleResourceContent(
   return content.str();
 }
 
+std::string BuildDirectorCounterResourceContent(
+    std::string_view counter_name,
+    const DirectorCounterContentSpec& spec)
+{
+  std::ostringstream content;
+  content << "Counter {\n"
+          << "  Name = " << QuoteBareosString(counter_name) << "\n";
+  AppendQuotedDirective(content, "Description", spec.description);
+  content << "  Minimum = " << spec.minimum << "\n"
+          << "  Maximum = " << spec.maximum << "\n";
+  AppendBareosDirective(content, "WrapCounter", spec.wrap_counter);
+  AppendBareosDirective(content, "Catalog", spec.catalog);
+  content << "}\n";
+  return content.str();
+}
+
+std::string BuildDirectorFilesetResourceContent(
+    std::string_view fileset_name,
+    const DirectorFilesetContentSpec& spec)
+{
+  std::ostringstream content;
+  content << "FileSet {\n"
+          << "  Name = " << QuoteBareosString(fileset_name) << "\n";
+  AppendQuotedDirective(content, "Description", spec.description);
+  content << "  IgnoreFileSetChanges = "
+          << RenderBareosBool(spec.ignore_fileset_changes) << "\n"
+          << "  EnableVSS = " << RenderBareosBool(spec.enable_vss) << "\n";
+  for (const auto& block : spec.include_blocks) {
+    content << block;
+    if (block.empty() || block.back() != '\n') { content << "\n"; }
+  }
+  for (const auto& block : spec.exclude_blocks) {
+    content << block;
+    if (block.empty() || block.back() != '\n') { content << "\n"; }
+  }
+  content << "}\n";
+  return content.str();
+}
+
+std::string BuildDirectorJobResourceContent(std::string_view job_name,
+                                            const DirectorJobContentSpec& spec)
+{
+  std::ostringstream content;
+  content << "Job {\n"
+          << "  Name = " << QuoteBareosString(job_name) << "\n";
+  AppendQuotedDirective(content, "Description", spec.description);
+  AppendBareosDirective(content, "Type", spec.type);
+  AppendBareosDirective(content, "Level", spec.level);
+  AppendBareosDirective(content, "Messages", spec.messages);
+  AppendRepeatedBareosDirective(content, "Storage", spec.storages);
+  AppendBareosDirective(content, "Pool", spec.pool);
+  AppendBareosDirective(content, "FullBackupPool", spec.full_backup_pool);
+  AppendBareosDirective(content, "VirtualFullBackupPool",
+                        spec.virtual_full_backup_pool);
+  AppendBareosDirective(content, "IncrementalBackupPool",
+                        spec.incremental_backup_pool);
+  AppendBareosDirective(content, "DifferentialBackupPool",
+                        spec.differential_backup_pool);
+  AppendBareosDirective(content, "NextPool", spec.next_pool);
+  AppendBareosDirective(content, "Client", spec.client);
+  AppendBareosDirective(content, "FileSet", spec.fileset);
+  AppendBareosDirective(content, "Schedule", spec.schedule);
+  AppendBareosDirective(content, "JobToVerify", spec.verify_job);
+  AppendBareosDirective(content, "Catalog", spec.catalog);
+  AppendBareosDirective(content, "JobDefs", spec.jobdefs);
+  AppendBareosDirective(content, "Where", spec.where);
+  AppendIntegerDirective(content, "Priority", spec.priority);
+  AppendBoolDirective(content, "Enabled", spec.enabled);
+  for (const auto& entry : spec.passthrough_entries) {
+    content << entry;
+    if (entry.empty() || entry.back() != '\n') { content << "\n"; }
+  }
+  content << "}\n";
+  return content.str();
+}
+
+std::string BuildDirectorJobDefsResourceContent(
+    std::string_view jobdefs_name,
+    const DirectorJobContentSpec& spec)
+{
+  std::ostringstream content;
+  content << "JobDefs {\n"
+          << "  Name = " << QuoteBareosString(jobdefs_name) << "\n";
+  AppendQuotedDirective(content, "Description", spec.description);
+  AppendBareosDirective(content, "Type", spec.type);
+  AppendBareosDirective(content, "Level", spec.level);
+  AppendBareosDirective(content, "Messages", spec.messages);
+  AppendRepeatedBareosDirective(content, "Storage", spec.storages);
+  AppendBareosDirective(content, "Pool", spec.pool);
+  AppendBareosDirective(content, "FullBackupPool", spec.full_backup_pool);
+  AppendBareosDirective(content, "VirtualFullBackupPool",
+                        spec.virtual_full_backup_pool);
+  AppendBareosDirective(content, "IncrementalBackupPool",
+                        spec.incremental_backup_pool);
+  AppendBareosDirective(content, "DifferentialBackupPool",
+                        spec.differential_backup_pool);
+  AppendBareosDirective(content, "NextPool", spec.next_pool);
+  AppendBareosDirective(content, "Client", spec.client);
+  AppendBareosDirective(content, "FileSet", spec.fileset);
+  AppendBareosDirective(content, "Schedule", spec.schedule);
+  AppendBareosDirective(content, "JobToVerify", spec.verify_job);
+  AppendBareosDirective(content, "Catalog", spec.catalog);
+  AppendBareosDirective(content, "JobDefs", spec.jobdefs);
+  AppendBareosDirective(content, "Where", spec.where);
+  AppendIntegerDirective(content, "Priority", spec.priority);
+  AppendBoolDirective(content, "Enabled", spec.enabled);
+  for (const auto& entry : spec.passthrough_entries) {
+    content << entry;
+    if (entry.empty() || entry.back() != '\n') { content << "\n"; }
+  }
+  content << "}\n";
+  return content.str();
+}
+
 std::string BuildStorageDaemonDirectorResourceContent(
     std::string_view director_name,
     std::string_view password,
@@ -1024,6 +1177,34 @@ std::string DefaultDirectorScheduleDescription(std::string_view schedule_name,
                                                std::string_view director_name)
 {
   return "Managed schedule resource for " + std::string{schedule_name}
+         + " in director " + std::string{director_name};
+}
+
+std::string DefaultDirectorCounterDescription(std::string_view counter_name,
+                                              std::string_view director_name)
+{
+  return "Managed counter resource for " + std::string{counter_name}
+         + " in director " + std::string{director_name};
+}
+
+std::string DefaultDirectorFilesetDescription(std::string_view fileset_name,
+                                              std::string_view director_name)
+{
+  return "Managed fileset resource for " + std::string{fileset_name}
+         + " in director " + std::string{director_name};
+}
+
+std::string DefaultDirectorJobDescription(std::string_view job_name,
+                                          std::string_view director_name)
+{
+  return "Managed job resource for " + std::string{job_name} + " in director "
+         + std::string{director_name};
+}
+
+std::string DefaultDirectorJobDefsDescription(std::string_view jobdefs_name,
+                                              std::string_view director_name)
+{
+  return "Managed jobdefs resource for " + std::string{jobdefs_name}
          + " in director " + std::string{director_name};
 }
 
@@ -1243,6 +1424,34 @@ struct DirectorCatalogWriteContext {
 struct DirectorScheduleWriteContext {
   std::filesystem::path file_path{};
   DirectorScheduleContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorCounterWriteContext {
+  std::filesystem::path file_path{};
+  DirectorCounterContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorFilesetWriteContext {
+  std::filesystem::path file_path{};
+  DirectorFilesetContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorJobWriteContext {
+  std::filesystem::path file_path{};
+  DirectorJobContentSpec content{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorJobDefsWriteContext {
+  std::filesystem::path file_path{};
+  DirectorJobContentSpec content{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -1490,6 +1699,187 @@ std::string TrimAsciiWhitespace(std::string_view value)
   return std::string{value.substr(begin, end - begin)};
 }
 
+std::string NormalizeDirectiveName(std::string_view value)
+{
+  std::string normalized;
+  normalized.reserve(value.size());
+  for (const char character : value) {
+    if (std::isspace(static_cast<unsigned char>(character))) { continue; }
+    normalized.push_back(character);
+  }
+  return normalized;
+}
+
+int CountBraces(std::string_view value)
+{
+  int depth = 0;
+  for (const char character : value) {
+    if (character == '{') {
+      ++depth;
+    } else if (character == '}') {
+      --depth;
+    }
+  }
+  return depth;
+}
+
+OperationResult<std::vector<std::string>> ExtractJobPassthroughEntries(
+    const std::filesystem::path& file_path,
+    const std::set<std::string>& controlled_directives)
+{
+  auto file = ReadFile(file_path);
+  if (!file) { return {.error = file.error}; }
+
+  std::vector<std::string> entries;
+  std::istringstream stream{*file.value};
+  std::string line;
+  bool in_job = false;
+  int job_depth = 0;
+  bool capturing_entry = false;
+  int entry_depth = 0;
+  std::ostringstream entry;
+
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    const int brace_delta = CountBraces(line);
+
+    if (!in_job) {
+      if (trimmed.rfind("Job", 0) == 0
+          && trimmed.find('{') != std::string::npos) {
+        in_job = true;
+        job_depth += brace_delta;
+      }
+      continue;
+    }
+
+    if (capturing_entry) {
+      entry << line << "\n";
+      entry_depth += brace_delta;
+      job_depth += brace_delta;
+      if (entry_depth <= 0) {
+        entries.push_back(entry.str());
+        entry.str({});
+        entry.clear();
+        capturing_entry = false;
+      }
+      if (job_depth <= 0) { break; }
+      continue;
+    }
+
+    if (job_depth == 1) {
+      if (!trimmed.empty() && trimmed[0] != '#') {
+        const auto equals = trimmed.find('=');
+        const auto open_brace = trimmed.find('{');
+        if (open_brace != std::string::npos
+            && (equals == std::string::npos || open_brace < equals)) {
+          const auto name = NormalizeDirectiveName(
+              TrimAsciiWhitespace(trimmed.substr(0, open_brace)));
+          if (!controlled_directives.contains(name)) {
+            entry << line << "\n";
+            entry_depth = brace_delta;
+            capturing_entry = entry_depth > 0;
+            if (!capturing_entry) {
+              entries.push_back(entry.str());
+              entry.str({});
+              entry.clear();
+            }
+          }
+        } else if (equals != std::string::npos) {
+          const auto name = NormalizeDirectiveName(
+              TrimAsciiWhitespace(trimmed.substr(0, equals)));
+          if (!controlled_directives.contains(name)) {
+            entries.push_back(line + "\n");
+          }
+        }
+      }
+    }
+
+    job_depth += brace_delta;
+    if (job_depth <= 0) { break; }
+  }
+
+  if (capturing_entry) {
+    return {.error = "unterminated preserved job block in '"
+                     + file_path.string() + "'."};
+  }
+  return {.value = std::move(entries)};
+}
+
+OperationResult<std::string> RenderJobTypeForConfig(uint32_t job_type)
+{
+  switch (job_type) {
+    case JT_BACKUP:
+      return {.value = std::string{"Backup"}};
+    case JT_ADMIN:
+      return {.value = std::string{"Admin"}};
+    case JT_ARCHIVE:
+      return {.value = std::string{"Archive"}};
+    case JT_VERIFY:
+      return {.value = std::string{"Verify"}};
+    case JT_RESTORE:
+      return {.value = std::string{"Restore"}};
+    case JT_MIGRATE:
+      return {.value = std::string{"Migrate"}};
+    case JT_COPY:
+      return {.value = std::string{"Copy"}};
+    case JT_CONSOLIDATE:
+      return {.value = std::string{"Consolidate"}};
+    case 0:
+      return {.value = std::string{}};
+    default:
+      return {.error = "unsupported director job Type value "
+                       + std::to_string(job_type) + "."};
+  }
+}
+
+OperationResult<std::string> RenderJobLevelForConfig(uint32_t job_level,
+                                                     uint32_t job_type)
+{
+  if (job_level == L_NONE || job_level == 0) {
+    return {.value = std::string{}};
+  }
+
+  switch (job_level) {
+    case L_FULL:
+      return {.value = std::string{"Full"}};
+    case L_BASE:
+      return {.value = std::string{"Base"}};
+    case L_INCREMENTAL:
+      return {.value = std::string{"Incremental"}};
+    case L_DIFFERENTIAL:
+      return {.value = std::string{"Differential"}};
+    case L_SINCE:
+      return {.value = std::string{"Since"}};
+    case L_VIRTUAL_FULL:
+      return {.value = std::string{"VirtualFull"}};
+    case L_VERIFY_CATALOG:
+      if (job_type == JT_VERIFY) { return {.value = std::string{"Catalog"}}; }
+      break;
+    case L_VERIFY_INIT:
+      if (job_type == JT_VERIFY) {
+        return {.value = std::string{"InitCatalog"}};
+      }
+      break;
+    case L_VERIFY_VOLUME_TO_CATALOG:
+      if (job_type == JT_VERIFY) {
+        return {.value = std::string{"VolumeToCatalog"}};
+      }
+      break;
+    case L_VERIFY_DISK_TO_CATALOG:
+      if (job_type == JT_VERIFY) {
+        return {.value = std::string{"DiskToCatalog"}};
+      }
+      break;
+    case L_VERIFY_DATA:
+      if (job_type == JT_VERIFY) { return {.value = std::string{"Data"}}; }
+      break;
+  }
+
+  return {.error = "unsupported director job Level value "
+                   + std::to_string(job_level) + " for type "
+                   + std::to_string(job_type) + "."};
+}
+
 OperationResult<std::vector<std::string>> ExtractScheduleRunEntries(
     const std::filesystem::path& file_path)
 {
@@ -1508,6 +1898,54 @@ OperationResult<std::vector<std::string>> ExtractScheduleRunEntries(
     if (!value.empty()) { entries.push_back(std::move(value)); }
   }
   return {.value = std::move(entries)};
+}
+
+OperationResult<std::vector<std::string>> ExtractResourceBlocks(
+    const std::filesystem::path& file_path,
+    std::string_view block_name)
+{
+  auto file = ReadFile(file_path);
+  if (!file) { return {.error = file.error}; }
+
+  std::vector<std::string> blocks;
+  std::istringstream stream{*file.value};
+  std::string line;
+  bool in_block = false;
+  int brace_depth = 0;
+  std::ostringstream current;
+  while (std::getline(stream, line)) {
+    const auto trimmed = TrimAsciiWhitespace(line);
+    if (!in_block) {
+      if (trimmed.rfind(block_name, 0) != 0
+          || trimmed.find('{') == std::string::npos) {
+        continue;
+      }
+      in_block = true;
+      brace_depth = 0;
+      current.str({});
+      current.clear();
+    }
+
+    current << line << "\n";
+    for (const char character : line) {
+      if (character == '{') {
+        ++brace_depth;
+      } else if (character == '}') {
+        --brace_depth;
+      }
+    }
+
+    if (in_block && brace_depth <= 0) {
+      blocks.push_back(current.str());
+      in_block = false;
+    }
+  }
+
+  if (in_block) {
+    return {.error = "unterminated " + std::string{block_name} + " block in '"
+                     + file_path.string() + "'."};
+  }
+  return {.value = std::move(blocks)};
 }
 
 template <typename Resource>
@@ -2052,6 +2490,383 @@ OperationResult<DirectorScheduleWriteContext> LoadDirectorScheduleWriteContext(
     auto runs = ExtractScheduleRunEntries(context.file_path);
     if (!runs) { return {.error = runs.error}; }
     context.content.run_entries = std::move(*runs.value);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorCounterWriteContext> LoadDirectorCounterWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view counter_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorCounterWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "counter"
+                   / (std::string{counter_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_COUNTER, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_COUNTER, resource)) {
+    auto* counter = dynamic_cast<directordaemon::CounterResource*>(resource);
+    if (!counter) { continue; }
+    if (auto source = counter->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_COUNTER, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_COUNTER, resource)) {
+    auto* counter = dynamic_cast<directordaemon::CounterResource*>(resource);
+    if (!counter || !counter->resource_name_
+        || counter->resource_name_ != counter_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (counter->description_ && counter->description_[0] != '\0') {
+      context.content.description = std::string{counter->description_};
+    }
+    context.content.minimum = counter->MinValue;
+    context.content.maximum = counter->MaxValue;
+    context.content.wrap_counter = CopyResourceName(counter->WrapCounter);
+    context.content.catalog = CopyResourceName(counter->Catalog);
+
+    auto source = counter->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director counter '" + std::string{counter_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director counter '" + std::string{counter_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorFilesetWriteContext> LoadDirectorFilesetWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view fileset_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorFilesetWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "fileset"
+                   / (std::string{fileset_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_FILESET, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_FILESET, resource)) {
+    auto* fileset = dynamic_cast<directordaemon::FilesetResource*>(resource);
+    if (!fileset) { continue; }
+    if (auto source = fileset->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_FILESET, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_FILESET, resource)) {
+    auto* fileset = dynamic_cast<directordaemon::FilesetResource*>(resource);
+    if (!fileset || !fileset->resource_name_
+        || fileset->resource_name_ != fileset_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (fileset->description_ && fileset->description_[0] != '\0') {
+      context.content.description = std::string{fileset->description_};
+    }
+    context.content.ignore_fileset_changes = fileset->ignore_fs_changes;
+    context.content.enable_vss = fileset->enable_vss;
+
+    auto source = fileset->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director fileset '" + std::string{fileset_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director fileset '" + std::string{fileset_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+
+    auto include_blocks = ExtractResourceBlocks(context.file_path, "Include");
+    if (!include_blocks) { return {.error = include_blocks.error}; }
+    context.content.include_blocks = std::move(*include_blocks.value);
+
+    auto exclude_blocks = ExtractResourceBlocks(context.file_path, "Exclude");
+    if (!exclude_blocks) { return {.error = exclude_blocks.error}; }
+    context.content.exclude_blocks = std::move(*exclude_blocks.value);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorJobWriteContext> LoadDirectorJobWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view job_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorJobWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "job"
+                   / (std::string{job_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_JOB, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(directordaemon::R_JOB, resource)) {
+    auto* job = dynamic_cast<directordaemon::JobResource*>(resource);
+    if (!job) { continue; }
+    if (auto source = job->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_JOB, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(directordaemon::R_JOB, resource)) {
+    auto* job = dynamic_cast<directordaemon::JobResource*>(resource);
+    if (!job || !job->resource_name_ || job->resource_name_ != job_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (job->description_ && job->description_[0] != '\0') {
+      context.content.description = std::string{job->description_};
+    }
+    auto type = RenderJobTypeForConfig(job->JobType);
+    if (!type) { return {.error = type.error}; }
+    if (!type.value->empty()) { context.content.type = *type.value; }
+    auto level = RenderJobLevelForConfig(job->JobLevel, job->JobType);
+    if (!level) { return {.error = level.error}; }
+    if (!level.value->empty()) { context.content.level = *level.value; }
+    context.content.messages = CopyResourceName(job->messages);
+    context.content.storages = CopyStorageNames(job->storage);
+    context.content.pool = CopyResourceName(job->pool);
+    context.content.full_backup_pool = CopyResourceName(job->full_pool);
+    context.content.virtual_full_backup_pool
+        = CopyResourceName(job->vfull_pool);
+    context.content.incremental_backup_pool = CopyResourceName(job->inc_pool);
+    context.content.differential_backup_pool = CopyResourceName(job->diff_pool);
+    context.content.next_pool = CopyResourceName(job->next_pool);
+    context.content.client = CopyResourceName(job->client);
+    context.content.fileset = CopyResourceName(job->fileset);
+    context.content.schedule = CopyResourceName(job->schedule);
+    context.content.verify_job = CopyResourceName(job->verify_job);
+    context.content.catalog = CopyResourceName(job->catalog);
+    context.content.jobdefs = CopyResourceName(job->jobdefs);
+    if (job->RestoreWhere && job->RestoreWhere[0] != '\0') {
+      context.content.where = std::string{job->RestoreWhere};
+    }
+    if (job->Priority != 0) { context.content.priority = job->Priority; }
+    context.content.enabled = job->enabled;
+
+    auto source = job->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director job '" + std::string{job_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director job '" + std::string{job_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+
+    static const std::set<std::string> kControlledJobDirectives{
+        "Name",
+        "Description",
+        "Type",
+        "Level",
+        "Messages",
+        "Storage",
+        "Pool",
+        "FullBackupPool",
+        "VirtualFullBackupPool",
+        "IncrementalBackupPool",
+        "DifferentialBackupPool",
+        "NextPool",
+        "Client",
+        "FileSet",
+        "Schedule",
+        "JobToVerify",
+        "VerifyJob",
+        "Catalog",
+        "JobDefs",
+        "Where",
+        "Priority",
+        "Enabled"};
+    auto passthrough = ExtractJobPassthroughEntries(context.file_path,
+                                                    kControlledJobDirectives);
+    if (!passthrough) { return {.error = passthrough.error}; }
+    context.content.passthrough_entries = std::move(*passthrough.value);
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorJobDefsWriteContext> LoadDirectorJobDefsWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view jobdefs_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorJobDefsWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "jobdefs"
+                   / (std::string{jobdefs_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_JOBDEFS, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_JOBDEFS, resource)) {
+    auto* jobdefs = dynamic_cast<directordaemon::JobResource*>(resource);
+    if (!jobdefs) { continue; }
+    if (auto source = jobdefs->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_JOBDEFS, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_JOBDEFS, resource)) {
+    auto* jobdefs = dynamic_cast<directordaemon::JobResource*>(resource);
+    if (!jobdefs || !jobdefs->resource_name_
+        || jobdefs->resource_name_ != jobdefs_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (jobdefs->description_ && jobdefs->description_[0] != '\0') {
+      context.content.description = std::string{jobdefs->description_};
+    }
+    auto type = RenderJobTypeForConfig(jobdefs->JobType);
+    if (!type) { return {.error = type.error}; }
+    if (!type.value->empty()) { context.content.type = *type.value; }
+    auto level = RenderJobLevelForConfig(jobdefs->JobLevel, jobdefs->JobType);
+    if (!level) { return {.error = level.error}; }
+    if (!level.value->empty()) { context.content.level = *level.value; }
+    context.content.messages = CopyResourceName(jobdefs->messages);
+    context.content.storages = CopyStorageNames(jobdefs->storage);
+    context.content.pool = CopyResourceName(jobdefs->pool);
+    context.content.full_backup_pool = CopyResourceName(jobdefs->full_pool);
+    context.content.virtual_full_backup_pool
+        = CopyResourceName(jobdefs->vfull_pool);
+    context.content.incremental_backup_pool
+        = CopyResourceName(jobdefs->inc_pool);
+    context.content.differential_backup_pool
+        = CopyResourceName(jobdefs->diff_pool);
+    context.content.next_pool = CopyResourceName(jobdefs->next_pool);
+    context.content.client = CopyResourceName(jobdefs->client);
+    context.content.fileset = CopyResourceName(jobdefs->fileset);
+    context.content.schedule = CopyResourceName(jobdefs->schedule);
+    context.content.verify_job = CopyResourceName(jobdefs->verify_job);
+    context.content.catalog = CopyResourceName(jobdefs->catalog);
+    context.content.jobdefs = CopyResourceName(jobdefs->jobdefs);
+    if (jobdefs->RestoreWhere && jobdefs->RestoreWhere[0] != '\0') {
+      context.content.where = std::string{jobdefs->RestoreWhere};
+    }
+    if (jobdefs->Priority != 0) {
+      context.content.priority = jobdefs->Priority;
+    }
+    context.content.enabled = jobdefs->enabled;
+
+    auto source = jobdefs->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director jobdefs '" + std::string{jobdefs_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+
+    static const std::set<std::string> kControlledJobDefsDirectives{
+        "Name",
+        "Description",
+        "Type",
+        "Level",
+        "Messages",
+        "Storage",
+        "Pool",
+        "FullBackupPool",
+        "VirtualFullBackupPool",
+        "IncrementalBackupPool",
+        "DifferentialBackupPool",
+        "NextPool",
+        "Client",
+        "FileSet",
+        "Schedule",
+        "JobToVerify",
+        "VerifyJob",
+        "Catalog",
+        "JobDefs",
+        "Where",
+        "Priority",
+        "Enabled"};
+    auto passthrough = ExtractJobPassthroughEntries(
+        context.file_path, kControlledJobDefsDirectives);
+    if (!passthrough) { return {.error = passthrough.error}; }
+    context.content.passthrough_entries = std::move(*passthrough.value);
     return {.value = std::move(context)};
   }
 
@@ -4837,6 +5652,638 @@ ServiceState::DeleteDirectorScheduleResource(
   }
 
   DebugLog("deleted director schedule resource '" + std::string{schedule_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorCounterResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view counter_name,
+    const DirectorCounterResourceSpec& spec) const
+{
+  DebugLog("upserting director counter resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', counter '"
+           + std::string{counter_name} + "'");
+  if (!IsSafePathSegment(counter_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "counter and director names must be safe path segments."};
+  }
+
+  if (spec.maximum && *spec.maximum > std::numeric_limits<int32_t>::max()) {
+    return {.error = "counter maximum must not exceed 2147483647."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorCounterWriteContext(*director_config.value, counter_name);
+  if (!context) { return {.error = context.error}; }
+
+  auto content = context.value->content;
+  content.description
+      = spec.description
+            ? *spec.description
+            : content.description.value_or(DefaultDirectorCounterDescription(
+                  counter_name, director_name));
+  if (spec.minimum) { content.minimum = *spec.minimum; }
+  if (spec.maximum) { content.maximum = static_cast<int32_t>(*spec.maximum); }
+  if (spec.wrap_counter) { content.wrap_counter = *spec.wrap_counter; }
+  if (spec.catalog) { content.catalog = *spec.catalog; }
+
+  const auto rendered
+      = BuildDirectorCounterResourceContent(counter_name, content);
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "counter";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director counter directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write director counter resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director counter file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director counter update for '" + std::string{counter_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director counter parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director counter update ", loaded.messages)};
+  }
+
+  DebugLog("updated director counter resource '" + std::string{counter_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorCounterResource(std::string_view deployment_id,
+                                            std::string_view director_name,
+                                            std::string_view counter_name) const
+{
+  DebugLog("deleting director counter resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', counter '"
+           + std::string{counter_name} + "'");
+  if (!IsSafePathSegment(counter_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "counter and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorCounterWriteContext(*director_config.value, counter_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define counter '" + std::string{counter_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director counter parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director counter delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director counter resource '" + std::string{counter_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorFilesetResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view fileset_name,
+    const DirectorFilesetResourceSpec& spec) const
+{
+  DebugLog("upserting director fileset resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', fileset '"
+           + std::string{fileset_name} + "'");
+  if (!IsSafePathSegment(fileset_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "fileset and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorFilesetWriteContext(*director_config.value, fileset_name);
+  if (!context) { return {.error = context.error}; }
+
+  auto content = context.value->content;
+  content.description
+      = spec.description
+            ? *spec.description
+            : content.description.value_or(DefaultDirectorFilesetDescription(
+                  fileset_name, director_name));
+  if (spec.ignore_fileset_changes) {
+    content.ignore_fileset_changes = *spec.ignore_fileset_changes;
+  }
+  if (spec.enable_vss) { content.enable_vss = *spec.enable_vss; }
+  if (spec.include_blocks) { content.include_blocks = *spec.include_blocks; }
+  if (spec.exclude_blocks) { content.exclude_blocks = *spec.exclude_blocks; }
+
+  const auto rendered
+      = BuildDirectorFilesetResourceContent(fileset_name, content);
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "fileset";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director fileset directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write director fileset resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director fileset file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director fileset update for '" + std::string{fileset_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director fileset parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director fileset update ", loaded.messages)};
+  }
+
+  DebugLog("updated director fileset resource '" + std::string{fileset_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorFilesetResource(std::string_view deployment_id,
+                                            std::string_view director_name,
+                                            std::string_view fileset_name) const
+{
+  DebugLog("deleting director fileset resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', fileset '"
+           + std::string{fileset_name} + "'");
+  if (!IsSafePathSegment(fileset_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "fileset and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorFilesetWriteContext(*director_config.value, fileset_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define fileset '" + std::string{fileset_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director fileset parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director fileset delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director fileset resource '" + std::string{fileset_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord> ServiceState::UpsertDirectorJobResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view job_name,
+    const DirectorJobResourceSpec& spec) const
+{
+  DebugLog("upserting director job resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', job '" + std::string{job_name}
+           + "'");
+  if (!IsSafePathSegment(job_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "job and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context = LoadDirectorJobWriteContext(*director_config.value, job_name);
+  if (!context) { return {.error = context.error}; }
+
+  auto content = context.value->content;
+  content.description
+      = spec.description
+            ? *spec.description
+            : content.description.value_or(
+                  DefaultDirectorJobDescription(job_name, director_name));
+  if (spec.type) { content.type = *spec.type; }
+  if (spec.level) { content.level = *spec.level; }
+  if (spec.messages) { content.messages = *spec.messages; }
+  if (spec.storages) { content.storages = *spec.storages; }
+  if (spec.pool) { content.pool = *spec.pool; }
+  if (spec.full_backup_pool) {
+    content.full_backup_pool = *spec.full_backup_pool;
+  }
+  if (spec.virtual_full_backup_pool) {
+    content.virtual_full_backup_pool = *spec.virtual_full_backup_pool;
+  }
+  if (spec.incremental_backup_pool) {
+    content.incremental_backup_pool = *spec.incremental_backup_pool;
+  }
+  if (spec.differential_backup_pool) {
+    content.differential_backup_pool = *spec.differential_backup_pool;
+  }
+  if (spec.next_pool) { content.next_pool = *spec.next_pool; }
+  if (spec.client) { content.client = *spec.client; }
+  if (spec.fileset) { content.fileset = *spec.fileset; }
+  if (spec.schedule) { content.schedule = *spec.schedule; }
+  if (spec.verify_job) { content.verify_job = *spec.verify_job; }
+  if (spec.catalog) { content.catalog = *spec.catalog; }
+  if (spec.jobdefs) { content.jobdefs = *spec.jobdefs; }
+  if (spec.where) { content.where = *spec.where; }
+  if (spec.priority) { content.priority = *spec.priority; }
+  if (spec.enabled) { content.enabled = *spec.enabled; }
+
+  const auto rendered = BuildDirectorJobResourceContent(job_name, content);
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "job";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director job directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write director job resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director job file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director job update for '" + std::string{job_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure("director job parser initialization ",
+                                          loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director job update ", loaded.messages)};
+  }
+
+  DebugLog("updated director job resource '" + std::string{job_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord> ServiceState::DeleteDirectorJobResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view job_name) const
+{
+  DebugLog("deleting director job resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', job '" + std::string{job_name}
+           + "'");
+  if (!IsSafePathSegment(job_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "job and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context = LoadDirectorJobWriteContext(*director_config.value, job_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define job '" + std::string{job_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure("director job parser initialization ",
+                                          loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director job delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director job resource '" + std::string{job_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorJobDefsResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view jobdefs_name,
+    const DirectorJobDefsResourceSpec& spec) const
+{
+  DebugLog("upserting director jobdefs resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', jobdefs '"
+           + std::string{jobdefs_name} + "'");
+  if (!IsSafePathSegment(jobdefs_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "jobdefs and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorJobDefsWriteContext(*director_config.value, jobdefs_name);
+  if (!context) { return {.error = context.error}; }
+
+  auto content = context.value->content;
+  content.description
+      = spec.description
+            ? *spec.description
+            : content.description.value_or(DefaultDirectorJobDefsDescription(
+                  jobdefs_name, director_name));
+  if (spec.type) { content.type = *spec.type; }
+  if (spec.level) { content.level = *spec.level; }
+  if (spec.messages) { content.messages = *spec.messages; }
+  if (spec.storages) { content.storages = *spec.storages; }
+  if (spec.pool) { content.pool = *spec.pool; }
+  if (spec.full_backup_pool) {
+    content.full_backup_pool = *spec.full_backup_pool;
+  }
+  if (spec.virtual_full_backup_pool) {
+    content.virtual_full_backup_pool = *spec.virtual_full_backup_pool;
+  }
+  if (spec.incremental_backup_pool) {
+    content.incremental_backup_pool = *spec.incremental_backup_pool;
+  }
+  if (spec.differential_backup_pool) {
+    content.differential_backup_pool = *spec.differential_backup_pool;
+  }
+  if (spec.next_pool) { content.next_pool = *spec.next_pool; }
+  if (spec.client) { content.client = *spec.client; }
+  if (spec.fileset) { content.fileset = *spec.fileset; }
+  if (spec.schedule) { content.schedule = *spec.schedule; }
+  if (spec.verify_job) { content.verify_job = *spec.verify_job; }
+  if (spec.catalog) { content.catalog = *spec.catalog; }
+  if (spec.jobdefs) { content.jobdefs = *spec.jobdefs; }
+  if (spec.where) { content.where = *spec.where; }
+  if (spec.priority) { content.priority = *spec.priority; }
+  if (spec.enabled) { content.enabled = *spec.enabled; }
+
+  const auto rendered
+      = BuildDirectorJobDefsResourceContent(jobdefs_name, content);
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "jobdefs";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director jobdefs directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, rendered)) {
+    return {.error = "failed to write director jobdefs resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director jobdefs file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director jobdefs update for '" + std::string{jobdefs_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director jobdefs parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director jobdefs update ", loaded.messages)};
+  }
+
+  DebugLog("updated director jobdefs resource '" + std::string{jobdefs_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorJobDefsResource(std::string_view deployment_id,
+                                            std::string_view director_name,
+                                            std::string_view jobdefs_name) const
+{
+  DebugLog("deleting director jobdefs resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', jobdefs '"
+           + std::string{jobdefs_name} + "'");
+  if (!IsSafePathSegment(jobdefs_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "jobdefs and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorJobDefsWriteContext(*director_config.value, jobdefs_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define jobdefs '" + std::string{jobdefs_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director jobdefs parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director jobdefs delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director jobdefs resource '" + std::string{jobdefs_name}
            + "' from director '" + std::string{director_name} + "'");
   return {.value = *director_config.value};
 }
