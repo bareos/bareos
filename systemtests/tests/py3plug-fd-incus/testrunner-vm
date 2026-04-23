@@ -20,39 +20,43 @@ IMAGE=bareos-test-alpine
 INSTANCE=bareos-test-vm
 NEWINSTANCE=bareos-test-vm-2
 
-wait_for_agent() {
-    while ! incus exec "$1" true 2>/dev/null; do
-        sleep 2
-    done
+wait_for_agent()
+{
+  while ! incus exec "$1" true 2>/dev/null; do
+    sleep 2
+  done
 }
 
-sync_fs() {
-    incus exec "$INSTANCE" sync
+sync_fs()
+{
+  incus exec "$INSTANCE" sync
 }
 
-cleanup_instances() {
-    incus rm -f "$INSTANCE" 2>/dev/null || :
-    incus rm -f "$NEWINSTANCE" 2>/dev/null || :
+cleanup_instances()
+{
+  incus rm -f "$INSTANCE" 2>/dev/null || :
+  incus rm -f "$NEWINSTANCE" 2>/dev/null || :
 }
 
-check_chunks() {
-    grep -c "^ @INCUS/instances/$2" "$1" || :
+check_chunks()
+{
+  grep -c "^ @INCUS/instances/$2" "$1" || :
 }
 
 # Build a tiny Alpine image. This can be extremely slow, so we do not remove the image at the end,
 # to reproduce test results faster.
 if ! incus image info "$IMAGE" >/dev/null 2>&1; then
-    incus image export images:alpine/edge "$tmp" --vm
-    guestfish --rw -a "$tmp/disk.qcow2" <<EOF
+  incus image export images:alpine/edge "$tmp" --vm
+  guestfish --rw -a "$tmp/disk.qcow2" <<EOF
 run
 e2fsck-f /dev/sda2
 resize2fs-M /dev/sda2
 e2fsck-f /dev/sda2
 EOF
-    qemu-img create -f qcow2 -o preallocation=metadata "$tmp/disk.400M.qcow2" 400M
-    virt-resize --shrink /dev/sda2 "$tmp/disk.qcow2" "$tmp/disk.400M.qcow2"
-    incus image import "$tmp/incus.tar.xz" "$tmp/disk.400M.qcow2" --alias "$IMAGE"
-    rm "$tmp/incus.tar.xz" "$tmp/disk.qcow2" "$tmp/disk.400M.qcow2"
+  qemu-img create -f qcow2 -o preallocation=metadata "$tmp/disk.400M.qcow2" 400M
+  virt-resize --shrink /dev/sda2 "$tmp/disk.qcow2" "$tmp/disk.400M.qcow2"
+  incus image import "$tmp/incus.tar.xz" "$tmp/disk.400M.qcow2" --alias "$IMAGE"
+  rm "$tmp/incus.tar.xz" "$tmp/disk.qcow2" "$tmp/disk.400M.qcow2"
 fi
 
 trap cleanup_instances EXIT
@@ -60,9 +64,8 @@ trap cleanup_instances EXIT
 cleanup_instances
 incus launch "$IMAGE" "$INSTANCE" --vm -c security.secureboot=false -d root,size=400MiB
 wait_for_agent "$INSTANCE"
-incus file push - "$INSTANCE/old-file" <<< foobar
+incus file push - "$INSTANCE/old-file" <<<"foobar"
 sync_fs
-
 
 start_test
 
@@ -94,11 +97,11 @@ run_bconsole "$@"
 # 25 chunks should be created here
 chunks="$(check_chunks "$tmp/log4-list.out" "$INSTANCE/virtual-machine.img")"
 if ((chunks != 25)); then
-    echo "Error: expected 25 chunks, got $chunks"
-    exit 1
+  echo "Error: expected 25 chunks, got $chunks"
+  exit 1
 fi
 
-incus file push - "$INSTANCE/new-file" <<< bazqux
+incus file push - "$INSTANCE/new-file" <<<"bazqux"
 sync_fs
 
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -127,8 +130,8 @@ run_bconsole "$@"
 # Modifying our single file should only modify ~4 chunks, but let's be safe
 chunks="$(check_chunks "$tmp/log5-list.out" "$INSTANCE/virtual-machine.img")"
 if ((chunks > 8)); then
-    echo "Error: too many chunks modified ($chunks)"
-    exit 1
+  echo "Error: too many chunks modified ($chunks)"
+  exit 1
 fi
 
 incus rm -f "$INSTANCE"
@@ -151,13 +154,13 @@ check_log "$tmp/log6.out"
 incus start "$NEWINSTANCE"
 wait_for_agent "$NEWINSTANCE"
 
-if [ "$(incus file pull "$NEWINSTANCE/old-file" -)" = "foobar" ] &&
-   [ "$(incus file pull "$NEWINSTANCE/new-file" -)" = "bazqux" ]; then
-    echo "Restored files OK"
+if [ "$(incus file pull "$NEWINSTANCE/old-file" -)" = "foobar" ] \
+  && [ "$(incus file pull "$NEWINSTANCE/new-file" -)" = "bazqux" ]; then
+  echo "Restored files OK"
 else
-    echo "Restored files ERROR: files have changed"
-    dstat=1
-    exit 1
+  echo "Restored files ERROR: files have changed"
+  dstat=1
+  exit 1
 fi
 
 incus rm -f "$NEWINSTANCE"
