@@ -127,6 +127,16 @@ struct DirectorStorageResourceSpec {
   std::optional<std::string> description{};
 };
 
+struct DirectorConsoleResourceSpec {
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+  std::optional<bool> use_pam_authentication{};
+};
+
+struct DirectorUserResourceSpec {
+  std::optional<std::string> description{};
+};
+
 struct JobSpec {
   std::string type{};
   std::optional<std::string> deployment_id{};
@@ -222,6 +232,24 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view storage_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorConsoleResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view console_name,
+      const DirectorConsoleResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorConsoleResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view console_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorUserResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view user_name,
+      const DirectorUserResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorUserResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view user_name) const;
   OperationResult<std::vector<DeploymentImportRecord>> ListDeploymentImports(
       std::string_view deployment_id) const;
   OperationResult<DeploymentGitStatusRecord> GetDeploymentGitStatus(

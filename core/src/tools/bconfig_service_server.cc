@@ -92,6 +92,16 @@ struct DirectorStorageRequestSpec {
   std::optional<std::string> description{};
 };
 
+struct DirectorConsoleRequestSpec {
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+  std::optional<bool> use_pam_authentication{};
+};
+
+struct DirectorUserRequestSpec {
+  std::optional<std::string> description{};
+};
+
 std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     std::string_view body,
     std::string& error);
@@ -99,6 +109,12 @@ std::optional<DirectorClientRequestSpec> ParseDirectorClientRequest(
     std::string_view body,
     std::string& error);
 std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<DirectorConsoleRequestSpec> ParseDirectorConsoleRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<DirectorUserRequestSpec> ParseDirectorUserRequest(
     std::string_view body,
     std::string& error);
 
@@ -586,6 +602,66 @@ const char* kTestUiHtmlTemplate = R"HTML(
         </button>
         <button type="button" id="director-storage-delete-button">
           DELETE /v1/deployments/{id}/directors/{director}/storages/{storage}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director console resource</h2>
+      <form id="director-console-form">
+        <label for="director-console-deployment-id">Deployment ID</label>
+        <input id="director-console-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-console-director-name">Director name</label>
+        <input id="director-console-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-console-console-name">Console name</label>
+        <input id="director-console-console-name" name="console_name" value="managed-console">
+
+        <label for="director-console-password">Password</label>
+        <input id="director-console-password" name="password"
+               placeholder="cleartext or [md5]hash">
+
+        <label for="director-console-description">Description</label>
+        <input id="director-console-description" name="description"
+               placeholder="Managed console resource">
+
+        <label class="checkbox-label" for="director-console-use-pam">
+          <input id="director-console-use-pam" name="use_pam_authentication"
+                 type="checkbox">
+          Use PAM authentication
+        </label>
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/consoles/{console}
+        </button>
+        <button type="button" id="director-console-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/consoles/{console}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director user resource</h2>
+      <form id="director-user-form">
+        <label for="director-user-deployment-id">Deployment ID</label>
+        <input id="director-user-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-user-director-name">Director name</label>
+        <input id="director-user-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-user-user-name">User name</label>
+        <input id="director-user-user-name" name="user_name" value="managed-user">
+
+        <label for="director-user-description">Description</label>
+        <input id="director-user-description" name="description"
+               placeholder="Managed user resource">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/users/{user}
+        </button>
+        <button type="button" id="director-user-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/users/{user}
         </button>
       </form>
     </section>
@@ -1411,6 +1487,87 @@ const char* kTestUiHtmlTemplate = R"HTML(
           await loadDeploymentContents(deploymentId);
         }
       });
+    document.getElementById('director-console-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const consoleName = String(form.get('console_name') ?? '').trim();
+        const payload = {
+          password: String(form.get('password') ?? '').trim(),
+          description: String(form.get('description') ?? '').trim(),
+          use_pam_authentication: document.getElementById('director-console-use-pam').checked,
+        };
+        if (!payload.password) {
+          delete payload.password;
+        }
+        if (!payload.description) {
+          delete payload.description;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/consoles/${encodeURIComponent(consoleName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-console-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-console-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const consoleName = String(form.get('console_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/consoles/${encodeURIComponent(consoleName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-user-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const userName = String(form.get('user_name') ?? '').trim();
+        const payload = {
+          description: String(form.get('description') ?? '').trim(),
+        };
+        if (!payload.description) {
+          delete payload.description;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/users/${encodeURIComponent(userName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-user-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-user-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const userName = String(form.get('user_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/users/${encodeURIComponent(userName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
 
     request('GET', '/v1/health');
   </script>
@@ -1808,8 +1965,8 @@ bool IsManagedSourcePath(const std::set<std::string>& managed_paths,
                          const std::filesystem::path& source_path)
 {
   std::error_code error_code;
-  const auto relative = std::filesystem::relative(source_path, repository_root,
-                                                  error_code);
+  const auto relative
+      = std::filesystem::relative(source_path, repository_root, error_code);
   if (error_code) { return false; }
   return managed_paths.contains(relative.generic_string());
 }
@@ -2450,6 +2607,176 @@ http::response<http::string_body> HandleDeploymentDirectorStorageDeleteRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body> HandleDeploymentDirectorConsolePutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view console_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorConsoleRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorConsoleResourceSpec resource_spec{
+      .password = spec->password,
+      .description = spec->description,
+      .use_pam_authentication = spec->use_pam_authentication,
+  };
+  auto result = state.UpsertDirectorConsoleResource(
+      deployment_id, director_name, console_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "console_name",
+                      json_string(std::string{console_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorConsoleDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view console_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorConsoleResource(
+      deployment_id, director_name, console_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "console_name",
+                      json_string(std::string{console_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorUserPutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view user_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorUserRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorUserResourceSpec resource_spec{
+      .description = spec->description,
+  };
+  auto result = state.UpsertDirectorUserResource(deployment_id, director_name,
+                                                 user_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "user_name",
+                      json_string(std::string{user_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorUserDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view user_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorUserResource(deployment_id, director_name,
+                                                 user_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "user_name",
+                      json_string(std::string{user_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 http::response<http::string_body> HandleDeploymentGitStatusRequest(
     ServiceState& state,
     std::string_view deployment_id)
@@ -2783,6 +3110,75 @@ std::optional<DirectorStorageRequestSpec> ParseDirectorStorageRequest(
   return spec;
 }
 
+std::optional<DirectorConsoleRequestSpec> ParseDirectorConsoleRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* password = json_object_get(root.get(), "password");
+  auto* description = json_object_get(root.get(), "description");
+  auto* use_pam_authentication
+      = json_object_get(root.get(), "use_pam_authentication");
+
+  if (password && !json_is_null(password) && !json_is_string(password)) {
+    error = "field 'password' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (description && !json_is_null(description)
+      && !json_is_string(description)) {
+    error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+  if (use_pam_authentication && !json_is_null(use_pam_authentication)
+      && !json_is_boolean(use_pam_authentication)) {
+    error = "field 'use_pam_authentication' must be a boolean when provided.";
+    return std::nullopt;
+  }
+
+  DirectorConsoleRequestSpec spec{};
+  if (password && json_is_string(password)) {
+    spec.password = std::string{json_string_value(password)};
+  }
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  if (use_pam_authentication && json_is_boolean(use_pam_authentication)) {
+    spec.use_pam_authentication = json_is_true(use_pam_authentication);
+  }
+  return spec;
+}
+
+std::optional<DirectorUserRequestSpec> ParseDirectorUserRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* description = json_object_get(root.get(), "description");
+  if (description && !json_is_null(description)
+      && !json_is_string(description)) {
+    error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+
+  DirectorUserRequestSpec spec{};
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  return spec;
+}
+
 http::response<http::string_body> HandleDeploymentsRequest(
     ServiceState& state,
     const http::request<http::string_body>& request,
@@ -2880,6 +3276,29 @@ http::response<http::string_body> HandleDeploymentsRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "consoles" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorConsolePutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "consoles"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorConsoleDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "users" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorUserPutRequest(state, request, path_parts[2],
+                                                  path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "users" && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorUserDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
   if (path_parts.size() == 4 && path_parts[3] == "git-status"
       && request.method() == http::verb::get) {
     return HandleDeploymentGitStatusRequest(state, path_parts[2]);
@@ -2963,9 +3382,11 @@ http::response<http::string_body> HandleRequest(
 
   if (request.method() != http::verb::get
       && request.method() != http::verb::post
-      && request.method() != http::verb::put) {
-    return ErrorResponse(http::status::method_not_allowed,
-                         "only GET, POST, and PUT are currently supported.");
+      && request.method() != http::verb::put
+      && request.method() != http::verb::delete_) {
+    return ErrorResponse(
+        http::status::method_not_allowed,
+        "only GET, POST, PUT, and DELETE are currently supported.");
   }
 
   if (path_parts.size() == 2 && path_parts[0] == "v1"

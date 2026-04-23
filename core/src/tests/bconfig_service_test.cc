@@ -842,6 +842,426 @@ TEST(BconfigService, RejectsDirectorClientDeletesForSharedFiles)
   EXPECT_TRUE(std::filesystem::exists(shared_path));
 }
 
+TEST(BconfigService, UpsertsDirectorConsoleResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorConsoleResource(
+      "prod", "bareos-dir", "managed-console",
+      {.password = std::string{"[md5]abcdef0123456789abcdef0123456789"},
+       .description = std::string{"Managed console"},
+       .use_pam_authentication = true});
+  ASSERT_TRUE(created) << created.error;
+  EXPECT_EQ(created.value->name, "bareos-dir");
+
+  const auto console_path
+      = created.value->path / "bareos-dir.d/console/managed-console.conf";
+  const auto created_text = ReadTextFile(console_path);
+  EXPECT_NE(created_text.find("Name = \"managed-console\""), std::string::npos);
+  EXPECT_NE(
+      created_text.find("Password = \"[md5]abcdef0123456789abcdef0123456789\""),
+      std::string::npos);
+  EXPECT_NE(created_text.find("Description = \"Managed console\""),
+            std::string::npos);
+  EXPECT_NE(created_text.find("UsePamAuthentication = yes"), std::string::npos);
+
+  auto updated = state.UpsertDirectorConsoleResource(
+      "prod", "bareos-dir", "bareos-mon",
+      {.description = std::string{"Updated restricted console"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(
+      updated.value->path / "bareos-dir.d/console/bareos-mon.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated restricted console\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Password = "), std::string::npos);
+  EXPECT_NE(updated_text.find("CommandACL = status, .status"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("JobACL = *all*"), std::string::npos);
+}
+
+TEST(BconfigService, RejectsDirectorConsoleUpdatesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto console_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/console";
+  const auto original_path = console_directory / "bareos-mon.conf";
+  const auto shared_path = console_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nConsole {\n"
+                      "  Name = \"other-console\"\n"
+                      "  Password = \"other_password\"\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto rejected = state.UpsertDirectorConsoleResource(
+      "prod", "bareos-dir", "bareos-mon",
+      {.description = std::string{"Updated restricted console"}});
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
+TEST(BconfigService, DeletesDirectorConsoleResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorConsoleResource(
+      "prod", "bareos-dir", "managed-console",
+      {.password = std::string{"[md5]abcdef0123456789abcdef0123456789"}});
+  ASSERT_TRUE(created) << created.error;
+
+  const auto console_path
+      = created.value->path / "bareos-dir.d/console/managed-console.conf";
+  ASSERT_TRUE(std::filesystem::exists(console_path));
+
+  auto deleted = state.DeleteDirectorConsoleResource("prod", "bareos-dir",
+                                                     "managed-console");
+  ASSERT_TRUE(deleted) << deleted.error;
+  EXPECT_FALSE(std::filesystem::exists(console_path));
+}
+
+TEST(BconfigService, RejectsDirectorConsoleDeletesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto console_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/console";
+  const auto original_path = console_directory / "bareos-mon.conf";
+  const auto shared_path = console_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nConsole {\n"
+                      "  Name = \"other-console\"\n"
+                      "  Password = \"other_password\"\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto rejected
+      = state.DeleteDirectorConsoleResource("prod", "bareos-dir", "bareos-mon");
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
+TEST(BconfigService, UpsertsDirectorUserResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-dir.d/user/operator-user.conf",
+                "User {\n"
+                "  Name = \"operator-user\"\n"
+                "  Description = \"Fixture operator user\"\n"
+                "  CommandACL = status, .status\n"
+                "  Profile = operator\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorUserResource(
+      "prod", "bareos-dir", "managed-user",
+      {.description = std::string{"Managed user"}});
+  ASSERT_TRUE(created) << created.error;
+  EXPECT_EQ(created.value->name, "bareos-dir");
+
+  const auto user_path
+      = created.value->path / "bareos-dir.d/user/managed-user.conf";
+  const auto created_text = ReadTextFile(user_path);
+  EXPECT_NE(created_text.find("Name = \"managed-user\""), std::string::npos);
+  EXPECT_NE(created_text.find("Description = \"Managed user\""),
+            std::string::npos);
+
+  auto updated = state.UpsertDirectorUserResource(
+      "prod", "bareos-dir", "operator-user",
+      {.description = std::string{"Updated operator user"}});
+  ASSERT_TRUE(updated) << updated.error;
+
+  const auto updated_text = ReadTextFile(
+      updated.value->path / "bareos-dir.d/user/operator-user.conf");
+  EXPECT_NE(updated_text.find("Description = \"Updated operator user\""),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("CommandACL = status, .status"),
+            std::string::npos);
+  EXPECT_NE(updated_text.find("Profile = operator"), std::string::npos);
+}
+
+TEST(BconfigService, RejectsDirectorUserUpdatesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-dir.d/user/operator-user.conf",
+                "User {\n"
+                "  Name = \"operator-user\"\n"
+                "  Description = \"Fixture operator user\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto user_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/user";
+  const auto original_path = user_directory / "operator-user.conf";
+  const auto shared_path = user_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nUser {\n"
+                      "  Name = \"other-user\"\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto rejected = state.UpsertDirectorUserResource(
+      "prod", "bareos-dir", "operator-user",
+      {.description = std::string{"Updated operator user"}});
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
+TEST(BconfigService, DeletesDirectorUserResources)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  auto created = state.UpsertDirectorUserResource(
+      "prod", "bareos-dir", "managed-user",
+      {.description = std::string{"Managed user"}});
+  ASSERT_TRUE(created) << created.error;
+
+  const auto user_path
+      = created.value->path / "bareos-dir.d/user/managed-user.conf";
+  ASSERT_TRUE(std::filesystem::exists(user_path));
+
+  auto deleted
+      = state.DeleteDirectorUserResource("prod", "bareos-dir", "managed-user");
+  ASSERT_TRUE(deleted) << deleted.error;
+  EXPECT_FALSE(std::filesystem::exists(user_path));
+}
+
+TEST(BconfigService, RejectsDirectorUserDeletesForSharedFiles)
+{
+  ScopedDirectory source_root{MakeTempPath()};
+  ScopedDirectory repo_path{MakeTempPath()};
+  ServiceState state;
+
+  auto deployment
+      = state.CreateDeployment({.id = "prod",
+                                .name = "Production",
+                                .repository_path = repo_path.path()});
+  ASSERT_TRUE(deployment);
+
+  const auto source_fixture_root = FindFixtureRoot();
+  ASSERT_FALSE(source_fixture_root.empty());
+  std::filesystem::create_directories(source_root.path());
+  std::filesystem::copy(source_fixture_root / "bareos-dir.d",
+                        source_root.path() / "bareos-dir.d",
+                        std::filesystem::copy_options::recursive);
+  WriteTextFile(source_root.path() / "bareos-dir.d/user/operator-user.conf",
+                "User {\n"
+                "  Name = \"operator-user\"\n"
+                "  Description = \"Fixture operator user\"\n"
+                "}\n");
+
+  auto import_job
+      = state.CreateJob({.type = "import_configuration",
+                         .deployment_id = std::string{"prod"},
+                         .source_path = source_root.path().string()});
+  ASSERT_TRUE(import_job);
+  auto imported = WaitForJobTerminal(state, import_job.value->id);
+  ASSERT_TRUE(imported.has_value());
+  ASSERT_EQ(imported->status, JobStatus::kSucceeded);
+
+  const auto user_directory
+      = RepositoryLayout::DirectorsDirectory(repo_path.path())
+        / "bareos-dir/bareos-dir.d/user";
+  const auto original_path = user_directory / "operator-user.conf";
+  const auto shared_path = user_directory / "shared.conf";
+  const auto original_text = ReadTextFile(original_path);
+  WriteTextFile(shared_path,
+                original_text
+                    + "\nUser {\n"
+                      "  Name = \"other-user\"\n"
+                      "}\n");
+  std::filesystem::remove(original_path);
+
+  auto rejected
+      = state.DeleteDirectorUserResource("prod", "bareos-dir", "operator-user");
+  ASSERT_FALSE(rejected);
+  EXPECT_NE(rejected.error.find("standalone file"), std::string::npos);
+  EXPECT_FALSE(std::filesystem::exists(original_path));
+  EXPECT_TRUE(std::filesystem::exists(shared_path));
+}
+
 TEST(BconfigService, UpsertsDirectorStorageResources)
 {
   ScopedDirectory source_root{MakeTempPath()};

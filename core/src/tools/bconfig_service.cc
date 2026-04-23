@@ -593,6 +593,9 @@ std::string QuoteBareosString(std::string_view value)
   return quoted;
 }
 
+bool IsSafePathSegment(std::string_view value);
+bool IsSafeBareosToken(std::string_view value);
+
 std::string BuildClientDirectorStubContent(std::string_view director_name,
                                            std::string_view password,
                                            std::string_view description)
@@ -608,6 +611,11 @@ std::string BuildClientDirectorStubContent(std::string_view director_name,
 
 constexpr uint16_t kDefaultFileDaemonPort = 9102;
 constexpr uint16_t kDefaultStorageDaemonPort = 9103;
+constexpr std::array<std::string_view, directordaemon::Num_ACL>
+    kDirectorAclDirectiveNames
+    = {"JobACL",   "ClientACL",       "StorageACL", "ScheduleACL",
+       "PoolACL",  "CommandACL",      "FileSetACL", "CatalogACL",
+       "WhereACL", "PluginOptionsACL"};
 
 std::string BuildDirectorClientResourceContent(std::string_view client_name,
                                                std::string_view address,
@@ -644,6 +652,70 @@ std::string BuildDirectorStorageResourceContent(std::string_view storage_name,
           << "  Media Type = " << media_type << "\n"
           << "  Port = " << port << "\n"
           << "}\n";
+  return content.str();
+}
+
+std::string RenderBareosDirectiveValue(std::string_view value)
+{
+  if (IsSafeBareosToken(value)) { return std::string{value}; }
+  return QuoteBareosString(value);
+}
+
+std::string JoinDirectiveValues(const std::vector<std::string>& values)
+{
+  std::ostringstream rendered;
+  for (size_t index = 0; index < values.size(); ++index) {
+    if (index != 0) { rendered << ", "; }
+    rendered << RenderBareosDirectiveValue(values[index]);
+  }
+  return rendered.str();
+}
+
+std::string BuildDirectorConsoleResourceContent(
+    std::string_view console_name,
+    std::string_view password,
+    std::string_view description,
+    bool use_pam_authentication,
+    const std::array<std::vector<std::string>, directordaemon::Num_ACL>& acl,
+    const std::vector<std::string>& profiles)
+{
+  std::ostringstream content;
+  content << "Console {\n"
+          << "  Name = " << QuoteBareosString(console_name) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n"
+          << "  Password = " << QuoteBareosString(password) << "\n";
+  for (size_t index = 0; index < acl.size(); ++index) {
+    if (acl[index].empty()) { continue; }
+    content << "  " << kDirectorAclDirectiveNames[index] << " = "
+            << JoinDirectiveValues(acl[index]) << "\n";
+  }
+  for (const auto& profile : profiles) {
+    content << "  Profile = " << RenderBareosDirectiveValue(profile) << "\n";
+  }
+  if (use_pam_authentication) { content << "  UsePamAuthentication = yes\n"; }
+  content << "}\n";
+  return content.str();
+}
+
+std::string BuildDirectorUserResourceContent(
+    std::string_view user_name,
+    std::string_view description,
+    const std::array<std::vector<std::string>, directordaemon::Num_ACL>& acl,
+    const std::vector<std::string>& profiles)
+{
+  std::ostringstream content;
+  content << "User {\n"
+          << "  Name = " << QuoteBareosString(user_name) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n";
+  for (size_t index = 0; index < acl.size(); ++index) {
+    if (acl[index].empty()) { continue; }
+    content << "  " << kDirectorAclDirectiveNames[index] << " = "
+            << JoinDirectiveValues(acl[index]) << "\n";
+  }
+  for (const auto& profile : profiles) {
+    content << "  Profile = " << RenderBareosDirectiveValue(profile) << "\n";
+  }
+  content << "}\n";
   return content.str();
 }
 
@@ -698,6 +770,20 @@ std::string DefaultDirectorStorageDescription(std::string_view storage_name,
 {
   return "Managed storage resource for " + std::string{storage_name}
          + " in director " + std::string{director_name};
+}
+
+std::string DefaultDirectorConsoleDescription(std::string_view console_name,
+                                              std::string_view director_name)
+{
+  return "Managed console resource for " + std::string{console_name}
+         + " in director " + std::string{director_name};
+}
+
+std::string DefaultDirectorUserDescription(std::string_view user_name,
+                                           std::string_view director_name)
+{
+  return "Managed user resource for " + std::string{user_name} + " in director "
+         + std::string{director_name};
 }
 
 std::string DefaultStorageDaemonDirectorDescription(
@@ -867,6 +953,26 @@ struct DirectorStorageWriteContext {
   std::optional<std::string> device{};
   std::optional<std::string> media_type{};
   std::optional<std::string> description{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorConsoleWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> password{};
+  std::optional<std::string> description{};
+  std::optional<bool> use_pam_authentication{};
+  std::array<std::vector<std::string>, directordaemon::Num_ACL> acl{};
+  std::vector<std::string> profiles{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorUserWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> description{};
+  std::array<std::vector<std::string>, directordaemon::Num_ACL> acl{};
+  std::vector<std::string> profiles{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -1048,6 +1154,174 @@ OperationResult<DirectorStorageWriteContext> LoadDirectorStorageWriteContext(
         = per_file != resources_per_file.end() && per_file->second == 1;
     if (!context.is_standalone_file) {
       return {.error = "director storage '" + std::string{storage_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+std::vector<std::string> CopyAclValues(alist<const char*>* list)
+{
+  std::vector<std::string> values;
+  if (!list) { return values; }
+
+  values.reserve(list->size());
+  for (int index = 0; index < list->size(); ++index) {
+    const auto* value = list->get(index);
+    values.emplace_back(value ? value : "");
+  }
+  return values;
+}
+
+std::vector<std::string> CopyProfileNames(
+    alist<directordaemon::ProfileResource*>* profiles)
+{
+  std::vector<std::string> names;
+  if (!profiles) { return names; }
+
+  names.reserve(profiles->size());
+  for (auto* profile : profiles) {
+    if (profile && profile->resource_name_) {
+      names.emplace_back(profile->resource_name_);
+    }
+  }
+  return names;
+}
+
+OperationResult<DirectorConsoleWriteContext> LoadDirectorConsoleWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view console_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorConsoleWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "console"
+                   / (std::string{console_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_CONSOLE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_CONSOLE, resource)) {
+    auto* console = dynamic_cast<directordaemon::ConsoleResource*>(resource);
+    if (!console) { continue; }
+    if (auto source = console->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_CONSOLE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_CONSOLE, resource)) {
+    auto* console = dynamic_cast<directordaemon::ConsoleResource*>(resource);
+    if (!console || !console->resource_name_
+        || console->resource_name_ != console_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (console->description_ && console->description_[0] != '\0') {
+      context.description = std::string{console->description_};
+    }
+    context.use_pam_authentication = console->use_pam_authentication_;
+    auto rendered_password = RenderPasswordForConfig(
+        console->password_, "director-side console password for '"
+                                + std::string{console_name} + "'");
+    if (!rendered_password) { return {.error = rendered_password.error}; }
+    context.password = *rendered_password.value;
+
+    for (size_t index = 0; index < context.acl.size(); ++index) {
+      context.acl[index] = CopyAclValues(console->user_acl.ACL_lists[index]);
+    }
+    context.profiles = CopyProfileNames(console->user_acl.profiles);
+
+    auto source = console->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director console '" + std::string{console_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director console '" + std::string{console_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorUserWriteContext> LoadDirectorUserWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view user_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorUserWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "user"
+                   / (std::string{user_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_USER, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(directordaemon::R_USER, resource)) {
+    auto* user = dynamic_cast<directordaemon::UserResource*>(resource);
+    if (!user) { continue; }
+    if (auto source = user->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_USER, nullptr);
+       resource != nullptr;
+       resource = loaded.parser->GetNextRes(directordaemon::R_USER, resource)) {
+    auto* user = dynamic_cast<directordaemon::UserResource*>(resource);
+    if (!user || !user->resource_name_ || user->resource_name_ != user_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (user->description_ && user->description_[0] != '\0') {
+      context.description = std::string{user->description_};
+    }
+    for (size_t index = 0; index < context.acl.size(); ++index) {
+      context.acl[index] = CopyAclValues(user->user_acl.ACL_lists[index]);
+    }
+    context.profiles = CopyProfileNames(user->user_acl.profiles);
+
+    auto source = user->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director user '" + std::string{user_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director user '" + std::string{user_name}
                        + "' is not stored in a standalone file yet."};
     }
     return {.value = std::move(context)};
@@ -2932,6 +3206,299 @@ ServiceState::DeleteDirectorStorageResource(std::string_view deployment_id,
   }
 
   DebugLog("deleted director storage resource '" + std::string{storage_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorConsoleResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view console_name,
+    const DirectorConsoleResourceSpec& spec) const
+{
+  DebugLog("upserting director console resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', console '"
+           + std::string{console_name} + "'");
+  if (!IsSafePathSegment(console_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "console and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorConsoleWriteContext(*director_config.value, console_name);
+  if (!context) { return {.error = context.error}; }
+
+  const auto password
+      = spec.password ? *spec.password : context.value->password;
+  if (!password || password->empty()) {
+    return {.error
+            = "field 'password' is required when creating a director "
+              "console resource."};
+  }
+
+  const auto description = spec.description
+                               ? *spec.description
+                               : context.value->description.value_or(
+                                     DefaultDirectorConsoleDescription(
+                                         console_name, director_name));
+  const auto use_pam_authentication = spec.use_pam_authentication.value_or(
+      context.value->use_pam_authentication.value_or(false));
+  const auto content = BuildDirectorConsoleResourceContent(
+      console_name, *password, description, use_pam_authentication,
+      context.value->acl, context.value->profiles);
+
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "console";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director console directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, content)) {
+    return {.error = "failed to write director console resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director console file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director console update for '" + std::string{console_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director console parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director console update ", loaded.messages)};
+  }
+
+  DebugLog("updated director console resource '" + std::string{console_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorConsoleResource(std::string_view deployment_id,
+                                            std::string_view director_name,
+                                            std::string_view console_name) const
+{
+  DebugLog("deleting director console resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', console '"
+           + std::string{console_name} + "'");
+  if (!IsSafePathSegment(console_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "console and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorConsoleWriteContext(*director_config.value, console_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define console '" + std::string{console_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director console parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director console delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director console resource '" + std::string{console_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorUserResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view user_name,
+    const DirectorUserResourceSpec& spec) const
+{
+  DebugLog("upserting director user resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', user '" + std::string{user_name}
+           + "'");
+  if (!IsSafePathSegment(user_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "user and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorUserWriteContext(*director_config.value, user_name);
+  if (!context) { return {.error = context.error}; }
+
+  const auto description
+      = spec.description
+            ? *spec.description
+            : context.value->description.value_or(
+                  DefaultDirectorUserDescription(user_name, director_name));
+  const auto content = BuildDirectorUserResourceContent(
+      user_name, description, context.value->acl, context.value->profiles);
+
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "user";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director user directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, content)) {
+    return {.error = "failed to write director user resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director user file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director user update for '" + std::string{user_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director user parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director user update ", loaded.messages)};
+  }
+
+  DebugLog("updated director user resource '" + std::string{user_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorUserResource(std::string_view deployment_id,
+                                         std::string_view director_name,
+                                         std::string_view user_name) const
+{
+  DebugLog("deleting director user resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', user '" + std::string{user_name}
+           + "'");
+  if (!IsSafePathSegment(user_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "user and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorUserWriteContext(*director_config.value, user_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define user '" + std::string{user_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director user parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director user delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director user resource '" + std::string{user_name}
            + "' from director '" + std::string{director_name} + "'");
   return {.value = *director_config.value};
 }
