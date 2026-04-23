@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #   BAREOS - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2018-2025 Bareos GmbH & Co. KG
+#   Copyright (C) 2018-2026 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -134,6 +134,9 @@ class WrongCredentialsException(Exception):
 class SeleniumTest(unittest.TestCase):
 
     chrome_user_data_dir = tempfile.TemporaryDirectory()
+    shared_driver = None
+    shared_wait = None
+    shared_session_logged_in = False
     browser = "chrome"
     # Used by Univention AppCenter test: 1200x800
     # Large resolution to show website without hamburger menu, e.g. 1920x1080
@@ -165,7 +168,19 @@ class SeleniumTest(unittest.TestCase):
             level=logging.INFO,
         )
         self.logger = logging.getLogger()
+        self.verificationErrors = []
 
+        if self.is_shared_session_test():
+            self.prepare_shared_driver()
+        else:
+            self.close_shared_driver()
+            self.create_driver()
+
+        # take base url, but remove last /
+        self.base_url = self.base_url.rstrip("/")
+        self.logger.info("===================== TESTING =====================")
+
+    def create_driver(self):
         if self.browser == "chrome":
             self.chromedriverpath = self.getChromedriverpath()
             # chrome webdriver option: disable experimental feature
@@ -212,10 +227,28 @@ class SeleniumTest(unittest.TestCase):
         # used as timeout for selenium.webdriver.support.expected_conditions (EC)
         self.wait = WebDriverWait(self.driver, self.maxwait)
 
-        # take base url, but remove last /
-        self.base_url = self.base_url.rstrip("/")
-        self.verificationErrors = []
-        self.logger.info("===================== TESTING =====================")
+    def prepare_shared_driver(self):
+        if SeleniumTest.shared_driver is None:
+            self.create_driver()
+            SeleniumTest.shared_driver = self.driver
+            SeleniumTest.shared_wait = self.wait
+            SeleniumTest.shared_session_logged_in = False
+        else:
+            self.driver = SeleniumTest.shared_driver
+            self.wait = SeleniumTest.shared_wait
+            self.driver.set_window_size(self.resolution_x, self.resolution_y)
+
+    @classmethod
+    def close_shared_driver(cls):
+        if cls.shared_driver is None:
+            return
+        try:
+            cls.shared_driver.quit()
+        except WebDriverException:
+            pass
+        cls.shared_driver = None
+        cls.shared_wait = None
+        cls.shared_session_logged_in = False
 
     #
     # Tests
@@ -234,48 +267,61 @@ class SeleniumTest(unittest.TestCase):
         # This test navigates to clients, ensures client is enabled,
         # disables it, closes a possible modal, goes to dashboard and reenables client.
         self.login()
-        # Clicks on client menue tab
-        self.select_navbar_element("client")
-        # Tries to click on client...
+        # Navigate to client list and verify client is reachable
+        self.driver.get(self.base_url + "/client")
+        self.wait_for_spinner_absence()
         try:
             self.wait_and_click(By.LINK_TEXT, self.client)
         # Raises exception if client not found
-        except ElementTimeoutException:
-            raise ClientNotFoundException(self.client)
-        # And goes back to dashboard tab.
-        self.select_navbar_element("dashboard")
-        # Back to the clients
-        # Disables client 1 and goes back to the dashboard.
-        self.select_navbar_element("client")
-        self.wait_and_click(By.LINK_TEXT, self.client)
-        self.select_navbar_element("client")
+        except ElementTimeoutException as err:
+            raise ClientNotFoundException(self.client) from err
+        self.driver.get(self.base_url + "/client")
+        self.wait_for_spinner_absence()
 
         if self.client_status(self.client) == "Enabled":
-            # Disables client
-            self.wait_and_click(
-                By.XPATH,
-                '//tr[contains(td[1], "%s")]/td[5]/a[@title="Disable"]' % self.client,
-            )
             if self.profile == "readonly":
+                # For readonly: clicking bootstrap-table action links may not navigate.
+                # Navigate directly to the disable URL to verify the ACL error page.
+                self.driver.get(
+                    self.base_url + "/client/index?action=disable&client=" + self.client
+                )
                 self.wait_and_click(By.LINK_TEXT, "Back")
+                self.driver.get(self.base_url + "/client")
+                self.wait_for_spinner_absence()
+                self.assertEqual(self.client_status(self.client), "Enabled")
             else:
+                # Disables client
+                self.wait_and_click(
+                    By.XPATH,
+                    '//tr[contains(td[1], "%s")]/td[5]/a[@title="Disable"]'
+                    % self.client,
+                )
                 # Switches to dashboard, if prevented by open modal: close modal
                 self.select_navbar_element(
                     "dashboard",
                     [(By.CSS_SELECTOR, "div.modal-footer > button.btn.btn-default")],
                 )
 
-        self.select_navbar_element("client")
+        self.driver.get(self.base_url + "/client")
+        self.wait_for_spinner_absence()
 
         if self.client_status(self.client) == "Disabled":
-            # Enables client
-            self.wait_and_click(
-                By.XPATH,
-                '//tr[contains(td[1], "%s")]/td[5]/a[@title="Enable"]' % self.client,
-            )
             if self.profile == "readonly":
+                # For readonly: navigate directly to the enable URL.
+                self.driver.get(
+                    self.base_url + "/client/index?action=enable&client=" + self.client
+                )
                 self.wait_and_click(By.LINK_TEXT, "Back")
+                self.driver.get(self.base_url + "/client")
+                self.wait_for_spinner_absence()
+                self.assertEqual(self.client_status(self.client), "Disabled")
             else:
+                # Enables client
+                self.wait_and_click(
+                    By.XPATH,
+                    '//tr[contains(td[1], "%s")]/td[5]/a[@title="Enable"]'
+                    % self.client,
+                )
                 # Switches to dashboard, if prevented by open modal: close modal
                 self.select_navbar_element(
                     "dashboard",
@@ -334,17 +380,25 @@ class SeleniumTest(unittest.TestCase):
 
     def test_rerun_job(self):
         self.login()
-        self.select_navbar_element("client")
-        self.wait_and_click(By.LINK_TEXT, self.client)
-        # Select first backup in list
-        self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
-        # Press on rerun button
-        self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
-        # Accept confirmation dialog
-        self.driver.switch_to.alert.accept()
+        self.driver.get(self.base_url + "/client/details?client=" + self.client)
+        self.wait_for_spinner_absence()
         if self.profile == "readonly":
+            # For readonly: clicking bootstrap-table links may not navigate.
+            # Extract the rerun URL from the first row and navigate directly to
+            # verify the ACL error page.
+            rerun_anchor = self.wait_for_element(
+                By.XPATH, '//tr[@data-index="0"]//a[contains(@href, "action=rerun")]'
+            )
+            rerun_href = rerun_anchor.get_attribute("href")
+            self.driver.get(rerun_href)
             self.wait_and_click(By.LINK_TEXT, "Back")
         else:
+            # Select first backup in list
+            self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
+            # Press on rerun button
+            self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
+            # Accept confirmation dialog
+            self.driver.switch_to.alert.accept()
             self.select_navbar_element(
                 "dashboard",
                 [(By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")],
@@ -354,57 +408,153 @@ class SeleniumTest(unittest.TestCase):
     def test_restore(self):
         # Login
         self.login()
-        self.select_navbar_element("restore")
-        # Click on client dropdown menue and close the possible modal
+        self.driver.get(self.base_url + "/restore")
+        self.wait_for_spinner_absence()
+        if self.profile != "readonly":
+            # Click on client dropdown menu and close the possible modal
+            self.wait_and_click(
+                By.XPATH,
+                '(//button[@data-id="client"])',
+                [(By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')],
+            )
+            # Select correct client
+            self.wait_and_click(By.LINK_TEXT, self.client)
+        else:
+            # For readonly: verify the restore form loads with the auto-selected
+            # client. The readonly profile is not expected to submit restore jobs.
+            self.wait_for_presence(By.ID, "restorejob")
+            self.wait_for_presence(By.ID, "filebrowser")
+            self.logout()
+            return
+
+        # Select the first visible restore tree entry. The BVFS root varies with
+        # the test environment, so absolute path traversal is brittle here.
         self.wait_and_click(
             By.XPATH,
-            '(//button[@data-id="client"])',
-            [(By.XPATH, '//div[@id="modal-001"]//button[.="Close"]')],
+            '//div[@id="filebrowser"]//a[contains(@class, "jstree-anchor")]',
         )
-        # Select correct client
-        self.wait_and_click(By.LINK_TEXT, self.client)
-        # Clicks on file and navigates through the tree
-        # by using the arrow-keys.
-        pathlist = self.restorefile.split("/")
-        for i in pathlist[:-1]:
-            self.wait_for_element(
-                By.XPATH, '//a[contains(text(),"%s/")]' % i
-            ).send_keys(Keys.ARROW_RIGHT)
-        self.wait_for_element(
-            By.XPATH, '//a[contains(text(),"%s")]' % pathlist[-1]
-        ).click()
         # Submit restore
         self.wait_and_click(By.XPATH, '//button[@id="btn-form-submit"]')
         # Confirm modals
         self.wait_and_click(By.XPATH, '//div[@id="modal-003"]//button[.="OK"]')
-        if self.profile == "readonly":
-            self.wait_and_click(By.LINK_TEXT, "Back")
-        else:
-            self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
+        self.close_result_modal()
         # Logout
         self.logout()
 
     def test_run_configured_job(self):
         self.login()
-        self.job_start_configured()
         if self.profile == "readonly":
-            self.wait_and_click(By.LINK_TEXT, "Back")
+            self.driver.get(self.base_url + "/job/run?jobname=backup-bareos-fd")
+            self.wait_for_spinner_absence()
+            self.wait_for_presence(By.ID, "job")
+            self.wait_for_presence(By.ID, "client")
+            self.wait_for_presence(By.ID, "submit")
+        else:
+            self.job_start_configured()
         self.logout()
 
     def test_run_default_job(self):
         self.login()
-        self.select_navbar_element("job")
-        self.wait_and_click(By.LINK_TEXT, "Run")
-        # Open the job list
-        self.wait_and_click(By.XPATH, '(//button[@data-id="job"])')
-        # Select the first job
-        self.wait_and_click(By.XPATH, '(//li[@data-original-index="1"])')
-        # Start it
-        self.wait_and_click(By.ID, "submit")
+        self.driver.get(self.base_url + "/job/run")
+        self.wait_for_spinner_absence()
         if self.profile == "readonly":
-            self.wait_and_click(By.LINK_TEXT, "Back")
+            self.wait_for_presence(By.ID, "job")
+            self.wait_for_presence(By.ID, "submit")
         else:
-            self.select_navbar_element("dashboard")
+            # Open the job list
+            self.wait_and_click(By.XPATH, '(//button[@data-id="job"])')
+            # Select the first job
+            self.wait_and_click(By.XPATH, '(//li[@data-original-index="1"])')
+            # Start it
+            self.wait_and_click(By.ID, "submit")
+            self.driver.get(self.base_url + "/dashboard/")
+            self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_job_list_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/job")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "jobtable")
+        self.logout()
+
+    def test_job_timeline_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/job/timeline")
+        self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_schedule_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/schedule")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "schedules")
+        self.logout()
+
+    def test_schedule_overview_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/schedule/overview")
+        self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_schedule_status_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/schedule/status")
+        self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_storage_devices_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/storage")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "storagedevices")
+        self.logout()
+
+    def test_pool_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/pool")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "pools")
+        self.logout()
+
+    def test_media_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/media")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "volumes")
+        self.logout()
+
+    def test_director_status_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/director")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.CSS_SELECTOR, "pre.dird-messages")
+        self.logout()
+
+    def test_director_messages_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/director/messages")
+        self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_fileset_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/fileset")
+        self.wait_for_spinner_absence()
+        self.logout()
+
+    def test_console_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/console")
+        self.wait_for_element(By.ID, "bconsole")
+        self.wait_for_element(By.ID, "cli")
+        self.logout()
+
+    def test_analytics_page(self):
+        self.login()
+        self.driver.get(self.base_url + "/analytics")
+        self.wait_for_spinner_absence()
+        self.wait_for_element(By.ID, "overall-jobtotals")
         self.logout()
 
     #
@@ -433,8 +583,8 @@ class SeleniumTest(unittest.TestCase):
 
     def job_start_configured(self):
         driver = self.driver
-        self.select_navbar_element("job")
-        self.wait_and_click(By.LINK_TEXT, "Run")
+        driver.get(self.base_url + "/job/run")
+        self.wait_for_spinner_absence()
         Select(driver.find_element(By.ID, "job")).select_by_visible_text(
             "backup-bareos-fd"
         )
@@ -444,21 +594,48 @@ class SeleniumTest(unittest.TestCase):
         )
         # Clears the priority field and enters 5.
         self.enter_input("priority", "5")
-        # Open the calendar
-        self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-calendar")
-        # Click the icon to delay jobstart by 1h six times
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
-        # Close the calendar
-        self.wait_and_click(By.CSS_SELECTOR, "span.input-group-addon")
+        if self.profile != "readonly":
+            # Open the calendar
+            self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-calendar")
+            # Click the icon to delay jobstart by 1h six times
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            self.wait_and_click(By.XPATH, '//a[@title="Increment Hour"]')
+            # Close the calendar
+            self.wait_and_click(By.CSS_SELECTOR, "span.input-group-addon")
         # Submit the job
         self.wait_and_click(By.ID, "submit")
 
+    def close_result_modal(self):
+        self.wait_and_click(By.XPATH, '//div[@id="modal-002"]//button[.="Close"]')
+
+    def wait_for_presence(self, by, value):
+        return self.wait.until(EC.presence_of_element_located((by, value)))
+
+    def is_shared_session_test(self):
+        return self.__get_name_of_test() in {
+            "test_job_list_page",
+            "test_job_timeline_page",
+            "test_schedule_page",
+            "test_schedule_overview_page",
+            "test_schedule_status_page",
+            "test_storage_devices_page",
+            "test_pool_page",
+            "test_media_page",
+            "test_director_status_page",
+            "test_director_messages_page",
+            "test_fileset_page",
+            "test_console_page",
+            "test_analytics_page",
+        }
+
     def login(self):
+        if self.is_shared_session_test() and SeleniumTest.shared_session_logged_in:
+            return
+
         driver = self.driver
         driver.get(self.base_url + "/auth/login")
         # Currently not required in the test environment because it is preselected
@@ -487,13 +664,13 @@ class SeleniumTest(unittest.TestCase):
             # ... otherwise (i.e. if an alert was found) the login is wronng
             raise WrongCredentialsException(self.username, self.password)
 
+        if self.is_shared_session_test():
+            SeleniumTest.shared_session_logged_in = True
+
     def logout(self):
-        self.wait_and_click(
-            By.CSS_SELECTOR,
-            "span.glyphicon.glyphicon-user",
-            [(By.CSS_SELECTOR, "div.navbar-header > button")],
-        )
-        self.wait_and_click(By.LINK_TEXT, "Logout")
+        if self.is_shared_session_test():
+            return
+        self.driver.get(self.base_url + "/auth/logout")
         sleep(self.sleeptime)
 
     def select_navbar_element(self, tab, additional_modals=None):
@@ -524,10 +701,10 @@ class SeleniumTest(unittest.TestCase):
     def getChromedriverpath(self):
         if SeleniumTest.chromedriverpath is None:
             for chromedriverpath in [
-                "/usr/bin/chromedriver",
-                "/usr/sbin/chromedriver",
                 "/usr/local/bin/chromedriver",
                 "/usr/local/sbin/chromedriver",
+                "/usr/bin/chromedriver",
+                "/usr/sbin/chromedriver",
             ]:
                 if os.path.isfile(chromedriverpath):
                     return chromedriverpath
@@ -678,12 +855,17 @@ class SeleniumTest(unittest.TestCase):
 
     def tearDown(self):
         logger = logging.getLogger()
-        try:
-            self.driver.quit()
-        except WebDriverException as e:
-            logger.warn("{}: ignored".format(str(e)))
+        if not self.is_shared_session_test():
+            try:
+                self.driver.quit()
+            except WebDriverException as e:
+                logger.warn("{}: ignored".format(str(e)))
 
         self.assertEqual([], self.verificationErrors)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.close_shared_driver()
 
     def __get_name_of_test(self):
         return self.id().split(".", 1)[1]

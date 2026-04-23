@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -83,11 +83,22 @@ class ClientController extends AbstractActionController
             try {
                 $this->bsock = $this->getServiceLocator()->get('director');
             } catch (Exception $e) {
-                echo $e->getMessage();
+                error_log($e->getMessage());
+                return new ViewModel(['error' => 'Failed to connect to director']);
+            }
+
+            if (!$this->bsock) {
+                return new ViewModel(['error' => 'Failed to connect to director']);
             }
 
             if ($action == "enable") {
                 $clientname = $this->params()->fromQuery('client');
+                if (empty($clientname) || !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $clientname)) {
+                    if ($this->bsock) {
+                        $this->bsock->disconnect();
+                    }
+                    return new ViewModel(['error' => 'Invalid client name']);
+                }
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
@@ -95,6 +106,9 @@ class ClientController extends AbstractActionController
                     );
                     if (count($invalid_commands) > 0 && in_array('enable', $invalid_commands)) {
                         $this->acl_alert = true;
+                        if ($this->bsock) {
+                            $this->bsock->disconnect();
+                        }
                         return new ViewModel(
                             array(
                                 'acl_alert' => $this->acl_alert,
@@ -105,10 +119,16 @@ class ClientController extends AbstractActionController
                         $result = $this->getClientModel()->enableClient($this->bsock, $clientname);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             } elseif ($action == "disable") {
                 $clientname = $this->params()->fromQuery('client');
+                if (empty($clientname) || !preg_match('/^[A-Za-z0-9_\-\. ]+$/', $clientname)) {
+                    if ($this->bsock) {
+                        $this->bsock->disconnect();
+                    }
+                    return new ViewModel(['error' => 'Invalid client name']);
+                }
                 try {
                     $module_config = $this->getServiceLocator()->get('ModuleManager')->getModule('Application')->getConfig();
                     $invalid_commands = $this->CommandACLPlugin()->getInvalidCommands(
@@ -116,6 +136,9 @@ class ClientController extends AbstractActionController
                     );
                     if (count($invalid_commands) > 0 && in_array('disable', $invalid_commands)) {
                         $this->acl_alert = true;
+                        if ($this->bsock) {
+                            $this->bsock->disconnect();
+                        }
                         return new ViewModel(
                             array(
                                 'acl_alert' => $this->acl_alert,
@@ -126,14 +149,16 @@ class ClientController extends AbstractActionController
                         $result = $this->getClientModel()->disableClient($this->bsock, $clientname);
                     }
                 } catch (Exception $e) {
-                    echo $e->getMessage();
+                    error_log($e->getMessage());
                 }
             }
 
-            try {
-                $this->bsock->disconnect();
-            } catch (Exception $e) {
-                echo $e->getMessage();
+            if ($this->bsock) {
+                try {
+                    $this->bsock->disconnect();
+                } catch (Exception $e) {
+                    error_log($e->getMessage());
+                }
             }
 
             return new ViewModel(
@@ -236,7 +261,7 @@ class ClientController extends AbstractActionController
             $result = $this->getClientModel()->statusClient($this->bsock, $clientname);
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            error_log($e->getMessage());
         }
 
         return new ViewModel(

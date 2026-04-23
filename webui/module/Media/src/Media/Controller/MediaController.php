@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos for the canonical source repository
- * @copyright Copyright (C) 2013-2025 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (C) 2013-2026 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -81,7 +81,10 @@ class MediaController extends AbstractActionController
             $volumes = $this->getMediaModel()->getVolumes($this->bsock);
             $this->bsock->disconnect();
         } catch (Exception $e) {
-            echo $e->getMessage();
+            if ($this->bsock) {
+                $this->bsock->disconnect();
+            }
+            error_log($e->getMessage());
         }
 
         return new ViewModel(
