@@ -137,6 +137,10 @@ struct DirectorUserResourceSpec {
   std::optional<std::string> description{};
 };
 
+struct DirectorProfileResourceSpec {
+  std::optional<std::string> description{};
+};
+
 struct JobSpec {
   std::string type{};
   std::optional<std::string> deployment_id{};
@@ -250,6 +254,15 @@ class ServiceState {
       std::string_view deployment_id,
       std::string_view director_name,
       std::string_view user_name) const;
+  OperationResult<DeploymentConfigRecord> UpsertDirectorProfileResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view profile_name,
+      const DirectorProfileResourceSpec& spec) const;
+  OperationResult<DeploymentConfigRecord> DeleteDirectorProfileResource(
+      std::string_view deployment_id,
+      std::string_view director_name,
+      std::string_view profile_name) const;
   OperationResult<std::vector<DeploymentImportRecord>> ListDeploymentImports(
       std::string_view deployment_id) const;
   OperationResult<DeploymentGitStatusRecord> GetDeploymentGitStatus(

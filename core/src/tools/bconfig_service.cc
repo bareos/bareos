@@ -719,6 +719,24 @@ std::string BuildDirectorUserResourceContent(
   return content.str();
 }
 
+std::string BuildDirectorProfileResourceContent(
+    std::string_view profile_name,
+    std::string_view description,
+    const std::array<std::vector<std::string>, directordaemon::Num_ACL>& acl)
+{
+  std::ostringstream content;
+  content << "Profile {\n"
+          << "  Name = " << QuoteBareosString(profile_name) << "\n"
+          << "  Description = " << QuoteBareosString(description) << "\n";
+  for (size_t index = 0; index < acl.size(); ++index) {
+    if (acl[index].empty()) { continue; }
+    content << "  " << kDirectorAclDirectiveNames[index] << " = "
+            << JoinDirectiveValues(acl[index]) << "\n";
+  }
+  content << "}\n";
+  return content.str();
+}
+
 std::string BuildStorageDaemonDirectorResourceContent(
     std::string_view director_name,
     std::string_view password,
@@ -784,6 +802,13 @@ std::string DefaultDirectorUserDescription(std::string_view user_name,
 {
   return "Managed user resource for " + std::string{user_name} + " in director "
          + std::string{director_name};
+}
+
+std::string DefaultDirectorProfileDescription(std::string_view profile_name,
+                                              std::string_view director_name)
+{
+  return "Managed profile resource for " + std::string{profile_name}
+         + " in director " + std::string{director_name};
 }
 
 std::string DefaultStorageDaemonDirectorDescription(
@@ -973,6 +998,14 @@ struct DirectorUserWriteContext {
   std::optional<std::string> description{};
   std::array<std::vector<std::string>, directordaemon::Num_ACL> acl{};
   std::vector<std::string> profiles{};
+  bool exists{false};
+  bool is_standalone_file{false};
+};
+
+struct DirectorProfileWriteContext {
+  std::filesystem::path file_path{};
+  std::optional<std::string> description{};
+  std::array<std::vector<std::string>, directordaemon::Num_ACL> acl{};
   bool exists{false};
   bool is_standalone_file{false};
 };
@@ -1322,6 +1355,72 @@ OperationResult<DirectorUserWriteContext> LoadDirectorUserWriteContext(
         = per_file != resources_per_file.end() && per_file->second == 1;
     if (!context.is_standalone_file) {
       return {.error = "director user '" + std::string{user_name}
+                       + "' is not stored in a standalone file yet."};
+    }
+    return {.value = std::move(context)};
+  }
+
+  return {.value = std::move(context)};
+}
+
+OperationResult<DirectorProfileWriteContext> LoadDirectorProfileWriteContext(
+    const DeploymentConfigRecord& director_config,
+    std::string_view profile_name)
+{
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.path.string(), true);
+  if (!loaded.parser) {
+    return {.error = FormatParseFailure(
+                "director config parser initialization ", loaded.messages)};
+  }
+  if (!loaded.parse_ok) {
+    return {.error = FormatParseFailure("director config ", loaded.messages)};
+  }
+
+  DirectorProfileWriteContext context{
+      .file_path = director_config.path / "bareos-dir.d" / "profile"
+                   / (std::string{profile_name} + ".conf")};
+  std::unordered_map<std::string, size_t> resources_per_file;
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_PROFILE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_PROFILE, resource)) {
+    auto* profile = dynamic_cast<directordaemon::ProfileResource*>(resource);
+    if (!profile) { continue; }
+    if (auto source = profile->GetDefinitionSource()) {
+      ++resources_per_file[source->file];
+    }
+  }
+
+  for (auto* resource
+       = loaded.parser->GetNextRes(directordaemon::R_PROFILE, nullptr);
+       resource != nullptr; resource = loaded.parser->GetNextRes(
+                                directordaemon::R_PROFILE, resource)) {
+    auto* profile = dynamic_cast<directordaemon::ProfileResource*>(resource);
+    if (!profile || !profile->resource_name_
+        || profile->resource_name_ != profile_name) {
+      continue;
+    }
+
+    context.exists = true;
+    if (profile->description_ && profile->description_[0] != '\0') {
+      context.description = std::string{profile->description_};
+    }
+    for (size_t index = 0; index < context.acl.size(); ++index) {
+      context.acl[index] = CopyAclValues(profile->ACL_lists[index]);
+    }
+
+    auto source = profile->GetDefinitionSource();
+    if (!source || source->file.empty()) {
+      return {.error = "director profile '" + std::string{profile_name}
+                       + "' has no definition source."};
+    }
+    context.file_path = source->file;
+    auto per_file = resources_per_file.find(source->file);
+    context.is_standalone_file
+        = per_file != resources_per_file.end() && per_file->second == 1;
+    if (!context.is_standalone_file) {
+      return {.error = "director profile '" + std::string{profile_name}
                        + "' is not stored in a standalone file yet."};
     }
     return {.value = std::move(context)};
@@ -3499,6 +3598,147 @@ ServiceState::DeleteDirectorUserResource(std::string_view deployment_id,
   }
 
   DebugLog("deleted director user resource '" + std::string{user_name}
+           + "' from director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::UpsertDirectorProfileResource(
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view profile_name,
+    const DirectorProfileResourceSpec& spec) const
+{
+  DebugLog("upserting director profile resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', profile '"
+           + std::string{profile_name} + "'");
+  if (!IsSafePathSegment(profile_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "profile and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorProfileWriteContext(*director_config.value, profile_name);
+  if (!context) { return {.error = context.error}; }
+
+  const auto description = spec.description
+                               ? *spec.description
+                               : context.value->description.value_or(
+                                     DefaultDirectorProfileDescription(
+                                         profile_name, director_name));
+  const auto content = BuildDirectorProfileResourceContent(
+      profile_name, description, context.value->acl);
+
+  const auto resource_directory
+      = director_config.value->path / "bareos-dir.d" / "profile";
+  const bool file_existed = std::filesystem::exists(context.value->file_path);
+  std::string original_content;
+  if (file_existed) {
+    auto existing = ReadFile(context.value->file_path);
+    if (!existing) { return {.error = existing.error}; }
+    original_content = std::move(*existing.value);
+  }
+
+  std::error_code error_code;
+  std::filesystem::create_directories(resource_directory, error_code);
+  if (error_code) {
+    return {.error = "failed to create director profile directory '"
+                     + resource_directory.string()
+                     + "': " + error_code.message()};
+  }
+  if (!WriteFile(context.value->file_path, content)) {
+    return {.error = "failed to write director profile resource '"
+                     + context.value->file_path.string() + "'."};
+  }
+  DebugLog("wrote director profile file '" + context.value->file_path.string()
+           + "'");
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    DebugLog("director profile update for '" + std::string{profile_name}
+             + "' failed validation and will be rolled back");
+    std::optional<std::string> rollback_error;
+    if (file_existed) {
+      rollback_error
+          = RestoreClientStubFile(context.value->file_path, original_content);
+    } else {
+      rollback_error = CleanupCreatedFile(context.value->file_path,
+                                          director_config.value->path);
+    }
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director profile parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director profile update ", loaded.messages)};
+  }
+
+  DebugLog("updated director profile resource '" + std::string{profile_name}
+           + "' in director '" + std::string{director_name} + "'");
+  return {.value = *director_config.value};
+}
+
+OperationResult<DeploymentConfigRecord>
+ServiceState::DeleteDirectorProfileResource(std::string_view deployment_id,
+                                            std::string_view director_name,
+                                            std::string_view profile_name) const
+{
+  DebugLog("deleting director profile resource for deployment '"
+           + std::string{deployment_id} + "', director '"
+           + std::string{director_name} + "', profile '"
+           + std::string{profile_name} + "'");
+  if (!IsSafePathSegment(profile_name) || !IsSafePathSegment(director_name)) {
+    return {.error = "profile and director names must be safe path segments."};
+  }
+
+  auto director_config = GetDeploymentConfig(
+      deployment_id, bconfig::Component::kDirector, director_name);
+  if (!director_config) {
+    return {.error = "director config not found for '"
+                     + std::string{director_name} + "'."};
+  }
+
+  auto context
+      = LoadDirectorProfileWriteContext(*director_config.value, profile_name);
+  if (!context) { return {.error = context.error}; }
+  if (!context.value->exists) {
+    return {.error = "director '" + std::string{director_name}
+                     + "' does not define profile '" + std::string{profile_name}
+                     + "'."};
+  }
+
+  auto original_content = ReadFile(context.value->file_path);
+  if (!original_content) { return {.error = original_content.error}; }
+  if (auto error = DeleteFileAndEmptyParents(context.value->file_path,
+                                             director_config.value->path);
+      error) {
+    return {.error = *error};
+  }
+
+  auto loaded = bconfig::LoadConfig(bconfig::Component::kDirector,
+                                    director_config.value->path.string(), true);
+  if (!loaded.parser || !loaded.parse_ok) {
+    auto rollback_error
+        = RestoreDeletedFile(context.value->file_path, *original_content.value);
+    if (rollback_error) { return {.error = *rollback_error}; }
+    if (!loaded.parser) {
+      return {.error = FormatParseFailure(
+                  "director profile parser initialization ", loaded.messages)};
+    }
+    return {.error
+            = FormatParseFailure("director profile delete ", loaded.messages)};
+  }
+
+  DebugLog("deleted director profile resource '" + std::string{profile_name}
            + "' from director '" + std::string{director_name} + "'");
   return {.value = *director_config.value};
 }

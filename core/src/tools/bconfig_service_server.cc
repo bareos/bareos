@@ -102,6 +102,10 @@ struct DirectorUserRequestSpec {
   std::optional<std::string> description{};
 };
 
+struct DirectorProfileRequestSpec {
+  std::optional<std::string> description{};
+};
+
 std::optional<ClientDirectorStubRequestSpec> ParseClientDirectorStubRequest(
     std::string_view body,
     std::string& error);
@@ -115,6 +119,9 @@ std::optional<DirectorConsoleRequestSpec> ParseDirectorConsoleRequest(
     std::string_view body,
     std::string& error);
 std::optional<DirectorUserRequestSpec> ParseDirectorUserRequest(
+    std::string_view body,
+    std::string& error);
+std::optional<DirectorProfileRequestSpec> ParseDirectorProfileRequest(
     std::string_view body,
     std::string& error);
 
@@ -662,6 +669,31 @@ const char* kTestUiHtmlTemplate = R"HTML(
         </button>
         <button type="button" id="director-user-delete-button">
           DELETE /v1/deployments/{id}/directors/{director}/users/{user}
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Upsert director profile resource</h2>
+      <form id="director-profile-form">
+        <label for="director-profile-deployment-id">Deployment ID</label>
+        <input id="director-profile-deployment-id" name="deployment_id" value="prod">
+
+        <label for="director-profile-director-name">Director name</label>
+        <input id="director-profile-director-name" name="director_name" value="bareos-dir">
+
+        <label for="director-profile-profile-name">Profile name</label>
+        <input id="director-profile-profile-name" name="profile_name" value="managed-profile">
+
+        <label for="director-profile-description">Description</label>
+        <input id="director-profile-description" name="description"
+               placeholder="Managed profile resource">
+
+        <button type="submit">
+          PUT /v1/deployments/{id}/directors/{director}/profiles/{profile}
+        </button>
+        <button type="button" id="director-profile-delete-button">
+          DELETE /v1/deployments/{id}/directors/{director}/profiles/{profile}
         </button>
       </form>
     </section>
@@ -1563,6 +1595,44 @@ const char* kTestUiHtmlTemplate = R"HTML(
         const { response } = await request(
           'DELETE',
           `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/users/${encodeURIComponent(userName)}`);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-profile-form').addEventListener(
+      'submit',
+      async (event) => {
+        event.preventDefault();
+        const form = new FormData(event.target);
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const profileName = String(form.get('profile_name') ?? '').trim();
+        const payload = {
+          description: String(form.get('description') ?? '').trim(),
+        };
+        if (!payload.description) {
+          delete payload.description;
+        }
+        const { response } = await request(
+          'PUT',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/profiles/${encodeURIComponent(profileName)}`,
+          payload);
+        if (response.ok) {
+          document.getElementById('deployment-inspect-id').value = deploymentId;
+          await loadDeploymentContents(deploymentId);
+        }
+      });
+    document.getElementById('director-profile-delete-button').addEventListener(
+      'click',
+      async () => {
+        const form = new FormData(document.getElementById('director-profile-form'));
+        const deploymentId = String(form.get('deployment_id') ?? '').trim();
+        const directorName = String(form.get('director_name') ?? '').trim();
+        const profileName = String(form.get('profile_name') ?? '').trim();
+        const { response } = await request(
+          'DELETE',
+          `/v1/deployments/${encodeURIComponent(deploymentId)}/directors/${encodeURIComponent(directorName)}/profiles/${encodeURIComponent(profileName)}`);
         if (response.ok) {
           document.getElementById('deployment-inspect-id').value = deploymentId;
           await loadDeploymentContents(deploymentId);
@@ -2777,6 +2847,90 @@ http::response<http::string_body> HandleDeploymentDirectorUserDeleteRequest(
   return JsonResponse(http::status::ok, DumpJson(root.get()));
 }
 
+http::response<http::string_body> HandleDeploymentDirectorProfilePutRequest(
+    ServiceState& state,
+    const http::request<http::string_body>& request,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view profile_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  std::string error;
+  auto spec = ParseDirectorProfileRequest(request.body(), error);
+  if (!spec) { return ErrorResponse(http::status::bad_request, error); }
+
+  DirectorProfileResourceSpec resource_spec{
+      .description = spec->description,
+  };
+  auto result = state.UpsertDirectorProfileResource(
+      deployment_id, director_name, profile_name, resource_spec);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "profile_name",
+                      json_string(std::string{profile_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
+http::response<http::string_body> HandleDeploymentDirectorProfileDeleteRequest(
+    ServiceState& state,
+    std::string_view deployment_id,
+    std::string_view director_name,
+    std::string_view profile_name)
+{
+  auto deployment = state.GetDeployment(deployment_id);
+  if (!deployment) {
+    return ErrorResponse(http::status::not_found, "deployment not found.");
+  }
+
+  auto result = state.DeleteDirectorProfileResource(
+      deployment_id, director_name, profile_name);
+  if (!result) {
+    return ErrorResponse(http::status::bad_request, result.error);
+  }
+
+  bool parser_initialized = false;
+  auto director_json
+      = BuildDeploymentConfigDocument(*result.value, parser_initialized);
+  if (!parser_initialized) {
+    return JsonResponse(http::status::bad_request,
+                        DumpJson(director_json.get()));
+  }
+
+  auto root = MakeJson(json_object());
+  auto deployment_json = MakeJson(json_array());
+  AppendDeployment(deployment_json.get(), *deployment);
+  json_object_set(root.get(), "deployment",
+                  json_array_get(deployment_json.get(), 0));
+  json_object_set_new(root.get(), "director_name",
+                      json_string(std::string{director_name}.c_str()));
+  json_object_set_new(root.get(), "profile_name",
+                      json_string(std::string{profile_name}.c_str()));
+  json_object_set(root.get(), "director", director_json.get());
+  return JsonResponse(http::status::ok, DumpJson(root.get()));
+}
+
 http::response<http::string_body> HandleDeploymentGitStatusRequest(
     ServiceState& state,
     std::string_view deployment_id)
@@ -3179,6 +3333,31 @@ std::optional<DirectorUserRequestSpec> ParseDirectorUserRequest(
   return spec;
 }
 
+std::optional<DirectorProfileRequestSpec> ParseDirectorProfileRequest(
+    std::string_view body,
+    std::string& error)
+{
+  json_error_t json_error{};
+  auto root = MakeJson(json_loadb(body.data(), body.size(), 0, &json_error));
+  if (!root) {
+    error = "invalid JSON body: " + std::string{json_error.text};
+    return std::nullopt;
+  }
+
+  auto* description = json_object_get(root.get(), "description");
+  if (description && !json_is_null(description)
+      && !json_is_string(description)) {
+    error = "field 'description' must be a string when provided.";
+    return std::nullopt;
+  }
+
+  DirectorProfileRequestSpec spec{};
+  if (description && json_is_string(description)) {
+    spec.description = std::string{json_string_value(description)};
+  }
+  return spec;
+}
+
 http::response<http::string_body> HandleDeploymentsRequest(
     ServiceState& state,
     const http::request<http::string_body>& request,
@@ -3296,6 +3475,18 @@ http::response<http::string_body> HandleDeploymentsRequest(
   if (path_parts.size() == 7 && path_parts[3] == "directors"
       && path_parts[5] == "users" && request.method() == http::verb::delete_) {
     return HandleDeploymentDirectorUserDeleteRequest(
+        state, path_parts[2], path_parts[4], path_parts[6]);
+  }
+
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "profiles" && request.method() == http::verb::put) {
+    return HandleDeploymentDirectorProfilePutRequest(
+        state, request, path_parts[2], path_parts[4], path_parts[6]);
+  }
+  if (path_parts.size() == 7 && path_parts[3] == "directors"
+      && path_parts[5] == "profiles"
+      && request.method() == http::verb::delete_) {
+    return HandleDeploymentDirectorProfileDeleteRequest(
         state, path_parts[2], path_parts[4], path_parts[6]);
   }
 
